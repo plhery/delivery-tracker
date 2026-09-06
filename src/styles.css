@@ -3853,6 +3853,11 @@ body {
   display: none;
 }
 
+.detail__freshness-times {
+  display: grid;
+  gap: 4px;
+}
+
 .detail__freshness {
   display: flex;
   min-height: 38px;

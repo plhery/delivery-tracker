@@ -77,6 +77,22 @@ commit;
 Verify zero ownerless rows remain and take another backup. If this is a new
 deployment, the validation and `NOT NULL` steps can be performed immediately.
 
+### Tracking generation rollout (September 2026)
+
+Before deploying the worker that calls `apply_tracking_sync`, apply
+`20260906120000_guard_tracking_sync_generation.sql`. This additive migration
+assigns configuration tokens to existing parcels and exposes a service-only
+transaction for events and status updates. It does not rewrite tracking history.
+Drain or stop old worker instances during rollout: older code does not submit
+generation tokens and cannot reject a superseded carrier result. New workers
+fail closed if the migration or token is missing.
+
+Deploy the server before releasing native clients that use `GET /api/sync/jobs`.
+The existing single-job endpoint remains compatible with older clients.
+For a local database test, run `scripts/test-migrations.sh` with
+`TEST_DATABASE_URL` pointing at a disposable database; it includes generation,
+transaction rollback, ownership, and privilege assertions.
+
 ## 3. Configure Auth and email
 
 1. Set the Auth Site URL to the public HTTPS origin and restrict redirect URLs.

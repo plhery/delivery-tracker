@@ -2,6 +2,29 @@ import XCTest
 @testable import SwissDeliveryTracker
 
 final class ParcelLogicTests: XCTestCase {
+    @MainActor
+    func testRetryAfterSupportsBothHeaderFormats() {
+        let now = DateParser.date("2026-09-06T12:00:00Z")!
+        XCTAssertEqual(DeliveryAPIClient.retryAfterSeconds("12", now: now), 12)
+        XCTAssertEqual(DeliveryAPIClient.retryAfterSeconds("Sun, 06 Sep 2026 12:00:12 GMT", now: now), 12)
+        XCTAssertEqual(DeliveryAPIClient.retryAfterSeconds("invalid", now: now), 0)
+        XCTAssertEqual(DeliveryAPIClient.retryAfterSeconds(nil, now: now), 0)
+    }
+
+    func testPickupAndDeliveryActionsSurviveSyncErrors() {
+        let id = UUID()
+        for (stage, attention) in [
+            (TrackingStage.readyForPickup, ParcelAttention.readyForPickup),
+            (.failedAttempt, .failedAttempt),
+            (.customs, .customs),
+        ] {
+            var parcel = makeParcel(id: id, events: [event(id, stage, "2026-09-06T10:00:00Z")])
+            parcel.syncStatus = .error
+            XCTAssertEqual(parcel.attention(), attention)
+            XCTAssertEqual(parcel.currentStage, stage)
+        }
+    }
+
     func testDecodesSharedAPIContractFixture() throws {
         struct Fixture: Decodable {
             let packageList: PackageListResponse

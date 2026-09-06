@@ -14,6 +14,7 @@ import {
   type ParcelCarrierInput,
   type ParcelRepo,
   type ParcelWithEvents,
+  type SyncProgress,
 } from '../types';
 import { ApiAuthenticationError } from '../lib/apiClient';
 
@@ -32,8 +33,8 @@ interface ParcelsState {
   removeParcel: (id: string) => Promise<void>;
   restoreParcel: (id: string) => Promise<void>;
   deleteParcel: (id: string) => Promise<void>;
-  refresh: () => Promise<void>;
-  refreshParcel: (id: string) => Promise<void>;
+  refresh: (onProgress?: (progress: SyncProgress) => void) => Promise<void>;
+  refreshParcel: (id: string, onProgress?: (progress: SyncProgress) => void) => Promise<void>;
   retryLoad: () => Promise<void>;
 }
 
@@ -228,10 +229,10 @@ export function ParcelsProvider({
     }
   }, [repo, rememberError]);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (onProgress?: (progress: SyncProgress) => void) => {
     setRefreshing(true);
     try {
-      const list = await repo.refresh();
+      const list = await repo.refresh(onProgress);
       if (mounted.current) {
         setParcels(list);
         setError(null);
@@ -245,10 +246,10 @@ export function ParcelsProvider({
     }
   }, [repo, rememberError]);
 
-  const refreshParcel = useCallback(async (id: string) => {
+  const refreshParcel = useCallback(async (id: string, onProgress?: (progress: SyncProgress) => void) => {
     try {
       const parcel = repo.refreshParcel
-        ? await repo.refreshParcel(id)
+        ? await repo.refreshParcel(id, onProgress)
         : (await repo.refresh()).find((candidate) => candidate.id === id);
       if (!parcel) throw new Error('Parcel not found after refreshing');
       if (mounted.current) {

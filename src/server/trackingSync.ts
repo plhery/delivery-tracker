@@ -148,6 +148,7 @@ export interface SyncSummary extends JsonObject {
   waiting: number;
   errors: number;
   unsupported: number;
+  superseded: number;
   notifications_sent: number;
   notification_errors: number;
   subscriptions_expired: number;
@@ -160,6 +161,7 @@ export function emptySyncSummary(): SyncSummary {
     waiting: 0,
     errors: 0,
     unsupported: 0,
+    superseded: 0,
     notifications_sent: 0,
     notification_errors: 0,
     subscriptions_expired: 0,
@@ -442,7 +444,9 @@ export function detectSyncAnomalies(
   return [...anomalies];
 }
 
-type SyncOutcome = 'updated' | 'waiting' | 'errors' | 'unsupported';
+type SyncOutcome = 'updated' | 'waiting' | 'errors' | 'unsupported' | 'superseded';
+
+class SupersededTrackingSync extends Error {}
 
 export class TrackingSyncService {
   #tail: Promise<void> = Promise.resolve();
@@ -527,6 +531,20 @@ export class TrackingSyncService {
     );
     await audit.start();
 
+    const persist = async (
+      values: JsonObject,
+      newEvents: JsonObject[] = [],
+      deleteDescriptions: string[] = [],
+    ) => {
+      if (!await this.client.applyTrackingSync(parcel, values, newEvents, deleteDescriptions)) {
+        throw new SupersededTrackingSync('Tracking configuration changed during the check');
+      }
+    };
+    const superseded = async (): Promise<SyncOutcome> => {
+      await audit.finish({ outcome: 'superseded' });
+      return 'superseded';
+    };
+
     if (!AUTOMATIC_CARRIER_IDS.has(carrierId)) {
       audit.record('selected', 'succeeded', 0, { automatic: false });
       audit.skip('fetch', 'unsupported_carrier');
@@ -534,7 +552,7 @@ export class TrackingSyncService {
       audit.skip('persist_events', 'unsupported_carrier');
       try {
         await audit.step('persist_package', async () => {
-          await this.client.updatePackage(id, {
+          await persist({
             sync_status: 'unsupported',
             sync_error: 'Choose a carrier with an automatic adapter or use the carrier link.',
             last_synced_at: null,
@@ -543,6 +561,7 @@ export class TrackingSyncService {
         await audit.finish({ outcome: 'unsupported' });
         return 'unsupported';
       } catch (error) {
+        if (error instanceof SupersededTrackingSync) return superseded();
         audit.reportError(error, 'persist_package');
         await audit.finish({ outcome: 'error', error });
         throw error;
@@ -559,7 +578,7 @@ export class TrackingSyncService {
     let anomalies: SyncAnomalyCode[] = [];
     try {
       await audit.step('selected', async () => {
-        await this.client.updatePackage(id, { sync_status: 'syncing', sync_error: null });
+        await persist({ sync_status: 'syncing', sync_error: null });
       }, () => ({ automatic: true }));
 
       operation = 'fetch';
@@ -582,8 +601,8 @@ export class TrackingSyncService {
           audit.skip('persist_events', 'unannounced');
           operation = 'persist_package';
           await audit.step('persist_package', async () => {
-            await this.client.updatePackage(id, {
-              last_synced_at: now.toISOString(),
+            await persist({
+              last_synced_at: this.now().toISOString(),
               sync_status: 'waiting',
               sync_error: null,
             });
@@ -646,16 +665,11 @@ export class TrackingSyncService {
         now,
       );
 
-      operation = 'persist_events';
-      await audit.step('persist_events', async () => {
-        await this.client.insertEvents(events);
-        if (sourceCarrierId === 'swiss-post' && (result!.events?.length ?? 0) > 0) {
-          await this.client.deleteEventsByDescriptions(id, new Set([
-            'TO_BE_DELIVERED', 'REPORTED', 'IN_DELIVERY', 'DELIVERED',
-            'MISSED_DELIVERY', 'NOT_DELIVERED', 'RETURNED', 'CUSTOMS', 'REGISTERED',
-          ]));
-        }
-      }, () => ({ events_persisted: events.length }));
+      const deleteDescriptions = sourceCarrierId === 'swiss-post' && (result.events?.length ?? 0) > 0
+        ? [
+          'TO_BE_DELIVERED', 'REPORTED', 'IN_DELIVERY', 'DELIVERED',
+          'MISSED_DELIVERY', 'NOT_DELIVERED', 'RETURNED', 'CUSTOMS', 'REGISTERED',
+        ] : [];
       const hasUpdate = Boolean(
         (selectedStage && selectedStage !== 'pending')
         || events.some((event) => event.stage !== 'pending'),
@@ -670,7 +684,7 @@ export class TrackingSyncService {
         carrierData.swiss_post_ready = swissPostReady;
       }
       const values: JsonObject = {
-        last_synced_at: now.toISOString(),
+        last_synced_at: this.now().toISOString(),
         sync_status: knownUpdate ? 'ok' : 'waiting',
         sync_error: null,
         last_status_text: result.last_status_text || null,
@@ -680,11 +694,15 @@ export class TrackingSyncService {
       if (selectedStage && (hasUpdate || !swissPostReady)) values.current_stage = selectedStage;
       operation = 'persist_package';
       await audit.step('persist_package', async () => {
-        await this.client.updatePackage(id, values);
+        await persist(values, events, deleteDescriptions);
       }, () => ({
         outcome: knownUpdate ? 'updated' : 'waiting',
         selected_stage: selectedStage,
       }));
+      audit.record('persist_events', 'succeeded', 0, {
+        events_persisted: events.length,
+        atomic_with_package: true,
+      });
       const outcome = knownUpdate ? 'updated' : 'waiting';
       const completion = {
         outcome,
@@ -701,20 +719,22 @@ export class TrackingSyncService {
       audit.reportAnomalies(anomalies, completion);
       return outcome;
     } catch (error) {
-      audit.reportError(error, operation);
+      if (error instanceof SupersededTrackingSync) return superseded();
       let message = error instanceof Error ? error.message.trim() || error.name : String(error);
       if (error instanceof SyntaxError) {
         message = 'The carrier returned a maintenance page instead of tracking data.';
       }
       try {
         await audit.step('persist_package', async () => {
-          await this.client.updatePackage(id, {
-            last_synced_at: now.toISOString(),
+          await persist({
+            last_synced_at: this.now().toISOString(),
             sync_status: 'error',
             sync_error: message.slice(0, 500),
           });
         }, () => ({ purpose: 'record_error' }));
       } catch (persistenceError) {
+        if (persistenceError instanceof SupersededTrackingSync) return superseded();
+        audit.reportError(error, operation);
         audit.reportError(persistenceError, 'persist_error_state');
         await audit.finish({
           outcome: 'error',
@@ -730,6 +750,7 @@ export class TrackingSyncService {
         });
         throw persistenceError;
       }
+      audit.reportError(error, operation);
       await audit.finish({
         outcome: 'error',
         sourceCarrier: sourceCarrierId,

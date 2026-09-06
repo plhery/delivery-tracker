@@ -103,13 +103,13 @@ extension Parcel {
     }
 
     func attention(now: Date = Date()) -> ParcelAttention? {
-        if syncStatus == .error { return .syncError }
         switch currentStage {
         case .failedAttempt: return .failedAttempt
         case .readyForPickup: return .readyForPickup
         case .customs: return .customs
         default: break
         }
+        if syncStatus == .error { return .syncError }
         if let event = currentEvent,
            [.registered, .accepted, .inTransit].contains(event.stage),
            let update = DateParser.date(event.occurredAt),

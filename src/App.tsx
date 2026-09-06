@@ -14,6 +14,7 @@ import {
 import type { ApiAuth } from './lib/apiClient';
 import {
   isActiveParcel,
+  nextPriorityParcel,
   prioritizeActiveParcels,
   type ParcelAttention,
 } from './lib/parcelPriority';
@@ -132,10 +133,10 @@ export default function App({
   }, [undoParcel, undoing, undoError]);
 
   useEffect(() => {
-    if (!refreshNotice) return;
+    if (!refreshNotice || refreshing) return;
     const timeout = window.setTimeout(() => setRefreshNotice(null), 4_000);
     return () => window.clearTimeout(timeout);
-  }, [refreshNotice]);
+  }, [refreshNotice, refreshing]);
 
   useEffect(() => {
     const interval = window.setInterval(() => setViewNow(Date.now()), 60_000);
@@ -214,18 +215,10 @@ export default function App({
     () => prioritizeActiveParcels(activeParcels, viewNow, parcelComparator(sort)),
     [activeParcels, sort, viewNow],
   );
-  const allPrioritized = useMemo(
-    () => prioritizeActiveParcels(
-      parcels.filter(isActiveParcel),
-      viewNow,
-      parcelComparator('priority'),
-    ),
+  const nextParcel = useMemo(
+    () => nextPriorityParcel(parcels, viewNow),
     [parcels, viewNow],
   );
-  const nextParcel = allPrioritized.attention[0]?.parcel
-    ?? allPrioritized.arrivingToday[0]
-    ?? allPrioritized.onTheWay[0]
-    ?? null;
   const activeCount = useMemo(
     () => parcels.filter(isActiveParcel).length,
     [parcels],
@@ -304,9 +297,10 @@ export default function App({
   async function refreshAll() {
     setRefreshNotice(null);
     try {
-      await refresh();
-      setRefreshNotice(t('app.refreshQueued'));
+      await refresh((progress) => setRefreshNotice(t(`sync.${progress}`)));
+      setRefreshNotice(t('sync.completed'));
     } catch {
+      setRefreshNotice(null);
       // The shared error banner contains the actionable failure message.
     }
   }
@@ -684,7 +678,7 @@ export default function App({
           onChangeCarrier={(p, input) => changeParcelCarrier(p.id, input)}
           onSetNotificationsMuted={(p, muted) =>
             setParcelNotificationsMuted(p.id, muted)}
-          onRefresh={(p) => refreshParcel(p.id)}
+          onRefresh={(p, onProgress) => refreshParcel(p.id, onProgress)}
           onRestore={(p) => handleRestore(p)}
           onArchive={(p) => handleArchive(p)}
           onDelete={(p) => handleDelete(p)}

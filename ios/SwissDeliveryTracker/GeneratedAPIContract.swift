@@ -414,6 +414,10 @@ enum SyncJobStatus: String, Codable, CaseIterable, Hashable, Sendable, Identifia
     var id: String { rawValue }
 }
 
+struct SyncJobListResponse: Codable, Equatable, Hashable, Sendable {
+    var jobs: [SyncJobResponse]
+}
+
 struct SyncJobResponse: Codable, Equatable, Hashable, Sendable, Identifiable {
     var id: UUID
     var status: SyncJobStatus
@@ -442,6 +446,7 @@ struct SyncSummary: Codable, Equatable, Hashable, Sendable {
     var waiting: Int? = nil
     var errors: Int? = nil
     var unsupported: Int? = nil
+    var superseded: Int? = nil
     var notificationsSent: Int? = nil
     var notificationErrors: Int? = nil
     var subscriptionsExpired: Int? = nil

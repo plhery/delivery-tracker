@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { expectedDeliveryDay, parcelAttention, prioritizeActiveParcels } from './parcelPriority';
+import { expectedDeliveryDay, nextPriorityParcel, parcelAttention, prioritizeActiveParcels } from './parcelPriority';
 import type { ParcelWithEvents, Stage } from '../types';
 
 const NOW = new Date(2026, 7, 5, 12).getTime();
@@ -21,6 +21,21 @@ function parcel(
 }
 
 describe('parcel priority', () => {
+  it.each(['ready_for_pickup', 'failed_attempt', 'customs'] as const)(
+    'keeps %s actionable even when the latest check failed', (stage) => {
+      expect(parcelAttention({ ...parcel('action', stage), syncStatus: 'error' }, NOW)).toBe(stage);
+    },
+  );
+
+  it('highlights an immediate delivery before a sync outage, but preserves pickup urgency', () => {
+    const outage = { ...parcel('outage'), syncStatus: 'error' as const };
+    const delivery = parcel('delivery', 'out_for_delivery');
+    const pickup = { ...parcel('pickup', 'ready_for_pickup'), syncStatus: 'error' as const };
+    expect(nextPriorityParcel([outage, delivery], NOW)?.id).toBe('delivery');
+    expect(nextPriorityParcel([outage, delivery, pickup], NOW)?.id).toBe('pickup');
+    expect(nextPriorityParcel([outage, { ...delivery, archivedAt: '2026-08-05' }], NOW)?.id).toBe('outage');
+    expect(nextPriorityParcel([], NOW)).toBeNull();
+  });
   it('recognizes dates with or without delivery windows', () => {
     expect(expectedDeliveryDay('2026-08-05')).toBe('2026-08-05');
     expect(expectedDeliveryDay('2026-08-05 13:00–15:00')).toBe('2026-08-05');

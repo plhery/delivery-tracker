@@ -221,7 +221,7 @@ export class SupabaseClient {
     const params = query([
       [
         'select',
-        'id,user_id,tracking_number,label,carrier,current_stage,tracking_url,dpd_postcode,last_synced_at,carrier_data',
+        'id,user_id,tracking_number,label,carrier,current_stage,tracking_url,dpd_postcode,last_synced_at,carrier_data,tracking_generation',
       ],
       ['archived_at', 'is.null'],
       ['or', '(current_stage.not.in.(delivered,returned),last_status_text.eq.TO_BE_DELIVERED)'],
@@ -564,6 +564,37 @@ export class SupabaseClient {
 }
 
 export class SupabaseServiceClient extends SupabaseClient {
+  override async getPackage(packageId: string): Promise<JsonObject | null> {
+    const params = query({
+      select: `${PACKAGE_SELECT},current_stage,tracking_generation`,
+      id: `eq.${packageId}`,
+      limit: '1',
+    });
+    return rows(await this.request(`/rest/v1/packages?${params}`))[0] ?? null;
+  }
+
+  async applyTrackingSync(
+    parcel: JsonObject,
+    values: JsonObject,
+    events: JsonObject[] = [],
+    deleteDescriptions: string[] = [],
+  ): Promise<boolean> {
+    if (typeof parcel.tracking_generation !== 'string') {
+      // Fail closed if a caller did not load the configuration snapshot.
+      throw new TypeError('A tracking generation is required for synchronization');
+    }
+    return await this.request('/rest/v1/rpc/apply_tracking_sync', {
+      method: 'POST',
+      body: {
+        p_package_id: parcel.id,
+        p_tracking_generation: parcel.tracking_generation,
+        p_values: values,
+        p_events: events,
+        p_delete_descriptions: deleteDescriptions,
+      },
+    }) === true;
+  }
+
   async startSyncAttempt(attemptId: string, values: JsonObject): Promise<void> {
     await this.request('/rest/v1/tracking_sync_attempts', {
       method: 'POST',
@@ -683,6 +714,16 @@ export class SupabaseServiceClient extends SupabaseClient {
       limit: '1',
     });
     return rows(await this.request(`/rest/v1/sync_jobs?${params}`))[0] ?? null;
+  }
+
+  async getSyncJobs(jobIds: string[], userId: string): Promise<JsonObject[]> {
+    const params = query({
+      select: 'id,package_id,state,requested_at,started_at,completed_at,result,last_error',
+      id: `in.(${jobIds.join(',')})`,
+      user_id: `eq.${userId}`,
+      limit: '20',
+    });
+    return rows(await this.request(`/rest/v1/sync_jobs?${params}`));
   }
 
   async pendingSyncJobCount(userId?: string | null): Promise<number> {

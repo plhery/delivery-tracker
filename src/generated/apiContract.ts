@@ -1258,6 +1258,10 @@ export interface ApiDeleteLiveActivityUpdateTokenRequest {
 
 export type ApiSyncJobStatus = "queued" | "running" | "succeeded" | "failed";
 
+export interface ApiSyncJobListResponse {
+  "jobs": Array<ApiSyncJobResponse>;
+}
+
 export interface ApiSyncJobResponse {
   "id": string;
   "status": ApiSyncJobStatus;
@@ -1275,6 +1279,7 @@ export interface ApiSyncSummary {
   "waiting"?: number;
   "errors"?: number;
   "unsupported"?: number;
+  "superseded"?: number;
   "notifications_sent"?: number;
   "notification_errors"?: number;
   "subscriptions_expired"?: number;

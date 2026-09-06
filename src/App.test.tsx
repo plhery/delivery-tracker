@@ -5,7 +5,7 @@ import App from './App';
 import { ApiAuthenticationError } from './lib/apiClient';
 import { createDemoRepo } from './store/demoRepo';
 import { ParcelsProvider } from './store/ParcelsContext';
-import type { ParcelRepo, ParcelWithEvents } from './types';
+import type { ParcelRepo, ParcelWithEvents, SyncProgress } from './types';
 
 function renderApp(repo: ParcelRepo = createDemoRepo(window.localStorage)) {
   return render(
@@ -29,6 +29,78 @@ beforeEach(() => {
 });
 
 describe('App', () => {
+  it('shows queued, running and completed refresh feedback at the correct time', async () => {
+    const repo = createDemoRepo(window.localStorage);
+    const parcels = await repo.list();
+    let progress: ((phase: SyncProgress) => void) | undefined;
+    let finish!: (parcels: ParcelWithEvents[]) => void;
+    repo.refresh = vi.fn<ParcelRepo['refresh']>((onProgress) => {
+      progress = onProgress;
+      progress?.('queued');
+      return new Promise((resolve) => { finish = resolve; });
+    });
+    const user = userEvent.setup();
+    renderApp(repo);
+    await screen.findByText('Coffee beans ☕');
+    await user.click(screen.getByRole('button', { name: 'Refresh tracking' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Tracking check queued');
+    act(() => progress?.('running'));
+    expect(screen.getByRole('status')).toHaveTextContent('Checking with the carrier');
+    await act(async () => finish(parcels));
+    expect(screen.getByRole('status')).toHaveTextContent('Tracking check complete');
+  });
+
+  it('keeps keyboard focus in the carrier sheet and restores it to the detail dialog', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await user.click(await screen.findByText('New sneakers 👟'));
+    const detail = screen.getByRole('dialog', { name: 'New sneakers 👟' });
+    const changeCarrier = within(detail).getByRole('button', { name: 'Change carrier from DHL' });
+    await user.click(changeCarrier);
+    const sheet = screen.getByRole('dialog', { name: 'Change carrier' });
+    const select = within(sheet).getByRole('combobox', { name: 'Carrier' });
+    expect(detail).toHaveAttribute('inert');
+    expect(detail).toHaveAttribute('aria-hidden', 'true');
+    expect(select).toHaveFocus();
+    await user.selectOptions(select, 'dpd');
+    await user.tab();
+    expect(within(sheet).getByLabelText(/postcode/i)).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(select).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Change carrier' })).not.toBeInTheDocument();
+    expect(detail).not.toHaveAttribute('inert');
+    expect(detail).not.toHaveAttribute('aria-hidden');
+    expect(changeCarrier).toHaveFocus();
+    expect(document.body.style.overflow).toBe('hidden');
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(document.querySelector('.app')).not.toHaveAttribute('inert');
+    expect(document.body.style.overflow).not.toBe('hidden');
+  });
+
+  it('separates the latest carrier check from the last shipment event', async () => {
+    const repo = createDemoRepo(window.localStorage);
+    const parcels = await repo.list();
+    const parcel = parcels[0];
+    parcel.lastSyncedAt = new Date().toISOString();
+    parcel.events = [{
+      id: 'old-event', parcelId: parcel.id, stage: 'in_transit',
+      description: 'An older carrier scan', occurredAt: '2025-01-01T10:00:00Z',
+    }];
+    repo.list = vi.fn().mockResolvedValue([parcel]);
+    const user = userEvent.setup();
+    renderApp(repo);
+    await user.click((await screen.findAllByText(parcel.label))[0]);
+    const detail = screen.getByRole('dialog', { name: parcel.label });
+    const checked = within(detail).getByText(/^Last checked:/);
+    const update = within(detail).getByText(/^Last shipment update:/);
+    expect(checked.textContent?.replace('Last checked:', '')).not.toBe(
+      update.textContent?.replace('Last shipment update:', ''),
+    );
+    expect(checked).not.toHaveTextContent('2025');
+  });
+
   it('opens a prefilled add sheet for content shared to the installed PWA', async () => {
     window.history.replaceState({}, '', '/?share-target=1');
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
@@ -1150,7 +1222,7 @@ describe('App', () => {
 
     const cards = await screen.findAllByText('Delivered', { selector: '.status-badge' });
     expect(cards.length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByRole('status')).toHaveTextContent('Tracking checks queued');
+    expect(screen.getByRole('status')).toHaveTextContent('Tracking check complete.');
   });
 
   it('shows initial-load and refresh failures', async () => {
@@ -1300,8 +1372,8 @@ describe('App', () => {
       screen.getByText(/carrier hasn’t announced this shipment yet/i),
     ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /check now/i }));
-    expect(repo.refreshParcel).toHaveBeenCalledWith(parcel.id);
-    expect(screen.getByText(/Tracking check queued/)).toBeInTheDocument();
+    expect(repo.refreshParcel).toHaveBeenCalledWith(parcel.id, expect.any(Function));
+    expect(screen.getByText(/Tracking check complete/)).toBeInTheDocument();
   });
 
   it('shows a friendly empty state when there are no parcels', async () => {

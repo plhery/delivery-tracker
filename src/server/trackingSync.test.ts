@@ -251,7 +251,7 @@ describe('fair scheduling', () => {
 });
 
 function fakeClient(packages: JsonObject[] = []) {
-  return {
+  const client = {
     listActivePackages: vi.fn().mockResolvedValue(packages),
     updatePackage: vi.fn().mockResolvedValue(undefined),
     insertEvents: vi.fn().mockResolvedValue(undefined),
@@ -259,9 +259,74 @@ function fakeClient(packages: JsonObject[] = []) {
     startSyncAttempt: vi.fn().mockResolvedValue(undefined),
     completeSyncAttempt: vi.fn().mockResolvedValue(true),
   };
+  return {
+    ...client,
+    applyTrackingSync: vi.fn(async (
+      parcel: JsonObject, values: JsonObject, events: JsonObject[] = [], descriptions: string[] = [],
+    ) => {
+      if (events.length) await client.insertEvents(events);
+      if (descriptions.length) await client.deleteEventsByDescriptions(parcel.id, new Set(descriptions));
+      await client.updatePackage(parcel.id, values);
+      return true;
+    }),
+  };
 }
 
 describe('TrackingSyncService', () => {
+  it.each(['result', 'error', 'unannounced'] as const)(
+    'discards a late %s after the tracking configuration changes', async (outcome) => {
+      const parcel = {
+        id: 'corrected-package', carrier: 'ups', tracking_number: '1Z999AA10123456784',
+        current_stage: 'pending', tracking_generation: 'old-generation',
+      };
+      let generation = parcel.tracking_generation;
+      const savedEvents: JsonObject[] = [];
+      let state: JsonObject = {};
+      const client = fakeClient();
+      client.applyTrackingSync.mockImplementation(async (snapshot, values, events = []) => {
+        if (snapshot.tracking_generation !== generation) return false;
+        state = { ...state, ...values };
+        savedEvents.push(...events);
+        return true;
+      });
+      const adapter = { fetch: vi.fn(async (): Promise<CarrierResult> => {
+        // Simulate the SQL carrier reset while the old request is in flight.
+        generation = 'new-generation';
+        state = { current_stage: 'pending', sync_status: 'pending' };
+        if (outcome === 'error') throw new Error('Old carrier unavailable');
+        if (outcome === 'unannounced') throw Object.assign(new Error('not found'), { status: 404 });
+        return {
+          status: 'delivered' as const,
+          events: [{ time: '2026-09-06T12:00:00Z', description: 'Delivered by old carrier' }],
+        };
+      }) };
+      const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter);
+
+      await expect(service.syncPackage(parcel)).resolves.toMatchObject({ superseded: 1, updated: 0, errors: 0 });
+      expect(savedEvents).toEqual([]);
+      expect(state).toEqual({ current_stage: 'pending', sync_status: 'pending' });
+      expect(client.completeSyncAttempt).toHaveBeenLastCalledWith(
+        expect.any(String), expect.objectContaining({ outcome: 'superseded' }), expect.any(Array),
+      );
+
+      adapter.fetch.mockResolvedValue({ status: 'in_transit', events: [] });
+      await expect(service.syncPackage({ ...parcel, tracking_generation: generation }))
+        .resolves.toMatchObject({ updated: 1, superseded: 0 });
+      expect(state).toMatchObject({ current_stage: 'in_transit', sync_status: 'ok' });
+    },
+  );
+
+  it.each(['ups', 'dhl'])('rejects a superseded %s check before fetching or changing status', async (carrier) => {
+    const client = fakeClient();
+    client.applyTrackingSync.mockResolvedValue(false);
+    const adapter = { fetch: vi.fn() };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter);
+    await expect(service.syncPackage({ id: 'old-snapshot', carrier }))
+      .resolves.toMatchObject({ superseded: 1 });
+    expect(adapter.fetch).not.toHaveBeenCalled();
+    expect(client.updatePackage).not.toHaveBeenCalled();
+  });
+
   it('stores normalized events and advances the package stage', async () => {
     const parcel = {
       id: 'package-1',

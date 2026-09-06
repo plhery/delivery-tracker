@@ -12,7 +12,7 @@ import type {
   ApiRenamePackageRequest,
   ApiPackageNotificationRequest,
   ApiTrackingEventRow,
-  ApiSyncJobResponse,
+  ApiSyncJobListResponse,
 } from '../generated/apiContract';
 import {
   ParcelAlreadyExistsError,
@@ -21,6 +21,7 @@ import {
   type ParcelRepo,
   type ParcelWithEvents,
   type TrackingEvent,
+  type SyncProgress,
 } from '../types';
 
 export const API_CACHE_KEY = 'parcel-post.api-cache.v1';
@@ -112,6 +113,19 @@ function toParcel(row: ApiPackageRow): ParcelWithEvents {
   };
 }
 
+class ApiResponseError extends Error {
+  constructor(message: string, readonly status: number, readonly retryAfterMs: number) {
+    super(message);
+  }
+}
+
+function retryAfterMilliseconds(value: string | null): number {
+  if (!value) return 0;
+  const milliseconds = /^\d+$/.test(value)
+    ? Number(value) * 1_000 : Date.parse(value) - Date.now();
+  return Number.isFinite(milliseconds) ? Math.max(0, milliseconds) : 0;
+}
+
 async function request<T>(path: string, auth: ApiAuth | undefined, init?: RequestInit): Promise<T> {
   const response = await authenticatedFetch(path, auth, init);
   const payload = (await response.json().catch(() => null)) as (
@@ -124,7 +138,11 @@ async function request<T>(path: string, auth: ApiAuth | undefined, init?: Reques
         payload.packageId,
       );
     }
-    throw new Error(payload?.error ?? `Delivery service failed (${response.status})`);
+    throw new ApiResponseError(
+      payload?.error ?? `Delivery service failed (${response.status})`,
+      response.status,
+      retryAfterMilliseconds(response.headers?.get('Retry-After') ?? null),
+    );
   }
   if (payload === null) throw new Error('The delivery service returned an empty response');
   return payload;
@@ -139,25 +157,70 @@ export function createApiRepo(
   let notifySubscriber: (() => void) | null = null;
   const monitoredJobIds = new Set<string>();
   let monitorTask: Promise<void> | null = null;
+  let lifecycle = new AbortController();
   const cacheKey = auth ? `${API_CACHE_KEY}.${auth.userId}` : API_CACHE_KEY;
 
-  const wait = (milliseconds: number) => new Promise<void>((resolve) => {
-    window.setTimeout(resolve, milliseconds);
+  const wait = (milliseconds: number, signal: AbortSignal) => new Promise<void>((resolve, reject) => {
+    signal.throwIfAborted();
+    const onAbort = () => {
+      window.clearTimeout(timer);
+      reject(signal.reason);
+    };
+    const timer = window.setTimeout(() => {
+      signal.removeEventListener('abort', onAbort);
+      resolve();
+    }, milliseconds);
+    signal.addEventListener('abort', onAbort, { once: true });
   });
 
-  async function waitForJobs(jobIds: string[]): Promise<void> {
+  async function waitForJobs(
+    jobIds: string[],
+    onProgress?: (progress: SyncProgress) => void,
+  ): Promise<void> {
     if (jobIds.length === 0) return;
-    for (let attempt = 0; attempt < 120; attempt += 1) {
-      const jobs = await Promise.all(jobIds.map((jobId) => request<ApiSyncJobResponse>(
-        `/api/sync/jobs/${encodeURIComponent(jobId)}`,
-        auth,
-      )));
-      const failed = jobs.find((job) => job.status === 'failed');
-      if (failed) throw new Error(failed.error ?? 'Tracking refresh failed. Try again.');
-      if (jobs.every((job) => job.status === 'succeeded')) return;
-      await wait(jobPollIntervalMs);
+    const pending = new Set(jobIds);
+    const signal = lifecycle.signal;
+    const deadline = Date.now() + 120_000;
+    let interval = Math.max(1_000, jobPollIntervalMs);
+    onProgress?.('queued');
+    while (Date.now() < deadline) {
+      signal.throwIfAborted();
+      let retryAfter = 0;
+      try {
+        // One owner-scoped read for up to twenty active jobs, never one request
+        // per parcel. Completed jobs leave the set immediately.
+        const ids = [...pending].slice(0, 20);
+        const { jobs } = await request<ApiSyncJobListResponse>(
+          `/api/sync/jobs?ids=${ids.map(encodeURIComponent).join(',')}`,
+          auth,
+          { signal: AbortSignal.any([signal, AbortSignal.timeout(30_000)]) },
+        );
+        signal.throwIfAborted();
+        if (!Array.isArray(jobs) || jobs.length !== ids.length || ids.some((id) => !jobs.some((job) => job.id === id))) {
+          throw new Error('The delivery service returned incomplete job statuses');
+        }
+        if (jobs.some((job) => job.status === 'running')) onProgress?.('running');
+        const failed = jobs.find((job) => job.status === 'failed' || (job.result?.errors ?? 0) > 0);
+        if (failed) {
+          notifySubscriber?.();
+          throw new Error(failed.error ?? 'Tracking refresh failed. Try again.');
+        }
+        for (const job of jobs) {
+          if (job.status === 'succeeded') pending.delete(job.id);
+        }
+        if (pending.size === 0) return;
+      } catch (error) {
+        if (signal.aborted) throw error;
+        if (error instanceof ApiResponseError && [429, 502, 503, 504].includes(error.status)) {
+          retryAfter = error.retryAfterMs;
+        } else if (!(error instanceof TypeError) && !(error instanceof DOMException && error.name === 'TimeoutError')) {
+          throw error;
+        }
+      }
+      await wait(Math.min(Math.max(interval, retryAfter), Math.max(0, deadline - Date.now())), signal);
+      interval = Math.min(interval * 1.5, 10_000);
     }
-    throw new Error('The tracking refresh is taking longer than expected.');
+    throw new Error('The tracking check is taking longer than expected. Updates will appear automatically.');
   }
 
   function monitorJobs(jobIds: string[]) {
@@ -293,19 +356,19 @@ export function createApiRepo(
       }
     },
 
-    async refresh(): Promise<ParcelWithEvents[]> {
+    async refresh(onProgress): Promise<ParcelWithEvents[]> {
       const queued = await request<ApiQueueResponse>('/api/sync', auth, { method: 'POST' });
-      await waitForJobs(queued.jobIds);
+      await waitForJobs(queued.jobIds, onProgress);
       return list();
     },
 
-    async refreshParcel(id: string): Promise<ParcelWithEvents> {
+    async refreshParcel(id: string, onProgress): Promise<ParcelWithEvents> {
       const queued = await request<ApiQueueResponse>(
         `/api/packages/${encodeURIComponent(id)}/sync`,
         auth,
         { method: 'POST' },
       );
-      await waitForJobs(queued.jobIds);
+      await waitForJobs(queued.jobIds, onProgress);
       const parcels = await list();
       const parcel = parcels.find((candidate) => candidate.id === id);
       if (!parcel) throw new Error('Package not found after queueing its tracking check');
@@ -313,6 +376,7 @@ export function createApiRepo(
     },
 
     subscribe(onChange: () => void | Promise<void>): () => void {
+      if (lifecycle.signal.aborted) lifecycle = new AbortController();
       let pollInFlight = false;
       let stopped = false;
       let timer: number | null = null;
@@ -352,6 +416,8 @@ export function createApiRepo(
       schedule();
       return () => {
         stopped = true;
+        lifecycle.abort();
+        monitoredJobIds.clear();
         if (timer !== null) window.clearTimeout(timer);
         notifySubscriber = null;
         document.removeEventListener('visibilitychange', onVisible);

@@ -19,7 +19,7 @@ import {
 import { currentEvent, isFinal } from '../lib/stages';
 import { isBackSwipe, type TouchPoint } from '../lib/swipe';
 import { useModalDialog } from '../lib/modal';
-import type { ParcelCarrierInput, ParcelWithEvents } from '../types';
+import type { ParcelCarrierInput, ParcelWithEvents, SyncProgress } from '../types';
 import { ChangeCarrierSheet } from './ChangeCarrierSheet';
 import { Timeline } from './Timeline';
 
@@ -45,7 +45,7 @@ export function ParcelDetail({
     parcel: ParcelWithEvents,
     muted: boolean,
   ) => Promise<unknown>;
-  onRefresh: (parcel: ParcelWithEvents) => Promise<unknown>;
+  onRefresh: (parcel: ParcelWithEvents, onProgress?: (progress: SyncProgress) => void) => Promise<unknown>;
   onRestore: (parcel: ParcelWithEvents) => Promise<unknown>;
   onArchive: (parcel: ParcelWithEvents) => Promise<unknown>;
   onDelete: (parcel: ParcelWithEvents) => Promise<unknown>;
@@ -58,7 +58,10 @@ export function ParcelDetail({
   const statusLabel = t(parcelDisplayStatusKey(parcel));
   const completionDate = localizedParcelCompletionDate(parcel, languageTag);
   const trackingLinks = parcelTrackingLinks(parcel, locale);
-  const lastChecked = current
+  const lastChecked = parcel.lastSyncedAt
+    ? localizedRelativeTime(parcel.lastSyncedAt, t, languageTag)
+    : null;
+  const lastUpdate = current && current.stage !== 'pending'
     ? localizedRelativeTime(current.occurredAt, t, languageTag)
     : null;
   const swipeStart = useRef<TouchPoint | null>(null);
@@ -131,9 +134,10 @@ export function ParcelDetail({
     setCheckError(null);
     setCheckNotice(null);
     try {
-      await onRefresh(parcel);
-      setCheckNotice(t('detail.checkQueued'));
+      await onRefresh(parcel, (progress) => setCheckNotice(t(`sync.${progress}`)));
+      setCheckNotice(t('sync.completed'));
     } catch (error) {
+      setCheckNotice(null);
       setCheckError(error instanceof Error ? error.message : t('detail.checkFailed'));
     } finally {
       setChecking(false);
@@ -417,14 +421,17 @@ export function ParcelDetail({
           <p className="detail__sync-error" role="status">{parcel.syncError}</p>
         )}
         <div className="detail__freshness">
-          {lastChecked && <span>{t('detail.lastChecked', { date: lastChecked })}</span>}
+          <div className="detail__freshness-times">
+            {lastChecked && <span>{t('detail.lastChecked', { date: lastChecked })}</span>}
+            {lastUpdate && <span>{t('detail.lastUpdate', { date: lastUpdate })}</span>}
+          </div>
           {!parcel.archivedAt && (
             <button
               type="button"
               className="detail__refresh"
               onClick={() => void checkNow()}
               disabled={checking}
-              aria-label={checking ? t('detail.queueing') : t('detail.checkNow')}
+              aria-label={checking ? checkNotice ?? t('detail.queueing') : t('detail.checkNow')}
             >
               <svg className={checking ? 'spin' : undefined} aria-hidden="true" viewBox="0 0 24 24">
                 <path d="M19 8a7.5 7.5 0 1 0 .2 7.6M19 4v4h-4" />

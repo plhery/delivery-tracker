@@ -90,3 +90,42 @@ test('keeps invalid tracking input safely in the add sheet', async ({ page }) =>
   }));
   expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth);
 });
+
+test('navigates nested carrier dialogs entirely by keyboard', async ({ page }) => {
+  const parcel = page.getByRole('button', { name: /^New sneakers 👟 —/ });
+  await parcel.click();
+  const detail = page.getByRole('dialog', { name: 'New sneakers 👟' });
+  // Closed details-menu actions must not enter the Tab order.
+  await page.keyboard.press('Tab');
+  await expect(detail.getByLabel('Parcel actions', { exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(detail.getByRole('button', { name: 'Delete permanently' })).toBeHidden();
+
+  const changeCarrier = detail.getByRole('button', { name: 'Change carrier from DHL' });
+  await changeCarrier.click();
+  const sheet = page.getByRole('dialog', { name: 'Change carrier' });
+  const carrier = sheet.getByRole('combobox', { name: 'Carrier' });
+  await expect(carrier).toBeFocused();
+  await carrier.selectOption('dpd');
+  await page.keyboard.press('Tab');
+  const postcode = sheet.getByLabel(/postcode/i);
+  await expect(postcode).toBeFocused();
+  await postcode.fill('8000');
+  await page.keyboard.press('Tab');
+  await expect(sheet.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(sheet.getByRole('button', { name: 'Save carrier', exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(sheet.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(carrier).toBeFocused();
+  await expect(page.getByRole('dialog')).toHaveCount(1);
+
+  await page.keyboard.press('Escape');
+  await expect(sheet).toBeHidden();
+  await expect(changeCarrier).toBeFocused();
+  await expect(detail).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(detail).toBeHidden();
+  await expect(parcel).toBeFocused();
+});

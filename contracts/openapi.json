@@ -1354,6 +1354,40 @@
         }
       }
     },
+    "/api/sync/jobs": {
+      "get": {
+        "operationId": "getSyncJobs",
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 20,
+              "items": { "type": "string", "format": "uuid" }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Owned synchronization job statuses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncJobListResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ApiError" },
+          "404": { "$ref": "#/components/responses/ApiError" },
+          "429": { "$ref": "#/components/responses/ApiError" },
+          "502": { "$ref": "#/components/responses/ApiError" }
+        }
+      }
+    },
     "/api/sync/jobs/{jobId}": {
       "parameters": [
         {
@@ -2594,6 +2628,17 @@
           "failed"
         ]
       },
+      "SyncJobListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["jobs"],
+        "properties": {
+          "jobs": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SyncJobResponse" }
+          }
+        }
+      },
       "SyncJobResponse": {
         "type": "object",
         "additionalProperties": false,
@@ -2675,6 +2720,9 @@
             "type": "integer"
           },
           "unsupported": {
+            "type": "integer"
+          },
+          "superseded": {
             "type": "integer"
           },
           "notifications_sent": {

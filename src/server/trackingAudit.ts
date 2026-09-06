@@ -18,7 +18,7 @@ export type SyncStep =
   | 'persist_events'
   | 'persist_package'
   | 'complete';
-export type SyncAuditOutcome = 'updated' | 'waiting' | 'error' | 'unsupported';
+export type SyncAuditOutcome = 'updated' | 'waiting' | 'error' | 'unsupported' | 'superseded';
 export type SyncAnomalyCode =
   | 'delivered_status_conflict'
   | 'future_event_timestamp'

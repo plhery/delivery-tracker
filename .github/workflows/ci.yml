@@ -27,6 +27,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run test:scripts
       - run: npm run test:contract
+      - run: npm run test:dev
       - run: npm run test:coverage
       - if: matrix.node == 24
         run: npm run test:coverage:server

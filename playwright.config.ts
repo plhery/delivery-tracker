@@ -31,9 +31,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    // CI exercises the self-contained production server. This also avoids a
-    // Next dev bug that unnecessarily compiles Node-only instrumentation for
-    // the Edge runtime when CI=true.
+    // CI exercises the self-contained production server; test:dev separately
+    // verifies that the development compiler can serve a real page.
     command: process.env.CI
       ? 'npm run build && npm start'
       : 'npm run dev -- --hostname 127.0.0.1 --port 4173',

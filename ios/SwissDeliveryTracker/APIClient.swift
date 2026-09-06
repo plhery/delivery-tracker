@@ -11,6 +11,7 @@ enum DeliveryAPIError: LocalizedError {
     case pushTokenUnavailable
     case refreshFailed
     case refreshTimeout
+    case rateLimited(TimeInterval)
     case service(String)
     case serviceFailed(Int)
 
@@ -25,6 +26,7 @@ enum DeliveryAPIError: LocalizedError {
         case .pushTokenUnavailable: "Apple did not return a notification token. Try again on a signed development build."
         case .refreshFailed: "Tracking refresh failed. Try again."
         case .refreshTimeout: "The tracking refresh is taking longer than expected."
+        case .rateLimited: "Too many requests. Try again shortly."
         case .service(let message): message
         case .serviceFailed(let status): "Delivery service failed (\(status))."
         }
@@ -112,23 +114,34 @@ final class DeliveryAPIClient {
     }
 
     func waitForJobs(_ jobIds: [UUID]) async throws {
-        guard !jobIds.isEmpty else { return }
-        for attempt in 0..<120 {
-            var allSucceeded = true
-            for jobID in jobIds {
-                let job: SyncJobResponse = try await request(
-                    "/api/sync/jobs/\(jobID.uuidString)"
-                )
-                if job.status == .failed {
-                    if let error = job.error { throw DeliveryAPIError.service(error) }
-                    throw DeliveryAPIError.refreshFailed
+        var pending = Set(jobIds)
+        let deadline = Date().addingTimeInterval(120)
+        var interval: TimeInterval = 1
+        while !pending.isEmpty && Date() < deadline {
+            try Task.checkCancellation()
+            var retryAfter: TimeInterval = 0
+            do {
+                let ids = Array(pending.prefix(20))
+                let query = ids.map(\.uuidString).joined(separator: ",")
+                let response: SyncJobListResponse = try await request("/api/sync/jobs?ids=\(query)")
+                guard Set(response.jobs.map(\.id)) == Set(ids) else {
+                    throw DeliveryAPIError.invalidResponse
                 }
-                if job.status != .succeeded { allSucceeded = false }
+                for job in response.jobs {
+                    if job.status == .failed || (job.result?.errors ?? 0) > 0 {
+                        if let error = job.error { throw DeliveryAPIError.service(error) }
+                        throw DeliveryAPIError.refreshFailed
+                    }
+                    if job.status == .succeeded { pending.remove(job.id) }
+                }
+            } catch DeliveryAPIError.rateLimited(let seconds) {
+                retryAfter = seconds
             }
-            if allSucceeded { return }
-            if attempt < 119 { try await Task.sleep(for: .seconds(1)) }
+            if pending.isEmpty { return }
+            try await Task.sleep(for: .seconds(min(max(interval, retryAfter), max(0, deadline.timeIntervalSinceNow))))
+            interval = min(interval * 1.5, 10)
         }
-        throw DeliveryAPIError.refreshTimeout
+        if !pending.isEmpty { throw DeliveryAPIError.refreshTimeout }
     }
 
     func notificationPreferences() async throws -> NotificationPreferences {
@@ -311,6 +324,11 @@ final class DeliveryAPIClient {
             throw DeliveryAPIError.authenticationExpired
         }
         guard (200..<300).contains(result.1.statusCode) else {
+            if result.1.statusCode == 429 {
+                throw DeliveryAPIError.rateLimited(Self.retryAfterSeconds(
+                    result.1.value(forHTTPHeaderField: "Retry-After")
+                ))
+            }
             let error = try? JSONDecoder().decode(ErrorResponse.self, from: result.0)
             if result.1.statusCode == 409, let packageID = error?.packageID {
                 throw DeliveryAPIError.duplicateTracking(packageID)
@@ -319,5 +337,15 @@ final class DeliveryAPIClient {
             throw DeliveryAPIError.serviceFailed(result.1.statusCode)
         }
         return result
+    }
+
+    static func retryAfterSeconds(_ value: String?, now: Date = Date()) -> TimeInterval {
+        guard let value else { return 0 }
+        if let seconds = TimeInterval(value), seconds.isFinite { return max(0, seconds) }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
+        return max(0, formatter.date(from: value)?.timeIntervalSince(now) ?? 0)
     }
 }

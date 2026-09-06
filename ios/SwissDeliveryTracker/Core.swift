@@ -121,6 +121,8 @@ final class Localizer: ObservableObject {
                 return text("native.error.refreshFailed")
             case .refreshTimeout:
                 return text("native.error.refreshTimeout")
+            case .rateLimited:
+                return text("native.error.rateLimited")
             case .service(let message):
                 return message
             case .serviceFailed(let status):

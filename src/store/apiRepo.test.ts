@@ -1,13 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import contractFixture from '../../contracts/fixtures/delivery-api.json';
 import { ApiAuthenticationError } from '../lib/apiClient';
+import { RateLimiter } from '../server/rateLimit';
 import { ParcelAlreadyExistsError } from '../types';
 import { API_CACHE_KEY, browserStorage, clearApiCache, createApiRepo } from './apiRepo';
 
 const packageRow = contractFixture.packageList.packages[0];
 
-function response(body: unknown, ok = true, status = 200) {
-  return { ok, status, json: vi.fn().mockResolvedValue(body) };
+function response(body: unknown, ok = true, status = 200, headers = new Headers()) {
+  return { ok, status, headers, json: vi.fn().mockResolvedValue(body) };
 }
 
 describe('createApiRepo', () => {
@@ -422,8 +423,8 @@ describe('createApiRepo', () => {
         package: pendingRow,
         jobIds: [contractFixture.job.id],
       }))
-      .mockResolvedValueOnce(response({ ...contractFixture.job, status: 'queued' }))
-      .mockResolvedValueOnce(response(contractFixture.job))
+      .mockResolvedValueOnce(response({ jobs: [{ ...contractFixture.job, status: 'queued' }] }))
+      .mockResolvedValueOnce(response({ jobs: [contractFixture.job] }))
       .mockResolvedValueOnce(response({ packages: [packageRow] }));
     vi.stubGlobal('fetch', fetch);
     const repo = createApiRepo(30_000, 1_000);
@@ -434,18 +435,94 @@ describe('createApiRepo', () => {
 
     await repo.add({ trackingNumber: packageRow.tracking_number, label: 'Coffee' });
     await Promise.resolve();
-    expect(fetch.mock.calls[1][0]).toBe(`/api/sync/jobs/${contractFixture.job.id}`);
+    expect(fetch.mock.calls[1][0]).toBe(`/api/sync/jobs?ids=${contractFixture.job.id}`);
     await vi.advanceTimersByTimeAsync(999);
     expect(onChange).not.toHaveBeenCalled();
 
     await vi.advanceTimersByTimeAsync(1);
     expect(onChange).toHaveBeenCalledOnce();
     expect(fetch).toHaveBeenCalledTimes(4);
-    expect(fetch.mock.calls[2][0]).toBe(`/api/sync/jobs/${contractFixture.job.id}`);
+    expect(fetch.mock.calls[2][0]).toBe(`/api/sync/jobs?ids=${contractFixture.job.id}`);
     expect(fetch.mock.calls[3][0]).toBe('/api/packages?includeArchived=true');
 
     await vi.advanceTimersByTimeAsync(1_000);
     expect(onChange).toHaveBeenCalledOnce();
     unsubscribe?.();
+  });
+
+  it('finishes five slow jobs without exhausting the real read-rate budget', async () => {
+    const start = Date.now();
+    const limiter = new RateLimiter(4_096, () => Date.now() / 1_000);
+    const ids = Array.from({ length: 5 }, (_, index) => `job-${index}`);
+    let reads = 0;
+    const fetch = vi.fn(async (path: string) => {
+      if (path === '/api/sync') return response({ jobIds: ids });
+      if (path.startsWith('/api/sync/jobs?')) {
+        reads += 1;
+        expect(limiter.retryAfter('reads', { limit: 240, window: 60 })).toBe(0);
+        const requested = new URL(path, 'https://delivery.test').searchParams.get('ids')!.split(',');
+        // The first job finishes immediately and must disappear from later reads.
+        if (reads > 1) expect(requested).not.toContain('job-0');
+        return response({ jobs: requested.map((id) => ({
+          ...contractFixture.job, id,
+          status: id === 'job-0' || Date.now() - start >= 70_000 ? 'succeeded' : 'running',
+        })) });
+      }
+      return response({ packages: [packageRow] });
+    });
+    vi.stubGlobal('fetch', fetch);
+    const progress = vi.fn();
+    const refresh = createApiRepo().refresh(progress);
+    await vi.advanceTimersByTimeAsync(90_000);
+    await expect(refresh).resolves.toHaveLength(1);
+    expect(reads).toBeLessThan(20);
+    expect(progress).toHaveBeenNthCalledWith(1, 'queued');
+    expect(progress).toHaveBeenCalledWith('running');
+  });
+
+  it.each(['12', new Date('2026-09-06T12:00:12Z').toUTCString()])(
+    'honors Retry-After %s without re-queueing the job', async (retryAfter) => {
+      vi.setSystemTime(new Date('2026-09-06T12:00:00Z'));
+      const fetch = vi.fn()
+        .mockResolvedValueOnce(response({ jobIds: [contractFixture.job.id] }))
+        .mockResolvedValueOnce(response({ error: 'Slow down' }, false, 429, new Headers({ 'Retry-After': retryAfter })))
+        .mockResolvedValueOnce(response({ jobs: [contractFixture.job] }))
+        .mockResolvedValueOnce(response({ packages: [packageRow] }));
+      vi.stubGlobal('fetch', fetch);
+      const refresh = createApiRepo().refresh();
+      await vi.advanceTimersByTimeAsync(11_999);
+      expect(fetch).toHaveBeenCalledTimes(2);
+      await vi.advanceTimersByTimeAsync(1);
+      await expect(refresh).resolves.toHaveLength(1);
+      expect(fetch.mock.calls.filter(([path]) => path === '/api/sync')).toHaveLength(1);
+    },
+  );
+
+  it('stops monitoring after unsubscribe and never publishes a late refresh', async () => {
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(response({ package: packageRow, jobIds: [contractFixture.job.id] }))
+      .mockResolvedValue(response({ jobs: [{ ...contractFixture.job, status: 'running' }] }));
+    vi.stubGlobal('fetch', fetch);
+    const repo = createApiRepo();
+    const onChange = vi.fn();
+    const unsubscribe = repo.subscribe!(onChange);
+    await repo.add({ trackingNumber: packageRow.tracking_number, label: '' });
+    await vi.advanceTimersByTimeAsync(0);
+    unsubscribe();
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { ...contractFixture.job, status: 'failed', error: 'Worker stopped' },
+    { ...contractFixture.job, result: { errors: 1 } },
+  ])('does not report success for a failed refresh', async (job) => {
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(response({ jobIds: [job.id] }))
+      .mockResolvedValueOnce(response({ jobs: [job] }));
+    vi.stubGlobal('fetch', fetch);
+    await expect(createApiRepo().refresh()).rejects.toThrow();
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 });

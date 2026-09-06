@@ -32,13 +32,13 @@ export function parcelAttention(
   parcel: ParcelWithEvents,
   now: number = Date.now(),
 ): ParcelAttention | null {
-  if (parcel.syncStatus === 'error') return 'sync_error';
   const current = currentEvent(parcel.events);
   switch (current?.stage) {
     case 'failed_attempt': return 'failed_attempt';
     case 'ready_for_pickup': return 'ready_for_pickup';
     case 'customs': return 'customs';
   }
+  if (parcel.syncStatus === 'error') return 'sync_error';
 
   const latestTime = current ? new Date(current.occurredAt).getTime() : NaN;
   if (
@@ -100,4 +100,19 @@ export function prioritizeActiveParcels(
 export function isActiveParcel(parcel: ParcelWithEvents): boolean {
   const stage = currentStage(parcel.events);
   return !parcel.archivedAt && (stage === null || (stage !== 'delivered' && stage !== 'returned'));
+}
+
+/** A carrier outage must not displace a pickup or delivery happening today. */
+export function nextPriorityParcel(parcels: ParcelWithEvents[], now = Date.now()): ParcelWithEvents | null {
+  const today = dateKey(new Date(now));
+  const urgency = (parcel: ParcelWithEvents) => {
+    const reason = parcelAttention(parcel, now);
+    if (reason === 'ready_for_pickup' || reason === 'failed_attempt' || reason === 'customs') return 0;
+    if (currentStage(parcel.events) === 'out_for_delivery' || expectedDeliveryDay(parcel.expectedDelivery) === today) return 1;
+    if (reason === 'stalled' || reason === 'not_announced') return 2;
+    return reason === 'sync_error' ? 3 : 4;
+  };
+  return parcels.filter(isActiveParcel).sort((a, b) => (
+    urgency(a) - urgency(b) || compareParcelPriority(a, b)
+  ))[0] ?? null;
 }
