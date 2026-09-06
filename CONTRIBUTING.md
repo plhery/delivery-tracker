@@ -44,8 +44,12 @@ Carrier sites and undocumented APIs can change without notice. New adapters
 must use bounded timeouts and response sizes, avoid personal-data logging, and
 degrade to a carrier link when reliable automatic tracking is unavailable.
 Every automatic carrier also needs a public, credential-free `canaryUrl` in the
-carrier contract. The daily canary reports only carrier IDs, hostnames and HTTP
-statuses; it never sends or logs tracking numbers.
+carrier contract. The daily canary reports carrier IDs, hostnames, HTTP statuses,
+per-attempt timing and bounded network error details (types, codes, syscalls and
+failed IP addresses/ports, including nested causes). It records each attempt as
+it completes, including failures that recover on retry, and prints the runtime
+version and probe settings. It never sends or logs tracking numbers, and excludes
+raw error messages, stacks, full URLs, headers and response bodies.
 
 By contributing, you agree that your contribution is licensed under the
 repository's Apache License 2.0.
