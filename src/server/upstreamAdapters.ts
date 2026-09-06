@@ -1,6 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { decodeText, fetchBounded, parseJsonBytes } from './boundedFetch';
 import type { CarrierEvent, CarrierResult, CarrierStatus } from './carrierResult';
+import type { Stage } from '../types';
 import { isRecord, type JsonObject } from './types';
 
 const BASE_HEADERS = {
@@ -127,7 +128,22 @@ const PLANZER_STATUS = new Map<string, CarrierStatus>([
   ['Shipment out for delivery', 'out_for_delivery'],
   ['Delivered', 'delivered'],
   ['Shipment delivered', 'delivered'],
+  ['Shipped', 'delivered'],
   ['Not delivered', 'exception'],
+]);
+
+// Classify each milestone independently of the shipment's current status.
+// Planzer's English "Shipped" means "Zugestellt" / "Livré", not dispatched.
+const PLANZER_EVENT_STAGE = new Map<string, Stage>([
+  ['Recorded', 'registered'],
+  ['Transferred', 'in_transit'],
+  ['Shipment on the way', 'in_transit'],
+  ['In delivery', 'out_for_delivery'],
+  ['Shipment out for delivery', 'out_for_delivery'],
+  ['Delivered', 'delivered'],
+  ['Shipment delivered', 'delivered'],
+  ['Shipped', 'delivered'],
+  ['Not delivered', 'failed_attempt'],
 ]);
 
 export function planzerShipmentNumber(trackingNumber: string): string {
@@ -167,10 +183,18 @@ export async function fetchPlanzer(trackingNumber: string): Promise<CarrierResul
   const events: CarrierEvent[] = [];
   for (const position of matchingPositions) {
     for (const event of recordArray(position.positionEvents)) {
+      const description = text(record(event.text).english);
+      const stage = PLANZER_EVENT_STAGE.get(description);
+      if (!stage) {
+        // Surface schema changes through the existing sync error monitoring;
+        // never silently turn an unfamiliar historical event into a delivery.
+        throw new TypeError('Planzer returned an unrecognized tracking event status');
+      }
       events.push({
         time: text(event.createdAt),
         location: '',
-        description: text(record(event.text).english),
+        description,
+        stage,
       });
     }
   }
