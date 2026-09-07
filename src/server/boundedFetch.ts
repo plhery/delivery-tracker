@@ -1,7 +1,7 @@
 const DEFAULT_MAX_BYTES = 2_000_000;
 const TRANSIENT_HTTP_STATUSES = new Set([429, 502, 503, 504]);
 const DEFAULT_RETRY_DELAY_MS = 1_000;
-const MAX_RETRY_DELAY_MS = 5_000;
+const MAX_RETRY_DELAY_MS = 60_000;
 
 function retryDelay(header: string | null): number | null {
   if (header === null) return DEFAULT_RETRY_DELAY_MS;

@@ -11,9 +11,9 @@ afterEach(() => {
 });
 
 describe('bounded carrier request retries', () => {
-  it('waits for Retry-After and releases the rate-limited response before retrying', async () => {
+  it.each([6, 60])('waits %s seconds for Retry-After and releases the rate-limited response before retrying', async (seconds) => {
     const limited = new Response('Too many requests', {
-      status: 429, headers: { 'Retry-After': '3' },
+      status: 429, headers: { 'Retry-After': String(seconds) },
     });
     const cancel = vi.spyOn(limited.body!, 'cancel');
     const fetcher = vi.fn<typeof fetch>()
@@ -21,7 +21,7 @@ describe('bounded carrier request retries', () => {
       .mockResolvedValueOnce(new Response('tracking data'));
     const result = fetchBounded(URL, { method: 'POST', body: '{}' }, { ...OPTIONS, fetcher });
 
-    await vi.advanceTimersByTimeAsync(2_999);
+    await vi.advanceTimersByTimeAsync(seconds * 1_000 - 1);
     expect(cancel).toHaveBeenCalledOnce();
     expect(fetcher).toHaveBeenCalledOnce();
     await vi.advanceTimersByTimeAsync(1);
@@ -56,7 +56,7 @@ describe('bounded carrier request retries', () => {
     await expect(result).resolves.toMatchObject({ response: { status: 200 } });
   });
 
-  it.each(['60', '-1', 'invalid'])('leaves a long or malformed Retry-After (%s) as a real error', async (retryAfter) => {
+  it.each(['61', '-1', 'invalid'])('leaves a long or malformed Retry-After (%s) as a real error', async (retryAfter) => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response('', {
       status: 429, headers: { 'Retry-After': retryAfter },
     }));

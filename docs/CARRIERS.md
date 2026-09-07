@@ -42,7 +42,7 @@ network and local delivery partners.
 
 PostNL / Spring GDS and Planzer / Quickpac tracking requests retry once after
 a transport failure or HTTP 429, 502, 503, or 504. A supplied `Retry-After`
-is respected when it fits the five-second retry budget; longer delays and
+is respected when it fits the one-minute retry budget; longer delays and
 persistent failures remain visible as sync errors and in Sentry. Invalid
 tracking data and other HTTP errors are not retried.
 

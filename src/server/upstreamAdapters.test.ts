@@ -49,11 +49,13 @@ describe('PostNL and Quickpac transient failures', () => {
       jsonResponse({ data: { items: [{ item: SPRING_WRONG_NUMBER, events: [] }] } }),
     ];
     responses.splice(step === 'authentication' ? 0 : 1, 0, new Response('', {
-      status: 429, headers: { 'Retry-After': '2' },
+      status: 429, headers: { 'Retry-After': '6' },
     }));
     const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => responses.shift()!);
     const result = fetchSpringGds(SPRING_WRONG_NUMBER);
-    await vi.advanceTimersByTimeAsync(2_000);
+    await vi.advanceTimersByTimeAsync(5_999);
+    expect(fetcher).toHaveBeenCalledTimes(step === 'authentication' ? 1 : 2);
+    await vi.advanceTimersByTimeAsync(1);
     await expect(result).resolves.toMatchObject({ status: 'unknown', events: [] });
     expect(fetcher).toHaveBeenCalledTimes(3);
     const trackingRequests = fetcher.mock.calls.filter(([url]) => String(url).endsWith('/tracking-items'));
