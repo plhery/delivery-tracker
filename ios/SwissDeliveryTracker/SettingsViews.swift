@@ -185,6 +185,7 @@ struct AccountView: View {
     @State private var working = false
     @State private var exportURL: URL?
     @State private var showingShareSheet = false
+    @State private var showingNotifications = false
     @State private var confirmingDeletion = false
     @State private var confirmation = ""
     @State private var errorMessage: String?
@@ -197,7 +198,8 @@ struct AccountView: View {
                         Text(accountInitial)
                             .font(.title2.weight(.bold))
                             .frame(width: 48, height: 48)
-                            .background(Brand.accent.opacity(0.25), in: Circle())
+                            .foregroundStyle(Brand.onAccent)
+                            .background(Brand.accent, in: Circle())
                         VStack(alignment: .leading, spacing: 3) {
                             Text(localizer.text(store.isDemo ? "welcome.demo" : "account.signedIn"))
                                 .font(.caption).foregroundStyle(.secondary)
@@ -214,6 +216,13 @@ struct AccountView: View {
                             Text(language.nativeName).tag(language)
                         }
                     }
+                }
+
+                Section {
+                    Button(localizer.text("notifications.title"), systemImage: "bell.badge") {
+                        showingNotifications = true
+                    }
+                    .foregroundStyle(Brand.ink)
                 }
 
                 Section {
@@ -305,6 +314,7 @@ struct AccountView: View {
                 }
             }
         }
+        .sheet(isPresented: $showingNotifications) { NotificationSettingsView() }
         .sheet(isPresented: $showingShareSheet) {
             if let exportURL { ActivityShareSheet(items: [exportURL]) }
         }

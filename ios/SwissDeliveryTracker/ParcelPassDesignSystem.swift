@@ -1,12 +1,29 @@
 import SwiftUI
 
 enum ExperimentalPalette {
-    static let transit = Brand.color(light: "#526E89", dark: "#A1BAD0")
+    static let transit = Brand.color(light: "#22588A", dark: "#9BCBFF")
     static let pickup = Brand.warning
-    static let delivered = Brand.color(light: "#4D735F", dark: "#A1C4AD")
-    static let lilac = Brand.color(light: "#7A658C", dark: "#C3AFD4")
-    static let rose = Brand.color(light: "#A36570", dark: "#DEA7B2")
-    static let ochre = Brand.color(light: "#7B5E2C", dark: "#DCC18A")
+    static let delivered = Brand.color(light: "#24613E", dark: "#9BE0B5")
+    static let lilac = Brand.color(light: "#654299", dark: "#D1B5FF")
+    static let rose = Brand.color(light: "#9A3D5C", dark: "#FFADC8")
+    static let ochre = Brand.color(light: "#745300", dark: "#FFD65F")
+
+    static let transitSurface = Brand.color(light: "#DAEAFE", dark: "#213A51")
+    static let pickupSurface = Brand.color(light: "#FFDDC7", dark: "#4C3123")
+    static let deliveredSurface = Brand.color(light: "#DCF0D7", dark: "#243D2E")
+    static let lilacSurface = Brand.color(light: "#E9DEFF", dark: "#382D4C")
+    static let roseSurface = Brand.color(light: "#FADDE7", dark: "#482C39")
+    static let ochreSurface = Brand.color(light: "#FFEBAB", dark: "#443918")
+
+    static func surface(for parcel: Parcel) -> Color {
+        switch parcel.currentStage {
+        case .delivered: deliveredSurface
+        case .customs, .failedAttempt, .readyForPickup, .returned: pickupSurface
+        case .outForDelivery: ochreSurface
+        case .pending, .registered, .none: lilacSurface
+        default: transitSurface
+        }
+    }
 
     static func tint(for parcel: Parcel) -> Color {
         switch parcel.currentStage {
@@ -35,15 +52,16 @@ struct ExperimentalBackdrop: View {
 extension View {
     func experimentalSurface(
         tint: Color = .clear,
+        fill: Color = Brand.paper,
         cornerRadius: CGFloat = 26,
         shadow: Bool = true
     ) -> some View {
         background {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(Brand.paper)
+                .fill(fill)
                 .overlay {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(tint.opacity(0.08))
+                        .fill(tint.opacity(0.12))
                 }
                 .overlay {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)

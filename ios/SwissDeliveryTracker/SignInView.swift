@@ -54,10 +54,10 @@ struct WelcomeView: View {
                                     .font(.caption.weight(.bold))
                             }
                             .font(.headline)
-                            .foregroundStyle(Brand.ink)
+                            .foregroundStyle(Brand.onAccent)
                             .padding(.horizontal, 24)
                             .frame(minHeight: 50)
-                            .background(Brand.paper, in: Capsule())
+                            .background(Brand.accent, in: Capsule())
                             .overlay(Capsule().stroke(Brand.separator.opacity(0.3), lineWidth: 1))
                         }
                         .buttonStyle(TactileButtonStyle())
@@ -248,8 +248,8 @@ struct SignInView: View {
                     .padding(.horizontal, 18)
                     .padding(.vertical, 14)
                     .frame(minHeight: 56)
-                    .foregroundStyle(Brand.ink)
-                    .background(Brand.paper, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .foregroundStyle(Brand.onAccent)
+                    .background(Brand.accent, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 18).stroke(Brand.separator.opacity(0.35), lineWidth: 1))
                 }
                 .buttonStyle(TactileButtonStyle())
@@ -773,7 +773,7 @@ private struct GoogleSignInMark: View {
     var body: some View {
         Text("G")
             .font(.system(size: 21, weight: .semibold))
-            .foregroundStyle(Brand.ink)
+            .foregroundStyle(Brand.onAccent)
     }
 }
 

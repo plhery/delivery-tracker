@@ -36,10 +36,7 @@ struct PassportView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { showingAccount = true } label: {
-                        Image(systemName: "person.crop.circle")
-                    }
-                    .accessibilityLabel(localizer.text("native.account"))
+                    AccountToolbarButton { showingAccount = true }
                 }
             }
         }
@@ -66,26 +63,26 @@ struct PassportView: View {
                     Text(copy.allTime.uppercased())
                         .font(.caption2.weight(.semibold).monospaced())
                         .tracking(1.8)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Brand.onAccent.opacity(0.75))
                     Spacer()
                     Image(systemName: "globe.europe.africa")
                         .font(.title3.weight(.light))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Brand.onAccent.opacity(0.75))
                 }
 
                 HStack(alignment: .center, spacing: 16) {
                     VStack(alignment: .leading, spacing: 0) {
                         Text(stats.deliveredCount, format: .number)
-                            .font(.system(size: totalSize, weight: .semibold, design: .rounded))
+                            .font(.system(size: totalSize, weight: .bold, design: .rounded))
                             .tracking(-3)
                             .contentTransition(.numericText())
                         Text(copy.delivered)
                             .font(.title3.weight(.medium))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Brand.onAccent.opacity(0.75))
                     }
                     Spacer(minLength: 0)
                     if !dynamicTypeSize.isAccessibilitySize {
-                        PassportSeal(symbol: "shippingbox", tint: ExperimentalPalette.delivered, earned: stats.deliveredCount > 0)
+                        PassportSeal(symbol: "shippingbox", tint: Brand.onAccent, earned: stats.deliveredCount > 0)
                             .frame(width: 106, height: 106)
                             .rotationEffect(.degrees(-11))
                             .accessibilityHidden(true)
@@ -93,7 +90,7 @@ struct PassportView: View {
                 }
 
                 Rectangle()
-                    .fill(Brand.separator.opacity(0.35))
+                    .fill(Brand.onAccent.opacity(0.22))
                     .frame(height: 0.7)
 
                 let layout = dynamicTypeSize.isAccessibilitySize
@@ -105,15 +102,8 @@ struct PassportView: View {
                 }
             }
             .padding(24)
-            .foregroundStyle(Brand.ink)
-            .background {
-                RoundedRectangle(cornerRadius: 24).fill(Brand.paper)
-                    .overlay(RoundedRectangle(cornerRadius: 24).fill(ExperimentalPalette.delivered.opacity(0.055)))
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: 24)
-                    .strokeBorder(Brand.separator.opacity(0.35), lineWidth: 0.7)
-            }
+            .foregroundStyle(Brand.onAccent)
+            .experimentalSurface(fill: Brand.accent, cornerRadius: 24)
         }
         .buttonStyle(PassportPressStyle())
         .accessibilityElement(children: .ignore)
@@ -128,7 +118,7 @@ struct PassportView: View {
                 .font(.headline.monospacedDigit())
             Text(title)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Brand.onAccent.opacity(0.75))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -145,6 +135,7 @@ struct PassportView: View {
                     duration: stats.averageDeliveryDuration,
                     symbol: "clock",
                     tint: ExperimentalPalette.transit,
+                    surface: ExperimentalPalette.transitSurface,
                     explanation: stats.durationSampleCount > 0
                         ? "\(copy.timedJourneys(stats.durationSampleCount)). \(copy.timingExplanation)"
                         : copy.noTimingExplanation
@@ -154,6 +145,7 @@ struct PassportView: View {
                     duration: stats.fastestDelivery?.duration,
                     symbol: "hare",
                     tint: ExperimentalPalette.pickup,
+                    surface: ExperimentalPalette.pickupSurface,
                     explanation: fastestExplanation(stats)
                 )
             }
@@ -164,7 +156,7 @@ struct PassportView: View {
         }
     }
 
-    private func timeCard(title: String, duration: TimeInterval?, symbol: String, tint: Color, explanation: String) -> some View {
+    private func timeCard(title: String, duration: TimeInterval?, symbol: String, tint: Color, surface: Color, explanation: String) -> some View {
         Button {
             reveal(PassportDetail(
                 title: title,
@@ -187,7 +179,7 @@ struct PassportView: View {
                 }
                 VStack(alignment: .leading, spacing: 5) {
                     Text(duration.map { formattedDuration($0) } ?? "—")
-                        .font(.title2.weight(.semibold).monospacedDigit())
+                        .font(.title2.weight(.bold).monospacedDigit())
                         .minimumScaleFactor(0.75)
                         .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
                     Text(title)
@@ -198,7 +190,7 @@ struct PassportView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(17)
-            .background(tint.opacity(0.065), in: RoundedRectangle(cornerRadius: 20))
+            .experimentalSurface(fill: surface, cornerRadius: 20, shadow: false)
             .foregroundStyle(Brand.ink)
         }
         .buttonStyle(PassportPressStyle())
@@ -245,10 +237,10 @@ struct PassportView: View {
                             }
                             GeometryReader { geometry in
                                 Capsule().fill(tint.opacity(0.1))
-                                Capsule().fill(tint.opacity(0.65))
+                                Capsule().fill(tint)
                                     .frame(width: geometry.size.width * CGFloat(country.count) / CGFloat(max(1, stats.originCountries.first?.count ?? 1)))
                             }
-                            .frame(height: 3)
+                            .frame(height: 5)
                             .accessibilityHidden(true)
                         }
                         .foregroundStyle(Brand.ink)
@@ -309,14 +301,11 @@ struct PassportView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 20)
                         .padding(.horizontal, 12)
-                        .background {
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(Brand.paper.opacity(milestone.earned ? 1 : 0.6))
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .fill(milestone.tint.opacity(milestone.earned ? 0.07 : 0.025))
-                                }
-                        }
+                        .experimentalSurface(
+                            fill: milestone.earned ? milestone.surface : Brand.paper,
+                            cornerRadius: 20,
+                            shadow: false
+                        )
                         .foregroundStyle(Brand.ink)
                         .contentShape(RoundedRectangle(cornerRadius: 20))
                     }
@@ -332,13 +321,13 @@ struct PassportView: View {
 
     private func milestones(_ stats: PassportStatistics) -> [PassportMilestone] {
         [
-            PassportMilestone(id: "first", title: copy.firstArrival, symbol: "shippingbox", tint: ExperimentalPalette.delivered,
+            PassportMilestone(id: "first", title: copy.firstArrival, symbol: "shippingbox", tint: ExperimentalPalette.delivered, surface: ExperimentalPalette.deliveredSurface,
                               current: stats.deliveredCount, target: 1, explanation: copy.firstExplanation),
-            PassportMilestone(id: "ten", title: copy.doubleDigits, symbol: "10.circle", tint: ExperimentalPalette.lilac,
+            PassportMilestone(id: "ten", title: copy.doubleDigits, symbol: "10.circle", tint: ExperimentalPalette.lilac, surface: ExperimentalPalette.lilacSurface,
                               current: stats.deliveredCount, target: 10, explanation: copy.tenExplanation),
-            PassportMilestone(id: "carriers", title: copy.wellConnected, symbol: "point.3.connected.trianglepath.dotted", tint: ExperimentalPalette.rose,
+            PassportMilestone(id: "carriers", title: copy.wellConnected, symbol: "point.3.connected.trianglepath.dotted", tint: ExperimentalPalette.rose, surface: ExperimentalPalette.roseSurface,
                               current: carrierCount, target: 3, explanation: copy.carrierExplanation),
-            PassportMilestone(id: "speed", title: copy.expressArrival, symbol: "hare", tint: ExperimentalPalette.ochre,
+            PassportMilestone(id: "speed", title: copy.expressArrival, symbol: "hare", tint: ExperimentalPalette.ochre, surface: ExperimentalPalette.ochreSurface,
                               current: stats.fastestDelivery.map { $0.duration <= 48 * 60 * 60 ? 1 : 0 } ?? 0,
                               target: 1, explanation: copy.expressExplanation, pendingLabel: copy.underTwoDays),
         ]
@@ -374,6 +363,7 @@ private struct PassportMilestone: Identifiable {
     let title: String
     let symbol: String
     let tint: Color
+    let surface: Color
     let current: Int
     let target: Int
     let explanation: String
@@ -391,11 +381,11 @@ private struct PassportSeal: View {
 
     var body: some View {
         ZStack {
-            Circle().fill(tint.opacity(earned ? 0.075 : 0.025))
-            Circle().strokeBorder(tint.opacity(earned ? 0.65 : 0.22), style: StrokeStyle(lineWidth: 1.5, dash: [2, 3]))
-            Circle().inset(by: 7).strokeBorder(tint.opacity(earned ? 0.38 : 0.13), lineWidth: 0.8)
+            Circle().fill(tint.opacity(earned ? 0.12 : 0.04))
+            Circle().strokeBorder(tint.opacity(earned ? 0.88 : 0.35), style: StrokeStyle(lineWidth: 1.5, dash: [2, 3]))
+            Circle().inset(by: 7).strokeBorder(tint.opacity(earned ? 0.55 : 0.22), lineWidth: 0.8)
             Image(systemName: symbol)
-                .font(.system(size: 30, weight: .light))
+                .font(.system(size: 30, weight: .regular))
                 .foregroundStyle(earned ? tint : .secondary.opacity(0.45))
             if earned {
                 Image(systemName: "checkmark")

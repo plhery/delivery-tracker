@@ -1,15 +1,15 @@
 import SwiftUI
 
 enum Brand {
-    // Warm stationery colors with separate night and high-contrast treatments.
-    static let accent = color(light: "#D6B875", dark: "#DCC18A")
+    // Postal yellow anchors the interface; content surfaces adapt to appearance.
+    static let accent = Color(hex: "#FFD400")
     static let accentBright = accent
-    static let onAccent = Color(hex: "#292820")
-    static let ink = color(light: "#292D2B", dark: "#F1F0EA")
-    static let cream = color(light: "#EEEAE1", dark: "#292B28")
-    static let paper = color(light: "#FFFDF8", dark: "#222522")
-    static let warning = color(light: "#A6573B", dark: "#E2A185")
-    static let background = color(light: "#F5F3ED", dark: "#171A18")
+    static let onAccent = Color(hex: "#20251E")
+    static let ink = color(light: "#20251E", dark: "#F5F6F2")
+    static let cream = color(light: "#F0F0E9", dark: "#292C28")
+    static let paper = color(light: "#FFFFFF", dark: "#242824")
+    static let warning = color(light: "#963E19", dark: "#FFB184")
+    static let background = color(light: "#F4F5F1", dark: "#151915")
     static let separator = Color(uiColor: .separator)
 
     static func color(light: String, dark: String) -> Color {
@@ -27,6 +27,34 @@ enum Brand {
                 alpha: alpha
             )
         })
+    }
+}
+
+/// One account entry point, shared by both tabs.
+struct AccountToolbarButton: View {
+    let action: () -> Void
+    @EnvironmentObject private var session: SessionStore
+    @EnvironmentObject private var localizer: Localizer
+
+    var body: some View {
+        Button(action: action) {
+            Group {
+                if let initial = session.user?.email?.first {
+                    Text(String(initial).uppercased())
+                        .font(.subheadline.weight(.bold))
+                } else {
+                    Image(systemName: "person.fill")
+                        .font(.subheadline.weight(.semibold))
+                }
+            }
+            .foregroundStyle(Brand.onAccent)
+            .frame(width: 34, height: 34)
+            .background(Brand.accent, in: Circle())
+            .frame(width: 44, height: 44)
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(localizer.text("native.account"))
     }
 }
 
