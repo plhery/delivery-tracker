@@ -218,50 +218,28 @@ struct ExperimentalJourneyRail: View {
     }
 }
 
+@MainActor
 struct ExperimentalCopy {
-    let language: AppLanguage
+    let localizer: Localizer
 
-    var passport: String { value(en: "Passport", de: "Reisepass", fr: "Passeport", it: "Passaporto") }
-    var active: String { value(en: "Active", de: "Aktiv", fr: "En cours", it: "Attivi") }
-    var showArchive: String {
-        value(en: "Show archived parcels", de: "Archivierte Pakete anzeigen", fr: "Afficher les colis archivés", it: "Mostra i pacchi archiviati")
-    }
-    var hideArchive: String {
-        value(en: "Hide archived parcels", de: "Archivierte Pakete ausblenden", fr: "Masquer les colis archivés", it: "Nascondi i pacchi archiviati")
-    }
-    var currentUpdate: String { value(en: "Current update", de: "Aktueller Stand", fr: "Dernière nouvelle", it: "Ultimo aggiornamento") }
-    var fullJourney: String { value(en: "Show full journey", de: "Ganze Reise zeigen", fr: "Afficher tout le trajet", it: "Mostra tutto il viaggio") }
-    var lessJourney: String { value(en: "Show less", de: "Weniger zeigen", fr: "Afficher moins", it: "Mostra meno") }
-    var shipmentDetails: String { value(en: "Shipment details", de: "Sendungsdetails", fr: "Détails de l’envoi", it: "Dettagli della spedizione") }
-    var smartCapture: String { value(en: "Tracking details", de: "Sendungsangaben", fr: "Informations de suivi", it: "Dati di tracciamento") }
-    var scanOrEnter: String {
-        value(en: "Paste the tracking number or link from your shipping message.", de: "Füge die Sendungsnummer oder den Link aus deiner Versandnachricht ein.", fr: "Collez le numéro ou le lien de suivi de votre message d’expédition.", it: "Incolla il numero o il link di tracciamento del messaggio di spedizione.")
-    }
-    var quickAddIntro: String {
-        value(en: "Add a tracking number or link. Give your parcel a name if you like.", de: "Füge eine Sendungsnummer oder einen Link hinzu. Du kannst dem Paket auch einen Namen geben.", fr: "Ajoutez un numéro ou un lien de suivi. Donnez un nom au colis si vous le souhaitez.", it: "Aggiungi un numero o un link di tracciamento. Se vuoi, dai un nome al pacco.")
-    }
-    var parcelTitle: String { value(en: "Title", de: "Titel", fr: "Titre", it: "Titolo") }
-    var trackingReady: String {
-        value(en: "Ready to add", de: "Bereit zum Hinzufügen", fr: "Prêt à ajouter", it: "Pronto da aggiungere")
-    }
-    var oneMoreDetail: String {
-        value(en: "One detail needed", de: "Noch eine Angabe", fr: "Un détail nécessaire", it: "Serve ancora un dettaglio")
-    }
-    var ready: String { value(en: "Ready to review", de: "Bereit zur Prüfung", fr: "Prêt à vérifier", it: "Pronto da verificare") }
-    var chooseNext: String {
-        value(en: "Carrier details can be confirmed next.", de: "Anbieterdetails können als Nächstes bestätigt werden.", fr: "Vous pourrez ensuite confirmer le transporteur.", it: "Potrai confermare i dettagli del corriere nel passaggio successivo.")
-    }
-    var continueTitle: String { value(en: "Review parcel", de: "Paket prüfen", fr: "Vérifier le colis", it: "Verifica il pacco") }
-    var scanTitle: String { value(en: "Scan instead", de: "Stattdessen scannen", fr: "Scanner plutôt", it: "Scansiona invece") }
-
-    private func value(en: String, de: String, fr: String, it: String) -> String {
-        switch language {
-        case .en: en
-        case .de: de
-        case .fr: fr
-        case .it: it
-        }
-    }
+    var passport: String { localizer.text("passport.title") }
+    var active: String { localizer.text("design.active") }
+    var showArchive: String { localizer.text("design.showArchive") }
+    var hideArchive: String { localizer.text("design.hideArchive") }
+    var currentUpdate: String { localizer.text("design.currentUpdate") }
+    var fullJourney: String { localizer.text("design.fullJourney") }
+    var lessJourney: String { localizer.text("design.lessJourney") }
+    var shipmentDetails: String { localizer.text("design.shipmentDetails") }
+    var smartCapture: String { localizer.text("design.smartCapture") }
+    var scanOrEnter: String { localizer.text("design.scanOrEnter") }
+    var quickAddIntro: String { localizer.text("design.quickAddIntro") }
+    var parcelTitle: String { localizer.text("design.parcelTitle") }
+    var trackingReady: String { localizer.text("design.trackingReady") }
+    var oneMoreDetail: String { localizer.text("design.oneMoreDetail") }
+    var ready: String { localizer.text("design.ready") }
+    var chooseNext: String { localizer.text("design.chooseNext") }
+    var continueTitle: String { localizer.text("design.continueTitle") }
+    var scanTitle: String { localizer.text("design.scanTitle") }
 }
 
 extension Parcel {

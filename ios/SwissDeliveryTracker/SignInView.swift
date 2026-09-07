@@ -122,7 +122,7 @@ private struct WelcomeView: View {
     let opening: Bool
     let onOpen: () -> Void
 
-    private var copy: ArrivalCopy { ArrivalCopy(language: localizer.language) }
+    private var copy: ArrivalCopy { ArrivalCopy(localizer: localizer) }
 
     var body: some View {
         GeometryReader { geometry in
@@ -200,7 +200,7 @@ struct SignInView: View {
     @State private var working = false
     @State private var errorMessage: String?
 
-    private var copy: ArrivalCopy { ArrivalCopy(language: localizer.language) }
+    private var copy: ArrivalCopy { ArrivalCopy(localizer: localizer) }
 
     var body: some View {
         ZStack {
@@ -853,51 +853,13 @@ private struct GoogleSignInMark: View {
     }
 }
 
+@MainActor
 private struct ArrivalCopy {
-    let language: AppLanguage
+    let localizer: Localizer
 
-    var welcomeTitle: String {
-        switch language {
-        case .en: "Good things\nare on their way."
-        case .de: "Gute Dinge\nsind unterwegs."
-        case .fr: "De belles choses\nsont en route."
-        case .it: "Belle cose\nsono in arrivo."
-        }
-    }
-
-    var tapToOpen: String {
-        switch language {
-        case .en: "Tap to open your parcel"
-        case .de: "Tippe, um dein Paket zu öffnen"
-        case .fr: "Touchez pour ouvrir votre colis"
-        case .it: "Tocca per aprire il tuo pacco"
-        }
-    }
-
-    var openHint: String {
-        switch language {
-        case .en: "Opens the parcel and shows sign-in options."
-        case .de: "Öffnet das Paket und zeigt die Anmeldeoptionen."
-        case .fr: "Ouvre le colis et affiche les options de connexion."
-        case .it: "Apre il pacco e mostra le opzioni di accesso."
-        }
-    }
-
-    var signInTitle: String {
-        switch language {
-        case .en: "Your deliveries, together."
-        case .de: "Deine Lieferungen, vereint."
-        case .fr: "Vos livraisons, réunies."
-        case .it: "Le tue consegne, insieme."
-        }
-    }
-
-    var signInSubtitle: String {
-        switch language {
-        case .en: "Sign in to start tracking."
-        case .de: "Melde dich an und verfolge deine Pakete."
-        case .fr: "Connectez-vous pour suivre vos colis."
-        case .it: "Accedi per seguire i tuoi pacchi."
-        }
-    }
+    var welcomeTitle: String { localizer.text("arrival.welcomeTitle") }
+    var tapToOpen: String { localizer.text("arrival.tapToOpen") }
+    var openHint: String { localizer.text("arrival.openHint") }
+    var signInTitle: String { localizer.text("arrival.signInTitle") }
+    var signInSubtitle: String { localizer.text("arrival.signInSubtitle") }
 }

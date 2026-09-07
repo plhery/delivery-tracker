@@ -347,7 +347,7 @@ struct AddParcelView: View {
     }
 
     private var requiredDetailsCard: some View {
-        let strings = ExperimentalCopy(language: localizer.language)
+        let strings = ExperimentalCopy(localizer: localizer)
 
         return VStack(alignment: .leading, spacing: 14) {
             Label(strings.oneMoreDetail, systemImage: postcodeRequirement != nil ? "mappin.and.ellipse" : "link")

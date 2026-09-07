@@ -258,7 +258,7 @@ struct ParcelDetailView: View {
     }
 
     private func journey(_ parcel: Parcel) -> some View {
-        let copy = ExperimentalCopy(language: localizer.language)
+        let copy = ExperimentalCopy(localizer: localizer)
         let tint = ExperimentalPalette.tint(for: parcel)
         let currentEvent = parcel.sortedEvents.first
         let olderEvents = Array(parcel.sortedEvents.dropFirst())
@@ -549,7 +549,7 @@ private struct ExperimentalCurrentTimelineRow: View {
     @EnvironmentObject private var localizer: Localizer
 
     var body: some View {
-        let strings = ExperimentalCopy(language: localizer.language)
+        let strings = ExperimentalCopy(localizer: localizer)
 
         HStack(alignment: .top, spacing: 11) {
             VStack(spacing: 0) {

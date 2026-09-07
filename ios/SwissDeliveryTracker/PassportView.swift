@@ -10,7 +10,7 @@ struct PassportView: View {
     @State private var detail: PassportDetail?
     @State private var touchCount = 0
 
-    private var copy: PassportCopy { PassportCopy(language: localizer.language) }
+    private var copy: PassportCopy { PassportCopy(localizer: localizer) }
     private var statistics: PassportStatistics { PassportStatistics(parcels: store.parcels) }
     private var carrierCount: Int { Set(store.parcels.map(\.carrier)).count }
 
@@ -469,74 +469,48 @@ private struct PassportDetailSheet: View {
     }
 }
 
+@MainActor
 private struct PassportCopy {
-    let language: AppLanguage
+    let localizer: Localizer
 
-    var passport: String { value("Passport", "Reisepass", "Passeport", "Passaporto") }
-    var allTime: String { value("All time", "Insgesamt", "Depuis le début", "Dall’inizio") }
-    var delivered: String { value("Delivered", "Zugestellt", "Livrés", "Consegnati") }
-    var onTheWay: String { value("active", "aktiv", "actifs", "attivi") }
-    var carriers: String { value("carriers", "Paketdienste", "transporteurs", "corrieri") }
-    var deliveryTimes: String { value("Delivery times", "Lieferzeiten", "Délais de livraison", "Tempi di consegna") }
-    var average: String { value("On average", "Im Durchschnitt", "En moyenne", "In media") }
-    var personalBest: String { value("Personal best", "Persönlicher Rekord", "Record personnel", "Record personale") }
-    var firstSeenIn: String { value("First scanned in", "Erster Scan in", "Premiers scans", "Primi rilevamenti") }
-    var stamps: String { value("Your stamps", "Deine Stempel", "Vos tampons", "I tuoi timbri") }
-    var unlocked: String { value("Unlocked", "Freigeschaltet", "Débloqué", "Sbloccato") }
-    var firstArrival: String { value("First arrival", "Erste Ankunft", "Première arrivée", "Primo arrivo") }
-    var doubleDigits: String { value("Double digits", "Zweistellig", "Deux chiffres", "Doppia cifra") }
-    var wellConnected: String { value("Well connected", "Gut vernetzt", "Bien connecté", "Ben collegato") }
-    var expressArrival: String { value("Express arrival", "Expressankunft", "Arrivée express", "Arrivo express") }
-    var underTwoDays: String { value("Within 48 hours", "In 48 Stunden", "En 48 heures", "Entro 48 ore") }
-    var underOneMinute: String { value("< 1 min", "< 1 Min.", "< 1 min", "< 1 min") }
-    var lessThanOneMinute: String { value("Less than one minute", "Weniger als eine Minute", "Moins d’une minute", "Meno di un minuto") }
-    var detailsHint: String { value("Shows details", "Zeigt Details", "Affiche les détails", "Mostra i dettagli") }
-    var waitingForTimes: String {
-        value("Waiting for a complete journey", "Warten auf eine vollständige Reise", "En attente d’un trajet complet", "In attesa di un viaggio completo")
-    }
-    var deliveredExplanation: String {
-        value("Every delivered parcel in your collection counts, including archived parcels.", "Jedes zugestellte Paket in deiner Sammlung zählt, auch archivierte Pakete.", "Chaque colis livré de votre collection compte, y compris les colis archivés.", "Ogni pacco consegnato nella tua raccolta conta, inclusi quelli archiviati.")
-    }
-    var timingExplanation: String {
-        value("Measured from the carrier’s first acceptance or transit scan to delivery. Parcels without both timestamps are left out.", "Gemessen vom ersten Annahme- oder Transitscan bis zur Zustellung. Pakete ohne beide Zeitangaben werden nicht berücksichtigt.", "Du premier scan de prise en charge ou de transit à la livraison. Les colis sans ces deux horodatages sont exclus.", "Dal primo rilevamento di presa in carico o transito alla consegna. I pacchi senza entrambi gli orari sono esclusi.")
-    }
-    var noTimingExplanation: String {
-        value("Once a delivered parcel has both a carrier acceptance or transit scan and a delivery timestamp, its journey will count here.", "Sobald ein zugestelltes Paket einen Annahme- oder Transitscan und eine Zustellzeit hat, zählt seine Reise hier.", "Dès qu’un colis livré possède un scan de prise en charge ou de transit et une heure de livraison, son trajet compte ici.", "Quando un pacco consegnato ha un rilevamento di presa in carico o transito e un orario di consegna, il suo viaggio verrà incluso qui.")
-    }
-    var countryExplanation: String {
-        value("The country named in the carrier’s first acceptance or transit scan. It may differ from the sender’s country. Parcels without an explicit country are left out.", "Das im ersten Annahme- oder Transitscan genannte Land. Es kann vom Absenderland abweichen. Pakete ohne eindeutige Länderangabe werden nicht berücksichtigt.", "Le pays indiqué dans le premier scan de prise en charge ou de transit. Il peut différer du pays de l’expéditeur. Les colis sans pays explicite sont exclus.", "Il paese indicato nel primo rilevamento di presa in carico o transito. Può differire dal paese del mittente. I pacchi senza un paese esplicito sono esclusi.")
-    }
-    var firstExplanation: String {
-        value("Your first delivered parcel earns this stamp. A small beginning for your passport.", "Dein erstes zugestelltes Paket bringt dir diesen Stempel. Der Anfang deines Passes.", "Votre premier colis livré vous offre ce tampon. Le début de votre passeport.", "Il tuo primo pacco consegnato ti regala questo timbro. L’inizio del tuo passaporto.")
-    }
-    var tenExplanation: String {
-        value("Ten delivered parcels in your collection. Archived arrivals count too.", "Zehn zugestellte Pakete in deiner Sammlung. Archivierte Ankünfte zählen auch.", "Dix colis livrés dans votre collection. Les arrivées archivées comptent aussi.", "Dieci pacchi consegnati nella tua raccolta. Contano anche gli arrivi archiviati.")
-    }
-    var carrierExplanation: String {
-        value("Track parcels with three different carriers to earn this stamp.", "Verfolge Pakete mit drei verschiedenen Paketdiensten, um diesen Stempel zu bekommen.", "Suivez des colis avec trois transporteurs différents pour obtenir ce tampon.", "Traccia pacchi con tre corrieri diversi per ottenere questo timbro.")
-    }
-    var expressExplanation: String {
-        value("A parcel delivered within 48 hours of its first acceptance or transit scan earns this stamp.", "Ein Paket, das innerhalb von 48 Stunden nach dem ersten Annahme- oder Transitscan zugestellt wird, bringt dir diesen Stempel.", "Un colis livré dans les 48 heures suivant son premier scan de prise en charge ou de transit vous offre ce tampon.", "Un pacco consegnato entro 48 ore dal primo rilevamento di presa in carico o transito ti regala questo timbro.")
-    }
+    var passport: String { localizer.text("passport.title") }
+    var allTime: String { localizer.text("passport.allTime") }
+    var delivered: String { localizer.text("passport.delivered") }
+    var onTheWay: String { localizer.text("passport.onTheWay") }
+    var carriers: String { localizer.text("passport.carriers") }
+    var deliveryTimes: String { localizer.text("passport.deliveryTimes") }
+    var average: String { localizer.text("passport.average") }
+    var personalBest: String { localizer.text("passport.personalBest") }
+    var firstSeenIn: String { localizer.text("passport.firstSeenIn") }
+    var stamps: String { localizer.text("passport.stamps") }
+    var unlocked: String { localizer.text("passport.unlocked") }
+    var firstArrival: String { localizer.text("passport.firstArrival") }
+    var doubleDigits: String { localizer.text("passport.doubleDigits") }
+    var wellConnected: String { localizer.text("passport.wellConnected") }
+    var expressArrival: String { localizer.text("passport.expressArrival") }
+    var underTwoDays: String { localizer.text("passport.underTwoDays") }
+    var underOneMinute: String { localizer.text("passport.underOneMinute") }
+    var lessThanOneMinute: String { localizer.text("passport.lessThanOneMinute") }
+    var detailsHint: String { localizer.text("passport.detailsHint") }
+    var waitingForTimes: String { localizer.text("passport.waitingForTimes") }
+    var deliveredExplanation: String { localizer.text("passport.deliveredExplanation") }
+    var timingExplanation: String { localizer.text("passport.timingExplanation") }
+    var noTimingExplanation: String { localizer.text("passport.noTimingExplanation") }
+    var countryExplanation: String { localizer.text("passport.countryExplanation") }
+    var firstExplanation: String { localizer.text("passport.firstExplanation") }
+    var tenExplanation: String { localizer.text("passport.tenExplanation") }
+    var carrierExplanation: String { localizer.text("passport.carrierExplanation") }
+    var expressExplanation: String { localizer.text("passport.expressExplanation") }
+
     func timedJourneys(_ count: Int) -> String {
-        count == 1
-            ? value("From 1 timed journey", "Aus 1 erfassten Reise", "Sur 1 trajet chronométré", "Da 1 viaggio misurato")
-            : value("From \(count) timed journeys", "Aus \(count) erfassten Reisen", "Sur \(count) trajets chronométrés", "Da \(count) viaggi misurati")
+        localizer.text(count == 1 ? "passport.timedJourneys.one" : "passport.timedJourneys.many", ["count": count])
     }
+
     func parcels(_ count: Int) -> String {
-        count == 1
-            ? value("1 parcel", "1 Paket", "1 colis", "1 pacco")
-            : value("\(count) parcels", "\(count) Pakete", "\(count) colis", "\(count) pacchi")
+        localizer.text(count == 1 ? "passport.parcels.one" : "passport.parcels.many", ["count": count])
     }
+
     func stampsEarned(_ count: Int, total: Int) -> String {
-        value("\(count) of \(total) stamps unlocked", "\(count) von \(total) Stempeln freigeschaltet", "\(count) tampons débloqués sur \(total)", "\(count) timbri sbloccati su \(total)")
-    }
-    private func value(_ en: String, _ de: String, _ fr: String, _ it: String) -> String {
-        switch language {
-        case .en: en
-        case .de: de
-        case .fr: fr
-        case .it: it
-        }
+        localizer.text("passport.stampsEarned", ["count": count, "total": total])
     }
 }

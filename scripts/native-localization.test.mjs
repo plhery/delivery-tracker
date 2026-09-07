@@ -1,6 +1,32 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { nativeLocalizationReferences } from './native-localization.mjs';
+import { validateLocalizationCatalogs } from './localization-catalog.mjs';
+
+describe('Shared localization catalogs', () => {
+  const catalogs = () => Object.fromEntries(['en', 'de', 'fr', 'it'].map((locale) => [locale, {
+    'passport.stampsEarned': '{{count}} / {{total}}',
+    'arrival.tapToOpen': 'Open',
+  }]));
+
+  it('requires every platform and language to use the same keys', () => {
+    const value = catalogs();
+    delete value.fr['arrival.tapToOpen'];
+    assert.throws(() => validateLocalizationCatalogs(value), /fr.*arrival.tapToOpen/);
+  });
+
+  it('rejects translations that lose interpolation variables', () => {
+    const value = catalogs();
+    value.de['passport.stampsEarned'] = '{{count}}';
+    assert.throws(() => validateLocalizationCatalogs(value), /de.passport.stampsEarned.*variables/);
+  });
+
+  it('allows a translation to reorder variables', () => {
+    const value = catalogs();
+    value.it['passport.stampsEarned'] = '{{total}}: {{count}}';
+    assert.doesNotThrow(() => validateLocalizationCatalogs(value));
+  });
+});
 
 const catalogKeys = ['welcome.title', 'auth.title'];
 

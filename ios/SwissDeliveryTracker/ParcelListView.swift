@@ -16,7 +16,7 @@ struct ParcelListView: View {
             PassportView()
                 .tag(1)
                 .tabItem {
-                    Label(ExperimentalCopy(language: localizer.language).passport, systemImage: "book.closed.fill")
+                    Label(ExperimentalCopy(localizer: localizer).passport, systemImage: "book.closed.fill")
                 }
         }
         .tint(Brand.ink)
@@ -259,7 +259,7 @@ private struct DeliveryListView: View {
                     .fontWeight(.semibold)
                     .monospacedDigit()
                     .contentTransition(.numericText())
-                Text(ExperimentalCopy(language: localizer.language).active)
+                Text(ExperimentalCopy(localizer: localizer).active)
                     .foregroundStyle(.secondary)
             }
             .font(.subheadline)
@@ -1084,7 +1084,7 @@ private struct ExperimentalArchiveShelf: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        let copy = ExperimentalCopy(language: localizer.language)
+        let copy = ExperimentalCopy(localizer: localizer)
 
         VStack(alignment: .leading, spacing: 8) {
             Button {
