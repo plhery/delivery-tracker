@@ -2,7 +2,7 @@ import SwiftUI
 
 enum Brand {
     // Postal yellow anchors the interface; content surfaces adapt to appearance.
-    static let accent = Color(hex: "#FFD400")
+    static let accent = Color(hex: "#F3CF48")
     static let accentBright = accent
     static let onAccent = Color(hex: "#20251E")
     static let ink = color(light: "#20251E", dark: "#F5F6F2")
@@ -30,6 +30,21 @@ enum Brand {
     }
 }
 
+enum AppAppearance: String, CaseIterable, Identifiable {
+    case system, light, dark
+
+    static let storageKey = "sdt.appearance.v1"
+    var id: String { rawValue }
+    var titleKey: String { "native.appearance.\(rawValue)" }
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
+        }
+    }
+}
+
 /// One account entry point, shared by both tabs.
 struct AccountToolbarButton: View {
     let action: () -> Void
@@ -53,7 +68,7 @@ struct AccountToolbarButton: View {
             .frame(width: 44, height: 44)
             .contentShape(Circle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TactileButtonStyle(scale: 0.94))
         .accessibilityLabel(localizer.text("native.account"))
     }
 }
@@ -103,7 +118,7 @@ struct TactileButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed && !reduceMotion ? scale : 1)
-            .opacity(configuration.isPressed ? 0.88 : 1)
+            .opacity(configuration.isPressed ? 0.94 : 1)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: configuration.isPressed)
     }
 }

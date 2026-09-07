@@ -402,10 +402,10 @@ private struct PassportPressStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.955 : 1)
-            .rotationEffect(.degrees(configuration.isPressed && !reduceMotion ? -1 : 0))
-            .opacity(configuration.isPressed ? 0.82 : 1)
-            .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.6), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.975 : 1)
+            .rotationEffect(.degrees(configuration.isPressed && !reduceMotion ? -0.5 : 0))
+            .opacity(configuration.isPressed ? 0.94 : 1)
+            .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.75), value: configuration.isPressed)
     }
 }
 

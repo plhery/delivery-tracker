@@ -49,6 +49,83 @@ struct ExperimentalBackdrop: View {
     }
 }
 
+/// Cut-out perforations make this read as a paper stamp, even at card size.
+struct PostageStampShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let radius: CGFloat = 2.3
+        let horizontalCount = max(1, Int(rect.width / 9))
+        let verticalCount = max(1, Int(rect.height / 9))
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        for index in 0..<horizontalCount {
+            let x = rect.minX + (CGFloat(index) + 0.5) * rect.width / CGFloat(horizontalCount)
+            path.addLine(to: CGPoint(x: x - radius, y: rect.minY))
+            path.addArc(center: CGPoint(x: x, y: rect.minY), radius: radius,
+                        startAngle: .degrees(180), endAngle: .degrees(0), clockwise: true)
+        }
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        for index in 0..<verticalCount {
+            let y = rect.minY + (CGFloat(index) + 0.5) * rect.height / CGFloat(verticalCount)
+            path.addLine(to: CGPoint(x: rect.maxX, y: y - radius))
+            path.addArc(center: CGPoint(x: rect.maxX, y: y), radius: radius,
+                        startAngle: .degrees(-90), endAngle: .degrees(90), clockwise: true)
+        }
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        for index in 0..<horizontalCount {
+            let x = rect.maxX - (CGFloat(index) + 0.5) * rect.width / CGFloat(horizontalCount)
+            path.addLine(to: CGPoint(x: x + radius, y: rect.maxY))
+            path.addArc(center: CGPoint(x: x, y: rect.maxY), radius: radius,
+                        startAngle: .degrees(0), endAngle: .degrees(180), clockwise: true)
+        }
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        for index in 0..<verticalCount {
+            let y = rect.maxY - (CGFloat(index) + 0.5) * rect.height / CGFloat(verticalCount)
+            path.addLine(to: CGPoint(x: rect.minX, y: y + radius))
+            path.addArc(center: CGPoint(x: rect.minX, y: y), radius: radius,
+                        startAngle: .degrees(90), endAngle: .degrees(270), clockwise: true)
+        }
+        path.closeSubpath()
+        return path
+    }
+}
+
+struct DeliveryPostageStamp: View {
+    let stage: TrackingStage?
+    let appeared: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ZStack {
+            PostageStampShape()
+                .fill(Color(hex: "#FFF9E8"))
+                .shadow(color: .black.opacity(0.1), radius: 2, y: 2)
+            Rectangle()
+                .fill(Brand.accent.opacity(0.24))
+                .overlay(Rectangle().stroke(Brand.onAccent.opacity(0.3), lineWidth: 0.75))
+                .padding(9)
+            Image(systemName: stage?.metadata.symbol ?? "shippingbox")
+                .font(.system(size: 27, weight: .regular))
+                .foregroundStyle(Brand.onAccent)
+                .contentTransition(reduceMotion ? .identity : .symbolEffect(.replace))
+                .symbolEffect(.bounce, options: .nonRepeating, value: reduceMotion ? nil : stage)
+        }
+        .frame(width: 72, height: 86)
+        .overlay(alignment: .bottomTrailing) {
+            // A partial cancellation mark crosses the printed frame and paper edge.
+            ZStack {
+                Circle().stroke(Brand.onAccent.opacity(0.3), lineWidth: 1)
+                Circle().inset(by: 4).stroke(Brand.onAccent.opacity(0.18), lineWidth: 0.7)
+            }
+            .frame(width: 32, height: 32)
+            .offset(x: 8, y: 5)
+        }
+        .rotationEffect(.degrees(reduceMotion || appeared ? -3 : -10))
+        .scaleEffect(reduceMotion || appeared ? 1 : 1.12)
+        .animation(reduceMotion ? nil : .spring(response: 0.48, dampingFraction: 0.6).delay(0.08), value: appeared)
+        .accessibilityHidden(true)
+    }
+}
+
 extension View {
     func experimentalSurface(
         tint: Color = .clear,

@@ -2,6 +2,72 @@ import XCTest
 @testable import SwissDeliveryTracker
 
 final class ParcelLogicTests: XCTestCase {
+    func testArchiveReleaseKeepsTheFingerPositionUntilTheSettleAnimation() {
+        var swipe = ArchiveSwipeState()
+        swipe.drag(translation: CGSize(width: -120, height: 3), width: 360)
+
+        XCTAssertEqual(swipe.release(predictedTranslation: -125, width: 360), .revealed)
+        // Releasing used to reset the displayed translation to zero for a frame.
+        XCTAssertEqual(swipe.offset, -120)
+        XCTAssertNil(swipe.cancel())
+        XCTAssertEqual(swipe.offset, -120)
+        swipe.settle(at: -88)
+
+        swipe.drag(translation: CGSize(width: -12, height: 0), width: 360)
+        XCTAssertEqual(swipe.offset, -100)
+    }
+
+    func testShortArchiveSwipeClosesFromTheReleasePosition() {
+        var swipe = ArchiveSwipeState()
+        swipe.drag(translation: CGSize(width: -25, height: 0), width: 360)
+        XCTAssertEqual(swipe.release(predictedTranslation: -28, width: 360), .closed)
+        XCTAssertEqual(swipe.offset, -25)
+    }
+
+    func testReversingAnOpenArchiveSwipeClosesIt() {
+        var swipe = ArchiveSwipeState()
+        swipe.settle(at: -88)
+        swipe.drag(translation: CGSize(width: 65, height: 2), width: 360)
+        XCTAssertEqual(swipe.offset, -23)
+        XCTAssertEqual(swipe.release(predictedTranslation: 90, width: 360), .closed)
+        XCTAssertEqual(swipe.offset, -23)
+    }
+
+    func testArchiveRequiresActualDistanceNotJustFlingVelocity() {
+        var swipe = ArchiveSwipeState()
+        swipe.drag(translation: CGSize(width: -30, height: 0), width: 360)
+        XCTAssertEqual(swipe.release(predictedTranslation: -400, width: 360), .revealed)
+
+        swipe.settle(at: 0)
+        swipe.drag(translation: CGSize(width: -210, height: 1), width: 360)
+        XCTAssertEqual(swipe.release(predictedTranslation: -210, width: 360), .archive)
+        XCTAssertEqual(swipe.offset, -210)
+    }
+
+    func testVerticalScrollDoesNotBecomeAnArchiveSwipe() {
+        var swipe = ArchiveSwipeState()
+        swipe.drag(translation: CGSize(width: -3, height: -18), width: 360)
+        swipe.drag(translation: CGSize(width: -200, height: -25), width: 360)
+        XCTAssertEqual(swipe.offset, 0)
+        XCTAssertNil(swipe.release(predictedTranslation: -250, width: 360))
+    }
+
+    func testCancelledSwipeSettlesWithoutArchivingOrResettingItsPosition() {
+        var swipe = ArchiveSwipeState()
+        swipe.drag(translation: CGSize(width: -220, height: 0), width: 360)
+        XCTAssertEqual(swipe.cancel(), .revealed)
+        XCTAssertEqual(swipe.offset, -220)
+        XCTAssertNil(swipe.cancel())
+    }
+
+    func testArchiveSwipeStaysWithinCardBounds() {
+        var swipe = ArchiveSwipeState()
+        swipe.drag(translation: CGSize(width: 50, height: 0), width: 360)
+        XCTAssertEqual(swipe.offset, 0)
+        swipe.drag(translation: CGSize(width: -500, height: 0), width: 360)
+        XCTAssertEqual(swipe.offset, -360)
+    }
+
     func testLinkOnlyParcelDoesNotPromiseAnAutomaticCheck() {
         let id = UUID()
         var parcel = makeParcel(id: id, events: [])

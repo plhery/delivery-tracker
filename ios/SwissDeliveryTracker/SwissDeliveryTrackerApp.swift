@@ -6,6 +6,7 @@ struct SwissDeliveryTrackerApp: App {
     @StateObject private var session: SessionStore
     @StateObject private var parcels: ParcelStore
     @StateObject private var localizer: Localizer
+    @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system
 
     init() {
         let localizer = Localizer()
@@ -26,6 +27,7 @@ struct SwissDeliveryTrackerApp: App {
                 .environmentObject(parcels)
                 .environmentObject(localizer)
                 .environment(\.locale, localizer.language.locale)
+                .preferredColorScheme(appearance.colorScheme)
                 .tint(Brand.accent)
         }
     }

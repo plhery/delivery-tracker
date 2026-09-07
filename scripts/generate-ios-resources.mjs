@@ -23,6 +23,10 @@ const directKeys = new Map();
 const nativeMessages = {
   en: {
     'native.account': 'Account',
+    'native.appearance.title': 'Appearance',
+    'native.appearance.system': 'System',
+    'native.appearance.light': 'Light',
+    'native.appearance.dark': 'Dark',
     'native.apnsTokenError': "Couldn’t connect this iPhone for alerts. Try again in Notification settings.",
     'native.auth.cancelled': 'Sign-in was cancelled.',
     'native.auth.invalidResponse': "Couldn’t complete sign-in. Please try again.",
@@ -85,6 +89,10 @@ const nativeMessages = {
   },
   de: {
     'native.account': 'Konto',
+    'native.appearance.title': 'Darstellung',
+    'native.appearance.system': 'System',
+    'native.appearance.light': 'Hell',
+    'native.appearance.dark': 'Dunkel',
     'native.apnsTokenError': "Dieses iPhone konnte nicht für Meldungen verbunden werden. Versuche es in den Meldungseinstellungen erneut.",
     'native.auth.cancelled': 'Die Anmeldung wurde abgebrochen.',
     'native.auth.invalidResponse': "Die Anmeldung konnte nicht abgeschlossen werden. Versuche es erneut.",
@@ -147,6 +155,10 @@ const nativeMessages = {
   },
   fr: {
     'native.account': 'Compte',
+    'native.appearance.title': 'Apparence',
+    'native.appearance.system': 'Système',
+    'native.appearance.light': 'Clair',
+    'native.appearance.dark': 'Sombre',
     'native.apnsTokenError': "Impossible de connecter cet iPhone aux alertes. Réessayez dans les réglages des notifications.",
     'native.auth.cancelled': 'La connexion a été annulée.',
     'native.auth.invalidResponse': "Impossible de terminer la connexion. Réessayez.",
@@ -209,6 +221,10 @@ const nativeMessages = {
   },
   it: {
     'native.account': 'Account',
+    'native.appearance.title': 'Aspetto',
+    'native.appearance.system': 'Sistema',
+    'native.appearance.light': 'Chiaro',
+    'native.appearance.dark': 'Scuro',
     'native.apnsTokenError': "Impossibile collegare questo iPhone agli avvisi. Riprova nelle impostazioni delle notifiche.",
     'native.auth.cancelled': 'L’accesso è stato annullato.',
     'native.auth.invalidResponse': "Impossibile completare l’accesso. Riprova.",

@@ -182,6 +182,7 @@ struct AccountView: View {
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.dismiss) private var dismiss
+    @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system
     @State private var working = false
     @State private var exportURL: URL?
     @State private var showingShareSheet = false
@@ -216,6 +217,16 @@ struct AccountView: View {
                             Text(language.nativeName).tag(language)
                         }
                     }
+                }
+
+                Section(localizer.text("native.appearance.title")) {
+                    Picker(localizer.text("native.appearance.title"), selection: $appearance) {
+                        ForEach(AppAppearance.allCases) { option in
+                            Text(localizer.text(option.titleKey)).tag(option)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("settings.appearance")
                 }
 
                 Section {
@@ -314,6 +325,8 @@ struct AccountView: View {
                 }
             }
         }
+        .preferredColorScheme(appearance.colorScheme)
+        .sensoryFeedback(.selection, trigger: appearance)
         .sheet(isPresented: $showingNotifications) { NotificationSettingsView() }
         .sheet(isPresented: $showingShareSheet) {
             if let exportURL { ActivityShareSheet(items: [exportURL]) }

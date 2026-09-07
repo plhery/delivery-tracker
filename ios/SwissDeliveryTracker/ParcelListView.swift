@@ -27,6 +27,7 @@ private struct DeliveryListView: View {
     @EnvironmentObject private var store: ParcelStore
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var localizer: Localizer
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Namespace private var parcelTransition
     @State private var path: [UUID] = []
@@ -120,8 +121,9 @@ private struct DeliveryListView: View {
                         parcel: nextParcel,
                         transition: parcelTransition,
                         onOpen: { path.append(nextParcel.id) },
-                        onArchive: { archive(nextParcel) }
+                        onArchive: { await archive(nextParcel) }
                     )
+                    .id(nextParcel.id)
                 }
 
                 if store.isDemo {
@@ -173,6 +175,7 @@ private struct DeliveryListView: View {
             .padding(.horizontal, 16)
             .padding(.top, 8)
             .padding(.bottom, 28)
+            .animation(reduceMotion ? nil : .snappy(duration: 0.32), value: store.parcels.filter { !$0.isArchived }.map(\.id))
         }
         .scrollIndicators(.hidden)
         .refreshable {
@@ -254,7 +257,7 @@ private struct DeliveryListView: View {
                 ]),
                 button: localizer.text("app.undo"),
                 symbol: "archivebox.fill",
-                tint: Brand.accent
+                tint: ExperimentalPalette.ochre
             ) {
                 Task {
                     do { try await store.restore(parcel) }
@@ -389,7 +392,7 @@ private struct DeliveryListView: View {
                         parcel: parcel,
                         transition: parcelTransition,
                         onOpen: { path.append(parcel.id) },
-                        onArchive: { archive(parcel) }
+                        onArchive: { await archive(parcel) }
                     )
                 }
             }
@@ -424,7 +427,7 @@ private struct DeliveryListView: View {
                             : nil,
                         transition: parcelTransition,
                         onOpen: { path.append(parcel.id) },
-                        onArchive: parcel.isArchived ? nil : { archive(parcel) }
+                        onArchive: parcel.isArchived ? nil : { await archive(parcel) }
                     )
                 }
             }
@@ -442,11 +445,9 @@ private struct DeliveryListView: View {
         }
     }
 
-    private func archive(_ parcel: Parcel) {
-        Task {
-            do { try await store.archive(parcel) }
-            catch { actionError = localizer.errorMessage(error) }
-        }
+    private func archive(_ parcel: Parcel) async {
+        do { try await store.archive(parcel) }
+        catch { actionError = localizer.errorMessage(error) }
     }
 
     private func clearFilters() {
@@ -488,7 +489,7 @@ private struct ExperimentalNextDeliveryPass: View {
     let parcel: Parcel
     let transition: Namespace.ID
     let onOpen: () -> Void
-    let onArchive: () -> Void
+    let onArchive: () async -> Void
 
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -533,17 +534,7 @@ private struct ExperimentalNextDeliveryPass: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                Image(systemName: parcel.currentStage?.metadata.symbol ?? "shippingbox")
-                    .font(.system(size: 30, weight: .medium))
-                    .foregroundStyle(tint)
-                    .frame(width: 66, height: 74)
-                    .background(.white.opacity(0.3), in: RoundedRectangle(cornerRadius: 18))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 18)
-                            .strokeBorder(tint.opacity(0.16), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
-                    }
-                    .rotationEffect(.degrees(-6))
-                    .accessibilityHidden(true)
+                DeliveryPostageStamp(stage: parcel.currentStage, appeared: appeared)
             }
 
             ExperimentalJourneyRail(stage: parcel.currentStage, tint: tint)
@@ -594,7 +585,7 @@ private struct ExperimentalParcelPassCard: View {
     let notice: String?
     let transition: Namespace.ID
     let onOpen: () -> Void
-    let onArchive: (() -> Void)?
+    let onArchive: (() async -> Void)?
 
     @EnvironmentObject private var localizer: Localizer
     @ObservedObject private var catalog = CarrierCatalog.shared
@@ -659,7 +650,7 @@ private struct ExperimentalParcelPassCard: View {
             if let onArchive {
                 Menu {
                     Button(localizer.text("parcel.archive"), systemImage: "archivebox") {
-                        onArchive()
+                        Task { await onArchive() }
                     }
                 } label: {
                     Image(systemName: "ellipsis")
@@ -690,7 +681,7 @@ private struct ExperimentalDeliveredParcelCard: View {
     let parcel: Parcel
     let transition: Namespace.ID
     let onOpen: () -> Void
-    let onArchive: (() -> Void)?
+    let onArchive: (() async -> Void)?
 
     @EnvironmentObject private var localizer: Localizer
     @ObservedObject private var catalog = CarrierCatalog.shared
@@ -735,7 +726,7 @@ private struct ExperimentalDeliveredParcelCard: View {
             if let onArchive {
                 Menu {
                     Button(localizer.text("parcel.archive"), systemImage: "archivebox") {
-                        onArchive()
+                        Task { await onArchive() }
                     }
                 } label: {
                     Image(systemName: "ellipsis")
@@ -769,7 +760,7 @@ private extension View {
         shadow: Bool = true,
         protectedTrailingWidth: CGFloat = 0,
         onOpen: @escaping () -> Void,
-        action: (() -> Void)?
+        action: (() async -> Void)?
     ) -> some View {
         modifier(ExperimentalSwipeToArchiveModifier(
             title: title,
@@ -782,21 +773,62 @@ private extension View {
     }
 }
 
+/// The displayed offset survives gesture release. GestureState is used only for
+/// cancellation detection, never for a translation that resets before settling.
+struct ArchiveSwipeState {
+    enum Destination: Equatable { case closed, revealed, archive }
+    static let actionWidth: CGFloat = 88
+    private(set) var offset: CGFloat = 0
+    private var origin: CGFloat?
+    private var horizontal = false
+
+    static func commitThreshold(width: CGFloat) -> CGFloat {
+        max(actionWidth * 1.75, width * 0.52)
+    }
+
+    mutating func drag(translation: CGSize, width: CGFloat) {
+        if origin == nil {
+            origin = offset
+            horizontal = abs(translation.width) > abs(translation.height)
+        }
+        guard horizontal, let origin else { return }
+        offset = max(-max(width, Self.actionWidth), min(0, origin + translation.width))
+    }
+
+    mutating func release(predictedTranslation: CGFloat, width: CGFloat) -> Destination? {
+        defer { origin = nil; horizontal = false }
+        guard horizontal, let origin else { return nil }
+        if offset <= -Self.commitThreshold(width: width) { return .archive }
+        return origin + predictedTranslation < -Self.actionWidth * 0.42 ? .revealed : .closed
+    }
+
+    mutating func cancel() -> Destination? {
+        defer { origin = nil; horizontal = false }
+        guard horizontal, origin != nil else { return nil }
+        return offset < -Self.actionWidth / 2 ? .revealed : .closed
+    }
+
+    mutating func settle(at offset: CGFloat) {
+        self.offset = offset
+    }
+}
+
 private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
     let title: String
     let cornerRadius: CGFloat
     let shadow: Bool
     let protectedTrailingWidth: CGFloat
     let onOpen: () -> Void
-    let action: (() -> Void)?
+    let action: (() async -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @GestureState private var dragOffset: CGFloat = 0
-    @State private var restingOffset: CGFloat = 0
+    @GestureState private var gestureActive = false
+    @State private var swipe = ArchiveSwipeState()
+    @State private var committing = false
     @State private var width: CGFloat = 0
     @State private var archiveFeedback = 0
 
-    private let actionWidth: CGFloat = 88
+    private let actionWidth = ArchiveSwipeState.actionWidth
 
     @ViewBuilder
     func body(content: Content) -> some View {
@@ -812,7 +844,7 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
                                 .labelStyle(.iconOnly)
                                 .font(.system(size: 18, weight: .bold))
                                 .scaleEffect(archiveIconScale)
-                                .symbolEffect(.bounce, value: isCommitArmed)
+                                .symbolEffect(.bounce, value: isCommitArmed && !reduceMotion)
                                 .animation(
                                     reduceMotion
                                         ? nil
@@ -846,6 +878,11 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
             }
             .simultaneousGesture(tapGesture, including: .gesture)
             .simultaneousGesture(swipeGesture(action: action), including: .gesture)
+            .onChange(of: gestureActive) { _, active in
+                guard !active, !committing, let destination = swipe.cancel() else { return }
+                settle(destination)
+            }
+            .allowsHitTesting(!committing)
             .sensoryFeedback(
                 .impact(weight: .medium, intensity: 0.9),
                 trigger: isCommitArmed
@@ -855,6 +892,7 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
             .sensoryFeedback(.impact(weight: .medium, intensity: 0.8), trigger: archiveFeedback)
             .accessibilityAddTraits(.isButton)
             .accessibilityAction { onOpen() }
+            .accessibilityAction(named: Text(title)) { trigger(action, provideFeedback: true) }
         } else {
             content
                 .contentShape(Rectangle())
@@ -864,7 +902,7 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
     }
 
     private var currentOffset: CGFloat {
-        max(-max(width, actionWidth), min(0, restingOffset + dragOffset))
+        swipe.offset
     }
 
     private var revealProgress: CGFloat {
@@ -876,16 +914,16 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
     }
 
     private var commitThreshold: CGFloat {
-        max(actionWidth * 1.75, width * 0.52)
+        ArchiveSwipeState.commitThreshold(width: width)
     }
 
     private var isCommitArmed: Bool {
-        width > 0 && revealedWidth >= commitThreshold
+        gestureActive && !committing && width > 0 && revealedWidth >= commitThreshold
     }
 
     private var archiveIconScale: CGFloat {
         let revealScale = 0.76 + (revealProgress * 0.24)
-        return revealScale * (isCommitArmed ? 1.55 : 1)
+        return revealScale * (isCommitArmed && !reduceMotion ? 1.22 : 1)
     }
 
     private var tapGesture: some Gesture {
@@ -895,55 +933,60 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
             }
     }
 
-    private func swipeGesture(action: @escaping () -> Void) -> some Gesture {
+    private func swipeGesture(action: @escaping () async -> Void) -> some Gesture {
         DragGesture(minimumDistance: 12, coordinateSpace: .local)
-            .updating($dragOffset) { value, state, _ in
-                guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                state = value.translation.width
+            .updating($gestureActive) { _, active, _ in active = true }
+            .onChanged { value in
+                guard !committing else { return }
+                var transaction = Transaction(animation: nil)
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    swipe.drag(translation: value.translation, width: width)
+                }
             }
             .onEnded { value in
-                guard abs(value.translation.width) > abs(value.translation.height) else { return }
-
-                let releasedOffset = max(
-                    -max(width, actionWidth),
-                    min(0, restingOffset + value.translation.width)
-                )
-                let projectedOffset = restingOffset + value.predictedEndTranslation.width
-                if releasedOffset <= -commitThreshold {
+                guard !committing, let destination = swipe.release(
+                    predictedTranslation: value.predictedEndTranslation.width,
+                    width: width
+                ) else { return }
+                if destination == .archive {
                     trigger(action, provideFeedback: false)
                 } else {
-                    let shouldReveal = projectedOffset < -(actionWidth * 0.42)
-                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.3, extraBounce: 0.04)) {
-                        restingOffset = shouldReveal ? -actionWidth : 0
-                    }
+                    settle(destination)
                 }
             }
     }
 
+    private func settle(_ destination: ArchiveSwipeState.Destination) {
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.26)) {
+            swipe.settle(at: destination == .revealed ? -actionWidth : 0)
+        }
+    }
+
     private func handleTap(at location: CGPoint) {
-        if restingOffset < -1 {
+        guard !committing else { return }
+        if currentOffset < -1 {
             guard location.x < width - revealedWidth else { return }
-            withAnimation(reduceMotion ? nil : .snappy(duration: 0.26, extraBounce: 0.03)) {
-                restingOffset = 0
-            }
+            settle(.closed)
             return
         }
         guard location.x < width - protectedTrailingWidth else { return }
         onOpen()
     }
 
-    private func trigger(_ action: @escaping () -> Void, provideFeedback: Bool) {
-        withAnimation(reduceMotion ? nil : .snappy(duration: 0.28, extraBounce: 0.02)) {
-            restingOffset = -max(width, actionWidth)
-        }
+    private func trigger(_ action: @escaping () async -> Void, provideFeedback: Bool) {
+        guard !committing else { return }
+        committing = true
         if provideFeedback { archiveFeedback += 1 }
-        action()
-
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(700))
-            guard restingOffset <= -actionWidth else { return }
-            withAnimation(reduceMotion ? nil : .snappy(duration: 0.3, extraBounce: 0.04)) {
-                restingOffset = 0
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.24)) {
+            swipe.settle(at: -max(width, actionWidth))
+        } completion: {
+            Task { @MainActor in
+                await action()
+                // The row normally disappears. If the request failed, return it
+                // only after the result, rather than on an arbitrary timer.
+                committing = false
+                settle(.closed)
             }
         }
     }

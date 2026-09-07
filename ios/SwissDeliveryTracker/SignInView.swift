@@ -6,11 +6,14 @@ struct WelcomeView: View {
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @State private var opening = false
+    @State private var greeting = 0
 
     private var copy: ArrivalCopy { ArrivalCopy(language: localizer.language) }
 
     var body: some View {
+        let animateGreeting = !reduceMotion && !opening
         GeometryReader { geometry in
             ZStack {
                 Brand.background.ignoresSafeArea()
@@ -38,6 +41,29 @@ struct WelcomeView: View {
                         Button(action: unwrap) {
                             UnwrappingParcel(open: opening ? 1 : 0)
                                 .frame(width: min(300, geometry.size.width - 48), height: min(300, geometry.size.width - 48) * 31 / 30)
+                                .keyframeAnimator(initialValue: ParcelGreeting(), trigger: greeting) { content, pose in
+                                    content
+                                        .offset(y: animateGreeting ? pose.lift : 0)
+                                        .rotationEffect(.degrees(animateGreeting ? pose.angle : 0), anchor: .bottom)
+                                        .scaleEffect(x: 1, y: animateGreeting ? pose.squash : 1, anchor: .bottom)
+                                } keyframes: { _ in
+                                    KeyframeTrack(\.lift) {
+                                        CubicKeyframe(0, duration: 0.12)
+                                        CubicKeyframe(-7, duration: 0.24)
+                                        SpringKeyframe(0, duration: 0.46, spring: .smooth)
+                                    }
+                                    KeyframeTrack(\.angle) {
+                                        CubicKeyframe(-2.5, duration: 0.16)
+                                        CubicKeyframe(2, duration: 0.2)
+                                        CubicKeyframe(-0.8, duration: 0.2)
+                                        SpringKeyframe(0, duration: 0.26, spring: .smooth)
+                                    }
+                                    KeyframeTrack(\.squash) {
+                                        CubicKeyframe(0.975, duration: 0.12)
+                                        CubicKeyframe(1.02, duration: 0.24)
+                                        SpringKeyframe(1, duration: 0.46, spring: .smooth)
+                                    }
+                                }
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(TactileButtonStyle(scale: 0.96))
@@ -88,6 +114,16 @@ struct WelcomeView: View {
             }
         }
         .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.65), trigger: opening)
+        .task(id: opening || reduceMotion || scenePhase != .active) {
+            guard !opening, !reduceMotion, scenePhase == .active else { return }
+            do {
+                try await Task.sleep(for: .milliseconds(550))
+                greeting += 1
+                // One quiet reminder if the box has not been opened yet.
+                try await Task.sleep(for: .seconds(6))
+                greeting += 1
+            } catch { return }
+        }
         .task(id: opening) {
             guard opening else { return }
             if !reduceMotion {
@@ -107,6 +143,12 @@ struct WelcomeView: View {
             opening = true
         }
     }
+}
+
+private struct ParcelGreeting {
+    var lift: CGFloat = 0
+    var angle: Double = 0
+    var squash: CGFloat = 1
 }
 
 struct SignInView: View {
@@ -636,7 +678,7 @@ private struct AuthenticationLanguageMenu: View {
 }
 
 /// A little paper object, drawn in points so its folds stay crisp at every size.
-/// Only the user's tap sets it in motion; there is no looping welcome animation.
+/// The welcome screen gives it a small greeting; a tap unfolds the paper.
 private struct UnwrappingParcel: View, Animatable {
     var open: Double
 
