@@ -334,10 +334,12 @@ struct AddParcelView: View {
                     ]))
             }
 
-            Text(localizer.text(catalog.trackingHintKey(for: resolvedCarrier), ["carrier": definition.displayName]))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if !automatic {
+                Text(localizer.text(catalog.trackingHintKey(for: resolvedCarrier), ["carrier": definition.displayName]))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .foregroundStyle(Brand.ink)
         .padding(16)
