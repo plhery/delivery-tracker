@@ -42,7 +42,7 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(catalog.info(for: .springGDS).displayName, "PostNL / Spring GDS")
         XCTAssertEqual(catalog.trackingHintKey(for: .internationalPost), "add.internationalPost")
         XCTAssertEqual(catalog.trackingHintKey(for: .unknown), "add.unknownCarrier")
-        XCTAssertEqual(catalog.trackingHintKey(for: .dhl), "add.linkSync")
+        XCTAssertEqual(catalog.trackingHintKey(for: .dhl), "add.autoSync")
         for input in [
             "https://postnl.post/details/LX123456785NL",
             "https://postnl.post/tracktrace?B=LX123456785NL",
@@ -63,7 +63,7 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(catalog.detect("lf 123.456-785 de").carrier, .dhl)
         XCTAssertEqual(catalog.detect("LF123456789DE").carrier, .unknown)
         XCTAssertEqual(catalog.detect("LF123456785US").carrier, .internationalPost)
-        XCTAssertFalse(catalog.tracksAutomatically(.dhl))
+        XCTAssertTrue(catalog.tracksAutomatically(.dhl))
         for input in [
             "https://www.dhl.de/en/privatkunden/dhl-sendungsverfolgung.html?piececode=LF123456785DE",
             "https://nolp.dhl.de/nextt-online-public/en/search?piececode=LF123456785DE",

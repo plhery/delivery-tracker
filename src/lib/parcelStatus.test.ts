@@ -39,7 +39,7 @@ describe('parcelDisplayStatus', () => {
   });
 
   it('explains link-only tracking immediately, before a worker checks it', () => {
-    for (const carrier of ['intl-post', 'unknown', 'dhl'] as const) {
+    for (const carrier of ['intl-post', 'unknown', 'fedex'] as const) {
       const saved = { ...parcel('pending'), carrier };
       expect(parcelDisplayStatus(saved)).toEqual({
         label: "Check tracking website", tone: 'warn', syncing: false,

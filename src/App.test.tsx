@@ -44,7 +44,7 @@ describe('App', () => {
     })));
   });
 
-  it('adds a German tracked shipment as DHL and explains website-only tracking', async () => {
+  it('adds a German tracked shipment as DHL with automatic updates', async () => {
     const repo = createDemoRepo(window.localStorage);
     const add = vi.spyOn(repo, 'add');
     const user = userEvent.setup();
@@ -53,7 +53,7 @@ describe('App', () => {
     const sheet = screen.getByRole('dialog', { name: 'Add a parcel' });
     await user.type(within(sheet).getByLabelText('Tracking number or link'), 'LF123456785DE');
     expect(within(sheet).getByText('DHL', { exact: true })).toBeInTheDocument();
-    expect(within(sheet).getByText(/Automatic updates aren’t available for DHL yet/)).toBeInTheDocument();
+    expect(within(sheet).getByText('We’ll check DHL for updates automatically.')).toBeInTheDocument();
     expect(within(sheet).queryByText(/carrier is still unknown/)).not.toBeInTheDocument();
     await user.click(within(sheet).getByRole('button', { name: 'Add parcel' }));
     await waitFor(() => expect(add).toHaveBeenCalledWith(expect.objectContaining({

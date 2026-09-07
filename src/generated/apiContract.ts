@@ -287,12 +287,13 @@ export const CARRIER_CAPABILITIES = {
     "displayName": "DHL",
     "color": "#ffcc00",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Europe/Berlin",
     "tracking": {
-      "mode": "link-only",
-      "adapter": null
+      "mode": "automatic",
+      "adapter": "dhl"
     },
-    "trackingUrlTemplate": "https://www.dhl.com/ch-en/home/tracking.html?tracking-id={trackingNumber}",
+    "canaryUrl": "https://www.dhl.de/en/privatkunden/dhl-sendungsverfolgung.html",
+    "trackingUrlTemplate": "https://www.dhl.de/en/privatkunden/dhl-sendungsverfolgung.html?piececode={trackingNumber}",
     "linkRules": [
       {
         "domains": [

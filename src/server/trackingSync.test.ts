@@ -562,7 +562,7 @@ describe('TrackingSyncService', () => {
       adapter,
     );
 
-    await expect(service.syncPackage({ id: 'package-3', carrier: 'dhl' }))
+    await expect(service.syncPackage({ id: 'package-3', carrier: 'fedex' }))
       .resolves.toMatchObject({ unsupported: 1, checked: 1 });
     expect(adapter.fetch).not.toHaveBeenCalled();
     expect(client.updatePackage).toHaveBeenCalledWith('package-3', expect.objectContaining({

@@ -17,6 +17,7 @@ import { ColiswebTracker } from './colisweb';
 import { CChezVousTracker } from './cChezVous';
 import { CiblexTracker } from './ciblex';
 import { DachserTracker } from './dachser';
+import { DHLTracker } from './dhl';
 import { DPDFranceTracker } from './dpdFrance';
 import { DPDTracker } from './dpd';
 import { GeodisTracker } from './geodis';
@@ -80,6 +81,7 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     readonly paack = new PaackTracker(),
     readonly amazonLogistics = new AmazonLogisticsTracker(),
     readonly indiaPost = new IndiaPostTracker(),
+    readonly dhl = new DHLTracker(),
   ) {}
 
   async fetch(
@@ -103,6 +105,8 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
       result = await this.hermes.fetch(trackingNumber);
     } else if (adapter === 'ups') {
       result = await this.ups.fetch(trackingNumber);
+    } else if (adapter === 'dhl') {
+      result = await this.dhl.fetch(trackingNumber);
     } else if (adapter === 'la-poste') {
       result = await this.laPoste.fetch(trackingNumber);
     } else if (adapter === 'gls-france') {

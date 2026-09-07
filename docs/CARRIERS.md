@@ -5,6 +5,7 @@ Delivery Tracker can refresh these French, Swiss and international carriers auto
 | Carrier | Notes |
 | --- | --- |
 | Swiss Post | Automatic tracking through the pinned upstream adapter. A contracted business API is preferable for long-term production use. |
+| DHL / Deutsche Post | Automatic German parcel and tracked-mail updates through DHL's public tracking session, with the existing private TRAWL browser as a challenge fallback. |
 | Swiss Post Cargo | Automatic through the official anonymous public tracker. |
 | Quickpac | Automatic through Planzer's current tracking API. Existing Quickpac numbers keep their carrier label. |
 | Planzer | Automatic. Shared `999.90.########` shipments need the complete shared tracking URL. |
@@ -51,17 +52,33 @@ is respected when it fits the one-minute retry budget; longer delays and
 persistent failures remain visible as sync errors and in Sentry. Invalid
 tracking data and other HTTP errors are not retried.
 
-Asendia, DHL and FedEx parcels are saved with a direct carrier link. Asendia's
+Asendia and FedEx parcels are saved with a direct carrier link. Asendia's
 public flow requires a fresh Cloudflare Turnstile
-validation, while the supported DHL and FedEx tracking APIs require provider
+validation, while the supported FedEx tracking API requires provider
 credentials. ShipUp can be kept as a manual record.
 
 DHL detection includes checksum-valid German parcel and tracked-mail S10 numbers
 (`C…DE` and `L…DE`, including `LF…DE`) plus tracking links on `dhl.com`, `dhl.de`
 and `deutschepost.de`. Other postal ranges keep their existing carrier or generic
-postal fallback. DHL remains explicitly link-only; recognition does not enable
-automatic tracking. DHL documents its separate parcel and letter tracking entry
+postal fallback. DHL documents its separate parcel and letter tracking entry
 points in its [tracking help](https://www.dhl.de/en/privatkunden/hilfe-kundenservice/sendungsverfolgung/probleme-loesungen.html).
+
+The automatic DHL adapter establishes a cookie/CSRF session using the public
+`/int-verfolgen/data/config` endpoint, then reads `/search` with the same
+`verfolgen-CSRF-token` and `verfolgen-wg` headers as DHL's recipient app. Cookies
+stay in memory; an expired session gets one fresh HTTP attempt before TRAWL is
+used. Rate limits and server errors remain errors rather than triggering a
+browser attempt. DHL's official business API credentials are not needed for
+this public flow.
+
+Only status, timestamps, broad event locations and the delivery estimate are
+retained. Recipient/address/signature fields are discarded. The adapter checks
+the shipment identifier, orders events newest first, distinguishes electronic
+announcements from transit, and removes delivery estimates after completion.
+It covers the German parcel/postal tracking service, including `LF…DE`; another
+DHL division or a request for additional verification remains an explicit error
+with the tracking website available, rather than being mistaken for a parcel
+that has not yet been announced.
 
 Carrier names, adapter modes, tracking links, required inputs, timezones and
 detection rules are defined once in `contracts/openapi.json` under

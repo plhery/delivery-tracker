@@ -151,8 +151,8 @@ describe('detectCarrier', () => {
     expect(detectCarrier('lf 123.456-785 de')).toBe('dhl');
     expect(detectCarrier('LF123456789DE')).toBe('unknown');
     expect(detectCarrier('LF123456785US')).toBe('intl-post');
-    expect(tracksAutomatically('dhl')).toBe(false);
-    expect(carrierTrackingHintKey('dhl')).toBe('add.linkSync');
+    expect(tracksAutomatically('dhl')).toBe(true);
+    expect(carrierTrackingHintKey('dhl')).toBe('add.autoSync');
   });
 
   it('recognises Dutch postal numbers as PostNL / Spring GDS with a valid checksum', () => {
