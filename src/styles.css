@@ -4290,7 +4290,6 @@ body {
     display: none;
   }
 
-  .app__header-actions .language-control--header,
   .app__header-actions > .icon-button:not(.notification-button) {
     display: none;
   }

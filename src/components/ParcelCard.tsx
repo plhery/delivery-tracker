@@ -11,6 +11,7 @@ import {
 } from '../i18n';
 import {
   localizedParcelCompletionDate,
+  parcelDeliveryEstimate,
   parcelDisplayStatus,
   parcelDisplayStatusKey,
 } from '../lib/parcelStatus';
@@ -34,8 +35,9 @@ export function ParcelCard({
   const current = currentEvent(parcel.events);
   const status = parcelDisplayStatus(parcel);
   const final = current ? isFinal(current.stage) : false;
-  const expectedDelivery = parcel.expectedDelivery && !final
-    ? localizedExpectedDelivery(parcel.expectedDelivery, t, languageTag)
+  const estimate = parcelDeliveryEstimate(parcel);
+  const expectedDelivery = estimate
+    ? localizedExpectedDelivery(estimate, t, languageTag)
     : null;
   const statusLabel = t(parcelDisplayStatusKey(parcel));
   const completionDate = localizedParcelCompletionDate(parcel, languageTag);

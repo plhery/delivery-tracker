@@ -24,32 +24,31 @@ const STAGE_LABELS: Record<string, string> = {
 
 const PUSH_COPY: Record<string, Record<string, string>> = {
   en: {
-    test_title: 'Notifications are on',
-    test_body: 'Delivery Tracker will alert this iPhone when tracking changes.',
+    test_title: "Parcel alerts are on",
+    test_body: "You’ll receive the delivery updates you chose on this device. You can change them in Notification settings.",
     update: 'Parcel update',
     today: 'today',
     tomorrow: 'tomorrow',
     ...STAGE_LABELS,
-    body_update: 'There’s a new update on your package.',
-    body_pending: 'We’re waiting for the first update on your package.',
-    body_registered: 'Your shipment has been announced. We’ll keep you posted!',
-    body_accepted: 'The carrier has your package!',
-    body_in_transit: 'Your package is on its way!',
-    body_customs: 'Your package is going through customs.',
-    body_out_for_delivery: 'Your package is out for delivery!',
-    body_ready_for_pickup: 'Your package is ready to pick up!',
-    body_delivered: 'Your package has been delivered!',
-    body_failed_attempt: 'The carrier couldn’t deliver your package. Check the tracking details for next steps.',
-    body_returned: 'Your package is being returned to the sender.',
-    delivered_recent: 'Your package just got delivered at {{time}}!',
-    delivered_time: 'Your package was delivered at {{time}}!',
-    delivered_date: 'Your package was delivered on {{date}} at {{time}}.',
+    body_update: "There’s an update to your parcel. Open tracking for details.",
+    body_pending: "We’re waiting for the carrier’s first update.",
+    body_registered: "The sender has announced your parcel. We’re waiting for the carrier to receive it.",
+    body_accepted: "The carrier has received your parcel.",
+    body_in_transit: "Your parcel is on its way.",
+    body_customs: "Your parcel is going through customs. We’ll update you when it moves again.",
+    body_out_for_delivery: "Your parcel is out for delivery.",
+    body_ready_for_pickup: "Your parcel is ready to collect. Open tracking for pickup details.",
+    body_delivered: "Your parcel has been delivered.",
+    body_failed_attempt: "The carrier couldn’t deliver your parcel. Open tracking for the next steps.",
+    body_returned: "Your parcel is being returned to the sender. Contact the sender for the next steps.",
+    delivered_time: "Your parcel was delivered at {{time}}.",
+    delivered_date: "Your parcel was delivered on {{date}} at {{time}}.",
     eta: 'Expected {{date}}.',
     eta_changed: 'Delivery is now expected {{date}}.',
   },
   de: {
-    test_title: 'Benachrichtigungen sind aktiv',
-    test_body: 'Delivery Tracker meldet Änderungen an Sendungen auf diesem iPhone.',
+    test_title: "Paketmeldungen sind aktiv",
+    test_body: "Du erhältst die gewählten Liefermeldungen auf diesem Gerät. Du kannst sie in den Meldungseinstellungen ändern.",
     update: 'Paketaktualisierung',
     today: 'heute',
     tomorrow: 'morgen',
@@ -63,26 +62,25 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     delivered: 'Zugestellt',
     failed_attempt: 'Zustellversuch fehlgeschlagen',
     returned: 'Rücksendung an Absender',
-    body_update: 'Es gibt Neuigkeiten zu deinem Paket.',
-    body_pending: 'Wir warten auf die erste Meldung zu deinem Paket.',
-    body_registered: 'Deine Sendung wurde angekündigt. Wir halten dich auf dem Laufenden!',
-    body_accepted: 'Der Paketdienst hat dein Paket übernommen!',
-    body_in_transit: 'Dein Paket ist unterwegs!',
-    body_customs: 'Dein Paket wird beim Zoll bearbeitet.',
-    body_out_for_delivery: 'Dein Paket ist auf Zustelltour!',
-    body_ready_for_pickup: 'Dein Paket ist abholbereit!',
-    body_delivered: 'Dein Paket wurde zugestellt!',
-    body_failed_attempt: 'Dein Paket konnte nicht zugestellt werden. Die Sendungsdetails zeigen dir, wie es weitergeht.',
-    body_returned: 'Dein Paket wird an den Absender zurückgeschickt.',
-    delivered_recent: 'Dein Paket wurde gerade um {{time}} Uhr zugestellt!',
-    delivered_time: 'Dein Paket wurde um {{time}} Uhr zugestellt!',
-    delivered_date: 'Dein Paket wurde am {{date}} um {{time}} Uhr zugestellt.',
+    body_update: "Es gibt Neuigkeiten zu deinem Paket. Öffne das Tracking für die Details.",
+    body_pending: "Wir warten auf die erste Meldung des Paketdienstes.",
+    body_registered: "Der Absender hat dein Paket angekündigt. Wir warten auf die Übergabe an den Paketdienst.",
+    body_accepted: "Der Paketdienst hat dein Paket erhalten.",
+    body_in_transit: "Dein Paket ist unterwegs.",
+    body_customs: "Dein Paket wird beim Zoll bearbeitet. Wir melden uns, wenn es weitergeht.",
+    body_out_for_delivery: "Dein Paket ist auf Zustelltour.",
+    body_ready_for_pickup: "Dein Paket ist abholbereit. Öffne das Tracking für die Abholinformationen.",
+    body_delivered: "Dein Paket wurde zugestellt.",
+    body_failed_attempt: "Dein Paket konnte nicht zugestellt werden. Öffne das Tracking für die nächsten Schritte.",
+    body_returned: "Dein Paket geht an den Absender zurück. Frage dort nach den nächsten Schritten.",
+    delivered_time: "Dein Paket wurde um {{time}} Uhr zugestellt.",
+    delivered_date: "Dein Paket wurde am {{date}} um {{time}} Uhr zugestellt.",
     eta: 'Voraussichtliche Zustellung: {{date}}.',
     eta_changed: 'Neue voraussichtliche Zustellung: {{date}}.',
   },
   fr: {
-    test_title: 'Les notifications sont activées',
-    test_body: 'Delivery Tracker signalera les changements de suivi sur cet iPhone.',
+    test_title: "Les alertes colis sont activées",
+    test_body: "Vous recevrez les nouvelles choisies sur cet appareil. Vous pouvez les modifier dans les réglages des notifications.",
     update: 'Mise à jour du colis',
     today: 'aujourd’hui',
     tomorrow: 'demain',
@@ -96,26 +94,25 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     delivered: 'Livré',
     failed_attempt: 'Échec de la tentative de livraison',
     returned: 'Retour à l’expéditeur',
-    body_update: 'Il y a du nouveau pour votre colis.',
-    body_pending: 'Nous attendons les premières nouvelles de votre colis.',
-    body_registered: 'Votre envoi a été annoncé. Nous vous tiendrons au courant !',
-    body_accepted: 'Le transporteur a pris en charge votre colis !',
-    body_in_transit: 'Votre colis est en route !',
-    body_customs: 'Votre colis est en cours de dédouanement.',
-    body_out_for_delivery: 'Votre colis est en cours de livraison !',
-    body_ready_for_pickup: 'Votre colis est prêt à être retiré !',
-    body_delivered: 'Votre colis a été livré !',
-    body_failed_attempt: 'Le transporteur n’a pas pu livrer votre colis. Consultez le suivi pour connaître la suite.',
-    body_returned: 'Votre colis est en cours de retour à l’expéditeur.',
-    delivered_recent: 'Votre colis vient d’être livré à {{time}} !',
-    delivered_time: 'Votre colis a été livré à {{time}} !',
-    delivered_date: 'Votre colis a été livré le {{date}} à {{time}}.',
+    body_update: "Il y a du nouveau pour votre colis. Ouvrez le suivi pour les détails.",
+    body_pending: "Nous attendons les premières nouvelles du transporteur.",
+    body_registered: "L’expéditeur a annoncé votre colis. Nous attendons sa remise au transporteur.",
+    body_accepted: "Le transporteur a pris en charge votre colis.",
+    body_in_transit: "Votre colis est en route.",
+    body_customs: "Votre colis est en cours de dédouanement. Nous vous préviendrons lorsqu’il repartira.",
+    body_out_for_delivery: "Votre colis est en cours de livraison.",
+    body_ready_for_pickup: "Votre colis est prêt à être retiré. Ouvrez le suivi pour les détails du retrait.",
+    body_delivered: "Votre colis a été livré.",
+    body_failed_attempt: "Le transporteur n’a pas pu livrer votre colis. Ouvrez le suivi pour connaître la suite.",
+    body_returned: "Votre colis est retourné à l’expéditeur. Contactez-le pour connaître la suite.",
+    delivered_time: "Votre colis a été livré à {{time}}.",
+    delivered_date: "Votre colis a été livré le {{date}} à {{time}}.",
     eta: 'Livraison prévue : {{date}}.',
     eta_changed: 'Livraison désormais prévue : {{date}}.',
   },
   it: {
-    test_title: 'Le notifiche sono attive',
-    test_body: 'Delivery Tracker segnalerà le modifiche di tracciamento su questo iPhone.',
+    test_title: "Gli avvisi sui pacchi sono attivi",
+    test_body: "Riceverai gli aggiornamenti scelti su questo dispositivo. Puoi modificarli nelle impostazioni delle notifiche.",
     update: 'Aggiornamento del pacco',
     today: 'oggi',
     tomorrow: 'domani',
@@ -129,20 +126,19 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     delivered: 'Consegnato',
     failed_attempt: 'Tentativo di consegna non riuscito',
     returned: 'Restituzione al mittente',
-    body_update: 'Ci sono novità sul tuo pacco.',
-    body_pending: 'Aspettiamo il primo aggiornamento sul tuo pacco.',
-    body_registered: 'La tua spedizione è stata annunciata. Ti terremo aggiornato!',
-    body_accepted: 'Il corriere ha preso in carico il tuo pacco!',
-    body_in_transit: 'Il tuo pacco è in viaggio!',
-    body_customs: 'Il tuo pacco è in fase di sdoganamento.',
-    body_out_for_delivery: 'Il tuo pacco è in consegna!',
-    body_ready_for_pickup: 'Il tuo pacco è pronto per il ritiro!',
-    body_delivered: 'Il tuo pacco è stato consegnato!',
-    body_failed_attempt: 'Il corriere non è riuscito a consegnare il tuo pacco. Consulta il tracciamento per i prossimi passi.',
-    body_returned: 'Il tuo pacco sta tornando al mittente.',
-    delivered_recent: 'Il tuo pacco è appena stato consegnato alle {{time}}!',
-    delivered_time: 'Il tuo pacco è stato consegnato alle {{time}}!',
-    delivered_date: 'Il tuo pacco è stato consegnato il {{date}} alle {{time}}.',
+    body_update: "Ci sono novità sul pacco. Apri il tracciamento per i dettagli.",
+    body_pending: "Aspettiamo il primo aggiornamento del corriere.",
+    body_registered: "Il mittente ha annunciato il pacco. Attendiamo che venga affidato al corriere.",
+    body_accepted: "Il corriere ha preso in carico il tuo pacco.",
+    body_in_transit: "Il tuo pacco è in viaggio.",
+    body_customs: "Il tuo pacco è in fase di sdoganamento. Ti avviseremo quando ripartirà.",
+    body_out_for_delivery: "Il tuo pacco è in consegna.",
+    body_ready_for_pickup: "Il pacco è pronto per il ritiro. Apri il tracciamento per i dettagli.",
+    body_delivered: "Il tuo pacco è stato consegnato.",
+    body_failed_attempt: "Il corriere non è riuscito a consegnare il pacco. Apri il tracciamento per sapere come procedere.",
+    body_returned: "Il pacco sta tornando al mittente. Contattalo per sapere come procedere.",
+    delivered_time: "Il tuo pacco è stato consegnato alle {{time}}.",
+    delivered_date: "Il tuo pacco è stato consegnato il {{date}} alle {{time}}.",
     eta: 'Consegna prevista: {{date}}.',
     eta_changed: 'La consegna è ora prevista: {{date}}.',
   },
@@ -209,6 +205,7 @@ export function notificationExpectedDelivery(
   const formattedDay = (raw: string): string | null => {
     const expected = DateTime.fromISO(raw, { zone });
     if (!expected.isValid || !today.isValid) return null;
+    if (expected.startOf('day') < today.startOf('day')) return '';
     if (expected.toISODate() === today.toISODate()) return copy.today!;
     if (expected.toISODate() === today.plus({ days: 1 }).toISODate()) return copy.tomorrow!;
     return expected.setLocale(languageTag).toLocaleString(DateTime.DATE_SHORT);
@@ -219,10 +216,15 @@ export function notificationExpectedDelivery(
   );
   if (window) {
     const day = formattedDay(window[1]!);
-    if (!day) return cleaned;
+    if (!day) return '';
     return `${day}, ${window[2]}${window[3] ? `–${window[3]}` : ''}`;
   }
-  return formattedDay(cleaned) ?? cleaned;
+  const expected = DateTime.fromISO(cleaned, { zone });
+  if (expected.isValid && /T\d{2}:\d{2}/.test(cleaned)) {
+    const day = formattedDay(expected.toISODate()!);
+    return day ? `${day}, ${expected.toFormat('HH:mm')}` : '';
+  }
+  return formattedDay(cleaned) ?? '';
 }
 
 function deliveredMessage(
@@ -241,9 +243,7 @@ function deliveredMessage(
   if (!delivered.isValid || !current.isValid || delivered.toMillis() > now) return fallback;
 
   const sameDay = delivered.toISODate() === current.toISODate();
-  const recent = sameDay && now - delivered.toMillis() <= 15 * 60_000;
-  const template = recent ? copy.delivered_recent
-    : sameDay ? copy.delivered_time : copy.delivered_date;
+  const template = sameDay ? copy.delivered_time : copy.delivered_date;
   return template!
     .replace('{{time}}', delivered.toFormat('HH:mm'))
     .replace('{{date}}', delivered.setLocale(NOTIFICATION_LANGUAGE_TAGS[locale]!)
@@ -271,7 +271,7 @@ function notificationBody(
       stringField(row, 'timezone') || 'Europe/Zurich',
       now,
     );
-    if (expected) {
+    if (expected && !(stage === 'out_for_delivery' && expected === copy.today)) {
       const template = row.expected_delivery_changed === true ? copy.eta_changed : copy.eta;
       message += ` ${template!.replace('{{date}}', expected)}`;
     }
@@ -340,10 +340,12 @@ export class WebPushNotificationService {
   }
 
   async sendTest(subscription: JsonObject): Promise<void> {
+    const copy = PUSH_COPY[notificationLocale(subscription.locale)]!;
     await this.send(subscription, {
-      title: 'Notifications are on',
-      body: 'Delivery Tracker will alert this device when tracking changes.',
+      title: copy.test_title,
+      body: copy.test_body,
       tag: 'parcel-post-ready',
+      lang: notificationLocale(subscription.locale),
       data: { url: '/' },
     });
   }
@@ -371,14 +373,16 @@ export class WebPushNotificationService {
   }
 
   payload(row: JsonObject): JsonObject {
-    const copy = PUSH_COPY.en!;
+    const locale = notificationLocale(row.locale);
+    const copy = PUSH_COPY[locale]!;
     const packageId = stringField(row, 'package_id');
     return {
-      title: notificationText(row.label || 'Parcel update', 80),
-      body: notificationBody(row, copy, 'en', this.now()),
+      title: notificationText(row.label || copy.update, 80),
+      body: notificationBody(row, copy, locale, this.now()),
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',
       tag: `parcel-${packageId}`,
+      lang: locale,
       data: { url: `/?parcel=${packageId}` },
     };
   }
@@ -752,7 +756,9 @@ export class DeliveryLiveActivityNotificationService {
         label: notificationText(row.label || copy.update, 80),
         carrier: notificationText(carrierDisplayName(row.carrier), 80),
         status: notificationText(status, 80),
-        detail: notificationText(stage === 'out_for_delivery' && expected ? expected : status, 100),
+        // Older app versions already suppress a detail equal to the status.
+        detail: notificationText(stage === 'out_for_delivery' && expected && expected !== copy.today
+          ? expected : status, 100),
         phase,
       },
       languageCode: locale,

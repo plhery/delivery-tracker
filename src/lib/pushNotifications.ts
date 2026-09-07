@@ -1,4 +1,5 @@
 import { authenticatedFetch, type ApiAuth } from './apiClient';
+import type { Locale } from '../i18n';
 import type {
   ApiOkResponse,
   ApiNotificationPreferences,
@@ -112,6 +113,7 @@ export async function saveNotificationPreferences(
 export async function enablePushNotifications(
   publicKey: string,
   auth?: ApiAuth,
+  locale: Locale = 'en',
 ): Promise<boolean> {
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') throw new Error('Notifications were not allowed');
@@ -127,13 +129,24 @@ export async function enablePushNotifications(
   try {
     const result = await request<ApiPushSubscriptionResponse>('/api/push/subscriptions', auth, {
       method: 'POST',
-      body: JSON.stringify(subscription.toJSON()),
+      body: JSON.stringify({ ...subscription.toJSON(), locale }),
     });
     return result.testSent;
   } catch (error) {
     if (wasCreated) await subscription.unsubscribe();
     throw error;
   }
+}
+
+/** Update language without resetting the delivery cursor or sending a welcome alert. */
+export async function updatePushNotificationLocale(locale: Locale, auth: ApiAuth): Promise<void> {
+  if (!supported() || Notification.permission !== 'granted') return;
+  const registration = await navigator.serviceWorker.getRegistration();
+  const subscription = await registration?.pushManager.getSubscription();
+  if (!subscription) return;
+  await request<ApiOkResponse>('/api/push/subscriptions', auth, {
+    method: 'PATCH', body: JSON.stringify({ endpoint: subscription.endpoint, locale }),
+  });
 }
 
 export async function disablePushNotifications(auth?: ApiAuth): Promise<void> {

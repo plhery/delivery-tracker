@@ -7,7 +7,7 @@ import {
   requireUser,
 } from '../../../../src/server/api';
 import { pushServices } from '../../../../src/server/push';
-import { pushEndpoint, pushSubscription } from '../../../../src/server/validation';
+import { pushEndpoint, pushSubscription, pushSubscriptionLocale } from '../../../../src/server/validation';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -23,6 +23,7 @@ export const POST = apiRoute(async (context) => {
     values.p256dh,
     values.auth,
     context.request.headers.get('user-agent')?.slice(0, 300) || null,
+    values.locale,
   );
   let testSent = true;
   try {
@@ -31,6 +32,12 @@ export const POST = apiRoute(async (context) => {
     testSent = false;
   }
   return json({ ok: true, testSent }, 201);
+}, { serviceRequired: true });
+
+export const PATCH = apiRoute(async (context) => {
+  const values = pushSubscriptionLocale(await readJsonObject(context.request));
+  await requireService(context).updatePushSubscriptionLocale(requireUser(context).id, values.endpoint, values.locale);
+  return json({ ok: true });
 }, { serviceRequired: true });
 
 export const DELETE = apiRoute(async (context) => {

@@ -1,3 +1,4 @@
+import { userErrorMessage } from '../lib/userMessages';
 import { useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -119,7 +120,7 @@ export function AddParcelSheet({
         setError(t('add.alreadyExists'));
         setExistingParcelId(err.parcelId);
       } else {
-        setError(err instanceof Error ? err.message : t('add.failed'));
+        setError(userErrorMessage(err, t, 'add.failed'));
       }
       setSaving(false);
     }

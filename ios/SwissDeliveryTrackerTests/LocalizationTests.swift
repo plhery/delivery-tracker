@@ -72,7 +72,7 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
-    func testNativeWelcomeNamesFrenchAndSwissDeliveriesInEveryLanguage() throws {
+    func testNativeWelcomeExplainsCrossDeviceTrackingInEveryLanguage() throws {
         let dictionaries = try localizationDictionaries()
         let expected = [
             "en": "Track French and Swiss deliveries on the web and this iPhone.",
@@ -98,6 +98,15 @@ final class LocalizationTests: XCTestCase {
             localizer.errorMessage(AuthenticationError.oauthCancelled),
             "Die Anmeldung wurde abgebrochen."
         )
+    }
+
+    func testServerErrorsAndAppEventsFollowTheSelectedLanguage() {
+        let localizer = Localizer()
+        localizer.language = .fr
+        XCTAssertEqual(localizer.eventDescription("Tracking added"), "Ajouté à vos colis.")
+        XCTAssertEqual(localizer.eventDescription("Original carrier scan"), "Original carrier scan")
+        XCTAssertEqual(localizer.errorMessage(DeliveryAPIError.service("private SQL details")), localizer.text("error.generic"))
+        XCTAssertEqual(localizer.errorMessage(AuthenticationError.server("Token has expired or is invalid")), localizer.text("error.invalidCode"))
     }
 
     private func localizationDictionaries() throws -> [String: [String: String]] {

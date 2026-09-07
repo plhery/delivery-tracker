@@ -12,6 +12,7 @@ import { NotificationControl } from './NotificationControl';
 
 vi.mock('../lib/pushNotifications', () => ({
   inspectPushState: vi.fn(),
+  updatePushNotificationLocale: vi.fn().mockResolvedValue(undefined),
   enablePushNotifications: vi.fn(),
   disablePushNotifications: vi.fn(),
   getNotificationPreferences: vi.fn(),
@@ -57,8 +58,8 @@ describe('NotificationControl', () => {
     expect(await screen.findByText(/every 10 minutes from 08:00 to 22:00/i)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Enable notifications' }));
     expect(inspectPushState).toHaveBeenCalledWith(apiAuth);
-    expect(enablePushNotifications).toHaveBeenCalledWith('public', apiAuth);
-    expect(await screen.findByText('Updates will find you')).toBeInTheDocument();
+    expect(enablePushNotifications).toHaveBeenCalledWith('public', apiAuth, 'en');
+    expect(await screen.findByText("You’re set for parcel updates")).toBeInTheDocument();
   });
 
   it('turns alerts off for only this device', async () => {
@@ -71,7 +72,7 @@ describe('NotificationControl', () => {
     await user.click(await screen.findByRole('button', { name: 'Notifications enabled' }));
     await user.click(screen.getByRole('button', { name: /turn off on this device/i }));
     expect(disablePushNotifications).toHaveBeenCalled();
-    expect(await screen.findByText(/get parcel progress/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Know when your parcel needs you/i)).toBeInTheDocument();
   });
 
   it('gives iPhone installation guidance when Web Push is unavailable', async () => {

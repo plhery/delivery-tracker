@@ -1,3 +1,4 @@
+import { userErrorMessage } from '../lib/userMessages';
 import { useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -73,7 +74,7 @@ export function ChangeCarrierSheet({
       });
       onClose();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : t('detail.changeCarrierFailed'));
+      setError(userErrorMessage(reason, t, 'detail.changeCarrierFailed'));
       setSaving(false);
     }
   }

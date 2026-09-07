@@ -1,3 +1,4 @@
+import { userErrorMessage } from '../lib/userMessages';
 import { useEffect, useState, useRef, type FormEvent, type PointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -15,11 +16,12 @@ import {
 } from '../i18n';
 import {
   localizedParcelCompletionDate,
+  parcelDeliveryEstimate,
   parcelDisplayStatus,
   parcelDisplayStatusKey,
   parcelHasCarrierUpdate,
 } from '../lib/parcelStatus';
-import { currentEvent, isFinal } from '../lib/stages';
+import { currentEvent } from '../lib/stages';
 import { isBackSwipe, type TouchPoint } from '../lib/swipe';
 import { useModalDialog } from '../lib/modal';
 import type { ParcelCarrierInput, ParcelWithEvents, SyncProgress } from '../types';
@@ -58,9 +60,9 @@ export function ParcelDetail({
   const automaticTracking = tracksAutomatically(carrier.id);
   const current = currentEvent(parcel.events);
   const status = parcelDisplayStatus(parcel);
-  const final = current ? isFinal(current.stage) : false;
   const statusLabel = t(parcelDisplayStatusKey(parcel));
   const completionDate = localizedParcelCompletionDate(parcel, languageTag);
+  const estimate = parcelDeliveryEstimate(parcel);
   const trackingLinks = parcelTrackingLinks(parcel, locale);
   const lastChecked = parcel.lastSyncedAt
     ? localizedRelativeTime(parcel.lastSyncedAt, t, languageTag)
@@ -126,7 +128,7 @@ export function ParcelDetail({
       await onRename(parcel, nextTitle);
       setEditingTitle(false);
     } catch (error) {
-      setTitleError(error instanceof Error ? error.message : t('detail.renameFailed'));
+      setTitleError(userErrorMessage(error, t, 'detail.renameFailed'));
     } finally {
       setSavingTitle(false);
     }
@@ -142,7 +144,7 @@ export function ParcelDetail({
       setCheckNotice(t('sync.completed'));
     } catch (error) {
       setCheckNotice(null);
-      setCheckError(error instanceof Error ? error.message : t('detail.checkFailed'));
+      setCheckError(userErrorMessage(error, t, 'detail.checkFailed'));
     } finally {
       setChecking(false);
     }
@@ -155,7 +157,7 @@ export function ParcelDetail({
     try {
       await onRestore(parcel);
     } catch (error) {
-      setCheckError(error instanceof Error ? error.message : t('detail.restoreFailed'));
+      setCheckError(userErrorMessage(error, t, 'detail.restoreFailed'));
       setRestoring(false);
     }
   }
@@ -167,7 +169,7 @@ export function ParcelDetail({
     try {
       await onArchive(parcel);
     } catch (error) {
-      setCheckError(error instanceof Error ? error.message : t('detail.archiveFailed'));
+      setCheckError(userErrorMessage(error, t, 'detail.archiveFailed'));
       setArchiving(false);
     }
   }
@@ -179,7 +181,7 @@ export function ParcelDetail({
     try {
       await onDelete(parcel);
     } catch (error) {
-      setCheckError(error instanceof Error ? error.message : t('detail.deleteFailed'));
+      setCheckError(userErrorMessage(error, t, 'detail.deleteFailed'));
       setDeleting(false);
     }
   }
@@ -202,7 +204,7 @@ export function ParcelDetail({
       await onSetNotificationsMuted(parcel, !parcel.notificationsMuted);
     } catch (error) {
       setNotificationError(
-        error instanceof Error ? error.message : t('detail.notificationFailed'),
+        userErrorMessage(error, t, 'detail.notificationFailed'),
       );
     } finally {
       setSavingNotifications(false);
@@ -373,11 +375,11 @@ export function ParcelDetail({
             </button>
           </div>
         )}
-        {(completionDate || (parcel.expectedDelivery && !final)) && (
+        {(completionDate || estimate) && (
           <p className="detail__arrival">
             {completionDate
               ? t('parcel.onDate', { date: completionDate })
-              : localizedExpectedDelivery(parcel.expectedDelivery!, t, languageTag)}
+              : localizedExpectedDelivery(estimate!, t, languageTag)}
           </p>
         )}
         <div className="detail__shipment">
@@ -434,7 +436,7 @@ export function ParcelDetail({
           </div>
         )}
         {automaticTracking && parcel.syncError && (
-          <p className="detail__sync-error" role="status">{parcel.syncError}</p>
+          <p className="detail__sync-error" role="status">{t('detail.trackingUnavailable')}</p>
         )}
         <div className="detail__freshness">
           <div className="detail__freshness-times">

@@ -69,7 +69,10 @@ enum AppLanguage: String, CaseIterable, Identifiable, Codable, Hashable {
 @MainActor
 final class Localizer: ObservableObject {
     @Published var language: AppLanguage {
-        didSet { UserDefaults.standard.set(language.rawValue, forKey: Self.storageKey) }
+        didSet {
+            UserDefaults.standard.set(language.rawValue, forKey: Self.storageKey)
+            saveSharedLanguage()
+        }
     }
 
     private static let storageKey = "deliveryTrackerLocale"
@@ -77,9 +80,11 @@ final class Localizer: ObservableObject {
 
     init(bundle: Bundle = .main) {
         let saved = UserDefaults.standard.string(forKey: Self.storageKey)
-        let preferred = Locale.preferredLanguages.first?.prefix(2).lowercased()
+        let preferred = Locale.preferredLanguages.compactMap {
+            AppLanguage(rawValue: $0.split(separator: "-").first.map(String.init)?.lowercased() ?? "")
+        }.first
         language = AppLanguage(rawValue: saved ?? "")
-            ?? AppLanguage(rawValue: String(preferred ?? ""))
+            ?? preferred
             ?? .en
         if let url = bundle.url(forResource: "Localization", withExtension: "json"),
            let data = try? Data(contentsOf: url),
@@ -88,6 +93,12 @@ final class Localizer: ObservableObject {
         } else {
             dictionaries = ["en": [:]]
         }
+        saveSharedLanguage()
+    }
+
+    private func saveSharedLanguage() {
+        UserDefaults(suiteName: AppConfiguration.current.appGroupIdentifier)?
+            .set(language.rawValue, forKey: Self.storageKey)
     }
 
     func text(_ key: String, _ variables: [String: CustomStringConvertible] = [:]) -> String {
@@ -124,7 +135,7 @@ final class Localizer: ObservableObject {
             case .rateLimited:
                 return text("native.error.rateLimited")
             case .service(let message):
-                return message
+                return serviceErrorMessage(message)
             case .serviceFailed(let status):
                 return text("native.error.serviceFailed", ["status": status])
             }
@@ -146,10 +157,38 @@ final class Localizer: ObservableObject {
             case .sessionSaveFailed:
                 return text("native.auth.saveSession")
             case .server(let message):
-                return message
+                return serviceErrorMessage(message, fallback: "auth.verifyFailed")
             }
         }
-        return error.localizedDescription
+        if error is URLError { return text("error.connection") }
+        return text("error.generic")
+    }
+
+    private func serviceErrorMessage(_ message: String, fallback: String = "error.generic") -> String {
+        let value = message.lowercased()
+        let rules: [(String, String)] = [
+            ("rate.?limit|too many requests", "error.rateLimited"),
+            ("otp_expired|invalid.*(code|token)|(code|token).*expired", "error.invalidCode"),
+            ("email.*(invalid|valid)|invalid.*email", "error.invalidEmail"),
+            ("postcode|postal code", "error.postcode"),
+            ("tracking.*(url|link)|complete.*link", "error.trackingLink"),
+            ("tracking (number|input)|parcel number", "error.trackingNumber"),
+            ("80 characters|label.*long", "error.nameTooLong"),
+            ("package not found|parcel.*no longer", "native.parcelMissing"),
+        ]
+        for (pattern, key) in rules where value.range(of: pattern, options: .regularExpression) != nil {
+            return text(key)
+        }
+        return text(fallback)
+    }
+
+    func eventDescription(_ description: String) -> String {
+        let keys = [
+            "Tracking added": "event.added",
+            "Tracking added; the carrier has not announced it yet": "event.waiting",
+            "Carrier changed; waiting for tracking": "event.carrierChanged",
+        ]
+        return keys[description].map { text($0) } ?? description
     }
 
     func relativeTime(from value: String, now: Date = Date()) -> String {
@@ -186,6 +225,16 @@ final class Localizer: ObservableObject {
         }
 
         guard let date = DateParser.deliveryDate(value) else { return value }
+        if value.contains("T"), let timestamp = DateParser.date(value) {
+            let formatter = DateFormatter()
+            formatter.locale = language.locale
+            formatter.dateFormat = "HH:mm"
+            let dayFormatter = DateFormatter()
+            dayFormatter.calendar = Calendar(identifier: .gregorian)
+            dayFormatter.locale = Locale(identifier: "en_US_POSIX")
+            dayFormatter.dateFormat = "yyyy-MM-dd"
+            return "\(expectedDelivery(dayFormatter.string(from: timestamp), now: now)), \(formatter.string(from: timestamp))"
+        }
         let calendar = Calendar.current
         if calendar.isDate(date, inSameDayAs: now) { return text("time.today") }
         if let tomorrow = calendar.date(byAdding: .day, value: 1, to: now),
@@ -216,6 +265,19 @@ final class Localizer: ObservableObject {
         text(parcel.displayStatus.key)
     }
 
+    func parcelDeliveryEstimate(_ parcel: Parcel, now: Date = Date()) -> String? {
+        guard let value = parcel.expectedDelivery,
+              parcel.currentStage?.isFinal != true,
+              parcel.currentStage != .readyForPickup, parcel.currentStage != .failedAttempt,
+              let date = DateParser.deliveryDate(value) else { return nil }
+        let calendar = Calendar.current
+        guard calendar.startOfDay(for: date) >= calendar.startOfDay(for: now) else { return nil }
+        if parcel.currentStage == .outForDelivery,
+           calendar.isDate(date, inSameDayAs: now),
+           value.range(of: "[T ]\\d{2}:\\d{2}", options: .regularExpression) == nil { return nil }
+        return expectedDelivery(value, now: now)
+    }
+
     func parcelCompletionDate(_ parcel: Parcel) -> String? {
         if let event = parcel.currentEvent,
            event.stage.isFinal,
@@ -242,6 +304,7 @@ enum DateParser {
     }
 
     static func deliveryDate(_ value: String) -> Date? {
+        if let timestamp = date(value) { return timestamp }
         let day = String(value.prefix(10))
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)

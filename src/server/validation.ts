@@ -161,6 +161,7 @@ export function pushSubscription(payload: JsonObject): {
   endpoint: string;
   p256dh: string;
   auth: string;
+  locale?: NativePushLocale;
 } {
   const endpoint = pushEndpoint(payload.endpoint);
   if (typeof payload.keys !== 'object' || payload.keys === null || Array.isArray(payload.keys)) {
@@ -175,7 +176,12 @@ export function pushSubscription(payload: JsonObject): {
   if (publicKey.length !== 65 || publicKey[0] !== 4 || authSecret.length !== 16) {
     throw new HttpError(400, 'Send valid push encryption keys');
   }
-  return { endpoint, p256dh: keys.p256dh, auth: keys.auth };
+  return { endpoint, p256dh: keys.p256dh, auth: keys.auth,
+    ...(payload.locale == null ? {} : { locale: nativePushLocale(payload.locale) }) };
+}
+
+export function pushSubscriptionLocale(payload: JsonObject): { endpoint: string; locale: NativePushLocale } {
+  return { endpoint: pushEndpoint(payload.endpoint), locale: nativePushLocale(payload.locale) };
 }
 
 export interface NativePushDeviceValues {
@@ -210,7 +216,7 @@ function nativePushEnvironment(value: unknown): NativePushEnvironment {
 }
 
 function nativePushLocale(value: unknown): NativePushLocale {
-  if (!['en', 'de', 'fr', 'it'].includes(String(value))) {
+  if (typeof value !== 'string' || !['en', 'de', 'fr', 'it'].includes(value)) {
     throw new HttpError(400, 'Choose a supported notification locale');
   }
   return value as NativePushLocale;

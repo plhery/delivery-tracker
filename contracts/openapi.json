@@ -1558,6 +1558,34 @@
             "$ref": "#/components/responses/ApiError"
           }
         }
+      },
+      "patch": {
+        "operationId": "updatePushSubscriptionLocale",
+        "tags": [
+          "Notifications"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePushSubscriptionLocaleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Language updated for the signed-in account’s active subscription",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/push/devices": {
@@ -2424,6 +2452,9 @@
           },
           "keys": {
             "$ref": "#/components/schemas/PushSubscriptionKeys"
+          },
+          "locale": {
+            "$ref": "#/components/schemas/NativePushLocale"
           }
         }
       },
@@ -2751,6 +2782,25 @@
         "properties": {
           "ok": {
             "type": "boolean"
+          }
+        }
+      },
+      "UpdatePushSubscriptionLocaleRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "endpoint",
+          "locale"
+        ],
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https://",
+            "maxLength": 4096
+          },
+          "locale": {
+            "$ref": "#/components/schemas/NativePushLocale"
           }
         }
       }

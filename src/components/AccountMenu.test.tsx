@@ -32,7 +32,7 @@ describe('AccountMenu', () => {
     await user.click(screen.getByLabelText('Account options for owner@example.test'));
     await user.click(screen.getByRole('button', { name: 'Sign out' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Network unavailable');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Check your internet connection and try again.');
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeEnabled();
   });
 

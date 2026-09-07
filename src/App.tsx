@@ -1,3 +1,4 @@
+import { userErrorMessage } from './lib/userMessages';
 import { useEffect, useMemo, useState } from 'react';
 import { AddParcelSheet } from './components/AddParcelSheet';
 import { AccountMenu } from './components/AccountMenu';
@@ -30,7 +31,7 @@ import {
   readSharedParcelInput,
   type SharedParcelInput,
 } from './lib/shareTarget';
-import { parcelDisplayStatusKey } from './lib/parcelStatus';
+import { parcelDeliveryEstimate, parcelDisplayStatusKey } from './lib/parcelStatus';
 import { currentStage, isDelivered } from './lib/stages';
 import { useParcels } from './store/ParcelsContext';
 import type { CarrierId, ParcelWithEvents } from './types';
@@ -219,6 +220,7 @@ export default function App({
     () => nextPriorityParcel(parcels, viewNow),
     [parcels, viewNow],
   );
+  const nextEstimate = nextParcel ? parcelDeliveryEstimate(nextParcel, viewNow) : null;
   const activeCount = useMemo(
     () => parcels.filter(isActiveParcel).length,
     [parcels],
@@ -288,7 +290,7 @@ export default function App({
     try {
       await handleRestore(undoParcel);
     } catch (reason) {
-      setUndoError(reason instanceof Error ? reason.message : t('detail.restoreFailed'));
+      setUndoError(userErrorMessage(reason, t, 'detail.restoreFailed'));
     } finally {
       setUndoing(false);
     }
@@ -389,8 +391,8 @@ export default function App({
                 <span>{t('app.nextUp')}</span>
                 <strong>{nextParcel.label || t('common.parcel')}</strong>
                 <small>
-                  {nextParcel.expectedDelivery
-                    ? localizedExpectedDelivery(nextParcel.expectedDelivery, t, languageTag)
+                  {nextEstimate
+                    ? localizedExpectedDelivery(nextEstimate, t, languageTag)
                     : t(parcelDisplayStatusKey(nextParcel))}
                 </small>
               </span>
@@ -425,7 +427,7 @@ export default function App({
             <strong>
               {authenticationRequired ? t('app.signInNeeded') : t('app.trackingBreak')}
             </strong>
-            <span>{error}</span>
+            {!authenticationRequired && <span>{userErrorMessage(new Error(error), t, 'app.loadFailed')}</span>}
             {usingCachedData && <span>{t('app.cachedData')}</span>}
             {authenticationRequired && (
               // Reloading clears the expired client session before authentication restarts.

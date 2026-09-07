@@ -1,3 +1,4 @@
+import { userErrorMessage } from '../lib/userMessages';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -9,6 +10,7 @@ import {
   IMPORTANT_NOTIFICATION_STAGES,
   inspectPushState,
   saveNotificationPreferences,
+  updatePushNotificationLocale,
   type NotificationPreferences,
   type NotificationStage,
   type PushState,
@@ -26,7 +28,7 @@ const PRESET_STAGES: Record<EventPreset, NotificationStage[]> = {
 };
 
 export function NotificationControl({ apiAuth }: { apiAuth?: ApiAuth }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<PushState | null>(null);
   const [busy, setBusy] = useState(false);
@@ -40,11 +42,22 @@ export function NotificationControl({ apiAuth }: { apiAuth?: ApiAuth }) {
   const [preferencesNotice, setPreferencesNotice] = useState<string | null>(null);
   const enabled = state?.kind === 'enabled';
   const closeButton = useRef<HTMLButtonElement>(null);
+  const languageUpdate = useRef(Promise.resolve());
   const dialog = useModalDialog<HTMLElement>(open, () => setOpen(false), closeButton);
 
   useEffect(() => {
+    if (!apiAuth || !enabled) return;
+    let cancelled = false;
+    // Serialize changes so a slow request cannot restore an older language.
+    languageUpdate.current = languageUpdate.current.catch(() => undefined).then(async () => {
+      if (!cancelled) await updatePushNotificationLocale(locale, apiAuth);
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [apiAuth, enabled, locale]);
+
+  useEffect(() => {
     void inspectPushState(apiAuth).then(setState).catch((reason: unknown) => {
-      setError(reason instanceof Error ? reason.message : t('notifications.error.unavailable'));
+      setError(userErrorMessage(reason, t, 'notifications.error.unavailable'));
     });
   }, [apiAuth, t]);
 
@@ -57,7 +70,7 @@ export function NotificationControl({ apiAuth }: { apiAuth?: ApiAuth }) {
       setQuietStart(next.quietHoursStart ?? '22:00');
       setQuietEnd(next.quietHoursEnd ?? '08:00');
     }).catch((reason: unknown) => {
-      setError(reason instanceof Error ? reason.message : t('notifications.error.preferences'));
+      setError(userErrorMessage(reason, t, 'notifications.error.preferences'));
     });
   }, [apiAuth, t]);
 
@@ -66,11 +79,11 @@ export function NotificationControl({ apiAuth }: { apiAuth?: ApiAuth }) {
     setBusy(true);
     setError(null);
     try {
-      const testSent = await enablePushNotifications(state.publicKey, apiAuth);
+      const testSent = await enablePushNotifications(state.publicKey, apiAuth, locale);
       setState({ kind: 'enabled', publicKey: state.publicKey });
       if (!testSent) setError(t('notifications.error.welcome'));
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : t('notifications.error.enable'));
+      setError(userErrorMessage(reason, t, 'notifications.error.enable'));
       setState(await inspectPushState(apiAuth));
     } finally {
       setBusy(false);
@@ -85,7 +98,7 @@ export function NotificationControl({ apiAuth }: { apiAuth?: ApiAuth }) {
       const next = await inspectPushState(apiAuth);
       setState(next.kind === 'enabled' ? { kind: 'prompt', publicKey: next.publicKey } : next);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : t('notifications.error.disable'));
+      setError(userErrorMessage(reason, t, 'notifications.error.disable'));
     } finally {
       setBusy(false);
     }
@@ -109,7 +122,7 @@ export function NotificationControl({ apiAuth }: { apiAuth?: ApiAuth }) {
       setPreferences(saved);
       setPreferencesNotice(t('notifications.saved'));
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : t('notifications.error.save'));
+      setError(userErrorMessage(reason, t, 'notifications.error.save'));
     } finally {
       setPreferencesBusy(false);
     }

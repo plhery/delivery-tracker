@@ -526,12 +526,13 @@ private struct ExperimentalNextDeliveryPass: View {
                     .textCase(.uppercase)
                     .tracking(0.6)
                     .foregroundStyle(.secondary)
-                Text(parcel.expectedDelivery.map { localizer.expectedDelivery($0) }
-                    ?? localizer.parcelStatus(parcel))
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
-                    .contentTransition(.numericText())
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.76)
+                if let date = localizer.parcelCompletionDate(parcel) ?? localizer.parcelDeliveryEstimate(parcel) {
+                    Text(date)
+                        .font(.system(size: 30, weight: .bold, design: .rounded))
+                        .contentTransition(.numericText())
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.76)
+                }
                 Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
                     .font(.headline.weight(.semibold))
                     .lineLimit(2)
@@ -607,10 +608,10 @@ private struct ExperimentalParcelPassCard: View {
 
                 HStack(spacing: 6) {
                     Text(catalog.info(for: parcel.activeTrackingCarrier).displayName)
-                    if let expected = parcel.expectedDelivery, parcel.currentStage?.isFinal != true {
+                    if let expected = localizer.parcelDeliveryEstimate(parcel) {
                         Text("·")
                             .foregroundStyle(.tertiary)
-                        Text(localizer.expectedDelivery(expected))
+                        Text(expected)
                     } else if let completed = localizer.parcelCompletionDate(parcel) {
                         Text("·")
                             .foregroundStyle(.tertiary)

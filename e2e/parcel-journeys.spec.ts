@@ -70,7 +70,7 @@ test('adds a parcel from tracking text', async ({ page }) => {
   const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
   await sheet.getByLabel("What's inside?").fill('Fondue set');
   await sheet.getByLabel('Tracking number or link').fill('Track 99.34.111111.22222222');
-  await expect(sheet.getByText('Swiss Post will sync automatically.')).toBeVisible();
+  await expect(sheet.getByText('We’ll check Swiss Post for updates automatically.')).toBeVisible();
   await sheet.getByRole('button', { name: 'Add parcel' }).click();
 
   await expect(page.getByText('Fondue set')).toBeVisible();
@@ -128,4 +128,23 @@ test('navigates nested carrier dialogs entirely by keyboard', async ({ page }) =
   await page.keyboard.press('Escape');
   await expect(detail).toBeHidden();
   await expect(parcel).toBeFocused();
+});
+
+test('keeps translated add-parcel guidance readable in every app language', async ({ page }) => {
+  for (const [locale, action, title, cancel, hint] of [
+    ['en', 'Add a parcel', 'Add a parcel', 'Cancel', 'We’ll check Swiss Post for updates automatically.'],
+    ['de', 'Ein Paket hinzufügen', 'Paket hinzufügen', 'Abbrechen', 'Wir fragen Aktualisierungen bei Swiss Post automatisch ab.'],
+    ['fr', 'Ajouter un colis', 'Ajouter un colis', 'Annuler', 'Nous consulterons automatiquement le suivi de Swiss Post.'],
+    ['it', 'Aggiungi un pacco', 'Aggiungi un pacco', 'Annulla', 'Controlleremo automaticamente gli aggiornamenti di Swiss Post.'],
+  ]) {
+    await page.locator('.language-control select').selectOption(locale);
+    await expect(page.locator('html')).toHaveAttribute('lang', locale);
+    await page.getByRole('button', { name: action, exact: true }).click();
+    const sheet = page.getByRole('dialog', { name: title });
+    await sheet.locator('#add-parcel-tracking').fill('99.34.111111.22222222');
+    await expect(sheet.getByText(hint)).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await sheet.getByRole('button', { name: cancel, exact: true }).click();
+    expect(await page.evaluate(() => localStorage.getItem('deliveryTrackerLocale'))).toBe(locale);
+  }
 });

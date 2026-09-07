@@ -19,9 +19,19 @@ self.addEventListener('push', (event) => {
   const text = (value, fallback, limit) => (
     typeof value === 'string' && value.trim() ? value.trim().slice(0, limit) : fallback
   );
-  const title = text(payload.title, 'Parcel update', 120);
+  const fallbackCopy = {
+    en: ['Parcel update', 'Open tracking for the latest news about your parcel.'],
+    de: ['Paketaktualisierung', 'Öffne die Sendungsverfolgung für die neuesten Meldungen zu deinem Paket.'],
+    fr: ['Mise à jour du colis', 'Ouvrez le suivi pour connaître les dernières nouvelles de votre colis.'],
+    it: ['Aggiornamento sul pacco', 'Apri il tracciamento per le ultime notizie sul tuo pacco.'],
+  };
+  const requestedLanguage = String(payload.lang || self.navigator?.language || 'en').split(/[-_]/)[0].toLowerCase();
+  const lang = Object.hasOwn(fallbackCopy, requestedLanguage) ? requestedLanguage : 'en';
+  const [fallbackTitle, fallbackBody] = fallbackCopy[lang];
+  const title = text(payload.title, fallbackTitle, 120);
   const options = {
-    body: text(payload.body, 'A delivery has new tracking information.', 500),
+    body: text(payload.body, fallbackBody, 500),
+    lang,
     icon: text(payload.icon, '/icons/icon-192.png', 2_048),
     badge: text(payload.badge, '/icons/icon-192.png', 2_048),
     tag: text(payload.tag, 'parcel-update', 120),

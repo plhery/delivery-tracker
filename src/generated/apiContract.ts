@@ -1209,6 +1209,7 @@ export interface ApiPushSubscriptionKeys {
 export interface ApiPushSubscriptionRequest {
   "endpoint": string;
   "keys": ApiPushSubscriptionKeys;
+  "locale"?: ApiNativePushLocale;
 }
 
 export interface ApiDeletePushSubscriptionRequest {
@@ -1293,4 +1294,9 @@ export interface ApiSyncSummary {
 
 export interface ApiHealthResponse {
   "ok": boolean;
+}
+
+export interface ApiUpdatePushSubscriptionLocaleRequest {
+  "endpoint": string;
+  "locale": ApiNativePushLocale;
 }

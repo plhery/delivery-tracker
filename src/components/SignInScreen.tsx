@@ -1,3 +1,4 @@
+import { userErrorMessage } from '../lib/userMessages';
 import { useState, type FormEvent } from 'react';
 import { LanguageControl, useI18n } from '../i18n';
 
@@ -32,7 +33,7 @@ export function SignInScreen({
     try {
       await signInWithGoogle();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : t('auth.googleFailed'));
+      setError(userErrorMessage(reason, t, 'auth.googleFailed'));
       setWorking(null);
     }
   }
@@ -46,7 +47,7 @@ export function SignInScreen({
       await sendCode(email.trim().toLowerCase());
       setCodeSent(true);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : t('auth.sendFailed'));
+      setError(userErrorMessage(reason, t, 'auth.sendFailed'));
     } finally {
       setWorking(null);
     }
@@ -60,7 +61,7 @@ export function SignInScreen({
     try {
       await verifyCode(email.trim().toLowerCase(), code.replace(/\s/g, ''));
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : t('auth.verifyFailed'));
+      setError(userErrorMessage(reason, t, 'auth.verifyFailed'));
     } finally {
       setWorking(null);
     }

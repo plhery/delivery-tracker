@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   decodePublicKey,
+  updatePushNotificationLocale,
   disablePushNotifications,
   enableAppBadgeClearing,
   enablePushNotifications,
@@ -222,5 +223,32 @@ describe('push subscription lifecycle', () => {
     getRegistration.mockResolvedValueOnce(undefined);
     await expect(unsubscribePushNotificationsLocally()).resolves.toBeUndefined();
     expect(getSubscription).not.toHaveBeenCalled();
+  });
+});
+
+describe('browser notification language', () => {
+  it('registers the selected language with a new subscription', async () => {
+    subscribe.mockResolvedValue({ toJSON: () => ({ endpoint: 'https://push.example/token', keys: { p256dh: 'p', auth: 'a' } }) });
+    await enablePushNotifications('AQID', undefined, 'fr');
+    const options = vi.mocked(fetch).mock.calls[0][1]!;
+    expect(JSON.parse(String(options.body))).toMatchObject({ locale: 'fr' });
+  });
+
+  it('updates an existing device language without subscribing again or asking for permission', async () => {
+    vi.stubGlobal('Notification', { permission: 'granted', requestPermission: vi.fn() });
+    getSubscription.mockResolvedValue({ endpoint: 'https://push.example/token' });
+    const auth = { userId: 'user-1', getAccessToken: vi.fn().mockResolvedValue('token') };
+    await updatePushNotificationLocale('it', auth);
+    expect(fetch).toHaveBeenCalledWith('/api/push/subscriptions', expect.objectContaining({
+      method: 'PATCH', body: JSON.stringify({ endpoint: 'https://push.example/token', locale: 'it' }),
+    }));
+    expect(subscribe).not.toHaveBeenCalled();
+    expect(Notification.requestPermission).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when alerts are off', async () => {
+    await updatePushNotificationLocale('de', { userId: 'user-1', getAccessToken: vi.fn() });
+    expect(fetch).not.toHaveBeenCalled();
+    expect(subscribe).not.toHaveBeenCalled();
   });
 });

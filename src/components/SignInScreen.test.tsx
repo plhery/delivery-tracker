@@ -29,7 +29,7 @@ describe('SignInScreen', () => {
     const code = screen.getByLabelText('Sign-in code');
     expect(code).toHaveAttribute('autocomplete', 'one-time-code');
     await user.type(code, '12a 3456');
-    await user.click(screen.getByRole('button', { name: 'Open my delivery box' }));
+    await user.click(screen.getByRole('button', { name: "View my parcels" }));
     expect(verifyCode).toHaveBeenCalledWith('owner@example.test', '123456');
   });
 
@@ -41,7 +41,7 @@ describe('SignInScreen', () => {
     );
     await user.type(screen.getByLabelText('Email address'), 'owner@example.test');
     await user.click(screen.getByRole('button', { name: 'Email me a code' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Email rate limit reached');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Please wait a moment before trying again.');
   });
 
   it('supports Google-only production sign-in', async () => {

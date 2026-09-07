@@ -418,6 +418,31 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertEqual(archived?.parcels.map(\.id), [newerID, olderID])
     }
 
+    @MainActor
+    func testEstimatesKeepUsefulWindowsAndHideObsoleteOrRedundantDates() {
+        let id = UUID()
+        let now = DateParser.date("2026-09-07T12:00:00Z")!
+        let localizer = Localizer()
+        localizer.language = .fr
+        for stage in [TrackingStage.delivered, .returned, .failedAttempt, .readyForPickup] {
+            var parcel = makeParcel(id: id, events: [event(id, stage, "2026-09-07T10:00:00Z")])
+            parcel.expectedDelivery = "2026-09-07"
+            XCTAssertNil(localizer.parcelDeliveryEstimate(parcel, now: now))
+        }
+        var parcel = makeParcel(id: id, events: [event(id, .outForDelivery, "2026-09-07T10:00:00Z")])
+        parcel.expectedDelivery = "2026-09-07"
+        XCTAssertNil(localizer.parcelDeliveryEstimate(parcel, now: now))
+        parcel.expectedDelivery = "2026-09-07 14:00–16:00"
+        XCTAssertEqual(localizer.parcelDeliveryEstimate(parcel, now: now), "aujourd’hui, 14:00–16:00")
+        parcel.expectedDelivery = "2026-09-07T12:30:00Z"
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        let time = formatter.string(from: DateParser.date(parcel.expectedDelivery!)!)
+        XCTAssertEqual(localizer.parcelDeliveryEstimate(parcel, now: now), "aujourd’hui, \(time)")
+        parcel.expectedDelivery = "2026-09-06"
+        XCTAssertNil(localizer.parcelDeliveryEstimate(parcel, now: now))
+    }
+
     private func makeParcel(
         id: UUID = UUID(),
         trackingNumber: String = "1Z999AA10123456784",

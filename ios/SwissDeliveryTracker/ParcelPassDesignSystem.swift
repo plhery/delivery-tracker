@@ -164,7 +164,7 @@ struct ExperimentalParcelStatistics: Equatable {
 struct ExperimentalCopy {
     let language: AppLanguage
 
-    var passport: String { value(en: "Passport", de: "Pass", fr: "Passeport", it: "Passaporto") }
+    var passport: String { value(en: "History", de: "Verlauf", fr: "Historique", it: "Cronologia") }
     var yearInMotion: String {
         value(en: "Delivery history", de: "Lieferverlauf", fr: "Historique des livraisons", it: "Cronologia delle consegne")
     }
@@ -188,12 +188,12 @@ struct ExperimentalCopy {
     var fullJourney: String { value(en: "Show full journey", de: "Ganze Reise zeigen", fr: "Afficher tout le trajet", it: "Mostra tutto il viaggio") }
     var lessJourney: String { value(en: "Show less", de: "Weniger zeigen", fr: "Afficher moins", it: "Mostra meno") }
     var shipmentDetails: String { value(en: "Shipment details", de: "Sendungsdetails", fr: "Détails de l’envoi", it: "Dettagli della spedizione") }
-    var smartCapture: String { value(en: "Smart capture", de: "Schnellerfassung", fr: "Capture intelligente", it: "Acquisizione smart") }
+    var smartCapture: String { value(en: "Tracking details", de: "Sendungsangaben", fr: "Informations de suivi", it: "Dati di tracciamento") }
     var scanOrEnter: String {
-        value(en: "Paste anything from a shipping message. We’ll find the useful part.", de: "Füge etwas aus einer Versandnachricht ein. Wir finden den nützlichen Teil.", fr: "Collez un extrait d’un message d’expédition. Nous trouverons l’essentiel.", it: "Incolla un testo da un messaggio di spedizione. Troveremo la parte utile.")
+        value(en: "Paste the tracking number or link from your shipping message.", de: "Füge die Sendungsnummer oder den Link aus deiner Versandnachricht ein.", fr: "Collez le numéro ou le lien de suivi de votre message d’expédition.", it: "Incolla il numero o il link di tracciamento del messaggio di spedizione.")
     }
     var quickAddIntro: String {
-        value(en: "Name it, drop in the tracking number, done.", de: "Benennen, Sendungsnummer einfügen, fertig.", fr: "Nommez-le, ajoutez le numéro de suivi, c’est fait.", it: "Dagli un nome, inserisci il numero, fatto.")
+        value(en: "Add a tracking number or link. Give your parcel a name if you like.", de: "Füge eine Sendungsnummer oder einen Link hinzu. Du kannst dem Paket auch einen Namen geben.", fr: "Ajoutez un numéro ou un lien de suivi. Donnez un nom au colis si vous le souhaitez.", it: "Aggiungi un numero o un link di tracciamento. Se vuoi, dai un nome al pacco.")
     }
     var parcelTitle: String { value(en: "Title", de: "Titel", fr: "Titre", it: "Titolo") }
     var trackingReady: String {

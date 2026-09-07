@@ -9,6 +9,23 @@ export interface ParcelDisplayStatus {
   syncing: boolean;
 }
 
+/** Show estimates only when they still help explain what happens next. */
+export function parcelDeliveryEstimate(parcel: ParcelWithEvents, now = Date.now()): string | null {
+  const value = parcel.expectedDelivery;
+  const stage = currentEvent(parcel.events)?.stage;
+  if (!value || (stage && ['delivered', 'returned', 'ready_for_pickup', 'failed_attempt'].includes(stage))) return null;
+  const match = /^(\d{4}-\d{2}-\d{2})/.exec(value);
+  if (!match) return null;
+  const day = /T\d{2}:\d{2}/.test(value) && !Number.isNaN(Date.parse(value))
+    ? new Date(value) : new Date(`${match[1]}T00:00:00`);
+  day.setHours(0, 0, 0, 0);
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  if (!Number.isFinite(day.getTime()) || day < today) return null;
+  if (stage === 'out_for_delivery' && day.getTime() === today.getTime() && !/[T ]\d{2}:\d{2}/.test(value)) return null;
+  return value;
+}
+
 export function parcelHasCarrierUpdate(parcel: ParcelWithEvents): boolean {
   const current = currentEvent(parcel.events);
   return Boolean(current && current.stage !== 'pending');
@@ -24,29 +41,29 @@ export function parcelDisplayStatus(parcel: ParcelWithEvents): ParcelDisplayStat
   const hasCarrierUpdate = parcelHasCarrierUpdate(parcel);
 
   if (!hasCarrierUpdate && !tracksAutomatically(activeTrackingCarrierId(parcel))) {
-    return { label: 'Automatic sync unavailable', tone: 'warn', syncing: false };
+    return { label: 'Check on carrier website', tone: 'warn', syncing: false };
   }
 
   if (!hasCarrierUpdate && (parcel.syncStatus === 'pending' || parcel.syncStatus === 'syncing')) {
-    return { label: 'Sync in progress', tone: 'ok', syncing: true };
+    return { label: 'Checking for updates', tone: 'ok', syncing: true };
   }
   if (!hasCarrierUpdate && parcel.syncStatus === 'error') {
-    return { label: 'Sync failed', tone: 'warn', syncing: false };
+    return { label: 'Update unavailable', tone: 'warn', syncing: false };
   }
   if (!hasCarrierUpdate && parcel.syncStatus === 'unsupported') {
     return {
-      label: 'Automatic sync unavailable',
+      label: 'Check on carrier website',
       tone: 'warn',
       syncing: false,
     };
   }
   if (!hasCarrierUpdate && parcel.syncStatus === 'waiting') {
-    return { label: 'Not announced yet', tone: 'ok', syncing: false };
+    return { label: 'Waiting for the carrier', tone: 'ok', syncing: false };
   }
 
   const meta = current ? stageMeta(current.stage) : null;
   return {
-    label: meta?.label ?? 'Not announced yet',
+    label: meta?.label ?? 'Waiting for the carrier',
     tone: meta?.tone ?? 'ok',
     syncing: false,
   };

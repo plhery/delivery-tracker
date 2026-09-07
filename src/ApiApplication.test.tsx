@@ -90,7 +90,7 @@ describe('ApiApplication', () => {
   it('renders loading and both sign-in configuration states', () => {
     mocks.auth.status = 'loading';
     const result = render(<ApiApplication />);
-    expect(screen.getByRole('status')).toHaveTextContent('Opening your secure delivery box');
+    expect(screen.getByRole('status')).toHaveTextContent('Opening your parcels…');
 
     mocks.auth.status = 'unconfigured';
     result.rerender(<ApiApplication />);

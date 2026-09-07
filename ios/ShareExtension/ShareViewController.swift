@@ -153,38 +153,41 @@ private enum ShareCopy {
             "reading": "Reading the shared tracking information…",
             "open": "Open Delivery Tracker",
             "cancel": "Cancel",
-            "notFound": "No tracking number, text, or link was found.",
-            "ready": "Ready. The app will detect the carrier and tracking number for you.",
+            "notFound": "Share a tracking number or link, or paste it directly in the app.",
+            "ready": "Open the app to review the tracking details and add your parcel.",
         ],
         "de": [
             "title": "Zu Delivery Tracker hinzufügen",
             "reading": "Geteilte Sendungsinformationen werden gelesen…",
             "open": "Delivery Tracker öffnen",
             "cancel": "Abbrechen",
-            "notFound": "Keine Sendungsnummer, kein Text und kein Link gefunden.",
-            "ready": "Bereit. Die App erkennt den Anbieter und die Sendungsnummer automatisch.",
+            "notFound": "Teile eine Sendungsnummer oder einen Link oder füge sie direkt in der App ein.",
+            "ready": "Öffne die App, um die Sendungsangaben zu prüfen und dein Paket hinzuzufügen.",
         ],
         "fr": [
             "title": "Ajouter à Delivery Tracker",
             "reading": "Lecture des informations de suivi partagées…",
             "open": "Ouvrir Delivery Tracker",
             "cancel": "Annuler",
-            "notFound": "Aucun numéro de suivi, texte ou lien n’a été trouvé.",
-            "ready": "Prêt. L’app détectera automatiquement le transporteur et le numéro de suivi.",
+            "notFound": "Partagez un numéro ou un lien de suivi, ou collez-le directement dans l’app.",
+            "ready": "Ouvrez l’app pour vérifier le suivi et ajouter votre colis.",
         ],
         "it": [
             "title": "Aggiungi a Delivery Tracker",
             "reading": "Lettura delle informazioni di tracciamento condivise…",
             "open": "Apri Delivery Tracker",
             "cancel": "Annulla",
-            "notFound": "Non è stato trovato alcun numero di tracciamento, testo o link.",
-            "ready": "Pronto. L’app rileverà automaticamente il corriere e il numero di tracciamento.",
+            "notFound": "Condividi un numero o un link di tracciamento, oppure incollalo direttamente nell’app.",
+            "ready": "Apri l’app per verificare il tracciamento e aggiungere il pacco.",
         ],
     ]
 
     static func text(_ key: String) -> String {
-        let language = Locale.preferredLanguages.first?
-            .split(separator: "-").first.map(String.init) ?? "en"
+        let group = Bundle.main.object(forInfoDictionaryKey: "SDTAppGroupIdentifier") as? String
+            ?? "group.com.plhery.SwissDeliveryTracker"
+        let saved = UserDefaults(suiteName: group)?.string(forKey: "deliveryTrackerLocale")
+        let preferred = Locale.preferredLanguages.map { $0.split(separator: "-").first.map(String.init) ?? "" }
+        let language = ([saved].compactMap { $0 } + preferred).first { catalogs[$0] != nil } ?? "en"
         return catalogs[language]?[key] ?? catalogs["en"]?[key] ?? key
     }
 }

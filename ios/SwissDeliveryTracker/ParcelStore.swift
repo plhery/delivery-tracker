@@ -511,7 +511,7 @@ final class ParcelStore: ObservableObject {
                     label: parcel.label.nonEmpty ?? localizer.text("common.parcel"),
                     carrier: CarrierCatalog.shared.info(for: parcel.carrier).displayName,
                     trackingNumber: CarrierCatalog.format(parcel.trackingNumber),
-                    detail: parcel.expectedDelivery.map { localizer.expectedDelivery($0) }
+                    detail: localizer.parcelDeliveryEstimate(parcel)
                         ?? localizer.text(parcel.displayStatus.key),
                     isOutForDelivery: parcel.currentStage == .outForDelivery
                 )
@@ -677,7 +677,7 @@ final class ParcelStore: ObservableObject {
     ) -> ActivityContent<DeliveryActivityAttributes.ContentState> {
         let status = localizer.text(parcel.displayStatus.key)
         let detail = phase == .outForDelivery
-            ? parcel.expectedDelivery.map { localizer.expectedDelivery($0) } ?? status
+            ? localizer.parcelDeliveryEstimate(parcel) ?? status
             : status
         let activityParcel = DeliveryActivityParcel(
             id: parcel.id,

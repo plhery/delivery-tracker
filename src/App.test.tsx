@@ -37,7 +37,7 @@ describe('App', () => {
     await user.click(await screen.findByRole('button', { name: 'Add a parcel' }));
     const sheet = screen.getByRole('dialog', { name: 'Add a parcel' });
     await user.type(within(sheet).getByLabelText('Tracking number or link'), 'LX123456785NL');
-    expect(within(sheet).getByText('PostNL / Spring GDS will sync automatically.')).toBeInTheDocument();
+    expect(within(sheet).getByText("We’ll check PostNL / Spring GDS for updates automatically.")).toBeInTheDocument();
     await user.click(within(sheet).getByRole('button', { name: 'Add parcel' }));
     await waitFor(() => expect(add).toHaveBeenCalledWith(expect.objectContaining({
       trackingNumber: 'LX123456785NL', carrier: 'spring-gds',
@@ -58,12 +58,12 @@ describe('App', () => {
     await user.click(await screen.findByRole('button', { name: 'Add a parcel' }));
     const sheet = screen.getByRole('dialog', { name: 'Add a parcel' });
     await user.type(within(sheet).getByLabelText('Tracking number or link'), parcel.trackingNumber);
-    expect(within(sheet).getByText(/International Post means.*could not identify the carrier/))
+    expect(within(sheet).getByText(/postal tracking number, but the carrier is still unknown/))
       .toHaveTextContent('Automatic updates are unavailable.');
     await user.click(within(sheet).getByRole('button', { name: 'Cancel' }));
-    await user.click(screen.getByRole('button', { name: 'Postal shipment — Automatic sync unavailable' }));
+    await user.click(screen.getByRole('button', { name: "Postal shipment — Check on carrier website" }));
     const detail = screen.getByRole('dialog', { name: 'Postal shipment' });
-    expect(within(detail).getByText(/International Post means/)).toBeInTheDocument();
+    expect(within(detail).getByText(/postal tracking number, but the carrier is still unknown/)).toBeInTheDocument();
     expect(within(detail).queryByText(/automatic adapter/)).not.toBeInTheDocument();
     expect(within(detail).queryByRole('button', { name: 'Check now' })).not.toBeInTheDocument();
     expect(within(detail).queryByText(/hasn’t announced this shipment/)).not.toBeInTheDocument();
@@ -86,11 +86,11 @@ describe('App', () => {
     renderApp(repo);
     await screen.findByText('Coffee beans ☕');
     await user.click(screen.getByRole('button', { name: 'Refresh tracking' }));
-    expect(screen.getByRole('status')).toHaveTextContent('Tracking check queued');
+    expect(screen.getByRole('status')).toHaveTextContent('Waiting to check with the carrier');
     act(() => progress?.('running'));
     expect(screen.getByRole('status')).toHaveTextContent('Checking with the carrier');
     await act(async () => finish(parcels));
-    expect(screen.getByRole('status')).toHaveTextContent('Tracking check complete');
+    expect(screen.getByRole('status')).toHaveTextContent('The latest available tracking is shown.');
   });
 
   it('keeps keyboard focus in the carrier sheet and restores it to the detail dialog', async () => {
@@ -182,7 +182,7 @@ describe('App', () => {
 
     const attention = screen.getByRole('region', { name: 'Needs attention' });
     expect(within(attention).getByText('Birthday gift 🎁')).toBeInTheDocument();
-    expect(within(attention).getByText('Held at customs')).toBeInTheDocument();
+    expect(within(attention).getByText("Customs clearance")).toBeInTheDocument();
 
     const past = screen.getByRole('region', { name: 'Past deliveries' });
     expect(within(past).getByText('Coffee beans ☕')).toBeInTheDocument();
@@ -403,13 +403,13 @@ describe('App', () => {
       '99.34.111111.22222222',
     );
     expect(
-      within(sheet).getByText(/swiss post will sync automatically/i),
+      within(sheet).getByText(/We’ll check swiss post for updates automatically/i),
     ).toBeInTheDocument();
 
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
 
     expect(await screen.findByText('Fondue set 🫕')).toBeInTheDocument();
-    expect(screen.getByText('Tracked')).toBeInTheDocument();
+    expect(screen.getByText("Added to tracking")).toBeInTheDocument();
     expect(
       screen.queryByRole('dialog', { name: /add a parcel/i }),
     ).not.toBeInTheDocument();
@@ -504,7 +504,7 @@ describe('App', () => {
       'Heppner',
       'Ciblex',
       'Paack',
-      'Asendia (link only)',
+      "Asendia (check on carrier website)",
     ]) {
       expect(within(carrier).getByRole('option', { name })).toBeInTheDocument();
     }
@@ -513,7 +513,7 @@ describe('App', () => {
     const postcode = within(sheet).getByLabelText(/delivery postcode/i);
     expect(postcode).toHaveValue('');
     expect(postcode).toHaveAttribute('maxlength', '5');
-    expect(within(sheet).getByText(/used only to verify and retrieve tracking updates/i))
+    expect(within(sheet).getByText(/carrier needs the delivery postcode/i))
       .toBeInTheDocument();
 
     await user.type(postcode, '59650');
@@ -559,7 +559,7 @@ describe('App', () => {
     };
     renderApp(repo);
 
-    expect(await screen.findByText('Sync in progress', { selector: '.parcel-card__state' }))
+    expect(await screen.findByText("Checking for updates", { selector: '.parcel-card__state' }))
       .toBeInTheDocument();
 
     parcel = {
@@ -581,7 +581,7 @@ describe('App', () => {
     });
 
     expect(screen.getByText('Announced', { selector: '.parcel-card__state' })).toBeInTheDocument();
-    expect(screen.queryByText('Sync in progress')).not.toBeInTheDocument();
+    expect(screen.queryByText("Checking for updates")).not.toBeInTheDocument();
   });
 
   it('keeps a manual carrier selection for ambiguous tracking numbers', async () => {
@@ -595,7 +595,7 @@ describe('App', () => {
     const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
     await user.type(within(sheet).getByLabelText(/tracking number/i), 'ambiguous-123');
     await user.selectOptions(within(sheet).getByLabelText('Carrier'), 'planzer');
-    expect(within(sheet).getByText(/Planzer will sync automatically/i)).toBeInTheDocument();
+    expect(within(sheet).getByText(/We’ll check Planzer for updates automatically/i)).toBeInTheDocument();
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
 
     expect(add).toHaveBeenCalledWith({
@@ -620,7 +620,7 @@ describe('App', () => {
     );
 
     expect(
-      within(sheet).getByText(/Planzer will sync automatically/i),
+      within(sheet).getByText(/We’ll check Planzer for updates automatically/i),
     ).toBeInTheDocument();
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
 
@@ -648,7 +648,7 @@ describe('App', () => {
     expect(within(sheet).getByText('06086514587082').closest('p')).toHaveTextContent(
       /found 06086514587082 in the pasted link/i,
     );
-    expect(within(sheet).getByText(/DPD will sync automatically/i)).toBeInTheDocument();
+    expect(within(sheet).getByText(/We’ll check DPD for updates automatically/i)).toBeInTheDocument();
     await user.type(within(sheet).getByLabelText(/delivery postcode/i), '8004');
 
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
@@ -700,7 +700,7 @@ describe('App', () => {
     await user.type(within(sheet).getByLabelText(/tracking number or link/i), trackingUrl);
 
     expect(within(sheet).queryByLabelText(/dachser tracking url/i)).not.toBeInTheDocument();
-    expect(within(sheet).getByText(/Dachser will sync automatically/i)).toBeInTheDocument();
+    expect(within(sheet).getByText(/We’ll check Dachser for updates automatically/i)).toBeInTheDocument();
     expect(within(sheet).getByRole('button', { name: /add parcel/i })).toBeEnabled();
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
 
@@ -754,7 +754,7 @@ describe('App', () => {
     await user.type(within(sheet).getByLabelText(/tracking number/i), '123456');
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
 
-    expect(await within(sheet).findByRole('alert')).toHaveTextContent('Duplicate parcel');
+    expect(await within(sheet).findByRole('alert')).toHaveTextContent("Couldn’t add this parcel. Check the details and try again.");
     expect(sheet).toBeInTheDocument();
   });
 
@@ -772,7 +772,7 @@ describe('App', () => {
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
 
     const alert = await within(sheet).findByRole('alert');
-    expect(alert).toHaveTextContent('already in your delivery box');
+    expect(alert).toHaveTextContent('already tracking this parcel');
     const link = within(alert).getByRole('link', { name: 'Open the existing parcel' });
     expect(link).toHaveAttribute('href', expect.stringContaining('parcel='));
     await user.click(link);
@@ -1054,7 +1054,7 @@ describe('App', () => {
     await user.click(screen.getByLabelText('Parcel actions'));
     await user.click(screen.getByRole('button', { name: /archive parcel/i }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Archive service unavailable');
+    expect(await screen.findByRole('alert')).toHaveTextContent("Couldn’t archive this parcel. Try again.");
     expect(screen.getByRole('dialog', { name: 'Coffee beans ☕' })).toBeInTheDocument();
   });
 
@@ -1265,7 +1265,7 @@ describe('App', () => {
 
     const cards = await screen.findAllByText('Delivered', { selector: '.status-badge' });
     expect(cards.length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByRole('status')).toHaveTextContent('Tracking check complete.');
+    expect(screen.getByRole('status')).toHaveTextContent("The latest available tracking is shown.");
   });
 
   it('shows initial-load and refresh failures', async () => {
@@ -1281,7 +1281,7 @@ describe('App', () => {
     };
     const user = userEvent.setup();
     const first = renderApp(failingRepo);
-    expect(await screen.findByRole('alert')).toHaveTextContent('Could not load deliveries');
+    expect(await screen.findByRole('alert')).toHaveTextContent("We couldn’t load your parcels. Try again.");
     expect(screen.queryByText('No parcels yet')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('No parcels yet')).toBeInTheDocument();
@@ -1291,7 +1291,7 @@ describe('App', () => {
     renderApp({ ...base, refresh: vi.fn().mockRejectedValue(new Error('Sync unavailable')) });
     await screen.findByText('Coffee beans ☕');
     await user.click(screen.getByRole('button', { name: /refresh tracking/i }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Sync unavailable');
+    expect(await screen.findByRole('alert')).toHaveTextContent("We can’t reach the tracking service right now.");
   });
 
   it('shows the last saved parcels when the API is temporarily unavailable', async () => {
@@ -1317,7 +1317,7 @@ describe('App', () => {
     renderApp(repo);
 
     expect(await screen.findByRole('button', { name: /^Saved coffee —/ })).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent('last parcel data saved');
+    expect(screen.getByRole('alert')).toHaveTextContent('Your saved parcels are still available');
     expect(screen.queryByText('No parcels yet')).not.toBeInTheDocument();
   });
 
@@ -1334,8 +1334,7 @@ describe('App', () => {
     renderApp(repo);
 
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('Sign-in needed');
-    expect(alert).toHaveTextContent('sign-in expired');
+    expect(alert).toHaveTextContent('Sign in again to see the latest updates.');
     expect(within(alert).getByRole('link', { name: 'Sign in again' })).toHaveAttribute(
       'href',
       '/',
@@ -1371,10 +1370,10 @@ describe('App', () => {
     renderApp(repo);
 
     const card = await screen.findByRole('button', {
-      name: /Early shipping label — Not announced yet/i,
+      name: /Early shipping label — Waiting for the carrier/i,
     });
     expect(card).toHaveClass('parcel-card--ok');
-    expect(screen.queryByText('Sync needs attention')).not.toBeInTheDocument();
+    expect(screen.queryByText("Update unavailable")).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Needs attention' })).not.toBeInTheDocument();
     expect(
       within(screen.getByRole('region', { name: 'On the way' }))
@@ -1382,7 +1381,7 @@ describe('App', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows sync diagnostics and an empty journey', async () => {
+  it('explains unavailable tracking without exposing carrier diagnostics', async () => {
     const parcel: ParcelWithEvents = {
       id: 'pkg-error',
       trackingNumber: '993412345612345678',
@@ -1406,17 +1405,17 @@ describe('App', () => {
     const user = userEvent.setup();
     renderApp(repo);
 
-    expect(await screen.findByText('Sync needs attention')).toBeInTheDocument();
+    expect((await screen.findAllByText("Update unavailable")).length).toBeGreaterThan(0);
     await user.click(
-      screen.getByRole('button', { name: /Parcel — Sync failed/i }),
+      screen.getByRole('button', { name: /Parcel — Update unavailable/i }),
     );
-    expect(screen.getByRole('status')).toHaveTextContent('Carrier maintenance');
+    expect(screen.getByRole('status')).toHaveTextContent("The carrier’s latest update is unavailable.");
     expect(
-      screen.getByText(/carrier hasn’t announced this shipment yet/i),
+      screen.getByText(/No tracking updates yet/i),
     ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /check now/i }));
     expect(repo.refreshParcel).toHaveBeenCalledWith(parcel.id, expect.any(Function));
-    expect(screen.getByText(/Tracking check complete/)).toBeInTheDocument();
+    expect(screen.getByText(/latest available tracking is shown/)).toBeInTheDocument();
   });
 
   it('shows a friendly empty state when there are no parcels', async () => {

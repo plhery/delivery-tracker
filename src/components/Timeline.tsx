@@ -1,4 +1,4 @@
-import { stageLabel, useI18n } from '../i18n';
+import { localizedEventDescription, stageLabel, useI18n } from '../i18n';
 import { currentEvent, sortEventsDesc, stageMeta } from '../lib/stages';
 import type { TrackingEvent } from '../types';
 
@@ -45,7 +45,7 @@ export function Timeline({
                   ? t('timeline.syncing')
                   : stageLabel(t, event.stage)}
               </div>
-              <div className="timeline__description">{event.description}</div>
+              <div className="timeline__description">{localizedEventDescription(event.description, t)}</div>
               <div className="timeline__meta">
                 {event.location ? `${event.location} · ` : ''}
                 {new Intl.DateTimeFormat(languageTag, {

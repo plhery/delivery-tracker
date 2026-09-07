@@ -268,6 +268,7 @@ export class SupabaseClient {
     p256dh: string,
     auth: string,
     userAgent?: string | null,
+    locale?: string,
   ): Promise<JsonObject> {
     const now = new Date().toISOString();
     const result = rows(await this.request(`/rest/v1/push_subscriptions?${query({
@@ -280,6 +281,7 @@ export class SupabaseClient {
         p256dh,
         auth,
         user_agent: userAgent ?? null,
+        ...(locale ? { locale } : {}),
         subscribed_at: now,
         disabled_at: null,
         last_error: null,
@@ -296,6 +298,13 @@ export class SupabaseClient {
     await this.request(`/rest/v1/push_subscriptions?${params}`, {
       method: 'DELETE',
       prefer: 'return=minimal',
+    });
+  }
+
+  async updatePushSubscriptionLocale(userId: string, endpoint: string, locale: string): Promise<void> {
+    const params = query({ user_id: `eq.${userId}`, endpoint: `eq.${endpoint}`, disabled_at: 'is.null' });
+    await this.request(`/rest/v1/push_subscriptions?${params}`, {
+      method: 'PATCH', body: { locale }, prefer: 'return=minimal',
     });
   }
 

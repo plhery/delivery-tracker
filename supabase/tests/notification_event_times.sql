@@ -54,5 +54,27 @@ begin
 end;
 $$;
 
+-- Updating the device language must not drop queued events or restart its cursor.
+update public.push_subscriptions set locale = 'fr'
+where user_id = '97000000-0000-0000-0000-000000000001';
+do $$
+begin
+  if (select count(*) from public.pending_push_notifications
+      where package_id = '97000000-0000-0000-0000-000000000002' and locale = 'fr') <> 5 then
+    raise exception 'Browser queue lost localized events';
+  end if;
+  if (select subscribed_at from public.push_subscriptions
+      where user_id = '97000000-0000-0000-0000-000000000001') <> '2000-01-01'::timestamptz then
+    raise exception 'Locale update restarted the subscription cursor';
+  end if;
+  begin
+    update public.push_subscriptions set locale = 'es'
+    where user_id = '97000000-0000-0000-0000-000000000001';
+    raise exception 'Invalid locale was accepted';
+  exception when check_violation then null;
+  end;
+end;
+$$;
+
 rollback;
 select 'notification event time assertions passed' as result;

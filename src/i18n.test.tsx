@@ -54,6 +54,14 @@ describe('localization', () => {
     });
   });
 
+  it('preserves precise carrier estimates in the recipient timezone', () => {
+    const t = ((key: string) => key) as Translate;
+    const timestamp = new Date('2026-09-07T12:30:00Z');
+    const time = new Intl.DateTimeFormat('fr-CH', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(timestamp);
+    expect(localizedExpectedDelivery(timestamp.toISOString(), t, 'fr-CH', timestamp.getTime()))
+      .toBe(`time.today, ${time}`);
+  });
+
   it('formats calendar dates with the selected language tag', () => {
     const t = ((key: string) => key) as Translate;
     const now = new Date(2026, 0, 1, 12).getTime();

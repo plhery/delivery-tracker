@@ -143,12 +143,13 @@ struct ParcelDetailView: View {
                 Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
                     .font(.title2.weight(.semibold))
                     .lineLimit(2)
-                Text(parcel.expectedDelivery.map { localizer.expectedDelivery($0) }
-                    ?? localizer.parcelStatus(parcel))
-                    .font(.title3.weight(.bold))
-                    .contentTransition(.numericText())
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
+                if let date = localizer.parcelCompletionDate(parcel) ?? localizer.parcelDeliveryEstimate(parcel) {
+                    Text(date)
+                        .font(.title3.weight(.bold))
+                        .contentTransition(.numericText())
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                }
             }
 
             if let location = parcel.experimentalLatestLocation {
@@ -577,7 +578,7 @@ private struct ExperimentalCurrentTimelineRow: View {
                     .foregroundStyle(tint)
                 Text(localizer.text(event.stage.localizationKey))
                     .font(.headline.weight(.semibold))
-                Text(event.description)
+                Text(localizer.eventDescription(event.description))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Text([event.location, localizer.dateTime(event.occurredAt)]
@@ -621,7 +622,7 @@ private struct ExperimentalTimelineRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(localizer.text(event.stage.localizationKey))
                     .font(.subheadline.weight(.semibold))
-                Text(event.description)
+                Text(localizer.eventDescription(event.description))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Text([event.location, localizer.dateTime(event.occurredAt)]

@@ -306,6 +306,7 @@ struct PushSubscriptionKeys: Codable, Equatable, Hashable, Sendable {
 struct PushSubscriptionRequest: Codable, Equatable, Hashable, Sendable {
     var endpoint: String
     var keys: PushSubscriptionKeys
+    var locale: NativePushLocale? = nil
 }
 
 struct DeletePushSubscriptionRequest: Codable, Equatable, Hashable, Sendable {
@@ -454,6 +455,11 @@ struct SyncSummary: Codable, Equatable, Hashable, Sendable {
 
 struct HealthResponse: Codable, Equatable, Hashable, Sendable {
     var ok: Bool
+}
+
+struct UpdatePushSubscriptionLocaleRequest: Codable, Equatable, Hashable, Sendable {
+    var endpoint: String
+    var locale: NativePushLocale
 }
 
 struct AccountExportAccount: Codable, Equatable, Hashable, Sendable, Identifiable {

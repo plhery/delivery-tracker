@@ -1,3 +1,4 @@
+import { userErrorMessage } from '../lib/userMessages';
 import { useState } from 'react';
 import { LanguageControl, useI18n } from '../i18n';
 
@@ -29,7 +30,7 @@ export function AccountMenu({
       await operation();
       if (action === 'export') setWorking(null);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : t('account.actionFailed'));
+      setError(userErrorMessage(reason, t, 'account.actionFailed'));
       setWorking(null);
     }
   }

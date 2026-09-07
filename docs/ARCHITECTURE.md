@@ -47,7 +47,7 @@ Next.js route handlers -- user token -----> PostgREST + Postgres RLS
   All three channels use friendly status-specific sentences. Delivery alerts
   show the carrier's event time in the recipient's timezone when the source
   includes a clock time; date-only or app-observed updates omit it. Delayed
-  alerts avoid “just” and include the date for older deliveries. Estimates
+  alerts include the date for older deliveries. Estimates
   appear only while a parcel is progressing toward delivery, never after
   delivery, a failed attempt, pickup availability, or return.
 - `supabase/migrations/` is the append-only database history;
@@ -127,3 +127,27 @@ Rows left by the former shared deployment intentionally remain ownerless and
 invisible until an operator completes the explicit cutover in
 [DEPLOYMENT.md](DEPLOYMENT.md). New ownerless rows are rejected by database
 constraints.
+
+### Message and notification copy
+
+App-owned copy is localized in English, German, French and Italian. The shared
+web catalog generates the native catalog; generation checks key and interpolation
+parity. Original carrier scan notes and user-entered parcel names stay unchanged.
+Known app-generated timeline messages are translated at display time.
+
+Messages explain what happened and, when useful, the next action. UI errors map
+known service failures to localized guidance; raw service diagnostics are not
+shown as user-facing copy. Status labels remain short and avoid implying a
+carrier delay when only the app’s tracking check failed.
+
+Browser and native push alerts share stage-specific sentences. Delivered alerts
+use a reliable carrier timestamp when available; other outcomes give relevant
+pickup, missed-delivery, or return guidance. Finished shipments, pickup and failed
+attempts omit delivery estimates. Out-for-delivery alerts omit a bare “today” but
+keep useful times and windows. Past estimates are hidden across cards, details,
+widgets and notifications. Live Activities avoid repeating the status as detail.
+
+Browser subscriptions store a device locale, refreshed when the signed-in user
+changes the app language. The owner-scoped locale update preserves subscription
+cursors and disabled state and sends no test alert. Native registrations already
+store the app language; the Share extension reads it from the shared app group.
