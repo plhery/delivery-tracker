@@ -32,6 +32,7 @@ struct PassportView: View {
             }
             .scrollIndicators(.hidden)
             .background(Brand.background)
+            .safeAreaInset(edge: .top, spacing: 0) { DemoModeBar() }
             .navigationTitle(copy.passport)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

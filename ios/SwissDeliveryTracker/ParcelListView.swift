@@ -23,6 +23,42 @@ struct ParcelListView: View {
     }
 }
 
+struct DemoModeBar: View {
+    @EnvironmentObject private var session: SessionStore
+    @EnvironmentObject private var localizer: Localizer
+
+    var body: some View {
+        if session.isDemo {
+            Button {
+                session.showSignIn()
+            } label: {
+                HStack(spacing: 12) {
+                    Text(localizer.text("app.demo"))
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 8)
+                    Text(localizer.text("native.exitDemo"))
+                        .font(.subheadline.weight(.semibold))
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3)
+                        .symbolRenderingMode(.hierarchical)
+                }
+                .foregroundStyle(Brand.ink)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 6)
+                .frame(minHeight: 48)
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(TactileButtonStyle(scale: 0.995))
+            .background(Brand.cream)
+            .overlay(alignment: .bottom) { Divider().opacity(0.45) }
+            .accessibilityLabel("\(localizer.text("app.demo")), \(localizer.text("native.exitDemo"))")
+            .accessibilityIdentifier("demo.exit")
+        }
+    }
+}
+
 private struct DeliveryListView: View {
     @EnvironmentObject private var store: ParcelStore
     @EnvironmentObject private var session: SessionStore
@@ -51,12 +87,14 @@ private struct DeliveryListView: View {
                 ExperimentalBackdrop()
                 content
             }
+            .safeAreaInset(edge: .top, spacing: 0) { DemoModeBar() }
             .navigationTitle(localizer.text("native.deliveries"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
             .searchable(text: $query, prompt: localizer.text("view.searchPlaceholder"))
             .navigationDestination(for: UUID.self) { parcelID in
                 ParcelDetailView(parcelID: parcelID, transition: parcelTransition)
+                    .safeAreaInset(edge: .top, spacing: 0) { DemoModeBar() }
             }
             .safeAreaInset(edge: .bottom, spacing: 8) { bottomControls }
         }
@@ -124,13 +162,6 @@ private struct DeliveryListView: View {
                         onArchive: { await archive(nextParcel) }
                     )
                     .id(nextParcel.id)
-                }
-
-                if store.isDemo {
-                    Label(localizer.text("app.demo"), systemImage: "sparkles")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 4)
                 }
 
                 if let message = store.errorMessage {

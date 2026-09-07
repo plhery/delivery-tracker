@@ -202,13 +202,23 @@ struct AccountView: View {
                             .foregroundStyle(Brand.onAccent)
                             .background(Brand.accent, in: Circle())
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(localizer.text(store.isDemo ? "welcome.demo" : "account.signedIn"))
-                                .font(.caption).foregroundStyle(.secondary)
+                            if !store.isDemo {
+                                Text(localizer.text("account.signedIn"))
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
                             Text(session.user?.email ?? localizer.text("app.demo"))
                                 .font(.headline).textSelection(.enabled)
                         }
                     }
                     .padding(.vertical, 4)
+
+                    if store.isDemo {
+                        Button(localizer.text("native.exitDemo"), systemImage: "rectangle.portrait.and.arrow.right") {
+                            session.showSignIn()
+                            dismiss()
+                        }
+                        .foregroundStyle(Brand.ink)
+                    }
                 }
 
                 Section(localizer.text("language.label")) {
@@ -282,13 +292,6 @@ struct AccountView: View {
                                 try await store.signOut()
                                 dismiss()
                             }
-                        }
-                    }
-                } else {
-                    Section {
-                        Button(localizer.text("welcome.signInInstead"), systemImage: "person.crop.circle") {
-                            session.showSignIn()
-                            dismiss()
                         }
                     }
                 }
