@@ -47,12 +47,8 @@ struct RootView: View {
             switch session.state {
             case .loading:
                 LaunchView()
-            case .welcome:
-                WelcomeView()
-            case .unconfigured:
-                SignInView(configured: false)
-            case .signedOut:
-                SignInView(configured: true)
+            case .welcome, .unconfigured, .signedOut:
+                ArrivalView()
             case .demo, .signedIn:
                 ParcelListView()
             }

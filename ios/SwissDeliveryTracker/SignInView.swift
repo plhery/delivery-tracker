@@ -2,145 +2,179 @@ import SwiftUI
 import UIKit
 import UserNotifications
 
-struct WelcomeView: View {
+/// One parcel stays alive across both layouts, so opening flows into sign-in.
+struct ArrivalView: View {
     @EnvironmentObject private var session: SessionStore
-    @EnvironmentObject private var localizer: Localizer
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @State private var opening = false
     @State private var greeting = 0
 
-    private var copy: ArrivalCopy { ArrivalCopy(language: localizer.language) }
+    private var screen: ArrivalScreen {
+        if case .welcome = session.state { return .welcome }
+        return .signIn
+    }
+
+    private var greetingActive: Bool {
+        screen == .welcome && !opening && !reduceMotion && scenePhase == .active
+    }
 
     var body: some View {
-        let animateGreeting = !reduceMotion && !opening
-        GeometryReader { geometry in
-            ZStack {
-                Brand.background.ignoresSafeArea()
-                ScrollView {
-                    VStack(spacing: 0) {
-                        HStack {
-                            Text(localizer.text("app.title"))
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(Brand.ink)
-                            Spacer()
-                            AuthenticationLanguageMenu()
-                        }
-
-                        Spacer(minLength: 36)
-
-                        VStack(spacing: 10) {
-                            Text(copy.welcomeTitle)
-                                .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                                .tracking(-1.2)
-                                .multilineTextAlignment(.center)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        .padding(.horizontal, 8)
-
-                        Button(action: unwrap) {
-                            UnwrappingParcel(open: opening ? 1 : 0)
-                                .frame(width: min(300, geometry.size.width - 48), height: min(300, geometry.size.width - 48) * 31 / 30)
-                                .keyframeAnimator(initialValue: ParcelGreeting(), trigger: greeting) { content, pose in
-                                    content
-                                        .offset(y: animateGreeting ? pose.lift : 0)
-                                        .rotationEffect(.degrees(animateGreeting ? pose.angle : 0), anchor: .bottom)
-                                        .scaleEffect(x: 1, y: animateGreeting ? pose.squash : 1, anchor: .bottom)
-                                } keyframes: { _ in
-                                    KeyframeTrack(\.lift) {
-                                        CubicKeyframe(0, duration: 0.12)
-                                        CubicKeyframe(-7, duration: 0.24)
-                                        SpringKeyframe(0, duration: 0.46, spring: .smooth)
-                                    }
-                                    KeyframeTrack(\.angle) {
-                                        CubicKeyframe(-2.5, duration: 0.16)
-                                        CubicKeyframe(2, duration: 0.2)
-                                        CubicKeyframe(-0.8, duration: 0.2)
-                                        SpringKeyframe(0, duration: 0.26, spring: .smooth)
-                                    }
-                                    KeyframeTrack(\.squash) {
-                                        CubicKeyframe(0.975, duration: 0.12)
-                                        CubicKeyframe(1.02, duration: 0.24)
-                                        SpringKeyframe(1, duration: 0.46, spring: .smooth)
-                                    }
-                                }
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(TactileButtonStyle(scale: 0.96))
-                        .accessibilityLabel(copy.open)
-                        .accessibilityHint(copy.openHint)
-                        .accessibilityIdentifier("welcome.openParcel")
-                        .disabled(opening)
-                        .padding(.top, 12)
-
-                        Button(action: unwrap) {
-                            HStack(spacing: 8) {
-                                Text(copy.open)
-                                Image(systemName: "arrow.right")
-                                    .font(.caption.weight(.bold))
-                            }
-                            .font(.headline)
-                            .foregroundStyle(Brand.onAccent)
-                            .padding(.horizontal, 24)
-                            .frame(minHeight: 50)
-                            .background(Brand.accent, in: Capsule())
-                            .overlay(Capsule().stroke(Brand.separator.opacity(0.3), lineWidth: 1))
-                        }
-                        .buttonStyle(TactileButtonStyle())
-                        .disabled(opening)
-                        .opacity(opening ? 0 : 1)
-
-                        Spacer(minLength: 36)
-
-                        Button {
-                            session.enterDemo()
-                        } label: {
-                            Text(localizer.text("welcome.demo"))
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .frame(minHeight: 44)
-                        }
-                        .buttonStyle(TactileButtonStyle())
-                        .accessibilityHint(localizer.text("welcome.demoDescription"))
-                        .disabled(opening)
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 16)
-                    .frame(maxWidth: 520)
-                    .frame(minHeight: geometry.size.height)
-                    .frame(maxWidth: .infinity)
-                }
-                .scrollIndicators(.hidden)
+        let animateGreeting = !reduceMotion
+        ZStack {
+            Brand.background.ignoresSafeArea()
+            if screen == .welcome {
+                WelcomeView(opening: opening, onOpen: unwrap)
+                    .transition(.opacity)
+            } else {
+                SignInView(configured: session.configuration.authenticationConfigured, onBack: goBack)
+                    .transition(.opacity)
             }
         }
-        .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.65), trigger: opening)
-        .task(id: opening || reduceMotion || scenePhase != .active) {
-            guard !opening, !reduceMotion, scenePhase == .active else { return }
+        .overlayPreferenceValue(ArrivalParcelFrame.self) { frames in
+            GeometryReader { geometry in
+                if let anchor = frames[screen] {
+                    let frame = geometry[anchor]
+                    UnwrappingParcel(open: opening || screen == .signIn ? 1 : 0)
+                        .frame(width: 300, height: 310)
+                        .keyframeAnimator(initialValue: ParcelGreeting(), trigger: greeting) { content, pose in
+                            content
+                                .offset(y: animateGreeting ? pose.lift : 0)
+                                .rotationEffect(.degrees(animateGreeting ? pose.angle : 0), anchor: .bottom)
+                                .scaleEffect(x: 1, y: animateGreeting ? pose.squash : 1, anchor: .bottom)
+                        } keyframes: { _ in
+                            KeyframeTrack(\.lift) {
+                                CubicKeyframe(0, duration: 0.12)
+                                CubicKeyframe(-7, duration: 0.24)
+                                SpringKeyframe(0, duration: 0.46, spring: .smooth)
+                            }
+                            KeyframeTrack(\.angle) {
+                                CubicKeyframe(-2.5, duration: 0.16)
+                                CubicKeyframe(2, duration: 0.2)
+                                CubicKeyframe(-0.8, duration: 0.2)
+                                SpringKeyframe(0, duration: 0.26, spring: .smooth)
+                            }
+                            KeyframeTrack(\.squash) {
+                                CubicKeyframe(0.975, duration: 0.12)
+                                CubicKeyframe(1.02, duration: 0.24)
+                                SpringKeyframe(1, duration: 0.46, spring: .smooth)
+                            }
+                        }
+                        .scaleEffect(frame.width / 300)
+                        .position(x: frame.midX, y: frame.midY)
+                        .animation(reduceMotion ? nil : .spring(duration: 0.75, bounce: 0.08), value: screen)
+                }
+            }
+            .clipped()
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+        .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.65), trigger: opening) { _, newValue in newValue }
+        .task(id: greetingActive) {
+            guard greetingActive else { return }
             do {
-                try await Task.sleep(for: .milliseconds(550))
-                greeting += 1
-                // One quiet reminder if the box has not been opened yet.
-                try await Task.sleep(for: .seconds(6))
-                greeting += 1
+                try await Task.sleep(for: .milliseconds(900))
+                while !Task.isCancelled {
+                    greeting += 1
+                    try await Task.sleep(for: .seconds(3.6))
+                }
             } catch { return }
         }
-        .task(id: opening) {
-            guard opening else { return }
-            if !reduceMotion {
-                do { try await Task.sleep(for: .milliseconds(850)) }
-                catch { return }
-            }
+        .task(id: opening && screen == .welcome) {
+            guard opening, screen == .welcome else { return }
+            do {
+                try await Task.sleep(for: .milliseconds(reduceMotion ? 150 : 750))
+            } catch { return }
             guard !Task.isCancelled else { return }
-            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+            withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.45)) {
                 session.showSignIn()
             }
         }
     }
 
     private func unwrap() {
-        guard !opening else { return }
-        withAnimation(reduceMotion ? nil : .spring(response: 0.6, dampingFraction: 0.76)) {
+        guard !opening, screen == .welcome else { return }
+        withAnimation(reduceMotion ? nil : .spring(response: 0.65, dampingFraction: 0.82)) {
             opening = true
+        }
+    }
+
+    private func goBack() {
+        withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.45)) {
+            opening = false
+            session.showWelcome()
+        }
+    }
+}
+
+private enum ArrivalScreen { case welcome, signIn }
+
+private struct ArrivalParcelFrame: PreferenceKey {
+    static var defaultValue: [ArrivalScreen: Anchor<CGRect>] { [:] }
+
+    static func reduce(value: inout [ArrivalScreen: Anchor<CGRect>], nextValue: () -> [ArrivalScreen: Anchor<CGRect>]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
+    }
+}
+
+private struct WelcomeView: View {
+    @EnvironmentObject private var localizer: Localizer
+    let opening: Bool
+    let onOpen: () -> Void
+
+    private var copy: ArrivalCopy { ArrivalCopy(language: localizer.language) }
+
+    var body: some View {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
+                    HStack {
+                        Text(localizer.text("app.title"))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Brand.ink)
+                        Spacer()
+                        AuthenticationLanguageMenu()
+                    }
+
+                    Spacer(minLength: 36)
+
+                    Text(copy.welcomeTitle)
+                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                        .tracking(-1.2)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 8)
+
+                    Button(action: onOpen) {
+                        VStack(spacing: 8) {
+                            Color.clear
+                                .frame(width: min(300, geometry.size.width - 48), height: min(300, geometry.size.width - 48) * 31 / 30)
+                                .anchorPreference(key: ArrivalParcelFrame.self, value: .bounds) { [.welcome: $0] }
+                            Text(copy.tapToOpen)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .frame(minHeight: 44)
+                                .opacity(opening ? 0 : 1)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(TactileButtonStyle(scale: 0.98))
+                    .accessibilityLabel(copy.tapToOpen)
+                    .accessibilityHint(copy.openHint)
+                    .accessibilityIdentifier("welcome.openParcel")
+                    .disabled(opening)
+                    .padding(.top, 12)
+
+                    Spacer(minLength: 64)
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+                .frame(maxWidth: 520)
+                .frame(minHeight: geometry.size.height)
+                .frame(maxWidth: .infinity)
+            }
+            .scrollIndicators(.hidden)
         }
     }
 }
@@ -155,6 +189,7 @@ struct SignInView: View {
     enum Step { case methods, code }
 
     let configured: Bool
+    let onBack: () -> Void
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -173,9 +208,7 @@ struct SignInView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     HStack {
-                        Button {
-                            session.showWelcome()
-                        } label: {
+                        Button(action: onBack) {
                             Label(localizer.text("welcome.back"), systemImage: "chevron.left")
                                 .labelStyle(.iconOnly)
                                 .frame(width: 42, height: 42)
@@ -188,8 +221,9 @@ struct SignInView: View {
                     }
                     .padding(.bottom, 12)
 
-                    UnwrappingParcel(open: 1)
+                    Color.clear
                         .frame(width: 180, height: 186)
+                        .anchorPreference(key: ArrivalParcelFrame.self, value: .bounds) { [.signIn: $0] }
                         .accessibilityHidden(true)
 
                     VStack(spacing: 8) {
@@ -831,12 +865,12 @@ private struct ArrivalCopy {
         }
     }
 
-    var open: String {
+    var tapToOpen: String {
         switch language {
-        case .en: "Open your parcel"
-        case .de: "Paket öffnen"
-        case .fr: "Ouvrir votre colis"
-        case .it: "Apri il tuo pacco"
+        case .en: "Tap to open your parcel"
+        case .de: "Tippe, um dein Paket zu öffnen"
+        case .fr: "Touchez pour ouvrir votre colis"
+        case .it: "Tocca per aprire il tuo pacco"
         }
     }
 
