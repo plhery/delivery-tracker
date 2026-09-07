@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
+import { nativeLocalizationReferences } from './native-localization.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const sourcePath = path.join(root, 'src', 'i18n.tsx');
@@ -368,12 +369,7 @@ const swiftSources = ['SwissDeliveryTracker', 'DeliveryWidgetExtension']
     .filter((name) => name.endsWith('.swift'))
     .map((name) => fs.readFileSync(path.join(root, 'ios', directory, name), 'utf8')))
   .join('\n');
-const localizationPrefixes = new Set(Object.keys(languages.en).map((key) => key.split('.')[0]));
-const referencedKeys = new Set(
-  [...swiftSources.matchAll(/"([a-z][A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]+)+)"/g)]
-    .map((match) => match[1])
-    .filter((key) => localizationPrefixes.has(key.split('.')[0])),
-);
+const referencedKeys = nativeLocalizationReferences(swiftSources, Object.keys(languages.en));
 const missingNativeReferences = [...referencedKeys].filter((key) => !(key in languages.en));
 if (missingNativeReferences.length) {
   throw new Error(
