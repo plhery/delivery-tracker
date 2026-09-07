@@ -32,10 +32,15 @@ Delivery Tracker can refresh these French, Swiss and international carriers auto
 | Ciblex | Automatic through the public parcel-tracking page for 14-digit shipment numbers. |
 | Paack | Automatic through the public recipient flow. Requires the tracking number and delivery postcode. |
 
-International Post is a fallback for postal numbers whose carrier has not been
-identified; it does not provide automatic updates. Choose the actual carrier
-in parcel details or use the tracking link. Dutch postal numbers resolve to
-PostNL / Spring GDS instead. Its existing automatic tracker uses
+Unknown postal carrier (`intl-post`) is the fallback for postal numbers whose
+carrier has not been identified. It does not provide automatic updates. Choose
+the actual carrier in parcel details or use “Open on 17TRACK” to check the number
+on [17TRACK](https://t.17track.net/en). The carrier name and explanation are
+localized in English, German, French and Italian; the link opens the matching
+language. The fallback also replaces Swiss Post links saved on older unidentified
+parcels. Known Swiss Post shipments keep their Swiss Post links.
+
+Dutch postal numbers resolve to PostNL / Spring GDS instead. Its existing automatic tracker uses
 [PostNL international tracking](https://postnl.post/);
 [Spring GDS](https://track-trace.spring-gds.com/) describes its international
 network and local delivery partners.
@@ -46,8 +51,8 @@ is respected when it fits the one-minute retry budget; longer delays and
 persistent failures remain visible as sync errors and in Sentry. Invalid
 tracking data and other HTTP errors are not retried.
 
-Asendia, DHL, FedEx and International Post parcels are saved with a direct
-carrier link. Asendia's public flow requires a fresh Cloudflare Turnstile
+Asendia, DHL and FedEx parcels are saved with a direct carrier link. Asendia's
+public flow requires a fresh Cloudflare Turnstile
 validation, while the supported DHL and FedEx tracking APIs require provider
 credentials. ShipUp can be kept as a manual record.
 

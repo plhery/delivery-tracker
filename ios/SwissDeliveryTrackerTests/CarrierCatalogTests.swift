@@ -175,6 +175,44 @@ final class CarrierCatalogTests: XCTestCase {
         )
     }
 
+    func testUnknownPostalCarrierUsesLocalized17TrackInsteadOfLegacySwissPostLink() throws {
+        var parcel = Parcel(
+            id: UUID(), trackingNumber: "RA123456785DE", label: "Postal shipment",
+            carrier: .internationalPost, createdAt: "2026-09-07T13:00:00Z",
+            syncStatus: .unsupported, notificationsMuted: false
+        )
+        let names: [AppLanguage: String] = [
+            .en: "Unknown postal carrier", .de: "Postanbieter unbekannt",
+            .fr: "Transporteur postal inconnu", .it: "Corriere postale sconosciuto",
+        ]
+        for language in AppLanguage.allCases {
+            for savedURL in [nil, "https://service.post.ch/ekp-web/ui/entry/search/RA123456785DE"] as [String?] {
+                parcel.trackingURL = savedURL
+                let link = try XCTUnwrap(catalog.trackingLinks(for: parcel, language: language).first)
+                XCTAssertEqual(catalog.info(for: .internationalPost, language: language).displayName, names[language])
+                XCTAssertEqual(link.name, "17TRACK")
+                XCTAssertEqual(link.url.absoluteString, "https://t.17track.net/\(language.rawValue)#nums=RA123456785DE")
+                XCTAssertEqual(link.carrier, .internationalPost)
+            }
+        }
+        XCTAssertEqual(catalog.info(for: .internationalPost).displayName, "Unknown postal carrier")
+        XCTAssertFalse(catalog.tracksAutomatically(.internationalPost))
+
+        parcel.carrier = .swissPost
+        parcel.trackingNumber = "RA123456785CH"
+        parcel.trackingURL = nil
+        let swissPost = try XCTUnwrap(catalog.trackingLinks(for: parcel, language: .fr).first)
+        XCTAssertEqual(swissPost.name, "Swiss Post")
+        XCTAssertEqual(swissPost.url.absoluteString, "https://service.post.ch/ekp-web/ui/entry/search/RA123456785CH?lang=fr")
+
+        parcel.carrier = .dhl
+        parcel.trackingNumber = "LF123456785DE"
+        parcel.trackingURL = "https://www.dhl.de/int-verfolgen/?piececode=LF123456785DE"
+        let dhl = try XCTUnwrap(catalog.trackingLinks(for: parcel, language: .fr).first)
+        XCTAssertEqual(dhl.name, "DHL")
+        XCTAssertEqual(dhl.url.absoluteString, parcel.trackingURL)
+    }
+
     func testPlanzerLinkKeepsQuickpacIdentityFor44Barcode() {
         let parsed = catalog.parse(
             "https://tracking.app.planzer.ch/delivery/info?deliveryNumber=443412345678901234"

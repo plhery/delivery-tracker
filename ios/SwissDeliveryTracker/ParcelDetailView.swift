@@ -122,22 +122,19 @@ struct ParcelDetailView: View {
 
     private func liveParcelPass(_ parcel: Parcel) -> some View {
         let tint = ExperimentalPalette.tint(for: parcel)
-        let carrier = catalog.info(for: parcel.activeTrackingCarrier)
+        let carrier = catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language)
         let trackingLinks = catalog.trackingLinks(for: parcel, language: localizer.language)
 
         return VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 6) {
-                Image(systemName: parcel.currentStage?.metadata.symbol ?? "shippingbox.fill")
+            VStack(alignment: .leading, spacing: 5) {
+                Label(localizer.parcelStatus(parcel), systemImage: parcel.currentStage?.metadata.symbol ?? "shippingbox.fill")
                     .foregroundStyle(tint)
-                Text(localizer.parcelStatus(parcel))
-                Text("·")
-                    .foregroundStyle(.tertiary)
                 Text(carrier.displayName)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-                Spacer(minLength: 0)
             }
             .font(.subheadline.weight(.semibold))
-            .lineLimit(1)
+            .fixedSize(horizontal: false, vertical: true)
 
             VStack(alignment: .leading, spacing: 5) {
                 Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
@@ -188,42 +185,42 @@ struct ParcelDetailView: View {
         links: [ParcelTrackingLink],
         tint: Color
     ) -> some View {
-        HStack(alignment: .center, spacing: 10) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(localizer.text("detail.trackingNumber"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(CarrierCatalog.format(parcel.trackingNumber))
-                    .font(.system(.subheadline, design: .monospaced, weight: .semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-                    .textSelection(.enabled)
-            }
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 10) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(localizer.text("detail.trackingNumber"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(CarrierCatalog.format(parcel.trackingNumber))
+                        .font(.system(.subheadline, design: .monospaced, weight: .semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .textSelection(.enabled)
+                }
 
-            Spacer(minLength: 4)
+                Spacer(minLength: 4)
 
-            Button {
-                copy(parcel.trackingNumber)
-            } label: {
-                Image(systemName: copied ? "checkmark" : "doc.on.doc")
-                    .font(.caption.weight(.bold))
-                    .frame(width: 30, height: 30)
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(tint)
-            .accessibilityLabel(localizer.text(copied ? "detail.copied" : "detail.copyTracking"))
-
-            if let link = links.first {
-                Link(destination: link.url) {
-                    Image(systemName: "arrow.up.right")
+                Button {
+                    copy(parcel.trackingNumber)
+                } label: {
+                    Image(systemName: copied ? "checkmark" : "doc.on.doc")
                         .font(.caption.weight(.bold))
                         .frame(width: 30, height: 30)
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(tint)
-                .accessibilityLabel(localizer.text("detail.openCarrier", ["carrier": link.name]))
+                .accessibilityLabel(localizer.text(copied ? "detail.copied" : "detail.copyTracking"))
+            }
+
+            if let link = links.first {
+                Link(destination: link.url) {
+                    Text(localizer.text("detail.openCarrier", ["carrier": link.name]))
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.vertical, 4)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(tint)
             }
         }
     }
@@ -395,11 +392,11 @@ private struct ChangeCarrierView: View {
 
                 Section(localizer.text("add.carrier")) {
                     Picker(localizer.text("add.carrier"), selection: $selectedCarrier) {
-                        if !catalog.info(for: parcel.carrier).selectable {
-                            Text(catalog.info(for: parcel.carrier).displayName).tag(parcel.carrier)
+                        if !catalog.info(for: parcel.carrier, language: localizer.language).selectable {
+                            Text(catalog.info(for: parcel.carrier, language: localizer.language).displayName).tag(parcel.carrier)
                         }
                         ForEach(catalog.selectableCarriers) { carrier in
-                            Text(catalog.info(for: carrier).displayName).tag(carrier)
+                            Text(catalog.info(for: carrier, language: localizer.language).displayName).tag(carrier)
                         }
                     }
                     .pickerStyle(.navigationLink)
@@ -409,7 +406,7 @@ private struct ChangeCarrierView: View {
                         errorMessage = nil
                     }
                     Text(localizer.text(catalog.trackingHintKey(for: selectedCarrier), [
-                        "carrier": catalog.info(for: selectedCarrier).displayName,
+                        "carrier": catalog.info(for: selectedCarrier, language: localizer.language).displayName,
                     ]))
                     .font(.footnote)
                     .foregroundStyle(.secondary)

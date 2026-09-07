@@ -77,6 +77,37 @@ test('adds a parcel from tracking text', async ({ page }) => {
   await expect(sheet).toBeHidden();
 });
 
+test('opens unknown postal tracking on 17TRACK in the selected language', async ({ page }) => {
+  await page.getByRole('button', { name: 'Add a parcel' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
+  await sheet.getByLabel("What's inside?").fill('Postal shipment');
+  await sheet.getByLabel('Tracking number or link').fill('RA123456785DE');
+  await expect(sheet.getByText('Unknown postal carrier', { exact: true })).toBeVisible();
+  await expect(sheet.getByText(/Automatic updates aren’t available. Check 17TRACK/)).toBeVisible();
+  await sheet.getByRole('button', { name: 'Add parcel' }).click();
+  await page.getByRole('button', { name: /^Postal shipment —/ }).click();
+  let detail = page.getByRole('dialog', { name: 'Postal shipment' });
+  const link = detail.getByRole('link', { name: 'Open on 17TRACK ↗' });
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute('href', 'https://t.17track.net/en#nums=RA123456785DE');
+  await expect(detail.getByRole('button', { name: 'Change carrier from Unknown postal carrier' })).toBeVisible();
+  await detail.getByRole('button', { name: 'Back', exact: true }).click();
+
+  await page.getByRole('combobox', { name: 'Language' }).selectOption('fr');
+  await page.getByRole('button', { name: /^Postal shipment —/ }).click();
+  detail = page.getByRole('dialog', { name: 'Postal shipment' });
+  await expect(detail.getByRole('button', { name: /Transporteur postal inconnu/ })).toBeVisible();
+  const frenchLink = detail.getByRole('link', { name: 'Ouvrir sur 17TRACK ↗' });
+  await expect(frenchLink).toBeVisible();
+  await expect(frenchLink).toHaveAttribute('href', 'https://t.17track.net/fr#nums=RA123456785DE');
+  await expect(detail.getByText(/Consultez 17TRACK ou choisissez le transporteur/)).toBeVisible();
+  const viewport = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth);
+});
+
 test('keeps invalid tracking input safely in the add sheet', async ({ page }) => {
   await page.getByRole('button', { name: 'Add a parcel' }).click();
   const sheet = page.getByRole('dialog', { name: 'Add a parcel' });

@@ -56,7 +56,7 @@ export function AddParcelSheet({
   const parsedTracking = parseTrackingInput(trackingInputValue);
   const trackingNumber = parsedTracking.trackingNumber;
   const resolvedCarrier = selectedCarrier === 'auto' ? parsedTracking.carrier : selectedCarrier;
-  const carrier = trackingNumber ? carrierInfo(resolvedCarrier) : null;
+  const carrier = trackingNumber ? carrierInfo(resolvedCarrier, locale) : null;
   const requirements = carrier ? carrierRequirements(carrier.id, trackingNumber) : [];
   const requiresCarrierConfirmation =
     selectedCarrier === 'auto' && parsedTracking.confidence === 'low';
@@ -76,7 +76,7 @@ export function AddParcelSheet({
     ? requiresCarrierConfirmation
       ? t('add.confirmCarrier', {
         carriers: parsedTracking.candidates
-          .map((candidate) => carrierInfo(candidate).name)
+          .map((candidate) => carrierInfo(candidate, locale).name)
           .join(` ${t('auth.or')} `),
       })
       : t(carrierTrackingHintKey(carrier.id), { carrier: carrier.name })

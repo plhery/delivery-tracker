@@ -35,14 +35,14 @@ describe('parcelDisplayStatus', () => {
 
   it('makes first-sync failures and unsupported carriers explicit', () => {
     expect(parcelDisplayStatus(parcel('error')).label).toBe("Update unavailable");
-    expect(parcelDisplayStatus(parcel('unsupported')).label).toBe("Check on carrier website");
+    expect(parcelDisplayStatus(parcel('unsupported')).label).toBe("Check tracking website");
   });
 
   it('explains link-only tracking immediately, before a worker checks it', () => {
     for (const carrier of ['intl-post', 'unknown', 'dhl'] as const) {
       const saved = { ...parcel('pending'), carrier };
       expect(parcelDisplayStatus(saved)).toEqual({
-        label: "Check on carrier website", tone: 'warn', syncing: false,
+        label: "Check tracking website", tone: 'warn', syncing: false,
       });
       expect(parcelDisplayStatusKey(saved)).toBe('status.unsupported');
       saved.events[0].stage = 'in_transit';

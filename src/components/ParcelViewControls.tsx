@@ -53,7 +53,7 @@ export function ParcelViewControls({
   onToggleAdvanced: () => void;
   onClearAll: () => void;
 }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const activeFilterCount = Number(query.trim().length > 0)
     + Number(status !== 'all')
     + Number(carrier !== '')
@@ -99,7 +99,7 @@ export function ParcelViewControls({
           )}
           {carrier && (
             <button type="button" onClick={() => onCarrierChange('')}>
-              <span>{carrierInfo(carrier).name}</span><b aria-hidden="true">×</b>
+              <span>{carrierInfo(carrier, locale).name}</span><b aria-hidden="true">×</b>
             </button>
           )}
           {sort !== 'priority' && (
@@ -135,7 +135,7 @@ export function ParcelViewControls({
               >
                 <option value="">{t('view.allCarriers')}</option>
                 {carriers.map((carrierId) => (
-                  <option key={carrierId} value={carrierId}>{carrierInfo(carrierId).name}</option>
+                  <option key={carrierId} value={carrierId}>{carrierInfo(carrierId, locale).name}</option>
                 ))}
               </select>
             </label>

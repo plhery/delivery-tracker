@@ -41,7 +41,7 @@ export function parcelDisplayStatus(parcel: ParcelWithEvents): ParcelDisplayStat
   const hasCarrierUpdate = parcelHasCarrierUpdate(parcel);
 
   if (!hasCarrierUpdate && !tracksAutomatically(activeTrackingCarrierId(parcel))) {
-    return { label: 'Check on carrier website', tone: 'warn', syncing: false };
+    return { label: 'Check tracking website', tone: 'warn', syncing: false };
   }
 
   if (!hasCarrierUpdate && (parcel.syncStatus === 'pending' || parcel.syncStatus === 'syncing')) {
@@ -52,7 +52,7 @@ export function parcelDisplayStatus(parcel: ParcelWithEvents): ParcelDisplayStat
   }
   if (!hasCarrierUpdate && parcel.syncStatus === 'unsupported') {
     return {
-      label: 'Check on carrier website',
+      label: 'Check tracking website',
       tone: 'warn',
       syncing: false,
     };

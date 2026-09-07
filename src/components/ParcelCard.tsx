@@ -30,8 +30,8 @@ export function ParcelCard({
   onArchive?: (parcel: ParcelWithEvents) => Promise<unknown>;
   notice?: string;
 }) {
-  const { languageTag, t } = useI18n();
-  const carrier = carrierInfo(activeTrackingCarrierId(parcel));
+  const { locale, languageTag, t } = useI18n();
+  const carrier = carrierInfo(activeTrackingCarrierId(parcel), locale);
   const current = currentEvent(parcel.events);
   const status = parcelDisplayStatus(parcel);
   const final = current ? isFinal(current.stage) : false;

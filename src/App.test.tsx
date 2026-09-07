@@ -66,6 +66,7 @@ describe('App', () => {
     const [sample] = await repo.list();
     const parcel: ParcelWithEvents = {
       ...sample, carrier: 'intl-post', trackingNumber: 'RA123456785DE',
+      trackingUrl: 'https://service.post.ch/ekp-web/ui/entry/search/RA123456785DE',
       label: 'Postal shipment', syncStatus: 'pending', events: [], archivedAt: undefined,
       syncError: 'Choose a carrier with an automatic adapter or use the carrier link.',
     };
@@ -75,12 +76,16 @@ describe('App', () => {
     await user.click(await screen.findByRole('button', { name: 'Add a parcel' }));
     const sheet = screen.getByRole('dialog', { name: 'Add a parcel' });
     await user.type(within(sheet).getByLabelText('Tracking number or link'), parcel.trackingNumber);
-    expect(within(sheet).getByText(/postal tracking number, but the carrier is still unknown/))
-      .toHaveTextContent('Automatic updates are unavailable.');
+    expect(within(sheet).getByText(/We haven’t identified the postal carrier/))
+      .toHaveTextContent('Automatic updates aren’t available.');
     await user.click(within(sheet).getByRole('button', { name: 'Cancel' }));
-    await user.click(screen.getByRole('button', { name: "Postal shipment — Check on carrier website" }));
+    await user.click(screen.getByRole('button', { name: "Postal shipment — Check tracking website" }));
     const detail = screen.getByRole('dialog', { name: 'Postal shipment' });
-    expect(within(detail).getByText(/postal tracking number, but the carrier is still unknown/)).toBeInTheDocument();
+    expect(within(detail).getByText(/We haven’t identified the postal carrier/)).toBeInTheDocument();
+    expect(within(detail).getByText('Unknown postal carrier', { exact: true })).toBeInTheDocument();
+    expect(within(detail).getByRole('link', { name: 'Open on 17TRACK ↗' }))
+      .toHaveAttribute('href', 'https://t.17track.net/en#nums=RA123456785DE');
+    expect(within(detail).queryByRole('link', { name: /Swiss Post|International Post/ })).not.toBeInTheDocument();
     expect(within(detail).queryByText(/automatic adapter/)).not.toBeInTheDocument();
     expect(within(detail).queryByRole('button', { name: 'Check now' })).not.toBeInTheDocument();
     expect(within(detail).queryByText(/hasn’t announced this shipment/)).not.toBeInTheDocument();
@@ -282,7 +287,7 @@ describe('App', () => {
     expect(screen.queryByText('Coffee beans ☕')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /hide filters/i }));
     expect(screen.queryByLabelText('Status')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /international post/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /unknown postal carrier/i })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /hide search & filters/i }));
     expect(screen.queryByRole('searchbox', { name: 'Search parcels' })).not.toBeInTheDocument();
     expect(viewToggle).toHaveTextContent('Custom view');
@@ -521,7 +526,7 @@ describe('App', () => {
       'Heppner',
       'Ciblex',
       'Paack',
-      "Asendia (check on carrier website)",
+      "Asendia (check tracking website)",
     ]) {
       expect(within(carrier).getByRole('option', { name })).toBeInTheDocument();
     }

@@ -312,7 +312,7 @@ private struct DeliveryListView: View {
 
     private var availableCarriers: [CarrierID] {
         Array(Set(store.parcels.map(\.carrier))).sorted {
-            catalog.info(for: $0).displayName < catalog.info(for: $1).displayName
+            catalog.info(for: $0, language: localizer.language).displayName < catalog.info(for: $1, language: localizer.language).displayName
         }
     }
 
@@ -342,7 +342,7 @@ private struct DeliveryListView: View {
                     filterChip(localizer.text(statusFilter.localizationKey)) { statusFilter = .all }
                 }
                 if let carrierFilter {
-                    filterChip(catalog.info(for: carrierFilter).displayName) { self.carrierFilter = nil }
+                    filterChip(catalog.info(for: carrierFilter, language: localizer.language).displayName) { self.carrierFilter = nil }
                 }
                 if sort != .priority {
                     filterChip(localizer.text(sort.localizationKey)) { sort = .priority }
@@ -513,7 +513,7 @@ private struct ExperimentalNextDeliveryPass: View {
                 Text(localizer.parcelStatus(parcel))
                 Text("·")
                     .foregroundStyle(.tertiary)
-                Text(catalog.info(for: parcel.activeTrackingCarrier).displayName)
+                Text(catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName)
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
             }
@@ -546,7 +546,7 @@ private struct ExperimentalNextDeliveryPass: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(tint)
                 Text(parcel.experimentalLatestLocation
-                    ?? catalog.info(for: parcel.activeTrackingCarrier).displayName)
+                    ?? catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName)
                     .font(.subheadline)
                     .lineLimit(1)
                 Text("·")
@@ -607,7 +607,7 @@ private struct ExperimentalParcelPassCard: View {
                 }
 
                 HStack(spacing: 6) {
-                    Text(catalog.info(for: parcel.activeTrackingCarrier).displayName)
+                    Text(catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName)
                     if let expected = localizer.parcelDeliveryEstimate(parcel) {
                         Text("·")
                             .foregroundStyle(.tertiary)
@@ -701,7 +701,7 @@ private struct ExperimentalDeliveredParcelCard: View {
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
-                    Text(catalog.info(for: parcel.activeTrackingCarrier).displayName)
+                    Text(catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -1056,7 +1056,7 @@ private struct ExperimentalArchivedParcelRow: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
-                    Text("\(catalog.info(for: parcel.activeTrackingCarrier).displayName) · \(localizer.parcelStatus(parcel))")
+                    Text("\(catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName) · \(localizer.parcelStatus(parcel))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -1225,7 +1225,7 @@ private struct PassportView: View {
                 passportFact(
                     symbol: "star.fill",
                     title: copy.mostUsedCarrier,
-                    value: catalog.info(for: favorite).displayName,
+                    value: catalog.info(for: favorite, language: localizer.language).displayName,
                     tint: Brand.accent
                 )
             }
@@ -1262,7 +1262,7 @@ private struct PassportView: View {
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
                 Text([
-                    catalog.info(for: parcel.carrier).displayName,
+                    catalog.info(for: parcel.carrier, language: localizer.language).displayName,
                     parcel.experimentalLatestLocation,
                 ].compactMap { $0 }.joined(separator: " · "))
                     .font(.caption)

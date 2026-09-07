@@ -509,7 +509,7 @@ final class ParcelStore: ObservableObject {
                 DeliveryWidgetParcel(
                     id: parcel.id,
                     label: parcel.label.nonEmpty ?? localizer.text("common.parcel"),
-                    carrier: CarrierCatalog.shared.info(for: parcel.carrier).displayName,
+                    carrier: CarrierCatalog.shared.info(for: parcel.carrier, language: localizer.language).displayName,
                     trackingNumber: CarrierCatalog.format(parcel.trackingNumber),
                     detail: localizer.parcelDeliveryEstimate(parcel)
                         ?? localizer.text(parcel.displayStatus.key),
@@ -682,7 +682,7 @@ final class ParcelStore: ObservableObject {
         let activityParcel = DeliveryActivityParcel(
             id: parcel.id,
             label: parcel.label.nonEmpty ?? localizer.text("common.parcel"),
-            carrier: CarrierCatalog.shared.info(for: parcel.carrier).displayName,
+            carrier: CarrierCatalog.shared.info(for: parcel.carrier, language: localizer.language).displayName,
             status: status,
             detail: detail,
             phase: phase

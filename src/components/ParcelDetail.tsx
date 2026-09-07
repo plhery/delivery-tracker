@@ -56,7 +56,7 @@ export function ParcelDetail({
   onDelete: (parcel: ParcelWithEvents) => Promise<unknown>;
 }) {
   const { locale, languageTag, t } = useI18n();
-  const carrier = carrierInfo(activeTrackingCarrierId(parcel));
+  const carrier = carrierInfo(activeTrackingCarrierId(parcel), locale);
   const automaticTracking = tracksAutomatically(carrier.id);
   const current = currentEvent(parcel.events);
   const status = parcelDisplayStatus(parcel);
@@ -405,7 +405,7 @@ export function ParcelDetail({
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <span>{t('detail.openCarrier', { carrier: link.carrier.name })}</span>
+                  <span>{t('detail.openCarrier', { carrier: link.name })}</span>
                   {link.role !== 'active' && (
                     <small>
                       {link.role === 'waiting'

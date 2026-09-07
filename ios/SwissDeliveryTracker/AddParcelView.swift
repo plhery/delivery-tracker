@@ -242,7 +242,7 @@ struct AddParcelView: View {
                 detectionRow
                     .transition(.move(edge: .top).combined(with: .opacity))
                 Text(localizer.text(catalog.trackingHintKey(for: resolvedCarrier), [
-                    "carrier": catalog.info(for: resolvedCarrier).displayName,
+                    "carrier": catalog.info(for: resolvedCarrier, language: localizer.language).displayName,
                 ]))
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -261,7 +261,7 @@ struct AddParcelView: View {
     }
 
     private var detectionRow: some View {
-        let definition = catalog.info(for: resolvedCarrier)
+        let definition = catalog.info(for: resolvedCarrier, language: localizer.language)
 
         return HStack(spacing: 11) {
             ZStack {
@@ -446,7 +446,7 @@ struct AddParcelView: View {
     private var detectedTint: Color {
         resolvedCarrier == .unknown
             ? Brand.accent
-            : Color(hex: catalog.info(for: resolvedCarrier).color)
+            : Color(hex: catalog.info(for: resolvedCarrier, language: localizer.language).color)
     }
 
     private var requirements: [CarrierRequirement] {
@@ -648,7 +648,7 @@ struct ParcelFilterView: View {
                     Picker(localizer.text("view.carrier"), selection: $carrier) {
                         Text(localizer.text("view.allCarriers")).tag(Optional<CarrierID>.none)
                         ForEach(carriers) { value in
-                            Text(catalog.info(for: value).displayName).tag(Optional(value))
+                            Text(catalog.info(for: value, language: localizer.language).displayName).tag(Optional(value))
                         }
                     }
                 }

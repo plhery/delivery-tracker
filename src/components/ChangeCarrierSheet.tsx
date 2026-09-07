@@ -35,7 +35,7 @@ export function ChangeCarrierSheet({
   const [error, setError] = useState<string | null>(null);
   const carrierSelect = useRef<HTMLSelectElement>(null);
   const dialog = useModalDialog<HTMLDivElement>(true, onClose, carrierSelect);
-  const carrier = carrierInfo(selectedCarrier);
+  const carrier = carrierInfo(selectedCarrier, locale);
   const requirements = carrierRequirements(selectedCarrier, parcel.trackingNumber);
   const valueFor = (field: CarrierInputField) => field === 'trackingUrl'
     ? trackingUrl
@@ -121,9 +121,9 @@ export function ChangeCarrierSheet({
               value={selectedCarrier}
               onChange={(event) => selectCarrier(event.target.value as CarrierId)}
             >
-              {!carrierInfo(parcel.carrier).capabilities.selectable && (
+              {!carrierInfo(parcel.carrier, locale).capabilities.selectable && (
                 <option value={parcel.carrier}>
-                  {carrierInfo(parcel.carrier).name} ({t('add.linkOnly')})
+                  {carrierInfo(parcel.carrier, locale).name} ({t('add.linkOnly')})
                 </option>
               )}
               {SELECTABLE_CARRIERS.map((option) => (

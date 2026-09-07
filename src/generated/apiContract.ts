@@ -1005,7 +1005,14 @@ export const CARRIER_CAPABILITIES = {
     ]
   },
   "intl-post": {
-    "displayName": "International Post",
+    "displayName": "Unknown postal carrier",
+    "displayNames": {
+      "en": "Unknown postal carrier",
+      "de": "Postanbieter unbekannt",
+      "fr": "Transporteur postal inconnu",
+      "it": "Corriere postale sconosciuto"
+    },
+    "trackingSiteName": "17TRACK",
     "color": "#2c6fb5",
     "selectable": false,
     "timezone": "UTC",
@@ -1013,7 +1020,7 @@ export const CARRIER_CAPABILITIES = {
       "mode": "link-only",
       "adapter": null
     },
-    "trackingUrlTemplate": "https://service.post.ch/ekp-web/ui/entry/search/{trackingNumber}",
+    "trackingUrlTemplate": "https://t.17track.net/en#nums={trackingNumber}",
     "linkRules": [],
     "detectionRules": [
       {

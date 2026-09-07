@@ -34,6 +34,7 @@ export interface CarrierCapabilities {
 export interface CarrierInfo {
   id: CarrierId;
   name: string;
+  trackingSiteName?: string;
   /** Accent used for the carrier chip in the UI. */
   color: string;
   trackingUrl?: (trackingNumber: string) => string;
@@ -54,6 +55,7 @@ export interface TrackingInputMatch extends CarrierDetection {
 
 export interface ParcelTrackingLink {
   carrier: CarrierInfo;
+  name: string;
   url: string;
   active: boolean;
   ready: boolean;
@@ -76,6 +78,8 @@ interface TrackingLinkRule {
 
 interface RawCarrierCapability {
   displayName: string;
+  displayNames?: Record<string, string>;
+  trackingSiteName?: string;
   color: string;
   selectable: boolean;
   timezone: string;
@@ -123,6 +127,7 @@ export const CARRIERS = Object.fromEntries(
     {
       id: id as CarrierId,
       name: carrier.displayName,
+      trackingSiteName: carrier.trackingSiteName,
       color: carrier.color,
       trackingUrl: trackingLink(id as CarrierId, carrier.trackingUrlTemplate),
       capabilities: {
@@ -198,10 +203,13 @@ export function parcelTrackingLinks(
   locale?: string,
 ): ParcelTrackingLink[] {
   if (!supportsSwissPostHandoff(parcel.trackingNumber)) {
-    const carrier = carrierInfo(parcel.carrier);
-    const url = parcel.trackingUrl ?? carrier.trackingUrl?.(parcel.trackingNumber);
+    const carrier = carrierInfo(parcel.carrier, locale);
+    // Older generic postal parcels may have a Swiss Post fallback saved on them.
+    const savedUrl = parcel.carrier === 'intl-post' ? undefined : parcel.trackingUrl;
+    const url = savedUrl ?? carrier.trackingUrl?.(parcel.trackingNumber);
     return url ? [{
       carrier,
+      name: carrier.trackingSiteName ?? carrier.name,
       url: localizedCarrierUrl(carrier.id, url, locale),
       active: true,
       ready: true,
@@ -212,11 +220,12 @@ export function parcelTrackingLinks(
   const activeCarrier = activeTrackingCarrierId(parcel);
   const swissPostReady = parcel.swissPostReady === true || activeCarrier === 'swiss-post';
   const links = (['aliexpress', 'swiss-post'] as const).map((carrierId) => {
-    const carrier = carrierInfo(carrierId);
+    const carrier = carrierInfo(carrierId, locale);
     const active = carrierId === activeCarrier;
     const ready = carrierId !== 'swiss-post' || swissPostReady;
     return {
       carrier,
+      name: carrier.trackingSiteName ?? carrier.name,
       url: localizedCarrierUrl(
         carrier.id,
         carrier.trackingUrl!(parcel.trackingNumber),
@@ -235,10 +244,16 @@ function localizedCarrierUrl(
   url: string,
   locale?: string,
 ): string {
-  if (carrierId !== 'swiss-post' || !locale) return url;
+  if (!locale || !['en', 'de', 'fr', 'it'].includes(locale)) return url;
   try {
     const localizedUrl = new URL(url);
-    localizedUrl.searchParams.set('lang', locale);
+    if (carrierId === 'swiss-post') {
+      localizedUrl.searchParams.set('lang', locale);
+    } else if (carrierId === 'intl-post' && localizedUrl.hostname === 't.17track.net') {
+      localizedUrl.pathname = `/${locale}`;
+    } else {
+      return url;
+    }
     return localizedUrl.toString();
   } catch {
     return url;
@@ -453,8 +468,10 @@ export function formatTrackingNumber(raw: string): string {
   return value;
 }
 
-export function carrierInfo(id: CarrierId): CarrierInfo {
-  return CARRIERS[id] ?? CARRIERS.unknown;
+export function carrierInfo(id: CarrierId, locale?: string): CarrierInfo {
+  const carrier = CARRIERS[id] ?? CARRIERS.unknown;
+  const name = locale ? RAW_CARRIERS[carrier.id].displayNames?.[locale] : undefined;
+  return name ? { ...carrier, name } : carrier;
 }
 
 export const SELECTABLE_CARRIERS = Object.values(CARRIERS).filter(

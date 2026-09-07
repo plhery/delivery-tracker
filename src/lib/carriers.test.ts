@@ -70,6 +70,44 @@ describe('supportsSwissPostHandoff', () => {
   });
 });
 
+describe('unknown postal carrier links', () => {
+  it.each([
+    ['en', 'Unknown postal carrier'],
+    ['de', 'Postanbieter unbekannt'],
+    ['fr', 'Transporteur postal inconnu'],
+    ['it', 'Corriere postale sconosciuto'],
+  ])('names the fallback and opens 17TRACK in %s', (locale, name) => {
+    for (const trackingUrl of [undefined, 'https://service.post.ch/ekp-web/ui/entry/search/RA123456785DE']) {
+      const [link] = parcelTrackingLinks({
+        carrier: 'intl-post', trackingNumber: 'RA123456785DE', trackingUrl,
+      }, locale);
+      expect(carrierInfo('intl-post', locale).name).toBe(name);
+      expect(link.carrier.name).toBe(name);
+      expect(link.name).toBe('17TRACK');
+      expect(link.url).toBe(`https://t.17track.net/${locale}#nums=RA123456785DE`);
+      expect(link.role).toBe('active');
+    }
+    expect(tracksAutomatically('intl-post')).toBe(false);
+  });
+
+  it('uses English by default and keeps real carrier destinations', () => {
+    expect(carrierInfo('intl-post').name).toBe('Unknown postal carrier');
+    expect(parcelTrackingLinks({ carrier: 'intl-post', trackingNumber: 'RA123456785DE' })[0].url)
+      .toBe('https://t.17track.net/en#nums=RA123456785DE');
+    const [dhl] = parcelTrackingLinks({
+      carrier: 'dhl', trackingNumber: 'LF123456785DE',
+      trackingUrl: 'https://www.dhl.de/int-verfolgen/?piececode=LF123456785DE',
+    }, 'fr');
+    expect(dhl.name).toBe('DHL');
+    expect(dhl.url).toBe('https://www.dhl.de/int-verfolgen/?piececode=LF123456785DE');
+    const [swissPost] = parcelTrackingLinks({
+      carrier: 'swiss-post', trackingNumber: 'RA123456785CH',
+    }, 'fr');
+    expect(swissPost.name).toBe('Swiss Post');
+    expect(swissPost.url).toBe('https://service.post.ch/ekp-web/ui/entry/search/RA123456785CH?lang=fr');
+  });
+});
+
 describe('detectCarrier', () => {
   it('recognises Planzer 20-digit delivery numbers', () => {
     expect(detectCarrier('91346097020038089282')).toBe('planzer');

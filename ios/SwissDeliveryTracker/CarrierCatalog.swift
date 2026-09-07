@@ -69,7 +69,9 @@ struct CarrierDefinition: Codable, Sendable {
         let checksum: String?
     }
 
-    let displayName: String
+    var displayName: String
+    let displayNames: [String: String]?
+    let trackingSiteName: String?
     let color: String
     let selectable: Bool
     let timezone: String
@@ -79,7 +81,7 @@ struct CarrierDefinition: Codable, Sendable {
     let detectionRules: [DetectionRule]
 
     enum CodingKeys: String, CodingKey {
-        case displayName, color, selectable, timezone, tracking, linkRules, detectionRules
+        case displayName, displayNames, trackingSiteName, color, selectable, timezone, tracking, linkRules, detectionRules
         case trackingURLTemplate = "trackingUrlTemplate"
     }
 }
@@ -224,8 +226,12 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         }
     }
 
-    func info(for carrier: CarrierID) -> CarrierDefinition {
-        definitions[carrier] ?? definitions[.unknown] ?? Self.fallbackDefinitions[.unknown]!
+    func info(for carrier: CarrierID, language: AppLanguage? = nil) -> CarrierDefinition {
+        var definition = definitions[carrier] ?? definitions[.unknown] ?? Self.fallbackDefinitions[.unknown]!
+        if let language, let name = definition.displayNames?[language.rawValue] {
+            definition.displayName = name
+        }
+        return definition
     }
 
     var selectableCarriers: [CarrierID] {
@@ -348,8 +354,10 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
 
     func trackingLinks(for parcel: Parcel, language: AppLanguage) -> [ParcelTrackingLink] {
         if !Self.supportsSwissPostHandoff(parcel.trackingNumber) {
-            let definition = info(for: parcel.carrier)
-            guard let raw = parcel.trackingURL
+            let definition = info(for: parcel.carrier, language: language)
+            // Replace the Swiss Post fallback previously saved on generic postal parcels.
+            let savedURL = parcel.carrier == .internationalPost ? nil : parcel.trackingURL
+            guard let raw = savedURL
                     ?? Self.renderTrackingURL(
                         definition.trackingURLTemplate,
                         carrier: parcel.carrier,
@@ -358,7 +366,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
                   let url = localizedURL(raw, carrier: parcel.carrier, language: language) else { return [] }
             return [ParcelTrackingLink(
                 carrier: parcel.carrier,
-                name: definition.displayName,
+                name: definition.trackingSiteName ?? definition.displayName,
                 url: url,
                 role: .active
             )]
@@ -367,7 +375,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         let active = parcel.activeTrackingCarrier
         let ready = parcel.swissPostReady || active == .swissPost
         return [CarrierID.aliexpress, .swissPost].compactMap { carrier in
-            let definition = info(for: carrier)
+            let definition = info(for: carrier, language: language)
             guard let template = definition.trackingURLTemplate,
                   let url = localizedURL(
                     template.replacingOccurrences(
@@ -379,7 +387,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             let role: ParcelTrackingLink.Role = carrier == active
                 ? .active
                 : (carrier == .swissPost && !ready ? .waiting : .history)
-            return ParcelTrackingLink(carrier: carrier, name: definition.displayName, url: url, role: role)
+            return ParcelTrackingLink(carrier: carrier, name: definition.trackingSiteName ?? definition.displayName, url: url, role: role)
         }.sorted { left, _ in left.role == .active }
     }
 
@@ -412,13 +420,15 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     }
 
     private func localizedURL(_ raw: String, carrier: CarrierID, language: AppLanguage) -> URL? {
-        guard carrier == .swissPost, var components = URLComponents(string: raw) else {
-            return URL(string: raw)
+        guard var components = URLComponents(string: raw) else { return nil }
+        if carrier == .swissPost {
+            var items = components.queryItems ?? []
+            items.removeAll { $0.name == "lang" }
+            items.append(URLQueryItem(name: "lang", value: language.rawValue))
+            components.queryItems = items
+        } else if carrier == .internationalPost, components.host == "t.17track.net" {
+            components.path = "/\(language.rawValue)"
         }
-        var items = components.queryItems ?? []
-        items.removeAll { $0.name == "lang" }
-        items.append(URLQueryItem(name: "lang", value: language.rawValue))
-        components.queryItems = items
         return components.url
     }
 
@@ -587,6 +597,8 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     private static let fallbackDefinitions: [CarrierID: CarrierDefinition] = [
         .unknown: CarrierDefinition(
             displayName: "Carrier",
+            displayNames: nil,
+            trackingSiteName: nil,
             color: "#8e8e93",
             selectable: false,
             timezone: "UTC",
