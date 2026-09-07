@@ -26,7 +26,8 @@ Cargo, Quickpac, Planzer, DPD Switzerland, GLS Switzerland, UPS, Cainiao /
 AliExpress, SunYou, Hermes Einrichtungs-Service, Spring GDS, PostLogistics and
 Dachser, plus DPD France, Mondial Relay, Relais Colis, La Poste / Colissimo,
 Chronopost, GLS France, Colis Privé, GEODIS, Colisweb, C Chez Vous, Heppner,
-Ciblex and Paack. Asendia, DHL and FedEx use carrier links; ShipUp stays
+Ciblex, Paack and DHL / Deutsche Post (German parcels and tracked mail).
+Asendia and FedEx use carrier links; ShipUp stays
 available as a manual record. Sign in on any device, get push notifications,
 and keep every tracking credential private to your account.
 
