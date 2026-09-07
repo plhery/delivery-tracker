@@ -1,6 +1,7 @@
 import type { ParcelWithEvents } from '../types';
 import type { MessageKey } from '../i18n';
 import { currentEvent, stageMeta } from './stages';
+import { activeTrackingCarrierId, tracksAutomatically } from './carriers';
 
 export interface ParcelDisplayStatus {
   label: string;
@@ -21,6 +22,10 @@ export function parcelIsUnannounced(parcel: ParcelWithEvents): boolean {
 export function parcelDisplayStatus(parcel: ParcelWithEvents): ParcelDisplayStatus {
   const current = currentEvent(parcel.events);
   const hasCarrierUpdate = parcelHasCarrierUpdate(parcel);
+
+  if (!hasCarrierUpdate && !tracksAutomatically(activeTrackingCarrierId(parcel))) {
+    return { label: 'Automatic sync unavailable', tone: 'warn', syncing: false };
+  }
 
   if (!hasCarrierUpdate && (parcel.syncStatus === 'pending' || parcel.syncStatus === 'syncing')) {
     return { label: 'Sync in progress', tone: 'ok', syncing: true };
@@ -50,6 +55,9 @@ export function parcelDisplayStatus(parcel: ParcelWithEvents): ParcelDisplayStat
 export function parcelDisplayStatusKey(parcel: ParcelWithEvents): MessageKey {
   const current = currentEvent(parcel.events);
   const hasCarrierUpdate = parcelHasCarrierUpdate(parcel);
+  if (!hasCarrierUpdate && !tracksAutomatically(activeTrackingCarrierId(parcel))) {
+    return 'status.unsupported';
+  }
   if (!hasCarrierUpdate && (parcel.syncStatus === 'pending' || parcel.syncStatus === 'syncing')) {
     return 'status.syncing';
   }

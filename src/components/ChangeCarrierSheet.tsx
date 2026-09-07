@@ -4,6 +4,7 @@ import {
   type CarrierInputField,
   carrierInfo,
   carrierRequirements,
+  carrierTrackingHintKey,
   formatTrackingNumber,
   SELECTABLE_CARRIERS,
   tracksAutomatically,
@@ -119,6 +120,11 @@ export function ChangeCarrierSheet({
               value={selectedCarrier}
               onChange={(event) => selectCarrier(event.target.value as CarrierId)}
             >
+              {!carrierInfo(parcel.carrier).capabilities.selectable && (
+                <option value={parcel.carrier}>
+                  {carrierInfo(parcel.carrier).name} ({t('add.linkOnly')})
+                </option>
+              )}
               {SELECTABLE_CARRIERS.map((option) => (
                 <option key={option.id} value={option.id}>
                   {option.name}{tracksAutomatically(option.id) ? '' : ` (${t('add.linkOnly')})`}
@@ -132,9 +138,7 @@ export function ChangeCarrierSheet({
               <small>{t('add.carrier')}</small>
               <strong>{carrier.name}</strong>
               <span>
-                {tracksAutomatically(carrier.id)
-                  ? t('add.autoSync', { carrier: carrier.name })
-                  : t('add.linkSync', { carrier: carrier.name })}
+                {t(carrierTrackingHintKey(carrier.id), { carrier: carrier.name })}
               </span>
             </span>
           </div>

@@ -241,6 +241,12 @@ struct AddParcelView: View {
                 Divider().overlay(Brand.separator.opacity(0.5))
                 detectionRow
                     .transition(.move(edge: .top).combined(with: .opacity))
+                Text(localizer.text(catalog.trackingHintKey(for: resolvedCarrier), [
+                    "carrier": catalog.info(for: resolvedCarrier).displayName,
+                ]))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             } else if !cleanedInput.isEmpty {
                 Divider().overlay(Brand.separator.opacity(0.5))
                 Label(localizer.text("add.notFound"), systemImage: "text.magnifyingglass")
@@ -255,13 +261,12 @@ struct AddParcelView: View {
     }
 
     private var detectionRow: some View {
-        let strings = ExperimentalCopy(language: localizer.language)
         let definition = catalog.info(for: resolvedCarrier)
 
         return HStack(spacing: 11) {
             ZStack {
                 Circle().fill(detectedTint.opacity(0.16))
-                Image(systemName: "checkmark")
+                Image(systemName: catalog.tracksAutomatically(resolvedCarrier) ? "checkmark" : "questionmark")
                     .font(.caption.weight(.heavy))
                     .foregroundStyle(detectedTint)
                     .symbolEffect(.bounce, value: parsed.trackingNumber)
@@ -269,7 +274,8 @@ struct AddParcelView: View {
             .frame(width: 30, height: 30)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(strings.trackingReady)
+                Text(localizer.text(catalog.tracksAutomatically(resolvedCarrier)
+                    ? "add.detectedCarrier" : "status.unsupported"))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Text(CarrierCatalog.format(parsed.trackingNumber))

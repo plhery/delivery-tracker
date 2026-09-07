@@ -4,6 +4,7 @@ import {
   type CarrierInputField,
   carrierInfo,
   carrierRequirements,
+  carrierTrackingHintKey,
   formatTrackingNumber,
   parseTrackingInput,
   SELECTABLE_CARRIERS,
@@ -77,11 +78,7 @@ export function AddParcelSheet({
           .map((candidate) => carrierInfo(candidate).name)
           .join(` ${t('auth.or')} `),
       })
-      : carrier.id === 'unknown'
-        ? t('add.unknownCarrier')
-        : tracksAutomatically(carrier.id)
-          ? t('add.autoSync', { carrier: carrier.name })
-          : t('add.linkSync', { carrier: carrier.name })
+      : t(carrierTrackingHintKey(carrier.id), { carrier: carrier.name })
     : '';
   const carrierPickerVisible = Boolean(trackingNumber) && (
     showCarrierPicker || requiresCarrierConfirmation || carrier?.id === 'unknown'
@@ -204,10 +201,12 @@ export function AddParcelSheet({
             </p>
           )}
           {carrier && trackingNumber && (
-            <div className={`sheet__carrier-card${requiresCarrierConfirmation ? ' sheet__carrier-card--warning' : ''}`}>
+            <div className={`sheet__carrier-card${requiresCarrierConfirmation || !tracksAutomatically(carrier.id) ? ' sheet__carrier-card--warning' : ''}`}>
               <span className="sheet__carrier-mark" aria-hidden="true" />
               <span className="sheet__carrier-copy">
-                <small>{selectedCarrier === 'auto' ? t('add.detectedCarrier') : t('add.carrier')}</small>
+                <small>{selectedCarrier === 'auto' && carrier.id !== 'intl-post' && carrier.id !== 'unknown'
+                  ? t('add.detectedCarrier')
+                  : t('add.carrier')}</small>
                 <strong>{carrier.name}</strong>
                 <span>{carrierHint}</span>
               </span>

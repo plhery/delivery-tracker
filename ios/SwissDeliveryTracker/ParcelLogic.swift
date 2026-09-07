@@ -80,6 +80,9 @@ extension Parcel {
     }
 
     var displayStatus: ParcelDisplayStatus {
+        if !hasCarrierUpdate && !CarrierCatalog.shared.tracksAutomatically(activeTrackingCarrier) {
+            return ParcelDisplayStatus(key: "status.unsupported", tone: .warning, syncing: false)
+        }
         if !hasCarrierUpdate && (syncStatus == .pending || syncStatus == .syncing) {
             return ParcelDisplayStatus(key: "status.syncing", tone: .normal, syncing: true)
         }

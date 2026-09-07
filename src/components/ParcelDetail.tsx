@@ -3,8 +3,10 @@ import { createPortal } from 'react-dom';
 import {
   activeTrackingCarrierId,
   carrierInfo,
+  carrierTrackingHintKey,
   formatTrackingNumber,
   parcelTrackingLinks,
+  tracksAutomatically,
 } from '../lib/carriers';
 import {
   localizedExpectedDelivery,
@@ -15,6 +17,7 @@ import {
   localizedParcelCompletionDate,
   parcelDisplayStatus,
   parcelDisplayStatusKey,
+  parcelHasCarrierUpdate,
 } from '../lib/parcelStatus';
 import { currentEvent, isFinal } from '../lib/stages';
 import { isBackSwipe, type TouchPoint } from '../lib/swipe';
@@ -52,6 +55,7 @@ export function ParcelDetail({
 }) {
   const { locale, languageTag, t } = useI18n();
   const carrier = carrierInfo(activeTrackingCarrierId(parcel));
+  const automaticTracking = tracksAutomatically(carrier.id);
   const current = currentEvent(parcel.events);
   const status = parcelDisplayStatus(parcel);
   const final = current ? isFinal(current.stage) : false;
@@ -417,7 +421,19 @@ export function ParcelDetail({
             {t('detail.copyUnavailable')}
           </p>
         )}
-        {parcel.syncError && (
+        {!automaticTracking && (
+          <div className="detail__tracking-help" role="note">
+            <p>{t(carrierTrackingHintKey(carrier.id), { carrier: carrier.name })}</p>
+            <button
+              type="button"
+              className="button button--secondary"
+              onClick={() => setEditingCarrier(true)}
+            >
+              {t('detail.changeCarrier')}
+            </button>
+          </div>
+        )}
+        {automaticTracking && parcel.syncError && (
           <p className="detail__sync-error" role="status">{parcel.syncError}</p>
         )}
         <div className="detail__freshness">
@@ -425,7 +441,7 @@ export function ParcelDetail({
             {lastChecked && <span>{t('detail.lastChecked', { date: lastChecked })}</span>}
             {lastUpdate && <span>{t('detail.lastUpdate', { date: lastUpdate })}</span>}
           </div>
-          {!parcel.archivedAt && (
+          {!parcel.archivedAt && automaticTracking && (
             <button
               type="button"
               className="detail__refresh"
@@ -446,12 +462,14 @@ export function ParcelDetail({
         )}
       </section>
 
-      <section className="detail__timeline">
-        <div className="detail__section-heading">
-          <h2 className="detail__section-title">{t('detail.journey')}</h2>
-        </div>
-        <Timeline events={parcel.events} syncing={status.syncing} />
-      </section>
+      {(automaticTracking || parcelHasCarrierUpdate(parcel)) && (
+        <section className="detail__timeline">
+          <div className="detail__section-heading">
+            <h2 className="detail__section-title">{t('detail.journey')}</h2>
+          </div>
+          <Timeline events={parcel.events} syncing={status.syncing} />
+        </section>
+      )}
 
       {parcel.archivedAt && (
         <footer className="detail__footer detail__footer--archived">

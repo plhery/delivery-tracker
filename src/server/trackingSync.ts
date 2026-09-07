@@ -554,7 +554,7 @@ export class TrackingSyncService {
         await audit.step('persist_package', async () => {
           await persist({
             sync_status: 'unsupported',
-            sync_error: 'Choose a carrier with an automatic adapter or use the carrier link.',
+            sync_error: 'Automatic updates are unavailable for this carrier. Change the carrier or check the tracking link.',
             last_synced_at: null,
           });
         });

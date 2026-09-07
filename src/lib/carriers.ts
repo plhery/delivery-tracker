@@ -261,6 +261,12 @@ export function tracksAutomatically(carrierId: CarrierId): boolean {
   return CARRIERS[carrierId].capabilities.tracking.mode === 'automatic';
 }
 
+export function carrierTrackingHintKey(carrierId: CarrierId) {
+  if (carrierId === 'intl-post') return 'add.internationalPost';
+  if (carrierId === 'unknown') return 'add.unknownCarrier';
+  return tracksAutomatically(carrierId) ? 'add.autoSync' : 'add.linkSync';
+}
+
 /** Return only a high-confidence carrier; preserve ambiguous candidates for the UI. */
 export function detectCarrierMatch(raw: string): CarrierDetection {
   const trackingNumber = normalizeTrackingNumber(raw);

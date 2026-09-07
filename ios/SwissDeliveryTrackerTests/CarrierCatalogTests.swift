@@ -2,7 +2,8 @@ import XCTest
 @testable import SwissDeliveryTracker
 
 final class CarrierCatalogTests: XCTestCase {
-    private let catalog = CarrierCatalog.shared
+    // Exercise the bundled rules without inheriting a previously cached live catalog.
+    private let catalog = CarrierCatalog(cacheURL: nil)
 
     func testDetectsHighConfidenceCarriers() {
         XCTAssertEqual(catalog.detect("1Z999AA10123456784").carrier, .ups)
@@ -27,6 +28,29 @@ final class CarrierCatalogTests: XCTestCase {
             XCTAssertEqual(frenchResult.confidence, .low)
         }
         XCTAssertEqual(catalog.detect("99112233445500000").confidence, .none)
+    }
+
+    func testRecognisesDutchPostAndExplainsGenericPostalTracking() {
+        let detected = catalog.detect("LX123456785NL")
+        XCTAssertEqual(detected.carrier, .springGDS)
+        XCTAssertEqual(detected.confidence, .high)
+        XCTAssertEqual(detected.candidates, [.springGDS])
+        XCTAssertEqual(catalog.detect("lx 123.456-785 nl").carrier, .springGDS)
+        XCTAssertEqual(catalog.detect("LX123456789NL").carrier, .unknown)
+        XCTAssertEqual(catalog.detect("LX123456785DE").carrier, .internationalPost)
+        XCTAssertTrue(catalog.tracksAutomatically(.springGDS))
+        XCTAssertEqual(catalog.info(for: .springGDS).displayName, "PostNL / Spring GDS")
+        XCTAssertEqual(catalog.trackingHintKey(for: .internationalPost), "add.internationalPost")
+        XCTAssertEqual(catalog.trackingHintKey(for: .unknown), "add.unknownCarrier")
+        XCTAssertEqual(catalog.trackingHintKey(for: .dhl), "add.linkSync")
+        for input in [
+            "https://postnl.post/details/LX123456785NL",
+            "https://postnl.post/tracktrace?B=LX123456785NL",
+            "Your Myprotein shipment: LX123456785NL",
+        ] {
+            XCTAssertEqual(catalog.parse(input).carrier, .springGDS)
+            XCTAssertEqual(catalog.parse(input).trackingNumber, "LX123456785NL")
+        }
     }
 
     func testParsesKnownCarrierLink() {

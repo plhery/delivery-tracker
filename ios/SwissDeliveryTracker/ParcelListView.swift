@@ -510,7 +510,7 @@ private struct ExperimentalNextDeliveryPass: View {
             HStack(spacing: 6) {
                 Image(systemName: parcel.currentStage?.metadata.symbol ?? "shippingbox.fill")
                     .foregroundStyle(tint)
-                Text(localizer.text(parcel.currentStage?.localizationKey ?? parcel.displayStatus.key))
+                Text(localizer.parcelStatus(parcel))
                 Text("·")
                     .foregroundStyle(.tertiary)
                 Text(catalog.info(for: parcel.activeTrackingCarrier).displayName)

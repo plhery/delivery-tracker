@@ -239,6 +239,12 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         info(for: carrier).tracking.mode == "automatic"
     }
 
+    func trackingHintKey(for carrier: CarrierID) -> String {
+        if carrier == .internationalPost { return "add.internationalPost" }
+        if carrier == .unknown { return "add.unknownCarrier" }
+        return tracksAutomatically(carrier) ? "add.autoSync" : "add.linkSync"
+    }
+
     func requirements(for carrier: CarrierID, trackingNumber: String) -> [CarrierRequirement] {
         let normalized = Self.normalize(trackingNumber)
         return (info(for: carrier).tracking.requirements ?? []).filter { requirement in

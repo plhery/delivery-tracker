@@ -103,6 +103,16 @@ describe('detectCarrier', () => {
     expect(detectCarrier('CN987654326US')).toBe('intl-post');
   });
 
+  it('recognises Dutch postal numbers as PostNL / Spring GDS with a valid checksum', () => {
+    expect(detectCarrierMatch('LX123456785NL')).toEqual({
+      carrier: 'spring-gds', confidence: 'high', candidates: ['spring-gds'],
+    });
+    expect(detectCarrier('lx 123.456-785 nl')).toBe('spring-gds');
+    expect(detectCarrier('LX123456789NL')).toBe('unknown');
+    expect(carrierInfo('spring-gds').name).toBe('PostNL / Spring GDS');
+    expect(tracksAutomatically('spring-gds')).toBe(true);
+  });
+
   it('recognises valid India-issued S10 identifiers as India Post', () => {
     expect(detectCarrier('JN067614884IN')).toBe('india-post');
     expect(detectCarrier('jn 067.614-884 in')).toBe('india-post');
@@ -236,6 +246,18 @@ describe('formatTrackingNumber', () => {
 });
 
 describe('parseTrackingInput', () => {
+  it('recognises PostNL / Spring GDS numbers in carrier links and shipping messages', () => {
+    for (const input of [
+      'https://postnl.post/details/LX123456785NL',
+      'https://postnl.post/tracktrace?B=LX123456785NL',
+      'Your Myprotein shipment: LX123456785NL',
+    ]) {
+      expect(parseTrackingInput(input)).toMatchObject({
+        trackingNumber: 'LX123456785NL', carrier: 'spring-gds', confidence: 'high',
+      });
+    }
+  });
+
   it.each([
     ['swiss-post', '993412345612345678'],
     ['swiss-post-cargo', '1234ABC789'],

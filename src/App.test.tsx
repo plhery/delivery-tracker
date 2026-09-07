@@ -29,6 +29,49 @@ beforeEach(() => {
 });
 
 describe('App', () => {
+  it('adds a Dutch postal shipment with automatic PostNL / Spring GDS tracking', async () => {
+    const repo = createDemoRepo(window.localStorage);
+    const add = vi.spyOn(repo, 'add');
+    const user = userEvent.setup();
+    renderApp(repo);
+    await user.click(await screen.findByRole('button', { name: 'Add a parcel' }));
+    const sheet = screen.getByRole('dialog', { name: 'Add a parcel' });
+    await user.type(within(sheet).getByLabelText('Tracking number or link'), 'LX123456785NL');
+    expect(within(sheet).getByText('PostNL / Spring GDS will sync automatically.')).toBeInTheDocument();
+    await user.click(within(sheet).getByRole('button', { name: 'Add parcel' }));
+    await waitFor(() => expect(add).toHaveBeenCalledWith(expect.objectContaining({
+      trackingNumber: 'LX123456785NL', carrier: 'spring-gds',
+    })));
+  });
+
+  it('explains generic postal tracking in the add sheet and parcel details', async () => {
+    const repo = createDemoRepo(window.localStorage);
+    const [sample] = await repo.list();
+    const parcel: ParcelWithEvents = {
+      ...sample, carrier: 'intl-post', trackingNumber: 'LX123456785DE',
+      label: 'Postal shipment', syncStatus: 'pending', events: [], archivedAt: undefined,
+      syncError: 'Choose a carrier with an automatic adapter or use the carrier link.',
+    };
+    repo.list = vi.fn().mockResolvedValue([parcel]);
+    const user = userEvent.setup();
+    renderApp(repo);
+    await user.click(await screen.findByRole('button', { name: 'Add a parcel' }));
+    const sheet = screen.getByRole('dialog', { name: 'Add a parcel' });
+    await user.type(within(sheet).getByLabelText('Tracking number or link'), parcel.trackingNumber);
+    expect(within(sheet).getByText(/International Post means.*could not identify the carrier/))
+      .toHaveTextContent('Automatic updates are unavailable.');
+    await user.click(within(sheet).getByRole('button', { name: 'Cancel' }));
+    await user.click(screen.getByRole('button', { name: 'Postal shipment — Automatic sync unavailable' }));
+    const detail = screen.getByRole('dialog', { name: 'Postal shipment' });
+    expect(within(detail).getByText(/International Post means/)).toBeInTheDocument();
+    expect(within(detail).queryByText(/automatic adapter/)).not.toBeInTheDocument();
+    expect(within(detail).queryByRole('button', { name: 'Check now' })).not.toBeInTheDocument();
+    expect(within(detail).queryByText(/hasn’t announced this shipment/)).not.toBeInTheDocument();
+    await user.click(within(within(detail).getByRole('note')).getByRole('button', { name: 'Change carrier' }));
+    const carrierSheet = screen.getByRole('dialog', { name: 'Change carrier' });
+    expect(within(carrierSheet).getByRole('combobox', { name: 'Carrier' })).toHaveValue('intl-post');
+  });
+
   it('shows queued, running and completed refresh feedback at the correct time', async () => {
     const repo = createDemoRepo(window.localStorage);
     const parcels = await repo.list();

@@ -4318,3 +4318,16 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+.detail__tracking-help {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--control);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.detail__tracking-help p {
+  margin: 0 0 12px;
+}

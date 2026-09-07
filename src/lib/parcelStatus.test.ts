@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ParcelWithEvents, SyncStatus } from '../types';
-import { localizedParcelCompletionDate, parcelDisplayStatus } from './parcelStatus';
+import { localizedParcelCompletionDate, parcelDisplayStatus, parcelDisplayStatusKey } from './parcelStatus';
 
 function parcel(syncStatus: SyncStatus, stage: 'pending' | 'in_transit' = 'pending'): ParcelWithEvents {
   return {
@@ -36,6 +36,18 @@ describe('parcelDisplayStatus', () => {
   it('makes first-sync failures and unsupported carriers explicit', () => {
     expect(parcelDisplayStatus(parcel('error')).label).toBe('Sync failed');
     expect(parcelDisplayStatus(parcel('unsupported')).label).toBe('Automatic sync unavailable');
+  });
+
+  it('explains link-only tracking immediately, before a worker checks it', () => {
+    for (const carrier of ['intl-post', 'unknown', 'dhl'] as const) {
+      const saved = { ...parcel('pending'), carrier };
+      expect(parcelDisplayStatus(saved)).toEqual({
+        label: 'Automatic sync unavailable', tone: 'warn', syncing: false,
+      });
+      expect(parcelDisplayStatusKey(saved)).toBe('status.unsupported');
+      saved.events[0].stage = 'in_transit';
+      expect(parcelDisplayStatusKey(saved)).toBe('stage.in_transit');
+    }
   });
 
   it('keeps a real carrier stage visible during later sync attempts or errors', () => {

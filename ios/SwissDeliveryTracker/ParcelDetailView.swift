@@ -26,7 +26,9 @@ struct ParcelDetailView: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 18) {
                         liveParcelPass(parcel)
-                        journey(parcel)
+                        if catalog.tracksAutomatically(parcel.activeTrackingCarrier) || parcel.hasCarrierUpdate {
+                            journey(parcel)
+                        }
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 10)
@@ -159,6 +161,20 @@ struct ParcelDetailView: View {
             Divider()
 
             shipmentIdentity(parcel, links: trackingLinks, tint: tint)
+            if !catalog.tracksAutomatically(parcel.activeTrackingCarrier) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(localizer.text(catalog.trackingHintKey(for: parcel.activeTrackingCarrier), [
+                        "carrier": carrier.displayName,
+                    ]))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    Button(localizer.text("detail.changeCarrier")) {
+                        showingCarrierEditor = true
+                    }
+                    .font(.footnote.weight(.semibold))
+                }
+            }
             syncStatus(parcel, tint: tint)
         }
         .padding(18)
@@ -217,7 +233,7 @@ struct ParcelDetailView: View {
                 Text(localizer.relativeTime(from: lastSyncedAt))
             }
 
-            if !parcel.isArchived {
+            if !parcel.isArchived && catalog.tracksAutomatically(parcel.activeTrackingCarrier) {
                 Button {
                     run { try await store.refresh(parcel) }
                 } label: {
@@ -378,6 +394,9 @@ private struct ChangeCarrierView: View {
 
                 Section(localizer.text("add.carrier")) {
                     Picker(localizer.text("add.carrier"), selection: $selectedCarrier) {
+                        if !catalog.info(for: parcel.carrier).selectable {
+                            Text(catalog.info(for: parcel.carrier).displayName).tag(parcel.carrier)
+                        }
                         ForEach(catalog.selectableCarriers) { carrier in
                             Text(catalog.info(for: carrier).displayName).tag(carrier)
                         }
@@ -388,6 +407,11 @@ private struct ChangeCarrierView: View {
                         deliveryPostcode = carrier == parcel.carrier ? parcel.dpdPostcode ?? "" : ""
                         errorMessage = nil
                     }
+                    Text(localizer.text(catalog.trackingHintKey(for: selectedCarrier), [
+                        "carrier": catalog.info(for: selectedCarrier).displayName,
+                    ]))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
                 }
 
                 if !requirements.isEmpty {

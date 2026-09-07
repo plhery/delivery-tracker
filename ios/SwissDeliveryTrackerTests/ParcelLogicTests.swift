@@ -2,6 +2,15 @@ import XCTest
 @testable import SwissDeliveryTracker
 
 final class ParcelLogicTests: XCTestCase {
+    func testLinkOnlyParcelDoesNotPromiseAnAutomaticCheck() {
+        let id = UUID()
+        var parcel = makeParcel(id: id, events: [])
+        parcel.carrier = .internationalPost
+        parcel.syncStatus = .pending
+        XCTAssertEqual(parcel.displayStatus.key, "status.unsupported")
+        XCTAssertFalse(parcel.displayStatus.syncing)
+    }
+
     @MainActor
     func testRetryAfterSupportsBothHeaderFormats() {
         let now = DateParser.date("2026-09-06T12:00:00Z")!

@@ -209,7 +209,7 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": []
   },
   "spring-gds": {
-    "displayName": "Spring GDS",
+    "displayName": "PostNL / Spring GDS",
     "color": "#ef7d00",
     "selectable": true,
     "timezone": "UTC",
@@ -228,7 +228,13 @@ export const CARRIER_CAPABILITIES = {
         "path": "/details/([^/?#]+)"
       }
     ],
-    "detectionRules": []
+    "detectionRules": [
+      {
+        "pattern": "^(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}NL$",
+        "confidence": "high",
+        "checksum": "s10"
+      }
+    ]
   },
   "postlogistics": {
     "displayName": "PostLogistics",
@@ -1004,7 +1010,7 @@ export const CARRIER_CAPABILITIES = {
     "linkRules": [],
     "detectionRules": [
       {
-        "pattern": "^(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}(?!CH$|FR$|IN$)[A-Z]{2}$",
+        "pattern": "^(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}(?!CH$|FR$|IN$|NL$)[A-Z]{2}$",
         "confidence": "high",
         "checksum": "s10"
       }
