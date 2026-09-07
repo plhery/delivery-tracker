@@ -40,8 +40,9 @@ async function fetchJson(
   init: RequestInit,
   provider: string,
   timeoutMs = 15_000,
+  retryTransient = false,
 ): Promise<unknown> {
-  const { bytes } = await fetchBounded(url, init, { provider, timeoutMs });
+  const { bytes } = await fetchBounded(url, init, { provider, timeoutMs, retryTransient });
   return parseJsonBytes(bytes, provider);
 }
 
@@ -159,6 +160,7 @@ export async function fetchPlanzer(trackingNumber: string): Promise<CarrierResul
     { headers: BASE_HEADERS },
     'Planzer tracking',
     10_000,
+    true,
   ));
   const overall = record(payload.overallStatus);
   const statusText = text(record(overall.text).english);
@@ -320,6 +322,7 @@ export async function fetchSpringGds(trackingNumber: string): Promise<CarrierRes
     },
     'Spring GDS authentication',
     10_000,
+    true,
   ));
   const accessToken = text(tokenPayload.access_token);
   if (!accessToken || accessToken.length > 16_384) {
@@ -339,6 +342,8 @@ export async function fetchSpringGds(trackingNumber: string): Promise<CarrierRes
       body: JSON.stringify({ items: [trackingNumber], language_code: 'en' }),
     },
     'Spring GDS tracking',
+    15_000,
+    true,
   ));
   const rawItems = record(payload.data).items;
   if (!Array.isArray(rawItems)) {

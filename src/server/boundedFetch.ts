@@ -1,4 +1,23 @@
 const DEFAULT_MAX_BYTES = 2_000_000;
+const TRANSIENT_HTTP_STATUSES = new Set([429, 502, 503, 504]);
+const DEFAULT_RETRY_DELAY_MS = 1_000;
+const MAX_RETRY_DELAY_MS = 5_000;
+
+function retryDelay(header: string | null): number | null {
+  if (header === null) return DEFAULT_RETRY_DELAY_MS;
+  const value = header.trim();
+  const delay = /^\d+$/.test(value)
+    ? Number(value) * 1_000
+    : /^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), /i.test(value)
+      ? Date.parse(value) - Date.now()
+      : NaN;
+  if (!Number.isFinite(delay) || delay > MAX_RETRY_DELAY_MS) return null;
+  return Math.max(DEFAULT_RETRY_DELAY_MS, delay);
+}
+
+async function waitBeforeRetry(delayMs: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, delayMs));
+}
 
 export class UpstreamHttpError extends Error {
   constructor(
@@ -28,22 +47,35 @@ export async function fetchBounded(
     redirect?: RequestRedirect;
     fetcher?: typeof fetch;
     allowHttpError?: boolean;
+    /** One retry for replayable reads only; never retry parsing or validation. */
+    retryTransient?: boolean;
   },
 ): Promise<{ response: Response; bytes: Uint8Array }> {
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
   let response: Response;
-  try {
-    response = await (options.fetcher ?? fetch)(url, {
-      ...init,
-      cache: 'no-store',
-      redirect: options.redirect ?? 'error',
-      signal: AbortSignal.timeout(options.timeoutMs ?? 15_000),
-    });
-  } catch (error) {
-    throw new Error(`${options.provider} is unreachable`, { cause: error });
-  }
-  if (!response.ok && !options.allowHttpError) {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      response = await (options.fetcher ?? fetch)(url, {
+        ...init,
+        cache: 'no-store',
+        redirect: options.redirect ?? 'error',
+        signal: AbortSignal.timeout(options.timeoutMs ?? 15_000),
+      });
+    } catch (error) {
+      if (options.retryTransient && attempt === 0) {
+        await waitBeforeRetry(DEFAULT_RETRY_DELAY_MS);
+        continue;
+      }
+      throw new Error(`${options.provider} is unreachable`, { cause: error });
+    }
+    if (response.ok || options.allowHttpError) break;
+    const delay = retryDelay(response.headers.get('retry-after'));
     await cancelQuietly(response.body);
+    if (options.retryTransient && attempt === 0
+      && TRANSIENT_HTTP_STATUSES.has(response.status) && delay !== null) {
+      await waitBeforeRetry(delay);
+      continue;
+    }
     throw new UpstreamHttpError(options.provider, response.status);
   }
 

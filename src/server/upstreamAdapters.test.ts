@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   fetchCainiao,
   fetchPlanzer,
@@ -35,7 +35,48 @@ async function expectPrivacySafeNotFound(
   }
 }
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
+
+describe('PostNL and Quickpac transient failures', () => {
+  beforeEach(() => vi.useFakeTimers());
+
+  it.each(['authentication', 'tracking'])('recovers from a rate-limited Spring GDS %s request', async (step) => {
+    const responses = [
+      jsonResponse({ access_token: 'visitor-token' }),
+      jsonResponse({ data: { items: [{ item: SPRING_WRONG_NUMBER, events: [] }] } }),
+    ];
+    responses.splice(step === 'authentication' ? 0 : 1, 0, new Response('', {
+      status: 429, headers: { 'Retry-After': '2' },
+    }));
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => responses.shift()!);
+    const result = fetchSpringGds(SPRING_WRONG_NUMBER);
+    await vi.advanceTimersByTimeAsync(2_000);
+    await expect(result).resolves.toMatchObject({ status: 'unknown', events: [] });
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    const trackingRequests = fetcher.mock.calls.filter(([url]) => String(url).endsWith('/tracking-items'));
+    for (const [, init] of trackingRequests) {
+      expect(init?.headers).toMatchObject({ Authorization: 'Bearer visitor-token' });
+      expect(JSON.parse(String(init?.body))).toEqual({ items: [SPRING_WRONG_NUMBER], language_code: 'en' });
+    }
+  });
+
+  it('recovers from a Quickpac transport timeout without losing shipment validation', async () => {
+    const trackingNumber = '440000000000000001';
+    const fetcher = vi.spyOn(globalThis, 'fetch')
+      .mockRejectedValueOnce(new DOMException('Timed out', 'TimeoutError'))
+      .mockResolvedValueOnce(jsonResponse({
+        overallStatus: { text: { english: 'Recorded' } },
+        transportPositions: [{ positionNumber: trackingNumber, positionEvents: [] }],
+      }));
+    const result = fetchPlanzer(trackingNumber);
+    await vi.advanceTimersByTimeAsync(1_000);
+    await expect(result).resolves.toMatchObject({ status: 'pending', events: [] });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+});
 
 describe('Planzer and Quickpac no-data responses', () => {
   it('keeps both direct tracking number formats and surfaces the API 404', async () => {
