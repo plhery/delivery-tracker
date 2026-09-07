@@ -133,7 +133,7 @@ describe('DHL sessions and browser fallback', () => {
     expect(new Headers(fetcher.mock.calls[2][1]?.headers).get('verfolgen-CSRF-token')).toBe('rotated-csrf');
   });
 
-  it('uses the configured private browser only for a rejected session', async () => {
+  it('uses the configured private browser for a rejected session', async () => {
     const fetcher = vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(new Response('<html>Challenge</html>', { headers: { 'Content-Type': 'text/html' } }))
       .mockResolvedValueOnce(Response.json({ tier: 3, statusCode: 200, userAgent: 'Browser UA', cookies: [
@@ -162,6 +162,52 @@ describe('DHL sessions and browser fallback', () => {
     await tracker.fetch(NUMBER);
     expect(fetcher).toHaveBeenCalledTimes(5);
     expect(String(fetcher.mock.calls[3][0])).toBe(CONFIG);
+  });
+
+  it.each(['config', 'search', 'body', 'cached'])('recovers from an interrupted %s request with one fresh session', async (phase) => {
+    const fetcher = vi.spyOn(globalThis, 'fetch');
+    const tracker = new DHLTracker({ trawlUrl: 'http://trawl:8191' });
+    if (phase === 'cached') {
+      fetcher.mockResolvedValueOnce(config()).mockResolvedValueOnce(Response.json(shipment()));
+      await tracker.fetch(NUMBER);
+      fetcher.mockClear();
+    } else if (phase !== 'config') {
+      fetcher.mockResolvedValueOnce(config());
+    }
+    const timeout = new DOMException('Timed out', 'TimeoutError');
+    if (phase === 'body') {
+      fetcher.mockResolvedValueOnce(new Response(new ReadableStream({ start(controller) { controller.error(timeout); } }), {
+        headers: { 'Content-Type': 'application/json' },
+      }));
+    } else {
+      fetcher.mockRejectedValueOnce(timeout);
+    }
+    fetcher.mockResolvedValueOnce(config('renewed')).mockResolvedValueOnce(Response.json(shipment()));
+    expect((await tracker.fetch(NUMBER)).current_stage).toBe('in_transit');
+    expect(fetcher).toHaveBeenCalledTimes(['search', 'body'].includes(phase) ? 4 : 3);
+    expect(fetcher.mock.calls.some(([url]) => String(url).includes('trawl'))).toBe(false);
+  });
+
+  it('uses the browser when fresh direct sessions also time out', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch')
+      .mockRejectedValueOnce(new DOMException('Timed out', 'TimeoutError'))
+      .mockRejectedValueOnce(new TypeError('fetch failed'))
+      .mockResolvedValueOnce(Response.json({ tier: 3, statusCode: 200, cookies: [] }))
+      .mockResolvedValueOnce(config()).mockResolvedValueOnce(Response.json(shipment()));
+    const tracker = new DHLTracker({ trawlUrl: 'http://trawl:8191' });
+    expect((await tracker.fetch(NUMBER)).events).toHaveLength(2);
+    expect(String(fetcher.mock.calls[2][0])).toBe('http://trawl:8191/scrape');
+    expect(fetcher).toHaveBeenCalledTimes(5);
+  });
+
+  it('bounds repeated network failures and allows the next sync to recover', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new DOMException('Timed out', 'TimeoutError'));
+    const tracker = new DHLTracker({ trawlUrl: '' });
+    await expect(tracker.fetch(NUMBER)).rejects.toMatchObject({ name: 'UpstreamNetworkError' });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    fetcher.mockReset().mockResolvedValueOnce(config()).mockResolvedValueOnce(Response.json(shipment()));
+    expect((await tracker.fetch(NUMBER)).current_stage).toBe('in_transit');
+    expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
   it.each([429, 500, 503])('does not bypass HTTP %s using the browser', async (status) => {

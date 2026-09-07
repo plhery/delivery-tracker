@@ -66,10 +66,11 @@ points in its [tracking help](https://www.dhl.de/en/privatkunden/hilfe-kundenser
 The automatic DHL adapter establishes a cookie/CSRF session using the public
 `/int-verfolgen/data/config` endpoint, then reads `/search` with the same
 `verfolgen-CSRF-token` and `verfolgen-wg` headers as DHL's recipient app. Cookies
-stay in memory; an expired session gets one fresh HTTP attempt before TRAWL is
-used. Rate limits and server errors remain errors rather than triggering a
-browser attempt. DHL's official business API credentials are not needed for
-this public flow.
+stay in memory; an expired session, timeout or interrupted connection gets one
+fresh HTTP session before TRAWL is used. Interrupted response bodies also take
+this recovery path. Rate limits and server errors remain errors rather than
+triggering a browser attempt. DHL's official business API credentials are not
+needed for this public flow.
 
 Only status, timestamps, broad event locations and the delivery estimate are
 retained. Recipient/address/signature fields are discarded. The adapter checks

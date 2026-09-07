@@ -29,6 +29,13 @@ export class UpstreamHttpError extends Error {
   }
 }
 
+export class UpstreamNetworkError extends Error {
+  constructor(readonly provider: string, cause: unknown) {
+    super(`${provider} is unreachable`, { cause });
+    this.name = 'UpstreamNetworkError';
+  }
+}
+
 async function cancelQuietly(body: ReadableStream<Uint8Array> | null): Promise<void> {
   try {
     await body?.cancel();
@@ -66,7 +73,7 @@ export async function fetchBounded(
         await waitBeforeRetry(DEFAULT_RETRY_DELAY_MS);
         continue;
       }
-      throw new Error(`${options.provider} is unreachable`, { cause: error });
+      throw new UpstreamNetworkError(options.provider, error);
     }
     if (response.ok || options.allowHttpError) break;
     const delay = retryDelay(response.headers.get('retry-after'));
@@ -91,7 +98,9 @@ export async function fetchBounded(
   let length = 0;
   try {
     while (true) {
-      const { done, value } = await reader.read();
+      const { done, value } = await reader.read().catch((error: unknown) => {
+        throw new UpstreamNetworkError(options.provider, error);
+      });
       if (done) break;
       length += value.byteLength;
       if (length > maxBytes) {

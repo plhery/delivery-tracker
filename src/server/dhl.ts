@@ -3,7 +3,7 @@ import 'server-only';
 import makeFetchCookie from 'fetch-cookie';
 import { Cookie, CookieJar } from 'tough-cookie';
 import { DateTime } from 'luxon';
-import { fetchBounded, parseJsonBytes, UpstreamHttpError } from './boundedFetch';
+import { fetchBounded, parseJsonBytes, UpstreamHttpError, UpstreamNetworkError } from './boundedFetch';
 import type { CarrierEvent, CarrierResult, CarrierStatus } from './carrierResult';
 import { isRecord, type JsonObject } from './types';
 
@@ -203,20 +203,23 @@ export class DHLTracker {
     try {
       const cached = this.session !== null;
       this.session ??= new DHLSession(this.directTimeoutMs);
+      let recoveryError: DHLSessionError | UpstreamNetworkError;
       try {
         return await this.session.fetch(number);
       } catch (error) {
-        if (!(error instanceof DHLSessionError)) throw error;
+        if (!(error instanceof DHLSessionError || error instanceof UpstreamNetworkError)) throw error;
+        recoveryError = error;
       }
-      // Expired CSRF cookies should get one fresh HTTP session before a browser.
-      if (cached) {
+      // Renew stale sessions and retry interrupted reads once before using a browser.
+      if (cached || recoveryError instanceof UpstreamNetworkError) {
         this.session = new DHLSession(this.directTimeoutMs);
         try { return await this.session.fetch(number); } catch (error) {
-          if (!(error instanceof DHLSessionError)) throw error;
+          if (!(error instanceof DHLSessionError || error instanceof UpstreamNetworkError)) throw error;
+          recoveryError = error;
         }
       }
       this.session = null;
-      if (!this.trawlUrl) throw new DHLSessionError();
+      if (!this.trawlUrl) throw recoveryError;
       const endpoint = new URL(this.trawlUrl);
       if (!['http:', 'https:'].includes(endpoint.protocol)) throw new TypeError('FLARESOLVERR_URL must be an HTTP(S) URL');
       endpoint.pathname = `${endpoint.pathname.replace(/\/(?:v1|scrape)\/?$/, '').replace(/\/$/, '')}/scrape`;
