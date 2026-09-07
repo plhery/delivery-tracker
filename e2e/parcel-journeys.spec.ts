@@ -162,11 +162,13 @@ test('navigates nested carrier dialogs entirely by keyboard', async ({ page }) =
 });
 
 test('keeps translated add-parcel guidance readable in every app language', async ({ page }) => {
+  // Change away from the initial English value first: selecting an unchanged
+  // option does not emit a change event or save a language preference.
   for (const [locale, action, title, cancel, hint] of [
-    ['en', 'Add a parcel', 'Add a parcel', 'Cancel', 'We’ll check Swiss Post for updates automatically.'],
     ['de', 'Ein Paket hinzufügen', 'Paket hinzufügen', 'Abbrechen', 'Wir fragen Aktualisierungen bei Swiss Post automatisch ab.'],
     ['fr', 'Ajouter un colis', 'Ajouter un colis', 'Annuler', 'Nous consulterons automatiquement le suivi de Swiss Post.'],
     ['it', 'Aggiungi un pacco', 'Aggiungi un pacco', 'Annulla', 'Controlleremo automaticamente gli aggiornamenti di Swiss Post.'],
+    ['en', 'Add a parcel', 'Add a parcel', 'Cancel', 'We’ll check Swiss Post for updates automatically.'],
   ]) {
     await page.locator('.language-control select').selectOption(locale);
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
