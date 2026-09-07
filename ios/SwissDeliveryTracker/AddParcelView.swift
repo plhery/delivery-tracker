@@ -44,6 +44,7 @@ struct AddParcelView: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
+                        labelCard
                         trackingCard
 
                         if !parsed.trackingNumber.isEmpty {
@@ -55,8 +56,6 @@ struct AddParcelView: View {
                             requiredDetailsCard
                                 .transition(reduceMotion ? .opacity : .offset(y: 6).combined(with: .opacity))
                         }
-
-                        labelCard
 
                         if let errorMessage {
                             errorBanner(errorMessage)
