@@ -27,7 +27,7 @@ struct SwissDeliveryTrackerApp: App {
                 .environmentObject(parcels)
                 .environmentObject(localizer)
                 .environment(\.locale, localizer.language.locale)
-                .preferredColorScheme(appearance.colorScheme)
+                .background { AppWindowAppearance(appearance: appearance) }
                 .tint(Brand.accent)
         }
     }

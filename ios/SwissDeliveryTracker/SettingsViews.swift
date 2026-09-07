@@ -81,6 +81,7 @@ struct NotificationSettingsView: View {
 
                     Section {
                         Toggle(localizer.text("notifications.quietHours"), isOn: $draft.quietHoursEnabled)
+                            .tint(Brand.accent)
                         if draft.quietHoursEnabled {
                             DatePicker(
                                 localizer.text("notifications.from"),
@@ -253,6 +254,8 @@ struct AccountView: View {
                     )) {
                         Label(localizer.text("widget.settingTitle"), systemImage: "rectangle.3.group")
                     }
+                    .tint(Brand.accent)
+                    .accessibilityIdentifier("settings.widgets")
                 } footer: {
                     Text(localizer.text("widget.settingDescription"))
                 }
@@ -264,6 +267,8 @@ struct AccountView: View {
                     )) {
                         Label(localizer.text("liveActivity.settingTitle"), systemImage: "wave.3.right.circle")
                     }
+                    .tint(Brand.accent)
+                    .accessibilityIdentifier("settings.liveActivities")
                 } footer: {
                     VStack(alignment: .leading, spacing: 5) {
                         Text(localizer.text("liveActivity.settingDescription"))
@@ -328,7 +333,6 @@ struct AccountView: View {
                 }
             }
         }
-        .preferredColorScheme(appearance.colorScheme)
         .sensoryFeedback(.selection, trigger: appearance)
         .sheet(isPresented: $showingNotifications) { NotificationSettingsView() }
         .sheet(isPresented: $showingShareSheet) {

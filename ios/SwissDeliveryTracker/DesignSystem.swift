@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 enum Brand {
     // Postal yellow anchors the interface; content surfaces adapt to appearance.
@@ -36,11 +37,47 @@ enum AppAppearance: String, CaseIterable, Identifiable {
     static let storageKey = "sdt.appearance.v1"
     var id: String { rawValue }
     var titleKey: String { "native.appearance.\(rawValue)" }
-    var colorScheme: ColorScheme? {
+    var interfaceStyle: UIUserInterfaceStyle {
         switch self {
-        case .system: nil
+        case .system: .unspecified
         case .light: .light
         case .dark: .dark
+        }
+    }
+}
+
+/// Apply the preference to the window so presented sheets follow it too.
+/// Clearing a sheet's preferredColorScheme can leave its previous override active.
+struct AppWindowAppearance: UIViewRepresentable {
+    let appearance: AppAppearance
+
+    func makeUIView(context: Context) -> AppearanceView {
+        let view = AppearanceView()
+        view.isUserInteractionEnabled = false
+        return view
+    }
+
+    func updateUIView(_ view: AppearanceView, context: Context) {
+        view.appearance = appearance
+    }
+
+    final class AppearanceView: UIView {
+        var appearance = AppAppearance.system {
+            didSet {
+                guard appearance != oldValue else { return }
+                // Propagate UIKit traits after SwiftUI finishes its current update.
+                DispatchQueue.main.async { [weak self] in self?.applyAppearance() }
+            }
+        }
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            applyAppearance()
+        }
+
+        private func applyAppearance() {
+            guard let window, window.overrideUserInterfaceStyle != appearance.interfaceStyle else { return }
+            window.overrideUserInterfaceStyle = appearance.interfaceStyle
         }
     }
 }
