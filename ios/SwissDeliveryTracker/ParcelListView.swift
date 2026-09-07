@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ParcelListView: View {
     @EnvironmentObject private var localizer: Localizer
@@ -804,8 +805,7 @@ private extension View {
     }
 }
 
-/// The displayed offset survives gesture release. GestureState is used only for
-/// cancellation detection, never for a translation that resets before settling.
+/// The displayed offset survives gesture release and cancellation until settling.
 struct ArchiveSwipeState {
     enum Destination: Equatable { case closed, revealed, archive }
     static let actionWidth: CGFloat = 88
@@ -844,6 +844,50 @@ struct ArchiveSwipeState {
     }
 }
 
+/// Decline vertical intent before recognition so the parent scroll view can win.
+/// Ignoring vertical values after a SwiftUI DragGesture begins is too late.
+final class ArchivePanGestureDelegate: NSObject, UIGestureRecognizerDelegate {
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard let pan = gestureRecognizer as? UIPanGestureRecognizer else { return false }
+        let translation = pan.translation(in: pan.view)
+        let direction = translation == .zero ? pan.velocity(in: pan.view) : translation
+        return abs(direction.x) > abs(direction.y) * 1.25
+    }
+}
+
+private struct ArchivePanGesture: UIGestureRecognizerRepresentable {
+    let onChanged: (CGSize) -> Void
+    let onEnded: (CGFloat) -> Void
+    let onCancelled: () -> Void
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> ArchivePanGestureDelegate {
+        ArchivePanGestureDelegate()
+    }
+
+    func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
+        let recognizer = UIPanGestureRecognizer()
+        recognizer.maximumNumberOfTouches = 1
+        recognizer.delegate = context.coordinator
+        return recognizer
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UIPanGestureRecognizer, context: Context) {
+        let translation = context.converter.localTranslation ?? recognizer.translation(in: recognizer.view)
+        switch recognizer.state {
+        case .began, .changed:
+            onChanged(CGSize(width: translation.x, height: translation.y))
+        case .ended:
+            let velocity = context.converter.localVelocity ?? recognizer.velocity(in: recognizer.view)
+            // A short flick can reveal the action; archiving still needs actual travel.
+            onEnded(translation.x + velocity.x * 0.15)
+        case .cancelled, .failed:
+            onCancelled()
+        default:
+            break
+        }
+    }
+}
+
 private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
     let title: String
     let cornerRadius: CGFloat
@@ -853,7 +897,7 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
     let action: (() async -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @GestureState private var gestureActive = false
+    @State private var gestureActive = false
     @State private var swipe = ArchiveSwipeState()
     @State private var committing = false
     @State private var width: CGFloat = 0
@@ -888,6 +932,7 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .allowsHitTesting(revealedWidth >= 8)
                         .accessibilityHidden(revealedWidth < 8)
                     }
                     .opacity(revealProgress)
@@ -908,11 +953,8 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
                 width = nextWidth
             }
             .simultaneousGesture(tapGesture, including: .gesture)
-            .simultaneousGesture(swipeGesture(action: action), including: .gesture)
-            .onChange(of: gestureActive) { _, active in
-                guard !active, !committing, let destination = swipe.cancel() else { return }
-                settle(destination)
-            }
+            .gesture(swipeGesture(action: action))
+            .onDisappear(perform: cancelSwipe)
             .allowsHitTesting(!committing)
             .sensoryFeedback(
                 .impact(weight: .medium, intensity: 0.9),
@@ -964,20 +1006,21 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
             }
     }
 
-    private func swipeGesture(action: @escaping () async -> Void) -> some Gesture {
-        DragGesture(minimumDistance: 12, coordinateSpace: .local)
-            .updating($gestureActive) { _, active, _ in active = true }
-            .onChanged { value in
+    private func swipeGesture(action: @escaping () async -> Void) -> ArchivePanGesture {
+        ArchivePanGesture(
+            onChanged: { translation in
                 guard !committing else { return }
                 var transaction = Transaction(animation: nil)
                 transaction.disablesAnimations = true
                 withTransaction(transaction) {
-                    swipe.drag(translation: value.translation, width: width)
+                    gestureActive = true
+                    swipe.drag(translation: translation, width: width)
                 }
-            }
-            .onEnded { value in
+            },
+            onEnded: { predictedTranslation in
+                gestureActive = false
                 guard !committing, let destination = swipe.release(
-                    predictedTranslation: value.predictedEndTranslation.width,
+                    predictedTranslation: predictedTranslation,
                     width: width
                 ) else { return }
                 if destination == .archive {
@@ -985,7 +1028,15 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
                 } else {
                     settle(destination)
                 }
-            }
+            },
+            onCancelled: cancelSwipe
+        )
+    }
+
+    private func cancelSwipe() {
+        gestureActive = false
+        guard !committing, let destination = swipe.cancel() else { return }
+        settle(destination)
     }
 
     private func settle(_ destination: ArchiveSwipeState.Destination) {

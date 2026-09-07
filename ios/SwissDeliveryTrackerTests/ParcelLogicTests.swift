@@ -1,7 +1,38 @@
 import XCTest
+import UIKit
 @testable import SwissDeliveryTracker
 
 final class ParcelLogicTests: XCTestCase {
+    @MainActor
+    func testArchiveRecognizerDeclinesVerticalDragsBeforeTheyCanBlockScrolling() {
+        let delegate = ArchivePanGestureDelegate()
+        let recognizer = StubArchivePanGestureRecognizer()
+        for translation in [CGPoint(x: -3, y: -18), CGPoint(x: 4, y: 24)] {
+            recognizer.testTranslation = translation
+            XCTAssertFalse(delegate.gestureRecognizerShouldBegin(recognizer))
+        }
+    }
+
+    @MainActor
+    func testArchiveRecognizerLeavesAmbiguousDiagonalDragsToScrolling() {
+        let delegate = ArchivePanGestureDelegate()
+        let recognizer = StubArchivePanGestureRecognizer()
+        for translation in [CGPoint(x: -20, y: -20), CGPoint(x: -20, y: 18), .zero] {
+            recognizer.testTranslation = translation
+            XCTAssertFalse(delegate.gestureRecognizerShouldBegin(recognizer))
+        }
+    }
+
+    @MainActor
+    func testArchiveRecognizerAllowsHorizontalRevealAndReverseDrags() {
+        let delegate = ArchivePanGestureDelegate()
+        let recognizer = StubArchivePanGestureRecognizer()
+        for translation in [CGPoint(x: -20, y: 3), CGPoint(x: 20, y: -3)] {
+            recognizer.testTranslation = translation
+            XCTAssertTrue(delegate.gestureRecognizerShouldBegin(recognizer))
+        }
+    }
+
     func testArchiveReleaseKeepsTheFingerPositionUntilTheSettleAnimation() {
         var swipe = ArchiveSwipeState()
         swipe.drag(translation: CGSize(width: -120, height: 3), width: 360)
@@ -712,4 +743,12 @@ private extension String {
     func repeated(_ count: Int) -> String {
         String(repeating: self, count: count)
     }
+}
+
+@MainActor
+private final class StubArchivePanGestureRecognizer: UIPanGestureRecognizer {
+    var testTranslation: CGPoint = .zero
+
+    override func translation(in view: UIView?) -> CGPoint { testTranslation }
+    override func velocity(in view: UIView?) -> CGPoint { .zero }
 }
