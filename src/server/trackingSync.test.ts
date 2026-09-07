@@ -111,6 +111,14 @@ describe('dedicated carrier dispatch', () => {
 });
 
 describe('tracking event normalization', () => {
+  it.each(['2026-09-07', '2026-09-07T12:32:00Z'])('preserves the precision of a status-only timestamp: %s', (time) => {
+    const events = buildEvents({ id: 'package-1', carrier: 'dpd' }, {
+      status: 'delivered', last_status_text: 'Delivered', last_update: time,
+    });
+    expect(events).toHaveLength(1);
+    expect(events[0]?.raw_data).toEqual({ time });
+  });
+
   it('prioritizes exception and final-stage phrases before broad delivery words', () => {
     expect(inferStage('Delivery attempt failed')).toBe('failed_attempt');
     expect(inferStage('Return to sender')).toBe('returned');

@@ -44,6 +44,12 @@ Next.js route handlers -- user token -----> PostgREST + Postgres RLS
   ActivityKit is dispatched first, so a successful delivery-day surface can
   replace the matching ordinary banner while APNs failure retains the alert as
   a fallback.
+  All three channels use friendly status-specific sentences. Delivery alerts
+  show the carrier's event time in the recipient's timezone when the source
+  includes a clock time; date-only or app-observed updates omit it. Delayed
+  alerts avoid “just” and include the date for older deliveries. Estimates
+  appear only while a parcel is progressing toward delivery, never after
+  delivery, a failed attempt, pickup availability, or return.
 - `supabase/migrations/` is the append-only database history;
   `supabase/tests/assertions.sql` exercises the RLS boundary in PostgreSQL.
 - `contracts/openapi.json` generates the TypeScript and Swift contract types

@@ -535,7 +535,7 @@ describe('native notification boundaries', () => {
     expect(notificationText(`  ${'😀'.repeat(5)}  `, 4)).toBe('😀😀😀…');
   });
 
-  it('always keeps the current ETA in tracking notifications and marks changes', () => {
+  it('keeps delivery estimates in transit notifications and marks changes', () => {
     const now = Date.UTC(2026, 7, 25, 12);
     const web = new WebPushNotificationService(
       {} as never,
@@ -555,10 +555,10 @@ describe('native notification boundaries', () => {
     };
 
     expect(web.payload(row)).toMatchObject({
-      body: 'Parcel in transit · Zürich · New ETA: tomorrow',
+      body: 'Your package is on its way! Delivery is now expected tomorrow.\nZürich',
     });
     expect(web.payload({ ...row, expected_delivery_changed: false })).toMatchObject({
-      body: 'Parcel in transit · Zürich · ETA tomorrow',
+      body: 'Your package is on its way! Expected tomorrow.\nZürich',
     });
     expect(notificationExpectedDelivery(
       '2026-08-26 09:00–12:00',
@@ -568,7 +568,7 @@ describe('native notification boundaries', () => {
     )).toBe('demain, 09:00–12:00');
   });
 
-  it('localizes native ETA copy and preserves it after a long location', () => {
+  it('localizes native estimates and preserves them before a long location', () => {
     const now = Date.UTC(2026, 7, 25, 12);
     const native = new NativePushNotificationService(
       {} as never,
@@ -591,7 +591,7 @@ describe('native notification boundaries', () => {
     const alert = (payload.aps as Record<string, unknown>).alert as Record<string, unknown>;
     const body = String(alert.body);
 
-    expect(body).toMatch(/^Paket unterwegs · Z+… · Neue Lieferprognose: morgen$/);
+    expect(body).toMatch(/^Dein Paket ist unterwegs! Neue voraussichtliche Zustellung: morgen\.\nZ+…$/);
     expect([...body].length).toBeLessThanOrEqual(220);
   });
 
@@ -653,7 +653,7 @@ describe('native notification boundaries', () => {
         event: 'end',
         'relevance-score': 1,
         'dismissal-date': now + 1_800,
-        alert: { title: 'Laufschuhe', body: 'Zugestellt · Zürich' },
+        alert: { title: 'Laufschuhe', body: 'Dein Paket wurde zugestellt!\nZürich' },
         'content-state': {
           parcel: { status: 'Zugestellt', detail: 'Zugestellt', phase: 'delivered' },
         },

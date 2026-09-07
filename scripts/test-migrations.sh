@@ -25,6 +25,10 @@ while IFS= read -r migration; do
     psql "$database_url" -X -v ON_ERROR_STOP=1 \
       -f "$repo_root/supabase/tests/pre_fix_to_be_delivered_stage.sql"
   fi
+  if [[ "$(basename "$migration")" == "20260825160000_delivery_live_activities.sql" ]]; then
+    psql "$database_url" -X -v ON_ERROR_STOP=1 \
+      -f "$repo_root/supabase/tests/pre_notification_event_times.sql"
+  fi
   if [[ "$(basename "$migration")" == "20260901210000_add_india_post.sql" ]]; then
     psql "$database_url" -X -v ON_ERROR_STOP=1 \
       -f "$repo_root/supabase/tests/pre_india_post.sql"
@@ -40,3 +44,6 @@ psql "$database_url" -X -v ON_ERROR_STOP=1 \
 
 psql "$database_url" -X -v ON_ERROR_STOP=1 \
   -f "$repo_root/supabase/tests/planzer_event_stages.sql"
+
+psql "$database_url" -X -v ON_ERROR_STOP=1 \
+  -f "$repo_root/supabase/tests/notification_event_times.sql"

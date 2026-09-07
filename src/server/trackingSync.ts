@@ -353,7 +353,7 @@ export function buildEvents(
         location: null,
         occurred_at: occurredAt,
         provider_event_id: providerEventId(carrierId, result.last_update, '', description),
-        raw_data: {},
+        raw_data: { time: result.last_update },
       });
     }
   }
