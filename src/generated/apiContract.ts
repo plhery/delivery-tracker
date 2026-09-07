@@ -296,7 +296,9 @@ export const CARRIER_CAPABILITIES = {
     "linkRules": [
       {
         "domains": [
-          "dhl.com"
+          "dhl.com",
+          "dhl.de",
+          "deutschepost.de"
         ],
         "params": [
           "tracking-id",
@@ -306,6 +308,11 @@ export const CARRIER_CAPABILITIES = {
       }
     ],
     "detectionRules": [
+      {
+        "pattern": "^[CL][A-Z]\\d{9}DE$",
+        "confidence": "high",
+        "checksum": "s10"
+      },
       {
         "pattern": "^(JJD|JVGL)[A-Z0-9]{8,}$",
         "confidence": "high"
@@ -1010,7 +1017,7 @@ export const CARRIER_CAPABILITIES = {
     "linkRules": [],
     "detectionRules": [
       {
-        "pattern": "^(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}(?!CH$|FR$|IN$|NL$)[A-Z]{2}$",
+        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}(?!CH$|FR$|IN$|NL$)[A-Z]{2}$",
         "confidence": "high",
         "checksum": "s10"
       }

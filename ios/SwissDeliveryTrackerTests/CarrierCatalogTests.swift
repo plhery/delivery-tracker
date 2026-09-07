@@ -37,7 +37,7 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(detected.candidates, [.springGDS])
         XCTAssertEqual(catalog.detect("lx 123.456-785 nl").carrier, .springGDS)
         XCTAssertEqual(catalog.detect("LX123456789NL").carrier, .unknown)
-        XCTAssertEqual(catalog.detect("LX123456785DE").carrier, .internationalPost)
+        XCTAssertEqual(catalog.detect("RA123456785DE").carrier, .internationalPost)
         XCTAssertTrue(catalog.tracksAutomatically(.springGDS))
         XCTAssertEqual(catalog.info(for: .springGDS).displayName, "PostNL / Spring GDS")
         XCTAssertEqual(catalog.trackingHintKey(for: .internationalPost), "add.internationalPost")
@@ -51,6 +51,31 @@ final class CarrierCatalogTests: XCTestCase {
             XCTAssertEqual(catalog.parse(input).carrier, .springGDS)
             XCTAssertEqual(catalog.parse(input).trackingNumber, "LX123456785NL")
         }
+    }
+
+    func testRecognisesDHLGermanPostalNumbersAndLinks() {
+        for number in ["LF123456785DE", "LX123456785DE", "CY123456785DE"] {
+            let result = catalog.detect(number)
+            XCTAssertEqual(result.carrier, .dhl)
+            XCTAssertEqual(result.confidence, .high)
+            XCTAssertEqual(result.candidates, [.dhl])
+        }
+        XCTAssertEqual(catalog.detect("lf 123.456-785 de").carrier, .dhl)
+        XCTAssertEqual(catalog.detect("LF123456789DE").carrier, .unknown)
+        XCTAssertEqual(catalog.detect("LF123456785US").carrier, .internationalPost)
+        XCTAssertFalse(catalog.tracksAutomatically(.dhl))
+        for input in [
+            "https://www.dhl.de/en/privatkunden/dhl-sendungsverfolgung.html?piececode=LF123456785DE",
+            "https://nolp.dhl.de/nextt-online-public/en/search?piececode=LF123456785DE",
+            "https://www.deutschepost.de/de/s/sendungsverfolgung.html?piececode=LF123456785DE",
+            "Your shipment: LF123456785DE",
+        ] {
+            XCTAssertEqual(catalog.parse(input).carrier, .dhl)
+            XCTAssertEqual(catalog.parse(input).trackingNumber, "LF123456785DE")
+        }
+        let numeric = catalog.parse("https://www.dhl.de/int-verfolgen/?piececode=1234567890")
+        XCTAssertEqual(numeric.carrier, .dhl)
+        XCTAssertEqual(numeric.source, .link)
     }
 
     func testParsesKnownCarrierLink() {

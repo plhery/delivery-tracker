@@ -3,6 +3,7 @@ import {
   CARRIERS,
   SELECTABLE_CARRIERS,
   carrierInfo,
+  carrierTrackingHintKey,
   carrierRequirements,
   detectCarrier,
   detectCarrierMatch,
@@ -99,8 +100,21 @@ describe('detectCarrier', () => {
   });
 
   it('routes other S10 codes to international post', () => {
-    expect(detectCarrier('LX123456785DE')).toBe('intl-post');
+    expect(detectCarrier('RA123456785DE')).toBe('intl-post');
     expect(detectCarrier('CN987654326US')).toBe('intl-post');
+  });
+
+  it('recognises DHL German parcel and tracked-mail identifiers without losing the generic fallback', () => {
+    for (const number of ['LF123456785DE', 'LX123456785DE', 'CY123456785DE']) {
+      expect(detectCarrierMatch(number)).toEqual({
+        carrier: 'dhl', confidence: 'high', candidates: ['dhl'],
+      });
+    }
+    expect(detectCarrier('lf 123.456-785 de')).toBe('dhl');
+    expect(detectCarrier('LF123456789DE')).toBe('unknown');
+    expect(detectCarrier('LF123456785US')).toBe('intl-post');
+    expect(tracksAutomatically('dhl')).toBe(false);
+    expect(carrierTrackingHintKey('dhl')).toBe('add.linkSync');
   });
 
   it('recognises Dutch postal numbers as PostNL / Spring GDS with a valid checksum', () => {
@@ -246,6 +260,24 @@ describe('formatTrackingNumber', () => {
 });
 
 describe('parseTrackingInput', () => {
+  it('recognises DHL and Deutsche Post links and shipping text', () => {
+    for (const input of [
+      'https://www.dhl.de/en/privatkunden/dhl-sendungsverfolgung.html?piececode=LF123456785DE',
+      'https://nolp.dhl.de/nextt-online-public/en/search?piececode=LF123456785DE',
+      'https://www.deutschepost.de/de/s/sendungsverfolgung.html?piececode=LF123456785DE',
+      'https://www.dhl.com/ch-en/home/tracking.html?tracking-id=LF123456785DE',
+      'Your shipment: LF123456785DE',
+    ]) {
+      expect(parseTrackingInput(input)).toMatchObject({
+        trackingNumber: 'LF123456785DE', carrier: 'dhl', confidence: 'high',
+      });
+    }
+    // Explicit DHL links also identify ambiguous numeric IDs.
+    expect(parseTrackingInput('https://www.dhl.de/int-verfolgen/?piececode=1234567890'))
+      .toMatchObject({ carrier: 'dhl', confidence: 'high', source: 'link' });
+    expect(parseTrackingInput('https://dhl.de.example.com/?piececode=1234567890').carrier).not.toBe('dhl');
+  });
+
   it('recognises PostNL / Spring GDS numbers in carrier links and shipping messages', () => {
     for (const input of [
       'https://postnl.post/details/LX123456785NL',

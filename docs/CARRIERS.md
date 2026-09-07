@@ -51,6 +51,13 @@ carrier link. Asendia's public flow requires a fresh Cloudflare Turnstile
 validation, while the supported DHL and FedEx tracking APIs require provider
 credentials. ShipUp can be kept as a manual record.
 
+DHL detection includes checksum-valid German parcel and tracked-mail S10 numbers
+(`C…DE` and `L…DE`, including `LF…DE`) plus tracking links on `dhl.com`, `dhl.de`
+and `deutschepost.de`. Other postal ranges keep their existing carrier or generic
+postal fallback. DHL remains explicitly link-only; recognition does not enable
+automatic tracking. DHL documents its separate parcel and letter tracking entry
+points in its [tracking help](https://www.dhl.de/en/privatkunden/hilfe-kundenservice/sendungsverfolgung/probleme-loesungen.html).
+
 Carrier names, adapter modes, tracking links, required inputs, timezones and
 detection rules are defined once in `contracts/openapi.json` under
 `x-carriers`. They are generated into the Next.js app and the iPhone's offline

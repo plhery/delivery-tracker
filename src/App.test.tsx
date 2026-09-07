@@ -44,11 +44,28 @@ describe('App', () => {
     })));
   });
 
+  it('adds a German tracked shipment as DHL and explains website-only tracking', async () => {
+    const repo = createDemoRepo(window.localStorage);
+    const add = vi.spyOn(repo, 'add');
+    const user = userEvent.setup();
+    renderApp(repo);
+    await user.click(await screen.findByRole('button', { name: 'Add a parcel' }));
+    const sheet = screen.getByRole('dialog', { name: 'Add a parcel' });
+    await user.type(within(sheet).getByLabelText('Tracking number or link'), 'LF123456785DE');
+    expect(within(sheet).getByText('DHL', { exact: true })).toBeInTheDocument();
+    expect(within(sheet).getByText(/Automatic updates aren’t available for DHL yet/)).toBeInTheDocument();
+    expect(within(sheet).queryByText(/carrier is still unknown/)).not.toBeInTheDocument();
+    await user.click(within(sheet).getByRole('button', { name: 'Add parcel' }));
+    await waitFor(() => expect(add).toHaveBeenCalledWith(expect.objectContaining({
+      trackingNumber: 'LF123456785DE', carrier: 'dhl',
+    })));
+  });
+
   it('explains generic postal tracking in the add sheet and parcel details', async () => {
     const repo = createDemoRepo(window.localStorage);
     const [sample] = await repo.list();
     const parcel: ParcelWithEvents = {
-      ...sample, carrier: 'intl-post', trackingNumber: 'LX123456785DE',
+      ...sample, carrier: 'intl-post', trackingNumber: 'RA123456785DE',
       label: 'Postal shipment', syncStatus: 'pending', events: [], archivedAt: undefined,
       syncError: 'Choose a carrier with an automatic adapter or use the carrier link.',
     };
