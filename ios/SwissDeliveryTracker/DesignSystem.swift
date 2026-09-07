@@ -1,18 +1,33 @@
 import SwiftUI
 
 enum Brand {
-    // The Swiss-yellow accent stays distinctive while the surrounding layers
-    // use semantic system colors so contrast, Dark Mode, and increased
-    // contrast all adapt with iOS.
-    static let accent = Color(uiColor: .systemYellow)
-    static let accentBright = Color(uiColor: .systemYellow)
-    static let onAccent = Color(hex: "#171714")
-    static let ink = Color(uiColor: .label)
-    static let cream = Color(uiColor: .tertiarySystemGroupedBackground)
-    static let paper = Color(uiColor: .secondarySystemGroupedBackground)
-    static let warning = Color(uiColor: .systemOrange)
-    static let background = Color(uiColor: .systemGroupedBackground)
+    // Warm stationery colors with separate night and high-contrast treatments.
+    static let accent = color(light: "#D6B875", dark: "#DCC18A")
+    static let accentBright = accent
+    static let onAccent = Color(hex: "#292820")
+    static let ink = color(light: "#292D2B", dark: "#F1F0EA")
+    static let cream = color(light: "#EEEAE1", dark: "#292B28")
+    static let paper = color(light: "#FFFDF8", dark: "#222522")
+    static let warning = color(light: "#A6573B", dark: "#E2A185")
+    static let background = color(light: "#F5F3ED", dark: "#171A18")
     static let separator = Color(uiColor: .separator)
+
+    static func color(light: String, dark: String) -> Color {
+        Color(uiColor: UIColor { traits in
+            let color = UIColor(Color(hex: traits.userInterfaceStyle == .dark ? dark : light))
+            guard traits.accessibilityContrast == .high else { return color }
+            var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+            color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+            let luminance = red * 0.2126 + green * 0.7152 + blue * 0.0722
+            let adjustment: CGFloat = luminance > 0.5 ? 0.06 : -0.06
+            return UIColor(
+                red: min(1, max(0, red + adjustment)),
+                green: min(1, max(0, green + adjustment)),
+                blue: min(1, max(0, blue + adjustment)),
+                alpha: alpha
+            )
+        })
+    }
 }
 
 extension Color {

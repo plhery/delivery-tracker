@@ -1,9 +1,12 @@
 import SwiftUI
 
 enum ExperimentalPalette {
-    static let transit = Color(red: 0.16, green: 0.48, blue: 0.95)
-    static let pickup = Color(red: 1.00, green: 0.55, blue: 0.10)
-    static let delivered = Color(red: 0.12, green: 0.68, blue: 0.38)
+    static let transit = Brand.color(light: "#526E89", dark: "#A1BAD0")
+    static let pickup = Brand.warning
+    static let delivered = Brand.color(light: "#4D735F", dark: "#A1C4AD")
+    static let lilac = Brand.color(light: "#7A658C", dark: "#C3AFD4")
+    static let rose = Brand.color(light: "#A36570", dark: "#DEA7B2")
+    static let ochre = Brand.color(light: "#7B5E2C", dark: "#DCC18A")
 
     static func tint(for parcel: Parcel) -> Color {
         switch parcel.currentStage {
@@ -13,29 +16,19 @@ enum ExperimentalPalette {
             pickup
         case .inTransit:
             transit
+        case .outForDelivery:
+            ochre
+        case .pending, .registered, .none:
+            lilac
         default:
-            Brand.accent
+            transit
         }
     }
 }
 
 struct ExperimentalBackdrop: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     var body: some View {
-        ZStack {
-            Brand.background
-
-            LinearGradient(
-                colors: [
-                    Brand.accent.opacity(colorScheme == .dark ? 0.055 : 0.08),
-                    .clear,
-                ],
-                startPoint: .topTrailing,
-                endPoint: .center
-            )
-        }
-        .ignoresSafeArea()
+        Brand.background.ignoresSafeArea()
     }
 }
 
@@ -50,7 +43,7 @@ extension View {
                 .fill(Brand.paper)
                 .overlay {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(tint.opacity(0.035))
+                        .fill(tint.opacity(0.08))
                 }
                 .overlay {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -130,54 +123,11 @@ struct ExperimentalJourneyRail: View {
     }
 }
 
-struct ExperimentalParcelStatistics: Equatable {
-    let trackedCount: Int
-    let deliveredCount: Int
-    let activeCount: Int
-    let carrierCount: Int
-    let placeCount: Int
-    let favoriteCarrier: CarrierID?
-    let deliveredParcels: [Parcel]
-
-    init(parcels: [Parcel]) {
-        trackedCount = parcels.count
-        deliveredCount = parcels.filter(\.isDelivered).count
-        activeCount = parcels.filter(\.isActive).count
-        carrierCount = Set(parcels.map(\.carrier)).count
-        placeCount = Set(
-            parcels.flatMap(\.trackingEvents).compactMap { event in
-                event.location?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
-            }
-        ).count
-        deliveredParcels = parcels.filter(\.isDelivered).sorted {
-            ($0.currentEvent?.occurredAt ?? $0.createdAt) > ($1.currentEvent?.occurredAt ?? $1.createdAt)
-        }
-
-        let counts = Dictionary(grouping: parcels, by: \.carrier).mapValues { $0.count }
-        favoriteCarrier = counts.sorted { left, right in
-            if left.value == right.value { return left.key.rawValue < right.key.rawValue }
-            return left.value > right.value
-        }.first?.key
-    }
-}
-
 struct ExperimentalCopy {
     let language: AppLanguage
 
-    var passport: String { value(en: "History", de: "Verlauf", fr: "Historique", it: "Cronologia") }
-    var yearInMotion: String {
-        value(en: "Delivery history", de: "Lieferverlauf", fr: "Historique des livraisons", it: "Cronologia delle consegne")
-    }
-    var tracked: String { value(en: "Tracked", de: "Verfolgt", fr: "Suivis", it: "Tracciati") }
-    var delivered: String { value(en: "Delivered", de: "Zugestellt", fr: "Livrés", it: "Consegnati") }
-    var active: String { value(en: "On the way", de: "Unterwegs", fr: "En route", it: "In viaggio") }
-    var carriers: String { value(en: "Carriers", de: "Anbieter", fr: "Transporteurs", it: "Corrieri") }
-    var places: String { value(en: "Places", de: "Orte", fr: "Lieux", it: "Luoghi") }
-    var mostUsedCarrier: String { value(en: "Most used", de: "Meistgenutzt", fr: "Plus utilisé", it: "Più usato") }
-    var memories: String { value(en: "Recent deliveries", de: "Letzte Lieferungen", fr: "Livraisons récentes", it: "Consegne recenti") }
-    var noMemories: String {
-        value(en: "Delivered parcels will appear here.", de: "Zugestellte Pakete erscheinen hier.", fr: "Les colis livrés apparaîtront ici.", it: "I pacchi consegnati appariranno qui.")
-    }
+    var passport: String { value(en: "Passport", de: "Reisepass", fr: "Passeport", it: "Passaporto") }
+    var active: String { value(en: "Active", de: "Aktiv", fr: "En cours", it: "Attivi") }
     var showArchive: String {
         value(en: "Show archived parcels", de: "Archivierte Pakete anzeigen", fr: "Afficher les colis archivés", it: "Mostra i pacchi archiviati")
     }

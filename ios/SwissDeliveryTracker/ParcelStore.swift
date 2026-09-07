@@ -1253,7 +1253,7 @@ private final class DemoRepository {
             ] },
             parcel(label: "Camera strap", number: "RR123456785DE", carrier: .internationalPost, created: 138) { id in [
                 event(id, .registered, 137, "Posting prepared"),
-                event(id, .accepted, 130, "Accepted by origin post", "Hamburg, DE"),
+                event(id, .accepted, 130, "Accepted by origin post", "Hamburg, Germany"),
                 event(id, .customs, 10, "Awaiting customs clearance", "Basel"),
             ] },
             parcel(label: "Coffee beans", number: "443412345678901234", carrier: .quickpac, created: 96) { id in [

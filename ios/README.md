@@ -13,6 +13,15 @@ iOS 26 while retaining a material-based presentation on iOS 18–25.
 
 Refreshing advances fictional parcels. Reset the sample data from Account.
 
+First launch opens with a tappable parcel that unfolds into sign-in. The
+Deliveries tab keeps the current tracking list; Passport collects delivery
+milestones, average and fastest journeys, and countries reported at the first
+physical scan. Delivery times run from the first acceptance or transit scan to
+delivery, including archived deliveries with complete histories. Missing or
+ambiguous locations remain unknown, and the first scan country is not a claim
+about the sender's location. Passport cards and stamps respond to touch with
+spring motion and haptics, respecting Reduce Motion.
+
 ## Connect the production service
 
 Copy `Configuration/Local.xcconfig.example` to

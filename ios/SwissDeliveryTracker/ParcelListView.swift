@@ -15,7 +15,7 @@ struct ParcelListView: View {
             PassportView()
                 .tag(1)
                 .tabItem {
-                    Label(ExperimentalCopy(language: localizer.language).passport, systemImage: "map.fill")
+                    Label(ExperimentalCopy(language: localizer.language).passport, systemImage: "book.closed.fill")
                 }
         }
         .tint(Brand.ink)
@@ -52,7 +52,7 @@ private struct DeliveryListView: View {
                 content
             }
             .navigationTitle(localizer.text("native.deliveries"))
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
             .searchable(text: $query, prompt: localizer.text("view.searchPlaceholder"))
             .navigationDestination(for: UUID.self) { parcelID in
@@ -119,6 +119,8 @@ private struct DeliveryListView: View {
     private var content: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 22) {
+                listOverview
+
                 if !hasCustomView, let nextParcel {
                     ExperimentalNextDeliveryPass(
                         parcel: nextParcel,
@@ -142,7 +144,7 @@ private struct DeliveryListView: View {
                         message: store.usingCachedData
                             ? "\(message) \(localizer.text("app.cachedData"))"
                             : message,
-                        tint: .orange,
+                        tint: Brand.warning,
                         actionTitle: localizer.text(store.authenticationRequired ? "app.signInAgain" : "app.tryAgain"),
                         action: { Task { await store.load(showSpinner: true) } }
                     )
@@ -176,7 +178,7 @@ private struct DeliveryListView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
-            .padding(.bottom, 106)
+            .padding(.bottom, 28)
         }
         .scrollIndicators(.hidden)
         .refreshable {
@@ -201,39 +203,10 @@ private struct DeliveryListView: View {
 
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            Button { showingAccount = true } label: {
-                if let email = session.user?.email, let initial = email.first {
-                    Text(String(initial).uppercased())
-                        .font(.caption.weight(.bold))
-                        .frame(width: 30, height: 30)
-                        .background(Brand.accent.opacity(0.25), in: Circle())
-                } else {
-                    Image(systemName: "person.crop.circle.fill")
-                }
-            }
-            .tint(Brand.ink)
-            .accessibilityLabel(localizer.text("account.signedIn"))
-        }
-
-        ToolbarItemGroup(placement: .topBarTrailing) {
-            Button {
-                sharedDraft = nil
-                showingAdd = true
-            } label: {
-                Image(systemName: "plus")
-            }
-            .tint(Brand.ink)
-            .accessibilityLabel(localizer.text("app.addParcelAria"))
-
-            Button { showingFilters = true } label: {
-                Image(systemName: hasCustomView
-                    ? "line.3.horizontal.decrease.circle.fill"
-                    : "line.3.horizontal.decrease.circle")
-            }
-            .tint(Brand.ink)
-            .accessibilityLabel(localizer.text("view.showControls"))
-
             Menu {
+                Button(localizer.text("native.account"), systemImage: "person.crop.circle") {
+                    showingAccount = true
+                }
                 Button(localizer.text("notifications.title"), systemImage: "bell") {
                     showingNotifications = true
                 }
@@ -248,10 +221,65 @@ private struct DeliveryListView: View {
                     }
                 }
             } label: {
-                Image(systemName: "ellipsis")
+                Group {
+                    if let email = session.user?.email, let initial = email.first {
+                        Text(String(initial).uppercased())
+                            .font(.subheadline.weight(.semibold))
+                    } else {
+                        Image(systemName: "person.crop.circle")
+                            .font(.title3.weight(.regular))
+                    }
+                }
+                .foregroundStyle(Brand.ink)
+                .frame(width: 34, height: 34)
             }
-            .tint(Brand.ink)
+            .accessibilityLabel(localizer.text("native.account"))
         }
+
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                sharedDraft = nil
+                showingAdd = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Brand.ink)
+                    .frame(width: 34, height: 34)
+            }
+            .accessibilityLabel(localizer.text("app.addParcelAria"))
+        }
+    }
+
+    private var listOverview: some View {
+        HStack(alignment: .center, spacing: 12) {
+            HStack(spacing: 7) {
+                Circle()
+                    .fill(ExperimentalPalette.transit)
+                    .frame(width: 6, height: 6)
+                Text("\(store.parcels.filter(\.isActive).count)")
+                    .fontWeight(.semibold)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                Text(ExperimentalCopy(language: localizer.language).active)
+                    .foregroundStyle(.secondary)
+            }
+            .font(.subheadline)
+            .accessibilityElement(children: .combine)
+            Spacer(minLength: 0)
+            Button { showingFilters = true } label: {
+                Image(systemName: hasCustomView
+                    ? "line.3.horizontal.decrease.circle.fill"
+                    : "line.3.horizontal.decrease")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(hasCustomView ? ExperimentalPalette.transit : Brand.ink)
+                    .frame(width: 44, height: 44)
+                    .background(hasCustomView ? ExperimentalPalette.transit.opacity(0.09) : .clear, in: Circle())
+            }
+            .buttonStyle(ExperimentalLiftButtonStyle())
+            .accessibilityLabel(localizer.text("view.showControls"))
+        }
+        .padding(.leading, 4)
+        .padding(.bottom, -12)
     }
 
     @ViewBuilder private var bottomControls: some View {
@@ -277,7 +305,7 @@ private struct DeliveryListView: View {
                 text: actionMessage,
                 button: nil,
                 symbol: "checkmark.circle.fill",
-                tint: .green,
+                tint: ExperimentalPalette.delivered,
                 action: nil
             )
             .padding(.horizontal, 16)
@@ -505,60 +533,78 @@ private struct ExperimentalNextDeliveryPass: View {
 
     var body: some View {
         let tint = ExperimentalPalette.tint(for: parcel)
+        let deliveryDate = localizer.parcelCompletionDate(parcel) ?? localizer.parcelDeliveryEstimate(parcel)
 
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 6) {
-                Image(systemName: parcel.currentStage?.metadata.symbol ?? "shippingbox.fill")
-                    .foregroundStyle(tint)
-                Text(localizer.parcelStatus(parcel))
-                Text("·")
-                    .foregroundStyle(.tertiary)
-                Text(catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName)
-                    .foregroundStyle(.secondary)
-                Spacer(minLength: 0)
-            }
-            .font(.subheadline.weight(.semibold))
-            .lineLimit(1)
-
-            VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 8) {
                 Text(localizer.text("app.nextUp"))
                     .font(.caption.weight(.semibold))
                     .textCase(.uppercase)
-                    .tracking(0.6)
+                    .tracking(1.2)
                     .foregroundStyle(.secondary)
-                if let date = localizer.parcelCompletionDate(parcel) ?? localizer.parcelDeliveryEstimate(parcel) {
-                    Text(date)
-                        .font(.system(size: 30, weight: .bold, design: .rounded))
-                        .contentTransition(.numericText())
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.76)
+                Spacer(minLength: 8)
+                HStack(spacing: 5) {
+                    Circle().fill(tint).frame(width: 5, height: 5)
+                    Text(localizer.parcelStatus(parcel))
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Brand.ink)
                 }
-                Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
-                    .font(.headline.weight(.semibold))
-                    .lineLimit(2)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 6)
+                .background(tint.opacity(0.08), in: Capsule())
+            }
+
+            HStack(alignment: .center, spacing: 18) {
+                VStack(alignment: .leading, spacing: 6) {
+                    if let date = deliveryDate {
+                        Text(date)
+                            .font(.system(.largeTitle, design: .default, weight: .semibold))
+                            .tracking(-1.0)
+                            .contentTransition(.numericText())
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
+                        .font((deliveryDate == nil ? Font.title2 : Font.headline).weight(.medium))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Image(systemName: parcel.currentStage?.metadata.symbol ?? "shippingbox")
+                    .font(.system(size: 30, weight: .light))
+                    .foregroundStyle(tint)
+                    .frame(width: 66, height: 74)
+                    .background(tint.opacity(0.06), in: RoundedRectangle(cornerRadius: 18))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18)
+                            .strokeBorder(tint.opacity(0.16), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    }
+                    .rotationEffect(.degrees(-6))
+                    .accessibilityHidden(true)
             }
 
             ExperimentalJourneyRail(stage: parcel.currentStage, tint: tint)
                 .environmentObject(localizer)
 
-            HStack(spacing: 8) {
-                Image(systemName: "location.fill")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(tint)
-                Text(parcel.experimentalLatestLocation
-                    ?? catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName)
-                    .font(.subheadline)
-                    .lineLimit(1)
-                Text("·")
-                    .foregroundStyle(.tertiary)
-                Text(parcel.lastSyncedAt.map { localizer.relativeTime(from: $0) } ?? "")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+            HStack(alignment: .center, spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName)
+                        .font(.subheadline.weight(.medium))
+                    if let location = parcel.experimentalLatestLocation {
+                        Text(location)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
                 Spacer(minLength: 0)
+                Image(systemName: "arrow.up.right")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.tertiary)
             }
+            .padding(.top, 2)
         }
-        .padding(18)
+        .foregroundStyle(Brand.ink)
+        .padding(20)
         .experimentalSurface(tint: tint, cornerRadius: 24)
         .matchedTransitionSource(id: parcel.id, in: transition)
         .accessibilityElement(children: .combine)
@@ -631,7 +677,7 @@ private struct ExperimentalParcelPassCard: View {
                 if let notice {
                     Label(notice, systemImage: "exclamationmark.circle.fill")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Brand.warning)
                         .lineLimit(2)
                 }
 
@@ -662,7 +708,7 @@ private struct ExperimentalParcelPassCard: View {
                 ]))
             }
         }
-        .experimentalSurface(cornerRadius: 18, shadow: false)
+        .experimentalSurface(tint: tint, cornerRadius: 18, shadow: false)
         .matchedTransitionSource(id: parcel.id, in: transition)
         .experimentalSwipeToArchive(
             title: localizer.text("parcel.archive"),
@@ -738,7 +784,7 @@ private struct ExperimentalDeliveredParcelCard: View {
                 ]))
             }
         }
-        .experimentalSurface(cornerRadius: 18, shadow: false)
+        .experimentalSurface(tint: tint, cornerRadius: 18, shadow: false)
         .matchedTransitionSource(id: parcel.id, in: transition)
         .experimentalSwipeToArchive(
             title: localizer.text("parcel.archive"),
@@ -793,13 +839,7 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
         if let action {
             ZStack(alignment: .trailing) {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [Brand.warning, Brand.warning.opacity(0.84)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
+                    .fill(Brand.warning)
                     .overlay(alignment: .trailing) {
                         Button {
                             trigger(action, provideFeedback: true)
@@ -815,7 +855,7 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
                                         : .snappy(duration: 0.22, extraBounce: 0.16),
                                     value: isCommitArmed
                                 )
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Brand.color(light: "#FFFFFF", dark: "#292820"))
                                 .frame(width: max(actionWidth, revealedWidth))
                                 .frame(maxHeight: .infinity)
                                 .contentShape(Rectangle())
@@ -830,9 +870,9 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
             }
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .shadow(
-                color: shadow ? .black.opacity(0.08) : .clear,
-                radius: shadow ? 18 : 0,
-                y: shadow ? 9 : 0
+                color: shadow ? .black.opacity(0.035) : .clear,
+                radius: shadow ? 10 : 0,
+                y: shadow ? 4 : 0
             )
             .contentShape(Rectangle())
             .onGeometryChange(for: CGFloat.self) { geometry in
@@ -1093,192 +1133,5 @@ private extension Parcel {
 
     var experimentalArchivedDisplayDate: Date? {
         experimentalCompletionDate ?? archivedAt.flatMap(DateParser.date)
-    }
-}
-
-private struct PassportView: View {
-    @EnvironmentObject private var store: ParcelStore
-    @EnvironmentObject private var localizer: Localizer
-
-    @ObservedObject private var catalog = CarrierCatalog.shared
-
-    var body: some View {
-        let copy = ExperimentalCopy(language: localizer.language)
-        let stats = ExperimentalParcelStatistics(parcels: store.parcels)
-        let recentDeliveries = Array(stats.deliveredParcels.prefix(5))
-
-        NavigationStack {
-            ZStack {
-                ExperimentalBackdrop()
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 20) {
-                        passportHero(stats: stats, copy: copy)
-                        passportFacts(stats: stats, copy: copy)
-
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text(copy.memories)
-                                .font(.title3.weight(.semibold))
-                            if stats.deliveredParcels.isEmpty {
-                                ContentUnavailableView(
-                                    copy.memories,
-                                    systemImage: "shippingbox.and.arrow.backward",
-                                    description: Text(copy.noMemories)
-                                )
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 24)
-                            } else {
-                                VStack(spacing: 0) {
-                                    ForEach(Array(recentDeliveries.enumerated()), id: \.element.id) { index, parcel in
-                                        memory(parcel)
-                                        if index < recentDeliveries.count - 1 {
-                                            Divider()
-                                                .padding(.leading, 48)
-                                        }
-                                    }
-                                }
-                                .experimentalSurface(cornerRadius: 18, shadow: false)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                    .padding(.bottom, 32)
-                }
-                .scrollIndicators(.hidden)
-            }
-            .navigationTitle(copy.passport)
-            .navigationBarTitleDisplayMode(.large)
-        }
-    }
-
-    private func passportHero(stats: ExperimentalParcelStatistics, copy: ExperimentalCopy) -> some View {
-        VStack(alignment: .leading, spacing: 17) {
-            Label(copy.yearInMotion, systemImage: "map.fill")
-                .font(.caption.weight(.semibold))
-                .textCase(.uppercase)
-                .tracking(0.55)
-                .foregroundStyle(Brand.onAccent.opacity(0.62))
-
-            HStack(alignment: .lastTextBaseline, spacing: 9) {
-                Text("\(stats.trackedCount)")
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                Text(copy.tracked)
-                    .font(.title3.weight(.semibold))
-            }
-
-            HStack(spacing: 0) {
-                passportSummaryValue(stats.deliveredCount, title: copy.delivered)
-
-                Rectangle()
-                    .fill(Brand.onAccent.opacity(0.16))
-                    .frame(width: 1, height: 32)
-                    .padding(.horizontal, 18)
-
-                passportSummaryValue(stats.activeCount, title: copy.active)
-            }
-        }
-        .foregroundStyle(Brand.onAccent)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
-        .background(
-            LinearGradient(
-                colors: [Brand.accent, ExperimentalPalette.pickup.opacity(0.72)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ),
-            in: RoundedRectangle(cornerRadius: 26, style: .continuous)
-        )
-        .shadow(color: .black.opacity(0.045), radius: 10, y: 4)
-    }
-
-    private func passportSummaryValue(_ value: Int, title: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("\(value)")
-                .font(.headline.weight(.bold).monospacedDigit())
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(Brand.onAccent.opacity(0.62))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func passportFacts(stats: ExperimentalParcelStatistics, copy: ExperimentalCopy) -> some View {
-        VStack(spacing: 0) {
-            passportFact(
-                symbol: "truck.box.fill",
-                title: copy.carriers,
-                value: "\(stats.carrierCount)",
-                tint: ExperimentalPalette.transit
-            )
-            Divider().padding(.leading, 48)
-            passportFact(
-                symbol: "map.fill",
-                title: copy.places,
-                value: "\(stats.placeCount)",
-                tint: ExperimentalPalette.pickup
-            )
-
-            if let favorite = stats.favoriteCarrier {
-                Divider().padding(.leading, 48)
-                passportFact(
-                    symbol: "star.fill",
-                    title: copy.mostUsedCarrier,
-                    value: catalog.info(for: favorite, language: localizer.language).displayName,
-                    tint: Brand.accent
-                )
-            }
-        }
-        .experimentalSurface(cornerRadius: 18, shadow: false)
-    }
-
-    private func passportFact(symbol: String, title: String, value: String, tint: Color) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: symbol)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(tint)
-                .frame(width: 24)
-            Text(title)
-                .font(.subheadline)
-            Spacer(minLength: 12)
-            Text(value)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        }
-        .padding(.horizontal, 14)
-        .frame(minHeight: 50)
-    }
-
-    private func memory(_ parcel: Parcel) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.title3)
-                .foregroundStyle(ExperimentalPalette.delivered)
-                .frame(width: 28)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-                Text([
-                    catalog.info(for: parcel.carrier, language: localizer.language).displayName,
-                    parcel.experimentalLatestLocation,
-                ].compactMap { $0 }.joined(separator: " · "))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 0)
-
-            if let date = parcel.experimentalCompletionDate {
-                Text(localizer.shortDate(date))
-                    .font(.caption.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.horizontal, 13)
-        .frame(minHeight: 58)
-        .accessibilityElement(children: .combine)
     }
 }

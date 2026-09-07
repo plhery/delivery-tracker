@@ -5,98 +5,106 @@ import UserNotifications
 struct WelcomeView: View {
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var localizer: Localizer
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var opening = false
+
+    private var copy: ArrivalCopy { ArrivalCopy(language: localizer.language) }
 
     var body: some View {
-        ZStack {
-            Brand.background.ignoresSafeArea()
-            ScrollView {
-                VStack(spacing: 0) {
-                    HStack {
-                        Spacer()
-                        languageMenu
-                    }
-                    .padding(.bottom, 32)
-
-                    AuthenticationIdentity(
-                        title: localizer.text("welcome.title"),
-                        subtitle: localizer.text("welcome.subtitle")
-                    )
-
-                    VStack(spacing: 14) {
-                        welcomeFeature("shippingbox.and.arrow.backward.fill", "welcome.feature.track")
-                        welcomeFeature("bell.badge.fill", "welcome.feature.alerts")
-                        welcomeFeature("lock.shield.fill", "welcome.feature.private")
-                    }
-                    .padding(.top, 28)
-
-                    VStack(spacing: 12) {
-                        Button {
-                            session.showSignIn()
-                        } label: {
-                            Label(localizer.text("welcome.signIn"), systemImage: "person.crop.circle.fill")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 54)
+        GeometryReader { geometry in
+            ZStack {
+                Brand.background.ignoresSafeArea()
+                ScrollView {
+                    VStack(spacing: 0) {
+                        HStack {
+                            Text(localizer.text("app.title"))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Brand.ink)
+                            Spacer()
+                            AuthenticationLanguageMenu()
                         }
-                        .buttonStyle(.borderedProminent)
-                        .buttonBorderShape(.roundedRectangle(radius: 17))
-                        .tint(Brand.accent)
-                        .foregroundStyle(Brand.onAccent)
+
+                        Spacer(minLength: 36)
+
+                        VStack(spacing: 10) {
+                            Text(copy.welcomeTitle)
+                                .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                                .tracking(-1.2)
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.horizontal, 8)
+
+                        Button(action: unwrap) {
+                            UnwrappingParcel(open: opening ? 1 : 0)
+                                .frame(width: min(300, geometry.size.width - 48), height: min(300, geometry.size.width - 48) * 31 / 30)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(TactileButtonStyle(scale: 0.96))
+                        .accessibilityLabel(copy.open)
+                        .accessibilityHint(copy.openHint)
+                        .accessibilityIdentifier("welcome.openParcel")
+                        .disabled(opening)
+                        .padding(.top, 12)
+
+                        Button(action: unwrap) {
+                            HStack(spacing: 8) {
+                                Text(copy.open)
+                                Image(systemName: "arrow.right")
+                                    .font(.caption.weight(.bold))
+                            }
+                            .font(.headline)
+                            .foregroundStyle(Brand.ink)
+                            .padding(.horizontal, 24)
+                            .frame(minHeight: 50)
+                            .background(Brand.paper, in: Capsule())
+                            .overlay(Capsule().stroke(Brand.separator.opacity(0.3), lineWidth: 1))
+                        }
+                        .buttonStyle(TactileButtonStyle())
+                        .disabled(opening)
+                        .opacity(opening ? 0 : 1)
+
+                        Spacer(minLength: 36)
 
                         Button {
                             session.enterDemo()
                         } label: {
-                            Label(localizer.text("welcome.demo"), systemImage: "sparkles")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 54)
+                            Text(localizer.text("welcome.demo"))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .frame(minHeight: 44)
                         }
-                        .buttonStyle(.bordered)
-                        .buttonBorderShape(.roundedRectangle(radius: 17))
-                        .tint(Brand.ink)
-
-                        Text(localizer.text("welcome.demoDescription"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
+                        .buttonStyle(TactileButtonStyle())
+                        .accessibilityHint(localizer.text("welcome.demoDescription"))
+                        .disabled(opening)
                     }
-                    .padding(.top, 30)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 16)
+                    .frame(maxWidth: 520)
+                    .frame(minHeight: geometry.size.height)
+                    .frame(maxWidth: .infinity)
                 }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 20)
-                .frame(maxWidth: 520)
-                .frame(maxWidth: .infinity)
+                .scrollIndicators(.hidden)
+            }
+        }
+        .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.65), trigger: opening)
+        .task(id: opening) {
+            guard opening else { return }
+            if !reduceMotion {
+                do { try await Task.sleep(for: .milliseconds(850)) }
+                catch { return }
+            }
+            guard !Task.isCancelled else { return }
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+                session.showSignIn()
             }
         }
     }
 
-    private var languageMenu: some View {
-        Menu {
-            Picker(localizer.text("language.label"), selection: $localizer.language) {
-                ForEach(AppLanguage.allCases) { language in
-                    Text(language.nativeName).tag(language)
-                }
-            }
-        } label: {
-            Label(localizer.language.nativeName, systemImage: "globe")
-                .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, 14)
-                .frame(height: 42)
-                .glassSurface(in: Capsule())
-        }
-        .foregroundStyle(Brand.ink)
-    }
-
-    private func welcomeFeature(_ symbol: String, _ key: String) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: symbol)
-                .font(.headline)
-                .foregroundStyle(Brand.ink)
-                .frame(width: 38, height: 38)
-                .background(Brand.accent.opacity(0.28), in: RoundedRectangle(cornerRadius: 12))
-            Text(localizer.text(key))
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity, alignment: .leading)
+    private func unwrap() {
+        guard !opening else { return }
+        withAnimation(reduceMotion ? nil : .spring(response: 0.6, dampingFraction: 0.76)) {
+            opening = true
         }
     }
 }
@@ -115,6 +123,8 @@ struct SignInView: View {
     @State private var working = false
     @State private var errorMessage: String?
 
+    private var copy: ArrivalCopy { ArrivalCopy(language: localizer.language) }
+
     var body: some View {
         ZStack {
             Brand.background.ignoresSafeArea()
@@ -132,14 +142,25 @@ struct SignInView: View {
                         .foregroundStyle(Brand.ink)
                         .accessibilityLabel(localizer.text("welcome.back"))
                         Spacer()
-                        languageMenu
+                        AuthenticationLanguageMenu()
                     }
-                    .padding(.bottom, 32)
+                    .padding(.bottom, 12)
 
-                    AuthenticationIdentity(
-                        title: localizer.text("auth.title"),
-                        subtitle: localizer.text("auth.subtitle")
-                    )
+                    UnwrappingParcel(open: 1)
+                        .frame(width: 180, height: 186)
+                        .accessibilityHidden(true)
+
+                    VStack(spacing: 8) {
+                        Text(copy.signInTitle)
+                            .font(.system(.title, design: .rounded, weight: .bold))
+                            .tracking(-0.6)
+                        Text(copy.signInSubtitle)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 8)
 
                     if !configured {
                         configurationNotice.padding(.top, 28)
@@ -149,7 +170,20 @@ struct SignInView: View {
                         methods.padding(.top, 28)
                     }
 
-                    privacyNotice.padding(.top, 28)
+                    Button {
+                        session.enterDemo()
+                    } label: {
+                        Text(localizer.text("welcome.demo"))
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .frame(minHeight: 44)
+                    }
+                    .buttonStyle(TactileButtonStyle())
+                    .accessibilityHint(localizer.text("welcome.demoDescription"))
+                    .disabled(working)
+                    .padding(.top, 8)
+
+                    privacyNotice.padding(.top, 12)
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 20)
@@ -180,23 +214,6 @@ struct SignInView: View {
         .overlay(alignment: .top) { Divider() }
     }
 
-    private var languageMenu: some View {
-        Menu {
-            Picker(localizer.text("language.label"), selection: $localizer.language) {
-                ForEach(AppLanguage.allCases) { language in
-                    Text(language.nativeName).tag(language)
-                }
-            }
-        } label: {
-            Label(localizer.language.nativeName, systemImage: "globe")
-                .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, 14)
-                .frame(height: 42)
-                .glassSurface(in: Capsule())
-        }
-        .foregroundStyle(Brand.ink)
-    }
-
     private var configurationNotice: some View {
         NoticeBanner(
             symbol: "wrench.and.screwdriver.fill",
@@ -213,19 +230,30 @@ struct SignInView: View {
                     run { try await session.signInWithGoogle() }
                 } label: {
                     HStack {
-                        Text("G").font(.headline.weight(.bold)).foregroundStyle(.blue)
+                        GoogleSignInMark()
+                            .frame(width: 20, height: 20)
+                            .accessibilityHidden(true)
+                        Spacer(minLength: 8)
                         Text(working ? localizer.text("auth.googleOpening") : localizer.text("auth.google"))
-                        Spacer()
-                        Image(systemName: "arrow.up.right")
+                            .font(.headline)
+                        Spacer(minLength: 8)
+                        if working {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Image(systemName: "arrow.right")
+                                .font(.caption.weight(.semibold))
+                        }
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 18)
-                    .frame(height: 54)
+                    .padding(.vertical, 14)
+                    .frame(minHeight: 56)
+                    .foregroundStyle(Brand.ink)
+                    .background(Brand.paper, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(Brand.separator.opacity(0.35), lineWidth: 1))
                 }
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.roundedRectangle(radius: 16))
-                .tint(Brand.ink)
-                .foregroundStyle(Brand.background)
+                .buttonStyle(TactileButtonStyle())
+                .accessibilityIdentifier("auth.google")
                 .disabled(working)
             }
 
@@ -249,13 +277,12 @@ struct SignInView: View {
                     }
                 } label: {
                     Label(localizer.text("auth.emailOption"), systemImage: "envelope")
-                        .font(.headline)
+                        .font(.subheadline.weight(.medium))
                         .frame(maxWidth: .infinity)
-                        .frame(height: 52)
+                        .frame(minHeight: 48)
                 }
-                .buttonStyle(.bordered)
-                .buttonBorderShape(.roundedRectangle(radius: 16))
-                .tint(Brand.ink)
+                .buttonStyle(TactileButtonStyle())
+                .foregroundStyle(Brand.ink)
                 .disabled(working)
             }
             if !emailFormVisible {
@@ -415,9 +442,9 @@ struct NotificationOnboardingView: View {
                         .padding(.horizontal, 8)
 
                     VStack(spacing: 13) {
-                        feature("sun.max.fill", "onboarding.notifications.feature.delivery")
-                        feature("shippingbox.fill", "onboarding.notifications.feature.pickup")
-                        feature("exclamationmark.triangle.fill", "onboarding.notifications.feature.issues")
+                        feature("sun.max.fill", "onboarding.notifications.feature.delivery", tint: ExperimentalPalette.ochre)
+                        feature("shippingbox.fill", "onboarding.notifications.feature.pickup", tint: ExperimentalPalette.delivered)
+                        feature("exclamationmark.triangle.fill", "onboarding.notifications.feature.issues", tint: ExperimentalPalette.rose)
                     }
                     .padding(18)
                     .parcelCardSurface()
@@ -459,15 +486,15 @@ struct NotificationOnboardingView: View {
     private var notificationGlyph: some View {
         ZStack {
             Circle()
-                .fill(Brand.accent.opacity(0.22))
+                .fill(ExperimentalPalette.transit.opacity(0.10))
                 .frame(width: 110, height: 110)
             Circle()
-                .stroke(Brand.accent.opacity(0.34), lineWidth: 1)
+                .stroke(ExperimentalPalette.transit.opacity(0.16), lineWidth: 1)
                 .frame(width: 86, height: 86)
             Image(systemName: store.notificationsEnabledOnDevice ? "bell.badge.fill" : "bell.and.waves.left.and.right.fill")
                 .font(.system(size: 38, weight: .semibold))
                 .symbolRenderingMode(.palette)
-                .foregroundStyle(Brand.ink, Brand.accent)
+                .foregroundStyle(ExperimentalPalette.transit, ExperimentalPalette.ochre)
         }
         .accessibilityHidden(true)
     }
@@ -493,13 +520,13 @@ struct NotificationOnboardingView: View {
         .overlay(alignment: .top) { Divider().opacity(0.45) }
     }
 
-    private func feature(_ symbol: String, _ key: String) -> some View {
+    private func feature(_ symbol: String, _ key: String, tint: Color) -> some View {
         HStack(spacing: 14) {
             Image(systemName: symbol)
                 .font(.body.weight(.semibold))
-                .foregroundStyle(Brand.ink)
+                .foregroundStyle(tint)
                 .frame(width: 40, height: 40)
-                .background(Brand.accent.opacity(0.22), in: RoundedRectangle(cornerRadius: 12))
+                .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 12))
             Text(localizer.text(key))
                 .font(.subheadline.weight(.semibold))
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -580,28 +607,221 @@ private extension String {
     }
 }
 
-private struct AuthenticationIdentity: View {
-    let title: String
-    let subtitle: String
+private struct AuthenticationLanguageMenu: View {
     @EnvironmentObject private var localizer: Localizer
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            ParcelGlyph(size: 54)
-            VStack(alignment: .leading, spacing: 5) {
-                Text(localizer.text("app.title"))
-                    .font(.subheadline.weight(.bold))
-                Text(title)
-                    .font(.system(.title2, design: .rounded, weight: .bold))
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 2)
+        Menu {
+            Picker(localizer.text("language.label"), selection: $localizer.language) {
+                ForEach(AppLanguage.allCases) { language in
+                    Text(language.nativeName).tag(language)
+                }
             }
-            Spacer(minLength: 0)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "globe")
+                Text(localizer.language.rawValue.uppercased())
+                    .font(.caption.weight(.semibold))
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 10)
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .tint(Brand.ink)
+        .accessibilityLabel(localizer.text("language.label"))
+        .accessibilityValue(localizer.language.nativeName)
+    }
+}
+
+/// A little paper object, drawn in points so its folds stay crisp at every size.
+/// Only the user's tap sets it in motion; there is no looping welcome animation.
+private struct UnwrappingParcel: View, Animatable {
+    var open: Double
+
+    var animatableData: Double {
+        get { open }
+        set { open = newValue }
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let scale = geometry.size.width / 300
+            ZStack {
+                Ellipse()
+                    .fill(.black.opacity(0.08))
+                    .frame(width: 180, height: 20)
+                    .blur(radius: 9)
+                    .position(x: 151, y: 283)
+
+                polygon([(55, 142), (150, 95), (245, 142), (150, 190)])
+                    .fill(Color(hex: "#806345"))
+
+                // The rear pair folds away before the front panels reveal the box.
+                flap(
+                    closed: [(55, 142), (150, 95), (190, 143), (95, 190)],
+                    opened: [(55, 142), (150, 95), (112, 48), (17, 95)],
+                    color: Color(hex: "#C4A078")
+                )
+                .opacity(open)
+                flap(
+                    closed: [(150, 95), (245, 142), (197.5, 166), (102.5, 118.5)],
+                    opened: [(150, 95), (245, 142), (270, 88), (175, 41)],
+                    color: Color(hex: "#D8B997")
+                )
+
+                // A small delivery card rises from inside. It has no fake data.
+                VStack(alignment: .leading, spacing: 10) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(Color(hex: "#587260"))
+                        .frame(width: 38, height: 38)
+                        .background(Color(hex: "#E7ECE4"), in: Circle())
+                    Capsule().fill(Color(hex: "#DAD7CE")).frame(width: 45, height: 4)
+                    Capsule().fill(Color(hex: "#E7E4DC")).frame(width: 29, height: 4)
+                }
+                .padding(14)
+                .frame(width: 83, height: 111)
+                .background(Color(hex: "#FCFAF4"), in: RoundedRectangle(cornerRadius: 7))
+                .rotationEffect(.degrees(-8 + open * 3))
+                .position(x: 152, y: 174 - 69 * open)
+                .opacity(min(1, max(0, open * 2)))
+
+                polygon([(55, 142), (150, 190), (150, 277), (55, 229)])
+                    .fill(Color(hex: "#C9A47B"))
+                polygon([(150, 190), (245, 142), (245, 229), (150, 277)])
+                    .fill(Color(hex: "#B78F66"))
+
+                // The quiet shipping label is part of the illustration.
+                HStack(alignment: .bottom, spacing: 2) {
+                    ForEach(0..<10) { index in
+                        Rectangle()
+                            .fill(Color(hex: "#4E677A"))
+                            .frame(width: index.isMultiple(of: 3) ? 2 : 1, height: 17)
+                    }
+                }
+                .frame(width: 51, height: 32)
+                .background(Color(hex: "#D8E5EA"), in: RoundedRectangle(cornerRadius: 3))
+                .rotationEffect(.degrees(27))
+                .position(x: 101, y: 221)
+
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(Color(hex: "#735C43"))
+                    .rotationEffect(.degrees(-27))
+                    .position(x: 218, y: 214)
+
+                Image(systemName: "asterisk")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Color(hex: "#7C6787"))
+                    .frame(width: 28, height: 28)
+                    .background(Color(hex: "#DECCE2"), in: Circle())
+                    .rotationEffect(.degrees(-27))
+                    .position(x: 183, y: 234)
+
+                flap(
+                    closed: [(245, 142), (150, 190), (110, 142), (205, 95)],
+                    opened: [(245, 142), (150, 190), (186, 231), (281, 183)],
+                    color: Color(hex: "#D1AE85")
+                )
+                .opacity(open)
+                flap(
+                    closed: [(55, 142), (150, 190), (197.5, 166), (102.5, 118.5)],
+                    opened: [(55, 142), (150, 190), (121, 234), (26, 186)],
+                    color: Color(hex: "#DDBD96")
+                )
+
+                // The tape tears out of sight as the flaps open.
+                polygon([(96, 122), (109, 115), (204, 163), (191, 170)])
+                    .fill(Color(hex: "#EBDDCA"))
+                    .opacity(max(0, 1 - open * 4))
+                Path { path in
+                    path.move(to: CGPoint(x: 102.5, y: 118.5))
+                    path.addLine(to: CGPoint(x: 197.5, y: 166))
+                }
+                .stroke(Color(hex: "#AF9474").opacity(max(0, 0.6 - open * 3)), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+            }
+            .frame(width: 300, height: 310)
+            .scaleEffect(scale, anchor: .topLeading)
+        }
+        .accessibilityHidden(true)
+    }
+
+    private func flap(closed: [(Double, Double)], opened: [(Double, Double)], color: Color) -> some View {
+        let points = zip(closed, opened).map { from, to in
+            (from.0 + (to.0 - from.0) * open, from.1 + (to.1 - from.1) * open)
+        }
+        return polygon(points)
+            .fill(color)
+            .overlay(polygon(points).stroke(Color(hex: "#987450").opacity(0.24), lineWidth: 0.7))
+    }
+
+    private func polygon(_ points: [(Double, Double)]) -> Path {
+        Path { path in
+            guard let first = points.first else { return }
+            path.move(to: CGPoint(x: first.0, y: first.1))
+            for point in points.dropFirst() {
+                path.addLine(to: CGPoint(x: point.0, y: point.1))
+            }
+            path.closeSubpath()
+        }
+    }
+}
+
+private struct GoogleSignInMark: View {
+    var body: some View {
+        Text("G")
+            .font(.system(size: 21, weight: .semibold))
+            .foregroundStyle(Brand.ink)
+    }
+}
+
+private struct ArrivalCopy {
+    let language: AppLanguage
+
+    var welcomeTitle: String {
+        switch language {
+        case .en: "Good things\nare on their way."
+        case .de: "Gute Dinge\nsind unterwegs."
+        case .fr: "De belles choses\nsont en route."
+        case .it: "Belle cose\nsono in arrivo."
+        }
+    }
+
+    var open: String {
+        switch language {
+        case .en: "Open your parcel"
+        case .de: "Paket öffnen"
+        case .fr: "Ouvrir votre colis"
+        case .it: "Apri il tuo pacco"
+        }
+    }
+
+    var openHint: String {
+        switch language {
+        case .en: "Opens the parcel and shows sign-in options."
+        case .de: "Öffnet das Paket und zeigt die Anmeldeoptionen."
+        case .fr: "Ouvre le colis et affiche les options de connexion."
+        case .it: "Apre il pacco e mostra le opzioni di accesso."
+        }
+    }
+
+    var signInTitle: String {
+        switch language {
+        case .en: "Your deliveries, together."
+        case .de: "Deine Lieferungen, vereint."
+        case .fr: "Vos livraisons, réunies."
+        case .it: "Le tue consegne, insieme."
+        }
+    }
+
+    var signInSubtitle: String {
+        switch language {
+        case .en: "Sign in to start tracking."
+        case .de: "Melde dich an und verfolge deine Pakete."
+        case .fr: "Connectez-vous pour suivre vos colis."
+        case .it: "Accedi per seguire i tuoi pacchi."
+        }
     }
 }

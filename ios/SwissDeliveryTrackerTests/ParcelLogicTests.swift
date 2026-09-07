@@ -443,6 +443,161 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertNil(localizer.parcelDeliveryEstimate(parcel, now: now))
     }
 
+    func testEmptyPassportHasNoInventedRecordsOrCountries() {
+        let statistics = PassportStatistics(parcels: [])
+        XCTAssertEqual(statistics.trackedCount, 0)
+        XCTAssertEqual(statistics.deliveredCount, 0)
+        XCTAssertEqual(statistics.activeCount, 0)
+        XCTAssertEqual(statistics.durationSampleCount, 0)
+        XCTAssertNil(statistics.averageDeliveryDuration)
+        XCTAssertNil(statistics.fastestDelivery)
+        XCTAssertTrue(statistics.originCountries.isEmpty)
+        XCTAssertEqual(statistics.unknownOriginCount, 0)
+        XCTAssertEqual(statistics.nextMilestoneCount, 1)
+        XCTAssertEqual(statistics.milestoneProgress, 0)
+    }
+
+    func testPassportUsesCarrierJourneyTimesAndIncludesArchivedDeliveries() throws {
+        let firstID = UUID()
+        var first = makeParcel(id: firstID, events: [
+            event(firstID, .registered, "2026-08-01T10:00:00Z"),
+            event(firstID, .accepted, "2026-08-06T10:00:00Z"),
+            event(firstID, .delivered, "2026-08-08T10:00:00Z"),
+        ])
+        first.archivedAt = "2026-08-09T10:00:00Z"
+        let secondID = UUID()
+        var second = makeParcel(id: secondID, events: [
+            event(secondID, .inTransit, "2026-08-07T10:00:00Z"),
+            event(secondID, .delivered, "2026-08-08T10:00:00Z"),
+            event(secondID, .pending, "2026-08-09T10:00:00Z"),
+        ])
+        // A parcel added after delivery still has a valid carrier journey.
+        second.createdAt = "2026-08-10T10:00:00Z"
+        let returnedID = UUID()
+        let returned = makeParcel(id: returnedID, events: [
+            event(returnedID, .accepted, "2026-08-05T10:00:00Z"),
+            event(returnedID, .delivered, "2026-08-06T10:00:00Z"),
+            event(returnedID, .returned, "2026-08-08T10:00:00Z"),
+        ])
+        let statistics = PassportStatistics(parcels: [first, second, returned, makeParcel()])
+        XCTAssertEqual(statistics.trackedCount, 4)
+        XCTAssertEqual(statistics.deliveredCount, 2)
+        XCTAssertEqual(statistics.activeCount, 1)
+        XCTAssertEqual(statistics.durationSampleCount, 2)
+        XCTAssertEqual(try XCTUnwrap(statistics.averageDeliveryDuration), 36 * 3_600, accuracy: 0.001)
+        XCTAssertEqual(statistics.fastestDelivery?.parcelID, secondID)
+        XCTAssertEqual(statistics.fastestDelivery?.duration, 24 * 3_600)
+        XCTAssertEqual(statistics.fastestDelivery?.deliveredAt, DateParser.date("2026-08-08T10:00:00Z"))
+    }
+
+    func testPassportOrdersActualInstantsAcrossTimeZones() throws {
+        let id = UUID()
+        let parcel = makeParcel(id: id, events: [
+            // Lexical order incorrectly puts the accepted scan last.
+            event(id, .accepted, "2026-08-08T12:00:00+03:00"),
+            event(id, .delivered, "2026-08-08T11:00:00Z"),
+        ])
+        let statistics = PassportStatistics(parcels: [parcel])
+        XCTAssertEqual(statistics.deliveredCount, 1)
+        XCTAssertEqual(statistics.activeCount, 0)
+        XCTAssertEqual(try XCTUnwrap(statistics.averageDeliveryDuration), 2 * 3_600, accuracy: 0.001)
+    }
+
+    func testPassportDoesNotInventDurationsFromPartialOrInvalidHistories() {
+        let histories: [[(TrackingStage, String)]] = [
+            [(.delivered, "2026-08-08T10:00:00Z")],
+            [(.registered, "2026-08-07T10:00:00Z"), (.delivered, "2026-08-08T10:00:00Z")],
+            [(.outForDelivery, "2026-08-08T09:00:00Z"), (.delivered, "2026-08-08T10:00:00Z")],
+            [(.accepted, "invalid"), (.delivered, "2026-08-08T10:00:00Z")],
+            [(.accepted, "2026-08-08T10:00:00Z"), (.delivered, "invalid")],
+            [(.accepted, "2026-08-09T10:00:00Z"), (.delivered, "2026-08-08T10:00:00Z")],
+            [(.accepted, "2026-08-08T10:00:00Z"), (.delivered, "2026-08-08T10:00:00Z")],
+        ]
+        for history in histories {
+            let id = UUID()
+            let parcel = makeParcel(id: id, events: history.map { event(id, $0.0, $0.1) })
+            let statistics = PassportStatistics(parcels: [parcel])
+            XCTAssertEqual(statistics.durationSampleCount, 0, "Unexpected duration for \(history)")
+            XCTAssertNil(statistics.averageDeliveryDuration)
+            XCTAssertNil(statistics.fastestDelivery)
+        }
+    }
+
+    func testPassportCountryRanksRequireExplicitFirstPhysicalScanCountry() {
+        func originParcel(_ location: String?) -> Parcel {
+            let id = UUID()
+            var scan = event(id, .accepted, "2026-08-06T10:00:00Z")
+            scan.location = location
+            // Neither the international identifier nor UPS's headquarters is evidence.
+            return makeParcel(id: id, trackingNumber: "RR123456785US", events: [scan])
+        }
+        let statistics = PassportStatistics(parcels: [
+            originParcel("Milano, IT"), originParcel("Roma, Italy"),
+            originParcel("Berlin (Germany)"), originParcel("Paris, France"),
+            originParcel("Buchs AG"), originParcel(nil), originParcel("Europe"),
+        ])
+        XCTAssertEqual(statistics.originCountries.map(\.code), ["IT", "DE", "FR"])
+        XCTAssertEqual(statistics.originCountries.map(\.count), [2, 1, 1])
+        XCTAssertEqual(statistics.originCountries.first?.flag, "🇮🇹")
+        XCTAssertEqual(statistics.knownOriginCount, 4)
+        XCTAssertEqual(statistics.unknownOriginCount, 3)
+    }
+
+    func testPassportNeverPromotesLaterDestinationScanToOrigin() {
+        let id = UUID()
+        var registered = event(id, .registered, "2026-08-05T10:00:00Z")
+        registered.location = "London, GB"
+        let accepted = event(id, .accepted, "2026-08-06T10:00:00Z")
+        var transit = event(id, .inTransit, "2026-08-07T10:00:00Z")
+        transit.location = "Zürich, CH"
+        let unknown = PassportStatistics(parcels: [makeParcel(id: id, events: [registered, accepted, transit])])
+        XCTAssertTrue(unknown.originCountries.isEmpty)
+        XCTAssertEqual(unknown.unknownOriginCount, 1)
+
+        // Registration's location is ignored; the first physical scan supplies evidence.
+        var locatedAccepted = accepted
+        locatedAccepted.location = "Paris, Frankreich"
+        let known = PassportStatistics(parcels: [makeParcel(id: id, events: [registered, locatedAccepted, transit])])
+        XCTAssertEqual(known.originCountries.map(\.code), ["FR"])
+
+        var customs = event(id, .customs, "2026-08-06T10:00:00Z")
+        customs.location = "Basel, CH"
+        XCTAssertTrue(PassportStatistics(parcels: [makeParcel(id: id, events: [customs, transit])]).originCountries.isEmpty)
+    }
+
+    func testPassportDoesNotMistakeStateOrCantonCodesForCountries() {
+        for location in ["Los Angeles, CA", "Bern, BE", "Dover, DE", "Fribourg (FR)", "St. John's, NL"] {
+            let id = UUID()
+            var scan = event(id, .accepted, "2026-08-06T10:00:00Z")
+            scan.location = location
+            let statistics = PassportStatistics(parcels: [makeParcel(id: id, events: [scan])])
+            XCTAssertTrue(statistics.originCountries.isEmpty, "Ambiguous address: \(location)")
+        }
+        for (location, code) in [("Toronto, Canada", "CA"), ("Brussels, Belgium", "BE"), ("DE", "DE")] {
+            let id = UUID()
+            var scan = event(id, .accepted, "2026-08-06T10:00:00Z")
+            scan.location = location
+            let statistics = PassportStatistics(parcels: [makeParcel(id: id, events: [scan])])
+            XCTAssertEqual(statistics.originCountries.first?.code, code)
+        }
+    }
+
+    func testPassportTiesAndMilestonesAreStableWhenParcelOrderChanges() {
+        let parcels = (1...5).map { index in
+            let id = UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012d", index))")!
+            return makeParcel(id: id, events: [
+                event(id, .accepted, "2026-08-06T10:00:00Z"),
+                event(id, .delivered, "2026-08-07T10:00:00Z"),
+            ])
+        }
+        let forward = PassportStatistics(parcels: parcels)
+        let reverse = PassportStatistics(parcels: parcels.reversed())
+        XCTAssertEqual(forward.fastestDelivery, reverse.fastestDelivery)
+        XCTAssertEqual(forward.fastestDelivery?.parcelID, parcels.first?.id)
+        XCTAssertEqual(forward.nextMilestoneCount, 10)
+        XCTAssertEqual(forward.milestoneProgress, 0.5)
+    }
+
     private func makeParcel(
         id: UUID = UUID(),
         trackingNumber: String = "1Z999AA10123456784",

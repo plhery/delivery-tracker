@@ -7,8 +7,8 @@ enum ParcelTone: Sendable {
     var color: Color {
         switch self {
         case .normal: Brand.accent
-        case .warning: .orange
-        case .complete: .green
+        case .warning: Brand.warning
+        case .complete: ExperimentalPalette.delivered
         }
     }
 }
