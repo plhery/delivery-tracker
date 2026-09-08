@@ -11,7 +11,13 @@ export async function requestOrigin(): Promise<URL> {
   const host = firstHeaderValue(requestHeaders.get('host'))
     ?? firstHeaderValue(requestHeaders.get('x-forwarded-host'))
     ?? 'localhost';
-  const forwardedProtocol = firstHeaderValue(requestHeaders.get('x-forwarded-proto'));
+  let edgeProtocol: string | undefined;
+  try {
+    // The internal reverse proxy can replace X-Forwarded-Proto with HTTP.
+    const { scheme } = JSON.parse(requestHeaders.get('cf-visitor') ?? '{}') as { scheme?: unknown };
+    if (scheme === 'http' || scheme === 'https') edgeProtocol = scheme;
+  } catch { /* Fall back to the usual proxy headers when absent or malformed. */ }
+  const forwardedProtocol = edgeProtocol ?? firstHeaderValue(requestHeaders.get('x-forwarded-proto'));
   const localHost = host === 'localhost'
     || host.startsWith('localhost:')
     || host === '[::1]'
