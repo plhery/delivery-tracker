@@ -32,12 +32,12 @@ class MemoryStorage implements Storage {
 
 // Node 24 reserves a global localStorage binding that can mask JSDOM's
 // origin-backed implementation inside isolated test workers.
-Object.defineProperty(window, 'localStorage', {
+if (typeof window !== 'undefined') Object.defineProperty(window, 'localStorage', {
   configurable: true,
   value: new MemoryStorage(),
 });
 
 afterEach(() => {
   cleanup();
-  window.localStorage.clear();
+  if (typeof window !== 'undefined') window.localStorage.clear();
 });

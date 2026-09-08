@@ -8,15 +8,22 @@ const maxAge = 7 * 24 * 60 * 60 * 1_000;
 type PendingInvitation = { code: string | null; opened: boolean; receivedAt: number; accepted?: boolean };
 let memory: string | null = null;
 
-export function invitationURL(code: string, origin = window.location.origin): string {
+export async function invitationURL(code: string, origin = window.location.origin): Promise<string> {
   if (!tokenPattern.test(code)) throw new Error('Invalid invitation');
-  return new URL(`/invite#${code}`, origin).href;
+  const url = new URL(`/invite#${code}`, origin);
+  try {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(code));
+    const preview = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+    url.searchParams.set('preview', preview);
+  } catch { /* Older or insecure browsers can still share a working fragment-only link. */ }
+  return url.href;
 }
 
 export function invitationCode(text: string, origin = window.location.origin): string | null {
   try {
     const url = new URL(text.trim());
-    if (url.origin !== origin || !['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.pathname !== '/invite' || url.search) return null;
+    if (url.origin !== origin || !['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.pathname !== '/invite') return null;
+    if (url.search && (url.searchParams.size !== 1 || !/^[a-f0-9]{64}$/.test(url.searchParams.get('preview') ?? ''))) return null;
     const code = url.hash.slice(1);
     return tokenPattern.test(code) ? code : null;
   } catch { return null; }
@@ -61,7 +68,7 @@ export function usePendingInvitation(invitationRoute = false) {
   const snapshot = useSyncExternalStore(subscribe, read, () => invitationRoute ? 'invalid' : '');
   const pending = useMemo<PendingInvitation | null>(() => snapshot === 'invalid' ? { code: null, opened: false, receivedAt: -1 } : snapshot ? JSON.parse(snapshot) as PendingInvitation : null, [snapshot]);
   useEffect(() => {
-    // Strip the fragment before authentication. Only the token and opened state
+    // Strip the fragment and preview key before authentication. Only the token and opened state
     // survive the OAuth round trip in this tab; never persist the sender's name.
     if (pending?.receivedAt === 0) write({ ...pending, receivedAt: Date.now() }, '/invite');
   }, [pending]);

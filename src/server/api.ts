@@ -75,7 +75,7 @@ function ratePolicy(method: string, pathname: string): {
   return { bucket: 'write', limit: 60, window: 60 };
 }
 
-function clientIp(request: NextRequest): string {
+export function clientIp(request: Pick<Request, 'headers'>): string {
   if (process.env.TRUST_PROXY_HEADERS !== 'true') return 'untrusted';
   const candidate = request.headers.get('cf-connecting-ip')?.trim()
     || request.headers.get('x-real-ip')?.trim()

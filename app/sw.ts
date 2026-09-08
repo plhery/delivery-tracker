@@ -120,7 +120,7 @@ const serwist = new Serwist({
       // Keep this route ahead of Serwist's defaults, which cache GET APIs and
       // cross-origin responses for applications with public data.
       matcher: ({ sameOrigin, url }) => (
-        !sameOrigin || url.pathname.startsWith('/api/') || url.pathname === '/health'
+        !sameOrigin || url.pathname.startsWith('/api/') || url.pathname === '/health' || url.pathname === '/invite'
       ),
       handler: new NetworkOnly(),
     },

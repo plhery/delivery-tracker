@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 
 enum FriendInvitationLink {
     static func isInvitation(_ url: URL, baseURL: URL = AppConfiguration.current.apiBaseURL) -> Bool {
@@ -10,15 +11,23 @@ enum FriendInvitationLink {
 
     static func code(from text: String, baseURL: URL = AppConfiguration.current.apiBaseURL) -> String? {
         guard let url = URL(string: text.trimmingCharacters(in: .whitespacesAndNewlines)),
-              isInvitation(url, baseURL: baseURL), url.query == nil,
+              isInvitation(url, baseURL: baseURL),
               let code = url.fragment, code.range(of: "^[a-f0-9]{32}$", options: .regularExpression) != nil else { return nil }
+        if url.query != nil {
+            let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+            guard items.count == 1, items[0].name == "preview", items[0].value == previewHash(code) else { return nil }
+        }
         return code
+    }
+
+    private static func previewHash(_ code: String) -> String {
+        SHA256.hash(data: Data(code.utf8)).map { String(format: "%02x", $0) }.joined()
     }
 
     static func url(code: String, baseURL: URL = AppConfiguration.current.apiBaseURL) -> URL {
         var components = URLComponents(url: baseURL.appending(path: "invite"), resolvingAgainstBaseURL: false)!
         // Fragments never travel in HTTP requests or Referer headers.
-        components.query = nil
+        components.queryItems = [URLQueryItem(name: "preview", value: previewHash(code))]
         components.fragment = code
         return components.url!
     }

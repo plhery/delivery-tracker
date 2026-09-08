@@ -35,7 +35,9 @@ final class AppRoutingTests: XCTestCase {
         let base = URL(string: "https://delivery.plhery.com")!
         let url = FriendInvitationLink.url(code: code, baseURL: base)
         XCTAssertEqual(url.path, "/invite")
-        XCTAssertNil(url.query)
+        XCTAssertEqual(url.query, "preview=3ba3f5f43b92602683c19aee62a20342b084dd5971ddd33808d81a328879a547")
+        XCTAssertFalse(url.query!.contains(code))
+        XCTAssertEqual(FriendInvitationLink.code(from: base.absoluteString + "/invite#" + code, baseURL: base), code)
         XCTAssertEqual(url.fragment, code)
         XCTAssertEqual(FriendInvitationLink.code(from: url.absoluteString, baseURL: base), code)
         XCTAssertEqual(FriendInvitationLink.code(from: "swissdeliverytracker://invite#" + code), code)

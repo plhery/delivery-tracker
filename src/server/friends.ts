@@ -29,9 +29,15 @@ function corrupt(): never { throw new HttpError(502, 'Friends is temporarily una
 /** A bearer invitation reveals only its sender's nickname, without consuming it. */
 export async function invitationPreview(client: SupabaseServiceClient, payload: JsonObject): Promise<{ previewNickname: string }> {
   if (Object.keys(payload).length !== 1 || typeof payload.code !== 'string' || !/^[a-f0-9]{32}$/.test(payload.code)) throw invalid();
+  return invitationPreviewByHash(client, createHash('sha256').update(payload.code).digest('hex'));
+}
+
+/** The public preview hash can reveal a nickname, but cannot accept an invitation. */
+export async function invitationPreviewByHash(client: SupabaseServiceClient, hash: string): Promise<{ previewNickname: string }> {
+  if (!/^[a-f0-9]{64}$/.test(hash)) throw invalid();
   const query = new URLSearchParams({
     select: 'friend_profiles!inner(nickname)',
-    code_hash: `eq.${createHash('sha256').update(payload.code).digest('hex')}`,
+    code_hash: `eq.${hash}`,
     expires_at: `gt.${new Date().toISOString()}`,
     limit: '1',
   });

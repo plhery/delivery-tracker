@@ -167,7 +167,14 @@ function FriendsInvite({ code, busy, act, onRetry, onClose }: { code: string | n
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
-  const link = code ? invitationURL(code) : null;
+  const [prepared, setPrepared] = useState<{ code: string; link: string } | null>(null);
+  const link = prepared?.code === code ? prepared.link : null;
+  useEffect(() => {
+    if (!code) return;
+    let cancelled = false;
+    void invitationURL(code).then((url) => { if (!cancelled) setPrepared({ code, link: url }); });
+    return () => { cancelled = true; };
+  }, [code]);
   async function copy() {
     if (!link) return;
     try { await navigator.clipboard.writeText(link); setCopied(true); setCopyFailed(false); }
@@ -180,7 +187,7 @@ function FriendsInvite({ code, busy, act, onRetry, onClose }: { code: string | n
     <button className={typeof navigator.share === 'function' ? 'text-button' : 'button button--primary'} onClick={() => void copy()}>{t(copied ? 'friends.copied' : 'friends.copyLink')}<Icon name={copied ? 'check' : 'copy'} /></button>
     {copyFailed && <p className="friends-error" role="alert">{t('friends.actionFailed')}</p>}
     <button className="text-button" disabled={busy} onClick={async () => { if (await act({ action: 'revoke_invite' })) onClose(); }}>{t('friends.revoke')}</button>
-  </> : busy ? <div className="friends-invite__loading" role="status" aria-label={t('friends.link')}><Icon name="refresh" className="spin" /></div> : <button className="button button--primary" onClick={() => void onRetry()}>{t('common.retry')}</button>}</div>;
+  </> : busy || code ? <div className="friends-invite__loading" role="status" aria-label={t('friends.link')}><Icon name="refresh" className="spin" /></div> : <button className="button button--primary" onClick={() => void onRetry()}>{t('common.retry')}</button>}</div>;
 }
 function FriendsAccept({ onOpen }: { onOpen: () => void }) {
   const { t } = useI18n(); const [link, setLink] = useState('');

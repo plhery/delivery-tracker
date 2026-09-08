@@ -1,11 +1,15 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { StrictMode } from 'react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fixture from '../../shared/friends-demo.json';
 import type { ApiFriendsActionResponse, ApiFriendsSnapshot } from '../generated/apiContract';
 import { createFriendsClient, ownFriendCard, type FriendsClient } from '../lib/friends';
 import { Friends } from './Friends';
+import { createHash, webcrypto } from 'node:crypto';
+
+const sharedLink = window.location.origin + '/invite?preview=' + createHash('sha256').update('a'.repeat(32)).digest('hex') + '#' + 'a'.repeat(32);
+beforeEach(() => vi.stubGlobal('crypto', webcrypto));
 
 const enrolled = (): ApiFriendsSnapshot => ({ ...structuredClone(fixture), ownCard: ownFriendCard([], fixture.profile) }) as ApiFriendsSnapshot;
 function realClient(): FriendsClient { return { checkInvitation: vi.fn().mockResolvedValue(undefined), load: vi.fn().mockResolvedValue(enrolled()), action: vi.fn() }; }
@@ -95,10 +99,10 @@ describe('Friends', () => {
     expect(client.action).toHaveBeenCalledExactlyOnceWith({ action: 'create_invite' }, []);
     expect(within(sheet).queryByRole('button', { name: 'Invite a friend' })).not.toBeInTheDocument();
     await user.click(await within(sheet).findByRole('button', { name: 'Copy link' }));
-    expect(copy).toHaveBeenCalledWith(window.location.origin + '/invite#' + 'a'.repeat(32));
+    expect(copy).toHaveBeenCalledWith(sharedLink);
     expect(within(sheet).getByRole('button', { name: 'Copied' })).toBeVisible();
     const field = within(sheet).getByRole('textbox', { name: 'Invitation link' });
-    fireEvent.focus(field); expect(field).toHaveValue(window.location.origin + '/invite#' + 'a'.repeat(32));
+    fireEvent.focus(field); expect(field).toHaveValue(sharedLink);
     await user.click(within(sheet).getByRole('button', { name: 'Cancel this invitation' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(client.action).toHaveBeenLastCalledWith({ action: 'revoke_invite' }, []);
@@ -118,7 +122,7 @@ describe('Friends', () => {
     expect(within(sheet).getByRole('alert')).toBeVisible();
     expect(client.action).toHaveBeenCalledTimes(1);
     fireEvent.click(within(sheet).getByRole('button', { name: 'Retry' }));
-    expect(await within(sheet).findByRole('textbox', { name: 'Invitation link' })).toHaveValue(window.location.origin + '/invite#' + 'a'.repeat(32));
+    expect(await within(sheet).findByRole('textbox', { name: 'Invitation link' })).toHaveValue(sharedLink);
     expect(client.action).toHaveBeenCalledTimes(2);
   });
   it('opens a pasted link into the parcel welcome without accepting it', async () => {
@@ -132,7 +136,7 @@ describe('Friends', () => {
     await user.type(field, 'https://untrusted.example/invite#' + 'a'.repeat(32));
     expect(open).toBeDisabled();
     await user.clear(field);
-    await user.type(field, window.location.origin + '/invite#' + 'a'.repeat(32));
+    await user.type(field, sharedLink);
     await user.click(open);
     expect(client.action).not.toHaveBeenCalled();
     expect(window.location.pathname).toBe('/invite');
