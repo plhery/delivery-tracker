@@ -3,6 +3,7 @@ import { userErrorMessage } from './lib/userMessages';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AddParcelSheet } from './components/AddParcelSheet';
 import { AccountMenu } from './components/AccountMenu';
+import { AppNavigation, type AppTab } from './components/AppNavigation';
 import { ParcelCard } from './components/ParcelCard';
 import { ParcelDetail } from './components/ParcelDetail';
 import { Passport } from './components/Passport';
@@ -114,11 +115,12 @@ export default function App({
   const [carrierFilter, setCarrierFilter] = useState<CarrierId | ''>('');
   const [sort, setSort] = useState<ParcelSort>('priority');
   const [viewControlsOpen, setViewControlsOpen] = useState(false);
+  const searchToggle = useRef<HTMLButtonElement>(null);
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
   const [viewNow, setViewNow] = useState(() => Date.now());
   const [openParcelId, setOpenParcelId] = useState<string | null>(null);
   const [detailOrigin, setDetailOrigin] = useState<CardOrigin | null>(null);
-  const [tab, setTab] = useState<'deliveries' | 'passport' | 'friends'>('deliveries');
+  const [tab, setTab] = useState<AppTab>('deliveries');
   const scrollPositions = useRef({ deliveries: 0, passport: 0, friends: 0 });
 
   const friendsClient = useMemo(() => createFriendsClient(mode === 'demo', apiAuth), [mode, apiAuth]);
@@ -166,7 +168,7 @@ export default function App({
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  function switchTab(next: 'deliveries' | 'passport' | 'friends') {
+  function switchTab(next: AppTab) {
     if (next === tab) return;
     scrollPositions.current[tab] = window.scrollY;
     const url = new URL(window.location.href);
@@ -334,11 +336,7 @@ export default function App({
           <span className="app__wordmark"><Icon name="parcel" />{t('app.title')}</span>
           <button type="button" className="app__add-button" aria-label={t('app.addParcelAria')} onClick={() => setAdding(true)}><Icon name="plus" /><span>{t('app.addParcel')}</span></button>
           <h1 className="app__title">{t(tab === 'deliveries' ? 'native.deliveries' : tab === 'passport' ? 'passport.title' : 'friends.title')}</h1>
-          <nav className="app__navigation" aria-label={t('app.title')}>
-            <button type="button" aria-current={tab === 'deliveries' ? 'page' : undefined} onClick={() => switchTab('deliveries')}><Icon name="parcel" /><span>{t('native.deliveries')}</span></button>
-            <button type="button" aria-current={tab === 'passport' ? 'page' : undefined} onClick={() => switchTab('passport')}><Icon name="passport" /><span>{t('passport.title')}</span></button>
-            <button type="button" aria-current={tab === 'friends' ? 'page' : undefined} onClick={() => switchTab('friends')}><Icon name="friends" /><span>{t('friends.title')}</span></button>
-          </nav>
+          <AppNavigation selected={tab} onSelect={switchTab} />
           <AccountMenu email={accountEmail} onExport={onExportAccount} onDelete={onDeleteAccount} onSignOut={onSignOut} onExitDemo={onExitDemo} apiAuth={apiAuth} />
         </div>
       </header>
@@ -371,52 +369,53 @@ export default function App({
         )}
 
         <div className="deliveries-page" hidden={tab !== 'deliveries'}>
-        <div className="delivery-overview"><span className="delivery-overview__count"><i aria-hidden="true" /><strong>{loading ? '—' : activeCount}</strong> {t('design.active')}</span><button type="button" className="icon-button" aria-label={refreshing ? t('app.refreshing') : t('app.refresh')} aria-busy={refreshing} disabled={refreshing} onClick={() => void refreshAll()}><Icon name="refresh" className={refreshing ? 'spin' : undefined} /></button></div>
-        {!loading && nextParcel && <div className="delivery-next"><ParcelCard parcel={nextParcel} variant="hero" notice={nextAttention ? t(ATTENTION_LABELS[nextAttention]) : undefined} onOpen={(parcel, source) => openParcelDetail(parcel.id, source)} onArchive={handleArchive} /></div>}
-        {!loading && parcels.length > 0 && (
-          <div className="parcel-view-shell">
-            <button
+        <div className="delivery-overview">
+          <span className="delivery-overview__count"><i aria-hidden="true" /><strong>{loading ? '—' : activeCount}</strong> {t('design.active')}</span>
+          <div className="delivery-overview__actions">
+            {!loading && parcels.length > 0 && <button
+              ref={searchToggle}
               type="button"
-              className={`parcel-view-toggle${hasCustomView ? ' parcel-view-toggle--active' : ''}`}
+              className="icon-button delivery-search"
+              aria-label={viewControlsOpen ? t('view.hideControls') : t('view.showControls')}
+              title={viewControlsOpen ? t('view.hideControls') : t('view.showControls')}
               aria-expanded={viewControlsOpen}
               aria-controls={PARCEL_VIEW_CONTROLS_ID}
+              aria-describedby={hasCustomView ? 'parcel-view-active' : undefined}
               onClick={() => setViewControlsOpen((open) => !open)}
             >
-              <svg className="parcel-view-toggle__search" aria-hidden="true" viewBox="0 0 20 20">
-                <circle cx="8.5" cy="8.5" r="5.5" />
-                <path d="m13 13 4 4" />
-              </svg>
-              <span>
-                {viewControlsOpen ? t('view.hideControls') : t('view.showControls')}
-              </span>
-              {hasCustomView && (
-                <span className="parcel-view-toggle__active">{t('view.customized')}</span>
-              )}
-              <svg className="parcel-view-toggle__chevron" aria-hidden="true" viewBox="0 0 20 20">
-                <path d="m6 8 4 4 4-4" />
-              </svg>
-            </button>
-            {viewControlsOpen && (
-              <ParcelViewControls
-                id={PARCEL_VIEW_CONTROLS_ID}
-                query={query}
-                status={statusFilter}
-                carrier={carrierFilter}
-                sort={sort}
-                carriers={availableCarriers}
-                count={visibleParcels.length}
-                advancedOpen={advancedFiltersOpen}
-                hasCustomView={hasCustomView}
-                onQueryChange={setQuery}
-                onStatusChange={setStatusFilter}
-                onCarrierChange={setCarrierFilter}
-                onSortChange={setSort}
-                onToggleAdvanced={() => setAdvancedFiltersOpen((open) => !open)}
-                onClearAll={clearView}
-              />
-            )}
+              <Icon name="search" />
+              {hasCustomView && <><i className="delivery-search__dot" aria-hidden="true" /><span className="sr-only" id="parcel-view-active">{t('view.customized')}</span></>}
+            </button>}
+            <button type="button" className="icon-button" aria-label={refreshing ? t('app.refreshing') : t('app.refresh')} aria-busy={refreshing} disabled={refreshing} onClick={() => void refreshAll()}><Icon name="refresh" className={refreshing ? 'spin' : undefined} /></button>
+          </div>
+        </div>
+        {!loading && parcels.length > 0 && viewControlsOpen && (
+          <div className="parcel-view-shell" onKeyDown={(event) => {
+            if (event.key !== 'Escape' || event.nativeEvent.isComposing) return;
+            event.preventDefault();
+            setViewControlsOpen(false);
+            searchToggle.current?.focus({ preventScroll: true });
+          }}>
+            <ParcelViewControls
+              id={PARCEL_VIEW_CONTROLS_ID}
+              query={query}
+              status={statusFilter}
+              carrier={carrierFilter}
+              sort={sort}
+              carriers={availableCarriers}
+              count={visibleParcels.length}
+              advancedOpen={advancedFiltersOpen}
+              hasCustomView={hasCustomView}
+              onQueryChange={setQuery}
+              onStatusChange={setStatusFilter}
+              onCarrierChange={setCarrierFilter}
+              onSortChange={setSort}
+              onToggleAdvanced={() => setAdvancedFiltersOpen((open) => !open)}
+              onClearAll={clearView}
+            />
           </div>
         )}
+        {!loading && nextParcel && <div className="delivery-next"><ParcelCard parcel={nextParcel} variant="hero" notice={nextAttention ? t(ATTENTION_LABELS[nextAttention]) : undefined} onOpen={(parcel, source) => openParcelDetail(parcel.id, source)} onArchive={handleArchive} /></div>}
 
         {loading && (
           <div className="parcel-grid" aria-label={t('app.loadingParcels')}>

@@ -25,6 +25,15 @@ test('finds, filters, and opens a parcel', async ({ page }) => {
   const search = page.getByRole('searchbox', { name: 'Search parcels' });
   await expect(search).toBeHidden();
   await page.getByRole('button', { name: 'Search & filters' }).click();
+  await expect(search).toBeFocused();
+  await search.fill('birthday');
+  await page.keyboard.press('Escape');
+  await expect(search).toBeHidden();
+  const toggle = page.getByRole('button', { name: 'Search & filters' });
+  await expect(toggle).toBeFocused();
+  await expect(toggle).toHaveAccessibleDescription('Custom view');
+  await toggle.click();
+  await expect(search).toHaveValue('birthday');
   await page.getByRole('button', { name: 'Filters', exact: true }).click();
   await search.fill('birthday');
   await expect(

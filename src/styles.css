@@ -48,9 +48,12 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .app__wordmark { display: flex; gap: 10px; align-items: center; font-weight: 700; font-size: 16px; letter-spacing: -.3px; margin-right: auto; }
 .app__wordmark svg { width: 27px; height: 27px; padding: 3px; color: var(--on-yellow); background: var(--yellow); border-radius: 8px; }
 .app__title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-.app__navigation { display: flex; align-items: center; padding: 4px; gap: 4px; order: 1; background: var(--control); border-radius: 18px; }
+.app__navigation { position: relative; isolation: isolate; display: flex; align-items: center; padding: 4px; gap: 4px; order: 1; background: var(--control); border-radius: 18px; }
+.app__navigation-selection { position: absolute; left: 0; pointer-events: none; border-radius: 14px; background: var(--paper); box-shadow: var(--shadow); opacity: 0; }
+.app__navigation[data-selection-ready] .app__navigation-selection { opacity: 1; }
 .app__navigation button { position: relative; display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 10px 15px; border-radius: 14px; color: var(--ink-soft); background: transparent; font-size: 13px; font-weight: 600; transition: background .2s, color .2s, scale .2s var(--spring); }
 .app__navigation button[aria-current="page"] { color: var(--ink); background: var(--paper); box-shadow: var(--shadow); }
+.app__navigation[data-selection-ready] button[aria-current="page"] { background: transparent; box-shadow: none; }
 .app__navigation button:active { scale: .96; }
 .app__navigation svg { width: 18px; height: 18px; }
 .app__add-button { display: flex; justify-content: center; align-items: center; gap: 7px; background: transparent; border-radius: 14px; min-height: 44px; padding: 8px; order: 2; font-weight: 600; font-size: 13px; }
@@ -62,6 +65,10 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .app__content { padding: 20px 28px 32px; }
 .deliveries-page, .passport-page { animation: page-arrive .25s var(--ease-out) both; }
 .delivery-overview { display: flex; align-items: center; justify-content: space-between; margin: -4px 0 10px; }
+.delivery-overview__actions { display: flex; align-items: center; gap: 2px; }
+.delivery-search { position: relative; }
+.delivery-search[aria-expanded="true"] { background: var(--control); }
+.delivery-search__dot { position: absolute; top: 8px; right: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 2px var(--canvas); }
 .delivery-overview__count { display: flex; align-items: center; gap: 7px; color: var(--ink-soft); font-size: 14px; padding-left: 3px; }
 .delivery-overview__count strong { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
 .delivery-overview__count i { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); margin-right: 1px; }
@@ -134,13 +141,8 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .archived-section__count { font-variant-numeric: tabular-nums; font-size: 12px; padding: 1px 7px; background: var(--control); border-radius: 10px; }
 
 /* Search expands only when it is useful. */
-.parcel-view-shell { border-radius: 18px; background: var(--control); overflow: clip; }
-.parcel-view-toggle { display: flex; align-items: center; width: 100%; min-height: 48px; gap: 10px; padding: 12px 16px; background: transparent; color: var(--ink-soft); font-size: 13px; text-align: left; }
-.parcel-view-toggle__search { width: 17px; height: 17px; }
-.parcel-view-toggle__chevron { margin-left: auto; width: 16px; height: 16px; transition: rotate .2s; }
-.parcel-view-toggle[aria-expanded="true"] .parcel-view-toggle__chevron { rotate: 180deg; }
-.parcel-view-toggle__active { margin-left: auto; color: var(--blue); font-size: 11px; }
-.parcel-view { padding: 0 14px 12px; animation: page-arrive .2s; }
+.parcel-view-shell { margin-bottom: 18px; border-radius: 18px; background: var(--control); overflow: clip; animation: page-arrive .18s var(--ease-out) both; }
+.parcel-view { padding: 14px 14px 12px; }
 .parcel-view__top { display: flex; gap: 10px; }
 .parcel-view__search { display: flex; align-items: center; flex: 1; min-width: 0; padding: 0 12px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; }
 .parcel-view__search > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
@@ -501,6 +503,7 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
   .app__navigation { position: fixed; z-index: 30; bottom: max(14px, env(safe-area-inset-bottom)); left: 50%; translate: -50% 0; background: var(--paper); padding: 5px; border: 1px solid var(--line); border-radius: 24px; box-shadow: 0 4px 18px rgb(0 0 0 / 9%); width: 288px; max-width: calc(100% - 48px); gap: 5px; }
   .app__navigation button { flex: 1; min-width: 0; min-height: 49px; flex-direction: column; gap: 4px; padding: 6px 8px; font-size: 10px; border-radius: 19px; }
   .app__navigation button[aria-current="page"] { background: var(--yellow); color: var(--on-yellow); box-shadow: none; }
+  .app__navigation-selection { border-radius: 19px; background: var(--yellow); box-shadow: none; }
   .app__navigation svg { width: 19px; height: 19px; }
   .app__add-button { padding: 8px; border-radius: 50%; width: 40px; min-height: 40px; background: var(--control); }
   .app__add-button span { display: none; }
@@ -606,6 +609,7 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 }
 @media (forced-colors: active) {
   .parcel-card, .passport-cover, .time-card, .stamp-card, .button, .app__navigation, .sheet, .settings-row { border: 1px solid ButtonText; }
+  .app__navigation-selection { outline: 2px solid Highlight; outline-offset: -2px; }
   .passport-seal, .progress-track__dot--filled { forced-color-adjust: none; }
 }
 

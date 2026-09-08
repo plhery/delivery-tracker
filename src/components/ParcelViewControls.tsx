@@ -70,6 +70,7 @@ export function ParcelViewControls({
           </svg>
           <input
             type="search"
+            autoFocus
             value={query}
             placeholder={t('view.searchPlaceholder')}
             onChange={(event) => onQueryChange(event.target.value)}

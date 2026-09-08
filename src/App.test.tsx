@@ -240,6 +240,7 @@ describe('App', () => {
     expect(screen.queryByRole('searchbox', { name: 'Search parcels' })).not.toBeInTheDocument();
     await user.click(viewToggle);
     expect(viewToggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('searchbox', { name: 'Search parcels' })).toHaveFocus();
 
     await user.type(screen.getByRole('searchbox', { name: 'Search parcels' }), 'birthday');
 
@@ -250,6 +251,14 @@ describe('App', () => {
     expect(screen.queryByText('Coffee beans ☕')).not.toBeInTheDocument();
     expect(screen.queryByText('New sneakers 👟')).not.toBeInTheDocument();
     expect(screen.getByText('1 shown')).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+    expect(viewToggle).toHaveFocus();
+    expect(viewToggle).toHaveAccessibleDescription('Custom view');
+    expect(screen.queryByText('Coffee beans ☕')).not.toBeInTheDocument();
+    await user.click(viewToggle);
+    expect(screen.getByRole('searchbox')).toHaveValue('birthday');
 
     await user.clear(screen.getByRole('searchbox', { name: 'Search parcels' }));
     await user.type(screen.getByRole('searchbox', { name: 'Search parcels' }), 'not here');
