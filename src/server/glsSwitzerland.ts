@@ -116,10 +116,10 @@ export function normalizeGLSSwitzerlandTrackingNumber(raw: string): string {
   return value;
 }
 
-export function normalizeGLSSwitzerlandPostcode(raw: string, digits: 4 | 5 = 4): string {
+export function normalizeGLSSwitzerlandPostcode(raw: string, digits: 4 | 5 | '4,5' = 4): string {
   const value = raw.trim();
   if (!new RegExp(`^\\d{${digits}}$`).test(value)) {
-    throw new TypeError(`GLS detailed tracking requires the ${digits}-digit recipient postcode`);
+    throw new TypeError(`GLS detailed tracking requires the ${digits === '4,5' ? '4- or 5' : digits}-digit recipient postcode`);
   }
   return value;
 }
@@ -147,7 +147,7 @@ export function glsSwitzerlandDetailApiUrl(
   rawPostcode: string,
   millis = Date.now(),
   ownerCode = '',
-  postcodeDigits: 4 | 5 = 4,
+  postcodeDigits: 4 | 5 | '4,5' = 4,
 ): string {
   const parcelNumber = normalizeGLSSwitzerlandTrackingNumber(rawParcelNumber);
   if (!/^\d{11,14}$/.test(parcelNumber)) {
@@ -199,11 +199,19 @@ function parcelRows(payload: unknown): JsonObject[] {
   throw new TypeError('GLS did not return tracking details');
 }
 
-function selectParcel(payload: unknown, rawTrackingNumber: string): JsonObject {
+export function selectGLSParcel(payload: unknown, rawTrackingNumber: string): JsonObject {
   const trackingNumber = normalizeGLSSwitzerlandTrackingNumber(rawTrackingNumber);
   const parcels = parcelRows(payload);
   if (parcels.length === 0) throw new GLSSwitzerlandTrackingError();
-  const matching = parcels.filter((parcel) => responseIdentifiers(parcel).includes(trackingNumber));
+  // GLS accepts an 11-digit parcel ID or its 12-digit printed form. Its
+  // recipient API can return the first 11 digits for the latter (ShipIT docs:
+  // https://gls-shipit.gls-group.eu/webservices/5_0_15/doxygen/WS-REST-API/rest_tracking.html).
+  // Bind that alias to the exact prefix; never accept an unrelated numeric ID.
+  const matching = parcels.filter((parcel) => responseIdentifiers(parcel).some((identifier) => (
+    identifier === trackingNumber
+    || (/^\d{12}$/.test(trackingNumber) && /^\d{11}$/.test(identifier)
+      && trackingNumber.slice(0, 11) === identifier)
+  )));
   if (matching.length === 1) return matching[0]!;
   // An eight-character Track ID is translated by the overview endpoint to its
   // numeric parcel number and is not echoed. A single result is unambiguous.
@@ -299,7 +307,7 @@ export function parseGLSSwitzerlandTrackingResponse(
   payload: unknown,
   rawTrackingNumber: string,
 ): CarrierResult {
-  const parcel = selectParcel(payload, rawTrackingNumber);
+  const parcel = selectGLSParcel(payload, rawTrackingNumber);
   if (!isRecord(parcel.progressBar)) {
     throw new TypeError('GLS did not return a shipment status');
   }
@@ -359,7 +367,7 @@ export class GLSSwitzerlandTracker {
   async fetch(rawTrackingNumber: string, rawPostcode = ''): Promise<CarrierResult> {
     const trackingNumber = normalizeGLSSwitzerlandTrackingNumber(rawTrackingNumber);
     const overview = await this.request(glsSwitzerlandOverviewApiUrl(trackingNumber, this.now()));
-    const parcel = selectParcel(overview, trackingNumber);
+    const parcel = selectGLSParcel(overview, trackingNumber);
     if (!rawPostcode.trim()) return parseGLSSwitzerlandTrackingResponse(overview, trackingNumber);
 
     const parcelNumber = normalizedResponseIdentifier(parcel.tuNo);

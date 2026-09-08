@@ -70,6 +70,11 @@ final class DeliveryAPIClient {
         return response.packages
     }
 
+    func detectCarrier(trackingNumber: String) async throws -> CarrierDetectionResponse {
+        try await request("/api/carriers/detect", method: "POST",
+                          body: CarrierDetectionRequest(trackingNumber: trackingNumber))
+    }
+
     func add(_ input: CreatePackageRequest) async throws -> CreatePackageResponse {
         try await request("/api/packages", method: "POST", body: input)
     }

@@ -594,6 +594,7 @@ export default function App({
 
       {adding && (
         <AddParcelSheet
+          apiAuth={apiAuth}
           onAdd={addParcel}
           onClose={() => setAdding(false)}
           onAdded={(id) => {

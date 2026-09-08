@@ -9,11 +9,12 @@ import {
   normalizeGLSSwitzerlandPostcode,
   normalizeGLSSwitzerlandTrackingNumber,
   parseGLSSwitzerlandTrackingResponse,
+  selectGLSParcel,
 } from './glsSwitzerland';
 import { isRecord } from './types';
 
 // GLS's GROUP recipient service covers German and Swiss parcels. Keep the
-// shared response parser; Germany requires a five-digit delivery postcode.
+// shared response parser; the delivery postcode can be Swiss or German.
 const PROVIDER = 'GLS Germany tracking';
 
 export class GLSGermanyTrackingError extends Error {
@@ -32,7 +33,7 @@ export class GLSGermanyTracker {
 
   async fetch(rawTrackingNumber: string, rawPostcode: string): Promise<CarrierResult> {
     const number = normalizeGLSSwitzerlandTrackingNumber(rawTrackingNumber);
-    const postcode = normalizeGLSSwitzerlandPostcode(rawPostcode, 5);
+    const postcode = normalizeGLSSwitzerlandPostcode(rawPostcode, '4,5');
     const overview = await this.request(glsSwitzerlandOverviewApiUrl(number, this.now()));
     // Validate the overview identity before resolving a Track ID to a parcel number.
     try {
@@ -44,16 +45,14 @@ export class GLSGermanyTracker {
     if (!isRecord(overview) || !Array.isArray(overview.tuStatus)) {
       throw new TypeError('GLS Germany returned an invalid overview');
     }
-    const rows = overview.tuStatus.filter(isRecord);
-    const parcel = rows.find((row) => String(row.tuNo) === number)
-      ?? (rows.length === 1 ? rows[0] : undefined);
+    const parcel = selectGLSParcel(overview, number);
     if (!parcel || !/^\d{11,14}$/.test(String(parcel.tuNo))) {
       throw new TypeError('GLS Germany did not return a numeric parcel number');
     }
     const owners = Array.isArray(parcel.owners) ? parcel.owners.filter(isRecord) : [];
     const owner = owners.find((row) => row.type === 'REQUEST');
     const detail = await this.request(glsSwitzerlandDetailApiUrl(
-      String(parcel.tuNo), postcode, this.now(), String(owner?.code ?? ''), 5,
+      String(parcel.tuNo), postcode, this.now(), String(owner?.code ?? ''), '4,5',
     ));
     try {
       const result = parseGLSSwitzerlandTrackingResponse(detail, String(parcel.tuNo));
@@ -61,6 +60,19 @@ export class GLSGermanyTracker {
       return { ...result, timezone: 'Europe/Berlin' };
     } catch (error) {
       if (error instanceof GLSSwitzerlandTrackingError) throw new GLSGermanyTrackingError();
+      throw error;
+    }
+  }
+
+  async recognizes(rawTrackingNumber: string): Promise<boolean> {
+    const number = normalizeGLSSwitzerlandTrackingNumber(rawTrackingNumber);
+    try {
+      const url = glsSwitzerlandOverviewApiUrl(number, this.now()).replace('/GROUP/en/', '/DE/en/');
+      const overview = await this.request(url);
+      const result = parseGLSSwitzerlandTrackingResponse(overview, number);
+      return result.status !== 'unknown';
+    } catch (error) {
+      if (error instanceof GLSGermanyTrackingError || error instanceof GLSSwitzerlandTrackingError) return false;
       throw error;
     }
   }

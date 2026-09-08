@@ -21,6 +21,7 @@ struct AddParcelView: View {
     @State private var errorMessage: String?
     @State private var duplicateParcelID: UUID?
     @State private var carrierOverride: CarrierID?
+    @State private var verifiedCarrier: CarrierDetectionResponse?
     @FocusState private var focusedField: Field?
 
     @ObservedObject private var catalog = CarrierCatalog.shared
@@ -110,6 +111,19 @@ struct AddParcelView: View {
             }
             .onChange(of: resolvedCarrier, initial: true) { _, carrier in
                 prepareRequiredDetails(for: carrier)
+            }
+            .task(id: lookupTrackingNumber) {
+                guard let number = lookupTrackingNumber else { return }
+                do {
+                    try await Task.sleep(for: .milliseconds(350))
+                    let result = try await store.detectCarrier(trackingNumber: number)
+                    guard !Task.isCancelled else { return }
+                    guard result.trackingNumber == number else { throw DeliveryAPIError.invalidResponse }
+                    verifiedCarrier = result
+                } catch {
+                    guard !Task.isCancelled else { return }
+                    verifiedCarrier = CarrierDetectionResponse(trackingNumber: number, carrier: .unknown)
+                }
             }
         }
         .presentationDetents([.large])
@@ -488,7 +502,18 @@ struct AddParcelView: View {
     private var parsed: TrackingInputMatch { catalog.parse(trackingInput) }
 
     private var resolvedCarrier: CarrierID {
-        carrierOverride ?? parsed.carrier
+        if let carrierOverride { return carrierOverride }
+        if let number = lookupTrackingNumber, verifiedCarrier?.trackingNumber == number {
+            return verifiedCarrier?.carrier ?? parsed.carrier
+        }
+        return parsed.carrier
+    }
+
+    private var lookupTrackingNumber: String? {
+        let number = CarrierCatalog.normalize(parsed.trackingNumber)
+        guard !store.isDemo, carrierOverride == nil, parsed.carrier == .unknown,
+              number.range(of: "^[0-9]{11,12}$", options: .regularExpression) != nil else { return nil }
+        return number
     }
 
     private var detectedTint: Color {
@@ -516,6 +541,7 @@ struct AddParcelView: View {
 
     private var canSave: Bool {
         guard !parsed.trackingNumber.isEmpty else { return false }
+        if let number = lookupTrackingNumber, verifiedCarrier?.trackingNumber != number { return false }
         for requirement in requirements {
             switch requirement.field {
             case .trackingURL:

@@ -30,7 +30,7 @@ describe('expanded carrier catalog', () => {
     expect(tracksAutomatically('unknown')).toBe(true);
     expect(carrierTrackingHintKey('unknown')).toBe('add.autoSync');
     expect(carrierTrackingHintKey('intl-post')).toBe('add.autoSync');
-    expect(carrierRequirements('gls-de', '12345678901')).toMatchObject([{ pattern: '^[0-9]{5}$' }]);
+    expect(carrierRequirements('gls-de', '12345678901')).toMatchObject([{ pattern: '^[0-9]{4,5}$' }]);
   });
 
   it.each([
@@ -53,6 +53,12 @@ describe('expanded carrier catalog', () => {
 });
 
 describe('normalizeTrackingNumber', () => {
+  it.each([
+    ['en', 'Unknown carrier'], ['de', 'Paketdienst unbekannt'],
+    ['fr', 'Transporteur inconnu'], ['it', 'Corriere sconosciuto'],
+  ])('names undetected carriers clearly in %s', (locale, name) => {
+    expect(carrierInfo('unknown', locale).name).toBe(name);
+  });
   it('uppercases and strips spaces, dots and dashes', () => {
     expect(normalizeTrackingNumber('99.34.123456.12345678')).toBe(
       '993412345612345678',

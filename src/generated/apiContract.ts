@@ -1054,12 +1054,12 @@ export const CARRIER_CAPABILITIES = {
       "requirements": [
         {
           "field": "dpdPostcode",
-          "validator": "francePostcode",
+          "validator": "swissOrFrancePostcode",
           "label": "Delivery postcode",
           "type": "text",
           "placeholder": "10115",
-          "help": "GLS requires the five-digit delivery postcode to show the detailed event history.",
-          "pattern": "^[0-9]{5}$",
+          "help": "GLS requires the four- or five-digit delivery postcode to show the detailed event history.",
+          "pattern": "^[0-9]{4,5}$",
           "maxLength": 5,
           "inputMode": "numeric",
           "autoComplete": "postal-code"
@@ -1140,7 +1140,13 @@ export const CARRIER_CAPABILITIES = {
     "canaryUrl": "https://parcelsapp.com/en"
   },
   "unknown": {
-    "displayName": "Carrier",
+    "displayName": "Unknown carrier",
+    "displayNames": {
+      "en": "Unknown carrier",
+      "de": "Paketdienst unbekannt",
+      "fr": "Transporteur inconnu",
+      "it": "Corriere sconosciuto"
+    },
     "color": "#8e8e93",
     "selectable": false,
     "timezone": "UTC",
@@ -1173,6 +1179,15 @@ export const CARRIER_CAPABILITIES = {
     "canaryUrl": "https://parcelsapp.com/en"
   }
 } as const;
+
+export interface ApiCarrierDetectionRequest {
+  "trackingNumber": string;
+}
+
+export interface ApiCarrierDetectionResponse {
+  "trackingNumber": string;
+  "carrier": ApiCarrierId;
+}
 
 export interface ApiAccountExportResponse {
   "exportedAt": string;

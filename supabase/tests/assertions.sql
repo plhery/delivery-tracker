@@ -1922,9 +1922,14 @@ begin
   end loop;
   select * into parcel from public.create_owned_package('12345678901', '', 'gls-de', null, '01067');
   if parcel.dpd_postcode <> '01067' then raise exception 'German postcode lost its leading zero'; end if;
+  perform public.change_owned_package_carrier(parcel.id, 'gls-de', null, '8004');
+  select * into parcel from public.packages where id = parcel.id;
+  if parcel.dpd_postcode <> '8004' then raise exception 'Swiss postcode was not saved for GLS Germany'; end if;
+  select * into parcel from public.create_owned_package('12345678902', '', 'gls-de', null, '8000');
+  if parcel.dpd_postcode <> '8000' then raise exception 'Swiss postcode was not accepted for GLS Germany'; end if;
   begin
-    perform public.create_owned_package('12345678902', '', 'gls-de', null, '8000');
-    raise exception 'Accepted Swiss postcode for German GLS' using errcode = 'P0002';
+    perform public.create_owned_package('12345678903', '', 'gls-de', null, '800');
+    raise exception 'Accepted invalid postcode for German GLS' using errcode = 'P0002';
   exception when invalid_parameter_value then null; end;
   begin
     perform public.change_owned_package_carrier(parcel.id, 'gls-de', null, null);

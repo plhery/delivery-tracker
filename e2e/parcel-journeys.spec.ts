@@ -104,6 +104,30 @@ test('adds a parcel from tracking text', async ({ page }) => {
   await expect(burst).toHaveCount(0);
 });
 
+test('accepts a Swiss postcode for GLS Germany and labels unknown carriers', async ({ page }) => {
+  await page.getByRole('button', { name: 'Add a parcel' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
+  await sheet.getByLabel(/^Title/).fill('Cross-border GLS parcel');
+  await sheet.getByLabel('Tracking number or link').fill('123456789018');
+  await expect(sheet.getByText('Unknown carrier', { exact: true })).toBeVisible();
+  await sheet.getByLabel('Tracking number or link').fill('https://gls-group.eu/DE/de/paketverfolgung?match=123456789018');
+  await expect(sheet.getByText('GLS Germany', { exact: true })).toBeVisible();
+  const add = sheet.getByRole('button', { name: 'Add parcel' });
+  await expect(add).toBeDisabled();
+  await sheet.getByLabel(/^Delivery postcode/).fill('8004');
+  await expect(add).toBeEnabled();
+  await add.click();
+  await expect(sheet).toBeHidden();
+  await page.getByRole('button', { name: /^(?:Next up: )?Cross-border GLS parcel —/ }).click();
+  const detail = page.getByRole('dialog', { name: 'Cross-border GLS parcel' });
+  await detail.getByRole('button', { name: 'Change carrier from GLS Germany' }).click();
+  const edit = page.getByRole('dialog', { name: 'Change carrier', exact: true });
+  await expect(edit.getByLabel(/^Delivery postcode/)).toHaveValue('8004');
+  await edit.getByLabel(/^Delivery postcode/).fill('1201');
+  await edit.getByRole('button', { name: 'Save carrier' }).click();
+  await expect(edit).toBeHidden();
+});
+
 test('parcel celebration respects reduced motion and clears before the next interaction', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByRole('button', { name: 'Add a parcel' }).click();

@@ -608,8 +608,9 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
 
     private static let fallbackDefinitions: [CarrierID: CarrierDefinition] = [
         .unknown: CarrierDefinition(
-            displayName: "Carrier",
-            displayNames: nil,
+            displayName: "Unknown carrier",
+            displayNames: ["en": "Unknown carrier", "de": "Paketdienst unbekannt",
+                           "fr": "Transporteur inconnu", "it": "Corriere sconosciuto"],
             trackingSiteName: nil,
             color: "#8e8e93",
             selectable: false,

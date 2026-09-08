@@ -7,6 +7,7 @@ import {
   carrierRequirements,
   carrierTrackingHintKey,
   formatTrackingNumber,
+  normalizeTrackingNumber,
   parseTrackingInput,
   SELECTABLE_CARRIERS,
   tracksAutomatically,
@@ -19,6 +20,9 @@ import {
 import { useSheetDialog } from '../lib/modal';
 import { useI18n } from '../i18n';
 import { Icon } from './Icon';
+import { lookupCarrier } from '../lib/carrierDetection';
+import type { ApiAuth } from '../lib/apiClient';
+import type { ApiCarrierDetectionResponse } from '../generated/apiContract';
 
 export function AddParcelSheet({
   onAdd,
@@ -28,6 +32,7 @@ export function AddParcelSheet({
   initialTrackingInput = '',
   onOpenParcel,
   onAdded,
+  apiAuth,
 }: {
   onAdd: (input: NewParcelInput) => Promise<{ id: string } | void>;
   onClose: () => void;
@@ -36,6 +41,7 @@ export function AddParcelSheet({
   lastDpdPostcode?: string;
   initialLabel?: string;
   initialTrackingInput?: string;
+  apiAuth?: ApiAuth;
 }) {
   const { locale, t } = useI18n();
   const [label, setLabel] = useState(initialLabel);
@@ -48,6 +54,7 @@ export function AddParcelSheet({
     dpd: lastDpdPostcode ?? '',
   });
   const [selectedCarrier, setSelectedCarrier] = useState<CarrierId | 'auto'>('auto');
+  const [verifiedCarrier, setVerifiedCarrier] = useState<ApiCarrierDetectionResponse>();
   const [showCarrierPicker, setShowCarrierPicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +75,25 @@ export function AddParcelSheet({
 
   const parsedTracking = parseTrackingInput(trackingInputValue);
   const trackingNumber = parsedTracking.trackingNumber;
-  const resolvedCarrier = selectedCarrier === 'auto' ? parsedTracking.carrier : selectedCarrier;
+  const normalizedNumber = normalizeTrackingNumber(trackingNumber);
+  const shouldLookup = Boolean(apiAuth) && selectedCarrier === 'auto'
+    && parsedTracking.carrier === 'unknown' && /^\d{11,12}$/.test(normalizedNumber);
+  const lookingUp = shouldLookup && verifiedCarrier?.trackingNumber !== normalizedNumber;
+  const detectedCarrier = shouldLookup && verifiedCarrier?.trackingNumber === normalizedNumber
+    ? verifiedCarrier.carrier : parsedTracking.carrier;
+  const resolvedCarrier = selectedCarrier === 'auto' ? detectedCarrier : selectedCarrier;
+  useEffect(() => {
+    if (!shouldLookup || !apiAuth) return;
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      void lookupCarrier(normalizedNumber, apiAuth, controller.signal).then((result) => {
+        if (!controller.signal.aborted) setVerifiedCarrier(result);
+      }).catch(() => {
+        if (!controller.signal.aborted) setVerifiedCarrier({ trackingNumber: normalizedNumber, carrier: 'unknown' });
+      });
+    }, 350);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [shouldLookup, normalizedNumber, apiAuth]);
   const carrier = trackingNumber ? carrierInfo(resolvedCarrier, locale) : null;
   const requirements = carrier ? carrierRequirements(carrier.id, trackingNumber) : [];
   const requiresCarrierConfirmation =
@@ -112,7 +137,7 @@ export function AddParcelSheet({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!trackingNumber.trim() || requiresCarrierConfirmation || !requirementsSatisfied || saving) return;
+    if (!trackingNumber.trim() || lookingUp || requiresCarrierConfirmation || !requirementsSatisfied || saving) return;
     setSaving(true);
     setError(null);
     setExistingParcelId(null);
@@ -228,7 +253,7 @@ export function AddParcelSheet({
             </p>
           )}
           {carrier && trackingNumber && (
-            <div className={`sheet__carrier-card${requiresCarrierConfirmation || !tracksAutomatically(carrier.id) ? ' sheet__carrier-card--warning' : ''}`}>
+            <div aria-busy={lookingUp} className={`sheet__carrier-card${requiresCarrierConfirmation || !tracksAutomatically(carrier.id) ? ' sheet__carrier-card--warning' : ''}`}>
               <span className="sheet__carrier-mark" aria-hidden="true" />
               <span className="sheet__carrier-copy">
                 <small>{selectedCarrier === 'auto' && carrier.id !== 'intl-post' && carrier.id !== 'unknown'
@@ -238,7 +263,7 @@ export function AddParcelSheet({
                 {(requiresCarrierConfirmation || !tracksAutomatically(carrier.id)) && <span>{carrierHint}</span>}
               </span>
               {!requiresCarrierConfirmation
-                && (selectedCarrier !== 'auto' || parsedTracking.carrier !== 'unknown') && (
+                && (selectedCarrier !== 'auto' || detectedCarrier !== 'unknown') && (
                 <button
                   type="button"
                   onClick={() => setShowCarrierPicker((visible) => !visible)}
@@ -349,7 +374,7 @@ export function AddParcelSheet({
               className="button button--primary"
               disabled={
                 !trackingNumber
-                || requiresCarrierConfirmation
+                || lookingUp || requiresCarrierConfirmation
                 || !requirementsSatisfied
                 || saving
               }

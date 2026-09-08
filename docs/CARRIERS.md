@@ -6,7 +6,7 @@ Delivery Tracker can refresh these French, Swiss, German and international carri
 | --- | --- |
 | Swiss Post | Automatic tracking through the pinned upstream adapter. A contracted business API is preferable for long-term production use. |
 | Hermes Germany | Automatic parcel tracking through the anonymous myHermes recipient API. Separate from Hermes Einrichtungs-Service. |
-| GLS Germany | Automatic through the GLS Group recipient service. Requires the five-digit delivery postcode. |
+| GLS Germany | Automatic through the GLS Group recipient service. Accepts four-digit Swiss and five-digit German delivery postcodes. Ambiguous 11/12-digit numbers are verified with GLS during entry. |
 | Delivengo | Automatic through La Poste. Choose it manually: its postal number ranges overlap other La Poste services. |
 | DHL / Deutsche Post | Automatic German parcel and tracked-mail updates through DHL's public tracking session, with the existing private TRAWL browser as a challenge fallback. |
 | Swiss Post Cargo | Automatic through the official anonymous public tracker. |

@@ -2,6 +2,15 @@
 
 import Foundation
 
+struct CarrierDetectionRequest: Codable, Equatable, Hashable, Sendable {
+    var trackingNumber: String
+}
+
+struct CarrierDetectionResponse: Codable, Equatable, Hashable, Sendable {
+    var trackingNumber: String
+    var carrier: CarrierID
+}
+
 struct AccountExportResponse: Codable, Equatable, Hashable, Sendable {
     var exportedAt: String
     var account: AccountExportAccount

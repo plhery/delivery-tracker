@@ -940,12 +940,12 @@
         "requirements": [
           {
             "field": "dpdPostcode",
-            "validator": "francePostcode",
+            "validator": "swissOrFrancePostcode",
             "label": "Delivery postcode",
             "type": "text",
             "placeholder": "10115",
-            "help": "GLS requires the five-digit delivery postcode to show the detailed event history.",
-            "pattern": "^[0-9]{5}$",
+            "help": "GLS requires the four- or five-digit delivery postcode to show the detailed event history.",
+            "pattern": "^[0-9]{4,5}$",
             "maxLength": 5,
             "inputMode": "numeric",
             "autoComplete": "postal-code"
@@ -1026,7 +1026,13 @@
       "canaryUrl": "https://parcelsapp.com/en"
     },
     "unknown": {
-      "displayName": "Carrier",
+      "displayName": "Unknown carrier",
+      "displayNames": {
+        "en": "Unknown carrier",
+        "de": "Paketdienst unbekannt",
+        "fr": "Transporteur inconnu",
+        "it": "Corriere sconosciuto"
+      },
       "color": "#8e8e93",
       "selectable": false,
       "timezone": "UTC",
@@ -1070,6 +1076,42 @@
     }
   ],
   "paths": {
+    "/api/carriers/detect": {
+      "post": {
+        "operationId": "detectCarrier",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CarrierDetectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Carrier verified with its tracking service, or unknown",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarrierDetectionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "400": {
+            "description": "Invalid tracking number"
+          },
+          "502": {
+            "description": "Carrier lookup unavailable"
+          }
+        }
+      }
+    },
     "/api/carriers": {
       "get": {
         "operationId": "getCarrierCatalog",
@@ -2151,6 +2193,36 @@
       }
     },
     "schemas": {
+      "CarrierDetectionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "trackingNumber"
+        ],
+        "properties": {
+          "trackingNumber": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 40
+          }
+        }
+      },
+      "CarrierDetectionResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "trackingNumber",
+          "carrier"
+        ],
+        "properties": {
+          "trackingNumber": {
+            "type": "string"
+          },
+          "carrier": {
+            "$ref": "#/components/schemas/CarrierId"
+          }
+        }
+      },
       "AccountExportResponse": {
         "type": "object",
         "additionalProperties": false,

@@ -122,6 +122,16 @@ final class CarrierCatalogTests: XCTestCase {
     }
 
     func testCountrySpecificPostcodeRequirementsNormalizeAndValidate() throws {
+        let glsGermany = try XCTUnwrap(
+            catalog.requirements(for: .glsDe, trackingNumber: "123456789018")
+                .first(where: { $0.field == .dpdPostcode })
+        )
+        XCTAssertTrue(glsGermany.accepts("8004"))
+        XCTAssertTrue(glsGermany.accepts("01067"))
+        XCTAssertFalse(glsGermany.accepts("800"))
+        XCTAssertFalse(glsGermany.accepts("123456"))
+        XCTAssertEqual(catalog.info(for: .unknown, language: .en).displayName, "Unknown carrier")
+        XCTAssertEqual(catalog.info(for: .unknown, language: .fr).displayName, "Transporteur inconnu")
         let dpd = try XCTUnwrap(
             catalog.requirements(for: .dpd, trackingNumber: "12345678901234")
                 .first(where: { $0.field == .dpdPostcode })

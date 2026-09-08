@@ -69,6 +69,10 @@ final class ParcelStore: ObservableObject {
     }
 
     var isDemo: Bool { session.isDemo }
+
+    func detectCarrier(trackingNumber: String) async throws -> CarrierDetectionResponse {
+        try await api.detectCarrier(trackingNumber: trackingNumber)
+    }
     var activeCount: Int { parcels.filter(\.isActive).count }
     var isSynchronizing: Bool {
         parcels.contains { $0.syncStatus == .pending || $0.syncStatus == .syncing }

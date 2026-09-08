@@ -47,10 +47,40 @@ describe('GLS Germany', () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
-  it.each(['', '8000', '123456', 'ABCDE'])('rejects invalid postcode %s before the network request', async (postcode) => {
+  it.each(['', '800', '123456', 'ABCDE'])('rejects invalid postcode %s before the network request', async (postcode) => {
     const fetcher = vi.spyOn(globalThis, 'fetch');
-    await expect(new GLSGermanyTracker().fetch(NUMBER, postcode)).rejects.toThrow('5-digit recipient postcode');
+    await expect(new GLSGermanyTracker().fetch(NUMBER, postcode)).rejects.toThrow('4- or 5-digit recipient postcode');
     expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it('resolves a printed 12-digit number to its matching 11-digit parcel and preserves the Swiss postcode', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ tuStatus: [parcel('99999999999'), parcel()] })))
+      .mockResolvedValueOnce(new Response(JSON.stringify(parcel())));
+    const result = await new GLSGermanyTracker().fetch(`${NUMBER}8`, ' 8004 ');
+    expect(result.events).toHaveLength(2);
+    const detail = new URL(String(fetcher.mock.calls[1][0]));
+    expect(detail.pathname).toContain(`/rstt028/${NUMBER}`);
+    expect(detail.searchParams.get('postalCode')).toBe('8004');
+  });
+
+  it('does not accept a different 11-digit parcel for a printed number', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ tuStatus: [parcel('99999999999')] })));
+    await expect(new GLSGermanyTracker().fetch(`${NUMBER}8`, '8004')).rejects.toThrow('different shipment');
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it('verifies numeric GLS recognition against the official overview', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ tuStatus: [parcel()] })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ tuStatus: [] })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ tuStatus: [parcel('99999999999')] })));
+    const tracker = new GLSGermanyTracker();
+    await expect(tracker.recognizes(`${NUMBER}8`)).resolves.toBe(true);
+    expect(String(fetcher.mock.calls[0][0])).toContain('/DE/en/rstt029');
+    await expect(tracker.recognizes(NUMBER)).resolves.toBe(false);
+    await expect(tracker.recognizes(NUMBER)).rejects.toThrow('different shipment');
   });
 
   it('recognizes the official expired-number response', async () => {
