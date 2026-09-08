@@ -89,39 +89,28 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .parcel-card--dragging { transition: none; cursor: grabbing; }
 .parcel-card:active:not(.parcel-card--dragging):not(:disabled) { scale: .988; }
 .parcel-card__body { display: flex; flex-direction: column; justify-content: center; gap: 8px; flex: 1; min-width: 0; padding: 12px 14px 12px 20px; }
-.parcel-card__top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .parcel-card__label { font-size: 16px; font-weight: 650; letter-spacing: -.3px; line-height: 1.3; overflow-wrap: anywhere; }
-.parcel-card__state { font-size: 11px; font-weight: 600; line-height: 1.3; color: var(--tone); text-align: right; max-width: 100px; flex-shrink: 0; }
+.parcel-card__state { font-size: 11px; font-weight: 400; line-height: 1.3; color: var(--tone); text-align: center; overflow-wrap: anywhere; }
 .parcel-card__meta { display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 5px; font-size: 11px; color: var(--ink-soft); line-height: 1.45; }
 .parcel-card__location { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
 .parcel-card__notice, .parcel-card__error { font-size: 12px; line-height: 1.45; color: var(--orange-text); }
 .parcel-card__error { background: var(--orange-soft); margin: 6px 0 0; padding: 12px; border-radius: 12px; }
-.parcel-card__stub { position: relative; flex: 0 0 64px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px; border-left: 1px dashed color-mix(in srgb, var(--tone) 25%, transparent); padding: 12px 8px; color: var(--tone); }
+.parcel-card__stub { position: relative; flex: 0 0 88px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px; border-left: 1px dashed color-mix(in srgb, var(--tone) 25%, transparent); padding: 12px 8px; color: var(--tone); }
 .parcel-card__stub::before, .parcel-card__stub::after { content: ''; position: absolute; left: -6px; width: 12px; height: 12px; border-radius: 50%; background: var(--canvas); }
 .parcel-card__stub::before { top: -6px; }.parcel-card__stub::after { bottom: -6px; }
 .parcel-card--compact { min-height: 82px; }
 .parcel-card--archived { background: var(--paper); }
-.parcel-card--hero { display: flex; flex-direction: column; gap: 12px; min-height: 200px; background: var(--yellow); color: var(--on-yellow); padding: 14px 22px; }
-.parcel-card__hero-top { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px; }
-.parcel-card__hero-top .eyebrow { opacity: .74; }
-.status-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; border-radius: 20px; padding: 6px 10px; background: rgb(255 255 255 / 36%); }
-.status-badge i { width: 5px; height: 5px; border-radius: 50%; background: #745300; }
-.parcel-card__hero-main { display: flex; align-items: center; gap: 18px; justify-content: space-between; width: 100%; min-height: 78px; }
-.parcel-card__hero-main .postage-stamp { width: 66px; height: 78px; }
-.parcel-card__hero-main > span:first-child { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
-.parcel-card--hero .parcel-card__label { font-size: 28px; letter-spacing: -1px; font-weight: 650; }
-.parcel-card__hero-date { font-size: 36px; letter-spacing: -1.3px; font-weight: 650; }
-.parcel-card__hero-date + .parcel-card__label { font-size: 18px; letter-spacing: -.3px; }
-.parcel-card__hero-bottom { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 12px; }
-.parcel-card__hero-bottom > span { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
-.parcel-card__hero-bottom strong { font-weight: 600; font-size: 14px; }
-.parcel-card__hero-bottom > span > span { opacity: .74; }
-.parcel-card__hero-bottom > svg { opacity: .7; }
+.parcel-card--hero { min-height: 130px; background: var(--yellow); color: var(--on-yellow); }
+.parcel-card--hero .parcel-card__body { padding-top: 16px; padding-bottom: 16px; }
+.parcel-card__next-label { font-size: 12px; font-weight: 400; opacity: .7; }
+.parcel-card__hero-date { font-size: 28px; font-weight: 650; letter-spacing: -.6px; line-height: 1.15; }
+.parcel-card--hero .parcel-card__label { font-size: 18px; }
+.parcel-card--hero .parcel-card__stub { border: 0; color: #745300; }
+.parcel-card--hero .parcel-card__state { color: inherit; }
+.parcel-card--hero .parcel-card__stub::before, .parcel-card--hero .parcel-card__stub::after { display: none; }
 .progress-track { display: flex; align-items: center; width: 100%; height: 3px; gap: 5px; }
 .progress-track__dot { display: block; flex: 1; height: 3px; background: color-mix(in srgb, var(--ink) 14%, transparent); border-radius: 4px; transition: background .25s; }
 .progress-track__dot--filled { background: var(--tone, var(--blue)); }
-.parcel-card--hero .progress-track__dot { background: rgb(32 37 30 / 16%); }
-.parcel-card--hero .progress-track__dot--filled { background: #745300; }
 .postage-stamp { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 72px; height: 86px; flex: 0 0 auto; padding: 9px; background: #fff9e8; color: var(--on-yellow); transform: rotate(-3deg); filter: drop-shadow(0 2px 1px rgb(0 0 0 / 8%)); clip-path: polygon(0 4%,4% 0,10% 4%,16% 0,22% 4%,28% 0,34% 4%,40% 0,46% 4%,52% 0,58% 4%,64% 0,70% 4%,76% 0,82% 4%,88% 0,94% 4%,100% 0,96% 7%,100% 13%,96% 19%,100% 25%,96% 31%,100% 37%,96% 43%,100% 49%,96% 55%,100% 61%,96% 67%,100% 73%,96% 79%,100% 85%,96% 91%,100% 97%,94% 100%,88% 96%,82% 100%,76% 96%,70% 100%,64% 96%,58% 100%,52% 96%,46% 100%,40% 96%,34% 100%,28% 96%,22% 100%,16% 96%,10% 100%,4% 96%,0 100%,4% 91%,0 85%,4% 79%,0 73%,4% 67%,0 61%,4% 55%,0 49%,4% 43%,0 37%,4% 31%,0 25%,4% 19%,0 13%,4% 7%); }
 .postage-stamp__print { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #f6e9b7; border: 1px solid #bcab75; }
 .postage-stamp__print svg { width: 30px; height: 30px; stroke-width: 1.4; }
@@ -528,19 +517,12 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
   .delivery-overview { margin-bottom: 7px; }
   .delivery-next { margin-bottom: 16px; }
   .delivery-on-the-way > .parcel-grid { grid-template-columns: 1fr; }
-  .parcel-card--hero { min-height: 196px; padding: 14px 19px; gap: 12px; }
-  .parcel-card__hero-main .postage-stamp { width: 62px; height: 74px; }
-  .parcel-card__hero-date { font-size: 32px; }
-  .parcel-card--hero .parcel-card__label { font-size: 26px; }
-  .parcel-card__hero-date + .parcel-card__label { font-size: 16px; }
   .parcel-sections { grid-template-columns: 1fr; gap: 26px; margin-top: 25px; }
   .parcel-section .parcel-grid, .archived-section .parcel-grid { grid-template-columns: 1fr; }
   .parcel-card__body { padding: 18px; padding-right: 12px; }
-  .parcel-card__top { flex-wrap: wrap; gap: 5px 10px; }
-  .parcel-card__state { text-align: left; max-width: none; }
   .parcel-card__label { font-size: 16px; }
   .parcel-section__heading h2 { font-size: 18px; }
-  .parcel-card__stub { flex-basis: 60px; }
+
   .parcel-view__filter-button > span { display: none; }
   .parcel-view__selects { grid-template-columns: 1fr; }
   .parcel-view__selects label { grid-template-columns: 80px 1fr; align-items: center; }
@@ -600,12 +582,9 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
   .app__masthead { gap: 9px; }
   .app__title { font-size: 23px; }
   .app__content { padding-left: 16px; padding-right: 16px; }
-  .parcel-card--hero { padding: 18px; }
-  .status-badge { font-size: 10px; }
   .postage-stamp { width: 62px; height: 76px; }
-  .parcel-card__hero-main { gap: 12px; }
   .parcel-card__label { font-size: 15px; }
-  .parcel-card__stub { flex-basis: 50px; }
+  .parcel-card__stub { flex-basis: 80px; }
   .time-card { padding: 16px; }.time-card > strong { font-size: 24px; }
   .appearance-control button { flex-direction: column; gap: 4px; }
   .arrival { padding-left: 20px; padding-right: 20px; }.arrival__brand { font-size: 12px; gap: 6px; }
@@ -626,8 +605,6 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 }
 
 .parcel-card-swipe--revealed .parcel-card-swipe__clip { background: var(--orange-text); }
-.parcel-card--hero .parcel-card__state { color: inherit; max-width: 55%; text-align: left; }
-.parcel-card__hero-notice { color: #745300; font-size: 12px; margin-top: -8px; }
 .auth-flow__heading h1:focus { outline: none; }
 .auth-loading { min-height: 100dvh; display: grid; align-content: center; justify-items: center; gap: 20px; padding: 24px; color: var(--ink-soft); font-size: 13px; }
 .auth-loading .parcel-illustration { width: 190px; }

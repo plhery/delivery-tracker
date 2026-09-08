@@ -222,11 +222,33 @@ describe('App', () => {
     expect(within(active).queryByText('Birthday gift 🎁')).not.toBeInTheDocument();
 
     const next = screen.getByRole('button', { name: /Next up: Birthday gift/ });
-    expect(within(next).getByText('Customs clearance')).toBeInTheDocument();
+    expect(next.querySelector('.parcel-card__stub')).toHaveTextContent('At customs');
+    expect(within(next).queryByText('Customs clearance')).not.toBeInTheDocument();
+    expect(next.querySelector('.parcel-card__meta, .progress-track')).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Needs attention' })).not.toBeInTheDocument();
 
     const past = screen.getByRole('region', { name: 'Past deliveries' });
     expect(within(past).getByText('Coffee beans ☕')).toBeInTheDocument();
+  });
+
+  it('orders past deliveries by delivery time, regardless of their ETA or creation order', async () => {
+    const repo = createDemoRepo(window.localStorage);
+    const sample = (await repo.list()).find(parcel => parcel.events.some(event => event.stage === 'delivered'))!;
+    const older: ParcelWithEvents = {
+      ...sample, id: 'older-delivery', label: 'Older delivery',
+      createdAt: '2026-09-07T12:00:00Z', expectedDelivery: '2026-09-12',
+      events: [{ id: 'older-event', parcelId: 'older-delivery', stage: 'delivered', description: 'Delivered', occurredAt: '2026-09-06T12:00:00Z' }],
+    };
+    const newer: ParcelWithEvents = {
+      ...older, id: 'newer-delivery', label: 'Newer delivery',
+      createdAt: '2026-09-01T12:00:00Z', expectedDelivery: '2026-09-14',
+      events: [{ id: 'newer-event', parcelId: 'newer-delivery', stage: 'delivered', description: 'Delivered', occurredAt: '2026-09-07T12:00:00Z' }],
+    };
+    vi.spyOn(repo, 'list').mockResolvedValue([older, newer]);
+    renderApp(repo);
+    const past = await screen.findByRole('region', { name: 'Past deliveries' });
+    expect(Array.from(past.querySelectorAll('.parcel-card__label'), element => element.textContent))
+      .toEqual(['Newer delivery', 'Older delivery']);
   });
 
   it('opens the next parcel from the summary', async () => {

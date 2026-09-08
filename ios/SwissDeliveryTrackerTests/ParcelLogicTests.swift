@@ -532,6 +532,18 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertTrue(ParcelOrganizer.sections(from: [parcel]).contains { $0.kind == .archived })
     }
 
+    func testPastDeliveriesSortByCompletionInsteadOfETAOrCreationOrder() {
+        let olderID = UUID(), newerID = UUID()
+        var older = makeParcel(id: olderID, events: [event(olderID, .delivered, "2026-09-06T12:00:00Z")])
+        older.createdAt = "2026-09-07T12:00:00Z"
+        older.expectedDelivery = "2026-09-12"
+        var newer = makeParcel(id: newerID, events: [event(newerID, .delivered, "2026-09-07T12:00:00Z")])
+        newer.createdAt = "2026-09-01T12:00:00Z"
+        newer.expectedDelivery = "2026-09-14"
+        let past = ParcelOrganizer.sections(from: [older, newer]).first { $0.kind == .delivered }
+        XCTAssertEqual(past?.parcels.map(\.id), [newerID, olderID])
+    }
+
     func testArchivedParcelsAreOrderedByNewestDisplayedDate() {
         let olderID = UUID()
         var older = makeParcel(

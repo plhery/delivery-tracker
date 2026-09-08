@@ -74,10 +74,10 @@ function updatedAt(parcel: ParcelWithEvents): string {
 }
 
 /**
- * The date that best represents a parcel in its archive. A delivered or returned
+ * The date that best represents a completed or archived parcel. A delivered or returned
  * scan is more meaningful than the moment the user happened to archive it.
  */
-export function archivedDisplayDate(parcel: ParcelWithEvents): string {
+export function completionSortDate(parcel: ParcelWithEvents): string {
   const completion = [...parcel.events]
     .filter((event) => isFinal(event.stage))
     .sort((first, second) => second.occurredAt.localeCompare(first.occurredAt))[0];
@@ -87,11 +87,11 @@ export function archivedDisplayDate(parcel: ParcelWithEvents): string {
     ?? parcel.createdAt;
 }
 
-export function sortArchivedParcels(
+export function sortPastParcels(
   parcels: ParcelWithEvents[],
 ): ParcelWithEvents[] {
   return [...parcels].sort((first, second) => {
-    const byDate = archivedDisplayDate(second).localeCompare(archivedDisplayDate(first));
+    const byDate = completionSortDate(second).localeCompare(completionSortDate(first));
     return byDate !== 0 ? byDate : first.id.localeCompare(second.id);
   });
 }

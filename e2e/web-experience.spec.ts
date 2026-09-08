@@ -201,6 +201,7 @@ test('keeps every screen within a narrow viewport in dark mode', async ({ page }
 
 test('scrolls from a card, reveals archive smoothly, and supports reversing the swipe', async ({ page, browserName, isMobile }) => {
   test.skip(!isMobile || browserName !== 'chromium', 'Uses real Chromium touch input on the mobile layout.');
+  await page.setViewportSize({ width: 390, height: 640 });
   await demo(page);
   const touch = await page.context().newCDPSession(page);
   async function swipe(x: number, y: number, dx: number, dy: number) {
@@ -211,20 +212,20 @@ test('scrolls from a card, reveals archive smoothly, and supports reversing the 
     }
     await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   }
-  const hero = page.locator('.parcel-card--hero');
-  const box = await hero.boundingBox();
-  await swipe(box!.x + 100, box!.y + 180, 6, -150);
+  const card = page.getByRole('button', { name: /^Next up: Birthday gift 🎁 —/ });
+  const box = await card.boundingBox();
+  await swipe(box!.x + 100, box!.y + box!.height / 2, 6, -150);
   await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(50);
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.evaluate(() => scrollTo(0, 0));
   await page.waitForTimeout(300);
-  const x = box!.x + 230; const y = box!.y + 130;
+  const x = box!.x + 230; const y = box!.y + box!.height / 2;
   await swipe(x, y, -70, 3);
-  await expect(hero).toHaveCSS('transform', 'matrix(1, 0, 0, 1, -88, 0)');
+  await expect(card).toHaveCSS('transform', 'matrix(1, 0, 0, 1, -88, 0)');
   const archive = page.getByRole('button', { name: 'Archive Birthday gift 🎁', exact: true });
   await expect(archive).toBeVisible();
   await swipe(x - 88, y, 70, 2);
-  await expect(hero).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+  await expect(card).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
   await expect(archive).toBeHidden();
   await swipe(x, y, -220, 1);
   await expect(page.getByRole('status')).toContainText('Birthday gift 🎁 archived');

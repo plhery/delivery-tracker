@@ -8,7 +8,7 @@ import { parcelIcon, parcelTone } from '../lib/parcelDesign';
 import { userErrorMessage } from '../lib/userMessages';
 import type { ParcelWithEvents } from '../types';
 import { ProgressTrack } from './ProgressTrack';
-import { Icon, PostageStamp } from './Icon';
+import { Icon } from './Icon';
 
 type Drag = { x: number; y: number; pointerId: number; origin: number; width: number; direction: 'horizontal' | 'vertical' | null };
 
@@ -113,20 +113,16 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
         style={{ transform: `translateX(${offset}px)` }} disabled={archiving} aria-busy={archiving} aria-label={hero ? `${t('app.nextUp')}: ${label}` : label}
         onClick={(event) => { if (suppressClick.current) return; if (offset) setOffset(0); else onOpen(parcel, event.currentTarget); }}
         onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={finishSwipe} onPointerCancel={cancelSwipe}>
-        {hero ? <>
-          <span className="parcel-card__hero-top"><span className="eyebrow">{t('app.nextUp')}</span><span className="status-badge parcel-card__state"><i aria-hidden="true" />{statusLabel}</span></span>
-          <span className="parcel-card__hero-main"><span>{expectedDelivery && <strong className="parcel-card__hero-date">{expectedDelivery}</strong>}<span className="parcel-card__label">{parcelName}</span></span><PostageStamp icon={parcelIcon(current?.stage)} /></span>
-          <ProgressTrack stage={current?.stage ?? null} />
-          {(parcel.syncStatus === 'error' || notice) && <span className="parcel-card__hero-notice">{parcel.syncStatus === 'error' ? t('parcel.syncAttention') : notice}</span>}
-          <span className="parcel-card__hero-bottom"><span><strong>{carrier.name}</strong>{current?.location && <span aria-label={current.location}>{trackingLocationLabel(current.location)}</span>}</span><Icon name="arrow" /></span>
-        </> : <>
-          <span className="parcel-card__body"><span className="parcel-card__top"><strong className="parcel-card__label">{parcelName}</strong><span className="parcel-card__state">{statusLabel}</span></span>
+        {hero ? <span className="parcel-card__body">
+          <span className="parcel-card__next-label">{t('app.nextUp')}</span>
+          {expectedDelivery && <strong className="parcel-card__hero-date">{expectedDelivery}</strong>}
+          <strong className="parcel-card__label">{parcelName}</strong>
+        </span> : <span className="parcel-card__body"><strong className="parcel-card__label">{parcelName}</strong>
             <span className="parcel-card__meta"><span className="parcel-card__carrier">{carrier.name}</span>{(expectedDelivery || completionDate) && <><span aria-hidden="true">·</span><span className={completionDate ? "parcel-card__completion" : "parcel-card__eta"}>{expectedDelivery || completionDate}</span></>}{current?.location && <><span aria-hidden="true">·</span><span className="parcel-card__location" aria-label={current.location}>{trackingLocationLabel(current.location)}</span></>}</span>
             {parcel.syncStatus === 'error' ? <span className="parcel-card__notice">{t('parcel.syncAttention')}</span> : notice && <span className="parcel-card__notice">{notice}</span>}
             {!compact && <ProgressTrack stage={current?.stage ?? null} />}
-          </span>
-          <span className="parcel-card__stub" aria-hidden="true">{current?.stage === 'delivered' && <Icon name="check" />}</span>
-        </>}
+        </span>}
+        <span className="parcel-card__stub" aria-hidden="true"><Icon name={parcelIcon(current?.stage)} strokeWidth="1.3" /><span className="parcel-card__state">{statusLabel}</span></span>
       </button>
     </div>
     {archiveError && <p className="parcel-card__error" role="alert">{archiveError}</p>}

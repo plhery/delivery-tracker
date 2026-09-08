@@ -28,7 +28,7 @@ import {
 } from './lib/parcelPriority';
 import {
   parcelComparator,
-  sortArchivedParcels,
+  sortPastParcels,
   viewParcels,
   type ParcelSort,
   type ParcelStatusFilter,
@@ -264,17 +264,17 @@ export default function App({
     [activeParcels, nextParcel, sort, viewNow],
   );
   const deliveredParcels = useMemo(
-    () => visibleParcels.filter((p) => !p.archivedAt && isDelivered(p.events)),
+    () => sortPastParcels(visibleParcels.filter((p) => !p.archivedAt && isDelivered(p.events))),
     [visibleParcels],
   );
   const returnedParcels = useMemo(
-    () => visibleParcels.filter(
+    () => sortPastParcels(visibleParcels.filter(
       (parcel) => !parcel.archivedAt && currentStage(parcel.events) === 'returned',
-    ),
+    )),
     [visibleParcels],
   );
   const archivedParcels = useMemo(
-    () => sortArchivedParcels(
+    () => sortPastParcels(
       visibleParcels.filter((parcel) => Boolean(parcel.archivedAt)),
     ),
     [visibleParcels],

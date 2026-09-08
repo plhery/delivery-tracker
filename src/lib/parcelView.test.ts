@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   parcelMatchesSearch,
   parcelMatchesStatus,
-  sortArchivedParcels,
+  sortPastParcels,
   viewParcels,
 } from './parcelView';
 import type { ParcelWithEvents, Stage } from '../types';
@@ -85,7 +85,7 @@ describe('parcel view', () => {
     };
     newerDelivery.events[0].occurredAt = '2026-08-30T08:00:00Z';
 
-    expect(sortArchivedParcels([olderDelivery, newerDelivery]).map(({ id }) => id))
+    expect(sortPastParcels([olderDelivery, newerDelivery]).map(({ id }) => id))
       .toEqual(['newer', 'older']);
   });
 });

@@ -62,13 +62,15 @@ function ParcelFlap({ points, openedCorner, tone, rear = false, hidden = false }
     (y - origin[1]) * Math.cos(angle) - (x - origin[0]) * Math.sin(angle),
   ];
   const from = local(corner), to = local(openedCorner);
+  // Trigonometric results can differ at the last decimal across JS runtimes.
+  const coordinate = (value: number) => Number(value.toFixed(6));
   const fold = {
-    '--fold-scale': to[1] / from[1],
-    '--fold-skew': `${Math.atan((to[0] - from[0]) / from[1]) * 180 / Math.PI}deg`,
+    '--fold-scale': coordinate(to[1] / from[1]),
+    '--fold-skew': `${coordinate(Math.atan((to[0] - from[0]) / from[1]) * 180 / Math.PI)}deg`,
   } as CSSProperties;
-  return <g transform={`translate(${origin.join(' ')}) rotate(${angle * 180 / Math.PI})`}>
+  return <g transform={`translate(${origin.join(' ')}) rotate(${coordinate(angle * 180 / Math.PI)})`}>
     <g className={`parcel-illustration__flap${rear ? ' parcel-illustration__flap--rear' : ''}${hidden ? ' parcel-illustration__flap--hidden' : ''}`} style={fold}>
-      <polygon points={points.map((point) => local(point).join(',')).join(' ')} fill={tone} stroke="#987450" strokeOpacity=".24" strokeWidth=".7" />
+      <polygon points={points.map((point) => local(point).map(coordinate).join(',')).join(' ')} fill={tone} stroke="#987450" strokeOpacity=".24" strokeWidth=".7" />
     </g>
   </g>;
 }

@@ -201,7 +201,7 @@ private struct DeliveryListView: View {
                             onOpen: { path.append(nextParcel.id) },
                             onArchive: { await archive(nextParcel) }
                         )
-                        .modifier(arrivalCelebration(for: nextParcel.id, stubInset: 56))
+                        .modifier(arrivalCelebration(for: nextParcel.id, stubInset: DeliveryTicketShape.stubWidth / 2))
                         .id(nextParcel.id)
                     }
 
@@ -514,7 +514,7 @@ private struct DeliveryListView: View {
                             onOpen: { path.append(parcel.id) },
                             onArchive: { await archive(parcel) }
                         )
-                        .modifier(arrivalCelebration(for: parcel.id, stubInset: 56))
+                        .modifier(arrivalCelebration(for: parcel.id, stubInset: DeliveryTicketShape.stubWidth / 2))
                         .id(parcel.id)
                     } else {
                         ExperimentalParcelPassCard(
@@ -534,7 +534,7 @@ private struct DeliveryListView: View {
         }
     }
 
-    private func arrivalCelebration(for id: UUID, stubInset: CGFloat = 30) -> ParcelArrivalCelebration {
+    private func arrivalCelebration(for id: UUID, stubInset: CGFloat = DeliveryTicketShape.stubWidth / 2) -> ParcelArrivalCelebration {
         ParcelArrivalCelebration(active: parcelBurstID == id, stubInset: stubInset) {
             if parcelBurstID == id { parcelBurstID = nil }
         }
@@ -600,75 +600,41 @@ private struct ExperimentalNextDeliveryPass: View {
     let onArchive: () async -> Void
 
     @EnvironmentObject private var localizer: Localizer
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var appeared = false
-    @ObservedObject private var catalog = CarrierCatalog.shared
 
     var body: some View {
-        let tint = Brand.onAccent
-        let deliveryDate = localizer.parcelCompletionDate(parcel) ?? localizer.parcelDeliveryEstimate(parcel)
-
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
+        HStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text(localizer.text("app.nextUp"))
-                    .font(.caption.weight(.semibold))
-                    .textCase(.uppercase)
-                    .tracking(1.2)
-                    .foregroundStyle(Brand.onAccent.opacity(0.75))
-                Spacer(minLength: 8)
-                HStack(spacing: 5) {
-                    Circle().fill(tint).frame(width: 5, height: 5)
-                    Text(localizer.parcelStatus(parcel))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Brand.onAccent)
-                }
-                .padding(.horizontal, 9)
-                .padding(.vertical, 6)
-                .background(.white.opacity(0.36), in: Capsule())
-            }
-
-            HStack(alignment: .center, spacing: 18) {
-                VStack(alignment: .leading, spacing: 6) {
-                    if let date = deliveryDate {
-                        Text(date)
-                            .font(.system(.largeTitle, design: .default, weight: .semibold))
-                            .tracking(-1.0)
-                            .contentTransition(.numericText())
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
-                        .font((deliveryDate == nil ? Font.title2 : Font.headline).weight(.semibold))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                DeliveryPostageStamp(stage: parcel.currentStage, appeared: appeared)
-            }
-
-            ExperimentalJourneyRail(stage: parcel.currentStage, tint: tint)
-                .environmentObject(localizer)
-
-            HStack(alignment: .center, spacing: 8) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName)
-                        .font(.subheadline.weight(.semibold))
-                    if let location = parcel.experimentalLatestLocation {
-                        Text(TrackingLocation.label(location))
-                            .font(.caption)
-                            .foregroundStyle(Brand.onAccent.opacity(0.75))
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "arrow.up.right")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.caption)
                     .foregroundStyle(Brand.onAccent.opacity(0.7))
+                if let estimate = localizer.parcelDeliveryEstimate(parcel) {
+                    Text(estimate)
+                        .font(.title2.weight(.semibold))
+                }
+                Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
+                    .font(.headline)
             }
-            .padding(.top, 2)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.leading, 20)
+            .padding(.trailing, 14)
+
+            VStack(spacing: 6) {
+                Image(systemName: parcel.currentStage?.metadata.symbol ?? "shippingbox")
+                    .font(.system(size: 22, weight: .light))
+                    .accessibilityHidden(true)
+                Text(localizer.parcelStatus(parcel))
+                    .font(.caption)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .foregroundStyle(Brand.onAccent.opacity(0.7))
+            .padding(.horizontal, 8)
+            .frame(width: DeliveryTicketShape.stubWidth)
         }
+        .padding(.vertical, 16)
+        .frame(minHeight: 130)
+        .fixedSize(horizontal: false, vertical: true)
         .foregroundStyle(Brand.onAccent)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
         .experimentalSurface(fill: Brand.accent, cornerRadius: 24)
         .matchedTransitionSource(id: parcel.id, in: transition)
         .accessibilityElement(children: .combine)
@@ -678,14 +644,7 @@ private struct ExperimentalNextDeliveryPass: View {
             onOpen: onOpen,
             action: onArchive
         )
-        .opacity(appeared ? 1 : 0)
-        .offset(y: appeared ? 0 : 6)
         .accessibilityHint(localizer.text("detail.label"))
-        .onAppear {
-            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) {
-                appeared = true
-            }
-        }
     }
 }
 
@@ -705,34 +664,38 @@ private struct ExperimentalParcelPassCard: View {
     private var name: String { parcel.label.nonEmpty ?? localizer.text("common.parcel") }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            heading
-
-            Text(metadata)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
-                .fixedSize(horizontal: false, vertical: true)
-
-            if let notice {
-                Label(notice, systemImage: "exclamationmark.circle.fill")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Brand.warning)
+        HStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 8) {
+                title
                     .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
-            }
+                    .fixedSize(horizontal: false, vertical: true)
 
-            if !compact, parcel.currentStage?.isFinal != true {
-                ExperimentalJourneyRail(stage: parcel.currentStage, tint: tint, compact: true)
-                    .environmentObject(localizer)
+                Text(metadata)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let notice {
+                    Label(notice, systemImage: "exclamationmark.circle")
+                        .font(.caption)
+                        .foregroundStyle(Brand.warning)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                }
+
+                if !compact, parcel.currentStage?.isFinal != true {
+                    ExperimentalJourneyRail(stage: parcel.currentStage, tint: tint, compact: true)
+                        .environmentObject(localizer)
+                }
             }
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.vertical, 12)
+            .padding(.leading, 18)
+            .padding(.trailing, 14)
+            .frame(maxWidth: .infinity, minHeight: compact ? 82 : 104, alignment: .leading)
+            ticketStub
         }
         .fixedSize(horizontal: false, vertical: true)
-        .padding(.vertical, 12)
-        .padding(.leading, 18)
-        .padding(.trailing, 14)
-        .frame(maxWidth: .infinity, minHeight: compact ? 82 : 104, alignment: .leading)
-        .padding(.trailing, DeliveryTicketShape.stubWidth)
-        .overlay(alignment: .trailing) { ticketStub }
         .background(ExperimentalPalette.surface(for: parcel), in: DeliveryTicketShape())
         .clipShape(DeliveryTicketShape())
         .matchedTransitionSource(id: parcel.id, in: transition)
@@ -746,30 +709,6 @@ private struct ExperimentalParcelPassCard: View {
         .accessibilityElement(children: .contain)
     }
 
-    @ViewBuilder private var heading: some View {
-        if dynamicTypeSize.isAccessibilitySize {
-            stackedHeading
-        } else {
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    title.fixedSize()
-                    Spacer(minLength: 0)
-                    status.fixedSize()
-                }
-                stackedHeading
-            }
-            .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var stackedHeading: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            title.lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
-                .fixedSize(horizontal: false, vertical: true)
-            status
-        }
-    }
-
     private var title: some View {
         Text(name)
             .font(compact ? .subheadline.weight(.semibold) : .headline.weight(.semibold))
@@ -778,7 +717,7 @@ private struct ExperimentalParcelPassCard: View {
 
     private var status: some View {
         Text(localizer.parcelStatus(parcel))
-            .font(.caption.weight(.semibold))
+            .font(.caption)
             .foregroundStyle(tint)
             .fixedSize(horizontal: false, vertical: true)
     }
@@ -791,14 +730,15 @@ private struct ExperimentalParcelPassCard: View {
     }
 
     private var ticketStub: some View {
-        ZStack {
-            if parcel.currentStage == .delivered {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 22, weight: .regular))
-                    .foregroundStyle(tint)
-            }
+        VStack(spacing: 6) {
+            Image(systemName: parcel.currentStage == .delivered ? "checkmark" : (parcel.currentStage?.metadata.symbol ?? "shippingbox"))
+                .font(.system(size: 22, weight: .light))
+                .accessibilityHidden(true)
+            status
+                .multilineTextAlignment(.center)
         }
-        .accessibilityHidden(true)
+        .foregroundStyle(tint)
+        .padding(.horizontal, 8)
         .padding(.vertical, 12)
         .frame(width: DeliveryTicketShape.stubWidth)
         .frame(maxHeight: .infinity)
