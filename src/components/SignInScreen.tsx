@@ -1,6 +1,6 @@
 import { userErrorMessage } from '../lib/userMessages';
 import { useState, type FormEvent } from 'react';
-import { LanguageControl, useI18n } from '../i18n';
+import { useI18n } from '../i18n';
 
 export function SignInScreen({
   configured,
@@ -68,37 +68,15 @@ export function SignInScreen({
   }
 
   return (
-    <main className="auth-screen">
-      <div className="auth-shell">
-        <header className="auth-header">
-          <div className="auth-header__brand">
-            <svg className="auth-header__mark" aria-hidden="true" viewBox="0 0 24 24">
-              <path d="M12 22V12" />
-              <path d="m16 17 2 2 4-4" />
-              <path d="M21 11.127V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.729l7 4a2 2 0 0 0 2 .001l1.32-.753" />
-              <path d="M3.29 7 12 12l8.71-5" />
-              <path d="m7.5 4.27 8.997 5.148" />
-            </svg>
-            <div>
-              <p>{t('app.eyebrow')}</p>
-              <strong>{t('app.title')}</strong>
-            </div>
-          </div>
-          <LanguageControl className="language-control--auth" />
-        </header>
-
         <section className="auth-flow" aria-labelledby="sign-in-title">
           <div className="auth-flow__heading">
-            <h1 id="sign-in-title">{t('auth.title')}</h1>
-            <p>{t('auth.subtitle')}</p>
+            <h1 id="sign-in-title" tabIndex={-1}>{t('arrival.signInTitle')}</h1>
+            <p>{t('arrival.signInSubtitle')}</p>
           </div>
         {!configured ? (
           <div className="auth-flow__configuration" role="alert">
             <strong>{t('auth.configTitle')}</strong>
-            <span>
-              Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` when
-              building the production app.
-            </span>
+            <span>{t('native.configurationHelp')}</span>
           </div>
         ) : codeSent && emailOtpEnabled ? (
           <form className="auth-flow__form auth-flow__form--code" onSubmit={(event) => void submitCode(event)}>
@@ -210,7 +188,5 @@ export function SignInScreen({
             </p>
           </div>
         </section>
-      </div>
-    </main>
   );
 }

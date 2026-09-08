@@ -8,6 +8,8 @@ const config = [
     ignores: [
       '.next/**',
       'coverage/**',
+      'test-results/**',
+      'playwright-report/**',
       'dist/**',
       'out/**',
       'public/sw.js',

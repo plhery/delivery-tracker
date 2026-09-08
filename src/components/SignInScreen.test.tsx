@@ -12,12 +12,10 @@ describe('SignInScreen', () => {
       <SignInScreen configured sendCode={sendCode} verifyCode={verifyCode} />,
     );
 
-    expect(screen.getByText('Delivery Tracker')).toBeInTheDocument();
-    expect(screen.getByText('French and Swiss parcel tracking')).toBeInTheDocument();
     expect(screen.getByRole('heading', {
-      name: 'Keep every delivery in one place',
+      name: 'Your deliveries, together.',
     })).toBeInTheDocument();
-    expect(screen.getByText(/track French and Swiss parcels/i))
+    expect(screen.getByText('Sign in to start tracking.'))
       .toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Read the privacy notice.' }))
       .toHaveAttribute('href', '/privacy.html');
@@ -86,7 +84,7 @@ describe('SignInScreen', () => {
       <SignInScreen configured={false} sendCode={vi.fn()} verifyCode={vi.fn()} />,
     );
     expect(screen.getByRole('alert')).toHaveTextContent(
-      'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+      'You can explore the app with demo parcels while sign-in is unavailable.',
     );
   });
 });

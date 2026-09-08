@@ -1,7 +1,10 @@
 import { useCallback, useMemo } from 'react';
 import App from './App';
 import { useAuth } from './auth/AuthContext';
-import { SignInScreen } from './components/SignInScreen';
+import { ArrivalScreen } from './components/ArrivalScreen';
+import { ParcelIllustration } from './components/Icon';
+import { useEntryExperience } from './lib/experience';
+import { createDemoRepo } from './store/demoRepo';
 import { deleteAccount, downloadAccountExport, exportAccount } from './lib/account';
 import {
   disablePushNotifications,
@@ -14,7 +17,10 @@ import { useI18n } from './i18n';
 export function ApiApplication() {
   const { t } = useI18n();
   const auth = useAuth();
+  const experience = useEntryExperience();
+  const demoRepo = useMemo(() => createDemoRepo(), []);
   const signOut = auth.signOut;
+  const navigate = experience.navigate;
   const storage = browserStorage();
   const sessionAuth = useMemo(
     () => auth.user ? {
@@ -29,7 +35,8 @@ export function ApiApplication() {
       clearApiCache(storage, sessionAuth.userId);
     }
     await signOut();
-  }, [sessionAuth, signOut, storage]);
+    navigate('sign-in');
+  }, [sessionAuth, signOut, storage, navigate]);
   const apiAuth = useMemo(
     () => sessionAuth ? {
       ...sessionAuth,
@@ -47,7 +54,8 @@ export function ApiApplication() {
     await unsubscribePushNotificationsLocally().catch(() => undefined);
     clearApiCache(storage, apiAuth.userId);
     await signOut();
-  }, [apiAuth, signOut, storage]);
+    navigate('sign-in');
+  }, [apiAuth, signOut, storage, navigate]);
   const repo = useMemo(
     () => apiAuth ? createApiRepo(
       30_000,
@@ -58,11 +66,16 @@ export function ApiApplication() {
     [apiAuth, storage],
   );
   if (auth.status === 'loading') {
-    return <div className="auth-loading" role="status">{t('auth.loading')}</div>;
+    return <div className="auth-loading" role="status"><ParcelIllustration /><span>{t('auth.loading')}</span></div>;
   }
   if (auth.status === 'unconfigured' || auth.status === 'anonymous') {
+    if (experience.screen === 'demo') return <ParcelsProvider key="demo" repo={demoRepo}>
+      <App onExitDemo={() => experience.navigate('sign-in')} />
+    </ParcelsProvider>;
     return (
-      <SignInScreen
+      <ArrivalScreen
+        screen={experience.screen}
+        onNavigate={experience.navigate}
         configured={auth.status !== 'unconfigured'}
         googleEnabled={auth.googleEnabled}
         emailOtpEnabled={auth.emailOtpEnabled}
@@ -74,9 +87,9 @@ export function ApiApplication() {
   }
   if (!repo) return null;
   return (
-    <ParcelsProvider repo={repo}>
+    <ParcelsProvider key={auth.user?.id} repo={repo}>
       <App
-        accountEmail={auth.user?.email ?? 'Account'}
+        accountEmail={auth.user?.email ?? t('native.account')}
         onSignOut={handleSignOut}
         onExportAccount={handleExport}
         onDeleteAccount={handleDelete}

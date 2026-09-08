@@ -16,7 +16,7 @@ import {
   type PushState,
 } from '../lib/pushNotifications';
 import type { ApiAuth } from '../lib/apiClient';
-import { useModalDialog } from '../lib/modal';
+import { useSheetDialog } from '../lib/modal';
 import { type Translate, useI18n } from '../i18n';
 
 type EventPreset = 'all' | 'important' | 'delivery-day';
@@ -27,7 +27,7 @@ const PRESET_STAGES: Record<EventPreset, NotificationStage[]> = {
   'delivery-day': DELIVERY_DAY_NOTIFICATION_STAGES,
 };
 
-export function NotificationControl({ apiAuth }: { apiAuth?: ApiAuth }) {
+export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: ApiAuth; variant?: 'icon' | 'row' }) {
   const { t, locale } = useI18n();
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<PushState | null>(null);
@@ -43,7 +43,7 @@ export function NotificationControl({ apiAuth }: { apiAuth?: ApiAuth }) {
   const enabled = state?.kind === 'enabled';
   const closeButton = useRef<HTMLButtonElement>(null);
   const languageUpdate = useRef(Promise.resolve());
-  const dialog = useModalDialog<HTMLElement>(open, () => setOpen(false), closeButton);
+  const [dialog, close] = useSheetDialog<HTMLElement>(open, () => setOpen(false), closeButton);
 
   useEffect(() => {
     if (!apiAuth || !enabled) return;
@@ -132,17 +132,18 @@ export function NotificationControl({ apiAuth }: { apiAuth?: ApiAuth }) {
     <>
       <button
         type="button"
-        className={`icon-button notification-button${enabled ? ' notification-button--enabled' : ''}`}
+        className={`${variant === 'row' ? 'settings-row' : 'icon-button'} notification-button${enabled ? ' notification-button--enabled' : ''}`}
         aria-label={enabled ? t('notifications.enabledButton') : t('notifications.button')}
         onClick={() => setOpen(true)}
       >
         <svg aria-hidden="true" viewBox="0 0 24 24">
           <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
         </svg>
+        {variant === 'row' && <span>{t('notifications.title')}</span>}
       </button>
 
       {open && createPortal(
-        <div className="sheet-backdrop" role="presentation" onMouseDown={() => setOpen(false)}>
+        <div className="sheet-backdrop" role="presentation" onMouseDown={close}>
           <section
             ref={dialog}
             className="sheet notification-sheet"
@@ -158,7 +159,7 @@ export function NotificationControl({ apiAuth }: { apiAuth?: ApiAuth }) {
                 <p className="sheet__eyebrow">{t('notifications.eyebrow')}</p>
                 <h2 className="sheet__title" id="notifications-title">{t('notifications.title')}</h2>
               </div>
-              <button ref={closeButton} className="sheet__close" type="button" aria-label={t('common.close')} onClick={() => setOpen(false)}>×</button>
+              <button ref={closeButton} className="sheet__close" type="button" aria-label={t('common.close')} onClick={close}>×</button>
             </div>
 
             <div className={`notification-status${enabled ? ' notification-status--enabled' : ''}`}>

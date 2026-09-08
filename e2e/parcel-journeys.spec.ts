@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
     if (message.type() === 'error') errors.push(message.text());
   });
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.addInitScript(() => window.localStorage.clear());
+  await page.addInitScript(() => { window.localStorage.clear(); window.localStorage.setItem('sdt.web.experience.v1', 'demo'); });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveTitle('French & Swiss Parcel Tracking | Delivery Tracker');
   // This control is rendered only after the client repository has loaded, so
@@ -43,7 +43,7 @@ test('finds, filters, and opens a parcel', async ({ page }) => {
 });
 
 test('carefully deletes an active parcel from its detail screen', async ({ page }) => {
-  await page.getByRole('button', { name: /^New sneakers 👟 —/ }).click();
+  await page.getByRole('button', { name: /^(?:Next up: )?New sneakers 👟 —/ }).click();
   const detail = page.getByRole('dialog', { name: 'New sneakers 👟' });
   await detail.getByLabel('Parcel actions', { exact: true }).click();
   await page.getByRole('button', { name: 'Delete permanently' }).click();
@@ -68,9 +68,9 @@ test('carefully deletes an active parcel from its detail screen', async ({ page 
 test('adds a parcel from tracking text', async ({ page }) => {
   await page.getByRole('button', { name: 'Add a parcel' }).click();
   const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
-  await sheet.getByLabel("What's inside?").fill('Fondue set');
+  await sheet.getByLabel(/^Title/).fill('Fondue set');
   await sheet.getByLabel('Tracking number or link').fill('Track 99.34.111111.22222222');
-  await expect(sheet.getByText('We’ll check Swiss Post for updates automatically.')).toBeVisible();
+  await expect(sheet.getByText('Swiss Post', { exact: true })).toBeVisible();
   await sheet.getByRole('button', { name: 'Add parcel' }).click();
 
   await expect(page.getByText('Fondue set')).toBeVisible();
@@ -80,12 +80,12 @@ test('adds a parcel from tracking text', async ({ page }) => {
 test('opens unknown postal tracking on 17TRACK in the selected language', async ({ page }) => {
   await page.getByRole('button', { name: 'Add a parcel' }).click();
   const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
-  await sheet.getByLabel("What's inside?").fill('Postal shipment');
+  await sheet.getByLabel(/^Title/).fill('Postal shipment');
   await sheet.getByLabel('Tracking number or link').fill('RA123456785DE');
   await expect(sheet.getByText('Unknown postal carrier', { exact: true })).toBeVisible();
   await expect(sheet.getByText(/Automatic updates aren’t available. Check 17TRACK/)).toBeVisible();
   await sheet.getByRole('button', { name: 'Add parcel' }).click();
-  await page.getByRole('button', { name: /^Postal shipment —/ }).click();
+  await page.getByRole('button', { name: /^(?:Next up: )?Postal shipment —/ }).click();
   let detail = page.getByRole('dialog', { name: 'Postal shipment' });
   const link = detail.getByRole('link', { name: 'Open on 17TRACK ↗' });
   await expect(link).toBeVisible();
@@ -93,8 +93,11 @@ test('opens unknown postal tracking on 17TRACK in the selected language', async 
   await expect(detail.getByRole('button', { name: 'Change carrier from Unknown postal carrier' })).toBeVisible();
   await detail.getByRole('button', { name: 'Back', exact: true }).click();
 
+  await page.locator('.account-trigger').click();
   await page.getByRole('combobox', { name: 'Language' }).selectOption('fr');
-  await page.getByRole('button', { name: /^Postal shipment —/ }).click();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.settings-sheet')).toBeHidden();
+  await page.getByRole('button', { name: /^(?:Next up: )?Postal shipment —/ }).click();
   detail = page.getByRole('dialog', { name: 'Postal shipment' });
   await expect(detail.getByRole('button', { name: /Transporteur postal inconnu/ })).toBeVisible();
   const frenchLink = detail.getByRole('link', { name: 'Ouvrir sur 17TRACK ↗' });
@@ -123,7 +126,7 @@ test('keeps invalid tracking input safely in the add sheet', async ({ page }) =>
 });
 
 test('navigates nested carrier dialogs entirely by keyboard', async ({ page }) => {
-  const parcel = page.getByRole('button', { name: /^New sneakers 👟 —/ });
+  const parcel = page.getByRole('button', { name: /^(?:Next up: )?New sneakers 👟 —/ });
   await parcel.click();
   const detail = page.getByRole('dialog', { name: 'New sneakers 👟' });
   // Closed details-menu actions must not enter the Tab order.
@@ -164,18 +167,21 @@ test('navigates nested carrier dialogs entirely by keyboard', async ({ page }) =
 test('keeps translated add-parcel guidance readable in every app language', async ({ page }) => {
   // Change away from the initial English value first: selecting an unchanged
   // option does not emit a change event or save a language preference.
-  for (const [locale, action, title, cancel, hint] of [
-    ['de', 'Ein Paket hinzufügen', 'Paket hinzufügen', 'Abbrechen', 'Wir fragen Aktualisierungen bei Swiss Post automatisch ab.'],
-    ['fr', 'Ajouter un colis', 'Ajouter un colis', 'Annuler', 'Nous consulterons automatiquement le suivi de Swiss Post.'],
-    ['it', 'Aggiungi un pacco', 'Aggiungi un pacco', 'Annulla', 'Controlleremo automaticamente gli aggiornamenti di Swiss Post.'],
-    ['en', 'Add a parcel', 'Add a parcel', 'Cancel', 'We’ll check Swiss Post for updates automatically.'],
+  for (const [locale, action, title, cancel] of [
+    ['de', 'Ein Paket hinzufügen', 'Paket hinzufügen', 'Abbrechen'],
+    ['fr', 'Ajouter un colis', 'Ajouter un colis', 'Annuler'],
+    ['it', 'Aggiungi un pacco', 'Aggiungi un pacco', 'Annulla'],
+    ['en', 'Add a parcel', 'Add a parcel', 'Cancel'],
   ]) {
+    await page.locator('.account-trigger').click();
     await page.locator('.language-control select').selectOption(locale);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.settings-sheet')).toBeHidden();
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     await page.getByRole('button', { name: action, exact: true }).click();
     const sheet = page.getByRole('dialog', { name: title });
     await sheet.locator('#add-parcel-tracking').fill('99.34.111111.22222222');
-    await expect(sheet.getByText(hint)).toBeVisible();
+    await expect(sheet.getByText('Swiss Post', { exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     await sheet.getByRole('button', { name: cancel, exact: true }).click();
     expect(await page.evaluate(() => localStorage.getItem('deliveryTrackerLocale'))).toBe(locale);

@@ -1,20 +1,21 @@
+import { focusClickedButton } from './lib/modal';
 import { userErrorMessage } from './lib/userMessages';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AddParcelSheet } from './components/AddParcelSheet';
 import { AccountMenu } from './components/AccountMenu';
 import { ParcelCard } from './components/ParcelCard';
 import { ParcelDetail } from './components/ParcelDetail';
-import { NotificationControl } from './components/NotificationControl';
+import { Passport } from './components/Passport';
+import { Icon, ParcelIllustration } from './components/Icon';
 import { ParcelViewControls } from './components/ParcelViewControls';
 import {
-  LanguageControl,
-  localizedExpectedDelivery,
   type MessageKey,
   useI18n,
 } from './i18n';
 import type { ApiAuth } from './lib/apiClient';
 import {
   isActiveParcel,
+  parcelAttention,
   nextPriorityParcel,
   prioritizeActiveParcels,
   type ParcelAttention,
@@ -31,7 +32,6 @@ import {
   readSharedParcelInput,
   type SharedParcelInput,
 } from './lib/shareTarget';
-import { parcelDeliveryEstimate, parcelDisplayStatusKey } from './lib/parcelStatus';
 import { currentStage, isDelivered } from './lib/stages';
 import { useParcels } from './store/ParcelsContext';
 import type { CarrierId, ParcelWithEvents } from './types';
@@ -71,14 +71,16 @@ export default function App({
   onExportAccount,
   onDeleteAccount,
   apiAuth,
+  onExitDemo,
 }: {
   accountEmail?: string;
   onSignOut?: () => Promise<void>;
   onExportAccount?: () => Promise<void>;
   onDeleteAccount?: (confirmation: string) => Promise<void>;
   apiAuth?: ApiAuth;
+  onExitDemo?: () => void;
 } = {}) {
-  const { languageTag, t } = useI18n();
+  const { t } = useI18n();
   const {
     parcels,
     loading,
@@ -112,6 +114,8 @@ export default function App({
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
   const [viewNow, setViewNow] = useState(() => Date.now());
   const [openParcelId, setOpenParcelId] = useState<string | null>(null);
+  const [tab, setTab] = useState<'deliveries' | 'passport'>('deliveries');
+  const scrollPositions = useRef({ deliveries: 0, passport: 0 });
 
   useEffect(() => {
     let active = true;
@@ -146,12 +150,25 @@ export default function App({
 
   useEffect(() => {
     const onPopState = () => {
-      setOpenParcelId(new URLSearchParams(window.location.search).get('parcel'));
+      const params = new URLSearchParams(window.location.search);
+      setOpenParcelId(params.get('parcel'));
+      setTab(params.get('view') === 'passport' ? 'passport' : 'deliveries');
     };
     onPopState();
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
+
+  function switchTab(next: 'deliveries' | 'passport') {
+    if (next === tab) return;
+    scrollPositions.current[tab] = window.scrollY;
+    const url = new URL(window.location.href);
+    if (next === 'passport') url.searchParams.set('view', next);
+    else url.searchParams.delete('view');
+    window.history.pushState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    setTab(next);
+    requestAnimationFrame(() => window.scrollTo({ top: scrollPositions.current[next], behavior: 'instant' }));
+  }
 
   function openParcelDetail(packageId: string) {
     const url = new URL(window.location.href);
@@ -212,15 +229,12 @@ export default function App({
     () => visibleParcels.filter(isActiveParcel),
     [visibleParcels],
   );
+  const nextParcel = useMemo(() => hasCustomView ? null : nextPriorityParcel(parcels, viewNow), [parcels, viewNow, hasCustomView]);
+  const nextAttention = nextParcel ? parcelAttention(nextParcel, viewNow) : null;
   const prioritized = useMemo(
-    () => prioritizeActiveParcels(activeParcels, viewNow, parcelComparator(sort)),
-    [activeParcels, sort, viewNow],
+    () => prioritizeActiveParcels(activeParcels.filter((parcel) => parcel.id !== nextParcel?.id), viewNow, parcelComparator(sort)),
+    [activeParcels, nextParcel, sort, viewNow],
   );
-  const nextParcel = useMemo(
-    () => nextPriorityParcel(parcels, viewNow),
-    [parcels, viewNow],
-  );
-  const nextEstimate = nextParcel ? parcelDeliveryEstimate(nextParcel, viewNow) : null;
   const activeCount = useMemo(
     () => parcels.filter(isActiveParcel).length,
     [parcels],
@@ -240,10 +254,6 @@ export default function App({
       visibleParcels.filter((parcel) => Boolean(parcel.archivedAt)),
     ),
     [visibleParcels],
-  );
-  const deliveredTotalCount = useMemo(
-    () => parcels.filter((parcel) => isDelivered(parcel.events)).length,
-    [parcels],
   );
   const lastDpdPostcode = useMemo(
     () => [...parcels]
@@ -307,121 +317,23 @@ export default function App({
     }
   }
 
-  const summaryMessage = loading
-    ? t('app.opening')
-    : error && parcels.length === 0
-      ? t('app.loadFailed')
-      : activeCount === 0
-        ? t('app.noneOnWay')
-        : null;
-
   return (
-    <div className="app">
+    <div className="app" onClickCapture={focusClickedButton}>
+      <a className="skip-link" href="#main-content">{t('web.skipContent')}</a>
       <header className="app__header">
         <div className="app__masthead">
-          <div className="app__brand">
-            <span className="app__brand-mark" aria-hidden="true">P</span>
-            <h1 className="app__title">{t('app.title')}</h1>
-          </div>
-          <div className="app__header-cluster">
-            <div className="app__header-actions">
-              {(!accountEmail || !onSignOut) && (
-                <LanguageControl className="language-control--header" />
-              )}
-              {mode === 'api' && <NotificationControl apiAuth={apiAuth} />}
-              <button
-                type="button"
-                className="icon-button"
-                aria-label={refreshing ? t('app.refreshing') : t('app.refresh')}
-                aria-busy={refreshing}
-                onClick={() => void refreshAll()}
-                disabled={refreshing}
-              >
-                <svg
-                  className={refreshing ? 'spin' : undefined}
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M19 8a7.5 7.5 0 1 0 .2 7.6M19 4v4h-4" />
-                </svg>
-              </button>
-              {accountEmail && onSignOut && (
-                <AccountMenu
-                  email={accountEmail}
-                  onExport={onExportAccount}
-                  onDelete={onDeleteAccount}
-                  onSignOut={onSignOut}
-                />
-              )}
-            </div>
-            <button
-              type="button"
-              className="app__add-button"
-              aria-label={t('app.addParcelAria')}
-              onClick={() => setAdding(true)}
-            >
-              <svg aria-hidden="true" viewBox="0 0 24 24">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-              <span>{t('app.addParcel')}</span>
-            </button>
-          </div>
-        </div>
-        <div className="app__summary" aria-live="polite">
-          <div className="app__summary-overview">
-            <p className="app__summary-kicker">{t('app.eyebrow')}</p>
-            <div className="app__summary-count">
-              <strong>{loading ? '—' : activeCount}</strong>
-              <span>
-                {activeCount === 1 ? t('app.parcel.one') : t('app.parcel.many')}
-                <br />
-                {t('app.onTheWay')}
-              </span>
-            </div>
-          </div>
-          {nextParcel ? (
-            <button
-              type="button"
-              className="app__next"
-              aria-label={`${t('app.nextUp')}: ${nextParcel.label || t('common.parcel')}`}
-              aria-haspopup="dialog"
-              onClick={() => openParcelDetail(nextParcel.id)}
-            >
-              <span className="app__next-copy">
-                <span>{t('app.nextUp')}</span>
-                <strong>{nextParcel.label || t('common.parcel')}</strong>
-                <small>
-                  {nextEstimate
-                    ? localizedExpectedDelivery(nextEstimate, t, languageTag)
-                    : t(parcelDisplayStatusKey(nextParcel))}
-                </small>
-              </span>
-              <svg aria-hidden="true" viewBox="0 0 20 20"><path d="m8 5 5 5-5 5" /></svg>
-            </button>
-          ) : summaryMessage ? <p className="app__subtitle">{summaryMessage}</p> : null}
-          {!loading && parcels.length > 0 && (
-            <div className="app__summary-stats">
-              <span>
-                <strong>{parcels.length}</strong>
-                {parcels.length === 1 ? t('app.parcel.one') : t('app.parcel.many')}
-              </span>
-              <span>
-                <strong>{deliveredTotalCount}</strong>
-                {t('stage.delivered')}
-              </span>
-            </div>
-          )}
+          <span className="app__wordmark"><Icon name="parcel" />{t('app.title')}</span>
+          <button type="button" className="app__add-button" aria-label={t('app.addParcelAria')} onClick={() => setAdding(true)}><Icon name="plus" /><span>{t('app.addParcel')}</span></button>
+          <h1 className="app__title">{t(tab === 'deliveries' ? 'native.deliveries' : 'passport.title')}</h1>
+          <nav className="app__navigation" aria-label={t('app.title')}>
+            <button type="button" aria-current={tab === 'deliveries' ? 'page' : undefined} onClick={() => switchTab('deliveries')}><Icon name="parcel" /><span>{t('native.deliveries')}</span></button>
+            <button type="button" aria-current={tab === 'passport' ? 'page' : undefined} onClick={() => switchTab('passport')}><Icon name="passport" /><span>{t('passport.title')}</span></button>
+          </nav>
+          <AccountMenu email={accountEmail} onExport={onExportAccount} onDelete={onDeleteAccount} onSignOut={onSignOut} onExitDemo={onExitDemo} apiAuth={apiAuth} />
         </div>
       </header>
-
-      <main className="app__content">
-        {mode === 'demo' && (
-          <div className="demo-banner">
-            <span className="demo-banner__stamp">{t('app.demo')}</span>
-            <span>{t('app.demoDescription')}</span>
-          </div>
-        )}
-
+      {mode === 'demo' && <div className="demo-banner"><span>{t('app.demo')}</span>{onExitDemo && <button type="button" onClick={onExitDemo}>{t('native.exitDemo')}<Icon name="close" /></button>}</div>}
+      <main className="app__content" id="main-content">
         {error && (
           <div className="error-banner" role="alert">
             <strong>
@@ -448,6 +360,9 @@ export default function App({
           </div>
         )}
 
+        <div className="deliveries-page" hidden={tab !== 'deliveries'}>
+        <div className="delivery-overview"><span className="delivery-overview__count"><i aria-hidden="true" /><strong>{loading ? '—' : activeCount}</strong> {t('design.active')}</span><button type="button" className="icon-button" aria-label={refreshing ? t('app.refreshing') : t('app.refresh')} aria-busy={refreshing} disabled={refreshing} onClick={() => void refreshAll()}><Icon name="refresh" className={refreshing ? 'spin' : undefined} /></button></div>
+        {!loading && nextParcel && <div className="delivery-next"><ParcelCard parcel={nextParcel} variant="hero" notice={nextAttention ? t(ATTENTION_LABELS[nextAttention]) : undefined} onOpen={(parcel) => openParcelDetail(parcel.id)} onArchive={handleArchive} /></div>}
         {!loading && parcels.length > 0 && (
           <div className="parcel-view-shell">
             <button
@@ -502,10 +417,11 @@ export default function App({
 
         {!loading && !error && parcels.length === 0 && (
           <div className="empty-state">
-            <div className="empty-state__mailbox" aria-hidden="true"><span /></div>
+            <ParcelIllustration className="empty-state__parcel" />
             <p className="empty-state__eyebrow">{t('app.emptyEyebrow')}</p>
             <h2>{t('app.emptyTitle')}</h2>
             <p>{t('app.emptyDescription')}</p>
+            <button className="button button--primary" type="button" onClick={() => setAdding(true)}><Icon name="plus" />{t('app.addParcel')}</button>
           </div>
         )}
 
@@ -659,6 +575,8 @@ export default function App({
           </section>
         )}
         </div>
+        </div>
+        {tab === 'passport' && <Passport parcels={parcels} loading={loading} />}
       </main>
 
       {adding && (
@@ -674,6 +592,8 @@ export default function App({
 
       {openParcel && (
         <ParcelDetail
+          key={openParcel.id}
+          onExitDemo={onExitDemo}
           parcel={openParcel}
           onBack={closeParcelDetail}
           onRename={(p, label) => renameParcel(p.id, label)}

@@ -1,4 +1,10 @@
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useRef, type RefObject, type MouseEvent } from 'react';
+
+/** Safari leaves clicked buttons unfocused; preserve the actual modal launcher. */
+export function focusClickedButton(event: MouseEvent<HTMLElement>) {
+  const target = event.target instanceof Element ? event.target.closest<HTMLElement>('button, summary') : null;
+  if (target && !target.matches(':disabled')) target.focus({ preventScroll: true });
+}
 
 const FOCUSABLE = [
   'a[href]',
@@ -99,7 +105,8 @@ export function useModalDialog<T extends HTMLElement>(
       if (active instanceof HTMLDialogElement && typeof active.showModal === 'function') return;
       if (event.key === 'Escape') {
         event.preventDefault();
-        closeRef.current();
+        if (active instanceof HTMLDialogElement) active.dispatchEvent(new Event('cancel', { cancelable: true }));
+        else closeRef.current();
         return;
       }
       if (event.key !== 'Tab') return;
@@ -135,7 +142,7 @@ export function useModalDialog<T extends HTMLElement>(
         unlockBackground = null;
       }
       if (wasTopmost) {
-        if (returnFocus?.isConnected && !returnFocus.closest('[inert]')) returnFocus.focus();
+        if (returnFocus?.isConnected && !returnFocus.closest('[inert]')) returnFocus.focus({ preventScroll: true });
         if (document.activeElement === document.body && modals.length > 0) {
           const parent = modals.at(-1)!.element;
           (focusableElements(parent)[0] ?? parent).focus();
@@ -145,4 +152,44 @@ export function useModalDialog<T extends HTMLElement>(
   }, [open, initialFocus]);
 
   return dialog;
+}
+
+/** Keep focus trapped until the panel has finished its short dismissal. */
+export function useSheetDialog<T extends HTMLElement>(
+  open: boolean,
+  onClose: () => void,
+  initialFocus?: RefObject<HTMLElement | null>,
+): readonly [RefObject<T | null>, () => void] {
+  const finish = useRef(onClose);
+  const closing = useRef(false);
+  const alive = useRef(true);
+  useEffect(() => { finish.current = onClose; }, [onClose]);
+  useEffect(() => {
+    alive.current = true;
+    closing.current = false;
+    return () => { alive.current = false; };
+  }, [open]);
+  const dialog = useModalDialog<T>(open, dismiss, initialFocus);
+  function dismiss() {
+    if (closing.current) return;
+    const element = dialog.current;
+    if (!element?.animate || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      finish.current();
+      return;
+    }
+    closing.current = true;
+    const isDetail = element.classList.contains('detail');
+    const animation = element.animate([
+      { opacity: 1, transform: 'translate(0, 0)' },
+      { opacity: 0, transform: isDetail ? 'translateX(24px)' : 'translateY(28px)' },
+    ], { duration: 160, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
+    element.closest('.sheet-backdrop')?.animate([
+      { backgroundColor: 'rgba(15,22,15,.28)' },
+      { backgroundColor: 'rgba(15,22,15,0)' },
+    ], { duration: 160, fill: 'forwards' });
+    void animation.finished.catch(() => undefined).then(() => {
+      if (alive.current) finish.current();
+    });
+  }
+  return [dialog, dismiss] as const;
 }

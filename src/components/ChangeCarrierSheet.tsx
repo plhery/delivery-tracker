@@ -11,7 +11,7 @@ import {
   tracksAutomatically,
 } from '../lib/carriers';
 import { useI18n } from '../i18n';
-import { useModalDialog } from '../lib/modal';
+import { useSheetDialog } from '../lib/modal';
 import type {
   CarrierId,
   ParcelCarrierInput,
@@ -21,7 +21,7 @@ import type {
 export function ChangeCarrierSheet({
   parcel,
   onChange,
-  onClose,
+  onClose: onDismissed,
 }: {
   parcel: ParcelWithEvents;
   onChange: (input: ParcelCarrierInput) => Promise<unknown>;
@@ -34,7 +34,7 @@ export function ChangeCarrierSheet({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const carrierSelect = useRef<HTMLSelectElement>(null);
-  const dialog = useModalDialog<HTMLDivElement>(true, onClose, carrierSelect);
+  const [dialog, onClose] = useSheetDialog<HTMLDivElement>(true, onDismissed, carrierSelect);
   const carrier = carrierInfo(selectedCarrier, locale);
   const requirements = carrierRequirements(selectedCarrier, parcel.trackingNumber);
   const valueFor = (field: CarrierInputField) => field === 'trackingUrl'

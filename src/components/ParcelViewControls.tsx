@@ -78,6 +78,7 @@ export function ParcelViewControls({
         <button
           type="button"
           className={`parcel-view__filter-button${activeFilterCount ? ' parcel-view__filter-button--active' : ''}`}
+          aria-label={advancedOpen ? t('view.hideFilters') : t('view.filters')}
           aria-expanded={advancedOpen}
           aria-controls={`${id}-advanced`}
           onClick={onToggleAdvanced}

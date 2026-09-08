@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { localizedEventDescription, stageLabel, useI18n } from '../i18n';
 import { currentEvent, sortEventsDesc, stageMeta } from '../lib/stages';
 import type { TrackingEvent } from '../types';
@@ -6,12 +7,16 @@ import type { TrackingEvent } from '../types';
 export function Timeline({
   events,
   syncing = false,
+  preview = false,
 }: {
   events: TrackingEvent[];
   syncing?: boolean;
+  preview?: boolean;
 }) {
   const { languageTag, t } = useI18n();
+  const [expanded, setExpanded] = useState(false);
   const sorted = sortEventsDesc(events);
+  const visible = preview && !expanded ? sorted.slice(0, 3) : sorted;
   const current = currentEvent(events);
 
   if (sorted.length === 0) {
@@ -25,8 +30,9 @@ export function Timeline({
   }
 
   return (
+    <>
     <ol className="timeline" aria-label={t('timeline.label')}>
-      {sorted.map((event) => {
+      {visible.map((event) => {
         const meta = stageMeta(event.stage);
         const isCurrent = event.id === current?.id;
         return (
@@ -48,15 +54,16 @@ export function Timeline({
               <div className="timeline__description">{localizedEventDescription(event.description, t)}</div>
               <div className="timeline__meta">
                 {event.location ? `${event.location} · ` : ''}
-                {new Intl.DateTimeFormat(languageTag, {
-                  dateStyle: 'short',
-                  timeStyle: 'short',
-                }).format(new Date(event.occurredAt))}
+                {Number.isFinite(Date.parse(event.occurredAt)) ? new Intl.DateTimeFormat(languageTag, {
+                  dateStyle: 'medium', timeStyle: 'short',
+                }).format(new Date(event.occurredAt)) : event.occurredAt}
               </div>
             </div>
           </li>
         );
       })}
     </ol>
+    {preview && sorted.length > 3 && <button type="button" className="timeline-expand" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{t(expanded ? 'design.lessJourney' : 'design.fullJourney')}<span aria-hidden="true">{expanded ? '−' : '+'}</span></button>}
+    </>
   );
 }

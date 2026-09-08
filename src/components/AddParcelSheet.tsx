@@ -16,12 +16,13 @@ import {
   type CarrierId,
   type NewParcelInput,
 } from '../types';
-import { useModalDialog } from '../lib/modal';
+import { useSheetDialog } from '../lib/modal';
 import { useI18n } from '../i18n';
+import { Icon } from './Icon';
 
 export function AddParcelSheet({
   onAdd,
-  onClose,
+  onClose: onDismissed,
   lastDpdPostcode,
   initialLabel = '',
   initialTrackingInput = '',
@@ -51,7 +52,8 @@ export function AddParcelSheet({
   const [existingParcelId, setExistingParcelId] = useState<string | null>(null);
   const [pasteError, setPasteError] = useState<string | null>(null);
   const trackingInput = useRef<HTMLTextAreaElement>(null);
-  const dialog = useModalDialog<HTMLDivElement>(true, onClose, trackingInput);
+  const titleInput = useRef<HTMLInputElement>(null);
+  const [dialog, onClose] = useSheetDialog<HTMLDivElement>(true, onDismissed, titleInput);
 
   const parsedTracking = parseTrackingInput(trackingInputValue);
   const trackingNumber = parsedTracking.trackingNumber;
@@ -98,7 +100,7 @@ export function AddParcelSheet({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!trackingNumber.trim() || saving) return;
+    if (!trackingNumber.trim() || requiresCarrierConfirmation || !requirementsSatisfied || saving) return;
     setSaving(true);
     setError(null);
     setExistingParcelId(null);
@@ -130,7 +132,7 @@ export function AddParcelSheet({
     <div className="sheet-backdrop" onClick={onClose}>
       <div
         ref={dialog}
-        className="sheet"
+        className="sheet add-parcel-sheet"
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-parcel-title"
@@ -140,7 +142,6 @@ export function AddParcelSheet({
         <div className="sheet__grabber" aria-hidden="true" />
         <div className="sheet__heading">
           <div>
-            <p className="sheet__eyebrow">{t('add.eyebrow')}</p>
             <h2 className="sheet__title" id="add-parcel-title">{t('add.title')}</h2>
           </div>
           <button
@@ -149,13 +150,23 @@ export function AddParcelSheet({
             aria-label={t('common.close')}
             onClick={onClose}
           >
-            ×
+            <Icon name="close" />
           </button>
         </div>
-        <p className="sheet__intro">
-          {t('add.intro')}
-        </p>
         <form onSubmit={handleSubmit} className="sheet__form">
+          <label className="field">
+            <span className="field__label">{t('design.parcelTitle')} <small>{t('add.optional')}</small></span>
+            <input
+              className="field__input"
+              type="text"
+              ref={titleInput}
+              value={label}
+              placeholder={t('add.contentsPlaceholder')}
+              onChange={(e) => setLabel(e.target.value)}
+              maxLength={80}
+            />
+          </label>
+
           <div className="field">
             <div className="field__label">
               <label htmlFor="add-parcel-tracking">{t('add.tracking')}</label>
@@ -164,7 +175,7 @@ export function AddParcelSheet({
                 className="field__inline-action"
                 onClick={() => void pasteTrackingInput()}
               >
-                {t('add.paste')}
+                <Icon name="copy" />{t('add.paste')}
               </button>
             </div>
             <textarea
@@ -209,7 +220,7 @@ export function AddParcelSheet({
                   ? t('add.detectedCarrier')
                   : t('add.carrier')}</small>
                 <strong>{carrier.name}</strong>
-                <span>{carrierHint}</span>
+                {(requiresCarrierConfirmation || !tracksAutomatically(carrier.id)) && <span>{carrierHint}</span>}
               </span>
               {!requiresCarrierConfirmation
                 && (selectedCarrier !== 'auto' || parsedTracking.carrier !== 'unknown') && (
@@ -291,17 +302,6 @@ export function AddParcelSheet({
                 )}
               </label>
             ))}
-          <label className="field">
-            <span className="field__label">{t('add.contents')} <small>{t('add.optional')}</small></span>
-            <input
-              className="field__input"
-              type="text"
-              value={label}
-              placeholder={t('add.contentsPlaceholder')}
-              onChange={(e) => setLabel(e.target.value)}
-              maxLength={80}
-            />
-          </label>
           {error && (
             <p className="sheet__error" role="alert">
               <span>{error}</span>

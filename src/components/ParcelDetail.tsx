@@ -23,14 +23,17 @@ import {
 } from '../lib/parcelStatus';
 import { currentEvent } from '../lib/stages';
 import { isBackSwipe, type TouchPoint } from '../lib/swipe';
-import { useModalDialog } from '../lib/modal';
+import { useSheetDialog } from '../lib/modal';
 import type { ParcelCarrierInput, ParcelWithEvents, SyncProgress } from '../types';
 import { ChangeCarrierSheet } from './ChangeCarrierSheet';
 import { Timeline } from './Timeline';
+import { Icon, PostageStamp } from './Icon';
+import { parcelIcon, parcelTone } from '../lib/parcelDesign';
+import { ProgressTrack } from './ProgressTrack';
 
 export function ParcelDetail({
   parcel,
-  onBack,
+  onBack: onDismissed,
   onRename,
   onChangeCarrier,
   onSetNotificationsMuted,
@@ -38,8 +41,10 @@ export function ParcelDetail({
   onRestore,
   onArchive,
   onDelete,
+  onExitDemo,
 }: {
   parcel: ParcelWithEvents;
+  onExitDemo?: () => void;
   onBack: () => void;
   onRename: (parcel: ParcelWithEvents, label: string) => Promise<unknown>;
   onChangeCarrier: (
@@ -88,20 +93,7 @@ export function ParcelDetail({
   const [notificationError, setNotificationError] = useState<string | null>(null);
   const backButton = useRef<HTMLButtonElement>(null);
   const actionsMenu = useRef<HTMLDetailsElement>(null);
-  const dialog = useModalDialog<HTMLDivElement>(true, () => {
-    if (editingCarrier) {
-      setEditingCarrier(false);
-      return;
-    }
-    if (confirmingDelete) {
-      if (!deleting) {
-        setConfirmingDelete(false);
-        setCheckError(null);
-      }
-      return;
-    }
-    onBack();
-  }, backButton);
+  const [dialog, onBack] = useSheetDialog<HTMLDivElement>(true, onDismissed, backButton);
 
   function beginTitleEdit() {
     setTitle(parcel.label);
@@ -239,7 +231,7 @@ export function ParcelDetail({
   return createPortal(
     <div
       ref={dialog}
-      className="detail"
+      className={`detail tone-${parcelTone(current?.stage)}`}
       role="dialog"
       aria-modal="true"
       aria-label={parcel.label || t('common.parcel')}
@@ -309,6 +301,7 @@ export function ParcelDetail({
         </details>
       </header>
 
+      {onExitDemo && <div className="demo-banner demo-banner--detail"><span>{t('app.demo')}</span><button type="button" onClick={onExitDemo}>{t('native.exitDemo')}<Icon name="close" /></button></div>}
       <section className="detail__hero">
         <div className="detail__hero-meta">
           <button
@@ -382,6 +375,7 @@ export function ParcelDetail({
               : localizedExpectedDelivery(estimate!, t, languageTag)}
           </p>
         )}
+        <div className="detail__progress"><ProgressTrack stage={current?.stage ?? null} /><PostageStamp icon={parcelIcon(current?.stage)} /></div>
         <div className="detail__shipment">
           <div className="detail__tracking-ticket">
             <span className="detail__tracking-label">{t('detail.trackingNumber')}</span>
@@ -469,7 +463,7 @@ export function ParcelDetail({
           <div className="detail__section-heading">
             <h2 className="detail__section-title">{t('detail.journey')}</h2>
           </div>
-          <Timeline events={parcel.events} syncing={status.syncing} />
+          <Timeline events={parcel.events} syncing={status.syncing} preview />
         </section>
       )}
 

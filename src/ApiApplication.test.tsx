@@ -67,6 +67,8 @@ const USER = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  window.localStorage.setItem('sdt.web.experience.v1', 'sign-in');
+  window.dispatchEvent(new Event('storage'));
   mocks.auth = {
     status: 'anonymous',
     user: null,

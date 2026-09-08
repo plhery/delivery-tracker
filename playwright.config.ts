@@ -1,5 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
+const port = process.env.PLAYWRIGHT_PORT ?? '4173';
+const baseURL = `http://127.0.0.1:${port}`;
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -11,7 +14,7 @@ export default defineConfig({
   workers: 2,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL,
     browserName: 'chromium',
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
@@ -29,20 +32,26 @@ export default defineConfig({
         isMobile: true,
       },
     },
+    {
+      name: 'mobile-webkit',
+      use: { browserName: 'webkit', viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true },
+    },
   ],
   webServer: {
     // CI exercises the self-contained production server; test:dev separately
     // verifies that the development compiler can serve a real page.
     command: process.env.CI
       ? 'npm run build && npm start'
-      : 'npm run dev -- --hostname 127.0.0.1 --port 4173',
+      : process.env.PLAYWRIGHT_PRODUCTION
+        ? 'npm start'
+        : `npm run dev -- --hostname 127.0.0.1 --port ${port}`,
     env: {
       HOSTNAME: '127.0.0.1',
       NEXT_PUBLIC_USE_API: 'false',
-      PORT: '4173',
+      PORT: port,
     },
     reuseExistingServer: !process.env.CI,
     timeout: process.env.CI ? 120_000 : 30_000,
-    url: 'http://127.0.0.1:4173',
+    url: baseURL,
   },
 });

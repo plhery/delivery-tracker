@@ -1,0 +1,33 @@
+/* Postal paper, ink, and the same restrained colors as the iOS app. */
+:root {
+  color-scheme: light;
+  --yellow: #f3cf48; --on-yellow: #20251e; --yellow-soft: #ffebab;
+  --ink: #20251e; --ink-soft: #657060; --canvas: #f4f5f1; --paper: #fff;
+  --control: #eceee7; --line: #dce0d5; --green: #24613e; --green-soft: #dcf0d7;
+  --blue: #22588a; --blue-soft: #daeafe; --orange: #963e19; --orange-text: #963e19; --orange-soft: #ffddc7;
+  --lilac: #654299; --lilac-soft: #e9deff; --rose: #9a3d5c; --rose-soft: #fadde7;
+  --ochre: #745300; --ochre-soft: #ffebab;
+  --shadow: 0 3px 15px rgb(25 35 20 / 4%);
+  --ease-out: cubic-bezier(.2,.8,.2,1); --spring: cubic-bezier(.22,1,.36,1);
+  --z-popover: 90;
+}
+:root[data-appearance="dark"] {
+  color-scheme: dark;
+  --ink: #f5f6f2; --ink-soft: #afb9a9; --canvas: #151915; --paper: #242824;
+  --control: #2e342d; --line: #3e463b; --green: #9be0b5; --green-soft: #243d2e;
+  --blue: #9bcbff; --blue-soft: #213a51; --orange: #ffb184; --orange-text: #ffb184; --orange-soft: #4c3123;
+  --lilac: #d1b5ff; --lilac-soft: #382d4c; --rose: #ffadc8; --rose-soft: #482c39;
+  --ochre: #ffd65f; --ochre-soft: #443918; --yellow-soft: #443918;
+  --shadow: 0 3px 16px rgb(0 0 0 / 10%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-appearance="light"]):not([data-appearance="dark"]) {
+    color-scheme: dark;
+    --ink: #f5f6f2; --ink-soft: #afb9a9; --canvas: #151915; --paper: #242824;
+    --control: #2e342d; --line: #3e463b; --green: #9be0b5; --green-soft: #243d2e;
+    --blue: #9bcbff; --blue-soft: #213a51; --orange: #ffb184; --orange-text: #ffb184; --orange-soft: #4c3123;
+    --lilac: #d1b5ff; --lilac-soft: #382d4c; --rose: #ffadc8; --rose-soft: #482c39;
+    --ochre: #ffd65f; --ochre-soft: #443918; --yellow-soft: #443918;
+    --shadow: 0 3px 16px rgb(0 0 0 / 10%);
+  }
+}

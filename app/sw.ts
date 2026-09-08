@@ -1,6 +1,6 @@
 import { defaultCache } from '@serwist/next/worker';
 import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
-import { NetworkOnly, Serwist } from 'serwist';
+import { ExpirationPlugin, NetworkFirst, NetworkOnly, Serwist } from 'serwist';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -123,6 +123,20 @@ const serwist = new Serwist({
         !sameOrigin || url.pathname.startsWith('/api/') || url.pathname === '/health'
       ),
       handler: new NetworkOnly(),
+    },
+    {
+      matcher: ({ sameOrigin, request }) => sameOrigin && request.mode === 'navigate',
+      handler: new NetworkFirst({
+        cacheName: 'pages',
+        plugins: [
+          new ExpirationPlugin({ maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 }),
+          {
+            // Next's router needs the fallback's real URL when it hydrates.
+            // The target itself is precached and works without a network.
+            handlerDidError: async () => Response.redirect(new URL('/~offline', self.location.origin).href, 302),
+          },
+        ],
+      }),
     },
     ...defaultCache,
   ],

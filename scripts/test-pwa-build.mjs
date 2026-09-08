@@ -11,7 +11,7 @@ const [worker, workerSource, pushWorker, manifestText, privacy, offline, ogImage
   readFile(resolve(root, 'public/push-sw.js'), 'utf8'),
   readFile(resolve(next, 'server/app/manifest.webmanifest.body'), 'utf8'),
   readFile(resolve(root, 'public/privacy.html'), 'utf8'),
-  readFile(resolve(next, 'server/app/~offline.html'), 'utf8'),
+  readFile(resolve(root, 'app/~offline/page.tsx'), 'utf8'),
   readFile(resolve(root, 'public/og.png')),
   readdir(staticDirectory, { recursive: true, withFileTypes: true }),
 ]);
@@ -42,8 +42,9 @@ assert.match(worker, /cleanupOutdatedCaches/, 'old precaches must be removed');
 assert.match(worker, /push-sw\.js/, 'the push handler must be loaded');
 assert.match(worker, /privacy\.html/, 'the privacy notice must be cached for offline access');
 assert.match(worker, /~offline/, 'offline navigations must use the dedicated Next.js fallback');
-assert.match(offline, /You’re offline/, 'the offline fallback must be rendered during the build');
-assert.match(offline, /Delivery Tracker/, 'the offline fallback must use the public product name');
+assert.match(worker, /["']?revision["']?:["'][a-f0-9]{64}["'],["']?url["']?:["']\/~offline["']/, 'the offline document must be explicitly precached with a build revision');
+assert.match(offline, /await connection\(\)/, 'offline HTML must render with its matching CSP nonce');
+assert.match(offline, /FeedbackScreen/, 'offline must use the shared translated screen');
 assert.match(pushWorker, /addEventListener\(['"]push['"]/, 'push events must be handled');
 assert.match(pushWorker, /showNotification\(/, 'push events must display a notification');
 assert.match(pushWorker, /addEventListener\(['"]notificationclick['"]/, 'notification clicks must be handled');

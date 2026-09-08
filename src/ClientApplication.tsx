@@ -10,6 +10,9 @@ import { enableAppBadgeClearing } from './lib/pushNotifications';
 import { enablePwaLiveReload, registerPwaServiceWorker } from './lib/pwaUpdates';
 import { createDemoRepo } from './store/demoRepo';
 import { ParcelsProvider } from './store/ParcelsContext';
+import { AppearanceProvider } from './lib/appearance';
+import { useEntryExperience } from './lib/experience';
+import { ArrivalScreen } from './components/ArrivalScreen';
 
 export function shouldUseDemoRepository(
   nodeEnvironment: string | undefined,
@@ -38,6 +41,7 @@ export function ClientApplication() {
     () => useDemo ? createDemoRepo() : null,
     [],
   );
+  const experience = useEntryExperience();
 
   useEffect(() => {
     const disableReload = enablePwaLiveReload();
@@ -53,15 +57,21 @@ export function ClientApplication() {
 
   return (
     <I18nProvider>
+      <AppearanceProvider>
       {demoRepo ? (
-        <ParcelsProvider repo={demoRepo}>
-          <App />
-        </ParcelsProvider>
+        experience.screen === 'demo' ? (
+          <ParcelsProvider repo={demoRepo}>
+            <App onExitDemo={() => experience.navigate('sign-in')} />
+          </ParcelsProvider>
+        ) : <ArrivalScreen screen={experience.screen} onNavigate={experience.navigate}
+          configured={false} googleEnabled={false} emailOtpEnabled={false}
+          sendCode={async () => undefined} verifyCode={async () => undefined} />
       ) : (
         <AuthProvider config={authConfig}>
           <ApiApplication />
         </AuthProvider>
       )}
+      </AppearanceProvider>
     </I18nProvider>
   );
 }

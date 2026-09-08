@@ -155,7 +155,7 @@ function seedParcels(now: number): ParcelWithEvents[] {
   };
   coffee.events = [
     event(coffee.id, 'registered', iso(72 * HOUR)),
-    event(coffee.id, 'accepted', iso(60 * HOUR)),
+    { ...event(coffee.id, 'accepted', iso(60 * HOUR)), location: 'Zürich, Switzerland' },
     event(coffee.id, 'in_transit', iso(40 * HOUR)),
     event(coffee.id, 'out_for_delivery', iso(28 * HOUR)),
     event(coffee.id, 'delivered', iso(26 * HOUR)),
@@ -172,7 +172,7 @@ function seedParcels(now: number): ParcelWithEvents[] {
   };
   sneakers.events = [
     event(sneakers.id, 'registered', iso(30 * HOUR)),
-    event(sneakers.id, 'accepted', iso(20 * HOUR)),
+    { ...event(sneakers.id, 'accepted', iso(20 * HOUR)), location: 'Hamburg, Germany' },
     event(sneakers.id, 'in_transit', iso(10 * HOUR)),
     event(sneakers.id, 'out_for_delivery', iso(2 * HOUR)),
   ];
@@ -188,7 +188,7 @@ function seedParcels(now: number): ParcelWithEvents[] {
   };
   gift.events = [
     event(gift.id, 'registered', iso(50 * HOUR)),
-    event(gift.id, 'accepted', iso(44 * HOUR)),
+    { ...event(gift.id, 'accepted', iso(44 * HOUR)), location: 'Lyon, France' },
     event(gift.id, 'customs', iso(12 * HOUR)),
   ];
 
