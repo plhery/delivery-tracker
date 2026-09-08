@@ -108,7 +108,23 @@ export function ParcelIllustration({ className = '' }: { className?: string }) {
       <ParcelFlap points={[[245, 142], [150, 190], [110, 142], [205, 95]]} openedCorner={[186, 231]} tone="#D1AE85" hidden />
       <ParcelFlap points={[[55, 142], [150, 190], [197.5, 166], [102.5, 118.5]]} openedCorner={[121, 234]} tone="#DDBD96" />
       <g className="parcel-illustration__tape"><path d="m96 122 13-7 95 48-13 7-95-48Z" fill="#EBDDCA" /><path d="m103 119 94 47" stroke="#AF9474" strokeOpacity=".6" strokeWidth="1" strokeDasharray="3 3" /></g>
-      <g className="parcel-illustration__glints" fill="#C9A47B"><path d="m70 84 2-6 2 6 6 2-6 2-2 6-2-6-6-2Z" /><circle cx="225" cy="86" r="2.5" /><path d="m202 52 1.5-4 1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5Z" /><circle cx="93" cy="58" r="1.5" /></g>
+      <g className="parcel-illustration__glints">
+        {[
+          { x: 43, y: 96, size: 23, color: '#C99B35' },
+          { x: 91, y: 57, size: 16, color: '#D6AE48' },
+          { x: 151, y: 36, size: 24, color: '#C99B35' },
+          { x: 216, y: 55, size: 18, color: '#B594BE' },
+          { x: 261, y: 96, size: 25, color: '#D6AE48' },
+          { x: 233, y: 145, size: 13, color: '#C99B35' },
+        ].map(({ x, y, size, color }, index) => <g key={index} transform={`translate(${x} ${y})`}>
+          <g className="parcel-illustration__sparkle" style={{
+            '--sparkle-x': `${(150 - x) * .55}px`, '--sparkle-y': `${(140 - y) * .7}px`,
+            '--sparkle-delay': `${index % 3 * .055}s`,
+          } as CSSProperties}>
+            <path d="M0 -1 .24 -.24 1 0 .24 .24 0 1 -.24 .24 -1 0 -.24 -.24Z" transform={`scale(${size / 2})`} fill={color} />
+          </g>
+        </g>)}
+      </g>
     </g>
   </svg>;
 }

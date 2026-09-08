@@ -27,6 +27,20 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertEqual(landscape.y, 0, accuracy: 0.0001)
     }
 
+    func testArrivalTiltRespondsGentlyToAccelerationAndRejectsInvalidSamples() {
+        var tilt = ArrivalTilt()
+        tilt.follow(roll: 0, pitch: 0, accelerationX: 0.35, accelerationY: 0.35)
+        XCTAssertGreaterThan(tilt.x, 0)
+        XCTAssertLessThan(tilt.y, 0)
+        XCTAssertLessThan(abs(tilt.x) + abs(tilt.y), 0.1)
+        let previous = tilt
+        tilt.follow(roll: 0, pitch: 0, accelerationX: .nan)
+        XCTAssertEqual(tilt, previous)
+        for _ in 0..<60 { tilt.follow(roll: 0, pitch: 0) }
+        XCTAssertEqual(tilt.x, 0, accuracy: 0.0001)
+        XCTAssertEqual(tilt.y, 0, accuracy: 0.0001)
+    }
+
     @MainActor
     func testArchiveRecognizerDeclinesVerticalDragsBeforeTheyCanBlockScrolling() {
         let delegate = ArchivePanGestureDelegate()

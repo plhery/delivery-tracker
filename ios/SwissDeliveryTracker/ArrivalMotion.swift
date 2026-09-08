@@ -7,11 +7,15 @@ struct ArrivalTilt: Equatable, Sendable {
     var x: Double = 0
     var y: Double = 0
 
-    mutating func follow(roll: Double, pitch: Double, quarterTurns: Int = 0) {
-        guard roll.isFinite, pitch.isFinite else { return }
+    mutating func follow(roll: Double, pitch: Double, accelerationX: Double = 0, accelerationY: Double = 0, quarterTurns: Int = 0) {
+        guard roll.isFinite, pitch.isFinite, accelerationX.isFinite, accelerationY.isFinite else { return }
+        // Device motion separates gravity from translation: a small inertial
+        // response makes the paper feel weighted even without rotating the phone.
+        let horizontalInput = roll / 0.36 + min(1, max(-1, accelerationX * 2)) * 0.16
+        let verticalInput = pitch / 0.36 - min(1, max(-1, accelerationY * 2)) * 0.16
         let angle = Double(quarterTurns) * .pi / 2
-        let horizontal = (roll * cos(angle) + pitch * sin(angle)) / 0.44
-        let vertical = (pitch * cos(angle) - roll * sin(angle)) / 0.44
+        let horizontal = horizontalInput * cos(angle) + verticalInput * sin(angle)
+        let vertical = verticalInput * cos(angle) - horizontalInput * sin(angle)
         // A low-pass filter removes hand tremor; output can never exceed ±1.
         x += (min(1, max(-1, horizontal)) - x) * 0.22
         y += (min(1, max(-1, vertical)) - y) * 0.22
@@ -47,7 +51,8 @@ final class ArrivalMotion: ObservableObject {
     }
 
     private func sample() {
-        guard let attitude = manager.deviceMotion?.attitude else { return }
+        guard let sample = manager.deviceMotion else { return }
+        let attitude = sample.attitude
         let currentOrientation = (UIApplication.shared.connectedScenes
             .first { $0.activationState == .foregroundActive } as? UIWindowScene)?.interfaceOrientation ?? .portrait
         if orientation != currentOrientation {
@@ -61,9 +66,11 @@ final class ArrivalMotion: ObservableObject {
         }
         guard let relative = attitude.copy() as? CMAttitude else { return }
         relative.multiply(byInverseOf: reference)
-        let turns = currentOrientation == .landscapeLeft ? 1 : currentOrientation == .landscapeRight ? -1 : 0
+        let turns = currentOrientation == .landscapeLeft ? 1 : currentOrientation == .landscapeRight ? -1 : currentOrientation == .portraitUpsideDown ? 2 : 0
         var next = tilt
-        next.follow(roll: relative.roll, pitch: relative.pitch, quarterTurns: turns)
+        next.follow(roll: relative.roll, pitch: relative.pitch,
+                    accelerationX: sample.userAcceleration.x, accelerationY: sample.userAcceleration.y,
+                    quarterTurns: turns)
         if abs(next.x - tilt.x) + abs(next.y - tilt.y) > 0.0005 { tilt = next }
     }
 

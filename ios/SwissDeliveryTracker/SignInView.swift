@@ -33,7 +33,10 @@ struct ArrivalView: View {
                     .transition(.opacity)
             } else {
                 SignInView(configured: session.configuration.authenticationConfigured, onBack: goBack)
-                    .transition(.opacity)
+                    .transition(.asymmetric(
+                        insertion: .opacity.animation(.easeOut(duration: reduceMotion ? 0.15 : 0.35).delay(reduceMotion ? 0 : 0.25)),
+                        removal: .opacity
+                    ))
             }
         }
         .overlayPreferenceValue(ArrivalParcelFrame.self) { frames in
@@ -47,18 +50,19 @@ struct ArrivalView: View {
                                 tilt: currentTilt,
                                 lift: animateGreeting ? pose.lift : 0,
                                 sway: animateGreeting ? pose.angle : 0,
-                                pressed: isPressed
+                                pressed: isPressed,
+                                celebrating: opening
                             )
-                            .animation(.linear(duration: 0.07), value: currentTilt)
-                            .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isPressed)
+                            .animation(.easeOut(duration: opening ? 0.35 : 0.07), value: currentTilt)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.64), value: isPressed)
                         } keyframes: { _ in
                             KeyframeTrack(\.lift) {
-                                CubicKeyframe(-7, duration: 2.3)
+                                CubicKeyframe(-9, duration: 2.3)
                                 CubicKeyframe(0, duration: 2.3)
                             }
                             KeyframeTrack(\.angle) {
-                                CubicKeyframe(0.7, duration: 2.3)
-                                CubicKeyframe(-0.5, duration: 2.3)
+                                CubicKeyframe(1.1, duration: 2.3)
+                                CubicKeyframe(-0.8, duration: 2.3)
                             }
                         }
                         .frame(width: 300, height: 310)
@@ -101,6 +105,7 @@ struct ArrivalView: View {
 
     private func unwrap() {
         guard !opening, screen == .welcome else { return }
+        pressed = false
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.95)) {
             opening = true
         }
@@ -295,9 +300,12 @@ struct SignInView: View {
                 Text(localizer.text("auth.privacy"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Link(localizer.text("auth.readPrivacy"), destination: session.configuration.privacyURL)
-                    .font(.caption.weight(.semibold))
-                    .tint(Brand.ink)
+                Link(destination: session.configuration.privacyURL) {
+                    Text(localizer.text("auth.readPrivacy"))
+                        .font(.caption)
+                        .underline(color: Color(uiColor: .tertiaryLabel))
+                }
+                .tint(Color(uiColor: .secondaryLabel))
             }
             Spacer(minLength: 0)
         }
@@ -735,6 +743,7 @@ private struct UnwrappingParcel: View, Animatable {
     var lift: CGFloat = 0
     var sway: Double = 0
     var pressed = false
+    var celebrating = false
 
     var animatableData: Double {
         get { open }
@@ -749,10 +758,10 @@ private struct UnwrappingParcel: View, Animatable {
             let anticipation = reduceMotion ? 0 : max(0, 1 - abs(open - 0.12) / 0.12)
             ZStack {
                 Ellipse()
-                    .fill(.black.opacity(pressed ? 0.12 : 0.08 + Double(lift) * 0.004))
-                    .frame(width: 180 + lift * 3, height: pressed ? 15 : 20)
+                    .fill(.black.opacity(pressed ? 0.14 : 0.08 + Double(lift) * 0.004))
+                    .frame(width: pressed ? 188 : 180 + lift * 3, height: pressed ? 13 : 20)
                     .blur(radius: 9)
-                    .position(x: 151 - tilt.x * 4, y: 286 - tilt.y * 2)
+                    .position(x: 151 - tilt.x * 7, y: 286 - tilt.y * 3)
 
                 ZStack {
                     polygon([(55, 142), (150, 95), (245, 142), (150, 190)])
@@ -779,9 +788,13 @@ private struct UnwrappingParcel: View, Animatable {
 
                     // A small delivery card rises from inside. It has no fake data.
                     VStack(alignment: .leading, spacing: 10) {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(Color(hex: "#587260"))
+                        Path { path in
+                            path.move(to: CGPoint(x: 10, y: 19))
+                            path.addLine(to: CGPoint(x: 16, y: 25))
+                            path.addLine(to: CGPoint(x: 28, y: 12))
+                        }
+                            .trim(from: 0, to: phase(0.48, 0.3))
+                            .stroke(Color(hex: "#587260"), style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
                             .frame(width: 38, height: 38)
                             .background(Color(hex: "#E7ECE4"), in: Circle())
                         Capsule().fill(Color(hex: "#DAD7CE")).frame(width: 45, height: 4)
@@ -862,21 +875,14 @@ private struct UnwrappingParcel: View, Animatable {
                         path.addLine(to: CGPoint(x: 197.5, y: 166))
                     }
                     .stroke(Color(hex: "#AF9474").opacity(max(0, 0.6 - open * 3)), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
-                    ForEach(0..<4) { index in
-                        let points: [CGPoint] = [CGPoint(x: 72, y: 84), CGPoint(x: 225, y: 86), CGPoint(x: 204, y: 53), CGPoint(x: 93, y: 58)]
-                        Image(systemName: index.isMultiple(of: 2) ? "sparkle" : "circle.fill")
-                            .font(.system(size: index.isMultiple(of: 2) ? 10 : 3, weight: .regular))
-                            .foregroundStyle(Color(hex: "#C9A47B"))
-                            .opacity(reduceMotion ? 0 : sin(phase(0.2, 0.8) * .pi) * 0.7)
-                            .position(x: points[index].x, y: points[index].y + 25 - 37 * phase(0.2, 0.8))
-                    }
+                    ParcelStarBurst(active: celebrating)
                 }
                 .frame(width: 300, height: 310)
-                .rotation3DEffect(.degrees(tilt.y * -4), axis: (x: 1, y: 0, z: 0), perspective: 0.35)
-                .rotation3DEffect(.degrees(tilt.x * 5), axis: (x: 0, y: 1, z: 0), perspective: 0.35)
+                .rotation3DEffect(.degrees(tilt.y * -6), axis: (x: 1, y: 0, z: 0), perspective: 0.35)
+                .rotation3DEffect(.degrees(tilt.x * 7), axis: (x: 0, y: 1, z: 0), perspective: 0.35)
                 .rotationEffect(.degrees(sway * (1 - open)))
-                .scaleEffect(pressed ? 0.976 : 1 - anticipation * 0.022 + breath * 0.012, anchor: .bottom)
-                .offset(x: tilt.x * 7, y: Double(lift) * (1 - open) + tilt.y * 4 + (pressed ? 3 : anticipation * 3 - breath * 6))
+                .scaleEffect(pressed ? 0.956 : 1 - anticipation * 0.032 + breath * 0.025, anchor: .bottom)
+                .offset(x: tilt.x * 11, y: Double(lift) * (1 - open) + tilt.y * 6 + (pressed ? 5 : anticipation * 4 - breath * 8))
             }
             .frame(width: 300, height: 310)
             .scaleEffect(scale, anchor: .topLeading)
@@ -906,6 +912,67 @@ private struct UnwrappingParcel: View, Animatable {
             }
             path.closeSubpath()
         }
+    }
+}
+
+/// Its own clock lets the stars linger while the same parcel moves into sign-in.
+private struct ParcelStarBurst: View {
+    let active: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var progress = 0.0
+
+    var body: some View {
+        ParcelStars(progress: reduceMotion ? 1 : progress)
+            .onChange(of: active, initial: true) { _, active in
+                withAnimation(nil) { progress = 0 }
+                guard active, !reduceMotion, scenePhase == .active else { return }
+                withAnimation(.linear(duration: 1.85)) { progress = 1 }
+            }
+            .onChange(of: reduceMotion) { _, reduce in
+                if reduce { withAnimation(nil) { progress = 1 } }
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase != .active { withAnimation(nil) { progress = 1 } }
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
+private struct ParcelStars: View, Animatable {
+    var progress: Double
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+    private let stars: [(x: Double, y: Double, size: Double, color: String)] = [
+        (43, 96, 23, "#C99B35"), (91, 57, 16, "#D6AE48"),
+        (151, 36, 24, "#C99B35"), (216, 55, 18, "#B594BE"),
+        (261, 96, 25, "#D6AE48"), (233, 145, 13, "#C99B35"),
+    ]
+
+    var body: some View {
+        ZStack {
+            ForEach(stars.indices, id: \.self) { index in
+                let star = stars[index]
+                let delay = 0.14 + Double(index % 3) * 0.03
+                let p = min(1, max(0, (progress - delay) / (1 - delay)))
+                let travel = 1 - pow(1 - p, 3)
+                let opacity = min(1, p / 0.16) * min(1, (1 - p) / 0.32)
+                let sizeScale = (0.3 + 0.7 * min(1, p / 0.2)) * (1 + 0.16 * sin(p * Double.pi))
+                let x = 150 + (star.x - 150) * (0.45 + 0.55 * travel)
+                let y = 140 + (star.y - 140) * (0.3 + 0.7 * travel) - p * 12
+                Image(systemName: "sparkle")
+                    .font(.system(size: CGFloat(star.size), weight: .medium))
+                    .foregroundStyle(Color(hex: star.color))
+                    .scaleEffect(CGFloat(sizeScale))
+                    .rotationEffect(.degrees(-18 + 36 * travel))
+                    .opacity(opacity)
+                    .position(x: CGFloat(x), y: CGFloat(y))
+            }
+        }
+        .frame(width: 300, height: 310)
     }
 }
 
