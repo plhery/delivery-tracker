@@ -53,13 +53,16 @@ final class AppRoutingTests: XCTestCase {
         let preview = "Ab7kP2mQ9xR4tY6n"
         let base = URL(string: "https://delivery.plhery.com")!
         let url = FriendInvitationLink.url(code: code, previewId: preview, baseURL: base)
-        XCTAssertEqual(url.absoluteString, base.absoluteString + "/i/" + preview + "#" + code)
+        XCTAssertEqual(url.absoluteString, base.absoluteString + "/i/" + preview)
         XCTAssertNil(url.query)
-        XCTAssertEqual(FriendInvitationLink.code(from: url.absoluteString, baseURL: base), code)
+        XCTAssertNil(url.fragment)
+        XCTAssertEqual(FriendInvitationLink.code(from: url.absoluteString, baseURL: base), preview)
+        XCTAssertEqual(FriendInvitationLink.code(from: url.absoluteString + "#" + code, baseURL: base), preview)
+        XCTAssertEqual(FriendInvitationLink.code(from: url.absoluteString + "?fbclid=tracking#ignored", baseURL: base), preview)
+        XCTAssertEqual(FriendInvitationLink.code(from: "swissdeliverytracker://invite#" + preview), preview)
         XCTAssertEqual(FriendInvitationLink.code(from: "swissdeliverytracker://invite#" + code), code)
-        for invalid in [base.absoluteString + "/i/" + preview, base.absoluteString + "/i/short#" + code,
+        for invalid in [base.absoluteString + "/i/short#" + code,
                         base.absoluteString + "/i/" + preview + "/extra#" + code,
-                        base.absoluteString + "/i/" + preview + "?extra=1#" + code,
                         "https://evil.example/i/" + preview + "#" + code] {
             XCTAssertNil(FriendInvitationLink.code(from: invalid, baseURL: base))
         }
@@ -71,8 +74,10 @@ final class AppRoutingTests: XCTestCase {
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let store = FriendInvitationStore(defaults: defaults)
-        store.open(URL(string: "swissdeliverytracker://invite#" + String(repeating: "a", count: 32))!)
+        let shortKey = "Ab7kP2mQ9xR4tY6n"
+        store.open(URL(string: AppConfiguration.current.apiBaseURL.absoluteString + "/i/" + shortKey)!)
         store.opened = true
+        XCTAssertEqual(store.code, shortKey)
         let restored = FriendInvitationStore(defaults: defaults)
         XCTAssertTrue(restored.isPresenting)
         XCTAssertTrue(restored.opened)

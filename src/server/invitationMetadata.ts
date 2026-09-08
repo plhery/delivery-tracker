@@ -11,7 +11,7 @@ export async function invitationMetadata(preview: string | string[] | undefined)
   const short = isInvitationPreviewId(preview);
   const url = new URL(short ? `/i/${preview}` : '/invite', origin);
   const image = new URL('/api/friends/invite-image', origin);
-  // Each invitation has its own social identity, without exposing its acceptance token.
+  // Use the working standalone invitation URL as the social card destination.
   if (typeof preview === 'string' && (short || /^[a-f0-9]{64}$/.test(preview))) {
     if (!short) url.searchParams.set('preview', preview);
     image.searchParams.set('preview', preview);

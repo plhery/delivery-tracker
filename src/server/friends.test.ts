@@ -137,3 +137,19 @@ describe('Friends privacy boundary', () => {
     expect(response.status).toBe(status); expect(await response.text()).not.toContain('PRIVATE_SERVER_PAYLOAD');
   });
 });
+
+it('accepts standalone keys only through the authenticated action endpoint', async () => {
+  const code = 'Ab7kP2mQ9xR4tY6n';
+  const rpc = vi.spyOn(SupabaseUserClient.prototype, 'request').mockResolvedValue({ snapshot });
+  expect((await call({ action: 'accept_invite', code }, false)).status).toBe(401);
+  expect(rpc).not.toHaveBeenCalled();
+  expect((await call({ action: 'accept_invite', code })).status).toBe(200);
+  expect(rpc).toHaveBeenCalledWith('/rest/v1/rpc/friends_action', expect.objectContaining({
+    body: expect.objectContaining({ p_action: 'accept_invite', p_code: code }),
+  }));
+  for (const action of ['preview_invite', 'revoke_invite', 'revoke_previous_invites']) {
+    expect(friendsAction({ action, code })).toEqual({ action, code });
+  }
+  // A legacy public preview hash must never become an acceptance credential.
+  expect((await call({ action: 'accept_invite', code: 'a'.repeat(64) })).status).toBe(400);
+});

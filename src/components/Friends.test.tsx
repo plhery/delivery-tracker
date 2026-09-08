@@ -9,7 +9,7 @@ import { Friends } from './Friends';
 import { webcrypto } from 'node:crypto';
 
 const previewId = 'Ab7kP2mQ9xR4tY6n';
-const sharedLink = window.location.origin + '/i/' + previewId + '#' + 'a'.repeat(32);
+const sharedLink = window.location.origin + '/i/' + previewId;
 beforeEach(() => vi.stubGlobal('crypto', webcrypto));
 
 const enrolled = (): ApiFriendsSnapshot => ({ ...structuredClone(fixture), ownCard: ownFriendCard([], fixture.profile) }) as ApiFriendsSnapshot;
@@ -256,7 +256,7 @@ describe('Friends', () => {
     expect(client.action).not.toHaveBeenCalled();
     expect(window.location.pathname).toBe('/invite');
     expect(window.location.hash).toBe('');
-    expect(sessionStorage.getItem('sdt.pendingFriendInvitation.v1')).toContain('a'.repeat(32));
+    expect(sessionStorage.getItem('sdt.pendingFriendInvitation.v1')).toContain(previewId);
   });
   it('clears background data and ignores an old request after privacy changes', async () => {
     const client = realClient(); await show(client, false);

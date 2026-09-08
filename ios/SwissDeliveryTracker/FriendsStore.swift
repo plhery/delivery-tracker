@@ -21,7 +21,7 @@ final class FriendInvitationStore: ObservableObject {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         if let data = defaults.data(forKey: storageKey), let pending = try? JSONDecoder().decode(Pending.self, from: data),
-           pending.code.range(of: "^[a-f0-9]{32}$", options: .regularExpression) != nil,
+           FriendInvitationLink.validCode(pending.code),
            Date().timeIntervalSince(pending.receivedAt) >= 0, Date().timeIntervalSince(pending.receivedAt) < 604_800 {
             code = pending.code; opened = pending.opened; receivedAt = pending.receivedAt; isPresenting = true
         } else { defaults.removeObject(forKey: storageKey) }

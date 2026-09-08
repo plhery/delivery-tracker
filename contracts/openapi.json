@@ -2112,7 +2112,7 @@
                 "properties": {
                   "code": {
                     "type": "string",
-                    "pattern": "^[a-f0-9]{32}$"
+                    "pattern": "^([A-Za-z0-9_-]{16}|[a-f0-9]{32})$"
                   }
                 }
               }
@@ -3414,7 +3414,7 @@
           },
           "code": {
             "type": "string",
-            "pattern": "^[a-f0-9]{32}$"
+            "pattern": "^([A-Za-z0-9_-]{16}|[a-f0-9]{32})$"
           },
           "friendId": {
             "type": "string",
@@ -3436,7 +3436,7 @@
           "previewId": {
             "type": "string",
             "pattern": "^[A-Za-z0-9_-]{16}$",
-            "description": "Read-only ID used in short invitation links. Cannot accept an invitation."
+            "description": "Random invitation key used in standalone short links. May be submitted as code to preview, accept, or revoke the invitation."
           },
           "expiresAt": {
             "type": "string",

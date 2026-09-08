@@ -56,7 +56,8 @@ it('opens into personalized sign-in and never offers the demo or accepts automat
   expect(JSON.parse(sessionStorage.getItem('sdt.pendingFriendInvitation.v1')!).opened).toBe(true);
   expect(fetch).toHaveBeenCalledWith('/api/friends/invite-preview', expect.objectContaining({ credentials: 'omit', cache: 'no-store', body: JSON.stringify({ code }) }));
 });
-it('requires an explicit accept and ignores repeated taps', async () => {
+it.each([code, 'Ab7kP2mQ9xR4tY6n'])('requires explicit acceptance and ignores repeated taps for key %s', async (key) => {
+  history.replaceState(null, '', key === code ? `/invite#${key}` : `/i/${key}`);
   let finish!: (value: { snapshot: ApiFriendsSnapshot }) => void;
   const client: FriendsClient = { checkInvitation: vi.fn().mockResolvedValue(undefined), load: vi.fn().mockResolvedValue(enrolled), action: vi.fn().mockImplementation(() => new Promise((resolve) => { finish = resolve; })) };
   const user = userEvent.setup(); render(<Harness client={client} />);
@@ -65,7 +66,8 @@ it('requires an explicit accept and ignores repeated taps', async () => {
   const accept = await screen.findByRole('button', { name: 'Become friends' });
   expect(client.action).not.toHaveBeenCalled();
   fireEvent.click(accept); fireEvent.click(accept);
-  expect(client.action).toHaveBeenCalledExactlyOnceWith({ action: 'accept_invite', code }, []);
+  expect(client.checkInvitation).toHaveBeenCalledWith(key);
+  expect(client.action).toHaveBeenCalledExactlyOnceWith({ action: 'accept_invite', code: key }, []);
   vi.spyOn(document, 'hidden', 'get').mockReturnValue(true);
   fireEvent(document, new Event('visibilitychange'));
   expect(screen.queryByRole('heading', { name: 'Your friend Paul sent you an invitation' })).toBeNull();

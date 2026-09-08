@@ -59,3 +59,18 @@ it('limits anonymous preview requests and returns an uncached retry response', a
   expect(response.headers.get('cache-control')).toBe('no-store');
   expect(request).toHaveBeenCalledTimes(30);
 });
+
+it('previews a standalone short key without consuming it or revealing other fields', async () => {
+  const key = 'Ab7kP2mQ9xR4tY6n';
+  const request = vi.spyOn(SupabaseServiceClient.prototype, 'request').mockResolvedValue([{ friend_profiles: { nickname: 'Paul', user_id: 'private' } }]);
+  const response = await call({ code: key });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ previewNickname: 'Paul' });
+  const query = new URL(request.mock.calls[0][0], 'https://database.example').searchParams;
+  expect(query.get('preview_id')).toBe(`eq.${key}`);
+  expect(query.get('select')).toBe('friend_profiles!inner(nickname)');
+  expect(query.get('expires_at')).toMatch(/^gt\.\d{4}-/);
+  expect(query.has('code_hash')).toBe(false);
+  expect(request).toHaveBeenCalledTimes(1);
+  expect(request.mock.calls[0]).toHaveLength(1);
+});

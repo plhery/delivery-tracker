@@ -11,15 +11,21 @@ enum FriendInvitationLink {
 
     static func code(from text: String, baseURL: URL = AppConfiguration.current.apiBaseURL) -> String? {
         guard let url = URL(string: text.trimmingCharacters(in: .whitespacesAndNewlines)),
-              isInvitation(url, baseURL: baseURL),
-              let code = url.fragment, code.range(of: "^[a-f0-9]{32}$", options: .regularExpression) != nil else { return nil }
+              isInvitation(url, baseURL: baseURL) else { return nil }
         if url.path.hasPrefix("/i/") {
-            guard validPreviewID(String(url.path.dropFirst(3))), url.query == nil else { return nil }
-        } else if url.query != nil {
+            let key = String(url.path.dropFirst(3))
+            return validPreviewID(key) ? key : nil
+        }
+        guard let code = url.fragment, validCode(code) else { return nil }
+        if url.query != nil {
             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
             guard items.count == 1, items[0].name == "preview", items[0].value == previewHash(code) else { return nil }
         }
         return code
+    }
+
+    static func validCode(_ value: String) -> Bool {
+        validPreviewID(value) || value.range(of: "^[a-f0-9]{32}$", options: .regularExpression) != nil
     }
 
     private static func validPreviewID(_ value: String) -> Bool {
@@ -34,7 +40,7 @@ enum FriendInvitationLink {
         if let previewId, validPreviewID(previewId) {
             var components = URLComponents(url: baseURL.appending(path: "i").appending(path: previewId), resolvingAgainstBaseURL: false)!
             components.query = nil
-            components.fragment = code
+            components.fragment = nil
             return components.url!
         }
         // Compatibility with servers that have not started returning short IDs.

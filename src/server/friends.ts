@@ -1,6 +1,6 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
-import { isInvitationPreviewId } from '../lib/invitationLinkFormat';
+import { isInvitationCode, isInvitationPreviewId } from '../lib/invitationLinkFormat';
 import type { ApiFriendCard, ApiFriendProfile, ApiFriendsActionRequest, ApiFriendsActionResponse, ApiFriendsSnapshot, ApiFriendStamp, ApiFriendsActivity } from '../generated/apiContract';
 import { HttpError } from './api';
 import { isRecord, type JsonObject } from './types';
@@ -22,7 +22,7 @@ export function friendsAction(payload: JsonObject): ApiFriendsActionRequest {
   const allowed = payload.action === 'revoke_invite' ? [...required, 'code'] : required;
   if (Object.keys(payload).some((key) => key !== 'action' && !allowed.includes(key)) || required.some((key) => payload[key] === undefined)) throw invalid();
   if (payload.action === 'save_profile' && (!nickname(payload.nickname) || typeof payload.shareStats !== 'boolean' || typeof payload.shareArrival !== 'boolean')) throw invalid();
-  if (allowed.includes('code') && payload.code !== undefined && (typeof payload.code !== 'string' || !/^[a-f0-9]{32}$/.test(payload.code))) throw invalid();
+  if (allowed.includes('code') && payload.code !== undefined && !isInvitationCode(payload.code)) throw invalid();
   if (allowed.includes('friendId') && (typeof payload.friendId !== 'string' || !uuid.test(payload.friendId))) throw invalid();
   return { ...payload, ...(typeof payload.nickname === 'string' ? { nickname: payload.nickname.trim() } : {}) } as unknown as ApiFriendsActionRequest;
 }
@@ -30,8 +30,10 @@ function corrupt(): never { throw new HttpError(502, 'Friends is temporarily una
 
 /** A bearer invitation reveals only its sender's nickname, without consuming it. */
 export async function invitationPreview(client: SupabaseServiceClient, payload: JsonObject): Promise<{ previewNickname: string }> {
-  if (Object.keys(payload).length !== 1 || typeof payload.code !== 'string' || !/^[a-f0-9]{32}$/.test(payload.code)) throw invalid();
-  return invitationPreviewByHash(client, createHash('sha256').update(payload.code).digest('hex'));
+  if (Object.keys(payload).length !== 1 || !isInvitationCode(payload.code)) throw invalid();
+  return isInvitationPreviewId(payload.code)
+    ? invitationPreviewById(client, payload.code)
+    : invitationPreviewByHash(client, createHash('sha256').update(payload.code).digest('hex'));
 }
 
 /** The public preview hash can reveal a nickname, but cannot accept an invitation. */

@@ -78,7 +78,7 @@ it('keeps preview hashes and acceptance tokens non-interchangeable', async () =>
   expect(request).not.toHaveBeenCalled();
 });
 
-it('uses a short, independent ID for both crawler metadata and the nickname lookup', async () => {
+it('uses the same working short key for canonical metadata and invitation actions', async () => {
   const previewId = 'Ab7kP2mQ9xR4tY6n';
   const request = vi.spyOn(SupabaseServiceClient.prototype, 'request').mockResolvedValue(sender);
   const metadata = await shortMetadata({ params: Promise.resolve({ previewId }) });
@@ -95,7 +95,7 @@ it('uses a short, independent ID for both crawler metadata and the nickname look
   expect(query.get('expires_at')).toMatch(/^gt\.\d{4}-/);
   expect(JSON.stringify(metadata)).not.toContain(code);
   expect(request.mock.calls[0]).toHaveLength(1);
-  expect(() => friendsAction({ action: 'accept_invite', code: previewId })).toThrow();
+  expect(friendsAction({ action: 'accept_invite', code: previewId })).toEqual({ action: 'accept_invite', code: previewId });
 });
 it('treats malformed and unavailable short IDs as generic previews', async () => {
   const request = vi.spyOn(SupabaseServiceClient.prototype, 'request').mockResolvedValue([]);

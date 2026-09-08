@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { FriendsError } from './friends';
-import { isInvitationPreviewId, shortInvitationPreviewId } from './invitationLinkFormat';
+import { isInvitationCode, isInvitationPreviewId, shortInvitationPreviewId } from './invitationLinkFormat';
 
 const tokenPattern = /^[a-f0-9]{32}$/;
 export const INVITATION_STORAGE_KEY = 'sdt.pendingFriendInvitation.v1'; // gitleaks:allow -- sessionStorage key, not a credential
@@ -13,7 +13,7 @@ export async function invitationURL(code: string, previewId?: string, origin = w
   if (!tokenPattern.test(code)) throw new Error('Invalid invitation');
   if (previewId !== undefined) {
     if (!isInvitationPreviewId(previewId)) throw new Error('Invalid invitation preview');
-    return new URL(`/i/${previewId}#${code}`, origin).href;
+    return new URL(`/i/${previewId}`, origin).href;
   }
   // Older servers do not return a preview ID yet; their existing links still work.
   const url = new URL(`/invite#${code}`, origin);
@@ -29,8 +29,10 @@ export function invitationCode(text: string, origin = window.location.origin): s
   try {
     const url = new URL(text.trim());
     if (url.origin !== origin || !['https:', 'http:'].includes(url.protocol) || url.username || url.password) return null;
-    if (shortInvitationPreviewId(url.pathname)) {
-      if (url.search) return null;
+    const shortId = shortInvitationPreviewId(url.pathname);
+    if (shortId) {
+      // The path is authoritative; social apps may drop fragments or append tracking queries.
+      return shortId;
     } else {
       if (url.pathname !== '/invite') return null;
       if (url.search && (url.searchParams.size !== 1 || !/^[a-f0-9]{64}$/.test(url.searchParams.get('preview') ?? ''))) return null;
@@ -53,7 +55,7 @@ function read(): string {
     try {
       const value = JSON.parse(raw) as PendingInvitation;
       const age = Date.now() - value.receivedAt;
-      if (tokenPattern.test(value.code ?? '') && typeof value.opened === 'boolean' && age >= 0 && age < maxAge) return raw;
+      if (isInvitationCode(value.code) && typeof value.opened === 'boolean' && age >= 0 && age < maxAge) return raw;
     } catch { /* A damaged or expired pending link is unavailable. */ }
   }
   return url.pathname === '/invite' ? 'invalid' : '';
@@ -80,7 +82,7 @@ export function usePendingInvitation(invitationRoute = false) {
   const snapshot = useSyncExternalStore(subscribe, read, () => invitationRoute ? 'invalid' : '');
   const pending = useMemo<PendingInvitation | null>(() => snapshot === 'invalid' ? { code: null, opened: false, receivedAt: -1 } : snapshot ? JSON.parse(snapshot) as PendingInvitation : null, [snapshot]);
   useEffect(() => {
-    // Strip the fragment and preview key before authentication. Only the token and opened state
+    // Strip the invitation key before authentication. Only the key and opened state
     // survive the OAuth round trip in this tab; never persist the sender's name.
     if (pending?.receivedAt === 0) write({ ...pending, receivedAt: Date.now() }, '/invite');
   }, [pending]);

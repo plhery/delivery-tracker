@@ -24,7 +24,7 @@ test('social crawlers and browser-like preview readers receive a parcel card in 
     expect(head).toContain('property="og:title" content="A friend sent you an invitation"');
     expect(head).toContain('name="twitter:card" content="summary_large_image"');
     expect(head).toContain(`/api/friends/invite-image?preview=${preview}`);
-    expect(head).toContain(`/i/${preview}`);
+    expect(head).toMatch(new RegExp(`property="og:url" content="https?://[^"]+/i/${preview}"`));
   }
   const image = await request.get('/api/friends/invite-image');
   expect(image.headers()['content-type']).toBe('image/png');
@@ -34,7 +34,7 @@ test('social crawlers and browser-like preview readers receive a parcel card in 
   expect(png.readUInt32BE(20)).toBe(630);
 });
 
-test('a shared link opens the same parcel into personalized sign-in and survives a return visit', async ({ page }) => {
+for (const suffix of ['', '?fbclid=tracking#discardable']) test(`a shared link (${suffix || 'bare'}) opens into personalized sign-in and survives a return visit`, async ({ page }) => {
   const errors: string[] = [];
   const urls: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -42,10 +42,10 @@ test('a shared link opens the same parcel into personalized sign-in and survives
   await page.addInitScript(() => localStorage.setItem('sdt.web.experience.v1', 'demo'));
   await page.route('**/api/friends/invite-preview', async (route) => {
     expect(route.request().method()).toBe('POST');
-    expect(route.request().postDataJSON()).toEqual({ code: token });
+    expect(route.request().postDataJSON()).toEqual({ code: preview });
     await route.fulfill({ json: { previewNickname: 'Paul' } });
   });
-  await page.goto(`/i/${preview}#${token}`);
+  await page.goto(`/i/${preview}${suffix}`);
   await expect(page.getByRole('heading', { name: 'Your friend Paul sent you an invitation' })).toBeVisible();
   await expect(page).toHaveURL(/\/invite$/);
   await expect(page.getByRole('button', { name: /try the demo/i })).toHaveCount(0);
@@ -74,9 +74,9 @@ test('long sender names and expired invitations fit narrow screens in every loca
   await page.addInitScript(() => Object.defineProperty(navigator, 'userAgent', { value: 'Mozilla/5.0 (iPhone)' }));
   let expired = false;
   await page.route('**/api/friends/invite-preview', (route) => route.fulfill(expired ? { status: 404, json: { error: 'Invitation unavailable' } } : { json: { previewNickname: 'AlexandertheGreatestEver' } }));
-  await page.goto(`/invite#${token}`);
+  await page.goto(`/i/${preview}`);
   await expect(page.locator('.arrival__open')).toBeEnabled();
-  await expect(page.getByRole('link', { name: 'Open in iOS app' })).toHaveAttribute('href', `swissdeliverytracker://invite#${token}`);
+  await expect(page.getByRole('link', { name: 'Open in iOS app' })).toHaveAttribute('href', `swissdeliverytracker://invite#${preview}`);
   for (const language of ['fr', 'de', 'it', 'en']) {
     await page.getByRole('combobox').selectOption(language);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
