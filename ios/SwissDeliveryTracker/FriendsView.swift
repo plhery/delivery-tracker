@@ -435,7 +435,7 @@ private struct FriendsInvitationView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(localizer.text("friends.link")).font(.caption).foregroundStyle(.secondary)
                         Text(link.absoluteString).font(.system(.footnote, design: .monospaced))
-                            .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+                            .lineLimit(1).truncationMode(.middle).textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading).padding(14)
                             .background(Brand.paper, in: RoundedRectangle(cornerRadius: 14))
                             .accessibilityIdentifier("friends.invitationURL")
@@ -449,19 +449,20 @@ private struct FriendsInvitationView: View {
                         Label(localizer.text("friends.previousRevoked"), systemImage: "checkmark")
                             .font(.caption).foregroundStyle(ExperimentalPalette.delivered)
                     }
-                    if previousInviteCount > 0 {
-                        Button(localizer.text(previousInviteCount == 1 ? "friends.revokePreviousOne" : "friends.revokePreviousMany", ["count": previousInviteCount])) {
-                            Task {
-                                if await act(FriendsActionRequest(action: .revokePreviousInvites, code: code)) != nil {
-                                    previousInviteCount = 0
-                                    previousInvitationsCancelled = true
-                                }
-                            }
-                        }.font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44)
-                    } else {
+                    VStack(spacing: 0) {
                         Button(localizer.text("friends.revoke")) {
                             Task { if await act(FriendsActionRequest(action: .revokeInvite, code: code)) != nil { completed() } }
                         }.font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44)
+                        if previousInviteCount > 0 {
+                            Button(localizer.text("friends.revokePrevious", ["count": previousInviteCount])) {
+                                Task {
+                                    if await act(FriendsActionRequest(action: .revokePreviousInvites, code: code)) != nil {
+                                        previousInviteCount = 0
+                                        previousInvitationsCancelled = true
+                                    }
+                                }
+                            }.font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44)
+                        }
                     }
                 }
             }

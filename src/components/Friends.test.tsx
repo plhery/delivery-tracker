@@ -128,16 +128,30 @@ describe('Friends', () => {
     const sheet = screen.getByRole('dialog');
     const field = await within(sheet).findByRole('textbox', { name: 'Invitation link' });
     const link = (field as HTMLInputElement).value;
-    await user.click(within(sheet).getByRole('button', { name: 'Cancel 6 previous invitations' }));
+    expect(within(sheet).getByRole('button', { name: 'Cancel this invitation' })).toBeVisible();
+    await user.click(within(sheet).getByRole('button', { name: 'Cancel previous invitations (6)' }));
     expect(client.action).toHaveBeenLastCalledWith({ action: 'revoke_previous_invites', code: 'a'.repeat(32) }, []);
     expect(within(sheet).getByRole('status')).toHaveTextContent('Previous invitations cancelled');
     expect(field).toHaveValue(link);
     await user.click(within(sheet).getByRole('button', { name: 'Copy link' }));
     expect(copy).toHaveBeenCalledWith(link);
-    expect(within(sheet).queryByText('Cancel 6 previous invitations')).toBeNull();
+    expect(within(sheet).queryByText('Cancel previous invitations (6)')).toBeNull();
     expect(client.action).toHaveBeenCalledTimes(2);
     await user.click(within(sheet).getByRole('button', { name: 'Cancel this invitation' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(client.action).toHaveBeenLastCalledWith({ action: 'revoke_invite', code: 'a'.repeat(32) }, []);
+  });
+  it('can cancel just the visible invitation while older invitations are active', async () => {
+    const client = realClient();
+    vi.mocked(client.action).mockResolvedValueOnce({ inviteCode: 'a'.repeat(32), previousInviteCount: 1 })
+      .mockResolvedValue({ snapshot: enrolled() });
+    const { user } = await show(client, false);
+    await user.click(screen.getByRole('button', { name: 'Invite a friend' }));
+    const sheet = screen.getByRole('dialog');
+    expect(await within(sheet).findByRole('button', { name: 'Cancel previous invitations (1)' })).toBeVisible();
+    await user.click(within(sheet).getByRole('button', { name: 'Cancel this invitation' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(client.action).toHaveBeenCalledTimes(2);
     expect(client.action).toHaveBeenLastCalledWith({ action: 'revoke_invite', code: 'a'.repeat(32) }, []);
   });
   it('keeps the count and link after a failed cancellation, then allows a retry', async () => {
@@ -148,7 +162,7 @@ describe('Friends', () => {
     const { user } = await show(client, false);
     await user.click(screen.getByRole('button', { name: 'Invite a friend' }));
     const sheet = screen.getByRole('dialog');
-    const cancel = await within(sheet).findByRole('button', { name: 'Cancel 1 previous invitation' });
+    const cancel = await within(sheet).findByRole('button', { name: 'Cancel previous invitations (1)' });
     const field = within(sheet).getByRole('textbox', { name: 'Invitation link' });
     const link = (field as HTMLInputElement).value;
     await user.click(cancel);

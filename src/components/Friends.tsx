@@ -201,14 +201,16 @@ function FriendsInvite({ code, previewId, previousInviteCount, busy, act, onRetr
   return <div className="friends-invite">{link ? <>
     <label>{t('friends.link')}<input readOnly value={link} onFocus={(event) => event.target.select()} /></label>
     <small>{t('friends.inviteExpiry')}</small>
-    {typeof navigator.share === 'function' && <button className="button button--primary" onClick={async () => { try { await navigator.share({ url: link }); trackAction('friend-invite-share', 'success'); } catch (error) { if (!(error instanceof Error && error.name === 'AbortError')) await copy(); } }}>{t('friends.shareLink')}<Icon name="arrow" /></button>}
-    <button className={typeof navigator.share === 'function' ? 'text-button' : 'button button--primary'} onClick={() => void copy()}>{t(copied ? 'friends.copied' : 'friends.copyLink')}<Icon name={copied ? 'check' : 'copy'} /></button>
+    {typeof navigator.share === 'function' && <button className="button button--primary" disabled={busy} onClick={async () => { try { await navigator.share({ url: link }); trackAction('friend-invite-share', 'success'); } catch (error) { if (!(error instanceof Error && error.name === 'AbortError')) await copy(); } }}><Icon name="share" />{t('friends.shareLink')}</button>}
+    <button className={typeof navigator.share === 'function' ? 'text-button' : 'button button--primary'} disabled={busy} onClick={() => void copy()}><Icon name={copied ? 'check' : 'copy'} />{t(copied ? 'friends.copied' : 'friends.copyLink')}</button>
     {copyFailed && <p className="friends-error" role="alert">{t('friends.actionFailed')}</p>}
     {previousCancelled && <p className="friends-notice" role="status"><Icon name="check" />{t('friends.previousRevoked')}</p>}
-    {previousCount > 0 ? <button className="text-button" disabled={busy} onClick={async () => {
-      if (code && await act({ action: 'revoke_previous_invites', code })) setCancelledForCode(code);
-    }}>{t(previousCount === 1 ? 'friends.revokePreviousOne' : 'friends.revokePreviousMany', { count: previousCount })}</button>
-      : <button className="text-button" disabled={busy} onClick={async () => { if (code && await act({ action: 'revoke_invite', code })) onClose(); }}>{t('friends.revoke')}</button>}
+    <div className="friends-invite__cancellations">
+      <button className="text-button friends-invite__cancel" disabled={busy} onClick={async () => { if (code && await act({ action: 'revoke_invite', code })) onClose(); }}>{t('friends.revoke')}</button>
+      {previousCount > 0 && <button className="text-button friends-invite__cancel" disabled={busy} onClick={async () => {
+        if (code && await act({ action: 'revoke_previous_invites', code })) setCancelledForCode(code);
+      }}>{t('friends.revokePrevious', { count: previousCount })}</button>}
+    </div>
   </> : busy || code ? <div className="friends-invite__loading" role="status" aria-label={t('friends.link')}><Icon name="refresh" className="spin" /></div> : <button className="button button--primary" onClick={() => void onRetry()}>{t('common.retry')}</button>}</div>;
 }
 function FriendsAccept({ onOpen }: { onOpen: () => void }) {

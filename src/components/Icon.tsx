@@ -32,6 +32,7 @@ const paths = {
   trash: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7',
   mail: 'M3 5h18v14H3V5Zm0 1 9 7 9-7',
   copy: 'M9 8h12v13H9V8ZM6 16H3V3h12v2',
+  share: 'M12 15V3m-4 4 4-4 4 4M8 9H5v12h14V9h-3',
 } as const;
 
 export type IconName = keyof typeof paths;
