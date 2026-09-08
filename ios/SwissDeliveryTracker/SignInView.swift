@@ -6,11 +6,14 @@ import UserNotifications
 struct ArrivalView: View {
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var invitation: FriendInvitationStore
+    @EnvironmentObject private var friendsActivity: FriendsActivityStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @State private var opening = false
     @State private var greeting = 0
     @State private var pressed = false
+    @State private var stampLanded = false
+    @State private var stampImpact = false
     @StateObject private var motion = ArrivalMotion()
 
     private var screen: ArrivalScreen {
@@ -74,6 +77,16 @@ struct ArrivalView: View {
                                 CubicKeyframe(-0.8, duration: 2.3)
                             }
                         }
+                        .overlay {
+                            if invitation.receipt != nil {
+                                FriendshipReceiptStamp()
+                                    .frame(width: 100, height: 116)
+                                    .rotationEffect(.degrees(stampLanded ? -9 : -22))
+                                    .scaleEffect(reduceMotion || stampLanded ? 1 : 1.7)
+                                    .offset(x: 28, y: reduceMotion || stampLanded ? 34 : -80)
+                                    .opacity(stampLanded ? 1 : 0)
+                            }
+                        }
                         .frame(width: 300, height: 310)
                         .scaleEffect(frame.width / 300)
                         .position(x: frame.midX, y: frame.midY)
@@ -86,6 +99,19 @@ struct ArrivalView: View {
         }
         .onChange(of: greetingActive, initial: true) { _, active in motion.setActive(active) }
         .onDisappear { motion.setActive(false) }
+        .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.45), trigger: stampImpact) { _, value in value }
+        .task(id: invitation.receipt != nil && scenePhase == .active) {
+            guard invitation.receipt != nil else { return }
+            guard scenePhase == .active else { finishReceipt(); return }
+            do {
+                try await Task.sleep(for: .milliseconds(reduceMotion ? 30 : 250))
+                withAnimation(reduceMotion ? .easeOut(duration: 0.12) : .spring(response: 0.32, dampingFraction: 0.62)) { stampLanded = true }
+                try await Task.sleep(for: .milliseconds(reduceMotion ? 80 : 210))
+                stampImpact = true
+                try await Task.sleep(for: .milliseconds(reduceMotion ? 180 : 450))
+                finishReceipt()
+            } catch { }
+        }
         .task(id: invitation.isPresenting && scenePhase == .active) {
             guard invitation.isPresenting, scenePhase == .active else { return }
             await invitation.loadPreview()
@@ -126,6 +152,7 @@ struct ArrivalView: View {
     }
 
     private func goBack() {
+        guard invitation.receipt == nil else { return }
         withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.45)) {
             opening = false
             if invitation.isPresenting { invitation.opened = false }
@@ -136,6 +163,27 @@ struct ArrivalView: View {
     private func dismissInvitation() {
         invitation.dismiss()
         if !session.isAuthenticated { session.showWelcome() }
+    }
+
+    private func finishReceipt() {
+        guard let receipt = invitation.receipt else { return }
+        if let friend = receipt.acceptedFriend { friendsActivity.reveal(friend.id, snapshot: scenePhase == .active ? receipt.snapshot : nil) }
+        invitation.finish()
+    }
+}
+
+private struct FriendshipReceiptStamp: View {
+    var body: some View {
+        ZStack {
+            PostageStampShape().fill(Brand.cream).shadow(color: .black.opacity(0.18), radius: 5, y: 3)
+            VStack(spacing: 9) {
+                Image(systemName: "person.2.fill").font(.system(size: 30, weight: .medium))
+                Image(systemName: "checkmark.seal.fill").font(.system(size: 23))
+            }
+            .foregroundStyle(ExperimentalPalette.delivered)
+            .padding(12)
+            .overlay { RoundedRectangle(cornerRadius: 2).strokeBorder(ExperimentalPalette.delivered.opacity(0.45), style: StrokeStyle(lineWidth: 1, dash: [2, 2])).padding(9) }
+        }
     }
 }
 
@@ -600,14 +648,18 @@ private struct FriendInvitationAcceptanceView: View {
                 }
                 Color.clear.frame(width: 180, height: 186)
                     .anchorPreference(key: ArrivalParcelFrame.self, value: .bounds) { [.signIn: $0] }.accessibilityHidden(true)
-                InvitationHeading(nickname: invitation.nickname)
+                if invitation.receipt != nil {
+                    Text(localizer.text("friends.friendshipDelivered"))
+                        .font(.system(.title, design: .rounded, weight: .medium)).multilineTextAlignment(.center)
+                        .accessibilityAddTraits(.isHeader)
+                } else { InvitationHeading(nickname: invitation.nickname) }
                 if let error = invitation.errorKey ?? model.errorKey, !creatingProfile {
                     Text(localizer.text(error)).font(.footnote).foregroundStyle(.secondary)
                     if error != "friends.inviteUnavailable" {
                         Button(localizer.text("common.retry")) { Task { await invitation.loadPreview(); await model.load(parcels: parcels.parcels) } }
                     }
                 }
-                if invitation.nickname != nil, model.snapshot != nil {
+                if invitation.receipt == nil, invitation.nickname != nil, model.snapshot != nil {
                     Button {
                         if model.snapshot?.profile == nil { model.errorKey = nil; creatingProfile = true }
                         else { Task { await accept() } }
@@ -618,7 +670,7 @@ private struct FriendInvitationAcceptanceView: View {
                         }.frame(maxWidth: .infinity, minHeight: 46)
                     }.buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
                         .disabled(joining || model.errorKey == "friends.inviteUnavailable")
-                } else if invitation.errorKey == nil && model.errorKey == nil { ProgressView() }
+                } else if invitation.receipt == nil && invitation.errorKey == nil && model.errorKey == nil { ProgressView() }
             }.padding(24).frame(maxWidth: 520).frame(maxWidth: .infinity)
         }
         .scrollDismissesKeyboard(.interactively)
@@ -665,8 +717,8 @@ private struct FriendInvitationAcceptanceView: View {
             guard let saved = await model.act(FriendsActionRequest(action: .saveProfile, nickname: profile.nickname, shareStats: profile.shareStats, shareArrival: profile.shareArrival), parcels: parcels.parcels) else { return }
             guard saved.snapshot?.profile != nil else { model.errorKey = "friends.actionFailed"; return }
         }
-        _ = await model.act(FriendsActionRequest(action: .acceptInvite, code: code), parcels: parcels.parcels, onCommitted: { _ in
-            if invitation.isPresenting, invitation.code == code { invitation.finish() }
+        _ = await model.act(FriendsActionRequest(action: .acceptInvite, code: code), parcels: parcels.parcels, onCommitted: { result in
+            if invitation.isPresenting, invitation.code == code { creatingProfile = false; invitation.receive(result) }
         })
     }
 }

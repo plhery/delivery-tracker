@@ -747,3 +747,18 @@ button.friend-card:focus-visible .friend-avatar .postage-stamp { scale: 1.035; }
 .parcel-added-burst > span { position: absolute; left: var(--burst-x); top: var(--burst-y); display: grid; place-items: center; width: 1.4em; height: 1.4em; margin: -.7em; line-height: 1; opacity: 0; user-select: none; }
 .parcel-added-burst[data-phase="waiting"] { visibility: hidden; }
 .parcel-added-burst[data-reduced="true"] > span { display: none; }
+
+/* A friendship is delivered onto the same parcel before its card arrives. */
+.friendship-receipt { position: absolute; left: 52%; top: 44%; width: 30%; aspect-ratio: 100 / 116; transform: rotate(-9deg); pointer-events: none; animation: friendship-stamp-land .55s cubic-bezier(.2,.85,.3,1.15) both; }
+.friendship-receipt .postage-stamp { width: 100%; height: 100%; background: var(--paper); color: var(--green); filter: drop-shadow(0 4px 3px #0003); }
+.friendship-receipt .postage-stamp__print { background: var(--green-soft); flex-direction: column; gap: 5px; border: 1px dashed currentColor; }
+.friendship-receipt svg { width: 48%; height: 40%; }.friendship-receipt svg:last-child { width: 30%; height: 26%; }
+@keyframes friendship-stamp-land { 0%, 25% { opacity: 0; transform: translateY(-80px) scale(1.8) rotate(-23deg); } 65% { opacity: 1; transform: translateY(3px) scale(.94) rotate(-8deg); } 100% { opacity: 1; transform: translateY(0) scale(1) rotate(-9deg); } }
+.friend-card[data-arriving] { transition: transform .55s cubic-bezier(.2,.8,.25,1), opacity .4s ease-out; }
+.friend-card[data-arriving="waiting"] { opacity: 0; transform: translateX(80px) rotate(2deg); }
+.friend-card[data-arriving="landed"] { opacity: 1; transform: translateX(0) rotate(0); }
+.friend-accepted-notice { position: fixed; z-index: 50; top: max(14px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: min(520px, calc(100% - 32px)); display: flex; align-items: center; gap: 6px; padding: 10px 12px 10px 16px; border-radius: 22px; background: var(--paper); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 8px 30px #0002; animation: friend-notice-enter .35s ease-out; }
+.friend-accepted-notice__open { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; text-align: left; border: 0; background: none; color: inherit; font: inherit; font-size: 14px; font-weight: 550; padding: 0; min-height: 44px; cursor: pointer; }.friend-accepted-notice__open > span:not(.postage-stamp) { flex: 1; }.friend-accepted-notice .postage-stamp { width: 32px; height: 40px; flex-shrink: 0; color: var(--green); }.friend-accepted-notice .icon-button { flex-shrink: 0; }
+@keyframes friend-notice-enter { from { opacity: 0; transform: translate(-50%, -14px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@media (prefers-reduced-motion: reduce) { .friendship-receipt { animation: none; }.friend-card[data-arriving="waiting"] { transform: none; }.friend-card[data-arriving] { transition: opacity .15s; }.friend-accepted-notice { animation: none; } }
+.friends-received-card { width: 100%; max-width: 520px; margin-bottom: 18px; }.friends-received-card > .friend-card { width: 100%; }

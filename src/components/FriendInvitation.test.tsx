@@ -51,6 +51,24 @@ it('requires an explicit accept and ignores repeated taps', async () => {
   expect(screen.getByText('Invitation closed')).toBeVisible();
   expect(location.search).toBe('?view=friends');
 });
+it('lands a friendship stamp on the same opened parcel before leaving for Friends', async () => {
+  const friend = { id: '11111111-1111-4111-8111-111111111111', nickname: 'Paul', stats: null, arrivedThisWeek: null };
+  const client: FriendsClient = { load: vi.fn().mockResolvedValue(enrolled), action: vi.fn().mockResolvedValue({ snapshot: { ...enrolled, friends: [friend] }, acceptedFriend: friend }) };
+  const user = userEvent.setup(); const { container } = render(<Harness client={client} />);
+  await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' });
+  await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
+  const parcel = container.querySelector('.arrival__parcel');
+  vi.mocked(window.matchMedia).mockReturnValue({ matches: false } as MediaQueryList);
+  await user.click(await screen.findByRole('button', { name: 'Become friends' }));
+  expect(await screen.findByRole('heading', { name: 'Friendship delivered' })).toBeVisible();
+  expect(container.querySelector('.friendship-receipt')).toBeInTheDocument();
+  expect(container.querySelector('.arrival__parcel')).toBe(parcel);
+  expect(screen.getByRole('button', { name: 'Back' })).toBeDisabled();
+  expect(sessionStorage.getItem('sdt.pendingFriendInvitation.v1')).toBeNull();
+  expect(await screen.findByText('Invitation closed', {}, { timeout: 1800 })).toBeVisible();
+  expect(client.action).toHaveBeenCalledOnce();
+  expect(location.search).toBe('?view=friends');
+});
 it('shows the profile preview and saves explicit sharing choices before joining', async () => {
   const client: FriendsClient = { load: vi.fn().mockResolvedValue(noProfile), action: vi.fn().mockResolvedValue({ snapshot: enrolled }) };
   const user = userEvent.setup(); render(<Harness client={client} />);

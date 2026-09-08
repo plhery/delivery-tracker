@@ -1,6 +1,6 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
-import type { ApiFriendCard, ApiFriendProfile, ApiFriendsActionRequest, ApiFriendsActionResponse, ApiFriendsSnapshot, ApiFriendStamp } from '../generated/apiContract';
+import type { ApiFriendCard, ApiFriendProfile, ApiFriendsActionRequest, ApiFriendsActionResponse, ApiFriendsSnapshot, ApiFriendStamp, ApiFriendsActivity } from '../generated/apiContract';
 import { HttpError } from './api';
 import { isRecord, type JsonObject } from './types';
 import { SupabaseError, type SupabaseUserClient, type SupabaseServiceClient } from './supabase';
@@ -9,7 +9,7 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const stamps = new Set<ApiFriendStamp>(['first', 'ten', 'connected', 'express']);
 const fields: Record<ApiFriendsActionRequest['action'], string[]> = {
   save_profile: ['nickname', 'shareStats', 'shareArrival'], create_invite: [], revoke_invite: [],
-  preview_invite: ['code'], accept_invite: ['code'], remove_friend: ['friendId'], disable: [],
+  preview_invite: ['code'], accept_invite: ['code'], remove_friend: ['friendId'], acknowledge_friend: ['friendId'], disable: [],
 };
 const invalid = () => new HttpError(400, 'Invalid Friends request');
 function nickname(value: unknown): value is string {
@@ -92,5 +92,13 @@ export function friendsActionResponse(value: unknown, action: ApiFriendsActionRe
     if (!nickname(value.previewNickname)) return corrupt();
     return { previewNickname: value.previewNickname };
   }
-  return { snapshot: friendsSnapshot(value.snapshot) };
+  return { snapshot: friendsSnapshot(value.snapshot), ...(action === 'accept_invite' && value.acceptedFriend ? { acceptedFriend: friendCard(value.acceptedFriend) } : {}) };
+}
+
+export function friendsActivity(value: unknown): ApiFriendsActivity {
+  if (!isRecord(value) || !Array.isArray(value.updates) || value.updates.length > 50) return corrupt();
+  return { updates: value.updates.map((item) => {
+    if (!isRecord(item) || typeof item.friendId !== 'string' || !uuid.test(item.friendId) || !nickname(item.nickname)) return corrupt();
+    return { friendId: item.friendId, nickname: item.nickname };
+  }) };
 }

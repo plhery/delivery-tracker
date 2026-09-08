@@ -1491,7 +1491,7 @@ export interface ApiFriendsSnapshot {
   "friends": Array<ApiFriendCard>;
 }
 
-export type ApiFriendsAction = "save_profile" | "create_invite" | "revoke_invite" | "preview_invite" | "accept_invite" | "remove_friend" | "disable";
+export type ApiFriendsAction = "save_profile" | "create_invite" | "revoke_invite" | "preview_invite" | "accept_invite" | "remove_friend" | "disable" | "acknowledge_friend";
 
 export interface ApiFriendsActionRequest {
   "action": ApiFriendsAction;
@@ -1507,6 +1507,7 @@ export interface ApiFriendsActionResponse {
   "inviteCode"?: string;
   "expiresAt"?: string;
   "previewNickname"?: string;
+  "acceptedFriend"?: ApiFriendCard;
 }
 
 export interface ApiFriendExportConnection {
@@ -1517,4 +1518,13 @@ export interface ApiFriendExportConnection {
 export interface ApiFriendsExport {
   "profile": ApiFriendProfile | null;
   "connections": Array<ApiFriendExportConnection>;
+}
+
+export interface ApiFriendUpdate {
+  "friendId": string;
+  "nickname": string;
+}
+
+export interface ApiFriendsActivity {
+  "updates": Array<ApiFriendUpdate>;
 }

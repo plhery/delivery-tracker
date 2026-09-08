@@ -7,6 +7,7 @@ struct SwissDeliveryTrackerApp: App {
     @StateObject private var parcels: ParcelStore
     @StateObject private var localizer: Localizer
     @StateObject private var invitation = FriendInvitationStore()
+    @StateObject private var friendsActivity = FriendsActivityStore()
     @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system
 
     init() {
@@ -28,6 +29,7 @@ struct SwissDeliveryTrackerApp: App {
                 .environmentObject(parcels)
                 .environmentObject(localizer)
                 .environmentObject(invitation)
+                .environmentObject(friendsActivity)
                 .environment(\.locale, localizer.language.locale)
                 .background { AppWindowAppearance(appearance: appearance) }
                 .tint(Brand.accent)
@@ -40,6 +42,7 @@ struct RootView: View {
     @EnvironmentObject private var parcels: ParcelStore
     @EnvironmentObject private var localizer: Localizer
     @EnvironmentObject private var invitation: FriendInvitationStore
+    @EnvironmentObject private var friendsActivity: FriendsActivityStore
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("sdt.notificationOnboardingCompleted.v1") private var notificationOnboardingCompleted = false
     @State private var showingNotificationOnboarding = false
@@ -62,6 +65,26 @@ struct RootView: View {
             }
         }
         .task { await session.bootstrap() }
+        .onChange(of: sessionIdentity) { _, _ in friendsActivity.clear() }
+        .task(id: sessionIdentity + (scenePhase == .active ? "-active" : "-hidden")) {
+            guard session.user != nil else { friendsActivity.clear(); return }
+            guard scenePhase == .active else { friendsActivity.hidePrivateContent(); return }
+            if let friendID = AppDelegate.consumePendingFriendID() { friendsActivity.reveal(friendID) }
+            while !Task.isCancelled {
+                await friendsActivity.refresh(session: session)
+                do { try await Task.sleep(for: .seconds(30)) } catch { return }
+            }
+        }
+        .overlay(alignment: .top) {
+            if !invitation.isPresenting, session.user != nil, let update = friendsActivity.updates.first {
+                FriendAcceptedNotice(update: update) {
+                    friendsActivity.reveal(update.friendID)
+                    Task { await friendsActivity.acknowledge(update.friendID, session: session) }
+                } dismiss: { Task { await friendsActivity.acknowledge(update.friendID, session: session) } }
+                .padding(.horizontal, 16).padding(.top, 6)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
         .task {
             if await carrierCatalog.refresh(from: AppConfiguration.current.apiBaseURL) == .updated {
                 parcels.refreshDeliverySurfaces()
@@ -80,7 +103,7 @@ struct RootView: View {
                 isAuthenticated: session.isAuthenticated,
                 isDemo: session.isDemo,
                 completed: notificationOnboardingCompleted
-            ) && !invitation.isPresenting
+            ) && !invitation.isPresenting && friendsActivity.focusID == nil
             await parcels.start()
         }
         .onChange(of: scenePhase) { _, phase in
@@ -95,10 +118,24 @@ struct RootView: View {
                 }
             }
         }
-        .onOpenURL { invitation.open($0) }
+        .onOpenURL { url in
+            if case .friend(let friendID) = NativeRoute(url: url), session.user != nil { friendsActivity.reveal(friendID) }
+            else { invitation.open(url) }
+        }
         .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { if let url = $0.webpageURL { invitation.open(url) } }
-        .sensoryFeedback(.success, trigger: invitation.completed)
         .onChange(of: invitation.completed) { _, _ in selectedTab = 2 }
+        .onChange(of: friendsActivity.presentationID) { _, _ in
+            if friendsActivity.focusID != nil { selectedTab = 2 }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .didOpenFriendNotification)) { notification in
+            guard session.user != nil, let friendID = notification.object as? UUID else { return }
+            _ = AppDelegate.consumePendingFriendID()
+            friendsActivity.reveal(friendID)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .didReceiveFriendActivity)) { _ in
+            guard session.user != nil, scenePhase == .active else { return }
+            Task { await friendsActivity.refresh(session: session) }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .didReceiveAPNSToken)) { notification in
             guard let token = notification.object as? String else { return }
             Task {

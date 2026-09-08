@@ -2,9 +2,10 @@ import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET as exportGET } from '../../app/api/account/export/route';
 import { GET, POST } from '../../app/api/friends/route';
+import { GET as activityGET } from '../../app/api/friends/activity/route';
 import { SupabaseAuthenticator } from './auth';
 import { SupabaseError, SupabaseUserClient } from './supabase';
-import { friendCard, friendsAction, friendsActionResponse, friendsSnapshot } from './friends';
+import { friendCard, friendsAction, friendsActionResponse, friendsSnapshot, friendsActivity } from './friends';
 
 const id = '11000000-0000-4000-8000-000000000001';
 const card = { id, nickname: 'Mila', stats: { deliveredCount: 12, averageDays: 3, stamps: ['first', 'ten'] }, arrivedThisWeek: null };
@@ -21,6 +22,22 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
 describe('Friends privacy boundary', () => {
+  it('returns only shared nicknames and profile IDs in authenticated sender notices', async () => {
+    const updates = { updates: [{ friendId: id, nickname: 'Mila' }] };
+    const rpc = vi.spyOn(SupabaseUserClient.prototype, 'request').mockResolvedValue({ updates: [{ ...updates.updates[0], email: 'private', parcel: 'private' }] });
+    const response = await activityGET(new NextRequest('https://delivery.example/api/friends/activity', { headers: { Authorization: 'Bearer activity-test' } }), { params: Promise.resolve({}) });
+    expect(response.status).toBe(200); expect(await response.json()).toEqual(updates);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(rpc).toHaveBeenCalledWith('/rest/v1/rpc/friends_activity', { method: 'POST', body: {} });
+    expect((await activityGET(new NextRequest('https://delivery.example/api/friends/activity'), { params: Promise.resolve({}) })).status).toBe(401);
+    expect(() => friendsActivity({ updates: [{ friendId: id, nickname: '\u202espoof' }] })).toThrow();
+    expect(() => friendsActivity({ updates: Array(51).fill(updates.updates[0]) })).toThrow();
+    expect(friendsAction({ action: 'acknowledge_friend', friendId: id })).toEqual({ action: 'acknowledge_friend', friendId: id });
+  });
+  it('includes the accepted profile without exposing extra fields', () => {
+    expect(friendsActionResponse({ snapshot, acceptedFriend: { ...card, email: 'private' } }, 'accept_invite')).toEqual({ snapshot, acceptedFriend: card });
+    expect(friendsActionResponse({ snapshot, acceptedFriend: card }, 'save_profile')).toEqual({ snapshot });
+  });
   it('projects an allowlist at every nesting level, excluding all parcel and account data', async () => {
     const privateCard = { ...card, email: 'private@example.test', trackingNumber: 'PRIVATE123', parcel: { label: 'Private purchase' }, stats: { ...card.stats, location: 'Private address' } };
     vi.spyOn(SupabaseUserClient.prototype, 'request').mockResolvedValue({ ...snapshot, ownCard: privateCard, friends: [privateCard], invites: ['secret-code'] });

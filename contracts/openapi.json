@@ -2149,6 +2149,24 @@
           }
         }
       }
+    },
+    "/api/friends/activity": {
+      "get": {
+        "operationId": "getFriendsActivity",
+        "summary": "Unread invitation acceptances for the signed-in sender",
+        "responses": {
+          "200": {
+            "description": "Only shared nicknames and friend profile IDs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendsActivity"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3324,7 +3342,8 @@
           "preview_invite",
           "accept_invite",
           "remove_friend",
-          "disable"
+          "disable",
+          "acknowledge_friend"
         ]
       },
       "FriendsActionRequest": {
@@ -3377,6 +3396,9 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 24
+          },
+          "acceptedFriend": {
+            "$ref": "#/components/schemas/FriendCard"
           }
         }
       },
@@ -3419,6 +3441,41 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/FriendExportConnection"
+            }
+          }
+        }
+      },
+      "FriendUpdate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "friendId",
+          "nickname"
+        ],
+        "properties": {
+          "friendId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nickname": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24
+          }
+        }
+      },
+      "FriendsActivity": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "updates"
+        ],
+        "properties": {
+          "updates": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "$ref": "#/components/schemas/FriendUpdate"
             }
           }
         }

@@ -5,12 +5,20 @@ extension Notification.Name {
     static let didReceiveAPNSToken = Notification.Name("SDTDidReceiveAPNSToken")
     static let didFailAPNSRegistration = Notification.Name("SDTDidFailAPNSRegistration")
     static let didOpenParcelNotification = Notification.Name("SDTDidOpenParcelNotification")
+    static let didOpenFriendNotification = Notification.Name("SDTDidOpenFriendNotification")
+    static let didReceiveFriendActivity = Notification.Name("SDTDidReceiveFriendActivity")
 }
 
 @MainActor
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     static private(set) var currentDeviceToken: String?
     static private(set) var pendingParcelID: UUID?
+    static private(set) var pendingFriendID: UUID?
+
+    static func consumePendingFriendID() -> UUID? {
+        defer { pendingFriendID = nil }
+        return pendingFriendID
+    }
 
     static func clearDeviceToken() {
         currentDeviceToken = nil
@@ -50,7 +58,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        [.banner, .list, .sound]
+        if case .friend = NativeRoute(remoteNotification: notification.request.content.userInfo) {
+            NotificationCenter.default.post(name: .didReceiveFriendActivity, object: nil)
+            return [.list]
+        }
+        return [.banner, .list, .sound]
     }
 
     func userNotificationCenter(
@@ -58,6 +70,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         didReceive response: UNNotificationResponse
     ) async {
         let payload = response.notification.request.content.userInfo
+        if case .friend(let friendID) = NativeRoute(remoteNotification: payload) {
+            Self.pendingFriendID = friendID
+            NotificationCenter.default.post(name: .didOpenFriendNotification, object: friendID)
+        }
         if case .parcel(let parcelID) = NativeRoute(remoteNotification: payload) {
             Self.pendingParcelID = parcelID
             NotificationCenter.default.post(name: .didOpenParcelNotification, object: parcelID)

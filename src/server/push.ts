@@ -571,7 +571,8 @@ export class NativePushNotificationService {
       'apns-expiration': String(Math.floor(this.now()) + 86_400),
       'content-type': 'application/json',
     };
-    if (packageId) headers['apns-collapse-id'] = packageId.slice(0, 64);
+    const collapseId = packageId || (row.friend_id ? `friend-${String(row.friend_id)}` : '');
+    if (collapseId) headers['apns-collapse-id'] = collapseId.slice(0, 64);
     const response = await postApns(
       host,
       `/3/device/${stringField(row, 'token')}`,

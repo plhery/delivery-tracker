@@ -493,5 +493,10 @@
   "friends.linkPlaceholder": "Paste an invitation link",
   "friends.openLink": "Open invitation",
   "friends.enable": "Turn on Friends",
-  "friends.enableToAccept": "Turn on Friends to accept"
+  "friends.enableToAccept": "Turn on Friends to accept",
+  "friends.friendshipDelivered": "Friendship delivered",
+  "friends.invitationAccepted": "{{name}} accepted your invitation",
+  "friends.viewPassport": "View their Passport",
+  "friends.dismissUpdate": "Dismiss notification",
+  "friends.friendUnavailable": "This friend is no longer in your circle."
 }

@@ -1,6 +1,6 @@
 import { focusClickedButton } from './lib/modal';
 import { userErrorMessage } from './lib/userMessages';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AddParcelSheet } from './components/AddParcelSheet';
 import { ParcelAddedBurst } from './components/ParcelAddedBurst';
 import { AccountMenu } from './components/AccountMenu';
@@ -159,7 +159,7 @@ export default function App({
     return () => window.clearInterval(interval);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const onPopState = () => {
       setDetailOrigin(null);
       const params = new URLSearchParams(window.location.search);
@@ -175,6 +175,7 @@ export default function App({
     if (next === tab) return;
     scrollPositions.current[tab] = window.scrollY;
     const url = new URL(window.location.href);
+    url.searchParams.delete('friend');
     if (next !== 'deliveries') url.searchParams.set('view', next);
     else url.searchParams.delete('view');
     window.history.pushState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);

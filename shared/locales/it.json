@@ -493,5 +493,10 @@
   "friends.linkPlaceholder": "Incolla un link d’invito",
   "friends.openLink": "Apri invito",
   "friends.enable": "Attiva Amici",
-  "friends.enableToAccept": "Attiva Amici per accettare"
+  "friends.enableToAccept": "Attiva Amici per accettare",
+  "friends.friendshipDelivered": "Amicizia consegnata",
+  "friends.invitationAccepted": "{{name}} ha accettato il tuo invito",
+  "friends.viewPassport": "Vedi il suo passaporto",
+  "friends.dismissUpdate": "Chiudi notifica",
+  "friends.friendUnavailable": "Questa persona non fa più parte della tua cerchia."
 }

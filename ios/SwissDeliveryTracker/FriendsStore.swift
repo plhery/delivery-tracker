@@ -1,4 +1,5 @@
 import Foundation
+import UserNotifications
 
 @MainActor
 final class FriendInvitationStore: ObservableObject {
@@ -9,6 +10,7 @@ final class FriendInvitationStore: ObservableObject {
     @Published private(set) var errorKey: String?
     @Published private(set) var loading = false
     @Published private(set) var completed = 0
+    @Published private(set) var receipt: FriendsActionResponse?
     @Published var opened = false { didSet { persist() } }
     private let defaults: UserDefaults
     private let storageKey = "sdt.pendingFriendInvitation.v1"
@@ -27,7 +29,7 @@ final class FriendInvitationStore: ObservableObject {
 
     func open(_ url: URL) {
         guard FriendInvitationLink.isInvitation(url) else { return }
-        clearPreview()
+        clearPreview(); receipt = nil
         code = FriendInvitationLink.code(from: url.absoluteString)
         presentationID = UUID(); receivedAt = .now; isPresenting = true; opened = false
         if code == nil { errorKey = "friends.inviteUnavailable"; defaults.removeObject(forKey: storageKey) }
@@ -35,7 +37,7 @@ final class FriendInvitationStore: ObservableObject {
     }
 
     func loadPreview() async {
-        guard isPresenting else { return }
+        guard isPresenting, receipt == nil else { return }
         guard let code else { errorKey = "friends.inviteUnavailable"; return }
         generation += 1; let current = generation
         loading = true; errorKey = nil
@@ -53,10 +55,15 @@ final class FriendInvitationStore: ObservableObject {
     }
 
     func clearPreview() { generation += 1; nickname = nil; errorKey = nil; loading = false }
-    func dismiss() { isPresenting = false; code = nil; opened = false; clearPreview(); defaults.removeObject(forKey: storageKey) }
+    func receive(_ result: FriendsActionResponse) {
+        // The invitation was consumed on the server. Never restore it after a crash.
+        receipt = result
+        defaults.removeObject(forKey: storageKey)
+    }
+    func dismiss() { isPresenting = false; code = nil; opened = false; receipt = nil; clearPreview(); defaults.removeObject(forKey: storageKey) }
     func finish() { completed += 1; dismiss() }
     private func persist() {
-        guard isPresenting, let code else { return }
+        guard isPresenting, receipt == nil, let code else { return }
         // Only the pending link survives authentication; sender information is fetched afresh.
         let value = Pending(code: code, opened: opened, receivedAt: receivedAt)
         if let data = try? JSONEncoder().encode(value) { defaults.set(data, forKey: storageKey) }
@@ -72,6 +79,8 @@ final class FriendsStore: ObservableObject {
     private var demo = false
     private var local: FriendsSnapshot?
     private var generation = 0
+
+    func seed(_ value: FriendsSnapshot) { snapshot = value }
 
     func configure(session: SessionStore) {
         demo = session.isDemo
@@ -190,4 +199,46 @@ extension FriendStamp {
     var symbol: String {
         switch self { case .first: "shippingbox"; case .ten: "seal"; case .connected: "globe"; case .express: "bolt" }
     }
+}
+
+/// Shared, memory-only presentation state for a received friendship and sender notices.
+@MainActor
+final class FriendsActivityStore: ObservableObject {
+    @Published private(set) var updates: [FriendUpdate] = []
+    @Published private(set) var focusID: UUID?
+    @Published private(set) var presentationID = UUID()
+    private(set) var arrivalSnapshot: FriendsSnapshot?
+    private var dismissed: Set<UUID> = []
+    private var generation = 0
+
+    func refresh(session: SessionStore) async {
+        guard session.user != nil else { clear(); return }
+        let current = generation
+        do {
+            let next = try await DeliveryAPIClient(configuration: .current, session: session).friendsActivity()
+            guard current == generation, !Task.isCancelled else { return }
+            updates = next.updates.filter { !dismissed.contains($0.friendID) }
+        } catch { /* Keep an existing notice on transient network failures. */ }
+    }
+
+    func reveal(_ friendID: UUID, snapshot: FriendsSnapshot? = nil) {
+        focusID = friendID; arrivalSnapshot = snapshot; presentationID = UUID()
+    }
+
+    func acknowledge(_ friendID: UUID, session: SessionStore) async {
+        guard !dismissed.contains(friendID) else { return }
+        dismissed.insert(friendID); updates.removeAll { $0.friendID == friendID }
+        let center = UNUserNotificationCenter.current()
+        let delivered = await center.deliveredNotifications()
+        center.removeDeliveredNotifications(withIdentifiers: delivered.filter {
+            NativeRoute(remoteNotification: $0.request.content.userInfo) == .friend(friendID)
+        }.map { $0.request.identifier })
+        _ = try? await DeliveryAPIClient(configuration: .current, session: session)
+            .friendsAction(FriendsActionRequest(action: .acknowledgeFriend, friendID: friendID))
+    }
+
+    func consumeArrival() { arrivalSnapshot = nil }
+    func consumeFocus(_ friendID: UUID) { if focusID == friendID { focusID = nil } }
+    func hidePrivateContent() { generation += 1; updates = []; arrivalSnapshot = nil }
+    func clear() { hidePrivateContent(); dismissed = []; focusID = nil; presentationID = UUID() }
 }

@@ -6,21 +6,31 @@ struct FriendsView: View {
     @EnvironmentObject private var parcels: ParcelStore
     @EnvironmentObject private var localizer: Localizer
     @EnvironmentObject private var invitation: FriendInvitationStore
+    @EnvironmentObject private var activity: FriendsActivityStore
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var model = FriendsStore()
     @State private var showingAccount = false
     @State private var visible = false
     @State private var panel: FriendsPanel?
+    @State private var arrivingID: UUID?
+    @State private var cardLanded = false
+    @State private var presented: UUID?
+    @State private var checkedPresentation: UUID?
+    private var focusReady: Bool { active && model.snapshot?.friends.contains(where: { $0.id == activity.focusID }) == true }
     private var active: Bool { visible && scenePhase == .active }
     private func text(_ key: String) -> String { localizer.text(key) }
 
     var body: some View {
         NavigationStack {
+            ScrollViewReader { scroll in
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     if let error = model.errorKey, panel == nil { errorView(error) }
                     if let data = model.snapshot {
+                        if let friendID = activity.focusID, checkedPresentation == activity.presentationID, !data.friends.contains(where: { $0.id == friendID }) {
+                            Text(text("friends.friendUnavailable")).font(.footnote).foregroundStyle(.secondary)
+                        }
                         if data.profile != nil { circle(data) }
                         else {
                             HStack(spacing: 16) {
@@ -43,13 +53,34 @@ struct FriendsView: View {
             .navigationTitle(text("friends.title")).navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { AccountToolbarButton { showingAccount = true } } }
             .refreshable { await model.load(parcels: parcels.parcels) }
+            .task(id: focusReady ? activity.presentationID.uuidString : "waiting") {
+                guard focusReady, presented != activity.presentationID, let friendID = activity.focusID else { return }
+                arrivingID = friendID; cardLanded = false
+                activity.consumeArrival()
+                guard model.snapshot?.friends.contains(where: { $0.id == friendID }) == true, !Task.isCancelled else { return }
+                do {
+                    try await Task.sleep(for: .milliseconds(60))
+                    scroll.scrollTo(friendID, anchor: .center)
+                    try await Task.sleep(for: .milliseconds(60))
+                    presented = activity.presentationID
+                    withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .spring(response: 0.55, dampingFraction: 0.78)) { cardLanded = true }
+                    await activity.acknowledge(friendID, session: session)
+                    activity.consumeFocus(friendID)
+                } catch { }
+            }
+            }
         }
-        .onAppear { visible = true; model.configure(session: session) }
-        .onDisappear { visible = false; panel = nil; model.clear() }
-        .task(id: active) {
+        .onAppear {
+            visible = true; model.configure(session: session)
+            if let seed = activity.arrivalSnapshot { model.seed(seed) }
+        }
+        .onDisappear { visible = false; panel = nil; arrivingID = nil; model.clear() }
+        .task(id: active ? activity.presentationID.uuidString : "hidden") {
             guard active else { panel = nil; model.clear(); return }
             while !Task.isCancelled {
                 await model.load(parcels: parcels.parcels)
+                guard !Task.isCancelled else { return }
+                checkedPresentation = activity.presentationID
                 do { try await Task.sleep(for: .seconds(60)) } catch { return }
             }
         }
@@ -76,6 +107,9 @@ struct FriendsView: View {
     @ViewBuilder private func circle(_ data: FriendsSnapshot) -> some View {
         let people = [data.ownCard].compactMap { $0 } + data.friends
         let total = people.reduce(0) { $0 + ($1.stats?.stamps.count ?? 0) }
+        let featured = data.friends.first { $0.id == (arrivingID ?? activity.focusID) }
+        let remaining = data.friends.filter { $0.id != featured?.id }
+        if let featured { friendButton(featured) }
         if let profile = data.profile {
             Button { panel = .profile } label: {
                 FriendCardView(friend: data.ownCard ?? FriendsStore.ownCard(parcels: parcels.parcels, profile: profile), showsSettings: true, showsSharingStatus: true)
@@ -100,13 +134,17 @@ struct FriendsView: View {
                 .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
             Button(text("friends.enterCode")) { panel = .accept }.font(.subheadline).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44)
         }
-        if !data.friends.isEmpty {
+        if !remaining.isEmpty {
             HStack { Text(text("friends.circle")).font(.title2.bold()); Spacer(); Text(session.isDemo ? text("friends.demoPeople") : data.friends.count.formatted()).font(.caption).foregroundStyle(.secondary) }
-            ForEach(data.friends) { friend in
-                Button { panel = .friend(friend) } label: { FriendCardView(friend: friend, showsArrow: true) }
-                    .buttonStyle(TactileButtonStyle(scale: 0.98))
-            }
+            ForEach(remaining) { friendButton($0) }
         }
+    }
+
+    private func friendButton(_ friend: FriendCard) -> some View {
+        Button { panel = .friend(friend) } label: { FriendCardView(friend: friend, showsArrow: true) }
+            .buttonStyle(TactileButtonStyle(scale: 0.98)).id(friend.id)
+            .offset(x: friend.id == (arrivingID ?? activity.focusID) && !cardLanded && !reduceMotion ? 100 : 0)
+            .opacity(friend.id == (arrivingID ?? activity.focusID) && !cardLanded ? 0 : 1)
     }
 
     @ViewBuilder private func sheetContent(_ value: FriendsPanel) -> some View {
@@ -394,4 +432,31 @@ private struct FriendsPostage: View {
 }
 private struct FriendsPostagePair: View {
     var body: some View { HStack(spacing: -14) { FriendsPostage(symbol: "shippingbox").rotationEffect(.degrees(-12)); FriendsPostage(symbol: "person.2").rotationEffect(.degrees(10)).offset(y: -8) }.padding(10).accessibilityHidden(true) }
+}
+
+struct FriendAcceptedNotice: View {
+    let update: FriendUpdate
+    let open: () -> Void
+    let dismiss: () -> Void
+    @EnvironmentObject private var localizer: Localizer
+    var body: some View {
+        HStack(spacing: 8) {
+            Button(action: open) {
+                HStack(spacing: 12) {
+                    Image(systemName: "person.2.fill").font(.title3).foregroundStyle(ExperimentalPalette.delivered)
+                    Text(localizer.text("friends.invitationAccepted", ["name": update.nickname]))
+                        .font(.subheadline.weight(.medium)).multilineTextAlignment(.leading)
+                    Spacer(minLength: 4)
+                    Image(systemName: "arrow.right").font(.caption.weight(.semibold))
+                }.frame(minHeight: 44)
+            }.buttonStyle(.plain)
+            Button(action: dismiss) { Image(systemName: "xmark").frame(width: 32, height: 44) }
+                .buttonStyle(.plain).accessibilityLabel(localizer.text("friends.dismissUpdate"))
+        }
+        .padding(.horizontal, 16).padding(.vertical, 8)
+        .foregroundStyle(Brand.ink).background(Brand.paper, in: RoundedRectangle(cornerRadius: 22))
+        .overlay { RoundedRectangle(cornerRadius: 22).stroke(Brand.ink.opacity(0.08)) }
+        .shadow(color: .black.opacity(0.12), radius: 18, y: 6)
+        .frame(maxWidth: 520)
+    }
 }

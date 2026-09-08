@@ -49,6 +49,10 @@ final class DeliveryAPIClient {
         try await request("/api/friends")
     }
 
+    func friendsActivity() async throws -> FriendsActivity {
+        try await request("/api/friends/activity")
+    }
+
     func friendsAction(_ value: FriendsActionRequest) async throws -> FriendsActionResponse {
         try await request("/api/friends", method: "POST", body: value)
     }

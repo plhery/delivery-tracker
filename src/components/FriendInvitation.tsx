@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import { useI18n, type MessageKey } from '../i18n';
-import type { ApiFriendProfile, ApiFriendsSnapshot } from '../generated/apiContract';
+import type { ApiFriendProfile, ApiFriendsActionResponse, ApiFriendsSnapshot } from '../generated/apiContract';
 import { FriendsError, type FriendsClient } from '../lib/friends';
 import { previewInvitation, type PendingInvitationState } from '../lib/friendInvites';
 import type { ParcelWithEvents } from '../types';
 import { ArrivalScreen } from './ArrivalScreen';
 import { FriendProfileForm, FriendsSheet } from './Friends';
 import type { SignInScreen } from './SignInScreen';
+import { useFriendsActivity } from './FriendsActivity';
 
 type Props = ComponentProps<typeof SignInScreen> & {
   invitation: PendingInvitationState;
@@ -18,6 +19,31 @@ const emptyParcels: ParcelWithEvents[] = [];
 
 export function FriendInvitation({ invitation, onDismiss, client, parcels = emptyParcels, ...signIn }: Props) {
   const { t } = useI18n();
+  const activity = useFriendsActivity();
+  const [receipt, setReceipt] = useState<ApiFriendsActionResponse | null>(null);
+  const alive = useRef(true);
+  const receiptCallbacks = useRef({ invitation, activity });
+  useEffect(() => { receiptCallbacks.current = { invitation, activity }; }, [invitation, activity]);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+  useEffect(() => {
+    if (!receipt) return;
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      const current = receiptCallbacks.current;
+      if (receipt.acceptedFriend) current.activity?.prepareArrival(receipt.acceptedFriend, document.hidden ? undefined : receipt.snapshot);
+      current.invitation.clear(true);
+    };
+    const onVisibility = () => { if (document.hidden) finish(); };
+    const timer = setTimeout(finish, window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 300 : 950);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => { clearTimeout(timer); document.removeEventListener('visibilitychange', onVisibility); };
+  }, [receipt]);
+  function received(result: ApiFriendsActionResponse) {
+    if (!alive.current || document.hidden) { invitation.clear(true); return; }
+    if (invitation.markAccepted()) setReceipt(result);
+  }
   const code = invitation.pending?.code;
   const [nickname, setNickname] = useState<string | null>(null);
   const [error, setError] = useState<MessageKey | null>(null);
@@ -49,14 +75,15 @@ export function FriendInvitation({ invitation, onDismiss, client, parcels = empt
   return <ArrivalScreen {...signIn} title={title} subtitle={t('friends.signInToAccept')} showConfigurationHelp={false}
     screen={invitation.pending?.opened ? 'sign-in' : 'welcome'}
     onNavigate={(screen) => invitation.setOpened(screen === 'sign-in')}
-    invitation={{ title, canOpen: !!nickname,
+    invitation={{ title, canOpen: !!nickname, received: !!receipt,
       onDismiss, notice, appURL: ios && code ? `swissdeliverytracker://invite#${code}` : undefined,
-      afterOpen: !nickname ? <section className="auth-flow"><div className="auth-flow__heading"><h1 tabIndex={-1}>{title}</h1></div>{notice}</section>
-        : client && code ? <InvitationAcceptance key={code} title={title} code={code} client={client} parcels={parcels} onAccepted={() => invitation.clear(true)} /> : undefined,
+      afterOpen: receipt ? <section className="auth-flow friendship-received" role="status"><div className="auth-flow__heading"><h1 tabIndex={-1}>{t('friends.friendshipDelivered')}</h1></div></section>
+        : !nickname ? <section className="auth-flow"><div className="auth-flow__heading"><h1 tabIndex={-1}>{title}</h1></div>{notice}</section>
+        : client && code ? <InvitationAcceptance key={code} title={title} code={code} client={client} parcels={parcels} onAccepted={received} /> : undefined,
     }} />;
 }
 
-function InvitationAcceptance({ title, code, client, parcels, onAccepted }: { title: ReactNode; code: string; client: FriendsClient; parcels: ParcelWithEvents[]; onAccepted: () => void }) {
+function InvitationAcceptance({ title, code, client, parcels, onAccepted }: { title: ReactNode; code: string; client: FriendsClient; parcels: ParcelWithEvents[]; onAccepted: (result: ApiFriendsActionResponse) => void }) {
   const { t } = useI18n();
   const [snapshot, setSnapshot] = useState<ApiFriendsSnapshot | null>(null);
   const [error, setError] = useState<MessageKey | null>(null);
@@ -85,10 +112,10 @@ function InvitationAcceptance({ title, code, client, parcels, onAccepted }: { ti
         setSnapshot(saved.snapshot);
         enabled = true;
       }
-      await client.action({ action: 'accept_invite', code }, parcels);
+      const result = await client.action({ action: 'accept_invite', code }, parcels);
       // A committed acceptance can finish while the preview is backgrounded.
       // The pending-link store checks the token before clearing a newer link.
-      onAccepted();
+      onAccepted(result);
     } catch (reason) {
       if (generation.current === current) setError(reason instanceof FriendsError ? reason.key : 'friends.actionFailed');
     } finally {

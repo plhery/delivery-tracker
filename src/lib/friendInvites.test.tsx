@@ -26,6 +26,19 @@ it('strips the fragment, remembers opening through OAuth, and clears after accep
   expect(sessionStorage.getItem(INVITATION_STORAGE_KEY)).toBeNull();
   expect(location.search).toBe('?view=friends');
 });
+it('keeps a consumed invitation only for the receipt animation and protects replacement links', () => {
+  const hook = renderHook(() => usePendingInvitation());
+  act(() => openPendingInvitation(invitationURL(code)));
+  act(() => { expect(hook.result.current.markAccepted()).toBe(true); });
+  expect(hook.result.current.pending).toMatchObject({ code, opened: true, accepted: true });
+  expect(sessionStorage.getItem(INVITATION_STORAGE_KEY)).toBeNull();
+  expect(location.pathname + location.search).toBe('/?view=friends');
+  const oldReceipt = hook.result.current;
+  act(() => openPendingInvitation(invitationURL('cd'.repeat(16))));
+  act(() => { expect(oldReceipt.markAccepted()).toBe(false); oldReceipt.clear(true); });
+  expect(hook.result.current.pending?.code).toBe('cd'.repeat(16));
+  act(() => hook.result.current.clear());
+});
 it('replaces an old invitation, rejects an expired one, and dismisses to the unopened start', () => {
   const hook = renderHook(() => usePendingInvitation());
   act(() => openPendingInvitation(invitationURL(code)));

@@ -71,6 +71,32 @@ final class AppRoutingTests: XCTestCase {
         XCTAssertFalse(FriendInvitationStore(defaults: defaults).isPresenting)
     }
 
+    @MainActor
+    func testReceivedFriendshipCannotRestoreAConsumedInvitation() {
+        let suite = "FriendshipReceiptTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = FriendInvitationStore(defaults: defaults)
+        store.open(URL(string: "swissdeliverytracker://invite#" + String(repeating: "a", count: 32))!)
+        store.opened = true
+        let friend = FriendCard(id: UUID(), nickname: "Paul")
+        store.receive(FriendsActionResponse(acceptedFriend: friend))
+        XCTAssertTrue(store.isPresenting)
+        XCTAssertEqual(store.receipt?.acceptedFriend?.id, friend.id)
+        XCTAssertFalse(FriendInvitationStore(defaults: defaults).isPresenting)
+        store.finish()
+        XCTAssertEqual(store.completed, 1)
+        XCTAssertNil(store.receipt)
+    }
+
+    func testFriendNotificationsAndLinksOpenOnlyValidProfileIdentifiers() {
+        let friendID = UUID()
+        XCTAssertEqual(NativeRoute(remoteNotification: ["kind": "friend_accepted", "friend_id": friendID.uuidString]), .friend(friendID))
+        XCTAssertEqual(NativeRoute(url: URL(string: "swissdeliverytracker://friend/\(friendID.uuidString)")!), .friend(friendID))
+        XCTAssertNil(NativeRoute(remoteNotification: ["kind": "friend_accepted", "friend_id": "invalid"]))
+        XCTAssertNil(NativeRoute(remoteNotification: ["friend_id": friendID.uuidString]))
+    }
+
     func testParsesParcelDeepLink() {
         let parcelID = UUID()
         let url = URL(string: "swissdeliverytracker://parcel/\(parcelID.uuidString)")!

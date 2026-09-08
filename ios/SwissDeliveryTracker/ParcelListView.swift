@@ -561,6 +561,7 @@ private struct DeliveryListView: View {
         switch NativeRoute(url: url) {
         case .parcel(let parcelID):
             path = [parcelID]
+        case .friend: break // RootView owns Friends navigation.
         case .add(let trackingInput):
             sharedDraft = SharedParcelDraft(trackingInput: trackingInput)
             showingAdd = true

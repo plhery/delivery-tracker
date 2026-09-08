@@ -493,5 +493,10 @@
   "friends.linkPlaceholder": "Einladungslink einfügen",
   "friends.openLink": "Einladung öffnen",
   "friends.enable": "Freunde aktivieren",
-  "friends.enableToAccept": "Freunde aktivieren und Einladung annehmen"
+  "friends.enableToAccept": "Freunde aktivieren und Einladung annehmen",
+  "friends.friendshipDelivered": "Freundschaft zugestellt",
+  "friends.invitationAccepted": "{{name}} hat deine Einladung angenommen",
+  "friends.viewPassport": "Pass ansehen",
+  "friends.dismissUpdate": "Mitteilung schließen",
+  "friends.friendUnavailable": "Diese Person ist nicht mehr in deinem Kreis."
 }

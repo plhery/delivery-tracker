@@ -7,28 +7,57 @@ import { invitationCode, invitationURL, openPendingInvitation } from '../lib/fri
 import { useSheetDialog } from '../lib/modal';
 import type { ParcelWithEvents } from '../types';
 import { Icon, PostageStamp } from './Icon';
+import { useFriendsActivity } from './FriendsActivity';
 
 type Panel = 'settings' | 'invite' | 'accept' | 'disable' | ApiFriendCard | null;
 export function Friends({ client, parcels, demo }: { client: FriendsClient; parcels: ParcelWithEvents[]; demo: boolean }) {
   const { t } = useI18n();
-  const [data, setData] = useState<ApiFriendsSnapshot | null>(null);
+  const activity = useFriendsActivity();
+  const [data, setData] = useState<ApiFriendsSnapshot | null>(() => activity?.arrival?.snapshot ?? null);
+  const [featuredId, setFeaturedId] = useState<string | null>(() => activity?.arrival?.friendId ?? new URLSearchParams(window.location.search).get('friend'));
+  const [landed, setLanded] = useState(false);
+  const [checkedFocusId, setCheckedFocusId] = useState<string | null>(null);
+  const arrivalCard = useRef<HTMLButtonElement>(null);
+  const presented = useRef<number | string | null>(null);
   const [error, setError] = useState<MessageKey | null>(null);
   const [busy, setBusy] = useState(false);
   const [panel, setPanel] = useState<Panel>(null);
   const [notice, setNotice] = useState<MessageKey | null>(null);
   const generation = useRef(0);
   const working = useRef(false);
+  const focusId = activity?.arrival?.friendId ?? featuredId;
+  const focusReady = data?.friends.some((friend) => friend.id === focusId);
+  const arrivalKey = activity?.arrival?.key ?? featuredId;
+  useEffect(() => {
+    if (!focusReady || !focusId || presented.current === arrivalKey || (!activity?.arrival && presented.current != null)) return;
+    setFeaturedId(focusId); setLanded(false);
+    let reveal = 0;
+    let settled: ReturnType<typeof setTimeout>;
+    const position = requestAnimationFrame(() => {
+      arrivalCard.current?.scrollIntoView?.({ block: 'center', behavior: 'instant' });
+      reveal = requestAnimationFrame(() => {
+        presented.current = arrivalKey; setLanded(true);
+        settled = setTimeout(() => {
+          if (typeof arrivalKey === 'number') activity?.consumeArrival(arrivalKey);
+          const url = new URL(window.location.href);
+          if (url.searchParams.get('friend') === focusId) { url.searchParams.delete('friend'); window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash); }
+        }, 650);
+      });
+    });
+    void activity?.acknowledge(focusId);
+    return () => { cancelAnimationFrame(position); cancelAnimationFrame(reveal); clearTimeout(settled); };
+  }, [focusReady, focusId, arrivalKey, activity]);
   const invalidate = useCallback(() => { generation.current++; }, []);
   const load = useCallback(async () => {
     const current = ++generation.current;
     try {
       const next = await client.load(parcels);
       if (current === generation.current) {
-        setData(next); setError(null);
+        setData(next); setError(null); setCheckedFocusId(focusId);
         setPanel((open) => typeof open === 'object' && open && !next.friends.some((friend) => friend.id === open.id) ? null : open);
       }
     } catch { if (current === generation.current) { setData(null); setPanel(null); setError('friends.unavailable'); } }
-  }, [client, parcels]);
+  }, [client, parcels, focusId]);
   useEffect(() => {
     const current = generation.current;
     void Promise.resolve().then(() => { if (current === generation.current) void load(); });
@@ -39,7 +68,7 @@ export function Friends({ client, parcels, demo }: { client: FriendsClient; parc
     document.addEventListener('visibilitychange', visibility);
     const timer = window.setInterval(() => { if (!document.hidden && !working.current) void load(); }, 60_000);
     return () => { invalidate(); clearInterval(timer); document.removeEventListener('visibilitychange', visibility); };
-  }, [load, invalidate]);
+  }, [load, invalidate, activity?.arrival?.key]);
   async function act(action: ApiFriendsActionRequest): Promise<ApiFriendsActionResponse | null> {
     if (working.current) return null;
     working.current = true; setBusy(true); setError(null); setNotice(null);
@@ -58,19 +87,24 @@ export function Friends({ client, parcels, demo }: { client: FriendsClient; parc
   const errorView = error && <p className="friends-error" role="alert">{t(error)}</p>;
   const total = [data?.ownCard, ...(data?.friends ?? [])].reduce((sum, friend) => sum + (friend?.stats?.stamps.length ?? 0), 0);
   const selected = typeof panel === 'object' && panel ? data?.friends.find((friend) => friend.id === panel.id) : null;
+  const featured = data?.friends.find((friend) => friend.id === focusId);
+  const remainingFriends = data?.friends.filter((friend) => friend.id !== featured?.id) ?? [];
+  const friendButton = (friend: ApiFriendCard) => <button key={friend.id} ref={friend.id === focusId ? arrivalCard : undefined} data-arriving={friend.id === focusId ? (landed ? 'landed' : 'waiting') : undefined} className={`friend-card tone-${friendTone(friend.id)}`} onClick={() => setPanel(friend)}><FriendCardBody friend={friend} /><span className="friend-card__more"><Icon name="arrow" /></span></button>;
   return <div className="friends-page" data-empty={!!data?.profile && !data.friends.length}>
+    {data && focusId && checkedFocusId === focusId && !focusReady && <p className="friends-notice" role="status">{t('friends.friendUnavailable')}</p>}
     {notice && <p role="status" className="friends-notice"><Icon name="check" />{t(notice)}</p>}
     {!panel && errorView}
     {!data ? <div className="friends-loading" role="status">{error ? <button className="button button--secondary" onClick={() => void load()}>{t('common.retry')}</button> : <div className="skeleton" aria-label={t('friends.title')} />}</div> : !data.profile ? <>
       <div className="friends-intro"><h2>{t('friends.joinTitle')}</h2><div className="friends-postage" aria-hidden="true"><PostageStamp icon="parcel" /><PostageStamp icon="friends" /></div></div>
       <FriendProfileForm profile={null} parcels={parcels} busy={busy} onSave={async (profile) => { await act({ action: 'save_profile', ...profile }); }} />
     </> : <>
+      {featured && <div className="friends-received-card">{friendButton(featured)}</div>}
       <div className="friends-summary"><button className="friends-own friend-card tone-blue" aria-label={t('friends.settings')} onClick={() => setPanel('settings')}><FriendCardBody friend={data.ownCard ?? ownFriendCard(parcels, data.profile)} showSharingStatus /><span className="friend-card__more"><Icon name="settings" /></span></button>
       {!!data.friends.length && <section className="friends-cover"><div className="friends-cover__main"><div><strong>{total}</strong><span>{t('friends.collectionNote')}</span></div><div className="friends-postage" aria-hidden="true"><PostageStamp icon="parcel" /><PostageStamp icon="express" /></div></div></section>}</div>
       {!data.friends.length && <h2 className="friends-empty-title">{t('friends.emptyTitle')}</h2>}
       <div className="friends-actions"><button className="button button--primary" onClick={() => setPanel('invite')}><Icon name="plus" />{t('friends.invite')}</button><button className="text-button friends-code-link" onClick={() => setPanel('accept')}>{t('friends.enterCode')}<Icon name="arrow" /></button></div>
-      {!!data.friends.length && <section><div className="section-heading"><h2>{t('friends.circle')}</h2><span>{demo ? t('friends.demoPeople') : data.friends.length}</span></div>
-        <div className="friends-grid">{data.friends.map((friend) => <button key={friend.id} className={`friend-card tone-${friendTone(friend.id)}`} onClick={() => setPanel(friend)}><FriendCardBody friend={friend} /><span className="friend-card__more"><Icon name="arrow" /></span></button>)}</div>
+      {!!remainingFriends.length && <section><div className="section-heading"><h2>{t('friends.circle')}</h2><span>{demo ? t('friends.demoPeople') : data.friends.length}</span></div>
+        <div className="friends-grid">{remainingFriends.map(friendButton)}</div>
       </section>}
     </>}
     {panel && <FriendsSheet title={typeof panel === 'object' ? panel.nickname : t(panel === 'settings' ? 'friends.settings' : panel === 'disable' ? 'friends.disableTitle' : panel === 'accept' ? 'friends.enterCode' : 'friends.inviteTitle')} onClose={close} busy={busy}>

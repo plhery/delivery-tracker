@@ -13,6 +13,7 @@ import {
   type ScheduledCheckIn,
 } from './observability';
 import { pushServices } from './push';
+import { FriendshipPushService, FriendshipPushWorker } from './friendshipPush';
 import { serviceClient } from './runtime';
 import type { SupabaseServiceClient } from './supabase';
 import { TrackingSyncService, type SyncSummary } from './trackingSync';
@@ -322,6 +323,7 @@ interface BackgroundRuntime {
   state: BackgroundState;
   worker: SyncJobWorker;
   scheduler: ScheduledSync;
+  friendshipWorker: FriendshipPushWorker;
 }
 
 const globalBackground = globalThis as typeof globalThis & {
@@ -332,13 +334,15 @@ export function startBackgroundServices(): BackgroundRuntime | null {
   const client = serviceClient();
   if (!client) return null;
   const current = globalBackground.__deliveryBackgroundRuntime;
-  if (current?.client === client) {
+  if (current?.client === client && current.friendshipWorker) {
     current.worker.start();
     current.scheduler.start();
+    current.friendshipWorker.start();
     return current;
   }
   current?.worker.stop();
   current?.scheduler.stop();
+  current?.friendshipWorker?.stop();
   const state = initialState();
   const notifier = pushServices(client);
   const service = new TrackingSyncService(
@@ -348,10 +352,12 @@ export function startBackgroundServices(): BackgroundRuntime | null {
   );
   const worker = new SyncJobWorker(service, state);
   const scheduler = new ScheduledSync(client, worker, state);
-  const runtime = { client, state, worker, scheduler };
+  const friendshipWorker = new FriendshipPushWorker(new FriendshipPushService(client, notifier.web, notifier.native));
+  const runtime = { client, state, worker, scheduler, friendshipWorker };
   globalBackground.__deliveryBackgroundRuntime = runtime;
   worker.start();
   scheduler.start();
+  friendshipWorker.start();
   logOperationalEvent('background_services_started', {
     sync_enabled: true,
     web_push_enabled: Boolean(notifier.web),
@@ -364,6 +370,8 @@ export function startBackgroundServices(): BackgroundRuntime | null {
 export function wakeSyncWorker(): void {
   globalBackground.__deliveryBackgroundRuntime?.worker.wake();
 }
+
+export function wakeFriendshipWorker(): void { globalBackground.__deliveryBackgroundRuntime?.friendshipWorker?.wake(); }
 
 export function backgroundState(): BackgroundState | null {
   return globalBackground.__deliveryBackgroundRuntime?.state ?? null;

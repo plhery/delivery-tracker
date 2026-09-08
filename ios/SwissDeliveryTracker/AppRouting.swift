@@ -26,11 +26,15 @@ enum FriendInvitationLink {
 
 enum NativeRoute: Equatable {
     case parcel(UUID)
+    case friend(UUID)
     case add(trackingInput: String)
 
     init?(url: URL) {
         guard url.scheme?.lowercased() == OAuthFlow.callbackScheme else { return nil }
         switch url.host?.lowercased() {
+        case "friend":
+            guard let raw = url.pathComponents.last, let friendID = UUID(uuidString: raw) else { return nil }
+            self = .friend(friendID)
         case "parcel":
             guard let raw = url.pathComponents.last,
                   let parcelID = UUID(uuidString: raw) else { return nil }
@@ -45,6 +49,8 @@ enum NativeRoute: Equatable {
     }
 
     init?(remoteNotification payload: [AnyHashable: Any]) {
+        if payload["kind"] as? String == "friend_accepted", let raw = payload["friend_id"] as? String,
+           let friendID = UUID(uuidString: raw) { self = .friend(friendID); return }
         guard let raw = payload["parcel_id"] as? String,
               let parcelID = UUID(uuidString: raw) else { return nil }
         self = .parcel(parcelID)

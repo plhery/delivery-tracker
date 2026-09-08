@@ -5,7 +5,7 @@ const tokenPattern = /^[a-f0-9]{32}$/;
 export const INVITATION_STORAGE_KEY = 'sdt.pendingFriendInvitation.v1'; // gitleaks:allow -- sessionStorage key, not a credential
 const eventName = 'delivery-invitation-change';
 const maxAge = 7 * 24 * 60 * 60 * 1_000;
-type PendingInvitation = { code: string | null; opened: boolean; receivedAt: number };
+type PendingInvitation = { code: string | null; opened: boolean; receivedAt: number; accepted?: boolean };
 let memory: string | null = null;
 
 export function invitationURL(code: string, origin = window.location.origin): string {
@@ -23,6 +23,7 @@ export function invitationCode(text: string, origin = window.location.origin): s
 }
 
 function stored(): string | null {
+  if (memory && (JSON.parse(memory) as PendingInvitation).accepted) return memory;
   try { return sessionStorage.getItem(INVITATION_STORAGE_KEY); } catch { return memory; }
 }
 function read(): string {
@@ -45,7 +46,7 @@ function subscribe(notify: () => void) {
 function write(value: PendingInvitation | null, path?: string) {
   memory = value?.code ? JSON.stringify(value) : null;
   try {
-    if (memory) sessionStorage.setItem(INVITATION_STORAGE_KEY, memory);
+    if (memory && !value?.accepted) sessionStorage.setItem(INVITATION_STORAGE_KEY, memory);
     else sessionStorage.removeItem(INVITATION_STORAGE_KEY);
   } catch { /* Preserve the invitation in memory when storage is unavailable. */ }
   if (path) window.history.replaceState(window.history.state, '', path);
@@ -67,6 +68,13 @@ export function usePendingInvitation(invitationRoute = false) {
   return {
     pending,
     setOpened(opened: boolean) { if (pending) write({ ...pending, opened }); },
+    markAccepted() {
+      const current = read();
+      if (!pending?.code || !current || current === 'invalid' || (JSON.parse(current) as PendingInvitation).code !== pending.code) return false;
+      // Keep the receipt animation in memory; a reload goes straight to Friends.
+      write({ ...pending, opened: true, accepted: true }, '/?view=friends');
+      return true;
+    },
     clear(accepted = false) {
       if (accepted) {
         const current = read();

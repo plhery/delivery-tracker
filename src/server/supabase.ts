@@ -474,6 +474,18 @@ export class SupabaseClient {
     return rows(await this.request(`/rest/v1/pending_push_notifications?${params}`));
   }
 
+  async claimFriendshipPush(web: boolean, native: boolean): Promise<JsonObject[]> {
+    return rows(await this.request('/rest/v1/rpc/claim_friendship_push', {
+      method: 'POST', body: { p_web: web, p_native: native, p_limit: 10 },
+    }));
+  }
+
+  async finishFriendshipPush(id: string, lease: string, success: boolean): Promise<void> {
+    await this.request('/rest/v1/rpc/finish_friendship_push', {
+      method: 'POST', body: { p_id: id, p_lease: lease, p_success: success },
+    });
+  }
+
   async listPendingNativePushNotifications(): Promise<JsonObject[]> {
     const params = query({ select: '*', order: 'event_created_at.asc', limit: '1000' });
     return rows(await this.request(`/rest/v1/pending_native_push_notifications?${params}`));

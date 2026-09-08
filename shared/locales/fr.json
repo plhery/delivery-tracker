@@ -493,5 +493,10 @@
   "friends.linkPlaceholder": "Colle un lien d’invitation",
   "friends.openLink": "Ouvrir l’invitation",
   "friends.enable": "Activer les amis",
-  "friends.enableToAccept": "Activer les amis pour accepter"
+  "friends.enableToAccept": "Activer les amis pour accepter",
+  "friends.friendshipDelivered": "Amitié livrée",
+  "friends.invitationAccepted": "{{name}} a accepté ton invitation",
+  "friends.viewPassport": "Voir son passeport",
+  "friends.dismissUpdate": "Fermer la notification",
+  "friends.friendUnavailable": "Cet ami ne fait plus partie de ton cercle."
 }

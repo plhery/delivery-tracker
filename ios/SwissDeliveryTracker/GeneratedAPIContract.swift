@@ -520,6 +520,7 @@ enum FriendsAction: String, Codable, CaseIterable, Hashable, Sendable, Identifia
     case acceptInvite = "accept_invite"
     case removeFriend = "remove_friend"
     case disable
+    case acknowledgeFriend = "acknowledge_friend"
 
     var id: String { rawValue }
 }
@@ -547,6 +548,7 @@ struct FriendsActionResponse: Codable, Equatable, Hashable, Sendable {
     var inviteCode: String? = nil
     var expiresAt: String? = nil
     var previewNickname: String? = nil
+    var acceptedFriend: FriendCard? = nil
 }
 
 struct FriendExportConnection: Codable, Equatable, Hashable, Sendable, Identifiable {
@@ -557,6 +559,20 @@ struct FriendExportConnection: Codable, Equatable, Hashable, Sendable, Identifia
 struct FriendsExport: Codable, Equatable, Hashable, Sendable {
     var profile: FriendProfile? = nil
     var connections: [FriendExportConnection]
+}
+
+struct FriendUpdate: Codable, Equatable, Hashable, Sendable {
+    var friendID: UUID
+    var nickname: String
+
+    private enum CodingKeys: String, CodingKey {
+        case friendID = "friendId"
+        case nickname
+    }
+}
+
+struct FriendsActivity: Codable, Equatable, Hashable, Sendable {
+    var updates: [FriendUpdate]
 }
 
 struct AccountExportAccount: Codable, Equatable, Hashable, Sendable, Identifiable {

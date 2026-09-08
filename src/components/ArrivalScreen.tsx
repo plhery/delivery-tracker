@@ -12,7 +12,7 @@ const serverReady = () => false;
 export function ArrivalScreen({ screen, onNavigate, invitation, ...signIn }: ComponentProps<typeof SignInScreen> & {
   screen: Exclude<EntryScreen, 'demo'>;
   onNavigate: (screen: EntryScreen) => void;
-  invitation?: { title: ReactNode; canOpen: boolean; notice?: ReactNode; afterOpen?: ReactNode; onDismiss: () => void; appURL?: string };
+  invitation?: { title: ReactNode; canOpen: boolean; notice?: ReactNode; afterOpen?: ReactNode; onDismiss: () => void; appURL?: string; received?: boolean };
 }) {
   const { t } = useI18n();
   const ready = useSyncExternalStore(subscribeToHydration, clientReady, serverReady);
@@ -54,15 +54,17 @@ export function ArrivalScreen({ screen, onNavigate, invitation, ...signIn }: Com
     timer.current = setTimeout(() => onNavigate('sign-in'), reduced ? 80 : 960);
   }
 
-  return <main ref={scene} className={`arrival arrival--${screen}${opening ? ' arrival--opening' : ''}${invitation ? ' arrival--invitation' : ''}`}>
+  return <main ref={scene} className={`arrival arrival--${screen}${opening ? ' arrival--opening' : ''}${invitation ? ' arrival--invitation' : ''}${invitation?.received ? ' arrival--received' : ''}`}>
     <header className="arrival__header">
       {welcome ? invitation ? <button className="text-button arrival__back" type="button" aria-label={t('common.close')} onClick={invitation.onDismiss}><Icon name="close" /></button> : <span className="arrival__brand"><Icon name="parcel" />{t('app.title')}</span> :
-        <button className="text-button arrival__back" type="button" onClick={() => { setOpening(false); onNavigate('welcome'); }}><Icon name="back" />{t('welcome.back')}</button>}
+        <button className="text-button arrival__back" type="button" disabled={invitation?.received} onClick={() => { setOpening(false); onNavigate('welcome'); }}><Icon name="back" />{t('welcome.back')}</button>}
       {invitation?.appURL && <a className="arrival__app-link" href={invitation.appURL}>{t('friends.openInApp')}</a>}
       <LanguageControl />
     </header>
     <div className="arrival__scene">
-      <div className="arrival__parcel"><div className="arrival__ground" /><div className="arrival__tilt"><div className="arrival__press"><ParcelIllustration /></div></div></div>
+      <div className="arrival__parcel"><div className="arrival__ground" /><div className="arrival__tilt"><div className="arrival__press"><ParcelIllustration /></div></div>
+        {invitation?.received && <div className="friendship-receipt" aria-hidden="true"><span className="postage-stamp"><span className="postage-stamp__print"><Icon name="friends" /><Icon name="check" /></span></span></div>}
+      </div>
       {welcome ? <div className="arrival__welcome">
         <h1>{invitation?.title ?? t('arrival.welcomeTitle')}</h1>
         <button type="button" className="arrival__open" onClick={unwrap} disabled={!ready || opening || (invitation && !invitation.canOpen)} aria-describedby="parcel-open-hint">

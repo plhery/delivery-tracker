@@ -17,6 +17,7 @@ import { usePendingInvitation } from './lib/friendInvites';
 import { createFriendsClient } from './lib/friends';
 import { FriendInvitation } from './components/FriendInvitation';
 import { useParcels } from './store/ParcelsContext';
+import { FriendsActivityProvider } from './components/FriendsActivity';
 
 export function ApiApplication({ invitationRoute = false }: { invitationRoute?: boolean }) {
   const { t } = useI18n();
@@ -104,6 +105,7 @@ export function ApiApplication({ invitationRoute = false }: { invitationRoute?: 
   }
   if (!repo) return null;
   return (
+    <FriendsActivityProvider key={auth.user?.id} auth={apiAuth!} paused={!!invitation.pending}>
     <ParcelsProvider key={auth.user?.id} repo={repo}>
       {invitation.pending ? <AuthenticatedInvitation key={invitation.pending.code ?? 'invalid'} {...invitationProps} client={friendsClient} /> : <App
         accountEmail={auth.user?.email ?? t('native.account')}
@@ -113,6 +115,7 @@ export function ApiApplication({ invitationRoute = false }: { invitationRoute?: 
         apiAuth={apiAuth}
       />}
     </ParcelsProvider>
+    </FriendsActivityProvider>
   );
 }
 
