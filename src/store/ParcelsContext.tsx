@@ -68,7 +68,7 @@ export function ParcelsProvider({
   }, []);
 
   const rememberError = useCallback((reason: unknown) => {
-    if (!mounted.current) return;
+    if (!mounted.current || (reason instanceof DOMException && reason.name === 'AbortError')) return;
     setError(reason instanceof Error ? reason.message : String(reason));
     setAuthenticationRequired(reason instanceof ApiAuthenticationError);
   }, []);
@@ -83,6 +83,7 @@ export function ParcelsProvider({
         setUsingCachedData(false);
       }
     } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return;
       const cached = repo.cachedList?.() ?? null;
       if (mounted.current) {
         if (parcelsRef.current.length === 0 && cached?.length) setParcels(cached);
@@ -102,9 +103,9 @@ export function ParcelsProvider({
   useEffect(() => {
     // Fetching from and subscribing to the repository is the external system
     // synchronization this provider owns.
+    const unsubscribe = repo.subscribe?.(reload);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void reload();
-    const unsubscribe = repo.subscribe?.(reload);
     return unsubscribe;
   }, [repo, reload]);
 

@@ -31,16 +31,18 @@ export function ApiApplication({ invitationRoute = false }: { invitationRoute?: 
     () => auth.user ? {
       userId: auth.user.id,
       getAccessToken: auth.getAccessToken,
+      signal: auth.signal,
     } : undefined,
-    [auth.user, auth.getAccessToken],
+    [auth.user, auth.getAccessToken, auth.signal],
   );
   const handleSignOut = useCallback(async () => {
     if (sessionAuth) {
-      await disablePushNotifications(sessionAuth).catch(() => undefined);
+      void disablePushNotifications(sessionAuth).catch(() => undefined);
       clearApiCache(storage, sessionAuth.userId);
     }
-    await signOut();
+    const completion = signOut();
     navigate('welcome');
+    await completion;
   }, [sessionAuth, signOut, storage, navigate]);
   const apiAuth = useMemo(
     () => sessionAuth ? {
@@ -51,12 +53,15 @@ export function ApiApplication({ invitationRoute = false }: { invitationRoute?: 
   );
   const handleExport = useCallback(async () => {
     if (!apiAuth) return;
-    downloadAccountExport(await exportAccount(apiAuth));
+    const result = await exportAccount(apiAuth);
+    apiAuth.signal?.throwIfAborted();
+    downloadAccountExport(result);
   }, [apiAuth]);
   const handleDelete = useCallback(async (confirmation: string) => {
     if (!apiAuth) return;
     await deleteAccount(apiAuth, confirmation);
-    await unsubscribePushNotificationsLocally().catch(() => undefined);
+    apiAuth.signal?.throwIfAborted();
+    void unsubscribePushNotificationsLocally().catch(() => undefined);
     clearApiCache(storage, apiAuth.userId);
     await signOut();
     navigate('welcome');

@@ -37,10 +37,12 @@ enum DeliveryAPIError: LocalizedError {
 final class DeliveryAPIClient {
     private let configuration: AppConfiguration
     private unowned let session: SessionStore
+    private let transport: URLSession
 
-    init(configuration: AppConfiguration, session: SessionStore) {
+    init(configuration: AppConfiguration, session: SessionStore, transport: URLSession = .shared) {
         self.configuration = configuration
         self.session = session
+        self.transport = transport
     }
 
     func friendsSnapshot() async throws -> FriendsSnapshot {
@@ -128,29 +130,35 @@ final class DeliveryAPIClient {
     }
 
     func refreshAll() async throws {
+        let generation = session.generation
         let queued: QueueResponse = try await request("/api/sync", method: "POST")
+        try session.checkGeneration(generation)
         try await waitForJobs(queued.jobIDs)
     }
 
     func refresh(id: UUID) async throws {
+        let generation = session.generation
         let queued: QueueResponse = try await request(
             "/api/packages/\(id.uuidString)/sync",
             method: "POST"
         )
+        try session.checkGeneration(generation)
         try await waitForJobs(queued.jobIDs)
     }
 
     func waitForJobs(_ jobIds: [UUID]) async throws {
+        let generation = session.generation
         var pending = Set(jobIds)
         let deadline = Date().addingTimeInterval(120)
         var interval: TimeInterval = 1
         while !pending.isEmpty && Date() < deadline {
-            try Task.checkCancellation()
+            try session.checkGeneration(generation)
             var retryAfter: TimeInterval = 0
             do {
                 let ids = Array(pending.prefix(20))
                 let query = ids.map(\.uuidString).joined(separator: ",")
                 let response: SyncJobListResponse = try await request("/api/sync/jobs?ids=\(query)")
+                try session.checkGeneration(generation)
                 guard Set(response.jobs.map(\.id)) == Set(ids) else {
                     throw DeliveryAPIError.invalidResponse
                 }
@@ -321,11 +329,15 @@ final class DeliveryAPIClient {
         method: String = "GET",
         body: Data? = nil
     ) async throws -> (Data, HTTPURLResponse) {
+        let generation = session.generation
+        try session.checkGeneration(generation)
+        guard session.user != nil else { throw DeliveryAPIError.authenticationExpired }
         guard let url = URL(string: path, relativeTo: configuration.apiBaseURL)?.absoluteURL else {
             throw DeliveryAPIError.invalidResponse
         }
 
         func perform(token: String?) async throws -> (Data, HTTPURLResponse) {
+            try session.checkGeneration(generation)
             var request = URLRequest(url: url)
             request.httpMethod = method
             request.httpBody = body
@@ -335,17 +347,21 @@ final class DeliveryAPIClient {
             request.setValue("application/json", forHTTPHeaderField: "Accept")
             if body != nil { request.setValue("application/json", forHTTPHeaderField: "Content-Type") }
             if let token { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await transport.data(for: request)
+            try session.checkGeneration(generation)
             guard let http = response as? HTTPURLResponse else { throw DeliveryAPIError.invalidResponse }
             return (data, http)
         }
 
         var token = try await session.accessToken()
+        try session.checkGeneration(generation)
         var result = try await perform(token: token)
         if result.1.statusCode == 401 || result.1.statusCode == 403 {
-            token = try? await session.accessToken(forceRefresh: true)
+            token = try await session.accessToken(forceRefresh: true)
+            try session.checkGeneration(generation)
             if token != nil { result = try await perform(token: token) }
         }
+        try session.checkGeneration(generation)
         if result.1.statusCode == 401 || result.1.statusCode == 403 {
             session.forceSignOut()
             throw DeliveryAPIError.authenticationExpired

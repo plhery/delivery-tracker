@@ -68,6 +68,7 @@ export class SupabaseClient {
       method?: string;
       body?: unknown;
       prefer?: string;
+      timeoutMs?: number;
     } = {},
   ): Promise<T | null> {
     const method = options.method ?? 'GET';
@@ -91,7 +92,7 @@ export class SupabaseClient {
         body,
         cache: 'no-store',
         redirect: 'error',
-        signal: AbortSignal.timeout(this.timeoutMs),
+        signal: AbortSignal.timeout(options.timeoutMs ?? this.timeoutMs),
       });
     } catch (error) {
       throw new SupabaseError('The delivery database is unreachable', undefined, undefined, {
@@ -587,14 +588,16 @@ export class SupabaseServiceClient extends SupabaseClient {
     values: JsonObject,
     events: JsonObject[] = [],
     deleteDescriptions: string[] = [],
+    lease?: { jobId: string; workerId: string },
   ): Promise<boolean> {
     if (typeof parcel.tracking_generation !== 'string') {
       // Fail closed if a caller did not load the configuration snapshot.
       throw new TypeError('A tracking generation is required for synchronization');
     }
-    return await this.request('/rest/v1/rpc/apply_tracking_sync', {
+    return await this.request(`/rest/v1/rpc/${lease ? 'apply_leased_tracking_sync' : 'apply_tracking_sync'}`, {
       method: 'POST',
       body: {
+        ...(lease ? { p_job_id: lease.jobId, p_worker_id: lease.workerId } : {}),
         p_package_id: parcel.id,
         p_tracking_generation: parcel.tracking_generation,
         p_values: values,
@@ -694,25 +697,27 @@ export class SupabaseServiceClient extends SupabaseClient {
     return result[0] ?? null;
   }
 
+  async renewSyncJobLease(jobId: string, workerId: string, leaseSeconds = 900): Promise<boolean> {
+    return await this.request('/rest/v1/rpc/renew_sync_job_lease', {
+      method: 'POST', body: { p_job_id: jobId, p_worker_id: workerId, p_lease_seconds: leaseSeconds },
+    }) === true;
+  }
+
   async finishSyncJob(
     jobId: string,
     workerId: string,
     options: { result?: JsonObject | null; error?: string | null },
   ): Promise<void> {
-    const params = query({ id: `eq.${jobId}`, locked_by: `eq.${workerId}` });
-    await this.request(`/rest/v1/sync_jobs?${params}`, {
-      method: 'PATCH',
-      body: {
-        state: options.error ? 'failed' : 'succeeded',
-        completed_at: new Date().toISOString(),
-        lease_until: null,
-        locked_by: null,
-        dedupe_key: null,
-        result: options.result ?? null,
-        last_error: options.error?.slice(0, 500) ?? null,
-      },
-      prefer: 'return=minimal',
+    const finished = await this.request('/rest/v1/rpc/finish_sync_job', {
+      method: 'POST', body: { p_job_id: jobId, p_worker_id: workerId,
+        p_result: options.result ?? null, p_error: options.error?.slice(0, 500) ?? null },
     });
+    if (finished !== true) throw new Error('Synchronization job lease was lost');
+  }
+
+  async probeReadiness(): Promise<boolean> {
+    const result = await this.request('/rest/v1/sync_jobs?select=id&limit=0', { timeoutMs: 2_500 });
+    return Array.isArray(result);
   }
 
   async getSyncJob(jobId: string, userId: string): Promise<JsonObject | null> {

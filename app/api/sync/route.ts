@@ -7,8 +7,6 @@ import {
 } from '../../../src/server/api';
 import { wakeSyncWorker } from '../../../src/server/background';
 
-const MAX_USER_SYNC_JOBS = 5;
-
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
@@ -17,7 +15,7 @@ export const POST = apiRoute(async (context) => {
   const userId = requireUser(context).id;
   const jobIds: string[] = [];
   let queued = false;
-  for (const parcel of (await requireUserClient(context).listActivePackages()).slice(0, MAX_USER_SYNC_JOBS)) {
+  for (const parcel of await requireUserClient(context).listActivePackages()) {
     if (typeof parcel.id !== 'string') continue;
     const job = await service.enqueueSyncJob({ userId, packageId: parcel.id });
     queued ||= job.queued;

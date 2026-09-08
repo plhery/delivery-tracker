@@ -6,8 +6,11 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
   type ReactNode,
 } from 'react';
+import { abortable } from '../lib/apiClient';
+import { browserStorage, clearApiCache } from '../store/apiRepo';
 
 export interface AuthConfig {
   url: string;
@@ -19,6 +22,7 @@ export interface AuthConfig {
 type AuthStatus = 'loading' | 'anonymous' | 'authenticated' | 'unconfigured';
 
 interface AuthState {
+  signal: AbortSignal;
   status: AuthStatus;
   user: User | null;
   accessToken: string | null;
@@ -36,6 +40,12 @@ const AuthContext = createContext<AuthState | null>(null);
 function configuredClient(config: AuthConfig | null): SupabaseClient | null {
   if (!config?.url || !config.publishableKey) return null;
   return createClient(config.url, config.publishableKey, {
+    global: {
+      fetch: (input, init) => {
+        const signal = AbortSignal.any([AbortSignal.timeout(10_000), ...(init?.signal ? [init.signal] : [])]);
+        return abortable(fetch(input, { ...init, signal }), signal);
+      },
+    },
     auth: {
       autoRefreshToken: true,
       detectSessionInUrl: true,
@@ -79,31 +89,46 @@ export function AuthProvider({
     () => suppliedClient ?? configuredClient(config),
     [config, suppliedClient],
   );
-  const [state, setState] = useState<Pick<AuthState, 'status' | 'user' | 'accessToken'>>(
-    () => client
-      ? { status: 'loading', user: null, accessToken: null }
-      : sessionState(null, null),
+  const [initialController] = useState(() => new AbortController());
+  const identity = useRef({ userId: null as string | null, controller: initialController });
+  const logout = useRef<Promise<void> | null>(null);
+  const [state, setState] = useState<Pick<AuthState, 'status' | 'user' | 'accessToken' | 'signal'>>(
+    () => ({ ...(client ? { status: 'loading' as const, user: null, accessToken: null }
+      : sessionState(null, null)), signal: initialController.signal }),
   );
+  const acceptSession = useCallback((session: Session | null) => {
+    const next = sessionState(client, session);
+    const userId = next.user?.id ?? null;
+    if (identity.current.userId !== userId || identity.current.controller.signal.aborted) {
+      identity.current.controller.abort();
+      if (identity.current.userId) clearApiCache(browserStorage(), identity.current.userId);
+      identity.current = { userId, controller: new AbortController() };
+    }
+    setState({ ...next, signal: identity.current.controller.signal });
+  }, [client]);
 
   useEffect(() => {
     if (!client) return;
 
     let active = true;
+    let observedSession = false;
     void client.auth.getSession().then(({ data, error }) => {
-      if (!active) return;
-      setState(error ? sessionState(client, null) : sessionState(client, data.session));
+      if (!active || observedSession || logout.current) return;
+      acceptSession(error ? null : data.session);
     });
     const { data: listener } = client.auth.onAuthStateChange((_event, session) => {
-      if (active) setState(sessionState(client, session));
+      observedSession = true;
+      if (active && !logout.current) acceptSession(session);
     });
     return () => {
       active = false;
       listener.subscription.unsubscribe();
     };
-  }, [client]);
+  }, [client, acceptSession]);
 
   const sendCode = useCallback(async (email: string) => {
     if (!client) throw new Error('Authentication is not configured');
+    await logout.current;
     const { error } = await client.auth.signInWithOtp({
       email,
       options: { shouldCreateUser: true },
@@ -113,6 +138,7 @@ export function AuthProvider({
 
   const signInWithGoogle = useCallback(async () => {
     if (!client) throw new Error('Authentication is not configured');
+    await logout.current;
     const redirectTo = typeof window === 'undefined' ? undefined : window.location.origin;
     const { error } = await client.auth.signInWithOAuth({
       provider: 'google',
@@ -123,6 +149,7 @@ export function AuthProvider({
 
   const verifyCode = useCallback(async (email: string, code: string) => {
     if (!client) throw new Error('Authentication is not configured');
+    await logout.current;
     const { data, error } = await client.auth.verifyOtp({
       email,
       token: code,
@@ -130,25 +157,35 @@ export function AuthProvider({
     });
     if (error) throw error;
     if (!data.session) throw new Error('The sign-in code did not create a session');
-    setState(sessionState(client, data.session));
-  }, [client]);
+    acceptSession(data.session);
+  }, [client, acceptSession]);
 
   const signOut = useCallback(async () => {
     if (!client) return;
-    const { error } = await client.auth.signOut({ scope: 'local' });
-    if (error) throw error;
-    setState(sessionState(client, null));
-  }, [client]);
+    if (logout.current) return logout.current;
+    acceptSession(null);
+    const operation = client.auth.signOut({ scope: 'local' }).then(() => undefined);
+    logout.current = operation;
+    try { await operation; } finally { logout.current = null; }
+  }, [client, acceptSession]);
 
   const getAccessToken = useCallback(async (refresh = false) => {
-    if (!client) return null;
+    state.signal.throwIfAborted();
+    if (!client || !state.user) return null;
     const { data, error } = refresh
       ? await client.auth.refreshSession()
       : await client.auth.getSession();
+    state.signal.throwIfAborted();
     if (error) throw error;
+    if (data.session && data.session.user.id !== state.user.id) {
+      throw new DOMException('The signed-in account changed', 'AbortError');
+    }
     return data.session?.access_token ?? null;
-  }, [client]);
+  }, [client, state.user, state.signal]);
 
+  // These callbacks read lifecycle refs only when invoked by consumers.
+  // The compiler currently treats passing them through useMemo as invoking them.
+  /* eslint-disable react-hooks/refs */
   const value = useMemo(
     () => ({
       ...state,
@@ -172,6 +209,7 @@ export function AuthProvider({
     ],
   );
 
+  /* eslint-enable react-hooks/refs */
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

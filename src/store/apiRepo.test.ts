@@ -187,6 +187,7 @@ describe('createApiRepo', () => {
 
     const parcels = await repo.refresh();
     expect(fetch).toHaveBeenNthCalledWith(2, '/api/sync', {
+      signal: expect.any(AbortSignal),
       method: 'POST',
       cache: 'no-store',
       headers: expect.any(Headers),
@@ -369,7 +370,7 @@ describe('createApiRepo', () => {
 
     await expect(repo.list()).resolves.toHaveLength(1);
 
-    expect(getAccessToken).toHaveBeenNthCalledWith(1);
+    expect(getAccessToken).toHaveBeenNthCalledWith(1, false);
     expect(getAccessToken).toHaveBeenNthCalledWith(2, true);
     const firstHeaders = new Headers(fetch.mock.calls[0][1]?.headers);
     const secondHeaders = new Headers(fetch.mock.calls[1][1]?.headers);
@@ -434,7 +435,7 @@ describe('createApiRepo', () => {
     const unsubscribe = repo.subscribe?.(onChange);
 
     await repo.add({ trackingNumber: packageRow.tracking_number, label: 'Coffee' });
-    await Promise.resolve();
+    await vi.advanceTimersByTimeAsync(0);
     expect(fetch.mock.calls[1][0]).toBe(`/api/sync/jobs?ids=${contractFixture.job.id}`);
     await vi.advanceTimersByTimeAsync(999);
     expect(onChange).not.toHaveBeenCalled();

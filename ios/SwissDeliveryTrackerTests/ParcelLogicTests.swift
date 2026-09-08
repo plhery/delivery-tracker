@@ -841,3 +841,201 @@ private final class StubArchivePanGestureRecognizer: UIPanGestureRecognizer {
     override func translation(in view: UIView?) -> CGPoint { testTranslation }
     override func velocity(in view: UIView?) -> CGPoint { .zero }
 }
+
+private final class MemorySessionPersistence: SessionPersistence {
+    var data: Data?
+    func save<T: Encodable>(_ value: T) throws { data = try JSONEncoder.deliveryTracker.encode(value) }
+    func load<T: Decodable>() -> T? { data.flatMap { try? JSONDecoder.deliveryTracker.decode(T.self, from: $0) } }
+    func delete() { data = nil }
+}
+
+private final class SessionTestURLProtocol: URLProtocol {
+    nonisolated(unsafe) static var handler: ((URLRequest, @escaping (Result<(Int, Data), Error>) -> Void) -> Void)?
+    override class func canInit(with request: URLRequest) -> Bool { request.url?.host == "session.test" }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        Self.handler?(request) { result in
+            switch result {
+            case .success(let (status, data)):
+                self.client?.urlProtocol(self, didReceive: HTTPURLResponse(url: self.request.url!, statusCode: status, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!, cacheStoragePolicy: .notAllowed)
+                self.client?.urlProtocol(self, didLoad: data)
+                self.client?.urlProtocolDidFinishLoading(self)
+            case .failure(let error): self.client?.urlProtocol(self, didFailWithError: error)
+            }
+        }
+    }
+    override func stopLoading() {}
+}
+
+final class SessionIsolationTests: XCTestCase {
+    @MainActor private var configuration: AppConfiguration {
+        AppConfiguration(mode: .api, apiBaseURL: URL(string: "https://session.test")!, supabaseURL: URL(string: "https://session.test")!, supabasePublishableKey: "public", googleAuthEnabled: false, emailOTPEnabled: true, appGroupIdentifier: "session.test")
+    }
+    private func transport() -> URLSession {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [SessionTestURLProtocol.self]
+        return URLSession(configuration: config)
+    }
+    private func respond(_ data: Data, status: Int = 200) {
+        SessionTestURLProtocol.handler = { _, complete in complete(.success((status, data))) }
+    }
+    private func offline() {
+        SessionTestURLProtocol.handler = { _, complete in complete(.failure(URLError(.notConnectedToInternet))) }
+    }
+    @MainActor private func authorize(_ session: SessionStore, id: UUID = UUID(), expired: Bool = false) async throws {
+        let value = AuthSession(accessToken: "token-" + id.uuidString, tokenType: "bearer", expiresIn: 3600, expiresAt: Int(Date().timeIntervalSince1970) + (expired ? -120 : 3600), refreshToken: "refresh", user: AuthUser(id: id, email: "test@example.com", isAnonymous: false))
+        respond(try JSONEncoder.deliveryTracker.encode(value))
+        try await session.verifyCode(email: "test@example.com", code: "123456")
+    }
+    @MainActor private func store(_ session: SessionStore, _ transport: URLSession) -> ParcelStore {
+        let store = ParcelStore(configuration: configuration, session: session, localizer: Localizer(), transport: transport)
+        store.setDeliveryWidgetEnabled(false)
+        store.setDeliveryLiveActivitiesEnabled(false)
+        return store
+    }
+    private func parcel() -> Parcel {
+        Parcel(id: UUID(), trackingNumber: "12345678", label: "Private account A parcel", carrier: .unknown, createdAt: "2026-09-08T00:00:00Z", syncStatus: .ok, notificationsMuted: false)
+    }
+    @MainActor func testForcedSignOutClearsParcelsBeforeNextAccountLoads() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let session = SessionStore(configuration: configuration, persistence: MemorySessionPersistence(), transport: transport)
+        defer { session.forceSignOut() }
+        try await authorize(session)
+        let store = store(session, transport)
+        let parcel = parcel()
+        respond(try JSONEncoder.deliveryTracker.encode(PackageListResponse(packages: [parcel])))
+        await store.load()
+        store.undoParcel = parcel
+        XCTAssertEqual(store.parcels.map(\.id), [parcel.id])
+        session.forceSignOut()
+        XCTAssertTrue(store.parcels.isEmpty)
+        XCTAssertNil(store.undoParcel)
+        let nextUser = UUID()
+        try await authorize(session, id: nextUser)
+        offline()
+        await store.load()
+        XCTAssertEqual(session.user?.id, nextUser)
+        XCTAssertTrue(store.parcels.isEmpty)
+    }
+    @MainActor func testSuccessfulDeleteIsReflectedInOfflineCache() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let session = SessionStore(configuration: configuration, persistence: MemorySessionPersistence(), transport: transport)
+        defer { session.forceSignOut() }
+        try await authorize(session)
+        let store = store(session, transport)
+        let parcel = parcel()
+        respond(try JSONEncoder.deliveryTracker.encode(PackageListResponse(packages: [parcel])))
+        await store.load()
+        respond(Data("{\"ok\":true}".utf8))
+        try await store.permanentlyDelete(parcel)
+        offline()
+        let relaunchedStore = self.store(session, transport)
+        await relaunchedStore.load()
+        XCTAssertTrue(relaunchedStore.parcels.isEmpty)
+        XCTAssertTrue(relaunchedStore.usingCachedData)
+    }
+    @MainActor func testSuccessfulRenamePersistsForOfflineLaunch() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let session = SessionStore(configuration: configuration, persistence: MemorySessionPersistence(), transport: transport)
+        defer { session.forceSignOut() }
+        try await authorize(session)
+        let store = store(session, transport)
+        var parcel = parcel()
+        respond(try JSONEncoder.deliveryTracker.encode(PackageListResponse(packages: [parcel])))
+        await store.load()
+        parcel.label = "Updated label"
+        respond(try JSONEncoder.deliveryTracker.encode(parcel))
+        try await store.rename(parcel, label: parcel.label)
+        offline()
+        let relaunchedStore = self.store(session, transport)
+        await relaunchedStore.load()
+        XCTAssertEqual(relaunchedStore.parcels.first?.label, "Updated label")
+    }
+    @MainActor func testOfflineAndServerErrorPreserveExpiredRefreshableSession() async throws {
+        for serverError in [false, true] {
+            let transport = transport()
+            defer { transport.invalidateAndCancel() }
+            let persistence = MemorySessionPersistence()
+            let session = SessionStore(configuration: configuration, persistence: persistence, transport: transport)
+            try await authorize(session, expired: true)
+            if serverError { respond(Data("{\"message\":\"Unavailable\"}".utf8), status: 503) } else { offline() }
+            let relaunched = SessionStore(configuration: configuration, persistence: persistence, transport: transport)
+            await relaunched.bootstrap()
+            XCTAssertEqual(relaunched.user?.id, session.user?.id)
+            XCTAssertNotNil(persistence.data)
+            relaunched.forceSignOut()
+        }
+    }
+    @MainActor func testInvalidRefreshTokenClearsSavedSession() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let persistence = MemorySessionPersistence()
+        let session = SessionStore(configuration: configuration, persistence: persistence, transport: transport)
+        try await authorize(session, expired: true)
+        respond(Data("{\"code\":\"refresh_token_not_found\",\"message\":\"Invalid refresh token\"}".utf8), status: 400)
+        let relaunched = SessionStore(configuration: configuration, persistence: persistence, transport: transport)
+        await relaunched.bootstrap()
+        XCTAssertNil(relaunched.user)
+        XCTAssertNil(persistence.data)
+    }
+    @MainActor func testLateUnauthorizedResponseCannotSignOutNextAccount() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let session = SessionStore(configuration: configuration, persistence: MemorySessionPersistence(), transport: transport)
+        defer { session.forceSignOut() }
+        try await authorize(session)
+        let store = store(session, transport)
+        let started = expectation(description: "Old account request started")
+        nonisolated(unsafe) var complete: ((Result<(Int, Data), Error>) -> Void)?
+        SessionTestURLProtocol.handler = { request, callback in
+            if request.url?.path == "/api/packages", request.httpMethod == "GET" {
+                complete = callback
+                started.fulfill()
+            } else { callback(.success((200, Data("{}".utf8)))) }
+        }
+        let pending = Task { await store.load() }
+        await fulfillment(of: [started], timeout: 2)
+        session.forceSignOut()
+        let nextUser = UUID()
+        try await authorize(session, id: nextUser)
+        complete?(.success((401, Data("{}".utf8))))
+        await pending.value
+        XCTAssertEqual(session.user?.id, nextUser)
+        XCTAssertTrue(store.parcels.isEmpty)
+        XCTAssertNil(store.errorMessage)
+    }
+    @MainActor func testListStartedBeforeDeleteCannotRestoreDeletedParcel() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let session = SessionStore(configuration: configuration, persistence: MemorySessionPersistence(), transport: transport)
+        defer { session.forceSignOut() }
+        try await authorize(session)
+        let store = store(session, transport)
+        let parcel = parcel()
+        let data = try JSONEncoder.deliveryTracker.encode(PackageListResponse(packages: [parcel]))
+        respond(data)
+        await store.load()
+        let started = expectation(description: "Stale collection request started")
+        nonisolated(unsafe) var complete: ((Result<(Int, Data), Error>) -> Void)?
+        SessionTestURLProtocol.handler = { request, callback in
+            if request.url?.path == "/api/packages", request.httpMethod == "GET" {
+                complete = callback
+                started.fulfill()
+            } else { callback(.success((200, Data("{}".utf8)))) }
+        }
+        let pending = Task { await store.load() }
+        await fulfillment(of: [started], timeout: 2)
+        respond(Data("{\"ok\":true}".utf8))
+        try await store.permanentlyDelete(parcel)
+        complete?(.success((200, data)))
+        await pending.value
+        XCTAssertTrue(store.parcels.isEmpty)
+        offline()
+        let relaunchedStore = self.store(session, transport)
+        await relaunchedStore.load()
+        XCTAssertTrue(relaunchedStore.parcels.isEmpty)
+    }
+}

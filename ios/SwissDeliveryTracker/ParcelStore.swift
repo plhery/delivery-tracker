@@ -1,5 +1,6 @@
 import ActivityKit
 import Foundation
+import Combine
 import UIKit
 import UserNotifications
 import WidgetKit
@@ -39,7 +40,10 @@ final class ParcelStore: ObservableObject {
     private var deliveryActivityStateTasks: [String: Task<Void, Never>] = [:]
     private var pendingJobIDs = Set<UUID>()
     private var isActive = true
-    private var lastStartedAsDemo: Bool?
+    private var identityObservation: AnyCancellable?
+    private var cacheOwnerID: UUID?
+    private var mutationRevision = 0
+    private var loadSequence = 0
     private var notificationEnableInProgress = false
     private var nativePushGeneration = 0
     private var deliveryLiveActivityGeneration = 0
@@ -51,7 +55,7 @@ final class ParcelStore: ObservableObject {
     private let demoNotificationsKey = "sdt.demoNotificationsEnabled"
     private static let installationIDKey = "sdt.installationID.v1"
 
-    init(configuration: AppConfiguration = .current, session: SessionStore, localizer: Localizer) {
+    init(configuration: AppConfiguration = .current, session: SessionStore, localizer: Localizer, transport: URLSession = .shared) {
         self.configuration = configuration
         self.session = session
         self.localizer = localizer
@@ -60,12 +64,48 @@ final class ParcelStore: ObservableObject {
             appGroupIdentifier: configuration.appGroupIdentifier,
             fallbackToStandard: true
         )
-        api = DeliveryAPIClient(configuration: configuration, session: session)
+        api = DeliveryAPIClient(configuration: configuration, session: session, transport: transport)
         demo = DemoRepository()
         deliveryWidgetEnabled = deliveryWidgetStore?.isEnabled ?? true
         deliveryLiveActivitiesEnabled = deliveryWidgetStore?.liveActivitiesEnabled ?? true
         deliveryLiveActivityRegistrationRemovalPending = !deliveryLiveActivitiesEnabled
         deliveryWidgetStore?.setLiveActivitiesEnabled(deliveryLiveActivitiesEnabled)
+        cacheOwnerID = session.user?.id
+        identityObservation = session.identityChanges.sink { [weak self] in self?.resetForSessionChange() }
+    }
+
+    private func resetForSessionChange() {
+        pollingTask?.cancel()
+        pollingTask = nil
+        jobMonitoringTask?.cancel()
+        jobMonitoringTask = nil
+        pendingJobIDs.removeAll()
+        nativePushGeneration += 1
+        deliveryLiveActivityGeneration += 1
+        stopDeliveryLiveActivityObservers()
+        if let cacheOwnerID {
+            cache.delete(userID: cacheOwnerID)
+            UIApplication.shared.unregisterForRemoteNotifications()
+            AppDelegate.clearDeviceToken()
+            UserDefaults.standard.set(true, forKey: notificationOptOutKey)
+            UserDefaults.standard.set(false, forKey: nativePushRegisteredKey)
+        }
+        cacheOwnerID = session.user?.id
+        mutationRevision += 1
+        loadSequence += 1
+        parcels = []
+        undoParcel = nil
+        loading = false
+        refreshing = false
+        errorMessage = nil
+        authenticationRequired = false
+        usingCachedData = false
+        notificationPreferences = nil
+        notificationError = nil
+        notificationEnableInProgress = false
+        notificationsEnabledOnDevice = false
+        deliveryLiveActivityError = nil
+        clearDeliverySurfaces()
     }
 
     var isDemo: Bool { session.isDemo }
@@ -118,10 +158,7 @@ final class ParcelStore: ObservableObject {
         jobMonitoringTask?.cancel()
         jobMonitoringTask = nil
         pendingJobIDs.removeAll()
-        if let lastStartedAsDemo, lastStartedAsDemo != isDemo {
-            parcels = []
-        }
-        lastStartedAsDemo = isDemo
+        let generation = session.generation
         errorMessage = nil
         authenticationRequired = false
         usingCachedData = false
@@ -131,10 +168,13 @@ final class ParcelStore: ObservableObject {
             return
         }
         await load(showSpinner: true)
+        guard (try? session.checkGeneration(generation)) != nil else { return }
         await refreshNotificationState()
+        guard (try? session.checkGeneration(generation)) != nil else { return }
         startDeliveryLiveActivityObservers()
         if !isDemo {
             await loadNotificationPreferences()
+            guard (try? session.checkGeneration(generation)) != nil else { return }
             beginPolling()
         }
     }
@@ -149,33 +189,36 @@ final class ParcelStore: ObservableObject {
     }
 
     func load(showSpinner: Bool = false) async {
+        guard session.isAuthenticated else { return }
+        let generation = session.generation
+        let revision = mutationRevision
+        let ownerID = session.user?.id
+        loadSequence += 1
+        let sequence = loadSequence
         if showSpinner && parcels.isEmpty { loading = true }
+        defer { if generation == session.generation && sequence == loadSequence { loading = false } }
         do {
             let next = try await list()
+            try session.checkGeneration(generation)
+            guard revision == mutationRevision, sequence == loadSequence else { return }
             parcels = next
             errorMessage = nil
             authenticationRequired = false
             usingCachedData = false
-            if !isDemo, let userID = session.user?.id {
-                try? cache.save(next, userID: userID)
-            }
+            if let ownerID { try? cache.save(next, userID: ownerID) }
         } catch {
+            guard (try? session.checkGeneration(generation)) != nil,
+                  revision == mutationRevision, sequence == loadSequence,
+                  !(error is CancellationError) else { return }
             errorMessage = localizer.errorMessage(error)
-            if let apiError = error as? DeliveryAPIError,
-               case .authenticationExpired = apiError {
+            if let apiError = error as? DeliveryAPIError, case .authenticationExpired = apiError {
                 authenticationRequired = true
-            } else {
-                authenticationRequired = false
-            }
-            if parcels.isEmpty,
-               !isDemo,
-               let userID = session.user?.id,
-               let cached = cache.load(userID: userID) {
+            } else { authenticationRequired = false }
+            if parcels.isEmpty, let ownerID, let cached = cache.load(userID: ownerID) {
                 parcels = cached
                 usingCachedData = true
             }
         }
-        loading = false
     }
 
     @discardableResult
@@ -186,6 +229,7 @@ final class ParcelStore: ObservableObject {
         trackingURL: String?,
         dpdPostcode: String?
     ) async throws -> Parcel {
+        let generation = session.generation
         let request = CreatePackageRequest(
             trackingNumber: CarrierCatalog.normalize(trackingNumber),
             label: label.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -199,17 +243,21 @@ final class ParcelStore: ObservableObject {
         } else {
             let response = try await api.add(request)
             parcel = response.package
+            try session.checkGeneration(generation)
             monitorJobs(response.jobIDs)
         }
+        try session.checkGeneration(generation)
         upsert(parcel)
         return parcel
     }
 
     func rename(_ parcel: Parcel, label: String) async throws {
+        let generation = session.generation
         let cleaned = label.trimmingCharacters(in: .whitespacesAndNewlines)
         let updated = isDemo
             ? try demo.rename(id: parcel.id, label: cleaned)
             : try await api.rename(id: parcel.id, label: cleaned)
+        try session.checkGeneration(generation)
         upsert(updated)
     }
 
@@ -219,6 +267,7 @@ final class ParcelStore: ObservableObject {
         trackingURL: String?,
         dpdPostcode: String?
     ) async throws {
+        let generation = session.generation
         let cleanedURL = trackingURL?
             .trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
         let cleanedPostcode = dpdPostcode?
@@ -239,59 +288,76 @@ final class ParcelStore: ObservableObject {
                 dpdPostcode: cleanedPostcode
             )
             updated = response.package
+            try session.checkGeneration(generation)
             monitorJobs(response.jobIDs)
         }
+        try session.checkGeneration(generation)
         upsert(updated)
     }
 
     func setMuted(_ parcel: Parcel, muted: Bool) async throws {
+        let generation = session.generation
         let updated = isDemo
             ? try demo.setMuted(id: parcel.id, muted: muted)
             : try await api.setMuted(id: parcel.id, muted: muted)
+        try session.checkGeneration(generation)
         upsert(updated)
     }
 
     func archive(_ parcel: Parcel) async throws {
+        let generation = session.generation
         if isDemo { try demo.archive(id: parcel.id) }
         else { try await api.archive(id: parcel.id) }
         var updated = parcel
         updated.archivedAt = DateParser.isoString(Date())
+        try session.checkGeneration(generation)
         upsert(updated)
         undoParcel = parcel
     }
 
     func restore(_ parcel: Parcel) async throws {
+        let generation = session.generation
         let restored = isDemo
             ? try demo.restore(id: parcel.id)
             : try await api.restore(id: parcel.id)
+        try session.checkGeneration(generation)
         upsert(restored)
         if undoParcel?.id == parcel.id { undoParcel = nil }
     }
 
     func permanentlyDelete(_ parcel: Parcel) async throws {
+        let generation = session.generation
         if isDemo { try demo.permanentlyDelete(id: parcel.id) }
         else { try await api.permanentlyDelete(id: parcel.id) }
+        try session.checkGeneration(generation)
+        mutationRevision += 1
         parcels.removeAll { $0.id == parcel.id }
+        persistCache()
         if undoParcel?.id == parcel.id { undoParcel = nil }
     }
 
     func refreshAll() async throws {
+        let generation = session.generation
         guard !refreshing else { return }
         refreshing = true
-        defer { refreshing = false }
+        defer { if generation == session.generation { refreshing = false } }
         if isDemo {
             parcels = demo.refreshAll()
         } else {
             try await api.refreshAll()
+            try session.checkGeneration(generation)
             await load(showSpinner: false)
         }
     }
 
     func refresh(_ parcel: Parcel) async throws {
+        let generation = session.generation
         if isDemo {
+            try session.checkGeneration(generation)
             upsert(try demo.refresh(id: parcel.id))
         } else {
             try await api.refresh(id: parcel.id)
+            try session.checkGeneration(generation)
             await load(showSpinner: false)
         }
     }
@@ -323,6 +389,7 @@ final class ParcelStore: ObservableObject {
     }
 
     func deleteAccount(confirmation: String) async throws {
+        let generation = session.generation
         guard !isDemo else {
             await resetDemoData()
             return
@@ -334,7 +401,9 @@ final class ParcelStore: ObservableObject {
         jobMonitoringTask?.cancel()
         pendingJobIDs.removeAll()
         try await api.deleteAccount(confirmation: confirmation)
+        try session.checkGeneration(generation)
         await endAllDeliveryLiveActivities()
+        try session.checkGeneration(generation)
         UIApplication.shared.unregisterForRemoteNotifications()
         AppDelegate.clearDeviceToken()
         UserDefaults.standard.set(true, forKey: notificationOptOutKey)
@@ -348,6 +417,7 @@ final class ParcelStore: ObservableObject {
     }
 
     func signOut() async throws {
+        let generation = session.generation
         nativePushGeneration += 1
         deliveryLiveActivityGeneration += 1
         deliveryLiveActivityRegistrationRemovalPending = true
@@ -356,9 +426,12 @@ final class ParcelStore: ObservableObject {
         if let token = AppDelegate.currentDeviceToken, !isDemo {
             try? await api.unregisterNativePushToken(token)
         }
+        try session.checkGeneration(generation)
         if !isDemo { try? await api.unregisterLiveActivityDevice(installationID: installationID) }
         stopDeliveryLiveActivityObservers()
+        try session.checkGeneration(generation)
         await endAllDeliveryLiveActivities()
+        try session.checkGeneration(generation)
         UIApplication.shared.unregisterForRemoteNotifications()
         AppDelegate.clearDeviceToken()
         UserDefaults.standard.set(true, forKey: notificationOptOutKey)
@@ -368,8 +441,6 @@ final class ParcelStore: ObservableObject {
         notificationError = nil
         if let userID = session.user?.id { cache.delete(userID: userID) }
         try await session.signOut()
-        pollingTask?.cancel()
-        parcels = []
     }
 
     func refreshNotificationState() async {
@@ -498,8 +569,16 @@ final class ParcelStore: ObservableObject {
     }
 
     private func upsert(_ parcel: Parcel) {
+        mutationRevision += 1
         if let index = parcels.firstIndex(where: { $0.id == parcel.id }) { parcels[index] = parcel }
         else { parcels.append(parcel) }
+        persistCache()
+    }
+
+    private func persistCache() {
+        guard let userID = session.user?.id else { return }
+        do { try cache.save(parcels, userID: userID) }
+        catch { cache.delete(userID: userID) }
     }
 
     private func publishDeliverySurfaces() {
@@ -509,7 +588,7 @@ final class ParcelStore: ObservableObject {
 
     private func publishDeliveryWidget() {
         let snapshot: DeliveryWidgetSnapshot?
-        if deliveryWidgetEnabled {
+        if deliveryWidgetEnabled && session.isAuthenticated {
             let ordered = ParcelOrganizer.visible(
                 parcels,
                 query: "",
@@ -948,6 +1027,7 @@ final class ParcelStore: ObservableObject {
     private func monitorJobs(_ jobIDs: [UUID]) {
         pendingJobIDs.formUnion(jobIDs)
         guard jobMonitoringTask == nil, !pendingJobIDs.isEmpty else { return }
+        let generation = session.generation
         jobMonitoringTask = Task { [weak self] in
             guard let self else { return }
             while !Task.isCancelled, !self.pendingJobIDs.isEmpty {
@@ -957,11 +1037,12 @@ final class ParcelStore: ObservableObject {
                     self.pendingJobIDs.subtract(current)
                     await self.load(showSpinner: false)
                 } catch {
-                    if Task.isCancelled { break }
+                    guard (try? self.session.checkGeneration(generation)) != nil else { return }
                     self.pendingJobIDs.subtract(current)
                     self.errorMessage = self.localizer.errorMessage(error)
                 }
             }
+            guard (try? self.session.checkGeneration(generation)) != nil else { return }
             self.jobMonitoringTask = nil
             if !self.pendingJobIDs.isEmpty { self.monitorJobs([]) }
         }

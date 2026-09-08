@@ -11,7 +11,7 @@ it('sends an authenticated, cancellable lookup and checks its shipment identity'
   const signal = new AbortController().signal;
   await expect(lookupCarrier('123456789018', auth, signal)).resolves.toMatchObject({ carrier: 'gls-de' });
   expect(fetcher).toHaveBeenCalledWith('/api/carriers/detect', expect.objectContaining({
-    method: 'POST', signal, body: JSON.stringify({ trackingNumber: '123456789018' }), cache: 'no-store',
+    method: 'POST', signal: expect.any(AbortSignal), body: JSON.stringify({ trackingNumber: '123456789018' }), cache: 'no-store',
   }));
   expect(new Headers(fetcher.mock.calls[0][1]?.headers).get('Authorization')).toBe('Bearer test-token');
 });

@@ -126,7 +126,7 @@ function retryAfterMilliseconds(value: string | null): number {
   return Number.isFinite(milliseconds) ? Math.max(0, milliseconds) : 0;
 }
 
-async function request<T>(path: string, auth: ApiAuth | undefined, init?: RequestInit): Promise<T> {
+async function apiRequest<T>(path: string, auth: ApiAuth | undefined, init?: RequestInit): Promise<T> {
   const response = await authenticatedFetch(path, auth, init);
   const payload = (await response.json().catch(() => null)) as (
     T & { error?: string; packageId?: string }
@@ -159,6 +159,16 @@ export function createApiRepo(
   let monitorTask: Promise<void> | null = null;
   let lifecycle = new AbortController();
   const cacheKey = auth ? `${API_CACHE_KEY}.${auth.userId}` : API_CACHE_KEY;
+
+  async function request<T>(path: string, requestAuth: ApiAuth | undefined, init?: RequestInit): Promise<T> {
+    // Capture this lifecycle: StrictMode may subscribe again before an old response arrives.
+    const signal = AbortSignal.any([lifecycle.signal, ...(init?.signal ? [init.signal] : []),
+      ...(auth?.signal ? [auth.signal] : [])]);
+    signal.throwIfAborted();
+    const value = await apiRequest<T>(path, requestAuth, { ...init, signal });
+    signal.throwIfAborted();
+    return value;
+  }
 
   const wait = (milliseconds: number, signal: AbortSignal) => new Promise<void>((resolve, reject) => {
     signal.throwIfAborted();
@@ -248,10 +258,13 @@ export function createApiRepo(
   }
 
   async function list(): Promise<ParcelWithEvents[]> {
+    const signal = lifecycle.signal;
     const payload = await request<ApiPackageListResponse>(
       '/api/packages?includeArchived=true',
       auth,
     );
+    signal.throwIfAborted();
+    auth?.signal?.throwIfAborted();
     const parcels = payload.packages.map(toParcel);
     saveCachedParcels(storage, cacheKey, parcels);
     return parcels;
@@ -260,7 +273,7 @@ export function createApiRepo(
   return {
     mode: 'api',
     list,
-    cachedList: () => cachedParcels(storage, cacheKey),
+    cachedList: () => lifecycle.signal.aborted || auth?.signal?.aborted ? null : cachedParcels(storage, cacheKey),
 
     async add(input: NewParcelInput): Promise<ParcelWithEvents> {
       const trackingNumber = normalizeTrackingNumber(input.trackingNumber);

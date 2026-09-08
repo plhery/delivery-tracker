@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import { describe, expect, it, vi } from 'vitest';
@@ -160,4 +160,42 @@ describe('AuthProvider', () => {
     );
     expect(screen.getByText('unconfigured')).toBeInTheDocument();
   });
+});
+
+
+it('invalidates old token getters when another account signs in during refresh', async () => {
+  const { client, auth } = authClient(SESSION);
+  const { result } = renderHook(() => useAuth(), {
+    wrapper: ({ children }) => <AuthProvider config={null} client={client}>{children}</AuthProvider>,
+  });
+  await waitFor(() => expect(result.current.user?.id).toBe('user-1'));
+  const previous = result.current;
+  let finish!: (value: unknown) => void;
+  auth.refreshSession.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  const pending = previous.getAccessToken(true);
+  const rejected = expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+  const next = { ...SESSION, user: { ...SESSION.user, id: 'user-2' }, access_token: 'private-B' };
+  const listener = auth.onAuthStateChange.mock.calls[0][0] as unknown as (event: string, session: Session) => void;
+  act(() => listener('SIGNED_IN', next));
+  expect(previous.signal.aborted).toBe(true);
+  finish({ data: { session: next }, error: null });
+  await rejected;
+  expect(result.current.user?.id).toBe('user-2');
+});
+
+it('clears the account immediately while remote sign-out is pending', async () => {
+  const { client, auth } = authClient(SESSION);
+  let finish!: (value: { error: null }) => void;
+  auth.signOut.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  const { result } = renderHook(() => useAuth(), {
+    wrapper: ({ children }) => <AuthProvider config={null} client={client}>{children}</AuthProvider>,
+  });
+  await waitFor(() => expect(result.current.user).not.toBeNull());
+  const previousSignal = result.current.signal;
+  let pending!: Promise<void>;
+  act(() => { pending = result.current.signOut(); });
+  expect(result.current.status).toBe('anonymous');
+  expect(previousSignal.aborted).toBe(true);
+  finish({ error: null });
+  await pending;
 });

@@ -121,9 +121,9 @@ jobs:
             swiss-delivery-tracker:test
           trap 'docker logs swiss-delivery-tracker-test; docker rm -f swiss-delivery-tracker-test' EXIT
           for attempt in $(seq 1 20); do
-            if curl -fsS http://127.0.0.1:3000/health >/dev/null; then
+            if curl -fsS http://127.0.0.1:3000/health/live >/dev/null; then
               break
             fi
             sleep 1
           done
-          scripts/smoke-url.sh http://127.0.0.1:3000
+          SMOKE_EXPECT_READY=false scripts/smoke-url.sh http://127.0.0.1:3000

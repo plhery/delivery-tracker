@@ -29,6 +29,8 @@ export type SyncAnomalyCode =
 
 export interface SyncRunContext {
   jobId?: string | null;
+  lease?: { jobId: string; workerId: string };
+  signal?: AbortSignal;
   trigger: SyncTrigger;
 }
 

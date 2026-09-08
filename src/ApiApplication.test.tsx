@@ -135,6 +135,17 @@ describe('ApiApplication', () => {
     expect(screen.queryByRole('button', { name: /try the demo/ })).not.toBeInTheDocument();
   });
 
+  it('signs out and clears private cache while push deregistration is stalled', async () => {
+    mocks.auth.status = 'authenticated';
+    mocks.auth.user = USER;
+    mocks.disablePushNotifications.mockImplementationOnce(() => new Promise(() => {}));
+    render(<ApiApplication />);
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Sign out' }));
+    expect(mocks.auth.signOut).toHaveBeenCalledOnce();
+    expect(mocks.clearApiCache).toHaveBeenCalledWith(window.localStorage, USER.id);
+    expect(window.localStorage.getItem('sdt.web.experience.v1')).toBe('welcome');
+  });
+
   it('renders loading and both sign-in configuration states', () => {
     mocks.auth.status = 'loading';
     const result = render(<ApiApplication />);

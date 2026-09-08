@@ -1,6 +1,7 @@
 import AuthenticationServices
 import CryptoKit
 import Foundation
+import Combine
 import Security
 import UIKit
 
@@ -20,7 +21,7 @@ struct AuthSession: Codable, Sendable {
 
     var expirationDate: Date {
         if let expiresAt { return Date(timeIntervalSince1970: TimeInterval(expiresAt)) }
-        return Date().addingTimeInterval(TimeInterval(expiresIn))
+        return .distantPast // Legacy sessions without an absolute expiry must refresh.
     }
 }
 
@@ -31,6 +32,20 @@ enum AuthenticationState {
     case unconfigured
     case signedOut
     case signedIn(AuthUser)
+
+    var identity: String? {
+        switch self {
+        case .signedIn(let user): user.id.uuidString
+        case .demo: "demo"
+        default: nil
+        }
+    }
+}
+
+protocol SessionPersistence {
+    func save<T: Encodable>(_ value: T) throws
+    func load<T: Decodable>() -> T?
+    func delete()
 }
 
 enum AuthenticationError: LocalizedError {
@@ -59,19 +74,37 @@ enum AuthenticationError: LocalizedError {
 
 @MainActor
 final class SessionStore: ObservableObject {
-    @Published private(set) var state: AuthenticationState = .loading
+    @Published private(set) var state: AuthenticationState = .loading {
+        didSet {
+            if oldValue.identity != state.identity {
+                generation = UUID()
+                identityChanges.send()
+            }
+        }
+    }
+    private(set) var generation = UUID()
+    let identityChanges = PassthroughSubject<Void, Never>()
+
+    func checkGeneration(_ expected: UUID) throws {
+        try Task.checkCancellation()
+        guard generation == expected else { throw CancellationError() }
+    }
 
     let configuration: AppConfiguration
-    private let keychain = KeychainStore(service: "com.plhery.SwissDeliveryTracker.auth")
+    private let keychain: any SessionPersistence
+    private let transport: URLSession
     private let experienceKey = "sdt.native.experience.v1"
     private let defaults: UserDefaults
     private var session: AuthSession?
     private var refreshTask: Task<Void, Error>?
     private var webAuthenticationSession: ASWebAuthenticationSession?
 
-    init(configuration: AppConfiguration = .current, defaults: UserDefaults = .standard) {
+    init(configuration: AppConfiguration = .current, defaults: UserDefaults = .standard,
+         persistence: (any SessionPersistence)? = nil, transport: URLSession = .shared) {
         self.configuration = configuration
         self.defaults = defaults
+        self.keychain = persistence ?? KeychainStore(service: "com.plhery.SwissDeliveryTracker.auth")
+        self.transport = transport
     }
 
     var user: AuthUser? {
@@ -93,18 +126,14 @@ final class SessionStore: ObservableObject {
     func bootstrap() async {
         if configuration.authenticationConfigured,
            let stored: AuthSession = keychain.load() {
+            guard stored.user.isAnonymous != true else { clearLocalSession(); return }
             session = stored
+            rememberExperience("account")
+            state = .signedIn(stored.user)
             if stored.expirationDate.timeIntervalSinceNow < 60 {
-                do {
-                    try await refreshSession()
-                } catch {
-                    clearLocalSession()
-                }
-            } else if stored.user.isAnonymous == true {
-                clearLocalSession()
-            } else {
-                rememberExperience("account")
-                state = .signedIn(stored.user)
+                // A network outage does not invalidate the saved account or its offline parcels.
+                // refreshSession clears credentials only for a definitive refresh rejection.
+                try? await refreshSession()
             }
             return
         }
@@ -142,16 +171,19 @@ final class SessionStore: ObservableObject {
     }
 
     func verifyCode(email: String, code: String) async throws {
+        let generation = generation
         let result = try await authRequest(
             path: "verify",
             method: "POST",
             jsonObject: ["email": email, "token": code, "type": "email"],
             response: AuthSession.self
         )
+        try checkGeneration(generation)
         try accept(result)
     }
 
     func signInWithGoogle() async throws {
+        let generation = generation
         guard let base = configuration.supabaseURL else { throw AuthenticationError.notConfigured }
         let verifier = try Self.randomVerifier()
         let challenge = Self.codeChallenge(for: verifier)
@@ -170,20 +202,26 @@ final class SessionStore: ObservableObject {
             jsonObject: ["auth_code": code, "code_verifier": verifier],
             response: AuthSession.self
         )
+        try checkGeneration(generation)
         try accept(result)
     }
 
     func accessToken(forceRefresh: Bool = false) async throws -> String? {
         guard configuration.mode == .api else { return nil }
-        guard let session else { return nil }
+        guard user != nil, let session else { return nil }
+        let generation = generation
         if forceRefresh || session.expirationDate.timeIntervalSinceNow < 60 {
             try await refreshSession()
         }
+        try checkGeneration(generation)
         return self.session?.accessToken
     }
 
     func signOut() async throws {
-        if let token = session?.accessToken {
+        let token = session?.accessToken
+        clearLocalSession()
+        showWelcome()
+        if let token {
             _ = try? await authRequest(
                 path: "logout?scope=local",
                 method: "POST",
@@ -192,8 +230,6 @@ final class SessionStore: ObservableObject {
                 bearer: token
             )
         }
-        clearLocalSession()
-        showWelcome()
     }
 
     func forceSignOut() {
@@ -206,6 +242,7 @@ final class SessionStore: ObservableObject {
             return
         }
         guard let refreshToken = session?.refreshToken else { throw AuthenticationError.missingSession }
+        let generation = generation
         let task = Task<Void, Error> { [weak self] in
             guard let self else { throw AuthenticationError.missingSession }
             let refreshed = try await self.authRequest(
@@ -214,18 +251,30 @@ final class SessionStore: ObservableObject {
                 jsonObject: ["refresh_token": refreshToken],
                 response: AuthSession.self
             )
-            try Task.checkCancellation()
+            try self.checkGeneration(generation)
+            guard refreshed.user.id == self.session?.user.id else { throw AuthenticationError.missingSession }
             try self.accept(refreshed)
         }
         refreshTask = task
-        defer { refreshTask = nil }
-        try await task.value
+        defer { if self.generation == generation { refreshTask = nil } }
+        do {
+            try await task.value
+        } catch {
+            if self.generation == generation, case AuthenticationError.missingSession = error {
+                clearLocalSession()
+            }
+            throw error
+        }
     }
 
     private func accept(_ next: AuthSession) throws {
         guard next.user.isAnonymous != true else { throw AuthenticationError.missingSession }
-        try keychain.save(next)
-        session = next
+        let saved = AuthSession(accessToken: next.accessToken, tokenType: next.tokenType,
+                                expiresIn: next.expiresIn,
+                                expiresAt: next.expiresAt ?? Int(Date().timeIntervalSince1970) + next.expiresIn,
+                                refreshToken: next.refreshToken, user: next.user)
+        try keychain.save(saved)
+        session = saved
         rememberExperience("account")
         state = .signedIn(next.user)
     }
@@ -253,16 +302,19 @@ final class SessionStore: ObservableObject {
         guard let url = URL(string: "auth/v1/\(path)", relativeTo: base)?.absoluteURL else {
             throw AuthenticationError.invalidResponse
         }
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: url, timeoutInterval: 30)
         request.httpMethod = method
         request.httpBody = try JSONSerialization.data(withJSONObject: jsonObject)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(configuration.supabasePublishableKey, forHTTPHeaderField: "apikey")
         if let bearer { request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization") }
-        let (data, rawResponse) = try await URLSession.shared.data(for: request)
+        let (data, rawResponse) = try await transport.data(for: request)
         guard let http = rawResponse as? HTTPURLResponse else { throw AuthenticationError.invalidResponse }
         if !(200..<300).contains(http.statusCode) {
-            let payload = (try? JSONDecoder().decode(AuthErrorPayload.self, from: data))
+            let payload = (try? JSONDecoder.deliveryTracker.decode(AuthErrorPayload.self, from: data))
+            if path == "token?grant_type=refresh_token", Self.invalidRefresh(status: http.statusCode, code: payload?.code ?? payload?.error) {
+                throw AuthenticationError.missingSession
+            }
             if let message = payload?.errorDescription ?? payload?.message ?? payload?.msg {
                 throw AuthenticationError.server(message)
             }
@@ -272,6 +324,12 @@ final class SessionStore: ObservableObject {
             return EmptyAuthResponse() as! T
         }
         return try JSONDecoder.deliveryTracker.decode(T.self, from: data)
+    }
+
+    private static func invalidRefresh(status: Int, code: String?) -> Bool {
+        if status == 401 || status == 403 { return true }
+        return status == 400 && ["invalid_grant", "refresh_token_not_found", "refresh_token_already_used",
+                                 "session_not_found", "session_expired", "user_not_found", "user_banned"].contains(code ?? "")
     }
 
     private func startWebAuthentication(url: URL) async throws -> URL {
@@ -321,6 +379,8 @@ private struct EmptyAuthResponse: Codable {
 }
 
 private struct AuthErrorPayload: Codable {
+    let code: String?
+    let error: String?
     let message: String?
     let msg: String?
     let errorDescription: String?
@@ -335,7 +395,7 @@ private final class AuthenticationAnchorProvider: NSObject, ASWebAuthenticationP
     }
 }
 
-private struct KeychainStore {
+private struct KeychainStore: SessionPersistence {
     let service: String
     private let account = "session"
 

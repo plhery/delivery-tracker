@@ -87,6 +87,13 @@ Drain or stop old worker instances during rollout: older code does not submit
 generation tokens and cannot reject a superseded carrier result. New workers
 fail closed if the migration or token is missing.
 
+Before deploying the lease-renewing worker, apply
+`20260910120000_sync_job_lease_fencing.sql`. Stop or drain older workers during
+rollout: they do not submit lease ownership with tracking writes. The new
+service-only RPCs renew live leases, reject writes after ownership loss, and
+finish jobs only for their current owner. Workers fail closed if these RPCs are
+missing. No parcel history is rewritten.
+
 Deploy the server before releasing native clients that use `GET /api/sync/jobs`.
 The existing single-job endpoint remains compatible with older clients.
 For a local database test, run `scripts/test-migrations.sh` with
@@ -140,7 +147,10 @@ container and overwrites `CF-Connecting-IP`, `X-Real-IP`, and
 
 Expose container port `3000`, use `GET /health` as the health check, and keep the
 container behind HTTPS. The public health response intentionally contains only
-`{"ok": true}`. Authenticated API responses use `Cache-Control: no-store`.
+`{"ok": true}` with HTTP 200 when a database probe succeeds within 2.5 seconds
+and the worker has successfully claimed/polled or renewed a job in the last
+120 seconds; otherwise it returns `{"ok": false}` with HTTP 503. `GET /health/live`
+checks process liveness alone. Authenticated API responses use `Cache-Control: no-store`.
 
 ## 5. Cut over without exposing private data
 
@@ -181,12 +191,14 @@ repository secrets when they are no longer used.
   still required for unauthenticated OTP traffic.
 - Database functions cap each account at 50 active and 500 total parcels, and a
   scheduled synchronization processes at most five parcels per account in
-  round-robin order. Treat changes to these limits as security-sensitive.
+  round-robin order. A user-requested Refresh all queues every eligible parcel;
+  the worker controls execution concurrency. Treat changes to these limits as security-sensitive.
 - Next.js handles request admission. Application pre-authentication limits
   combine a trusted forwarded address with a hashed bearer credential when
   supplied; authenticated limits are per account. Keep the origin behind an
   edge rate limiter as an independent layer.
-- Carrier refreshes live in `public.sync_jobs`. Running jobs use leases and can
+- Carrier refreshes live in `public.sync_jobs`. Running jobs renew their 15-minute leases every 30 seconds. Tracking writes
+  check ownership transactionally and renewal failures stop the current job. Jobs can
   be reclaimed after a worker crash; active package and scheduled jobs are
   deduplicated, and terminal job records are retained for 30 days. Back up this
   table with the rest of Postgres.

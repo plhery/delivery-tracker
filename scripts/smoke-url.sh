@@ -33,13 +33,14 @@ request() {
   local url=$1
   local output=$2
   local response_headers=$3
+  local expected_status=${4:-200}
   local status
   status=$(curl "${curl_args[@]}" \
     -D "$response_headers" \
     -o "$output" \
     -w '%{http_code}' \
     "$url")
-  if [[ "$status" != 200 ]]; then
+  if [[ "$status" != "$expected_status" ]]; then
     echo "Smoke request returned HTTP $status for $url" >&2
     exit 1
   fi
@@ -51,8 +52,18 @@ grep -Eq 'property="og:image"' "$workdir/index.html"
 grep -Eq 'content="https?://[^\"]+/og\.png"' "$workdir/index.html"
 grep -Eiq '^cache-control:.*no-store' "$workdir/index.headers"
 
-request "$base_url/health?smoke=$nonce" "$workdir/health.json" "$workdir/health.headers"
-grep -Eq '"ok"[[:space:]]*:[[:space:]]*true' "$workdir/health.json"
+request "$base_url/health/live?smoke=$nonce" "$workdir/live.json" "$workdir/live.headers"
+expected_ready=${SMOKE_EXPECT_READY:-true}
+if [[ "$expected_ready" == true ]]; then
+  expected_status=200
+elif [[ "$expected_ready" == false ]]; then
+  expected_status=503
+else
+  echo "SMOKE_EXPECT_READY must be true or false" >&2
+  exit 2
+fi
+request "$base_url/health?smoke=$nonce" "$workdir/health.json" "$workdir/health.headers" "$expected_status"
+grep -Eq "\"ok\"[[:space:]]*:[[:space:]]*$expected_ready" "$workdir/health.json"
 
 request "$base_url/og.png" "$workdir/og.png" "$workdir/og.headers"
 grep -Eiq '^content-type:[[:space:]]*image/png' "$workdir/og.headers"

@@ -283,6 +283,22 @@ function notificationBody(
   return location ? `${primary}\n${location}` : primary;
 }
 
+// Database insertion times are identical for events imported in one transaction.
+// Prefer carrier chronology; resolve coarse/missing timestamps by delivery progress.
+const NOTIFICATION_STAGES = ['pending', 'registered', 'accepted', 'in_transit', 'customs',
+  'out_for_delivery', 'failed_attempt', 'ready_for_pickup', 'delivered', 'returned'];
+
+export function compareNotificationEvents(left: JsonObject, right: JsonObject): number {
+  const timestamp = (row: JsonObject, key: string) => {
+    const value = Date.parse(stringField(row, key));
+    return Number.isFinite(value) ? value : 0;
+  };
+  return timestamp(right, 'occurred_at') - timestamp(left, 'occurred_at')
+    || NOTIFICATION_STAGES.indexOf(stringField(right, 'stage')) - NOTIFICATION_STAGES.indexOf(stringField(left, 'stage'))
+    || timestamp(right, 'event_created_at') - timestamp(left, 'event_created_at')
+    || stringField(right, 'event_id').localeCompare(stringField(left, 'event_id'));
+}
+
 export class WebPushNotificationService {
   constructor(
     readonly client: SupabaseServiceClient,
@@ -292,7 +308,8 @@ export class WebPushNotificationService {
     readonly now: () => number = () => Date.now(),
   ) {}
 
-  async dispatch(): Promise<PushSummary> {
+  async dispatch(signal?: AbortSignal): Promise<PushSummary> {
+    signal?.throwIfAborted();
     const grouped = new Map<string, JsonObject[]>();
     for (const row of await this.client.listPendingPushNotifications()) {
       const key = JSON.stringify([stringField(row, 'subscription_id'), stringField(row, 'package_id')]);
@@ -300,15 +317,13 @@ export class WebPushNotificationService {
     }
     const summary = emptySummary();
     for (const events of grouped.values()) {
-      const newest = [...events].sort(
-        (left, right) => stringField(right, 'event_created_at').localeCompare(
-          stringField(left, 'event_created_at'),
-        ),
-      )[0]!;
+      signal?.throwIfAborted();
+      const newest = [...events].sort(compareNotificationEvents)[0]!;
       const subscriptionId = stringField(newest, 'subscription_id');
       summary.attempted += 1;
       try {
         await this.send(newest);
+        signal?.throwIfAborted();
         await this.client.recordPushDeliveries(
           subscriptionId,
           events.map((event) => stringField(event, 'event_id')).filter(Boolean),
@@ -319,6 +334,7 @@ export class WebPushNotificationService {
         });
         summary.sent += 1;
       } catch (error) {
+        signal?.throwIfAborted();
         const status = typeof error === 'object' && error !== null && 'statusCode' in error
           ? Number(error.statusCode)
           : 0;
@@ -485,7 +501,8 @@ export class NativePushNotificationService {
     }
   }
 
-  async dispatch(): Promise<PushSummary> {
+  async dispatch(signal?: AbortSignal): Promise<PushSummary> {
+    signal?.throwIfAborted();
     const grouped = new Map<string, JsonObject[]>();
     for (const row of await this.client.listPendingNativePushNotifications()) {
       const key = JSON.stringify([stringField(row, 'device_id'), stringField(row, 'package_id')]);
@@ -493,11 +510,8 @@ export class NativePushNotificationService {
     }
     const summary = emptySummary();
     for (const events of grouped.values()) {
-      const newest = [...events].sort(
-        (left, right) => stringField(right, 'event_created_at').localeCompare(
-          stringField(left, 'event_created_at'),
-        ),
-      )[0]!;
+      signal?.throwIfAborted();
+      const newest = [...events].sort(compareNotificationEvents)[0]!;
       const deviceId = stringField(newest, 'device_id');
       if (newest.live_activity_delivered === true) {
         await this.client.recordNativePushDeliveries(
@@ -509,6 +523,7 @@ export class NativePushNotificationService {
       summary.attempted += 1;
       try {
         await this.send(newest);
+        signal?.throwIfAborted();
         await this.client.recordNativePushDeliveries(
           deviceId,
           events.map((event) => stringField(event, 'event_id')).filter(Boolean),
@@ -519,6 +534,7 @@ export class NativePushNotificationService {
         });
         summary.sent += 1;
       } catch (error) {
+        signal?.throwIfAborted();
         if (this.isExpired(error)) {
           await this.client.updateNativePushDevice(deviceId, {
             disabled_at: new Date().toISOString(),
@@ -634,7 +650,8 @@ export class DeliveryLiveActivityNotificationService {
     readonly apns: NativePushNotificationService,
   ) {}
 
-  async dispatch(): Promise<PushSummary> {
+  async dispatch(signal?: AbortSignal): Promise<PushSummary> {
+    signal?.throwIfAborted();
     const grouped = new Map<string, JsonObject[]>();
     for (const row of await this.client.listPendingLiveActivityEvents()) {
       const key = JSON.stringify([stringField(row, 'device_id'), stringField(row, 'package_id')]);
@@ -642,11 +659,8 @@ export class DeliveryLiveActivityNotificationService {
     }
     const summary = emptySummary();
     for (const events of grouped.values()) {
-      const newest = [...events].sort(
-        (left, right) => stringField(right, 'event_created_at').localeCompare(
-          stringField(left, 'event_created_at'),
-        ),
-      )[0]!;
+      signal?.throwIfAborted();
+      const newest = [...events].sort(compareNotificationEvents)[0]!;
       const kind = this.deliveryKind(newest);
       if (!kind) continue;
       const deviceId = stringField(newest, 'device_id');
@@ -654,6 +668,7 @@ export class DeliveryLiveActivityNotificationService {
       summary.attempted += 1;
       try {
         await this.send(newest, kind);
+        signal?.throwIfAborted();
         await this.client.recordLiveActivityDeliveries(events.map((event) => ({
           deviceId,
           eventId: stringField(event, 'event_id'),
@@ -676,6 +691,7 @@ export class DeliveryLiveActivityNotificationService {
         }
         summary.sent += 1;
       } catch (error) {
+        signal?.throwIfAborted();
         if (this.apns.isExpired(error)) {
           if (updateTokenId) await this.client.deleteLiveActivityTokenById(updateTokenId);
           else {
@@ -801,11 +817,12 @@ export class CompositePushNotificationService {
     readonly liveActivities: DeliveryLiveActivityNotificationService | null,
   ) {}
 
-  async dispatch(): Promise<PushSummary> {
+  async dispatch(signal?: AbortSignal): Promise<PushSummary> {
+    signal?.throwIfAborted();
     const combined = emptySummary();
     for (const service of [this.liveActivities, this.web, this.native]) {
       if (!service) continue;
-      const summary = await service.dispatch();
+      const summary = await service.dispatch(signal);
       combined.attempted += summary.attempted;
       combined.sent += summary.sent;
       combined.failed += summary.failed;

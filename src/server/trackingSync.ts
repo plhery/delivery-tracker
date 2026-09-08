@@ -476,12 +476,13 @@ export class TrackingSyncService {
 
   async sync(context: SyncRunContext = { trigger: 'scheduled' }): Promise<SyncSummary> {
     return await this.exclusive(async () => {
+      context.signal?.throwIfAborted();
       const summary = emptySyncSummary();
       for (const parcel of fairSyncPackages(await this.client.listActivePackages())) {
         summary.checked += 1;
         summary[await this.syncOne(parcel, context)] += 1;
       }
-      await this.dispatchNotifications(summary);
+      await this.dispatchNotifications(summary, context.signal);
       return summary;
     });
   }
@@ -491,10 +492,11 @@ export class TrackingSyncService {
     context: SyncRunContext = { trigger: 'package' },
   ): Promise<SyncSummary> {
     return await this.exclusive(async () => {
+      context.signal?.throwIfAborted();
       const summary = emptySyncSummary();
       summary.checked = 1;
       summary[await this.syncOne(parcel, context)] += 1;
-      await this.dispatchNotifications(summary);
+      await this.dispatchNotifications(summary, context.signal);
       return summary;
     });
   }
@@ -511,10 +513,11 @@ export class TrackingSyncService {
     }
   }
 
-  private async dispatchNotifications(summary: SyncSummary): Promise<void> {
+  private async dispatchNotifications(summary: SyncSummary, signal?: AbortSignal): Promise<void> {
+    signal?.throwIfAborted();
     if (!this.notifier) return;
     try {
-      const push = await this.notifier.dispatch();
+      const push = await this.notifier.dispatch(signal);
       summary.notifications_sent = push.sent;
       summary.notification_errors = push.failed;
       summary.subscriptions_expired = push.expired;
@@ -526,12 +529,14 @@ export class TrackingSyncService {
         });
       }
     } catch (error) {
+      signal?.throwIfAborted();
       summary.notification_errors += 1;
       captureOperationalError(error, { component: 'push', operation: 'dispatch' });
     }
   }
 
   private async syncOne(parcel: JsonObject, context: SyncRunContext): Promise<SyncOutcome> {
+    context.signal?.throwIfAborted();
     const id = String(parcel.id ?? '');
     const carrierId = String(parcel.carrier ?? '');
     if (!id) throw new TypeError('A package id is required for synchronization');
@@ -552,7 +557,11 @@ export class TrackingSyncService {
       newEvents: JsonObject[] = [],
       deleteDescriptions: string[] = [],
     ) => {
-      if (!await this.client.applyTrackingSync(parcel, values, newEvents, deleteDescriptions)) {
+      context.signal?.throwIfAborted();
+      const applied = context.lease
+        ? await this.client.applyTrackingSync(parcel, values, newEvents, deleteDescriptions, context.lease)
+        : await this.client.applyTrackingSync(parcel, values, newEvents, deleteDescriptions);
+      if (!applied) {
         throw new SupersededTrackingSync('Tracking configuration changed during the check');
       }
     };
@@ -577,6 +586,7 @@ export class TrackingSyncService {
         await audit.finish({ outcome: 'unsupported' });
         return 'unsupported';
       } catch (error) {
+        context.signal?.throwIfAborted();
         if (error instanceof SupersededTrackingSync) return superseded();
         audit.reportError(error, 'persist_package');
         await audit.finish({ outcome: 'error', error });
@@ -735,6 +745,7 @@ export class TrackingSyncService {
       audit.reportAnomalies(anomalies, completion);
       return outcome;
     } catch (error) {
+      context.signal?.throwIfAborted();
       if (error instanceof SupersededTrackingSync) return superseded();
       let message = error instanceof Error ? error.message.trim() || error.name : String(error);
       if (error instanceof SyntaxError) {

@@ -71,7 +71,11 @@ test('handles an interrupted opening and changing motion preferences', async ({ 
   await expect(detail).toHaveClass(/detail--from-card/);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(detail).toHaveCSS('transform', 'none');
-  expect(await detail.evaluate((element) => element.getAnimations({ subtree: true }).length)).toBe(0);
+  // Finished CSS effects can remain attached through animation-fill-mode.
+  // Reduced motion must cancel every running or test-paused animation.
+  await expect.poll(() => detail.evaluate((element) => element.getAnimations({ subtree: true })
+    .filter(animation => animation.playState !== 'finished')
+    .map(animation => ({ id: animation.id, state: animation.playState })))).toEqual([]);
   await page.keyboard.press('Escape');
   await card.click();
   await expect(detail).not.toHaveClass(/detail--from-card/);

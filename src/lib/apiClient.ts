@@ -8,41 +8,62 @@ export class ApiAuthenticationError extends Error {
 export interface ApiAuth {
   userId: string;
   getAccessToken: (refresh?: boolean) => Promise<string | null>;
+  /** Aborted synchronously when this sign-in ends, including signing back into the same account. */
+  signal?: AbortSignal;
   onAuthenticationFailure?: () => Promise<void>;
 }
 
-/** Add the current Supabase bearer token and refresh it once after a 401/403. */
+/** Bound operations that do not themselves support cancellation, such as token refresh. */
+export function abortable<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const abort = () => reject(signal.reason);
+    signal.addEventListener('abort', abort, { once: true });
+    if (signal.aborted) abort();
+    operation.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
+  });
+}
+
+/** One deadline covers token lookup, the request and its single authentication retry. */
 export async function authenticatedFetch(
   path: string,
   auth: ApiAuth | undefined,
   init?: RequestInit,
 ): Promise<Response> {
+  const signal = AbortSignal.any([
+    AbortSignal.timeout(30_000),
+    ...(init?.signal ? [init.signal] : []),
+    ...(auth?.signal ? [auth.signal] : []),
+  ]);
+  async function token(refresh = false) {
+    signal.throwIfAborted();
+    const value = await abortable(auth?.getAccessToken(refresh) ?? Promise.resolve(null), signal);
+    signal.throwIfAborted();
+    return value;
+  }
   async function perform(accessToken: string | null) {
+    signal.throwIfAborted();
     const headers = new Headers(init?.headers);
     headers.set('X-Requested-With', 'XMLHttpRequest');
     if (init?.body) headers.set('Content-Type', 'application/json');
     if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
-    return fetch(path, {
-      ...init,
-      cache: 'no-store',
-      redirect: 'manual',
-      headers,
-    });
+    const response = await abortable(fetch(path, {
+      ...init, cache: 'no-store', redirect: 'manual', headers, signal,
+    }), signal);
+    signal.throwIfAborted();
+    return response;
   }
 
-  let accessToken = await auth?.getAccessToken() ?? null;
-  let response = await perform(accessToken);
+  let response = await perform(await token());
   if (auth && (response.status === 401 || response.status === 403)) {
-    accessToken = await auth.getAccessToken(true).catch(() => null);
+    // A transient refresh failure must not discard a recoverable session.
+    const accessToken = await token(true);
     if (accessToken) response = await perform(accessToken);
   }
-  if (
-    response.type === 'opaqueredirect'
-    || response.redirected
-    || response.status === 401
-    || response.status === 403
-  ) {
-    await auth?.onAuthenticationFailure?.().catch(() => undefined);
+  signal.throwIfAborted();
+  if (response.type === 'opaqueredirect' || response.redirected
+    || response.status === 401 || response.status === 403) {
+    // Local sign-out starts synchronously; notification cleanup cannot hold up this request.
+    void auth?.onAuthenticationFailure?.().catch(() => undefined);
     throw new ApiAuthenticationError();
   }
   return response;

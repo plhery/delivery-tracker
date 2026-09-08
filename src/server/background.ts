@@ -74,6 +74,7 @@ export class SyncJobWorker {
   #running = false;
   #timer: NodeJS.Timeout | null = null;
   #consecutiveClaimFailures = 0;
+  #activeJob: AbortController | null = null;
 
   constructor(
     readonly service: TrackingSyncService,
@@ -94,6 +95,7 @@ export class SyncJobWorker {
 
   stop(): void {
     this.#stopped = true;
+    this.#activeJob?.abort();
     if (this.#timer) clearTimeout(this.#timer);
     this.#timer = null;
   }
@@ -109,7 +111,6 @@ export class SyncJobWorker {
   private async run(): Promise<void> {
     if (this.#stopped || this.#running) return;
     this.#running = true;
-    this.state.workerHeartbeat = Date.now() / 1_000;
     let processed = false;
     try {
       processed = await this.processNext();
@@ -146,6 +147,7 @@ export class SyncJobWorker {
       return false;
     }
     this.#consecutiveClaimFailures = 0;
+    this.state.workerHeartbeat = Date.now() / 1_000;
     if (!job) return false;
     const jobId = String(job.id ?? '');
     const kind = String(job.kind ?? '');
@@ -159,6 +161,19 @@ export class SyncJobWorker {
       });
       return true;
     }
+    const controller = new AbortController();
+    this.#activeJob = controller;
+    const { signal } = controller;
+    let renewal: Promise<void> | null = null;
+    const heartbeat = setInterval(() => {
+      if (renewal || signal.aborted) return;
+      renewal = this.service.client.renewSyncJobLease(jobId, this.workerId).then((renewed) => {
+        if (!renewed) throw new Error('Synchronization job lease was lost');
+        this.state.workerHeartbeat = Date.now() / 1_000;
+      }).catch((error: unknown) => controller.abort(error)).finally(() => { renewal = null; });
+    }, 30_000);
+    heartbeat.unref();
+    const context = { jobId, lease: { jobId, workerId: this.workerId }, signal };
     let scheduledCheckIn: ScheduledCheckIn | null = null;
     try {
       let summary: SyncSummary;
@@ -167,10 +182,11 @@ export class SyncJobWorker {
         const packageId = String(job.package_id ?? '');
         const parcel = packageId ? await this.service.client.getPackage(packageId) : null;
         if (!parcel) throw new Error('Package no longer exists');
-        summary = await this.service.syncPackage(parcel, { jobId, trigger: 'package' });
+        summary = await this.service.syncPackage(parcel, { ...context, trigger: 'package' });
       } else if (kind === 'scheduled') {
         scheduledCheckIn = beginScheduledSyncCheckIn();
-        summary = await this.service.sync({ jobId, trigger: 'scheduled' });
+        summary = await this.service.sync({ ...context, trigger: 'scheduled' });
+        signal.throwIfAborted();
         archived = await this.service.client.archiveDeliveredBefore(
           new Date(Date.now() - AUTO_ARCHIVE_DAYS * 86_400_000),
         );
@@ -202,6 +218,7 @@ export class SyncJobWorker {
       } else {
         throw new TypeError('Unknown synchronization job kind');
       }
+      signal.throwIfAborted();
       const result: JsonObject = { ...summary, auto_archived: archived };
       await this.service.client.finishSyncJob(jobId, this.workerId, { result });
       finishScheduledSyncCheckIn(scheduledCheckIn, 'ok');
@@ -224,7 +241,7 @@ export class SyncJobWorker {
         trigger: kind,
       });
       try {
-        await this.service.client.finishSyncJob(jobId, this.workerId, {
+        if (!signal.aborted) await this.service.client.finishSyncJob(jobId, this.workerId, {
           error: 'Tracking refresh failed. Try again.',
         });
       } catch (finishError) {
@@ -239,6 +256,10 @@ export class SyncJobWorker {
           trigger: kind,
         });
       }
+    } finally {
+      clearInterval(heartbeat);
+      await renewal;
+      this.#activeJob = null;
     }
     return true;
   }
