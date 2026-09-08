@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { ApiFriendCard, ApiFriendProfile, ApiFriendsActionRequest, ApiFriendsActionResponse, ApiFriendsSnapshot, ApiFriendStamp } from '../generated/apiContract';
 import { useI18n, type MessageKey } from '../i18n';
@@ -57,15 +57,16 @@ export function Friends({ client, parcels, demo }: { client: FriendsClient; parc
   const errorView = error && <p className="friends-error" role="alert">{t(error)}</p>;
   const total = [data?.ownCard, ...(data?.friends ?? [])].reduce((sum, friend) => sum + (friend?.stats?.stamps.length ?? 0), 0);
   const selected = typeof panel === 'object' && panel ? data?.friends.find((friend) => friend.id === panel.id) : null;
-  return <div className="friends-page">
+  return <div className="friends-page" data-empty={!!data?.profile && !data.friends.length}>
     {notice && <p role="status" className="friends-notice"><Icon name="check" />{t(notice)}</p>}
     {!panel && errorView}
     {!data ? <div className="friends-loading" role="status">{error ? <button className="button button--secondary" onClick={() => void load()}>{t('common.retry')}</button> : <div className="skeleton" aria-label={t('friends.title')} />}</div> : !data.profile ? <>
       <div className="friends-intro"><h2>{t('friends.joinTitle')}</h2><div className="friends-postage" aria-hidden="true"><PostageStamp icon="parcel" /><PostageStamp icon="friends" /></div></div>
       <FriendProfileForm profile={null} parcels={parcels} busy={busy} onSave={async (profile) => { await act({ action: 'save_profile', ...profile }); }} />
     </> : <>
-      <button className="friends-own" aria-label={t('friends.settings')} onClick={() => setPanel('settings')}><span><span className="friend-avatar" aria-hidden="true">{Array.from(data.profile.nickname)[0]}</span>{data.profile.nickname}</span><Icon name="settings" /></button>
-      {data.friends.length ? <section className="friends-cover"><div className="friends-cover__main"><div><strong>{total}</strong><span>{t('friends.collectionNote')}</span></div><div className="friends-postage" aria-hidden="true"><PostageStamp icon="parcel" /><PostageStamp icon="express" /></div></div></section> : <section className="friends-cover friends-empty"><div className="friends-postage" aria-hidden="true"><PostageStamp icon="parcel" /><PostageStamp icon="friends" /></div><h2>{t('friends.emptyTitle')}</h2></section>}
+      <div className="friends-summary"><button className="friends-own friend-card tone-blue" aria-label={t('friends.settings')} onClick={() => setPanel('settings')}><FriendCardBody friend={data.ownCard ?? ownFriendCard(parcels, data.profile)} showSharingStatus /><span className="friend-card__more"><Icon name="settings" /></span></button>
+      {!!data.friends.length && <section className="friends-cover"><div className="friends-cover__main"><div><strong>{total}</strong><span>{t('friends.collectionNote')}</span></div><div className="friends-postage" aria-hidden="true"><PostageStamp icon="parcel" /><PostageStamp icon="express" /></div></div></section>}</div>
+      {!data.friends.length && <h2 className="friends-empty-title">{t('friends.emptyTitle')}</h2>}
       <div className="friends-actions"><button className="button button--primary" onClick={() => setPanel('invite')}><Icon name="plus" />{t('friends.invite')}</button><button className="text-button friends-code-link" onClick={() => setPanel('accept')}>{t('friends.enterCode')}<Icon name="arrow" /></button></div>
       {!!data.friends.length && <section><div className="section-heading"><h2>{t('friends.circle')}</h2><span>{demo ? t('friends.demoPeople') : data.friends.length}</span></div>
         <div className="friends-grid">{data.friends.map((friend) => <button key={friend.id} className={`friend-card tone-${friendTone(friend.id)}`} onClick={() => setPanel(friend)}><FriendCardBody friend={friend} /><span className="friend-card__more"><Icon name="arrow" /></span></button>)}</div>
@@ -80,26 +81,28 @@ export function Friends({ client, parcels, demo }: { client: FriendsClient; parc
     </FriendsSheet>}
   </div>;
 }
-function FriendCardBody({ friend }: { friend: ApiFriendCard }) {
+function FriendCardBody({ friend, showSharingStatus = false, magic = 0 }: { friend: ApiFriendCard; showSharingStatus?: boolean; magic?: number }) {
   const { t } = useI18n();
   const days = friend.stats?.averageDays;
-  return <><span className="friend-card__heading"><span className="friend-avatar" aria-hidden="true">{Array.from(friend.nickname)[0]}</span><strong>{friend.nickname}</strong></span>
-    {friend.stats ? <><span className="friend-card__stats"><span><strong>{friend.stats.deliveredCount}</strong>{t('passport.delivered')}</span><span><strong>{days == null ? '—' : t(days === 1 ? 'friends.day' : 'friends.days', { count: days })}</strong>{t('passport.average')}</span></span><span className="friend-card__stamps" aria-label={t('friends.stamps')}>{friend.stats.stamps.map((stamp) => <span key={stamp} title={t(friendStamps[stamp].title)}><Icon name={friendStamps[stamp].icon} /></span>)}</span></> : <span className="friend-card__private"><Icon name="lock" />{t('friends.privateStats')}</span>}
-    {friend.arrivedThisWeek && <span className="friend-card__arrival"><i />{t('friends.arrived')}</span>}</>;
+  return <><span className="friend-card__heading"><span className="friend-avatar" aria-hidden="true" key={magic}><span className="postage-stamp"><span className="postage-stamp__print">{Array.from(friend.nickname)[0]}</span></span><span className="friend-avatar__spark">✦</span></span><span className="friend-card__name"><small aria-hidden="true">{t('passport.title')}</small><strong>{friend.nickname}</strong></span></span>
+    <span className="friend-card__collection">{friend.stats ? <><span className="friend-card__stats"><span><strong>{friend.stats.deliveredCount}</strong>{t('passport.delivered')}</span><span><strong>{days == null ? '—' : t(days === 1 ? 'friends.day' : 'friends.days', { count: days })}</strong>{t('passport.average')}</span></span><span className="friend-card__stamps" aria-label={t('friends.stamps')}>{friend.stats.stamps.map((stamp) => <span key={stamp} title={t(friendStamps[stamp].title)}><PostageStamp icon={friendStamps[stamp].icon} /></span>)}</span></> : <span className="friend-card__private"><Icon name="lock" />{t('friends.privateStats')}</span>}</span>
+    {(friend.arrivedThisWeek || showSharingStatus) && <span className={`friend-card__arrival${friend.arrivedThisWeek ? '' : ' friend-card__arrival--quiet'}`}><Icon name={friend.arrivedThisWeek == null ? 'lock' : 'parcel'} />{t(friend.arrivedThisWeek ? 'friends.arrived' : friend.arrivedThisWeek === false ? 'friends.noArrival' : 'friends.privateArrival')}</span>}</>;
 }
 function FriendProfileForm({ profile, parcels, busy, onSave }: { profile: ApiFriendProfile | null; parcels: ParcelWithEvents[]; busy: boolean; onSave: (value: ApiFriendProfile) => Promise<void> }) {
   const { t } = useI18n();
   const [name, setName] = useState(profile?.nickname ?? '');
   const [stats, setStats] = useState(profile?.shareStats ?? true);
-  const [arrival, setArrival] = useState(profile?.shareArrival ?? false);
+  const [arrival, setArrival] = useState(profile?.shareArrival ?? true);
+  const [magic, setMagic] = useState(0);
+  const previewId = useId();
   const value = { nickname: name.trim(), shareStats: stats, shareArrival: arrival };
   return <form className="friends-profile" onSubmit={(event) => { event.preventDefault(); if (value.nickname) void onSave(value); }}>
     <label className="friends-name">{t('friends.nickname')}<input value={name} onChange={(event) => setName(event.target.value)} maxLength={24} placeholder={t('friends.nicknamePlaceholder')} autoComplete="off" required disabled={busy} /></label>
+    <section className="friends-preview" aria-labelledby={previewId}><p id={previewId}>{t('friends.preview')}</p><button type="button" className="friend-card tone-blue" disabled={busy} onClick={() => setMagic((value) => value + 1)}><FriendCardBody friend={ownFriendCard(parcels, { ...value, nickname: value.nickname || t('friends.you') })} showSharingStatus magic={magic} /></button></section>
     <div className="friends-sharing">
-      <label className="friends-toggle"><span><strong>{t('friends.shareStats')}</strong><small>{t('friends.shareStatsDetail')}</small></span><input type="checkbox" role="switch" checked={stats} onChange={(event) => setStats(event.target.checked)} disabled={busy} /></label>
-      <label className="friends-toggle"><span><strong>{t('friends.shareArrival')}</strong><small>{t('friends.shareArrivalDetail')}</small></span><input type="checkbox" role="switch" checked={arrival} onChange={(event) => setArrival(event.target.checked)} disabled={busy} /></label>
+      <label className="friends-toggle"><input type="checkbox" role="switch" checked={stats} onChange={(event) => { setStats(event.target.checked); setMagic((value) => value + 1); }} disabled={busy} /><span>{t('friends.shareStats')}</span></label>
+      <label className="friends-toggle"><input type="checkbox" role="switch" checked={arrival} onChange={(event) => { setArrival(event.target.checked); setMagic((value) => value + 1); }} disabled={busy} /><span>{t('friends.shareArrival')}</span></label>
     </div>
-    <details className="friends-preview"><summary>{t('friends.preview')}<Icon name="chevron" /></summary><div className="friend-card tone-blue"><FriendCardBody friend={ownFriendCard(parcels, { ...value, nickname: value.nickname || t('friends.you') })} /></div></details>
     <p className="friends-privacy"><Icon name="lock" />{t('friends.privacy')}</p><button className="button button--primary" disabled={busy || !value.nickname}>{t(profile ? 'friends.save' : 'friends.join')}</button>
   </form>;
 }

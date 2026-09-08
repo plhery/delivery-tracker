@@ -78,23 +78,14 @@ struct FriendsView: View {
     @ViewBuilder private func circle(_ data: FriendsSnapshot) -> some View {
         let people = [data.ownCard].compactMap { $0 } + data.friends
         let total = people.reduce(0) { $0 + ($1.stats?.stamps.count ?? 0) }
-        Button { panel = .profile } label: {
-            HStack {
-                Text(String((data.profile?.nickname ?? "").prefix(1))).font(.subheadline.bold())
-                    .frame(width: 36, height: 36).background(ExperimentalPalette.lilacSurface, in: Circle()).accessibilityHidden(true)
-                Text(data.profile?.nickname ?? "").font(.subheadline.weight(.semibold)).lineLimit(2)
-                Spacer()
-                Image(systemName: "slider.horizontal.3").foregroundStyle(.secondary)
-            }.frame(minHeight: 44).contentShape(Rectangle())
-        }.buttonStyle(TactileButtonStyle()).foregroundStyle(Brand.ink)
-            .accessibilityLabel("\(data.profile?.nickname ?? ""), \(text("friends.settings"))")
+        if let profile = data.profile {
+            Button { panel = .profile } label: {
+                FriendCardView(friend: data.ownCard ?? FriendsStore.ownCard(parcels: parcels.parcels, profile: profile), showsSettings: true, showsSharingStatus: true)
+            }.buttonStyle(TactileButtonStyle(scale: 0.985))
+                .accessibilityHint(text("friends.settings"))
+        }
         if data.friends.isEmpty {
-            VStack(spacing: 16) {
-                FriendsPostagePair()
-                Text(text("friends.emptyTitle")).font(.system(.title2, design: .rounded, weight: .bold)).multilineTextAlignment(.center)
-            }
-            .padding(24).frame(maxWidth: .infinity).foregroundStyle(Brand.onAccent)
-            .background(Brand.accent, in: RoundedRectangle(cornerRadius: 26))
+            Text(text("friends.emptyTitle")).font(.system(.title3, design: .rounded, weight: .bold)).padding(.top, 4)
         } else {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -154,32 +145,72 @@ private enum FriendsPanel: Identifiable {
 
 private struct FriendCardView: View {
     @EnvironmentObject private var localizer: Localizer
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let friend: FriendCard
     var showsArrow = false
+    var showsSettings = false
+    var showsSharingStatus = false
+    var magicTrigger = 0
+    @State private var appeared = false
     private var tint: Color { [ExperimentalPalette.transit, ExperimentalPalette.lilac, ExperimentalPalette.pickup, ExperimentalPalette.delivered][tone] }
     private var surface: Color { [ExperimentalPalette.transitSurface, ExperimentalPalette.lilacSurface, ExperimentalPalette.pickupSurface, ExperimentalPalette.deliveredSurface][tone] }
     private var tone: Int { Int(friend.id.uuid.0) % 4 }
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
-                Text(String(friend.nickname.prefix(1))).font(.headline).frame(width: 38, height: 38).background(Brand.paper, in: Circle()).foregroundStyle(tint).accessibilityHidden(true)
-                Text(friend.nickname).font(.title3.bold()).lineLimit(2)
-                Spacer(minLength: 0)
-                if showsArrow { Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(tint) }
-            }
-            if let stats = friend.stats {
-                HStack(spacing: 32) {
-                    metric(stats.deliveredCount.formatted(), "passport.delivered")
-                    metric(stats.averageDays.map { localizer.text($0 == 1 ? "friends.day" : "friends.days", ["count": $0]) } ?? "—", "passport.average")
+                ZStack(alignment: .topTrailing) {
+                    Text(String(friend.nickname.prefix(1))).font(.system(.title2, design: .rounded, weight: .bold))
+                        .frame(width: 42, height: 48).background(Brand.paper, in: PostageStampShape())
+                        .overlay(Rectangle().stroke(tint.opacity(0.25), lineWidth: 0.7).padding(6))
+                        .rotationEffect(.degrees(reduceMotion ? -4 : appeared ? -4 : -10))
+                    Image(systemName: "sparkle").font(.system(size: 12, weight: .medium)).offset(x: 6, y: -3)
+                        .phaseAnimator([false, true, false], trigger: magicTrigger) { content, bright in
+                            content.scaleEffect(bright && !reduceMotion ? 1.3 : 1).opacity(bright ? 1 : 0.5)
+                        } animation: { _ in .easeInOut(duration: 0.24) }
+                }.foregroundStyle(tint).accessibilityHidden(true)
+                    .phaseAnimator([false, true, false], trigger: magicTrigger) { content, lifted in
+                        content.offset(y: lifted && !reduceMotion ? -3 : 0).rotationEffect(.degrees(lifted && !reduceMotion ? 3 : 0))
+                    } animation: { _ in .spring(response: 0.3, dampingFraction: 0.6) }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(localizer.text("passport.title")).font(.caption2).foregroundStyle(tint).accessibilityHidden(true)
+                    Text(friend.nickname).font(.system(.title3, design: .rounded, weight: .bold)).lineLimit(2)
                 }
-                HStack(spacing: 8) { ForEach(stats.stamps) { stamp in Image(systemName: stamp.symbol).font(.caption).frame(width: 28, height: 28).overlay(Circle().stroke(tint.opacity(0.7), style: StrokeStyle(lineWidth: 0.7, dash: [2, 2]))).accessibilityLabel(localizer.text(stamp.titleKey)) } }.foregroundStyle(tint)
-            } else { Label(localizer.text("friends.privateStats"), systemImage: "lock").font(.subheadline).foregroundStyle(.secondary).padding(.vertical, 20) }
-            if friend.arrivedThisWeek == true {
-                Divider()
-                Label(localizer.text("friends.arrived"), systemImage: "circle.fill").font(.caption).foregroundStyle(tint)
+                Spacer(minLength: 0)
+                if showsSettings || showsArrow { Image(systemName: showsSettings ? "slider.horizontal.3" : "arrow.up.right").font(.subheadline).foregroundStyle(tint) }
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                if let stats = friend.stats {
+                    HStack(alignment: .top, spacing: 32) {
+                        metric(stats.deliveredCount.formatted(), "passport.delivered")
+                        metric(stats.averageDays.map { localizer.text($0 == 1 ? "friends.day" : "friends.days", ["count": $0]) } ?? "—", "passport.average")
+                    }
+                    HStack(spacing: 7) {
+                        ForEach(Array(stats.stamps.enumerated()), id: \.element) { index, stamp in
+                            Image(systemName: stamp.symbol).font(.system(size: 12)).frame(width: 25, height: 28)
+                                .background(tint.opacity(0.09), in: PostageStampShape())
+                                .rotationEffect(.degrees(index.isMultiple(of: 2) ? -4 : 3))
+                                .offset(y: appeared || reduceMotion ? 0 : 4).opacity(appeared ? 1 : 0)
+                                .animation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.7).delay(Double(index) * 0.055), value: appeared)
+                                .transition(.opacity.combined(with: .scale(scale: reduceMotion ? 1 : 0.85)))
+                                .accessibilityLabel(localizer.text(stamp.titleKey))
+                        }
+                    }.foregroundStyle(tint).frame(minHeight: 28)
+                } else {
+                    Label(localizer.text("friends.privateStats"), systemImage: "lock").font(.footnote).foregroundStyle(.secondary)
+                }
+            }.frame(minHeight: 76, alignment: .leading)
+            if friend.arrivedThisWeek == true || showsSharingStatus {
+                Label(localizer.text(friend.arrivedThisWeek == true ? "friends.arrived" : friend.arrivedThisWeek == false ? "friends.noArrival" : "friends.privateArrival"), systemImage: friend.arrivedThisWeek == nil ? "lock" : "shippingbox")
+                    .font(.caption).foregroundStyle(friend.arrivedThisWeek == true ? tint : Brand.ink.opacity(0.65))
+                    .padding(.top, 10).frame(maxWidth: .infinity, alignment: .leading)
+                    .overlay(alignment: .top) { Rectangle().fill(tint.opacity(0.18)).frame(height: 0.5) }
             }
         }
-        .foregroundStyle(Brand.ink).padding(22).frame(maxWidth: .infinity, alignment: .leading).background(surface, in: RoundedRectangle(cornerRadius: 24))
+        .foregroundStyle(Brand.ink).padding(18).frame(maxWidth: .infinity, alignment: .leading)
+        .background(surface, in: RoundedRectangle(cornerRadius: 24))
+        .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(tint.opacity(0.12), lineWidth: 0.7) }
+        .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.85), value: friend.stats != nil)
+        .onAppear { withAnimation(reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.6)) { appeared = true } }
     }
     private func metric(_ value: String, _ key: String) -> some View { VStack(alignment: .leading, spacing: 4) { Text(value).font(.title2.bold().monospacedDigit()); Text(localizer.text(key)).font(.caption).foregroundStyle(.secondary) } }
 }
@@ -193,37 +224,55 @@ private struct FriendsProfileForm: View {
     @State private var name: String
     @State private var stats: Bool
     @State private var arrival: Bool
+    @State private var magicTrigger = 0
     init(profile: FriendProfile?, busy: Bool, save: @escaping (FriendProfile) -> Void) {
         self.profile = profile; self.busy = busy; self.save = save
         _name = State(initialValue: profile?.nickname ?? "")
         _stats = State(initialValue: profile?.shareStats ?? true)
-        _arrival = State(initialValue: profile?.shareArrival ?? false)
+        _arrival = State(initialValue: profile?.shareArrival ?? true)
     }
     private var value: FriendProfile { FriendProfile(nickname: name.trimmingCharacters(in: .whitespacesAndNewlines), shareStats: stats, shareArrival: arrival) }
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(localizer.text("friends.nickname")).font(.subheadline.weight(.semibold))
                 TextField(localizer.text("friends.nicknamePlaceholder"), text: $name).textContentType(.nickname).padding(14).background(Brand.paper, in: RoundedRectangle(cornerRadius: 14))
                     .onChange(of: name) { _, next in if next.unicodeScalars.count > 24 { name = String(String.UnicodeScalarView(next.unicodeScalars.prefix(24))) } }
             }
-            VStack(spacing: 14) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(localizer.text("friends.preview")).font(.subheadline).foregroundStyle(.secondary)
+                Button { magicTrigger += 1 } label: {
+                    FriendCardView(friend: FriendsStore.ownCard(parcels: parcels.parcels, profile: FriendProfile(nickname: value.nickname.isEmpty ? localizer.text("friends.you") : value.nickname, shareStats: stats, shareArrival: arrival)), showsSharingStatus: true, magicTrigger: magicTrigger)
+                }.buttonStyle(TactileButtonStyle(scale: 0.99))
+            }
+            HStack(alignment: .top, spacing: 16) {
                 toggle("friends.shareStats", detail: "friends.shareStatsDetail", value: $stats)
-                Divider()
                 toggle("friends.shareArrival", detail: "friends.shareArrivalDetail", value: $arrival)
-            }.padding(16).background(Brand.paper, in: RoundedRectangle(cornerRadius: 18))
-            DisclosureGroup {
-                FriendCardView(friend: FriendsStore.ownCard(parcels: parcels.parcels, profile: FriendProfile(nickname: value.nickname.isEmpty ? localizer.text("friends.you") : value.nickname, shareStats: stats, shareArrival: arrival))).padding(.top, 8)
-            } label: {
-                Text(localizer.text("friends.preview")).font(.subheadline).frame(minHeight: 44)
-            }.tint(Brand.ink)
+            }
             Label(localizer.text("friends.privacy"), systemImage: "lock").font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Button { save(value) } label: { Text(localizer.text(profile == nil ? "friends.join" : "friends.save")).frame(maxWidth: .infinity, minHeight: 46) }
                 .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent).disabled(busy || value.nickname.isEmpty)
         }.disabled(busy)
+            .sensoryFeedback(.impact(weight: .light, intensity: 0.5), trigger: magicTrigger)
+            .onChange(of: stats) { _, _ in magicTrigger += 1 }
+            .onChange(of: arrival) { _, _ in magicTrigger += 1 }
     }
     private func toggle(_ title: String, detail: String, value: Binding<Bool>) -> some View {
-        Toggle(isOn: value) { VStack(alignment: .leading, spacing: 5) { Text(localizer.text(title)).font(.subheadline.weight(.semibold)); Text(localizer.text(detail)).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true) } }.tint(ExperimentalPalette.delivered)
+        Toggle(isOn: value) { Text(localizer.text(title)).font(.footnote).foregroundStyle(.secondary) }
+            .toggleStyle(FriendsSharingToggleStyle()).frame(maxWidth: .infinity, alignment: .leading).accessibilityHint(localizer.text(detail))
+    }
+}
+
+private struct FriendsSharingToggleStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        Button { configuration.isOn.toggle() } label: {
+            HStack(spacing: 7) {
+                Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
+                    .font(.system(size: 17)).foregroundStyle(configuration.isOn ? ExperimentalPalette.delivered : Brand.ink.opacity(0.45))
+                configuration.label.fixedSize(horizontal: false, vertical: true)
+            }.frame(minHeight: 44).contentShape(Rectangle())
+        }.buttonStyle(.plain)
+            .accessibilityRepresentation { Toggle(isOn: configuration.$isOn) { configuration.label }.toggleStyle(.switch) }
     }
 }
 

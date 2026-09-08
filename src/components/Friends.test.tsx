@@ -39,10 +39,14 @@ describe('Friends', () => {
     const stats = within(sheet).getByRole('switch', { name: /^Stats & stamps/ });
     const arrival = within(sheet).getByRole('switch', { name: /^Arrivals this week/ });
     expect(arrival).not.toBeChecked();
-    expect(sheet.querySelector('details')).not.toHaveAttribute('open');
-    await user.click(within(sheet).getByText('Preview my profile'));
+    const preview = within(sheet).getByRole('region', { name: 'Profile preview:' });
+    expect(preview).toBeVisible();
+    expect(within(preview).getByText('Alex')).toBeVisible();
+    expect(within(preview).getByText('Arrivals kept private')).toBeVisible();
     await user.click(stats); await user.click(arrival);
     expect(within(sheet).getByText('Stats kept private')).toBeVisible();
+    expect(within(preview).getByText('No arrivals this week')).toBeVisible();
+    expect(within(preview).queryByText('Arrivals kept private')).toBeNull();
     await user.clear(within(sheet).getByRole('textbox', { name: 'Nickname' }));
     expect(within(sheet).getByRole('button', { name: 'Save' })).toBeDisabled();
     await user.type(within(sheet).getByRole('textbox', { name: 'Nickname' }), '  Robin  ');
@@ -57,9 +61,16 @@ describe('Friends', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(screen.getByText('Share your Passport')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Create profile' })).toBeDisabled();
+    expect(screen.getByRole('region', { name: 'Profile preview:' })).toBeVisible();
+    expect(screen.getByRole('switch', { name: 'Stats & stamps' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Arrivals this week' })).toBeChecked();
     await user.type(screen.getByRole('textbox', { name: 'Nickname' }), 'Robin');
     await user.click(screen.getByRole('button', { name: 'Create profile' }));
     expect(await screen.findByText('Add your first friend')).toBeVisible();
+    const own = screen.getByRole('button', { name: 'Sharing preferences' });
+    expect(within(own).getByText('Robin')).toBeVisible();
+    expect(within(own).getByText('Delivered')).toBeVisible();
+    expect(within(own).getByText('No arrivals this week')).toBeVisible();
   });
   it('makes demo invitations clearly fictional without calling a server', async () => {
     const fetch = vi.fn(); vi.stubGlobal('fetch', fetch);

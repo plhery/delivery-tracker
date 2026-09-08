@@ -23,8 +23,11 @@ test('Friends shares the navigation, stamp interactions, and reversible privacy 
   await expect(mila).toBeVisible();
   await page.getByRole('button', { name: 'Sharing preferences', exact: true }).click();
   const preferences = page.getByRole('dialog');
-  await expect(preferences.locator('details')).not.toHaveAttribute('open');
-  await preferences.locator('summary').click();
+  await expect(preferences.getByRole('region', { name: 'Profile preview:' })).toBeVisible();
+  await expect(preferences.locator('.friend-card')).toContainText('Alex');
+  await preferences.locator('.friends-preview button').click();
+  await expect(preferences).toBeVisible();
+  await expect(preferences.getByRole('textbox')).toHaveValue('Alex');
   await preferences.getByRole('switch').first().uncheck();
   await expect(preferences.locator('.friend-card')).toContainText('Stats kept private');
   await expect(preferences.getByRole('switch').nth(1)).not.toBeChecked();
@@ -61,7 +64,7 @@ test('Friends and its preview fit a narrow dark screen in each shared locale', a
     await page.locator('.friends-own').click();
     const sheet = page.getByRole('dialog');
     await expect(sheet.getByRole('switch').first()).toBeVisible();
-    await sheet.locator('summary').click();
+    await expect(sheet.locator('.friends-preview .friend-card')).toBeVisible();
     await sheet.getByRole('textbox').fill('A long nickname 12345678');
     await expect(sheet.locator('.friend-card')).toContainText('A long nickname 12345678');
     expect(await sheet.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
@@ -79,10 +82,16 @@ test('An empty Friends circle and sharing settings fit a phone without scrolling
   await page.getByRole('dialog').getByRole('button', { name: 'Turn off Friends' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Turn off Friends' }).click();
   await expect(page.getByRole('heading', { name: 'Share your Passport' })).toBeVisible();
-  await expect(page.locator('.friends-preview')).not.toHaveAttribute('open');
+  await expect(page.getByRole('region', { name: 'Profile preview:' })).toBeVisible();
+  await expect(page.getByRole('switch').first()).toBeChecked();
+  await expect(page.getByRole('switch').nth(1)).toBeChecked();
   await page.getByRole('textbox', { name: 'Nickname' }).fill('Robin');
   await page.getByRole('button', { name: 'Create profile', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Add your first friend' })).toBeVisible();
+  await expect(page.locator('.friends-own')).toContainText('Robin');
+  await expect(page.locator('.friends-own')).toContainText('Delivered');
+  await expect(page.locator('.friends-own .friend-card__arrival')).toBeVisible();
+  await expect(page.locator('.friends-own')).not.toContainText('Arrivals kept private');
   await page.evaluate(() => scrollTo(0, 0));
   for (const language of ['fr', 'de', 'it', 'en']) {
     await page.locator('.account-trigger').click();
@@ -92,8 +101,9 @@ test('An empty Friends circle and sharing settings fit a phone without scrolling
     await expect(page.locator('.friends-code-link')).toBeInViewport({ ratio: 1 });
     await page.locator('.friends-own').click();
     const sheet = page.getByRole('dialog');
-    expect(await sheet.evaluate((element) => element.scrollHeight <= element.clientHeight + 1)).toBe(true);
-    await expect(sheet.getByRole('switch').nth(1)).not.toBeChecked();
+    await expect.poll(() => sheet.evaluate((element) => element.scrollHeight <= element.clientHeight + 1)).toBe(true);
+    await expect(sheet.getByRole('switch').first()).toBeChecked();
+    await expect(sheet.getByRole('switch').nth(1)).toBeChecked();
     await page.keyboard.press('Escape');
   }
 });
