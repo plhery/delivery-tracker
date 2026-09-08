@@ -18,9 +18,15 @@ const STAGES: Record<string, Stage> = {
   OutForDelivery: 'out_for_delivery', DeliveryFailure: 'failed_attempt', Delivered: 'delivered',
 };
 
-export class UniversalTrackingError extends Error {
-  constructor(readonly failures: ReadonlyArray<{ source: Source; reason: string }>) {
-    super(`Automatic carrier lookup could not retrieve tracking history. ${failures.map(
+interface SourceFailure {
+  source: Source;
+  reason: string;
+  error: unknown;
+}
+
+export class UniversalTrackingError extends AggregateError {
+  constructor(readonly failures: ReadonlyArray<SourceFailure>) {
+    super(failures.map(({ error }) => error), `Automatic carrier lookup could not retrieve tracking history. ${failures.map(
       ({ source, reason }) => `${source}: ${reason}`,
     ).join('; ')}`);
     this.name = 'UniversalTrackingError';
@@ -182,7 +188,7 @@ export class UniversalTracker {
     const endpoint = new URL(configured);
     endpoint.pathname = `${endpoint.pathname.replace(/\/(?:v1|scrape)\/?$/, '').replace(/\/$/, '')}/scrape`;
     endpoint.search = ''; endpoint.hash = '';
-    const failures: Array<{ source: Source; reason: string }> = [];
+    const failures: SourceFailure[] = [];
     for (const source of SOURCES) {
       try {
         const url = pageUrl(source, number);
@@ -213,10 +219,10 @@ export class UniversalTracker {
         }
         if (source === 'ParcelsApp') return parseParcelsAppHtml(payload.html, number);
         throw new TypeError('No matching tracking response');
-      } catch {
-        // Do not expose browser cookies, API bodies, URLs or fingerprint tokens
-        // through sync_error/observability. A failed lookup is never a fake 404.
-        failures.push({ source, reason: 'history unavailable; try again later or open the tracking website' });
+      } catch (error) {
+        // Keep the user-facing summary readable and retain the original provider
+        // errors for Sentry's AggregateError diagnostics.
+        failures.push({ source, reason: 'history unavailable; try again later or open the tracking website', error });
       }
     }
     throw new UniversalTrackingError(failures);

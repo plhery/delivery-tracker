@@ -1,12 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ErrorEvent } from '@sentry/node';
 import {
   errorType,
   logOperationalEvent,
   operationalErrorMetadata,
   parseSampleRate,
   resolveSentryRelease,
-  scrubSentryEvent,
   shouldReportRepeatedFailure,
 } from './observability';
 import { UpstreamHttpError } from './boundedFetch';
@@ -14,72 +12,7 @@ import { SupabaseError } from './supabase';
 
 afterEach(() => vi.restoreAllMocks());
 
-describe('Sentry privacy boundary', () => {
-  it('removes request, user, breadcrumb, local-variable, and arbitrary context data', () => {
-    const event = {
-      message: 'secret carrier response',
-      transaction: '/api/packages/11111111-1111-1111-1111-111111111111?token=secret',
-      user: { id: 'private-user' },
-      request: {
-        url: 'https://delivery.example/api/packages/private?token=secret',
-        headers: { authorization: 'Bearer secret' },
-      },
-      breadcrumbs: [{ message: 'tracking number 123' }],
-      contexts: {
-        runtime: { name: 'node' },
-        request: { tracking_number: 'private' },
-      },
-      tags: {
-        carrier: 'dpd-fr',
-        database_code: 'PGRST116',
-        database_status: '503',
-        tracking_number: 'private',
-        upstream_status: '502',
-      },
-      extra: {
-        attempt_id: 'opaque-attempt',
-        carrier_payload: { private: true },
-      },
-      server_name: 'private-host',
-      exception: {
-        values: [{
-          type: 'CarrierError',
-          value: 'private tracking number',
-          stacktrace: {
-            frames: [{
-              filename: '/app/tracker.ts',
-              vars: { trackingNumber: 'private' },
-              context_line: 'throw new Error(trackingNumber)',
-              pre_context: ['private'],
-              post_context: ['private'],
-            }],
-          },
-        }],
-      },
-    } as unknown as ErrorEvent;
-
-    const scrubbed = scrubSentryEvent(event);
-
-    expect(scrubbed.request).toBeUndefined();
-    expect(scrubbed.user).toBeUndefined();
-    expect(scrubbed.server_name).toBeUndefined();
-    expect(scrubbed.breadcrumbs).toEqual([]);
-    expect(scrubbed.contexts).toEqual({ runtime: { name: 'node' } });
-    expect(scrubbed.tags).toEqual({
-      carrier: 'dpd-fr',
-      database_code: 'PGRST116',
-      database_status: '503',
-      upstream_status: '502',
-    });
-    expect(scrubbed.extra).toEqual({ attempt_id: 'opaque-attempt' });
-    expect(scrubbed.transaction).toBeUndefined();
-    expect(scrubbed.message).toBe('Operational failure');
-    expect(scrubbed.exception?.values?.[0]?.value).toBe('Operational failure');
-    expect(scrubbed.exception?.values?.[0]?.stacktrace?.frames?.[0]?.vars).toBeUndefined();
-    expect(JSON.stringify(scrubbed)).not.toContain('private');
-    expect(JSON.stringify(scrubbed)).not.toContain('secret');
-  });
-
+describe('structured operational logs', () => {
   it('drops private fields from structured operational logs', () => {
     const output = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 

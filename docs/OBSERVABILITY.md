@@ -9,9 +9,10 @@ places:
 3. Sentry groups actionable failures and suspicious classifications, using an
    opaque `attempt_id` to link back to Postgres.
 
-This split is a privacy boundary. Tracking numbers, labels, locations, event
-descriptions, raw carrier responses, user ids, tokens, cookies, and capability
-URLs must never be sent to logs or Sentry.
+Sentry is a protected diagnostic data store for this project. Original errors,
+their causes, custom error properties, and SDK diagnostic context are retained
+there without application-level sanitization. Structured console logs still
+omit parcel and credential fields; Postgres retains the complete refresh audit.
 
 ## What is recorded
 
@@ -19,8 +20,8 @@ URLs must never be sent to logs or Sentry.
 configured and actual carrier, job and package references, previous stage,
 provider status, reported and selected stages, event counts, outcome, error
 class, and anomaly codes. The bounded `status_text` is private database data;
-it exists specifically to explain a mistaken classifier decision and is never
-copied to telemetry.
+it exists specifically to explain a mistaken classifier decision. The audit
+writer does not automatically copy it into logs or Sentry.
 
 `public.tracking_sync_steps` records `selected`, `fetch`, `normalize`,
 `persist_events`, `persist_package`, and `complete` with status and duration.
@@ -106,8 +107,8 @@ order by started_at;
 ```
 
 When a classifier appears wrong, use `package_id` from the attempt to inspect
-the account-private package and its already-normalized events. Do this only in
-the database; never paste tracking numbers or event text into Sentry comments.
+the account-private package and its already-normalized events. Relevant evidence
+can also be attached to the protected Sentry issue when needed for diagnosis.
 
 ## Logs and correlation
 
@@ -127,10 +128,21 @@ authorization, secret, or password data. Keep new fields scalar and bounded.
 
 ## Sentry behavior
 
-The Node SDK is enabled only when `SENTRY_DSN` is set. Default PII collection
-is disabled, tracing defaults to zero, request and fetch instrumentation is
-removed, and a final event processor removes requests, users, breadcrumbs,
-local variables, source context, arbitrary extras, and exception messages.
+The Node SDK is enabled only when `SENTRY_DSN` is set. Its normal non-performance
+integrations are enabled, including request/fetch instrumentation, breadcrumbs,
+source context, and linked errors. Diagnostic data collection includes user
+information; tracing still defaults to zero. There is no application-level
+`beforeSend` scrubber or replacement exception: original messages, stacks,
+causes, requests, contexts, tags, and extras reach the SDK event pipeline.
+`ExtraErrorData` also records custom error properties. The SDK's own field
+limits and built-in sensitive-key filtering, plus any Sentry project-side data
+scrubbing, still apply.
+
+Automatic carrier lookup retains each provider's original failure inside an
+`AggregateError`, allowing Sentry to show the individual causes while the app
+continues to display a readable lookup summary. Previously ingested, sanitized
+events cannot recover their discarded details; this behavior applies to new
+events after deployment.
 
 Issue fingerprints group by component, operation, carrier, anomaly/error type.
 Opaque `attempt_id`, `job_id`, and `request_id` tags make individual executions

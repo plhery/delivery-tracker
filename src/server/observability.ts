@@ -1,40 +1,9 @@
 import 'server-only';
 
 import * as Sentry from '@sentry/node';
-import type { ErrorEvent, Event } from '@sentry/node';
 import type { JsonObject } from './types';
 
-const SAFE_TAG_KEYS = new Set([
-  'anomaly_code',
-  'attempt_id',
-  'carrier',
-  'component',
-  'database_code',
-  'database_status',
-  'error_type',
-  'job_id',
-  'operation',
-  'request_id',
-  'route',
-  'route_type',
-  'trigger',
-  'upstream_status',
-]);
-const SAFE_EXTRA_KEYS = new Set([
-  'attempt_id',
-  'duration_ms',
-  'events_normalized',
-  'events_received',
-  'failure_count',
-  'job_id',
-  'previous_stage',
-  'provider_status',
-  'reported_stage',
-  'request_id',
-  'selected_stage',
-]);
 const PRIVATE_LOG_KEY = /(?:tracking|package|parcel|user|label|description|location|status_text|url|token|cookie|authorization|secret|password)/i;
-const UUID_PATH_SEGMENT = /\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?=\/|$)/gi;
 
 let initialized = false;
 
@@ -98,16 +67,10 @@ export function resolveSentryRelease(
   return configured.slice(0, 200);
 }
 
-function safeText(value: unknown, maximum = 200): string | undefined {
+function boundedText(value: unknown, maximum = 200): string | undefined {
   if (value == null) return undefined;
   const text = String(value).trim().slice(0, maximum);
   return text || undefined;
-}
-
-function safeRoute(value: string | null | undefined): string | undefined {
-  if (!value) return undefined;
-  const pathname = value.split('?', 1)[0]?.replace(UUID_PATH_SEGMENT, '/:id');
-  return safeText(pathname, 200);
 }
 
 function safeNumber(value: number | null | undefined): number | undefined {
@@ -153,92 +116,23 @@ export function operationalErrorMetadata(error: unknown): OperationalErrorMetada
   return metadata;
 }
 
-function scrubStack(event: ErrorEvent): void {
-  for (const exception of event.exception?.values ?? []) {
-    const type = safeText(exception.type, 100) ?? 'Error';
-    exception.type = type;
-    exception.value = 'Operational failure';
-    if (exception.mechanism) exception.mechanism.data = undefined;
-    for (const frame of exception.stacktrace?.frames ?? []) {
-      delete frame.vars;
-      delete frame.pre_context;
-      delete frame.context_line;
-      delete frame.post_context;
-    }
-  }
-}
-
-/**
- * Last-resort privacy boundary for both explicit and SDK-captured events.
- * Operational callers already pass only safe fields; this removes request,
- * breadcrumb, local-variable, and arbitrary-extra data before transport.
- */
-export function scrubSentryEvent(event: ErrorEvent): ErrorEvent {
-  const scrubbed: ErrorEvent = {
-    ...event,
-    breadcrumbs: [],
-    contexts: Object.fromEntries(
-      Object.entries(event.contexts ?? {}).filter(([key]) => ['os', 'runtime'].includes(key)),
-    ),
-    extra: Object.fromEntries(
-      Object.entries(event.extra ?? {}).filter(([key, value]) => (
-        SAFE_EXTRA_KEYS.has(key)
-        && (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')
-      )),
-    ),
-    tags: Object.fromEntries(
-      Object.entries(event.tags ?? {})
-        .filter(([key]) => SAFE_TAG_KEYS.has(key))
-        .map(([key, value]) => [key, safeText(value, 200)]),
-    ),
-    threads: undefined,
-    transaction: undefined,
-    user: undefined,
-    request: undefined,
-    server_name: undefined,
-  };
-  if (scrubbed.message && !scrubbed.message.startsWith('Tracking sync anomaly:')) {
-    scrubbed.message = 'Operational failure';
-  }
-  scrubStack(scrubbed);
-  return scrubbed;
-}
-
 export function initObservability(): boolean {
   if (initialized) return true;
   const dsn = process.env.SENTRY_DSN?.trim();
   if (!dsn) return false;
-  const integrations = Sentry.getDefaultIntegrationsWithoutPerformance().filter(
-    (integration) => ![
-      'Console',
-      'Http',
-      'LocalVariablesAsync',
-      'NodeFetch',
-      'RequestData',
-    ].includes(integration.name),
-  );
   Sentry.init({
     dsn,
     environment: process.env.SENTRY_ENVIRONMENT?.trim() || process.env.NODE_ENV || 'development',
     release: resolveSentryRelease(),
-    sendDefaultPii: false,
+    dataCollection: { userInfo: true },
     tracesSampleRate: parseSampleRate(process.env.SENTRY_TRACES_SAMPLE_RATE),
-    integrations,
-    beforeSend: scrubSentryEvent,
+    integrations: [
+      ...Sentry.getDefaultIntegrationsWithoutPerformance(),
+      Sentry.extraErrorDataIntegration(),
+    ],
   });
   initialized = true;
   return true;
-}
-
-function sanitizedError(error: unknown): Error {
-  const type = errorType(error);
-  const sanitized = new Error('Operational failure');
-  sanitized.name = type;
-  if (error instanceof Error && error.stack) {
-    const frames = error.stack.split('\n').slice(1);
-    sanitized.stack = `${type}: Operational failure${frames.length > 0 ? `\n${frames.join('\n')}` : ''}`;
-  }
-  return sanitized;
 }
 
 function applyContext(
@@ -248,36 +142,36 @@ function applyContext(
   errorMetadata: OperationalErrorMetadata = {},
 ): void {
   const tags: Record<string, string | undefined> = {
-    anomaly_code: safeText(context.anomalyCode, 100),
-    attempt_id: safeText(context.attemptId, 100),
-    carrier: safeText(context.carrier, 100),
-    component: safeText(context.component, 100),
-    database_code: safeText(errorMetadata.databaseCode, 40),
-    database_status: safeText(errorMetadata.databaseStatus, 3),
-    error_type: safeText(capturedErrorType, 100),
-    job_id: safeText(context.jobId, 100),
-    operation: safeText(context.operation, 100),
-    request_id: safeText(context.requestId, 100),
-    route: safeRoute(context.route),
-    route_type: safeText(context.routeType, 100),
-    trigger: safeText(context.trigger, 100),
-    upstream_status: safeText(errorMetadata.upstreamStatus, 3),
+    anomaly_code: boundedText(context.anomalyCode, 100),
+    attempt_id: boundedText(context.attemptId, 100),
+    carrier: boundedText(context.carrier, 100),
+    component: boundedText(context.component, 100),
+    database_code: boundedText(errorMetadata.databaseCode, 40),
+    database_status: boundedText(errorMetadata.databaseStatus, 3),
+    error_type: boundedText(capturedErrorType, 100),
+    job_id: boundedText(context.jobId, 100),
+    operation: boundedText(context.operation, 100),
+    request_id: boundedText(context.requestId, 100),
+    route: boundedText(context.route),
+    route_type: boundedText(context.routeType, 100),
+    trigger: boundedText(context.trigger, 100),
+    upstream_status: boundedText(errorMetadata.upstreamStatus, 3),
   };
   for (const [key, value] of Object.entries(tags)) {
     if (value) scope.setTag(key, value);
   }
   const extras: Record<string, string | number | undefined> = {
-    attempt_id: safeText(context.attemptId, 100),
+    attempt_id: boundedText(context.attemptId, 100),
     duration_ms: safeNumber(context.durationMs),
     events_normalized: safeNumber(context.eventsNormalized),
     events_received: safeNumber(context.eventsReceived),
     failure_count: safeNumber(context.failureCount),
-    job_id: safeText(context.jobId, 100),
-    previous_stage: safeText(context.previousStage, 100),
-    provider_status: safeText(context.providerStatus, 100),
-    reported_stage: safeText(context.reportedStage, 100),
-    request_id: safeText(context.requestId, 100),
-    selected_stage: safeText(context.selectedStage, 100),
+    job_id: boundedText(context.jobId, 100),
+    previous_stage: boundedText(context.previousStage, 100),
+    provider_status: boundedText(context.providerStatus, 100),
+    reported_stage: boundedText(context.reportedStage, 100),
+    request_id: boundedText(context.requestId, 100),
+    selected_stage: boundedText(context.selectedStage, 100),
   };
   for (const [key, value] of Object.entries(extras)) {
     if (value !== undefined) scope.setExtra(key, value);
@@ -301,7 +195,7 @@ export function captureOperationalError(
       context.carrier ?? 'none',
       capturedErrorType,
     ]);
-    eventId = Sentry.captureException(sanitizedError(error));
+    eventId = Sentry.captureException(error);
   });
   return eventId;
 }
@@ -406,5 +300,3 @@ export function finishScheduledSyncCheckIn(
 export async function flushObservability(timeoutMs = 2_000): Promise<boolean> {
   return initialized ? await Sentry.flush(timeoutMs) : true;
 }
-
-export type SanitizedSentryEvent = Event;

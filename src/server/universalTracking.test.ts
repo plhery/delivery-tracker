@@ -94,11 +94,17 @@ describe('universal public tracking', () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
-  it('surfaces failed lookups without inventing not-found, timestamps or leaking responses', async () => {
-    const fetcher = vi.fn().mockRejectedValue(new Error('SECRET upstream cookie'));
+  it('retains provider failures for Sentry while keeping the lookup summary readable', async () => {
+    const originalError = new Error('SECRET upstream cookie');
+    const fetcher = vi.fn().mockRejectedValue(originalError);
     const error = await new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher }).fetch(number).catch((e: unknown) => e);
     expect(error).toMatchObject({ name: 'UniversalTrackingError' });
     expect(String(error)).not.toContain('SECRET');
+    expect(error).toBeInstanceOf(AggregateError);
+    expect((error as AggregateError).errors).toHaveLength(2);
+    for (const providerError of (error as AggregateError).errors) {
+      expect(providerError.cause).toBe(originalError);
+    }
     expect(isUnannouncedTrackingError(error)).toBe(false);
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
