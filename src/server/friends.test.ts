@@ -90,6 +90,13 @@ describe('Friends privacy boundary', () => {
     expect(() => friendsActionResponse({}, 'preview_invite')).toThrow();
     expect(() => friendsActionResponse(null, 'disable')).toThrow();
   });
+  it('projects a validated short preview ID and rejects malformed IDs', () => {
+    const result = { inviteCode: 'a'.repeat(32), previewId: 'Ab7kP2mQ9xR4tY6n', expiresAt: '2026-09-16T00:00:00Z' };
+    expect(friendsActionResponse({ ...result, privateUserId: id }, 'create_invite')).toEqual(result);
+    for (const previewId of ['short', 'a'.repeat(64), 'a'.repeat(15) + '/', null, 123]) {
+      expect(() => friendsActionResponse({ ...result, previewId }, 'create_invite')).toThrow();
+    }
+  });
   it.each([['P0002',404], ['P0003',409], ['P0004',422], ['22023',400], ['PGRST202',503], ['42883',503], ['other',502]] as const)('maps safe database errors: %s', async (code, status) => {
     vi.spyOn(SupabaseUserClient.prototype, 'request').mockRejectedValue(new SupabaseError('PRIVATE_SERVER_PAYLOAD', 400, code));
     const response = await call({ action: 'accept_invite', code: 'a'.repeat(32) });

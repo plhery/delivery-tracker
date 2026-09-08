@@ -371,6 +371,7 @@ private struct FriendsInvitationView: View {
     let completed: () -> Void
     let open: (URL) -> Void
     @State private var code = ""
+    @State private var previewId: String?
     @State private var copied = false
     @State private var requestedInvitation = false
     var body: some View {
@@ -391,7 +392,7 @@ private struct FriendsInvitationView: View {
                     }
                 }
                 else {
-                    let link = FriendInvitationLink.url(code: code)
+                    let link = FriendInvitationLink.url(code: code, previewId: previewId)
                     ShareLink(item: link) { Label(localizer.text("friends.shareLink"), systemImage: "square.and.arrow.up").frame(maxWidth: .infinity, minHeight: 44) }
                         .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
                     Text(localizer.text("friends.inviteExpiry")).font(.caption).foregroundStyle(.secondary)
@@ -409,6 +410,7 @@ private struct FriendsInvitationView: View {
     private func createInvitation() async {
         let result = await act(FriendsActionRequest(action: .createInvite))
         guard !Task.isCancelled else { return }
+        previewId = result?.previewID
         code = result?.inviteCode ?? ""
     }
     private func actionButton(_ key: String, action: @escaping () async -> Void) -> some View {

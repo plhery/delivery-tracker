@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { FriendsError } from './friends';
+import { isInvitationPreviewId, shortInvitationPreviewId } from './invitationLinkFormat';
 
 const tokenPattern = /^[a-f0-9]{32}$/;
 export const INVITATION_STORAGE_KEY = 'sdt.pendingFriendInvitation.v1'; // gitleaks:allow -- sessionStorage key, not a credential
@@ -8,8 +9,13 @@ const maxAge = 7 * 24 * 60 * 60 * 1_000;
 type PendingInvitation = { code: string | null; opened: boolean; receivedAt: number; accepted?: boolean };
 let memory: string | null = null;
 
-export async function invitationURL(code: string, origin = window.location.origin): Promise<string> {
+export async function invitationURL(code: string, previewId?: string, origin = window.location.origin): Promise<string> {
   if (!tokenPattern.test(code)) throw new Error('Invalid invitation');
+  if (previewId !== undefined) {
+    if (!isInvitationPreviewId(previewId)) throw new Error('Invalid invitation preview');
+    return new URL(`/i/${previewId}#${code}`, origin).href;
+  }
+  // Older servers do not return a preview ID yet; their existing links still work.
   const url = new URL(`/invite#${code}`, origin);
   try {
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(code));
@@ -22,8 +28,13 @@ export async function invitationURL(code: string, origin = window.location.origi
 export function invitationCode(text: string, origin = window.location.origin): string | null {
   try {
     const url = new URL(text.trim());
-    if (url.origin !== origin || !['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.pathname !== '/invite') return null;
-    if (url.search && (url.searchParams.size !== 1 || !/^[a-f0-9]{64}$/.test(url.searchParams.get('preview') ?? ''))) return null;
+    if (url.origin !== origin || !['https:', 'http:'].includes(url.protocol) || url.username || url.password) return null;
+    if (shortInvitationPreviewId(url.pathname)) {
+      if (url.search) return null;
+    } else {
+      if (url.pathname !== '/invite') return null;
+      if (url.search && (url.searchParams.size !== 1 || !/^[a-f0-9]{64}$/.test(url.searchParams.get('preview') ?? ''))) return null;
+    }
     const code = url.hash.slice(1);
     return tokenPattern.test(code) ? code : null;
   } catch { return null; }
@@ -35,7 +46,8 @@ function stored(): string | null {
 }
 function read(): string {
   const url = new URL(window.location.href);
-  if (url.pathname === '/invite' && url.hash) return JSON.stringify({ code: invitationCode(url.href), opened: false, receivedAt: 0 });
+  const shortRoute = url.pathname.startsWith('/i/');
+  if (shortRoute || (url.pathname === '/invite' && (url.hash || url.search))) return JSON.stringify({ code: invitationCode(url.href), opened: false, receivedAt: 0 });
   const raw = stored();
   if (raw) {
     try {

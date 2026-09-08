@@ -1,15 +1,14 @@
 import { expect, test } from '@playwright/test';
-import { createHash } from 'node:crypto';
 
 const token = 'ab'.repeat(16);
-const preview = createHash('sha256').update(token).digest('hex');
+const preview = 'Ab7kP2mQ9xR4tY6n';
 // These tests stub the server response; worker-owned requests bypass routing in WebKit.
 test.use({ locale: 'en-US', serviceWorkers: 'block' });
 
 test('social crawlers receive a parcel card in the initial HTML head', async ({ request }) => {
   test.skip(test.info().project.name !== 'desktop-chromium');
   for (const userAgent of ['WhatsApp/2.24', 'facebookexternalhit/1.1', 'Twitterbot/1.0']) {
-    const response = await request.get('/invite', { headers: { 'user-agent': userAgent } });
+    const response = await request.get('/i/' + preview, { headers: { 'user-agent': userAgent } });
     expect(response.ok()).toBe(true);
     expect(response.headers()['cache-control']).toContain('no-store');
     expect(response.headers()['referrer-policy']).toBe('no-referrer');
@@ -17,7 +16,8 @@ test('social crawlers receive a parcel card in the initial HTML head', async ({ 
     const head = html.slice(0, html.indexOf('</head>'));
     expect(head).toContain('property="og:title" content="A friend sent you an invitation"');
     expect(head).toContain('name="twitter:card" content="summary_large_image"');
-    expect(head).toMatch(/property="og:image" content="https?:\/\/[^\"]+\/api\/friends\/invite-image"/);
+    expect(head).toContain(`/api/friends/invite-image?preview=${preview}`);
+    expect(head).toContain(`/i/${preview}`);
   }
   const image = await request.get('/api/friends/invite-image');
   expect(image.headers()['content-type']).toBe('image/png');
@@ -38,7 +38,7 @@ test('a shared link opens the same parcel into personalized sign-in and survives
     expect(route.request().postDataJSON()).toEqual({ code: token });
     await route.fulfill({ json: { previewNickname: 'Paul' } });
   });
-  await page.goto(`/invite?preview=${preview}#${token}`);
+  await page.goto(`/i/${preview}#${token}`);
   await expect(page.getByRole('heading', { name: 'Your friend Paul sent you an invitation' })).toBeVisible();
   await expect(page).toHaveURL(/\/invite$/);
   await expect(page.getByRole('button', { name: /try the demo/i })).toHaveCount(0);

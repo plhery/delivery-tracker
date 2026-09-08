@@ -16,11 +16,11 @@ it.each(['Paul', 'AlexandertheGreatestEver', 'Émilie & Léa', 'W'.repeat(24), n
   expect(png.readUInt32BE(20)).toBe(630);
 });
 
-it('serves a crawler-accessible image through the same unexpired nickname lookup', async () => {
+it.each(['a'.repeat(64), 'Ab7kP2mQ9xR4tY6n'])('serves a crawler-accessible image for old and short IDs: %s', async (preview) => {
   vi.stubEnv('SUPABASE_URL', 'https://database.example');
   vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-key');
   const request = vi.spyOn(SupabaseServiceClient.prototype, 'request').mockResolvedValue([{ friend_profiles: { nickname: 'Paul' } }]);
-  const response = await GET(new Request(`https://delivery.example/api/friends/invite-image?preview=${'a'.repeat(64)}`));
+  const response = await GET(new Request(`https://delivery.example/api/friends/invite-image?preview=${preview}`));
   expect(response.status).toBe(200);
   expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow');
   await response.arrayBuffer();

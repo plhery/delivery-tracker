@@ -1506,6 +1506,7 @@ export interface ApiFriendsActionRequest {
 export interface ApiFriendsActionResponse {
   "snapshot"?: ApiFriendsSnapshot;
   "inviteCode"?: string;
+  "previewId"?: string;
   "expiresAt"?: string;
   "previewNickname"?: string;
   "acceptedFriend"?: ApiFriendCard;

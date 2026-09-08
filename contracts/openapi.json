@@ -3432,6 +3432,11 @@
           "inviteCode": {
             "type": "string"
           },
+          "previewId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{16}$",
+            "description": "Read-only ID used in short invitation links. Cannot accept an invitation."
+          },
           "expiresAt": {
             "type": "string",
             "format": "date-time"

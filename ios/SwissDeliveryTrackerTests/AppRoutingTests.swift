@@ -48,6 +48,23 @@ final class AppRoutingTests: XCTestCase {
         }
     }
 
+    func testShortInvitationLinksAndLegacyCompatibility() {
+        let code = String(repeating: "a", count: 32)
+        let preview = "Ab7kP2mQ9xR4tY6n"
+        let base = URL(string: "https://delivery.plhery.com")!
+        let url = FriendInvitationLink.url(code: code, previewId: preview, baseURL: base)
+        XCTAssertEqual(url.absoluteString, base.absoluteString + "/i/" + preview + "#" + code)
+        XCTAssertNil(url.query)
+        XCTAssertEqual(FriendInvitationLink.code(from: url.absoluteString, baseURL: base), code)
+        XCTAssertEqual(FriendInvitationLink.code(from: "swissdeliverytracker://invite#" + code), code)
+        for invalid in [base.absoluteString + "/i/" + preview, base.absoluteString + "/i/short#" + code,
+                        base.absoluteString + "/i/" + preview + "/extra#" + code,
+                        base.absoluteString + "/i/" + preview + "?extra=1#" + code,
+                        "https://evil.example/i/" + preview + "#" + code] {
+            XCTAssertNil(FriendInvitationLink.code(from: invalid, baseURL: base))
+        }
+    }
+
     @MainActor
     func testPendingInvitationSurvivesAuthenticationButNotDismissalOrInvalidReplacement() async {
         let suite = "InvitationRoutingTests.\(UUID().uuidString)"

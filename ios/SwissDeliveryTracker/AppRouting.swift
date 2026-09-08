@@ -6,25 +6,38 @@ enum FriendInvitationLink {
         guard url.user == nil, url.password == nil else { return false }
         if url.scheme?.lowercased() == OAuthFlow.callbackScheme { return url.host?.lowercased() == "invite" && url.path.isEmpty }
         return url.scheme == baseURL.scheme && url.host?.lowercased() == baseURL.host?.lowercased()
-            && url.port == baseURL.port && url.path == "/invite"
+            && url.port == baseURL.port && (url.path == "/invite" || url.path.hasPrefix("/i/"))
     }
 
     static func code(from text: String, baseURL: URL = AppConfiguration.current.apiBaseURL) -> String? {
         guard let url = URL(string: text.trimmingCharacters(in: .whitespacesAndNewlines)),
               isInvitation(url, baseURL: baseURL),
               let code = url.fragment, code.range(of: "^[a-f0-9]{32}$", options: .regularExpression) != nil else { return nil }
-        if url.query != nil {
+        if url.path.hasPrefix("/i/") {
+            guard validPreviewID(String(url.path.dropFirst(3))), url.query == nil else { return nil }
+        } else if url.query != nil {
             let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
             guard items.count == 1, items[0].name == "preview", items[0].value == previewHash(code) else { return nil }
         }
         return code
     }
 
+    private static func validPreviewID(_ value: String) -> Bool {
+        value.range(of: "^[A-Za-z0-9_-]{16}$", options: .regularExpression) != nil
+    }
+
     private static func previewHash(_ code: String) -> String {
         SHA256.hash(data: Data(code.utf8)).map { String(format: "%02x", $0) }.joined()
     }
 
-    static func url(code: String, baseURL: URL = AppConfiguration.current.apiBaseURL) -> URL {
+    static func url(code: String, previewId: String? = nil, baseURL: URL = AppConfiguration.current.apiBaseURL) -> URL {
+        if let previewId, validPreviewID(previewId) {
+            var components = URLComponents(url: baseURL.appending(path: "i").appending(path: previewId), resolvingAgainstBaseURL: false)!
+            components.query = nil
+            components.fragment = code
+            return components.url!
+        }
+        // Compatibility with servers that have not started returning short IDs.
         var components = URLComponents(url: baseURL.appending(path: "invite"), resolvingAgainstBaseURL: false)!
         // Fragments never travel in HTTP requests or Referer headers.
         components.queryItems = [URLQueryItem(name: "preview", value: previewHash(code))]

@@ -6,9 +6,10 @@ import fixture from '../../shared/friends-demo.json';
 import type { ApiFriendsActionResponse, ApiFriendsSnapshot } from '../generated/apiContract';
 import { createFriendsClient, ownFriendCard, type FriendsClient } from '../lib/friends';
 import { Friends } from './Friends';
-import { createHash, webcrypto } from 'node:crypto';
+import { webcrypto } from 'node:crypto';
 
-const sharedLink = window.location.origin + '/invite?preview=' + createHash('sha256').update('a'.repeat(32)).digest('hex') + '#' + 'a'.repeat(32);
+const previewId = 'Ab7kP2mQ9xR4tY6n';
+const sharedLink = window.location.origin + '/i/' + previewId + '#' + 'a'.repeat(32);
 beforeEach(() => vi.stubGlobal('crypto', webcrypto));
 
 const enrolled = (): ApiFriendsSnapshot => ({ ...structuredClone(fixture), ownCard: ownFriendCard([], fixture.profile) }) as ApiFriendsSnapshot;
@@ -100,7 +101,7 @@ describe('Friends', () => {
   });
   it('prepares a single-use link on the first invite click, then copies and revokes it', async () => {
     const client = realClient();
-    vi.mocked(client.action).mockImplementation(async (input) => input.action === 'create_invite' ? { inviteCode: 'a'.repeat(32), expiresAt: '2026-09-16T00:00:00Z' } : { snapshot: enrolled() });
+    vi.mocked(client.action).mockImplementation(async (input) => input.action === 'create_invite' ? { inviteCode: 'a'.repeat(32), previewId, expiresAt: '2026-09-16T00:00:00Z' } : { snapshot: enrolled() });
     const { user } = await show(client, false);
     const copy = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue();
     expect(client.action).not.toHaveBeenCalled();
@@ -121,7 +122,7 @@ describe('Friends', () => {
     const client = realClient();
     let reject: (error: Error) => void = () => undefined;
     vi.mocked(client.action).mockReturnValueOnce(new Promise((_, fail) => { reject = fail; }))
-      .mockResolvedValue({ inviteCode: 'a'.repeat(32), expiresAt: '2026-09-16T00:00:00Z' });
+      .mockResolvedValue({ inviteCode: 'a'.repeat(32), previewId, expiresAt: '2026-09-16T00:00:00Z' });
     render(<StrictMode><Friends client={client} parcels={[]} demo={false} /></StrictMode>);
     const button = await screen.findByRole('button', { name: 'Invite a friend' });
     fireEvent.click(button); fireEvent.click(button);

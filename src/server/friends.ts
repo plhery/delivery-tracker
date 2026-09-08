@@ -1,5 +1,6 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
+import { isInvitationPreviewId } from '../lib/invitationLinkFormat';
 import type { ApiFriendCard, ApiFriendProfile, ApiFriendsActionRequest, ApiFriendsActionResponse, ApiFriendsSnapshot, ApiFriendStamp, ApiFriendsActivity } from '../generated/apiContract';
 import { HttpError } from './api';
 import { isRecord, type JsonObject } from './types';
@@ -35,9 +36,18 @@ export async function invitationPreview(client: SupabaseServiceClient, payload: 
 /** The public preview hash can reveal a nickname, but cannot accept an invitation. */
 export async function invitationPreviewByHash(client: SupabaseServiceClient, hash: string): Promise<{ previewNickname: string }> {
   if (!/^[a-f0-9]{64}$/.test(hash)) throw invalid();
+  return invitationPreviewLookup(client, 'code_hash', hash);
+}
+
+export async function invitationPreviewById(client: SupabaseServiceClient, previewId: string): Promise<{ previewNickname: string }> {
+  if (!isInvitationPreviewId(previewId)) throw invalid();
+  return invitationPreviewLookup(client, 'preview_id', previewId);
+}
+
+async function invitationPreviewLookup(client: SupabaseServiceClient, column: 'code_hash' | 'preview_id', value: string): Promise<{ previewNickname: string }> {
   const query = new URLSearchParams({
     select: 'friend_profiles!inner(nickname)',
-    code_hash: `eq.${hash}`,
+    [column]: `eq.${value}`,
     expires_at: `gt.${new Date().toISOString()}`,
     limit: '1',
   });
@@ -93,7 +103,8 @@ export function friendsActionResponse(value: unknown, action: ApiFriendsActionRe
   if (!isRecord(value)) return corrupt();
   if (action === 'create_invite') {
     if (typeof value.inviteCode !== 'string' || !/^[a-f0-9]{32}$/.test(value.inviteCode) || typeof value.expiresAt !== 'string' || !Number.isFinite(Date.parse(value.expiresAt))) return corrupt();
-    return { inviteCode: value.inviteCode, expiresAt: value.expiresAt };
+    if (value.previewId !== undefined && !isInvitationPreviewId(value.previewId)) return corrupt();
+    return { inviteCode: value.inviteCode, expiresAt: value.expiresAt, ...(value.previewId !== undefined ? { previewId: value.previewId } : {}) };
   }
   if (action === 'preview_invite') {
     if (!nickname(value.previewNickname)) return corrupt();

@@ -22,7 +22,7 @@ export function Friends({ client, parcels, demo, onExitDemo }: { client: Friends
   const [error, setError] = useState<MessageKey | null>(null);
   const [busy, setBusy] = useState(false);
   const [panel, setPanel] = useState<Panel>(null);
-  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [invite, setInvite] = useState<{ code: string; previewId?: string } | null>(null);
   const [notice, setNotice] = useState<MessageKey | null>(null);
   const generation = useRef(0);
   const working = useRef(false);
@@ -86,10 +86,10 @@ export function Friends({ client, parcels, demo, onExitDemo }: { client: Friends
   }
   async function inviteFriend() {
     if (working.current) return;
-    setInviteCode(null); setPanel('invite');
+    setInvite(null); setPanel('invite');
     if (demo) return;
     const result = await act({ action: 'create_invite' });
-    if (result?.inviteCode) setInviteCode(result.inviteCode);
+    if (result?.inviteCode) setInvite({ code: result.inviteCode, previewId: result.previewId });
   }
   const close = () => { if (!busy) { setPanel(null); setError(null); } };
   const errorView = error && <p className="friends-error" role="alert">{t(error)}</p>;
@@ -122,7 +122,7 @@ export function Friends({ client, parcels, demo, onExitDemo }: { client: Friends
       {(panel === 'invite' || panel === 'accept') && (demo ? <>
         <p>{t('friends.demoInvites')}</p>
         {onExitDemo && <button className="button button--primary" onClick={() => { close(); onExitDemo(); }}>{t('welcome.signInInstead')}</button>}
-      </> : panel === 'invite' ? <FriendsInvite code={inviteCode} busy={busy} act={act} onRetry={inviteFriend} onClose={close} /> : <FriendsAccept onOpen={() => setPanel(null)} />)}
+      </> : panel === 'invite' ? <FriendsInvite code={invite?.code ?? null} previewId={invite?.previewId} busy={busy} act={act} onRetry={inviteFriend} onClose={close} /> : <FriendsAccept onOpen={() => setPanel(null)} />)}
       {selected && <FriendDetails friend={selected} busy={busy} onRemove={async () => { if (await act({ action: 'remove_friend', friendId: selected.id })) close(); }} />}
     </FriendsSheet>}
   </div>;
@@ -166,18 +166,18 @@ export function FriendsSheet({ title, children, onClose, busy = false }: { title
   return createPortal(<div className="sheet-backdrop" onClick={close}><div ref={dialog} className="sheet friends-sheet" role="dialog" aria-modal="true" aria-labelledby="friends-sheet-title" aria-busy={busy} tabIndex={-1} onClick={(event) => event.stopPropagation()}><div className="sheet__grabber" aria-hidden="true" /><div className="sheet__heading"><h2 id="friends-sheet-title" className="sheet__title">{title}</h2><button className="sheet__close" aria-label={t('common.close')} disabled={busy} onClick={close}><Icon name="close" /></button></div>{children}</div></div>, document.body);
 }
 type Act = (action: ApiFriendsActionRequest) => Promise<ApiFriendsActionResponse | null>;
-function FriendsInvite({ code, busy, act, onRetry, onClose }: { code: string | null; busy: boolean; act: Act; onRetry: () => Promise<void>; onClose: () => void }) {
+function FriendsInvite({ code, previewId, busy, act, onRetry, onClose }: { code: string | null; previewId?: string; busy: boolean; act: Act; onRetry: () => Promise<void>; onClose: () => void }) {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
-  const [prepared, setPrepared] = useState<{ code: string; link: string } | null>(null);
-  const link = prepared?.code === code ? prepared.link : null;
+  const [prepared, setPrepared] = useState<{ code: string; previewId?: string; link: string } | null>(null);
+  const link = prepared?.code === code && prepared?.previewId === previewId ? prepared.link : null;
   useEffect(() => {
     if (!code) return;
     let cancelled = false;
-    void invitationURL(code).then((url) => { if (!cancelled) setPrepared({ code, link: url }); });
+    void invitationURL(code, previewId).then((url) => { if (!cancelled) setPrepared({ code, previewId, link: url }); });
     return () => { cancelled = true; };
-  }, [code]);
+  }, [code, previewId]);
   async function copy() {
     if (!link) return;
     try { await navigator.clipboard.writeText(link); setCopied(true); setCopyFailed(false); }

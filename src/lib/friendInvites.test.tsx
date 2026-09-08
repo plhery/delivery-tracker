@@ -5,6 +5,7 @@ import { invitationCode, invitationURL, INVITATION_STORAGE_KEY, openPendingInvit
 import { createHash, webcrypto } from 'node:crypto';
 
 const code = 'ab'.repeat(16);
+const previewId = 'Ab7kP2mQ9xR4tY6n';
 beforeEach(() => vi.stubGlobal('crypto', webcrypto));
 afterEach(() => { vi.unstubAllGlobals(); sessionStorage.clear(); history.replaceState(null, '', '/'); });
 it('accepts only complete trusted links and keeps their token out of HTTP requests', async () => {
@@ -16,14 +17,30 @@ it('accepts only complete trusted links and keeps their token out of HTTP reques
   expect(invitationCode(`${location.origin}/invite#${code}`)).toBe(code);
   for (const invalid of [code, `https://evil.example/invite#${code}`, `${location.origin}/invite?name=Paul#${code}`, `${location.origin}/invite#short`, `${location.origin}/invite?preview=short#${code}`, `${url}&extra=1`, url.replace('?preview=', '?preview=duplicate&preview='), url.replace('/invite', '/other'), url.replace('ab', 'AB')]) expect(invitationCode(invalid)).toBeNull();
 });
+it('shares compact IDs while keeping acceptance tokens in fragments', async () => {
+  const url = await invitationURL(code, previewId);
+  expect(url).toBe(`${location.origin}/i/${previewId}#${code}`);
+  expect(invitationCode(url)).toBe(code);
+  expect(new URL(url).pathname + new URL(url).search).not.toContain(code);
+  for (const invalid of [url.replace(previewId, 'short'), url.replace(previewId, previewId + '/extra'), url.replace('#', '?name=Paul#'), url.split('#')[0], url.replace(location.origin, 'https://evil.example')]) expect(invitationCode(invalid)).toBeNull();
+  await expect(invitationURL(code, 'short')).rejects.toThrow('Invalid invitation preview');
+});
+it('never restores an older invitation for a short preview URL without a token', async () => {
+  openPendingInvitation(await invitationURL(code));
+  history.replaceState(null, '', `/i/${previewId}`);
+  const hook = renderHook(() => usePendingInvitation());
+  expect(hook.result.current.pending?.code).toBeNull();
+  expect(sessionStorage.getItem(INVITATION_STORAGE_KEY)).toBeNull();
+});
 it('keeps sharing functional when Web Crypto is unavailable', async () => {
   vi.stubGlobal('crypto', {});
+  expect(await invitationURL(code, previewId)).toBe(`${location.origin}/i/${previewId}#${code}`);
   expect(await invitationURL(code)).toBe(`${location.origin}/invite#${code}`);
 });
 it('strips the fragment, remembers opening through OAuth, and clears after accepting', async () => {
-  history.replaceState(null, '', await invitationURL(code));
+  history.replaceState(null, '', await invitationURL(code, previewId));
   const first = renderHook(() => usePendingInvitation());
-  await waitFor(() => expect(location.hash + location.search).toBe(''));
+  await waitFor(() => expect(location.pathname + location.hash + location.search).toBe('/invite'));
   act(() => first.result.current.setOpened(true));
   first.unmount();
   history.replaceState(null, '', '/?code=oauth-authorization-code');

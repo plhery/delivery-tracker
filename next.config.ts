@@ -50,6 +50,13 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: '/i/:path*',
+        headers: [
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+        ],
+      },
+      {
         source: '/sw.js',
         headers: [
           { key: 'Cache-Control', value: 'no-store, max-age=0, must-revalidate' },

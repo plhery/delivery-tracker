@@ -548,9 +548,19 @@ struct FriendsActionRequest: Codable, Equatable, Hashable, Sendable {
 struct FriendsActionResponse: Codable, Equatable, Hashable, Sendable {
     var snapshot: FriendsSnapshot? = nil
     var inviteCode: String? = nil
+    var previewID: String? = nil
     var expiresAt: String? = nil
     var previewNickname: String? = nil
     var acceptedFriend: FriendCard? = nil
+
+    private enum CodingKeys: String, CodingKey {
+        case snapshot
+        case inviteCode
+        case previewID = "previewId"
+        case expiresAt
+        case previewNickname
+        case acceptedFriend
+    }
 }
 
 struct FriendExportConnection: Codable, Equatable, Hashable, Sendable, Identifiable {
