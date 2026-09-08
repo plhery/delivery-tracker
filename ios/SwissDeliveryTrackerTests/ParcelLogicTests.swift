@@ -719,6 +719,57 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertEqual(forward.milestoneProgress, 0.5)
     }
 
+    @MainActor
+    func testFriendsPreviewSharesOnlyChosenRoundedSummary() throws {
+        let id = UUID()
+        let parcel = makeParcel(id: id, events: [
+            event(id, .accepted, "2026-09-06T10:00:00Z"),
+            event(id, .delivered, "2026-09-07T11:00:00Z"),
+        ])
+        let now = DateParser.date("2026-09-08T12:00:00Z")!
+        var profile = FriendProfile(nickname: "My nickname", shareStats: true, shareArrival: false)
+        let card = FriendsStore.ownCard(parcels: [parcel], profile: profile, now: now)
+        XCTAssertEqual(card.stats?.deliveredCount, 1)
+        XCTAssertEqual(card.stats?.averageDays, 2)
+        XCTAssertEqual(card.stats?.stamps, [.first, .express])
+        XCTAssertNil(card.arrivedThisWeek)
+        let encoded = String(data: try JSONEncoder().encode(card), encoding: .utf8)!
+        for secret in [parcel.trackingNumber, parcel.label, id.uuidString, "occurredAt", "trackingEvents", "carrier"] {
+            XCTAssertFalse(encoded.contains(secret))
+        }
+        profile.shareStats = false
+        profile.shareArrival = true
+        let privateCard = FriendsStore.ownCard(parcels: [parcel], profile: profile, now: now)
+        XCTAssertNil(privateCard.stats)
+        XCTAssertEqual(privateCard.arrivedThisWeek, true)
+        var returned = parcel
+        returned.trackingEvents.append(event(id, .returned, "2026-09-08T10:00:00Z"))
+        XCTAssertEqual(FriendsStore.ownCard(parcels: [returned], profile: profile, now: now).arrivedThisWeek, false)
+    }
+
+    @MainActor
+    func testFriendsWeekUsesFirstDeliveryAndUTCBoundary() {
+        let id = UUID()
+        let parcel = makeParcel(id: id, events: [
+            event(id, .accepted, "2026-09-04T10:00:00Z"),
+            event(id, .delivered, "2026-09-06T23:59:00Z"),
+            event(id, .delivered, "2026-09-07T11:00:00Z"),
+        ])
+        let profile = FriendProfile(nickname: "Test", shareStats: false, shareArrival: true)
+        let now = DateParser.date("2026-09-08T12:00:00Z")!
+        XCTAssertEqual(FriendsStore.ownCard(parcels: [parcel], profile: profile, now: now).arrivedThisWeek, false)
+    }
+
+    func testSharedFriendsFixtureDecodesIncludingHiddenStatistics() throws {
+        let url = Bundle.main.url(forResource: "FriendsDemo", withExtension: "json")!
+        let snapshot = try JSONDecoder().decode(FriendsSnapshot.self, from: Data(contentsOf: url))
+        XCTAssertEqual(snapshot.friends.count, 3)
+        XCTAssertEqual(snapshot.friends.first?.stats?.stamps, [.first, .ten, .connected, .express])
+        XCTAssertNil(snapshot.friends.last?.stats)
+        XCTAssertNil(snapshot.friends.last?.arrivedThisWeek)
+        XCTAssertEqual(snapshot.profile?.shareArrival, false)
+    }
+
     private func makeParcel(
         id: UUID = UUID(),
         trackingNumber: String = "1Z999AA10123456784",

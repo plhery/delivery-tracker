@@ -6,6 +6,8 @@ import { AccountMenu } from './components/AccountMenu';
 import { ParcelCard } from './components/ParcelCard';
 import { ParcelDetail } from './components/ParcelDetail';
 import { Passport } from './components/Passport';
+import { Friends } from './components/Friends';
+import { createFriendsClient } from './lib/friends';
 import { Icon, ParcelIllustration } from './components/Icon';
 import { ParcelViewControls } from './components/ParcelViewControls';
 import {
@@ -114,8 +116,10 @@ export default function App({
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
   const [viewNow, setViewNow] = useState(() => Date.now());
   const [openParcelId, setOpenParcelId] = useState<string | null>(null);
-  const [tab, setTab] = useState<'deliveries' | 'passport'>('deliveries');
-  const scrollPositions = useRef({ deliveries: 0, passport: 0 });
+  const [tab, setTab] = useState<'deliveries' | 'passport' | 'friends'>('deliveries');
+  const scrollPositions = useRef({ deliveries: 0, passport: 0, friends: 0 });
+
+  const friendsClient = useMemo(() => createFriendsClient(mode === 'demo', apiAuth), [mode, apiAuth]);
 
   useEffect(() => {
     let active = true;
@@ -152,18 +156,18 @@ export default function App({
     const onPopState = () => {
       const params = new URLSearchParams(window.location.search);
       setOpenParcelId(params.get('parcel'));
-      setTab(params.get('view') === 'passport' ? 'passport' : 'deliveries');
+      setTab(params.get('view') === 'friends' ? 'friends' : params.get('view') === 'passport' ? 'passport' : 'deliveries');
     };
     onPopState();
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  function switchTab(next: 'deliveries' | 'passport') {
+  function switchTab(next: 'deliveries' | 'passport' | 'friends') {
     if (next === tab) return;
     scrollPositions.current[tab] = window.scrollY;
     const url = new URL(window.location.href);
-    if (next === 'passport') url.searchParams.set('view', next);
+    if (next !== 'deliveries') url.searchParams.set('view', next);
     else url.searchParams.delete('view');
     window.history.pushState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
     setTab(next);
@@ -324,10 +328,11 @@ export default function App({
         <div className="app__masthead">
           <span className="app__wordmark"><Icon name="parcel" />{t('app.title')}</span>
           <button type="button" className="app__add-button" aria-label={t('app.addParcelAria')} onClick={() => setAdding(true)}><Icon name="plus" /><span>{t('app.addParcel')}</span></button>
-          <h1 className="app__title">{t(tab === 'deliveries' ? 'native.deliveries' : 'passport.title')}</h1>
+          <h1 className="app__title">{t(tab === 'deliveries' ? 'native.deliveries' : tab === 'passport' ? 'passport.title' : 'friends.title')}</h1>
           <nav className="app__navigation" aria-label={t('app.title')}>
             <button type="button" aria-current={tab === 'deliveries' ? 'page' : undefined} onClick={() => switchTab('deliveries')}><Icon name="parcel" /><span>{t('native.deliveries')}</span></button>
             <button type="button" aria-current={tab === 'passport' ? 'page' : undefined} onClick={() => switchTab('passport')}><Icon name="passport" /><span>{t('passport.title')}</span></button>
+            <button type="button" aria-current={tab === 'friends' ? 'page' : undefined} onClick={() => switchTab('friends')}><Icon name="friends" /><span>{t('friends.title')}</span></button>
           </nav>
           <AccountMenu email={accountEmail} onExport={onExportAccount} onDelete={onDeleteAccount} onSignOut={onSignOut} onExitDemo={onExitDemo} apiAuth={apiAuth} />
         </div>
@@ -577,6 +582,7 @@ export default function App({
         </div>
         </div>
         {tab === 'passport' && <Passport parcels={parcels} loading={loading} />}
+        {tab === 'friends' && <Friends key={apiAuth?.userId ?? 'demo'} client={friendsClient} parcels={parcels} demo={mode === 'demo'} />}
       </main>
 
       {adding && (

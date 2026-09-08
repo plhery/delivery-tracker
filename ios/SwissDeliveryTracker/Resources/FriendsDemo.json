@@ -1,0 +1,44 @@
+{
+  "profile": {
+    "nickname": "Alex",
+    "shareStats": true,
+    "shareArrival": false
+  },
+  "ownCard": null,
+  "friends": [
+    {
+      "id": "11000000-0000-4000-8000-000000000001",
+      "nickname": "Mila",
+      "stats": {
+        "deliveredCount": 12,
+        "averageDays": 3,
+        "stamps": [
+          "first",
+          "ten",
+          "connected",
+          "express"
+        ]
+      },
+      "arrivedThisWeek": true
+    },
+    {
+      "id": "22000000-0000-4000-8000-000000000002",
+      "nickname": "Noé",
+      "stats": {
+        "deliveredCount": 6,
+        "averageDays": 4,
+        "stamps": [
+          "first",
+          "connected"
+        ]
+      },
+      "arrivedThisWeek": null
+    },
+    {
+      "id": "33000000-0000-4000-8000-000000000003",
+      "nickname": "Sam",
+      "stats": null,
+      "arrivedThisWeek": null
+    }
+  ]
+}

@@ -1181,6 +1181,7 @@ export interface ApiAccountExportResponse {
   "email": string | null;
 };
   "packages": Array<ApiPackageRow>;
+  "friends"?: ApiFriendsExport;
 }
 
 export interface ApiDeleteAccountRequest {
@@ -1446,4 +1447,59 @@ export interface ApiHealthResponse {
 export interface ApiUpdatePushSubscriptionLocaleRequest {
   "endpoint": string;
   "locale": ApiNativePushLocale;
+}
+
+export type ApiFriendStamp = "first" | "ten" | "connected" | "express";
+
+export interface ApiFriendStats {
+  "deliveredCount": number;
+  "averageDays": number | null;
+  "stamps": Array<ApiFriendStamp>;
+}
+
+export interface ApiFriendProfile {
+  "nickname": string;
+  "shareStats": boolean;
+  "shareArrival": boolean;
+}
+
+export interface ApiFriendCard {
+  "id": string;
+  "nickname": string;
+  "stats": ApiFriendStats | null;
+  "arrivedThisWeek": boolean | null;
+}
+
+export interface ApiFriendsSnapshot {
+  "profile": ApiFriendProfile | null;
+  "ownCard": ApiFriendCard | null;
+  "friends": Array<ApiFriendCard>;
+}
+
+export type ApiFriendsAction = "save_profile" | "create_invite" | "revoke_invite" | "preview_invite" | "accept_invite" | "remove_friend" | "disable";
+
+export interface ApiFriendsActionRequest {
+  "action": ApiFriendsAction;
+  "nickname"?: string;
+  "shareStats"?: boolean;
+  "shareArrival"?: boolean;
+  "code"?: string;
+  "friendId"?: string;
+}
+
+export interface ApiFriendsActionResponse {
+  "snapshot"?: ApiFriendsSnapshot;
+  "inviteCode"?: string;
+  "expiresAt"?: string;
+  "previewNickname"?: string;
+}
+
+export interface ApiFriendExportConnection {
+  "id": string;
+  "nickname": string;
+}
+
+export interface ApiFriendsExport {
+  "profile": ApiFriendProfile | null;
+  "connections": Array<ApiFriendExportConnection>;
 }

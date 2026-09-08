@@ -1,0 +1,14 @@
+import { apiRoute, json, readJsonObject, requireUserClient } from '../../../src/server/api';
+import { friendsAction, friendsActionResponse, friendsRPC, friendsSnapshot } from '../../../src/server/friends';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+export const GET = apiRoute(async (context) => json(
+  friendsSnapshot(await friendsRPC(requireUserClient(context))),
+), { loadService: false });
+
+export const POST = apiRoute(async (context) => {
+  const action = friendsAction(await readJsonObject(context.request));
+  return json(friendsActionResponse(await friendsRPC(requireUserClient(context), action), action.action));
+}, { loadService: false });

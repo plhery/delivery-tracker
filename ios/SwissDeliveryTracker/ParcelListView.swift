@@ -18,6 +18,10 @@ struct ParcelListView: View {
                 .tabItem {
                     Label(ExperimentalCopy(localizer: localizer).passport, systemImage: "book.closed.fill")
                 }
+
+            FriendsView()
+                .tag(2)
+                .tabItem { Label(localizer.text("friends.title"), systemImage: "person.2.fill") }
         }
         .tint(Brand.ink)
         .sensoryFeedback(.selection, trigger: selection)

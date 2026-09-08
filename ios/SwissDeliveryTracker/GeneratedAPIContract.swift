@@ -6,6 +6,7 @@ struct AccountExportResponse: Codable, Equatable, Hashable, Sendable {
     var exportedAt: String
     var account: AccountExportAccount
     var packages: [Parcel]
+    var friends: FriendsExport? = nil
 }
 
 struct DeleteAccountRequest: Codable, Equatable, Hashable, Sendable {
@@ -466,6 +467,87 @@ struct HealthResponse: Codable, Equatable, Hashable, Sendable {
 struct UpdatePushSubscriptionLocaleRequest: Codable, Equatable, Hashable, Sendable {
     var endpoint: String
     var locale: NativePushLocale
+}
+
+enum FriendStamp: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case first
+    case ten
+    case connected
+    case express
+
+    var id: String { rawValue }
+}
+
+struct FriendStats: Codable, Equatable, Hashable, Sendable {
+    var deliveredCount: Int
+    var averageDays: Int? = nil
+    var stamps: [FriendStamp]
+}
+
+struct FriendProfile: Codable, Equatable, Hashable, Sendable {
+    var nickname: String
+    var shareStats: Bool
+    var shareArrival: Bool
+}
+
+struct FriendCard: Codable, Equatable, Hashable, Sendable, Identifiable {
+    var id: UUID
+    var nickname: String
+    var stats: FriendStats? = nil
+    var arrivedThisWeek: Bool? = nil
+}
+
+struct FriendsSnapshot: Codable, Equatable, Hashable, Sendable {
+    var profile: FriendProfile? = nil
+    var ownCard: FriendCard? = nil
+    var friends: [FriendCard]
+}
+
+enum FriendsAction: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case saveProfile = "save_profile"
+    case createInvite = "create_invite"
+    case revokeInvite = "revoke_invite"
+    case previewInvite = "preview_invite"
+    case acceptInvite = "accept_invite"
+    case removeFriend = "remove_friend"
+    case disable
+
+    var id: String { rawValue }
+}
+
+struct FriendsActionRequest: Codable, Equatable, Hashable, Sendable {
+    var action: FriendsAction
+    var nickname: String? = nil
+    var shareStats: Bool? = nil
+    var shareArrival: Bool? = nil
+    var code: String? = nil
+    var friendID: UUID? = nil
+
+    private enum CodingKeys: String, CodingKey {
+        case action
+        case nickname
+        case shareStats
+        case shareArrival
+        case code
+        case friendID = "friendId"
+    }
+}
+
+struct FriendsActionResponse: Codable, Equatable, Hashable, Sendable {
+    var snapshot: FriendsSnapshot? = nil
+    var inviteCode: String? = nil
+    var expiresAt: String? = nil
+    var previewNickname: String? = nil
+}
+
+struct FriendExportConnection: Codable, Equatable, Hashable, Sendable, Identifiable {
+    var id: UUID
+    var nickname: String
+}
+
+struct FriendsExport: Codable, Equatable, Hashable, Sendable {
+    var profile: FriendProfile? = nil
+    var connections: [FriendExportConnection]
 }
 
 struct AccountExportAccount: Codable, Equatable, Hashable, Sendable, Identifiable {

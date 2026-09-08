@@ -28,6 +28,7 @@ const apiFixture = JSON.parse(fs.readFileSync(
 const outputs = new Map([
   ['Localization.json', `${JSON.stringify(languages, null, 2)}\n`],
   ['CarrierCatalog.json', `${JSON.stringify({ 'x-carriers': contract['x-carriers'] }, null, 2)}\n`],
+  ['FriendsDemo.json', fs.readFileSync(path.join(root, 'shared', 'friends-demo.json'), 'utf8')],
   ['ContractFixtures.json', `${JSON.stringify(apiFixture, null, 2)}\n`],
 ]);
 

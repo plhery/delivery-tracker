@@ -1089,7 +1089,10 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["version", "x-carriers"],
+                  "required": [
+                    "version",
+                    "x-carriers"
+                  ],
                   "properties": {
                     "version": {
                       "type": "string"
@@ -1531,7 +1534,10 @@
               "type": "array",
               "minItems": 1,
               "maxItems": 20,
-              "items": { "type": "string", "format": "uuid" }
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
             }
           }
         ],
@@ -1540,14 +1546,24 @@
             "description": "Owned synchronization job statuses",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/SyncJobListResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/SyncJobListResponse"
+                }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/ApiError" },
-          "404": { "$ref": "#/components/responses/ApiError" },
-          "429": { "$ref": "#/components/responses/ApiError" },
-          "502": { "$ref": "#/components/responses/ApiError" }
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "502": {
+            "$ref": "#/components/responses/ApiError"
+          }
         }
       }
     },
@@ -1979,6 +1995,59 @@
           }
         }
       }
+    },
+    "/api/friends": {
+      "get": {
+        "operationId": "getFriends",
+        "summary": "Read only mutually connected, consented Friends summaries",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendsSnapshot"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "updateFriends",
+        "summary": "Manage private Friends, single-use invitations, and sharing consent",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FriendsActionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendsActionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid profile or action"
+          },
+          "404": {
+            "description": "Invitation unavailable"
+          },
+          "409": {
+            "description": "Circle full"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2062,6 +2131,9 @@
             "items": {
               "$ref": "#/components/schemas/PackageRow"
             }
+          },
+          "friends": {
+            "$ref": "#/components/schemas/FriendsExport"
           }
         }
       },
@@ -2828,11 +2900,15 @@
       "SyncJobListResponse": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["jobs"],
+        "required": [
+          "jobs"
+        ],
         "properties": {
           "jobs": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/SyncJobResponse" }
+            "items": {
+              "$ref": "#/components/schemas/SyncJobResponse"
+            }
           }
         }
       },
@@ -2961,6 +3037,258 @@
           },
           "locale": {
             "$ref": "#/components/schemas/NativePushLocale"
+          }
+        }
+      },
+      "FriendStamp": {
+        "type": "string",
+        "enum": [
+          "first",
+          "ten",
+          "connected",
+          "express"
+        ]
+      },
+      "FriendStats": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "deliveredCount",
+          "averageDays",
+          "stamps"
+        ],
+        "properties": {
+          "deliveredCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "averageDays": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stamps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FriendStamp"
+            },
+            "uniqueItems": true,
+            "maxItems": 4
+          }
+        }
+      },
+      "FriendProfile": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "nickname",
+          "shareStats",
+          "shareArrival"
+        ],
+        "properties": {
+          "nickname": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24
+          },
+          "shareStats": {
+            "type": "boolean"
+          },
+          "shareArrival": {
+            "type": "boolean"
+          }
+        }
+      },
+      "FriendCard": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "nickname",
+          "stats",
+          "arrivedThisWeek"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nickname": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24
+          },
+          "stats": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FriendStats"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "arrivedThisWeek": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "FriendsSnapshot": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "ownCard",
+          "friends"
+        ],
+        "properties": {
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FriendProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ownCard": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FriendCard"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "friends": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "$ref": "#/components/schemas/FriendCard"
+            }
+          }
+        }
+      },
+      "FriendsAction": {
+        "type": "string",
+        "enum": [
+          "save_profile",
+          "create_invite",
+          "revoke_invite",
+          "preview_invite",
+          "accept_invite",
+          "remove_friend",
+          "disable"
+        ]
+      },
+      "FriendsActionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "action"
+        ],
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/FriendsAction"
+          },
+          "nickname": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24
+          },
+          "shareStats": {
+            "type": "boolean"
+          },
+          "shareArrival": {
+            "type": "boolean"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          },
+          "friendId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "FriendsActionResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [],
+        "properties": {
+          "snapshot": {
+            "$ref": "#/components/schemas/FriendsSnapshot"
+          },
+          "inviteCode": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "previewNickname": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 24
+          }
+        }
+      },
+      "FriendExportConnection": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "nickname"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nickname": {
+            "type": "string"
+          }
+        }
+      },
+      "FriendsExport": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile",
+          "connections"
+        ],
+        "properties": {
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FriendProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "connections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FriendExportConnection"
+            }
           }
         }
       }

@@ -43,6 +43,14 @@ final class DeliveryAPIClient {
         self.session = session
     }
 
+    func friendsSnapshot() async throws -> FriendsSnapshot {
+        try await request("/api/friends")
+    }
+
+    func friendsAction(_ value: FriendsActionRequest) async throws -> FriendsActionResponse {
+        try await request("/api/friends", method: "POST", body: value)
+    }
+
     func listPackages() async throws -> [Parcel] {
         let response: PackageListResponse = try await request("/api/packages?includeArchived=true")
         return response.packages
