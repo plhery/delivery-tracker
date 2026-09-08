@@ -51,6 +51,9 @@ struct CarrierID: RawRepresentable, Codable, CaseIterable, Hashable, Sendable, I
     static let asendia = CarrierID(rawValue: "asendia")
     static let shipup = CarrierID(rawValue: "shipup")
     static let indiaPost = CarrierID(rawValue: "india-post")
+    static let hermesDe = CarrierID(rawValue: "hermes-de")
+    static let glsDe = CarrierID(rawValue: "gls-de")
+    static let delivengo = CarrierID(rawValue: "delivengo")
     static let internationalPost = CarrierID(rawValue: "intl-post")
     static let unknown = CarrierID(rawValue: "unknown")
 
@@ -87,6 +90,9 @@ struct CarrierID: RawRepresentable, Codable, CaseIterable, Hashable, Sendable, I
         .asendia,
         .shipup,
         .indiaPost,
+        .hermesDe,
+        .glsDe,
+        .delivengo,
         .internationalPost,
         .unknown,
     ]

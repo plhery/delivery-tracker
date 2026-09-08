@@ -23,8 +23,10 @@ import { DPDTracker } from './dpd';
 import { GeodisTracker } from './geodis';
 import { GLSFranceTracker } from './glsFrance';
 import { GLSSwitzerlandTracker } from './glsSwitzerland';
+import { GLSGermanyTracker } from './glsGermany';
 import { HeppnerTracker } from './heppner';
 import { HermesTracker } from './hermes';
+import { HermesGermanyTracker } from './hermesGermany';
 import { IndiaPostTracker } from './indiaPost';
 import { LaPosteTracker } from './laPoste';
 import { MondialRelayTracker } from './mondialRelay';
@@ -44,6 +46,7 @@ import {
 import { isRecord, type JsonObject } from './types';
 import { fetchUpstreamCarrier } from './upstreamAdapters';
 import { UPSTracker } from './ups';
+import { UniversalTracker } from './universalTracking';
 
 const MAX_PACKAGES_PER_OWNER_PER_SYNC = 5;
 const VALID_STAGES = new Set<string>(STAGES);
@@ -82,6 +85,9 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     readonly amazonLogistics = new AmazonLogisticsTracker(),
     readonly indiaPost = new IndiaPostTracker(),
     readonly dhl = new DHLTracker(),
+    readonly hermesGermany = new HermesGermanyTracker(),
+    readonly glsGermany = new GLSGermanyTracker(),
+    readonly universal = new UniversalTracker(),
   ) {}
 
   async fetch(
@@ -103,6 +109,12 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
       result = await this.dachser.fetch(trackingNumber, trackingUrl);
     } else if (adapter === 'hermes') {
       result = await this.hermes.fetch(trackingNumber);
+    } else if (adapter === 'hermes-germany') {
+      result = await this.hermesGermany.fetch(trackingNumber);
+    } else if (adapter === 'gls-germany') {
+      result = await this.glsGermany.fetch(trackingNumber, dpdPostcode ?? '');
+    } else if (adapter === 'universal') {
+      result = await this.universal.fetch(trackingNumber);
     } else if (adapter === 'ups') {
       result = await this.ups.fetch(trackingNumber);
     } else if (adapter === 'dhl') {

@@ -110,16 +110,16 @@ export function normalizeGLSSwitzerlandTrackingNumber(raw: string): string {
   const value = raw.toLocaleUpperCase('en-US').replace(/[\s.-]/g, '');
   if (!/^(?:(?=[A-Z0-9]{8}$)(?=.*[A-Z])(?=.*\d)[A-Z0-9]{8}|\d{11,14})$/.test(value)) {
     throw new TypeError(
-      'GLS Switzerland tracking requires an 8-character Track ID or an 11-to-14-digit parcel number',
+      'GLS tracking requires an 8-character Track ID or an 11-to-14-digit parcel number',
     );
   }
   return value;
 }
 
-export function normalizeGLSSwitzerlandPostcode(raw: string): string {
+export function normalizeGLSSwitzerlandPostcode(raw: string, digits: 4 | 5 = 4): string {
   const value = raw.trim();
-  if (!/^\d{4}$/.test(value)) {
-    throw new TypeError('GLS Switzerland detailed tracking requires the 4-digit recipient postcode');
+  if (!new RegExp(`^\\d{${digits}}$`).test(value)) {
+    throw new TypeError(`GLS detailed tracking requires the ${digits}-digit recipient postcode`);
   }
   return value;
 }
@@ -147,15 +147,16 @@ export function glsSwitzerlandDetailApiUrl(
   rawPostcode: string,
   millis = Date.now(),
   ownerCode = '',
+  postcodeDigits: 4 | 5 = 4,
 ): string {
   const parcelNumber = normalizeGLSSwitzerlandTrackingNumber(rawParcelNumber);
   if (!/^\d{11,14}$/.test(parcelNumber)) {
-    throw new TypeError('GLS Switzerland details require the numeric parcel number');
+    throw new TypeError('GLS details require the numeric parcel number');
   }
   const url = new URL(`${TRACKING_API}/rstt028/${encodeURIComponent(parcelNumber)}`);
   url.searchParams.set('caller', 'witt002');
   url.searchParams.set('millis', String(millis));
-  url.searchParams.set('postalCode', normalizeGLSSwitzerlandPostcode(rawPostcode));
+  url.searchParams.set('postalCode', normalizeGLSSwitzerlandPostcode(rawPostcode, postcodeDigits));
   const owner = text(ownerCode, 32);
   if (owner && /^[A-Z0-9_-]+$/i.test(owner)) url.searchParams.set('tuOwnerCode', owner);
   return url.toString();
@@ -192,10 +193,10 @@ function responseIdentifiers(parcel: JsonObject): string[] {
 }
 
 function parcelRows(payload: unknown): JsonObject[] {
-  if (!isRecord(payload)) throw new TypeError('GLS Switzerland returned an invalid tracking response');
+  if (!isRecord(payload)) throw new TypeError('GLS returned an invalid tracking response');
   if (Array.isArray(payload.tuStatus)) return records(payload.tuStatus);
   if (payload.tuNo) return [payload];
-  throw new TypeError('GLS Switzerland did not return tracking details');
+  throw new TypeError('GLS did not return tracking details');
 }
 
 function selectParcel(payload: unknown, rawTrackingNumber: string): JsonObject {
@@ -207,8 +208,8 @@ function selectParcel(payload: unknown, rawTrackingNumber: string): JsonObject {
   // An eight-character Track ID is translated by the overview endpoint to its
   // numeric parcel number and is not echoed. A single result is unambiguous.
   if (/^[A-Z0-9]{8}$/.test(trackingNumber) && parcels.length === 1) return parcels[0]!;
-  if (matching.length > 1) throw new RangeError('GLS Switzerland returned an ambiguous shipment');
-  throw new RangeError('GLS Switzerland returned a different shipment');
+  if (matching.length > 1) throw new RangeError('GLS returned an ambiguous shipment');
+  throw new RangeError('GLS returned a different shipment');
 }
 
 function parseEventTime(dateValue: unknown, timeValue: unknown): {
@@ -300,7 +301,7 @@ export function parseGLSSwitzerlandTrackingResponse(
 ): CarrierResult {
   const parcel = selectParcel(payload, rawTrackingNumber);
   if (!isRecord(parcel.progressBar)) {
-    throw new TypeError('GLS Switzerland did not return a shipment status');
+    throw new TypeError('GLS did not return a shipment status');
   }
   const progress = parcel.progressBar;
   const current = records(progress.statusBar).find((entry) => (
@@ -363,7 +364,7 @@ export class GLSSwitzerlandTracker {
 
     const parcelNumber = normalizedResponseIdentifier(parcel.tuNo);
     if (!/^\d{11,14}$/.test(parcelNumber)) {
-      throw new TypeError('GLS Switzerland did not return a numeric parcel number');
+      throw new TypeError('GLS did not return a numeric parcel number');
     }
     const detail = await this.request(glsSwitzerlandDetailApiUrl(
       parcelNumber,

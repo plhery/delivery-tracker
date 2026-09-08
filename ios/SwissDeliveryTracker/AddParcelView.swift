@@ -486,15 +486,7 @@ struct AddParcelView: View {
     private var parsed: TrackingInputMatch { catalog.parse(trackingInput) }
 
     private var resolvedCarrier: CarrierID {
-        if let carrierOverride { return carrierOverride }
-        if parsed.carrier != .unknown { return parsed.carrier }
-        if parsed.candidates.count == 1, let carrier = parsed.candidates.first { return carrier }
-        if let recent = store.parcels
-            .sorted(by: { $0.createdAt > $1.createdAt })
-            .first(where: { parsed.candidates.contains($0.carrier) }) {
-            return recent.carrier
-        }
-        return .unknown
+        carrierOverride ?? parsed.carrier
     }
 
     private var detectedTint: Color {

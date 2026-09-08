@@ -445,7 +445,8 @@ export const CARRIER_CAPABILITIES = {
           "match",
           "parcelNumber",
           "matchParcelNumber"
-        ]
+        ],
+        "pathPattern": "^/(?:EU|CH)/"
       }
     ],
     "detectionRules": [
@@ -708,13 +709,15 @@ export const CARRIER_CAPABILITIES = {
       },
       {
         "domains": [
-          "gls-group.com"
+          "gls-group.com",
+          "gls-group.eu"
         ],
         "params": [
           "match",
           "parcelNumber",
           "matchParcelNumber"
-        ]
+        ],
+        "pathPattern": "^/FR/"
       }
     ],
     "detectionRules": [
@@ -1005,6 +1008,110 @@ export const CARRIER_CAPABILITIES = {
       }
     ]
   },
+  "hermes-de": {
+    "displayName": "Hermes Germany",
+    "color": "#0091cd",
+    "selectable": true,
+    "timezone": "Europe/Berlin",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "hermes-germany"
+    },
+    "trackingUrlTemplate": "https://www.myhermes.de/empfangen/sendungsverfolgung/sendungsinformation#{trackingNumber}",
+    "linkRules": [
+      {
+        "domains": [
+          "myhermes.de"
+        ],
+        "params": [
+          "TrackID",
+          "trackingNumber",
+          "sendungsId"
+        ],
+        "fragment": "^([A-Z0-9]{8,20})(?:$|[?&])"
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^H\\d{15,19}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^\\d{14}$",
+        "confidence": "low"
+      }
+    ],
+    "canaryUrl": "https://www.myhermes.de/empfangen/sendungsverfolgung/"
+  },
+  "gls-de": {
+    "displayName": "GLS Germany",
+    "color": "#ffdd00",
+    "selectable": true,
+    "timezone": "Europe/Berlin",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "gls-germany",
+      "requirements": [
+        {
+          "field": "dpdPostcode",
+          "validator": "francePostcode",
+          "label": "Delivery postcode",
+          "type": "text",
+          "placeholder": "10115",
+          "help": "GLS requires the five-digit delivery postcode to show the detailed event history.",
+          "pattern": "^[0-9]{5}$",
+          "maxLength": 5,
+          "inputMode": "numeric",
+          "autoComplete": "postal-code"
+        }
+      ]
+    },
+    "trackingUrlTemplate": "https://gls-group.eu/DE/de/paketverfolgung?match={trackingNumber}",
+    "linkRules": [
+      {
+        "domains": [
+          "gls-group.eu",
+          "gls-group.com"
+        ],
+        "pathPattern": "^/DE/",
+        "params": [
+          "match",
+          "parcelNumber",
+          "matchParcelNumber"
+        ]
+      },
+      {
+        "domains": [
+          "gls-pakete.de"
+        ],
+        "params": [
+          "match",
+          "trackingNumber"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^(?:(?=[A-Z0-9]{8}$)(?=.*[A-Z])(?=.*\\d)[A-Z0-9]{8}|\\d{11,14})$",
+        "confidence": "low"
+      }
+    ],
+    "canaryUrl": "https://gls-group.eu/EU/en/parcel-tracking"
+  },
+  "delivengo": {
+    "displayName": "Delivengo",
+    "color": "#ffcf00",
+    "selectable": true,
+    "timezone": "Europe/Paris",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "la-poste"
+    },
+    "trackingUrlTemplate": "https://www.laposte.fr/outils/suivre-vos-envois?code={trackingNumber}",
+    "linkRules": [],
+    "detectionRules": [],
+    "canaryUrl": "https://www.laposte.fr/outils/suivre-vos-envois"
+  },
   "intl-post": {
     "displayName": "Unknown postal carrier",
     "displayNames": {
@@ -1018,8 +1125,8 @@ export const CARRIER_CAPABILITIES = {
     "selectable": false,
     "timezone": "UTC",
     "tracking": {
-      "mode": "link-only",
-      "adapter": null
+      "mode": "automatic",
+      "adapter": "universal"
     },
     "trackingUrlTemplate": "https://t.17track.net/en#nums={trackingNumber}",
     "linkRules": [],
@@ -1029,7 +1136,8 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high",
         "checksum": "s10"
       }
-    ]
+    ],
+    "canaryUrl": "https://parcelsapp.com/en"
   },
   "unknown": {
     "displayName": "Carrier",
@@ -1037,11 +1145,32 @@ export const CARRIER_CAPABILITIES = {
     "selectable": false,
     "timezone": "UTC",
     "tracking": {
-      "mode": "link-only",
-      "adapter": null
+      "mode": "automatic",
+      "adapter": "universal"
     },
-    "linkRules": [],
-    "detectionRules": []
+    "linkRules": [
+      {
+        "domains": [
+          "17track.net"
+        ],
+        "params": [
+          "nums"
+        ],
+        "fragment": "(?:^|&)nums=([^&]+)",
+        "detectFromNumber": true
+      },
+      {
+        "domains": [
+          "parcelsapp.com"
+        ],
+        "path": "^/(?:[a-z]{2}/)?tracking/([^/?#]+)",
+        "detectFromNumber": true
+      }
+    ],
+    "detectionRules": [],
+    "trackingSiteName": "17TRACK",
+    "trackingUrlTemplate": "https://t.17track.net/en#nums={trackingNumber}",
+    "canaryUrl": "https://parcelsapp.com/en"
   }
 } as const;
 
@@ -1091,6 +1220,9 @@ export const CARRIER_IDS = [
   "asendia",
   "shipup",
   "india-post",
+  "hermes-de",
+  "gls-de",
+  "delivengo",
   "intl-post",
   "unknown"
 ] as const;

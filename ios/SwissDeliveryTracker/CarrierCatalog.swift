@@ -55,10 +55,13 @@ struct CarrierDefinition: Codable, Sendable {
         let domains: [String]
         let params: [String]?
         let path: String?
+        let pathPattern: String?
+        let fragment: String?
+        let detectFromNumber: Bool?
         let keepsCapabilityURL: Bool?
 
         enum CodingKeys: String, CodingKey {
-            case domains, params, path
+            case domains, params, path, pathPattern, fragment, detectFromNumber
             case keepsCapabilityURL = "keepsCapabilityUrl"
         }
     }
@@ -246,8 +249,6 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     }
 
     func trackingHintKey(for carrier: CarrierID) -> String {
-        if carrier == .internationalPost { return "add.internationalPost" }
-        if carrier == .unknown { return "add.unknownCarrier" }
         return tracksAutomatically(carrier) ? "add.autoSync" : "add.linkSync"
     }
 
@@ -303,6 +304,8 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
                 for rule in definition.linkRules where rule.domains.contains(where: {
                     host == $0 || host.hasSuffix(".\($0)")
                 }) {
+                    if let pattern = rule.pathPattern,
+                       Self.matches(in: components.path, pattern: pattern, caseInsensitive: true).isEmpty { continue }
                     matchingRules.append((carrier, rule))
                 }
             }
@@ -317,10 +320,16 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
                 if let path = firstMatch.rule.path {
                     pathValue = Self.capture(components.path, pattern: path)
                 }
-                let candidate = (queryValue ?? pathValue ?? "")
+                let fragmentValue = firstMatch.rule.fragment.flatMap {
+                    Self.capture(components.fragment ?? "", pattern: $0, caseInsensitive: true)
+                }
+                let candidate = (queryValue ?? pathValue ?? fragmentValue ?? "")
                     .split(whereSeparator: { $0 == "," || $0 == "|" }).first.map(String.init) ?? ""
                 if Self.valid(candidate) {
                     let detected = detect(candidate)
+                    if firstMatch.rule.detectFromNumber == true, detected.confidence == .high {
+                        return makeMatch(candidate, source: .link)
+                    }
                     let selected = detected.confidence == .high
                         ? matchingRules.first(where: { $0.carrier == detected.carrier }) ?? firstMatch
                         : firstMatch
@@ -393,6 +402,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
 
     private func recognizedNumber(in text: String) -> String? {
         let patterns = [
+            "\\bH\\d{15,19}\\b",
             "\\b1Z[A-Z0-9]{16}\\b",
             "\\b1G[A-Z0-9]{10}\\b",
             "\\b[A-Z]{2}\\s*\\d(?:[\\s.-]?\\d){8}\\s*[A-Z]{2}\\b",
@@ -426,8 +436,10 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             items.removeAll { $0.name == "lang" }
             items.append(URLQueryItem(name: "lang", value: language.rawValue))
             components.queryItems = items
-        } else if carrier == .internationalPost, components.host == "t.17track.net" {
-            components.path = "/\(language.rawValue)"
+        } else if components.host == "t.17track.net" || components.host == "parcelsapp.com" {
+            components.path = components.path.replacingOccurrences(
+                of: "^/[a-z]{2}(?=/|$)", with: "/\(language.rawValue)", options: .regularExpression
+            )
         }
         return components.url
     }

@@ -17,6 +17,41 @@ import {
   tracksAutomatically,
 } from './carriers';
 
+describe('expanded carrier catalog', () => {
+  it('offers regional carriers while universal lookups stay automatic and hidden', () => {
+    const choices = SELECTABLE_CARRIERS.map((c) => c.id);
+    for (const carrier of ['hermes-de', 'gls-de', 'delivengo'] as const) {
+      expect(choices).toContain(carrier);
+      expect(tracksAutomatically(carrier)).toBe(true);
+    }
+    for (const carrier of ['17track', 'seventeen-track', 'parcelsapp', 'unknown', 'intl-post']) {
+      expect(choices).not.toContain(carrier);
+    }
+    expect(tracksAutomatically('unknown')).toBe(true);
+    expect(carrierTrackingHintKey('unknown')).toBe('add.autoSync');
+    expect(carrierTrackingHintKey('intl-post')).toBe('add.autoSync');
+    expect(carrierRequirements('gls-de', '12345678901')).toMatchObject([{ pattern: '^[0-9]{5}$' }]);
+  });
+
+  it.each([
+    ['https://www.myhermes.de/empfangen/sendungsverfolgung/sendungsinformation#H1234567890123456789', 'hermes-de', 'H1234567890123456789'],
+    ['https://gls-group.com/DE/de/paketverfolgung?match=12345678901', 'gls-de', '12345678901'],
+    ['https://gls-group.eu/FR/fr/suivi-colis?match=12345678901', 'gls-fr', '12345678901'],
+    ['https://gls-group.eu/CH/en/parcel-tracking?match=12345678901', 'gls-ch', '12345678901'],
+    ['https://t.17track.net/en#nums=1Z999AA10123456784', 'ups', '1Z999AA10123456784'],
+    ['https://parcelsapp.com/fr/tracking/ZZ12345678900', 'unknown', 'ZZ12345678900'],
+    ['https://t.17track.net/fr#nums=ZZ12345678900', 'unknown', 'ZZ12345678900'],
+  ])('extracts %s', (url, carrier, trackingNumber) => {
+    expect(parseTrackingInput(url)).toMatchObject({ carrier, trackingNumber, source: 'link' });
+  });
+
+  it('recognizes Hermes H-numbers without assigning all fourteen-digit numbers to it', () => {
+    expect(parseTrackingInput('Parcel H1234567890123456789 is coming')).toMatchObject({ carrier: 'hermes-de' });
+    expect(detectCarrierMatch('12345678901234')).toMatchObject({ carrier: 'unknown', confidence: 'low' });
+    expect(parseTrackingInput('https://evil.test/myhermes.de#H1234567890123456789').trackingUrl).toBeUndefined();
+  });
+});
+
 describe('normalizeTrackingNumber', () => {
   it('uppercases and strips spaces, dots and dashes', () => {
     expect(normalizeTrackingNumber('99.34.123456.12345678')).toBe(
@@ -87,7 +122,7 @@ describe('unknown postal carrier links', () => {
       expect(link.url).toBe(`https://t.17track.net/${locale}#nums=RA123456785DE`);
       expect(link.role).toBe('active');
     }
-    expect(tracksAutomatically('intl-post')).toBe(false);
+    expect(tracksAutomatically('intl-post')).toBe(true);
   });
 
   it('uses English by default and keeps real carrier destinations', () => {
@@ -185,12 +220,12 @@ describe('detectCarrier', () => {
     expect(detectCarrierMatch('AB12CD34')).toMatchObject({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['gls-ch', 'gls-fr'],
+      candidates: ['gls-ch', 'gls-fr', 'gls-de'],
     });
     expect(detectCarrierMatch('36631000001')).toMatchObject({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['gls-ch', 'gls-fr'],
+      candidates: ['gls-ch', 'gls-fr', 'gls-de'],
     });
     expect(detectCarrierMatch('99112233445575012')).toMatchObject({
       carrier: 'unknown',
@@ -213,7 +248,7 @@ describe('detectCarrier', () => {
     expect(detectCarrierMatch('10594002378611')).toMatchObject({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['gls-ch', 'dpd', 'dpd-fr', 'ciblex'],
+      candidates: ['gls-ch', 'dpd', 'dpd-fr', 'ciblex', 'hermes-de', 'gls-de'],
     });
     expect(detectCarrierMatch('76434219')).toMatchObject({
       carrier: 'unknown',
@@ -253,7 +288,7 @@ describe('detectCarrier', () => {
     expect(detectCarrierMatch('123456789012')).toMatchObject({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['fedex', 'gls-ch', 'dpd-fr', 'mondial-relay'],
+      candidates: ['fedex', 'gls-ch', 'dpd-fr', 'mondial-relay', 'gls-de'],
     });
     expect(detectCarrierMatch('123456789012345')).toMatchObject({
       carrier: 'unknown',
@@ -266,7 +301,7 @@ describe('detectCarrier', () => {
     expect(detectCarrierMatch('01234567890123')).toMatchObject({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['gls-ch', 'dpd', 'dpd-fr', 'ciblex'],
+      candidates: ['gls-ch', 'dpd', 'dpd-fr', 'ciblex', 'hermes-de', 'gls-de'],
     });
   });
 

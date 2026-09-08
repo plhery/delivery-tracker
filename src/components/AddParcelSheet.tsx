@@ -61,7 +61,8 @@ export function AddParcelSheet({
   const carrier = trackingNumber ? carrierInfo(resolvedCarrier, locale) : null;
   const requirements = carrier ? carrierRequirements(carrier.id, trackingNumber) : [];
   const requiresCarrierConfirmation =
-    selectedCarrier === 'auto' && parsedTracking.confidence === 'low';
+    selectedCarrier === 'auto' && parsedTracking.confidence === 'low'
+    && !tracksAutomatically(parsedTracking.carrier);
   const parsedCarrierTrackingUrl =
     parsedTracking.carrier === resolvedCarrier ? parsedTracking.trackingUrl : undefined;
   const carrierInputValue = (field: CarrierInputField) =>

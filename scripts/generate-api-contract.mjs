@@ -135,6 +135,14 @@ for (const [carrierId, definition] of Object.entries(carrierCapabilities)) {
       throw new Error(`x-carriers.${carrierId} has an invalid detection rule`);
     }
   }
+  for (const rule of definition.linkRules ?? []) {
+    for (const field of ['path', 'pathPattern', 'fragment']) {
+      if (rule[field] !== undefined) new RegExp(rule[field], 'i');
+    }
+    if (rule.detectFromNumber !== undefined && typeof rule.detectFromNumber !== 'boolean') {
+      throw new Error(`x-carriers.${carrierId} has an invalid universal tracking rule`);
+    }
+  }
 }
 
 const enumConstants = {

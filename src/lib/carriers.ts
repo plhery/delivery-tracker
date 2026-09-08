@@ -73,6 +73,9 @@ interface TrackingLinkRule {
   domains: string[];
   params?: string[];
   path?: RegExp;
+  pathPattern?: RegExp;
+  fragment?: RegExp;
+  detectFromNumber?: boolean;
   keepsCapabilityUrl?: boolean;
 }
 
@@ -93,6 +96,9 @@ interface RawCarrierCapability {
     domains: readonly string[];
     params?: readonly string[];
     path?: string;
+    pathPattern?: string;
+    fragment?: string;
+    detectFromNumber?: boolean;
     keepsCapabilityUrl?: boolean;
   }[];
   detectionRules: readonly DetectionRule[];
@@ -149,6 +155,9 @@ const TRACKING_LINK_RULES: TrackingLinkRule[] = Object.entries(RAW_CARRIERS)
     domains: [...rule.domains],
     params: rule.params ? [...rule.params] : undefined,
     path: rule.path ? new RegExp(rule.path, 'i') : undefined,
+    pathPattern: rule.pathPattern ? new RegExp(rule.pathPattern, 'i') : undefined,
+    fragment: rule.fragment ? new RegExp(rule.fragment, 'i') : undefined,
+    detectFromNumber: rule.detectFromNumber,
     keepsCapabilityUrl: rule.keepsCapabilityUrl,
   })));
 
@@ -249,8 +258,8 @@ function localizedCarrierUrl(
     const localizedUrl = new URL(url);
     if (carrierId === 'swiss-post') {
       localizedUrl.searchParams.set('lang', locale);
-    } else if (carrierId === 'intl-post' && localizedUrl.hostname === 't.17track.net') {
-      localizedUrl.pathname = `/${locale}`;
+    } else if (localizedUrl.hostname === 't.17track.net' || localizedUrl.hostname === 'parcelsapp.com') {
+      localizedUrl.pathname = localizedUrl.pathname.replace(/^\/[a-z]{2}(?=\/|$)/i, `/${locale}`);
     } else {
       return url;
     }
@@ -277,8 +286,6 @@ export function tracksAutomatically(carrierId: CarrierId): boolean {
 }
 
 export function carrierTrackingHintKey(carrierId: CarrierId) {
-  if (carrierId === 'intl-post') return 'add.internationalPost';
-  if (carrierId === 'unknown') return 'add.unknownCarrier';
   return tracksAutomatically(carrierId) ? 'add.autoSync' : 'add.linkSync';
 }
 
@@ -318,6 +325,7 @@ export function detectCarrier(raw: string): CarrierId {
 }
 
 const TRACKING_CANDIDATE_PATTERNS = [
+  /\bH\d{15,19}\b/gi,
   /\b1Z[A-Z0-9]{16}\b/gi,
   /\b1G[A-Z0-9]{10}\b/gi,
   /\b[A-Z]{2}\s*\d(?:[\s.-]?\d){8}\s*[A-Z]{2}\b/gi,
@@ -356,7 +364,8 @@ function queryParam(url: URL, names: string[]): string | undefined {
 function numberFromRule(url: URL, rule: TrackingLinkRule): string | undefined {
   const fromQuery = rule.params ? queryParam(url, rule.params) : undefined;
   const fromPath = rule.path?.exec(url.pathname)?.[1];
-  const candidate = cleanLinkTrackingNumber(fromQuery ?? fromPath ?? '');
+  const fromFragment = rule.fragment?.exec(decodeURIComponent(url.hash.slice(1)))?.[1];
+  const candidate = cleanLinkTrackingNumber(fromQuery ?? fromPath ?? fromFragment ?? '');
   return validTrackingNumber(candidate) ? candidate : undefined;
 }
 
@@ -408,12 +417,16 @@ export function parseTrackingInput(raw: string): TrackingInputMatch {
     try {
       const url = new URL(trackingUrl);
       const rules = TRACKING_LINK_RULES.filter((candidate) =>
-        candidate.domains.some((domain) => matchesDomain(url.hostname.toLowerCase(), domain)),
+        candidate.domains.some((domain) => matchesDomain(url.hostname.toLowerCase(), domain))
+        && (!candidate.pathPattern || candidate.pathPattern.test(url.pathname)),
       );
       for (const firstRule of rules) {
         const trackingNumber = numberFromRule(url, firstRule);
         if (trackingNumber) {
           const detected = detectCarrierMatch(trackingNumber);
+          if (firstRule.detectFromNumber && detected.confidence === 'high') {
+            return { trackingNumber, ...detected, source: 'link' };
+          }
           const rule = detected.confidence === 'high'
             ? rules.find((candidate) => candidate.carrier === detected.carrier) ?? firstRule
             : firstRule;

@@ -39,7 +39,7 @@ describe('parcelDisplayStatus', () => {
   });
 
   it('explains link-only tracking immediately, before a worker checks it', () => {
-    for (const carrier of ['intl-post', 'unknown', 'fedex'] as const) {
+    for (const carrier of ['fedex', 'asendia'] as const) {
       const saved = { ...parcel('pending'), carrier };
       expect(parcelDisplayStatus(saved)).toEqual({
         label: "Check tracking website", tone: 'warn', syncing: false,
@@ -47,6 +47,12 @@ describe('parcelDisplayStatus', () => {
       expect(parcelDisplayStatusKey(saved)).toBe('status.unsupported');
       saved.events[0].stage = 'in_transit';
       expect(parcelDisplayStatusKey(saved)).toBe('stage.in_transit');
+    }
+  });
+
+  it('checks unidentified carriers automatically', () => {
+    for (const carrier of ['unknown', 'intl-post'] as const) {
+      expect(parcelDisplayStatusKey({ ...parcel('pending'), carrier })).toBe('status.syncing');
     }
   });
 

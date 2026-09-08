@@ -5,6 +5,21 @@ final class CarrierCatalogTests: XCTestCase {
     // Exercise the bundled rules without inheriting a previously cached live catalog.
     private let catalog = CarrierCatalog(cacheURL: nil)
 
+    func testExpandedCarriersAndHiddenUniversalLookup() {
+        for raw in ["hermes-de", "gls-de", "delivengo"] {
+            let carrier = CarrierID(rawValue: raw)
+            XCTAssertTrue(catalog.tracksAutomatically(carrier))
+        }
+        XCTAssertTrue(catalog.tracksAutomatically(.unknown))
+        XCTAssertEqual(catalog.parse("https://www.myhermes.de/empfangen/sendungsverfolgung/sendungsinformation#H1234567890123456789").carrier.rawValue, "hermes-de")
+        for (country, carrier) in [("DE", "gls-de"), ("FR", "gls-fr"), ("CH", "gls-ch")] {
+            XCTAssertEqual(catalog.parse("https://gls-group.eu/\(country)/en/parcel-tracking?match=12345678901").carrier.rawValue, carrier)
+        }
+        XCTAssertEqual(catalog.parse("https://t.17track.net/en#nums=1Z999AA10123456784").carrier, .ups)
+        XCTAssertEqual(catalog.parse("https://parcelsapp.com/fr/tracking/ZZ12345678900").carrier, .unknown)
+        XCTAssertEqual(catalog.parse("https://t.17track.net/en#nums=ZZ12345678900").trackingNumber, "ZZ12345678900")
+    }
+
     func testDetectsHighConfidenceCarriers() {
         XCTAssertEqual(catalog.detect("1Z999AA10123456784").carrier, .ups)
         XCTAssertEqual(catalog.detect("443412345678901234").carrier, .quickpac)
@@ -40,8 +55,8 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(catalog.detect("RA123456785DE").carrier, .internationalPost)
         XCTAssertTrue(catalog.tracksAutomatically(.springGDS))
         XCTAssertEqual(catalog.info(for: .springGDS).displayName, "PostNL / Spring GDS")
-        XCTAssertEqual(catalog.trackingHintKey(for: .internationalPost), "add.internationalPost")
-        XCTAssertEqual(catalog.trackingHintKey(for: .unknown), "add.unknownCarrier")
+        XCTAssertEqual(catalog.trackingHintKey(for: .internationalPost), "add.autoSync")
+        XCTAssertEqual(catalog.trackingHintKey(for: .unknown), "add.autoSync")
         XCTAssertEqual(catalog.trackingHintKey(for: .dhl), "add.autoSync")
         for input in [
             "https://postnl.post/details/LX123456785NL",
@@ -196,7 +211,7 @@ final class CarrierCatalogTests: XCTestCase {
             }
         }
         XCTAssertEqual(catalog.info(for: .internationalPost).displayName, "Unknown postal carrier")
-        XCTAssertFalse(catalog.tracksAutomatically(.internationalPost))
+        XCTAssertTrue(catalog.tracksAutomatically(.internationalPost))
 
         parcel.carrier = .swissPost
         parcel.trackingNumber = "RA123456785CH"

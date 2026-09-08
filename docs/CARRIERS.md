@@ -1,10 +1,13 @@
 # Carrier support
 
-Delivery Tracker can refresh these French, Swiss and international carriers automatically:
+Delivery Tracker can refresh these French, Swiss, German and international carriers automatically:
 
 | Carrier | Notes |
 | --- | --- |
 | Swiss Post | Automatic tracking through the pinned upstream adapter. A contracted business API is preferable for long-term production use. |
+| Hermes Germany | Automatic parcel tracking through the anonymous myHermes recipient API. Separate from Hermes Einrichtungs-Service. |
+| GLS Germany | Automatic through the GLS Group recipient service. Requires the five-digit delivery postcode. |
+| Delivengo | Automatic through La Poste. Choose it manually: its postal number ranges overlap other La Poste services. |
 | DHL / Deutsche Post | Automatic German parcel and tracked-mail updates through DHL's public tracking session, with the existing private TRAWL browser as a challenge fallback. |
 | Swiss Post Cargo | Automatic through the official anonymous public tracker. |
 | Quickpac | Automatic through Planzer's current tracking API. Existing Quickpac numbers keep their carrier label. |
@@ -33,13 +36,52 @@ Delivery Tracker can refresh these French, Swiss and international carriers auto
 | Ciblex | Automatic through the public parcel-tracking page for 14-digit shipment numbers. |
 | Paack | Automatic through the public recipient flow. Requires the tracking number and delivery postcode. |
 
-Unknown postal carrier (`intl-post`) is the fallback for postal numbers whose
-carrier has not been identified. It does not provide automatic updates. Choose
-the actual carrier in parcel details or use “Open on 17TRACK” to check the number
-on [17TRACK](https://t.17track.net/en). The carrier name and explanation are
-localized in English, German, French and Italian; the link opens the matching
-language. The fallback also replaces Swiss Post links saved on older unidentified
-parcels. Known Swiss Post shipments keep their Swiss Post links.
+Unknown carriers (`unknown` and `intl-post`) now attempt automatic lookup through
+17TRACK and then ParcelsApp's public web apps using the existing private TRAWL
+service (`FLARESOLVERR_URL`). These services are **not selectable carriers**.
+Ambiguous numbers can be saved for automatic lookup; a known carrier can still
+be selected manually. Pasted 17TRACK/ParcelsApp links resolve to a recognized
+carrier when possible, otherwise to unknown. The external 17TRACK link remains
+available and follows the app language.
+
+Only a matching shipment with dated history is accepted. 17TRACK demo numbers,
+initial polling replies, carrier-selection prompts, postcode forms, challenges,
+and empty responses cannot manufacture progress. If both lookups fail, sync
+reports an error and retains existing history. No authenticated commercial API
+key is required. A saved arbitrary tracking URL is never fetched by the fallback.
+
+TRAWL 1.5+ can return captured public API responses; ParcelsApp also supports
+parsing the rendered result on existing TRAWL releases. During the September 8
+checks, 17TRACK's onboarding and compressed response capture prevented automatic
+history retrieval, so it fell through to ParcelsApp. A normal interactive
+17TRACK browser did return real history. Aggregators can disagree or require
+additional information, especially for ambiguous numeric identifiers. Carrier
+adapters remain preferable when the carrier is known.
+
+GLS links are routed by country path (`DE`, `FR`, `CH`/`EU`) instead of treating
+all `gls-group.com` links as French. Hermes Germany's H-prefixed numbers are
+recognized; shared numeric formats remain ambiguous. Delivery postcodes are
+validated separately for Swiss and German GLS. Recipient addresses and
+signatures are not copied from carrier payloads.
+
+### Public sample checks, September 8, 2026
+
+| Provider | Public source and sample | Observed result |
+| --- | --- | --- |
+| Hermes Germany | [Paketda Hermes forum](https://www.paketda.de/fragen-antworten.php?suche_carrier=hermes), `39181147009513` | Five dated events, delivered to a neighbour July 7. |
+| GLS Germany | [Paketda GLS forum](https://www.paketda.de/fragen-antworten.php?suche_carrier=gls), `28286849236` | Explicit retired/not-found response (`E000`, HTTP 404); no postcode-protected details requested. Successful detail parsing is covered by synthetic fixtures. |
+| Delivengo | [Philaseiten public postal example](https://www.philaseiten.de/cgi-bin/index.pl?PR=319289), `LD156008025FR` | Old May 2023 example; local public endpoint returned an access error, not usable history. Adapter routing and parsing use the existing La Poste tests. |
+| Unknown → ParcelsApp | [Reddit AirReps discussion](https://www.reddit.com/r/AirReps/comments/1vfhh53/please_help_yunexpress_alibaba_tracking_stuck_on/), `YT2621200705470145` | 32 events through the real unknown-carrier dispatcher and existing deployed TRAWL; delivered August 17. |
+| Universal ambiguity | [Reddit tracking discussion](https://www.reddit.com/r/kakobuy/comments/1vvdv1x/is_this_normal_when_will_i_get_my_package/), `7321315927723857` | Interactive 17TRACK reported delivery August 31; ParcelsApp varied between an electronic announcement and a postcode prompt. Prompts are excluded from history. |
+
+The opt-in `expandedCarriers.live.test.ts` repeats the public checks. Universal
+lookup needs `FLARESOLVERR_URL`; other tests use anonymous public endpoints.
+Forum samples age out, so retained-history success and explicit retention errors
+are distinguished. Offline tests use synthetic identifiers and payloads rather
+than recipient data. Protocol references: [myHermes public web app](https://www.myhermes.de/empfangen/sendungsverfolgung/),
+[GLS Group](https://gls-group.eu/DE/de/paketverfolgung/),
+[Delivengo FAQ](https://mydelivengo.laposte.fr/easy/faq/), and
+[TRAWL native API](https://github.com/germondai/trawl/blob/main/apps/docs/api-reference/native-api.md).
 
 Dutch postal numbers resolve to PostNL / Spring GDS instead. Its existing automatic tracker uses
 [PostNL international tracking](https://postnl.post/);

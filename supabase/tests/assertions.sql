@@ -1903,3 +1903,42 @@ $$;
 reset role;
 
 select 'per-user ownership and RLS assertions passed' as result;
+
+-- Regional additions use the same owner-only RPCs and postcode validation.
+begin;
+insert into auth.users (id, email) values ('98000000-0000-0000-0000-000000000001', 'providers@example.invalid');
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000001', true);
+do $$
+declare
+  parcel public.packages;
+  carrier_id text;
+begin
+  foreach carrier_id in array array['hermes-de', 'delivengo', 'unknown', 'intl-post'] loop
+    select * into parcel from public.create_owned_package('TEST' || replace(carrier_id, '-', '') || '123', '', carrier_id, null, null);
+    if parcel.carrier <> carrier_id or parcel.user_id <> auth.uid() then
+      raise exception 'New provider lost its carrier or owner';
+    end if;
+  end loop;
+  select * into parcel from public.create_owned_package('12345678901', '', 'gls-de', null, '01067');
+  if parcel.dpd_postcode <> '01067' then raise exception 'German postcode lost its leading zero'; end if;
+  begin
+    perform public.create_owned_package('12345678902', '', 'gls-de', null, '8000');
+    raise exception 'Accepted Swiss postcode for German GLS' using errcode = 'P0002';
+  exception when invalid_parameter_value then null; end;
+  begin
+    perform public.change_owned_package_carrier(parcel.id, 'gls-de', null, null);
+    raise exception 'Accepted missing German postcode' using errcode = 'P0002';
+  exception when invalid_parameter_value then null; end;
+  perform public.change_owned_package_carrier(parcel.id, 'unknown', null, null);
+  select * into parcel from public.packages where id = parcel.id;
+  if parcel.carrier <> 'unknown' or parcel.dpd_postcode is not null or parcel.sync_status <> 'pending' then
+    raise exception 'Changing to automatic unknown lookup did not clear carrier-specific fields';
+  end if;
+  begin
+    perform public.create_owned_package('TESTAGGREGATOR123', '', 'parcelsapp', null, null);
+    raise exception 'Universal tracker was accepted as a selectable carrier' using errcode = 'P0002';
+  exception when invalid_parameter_value then null; end;
+end;
+$$;
+rollback;
