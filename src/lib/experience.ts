@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
 export type EntryScreen = 'welcome' | 'sign-in' | 'demo';
-export const EXPERIENCE_STORAGE_KEY = 'sdt.web.experience.v1';
+export const EXPERIENCE_STORAGE_KEY = 'sdt.web.experience.v1'; // gitleaks:allow -- public localStorage preference name
 const eventName = 'delivery-experience-change';
 let memoryScreen: EntryScreen | null = null;
 function read(): EntryScreen {
