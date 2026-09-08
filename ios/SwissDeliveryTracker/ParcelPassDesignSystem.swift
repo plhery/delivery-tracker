@@ -49,6 +49,41 @@ struct ExperimentalBackdrop: View {
     }
 }
 
+/// A continuous outline lets the notches reveal the actual surface during a swipe.
+struct DeliveryTicketShape: Shape {
+    static let stubWidth: CGFloat = 60
+    static let cornerRadius: CGFloat = 24
+    static let notchRadius: CGFloat = 6
+
+    func path(in rect: CGRect) -> Path {
+        let corner = min(Self.cornerRadius, rect.height / 2, rect.width / 2)
+        let notch = Self.notchRadius
+        let seam = rect.maxX - Self.stubWidth
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + corner, y: rect.minY))
+        path.addLine(to: CGPoint(x: seam - notch, y: rect.minY))
+        path.addArc(center: CGPoint(x: seam, y: rect.minY), radius: notch,
+                    startAngle: .degrees(180), endAngle: .degrees(0), clockwise: true)
+        path.addLine(to: CGPoint(x: rect.maxX - corner, y: rect.minY))
+        path.addQuadCurve(to: CGPoint(x: rect.maxX, y: rect.minY + corner),
+                          control: CGPoint(x: rect.maxX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - corner))
+        path.addQuadCurve(to: CGPoint(x: rect.maxX - corner, y: rect.maxY),
+                          control: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: seam + notch, y: rect.maxY))
+        path.addArc(center: CGPoint(x: seam, y: rect.maxY), radius: notch,
+                    startAngle: .degrees(0), endAngle: .degrees(180), clockwise: true)
+        path.addLine(to: CGPoint(x: rect.minX + corner, y: rect.maxY))
+        path.addQuadCurve(to: CGPoint(x: rect.minX, y: rect.maxY - corner),
+                          control: CGPoint(x: rect.minX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + corner))
+        path.addQuadCurve(to: CGPoint(x: rect.minX + corner, y: rect.minY),
+                          control: CGPoint(x: rect.minX, y: rect.minY))
+        path.closeSubpath()
+        return path
+    }
+}
+
 /// Cut-out perforations make this read as a paper stamp, even at card size.
 struct PostageStampShape: Shape {
     func path(in rect: CGRect) -> Path {
