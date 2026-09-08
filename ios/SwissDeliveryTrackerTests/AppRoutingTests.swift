@@ -74,7 +74,7 @@ final class AppRoutingTests: XCTestCase {
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let store = FriendInvitationStore(defaults: defaults)
-        let shortKey = "Ab7kP2mQ9xR4tY6n"
+        let shortKey = "Ab7kP2mQ9xR4tY6n" // gitleaks:allow -- synthetic invitation ID used only in tests
         store.open(URL(string: AppConfiguration.current.apiBaseURL.absoluteString + "/i/" + shortKey)!)
         store.opened = true
         XCTAssertEqual(store.code, shortKey)

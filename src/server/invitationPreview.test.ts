@@ -61,7 +61,7 @@ it('limits anonymous preview requests and returns an uncached retry response', a
 });
 
 it('previews a standalone short key without consuming it or revealing other fields', async () => {
-  const key = 'Ab7kP2mQ9xR4tY6n';
+  const key = 'Ab7kP2mQ9xR4tY6n'; // gitleaks:allow -- synthetic invitation ID used only in tests
   const request = vi.spyOn(SupabaseServiceClient.prototype, 'request').mockResolvedValue([{ friend_profiles: { nickname: 'Paul', user_id: 'private' } }]);
   const response = await call({ code: key });
   expect(response.status).toBe(200);

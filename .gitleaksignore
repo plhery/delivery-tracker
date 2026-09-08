@@ -1,2 +1,7 @@
 # Public localStorage preference name, not a credential (sdt.web.experience.v1).
 3765f01831e537d0fe978708dc68f32cf5f8c766:src/lib/experience.ts:generic-api-key:4
+
+# Synthetic invitation IDs in test fixtures, never issued by a server.
+# Current declarations carry inline annotations; these cover their original commit.
+f437eb60624597271db7cf510989c66401240f49:ios/SwissDeliveryTrackerTests/AppRoutingTests.swift:generic-api-key:77
+f437eb60624597271db7cf510989c66401240f49:src/server/invitationPreview.test.ts:generic-api-key:64
