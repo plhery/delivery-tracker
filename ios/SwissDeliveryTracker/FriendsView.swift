@@ -18,19 +18,17 @@ struct FriendsView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 18) {
                     if let error = model.errorKey, panel == nil { errorView(error) }
                     if joined { Label(text("friends.accepted"), systemImage: "checkmark.circle").foregroundStyle(ExperimentalPalette.delivered).font(.subheadline) }
                     if let data = model.snapshot {
                         if data.profile != nil { circle(data) }
                         else {
-                            VStack(spacing: 16) {
-                                FriendsPostagePair()
-                                Text(text("friends.onlyFriends").uppercased()).font(.caption2.monospaced()).tracking(1.4)
-                                Text(text("friends.joinTitle")).font(.system(.largeTitle, design: .rounded, weight: .bold)).tracking(-1)
-                                Text(text("friends.joinIntro")).font(.subheadline).foregroundStyle(.secondary)
+                            HStack(spacing: 16) {
+                                Text(text("friends.joinTitle")).font(.system(.title2, design: .rounded, weight: .bold)).tracking(-0.5)
+                                Spacer(minLength: 0)
+                                FriendsPostagePair().scaleEffect(0.75).frame(width: 96, height: 76)
                             }
-                            .multilineTextAlignment(.center).frame(maxWidth: .infinity).padding(.vertical, 16)
                             FriendsProfileForm(profile: nil, busy: model.working) { profile in
                                 Task { _ = await model.act(FriendsActionRequest(action: .saveProfile, nickname: profile.nickname, shareStats: profile.shareStats, shareArrival: profile.shareArrival), parcels: parcels.parcels) }
                             }
@@ -39,7 +37,7 @@ struct FriendsView: View {
                         Button(text("common.retry")) { Task { await model.load(parcels: parcels.parcels) } }.buttonStyle(.bordered)
                     } else { ProgressView().frame(maxWidth: .infinity, minHeight: 260) }
                 }
-                .padding(20).padding(.bottom, 20).frame(maxWidth: 680).frame(maxWidth: .infinity)
+                .padding(20).frame(maxWidth: 680).frame(maxWidth: .infinity)
             }
             .scrollIndicators(.hidden).background(Brand.background)
             .safeAreaInset(edge: .top, spacing: 0) { DemoModeBar() }
@@ -80,47 +78,46 @@ struct FriendsView: View {
     @ViewBuilder private func circle(_ data: FriendsSnapshot) -> some View {
         let people = [data.ownCard].compactMap { $0 } + data.friends
         let total = people.reduce(0) { $0 + ($1.stats?.stamps.count ?? 0) }
-        VStack(alignment: .leading, spacing: 22) {
-            HStack { Text(text("friends.collection").uppercased()).font(.caption2.monospaced()).tracking(1.6); Spacer(); Image(systemName: "person.2") }
+        Button { panel = .profile } label: {
             HStack {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(total.formatted()).font(.system(size: 64, weight: .bold, design: .rounded)).tracking(-3).contentTransition(.numericText())
+                Text(String((data.profile?.nickname ?? "").prefix(1))).font(.subheadline.bold())
+                    .frame(width: 36, height: 36).background(ExperimentalPalette.lilacSurface, in: Circle()).accessibilityHidden(true)
+                Text(data.profile?.nickname ?? "").font(.subheadline.weight(.semibold)).lineLimit(2)
+                Spacer()
+                Image(systemName: "slider.horizontal.3").foregroundStyle(.secondary)
+            }.frame(minHeight: 44).contentShape(Rectangle())
+        }.buttonStyle(TactileButtonStyle()).foregroundStyle(Brand.ink)
+            .accessibilityLabel("\(data.profile?.nickname ?? ""), \(text("friends.settings"))")
+        if data.friends.isEmpty {
+            VStack(spacing: 16) {
+                FriendsPostagePair()
+                Text(text("friends.emptyTitle")).font(.system(.title2, design: .rounded, weight: .bold)).multilineTextAlignment(.center)
+            }
+            .padding(24).frame(maxWidth: .infinity).foregroundStyle(Brand.onAccent)
+            .background(Brand.accent, in: RoundedRectangle(cornerRadius: 26))
+        } else {
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(total.formatted()).font(.system(size: 48, weight: .bold, design: .rounded)).tracking(-2).contentTransition(.numericText())
                     Text(text("friends.collectionNote")).font(.subheadline)
                 }
-                Spacer(minLength: 10)
+                Spacer(minLength: 0)
                 FriendsPostagePair().scaleEffect(0.82).frame(width: 110, height: 90)
             }
-            Divider().overlay(Brand.onAccent.opacity(0.1))
-            HStack {
-                HStack(spacing: -7) { ForEach(Array(people.prefix(5))) { friend in
-                    Text(String(friend.nickname.prefix(1))).font(.caption.weight(.bold)).frame(width: 30, height: 30).background(Brand.paper, in: Circle()).overlay(Circle().stroke(Brand.accent, lineWidth: 2))
-                } }.accessibilityHidden(true)
-                Spacer()
-                Text(text("friends.onlyFriends")).font(.caption2)
-            }
+            .padding(22).foregroundStyle(Brand.onAccent).background(Brand.accent, in: RoundedRectangle(cornerRadius: 26))
         }
-        .padding(24).foregroundStyle(Brand.onAccent).background(Brand.accent, in: RoundedRectangle(cornerRadius: 28))
-        HStack(spacing: 12) {
+        VStack(spacing: 4) {
             Button { panel = .invite } label: { Label(text("friends.invite"), systemImage: "plus").frame(maxWidth: .infinity, minHeight: 48) }
                 .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
-            Button { panel = .profile } label: { Image(systemName: "slider.horizontal.3").frame(width: 48, height: 48).background(Brand.paper, in: RoundedRectangle(cornerRadius: 16)) }
-                .buttonStyle(TactileButtonStyle()).foregroundStyle(Brand.ink).accessibilityLabel(text("friends.settings"))
+            Button(text("friends.enterCode")) { panel = .accept }.font(.subheadline).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44)
         }
-        Button(text("friends.enterCode")) { panel = .accept }.font(.subheadline).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 32)
-        HStack { Text(text("friends.circle")).font(.title2.bold()); Spacer(); Text(session.isDemo ? text("friends.demoPeople") : data.friends.count.formatted()).font(.caption).foregroundStyle(.secondary) }
-        if data.friends.isEmpty {
-            VStack(spacing: 14) { FriendsPostage(symbol: "person.2"); Text(text("friends.emptyTitle")).font(.title3.bold()); Text(text("friends.emptyDescription")).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center) }
-                .padding(26).frame(maxWidth: .infinity).background(Brand.paper, in: RoundedRectangle(cornerRadius: 24))
-        } else {
+        if !data.friends.isEmpty {
+            HStack { Text(text("friends.circle")).font(.title2.bold()); Spacer(); Text(session.isDemo ? text("friends.demoPeople") : data.friends.count.formatted()).font(.caption).foregroundStyle(.secondary) }
             ForEach(data.friends) { friend in
                 Button { panel = .friend(friend) } label: { FriendCardView(friend: friend, showsArrow: true) }
                     .buttonStyle(TactileButtonStyle(scale: 0.98))
             }
         }
-        Button { panel = .profile } label: {
-            HStack { Label(text("friends.preview"), systemImage: "lock"); Spacer(); Text(data.profile?.nickname ?? ""); Image(systemName: "chevron.right") }
-                .font(.caption).padding(18).background(Brand.paper, in: RoundedRectangle(cornerRadius: 18))
-        }.buttonStyle(TactileButtonStyle()).foregroundStyle(Brand.ink)
     }
 
     @ViewBuilder private func sheetContent(_ value: FriendsPanel) -> some View {
@@ -204,16 +201,22 @@ private struct FriendsProfileForm: View {
     }
     private var value: FriendProfile { FriendProfile(nickname: name.trimmingCharacters(in: .whitespacesAndNewlines), shareStats: stats, shareArrival: arrival) }
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(localizer.text("friends.nickname")).font(.subheadline.weight(.semibold))
                 TextField(localizer.text("friends.nicknamePlaceholder"), text: $name).textContentType(.nickname).padding(14).background(Brand.paper, in: RoundedRectangle(cornerRadius: 14))
                     .onChange(of: name) { _, next in if next.unicodeScalars.count > 24 { name = String(String.UnicodeScalarView(next.unicodeScalars.prefix(24))) } }
             }
-            toggle("friends.shareStats", detail: "friends.shareStatsDetail", value: $stats)
-            toggle("friends.shareArrival", detail: "friends.shareArrivalDetail", value: $arrival)
-            Text(localizer.text("friends.preview").uppercased()).font(.caption2.monospaced()).tracking(1.2)
-            FriendCardView(friend: FriendsStore.ownCard(parcels: parcels.parcels, profile: FriendProfile(nickname: value.nickname.isEmpty ? localizer.text("friends.you") : value.nickname, shareStats: stats, shareArrival: arrival)))
+            VStack(spacing: 14) {
+                toggle("friends.shareStats", detail: "friends.shareStatsDetail", value: $stats)
+                Divider()
+                toggle("friends.shareArrival", detail: "friends.shareArrivalDetail", value: $arrival)
+            }.padding(16).background(Brand.paper, in: RoundedRectangle(cornerRadius: 18))
+            DisclosureGroup {
+                FriendCardView(friend: FriendsStore.ownCard(parcels: parcels.parcels, profile: FriendProfile(nickname: value.nickname.isEmpty ? localizer.text("friends.you") : value.nickname, shareStats: stats, shareArrival: arrival))).padding(.top, 8)
+            } label: {
+                Text(localizer.text("friends.preview")).font(.subheadline).frame(minHeight: 44)
+            }.tint(Brand.ink)
             Label(localizer.text("friends.privacy"), systemImage: "lock").font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Button { save(value) } label: { Text(localizer.text(profile == nil ? "friends.join" : "friends.save")).frame(maxWidth: .infinity, minHeight: 46) }
                 .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent).disabled(busy || value.nickname.isEmpty)

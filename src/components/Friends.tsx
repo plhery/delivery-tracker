@@ -61,16 +61,15 @@ export function Friends({ client, parcels, demo }: { client: FriendsClient; parc
     {notice && <p role="status" className="friends-notice"><Icon name="check" />{t(notice)}</p>}
     {!panel && errorView}
     {!data ? <div className="friends-loading" role="status">{error ? <button className="button button--secondary" onClick={() => void load()}>{t('common.retry')}</button> : <div className="skeleton" aria-label={t('friends.title')} />}</div> : !data.profile ? <>
-      <div className="friends-intro"><div className="friends-postage" aria-hidden="true"><PostageStamp icon="parcel" /><PostageStamp icon="friends" /></div><span className="eyebrow">{t('friends.onlyFriends')}</span><h2>{t('friends.joinTitle')}</h2><p>{t('friends.joinIntro')}</p></div>
+      <div className="friends-intro"><h2>{t('friends.joinTitle')}</h2><div className="friends-postage" aria-hidden="true"><PostageStamp icon="parcel" /><PostageStamp icon="friends" /></div></div>
       <FriendProfileForm profile={null} parcels={parcels} busy={busy} onSave={async (profile) => { await act({ action: 'save_profile', ...profile }); }} />
     </> : <>
-      <section className="friends-cover"><div className="friends-cover__top"><span className="eyebrow">{t('friends.collection')}</span><Icon name="friends" /></div><div className="friends-cover__main"><div><strong>{total}</strong><span>{t('friends.collectionNote')}</span></div><div className="friends-postage" aria-hidden="true"><PostageStamp icon="parcel" /><PostageStamp icon="express" /></div></div><div className="friends-cover__bottom"><div className="friends-avatars" aria-hidden="true">{[data.ownCard, ...data.friends].filter(Boolean).slice(0, 5).map((friend) => <span key={friend!.id}>{Array.from(friend!.nickname)[0]}</span>)}</div><span>{t('friends.onlyFriends')}</span></div></section>
-      <div className="friends-actions"><button className="button button--primary" onClick={() => setPanel('invite')}><Icon name="plus" />{t('friends.invite')}</button><button className="icon-button" aria-label={t('friends.settings')} onClick={() => setPanel('settings')}><Icon name="settings" /></button></div>
-      <button className="text-button friends-code-link" onClick={() => setPanel('accept')}>{t('friends.enterCode')}<Icon name="arrow" /></button>
-      <section><div className="section-heading"><h2>{t('friends.circle')}</h2><span>{demo ? t('friends.demoPeople') : data.friends.length}</span></div>
-        {data.friends.length ? <div className="friends-grid">{data.friends.map((friend) => <button key={friend.id} className={`friend-card tone-${friendTone(friend.id)}`} onClick={() => setPanel(friend)}><FriendCardBody friend={friend} /><span className="friend-card__more"><Icon name="arrow" /></span></button>)}</div> : <div className="friends-empty"><PostageStamp icon="friends" /><h3>{t('friends.emptyTitle')}</h3><p>{t('friends.emptyDescription')}</p></div>}
-      </section>
-      <button className="friends-own" onClick={() => setPanel('settings')}><span><Icon name="lock" />{t('friends.preview')}</span><span>{data.profile.nickname}<Icon name="chevron" /></span></button>
+      <button className="friends-own" aria-label={t('friends.settings')} onClick={() => setPanel('settings')}><span><span className="friend-avatar" aria-hidden="true">{Array.from(data.profile.nickname)[0]}</span>{data.profile.nickname}</span><Icon name="settings" /></button>
+      {data.friends.length ? <section className="friends-cover"><div className="friends-cover__main"><div><strong>{total}</strong><span>{t('friends.collectionNote')}</span></div><div className="friends-postage" aria-hidden="true"><PostageStamp icon="parcel" /><PostageStamp icon="express" /></div></div></section> : <section className="friends-cover friends-empty"><div className="friends-postage" aria-hidden="true"><PostageStamp icon="parcel" /><PostageStamp icon="friends" /></div><h2>{t('friends.emptyTitle')}</h2></section>}
+      <div className="friends-actions"><button className="button button--primary" onClick={() => setPanel('invite')}><Icon name="plus" />{t('friends.invite')}</button><button className="text-button friends-code-link" onClick={() => setPanel('accept')}>{t('friends.enterCode')}<Icon name="arrow" /></button></div>
+      {!!data.friends.length && <section><div className="section-heading"><h2>{t('friends.circle')}</h2><span>{demo ? t('friends.demoPeople') : data.friends.length}</span></div>
+        <div className="friends-grid">{data.friends.map((friend) => <button key={friend.id} className={`friend-card tone-${friendTone(friend.id)}`} onClick={() => setPanel(friend)}><FriendCardBody friend={friend} /><span className="friend-card__more"><Icon name="arrow" /></span></button>)}</div>
+      </section>}
     </>}
     {panel && <FriendsSheet title={typeof panel === 'object' ? panel.nickname : t(panel === 'settings' ? 'friends.settings' : panel === 'disable' ? 'friends.disableTitle' : panel === 'accept' ? 'friends.enterCode' : 'friends.inviteTitle')} onClose={close}>
       {errorView}
@@ -96,9 +95,11 @@ function FriendProfileForm({ profile, parcels, busy, onSave }: { profile: ApiFri
   const value = { nickname: name.trim(), shareStats: stats, shareArrival: arrival };
   return <form className="friends-profile" onSubmit={(event) => { event.preventDefault(); if (value.nickname) void onSave(value); }}>
     <label className="friends-name">{t('friends.nickname')}<input value={name} onChange={(event) => setName(event.target.value)} maxLength={24} placeholder={t('friends.nicknamePlaceholder')} autoComplete="off" required disabled={busy} /></label>
-    <label className="friends-toggle"><span><strong>{t('friends.shareStats')}</strong><small>{t('friends.shareStatsDetail')}</small></span><input type="checkbox" role="switch" checked={stats} onChange={(event) => setStats(event.target.checked)} disabled={busy} /></label>
-    <label className="friends-toggle"><span><strong>{t('friends.shareArrival')}</strong><small>{t('friends.shareArrivalDetail')}</small></span><input type="checkbox" role="switch" checked={arrival} onChange={(event) => setArrival(event.target.checked)} disabled={busy} /></label>
-    <div className="friends-preview"><p className="eyebrow">{t('friends.preview')}</p><div className="friend-card tone-blue"><FriendCardBody friend={ownFriendCard(parcels, { ...value, nickname: value.nickname || t('friends.you') })} /></div></div>
+    <div className="friends-sharing">
+      <label className="friends-toggle"><span><strong>{t('friends.shareStats')}</strong><small>{t('friends.shareStatsDetail')}</small></span><input type="checkbox" role="switch" checked={stats} onChange={(event) => setStats(event.target.checked)} disabled={busy} /></label>
+      <label className="friends-toggle"><span><strong>{t('friends.shareArrival')}</strong><small>{t('friends.shareArrivalDetail')}</small></span><input type="checkbox" role="switch" checked={arrival} onChange={(event) => setArrival(event.target.checked)} disabled={busy} /></label>
+    </div>
+    <details className="friends-preview"><summary>{t('friends.preview')}<Icon name="chevron" /></summary><div className="friend-card tone-blue"><FriendCardBody friend={ownFriendCard(parcels, { ...value, nickname: value.nickname || t('friends.you') })} /></div></details>
     <p className="friends-privacy"><Icon name="lock" />{t('friends.privacy')}</p><button className="button button--primary" disabled={busy || !value.nickname}>{t(profile ? 'friends.save' : 'friends.join')}</button>
   </form>;
 }

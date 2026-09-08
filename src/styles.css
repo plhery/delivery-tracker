@@ -635,24 +635,17 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .feedback-language { position: absolute; top: max(24px, env(safe-area-inset-top)); right: max(24px, env(safe-area-inset-right)); }
 
 /* Friends uses the same paper, ink and postage system as the personal Passport. */
-.friends-page { max-width: 840px; margin: 0 auto; display: grid; gap: 24px; animation: page-arrive .3s var(--ease-out) both; }
-.friends-cover { background: var(--yellow); color: var(--on-yellow); padding: 26px; border-radius: 28px; overflow: hidden; }
-.friends-cover__top, .friends-cover__main, .friends-cover__bottom { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
-.friends-cover__top > svg { width: 26px; }
-.friends-cover__main { margin: 20px 0 24px; }
+.friends-page { max-width: 840px; margin: 0 auto; display: grid; gap: 18px; animation: page-arrive .3s var(--ease-out) both; }
+.friends-cover { background: var(--yellow); color: var(--on-yellow); padding: 22px; border-radius: 26px; overflow: hidden; }
+.friends-cover__main { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .friends-cover__main > div:first-child { display: grid; gap: 5px; max-width: 60%; }
-.friends-cover__main strong { font-size: 68px; line-height: 1; letter-spacing: -4px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.friends-cover__main strong { font-size: 48px; line-height: 1; letter-spacing: -2px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .friends-cover__main span { font-size: 14px; }
-.friends-cover__bottom { padding-top: 15px; border-top: 1px solid rgb(40 42 25 / 15%); font-size: 11px; }
 .friends-postage { display: flex; align-items: center; padding: 10px 8px; }
 .friends-postage .postage-stamp { width: 64px; height: 76px; transform: rotate(-12deg); flex-shrink: 0; }
 .friends-postage .postage-stamp + .postage-stamp { transform: rotate(10deg) translateY(-8px); margin-left: -18px; }
-.friends-avatars { display: flex; padding-left: 5px; }
-.friends-avatars > span { width: 30px; height: 30px; display: grid; place-items: center; border: 2px solid var(--yellow); border-radius: 50%; margin-left: -5px; background: #e5e6d4; font-size: 11px; font-weight: 650; }
-.friends-actions { display: flex; gap: 12px; align-items: center; }
-.friends-actions > .button { flex: 1; }
-.friends-actions > .icon-button { width: 50px; height: 50px; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; }
-.friends-code-link { justify-self: center; font-size: 13px; margin-top: -16px; min-height: 36px; gap: 7px; }
+.friends-actions { display: grid; gap: 4px; }
+.friends-code-link { justify-self: center; font-size: 13px; min-height: 44px; gap: 7px; }
 .friends-code-link svg { width: 15px; }
 .friends-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .friend-card { position: relative; display: flex; flex-direction: column; gap: 18px; min-width: 0; padding: 22px; border-radius: 24px; background: var(--tone-surface); color: var(--ink); text-align: left; }
@@ -675,13 +668,17 @@ button.friend-card:active { scale: .975; }
 .friend-card__more { position: absolute; right: 20px; top: 26px; color: var(--tone); }
 .friend-card__more svg { width: 16px; height: 16px; }
 button.friend-card .friend-card__heading { padding-right: 16px; }
-.friends-own { width: 100%; background: var(--paper); color: var(--ink); border-radius: 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px; text-align: left; font-size: 12px; }
-.friends-own > span { min-width: 0; overflow-wrap: anywhere; display: flex; align-items: center; gap: 8px; }.friends-own svg { width: 16px; flex-shrink: 0; }
-.friends-intro { text-align: center; max-width: 430px; margin: 0 auto; padding: 10px 0; }
-.friends-intro .friends-postage { justify-content: center; padding: 20px 0 30px; }
-.friends-intro h2 { font-size: 32px; line-height: 1.1; letter-spacing: -1px; margin: 14px 0; }
-.friends-intro > p { font-size: 14px; color: var(--ink-soft); }
-.friends-profile { display: grid; gap: 20px; width: 100%; max-width: 520px; margin: 0 auto; }
+.friends-own { width: 100%; min-height: 44px; background: transparent; color: var(--ink); border-radius: 12px; display: flex; justify-content: space-between; align-items: center; gap: 12px; text-align: left; font-size: 14px; font-weight: 550; transition: scale .2s var(--spring); }
+.friends-own:active { scale: .985; }
+.friends-own > span { min-width: 0; overflow-wrap: anywhere; display: flex; align-items: center; gap: 10px; }.friends-own > svg { width: 20px; flex-shrink: 0; color: var(--ink-soft); }
+.friends-own .friend-avatar { width: 36px; height: 36px; background: var(--lilac-soft); color: var(--lilac); font-size: 14px; }
+.friends-intro { width: 100%; max-width: 520px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.friends-intro .friends-postage { flex-shrink: 0; }
+.friends-intro .postage-stamp { width: 48px; height: 60px; }
+.friends-intro h2 { font-size: 24px; line-height: 1.15; letter-spacing: -.6px; margin: 0; }
+.friends-profile { display: grid; gap: 16px; width: 100%; max-width: 520px; margin: 0 auto; }
+.friends-sharing { display: grid; gap: 14px; padding: 16px; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; }
+.friends-sharing > .friends-toggle + .friends-toggle { border-top: 1px solid var(--line); padding-top: 14px; }
 .friends-name, .friends-invite label { display: grid; gap: 8px; font-size: 13px; font-weight: 600; }
 .friends-name input, .friends-invite input { width: 100%; min-width: 0; min-height: 50px; background: var(--control); color: var(--ink); border: 1px solid var(--line); border-radius: 15px; padding: 12px 14px; }
 .friends-toggle { display: flex; align-items: center; justify-content: space-between; gap: 20px; cursor: pointer; }
@@ -689,18 +686,24 @@ button.friend-card .friend-card__heading { padding-right: 16px; }
 .friends-toggle input { appearance: none; position: relative; width: 46px; height: 28px; border-radius: 20px; background: var(--control); border: 1px solid var(--line); flex-shrink: 0; cursor: pointer; transition: background .18s; }
 .friends-toggle input::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--ink-soft); transition: transform .2s var(--spring), background .2s; }
 .friends-toggle input:checked { background: var(--yellow); }.friends-toggle input:checked::after { transform: translateX(18px); background: var(--on-yellow); }
-.friends-preview > p { margin-bottom: 10px; }.friends-preview .friend-card { border: 1px dashed var(--line); }
+.friends-preview > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; font-size: 13px; cursor: pointer; list-style: none; border-radius: 8px; }
+.friends-preview > summary::-webkit-details-marker { display: none; }
+.friends-preview > summary svg { width: 16px; color: var(--ink-soft); transition: rotate .2s var(--ease-out); }
+.friends-preview[open] > summary svg { rotate: 90deg; }
+.friends-preview .friend-card { margin-top: 8px; border: 1px dashed var(--line); }
 .friends-privacy { display: flex; align-items: flex-start; gap: 8px; font-size: 11px; line-height: 1.6; color: var(--ink-soft); margin: 0; }.friends-privacy svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px; }
 .friends-sheet { max-width: 520px; padding: 26px; }.friends-sheet > .sheet__heading { padding: 0 0 20px; }.friends-sheet > p { color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
 .friends-invite, .friend-details { display: grid; gap: 20px; }.friends-invite > p, .friends-remove-confirm p { font-size: 13px; color: var(--ink-soft); line-height: 1.6; margin: 0; }
 .friends-invite input { font-family: ui-monospace, monospace; font-size: 12px; }.friends-invite small { text-align: center; color: var(--ink-soft); }
 .friends-remove { display: block; color: var(--ink-soft); background: transparent; font-size: 12px; min-height: 44px; margin: 20px auto 0; text-decoration: underline; text-underline-offset: 4px; }
+.friends-sheet > .friends-remove { margin-top: 8px; }
 .friends-remove-confirm { border-top: 1px solid var(--line); padding-top: 20px; display: grid; gap: 14px; }
 .friends-stamp-album { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }.friends-stamp-album button { background: transparent; padding: 4px; transition: scale .35s var(--spring), rotate .35s var(--spring); }.friends-stamp-album button[aria-pressed="true"] { scale: 1.1; rotate: -5deg; }.friends-stamp-album .postage-stamp { width: 65px; height: 78px; }
 .friends-stamp-story { display: grid; gap: 8px; font-size: 13px; line-height: 1.6; color: var(--ink-soft); animation: page-arrive .25s var(--spring); }.friends-stamp-story strong { color: var(--ink); }
 .friends-error { padding: 14px; background: var(--orange-soft); color: var(--orange-text); border-radius: 14px; font-size: 13px; }
 .friends-notice { display: flex; align-items: center; gap: 8px; color: var(--green); font-size: 13px; }.friends-notice svg { width: 18px; }
-.friends-empty { padding: 28px; background: var(--paper); border-radius: 24px; text-align: center; }.friends-empty > .postage-stamp { margin: 0 auto 24px; }.friends-empty p { color: var(--ink-soft); font-size: 13px; }
+.friends-empty { display: grid; justify-items: center; gap: 16px; padding: 24px; text-align: center; }
+.friends-empty h2 { font-size: 24px; line-height: 1.2; letter-spacing: -.6px; margin: 0; }
 .friends-loading .skeleton { height: 280px; border-radius: 28px; background: var(--control); }
-@media (max-width: 600px) { .friends-grid { grid-template-columns: 1fr; }.friends-cover { padding: 23px; }.friends-cover__main strong { font-size: 60px; }.friends-postage .postage-stamp { width: 57px; height: 69px; }.friends-sheet { padding: 22px 22px max(22px, env(safe-area-inset-bottom)); }.friends-own { font-size: 11px; } }
+@media (max-width: 600px) { .friends-grid { grid-template-columns: 1fr; }.friends-cover .postage-stamp { width: 57px; height: 69px; }.friends-sheet { padding: 22px 22px max(22px, env(safe-area-inset-bottom)); } }
 @media (prefers-reduced-motion: reduce) { .friends-stamp-album button[aria-pressed="true"] { scale: 1; rotate: 0deg; } }
