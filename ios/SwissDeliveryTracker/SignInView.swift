@@ -25,6 +25,7 @@ struct ArrivalView: View {
         let animateGreeting = !reduceMotion
         let currentTilt = reduceMotion ? ArrivalTilt() : motion.tilt
         let isPressed = pressed && !reduceMotion
+        let isOpening = opening
         let reveal = opening || screen == .signIn ? 1.0 : 0.0
         ZStack {
             Brand.background.ignoresSafeArea()
@@ -51,9 +52,9 @@ struct ArrivalView: View {
                                 lift: animateGreeting ? pose.lift : 0,
                                 sway: animateGreeting ? pose.angle : 0,
                                 pressed: isPressed,
-                                celebrating: opening
+                                celebrating: isOpening
                             )
-                            .animation(.easeOut(duration: opening ? 0.35 : 0.07), value: currentTilt)
+                            .animation(.easeOut(duration: isOpening ? 0.35 : 0.07), value: currentTilt)
                             .animation(.spring(response: 0.3, dampingFraction: 0.64), value: isPressed)
                         } keyframes: { _ in
                             KeyframeTrack(\.lift) {
@@ -930,10 +931,10 @@ private struct ParcelStarBurst: View {
                 withAnimation(.linear(duration: 1.85)) { progress = 1 }
             }
             .onChange(of: reduceMotion) { _, reduce in
-                if reduce { withAnimation(nil) { progress = 1 } }
+                if reduce { withAnimation(nil) { progress = 0 } }
             }
             .onChange(of: scenePhase) { _, phase in
-                if phase != .active { withAnimation(nil) { progress = 1 } }
+                if phase != .active { withAnimation(nil) { progress = 0 } }
             }
             .allowsHitTesting(false)
             .accessibilityHidden(true)
