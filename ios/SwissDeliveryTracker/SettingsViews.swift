@@ -189,6 +189,7 @@ struct AccountView: View {
     @State private var showingShareSheet = false
     @State private var showingNotifications = false
     @State private var confirmingDeletion = false
+    @State private var confirmingDemoReset = false
     @State private var confirmation = ""
     @State private var errorMessage: String?
 
@@ -215,7 +216,7 @@ struct AccountView: View {
 
                     if store.isDemo {
                         Button(localizer.text("native.exitDemo"), systemImage: "rectangle.portrait.and.arrow.right") {
-                            session.showSignIn()
+                            session.showWelcome()
                             dismiss()
                         }
                         .foregroundStyle(Brand.ink)
@@ -301,17 +302,22 @@ struct AccountView: View {
                     }
                 }
 
-                Section {
-                    Button(
-                        store.isDemo ? localizer.text("native.resetDemo") : localizer.text("account.delete"),
-                        systemImage: "trash",
-                        role: .destructive
-                    ) {
-                        confirmation = ""
-                        confirmingDeletion = true
+                if store.isDemo {
+                    Section {
+                        Button(localizer.text("native.resetDemo"), systemImage: "arrow.counterclockwise") {
+                            confirmingDemoReset = true
+                        }
+                        .foregroundStyle(Brand.ink)
                     }
-                } footer: {
-                    Text(localizer.text("account.deleteDescription"))
+                } else {
+                    Section {
+                        Button(localizer.text("account.delete"), systemImage: "trash", role: .destructive) {
+                            confirmation = ""
+                            confirmingDeletion = true
+                        }
+                    } footer: {
+                        Text(localizer.text("account.deleteDescription"))
+                    }
                 }
 
                 if let errorMessage {
@@ -337,6 +343,17 @@ struct AccountView: View {
         .sheet(isPresented: $showingNotifications) { NotificationSettingsView() }
         .sheet(isPresented: $showingShareSheet) {
             if let exportURL { ActivityShareSheet(items: [exportURL]) }
+        }
+        .alert(localizer.text("native.resetDemoQuestion"), isPresented: $confirmingDemoReset) {
+            Button(localizer.text("common.cancel"), role: .cancel) {}
+            Button(localizer.text("native.resetDemo")) {
+                run {
+                    await store.resetDemoData()
+                    dismiss()
+                }
+            }
+        } message: {
+            Text(localizer.text("native.resetDemoDescription"))
         }
         .alert(localizer.text("account.deleteQuestion"), isPresented: $confirmingDeletion) {
             if !store.isDemo {

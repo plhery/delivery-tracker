@@ -89,6 +89,20 @@ beforeEach(() => {
 });
 
 describe('ApiApplication', () => {
+  it('restarts the unopened welcome after sign-out and remembers it for the next visit', async () => {
+    mocks.auth.status = 'authenticated';
+    mocks.auth.user = USER;
+    const result = render(<ApiApplication />);
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Sign out' }));
+    await waitFor(() => expect(window.localStorage.getItem('sdt.web.experience.v1')).toBe('welcome'));
+    mocks.auth.status = 'anonymous';
+    mocks.auth.user = null;
+    result.rerender(<ApiApplication />);
+    expect(screen.getByRole('button', { name: 'Tap to open your parcel' })).toBeEnabled();
+    expect(screen.queryByText('Configured sign in')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /try the demo/ })).not.toBeInTheDocument();
+  });
+
   it('renders loading and both sign-in configuration states', () => {
     mocks.auth.status = 'loading';
     const result = render(<ApiApplication />);

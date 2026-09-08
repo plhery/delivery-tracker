@@ -308,11 +308,17 @@ final class ParcelStore: ObservableObject {
         return url
     }
 
+    func resetDemoData() async {
+        guard isDemo else { return }
+        demo.reset()
+        undoParcel = nil
+        await endAllDeliveryLiveActivities()
+        parcels = demo.list()
+    }
+
     func deleteAccount(confirmation: String) async throws {
         guard !isDemo else {
-            demo.reset()
-            parcels = []
-            await endAllDeliveryLiveActivities()
+            await resetDemoData()
             return
         }
         nativePushGeneration += 1

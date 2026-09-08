@@ -5,11 +5,10 @@ export const EXPERIENCE_STORAGE_KEY = 'sdt.web.experience.v1'; // gitleaks:allow
 const eventName = 'delivery-experience-change';
 let memoryScreen: EntryScreen | null = null;
 function read(): EntryScreen {
-  if (memoryScreen) return memoryScreen;
   try {
     const value = localStorage.getItem(EXPERIENCE_STORAGE_KEY);
     if (value === 'sign-in' || value === 'demo') return value;
-  } catch { /* Browsing still works without persistence. */ }
+  } catch { return memoryScreen ?? 'welcome'; }
   return 'welcome';
 }
 function subscribe(notify: () => void) {

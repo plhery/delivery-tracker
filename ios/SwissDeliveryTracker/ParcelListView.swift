@@ -31,7 +31,7 @@ struct DemoModeBar: View {
     var body: some View {
         if session.isDemo {
             Button {
-                session.showSignIn()
+                session.showWelcome()
             } label: {
                 HStack(spacing: 12) {
                     Text(localizer.text("app.demo"))

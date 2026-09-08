@@ -244,6 +244,8 @@
   "native.openSettings": "Ouvrir les réglages iPhone",
   "native.parcelMissing": "Ce colis ne se trouve plus dans votre liste de livraisons.",
   "native.resetDemo": "Réinitialiser les données de démo",
+  "native.resetDemoDescription": "Vos modifications dans la démo seront effacées et les colis d’exemple seront rétablis.",
+  "native.resetDemoQuestion": "Recommencer la démo ?",
   "notifications.button": "Paramètres des notifications",
   "notifications.disable": "Désactiver sur cet appareil",
   "notifications.disabledTitle": "Soyez prévenu au bon moment",

@@ -35,9 +35,11 @@ test('opens the looping package into sign-in, then leaves demo without a reload'
   await page.getByRole('button', { name: 'or try the demo' }).click();
   await expect(page.getByRole('heading', { name: 'Deliveries', exact: true })).toBeAttached();
   await page.getByRole('button', { name: 'Exit demo', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Your deliveries, together.' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Tap to open your parcel' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: /try the demo/ })).toHaveCount(0);
+  expect(await page.locator('.parcel-illustration__body').evaluate((element) => getComputedStyle(element).animationIterationCount)).toBe('infinite');
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Your deliveries, together.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Good things are on their way.' })).toBeVisible();
   await expect(page.locator('.demo-banner')).toHaveCount(0);
 });
 
@@ -45,12 +47,13 @@ test('keeps demo exit available from parcel details and account', async ({ page 
   await demo(page);
   await page.getByText('Coffee beans ☕', { exact: true }).click();
   await page.getByRole('dialog', { name: 'Coffee beans ☕' }).getByRole('button', { name: 'Exit demo' }).click();
-  await expect(page.getByRole('heading', { name: 'Your deliveries, together.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Good things are on their way.' })).toBeVisible();
   await expect(page).not.toHaveURL(/parcel=/);
+  await page.getByRole('button', { name: 'Tap to open your parcel' }).click();
   await page.getByRole('button', { name: 'or try the demo' }).click();
   const account = await settings(page);
   await account.getByRole('button', { name: 'Exit demo' }).click();
-  await expect(page.locator('.arrival--sign-in')).toBeVisible();
+  await expect(page.locator('.arrival--welcome')).toBeVisible();
   await expect(page.locator('[inert]')).toHaveCount(0);
 });
 

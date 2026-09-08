@@ -2,6 +2,34 @@ import XCTest
 @testable import SwissDeliveryTracker
 
 final class AppRoutingTests: XCTestCase {
+    @MainActor
+    func testLeavingDemoReturnsToTheUnopenedWelcome() {
+        let preference = "sdt.native.experience.v1"
+        let suite = "SessionRoutingTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let session = SessionStore(defaults: defaults)
+        session.enterDemo()
+        session.showWelcome()
+
+        guard case .welcome = session.state else { return XCTFail("Expected the unopened welcome") }
+        XCTAssertNil(defaults.object(forKey: preference))
+    }
+
+    @MainActor
+    func testSigningOutRestartsTheWelcomeForTheNextVisit() async throws {
+        let preference = "sdt.native.experience.v1"
+        let suite = "SessionRoutingTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let session = SessionStore(defaults: defaults)
+        session.showSignIn()
+        try await session.signOut()
+
+        guard case .welcome = session.state else { return XCTFail("Expected the unopened welcome") }
+        XCTAssertNil(defaults.object(forKey: preference))
+    }
+
     func testParsesParcelDeepLink() {
         let parcelID = UUID()
         let url = URL(string: "swissdeliverytracker://parcel/\(parcelID.uuidString)")!

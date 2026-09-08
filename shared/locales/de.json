@@ -244,6 +244,8 @@
   "native.openSettings": "iPhone-Einstellungen öffnen",
   "native.parcelMissing": "Dieses Paket befindet sich nicht mehr in deiner Paketübersicht.",
   "native.resetDemo": "Demodaten zurücksetzen",
+  "native.resetDemoDescription": "Deine Änderungen in der Demo werden zurückgesetzt und die ursprünglichen Beispielpakete wiederhergestellt.",
+  "native.resetDemoQuestion": "Demo neu starten?",
   "notifications.button": "Benachrichtigungseinstellungen",
   "notifications.disable": "Auf diesem Gerät ausschalten",
   "notifications.disabledTitle": "Erfahre, wenn dein Paket dich braucht",

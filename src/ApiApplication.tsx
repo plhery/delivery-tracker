@@ -35,7 +35,7 @@ export function ApiApplication() {
       clearApiCache(storage, sessionAuth.userId);
     }
     await signOut();
-    navigate('sign-in');
+    navigate('welcome');
   }, [sessionAuth, signOut, storage, navigate]);
   const apiAuth = useMemo(
     () => sessionAuth ? {
@@ -54,7 +54,7 @@ export function ApiApplication() {
     await unsubscribePushNotificationsLocally().catch(() => undefined);
     clearApiCache(storage, apiAuth.userId);
     await signOut();
-    navigate('sign-in');
+    navigate('welcome');
   }, [apiAuth, signOut, storage, navigate]);
   const repo = useMemo(
     () => apiAuth ? createApiRepo(
@@ -70,7 +70,7 @@ export function ApiApplication() {
   }
   if (auth.status === 'unconfigured' || auth.status === 'anonymous') {
     if (experience.screen === 'demo') return <ParcelsProvider key="demo" repo={demoRepo}>
-      <App onExitDemo={() => experience.navigate('sign-in')} />
+      <App onExitDemo={() => experience.navigate('welcome')} />
     </ParcelsProvider>;
     return (
       <ArrivalScreen

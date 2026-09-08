@@ -244,6 +244,8 @@
   "native.openSettings": "Open iPhone Settings",
   "native.parcelMissing": "This parcel is no longer in your delivery box.",
   "native.resetDemo": "Reset demo data",
+  "native.resetDemoDescription": "Your demo changes will be cleared and the original sample parcels restored.",
+  "native.resetDemoQuestion": "Start the demo fresh?",
   "notifications.button": "Notification settings",
   "notifications.disable": "Turn off on this device",
   "notifications.disabledTitle": "Know when your parcel needs you",

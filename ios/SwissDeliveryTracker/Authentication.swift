@@ -64,12 +64,14 @@ final class SessionStore: ObservableObject {
     let configuration: AppConfiguration
     private let keychain = KeychainStore(service: "com.plhery.SwissDeliveryTracker.auth")
     private let experienceKey = "sdt.native.experience.v1"
+    private let defaults: UserDefaults
     private var session: AuthSession?
     private var refreshTask: Task<Void, Error>?
     private var webAuthenticationSession: ASWebAuthenticationSession?
 
-    init(configuration: AppConfiguration = .current) {
+    init(configuration: AppConfiguration = .current, defaults: UserDefaults = .standard) {
         self.configuration = configuration
+        self.defaults = defaults
     }
 
     var user: AuthUser? {
@@ -107,7 +109,7 @@ final class SessionStore: ObservableObject {
             return
         }
 
-        switch UserDefaults.standard.string(forKey: experienceKey) {
+        switch defaults.string(forKey: experienceKey) {
         case "demo": state = .demo
         case "account": state = configuration.authenticationConfigured ? .signedOut : .unconfigured
         default: state = .welcome
@@ -125,7 +127,7 @@ final class SessionStore: ObservableObject {
     }
 
     func showWelcome() {
-        UserDefaults.standard.removeObject(forKey: experienceKey)
+        defaults.removeObject(forKey: experienceKey)
         state = .welcome
     }
 
@@ -191,6 +193,7 @@ final class SessionStore: ObservableObject {
             )
         }
         clearLocalSession()
+        showWelcome()
     }
 
     func forceSignOut() {
@@ -236,7 +239,7 @@ final class SessionStore: ObservableObject {
     }
 
     private func rememberExperience(_ value: String) {
-        UserDefaults.standard.set(value, forKey: experienceKey)
+        defaults.set(value, forKey: experienceKey)
     }
 
     private func authRequest<T: Decodable>(

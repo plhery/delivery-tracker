@@ -61,7 +61,7 @@ export function ClientApplication() {
       {demoRepo ? (
         experience.screen === 'demo' ? (
           <ParcelsProvider repo={demoRepo}>
-            <App onExitDemo={() => experience.navigate('sign-in')} />
+            <App onExitDemo={() => experience.navigate('welcome')} />
           </ParcelsProvider>
         ) : <ArrivalScreen screen={experience.screen} onNavigate={experience.navigate}
           configured={false} googleEnabled={false} emailOtpEnabled={false}
