@@ -1,5 +1,6 @@
 'use client';
 
+import { startAnalytics } from './lib/analytics';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import App from './App';
 import { ApiApplication } from './ApiApplication';
@@ -46,6 +47,7 @@ export function ClientApplication({ invitationRoute = false }: { invitationRoute
   const experience = useEntryExperience();
 
   useEffect(() => {
+    void startAnalytics();
     const disableReload = enablePwaLiveReload();
     if (process.env.NODE_ENV === 'production') {
       void registerPwaServiceWorker().catch(() => undefined);

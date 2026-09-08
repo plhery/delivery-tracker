@@ -1,3 +1,4 @@
+import { trackAction, trackOverlay } from '../lib/analytics';
 import { userErrorMessage } from '../lib/userMessages';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -30,6 +31,7 @@ const PRESET_STAGES: Record<EventPreset, NotificationStage[]> = {
 export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: ApiAuth; variant?: 'icon' | 'row' }) {
   const { t, locale } = useI18n();
   const [open, setOpen] = useState(false);
+  useEffect(() => { if (open) return trackOverlay('notifications'); }, [open]);
   const [state, setState] = useState<PushState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,9 +82,11 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
     setError(null);
     try {
       const testSent = await enablePushNotifications(state.publicKey, apiAuth, locale);
+      trackAction('notifications-enable', 'success');
       setState({ kind: 'enabled', publicKey: state.publicKey });
       if (!testSent) setError(t('notifications.error.welcome'));
     } catch (reason) {
+      trackAction('notifications-enable', 'error');
       setError(userErrorMessage(reason, t, 'notifications.error.enable'));
       setState(await inspectPushState(apiAuth));
     } finally {
@@ -95,6 +99,7 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
     setError(null);
     try {
       await disablePushNotifications(apiAuth);
+      trackAction('notifications-disable', 'success');
       const next = await inspectPushState(apiAuth);
       setState(next.kind === 'enabled' ? { kind: 'prompt', publicKey: next.publicKey } : next);
     } catch (reason) {

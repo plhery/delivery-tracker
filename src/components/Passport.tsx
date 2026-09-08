@@ -1,3 +1,4 @@
+import { trackAction } from '../lib/analytics';
 import { useMemo, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { useI18n, type MessageKey } from '../i18n';
@@ -28,7 +29,7 @@ export function Passport({ parcels, loading }: { parcels: ParcelWithEvents[]; lo
   if (loading) return <div className="passport-loading" role="status" aria-label={t('app.loadingParcels')}><div className="skeleton" /><div className="skeleton" /></div>;
 
   return <div className="passport-page">
-    <button type="button" className="passport-cover" onClick={() => setDetail({ title: t('passport.delivered'), value: String(stats.deliveredCount), explanation: t('passport.deliveredExplanation'), icon: 'parcel', tone: 'green' })}>
+    <button type="button" className="passport-cover" onClick={() => { trackAction('stamp-open'); setDetail({ title: t('passport.delivered'), value: String(stats.deliveredCount), explanation: t('passport.deliveredExplanation'), icon: 'parcel', tone: 'green' }); }}>
       <span className="passport-cover__top"><span className="eyebrow">{t('passport.allTime')}</span><Icon name="globe" /></span>
       <span className="passport-cover__main"><span><strong className="passport-cover__count">{stats.deliveredCount.toLocaleString(languageTag)}</strong><span>{t('passport.delivered')}</span></span><Seal icon="parcel" earned={stats.deliveredCount > 0} /></span>
       <span className="passport-cover__footer"><span><strong>{stats.activeCount}</strong> {t('passport.onTheWay')}</span><span><strong>{stats.carrierCount}</strong> {t('passport.carriers')}</span><Icon name="arrow" /></span>
@@ -37,19 +38,19 @@ export function Passport({ parcels, loading }: { parcels: ParcelWithEvents[]; lo
       <div className="passport-times__grid">{([
         { title: t('passport.average'), value: format(stats.averageDeliveryDuration), icon: 'clock', tone: 'blue', explanation: t(stats.durationSampleCount ? 'passport.timingExplanation' : 'passport.noTimingExplanation') },
         { title: t('passport.personalBest'), value: format(stats.fastestDelivery?.duration ?? null), icon: 'express', tone: 'peach', explanation: stats.fastestDelivery ? `${stats.fastestDelivery.label || t('common.parcel')} · ${new Intl.DateTimeFormat(languageTag, { dateStyle: 'medium' }).format(stats.fastestDelivery.deliveredAt)}\n${t('passport.timingExplanation')}` : t('passport.noTimingExplanation') },
-      ] satisfies PassportDetail[]).map((card) => <button type="button" className={`time-card tone-${card.tone}`} key={card.title} onClick={() => setDetail(card)}><span><Icon name={card.icon} /><Icon name="arrow" /></span><strong>{card.value}</strong><span>{card.title}</span></button>)}</div>
+      ] satisfies PassportDetail[]).map((card) => <button type="button" className={`time-card tone-${card.tone}`} key={card.title} onClick={() => { trackAction('stamp-open'); setDetail(card); }}><span><Icon name={card.icon} /><Icon name="arrow" /></span><strong>{card.value}</strong><span>{card.title}</span></button>)}</div>
       <p className="passport-note">{stats.durationSampleCount ? t(stats.durationSampleCount === 1 ? 'passport.timedJourneys.one' : 'passport.timedJourneys.many', { count: stats.durationSampleCount }) : t('passport.waitingForTimes')}</p>
     </section>
     <section className="passport-stamps" aria-labelledby="passport-stamps-title"><div className="section-heading"><h2 id="passport-stamps-title">{t('passport.stamps')}</h2><span>{earnedCount} / {stamps.length}</span></div>
       <div className="passport-stamps__grid">{stamps.map((stamp) => <button type="button" key={stamp.title} className={`stamp-card tone-${stamp.tone}${stamp.count >= stamp.total ? ' stamp-card--earned' : ''}`}
-        onClick={() => setDetail({ title: t(stamp.title), value: stamp.count >= stamp.total ? t('passport.unlocked') : stamp.icon === 'express' ? t('passport.underTwoDays') : `${Math.min(stamp.count, stamp.total)} / ${stamp.total}`, explanation: t(stamp.explanation), icon: stamp.icon, tone: stamp.tone, earned: stamp.count >= stamp.total })}>
+        onClick={() => { trackAction('stamp-open'); setDetail({ title: t(stamp.title), value: stamp.count >= stamp.total ? t('passport.unlocked') : stamp.icon === 'express' ? t('passport.underTwoDays') : `${Math.min(stamp.count, stamp.total)} / ${stamp.total}`, explanation: t(stamp.explanation), icon: stamp.icon, tone: stamp.tone, earned: stamp.count >= stamp.total }); }}>
         <Seal icon={stamp.icon} earned={stamp.count >= stamp.total} /><strong>{t(stamp.title)}</strong><span>{stamp.count >= stamp.total ? t('passport.unlocked') : stamp.icon === 'express' ? t('passport.underTwoDays') : `${Math.min(stamp.count, stamp.total)} / ${stamp.total}`}</span>
       </button>)}</div>
     </section>
     {stats.originCountries.length > 0 && <section className="passport-countries" aria-labelledby="passport-countries-title"><div className="section-heading"><h2 id="passport-countries-title">{t('passport.firstSeenIn')}</h2><span>{stats.originCountries.length}</span></div>
       <div className="country-list">{stats.originCountries.slice(0, 3).map((country, index) => {
         const name = new Intl.DisplayNames([locale], { type: 'region' }).of(country.code) ?? country.code;
-        return <button type="button" className={`country-row tone-${['blue', 'lilac', 'peach'][index]}`} key={country.code} onClick={() => setDetail({ title: name, value: quantity(country.count), explanation: t('passport.countryExplanation'), icon: 'globe', tone: ['blue', 'lilac', 'peach'][index] })}>
+        return <button type="button" className={`country-row tone-${['blue', 'lilac', 'peach'][index]}`} key={country.code} onClick={() => { trackAction('stamp-open'); setDetail({ title: name, value: quantity(country.count), explanation: t('passport.countryExplanation'), icon: 'globe', tone: ['blue', 'lilac', 'peach'][index] }); }}>
           <span className="country-row__number">{String(index + 1).padStart(2, '0')}</span><span className="country-row__flag" aria-hidden="true">{[...country.code].map((letter) => String.fromCodePoint(letter.charCodeAt(0) + 127397)).join('')}</span>
           <span className="country-row__body"><span><strong>{name}</strong><span>{country.count}</span></span><span className="country-row__track"><span style={{ '--progress': `${country.count / stats.originCountries[0].count * 100}%` } as CSSProperties} /></span></span>
         </button>;

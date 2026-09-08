@@ -1,3 +1,4 @@
+import { trackAction } from '../lib/analytics';
 import { userErrorMessage } from '../lib/userMessages';
 import { useEffect, useState, useRef, type FormEvent, type PointerEvent } from 'react';
 import { createPortal } from 'react-dom';
@@ -185,6 +186,7 @@ export function ParcelDetail({
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
       await navigator.clipboard.writeText(parcel.trackingNumber);
+      trackAction('parcel-copy-tracking', 'success');
       setCopyStatus('copied');
     } catch {
       setCopyStatus('error');
@@ -398,7 +400,7 @@ export function ParcelDetail({
                 <a
                   key={link.carrier.id}
                   className={`detail__carrier-link detail__carrier-link--${link.role}`}
-                  href={link.url}
+                  href={link.url} onClick={() => trackAction('parcel-carrier-link')}
                   target="_blank"
                   rel="noreferrer"
                 >

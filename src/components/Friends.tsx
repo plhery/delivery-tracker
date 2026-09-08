@@ -1,3 +1,4 @@
+import { trackAction } from '../lib/analytics';
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { ApiFriendCard, ApiFriendProfile, ApiFriendsActionRequest, ApiFriendsActionResponse, ApiFriendsSnapshot, ApiFriendStamp } from '../generated/apiContract';
@@ -97,7 +98,7 @@ export function Friends({ client, parcels, demo, onExitDemo }: { client: Friends
   const selected = typeof panel === 'object' && panel ? data?.friends.find((friend) => friend.id === panel.id) : null;
   const featured = data?.friends.find((friend) => friend.id === focusId);
   const remainingFriends = data?.friends.filter((friend) => friend.id !== featured?.id) ?? [];
-  const friendButton = (friend: ApiFriendCard) => <button key={friend.id} ref={friend.id === focusId ? arrivalCard : undefined} data-arriving={friend.id === focusId ? (landed ? 'landed' : 'waiting') : undefined} className={`friend-card tone-${friendTone(friend.id)}`} onClick={() => setPanel(friend)}><FriendCardBody friend={friend} /><span className="friend-card__more"><Icon name="arrow" /></span></button>;
+  const friendButton = (friend: ApiFriendCard) => <button key={friend.id} ref={friend.id === focusId ? arrivalCard : undefined} data-arriving={friend.id === focusId ? (landed ? 'landed' : 'waiting') : undefined} className={`friend-card tone-${friendTone(friend.id)}`} onClick={() => { setPanel(friend); trackAction('friend-open'); }}><FriendCardBody friend={friend} /><span className="friend-card__more"><Icon name="arrow" /></span></button>;
   return <div className="friends-page" data-empty={!!data?.profile && !data.friends.length}>
     {data && focusId && checkedFocusId === focusId && !focusReady && <p className="friends-notice" role="status">{t('friends.friendUnavailable')}</p>}
     {notice && <p role="status" className="friends-notice"><Icon name="check" />{t(notice)}</p>}
@@ -191,13 +192,13 @@ function FriendsInvite({ code, previewId, busy, act, onRetry, onClose }: { code:
   }, [code, previewId]);
   async function copy() {
     if (!link) return;
-    try { await navigator.clipboard.writeText(link); setCopied(true); setCopyFailed(false); }
+    try { await navigator.clipboard.writeText(link); trackAction('friend-invite-copy', 'success'); setCopied(true); setCopyFailed(false); }
     catch { setCopyFailed(true); }
   }
   return <div className="friends-invite">{link ? <>
     <label>{t('friends.link')}<input readOnly value={link} onFocus={(event) => event.target.select()} /></label>
     <small>{t('friends.inviteExpiry')}</small>
-    {typeof navigator.share === 'function' && <button className="button button--primary" onClick={async () => { try { await navigator.share({ url: link }); } catch (error) { if (!(error instanceof Error && error.name === 'AbortError')) await copy(); } }}>{t('friends.shareLink')}<Icon name="arrow" /></button>}
+    {typeof navigator.share === 'function' && <button className="button button--primary" onClick={async () => { try { await navigator.share({ url: link }); trackAction('friend-invite-share', 'success'); } catch (error) { if (!(error instanceof Error && error.name === 'AbortError')) await copy(); } }}>{t('friends.shareLink')}<Icon name="arrow" /></button>}
     <button className={typeof navigator.share === 'function' ? 'text-button' : 'button button--primary'} onClick={() => void copy()}>{t(copied ? 'friends.copied' : 'friends.copyLink')}<Icon name={copied ? 'check' : 'copy'} /></button>
     {copyFailed && <p className="friends-error" role="alert">{t('friends.actionFailed')}</p>}
     <button className="text-button" disabled={busy} onClick={async () => { if (await act({ action: 'revoke_invite' })) onClose(); }}>{t('friends.revoke')}</button>
@@ -212,5 +213,5 @@ function FriendsAccept({ onOpen }: { onOpen: () => void }) {
 }
 function FriendDetails({ friend, busy, onRemove }: { friend: ApiFriendCard; busy: boolean; onRemove: () => Promise<void> }) {
   const { t } = useI18n(); const [stamp, setStamp] = useState<ApiFriendStamp | null>(null); const [removing, setRemoving] = useState(false);
-  return <div className="friend-details"><div className={`friend-card tone-${friendTone(friend.id)}`}><FriendCardBody friend={friend} /></div>{!!friend.stats?.stamps.length && <><p className="eyebrow">{t('friends.stampHint')}</p><div className="friends-stamp-album">{friend.stats.stamps.map((id) => <button key={id} aria-label={t(friendStamps[id].title)} aria-pressed={stamp === id} className={`tone-${friendStamps[id].tone}`} onClick={() => setStamp(id)}><PostageStamp icon={friendStamps[id].icon} /></button>)}</div>{stamp && <p className="friends-stamp-story" key={stamp} role="status"><strong>{t(friendStamps[stamp].title)}</strong>{t(friendStamps[stamp].explanation)}</p>}</>}{removing ? <div className="friends-remove-confirm"><h3>{t('friends.removeTitle', { name: friend.nickname })}</h3><p>{t('friends.removeDetail')}</p><button className="button button--secondary" disabled={busy} onClick={() => void onRemove()}>{t('friends.remove')}</button><button className="text-button" onClick={() => setRemoving(false)}>{t('common.cancel')}</button></div> : <button className="friends-remove" onClick={() => setRemoving(true)}>{t('friends.remove')}</button>}</div>;
+  return <div className="friend-details"><div className={`friend-card tone-${friendTone(friend.id)}`}><FriendCardBody friend={friend} /></div>{!!friend.stats?.stamps.length && <><p className="eyebrow">{t('friends.stampHint')}</p><div className="friends-stamp-album">{friend.stats.stamps.map((id) => <button key={id} aria-label={t(friendStamps[id].title)} aria-pressed={stamp === id} className={`tone-${friendStamps[id].tone}`} onClick={() => { setStamp(id); trackAction('stamp-open'); }}><PostageStamp icon={friendStamps[id].icon} /></button>)}</div>{stamp && <p className="friends-stamp-story" key={stamp} role="status"><strong>{t(friendStamps[stamp].title)}</strong>{t(friendStamps[stamp].explanation)}</p>}</>}{removing ? <div className="friends-remove-confirm"><h3>{t('friends.removeTitle', { name: friend.nickname })}</h3><p>{t('friends.removeDetail')}</p><button className="button button--secondary" disabled={busy} onClick={() => void onRemove()}>{t('friends.remove')}</button><button className="text-button" onClick={() => setRemoving(false)}>{t('common.cancel')}</button></div> : <button className="friends-remove" onClick={() => setRemoving(true)}>{t('friends.remove')}</button>}</div>;
 }

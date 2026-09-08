@@ -1,3 +1,4 @@
+import { trackAction } from './lib/analytics';
 import {
   createContext,
   useContext,
@@ -121,7 +122,7 @@ export function LanguageControl({ className = '' }: { className?: string }) {
       <select
         aria-label={t('language.label')}
         value={locale}
-        onChange={(event) => setLocale(event.target.value as Locale)}
+        onChange={(event) => { setLocale(event.target.value as Locale); trackAction('language-change'); }}
       >
         {SUPPORTED_LOCALES.map((option) => (
           <option key={option} value={option}>{t(`language.${option}`)}</option>

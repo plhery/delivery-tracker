@@ -1,3 +1,5 @@
+import { apiAnalyticsEvent, trackAction } from './analytics';
+
 export class ApiAuthenticationError extends Error {
   constructor() {
     super('Your sign-in expired. Please sign in again.');
@@ -24,7 +26,7 @@ export function abortable<T>(operation: Promise<T>, signal: AbortSignal): Promis
 }
 
 /** One deadline covers token lookup, the request and its single authentication retry. */
-export async function authenticatedFetch(
+async function performAuthenticatedFetch(
   path: string,
   auth: ApiAuth | undefined,
   init?: RequestInit,
@@ -67,4 +69,17 @@ export async function authenticatedFetch(
     throw new ApiAuthenticationError();
   }
   return response;
+}
+
+/** Record one result after any auth retry; background reads are excluded. */
+export async function authenticatedFetch(path: string, auth: ApiAuth | undefined, init?: RequestInit): Promise<Response> {
+  const event = apiAnalyticsEvent(path, init?.method ?? 'GET', init?.body);
+  try {
+    const response = await performAuthenticatedFetch(path, auth, init);
+    if (event) trackAction(event, response.ok ? (response.status === 202 ? 'accepted' : 'success') : 'error');
+    return response;
+  } catch (error) {
+    if (event && !(error instanceof DOMException && error.name === 'AbortError')) trackAction(event, 'error');
+    throw error;
+  }
 }

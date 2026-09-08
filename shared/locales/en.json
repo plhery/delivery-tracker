@@ -504,5 +504,7 @@
   "friends.viewPassport": "View their Passport",
   "friends.dismissUpdate": "Dismiss notification",
   "friends.friendUnavailable": "This friend is no longer in your circle.",
-  "friends.selfInvitation": "Aw nice try, but you can’t be your own friend."
+  "friends.selfInvitation": "Aw nice try, but you can’t be your own friend.",
+  "analytics.label": "Usage analytics",
+  "analytics.detail": "Share anonymous screen views and actions to improve Delivery Tracker. Parcel contents and account details are excluded."
 }

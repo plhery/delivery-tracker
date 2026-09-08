@@ -1,3 +1,4 @@
+import { trackAction } from './analytics';
 import { useSyncExternalStore } from 'react';
 
 export type EntryScreen = 'welcome' | 'sign-in' | 'demo';
@@ -23,6 +24,8 @@ function subscribe(notify: () => void) {
 function serverSnapshot(): EntryScreen { return 'welcome'; }
 
 function navigate(next: EntryScreen) {
+  if (next === 'demo') trackAction('demo-start');
+  else if (read() === 'demo') trackAction('demo-exit');
   if (read() === 'demo' && next !== 'demo') {
     const url = new URL(window.location.href);
     url.searchParams.delete('parcel');

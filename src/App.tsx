@@ -1,3 +1,4 @@
+import { trackAction, trackScreen } from './lib/analytics';
 import { focusClickedButton } from './lib/modal';
 import { userErrorMessage } from './lib/userMessages';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -127,6 +128,15 @@ export default function App({
   const [tab, setTab] = useState<AppTab>('deliveries');
   const scrollPositions = useRef({ deliveries: 0, passport: 0, friends: 0 });
 
+  useEffect(() => {
+    trackScreen(adding ? 'add-parcel' : openParcelId ? 'parcel' : tab, mode === 'demo' ? 'demo' : 'account');
+  }, [adding, openParcelId, tab, mode]);
+  useEffect(() => {
+    if (!query.trim()) return;
+    const timer = setTimeout(() => trackAction('search'), 800);
+    return () => clearTimeout(timer);
+  }, [query]);
+
   const friendsClient = useMemo(() => createFriendsClient(mode === 'demo', apiAuth), [mode, apiAuth]);
 
   useEffect(() => {
@@ -134,6 +144,7 @@ export default function App({
     if (new URLSearchParams(window.location.search).get('share-target') !== '1') return;
     void readSharedParcelInput().then((input) => {
       if (active && input) {
+        trackAction('parcel-share-received');
         setSharedParcelInput(input);
         setAdding(true);
       }
@@ -394,7 +405,7 @@ export default function App({
               aria-expanded={viewControlsOpen}
               aria-controls={PARCEL_VIEW_CONTROLS_ID}
               aria-describedby={hasCustomView ? 'parcel-view-active' : undefined}
-              onClick={() => setViewControlsOpen((open) => !open)}
+              onClick={() => { if (!viewControlsOpen) trackAction('filters-open'); setViewControlsOpen((open) => !open); }}
             >
               <Icon name="search" />
               {hasCustomView && <><i className="delivery-search__dot" aria-hidden="true" /><span className="sr-only" id="parcel-view-active">{t('view.customized')}</span></>}
@@ -420,9 +431,9 @@ export default function App({
               advancedOpen={advancedFiltersOpen}
               hasCustomView={hasCustomView}
               onQueryChange={setQuery}
-              onStatusChange={setStatusFilter}
-              onCarrierChange={setCarrierFilter}
-              onSortChange={setSort}
+              onStatusChange={(value) => { setStatusFilter(value); trackAction('filter-status'); }}
+              onCarrierChange={(value) => { setCarrierFilter(value); trackAction('filter-carrier'); }}
+              onSortChange={(value) => { setSort(value); trackAction('sort-change'); }}
               onToggleAdvanced={() => setAdvancedFiltersOpen((open) => !open)}
               onClearAll={clearView}
             />
@@ -579,7 +590,7 @@ export default function App({
             className="parcel-section archived-section"
             aria-labelledby="archived-parcels-title"
           >
-            <details>
+            <details onToggle={(event) => { if (event.currentTarget.open) trackAction('archive-open'); }}>
               <summary>
                 <span id="archived-parcels-title">{t('app.archived')}</span>
                 <span className="archived-section__count">{archivedParcels.length}</span>

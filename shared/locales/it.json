@@ -504,5 +504,7 @@
   "friends.viewPassport": "Vedi il suo passaporto",
   "friends.dismissUpdate": "Chiudi notifica",
   "friends.friendUnavailable": "Questa persona non fa più parte della tua cerchia.",
-  "friends.selfInvitation": "Bel tentativo, ma non puoi essere amico di te stesso."
+  "friends.selfInvitation": "Bel tentativo, ma non puoi essere amico di te stesso.",
+  "analytics.label": "Statistiche di utilizzo",
+  "analytics.detail": "Condividi schermate e azioni anonime per migliorare Delivery Tracker. Il contenuto dei pacchi e i dati dell’account sono esclusi."
 }

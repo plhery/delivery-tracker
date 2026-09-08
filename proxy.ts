@@ -1,3 +1,4 @@
+import { analyticsConfiguration } from './src/server/analytics';
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'node:crypto';
 import { APPEARANCE_BOOTSTRAP } from './src/lib/appearanceConfig';
@@ -10,7 +11,8 @@ export function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const isDevelopment = process.env.NODE_ENV === 'development';
   const supabaseOrigin = publicSupabaseOrigin();
-  const connectSources = ["'self'", ...(supabaseOrigin ? [supabaseOrigin] : [])].join(' ');
+  const analyticsOrigin = analyticsConfiguration()?.endpoint;
+  const connectSources = [...(analyticsOrigin ? [new URL(analyticsOrigin).origin] : []), "'self'", ...(supabaseOrigin ? [supabaseOrigin] : [])].join(' ');
   const contentSecurityPolicy = `
     default-src 'self';
     base-uri 'none';

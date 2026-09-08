@@ -1,5 +1,6 @@
+import { trackAction, trackOverlay, analyticsEnabled, setAnalyticsEnabled } from '../lib/analytics';
 import { userErrorMessage } from '../lib/userMessages';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LanguageControl, useI18n } from '../i18n';
 import { useAppearance, type Appearance } from '../lib/appearance';
@@ -20,9 +21,11 @@ export function AccountMenu({ email, onExport, onDelete, onSignOut, onExitDemo, 
   apiAuth?: ApiAuth;
 }) {
   const { t } = useI18n();
+  const [usageAnalytics, setUsageAnalytics] = useState(analyticsEnabled);
   const [appearance, setAppearance] = useAppearance();
   const initial = email?.trim().charAt(0).toUpperCase();
   const [open, setOpen] = useState(false);
+  useEffect(() => { if (open) return trackOverlay('account'); }, [open]);
   const [working, setWorking] = useState<AccountAction | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [confirmingReset, setConfirmingReset] = useState(false);
@@ -59,8 +62,12 @@ export function AccountMenu({ email, onExport, onDelete, onSignOut, onExitDemo, 
         </div> : <button type="button" className="settings-row settings-row--reset" disabled={Boolean(working)} onClick={() => setConfirmingReset(true)}><Icon name="refresh" />{t('native.resetDemo')}<Icon name="arrow" /></button>)}
         <section className="settings-section"><LanguageControl className="language-control--account" /></section>
         <fieldset className="settings-section appearance-control"><legend>{t('native.appearance.title')}</legend>
-          <div>{(['system', 'light', 'dark'] as Appearance[]).map((option) => <button type="button" key={option} aria-pressed={appearance === option} onClick={() => setAppearance(option)}><Icon name={option === 'light' ? 'sun' : option === 'dark' ? 'moon' : 'system'} />{t(`native.appearance.${option}`)}</button>)}</div>
+          <div>{(['system', 'light', 'dark'] as Appearance[]).map((option) => <button type="button" key={option} aria-pressed={appearance === option} onClick={() => { setAppearance(option); trackAction('appearance-change'); }}><Icon name={option === 'light' ? 'sun' : option === 'dark' ? 'moon' : 'system'} />{t(`native.appearance.${option}`)}</button>)}</div>
         </fieldset>
+        <section className="settings-section"><label className="settings-row">
+          <input type="checkbox" checked={usageAnalytics} onChange={(event) => {
+            setUsageAnalytics(event.target.checked); setAnalyticsEnabled(event.target.checked);
+          }} />{t('analytics.label')}</label><p>{t('analytics.detail')}</p></section>
         {apiAuth && <section className="settings-section"><NotificationControl apiAuth={apiAuth} variant="row" /></section>}
         {error && <p className="sheet__error" role="alert">{error}</p>}
         {confirmingDelete && email ? <div className="settings-delete">
@@ -72,7 +79,7 @@ export function AccountMenu({ email, onExport, onDelete, onSignOut, onExitDemo, 
               onClick={() => void run('delete', () => onDelete?.(confirmation) ?? Promise.resolve())}>{working === 'delete' ? t('account.deleting') : t('account.deletePermanent')}</button></div>
         </div> : <section className="settings-section settings-links">
           {onExport && <button className="settings-row" type="button" disabled={Boolean(working)} onClick={() => void run('export', onExport)}><Icon name="download" />{working === 'export' ? t('account.exporting') : t('account.export')}</button>}
-          <a className="settings-row" href="/privacy.html"><Icon name="lock" />{t('account.privacy')}<Icon name="arrow" /></a>
+          <a className="settings-row" href="/privacy.html" onClick={() => trackAction('privacy-open')}><Icon name="lock" />{t('account.privacy')}<Icon name="arrow" /></a>
           {onSignOut && <button className="settings-row" type="button" disabled={Boolean(working)} onClick={() => void run('sign-out', onSignOut)}><Icon name="exit" />{working === 'sign-out' ? t('account.signingOut') : t('account.signOut')}</button>}
           {onDelete && <button className="settings-row settings-row--danger" type="button" disabled={Boolean(working)} onClick={() => setConfirmingDelete(true)}><Icon name="trash" />{t('account.delete')}</button>}
         </section>}

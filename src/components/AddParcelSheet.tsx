@@ -1,3 +1,4 @@
+import { trackAction } from '../lib/analytics';
 import { userErrorMessage } from '../lib/userMessages';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
@@ -129,6 +130,7 @@ export function AddParcelSheet({
     try {
       const text = await navigator.clipboard.readText();
       if (!text.trim()) throw new Error('Clipboard is empty');
+      trackAction('parcel-paste', 'success');
       setTrackingInputValue(text);
     } catch {
       setPasteError(t('add.pasteFailed'));

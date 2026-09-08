@@ -504,5 +504,7 @@
   "friends.viewPassport": "Pass ansehen",
   "friends.dismissUpdate": "Mitteilung schließen",
   "friends.friendUnavailable": "Diese Person ist nicht mehr in deinem Kreis.",
-  "friends.selfInvitation": "Netter Versuch, aber du kannst nicht mit dir selbst befreundet sein."
+  "friends.selfInvitation": "Netter Versuch, aber du kannst nicht mit dir selbst befreundet sein.",
+  "analytics.label": "Nutzungsstatistik",
+  "analytics.detail": "Anonyme Bildschirmaufrufe und Aktionen teilen, um Delivery Tracker zu verbessern. Paketinhalte und Kontodaten werden nicht erfasst."
 }

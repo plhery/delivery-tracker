@@ -1,3 +1,4 @@
+import { trackAction } from '../lib/analytics';
 import { createClient, type Session, type SupabaseClient, type User } from '@supabase/supabase-js';
 import {
   createContext,
@@ -122,7 +123,10 @@ export function AuthProvider({
       if (!active || observedSession || logout.current) return;
       acceptSession(error ? null : data.session);
     });
-    const { data: listener } = client.auth.onAuthStateChange((_event, session) => {
+    let signedIn = false;
+    const { data: listener } = client.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session && !signedIn) trackAction('sign-in-complete', 'success');
+      signedIn = Boolean(session);
       observedSession = true;
       if (active && !logout.current) acceptSession(session);
     });
@@ -133,6 +137,7 @@ export function AuthProvider({
   }, [client, acceptSession]);
 
   const sendCode = useCallback(async (email: string) => {
+    trackAction('sign-in-code-send', 'started');
     if (!client) throw new Error('Authentication is not configured');
     await logout.current;
     storage?.allowSignIn();
@@ -140,10 +145,12 @@ export function AuthProvider({
       email,
       options: { shouldCreateUser: true },
     });
-    if (error) throw error;
+    if (error) { trackAction('sign-in-code-send', 'error'); throw error; }
+    trackAction('sign-in-code-send', 'success');
   }, [client, storage]);
 
   const signInWithGoogle = useCallback(async () => {
+    trackAction('sign-in-google', 'started');
     if (!client) throw new Error('Authentication is not configured');
     await logout.current;
     storage?.allowSignIn();
@@ -152,10 +159,12 @@ export function AuthProvider({
       provider: 'google',
       ...(redirectTo ? { options: { redirectTo } } : {}),
     });
-    if (error) throw error;
+    if (error) { trackAction('sign-in-google', 'error'); throw error; }
+    trackAction('sign-in-google', 'success');
   }, [client, storage]);
 
   const verifyCode = useCallback(async (email: string, code: string) => {
+    trackAction('sign-in-code-verify', 'started');
     if (!client) throw new Error('Authentication is not configured');
     await logout.current;
     storage?.allowSignIn();
@@ -164,7 +173,8 @@ export function AuthProvider({
       token: code,
       type: 'email',
     });
-    if (error) throw error;
+    if (error) { trackAction('sign-in-code-verify', 'error'); throw error; }
+    trackAction('sign-in-code-verify', 'success');
     if (!data.session) throw new Error('The sign-in code did not create a session');
     acceptSession(data.session);
   }, [client, acceptSession, storage]);
@@ -173,6 +183,7 @@ export function AuthProvider({
     if (!client) return;
     if (logout.current) return logout.current;
     const token = state.accessToken;
+    trackAction('sign-out');
     storage?.signOut();
     acceptSession(null);
     const operation = (async () => {

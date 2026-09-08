@@ -19,7 +19,7 @@
       <p>
         Delivery Tracker stores only the information needed to authenticate you and
         follow parcel deliveries, and power the optional Friends circle. It does not sell personal data,
-        serve ads, or include third-party behavioral analytics.
+        serve ads, or use advertising analytics. It uses optional, self-hosted usage analytics.
       </p>
 
       <h2>What is processed</h2>
@@ -62,6 +62,24 @@
         document fields in Dachser's response are discarded. Web Push endpoints
         receive encrypted notifications you requested.
       </p>
+
+      <h2>Usage analytics</h2>
+      <p>The official public website and connected iPhone app send screen views and
+        named feature actions, including success or failure, to our self-hosted
+        Umami at u.plhery.com. Events include platform, demo/account/anonymous mode,
+        language and basic browser/device information. Umami processes IP address
+        and user agent to derive approximate location and rotating visitor/session
+        identifiers. This helps us improve features and find failing actions.</p>
+      <p>We do not send account IDs, emails, parcel contents, labels, tracking
+        numbers, delivery postcodes, invitation codes, search text, full URLs,
+        referrers or error messages. No analytics cookies or persistent analytics
+        device identifiers are created, and events are not linked to your account.</p>
+      <p>Turn off <strong>Usage analytics</strong> in Account on each device to stop
+        collection. The website also honors Do Not Track, Global Privacy Control
+        and Umami's local opt-out. Opting out discards queued events. Historical
+        analytics remain until operational cleanup; they cannot be selected by
+        account for export or deletion because no account identifier is sent.
+        Local demo builds, simulators and unconfigured self-hosted instances do not collect.</p>
 
       <h2>Friends is optional</h2>
       <p>

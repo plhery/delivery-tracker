@@ -504,5 +504,7 @@
   "friends.viewPassport": "Voir son passeport",
   "friends.dismissUpdate": "Fermer la notification",
   "friends.friendUnavailable": "Cet ami ne fait plus partie de ton cercle.",
-  "friends.selfInvitation": "Bien tenté, mais tu ne peux pas être ton propre ami."
+  "friends.selfInvitation": "Bien tenté, mais tu ne peux pas être ton propre ami.",
+  "analytics.label": "Statistiques d’utilisation",
+  "analytics.detail": "Partager les écrans consultés et les actions anonymes pour améliorer Delivery Tracker. Le contenu des colis et les informations du compte sont exclus."
 }

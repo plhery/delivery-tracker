@@ -1,0 +1,26 @@
+{
+  "screens": ["welcome", "sign-in", "deliveries", "passport", "friends", "parcel", "invitation", "account", "add-parcel", "notifications"],
+  "actions": ["app-open", "app-foreground", "sign-in-google", "sign-in-code-send", "sign-in-code-verify", "sign-in-complete", "sign-out", "demo-start", "demo-exit", "demo-reset", "parcel-add", "parcel-rename", "parcel-carrier-change", "parcel-archive", "parcel-restore", "parcel-delete", "parcel-notifications-change", "parcels-refresh", "parcel-refresh", "parcel-copy-tracking", "parcel-carrier-link", "parcel-paste", "parcel-scan", "parcel-share-received", "search", "filter-status", "filter-carrier", "sort-change", "filters-open", "archive-open", "language-change", "appearance-change", "notifications-enable", "notifications-disable", "notifications-preferences", "notifications-defer", "notification-open", "widget-change", "live-activities-change", "deep-link-open", "account-export", "account-delete", "privacy-open", "friend-profile-save", "friend-invite-create", "friend-invite-revoke", "friend-invite-accept", "friend-remove", "friends-disable", "friend-invite-copy", "friend-invite-share", "friend-open", "stamp-open"],
+  "operations": [
+    { "method": "POST", "path": "^/api/packages$", "event": "parcel-add" },
+    { "method": "PATCH", "path": "^/api/packages/[^/]+$", "event": "parcel-rename" },
+    { "method": "PATCH", "path": "^/api/packages/[^/]+/carrier$", "event": "parcel-carrier-change" },
+    { "method": "PATCH", "path": "^/api/packages/[^/]+/notifications$", "event": "parcel-notifications-change" },
+    { "method": "DELETE", "path": "^/api/packages/[^/]+$", "event": "parcel-archive" },
+    { "method": "POST", "path": "^/api/packages/[^/]+/restore$", "event": "parcel-restore" },
+    { "method": "DELETE", "path": "^/api/packages/[^/]+/permanent$", "event": "parcel-delete" },
+    { "method": "POST", "path": "^/api/sync$", "event": "parcels-refresh" },
+    { "method": "POST", "path": "^/api/packages/[^/]+/sync$", "event": "parcel-refresh" },
+    { "method": "PATCH", "path": "^/api/push/preferences$", "event": "notifications-preferences" },
+    { "method": "GET", "path": "^/api/account/export$", "event": "account-export" },
+    { "method": "DELETE", "path": "^/api/account$", "event": "account-delete" }
+  ],
+  "friendActions": {
+    "save_profile": "friend-profile-save",
+    "create_invite": "friend-invite-create",
+    "revoke_invite": "friend-invite-revoke",
+    "accept_invite": "friend-invite-accept",
+    "remove_friend": "friend-remove",
+    "disable": "friends-disable"
+  }
+}

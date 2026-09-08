@@ -1,3 +1,4 @@
+import { trackScreen } from '../lib/analytics';
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ComponentProps, type ReactNode } from 'react';
 import { LanguageControl, useI18n } from '../i18n';
 import { bindArrivalMotion } from '../lib/arrivalMotion';
@@ -15,6 +16,7 @@ export function ArrivalScreen({ screen, onNavigate, invitation, ...signIn }: Com
   invitation?: { title: ReactNode; canOpen: boolean; notice?: ReactNode; afterOpen?: ReactNode; onDismiss: () => void; appURL?: string; received?: boolean };
 }) {
   const { t } = useI18n();
+  useEffect(() => { trackScreen(invitation ? 'invitation' : screen, 'anonymous'); }, [screen, invitation]);
   const ready = useSyncExternalStore(subscribeToHydration, clientReady, serverReady);
   const [opening, setOpening] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);

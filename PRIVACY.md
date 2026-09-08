@@ -1,6 +1,6 @@
 # Delivery Tracker privacy notice
 
-Effective: 30 August 2026
+Effective: 8 September 2026
 
 This notice describes the official Delivery Tracker service for French
 and Swiss parcel tracking. A third party running a fork controls its own
@@ -22,8 +22,7 @@ deployment and must publish its own notice.
   corresponding notification or Live Activity setting.
 - Technical request data processed by the hosting, reverse-proxy, Auth, and mail
   infrastructure, such as IP address, timestamp, and user agent. The Swiss
-  Delivery Tracker application does not intentionally retain access logs or add
-  analytics.
+  Delivery Tracker application does not intentionally retain access logs.
 
 ## Why and where data is processed
 
@@ -48,7 +47,27 @@ contain a parcel label, carrier, status, location, and expected delivery text,
 but Delivery Tracker does not put the tracking number in them.
 
 Delivery Tracker does not sell personal data, serve advertising, or
-include third-party behavioral analytics.
+use advertising analytics.
+
+## Usage analytics
+
+The official public web service and connected iPhone app send screen views and
+named feature actions (including success/failure) to our self-hosted Umami at
+`u.plhery.com`. This helps us understand which features work and where actions
+fail. Events include the platform, demo/account/anonymous mode, language, and
+basic browser/device information. Umami processes IP address and user agent to
+derive approximate location and rotating visitor/session identifiers. We do not
+send account IDs, email addresses, parcel labels, tracking numbers, delivery
+postcodes, invitation codes, search text, full URLs, referrers, or error messages.
+No analytics cookies or persistent analytics device identifiers are created.
+Events are not linked to your Delivery Tracker account.
+
+Turn off **Usage analytics** in Account on each device to stop collection.
+The web client also honors Do Not Track, Global Privacy Control and Umami's
+local opt-out. Queued events are discarded when you opt out. Historical analytics
+remain until operational cleanup and cannot be selected by account when you
+export or delete it because we do not send an account identifier. Local demo
+builds, simulators, and unconfigured self-hosted deployments do not collect.
 
 ## Retention and control
 
