@@ -4,7 +4,7 @@ import VisionKit
 
 struct AddParcelView: View {
     let onOpenParcel: (UUID) -> Void
-    let onAdded: () -> Void
+    let onAdded: (UUID) -> Void
 
     @EnvironmentObject private var store: ParcelStore
     @EnvironmentObject private var localizer: Localizer
@@ -32,7 +32,7 @@ struct AddParcelView: View {
         case deliveryPostcode
     }
 
-    init(draft: SharedParcelDraft?, onOpenParcel: @escaping (UUID) -> Void = { _ in }, onAdded: @escaping () -> Void = {}) {
+    init(draft: SharedParcelDraft?, onOpenParcel: @escaping (UUID) -> Void = { _ in }, onAdded: @escaping (UUID) -> Void = { _ in }) {
         self.onOpenParcel = onOpenParcel
         self.onAdded = onAdded
         _label = State(initialValue: draft?.label ?? "")
@@ -576,7 +576,7 @@ struct AddParcelView: View {
 
         Task {
             do {
-                try await store.add(
+                let parcel = try await store.add(
                     trackingNumber: parsed.trackingNumber,
                     label: label,
                     carrier: resolvedCarrier,
@@ -584,7 +584,7 @@ struct AddParcelView: View {
                         ? (parsed.trackingURL ?? trackingURL) : nil,
                     dpdPostcode: postcodeRequirement != nil ? deliveryPostcode : nil
                 )
-                onAdded()
+                onAdded(parcel.id)
                 dismiss()
             } catch {
                 if let apiError = error as? DeliveryAPIError,
@@ -598,32 +598,75 @@ struct AddParcelView: View {
     }
 }
 
-/// A brief, deliberately uneven toss; never takes focus or intercepts a touch.
+/// Applied outside the card's swipe clipping so the little parcels can leave its edge.
+struct ParcelArrivalCelebration: ViewModifier {
+    let active: Bool
+    var stubInset: CGFloat = 30
+    let onFinished: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var progress = 0.0
+
+    func body(content: Content) -> some View {
+        content
+            .overlay {
+                if active {
+                    ParcelAddedBurst(stubInset: stubInset, onFinished: onFinished)
+                }
+            }
+            .modifier(ParcelArrivalEffect(progress: progress, reduced: reduceMotion))
+            .onChange(of: active, initial: true) { _, active in
+                if active {
+                    withAnimation(.linear(duration: reduceMotion ? 0.75 : 0.48)) { progress = 1 }
+                } else {
+                    var transaction = Transaction(animation: nil)
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) { progress = 0 }
+                }
+            }
+            .onDisappear { if active { onFinished() } }
+    }
+}
+
+private struct ParcelArrivalEffect: ViewModifier, Animatable {
+    var progress: Double
+    let reduced: Bool
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        let wobble = sin(progress * .pi * 6) * (1 - progress)
+        let pulse = sin(progress * .pi)
+        content
+            .offset(x: reduced ? 0 : wobble * 3)
+            .rotationEffect(.degrees(reduced ? 0 : wobble * 1.1))
+            .scaleEffect(reduced ? 1 : 1 + pulse * 0.012)
+            .brightness(reduced ? pulse * 0.08 : 0)
+    }
+}
+
+/// Small, uneven sparks from the new card's stamp; follows its position while scrolling.
 struct ParcelAddedBurst: View {
+    let stubInset: CGFloat
+    let onFinished: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var started = Date()
-    let onFinished: () -> Void
 
     // Horizontal spread, upward impulse, rotation, size, launch delay.
     private static let parcels: [(Double, Double, Double, Double, Double)] = [
-        (-0.94, 148, -112, 26, 0.02), (-0.68, 242, 78, 34, 0),
-        (-0.45, 186, -158, 29, 0.07), (-0.21, 282, 106, 37, 0.03),
-        (0.08, 218, -72, 31, 0.09), (0.32, 166, 142, 25, 0.01),
-        (0.54, 256, -128, 35, 0.05), (0.76, 212, 94, 28, 0.08),
-        (0.96, 152, 164, 32, 0.04),
+        (-1, 90, -80, 19, 0.02), (-0.7, 145, 65, 24, 0),
+        (-0.35, 115, -100, 21, 0.05), (0, 155, 85, 25, 0.03),
+        (0.35, 120, -55, 20, 0.06), (0.6, 95, 100, 22, 0.01),
     ]
 
     var body: some View {
         GeometryReader { geometry in
-            TimelineView(.animation) { timeline in
-                let elapsed = max(0, timeline.date.timeIntervalSince(started))
-                let origin = CGPoint(x: geometry.size.width / 2, y: geometry.size.height * 0.6)
-                if reduceMotion {
-                    Text("📦").font(.system(size: 42))
-                        .opacity(min(1, elapsed / 0.1) * max(0, min(1, (0.55 - elapsed) / 0.18)))
-                        .position(origin)
-                } else {
-                    let spread = min(geometry.size.width - 60, 350) / 2
+            if !reduceMotion {
+                TimelineView(.animation) { timeline in
+                    let elapsed = max(0, timeline.date.timeIntervalSince(started))
+                    let origin = CGPoint(x: geometry.size.width - stubInset, y: geometry.size.height / 2)
+                    let spread = min(geometry.size.width * 0.25, 80)
                     ForEach(Self.parcels.indices, id: \.self) { index in
                         particle(index, elapsed: elapsed, origin: origin, spread: spread)
                     }
@@ -633,7 +676,7 @@ struct ParcelAddedBurst: View {
         .allowsHitTesting(false)
         .accessibilityHidden(true)
         .task {
-            do { try await Task.sleep(for: .seconds(reduceMotion ? 0.55 : 1.2)) }
+            do { try await Task.sleep(for: .seconds(reduceMotion ? 0.75 : 0.95)) }
             catch { return }
             onFinished()
         }
@@ -642,12 +685,12 @@ struct ParcelAddedBurst: View {
 
     private func particle(_ index: Int, elapsed: TimeInterval, origin: CGPoint, spread: CGFloat) -> some View {
         let parcel = Self.parcels[index]
-        let progress = max(0, min(1, (elapsed - parcel.4) / 1.05))
-        let rotation = parcel.2 * progress + sin(progress * .pi * 2) * 12
-        let scale = min(1, progress / 0.1) * (1 - progress * 0.18)
-        let opacity = min(1, progress / 0.04) * min(1, (1 - progress) / 0.24)
+        let progress = max(0, min(1, (elapsed - parcel.4) / 0.8))
+        let rotation = parcel.2 * progress + sin(progress * .pi * 2) * 8
+        let scale = min(1, progress / 0.12) * (1 - progress * 0.25)
+        let opacity = min(1, progress / 0.05) * min(1, (1 - progress) / 0.3)
         let x = origin.x + CGFloat(parcel.0 * (1 - pow(1 - progress, 2))) * spread
-        let y = origin.y + CGFloat(-parcel.1 * progress + 220 * progress * progress)
+        let y = origin.y + CGFloat(-parcel.1 * progress + 120 * progress * progress)
         return Text("📦").font(.system(size: CGFloat(parcel.3)))
             .rotationEffect(.degrees(rotation)).scaleEffect(scale).opacity(opacity)
             .position(x: x, y: y)

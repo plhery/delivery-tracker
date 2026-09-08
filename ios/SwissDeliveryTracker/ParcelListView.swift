@@ -79,7 +79,8 @@ private struct DeliveryListView: View {
     @State private var sort: ParcelSort = .priority
     @State private var showingFilters = false
     @State private var showingAdd = false
-    @State private var addedParcel = false
+    @State private var addedParcelID: UUID?
+    @State private var revealParcelID: UUID?
     @State private var parcelBurstID: UUID?
     @State private var showingAccount = false
     @State private var archivedExpanded = false
@@ -106,22 +107,20 @@ private struct DeliveryListView: View {
             }
             .safeAreaInset(edge: .bottom, spacing: 8) { bottomControls }
         }
-        .overlay {
-            if let burstID = parcelBurstID {
-                ParcelAddedBurst {
-                    if parcelBurstID == burstID { parcelBurstID = nil }
-                }.id(burstID)
-            }
-        }
         .sensoryFeedback(.success, trigger: parcelBurstID) { _, next in next != nil }
         .sheet(isPresented: $showingAdd, onDismiss: {
-            if addedParcel && scenePhase == .active { parcelBurstID = UUID() }
-            addedParcel = false
+            if let id = addedParcelID, scenePhase == .active {
+                if !visibleParcels.contains(where: { $0.id == id }) { clearFilters() }
+                revealParcelID = id
+            }
+            addedParcelID = nil
         }) {
             AddParcelView(draft: sharedDraft, onOpenParcel: { parcelID in
                 showingAdd = false
                 path = [parcelID]
-            }, onAdded: { addedParcel = scenePhase == .active })
+            }, onAdded: { id in
+                if showingAdd && scenePhase == .active { addedParcelID = id }
+            })
                 .environmentObject(store)
                 .environmentObject(localizer)
         }
@@ -152,14 +151,14 @@ private struct DeliveryListView: View {
             consumeSharedDraft()
             consumePendingParcelNotification()
         }
-        .onDisappear { addedParcel = false; parcelBurstID = nil }
+        .onDisappear { addedParcelID = nil; revealParcelID = nil; parcelBurstID = nil }
         .onChange(of: scenePhase) { _, phase in
-            if phase != .active { addedParcel = false; parcelBurstID = nil }
+            if phase != .active { addedParcelID = nil; revealParcelID = nil; parcelBurstID = nil }
         }
-        .onChange(of: path) { _, _ in parcelBurstID = nil }
-        .onChange(of: showingAdd) { _, open in if open { parcelBurstID = nil } }
-        .onChange(of: showingAccount) { _, open in if open { parcelBurstID = nil } }
-        .onChange(of: showingFilters) { _, open in if open { parcelBurstID = nil } }
+        .onChange(of: path) { _, _ in revealParcelID = nil; parcelBurstID = nil }
+        .onChange(of: showingAdd) { _, open in if open { revealParcelID = nil; parcelBurstID = nil } }
+        .onChange(of: showingAccount) { _, open in if open { revealParcelID = nil; parcelBurstID = nil } }
+        .onChange(of: showingFilters) { _, open in if open { revealParcelID = nil; parcelBurstID = nil } }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             consumeSharedDraft()
         }
@@ -177,81 +176,99 @@ private struct DeliveryListView: View {
     }
 
     private var content: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 22) {
-                listOverview
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 22) {
+                    listOverview
 
-                if !hasCustomView, let nextParcel {
-                    ExperimentalNextDeliveryPass(
-                        parcel: nextParcel,
-                        transition: parcelTransition,
-                        onOpen: { path.append(nextParcel.id) },
-                        onArchive: { await archive(nextParcel) }
-                    )
-                    .id(nextParcel.id)
-                }
-
-                if let message = store.errorMessage {
-                    NoticeBanner(
-                        symbol: "wifi.exclamationmark",
-                        title: localizer.text(store.authenticationRequired ? "app.signInNeeded" : "app.trackingBreak"),
-                        message: store.usingCachedData
-                            ? "\(message) \(localizer.text("app.cachedData"))"
-                            : message,
-                        tint: Brand.warning,
-                        actionTitle: localizer.text(store.authenticationRequired ? "app.signInAgain" : "app.tryAgain"),
-                        action: { Task { await store.load(showSpinner: true) } }
-                    )
-                }
-
-                if hasCustomView { filterChips }
-
-                if !store.loading && store.parcels.isEmpty {
-                    ContentUnavailableView(
-                        localizer.text("app.emptyTitle"),
-                        systemImage: "shippingbox",
-                        description: Text(localizer.text("app.emptyDescription"))
-                    )
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 52)
-                } else if !store.loading && visibleParcels.isEmpty {
-                    ContentUnavailableView {
-                        Label(localizer.text("view.noResultsTitle"), systemImage: "line.3.horizontal.decrease.circle")
-                    } description: {
-                        Text(localizer.text("view.noResultsDescription"))
-                    } actions: {
-                        Button(localizer.text("view.clear")) { clearFilters() }
+                    if !hasCustomView, let nextParcel {
+                        ExperimentalNextDeliveryPass(
+                            parcel: nextParcel,
+                            transition: parcelTransition,
+                            onOpen: { path.append(nextParcel.id) },
+                            onArchive: { await archive(nextParcel) }
+                        )
+                        .modifier(arrivalCelebration(for: nextParcel.id, stubInset: 56))
+                        .id(nextParcel.id)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 40)
-                }
 
-                ForEach(sections) { section in
-                    sectionContent(section)
+                    if let message = store.errorMessage {
+                        NoticeBanner(
+                            symbol: "wifi.exclamationmark",
+                            title: localizer.text(store.authenticationRequired ? "app.signInNeeded" : "app.trackingBreak"),
+                            message: store.usingCachedData
+                                ? "\(message) \(localizer.text("app.cachedData"))"
+                                : message,
+                            tint: Brand.warning,
+                            actionTitle: localizer.text(store.authenticationRequired ? "app.signInAgain" : "app.tryAgain"),
+                            action: { Task { await store.load(showSpinner: true) } }
+                        )
+                    }
+
+                    if hasCustomView { filterChips }
+
+                    if !store.loading && store.parcels.isEmpty {
+                        ContentUnavailableView(
+                            localizer.text("app.emptyTitle"),
+                            systemImage: "shippingbox",
+                            description: Text(localizer.text("app.emptyDescription"))
+                        )
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 52)
+                    } else if !store.loading && visibleParcels.isEmpty {
+                        ContentUnavailableView {
+                            Label(localizer.text("view.noResultsTitle"), systemImage: "line.3.horizontal.decrease.circle")
+                        } description: {
+                            Text(localizer.text("view.noResultsDescription"))
+                        } actions: {
+                            Button(localizer.text("view.clear")) { clearFilters() }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
+                    }
+
+                    ForEach(sections) { section in
+                        sectionContent(section)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 28)
+                .animation(reduceMotion ? nil : .snappy(duration: 0.32), value: store.parcels.filter { !$0.isArchived }.map(\.id))
+            }
+            .scrollIndicators(.hidden)
+            .refreshable {
+                do {
+                    try await store.refreshAll()
+                    actionMessage = localizer.text("app.refreshQueued")
+                } catch {
+                    actionError = localizer.errorMessage(error)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 28)
-            .animation(reduceMotion ? nil : .snappy(duration: 0.32), value: store.parcels.filter { !$0.isArchived }.map(\.id))
-        }
-        .scrollIndicators(.hidden)
-        .refreshable {
-            do {
-                try await store.refreshAll()
-                actionMessage = localizer.text("app.refreshQueued")
-            } catch {
-                actionError = localizer.errorMessage(error)
-            }
-        }
-        .overlay {
-            if store.loading && store.parcels.isEmpty {
-                VStack(spacing: 12) {
-                    ProgressView().controlSize(.large)
-                    Text(localizer.text("app.opening"))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+            .overlay {
+                if store.loading && store.parcels.isEmpty {
+                    VStack(spacing: 12) {
+                        ProgressView().controlSize(.large)
+                        Text(localizer.text("app.opening"))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                 }
+            }
+            .task(id: revealParcelID) {
+                guard let id = revealParcelID else { return }
+                await Task.yield()
+                guard !Task.isCancelled, revealParcelID == id else { return }
+                withAnimation(reduceMotion ? nil : .smooth(duration: 0.35)) {
+                    proxy.scrollTo(id, anchor: .center)
+                } completion: {
+                    guard revealParcelID == id, scenePhase == .active else { return }
+                    parcelBurstID = id
+                    revealParcelID = nil
+                }
+            }
+            .onScrollPhaseChange { _, phase in
+                if phase == .interacting { revealParcelID = nil; parcelBurstID = nil }
             }
         }
     }
@@ -452,6 +469,8 @@ private struct DeliveryListView: View {
                         onOpen: { path.append(parcel.id) },
                         onArchive: { await archive(parcel) }
                     )
+                    .modifier(arrivalCelebration(for: parcel.id))
+                    .id(parcel.id)
                 }
             }
 
@@ -487,8 +506,16 @@ private struct DeliveryListView: View {
                         onOpen: { path.append(parcel.id) },
                         onArchive: parcel.isArchived ? nil : { await archive(parcel) }
                     )
+                    .modifier(arrivalCelebration(for: parcel.id))
+                    .id(parcel.id)
                 }
             }
+        }
+    }
+
+    private func arrivalCelebration(for id: UUID, stubInset: CGFloat = 30) -> ParcelArrivalCelebration {
+        ParcelArrivalCelebration(active: parcelBurstID == id, stubInset: stubInset) {
+            if parcelBurstID == id { parcelBurstID = nil }
         }
     }
 

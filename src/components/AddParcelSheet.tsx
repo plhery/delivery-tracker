@@ -29,10 +29,10 @@ export function AddParcelSheet({
   onOpenParcel,
   onAdded,
 }: {
-  onAdd: (input: NewParcelInput) => Promise<unknown>;
+  onAdd: (input: NewParcelInput) => Promise<{ id: string } | void>;
   onClose: () => void;
   onOpenParcel?: (parcelId: string) => void;
-  onAdded?: () => void;
+  onAdded?: (parcelId: string) => void;
   lastDpdPostcode?: string;
   initialLabel?: string;
   initialTrackingInput?: string;
@@ -55,7 +55,7 @@ export function AddParcelSheet({
   const [pasteError, setPasteError] = useState<string | null>(null);
   const trackingInput = useRef<HTMLTextAreaElement>(null);
   const titleInput = useRef<HTMLInputElement>(null);
-  const saved = useRef(false);
+  const saved = useRef<string | null>(null);
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -63,7 +63,7 @@ export function AddParcelSheet({
   }, []);
   const [dialog, onClose] = useSheetDialog<HTMLDivElement>(true, () => {
     onDismissed();
-    if (saved.current) onAdded?.();
+    if (saved.current) onAdded?.(saved.current);
   }, titleInput);
 
   const parsedTracking = parseTrackingInput(trackingInputValue);
@@ -117,7 +117,7 @@ export function AddParcelSheet({
     setError(null);
     setExistingParcelId(null);
     try {
-      await onAdd({
+      const parcel = await onAdd({
         trackingNumber: trackingNumber.trim(),
         label: label.trim(),
         carrier: resolvedCarrier,
@@ -129,7 +129,7 @@ export function AddParcelSheet({
           : undefined,
       });
       if (!mounted.current) return;
-      saved.current = true;
+      saved.current = parcel?.id ?? null;
       onClose();
     } catch (err) {
       if (!mounted.current) return;

@@ -107,8 +107,8 @@ export default function App({
   } = useParcels();
   const [sharedParcelInput, setSharedParcelInput] = useState<SharedParcelInput | null>(null);
   const [adding, setAdding] = useState(false);
-  const [parcelBurst, setParcelBurst] = useState(0);
-  const finishParcelBurst = useCallback(() => setParcelBurst(0), []);
+  const [parcelBurst, setParcelBurst] = useState<string | null>(null);
+  const finishParcelBurst = useCallback(() => setParcelBurst(null), []);
   const [undoParcel, setUndoParcel] = useState<ParcelWithEvents | null>(null);
   const [undoing, setUndoing] = useState(false);
   const [undoError, setUndoError] = useState<string | null>(null);
@@ -596,7 +596,12 @@ export default function App({
         <AddParcelSheet
           onAdd={addParcel}
           onClose={() => setAdding(false)}
-          onAdded={() => setParcelBurst((previous) => previous + 1)}
+          onAdded={(id) => {
+            if (!visibleParcels.some((parcel) => parcel.id === id)) clearView();
+            setViewControlsOpen(false);
+            switchTab('deliveries');
+            setParcelBurst(id);
+          }}
           onOpenParcel={(parcelId) => openParcelDetail(parcelId)}
           lastDpdPostcode={lastDpdPostcode}
           initialLabel={sharedParcelInput?.label}
@@ -604,7 +609,7 @@ export default function App({
         />
       )}
 
-      {parcelBurst > 0 && <ParcelAddedBurst key={parcelBurst} onFinished={finishParcelBurst} />}
+      {parcelBurst && <ParcelAddedBurst key={parcelBurst} parcelId={parcelBurst} onFinished={finishParcelBurst} />}
 
       {openParcel && (
         <ParcelDetail

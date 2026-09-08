@@ -87,6 +87,18 @@ test('adds a parcel from tracking text', async ({ page }) => {
   const burst = page.locator('.parcel-added-burst');
   await expect(burst).toBeVisible();
   await expect(burst).toHaveAttribute('aria-hidden', 'true');
+  const card = page.locator('.parcel-card-swipe').filter({ hasText: 'Fondue set' });
+  await expect(card).toBeInViewport();
+  await expect(card).toHaveAttribute('data-celebrating', 'rumble');
+  await expect(burst).toHaveAttribute('data-parcel-id', (await card.getAttribute('data-parcel-id'))!);
+  await expect(card.locator('.parcel-card')).toBeFocused();
+  const anchorDistance = await card.evaluate((element) => {
+    const stamp = element.querySelector('.parcel-card__stub, .postage-stamp')!.getBoundingClientRect();
+    const burst = document.querySelector<HTMLElement>('.parcel-added-burst')!;
+    return Math.hypot(parseFloat(burst.style.getPropertyValue('--burst-x')) - stamp.x - stamp.width / 2,
+      parseFloat(burst.style.getPropertyValue('--burst-y')) - stamp.y - stamp.height / 2);
+  });
+  expect(anchorDistance).toBeLessThan(6);
   expect(await burst.evaluate((element) => getComputedStyle(element).pointerEvents)).toBe('none');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await expect(burst).toHaveCount(0);
@@ -100,6 +112,11 @@ test('parcel celebration respects reduced motion and clears before the next inte
   await sheet.getByRole('button', { name: 'Add parcel' }).click();
   const burst = page.locator('.parcel-added-burst');
   await expect(burst).toHaveAttribute('data-reduced', 'true');
+  const card = page.locator('.parcel-card-swipe[data-celebrating="highlight"]');
+  await expect(card).toBeInViewport();
+  expect(await card.evaluate((element) => element.getAnimations()
+    .every((animation) => (animation.effect as KeyframeEffect).getKeyframes()
+      .every((frame) => frame.transform === undefined)))).toBe(true);
   expect(await burst.evaluate((element) => element.getAnimations({ subtree: true })
     .every((animation) => (animation.effect as KeyframeEffect).getKeyframes()
       .every((frame) => frame.transform === undefined)))).toBe(true);
@@ -113,6 +130,24 @@ test('parcel celebration respects reduced motion and clears before the next inte
   await expect(burst).toHaveCount(0);
   await sheet.getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(burst).toHaveCount(0);
+});
+
+test('reveals the added card from another tab even when delivery filters hide it', async ({ page }) => {
+  await page.getByRole('button', { name: 'Search & filters' }).click();
+  await page.getByRole('searchbox', { name: 'Search parcels' }).fill('birthday');
+  await page.locator('.app__navigation').getByRole('button', { name: 'Passport' }).click();
+  await page.getByRole('button', { name: 'Add a parcel' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
+  await sheet.getByLabel(/^Title/).fill('A new adventure');
+  await sheet.getByLabel('Tracking number or link').fill('99.34.111111.33333333');
+  await sheet.getByRole('button', { name: 'Add parcel' }).click();
+  const card = page.locator('.parcel-card-swipe').filter({ hasText: 'A new adventure' });
+  await expect(page.locator('.app__navigation').getByRole('button', { name: 'Deliveries' })).toHaveAttribute('aria-current', 'page');
+  await expect(card).toHaveAttribute('data-celebrating', 'rumble');
+  await expect(card).toBeInViewport();
+  await card.locator('.parcel-card').click();
+  await expect(page.getByRole('dialog', { name: 'A new adventure' })).toBeVisible();
+  await expect(page.locator('.parcel-added-burst')).toHaveCount(0);
 });
 
 test('opens unknown postal tracking on 17TRACK in the selected language', async ({ page }) => {

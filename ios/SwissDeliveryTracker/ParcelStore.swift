@@ -174,13 +174,14 @@ final class ParcelStore: ObservableObject {
         loading = false
     }
 
+    @discardableResult
     func add(
         trackingNumber: String,
         label: String,
         carrier: CarrierID,
         trackingURL: String?,
         dpdPostcode: String?
-    ) async throws {
+    ) async throws -> Parcel {
         let request = CreatePackageRequest(
             trackingNumber: CarrierCatalog.normalize(trackingNumber),
             label: label.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -197,6 +198,7 @@ final class ParcelStore: ObservableObject {
             monitorJobs(response.jobIDs)
         }
         upsert(parcel)
+        return parcel
     }
 
     func rename(_ parcel: Parcel, label: String) async throws {
