@@ -44,7 +44,7 @@ async function requestOrigin(): Promise<URL> {
 
 export async function generateMetadata(): Promise<Metadata> {
   const origin = await requestOrigin();
-  const image = new URL('/og.png?v=1a66fe85', origin).href;
+  const image = new URL('/og.png?v=8bd21a86', origin).href;
   return {
     metadataBase: origin,
     title,
