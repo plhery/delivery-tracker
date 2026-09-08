@@ -136,6 +136,54 @@ describe('Friends', () => {
     expect(await within(sheet).findByRole('textbox', { name: 'Invitation link' })).toHaveValue(sharedLink);
     expect(client.action).toHaveBeenCalledTimes(2);
   });
+  it('cancels previously shared links from settings without generating a new invitation or removing friends', async () => {
+    const client = realClient();
+    vi.mocked(client.action).mockResolvedValue({ snapshot: enrolled() });
+    const { user } = await show(client, false);
+    await user.click(screen.getByRole('button', { name: 'Sharing preferences' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel invitation links' }));
+    const confirmation = screen.getByRole('dialog', { name: 'Cancel shared links?' });
+    expect(confirmation).toHaveTextContent('Previously shared links will stop working. Your friends stay.');
+    expect(client.action).not.toHaveBeenCalled();
+    await user.click(within(confirmation).getByRole('button', { name: 'Keep links' }));
+    expect(screen.getByRole('dialog', { name: 'Sharing preferences' })).toBeVisible();
+    expect(client.action).not.toHaveBeenCalled();
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel invitation links' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel invitation links' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(screen.getByRole('status')).toHaveTextContent('Invitation links cancelled');
+    expect(screen.getByRole('button', { name: /^Mila/ })).toBeVisible();
+    expect(client.action).toHaveBeenCalledExactlyOnceWith({ action: 'revoke_invite' }, []);
+  });
+  it('keeps failed cancellation retryable and prevents duplicate requests while cancelling', async () => {
+    const client = realClient();
+    let reject: (error: Error) => void = () => undefined;
+    vi.mocked(client.action).mockReturnValueOnce(new Promise((_, fail) => { reject = fail; }))
+      .mockResolvedValue({ snapshot: enrolled() });
+    const { user } = await show(client, false);
+    await user.click(screen.getByRole('button', { name: 'Sharing preferences' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel invitation links' }));
+    const sheet = screen.getByRole('dialog');
+    const confirm = within(sheet).getByRole('button', { name: 'Cancel invitation links' });
+    fireEvent.click(confirm); fireEvent.click(confirm);
+    expect(client.action).toHaveBeenCalledTimes(1);
+    expect(confirm).toBeDisabled();
+    expect(within(sheet).getByRole('button', { name: 'Keep links' })).toBeDisabled();
+    expect(within(sheet).getByRole('button', { name: 'Close' })).toBeDisabled();
+    await act(async () => reject(new Error('Offline')));
+    expect(within(sheet).getByRole('alert')).toBeVisible();
+    expect(screen.queryByText('Invitation links cancelled')).toBeNull();
+    expect(confirm).toBeEnabled();
+    await user.click(confirm);
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(screen.getByRole('status')).toHaveTextContent('Invitation links cancelled');
+    expect(client.action).toHaveBeenCalledTimes(2);
+  });
+  it('does not offer cancellation for fictional demo links', async () => {
+    const { user } = await show();
+    await user.click(screen.getByRole('button', { name: 'Sharing preferences' }));
+    expect(within(screen.getByRole('dialog')).queryByRole('button', { name: 'Cancel invitation links' })).toBeNull();
+  });
   it('opens a pasted link into the parcel welcome without accepting it', async () => {
     const client = realClient();
     const { user } = await show(client, false);

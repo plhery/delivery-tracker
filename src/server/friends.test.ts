@@ -67,6 +67,19 @@ describe('Friends privacy boundary', () => {
     expect((await call({ action: 'accept_invite', code: 'short' })).status).toBe(400);
     expect(rpc).not.toHaveBeenCalled();
   });
+  it('revokes the caller’s outstanding invitations without needing a saved link or accepting another owner', async () => {
+    const rpc = vi.spyOn(SupabaseUserClient.prototype, 'request').mockResolvedValue({ snapshot });
+    expect((await call({ action: 'revoke_invite' }, false)).status).toBe(401);
+    expect((await call({ action: 'revoke_invite', userId: id })).status).toBe(400);
+    expect(rpc).not.toHaveBeenCalled();
+    const response = await call({ action: 'revoke_invite' });
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(await response.json()).toEqual({ snapshot });
+    expect(rpc).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/friends_action', {
+      method: 'POST', body: { p_action: 'revoke_invite', p_nickname: null, p_share_stats: null, p_share_arrival: null, p_code: null, p_friend_id: null },
+    });
+  });
   it.each([
     { action: 'save_profile', nickname: '', shareStats: true, shareArrival: false },
     { action: 'save_profile', nickname: 'x'.repeat(25), shareStats: true, shareArrival: false },

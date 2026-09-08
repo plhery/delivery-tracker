@@ -9,7 +9,7 @@ import type { ParcelWithEvents } from '../types';
 import { Icon, PostageStamp } from './Icon';
 import { useFriendsActivity } from './FriendsActivity';
 
-type Panel = 'settings' | 'invite' | 'accept' | 'disable' | ApiFriendCard | null;
+type Panel = 'settings' | 'invite' | 'accept' | 'revokeInvites' | 'disable' | ApiFriendCard | null;
 export function Friends({ client, parcels, demo, onExitDemo }: { client: FriendsClient; parcels: ParcelWithEvents[]; demo: boolean; onExitDemo?: () => void }) {
   const { t } = useI18n();
   const activity = useFriendsActivity();
@@ -115,9 +115,20 @@ export function Friends({ client, parcels, demo, onExitDemo }: { client: Friends
         <div className="friends-grid">{remainingFriends.map(friendButton)}</div>
       </section>}
     </>}
-    {panel && <FriendsSheet title={typeof panel === 'object' ? panel.nickname : t(panel === 'settings' ? 'friends.settings' : panel === 'disable' ? 'friends.disableTitle' : panel === 'accept' ? 'friends.enterCode' : 'friends.inviteTitle')} onClose={close} busy={busy}>
+    {panel && <FriendsSheet title={typeof panel === 'object' ? panel.nickname : t(panel === 'settings' ? 'friends.settings' : panel === 'revokeInvites' ? 'friends.revokeAllTitle' : panel === 'disable' ? 'friends.disableTitle' : panel === 'accept' ? 'friends.enterCode' : 'friends.inviteTitle')} onClose={close} busy={busy}>
       {errorView}
-      {panel === 'settings' && data?.profile && <><FriendProfileForm profile={data.profile} parcels={parcels} busy={busy} onSave={async (profile) => { if (await act({ action: 'save_profile', ...profile })) close(); }} /><button className="friends-remove" onClick={() => setPanel('disable')}>{t('friends.disable')}</button></>}
+      {panel === 'settings' && data?.profile && <>
+        <FriendProfileForm profile={data.profile} parcels={parcels} busy={busy} onSave={async (profile) => { if (await act({ action: 'save_profile', ...profile })) close(); }} />
+        {!demo && <button className="friends-remove" disabled={busy} onClick={() => { setNotice(null); setPanel('revokeInvites'); }}>{t('friends.revokeAll')}</button>}
+        <button className="friends-remove" onClick={() => setPanel('disable')}>{t('friends.disable')}</button>
+      </>}
+      {panel === 'revokeInvites' && <div className="friends-invite">
+        <p>{t('friends.revokeAllDetail')}</p>
+        <button className="button button--primary" disabled={busy} onClick={async () => {
+          if (await act({ action: 'revoke_invite' })) { setInvite(null); setNotice('friends.revoked'); close(); }
+        }}>{t('friends.revokeAll')}</button>
+        <button className="text-button" disabled={busy} onClick={() => { setError(null); setPanel('settings'); }}>{t('friends.keepLinks')}</button>
+      </div>}
       {panel === 'disable' && <><p>{t('friends.disableDetail')}</p><button className="button button--primary" disabled={busy} onClick={async () => { if (await act({ action: 'disable' })) close(); }}>{t('friends.disable')}</button></>}
       {(panel === 'invite' || panel === 'accept') && (demo ? <>
         <p>{t('friends.demoInvites')}</p>

@@ -13,6 +13,7 @@ struct FriendsView: View {
     @State private var showingAccount = false
     @State private var visible = false
     @State private var panel: FriendsPanel?
+    @State private var noticeKey: String?
     @State private var arrivingID: UUID?
     @State private var cardLanded = false
     @State private var presented: UUID?
@@ -27,6 +28,10 @@ struct FriendsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     if let error = model.errorKey, panel == nil { errorView(error) }
+                    if let noticeKey {
+                        Label(text(noticeKey), systemImage: "checkmark.circle")
+                            .font(.subheadline).foregroundStyle(ExperimentalPalette.delivered)
+                    }
                     if let data = model.snapshot {
                         if let friendID = activity.focusID, checkedPresentation == activity.presentationID, !data.friends.contains(where: { $0.id == friendID }) {
                             Text(text("friends.friendUnavailable")).font(.footnote).foregroundStyle(.secondary)
@@ -74,7 +79,7 @@ struct FriendsView: View {
             visible = true; model.configure(session: session)
             if let seed = activity.arrivalSnapshot { model.seed(seed) }
         }
-        .onDisappear { visible = false; panel = nil; arrivingID = nil; model.clear() }
+        .onDisappear { visible = false; panel = nil; noticeKey = nil; arrivingID = nil; model.clear() }
         .task(id: active ? activity.presentationID.uuidString : "hidden") {
             guard active else { panel = nil; model.clear(); return }
             while !Task.isCancelled {
@@ -87,6 +92,7 @@ struct FriendsView: View {
         .onChange(of: model.snapshot) { _, data in
             if case .friend(let friend) = panel, data?.friends.contains(where: { $0.id == friend.id }) != true { panel = nil }
         }
+        .onChange(of: model.working) { _, working in if working { noticeKey = nil } }
         .sheet(isPresented: $showingAccount) { AccountView() }
         .sheet(item: $panel) { value in
             NavigationStack {
@@ -100,6 +106,7 @@ struct FriendsView: View {
                 .navigationTitle(value.title(localizer)).navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button(text("common.close")) { panel = nil; model.errorKey = nil }.disabled(model.working) } }
             }
+            .presentationDetents(value.id == "revokeInvites" ? [.medium] : [.large])
             .presentationDragIndicator(.visible).interactiveDismissDisabled(model.working)
         }
     }
@@ -130,7 +137,7 @@ struct FriendsView: View {
             .padding(22).foregroundStyle(Brand.onAccent).background(Brand.accent, in: RoundedRectangle(cornerRadius: 26))
         }
         VStack(spacing: 4) {
-            Button { panel = .invite } label: { Label(text("friends.invite"), systemImage: "plus").frame(maxWidth: .infinity, minHeight: 48) }
+            Button { noticeKey = nil; panel = .invite } label: { Label(text("friends.invite"), systemImage: "plus").frame(maxWidth: .infinity, minHeight: 48) }
                 .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
             Button(text("friends.enterCode")) { panel = .accept }.font(.subheadline).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44)
         }
@@ -153,7 +160,27 @@ struct FriendsView: View {
             FriendsProfileForm(profile: model.snapshot?.profile, busy: model.working) { profile in
                 Task { if await model.act(FriendsActionRequest(action: .saveProfile, nickname: profile.nickname, shareStats: profile.shareStats, shareArrival: profile.shareArrival), parcels: parcels.parcels) != nil { panel = nil } }
             }
+            if !session.isDemo {
+                Button(text("friends.revokeAll")) { noticeKey = nil; panel = .revokeInvites }
+                    .font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44).disabled(model.working)
+                    .accessibilityIdentifier("friends.cancelInvitationLinks")
+            }
             Button(text("friends.disable")) { panel = .disable }.font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44)
+        case .revokeInvites:
+            Text(text("friends.revokeAllDetail")).font(.subheadline).foregroundStyle(.secondary)
+            Button {
+                Task {
+                    if await model.act(FriendsActionRequest(action: .revokeInvite), parcels: parcels.parcels) != nil {
+                        noticeKey = "friends.revoked"
+                        panel = nil
+                    }
+                }
+            } label: {
+                Text(text("friends.revokeAll")).frame(maxWidth: .infinity, minHeight: 48)
+            }
+            .buttonStyle(.borderedProminent).disabled(model.working).tint(Brand.accent).foregroundStyle(Brand.onAccent)
+            Button(text("friends.keepLinks")) { model.errorKey = nil; panel = .profile }
+                .font(.subheadline).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44).disabled(model.working)
         case .disable:
             Text(text("friends.disableDetail")).font(.subheadline).foregroundStyle(.secondary)
             Button(text("friends.disable")) { Task { if await model.act(FriendsActionRequest(action: .disable), parcels: parcels.parcels) != nil { panel = nil } } }.buttonStyle(.borderedProminent).disabled(model.working).tint(Brand.accent).foregroundStyle(Brand.onAccent)
@@ -183,10 +210,10 @@ struct FriendsView: View {
 }
 
 private enum FriendsPanel: Identifiable {
-    case profile, invite, accept, disable, friend(FriendCard)
-    var id: String { switch self { case .profile: "profile"; case .invite: "invite"; case .accept: "accept"; case .disable: "disable"; case .friend(let friend): friend.id.uuidString } }
+    case profile, invite, accept, revokeInvites, disable, friend(FriendCard)
+    var id: String { switch self { case .profile: "profile"; case .invite: "invite"; case .accept: "accept"; case .revokeInvites: "revokeInvites"; case .disable: "disable"; case .friend(let friend): friend.id.uuidString } }
     @MainActor func title(_ localizer: Localizer) -> String {
-        switch self { case .friend(let friend): friend.nickname; case .profile: localizer.text("friends.settings"); case .invite: localizer.text("friends.inviteTitle"); case .accept: localizer.text("friends.enterCode"); case .disable: localizer.text("friends.disableTitle") }
+        switch self { case .friend(let friend): friend.nickname; case .profile: localizer.text("friends.settings"); case .invite: localizer.text("friends.inviteTitle"); case .accept: localizer.text("friends.enterCode"); case .revokeInvites: localizer.text("friends.revokeAllTitle"); case .disable: localizer.text("friends.disableTitle") }
     }
 }
 
