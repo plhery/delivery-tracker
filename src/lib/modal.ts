@@ -161,6 +161,7 @@ export function useSheetDialog<T extends HTMLElement>(
   onClose: () => void,
   initialFocus?: RefObject<HTMLElement | null>,
   origin?: CardOrigin | null,
+  dismissDisabled = false,
 ): readonly [RefObject<T | null>, () => void] {
   const finish = useRef(onClose);
   const closing = useRef(false);
@@ -180,7 +181,7 @@ export function useSheetDialog<T extends HTMLElement>(
     return stop;
   }, [open, origin, dialog]);
   function dismiss() {
-    if (closing.current) return;
+    if (dismissDisabled || closing.current) return;
     const element = dialog.current;
     if (!element?.animate || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
       finish.current();

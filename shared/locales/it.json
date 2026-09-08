@@ -485,11 +485,13 @@
   "friends.invitationTitle": "Il tuo amico {{name}} ti ha inviato un invito",
   "friends.invitationGeneric": "Un invito per te",
   "friends.signInToAccept": "Accedi per accettare l’invito",
-  "friends.joinAndAccept": "Crea profilo e accetta",
+  "friends.joinAndAccept": "Attiva Amici e accetta",
   "friends.openInApp": "Apri nell’app iOS",
   "friends.shareLink": "Condividi invito",
   "friends.copyLink": "Copia link",
   "friends.link": "Link d’invito",
   "friends.linkPlaceholder": "Incolla un link d’invito",
-  "friends.openLink": "Apri invito"
+  "friends.openLink": "Apri invito",
+  "friends.enable": "Attiva Amici",
+  "friends.enableToAccept": "Attiva Amici per accettare"
 }

@@ -601,24 +601,51 @@ private struct FriendInvitationAcceptanceView: View {
                 Color.clear.frame(width: 180, height: 186)
                     .anchorPreference(key: ArrivalParcelFrame.self, value: .bounds) { [.signIn: $0] }.accessibilityHidden(true)
                 InvitationHeading(nickname: invitation.nickname)
-                if let error = invitation.errorKey ?? model.errorKey {
+                if let error = invitation.errorKey ?? model.errorKey, !creatingProfile {
                     Text(localizer.text(error)).font(.footnote).foregroundStyle(.secondary)
                     if error != "friends.inviteUnavailable" {
                         Button(localizer.text("common.retry")) { Task { await invitation.loadPreview(); await model.load(parcels: parcels.parcels) } }
                     }
                 }
                 if invitation.nickname != nil, model.snapshot != nil {
-                    if creatingProfile {
-                        FriendsProfileForm(profile: nil, busy: joining, submitKey: "friends.joinAndAccept") { profile in Task { await accept(profile: profile) } }
-                    } else {
-                        Button { if model.snapshot?.profile == nil { creatingProfile = true } else { Task { await accept() } } } label: {
-                            Text(localizer.text("friends.accept")).frame(maxWidth: .infinity, minHeight: 46)
-                        }.buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent).disabled(joining)
-                    }
+                    Button {
+                        if model.snapshot?.profile == nil { model.errorKey = nil; creatingProfile = true }
+                        else { Task { await accept() } }
+                    } label: {
+                        HStack {
+                            if joining { ProgressView().tint(Brand.onAccent) }
+                            Text(localizer.text(model.snapshot?.profile == nil ? "friends.enableToAccept" : "friends.accept"))
+                        }.frame(maxWidth: .infinity, minHeight: 46)
+                    }.buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
+                        .disabled(joining || model.errorKey == "friends.inviteUnavailable")
                 } else if invitation.errorKey == nil && model.errorKey == nil { ProgressView() }
             }.padding(24).frame(maxWidth: 520).frame(maxWidth: .infinity)
         }
         .scrollDismissesKeyboard(.interactively)
+        .sheet(isPresented: $creatingProfile) {
+            NavigationStack {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        if let error = model.errorKey {
+                            Text(localizer.text(error)).font(.footnote).foregroundStyle(.secondary)
+                        }
+                        FriendsProfileForm(profile: nil, busy: joining, submitKey: "friends.joinAndAccept") { profile in
+                            Task { await accept(profile: profile) }
+                        }
+                    }.padding(24).frame(maxWidth: 520).frame(maxWidth: .infinity)
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .background(Brand.background)
+                .navigationTitle(localizer.text("friends.enable")).navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(localizer.text("common.close")) { creatingProfile = false; model.errorKey = nil }
+                            .foregroundStyle(Brand.ink).disabled(joining)
+                    }
+                }
+            }
+            .presentationDragIndicator(.visible).interactiveDismissDisabled(joining)
+        }
         .task(id: scenePhase) {
             guard scenePhase == .active else { model.clear(); return }
             model.configure(session: session); await model.load(parcels: parcels.parcels)
@@ -629,9 +656,14 @@ private struct FriendInvitationAcceptanceView: View {
     private func accept(profile: FriendProfile? = nil) async {
         guard !joining, let code = invitation.code else { return }
         joining = true
-        defer { joining = false }
+        defer {
+            joining = false
+            // Once enabled, a failed invitation can be retried without creating the profile again.
+            if model.snapshot?.profile != nil { creatingProfile = false }
+        }
         if let profile {
-            guard await model.act(FriendsActionRequest(action: .saveProfile, nickname: profile.nickname, shareStats: profile.shareStats, shareArrival: profile.shareArrival), parcels: parcels.parcels) != nil else { return }
+            guard let saved = await model.act(FriendsActionRequest(action: .saveProfile, nickname: profile.nickname, shareStats: profile.shareStats, shareArrival: profile.shareArrival), parcels: parcels.parcels) else { return }
+            guard saved.snapshot?.profile != nil else { model.errorKey = "friends.actionFailed"; return }
         }
         _ = await model.act(FriendsActionRequest(action: .acceptInvite, code: code), parcels: parcels.parcels, onCommitted: { _ in
             if invitation.isPresenting, invitation.code == code { invitation.finish() }

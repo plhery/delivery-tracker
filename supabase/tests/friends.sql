@@ -50,9 +50,10 @@ begin
    perform public.friends_action('accept_invite',p_code=>code);
    raise exception 'Non-consenting account became a friend';
  exception when invalid_parameter_value then null; end;
- perform public.friends_action('save_profile','B friend',false,false);
- perform public.friends_action('accept_invite',p_code=>code);
- view := public.friends_snapshot();
+ view := public.friends_action('save_profile','B friend',false,false)->'snapshot';
+ if view->'profile' is distinct from '{"nickname":"B friend","shareStats":false,"shareArrival":false}'::jsonb
+    or view->'friends' <> '[]' then raise exception 'Profile setup did not return the saved choices: %',view; end if;
+ view := public.friends_action('accept_invite',p_code=>code)->'snapshot';
  if jsonb_array_length(view->'friends') <> 1 or view#>>'{friends,0,nickname}' <> 'A friend' then raise exception 'Friend not connected'; end if;
  if view::text like '%PRIVATE_%' or view::text like '%tracking%' or view::text like '%location%' or view::text like '%email%' or view::text like '%'||a::text||'%' then raise exception 'Private parcel/account data leaked'; end if;
  friend_id := (view#>>'{friends,0,id}')::uuid;
@@ -91,6 +92,14 @@ begin
  if public.friends_snapshot()->'profile' <> 'null' then raise exception 'Disable retained profile'; end if;
  perform set_config('request.jwt.claim.sub',b::text,true);
  if public.friends_snapshot()->'friends' <> '[]' then raise exception 'Disable retained friendships'; end if;
+ code := public.friends_action('create_invite')->>'inviteCode';
+ perform set_config('request.jwt.claim.sub',a::text,true);
+ view := public.friends_action('save_profile','A again',false,false)->'snapshot';
+ if view#>>'{profile,nickname}' <> 'A again' or view#>'{profile,shareStats}' <> 'false'
+    or view#>'{profile,shareArrival}' <> 'false' then raise exception 'Friends could not be enabled again'; end if;
+ view := public.friends_action('accept_invite',p_code=>code)->'snapshot';
+ if jsonb_array_length(view->'friends') <> 1 or view#>>'{friends,0,nickname}' <> 'B friend'
+    or view#>'{ownCard,stats}' <> 'null' then raise exception 'Re-enabled user could not accept privately: %',view; end if;
 end $$;
 reset role;
 

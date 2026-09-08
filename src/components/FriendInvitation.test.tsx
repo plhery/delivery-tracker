@@ -1,8 +1,8 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { usePendingInvitation } from '../lib/friendInvites';
-import type { FriendsClient } from '../lib/friends';
+import { FriendsError, type FriendsClient } from '../lib/friends';
 import type { ApiFriendsSnapshot } from '../generated/apiContract';
 import { FriendInvitation } from './FriendInvitation';
 
@@ -56,16 +56,90 @@ it('shows the profile preview and saves explicit sharing choices before joining'
   const user = userEvent.setup(); render(<Harness client={client} />);
   await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' });
   await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
-  await user.click(await screen.findByRole('button', { name: 'Become friends' }));
-  expect(screen.getByRole('region', { name: 'Profile preview:' })).toBeVisible();
+  await user.click(await screen.findByRole('button', { name: 'Turn on Friends to accept' }));
+  const setup = within(screen.getByRole('dialog', { name: 'Turn on Friends' }));
+  expect(setup.getByRole('region', { name: 'Profile preview:' })).toBeVisible();
+  expect(setup.getByRole('switch', { name: 'Stats & stamps' })).toBeChecked();
+  expect(setup.getByRole('switch', { name: 'Arrivals this week' })).toBeChecked();
   expect(client.action).not.toHaveBeenCalled();
   await user.type(screen.getByRole('textbox', { name: 'Nickname' }), 'Alex');
   await user.click(screen.getByRole('switch', { name: 'Arrivals this week' }));
-  await user.click(screen.getByRole('button', { name: 'Create profile & accept' }));
+  await user.click(screen.getByRole('button', { name: 'Turn on Friends & accept' }));
   await waitFor(() => expect(client.action).toHaveBeenCalledTimes(2));
   expect(vi.mocked(client.action).mock.calls.map(([action]) => action)).toEqual([
     { action: 'save_profile', nickname: 'Alex', shareStats: true, shareArrival: false }, { action: 'accept_invite', code },
   ]);
+  expect(await screen.findByText('Invitation closed')).toBeVisible();
+});
+it('can cancel setup without enabling Friends or losing the invitation', async () => {
+  const client: FriendsClient = { load: vi.fn().mockResolvedValue(noProfile), action: vi.fn() };
+  const user = userEvent.setup(); render(<Harness client={client} />);
+  await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' });
+  await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
+  await user.click(await screen.findByRole('button', { name: 'Turn on Friends to accept' }));
+  await user.type(screen.getByRole('textbox', { name: 'Nickname' }), 'Alex');
+  await user.keyboard('{Escape}');
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(client.action).not.toHaveBeenCalled();
+  expect(JSON.parse(sessionStorage.getItem('sdt.pendingFriendInvitation.v1')!).code).toBe(code);
+  await user.click(screen.getByRole('button', { name: 'Turn on Friends to accept' }));
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Close' }));
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(client.action).not.toHaveBeenCalled();
+});
+it('keeps the draft after a failed setup and never accepts before Friends is enabled', async () => {
+  const client: FriendsClient = { load: vi.fn().mockResolvedValue(noProfile), action: vi.fn()
+    .mockRejectedValueOnce(new FriendsError('friends.actionFailed'))
+    .mockResolvedValueOnce({ snapshot: noProfile })
+    .mockResolvedValue({ snapshot: enrolled }) };
+  const user = userEvent.setup(); render(<Harness client={client} />);
+  await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' });
+  await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
+  await user.click(await screen.findByRole('button', { name: 'Turn on Friends to accept' }));
+  await user.type(screen.getByRole('textbox', { name: 'Nickname' }), 'Alex');
+  await user.click(screen.getByRole('switch', { name: 'Stats & stamps' }));
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await user.click(screen.getByRole('button', { name: 'Turn on Friends & accept' }));
+    expect(await screen.findByRole('alert')).toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'Nickname' })).toHaveValue('Alex');
+    expect(screen.getByRole('switch', { name: 'Stats & stamps' })).not.toBeChecked();
+    expect(vi.mocked(client.action).mock.calls.every(([request]) => request.action === 'save_profile')).toBe(true);
+  }
+  await user.click(screen.getByRole('button', { name: 'Turn on Friends & accept' }));
+  expect(await screen.findByText('Invitation closed')).toBeVisible();
+  expect(client.action).toHaveBeenLastCalledWith({ action: 'accept_invite', code }, []);
+});
+it('blocks dismissal and repeat submits while enabling, then retries only acceptance after a failure', async () => {
+  let finish!: (value: { snapshot: ApiFriendsSnapshot }) => void;
+  const client: FriendsClient = { load: vi.fn().mockResolvedValue(noProfile), action: vi.fn()
+    .mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }))
+    .mockRejectedValueOnce(new FriendsError('friends.actionFailed'))
+    .mockResolvedValue({ snapshot: enrolled }) };
+  const user = userEvent.setup(); render(<Harness client={client} />);
+  await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' });
+  await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
+  await user.click(await screen.findByRole('button', { name: 'Turn on Friends to accept' }));
+  await user.type(screen.getByRole('textbox', { name: 'Nickname' }), 'Alex');
+  const submit = screen.getByRole('button', { name: 'Turn on Friends & accept' });
+  fireEvent.click(submit); fireEvent.click(submit);
+  const dialog = screen.getByRole('dialog', { name: 'Turn on Friends' });
+  expect(within(dialog).getByRole('button', { name: 'Close' })).toBeDisabled();
+  const animate = vi.fn();
+  Object.defineProperty(dialog, 'animate', { value: animate, configurable: true });
+  vi.mocked(window.matchMedia).mockReturnValue({ matches: false } as MediaQueryList);
+  await user.keyboard('{Escape}');
+  fireEvent.click(dialog.parentElement!);
+  expect(animate).not.toHaveBeenCalled();
+  expect(dialog).toBeVisible();
+  expect(client.action).toHaveBeenCalledOnce();
+  await act(async () => finish({ snapshot: enrolled }));
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(screen.getByRole('alert')).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Turn on Friends to accept' })).toBeNull();
+  expect(sessionStorage.getItem('sdt.pendingFriendInvitation.v1')).not.toBeNull();
+  await user.click(screen.getByRole('button', { name: 'Become friends' }));
+  expect(await screen.findByText('Invitation closed')).toBeVisible();
+  expect(vi.mocked(client.action).mock.calls.map(([request]) => request.action)).toEqual(['save_profile', 'accept_invite', 'accept_invite']);
 });
 it('keeps an expired invitation closed and allows dismissal', async () => {
   vi.mocked(fetch).mockResolvedValue(new Response('{}', { status: 404 }));

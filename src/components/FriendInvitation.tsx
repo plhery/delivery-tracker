@@ -5,7 +5,7 @@ import { FriendsError, type FriendsClient } from '../lib/friends';
 import { previewInvitation, type PendingInvitationState } from '../lib/friendInvites';
 import type { ParcelWithEvents } from '../types';
 import { ArrivalScreen } from './ArrivalScreen';
-import { FriendProfileForm } from './Friends';
+import { FriendProfileForm, FriendsSheet } from './Friends';
 import type { SignInScreen } from './SignInScreen';
 
 type Props = ComponentProps<typeof SignInScreen> & {
@@ -76,12 +76,14 @@ function InvitationAcceptance({ title, code, client, parcels, onAccepted }: { ti
     if (working.current) return;
     working.current = true; setBusy(true); setError(null);
     const current = generation.current;
+    let enabled = !!snapshot?.profile;
     try {
       if (profile) {
         const saved = await client.action({ action: 'save_profile', ...profile }, parcels);
         if (generation.current !== current) return;
         if (!saved.snapshot?.profile) throw new FriendsError('friends.actionFailed');
         setSnapshot(saved.snapshot);
+        enabled = true;
       }
       await client.action({ action: 'accept_invite', code }, parcels);
       // A committed acceptance can finish while the preview is backgrounded.
@@ -89,13 +91,23 @@ function InvitationAcceptance({ title, code, client, parcels, onAccepted }: { ti
       onAccepted();
     } catch (reason) {
       if (generation.current === current) setError(reason instanceof FriendsError ? reason.key : 'friends.actionFailed');
-    } finally { working.current = false; if (generation.current === current) setBusy(false); }
+    } finally {
+      working.current = false;
+      if (generation.current === current) {
+        setBusy(false);
+        // Keep a saved profile and its choices if only the acceptance needs a retry.
+        if (enabled) setCreating(false);
+      }
+    }
   }
   return <section className="auth-flow invitation-accept" aria-labelledby="invite-title">
     <div className="auth-flow__heading"><h1 id="invite-title" tabIndex={-1}>{title}</h1></div>
-    {error && <div className="invitation-notice" role="alert"><p>{t(error)}</p>{!snapshot && <button className="text-button" onClick={() => setRetry((value) => value + 1)}>{t('common.retry')}</button>}</div>}
-    {!snapshot ? !error && <p role="status">{t('auth.loading')}</p> : creating
-      ? <FriendProfileForm profile={null} parcels={parcels} busy={busy} submitKey="friends.joinAndAccept" onSave={accept} />
-      : <button className="button button--primary" disabled={busy || error === 'friends.inviteUnavailable'} onClick={() => snapshot.profile ? void accept() : setCreating(true)}>{t('friends.accept')}</button>}
+    {error && !creating && <div className="invitation-notice" role="alert"><p>{t(error)}</p>{!snapshot && <button className="text-button" onClick={() => setRetry((value) => value + 1)}>{t('common.retry')}</button>}</div>}
+    {!snapshot ? !error && <p role="status">{t('auth.loading')}</p>
+      : <button className="button button--primary" disabled={busy || error === 'friends.inviteUnavailable'} aria-busy={busy} onClick={() => { if (snapshot.profile) void accept(); else { setError(null); setCreating(true); } }}>{t(snapshot.profile ? 'friends.accept' : 'friends.enableToAccept')}</button>}
+    {creating && <FriendsSheet title={t('friends.enable')} busy={busy} onClose={() => { setCreating(false); setError(null); }}>
+      {error && <p className="friends-error" role="alert">{t(error)}</p>}
+      <FriendProfileForm profile={null} parcels={parcels} busy={busy} submitKey="friends.joinAndAccept" onSave={accept} />
+    </FriendsSheet>}
   </section>;
 }

@@ -92,14 +92,14 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); sessionStorage.clear(); history.replaceState(null, '', '/'); });
 
 describe('ApiApplication', () => {
-  it('keeps a demo visitor’s invitation through sign-in, then accepts into Friends', async () => {
+  it.each([true, false])('keeps the invitation through sign-in and accepts with Friends already enabled: %s', async (alreadyEnabled) => {
     const code = 'ab'.repeat(16);
     history.replaceState(null, '', '/invite#' + code);
     localStorage.setItem('sdt.web.experience.v1', 'demo');
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
     const snapshot = { profile: { nickname: 'Alex', shareStats: true, shareArrival: false }, ownCard: null, friends: [] };
     const fetch = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => new Response(JSON.stringify(
-      url.endsWith('invite-preview') ? { previewNickname: 'Paul' } : init?.method === 'POST' ? { snapshot } : snapshot,
+      url.endsWith('invite-preview') ? { previewNickname: 'Paul' } : init?.method === 'POST' ? { snapshot } : alreadyEnabled ? snapshot : { profile: null, ownCard: null, friends: [] },
     )));
     vi.stubGlobal('fetch', fetch);
     const user = userEvent.setup();
@@ -109,9 +109,14 @@ describe('ApiApplication', () => {
     expect(await screen.findByText('Configured sign in')).toBeVisible();
     mocks.auth.status = 'authenticated'; mocks.auth.user = USER;
     view.rerender(<ApiApplication />);
-    const accept = await screen.findByRole('button', { name: 'Become friends' });
+    const accept = await screen.findByRole('button', { name: alreadyEnabled ? 'Become friends' : 'Turn on Friends to accept' });
     expect(fetch.mock.calls.filter(([, init]) => String(init?.body).includes('accept_invite'))).toHaveLength(0);
     await user.click(accept);
+    if (!alreadyEnabled) {
+      expect(screen.getByRole('dialog', { name: 'Turn on Friends' })).toBeVisible();
+      await user.type(screen.getByRole('textbox', { name: 'Nickname' }), 'Alex');
+      await user.click(screen.getByRole('button', { name: 'Turn on Friends & accept' }));
+    }
     expect(await screen.findByText('owner@example.test')).toBeVisible();
     expect(location.search).toBe('?view=friends');
     expect(sessionStorage.getItem('sdt.pendingFriendInvitation.v1')).toBeNull();
