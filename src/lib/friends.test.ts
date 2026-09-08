@@ -37,14 +37,15 @@ describe('Friends client and self preview', () => {
   it('sends codes only in authenticated POST bodies with no-store requests', async () => {
     const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ previewNickname: 'Mila' }))); vi.stubGlobal('fetch', fetch);
     const client = createFriendsClient(false, { userId: 'owner', getAccessToken: async () => 'session-token' });
-    await client.action({ action: 'preview_invite', code: 'a'.repeat(32) }, []);
+    await client.checkInvitation('a'.repeat(32));
     expect(fetch.mock.calls[0][0]).toBe('/api/friends');
     expect(fetch.mock.calls[0][1]).toMatchObject({ method: 'POST', cache: 'no-store' });
+    expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({ action: 'preview_invite', code: 'a'.repeat(32) });
     expect(fetch.mock.calls[0][1].headers.get('Authorization')).toBe('Bearer session-token');
     fetch.mockResolvedValue(new Response(JSON.stringify({ profile: null, ownCard: null, friends: [] })));
     expect((await client.load([])).friends).toEqual([]);
   });
-  it.each([[404,'friends.inviteUnavailable'],[409,'friends.circleFull'],[503,'friends.unavailable'],[400,'friends.actionFailed']])('handles response %s safely', async (status, key) => {
+  it.each([[404,'friends.inviteUnavailable'],[409,'friends.circleFull'],[422,'friends.selfInvitation'],[503,'friends.unavailable'],[400,'friends.actionFailed']])('handles response %s safely', async (status, key) => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: Number(status) })));
     await expect(createFriendsClient(false).load([])).rejects.toMatchObject({ key });
   });

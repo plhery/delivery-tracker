@@ -42,7 +42,14 @@ begin
  begin
    perform public.friends_action('accept_invite',p_code=>code);
    raise exception 'Self invite accepted';
- exception when no_data_found then null; end;
+ exception when sqlstate 'P0004' then null; end;
+ begin
+   perform public.friends_action('preview_invite',p_code=>code);
+   raise exception 'Self invitation preview was not distinguished';
+ exception when sqlstate 'P0004' then null; end;
+ if public.friends_snapshot()->'friends' <> '[]' or public.friends_activity() <> '{"updates":[]}' then
+   raise exception 'Self invitation created a connection or a receipt';
+ end if;
  perform set_config('request.jwt.claim.sub',b::text,true);
  view := public.friends_action('preview_invite',p_code=>code);
  if view <> '{"previewNickname":"A friend"}' then raise exception 'Preview leaked stats: %',view; end if;

@@ -636,6 +636,8 @@ private struct FriendInvitationAcceptanceView: View {
     @StateObject private var model = FriendsStore()
     @State private var creatingProfile = false
     @State private var joining = false
+    @State private var checkingInvitation = true
+    private var isSelfInvitation: Bool { model.errorKey == "friends.selfInvitation" }
 
     var body: some View {
         ScrollView {
@@ -652,14 +654,23 @@ private struct FriendInvitationAcceptanceView: View {
                     Text(localizer.text("friends.friendshipDelivered"))
                         .font(.system(.title, design: .rounded, weight: .medium)).multilineTextAlignment(.center)
                         .accessibilityAddTraits(.isHeader)
+                } else if isSelfInvitation {
+                    Text(localizer.text("friends.selfInvitation"))
+                        .font(.system(.title, design: .rounded, weight: .medium)).multilineTextAlignment(.center)
+                        .accessibilityAddTraits(.isHeader)
                 } else { InvitationHeading(nickname: invitation.nickname) }
-                if let error = invitation.errorKey ?? model.errorKey, !creatingProfile {
+                if let error = invitation.errorKey ?? model.errorKey, !creatingProfile, !isSelfInvitation {
                     Text(localizer.text(error)).font(.footnote).foregroundStyle(.secondary)
                     if error != "friends.inviteUnavailable" {
-                        Button(localizer.text("common.retry")) { Task { await invitation.loadPreview(); await model.load(parcels: parcels.parcels) } }
+                        Button(localizer.text("common.retry")) { Task { await invitation.loadPreview(); await checkInvitation() } }
                     }
                 }
-                if invitation.receipt == nil, invitation.nickname != nil, model.snapshot != nil {
+                if isSelfInvitation {
+                    Button { invitation.dismiss() } label: {
+                        Text(localizer.text("common.close")).frame(maxWidth: .infinity, minHeight: 46)
+                    }
+                        .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
+                } else if !checkingInvitation, invitation.receipt == nil, invitation.nickname != nil, model.snapshot != nil {
                     Button {
                         if model.snapshot?.profile == nil { model.errorKey = nil; creatingProfile = true }
                         else { Task { await accept() } }
@@ -700,9 +711,17 @@ private struct FriendInvitationAcceptanceView: View {
         }
         .task(id: scenePhase) {
             guard scenePhase == .active else { model.clear(); return }
-            model.configure(session: session); await model.load(parcels: parcels.parcels)
+            model.configure(session: session); await checkInvitation()
         }
         .onDisappear { model.clear() }
+    }
+
+    private func checkInvitation() async {
+        checkingInvitation = true
+        defer { checkingInvitation = false }
+        await model.load(parcels: parcels.parcels)
+        guard !Task.isCancelled, model.snapshot != nil, let code = invitation.code else { return }
+        _ = await model.act(FriendsActionRequest(action: .previewInvite, code: code), parcels: parcels.parcels)
     }
 
     private func accept(profile: FriendProfile? = nil) async {

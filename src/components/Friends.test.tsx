@@ -8,7 +8,7 @@ import { createFriendsClient, ownFriendCard, type FriendsClient } from '../lib/f
 import { Friends } from './Friends';
 
 const enrolled = (): ApiFriendsSnapshot => ({ ...structuredClone(fixture), ownCard: ownFriendCard([], fixture.profile) }) as ApiFriendsSnapshot;
-function realClient(): FriendsClient { return { load: vi.fn().mockResolvedValue(enrolled()), action: vi.fn() }; }
+function realClient(): FriendsClient { return { checkInvitation: vi.fn().mockResolvedValue(undefined), load: vi.fn().mockResolvedValue(enrolled()), action: vi.fn() }; }
 async function show(client = createFriendsClient(true), demo = true) {
   const user = userEvent.setup(); render(<Friends client={client} parcels={[]} demo={demo} />);
   await screen.findByRole('button', { name: 'Invite a friend' }); return { user, client };

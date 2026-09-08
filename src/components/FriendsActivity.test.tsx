@@ -9,7 +9,7 @@ import type { FriendsClient } from '../lib/friends';
 const id = '11111111-1111-4111-8111-111111111111';
 const friend = { id, nickname: 'Alex', stats: null, arrivedThisWeek: null };
 const snapshot = { profile: { nickname: 'Paul', shareStats: true, shareArrival: false }, ownCard: null, friends: [friend] };
-const client: FriendsClient = { load: vi.fn().mockResolvedValue(snapshot), action: vi.fn() };
+const client: FriendsClient = { checkInvitation: vi.fn().mockResolvedValue(undefined), load: vi.fn().mockResolvedValue(snapshot), action: vi.fn() };
 const auth = { userId: 'sender', getAccessToken: vi.fn().mockResolvedValue('fixture') };
 function Harness({ paused = false }: { paused?: boolean }) {
   return <FriendsActivityProvider auth={auth} paused={paused}><Friends client={client} parcels={[]} demo={false} /></FriendsActivityProvider>;

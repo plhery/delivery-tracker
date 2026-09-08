@@ -90,7 +90,7 @@ describe('Friends privacy boundary', () => {
     expect(() => friendsActionResponse({}, 'preview_invite')).toThrow();
     expect(() => friendsActionResponse(null, 'disable')).toThrow();
   });
-  it.each([['P0002',404], ['P0003',409], ['22023',400], ['PGRST202',503], ['42883',503], ['other',502]] as const)('maps safe database errors: %s', async (code, status) => {
+  it.each([['P0002',404], ['P0003',409], ['P0004',422], ['22023',400], ['PGRST202',503], ['42883',503], ['other',502]] as const)('maps safe database errors: %s', async (code, status) => {
     vi.spyOn(SupabaseUserClient.prototype, 'request').mockRejectedValue(new SupabaseError('PRIVATE_SERVER_PAYLOAD', 400, code));
     const response = await call({ action: 'accept_invite', code: 'a'.repeat(32) });
     expect(response.status).toBe(status); expect(await response.text()).not.toContain('PRIVATE_SERVER_PAYLOAD');

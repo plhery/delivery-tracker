@@ -76,6 +76,7 @@ export async function friendsRPC(client: SupabaseUserClient, action?: ApiFriends
     if (error instanceof SupabaseError) {
       if (error.code === 'P0002') throw new HttpError(404, 'Invitation unavailable');
       if (error.code === 'P0003') throw new HttpError(409, 'Your circle is full');
+      if (error.code === 'P0004') throw new HttpError(422, 'Cannot accept your own invitation');
       if (error.code === '22023') throw invalid();
       if (error.code === 'PGRST202' || error.code === '42883') throw new HttpError(503, 'Friends is temporarily unavailable');
     }

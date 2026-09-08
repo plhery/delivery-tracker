@@ -22,6 +22,28 @@ beforeEach(() => {
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); sessionStorage.clear(); history.replaceState(null, '', '/'); signIn.mockClear(); });
 
+it('reveals the self-invitation message only after opening the package, without accepting', async () => {
+  const client: FriendsClient = {
+    checkInvitation: vi.fn().mockRejectedValue(new FriendsError('friends.selfInvitation')),
+    load: vi.fn().mockResolvedValue(enrolled), action: vi.fn(),
+  };
+  const user = userEvent.setup(); const { container } = render(<Harness client={client} />);
+  await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' });
+  expect(client.checkInvitation).not.toHaveBeenCalled();
+  expect(screen.queryByText(/Aw nice try/)).not.toBeInTheDocument();
+  const parcel = container.querySelector('.arrival__parcel');
+  await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
+  expect(await screen.findByRole('heading', { name: 'Aw nice try, but you can’t be your own friend.' })).toBeVisible();
+  expect(container.querySelector('.arrival__parcel')).toBe(parcel);
+  expect(client.checkInvitation).toHaveBeenCalledWith(code);
+  expect(client.action).not.toHaveBeenCalled();
+  expect(screen.queryByRole('button', { name: 'Become friends' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+  expect(screen.queryByText(/no longer available/)).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Close' }));
+  expect(screen.getByText('Invitation closed')).toBeVisible();
+});
+
 it('opens into personalized sign-in and never offers the demo or accepts automatically', async () => {
   const user = userEvent.setup(); render(<Harness />);
   expect(await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' })).toBeVisible();
@@ -36,7 +58,7 @@ it('opens into personalized sign-in and never offers the demo or accepts automat
 });
 it('requires an explicit accept and ignores repeated taps', async () => {
   let finish!: (value: { snapshot: ApiFriendsSnapshot }) => void;
-  const client: FriendsClient = { load: vi.fn().mockResolvedValue(enrolled), action: vi.fn().mockImplementation(() => new Promise((resolve) => { finish = resolve; })) };
+  const client: FriendsClient = { checkInvitation: vi.fn().mockResolvedValue(undefined), load: vi.fn().mockResolvedValue(enrolled), action: vi.fn().mockImplementation(() => new Promise((resolve) => { finish = resolve; })) };
   const user = userEvent.setup(); render(<Harness client={client} />);
   await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' });
   await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
@@ -53,7 +75,7 @@ it('requires an explicit accept and ignores repeated taps', async () => {
 });
 it('lands a friendship stamp on the same opened parcel before leaving for Friends', async () => {
   const friend = { id: '11111111-1111-4111-8111-111111111111', nickname: 'Paul', stats: null, arrivedThisWeek: null };
-  const client: FriendsClient = { load: vi.fn().mockResolvedValue(enrolled), action: vi.fn().mockResolvedValue({ snapshot: { ...enrolled, friends: [friend] }, acceptedFriend: friend }) };
+  const client: FriendsClient = { checkInvitation: vi.fn().mockResolvedValue(undefined), load: vi.fn().mockResolvedValue(enrolled), action: vi.fn().mockResolvedValue({ snapshot: { ...enrolled, friends: [friend] }, acceptedFriend: friend }) };
   const user = userEvent.setup(); const { container } = render(<Harness client={client} />);
   await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' });
   await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
@@ -70,7 +92,7 @@ it('lands a friendship stamp on the same opened parcel before leaving for Friend
   expect(location.search).toBe('?view=friends');
 });
 it('shows the profile preview and saves explicit sharing choices before joining', async () => {
-  const client: FriendsClient = { load: vi.fn().mockResolvedValue(noProfile), action: vi.fn().mockResolvedValue({ snapshot: enrolled }) };
+  const client: FriendsClient = { checkInvitation: vi.fn().mockResolvedValue(undefined), load: vi.fn().mockResolvedValue(noProfile), action: vi.fn().mockResolvedValue({ snapshot: enrolled }) };
   const user = userEvent.setup(); render(<Harness client={client} />);
   await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' });
   await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
@@ -90,7 +112,7 @@ it('shows the profile preview and saves explicit sharing choices before joining'
   expect(await screen.findByText('Invitation closed')).toBeVisible();
 });
 it('can cancel setup without enabling Friends or losing the invitation', async () => {
-  const client: FriendsClient = { load: vi.fn().mockResolvedValue(noProfile), action: vi.fn() };
+  const client: FriendsClient = { checkInvitation: vi.fn().mockResolvedValue(undefined), load: vi.fn().mockResolvedValue(noProfile), action: vi.fn() };
   const user = userEvent.setup(); render(<Harness client={client} />);
   await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' });
   await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
@@ -106,7 +128,7 @@ it('can cancel setup without enabling Friends or losing the invitation', async (
   expect(client.action).not.toHaveBeenCalled();
 });
 it('keeps the draft after a failed setup and never accepts before Friends is enabled', async () => {
-  const client: FriendsClient = { load: vi.fn().mockResolvedValue(noProfile), action: vi.fn()
+  const client: FriendsClient = { checkInvitation: vi.fn().mockResolvedValue(undefined), load: vi.fn().mockResolvedValue(noProfile), action: vi.fn()
     .mockRejectedValueOnce(new FriendsError('friends.actionFailed'))
     .mockResolvedValueOnce({ snapshot: noProfile })
     .mockResolvedValue({ snapshot: enrolled }) };
@@ -129,7 +151,7 @@ it('keeps the draft after a failed setup and never accepts before Friends is ena
 });
 it('blocks dismissal and repeat submits while enabling, then retries only acceptance after a failure', async () => {
   let finish!: (value: { snapshot: ApiFriendsSnapshot }) => void;
-  const client: FriendsClient = { load: vi.fn().mockResolvedValue(noProfile), action: vi.fn()
+  const client: FriendsClient = { checkInvitation: vi.fn().mockResolvedValue(undefined), load: vi.fn().mockResolvedValue(noProfile), action: vi.fn()
     .mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }))
     .mockRejectedValueOnce(new FriendsError('friends.actionFailed'))
     .mockResolvedValue({ snapshot: enrolled }) };

@@ -148,6 +148,7 @@ final class FriendsStore: ObservableObject {
             guard current == generation, !Task.isCancelled else { return nil }
             if case DeliveryAPIError.service(let message) = error {
                 errorKey = message == "Invitation unavailable" ? "friends.inviteUnavailable"
+                    : message == "Cannot accept your own invitation" ? "friends.selfInvitation"
                     : message == "Your circle is full" ? "friends.circleFull" : "friends.actionFailed"
             } else { errorKey = "friends.actionFailed" }
             return nil

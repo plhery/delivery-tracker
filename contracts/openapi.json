@@ -2087,6 +2087,9 @@
           },
           "409": {
             "description": "Circle full"
+          },
+          "422": {
+            "description": "Cannot accept your own invitation"
           }
         }
       }

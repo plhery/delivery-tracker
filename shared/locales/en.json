@@ -498,5 +498,6 @@
   "friends.invitationAccepted": "{{name}} accepted your invitation",
   "friends.viewPassport": "View their Passport",
   "friends.dismissUpdate": "Dismiss notification",
-  "friends.friendUnavailable": "This friend is no longer in your circle."
+  "friends.friendUnavailable": "This friend is no longer in your circle.",
+  "friends.selfInvitation": "Aw nice try, but you can’t be your own friend."
 }

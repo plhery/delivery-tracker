@@ -498,5 +498,6 @@
   "friends.invitationAccepted": "{{name}} hat deine Einladung angenommen",
   "friends.viewPassport": "Pass ansehen",
   "friends.dismissUpdate": "Mitteilung schließen",
-  "friends.friendUnavailable": "Diese Person ist nicht mehr in deinem Kreis."
+  "friends.friendUnavailable": "Diese Person ist nicht mehr in deinem Kreis.",
+  "friends.selfInvitation": "Netter Versuch, aber du kannst nicht mit dir selbst befreundet sein."
 }

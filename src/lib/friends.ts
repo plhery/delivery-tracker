@@ -38,10 +38,15 @@ export function createFriendsClient(demo: boolean, auth?: ApiAuth) {
   const snapshot = (parcels: readonly ParcelWithEvents[]): ApiFriendsSnapshot => ({ ...structuredClone(local), ownCard: local.profile ? ownFriendCard(parcels, local.profile) : null });
   async function request<T>(body?: ApiFriendsActionRequest): Promise<T> {
     const response = await authenticatedFetch('/api/friends', auth, body ? { method: 'POST', body: JSON.stringify(body) } : undefined);
-    if (!response.ok) throw new FriendsError(response.status === 404 ? 'friends.inviteUnavailable' : response.status === 409 ? 'friends.circleFull' : response.status >= 500 ? 'friends.unavailable' : 'friends.actionFailed');
+    if (!response.ok) throw new FriendsError(response.status === 404 ? 'friends.inviteUnavailable' : response.status === 409 ? 'friends.circleFull' : response.status === 422 ? 'friends.selfInvitation' : response.status >= 500 ? 'friends.unavailable' : 'friends.actionFailed');
     return response.json() as Promise<T>;
   }
   return {
+    /** Validate an opened invitation for this account without accepting it. */
+    async checkInvitation(code: string): Promise<void> {
+      if (demo) throw new FriendsError('friends.demoInvites');
+      await request({ action: 'preview_invite', code });
+    },
     async load(parcels: readonly ParcelWithEvents[]): Promise<ApiFriendsSnapshot> {
       return demo ? snapshot(parcels) : request();
     },
