@@ -29,6 +29,17 @@ Copy `Configuration/Local.xcconfig.example` to
 and Supabase publishable key. The local file is gitignored. Never put a
 service-role key, APNs `.p8` key, OAuth secret, or SMTP credential in the app.
 
+When building from a temporary checkout or `git archive`, copy the ignored
+`Local.xcconfig` into its `ios/Configuration/` directory before building.
+Before installing an account-enabled build, validate the resolved app bundle:
+
+```sh
+node scripts/validate-ios-install.mjs /path/to/SwissDeliveryTracker.app
+```
+
+The refresh helper runs this check automatically and refuses to replace the
+iPhone app with an unconfigured build. Simulator demo builds remain available.
+
 The iOS app talks to the same authenticated `/api` contract as the PWA. The
 Supabase URL and publishable key are used only for Google OAuth or email OTP;
 all parcel mutations still go through the application API and its ownership

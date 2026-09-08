@@ -96,6 +96,11 @@ if [[ ! -d "$SOURCE_IOS/SwissDeliveryTracker.xcodeproj" ]]; then
   exit 1
 fi
 
+if [[ ! -f "$SOURCE_IOS/Configuration/Local.xcconfig" ]]; then
+  print -u2 "Sign-in configuration is missing. Copy ios/Configuration/Local.xcconfig.example to Local.xcconfig and configure it before installing."
+  exit 1
+fi
+
 DEVICE_DETAILS="$(xcrun devicectl device info details --device "$DEVICE_NAME" 2>&1)" || {
   print -u2 "$DEVICE_DETAILS"
   print -u2 "The iPhone is not reachable. Connect it by USB, or place it on the same Wi-Fi as this Mac."
@@ -130,6 +135,8 @@ if [[ ! -d "$APP_PATH" ]]; then
   print -u2 "The build succeeded but the app bundle was not found at $APP_PATH"
   exit 1
 fi
+
+node "$PROJECT_ROOT/scripts/validate-ios-install.mjs" "$APP_PATH"
 
 SIGNED_ENTITLEMENTS="$(/usr/bin/codesign -d --entitlements :- "$APP_PATH" 2>/dev/null || true)"
 if [[ "$SIGNED_ENTITLEMENTS" == *"aps-environment"* || "$SIGNED_ENTITLEMENTS" == *"application-groups"* ]]; then
