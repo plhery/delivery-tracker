@@ -46,11 +46,21 @@ request() {
   fi
 }
 
+require_match() {
+  local pattern=$1
+  local file=$2
+  local message=$3
+  local flags=${4:--Eq}
+  if ! grep "$flags" "$pattern" "$file"; then
+    echo "Smoke check failed: $message" >&2
+    exit 1
+  fi
+}
+
 request "$base_url/?smoke=$nonce" "$workdir/index.html" "$workdir/index.headers"
-grep -Eq '/_next/static/[^" ]+\.js' "$workdir/index.html"
-grep -Eq 'property="og:image"' "$workdir/index.html"
-grep -Eq 'content="https?://[^\"]+/og\.png"' "$workdir/index.html"
-grep -Eiq '^cache-control:.*no-store' "$workdir/index.headers"
+require_match '/_next/static/[^" ]+\.js' "$workdir/index.html" 'app JavaScript is missing'
+require_match '<meta property="og:image" content="https?://[^" ]+/og\.png(\?[^" ]*)?"' "$workdir/index.html" 'social image metadata is missing or invalid'
+require_match '^cache-control:.*no-store' "$workdir/index.headers" 'the page must not be cached' -Eiq
 
 request "$base_url/health/live?smoke=$nonce" "$workdir/live.json" "$workdir/live.headers"
 expected_ready=${SMOKE_EXPECT_READY:-true}
@@ -63,9 +73,9 @@ else
   exit 2
 fi
 request "$base_url/health?smoke=$nonce" "$workdir/health.json" "$workdir/health.headers" "$expected_status"
-grep -Eq "\"ok\"[[:space:]]*:[[:space:]]*$expected_ready" "$workdir/health.json"
+require_match "\"ok\"[[:space:]]*:[[:space:]]*$expected_ready" "$workdir/health.json" 'readiness does not match the expected state'
 
 request "$base_url/og.png" "$workdir/og.png" "$workdir/og.headers"
-grep -Eiq '^content-type:[[:space:]]*image/png' "$workdir/og.headers"
+require_match '^content-type:[[:space:]]*image/png' "$workdir/og.headers" 'the social image must be a PNG' -Eiq
 
 echo "Origin smoke passed for $base_url"

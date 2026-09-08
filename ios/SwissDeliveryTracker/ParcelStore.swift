@@ -25,6 +25,7 @@ final class ParcelStore: ObservableObject {
     @Published var undoParcel: Parcel?
 
     let configuration: AppConfiguration
+    // Background delivery cleanup can outlive the screen that supplied the session.
     private let session: SessionStore
     private let localizer: Localizer
     private let api: DeliveryAPIClient

@@ -896,6 +896,41 @@ final class SessionIsolationTests: XCTestCase {
     private func parcel() -> Parcel {
         Parcel(id: UUID(), trackingNumber: "12345678", label: "Private account A parcel", carrier: .unknown, createdAt: "2026-09-08T00:00:00Z", syncStatus: .ok, notificationsMuted: false)
     }
+    @MainActor func testParcelStoreKeepsSessionAliveForDeferredDeliveryCleanup() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        var session: SessionStore? = SessionStore(configuration: configuration, persistence: MemorySessionPersistence(), transport: transport)
+        try await authorize(session!)
+        weak var retainedSession = session
+        defer { retainedSession?.forceSignOut() }
+        let store = store(session!, transport)
+        session = nil
+        // Disabling Live Activities queues cleanup that reads the session later.
+        guard retainedSession != nil else { XCTFail("Delivery cleanup lost its session"); return }
+        let parcel = parcel()
+        respond(try JSONEncoder.deliveryTracker.encode(PackageListResponse(packages: [parcel])))
+        await store.load()
+        XCTAssertEqual(store.parcels.map(\.id), [parcel.id])
+        retainedSession?.forceSignOut()
+        XCTAssertTrue(store.parcels.isEmpty)
+    }
+    @MainActor func testAPIClientKeepsSessionAliveWithoutCreatingARetainCycle() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        var session: SessionStore? = SessionStore(configuration: configuration, persistence: MemorySessionPersistence(), transport: transport)
+        try await authorize(session!)
+        weak var retainedSession = session
+        var client: DeliveryAPIClient? = DeliveryAPIClient(configuration: configuration, session: session!, transport: transport)
+        session = nil
+        guard retainedSession != nil else { XCTFail("API client lost its session"); return }
+        let parcel = parcel()
+        respond(try JSONEncoder.deliveryTracker.encode(PackageListResponse(packages: [parcel])))
+        let loaded = try await client!.listPackages()
+        XCTAssertEqual(loaded.map(\.id), [parcel.id])
+        retainedSession?.forceSignOut()
+        client = nil
+        XCTAssertNil(retainedSession)
+    }
     @MainActor func testForcedSignOutClearsParcelsBeforeNextAccountLoads() async throws {
         let transport = transport()
         defer { transport.invalidateAndCancel() }
