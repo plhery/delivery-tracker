@@ -201,7 +201,7 @@ private struct DeliveryListView: View {
                             onOpen: { path.append(nextParcel.id) },
                             onArchive: { await archive(nextParcel) }
                         )
-                        .modifier(arrivalCelebration(for: nextParcel.id, stubInset: DeliveryTicketShape.stubWidth / 2))
+                        .modifier(arrivalCelebration(for: nextParcel.id, stubInset: 56))
                         .id(nextParcel.id)
                     }
 
@@ -514,7 +514,7 @@ private struct DeliveryListView: View {
                             onOpen: { path.append(parcel.id) },
                             onArchive: { await archive(parcel) }
                         )
-                        .modifier(arrivalCelebration(for: parcel.id, stubInset: DeliveryTicketShape.stubWidth / 2))
+                        .modifier(arrivalCelebration(for: parcel.id, stubInset: 56))
                         .id(parcel.id)
                     } else {
                         ExperimentalParcelPassCard(
@@ -600,41 +600,72 @@ private struct ExperimentalNextDeliveryPass: View {
     let onArchive: () async -> Void
 
     @EnvironmentObject private var localizer: Localizer
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var appeared = false
+    @ObservedObject private var catalog = CarrierCatalog.shared
 
     var body: some View {
-        HStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(localizer.text("app.nextUp"))
-                    .font(.caption)
-                    .foregroundStyle(Brand.onAccent.opacity(0.7))
-                if let estimate = localizer.parcelDeliveryEstimate(parcel) {
-                    Text(estimate)
-                        .font(.title2.weight(.semibold))
-                }
-                Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
-                    .font(.headline)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.leading, 20)
-            .padding(.trailing, 14)
+        let tint = Brand.onAccent
+        let deliveryDate = localizer.parcelCompletionDate(parcel) ?? localizer.parcelDeliveryEstimate(parcel)
 
-            VStack(spacing: 6) {
-                Image(systemName: parcel.currentStage?.metadata.symbol ?? "shippingbox")
-                    .font(.system(size: 22, weight: .light))
-                    .accessibilityHidden(true)
-                Text(localizer.parcelStatus(parcel))
-                    .font(.caption)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Text(localizer.text("app.nextUp"))
+                    .font(.caption.weight(.semibold))
+                    .textCase(.uppercase)
+                    .tracking(1.2)
+                    .foregroundStyle(Brand.onAccent.opacity(0.75))
+                Spacer(minLength: 8)
+                HStack(spacing: 5) {
+                    Circle().fill(tint).frame(width: 5, height: 5)
+                    Text(localizer.parcelStatus(parcel))
+                        .font(.caption)
+                        .foregroundStyle(Brand.onAccent)
+                }
+                .padding(.horizontal, 9)
+                .padding(.vertical, 6)
+                .background(.white.opacity(0.36), in: Capsule())
             }
-            .foregroundStyle(Brand.onAccent.opacity(0.7))
-            .padding(.horizontal, 8)
-            .frame(width: DeliveryTicketShape.stubWidth)
+
+            HStack(alignment: .center, spacing: 18) {
+                VStack(alignment: .leading, spacing: 6) {
+                    if let date = deliveryDate {
+                        Text(date)
+                            .font(.system(.largeTitle, design: .default, weight: .semibold))
+                            .tracking(-1.0)
+                            .contentTransition(.numericText())
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
+                        .font((deliveryDate == nil ? Font.title2 : Font.headline).weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                DeliveryPostageStamp(stage: parcel.currentStage, appeared: appeared)
+            }
+
+            ExperimentalJourneyRail(stage: parcel.currentStage, tint: tint)
+                .environmentObject(localizer)
+
+            HStack(alignment: .center, spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName)
+                        .font(.subheadline.weight(.semibold))
+                    if let location = parcel.experimentalLatestLocation {
+                        Text(TrackingLocation.label(location))
+                            .font(.caption)
+                            .foregroundStyle(Brand.onAccent.opacity(0.75))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 2)
         }
-        .padding(.vertical, 16)
-        .frame(minHeight: 130)
-        .fixedSize(horizontal: false, vertical: true)
         .foregroundStyle(Brand.onAccent)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
         .experimentalSurface(fill: Brand.accent, cornerRadius: 24)
         .matchedTransitionSource(id: parcel.id, in: transition)
         .accessibilityElement(children: .combine)
@@ -644,7 +675,14 @@ private struct ExperimentalNextDeliveryPass: View {
             onOpen: onOpen,
             action: onArchive
         )
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 6)
         .accessibilityHint(localizer.text("detail.label"))
+        .onAppear {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) {
+                appeared = true
+            }
+        }
     }
 }
 

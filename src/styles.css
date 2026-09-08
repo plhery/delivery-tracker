@@ -100,14 +100,21 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .parcel-card__stub::before { top: -6px; }.parcel-card__stub::after { bottom: -6px; }
 .parcel-card--compact { min-height: 82px; }
 .parcel-card--archived { background: var(--paper); }
-.parcel-card--hero { min-height: 130px; background: var(--yellow); color: var(--on-yellow); }
-.parcel-card--hero .parcel-card__body { padding-top: 16px; padding-bottom: 16px; }
-.parcel-card__next-label { font-size: 12px; font-weight: 400; opacity: .7; }
-.parcel-card__hero-date { font-size: 28px; font-weight: 650; letter-spacing: -.6px; line-height: 1.15; }
-.parcel-card--hero .parcel-card__label { font-size: 18px; }
-.parcel-card--hero .parcel-card__stub { border: 0; color: #745300; }
-.parcel-card--hero .parcel-card__state { color: inherit; }
-.parcel-card--hero .parcel-card__stub::before, .parcel-card--hero .parcel-card__stub::after { display: none; }
+.parcel-card--hero { display: flex; flex-direction: column; gap: 12px; min-height: 200px; background: var(--yellow); color: var(--on-yellow); padding: 14px 22px; }
+.parcel-card__hero-top { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px; }
+.parcel-card__hero-top .eyebrow { opacity: .74; }
+.status-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 400; border-radius: 20px; padding: 6px 10px; background: rgb(255 255 255 / 36%); }
+.status-badge i { width: 5px; height: 5px; border-radius: 50%; background: #745300; }
+.parcel-card__hero-main { display: flex; align-items: center; gap: 18px; justify-content: space-between; width: 100%; min-height: 78px; }
+.parcel-card__hero-main .postage-stamp { width: 66px; height: 78px; }
+.parcel-card__hero-main > span:first-child { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.parcel-card--hero .parcel-card__label { font-size: 28px; letter-spacing: -1px; font-weight: 650; }
+.parcel-card__hero-date { font-size: 36px; letter-spacing: -1.3px; font-weight: 650; }
+.parcel-card__hero-date + .parcel-card__label { font-size: 18px; letter-spacing: -.3px; }
+.parcel-card__hero-bottom { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 12px; }
+.parcel-card__hero-bottom > span { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+.parcel-card__hero-bottom strong { font-weight: 600; font-size: 14px; }
+.parcel-card__hero-bottom > span > span { opacity: .74; }
 .progress-track { display: flex; align-items: center; width: 100%; height: 3px; gap: 5px; }
 .progress-track__dot { display: block; flex: 1; height: 3px; background: color-mix(in srgb, var(--ink) 14%, transparent); border-radius: 4px; transition: background .25s; }
 .progress-track__dot--filled { background: var(--tone, var(--blue)); }
@@ -516,6 +523,11 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
   .app__content { padding: 15px 20px 24px; }
   .delivery-overview { margin-bottom: 7px; }
   .delivery-next { margin-bottom: 16px; }
+  .parcel-card--hero { min-height: 196px; padding: 14px 19px; gap: 12px; }
+  .parcel-card__hero-main .postage-stamp { width: 62px; height: 74px; }
+  .parcel-card__hero-date { font-size: 32px; }
+  .parcel-card--hero .parcel-card__label { font-size: 26px; }
+  .parcel-card__hero-date + .parcel-card__label { font-size: 16px; }
   .delivery-on-the-way > .parcel-grid { grid-template-columns: 1fr; }
   .parcel-sections { grid-template-columns: 1fr; gap: 26px; margin-top: 25px; }
   .parcel-section .parcel-grid, .archived-section .parcel-grid { grid-template-columns: 1fr; }
@@ -735,3 +747,7 @@ button.friend-card:focus-visible .friend-avatar .postage-stamp { scale: 1.035; }
 @keyframes friend-notice-enter { from { opacity: 0; transform: translate(-50%, -14px); } to { opacity: 1; transform: translate(-50%, 0); } }
 @media (prefers-reduced-motion: reduce) { .friendship-receipt { animation: none; }.friend-card[data-arriving="waiting"] { transform: none; }.friend-card[data-arriving] { transition: opacity .15s; }.friend-accepted-notice { animation: none; } }
 .friends-received-card { width: 100%; max-width: 520px; margin-bottom: 18px; }.friends-received-card > .friend-card { width: 100%; }
+
+.parcel-card--hero .parcel-card__state { color: inherit; max-width: 55%; text-align: left; }
+.parcel-card--hero .progress-track__dot { background: rgb(32 37 30 / 16%); }
+.parcel-card--hero .progress-track__dot--filled { background: #745300; }

@@ -222,9 +222,11 @@ describe('App', () => {
     expect(within(active).queryByText('Birthday gift 🎁')).not.toBeInTheDocument();
 
     const next = screen.getByRole('button', { name: /Next up: Birthday gift/ });
-    expect(next.querySelector('.parcel-card__stub')).toHaveTextContent('At customs');
+    expect(within(next).getByText('At customs')).toBeInTheDocument();
+    expect(next.querySelector('.postage-stamp')).toBeInTheDocument();
     expect(within(next).queryByText('Customs clearance')).not.toBeInTheDocument();
-    expect(next.querySelector('.parcel-card__meta, .progress-track')).not.toBeInTheDocument();
+    expect(next.querySelector('.progress-track')).toBeInTheDocument();
+    expect(next.querySelector('.parcel-card__hero-bottom > svg')).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Needs attention' })).not.toBeInTheDocument();
 
     const past = screen.getByRole('region', { name: 'Past deliveries' });
