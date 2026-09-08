@@ -83,7 +83,7 @@ You will need a Supabase project or self-hosted stack, a public HTTPS hostname,
 and Docker.
 
 1. Apply the SQL files in `supabase/migrations/` in filename order.
-2. Configure Google OAuth, email OTP with custom SMTP, or both by following the
+2. Configure Google OAuth, Apple sign-in, or email OTP with custom SMTP following the
    [authentication guide](docs/AUTHENTICATION.md).
 3. Copy `.env.example` to `.env` and replace its example runtime values.
 4. Build the Next.js application with the same public Supabase URL and

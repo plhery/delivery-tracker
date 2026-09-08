@@ -5,8 +5,10 @@ import { useI18n } from '../i18n';
 export function SignInScreen({
   configured,
   googleEnabled = false,
+  appleEnabled = false,
   emailOtpEnabled = true,
   signInWithGoogle,
+  signInWithApple,
   sendCode,
   verifyCode,
   title,
@@ -18,8 +20,10 @@ export function SignInScreen({
   subtitle?: string;
   configured: boolean;
   googleEnabled?: boolean;
+  appleEnabled?: boolean;
   emailOtpEnabled?: boolean;
   signInWithGoogle?: () => Promise<void>;
+  signInWithApple?: () => Promise<void>;
   sendCode: (email: string) => Promise<void>;
   verifyCode: (email: string, code: string) => Promise<void>;
 }) {
@@ -27,19 +31,21 @@ export function SignInScreen({
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
-  const [emailExpanded, setEmailExpanded] = useState(!googleEnabled);
-  const [working, setWorking] = useState<'google' | 'email' | 'code' | null>(null);
+  const socialEnabled = !!((googleEnabled && signInWithGoogle) || (appleEnabled && signInWithApple));
+  const [emailExpanded, setEmailExpanded] = useState(!socialEnabled);
+  const [working, setWorking] = useState<'google' | 'apple' | 'email' | 'code' | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const emailVisible = emailOtpEnabled && (!googleEnabled || emailExpanded);
+  const emailVisible = emailOtpEnabled && (!socialEnabled || emailExpanded);
 
-  async function startGoogleSignIn() {
-    if (working || !signInWithGoogle) return;
-    setWorking('google');
+  async function startSocialSignIn(provider: 'google' | 'apple') {
+    const signIn = provider === 'apple' ? signInWithApple : signInWithGoogle;
+    if (working || !signIn) return;
+    setWorking(provider);
     setError(null);
     try {
-      await signInWithGoogle();
+      await signIn();
     } catch (reason) {
-      setError(userErrorMessage(reason, t, 'auth.googleFailed'));
+      setError(userErrorMessage(reason, t, provider === 'apple' ? 'auth.appleFailed' : 'auth.googleFailed'));
       setWorking(null);
     }
   }
@@ -122,12 +128,20 @@ export function SignInScreen({
           </form>
         ) : (
           <div className="auth-flow__methods">
+            {appleEnabled && signInWithApple && (
+              <button className="button auth-flow__apple" type="button" disabled={Boolean(working)} onClick={() => void startSocialSignIn('apple')}>
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.77 3.08.83 1.18-.24 2.31-.96 3.57-.87 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01ZM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25Z" />
+                </svg>
+                {working === 'apple' ? t('auth.appleOpening') : t('auth.apple')}
+              </button>
+            )}
             {googleEnabled && signInWithGoogle && (
               <button
                 className="button button--primary auth-flow__google"
                 type="button"
                 disabled={Boolean(working)}
-                onClick={() => void startGoogleSignIn()}
+                onClick={() => void startSocialSignIn('google')}
               >
                 <svg aria-hidden="true" viewBox="0 0 24 24">
                   <path fill="#4285f4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.4a4.6 4.6 0 0 1-2 3v2.6h3.2c1.9-1.8 3-4.4 3-7.5Z" />
@@ -138,7 +152,7 @@ export function SignInScreen({
                 {working === 'google' ? t('auth.googleOpening') : t('auth.google')}
               </button>
             )}
-            {googleEnabled && emailOtpEnabled && !emailVisible && (
+            {socialEnabled && emailOtpEnabled && !emailVisible && (
               <button
                 className="button button--secondary auth-flow__email-option"
                 type="button"
@@ -155,7 +169,7 @@ export function SignInScreen({
                 {t('auth.emailOption')}
               </button>
             )}
-            {googleEnabled && emailVisible && (
+            {socialEnabled && emailVisible && (
               <div className="auth-flow__divider"><span>{t('auth.or')}</span></div>
             )}
             {emailVisible && (

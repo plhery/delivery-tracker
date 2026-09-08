@@ -18,6 +18,12 @@ describe('built iPhone sign-in configuration', () => {
     validateIosInstall({ ...configured, SDTEmailOTPEnabled: 'NO' });
   });
 
+  it('accepts Apple alone and rejects an invalid Apple flag', () => {
+    const apple = { ...configured, SDTGoogleAuthEnabled: 'NO', SDTEmailOTPEnabled: 'NO', SDTAppleAuthEnabled: 'YES' };
+    validateIosInstall(apple);
+    assert.throws(() => validateIosInstall({ ...apple, SDTAppleAuthEnabled: 'true' }), /YES or NO/);
+  });
+
   it('rejects the demo defaults that replaced the account-enabled iPhone app', () => {
     assert.throws(() => validateIosInstall({
       ...configured, SDTUseAPI: 'NO', SDTSupabaseURL: '', SDTSupabasePublishableKey: '',

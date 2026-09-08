@@ -93,6 +93,7 @@ final class SessionStore: ObservableObject {
     let configuration: AppConfiguration
     private let keychain: any SessionPersistence
     private let transport: URLSession
+    private let appleSignIn: any AppleSignInAuthorizing
     private let experienceKey = "sdt.native.experience.v1"
     private let defaults: UserDefaults
     private var session: AuthSession?
@@ -100,11 +101,13 @@ final class SessionStore: ObservableObject {
     private var webAuthenticationSession: ASWebAuthenticationSession?
 
     init(configuration: AppConfiguration = .current, defaults: UserDefaults = .standard,
-         persistence: (any SessionPersistence)? = nil, transport: URLSession = .shared) {
+         persistence: (any SessionPersistence)? = nil, transport: URLSession = .shared,
+         appleSignIn: (any AppleSignInAuthorizing)? = nil) {
         self.configuration = configuration
         self.defaults = defaults
         self.keychain = persistence ?? KeychainStore(service: "com.plhery.SwissDeliveryTracker.auth")
         self.transport = transport
+        self.appleSignIn = appleSignIn ?? AppleSignInAuthorization()
     }
 
     var user: AuthUser? {
@@ -220,6 +223,32 @@ final class SessionStore: ObservableObject {
         try accept(result)
         DeliveryAnalytics.shared.action("sign-in-complete", .success)
         analyticsSucceeded = true
+    }
+
+    func signInWithApple() async throws {
+        guard configuration.authenticationConfigured, configuration.appleAuthEnabled else { throw AuthenticationError.notConfigured }
+        let generation = generation
+        let nonce = try Self.randomVerifier()
+        DeliveryAnalytics.shared.action("sign-in-apple", .started)
+        do {
+            let token = try await appleSignIn.identityToken(nonce: AppleSignInNonce.digest(nonce))
+            try checkGeneration(generation)
+            guard !token.isEmpty else { throw AuthenticationError.invalidResponse }
+            let result = try await authRequest(
+                path: "token?grant_type=id_token", method: "POST",
+                jsonObject: ["provider": "apple", "id_token": token, "nonce": nonce],
+                response: AuthSession.self
+            )
+            try checkGeneration(generation)
+            try accept(result)
+            DeliveryAnalytics.shared.action("sign-in-apple", .success)
+            DeliveryAnalytics.shared.action("sign-in-complete", .success)
+        } catch AuthenticationError.oauthCancelled {
+            throw AuthenticationError.oauthCancelled
+        } catch {
+            DeliveryAnalytics.shared.action("sign-in-apple", .error)
+            throw error
+        }
     }
 
     func accessToken(forceRefresh: Bool = false) async throws -> String? {
@@ -388,6 +417,63 @@ final class SessionStore: ObservableObject {
 
     private static func codeChallenge(for verifier: String) -> String {
         Data(SHA256.hash(data: Data(verifier.utf8))).base64URLEncodedString()
+    }
+}
+
+enum AppleSignInNonce {
+    static func digest(_ nonce: String) -> String {
+        SHA256.hash(data: Data(nonce.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+}
+
+@MainActor
+protocol AppleSignInAuthorizing {
+    func identityToken(nonce: String) async throws -> String
+}
+
+@MainActor
+private final class AppleSignInAuthorization: NSObject, AppleSignInAuthorizing, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
+    private var controller: ASAuthorizationController?
+    private var continuation: CheckedContinuation<String, Error>?
+
+    func identityToken(nonce: String) async throws -> String {
+        guard continuation == nil else { throw AuthenticationError.invalidResponse }
+        return try await withCheckedThrowingContinuation { continuation in
+            self.continuation = continuation
+            let request = ASAuthorizationAppleIDProvider().createRequest()
+            // Friends uses a chosen nickname; only request the email needed for the account.
+            request.requestedScopes = [.email]
+            request.nonce = nonce
+            let controller = ASAuthorizationController(authorizationRequests: [request])
+            controller.delegate = self
+            controller.presentationContextProvider = self
+            self.controller = controller
+            controller.performRequests()
+        }
+    }
+
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+              let data = credential.identityToken, let token = String(data: data, encoding: .utf8), !token.isEmpty else {
+            finish(.failure(AuthenticationError.invalidResponse)); return
+        }
+        finish(.success(token))
+    }
+
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        finish(.failure((error as? ASAuthorizationError)?.code == .canceled ? AuthenticationError.oauthCancelled : error))
+    }
+
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        return scenes.flatMap(\.windows).first(where: \.isKeyWindow) ?? ASPresentationAnchor()
+    }
+
+    private func finish(_ result: Result<String, Error>) {
+        let pending = continuation
+        continuation = nil
+        controller = nil
+        pending?.resume(with: result)
     }
 }
 

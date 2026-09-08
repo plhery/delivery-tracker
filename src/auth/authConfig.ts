@@ -4,6 +4,7 @@ export interface PublicAuthEnvironment {
   supabaseUrl?: string;
   supabasePublishableKey?: string;
   googleEnabled?: string;
+  appleEnabled?: string;
   emailOtpEnabled?: string;
 }
 
@@ -32,6 +33,7 @@ export function authConfigFromEnvironment(
     url: url.origin,
     publishableKey,
     googleEnabled: environment.googleEnabled === 'true',
+    appleEnabled: environment.appleEnabled === 'true',
     emailOtpEnabled: environment.emailOtpEnabled !== 'false',
   };
 }

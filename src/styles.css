@@ -436,6 +436,8 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .auth-flow__heading h1 { font-size: 34px; line-height: 1.12; font-weight: 650; letter-spacing: -1.3px; margin-bottom: 12px; }
 .auth-flow__heading > p { color: var(--ink-soft); font-size: 14px; margin-bottom: 28px; }
 .auth-flow__methods, .auth-flow__form { display: grid; gap: 12px; }
+.auth-flow__apple { background: light-dark(#000, #fff); color: light-dark(#fff, #000); min-height: 56px; }
+.auth-flow__apple svg { fill: currentColor; stroke: none; width: 24px; height: 24px; }
 .auth-flow__google { background: var(--paper); color: var(--ink); border-color: var(--line); gap: 12px; }
 .auth-flow__google svg { stroke: none; }
 .auth-flow__email-option { font-size: 13px; }

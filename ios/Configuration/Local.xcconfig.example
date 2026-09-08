@@ -5,4 +5,6 @@ SDT_API_BASE_URL = https:/$()/delivery.example.com
 SDT_SUPABASE_URL = https:/$()/your-project-ref.supabase.co
 SDT_SUPABASE_PUBLISHABLE_KEY = your-publishable-key
 SDT_GOOGLE_AUTH_ENABLED = YES
+// Enable after configuring the Apple provider and signing with a paid Developer team.
+SDT_APPLE_AUTH_ENABLED = NO
 SDT_EMAIL_OTP_ENABLED = YES

@@ -867,9 +867,21 @@ private final class SessionTestURLProtocol: URLProtocol {
     override func stopLoading() {}
 }
 
+@MainActor
+private final class StubAppleSignIn: AppleSignInAuthorizing {
+    var nonces: [String] = []
+    var result: Result<String, Error> = .success("apple-identity-token")
+    var beforeReturning: (() -> Void)?
+    func identityToken(nonce: String) async throws -> String {
+        nonces.append(nonce)
+        beforeReturning?()
+        return try result.get()
+    }
+}
+
 final class SessionIsolationTests: XCTestCase {
     @MainActor private var configuration: AppConfiguration {
-        AppConfiguration(mode: .api, apiBaseURL: URL(string: "https://session.test")!, supabaseURL: URL(string: "https://session.test")!, supabasePublishableKey: "public", googleAuthEnabled: false, emailOTPEnabled: true, appGroupIdentifier: "session.test")
+        AppConfiguration(mode: .api, apiBaseURL: URL(string: "https://session.test")!, supabaseURL: URL(string: "https://session.test")!, supabasePublishableKey: "public", googleAuthEnabled: false, appleAuthEnabled: true, emailOTPEnabled: true, appGroupIdentifier: "session.test")
     }
     private func transport() -> URLSession {
         let config = URLSessionConfiguration.ephemeral
@@ -895,6 +907,84 @@ final class SessionIsolationTests: XCTestCase {
     }
     private func parcel() -> Parcel {
         Parcel(id: UUID(), trackingNumber: "12345678", label: "Private account A parcel", carrier: .unknown, createdAt: "2026-09-08T00:00:00Z", syncStatus: .ok, notificationsMuted: false)
+    }
+
+    @MainActor func testAppleExchangesIdentityTokenWithOriginalNonceAndPersistsSession() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let apple = StubAppleSignIn()
+        let persistence = MemorySessionPersistence()
+        let session = SessionStore(configuration: configuration, persistence: persistence, transport: transport, appleSignIn: apple)
+        defer { session.forceSignOut() }
+        let user = AuthUser(id: UUID(), email: "private@privaterelay.appleid.com", isAnonymous: false)
+        let response = try JSONEncoder.deliveryTracker.encode(AuthSession(accessToken: "access", tokenType: "bearer", expiresIn: 3600,
+            expiresAt: Int(Date().timeIntervalSince1970) + 3600, refreshToken: "refresh", user: user))
+        nonisolated(unsafe) var receivedNonces: [String] = []
+        SessionTestURLProtocol.handler = { request, complete in
+            XCTAssertEqual(request.url?.path, "/auth/v1/token")
+            XCTAssertEqual(request.url?.query, "grant_type=id_token")
+            XCTAssertEqual(request.httpMethod, "POST")
+            var data = request.httpBody ?? Data()
+            if let stream = request.httpBodyStream {
+                stream.open()
+                var bytes = [UInt8](repeating: 0, count: 1024)
+                while stream.hasBytesAvailable {
+                    let count = stream.read(&bytes, maxLength: bytes.count)
+                    if count <= 0 { break }
+                    data.append(contentsOf: bytes.prefix(count))
+                }
+                stream.close()
+            }
+            let body = (try? JSONSerialization.jsonObject(with: data)) as? [String: String]
+            XCTAssertEqual(body?["provider"], "apple")
+            XCTAssertEqual(body?["id_token"], "apple-identity-token")
+            receivedNonces.append(body?["nonce"] ?? "")
+            complete(.success((200, response)))
+        }
+        try await session.signInWithApple()
+        XCTAssertEqual(session.user, user)
+        XCTAssertNotNil(persistence.data)
+        try await session.signInWithApple()
+        XCTAssertEqual(receivedNonces.count, 2)
+        XCTAssertEqual(Set(receivedNonces).count, 2)
+        XCTAssertTrue(receivedNonces.allSatisfy { $0.count == 64 })
+        XCTAssertEqual(apple.nonces, receivedNonces.map(AppleSignInNonce.digest))
+        XCTAssertNotEqual(apple.nonces, receivedNonces)
+    }
+
+    @MainActor func testCancelledAppleSignInDoesNotCallTheServerOrSaveASession() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let apple = StubAppleSignIn()
+        apple.result = .failure(AuthenticationError.oauthCancelled)
+        let persistence = MemorySessionPersistence()
+        let session = SessionStore(configuration: configuration, persistence: persistence, transport: transport, appleSignIn: apple)
+        SessionTestURLProtocol.handler = { _, complete in
+            XCTFail("Cancelled Apple sign-in reached the server")
+            complete(.failure(URLError(.cancelled)))
+        }
+        do { try await session.signInWithApple(); XCTFail("Expected cancellation") }
+        catch AuthenticationError.oauthCancelled { }
+        XCTAssertNil(session.user)
+        XCTAssertNil(persistence.data)
+    }
+
+    @MainActor func testAppleAuthorizationCannotRestoreASessionAfterSignOut() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let apple = StubAppleSignIn()
+        let persistence = MemorySessionPersistence()
+        let session = SessionStore(configuration: configuration, persistence: persistence, transport: transport, appleSignIn: apple)
+        try await authorize(session)
+        apple.beforeReturning = { [weak session] in session?.forceSignOut() }
+        SessionTestURLProtocol.handler = { _, complete in
+            XCTFail("Stale Apple sign-in reached the server")
+            complete(.failure(URLError(.cancelled)))
+        }
+        do { try await session.signInWithApple(); XCTFail("Expected cancellation") }
+        catch is CancellationError { }
+        XCTAssertNil(session.user)
+        XCTAssertNil(persistence.data)
     }
     @MainActor func testParcelStoreKeepsSessionAliveForDeferredDeliveryCleanup() async throws {
         let transport = transport()

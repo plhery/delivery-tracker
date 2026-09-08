@@ -8,7 +8,7 @@ const replacements = [
     1,
   ],
   [
-    'A10000000000000000000001 = {CreatedOnToolsVersion = 26.6; SystemCapabilities = {com.apple.ApplicationGroups.iOS = {enabled = 1; }; com.apple.Push = {enabled = 1; }; }; };',
+    'A10000000000000000000001 = {CreatedOnToolsVersion = 26.6; SystemCapabilities = {com.apple.ApplicationGroups.iOS = {enabled = 1; }; com.apple.Push = {enabled = 1; }; com.apple.SignInWithApple = {enabled = 1; }; }; };',
     'A10000000000000000000001 = {CreatedOnToolsVersion = 26.6; };',
     1,
   ],
@@ -28,7 +28,7 @@ const replacements = [
   ['CODE_SIGN_ENTITLEMENTS = DeliveryWidgetExtension/DeliveryWidgetExtension.entitlements; ', '', 2],
   [
     'PRODUCT_BUNDLE_IDENTIFIER = com.plhery.SwissDeliveryTracker;',
-    'PRODUCT_BUNDLE_IDENTIFIER = com.plhery.SwissDeliveryTracker.Personal;',
+    'PRODUCT_BUNDLE_IDENTIFIER = com.plhery.SwissDeliveryTracker.Personal; SDT_APPLE_AUTH_ENABLED = NO;',
     2,
   ],
   [

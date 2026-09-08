@@ -18,6 +18,7 @@ export interface AuthConfig {
   url: string;
   publishableKey: string;
   googleEnabled: boolean;
+  appleEnabled: boolean;
   emailOtpEnabled: boolean;
 }
 
@@ -29,8 +30,10 @@ interface AuthState {
   user: User | null;
   accessToken: string | null;
   googleEnabled: boolean;
+  appleEnabled: boolean;
   emailOtpEnabled: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
   sendCode: (email: string) => Promise<void>;
   verifyCode: (email: string, code: string) => Promise<void>;
   getAccessToken: (refresh?: boolean) => Promise<string | null>;
@@ -149,19 +152,23 @@ export function AuthProvider({
     trackAction('sign-in-code-send', 'success');
   }, [client, storage]);
 
-  const signInWithGoogle = useCallback(async () => {
-    trackAction('sign-in-google', 'started');
+  const signInWithProvider = useCallback(async (provider: 'google' | 'apple') => {
+    const event = provider === 'apple' ? 'sign-in-apple' : 'sign-in-google';
+    trackAction(event, 'started');
     if (!client) throw new Error('Authentication is not configured');
     await logout.current;
     storage?.allowSignIn();
     const redirectTo = typeof window === 'undefined' ? undefined : window.location.origin;
     const { error } = await client.auth.signInWithOAuth({
-      provider: 'google',
+      provider,
       ...(redirectTo ? { options: { redirectTo } } : {}),
     });
-    if (error) { trackAction('sign-in-google', 'error'); throw error; }
-    trackAction('sign-in-google', 'success');
+    if (error) { trackAction(event, 'error'); throw error; }
+    trackAction(event, 'success');
   }, [client, storage]);
+
+  const signInWithGoogle = useCallback(() => signInWithProvider('google'), [signInWithProvider]);
+  const signInWithApple = useCallback(() => signInWithProvider('apple'), [signInWithProvider]);
 
   const verifyCode = useCallback(async (email: string, code: string) => {
     trackAction('sign-in-code-verify', 'started');
@@ -217,8 +224,10 @@ export function AuthProvider({
     () => ({
       ...state,
       googleEnabled: config?.googleEnabled ?? false,
+      appleEnabled: config?.appleEnabled ?? false,
       emailOtpEnabled: config?.emailOtpEnabled ?? true,
       signInWithGoogle,
+      signInWithApple,
       sendCode,
       verifyCode,
       getAccessToken,
@@ -227,8 +236,10 @@ export function AuthProvider({
     [
       state,
       config?.googleEnabled,
+      config?.appleEnabled,
       config?.emailOtpEnabled,
       signInWithGoogle,
+      signInWithApple,
       sendCode,
       verifyCode,
       getAccessToken,

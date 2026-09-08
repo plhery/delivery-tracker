@@ -79,8 +79,8 @@ export function ApiApplication({ invitationRoute = false }: { invitationRoute?: 
   const friendsClient = useMemo(() => createFriendsClient(false, apiAuth), [apiAuth]);
   const invitationProps: ComponentProps<typeof FriendInvitation> = {
     invitation, onDismiss: () => { invitation.clear(); if (!auth.user) experience.navigate('welcome'); },
-    configured: auth.status !== 'unconfigured', googleEnabled: auth.googleEnabled, emailOtpEnabled: auth.emailOtpEnabled,
-    signInWithGoogle: auth.signInWithGoogle, sendCode: auth.sendCode, verifyCode: auth.verifyCode,
+    configured: auth.status !== 'unconfigured', googleEnabled: auth.googleEnabled, appleEnabled: auth.appleEnabled, emailOtpEnabled: auth.emailOtpEnabled,
+    signInWithGoogle: auth.signInWithGoogle, signInWithApple: auth.signInWithApple, sendCode: auth.sendCode, verifyCode: auth.verifyCode,
   };
   if (auth.status === 'loading') {
     return <div className="auth-loading" role="status"><ParcelIllustration /><span>{t('auth.loading')}</span></div>;
@@ -96,8 +96,10 @@ export function ApiApplication({ invitationRoute = false }: { invitationRoute?: 
         onNavigate={experience.navigate}
         configured={auth.status !== 'unconfigured'}
         googleEnabled={auth.googleEnabled}
+        appleEnabled={auth.appleEnabled}
         emailOtpEnabled={auth.emailOtpEnabled}
         signInWithGoogle={auth.signInWithGoogle}
+        signInWithApple={auth.signInWithApple}
         sendCode={auth.sendCode}
         verifyCode={auth.verifyCode}
       />

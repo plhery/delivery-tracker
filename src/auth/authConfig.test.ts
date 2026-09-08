@@ -19,6 +19,7 @@ describe('authConfigFromEnvironment', () => {
       url: 'https://project.supabase.co',
       publishableKey: 'publishable-key',
       googleEnabled: false,
+      appleEnabled: false,
       emailOtpEnabled: true,
     });
   });
@@ -43,7 +44,8 @@ describe('authConfigFromEnvironment', () => {
       supabaseUrl: 'https://project.supabase.co',
       supabasePublishableKey: 'publishable-key',
       googleEnabled: 'true',
+      appleEnabled: 'true',
       emailOtpEnabled: 'false',
-    }))).toMatchObject({ googleEnabled: true, emailOtpEnabled: false });
+    }))).toMatchObject({ googleEnabled: true, appleEnabled: true, emailOtpEnabled: false });
   });
 });

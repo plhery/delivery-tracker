@@ -30,7 +30,8 @@ export function validateIosInstall(info) {
   value(info, 'SDTSupabasePublishableKey');
   const google = flag(info, 'SDTGoogleAuthEnabled');
   const email = flag(info, 'SDTEmailOTPEnabled');
-  if (!google && !email) throw new Error('At least one sign-in method must be enabled');
+  const apple = info.SDTAppleAuthEnabled == null ? false : flag(info, 'SDTAppleAuthEnabled');
+  if (!google && !apple && !email) throw new Error('At least one sign-in method must be enabled');
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

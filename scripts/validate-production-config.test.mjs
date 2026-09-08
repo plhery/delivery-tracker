@@ -16,9 +16,16 @@ describe('production browser configuration', () => {
       supabaseUrl: 'https://supabase.example.com',
       providers: {
         NEXT_PUBLIC_AUTH_GOOGLE_ENABLED: true,
+        NEXT_PUBLIC_AUTH_APPLE_ENABLED: false,
         NEXT_PUBLIC_AUTH_EMAIL_OTP_ENABLED: false,
       },
     });
+  });
+
+  it('accepts Apple alone and rejects malformed Apple flags', () => {
+    const apple = { ...validEnvironment, NEXT_PUBLIC_AUTH_GOOGLE_ENABLED: 'false', NEXT_PUBLIC_AUTH_APPLE_ENABLED: 'true' };
+    assert.equal(validateProductionConfig(apple).providers.NEXT_PUBLIC_AUTH_APPLE_ENABLED, true);
+    assert.throws(() => validateProductionConfig({ ...apple, NEXT_PUBLIC_AUTH_APPLE_ENABLED: 'yes' }), /true or false/);
   });
 
   it('rejects missing or malformed Supabase values without echoing them', () => {

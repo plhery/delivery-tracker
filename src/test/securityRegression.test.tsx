@@ -49,7 +49,7 @@ it.each([429, 500, 502, 503, 504])('preserves authentication during Auth HTTP %s
 
 it('clears expired offline credentials and cannot restore them on reload', async () => {
   const key = 'sb-fixture-auth-token';
-  const config = { url: 'https://fixture.example.test', publishableKey: 'public-fixture', googleEnabled: false, emailOtpEnabled: true };
+  const config = { url: 'https://fixture.example.test', publishableKey: 'public-fixture', googleEnabled: false, appleEnabled: false, emailOtpEnabled: true };
   const saved: Session = { access_token: 'fixture-access', refresh_token: 'fixture-refresh', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, user: { id: '00000000-0000-4000-8000-000000000003', email: 'fixture@example.test', app_metadata: {}, user_metadata: {}, aud: 'authenticated', created_at: '2026-09-08T00:00:00Z' } };
   window.localStorage.setItem(key, JSON.stringify(saved));
   const fetcher = vi.fn().mockResolvedValue(new Response('{}', { status: 503 }));

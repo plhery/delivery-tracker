@@ -47,7 +47,8 @@ export function validateProductionConfig(environment = process.env) {
   const supabaseUrl = publicOrigin(environment);
   requiredValue(environment, 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
   const providers = Object.fromEntries(
-    BOOLEAN_VARIABLES.map((key) => [key, booleanValue(environment, key)]),
+    [...BOOLEAN_VARIABLES, 'NEXT_PUBLIC_AUTH_APPLE_ENABLED'].map((key) => [key,
+      key === 'NEXT_PUBLIC_AUTH_APPLE_ENABLED' && environment[key] == null ? false : booleanValue(environment, key)]),
   );
   if (!Object.values(providers).some(Boolean)) {
     throw new Error('At least one production authentication method must be enabled');

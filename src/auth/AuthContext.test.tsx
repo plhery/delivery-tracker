@@ -42,6 +42,7 @@ function AuthHarness() {
       <span>{auth.accessToken}</span>
       <button type="button" onClick={() => void auth.sendCode('owner@example.test')}>Send</button>
       <button type="button" onClick={() => void auth.signInWithGoogle()}>Google</button>
+      <button type="button" onClick={() => void auth.signInWithApple()}>Apple</button>
       <button type="button" onClick={() => void auth.verifyCode('owner@example.test', '123456')}>
         Verify
       </button>
@@ -128,7 +129,7 @@ describe('AuthProvider', () => {
     expect(await screen.findByText('authenticated')).toBeInTheDocument();
   });
 
-  it('starts Google OAuth with a same-origin callback', async () => {
+  it.each(['google', 'apple'] as const)('starts %s OAuth with a same-origin callback', async (provider) => {
     const { client, auth } = authClient();
     const user = userEvent.setup();
     render(
@@ -137,6 +138,7 @@ describe('AuthProvider', () => {
           url: 'https://project.supabase.co',
           publishableKey: 'publishable-key',
           googleEnabled: true,
+          appleEnabled: true,
           emailOtpEnabled: false,
         }}
         client={client}
@@ -145,9 +147,9 @@ describe('AuthProvider', () => {
       </AuthProvider>,
     );
     await screen.findByText('anonymous');
-    await user.click(screen.getByRole('button', { name: 'Google' }));
+    await user.click(screen.getByRole('button', { name: provider === 'apple' ? 'Apple' : 'Google' }));
     expect(auth.signInWithOAuth).toHaveBeenCalledWith({
-      provider: 'google',
+      provider,
       options: { redirectTo: window.location.origin },
     });
   });

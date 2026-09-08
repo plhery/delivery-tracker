@@ -61,6 +61,41 @@ describe('SignInScreen', () => {
     expect(signInWithGoogle).toHaveBeenCalledOnce();
   });
 
+  it('offers Apple alongside Google, prevents duplicate starts, and allows retry after failure', async () => {
+    let reject!: (error: Error) => void;
+    const signInWithApple = vi.fn().mockImplementationOnce(() => new Promise((_, fail) => { reject = fail; }))
+      .mockResolvedValue(undefined);
+    const signInWithGoogle = vi.fn();
+    const user = userEvent.setup();
+    render(<SignInScreen configured appleEnabled googleEnabled signInWithApple={signInWithApple}
+      signInWithGoogle={signInWithGoogle} sendCode={vi.fn()} verifyCode={vi.fn()} />);
+    await user.click(screen.getByRole('button', { name: 'Continue with Apple' }));
+    expect(screen.getByRole('button', { name: 'Opening Apple…' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Sign in with email' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Opening Apple…' }));
+    expect(signInWithApple).toHaveBeenCalledOnce();
+    reject(new Error('Provider configuration detail'));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t open Apple sign-in. Try again.');
+    await user.click(screen.getByRole('button', { name: 'Continue with Apple' }));
+    expect(signInWithApple).toHaveBeenCalledTimes(2);
+    expect(signInWithGoogle).not.toHaveBeenCalled();
+  });
+
+  it('keeps email secondary with Apple as the only social provider', async () => {
+    const user = userEvent.setup();
+    render(<SignInScreen configured appleEnabled signInWithApple={vi.fn()} sendCode={vi.fn()} verifyCode={vi.fn()} />);
+    expect(screen.queryByLabelText('Email address')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Continue with Google' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Sign in with email' }));
+    expect(screen.getByLabelText('Email address')).toHaveFocus();
+  });
+
+  it('hides Apple until the provider is configured', () => {
+    render(<SignInScreen configured signInWithApple={vi.fn()} sendCode={vi.fn()} verifyCode={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'Continue with Apple' })).not.toBeInTheDocument();
+  });
+
   it('keeps email secondary until the user asks for it', async () => {
     const user = userEvent.setup();
     render(

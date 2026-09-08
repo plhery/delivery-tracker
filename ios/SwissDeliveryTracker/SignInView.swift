@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices
 import UIKit
 import UserNotifications
 
@@ -303,11 +304,13 @@ struct SignInView: View {
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
     @State private var step: Step = .methods
     @State private var email = ""
     @State private var code = ""
     @State private var emailExpanded = false
     @State private var working = false
+    @State private var activeProvider: String?
     @State private var errorMessage: String?
 
     private var copy: ArrivalCopy { ArrivalCopy(localizer: localizer) }
@@ -424,19 +427,35 @@ struct SignInView: View {
 
     private var methods: some View {
         VStack(spacing: 12) {
+            if session.configuration.appleAuthEnabled {
+                AppleAuthenticationButton {
+                    run(provider: "apple") { try await session.signInWithApple() }
+                }
+                .id(colorScheme)
+                .frame(height: 56)
+                .overlay(alignment: .trailing) {
+                    if activeProvider == "apple" {
+                        ProgressView().tint(colorScheme == .dark ? .black : .white)
+                            .padding(.trailing, 18).allowsHitTesting(false)
+                    }
+                }
+                .accessibilityLabel(localizer.text("auth.apple"))
+                .accessibilityIdentifier("auth.apple")
+                .disabled(working)
+            }
             if session.configuration.googleAuthEnabled {
                 Button {
-                    run { try await session.signInWithGoogle() }
+                    run(provider: "google") { try await session.signInWithGoogle() }
                 } label: {
                     HStack {
                         GoogleSignInMark()
                             .frame(width: 20, height: 20)
                             .accessibilityHidden(true)
                         Spacer(minLength: 8)
-                        Text(working ? localizer.text("auth.googleOpening") : localizer.text("auth.google"))
+                        Text(activeProvider == "google" ? localizer.text("auth.googleOpening") : localizer.text("auth.google"))
                             .font(.headline)
                         Spacer(minLength: 8)
-                        if working {
+                        if activeProvider == "google" {
                             ProgressView().controlSize(.small)
                         } else {
                             Image(systemName: "arrow.right")
@@ -456,7 +475,7 @@ struct SignInView: View {
                 .disabled(working)
             }
 
-            if session.configuration.googleAuthEnabled && emailFormVisible {
+            if socialSignInEnabled && emailFormVisible {
                 HStack {
                     Rectangle().frame(height: 0.5)
                     Text(localizer.text("auth.or")).font(.caption).foregroundStyle(.secondary)
@@ -492,7 +511,11 @@ struct SignInView: View {
 
     private var emailFormVisible: Bool {
         session.configuration.emailOTPEnabled
-            && (!session.configuration.googleAuthEnabled || emailExpanded)
+            && (!socialSignInEnabled || emailExpanded)
+    }
+
+    private var socialSignInEnabled: Bool {
+        session.configuration.googleAuthEnabled || session.configuration.appleAuthEnabled
     }
 
     private var emailForm: some View {
@@ -588,15 +611,45 @@ struct SignInView: View {
         }
     }
 
-    private func run(_ operation: @escaping @MainActor () async throws -> Void) {
+    private func run(provider: String? = nil, _ operation: @escaping @MainActor () async throws -> Void) {
         guard !working else { return }
         working = true
+        activeProvider = provider
         errorMessage = nil
         Task {
             do { try await operation() }
+            catch AuthenticationError.oauthCancelled { }
+            catch is CancellationError { }
             catch { errorMessage = localizer.errorMessage(error) }
             working = false
+            activeProvider = nil
         }
+    }
+}
+
+private struct AppleAuthenticationButton: UIViewRepresentable {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.isEnabled) private var isEnabled
+    let action: () -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(action: action) }
+
+    func makeUIView(context: Context) -> ASAuthorizationAppleIDButton {
+        let button = ASAuthorizationAppleIDButton(type: .continue, style: colorScheme == .dark ? .white : .black)
+        button.cornerRadius = 18
+        button.addTarget(context.coordinator, action: #selector(Coordinator.tapped), for: .touchUpInside)
+        return button
+    }
+
+    func updateUIView(_ button: ASAuthorizationAppleIDButton, context: Context) {
+        button.isEnabled = isEnabled
+        context.coordinator.action = action
+    }
+
+    final class Coordinator: NSObject {
+        var action: () -> Void
+        init(action: @escaping () -> Void) { self.action = action }
+        @objc func tapped() { action() }
     }
 }
 

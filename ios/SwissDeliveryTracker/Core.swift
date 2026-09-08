@@ -12,6 +12,7 @@ struct AppConfiguration: Sendable {
     let supabaseURL: URL?
     let supabasePublishableKey: String
     let googleAuthEnabled: Bool
+    let appleAuthEnabled: Bool
     let emailOTPEnabled: Bool
     let appGroupIdentifier: String
 
@@ -26,6 +27,7 @@ struct AppConfiguration: Sendable {
             supabaseURL: supabase,
             supabasePublishableKey: value("SDTSupabasePublishableKey"),
             googleAuthEnabled: value("SDTGoogleAuthEnabled").uppercased() == "YES",
+            appleAuthEnabled: value("SDTAppleAuthEnabled").uppercased() == "YES",
             emailOTPEnabled: value("SDTEmailOTPEnabled").uppercased() != "NO",
             appGroupIdentifier: value("SDTAppGroupIdentifier").nonEmpty
                 ?? "group.com.plhery.SwissDeliveryTracker"

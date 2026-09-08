@@ -1,10 +1,12 @@
 # Authentication
 
-Delivery Tracker supports Google OAuth and passwordless email one-time
+Delivery Tracker supports Google OAuth, Sign in with Apple, and passwordless email one-time
 passwords (OTP) through Supabase Auth. Supabase is the identity and session
 provider. An SMTP provider is only the mail transport used by Supabase; it is
-not a second login system. Both login methods produce the same account-owned
+not a second login system. All login methods produce the same account-owned
 data boundary.
+
+Apple sign-in stays disabled until configured. See [Apple setup and activation](APPLE_SIGN_IN.md); it requires a paid Apple Developer Program membership.
 
 ## Browser and server configuration
 
@@ -14,6 +16,7 @@ The production frontend must be built with:
 NEXT_PUBLIC_SUPABASE_URL=https://supabase.example.com
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_example
 NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true
+NEXT_PUBLIC_AUTH_APPLE_ENABLED=false
 NEXT_PUBLIC_AUTH_EMAIL_OTP_ENABLED=false
 ```
 

@@ -25,6 +25,8 @@ describe('Personal Team Xcode project preparation', () => {
       /CODE_SIGN_ENTITLEMENTS = (?:SwissDeliveryTracker|DeliveryWidgetExtension)\//,
     );
     assert.doesNotMatch(transformed, /APS_ENVIRONMENT =/);
+    assert.doesNotMatch(transformed, /com.apple.SignInWithApple/);
+    assert.equal(transformed.split("SDT_APPLE_AUTH_ENABLED = NO;").length - 1, 2);
     assert.match(
       transformed,
       /PRODUCT_BUNDLE_IDENTIFIER = com\.plhery\.SwissDeliveryTracker\.Personal;/,

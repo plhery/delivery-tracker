@@ -36,6 +36,7 @@ const authConfig = authConfigFromEnvironment({
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
   supabasePublishableKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   googleEnabled: process.env.NEXT_PUBLIC_AUTH_GOOGLE_ENABLED,
+  appleEnabled: process.env.NEXT_PUBLIC_AUTH_APPLE_ENABLED,
   emailOtpEnabled: process.env.NEXT_PUBLIC_AUTH_EMAIL_OTP_ENABLED,
 });
 
