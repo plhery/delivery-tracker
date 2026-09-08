@@ -731,6 +731,7 @@ button.friend-card:focus-visible .friend-avatar .postage-stamp { scale: 1.035; }
 .friends-sheet { max-width: 520px; padding: 26px; }.friends-sheet > .sheet__heading { padding: 0; margin-bottom: 14px; }.friends-sheet > p { color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
 .friends-invite, .friend-details { display: grid; gap: 20px; }.friends-invite > p, .friends-remove-confirm p { font-size: 13px; color: var(--ink-soft); line-height: 1.6; margin: 0; }
 .friends-invite input { font-family: ui-monospace, monospace; font-size: 12px; }.friends-invite small { text-align: center; color: var(--ink-soft); }
+.friends-invite__loading { display: grid; place-items: center; min-height: 88px; color: var(--ink-soft); }
 .friends-remove { display: block; color: var(--ink-soft); background: transparent; font-size: 12px; min-height: 44px; margin: 20px auto 0; text-decoration: underline; text-underline-offset: 4px; }
 .friends-sheet > .friends-remove { margin-top: 8px; }
 .friends-remove-confirm { border-top: 1px solid var(--line); padding-top: 20px; display: grid; gap: 14px; }

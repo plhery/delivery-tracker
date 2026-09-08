@@ -361,6 +361,7 @@ private struct FriendsInvitationView: View {
     let open: (URL) -> Void
     @State private var code = ""
     @State private var copied = false
+    @State private var requestedInvitation = false
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             if accepting {
@@ -370,7 +371,14 @@ private struct FriendsInvitationView: View {
                     .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent).disabled(FriendInvitationLink.code(from: code) == nil)
             } else {
                 Text(localizer.text("friends.inviteHint")).font(.subheadline).foregroundStyle(.secondary)
-                if code.isEmpty { actionButton("friends.invite") { code = await act(FriendsActionRequest(action: .createInvite))?.inviteCode ?? "" } }
+                if code.isEmpty {
+                    if !requestedInvitation || busy {
+                        ProgressView().frame(maxWidth: .infinity, minHeight: 44)
+                            .accessibilityLabel(localizer.text("friends.link"))
+                    } else {
+                        actionButton("common.retry") { await createInvitation() }
+                    }
+                }
                 else {
                     let link = FriendInvitationLink.url(code: code)
                     ShareLink(item: link) { Label(localizer.text("friends.shareLink"), systemImage: "square.and.arrow.up").frame(maxWidth: .infinity, minHeight: 44) }
@@ -381,6 +389,16 @@ private struct FriendsInvitationView: View {
                 }
             }
         }.disabled(busy)
+        .task {
+            guard !accepting, !requestedInvitation else { return }
+            requestedInvitation = true
+            await createInvitation()
+        }
+    }
+    private func createInvitation() async {
+        let result = await act(FriendsActionRequest(action: .createInvite))
+        guard !Task.isCancelled else { return }
+        code = result?.inviteCode ?? ""
     }
     private func actionButton(_ key: String, action: @escaping () async -> Void) -> some View {
         Button { Task { await action() } } label: { Text(localizer.text(key)).frame(maxWidth: .infinity, minHeight: 44) }.buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)

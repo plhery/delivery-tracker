@@ -22,6 +22,7 @@ export function Friends({ client, parcels, demo }: { client: FriendsClient; parc
   const [error, setError] = useState<MessageKey | null>(null);
   const [busy, setBusy] = useState(false);
   const [panel, setPanel] = useState<Panel>(null);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [notice, setNotice] = useState<MessageKey | null>(null);
   const generation = useRef(0);
   const working = useRef(false);
@@ -83,6 +84,13 @@ export function Friends({ client, parcels, demo }: { client: FriendsClient; parc
       return null;
     } finally { working.current = false; setBusy(false); }
   }
+  async function inviteFriend() {
+    if (working.current) return;
+    setInviteCode(null); setPanel('invite');
+    if (demo) return;
+    const result = await act({ action: 'create_invite' });
+    if (result?.inviteCode) setInviteCode(result.inviteCode);
+  }
   const close = () => { if (!busy) { setPanel(null); setError(null); } };
   const errorView = error && <p className="friends-error" role="alert">{t(error)}</p>;
   const total = [data?.ownCard, ...(data?.friends ?? [])].reduce((sum, friend) => sum + (friend?.stats?.stamps.length ?? 0), 0);
@@ -102,7 +110,7 @@ export function Friends({ client, parcels, demo }: { client: FriendsClient; parc
       <div className="friends-summary"><button className="friends-own friend-card tone-blue" aria-label={t('friends.settings')} onClick={() => setPanel('settings')}><FriendCardBody friend={data.ownCard ?? ownFriendCard(parcels, data.profile)} showSharingStatus /><span className="friend-card__more"><Icon name="settings" /></span></button>
       {!!data.friends.length && <section className="friends-cover"><div className="friends-cover__main"><div><strong>{total}</strong><span>{t('friends.collectionNote')}</span></div><div className="friends-postage" aria-hidden="true"><PostageStamp icon="parcel" /><PostageStamp icon="express" /></div></div></section>}</div>
       {!data.friends.length && <h2 className="friends-empty-title">{t('friends.emptyTitle')}</h2>}
-      <div className="friends-actions"><button className="button button--primary" onClick={() => setPanel('invite')}><Icon name="plus" />{t('friends.invite')}</button><button className="text-button friends-code-link" onClick={() => setPanel('accept')}>{t('friends.enterCode')}<Icon name="arrow" /></button></div>
+      <div className="friends-actions"><button className="button button--primary" disabled={busy} onClick={() => void inviteFriend()}><Icon name="plus" />{t('friends.invite')}</button><button className="text-button friends-code-link" onClick={() => setPanel('accept')}>{t('friends.enterCode')}<Icon name="arrow" /></button></div>
       {!!remainingFriends.length && <section><div className="section-heading"><h2>{t('friends.circle')}</h2><span>{demo ? t('friends.demoPeople') : data.friends.length}</span></div>
         <div className="friends-grid">{remainingFriends.map(friendButton)}</div>
       </section>}
@@ -111,7 +119,7 @@ export function Friends({ client, parcels, demo }: { client: FriendsClient; parc
       {errorView}
       {panel === 'settings' && data?.profile && <><FriendProfileForm profile={data.profile} parcels={parcels} busy={busy} onSave={async (profile) => { if (await act({ action: 'save_profile', ...profile })) close(); }} /><button className="friends-remove" onClick={() => setPanel('disable')}>{t('friends.disable')}</button></>}
       {panel === 'disable' && <><p>{t('friends.disableDetail')}</p><button className="button button--primary" disabled={busy} onClick={async () => { if (await act({ action: 'disable' })) close(); }}>{t('friends.disable')}</button></>}
-      {(panel === 'invite' || panel === 'accept') && (demo ? <p>{t('friends.demoInvites')}</p> : panel === 'invite' ? <FriendsInvite busy={busy} act={act} onClose={close} /> : <FriendsAccept onOpen={() => setPanel(null)} />)}
+      {(panel === 'invite' || panel === 'accept') && (demo ? <p>{t('friends.demoInvites')}</p> : panel === 'invite' ? <FriendsInvite code={inviteCode} busy={busy} act={act} onRetry={inviteFriend} onClose={close} /> : <FriendsAccept onOpen={() => setPanel(null)} />)}
       {selected && <FriendDetails friend={selected} busy={busy} onRemove={async () => { if (await act({ action: 'remove_friend', friendId: selected.id })) close(); }} />}
     </FriendsSheet>}
   </div>;
@@ -155,9 +163,8 @@ export function FriendsSheet({ title, children, onClose, busy = false }: { title
   return createPortal(<div className="sheet-backdrop" onClick={close}><div ref={dialog} className="sheet friends-sheet" role="dialog" aria-modal="true" aria-labelledby="friends-sheet-title" aria-busy={busy} tabIndex={-1} onClick={(event) => event.stopPropagation()}><div className="sheet__grabber" aria-hidden="true" /><div className="sheet__heading"><h2 id="friends-sheet-title" className="sheet__title">{title}</h2><button className="sheet__close" aria-label={t('common.close')} disabled={busy} onClick={close}><Icon name="close" /></button></div>{children}</div></div>, document.body);
 }
 type Act = (action: ApiFriendsActionRequest) => Promise<ApiFriendsActionResponse | null>;
-function FriendsInvite({ busy, act, onClose }: { busy: boolean; act: Act; onClose: () => void }) {
+function FriendsInvite({ code, busy, act, onRetry, onClose }: { code: string | null; busy: boolean; act: Act; onRetry: () => Promise<void>; onClose: () => void }) {
   const { t } = useI18n();
-  const [code, setCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
   const link = code ? invitationURL(code) : null;
@@ -173,7 +180,7 @@ function FriendsInvite({ busy, act, onClose }: { busy: boolean; act: Act; onClos
     <button className={typeof navigator.share === 'function' ? 'text-button' : 'button button--primary'} onClick={() => void copy()}>{t(copied ? 'friends.copied' : 'friends.copyLink')}<Icon name={copied ? 'check' : 'copy'} /></button>
     {copyFailed && <p className="friends-error" role="alert">{t('friends.actionFailed')}</p>}
     <button className="text-button" disabled={busy} onClick={async () => { if (await act({ action: 'revoke_invite' })) onClose(); }}>{t('friends.revoke')}</button>
-  </> : <button className="button button--primary" disabled={busy} onClick={async () => { const result = await act({ action: 'create_invite' }); if (result?.inviteCode) setCode(result.inviteCode); }}>{t('friends.invite')}</button>}</div>;
+  </> : busy ? <div className="friends-invite__loading" role="status" aria-label={t('friends.link')}><Icon name="refresh" className="spin" /></div> : <button className="button button--primary" onClick={() => void onRetry()}>{t('common.retry')}</button>}</div>;
 }
 function FriendsAccept({ onOpen }: { onOpen: () => void }) {
   const { t } = useI18n(); const [link, setLink] = useState('');

@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { StrictMode } from 'react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import fixture from '../../shared/friends-demo.json';
@@ -83,15 +84,16 @@ describe('Friends', () => {
     expect(screen.getByRole('dialog')).toHaveTextContent('Sign in to invite friends');
     expect(fetch).not.toHaveBeenCalled();
   });
-  it('creates, copies, and revokes a single-use invite only on deliberate actions', async () => {
+  it('prepares a single-use link on the first invite click, then copies and revokes it', async () => {
     const client = realClient();
     vi.mocked(client.action).mockImplementation(async (input) => input.action === 'create_invite' ? { inviteCode: 'a'.repeat(32), expiresAt: '2026-09-16T00:00:00Z' } : { snapshot: enrolled() });
     const { user } = await show(client, false);
     const copy = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue();
+    expect(client.action).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: 'Invite a friend' }));
     const sheet = screen.getByRole('dialog');
-    expect(client.action).not.toHaveBeenCalled();
-    await user.click(within(sheet).getByRole('button', { name: 'Invite a friend' }));
+    expect(client.action).toHaveBeenCalledExactlyOnceWith({ action: 'create_invite' }, []);
+    expect(within(sheet).queryByRole('button', { name: 'Invite a friend' })).not.toBeInTheDocument();
     await user.click(await within(sheet).findByRole('button', { name: 'Copy link' }));
     expect(copy).toHaveBeenCalledWith(window.location.origin + '/invite#' + 'a'.repeat(32));
     expect(within(sheet).getByRole('button', { name: 'Copied' })).toBeVisible();
@@ -100,6 +102,24 @@ describe('Friends', () => {
     await user.click(within(sheet).getByRole('button', { name: 'Cancel this invitation' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(client.action).toHaveBeenLastCalledWith({ action: 'revoke_invite' }, []);
+  });
+  it('creates once under StrictMode and makes a failed first attempt retryable', async () => {
+    const client = realClient();
+    let reject: (error: Error) => void = () => undefined;
+    vi.mocked(client.action).mockReturnValueOnce(new Promise((_, fail) => { reject = fail; }))
+      .mockResolvedValue({ inviteCode: 'a'.repeat(32), expiresAt: '2026-09-16T00:00:00Z' });
+    render(<StrictMode><Friends client={client} parcels={[]} demo={false} /></StrictMode>);
+    const button = await screen.findByRole('button', { name: 'Invite a friend' });
+    fireEvent.click(button); fireEvent.click(button);
+    expect(client.action).toHaveBeenCalledTimes(1);
+    const sheet = screen.getByRole('dialog');
+    expect(within(sheet).getByRole('status', { name: 'Invitation link' })).toBeVisible();
+    await act(async () => reject(new Error('Offline')));
+    expect(within(sheet).getByRole('alert')).toBeVisible();
+    expect(client.action).toHaveBeenCalledTimes(1);
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Retry' }));
+    expect(await within(sheet).findByRole('textbox', { name: 'Invitation link' })).toHaveValue(window.location.origin + '/invite#' + 'a'.repeat(32));
+    expect(client.action).toHaveBeenCalledTimes(2);
   });
   it('opens a pasted link into the parcel welcome without accepting it', async () => {
     const client = realClient();
