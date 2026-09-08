@@ -57,7 +57,14 @@ export function FriendInvitation({ invitation, onDismiss, client, parcels = empt
       setNickname(null); setError(null);
       if (!code || document.hidden) return;
       try {
-        const name = await previewInvitation(code, current.signal);
+        const name = await previewInvitation(code, current.signal).catch(async (reason) => {
+          // Consumed links have no public preview. Only their recipient can
+          // recover the sender, keeping the account-specific message inside.
+          if (!(reason instanceof FriendsError) || reason.key !== 'friends.inviteUnavailable' || !client || current.signal.aborted) throw reason;
+          const preview = await client.checkInvitation(code);
+          if (!preview?.previewNickname) throw reason;
+          return preview.previewNickname;
+        });
         if (!disposed && !current.signal.aborted) setNickname(name);
       } catch (reason) {
         if (!disposed && !current.signal.aborted) setError(reason instanceof FriendsError ? reason.key : 'friends.unavailable');
@@ -66,7 +73,7 @@ export function FriendInvitation({ invitation, onDismiss, client, parcels = empt
     void load();
     document.addEventListener('visibilitychange', load);
     return () => { disposed = true; controller?.abort(); document.removeEventListener('visibilitychange', load); };
-  }, [code, retry]);
+  }, [code, client, retry]);
   const [beforeName, afterName] = t('friends.invitationTitle').split('{{name}}');
   const title = nickname ? <>{beforeName}<em className="invitation-name">{nickname}</em>{afterName}</> : t('friends.invitationGeneric');
   const failure = !code ? 'friends.inviteUnavailable' : error;
@@ -87,6 +94,7 @@ function InvitationAcceptance({ title, code, client, parcels, onAccepted, onDism
   const { t } = useI18n();
   const [snapshot, setSnapshot] = useState<ApiFriendsSnapshot | null>(null);
   const [error, setError] = useState<MessageKey | null>(null);
+  const [invitationState, setInvitationState] = useState<ApiFriendsActionResponse['invitationState']>();
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -97,10 +105,10 @@ function InvitationAcceptance({ title, code, client, parcels, onAccepted, onDism
   useEffect(() => {
     const current = ++generation.current;
     async function load() {
-      setSnapshot(null); setError(null);
+      setSnapshot(null); setError(null); setInvitationState(undefined);
       try {
-        const [, data] = await Promise.all([client.checkInvitation(code), client.load(latestParcels.current)]);
-        if (generation.current === current) { setSnapshot(data); setError(null); }
+        const [preview, data] = await Promise.all([client.checkInvitation(code), client.load(latestParcels.current)]);
+        if (generation.current === current) { setSnapshot(data); setInvitationState(preview?.invitationState); setError(null); }
       } catch (reason) {
         if (generation.current === current) setError(reason instanceof FriendsError ? reason.key : 'friends.unavailable');
       }
@@ -122,6 +130,10 @@ function InvitationAcceptance({ title, code, client, parcels, onAccepted, onDism
         enabled = true;
       }
       const result = await client.action({ action: 'accept_invite', code }, parcels);
+      if (result.invitationState) {
+        if (generation.current === current) { setInvitationState(result.invitationState); setCreating(false); }
+        return;
+      }
       // A committed acceptance can finish while the preview is backgrounded.
       // The pending-link store checks the token before clearing a newer link.
       onAccepted(result);
@@ -136,8 +148,9 @@ function InvitationAcceptance({ title, code, client, parcels, onAccepted, onDism
       }
     }
   }
-  if (error === 'friends.selfInvitation') return <section className="auth-flow invitation-accept" aria-labelledby="invite-title">
-    <div className="auth-flow__heading"><h1 id="invite-title" tabIndex={-1}>{t('friends.selfInvitation')}</h1></div>
+  const message = invitationState === 'already_accepted' ? 'friends.inviteAlreadyAccepted' : invitationState === 'already_friends' ? 'friends.alreadyFriends' : error === 'friends.selfInvitation' ? error : null;
+  if (message) return <section className="auth-flow invitation-accept" aria-labelledby="invite-title">
+    <div className="auth-flow__heading"><h1 id="invite-title" tabIndex={-1}>{t(message)}</h1></div>
     <button className="button button--primary" onClick={onDismiss}>{t('common.close')}</button>
   </section>;
   return <section className="auth-flow invitation-accept" aria-labelledby="invite-title">

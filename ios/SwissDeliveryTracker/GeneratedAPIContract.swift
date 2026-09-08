@@ -552,6 +552,7 @@ struct FriendsActionResponse: Codable, Equatable, Hashable, Sendable {
     var previewID: String? = nil
     var expiresAt: String? = nil
     var previewNickname: String? = nil
+    var invitationState: FriendsActionResponseInvitationState? = nil
     var acceptedFriend: FriendCard? = nil
     var previousInviteCount: Int? = nil
 
@@ -561,6 +562,7 @@ struct FriendsActionResponse: Codable, Equatable, Hashable, Sendable {
         case previewID = "previewId"
         case expiresAt
         case previewNickname
+        case invitationState
         case acceptedFriend
         case previousInviteCount
     }
@@ -608,6 +610,13 @@ struct AccountExportAccount: Codable, Equatable, Hashable, Sendable, Identifiabl
 struct CarrierData: Codable, Equatable, Hashable, Sendable {
     var activeTrackingCarrier: CarrierID? = nil
     var swissPostReady: Bool? = nil
+}
+
+enum FriendsActionResponseInvitationState: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case alreadyAccepted = "already_accepted"
+    case alreadyFriends = "already_friends"
+
+    var id: String { rawValue }
 }
 
 extension Parcel {

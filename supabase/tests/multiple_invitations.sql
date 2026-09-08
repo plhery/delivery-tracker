@@ -65,10 +65,7 @@ begin
   perform public.friends_action('accept_invite', p_code=>current_code);
   perform public.friends_action('preview_invite', p_code=>newer_code);
   if (select count(*) from public.friend_invites where user_id=owner_id) <> 1 then raise exception 'Accepting consumed other invitations'; end if;
-  begin
-    perform public.friends_action('accept_invite', p_code=>current_code);
-    raise exception 'Single-use invitation was accepted twice';
-  exception when no_data_found then null; end;
+  if public.friends_action('accept_invite', p_code=>current_code)->>'invitationState' <> 'already_accepted' then raise exception 'Consumed invitation was not recognized'; end if;
 
   perform set_config('request.jwt.claim.sub', owner_id::text, true);
   result := public.friends_action('create_invite'); next_code := result->>'inviteCode';

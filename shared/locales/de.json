@@ -239,6 +239,8 @@
   "friends.inviteExpiry": "Einmal nutzbar · 7 Tage gültig",
   "friends.inviteHint": "Sende diesen Link an einen Freund.",
   "friends.inviteTitle": "Freund einladen",
+  "friends.inviteAlreadyAccepted": "Du hast diese Einladung bereits angenommen.",
+  "friends.alreadyFriends": "Ihr seid bereits befreundet.",
   "friends.inviteUnavailable": "Diese Einladung ist nicht mehr verfügbar. Bitte deinen Freund um einen neuen Link.",
   "friends.invitedBy": "Dem Kreis von {{name}} beitreten?",
   "friends.join": "Profil erstellen",

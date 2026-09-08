@@ -32,7 +32,7 @@ begin
  perform set_config('request.jwt.claim.sub',sender::text,true);
  if public.friends_activity() <> jsonb_build_object('updates',jsonb_build_array(jsonb_build_object('friendId',receiver_card,'nickname','Alex'))) then raise exception 'Sender receipt leaked fields or was lost'; end if;
  if (select count(*) from public.friendship_push_deliveries) <> 2 then raise exception 'Missing per-device notifications'; end if;
- -- Re-sharing with an existing friend consumes the link without a second notice.
+ -- Re-sharing with an existing friend does not create a second notice.
  code := public.friends_action('create_invite')->>'inviteCode';
  perform set_config('request.jwt.claim.sub',receiver::text,true);
  perform public.friends_action('accept_invite',p_code=>code);

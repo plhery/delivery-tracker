@@ -90,6 +90,9 @@ test('long sender names and expired invitations fit narrow screens in every loca
   expired = true;
   await page.reload();
   await expect(page.locator('.invitation-notice[role="alert"]')).toContainText('This invitation is no longer available');
-  await expect(page.locator('.arrival__open')).toBeDisabled();
+  await expect(page.locator('.arrival__open')).toHaveCount(0);
+  await expect(page.getByText('Tap to open your parcel')).toHaveCount(0);
+  await expect(page.locator('.arrival__parcel')).toBeVisible();
+  await expect(page.locator('.arrival')).toHaveClass(/arrival--welcome/);
   await expect(page.getByRole('button', { name: /Google|Become friends/ })).toHaveCount(0);
 });

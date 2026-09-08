@@ -65,10 +65,7 @@ begin
  if view::text like '%PRIVATE_%' or view::text like '%tracking%' or view::text like '%location%' or view::text like '%email%' or view::text like '%'||a::text||'%' then raise exception 'Private parcel/account data leaked'; end if;
  friend_id := (view#>>'{friends,0,id}')::uuid;
  if exists(select 1 from public.packages where user_id=a) or exists(select 1 from public.tracking_events where package_id='d4444444-4444-4444-8444-444444444444') then raise exception 'Friendship bypassed parcel RLS'; end if;
- begin
-   perform public.friends_action('accept_invite',p_code=>code);
-   raise exception 'One-use invite reused';
- exception when no_data_found then null; end;
+  if public.friends_action('accept_invite', p_code=>code)->>'invitationState' <> 'already_accepted' then raise exception 'Consumed invitation was not recognized'; end if;
  perform set_config('request.jwt.claim.sub',c::text,true);
  if public.friends_snapshot()->'friends' <> '[]' then raise exception 'Stranger saw friends'; end if;
  perform public.friends_action('remove_friend',p_friend_id=>friend_id);

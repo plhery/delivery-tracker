@@ -1509,6 +1509,7 @@ export interface ApiFriendsActionResponse {
   "previewId"?: string;
   "expiresAt"?: string;
   "previewNickname"?: string;
+  "invitationState"?: "already_accepted" | "already_friends";
   "acceptedFriend"?: ApiFriendCard;
   "previousInviteCount"?: number;
 }

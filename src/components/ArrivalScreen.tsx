@@ -69,11 +69,11 @@ export function ArrivalScreen({ screen, onNavigate, invitation, ...signIn }: Com
       </div>
       {welcome ? <div className="arrival__welcome">
         <h1>{invitation?.title ?? t('arrival.welcomeTitle')}</h1>
-        <button type="button" className="arrival__open" onClick={unwrap} disabled={!ready || opening || (invitation && !invitation.canOpen)} aria-describedby="parcel-open-hint">
+        {invitation && !invitation.canOpen ? <div className="arrival__parcel-space" aria-hidden="true" /> : <><button type="button" className="arrival__open" onClick={unwrap} disabled={!ready || opening} aria-describedby="parcel-open-hint">
           <span className="arrival__parcel-space" aria-hidden="true" />
           <span>{t('arrival.tapToOpen')}<Icon name="arrow" /></span>
         </button>
-        <span className="sr-only" id="parcel-open-hint">{t('arrival.openHint')}</span>
+        <span className="sr-only" id="parcel-open-hint">{t('arrival.openHint')}</span></>}
         {invitation?.notice}
       </div> : <div className="arrival__sign-in" ref={signInPanel}>
         {invitation?.afterOpen ?? <SignInScreen {...signIn} />}

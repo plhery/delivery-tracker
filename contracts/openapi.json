@@ -3447,6 +3447,11 @@
             "minLength": 1,
             "maxLength": 24
           },
+          "invitationState": {
+            "type": "string",
+            "enum": ["already_accepted", "already_friends"],
+            "description": "Account-specific outcome of preview_invite or accept_invite. No new friendship was created."
+          },
           "acceptedFriend": {
             "$ref": "#/components/schemas/FriendCard"
           },

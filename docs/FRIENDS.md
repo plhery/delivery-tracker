@@ -12,4 +12,14 @@ The database computes allowlisted summaries directly from owned tracking events.
 
 Demo friends are clearly fictional, local fixtures using the same response contract. Their actions never reach another person. Strings and response types are shared by web and iOS. Reduced Motion, keyboard access, VoiceOver, dark appearance, and narrow screens follow the existing UI system.
 
-Rollout: apply the Friends migrations through `20260911200000_standalone_invitation_links.sql` before deploying the server and releasing the clients. The standalone-link migration makes existing short IDs usable for acceptance without changing invitation rows, expiry, or legacy token hashes. Apply it before deploying clients that accept short keys. Run `scripts/test-migrations.sh` on a disposable database, including the multiple-invitation migration fixture, standalone-link lifecycle, consent, authentication, revocation and RLS assertions. The UI reports an unavailable service if the backend is unreachable; it never fills a real account with demo friends.
+Rollout: apply the Friends migrations through `20260911220000_invitation_outcomes.sql` before deploying the server and releasing the clients. The standalone-link migration makes existing short IDs usable for acceptance without changing invitation rows, expiry, or legacy token hashes. Apply it before deploying clients that accept short keys. Run `scripts/test-migrations.sh` on a disposable database, including the multiple-invitation migration fixture, standalone-link lifecycle, consent, authentication, revocation and RLS assertions. The UI reports an unavailable service if the backend is unreachable; it never fills a real account with demo friends.
+
+Invitation outcomes: authenticated preview and acceptance return `invitationState`
+(`already_accepted` or `already_friends`) without creating another connection or
+notification. Web and iOS reveal these messages only after opening the parcel.
+Unavailable links keep the parcel closed and omit the opening action. Consumed
+links have no public preview; only the accepting account can retrieve their
+nickname and outcome through the authenticated RPC. Private receipts are removed
+when either Friends profile is deleted. Links consumed before this migration
+cannot be recovered because their invitation records were already deleted.
+Apply the outcomes migration before deploying the updated server and clients.

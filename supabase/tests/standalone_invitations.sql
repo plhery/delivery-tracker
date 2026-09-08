@@ -49,10 +49,7 @@ begin
   result := public.friends_action('accept_invite', p_code=>key);
   if result#>>'{acceptedFriend,nickname}' <> 'Sender' or jsonb_array_length(result#>'{snapshot,friends}') <> 1 then raise exception 'Short link did not create friendship'; end if;
   foreach candidate in array array[key, legacy] loop
-    begin
-      perform public.friends_action('accept_invite', p_code=>candidate);
-      raise exception 'Consumed invitation remained usable';
-    exception when no_data_found then null; end;
+  if public.friends_action('accept_invite', p_code=>candidate)->>'invitationState' <> 'already_accepted' then raise exception 'Consumed invitation was not recognized'; end if;
   end loop;
   if (select count(*) from public.friend_invites where user_id=sender) <> 2 then raise exception 'Acceptance consumed other links'; end if;
 

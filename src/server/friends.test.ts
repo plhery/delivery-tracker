@@ -153,3 +153,16 @@ it('accepts standalone keys only through the authenticated action endpoint', asy
   // A legacy public preview hash must never become an acceptance credential.
   expect((await call({ action: 'accept_invite', code: 'a'.repeat(64) })).status).toBe(400);
 });
+
+it.each(['already_accepted', 'already_friends'] as const)('returns the private %s outcome without a new friendship receipt', async (invitationState) => {
+  const result = { previewNickname: 'Paul', invitationState };
+  vi.spyOn(SupabaseUserClient.prototype, 'request').mockResolvedValue({ ...result, recipientId: id });
+  const response = await call({ action: 'preview_invite', code: 'ab'.repeat(16) });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual(result);
+  expect(friendsActionResponse({ snapshot, invitationState, acceptedFriend: card }, 'accept_invite')).toEqual({ snapshot, invitationState });
+});
+it.each(['unknown', null, 123])('rejects malformed invitation outcomes: %s', (invitationState) => {
+  expect(() => friendsActionResponse({ previewNickname: 'Paul', invitationState }, 'preview_invite')).toThrow();
+  expect(() => friendsActionResponse({ snapshot, invitationState }, 'accept_invite')).toThrow();
+});

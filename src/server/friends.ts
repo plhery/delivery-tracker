@@ -104,6 +104,11 @@ export async function friendsRPC(client: SupabaseUserClient, action?: ApiFriends
 }
 export function friendsActionResponse(value: unknown, action: ApiFriendsActionRequest['action']): ApiFriendsActionResponse {
   if (!isRecord(value)) return corrupt();
+  const invitationState = (): Pick<ApiFriendsActionResponse, 'invitationState'> => {
+    if (value.invitationState === undefined) return {};
+    if (value.invitationState !== 'already_accepted' && value.invitationState !== 'already_friends') return corrupt();
+    return { invitationState: value.invitationState };
+  };
   const invitationCount = () => {
     if (value.previousInviteCount === undefined) return {};
     if (!Number.isSafeInteger(value.previousInviteCount) || Number(value.previousInviteCount) < 0) return corrupt();
@@ -116,8 +121,9 @@ export function friendsActionResponse(value: unknown, action: ApiFriendsActionRe
   }
   if (action === 'preview_invite') {
     if (!nickname(value.previewNickname)) return corrupt();
-    return { previewNickname: value.previewNickname };
+    return { previewNickname: value.previewNickname, ...invitationState() };
   }
+  if (action === 'accept_invite' && value.invitationState !== undefined) return { snapshot: friendsSnapshot(value.snapshot), ...invitationState() };
   return { snapshot: friendsSnapshot(value.snapshot), ...(action === 'accept_invite' && value.acceptedFriend ? { acceptedFriend: friendCard(value.acceptedFriend) } : {}), ...(action === 'revoke_previous_invites' ? invitationCount() : {}) };
 }
 

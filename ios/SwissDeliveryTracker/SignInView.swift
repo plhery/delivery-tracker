@@ -115,7 +115,7 @@ struct ArrivalView: View {
         }
         .task(id: invitation.isPresenting && scenePhase == .active) {
             guard invitation.isPresenting, scenePhase == .active else { return }
-            await invitation.loadPreview()
+            await invitation.loadPreview(session: session)
         }
         .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.65), trigger: opening) { _, newValue in newValue }
         .sensoryFeedback(.impact(weight: .light, intensity: 0.35), trigger: screen) { old, new in
@@ -199,6 +199,7 @@ private struct ArrivalParcelFrame: PreferenceKey {
 }
 
 private struct WelcomeView: View {
+    @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var localizer: Localizer
     let opening: Bool
     let onOpen: () -> Void
@@ -238,33 +239,41 @@ private struct WelcomeView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 8)
 
-                    Button(action: onOpen) {
-                        VStack(spacing: 8) {
-                            Color.clear
-                                .frame(width: min(300, geometry.size.width - 48), height: min(300, geometry.size.width - 48) * 31 / 30)
-                                .anchorPreference(key: ArrivalParcelFrame.self, value: .bounds) { [.welcome: $0] }
-                            Text(copy.tapToOpen)
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                                .frame(minHeight: 44)
-                                .opacity(opening ? 0 : 1)
+                    if let invitation, invitation.nickname == nil {
+                        Color.clear
+                            .frame(width: min(300, geometry.size.width - 48), height: min(300, geometry.size.width - 48) * 31 / 30)
+                            .anchorPreference(key: ArrivalParcelFrame.self, value: .bounds) { [.welcome: $0] }
+                            .accessibilityHidden(true)
+                            .padding(.top, 12)
+                    } else {
+                        Button(action: onOpen) {
+                            VStack(spacing: 8) {
+                                Color.clear
+                                    .frame(width: min(300, geometry.size.width - 48), height: min(300, geometry.size.width - 48) * 31 / 30)
+                                    .anchorPreference(key: ArrivalParcelFrame.self, value: .bounds) { [.welcome: $0] }
+                                Text(copy.tapToOpen)
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .frame(minHeight: 44)
+                                    .opacity(opening ? 0 : 1)
+                            }
+                            .contentShape(Rectangle())
                         }
-                        .contentShape(Rectangle())
+                        .buttonStyle(ParcelOpeningButtonStyle(onPressChanged: onPressChanged))
+                        .accessibilityLabel(copy.tapToOpen)
+                        .accessibilityHint(copy.openHint)
+                        .accessibilityIdentifier("welcome.openParcel")
+                        .disabled(opening || (invitation != nil && invitation?.nickname == nil))
+                        .padding(.top, 12)
                     }
-                    .buttonStyle(ParcelOpeningButtonStyle(onPressChanged: onPressChanged))
-                    .accessibilityLabel(copy.tapToOpen)
-                    .accessibilityHint(copy.openHint)
-                    .accessibilityIdentifier("welcome.openParcel")
-                    .disabled(opening || (invitation != nil && invitation?.nickname == nil))
-                    .padding(.top, 12)
 
                     if let invitation {
                         if invitation.loading { ProgressView().padding(.top, 12) }
                         if let error = invitation.errorKey {
                             Text(localizer.text(error)).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
                             if error != "friends.inviteUnavailable" {
-                                Button(localizer.text("common.retry")) { Task { await invitation.loadPreview() } }.padding(.top, 8)
+                                Button(localizer.text("common.retry")) { Task { await invitation.loadPreview(session: session) } }.padding(.top, 8)
                             }
                         }
                     }
@@ -357,7 +366,7 @@ struct SignInView: View {
                     if let invitation, invitation.nickname == nil {
                         if let error = invitation.errorKey {
                             Text(localizer.text(error)).font(.footnote).foregroundStyle(.secondary).padding(.top, 20)
-                            Button(localizer.text("common.retry")) { Task { await invitation.loadPreview() } }.padding(.top, 12)
+                            Button(localizer.text("common.retry")) { Task { await invitation.loadPreview(session: session) } }.padding(.top, 12)
                         } else { ProgressView().padding(.top, 24) }
                     } else if !configured {
                         if invitation == nil { configurationNotice.padding(.top, 28) }
@@ -690,7 +699,14 @@ private struct FriendInvitationAcceptanceView: View {
     @State private var creatingProfile = false
     @State private var joining = false
     @State private var checkingInvitation = true
-    private var isSelfInvitation: Bool { model.errorKey == "friends.selfInvitation" }
+    @State private var invitationState: FriendsActionResponseInvitationState?
+    private var outcomeMessage: String? {
+        switch invitationState {
+        case .alreadyAccepted: "friends.inviteAlreadyAccepted"
+        case .alreadyFriends: "friends.alreadyFriends"
+        case nil: model.errorKey == "friends.selfInvitation" ? "friends.selfInvitation" : nil
+        }
+    }
 
     var body: some View {
         ScrollView {
@@ -707,18 +723,18 @@ private struct FriendInvitationAcceptanceView: View {
                     Text(localizer.text("friends.friendshipDelivered"))
                         .font(.system(.title, design: .rounded, weight: .medium)).multilineTextAlignment(.center)
                         .accessibilityAddTraits(.isHeader)
-                } else if isSelfInvitation {
-                    Text(localizer.text("friends.selfInvitation"))
+                } else if let outcomeMessage {
+                    Text(localizer.text(outcomeMessage))
                         .font(.system(.title, design: .rounded, weight: .medium)).multilineTextAlignment(.center)
                         .accessibilityAddTraits(.isHeader)
                 } else { InvitationHeading(nickname: invitation.nickname) }
-                if let error = invitation.errorKey ?? model.errorKey, !creatingProfile, !isSelfInvitation {
+                if let error = invitation.errorKey ?? model.errorKey, !creatingProfile, outcomeMessage == nil, invitation.receipt == nil {
                     Text(localizer.text(error)).font(.footnote).foregroundStyle(.secondary)
                     if error != "friends.inviteUnavailable" {
-                        Button(localizer.text("common.retry")) { Task { await invitation.loadPreview(); await checkInvitation() } }
+                        Button(localizer.text("common.retry")) { Task { await invitation.loadPreview(session: session); await checkInvitation() } }
                     }
                 }
-                if isSelfInvitation {
+                if outcomeMessage != nil {
                     Button { invitation.dismiss() } label: {
                         Text(localizer.text("common.close")).frame(maxWidth: .infinity, minHeight: 46)
                     }
@@ -771,10 +787,12 @@ private struct FriendInvitationAcceptanceView: View {
 
     private func checkInvitation() async {
         checkingInvitation = true
+        invitationState = nil
         defer { checkingInvitation = false }
         await model.load(parcels: parcels.parcels)
         guard !Task.isCancelled, model.snapshot != nil, let code = invitation.code else { return }
-        _ = await model.act(FriendsActionRequest(action: .previewInvite, code: code), parcels: parcels.parcels)
+        let preview = await model.act(FriendsActionRequest(action: .previewInvite, code: code), parcels: parcels.parcels)
+        invitationState = preview?.invitationState
     }
 
     private func accept(profile: FriendProfile? = nil) async {
@@ -790,7 +808,11 @@ private struct FriendInvitationAcceptanceView: View {
             guard saved.snapshot?.profile != nil else { model.errorKey = "friends.actionFailed"; return }
         }
         _ = await model.act(FriendsActionRequest(action: .acceptInvite, code: code), parcels: parcels.parcels, onCommitted: { result in
-            if invitation.isPresenting, invitation.code == code { creatingProfile = false; invitation.receive(result) }
+            if invitation.isPresenting, invitation.code == code {
+                creatingProfile = false
+                if let state = result.invitationState { invitationState = state }
+                else { invitation.receive(result) }
+            }
         })
     }
 }

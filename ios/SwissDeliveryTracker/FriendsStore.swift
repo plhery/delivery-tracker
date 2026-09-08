@@ -36,14 +36,24 @@ final class FriendInvitationStore: ObservableObject {
         persist()
     }
 
-    func loadPreview() async {
+    func loadPreview(session: SessionStore? = nil) async {
         guard isPresenting, receipt == nil else { return }
         guard let code else { errorKey = "friends.inviteUnavailable"; return }
         generation += 1; let current = generation
         loading = true; errorKey = nil
         defer { if generation == current { loading = false } }
         do {
-            let name = try await DeliveryAPIClient.invitationPreview(code: code)
+            let name: String
+            do { name = try await DeliveryAPIClient.invitationPreview(code: code) }
+            catch DeliveryAPIError.service("Invitation unavailable") {
+                // A consumed link has no public preview. Recover it only for
+                // the authenticated recipient, without revealing its state yet.
+                guard let session, session.user != nil else { throw DeliveryAPIError.service("Invitation unavailable") }
+                let preview = try await DeliveryAPIClient(configuration: .current, session: session)
+                    .friendsAction(FriendsActionRequest(action: .previewInvite, code: code))
+                guard let nickname = preview.previewNickname, !nickname.isEmpty else { throw DeliveryAPIError.invalidResponse }
+                name = nickname
+            }
             guard generation == current, !Task.isCancelled else { return }
             nickname = name
         } catch {

@@ -239,6 +239,8 @@
   "friends.inviteExpiry": "One use · expires in 7 days",
   "friends.inviteHint": "Send this link to a friend.",
   "friends.inviteTitle": "Invite a friend",
+  "friends.inviteAlreadyAccepted": "You’ve already accepted this invitation.",
+  "friends.alreadyFriends": "You’re already friends.",
   "friends.inviteUnavailable": "This invitation is no longer available. Ask your friend for a new link.",
   "friends.invitedBy": "Join {{name}}’s circle?",
   "friends.join": "Create profile",

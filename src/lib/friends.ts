@@ -43,9 +43,9 @@ export function createFriendsClient(demo: boolean, auth?: ApiAuth) {
   }
   return {
     /** Validate an opened invitation for this account without accepting it. */
-    async checkInvitation(code: string): Promise<void> {
+    async checkInvitation(code: string): Promise<ApiFriendsActionResponse> {
       if (demo) throw new FriendsError('friends.demoInvites');
-      await request({ action: 'preview_invite', code });
+      return request({ action: 'preview_invite', code });
     },
     async load(parcels: readonly ParcelWithEvents[]): Promise<ApiFriendsSnapshot> {
       return demo ? snapshot(parcels) : request();

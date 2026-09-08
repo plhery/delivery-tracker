@@ -193,3 +193,27 @@ describe('ApiApplication', () => {
     expect(mocks.auth.signOut).toHaveBeenCalled();
   });
 });
+
+it.each([
+  ['already_accepted', 'You’ve already accepted this invitation.'],
+  ['already_friends', 'You’re already friends.'],
+] as const)('opens the authenticated %s outcome without an error or an acceptance request', async (invitationState, message) => {
+  history.replaceState(null, '', '/invite#' + 'ab'.repeat(16));
+  mocks.auth.status = 'authenticated'; mocks.auth.user = USER;
+  vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+  const snapshot = { profile: { nickname: 'Alex', shareStats: false, shareArrival: false }, ownCard: null, friends: [] };
+  const fetch = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+    if (url.endsWith('invite-preview')) return invitationState === 'already_accepted'
+      ? new Response('{}', { status: 404 }) : new Response(JSON.stringify({ previewNickname: 'Paul' }));
+    return new Response(JSON.stringify(init?.method === 'POST' ? { previewNickname: 'Paul', invitationState } : snapshot));
+  });
+  vi.stubGlobal('fetch', fetch);
+  const user = userEvent.setup(); render(<ApiApplication />);
+  await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' });
+  expect(screen.queryByText(message)).not.toBeInTheDocument();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
+  expect(await screen.findByRole('heading', { name: message })).toBeVisible();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(fetch.mock.calls.some(([, init]) => String(init?.body).includes('accept_invite'))).toBe(false);
+});

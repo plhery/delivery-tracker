@@ -187,7 +187,10 @@ it('keeps an expired invitation closed and allows dismissal', async () => {
   vi.mocked(fetch).mockResolvedValue(new Response('{}', { status: 404 }));
   const user = userEvent.setup(); render(<Harness />);
   expect(await screen.findByRole('alert')).toHaveTextContent('This invitation is no longer available');
-  expect(screen.getByRole('button', { name: 'Tap to open your parcel' })).toBeDisabled();
+  expect(screen.queryByText('Tap to open your parcel')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Tap to open your parcel' })).not.toBeInTheDocument();
+  expect(document.querySelector('.arrival__parcel')).toBeInTheDocument();
+  expect(document.querySelector('.arrival')).toHaveClass('arrival--welcome');
   await user.click(screen.getByRole('button', { name: 'Close' }));
   expect(screen.getByText('Invitation closed')).toBeVisible();
   expect(sessionStorage.length).toBe(0);
@@ -201,4 +204,56 @@ it('clears sender information on background and ignores a late preview', async (
   fireEvent(document, new Event('visibilitychange'));
   await act(async () => finish(new Response(JSON.stringify({ previewNickname: 'Paul' }))));
   expect(screen.queryByRole('heading', { name: 'Your friend Paul sent you an invitation' })).toBeNull();
+});
+
+it.each([
+  ['already_accepted', 'You’ve already accepted this invitation.'],
+  ['already_friends', 'You’re already friends.'],
+] as const)('reveals %s only inside the parcel, without an error or another acceptance', async (invitationState, message) => {
+  if (invitationState === 'already_accepted') vi.mocked(fetch).mockResolvedValue(new Response('{}', { status: 404 }));
+  const client: FriendsClient = {
+    checkInvitation: vi.fn().mockResolvedValue({ previewNickname: 'Paul', invitationState }),
+    load: vi.fn().mockResolvedValue(enrolled), action: vi.fn(),
+  };
+  const user = userEvent.setup(); const { container } = render(<Harness client={client} />);
+  await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' });
+  expect(screen.queryByText(message)).not.toBeInTheDocument();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  const parcel = container.querySelector('.arrival__parcel');
+  await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
+  expect(await screen.findByRole('heading', { name: message })).toBeVisible();
+  expect(container.querySelector('.arrival__parcel')).toBe(parcel);
+  expect(container.querySelector('.arrival')).toHaveClass('arrival--sign-in');
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Become friends|Retry/ })).not.toBeInTheDocument();
+  expect(client.action).not.toHaveBeenCalled();
+  await user.click(screen.getByRole('button', { name: 'Close' }));
+  expect(screen.getByText('Invitation closed')).toBeVisible();
+});
+
+it.each(['already_accepted', 'already_friends'] as const)('handles %s returned during acceptance without celebrating a new friendship', async (invitationState) => {
+  const client: FriendsClient = {
+    checkInvitation: vi.fn().mockResolvedValue({ previewNickname: 'Paul' }),
+    load: vi.fn().mockResolvedValue(enrolled), action: vi.fn().mockResolvedValue({ snapshot: enrolled, invitationState }),
+  };
+  const user = userEvent.setup(); const { container } = render(<Harness client={client} />);
+  await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' });
+  await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
+  await user.click(await screen.findByRole('button', { name: 'Become friends' }));
+  await screen.findByRole('heading', { name: invitationState === 'already_accepted' ? 'You’ve already accepted this invitation.' : 'You’re already friends.' });
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(container.querySelector('.friendship-receipt')).not.toBeInTheDocument();
+  expect(screen.queryByText('Invitation closed')).not.toBeInTheDocument();
+});
+
+it('keeps a consumed invitation closed for another account', async () => {
+  vi.mocked(fetch).mockResolvedValue(new Response('{}', { status: 404 }));
+  const client: FriendsClient = {
+    checkInvitation: vi.fn().mockRejectedValue(new FriendsError('friends.inviteUnavailable')),
+    load: vi.fn(), action: vi.fn(),
+  };
+  render(<Harness client={client} />);
+  expect(await screen.findByRole('alert')).toHaveTextContent('This invitation is no longer available');
+  expect(screen.queryByText('Tap to open your parcel')).not.toBeInTheDocument();
+  expect(client.action).not.toHaveBeenCalled();
 });
