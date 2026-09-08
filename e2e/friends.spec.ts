@@ -1,6 +1,18 @@
 import { expect, test } from '@playwright/test';
 
 test.use({ locale: 'en-US' });
+test('Demo invitation actions offer a working route back to the opening parcel', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('sdt.web.experience.v1', 'demo'));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Friends', exact: true }).click();
+  await page.getByRole('button', { name: 'Invite a friend', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Sign in instead', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Tap to open your parcel' })).toBeVisible();
+  await expect(page.locator('.demo-banner')).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('sdt.web.experience.v1'))).toBe('welcome');
+});
+
 test('Friends shares the navigation, stamp interactions, and reversible privacy controls', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));

@@ -599,7 +599,7 @@ export default function App({
         </div>
         </div>
         {tab === 'passport' && <Passport parcels={parcels} loading={loading} />}
-        {tab === 'friends' && <Friends key={apiAuth?.userId ?? 'demo'} client={friendsClient} parcels={parcels} demo={mode === 'demo'} />}
+        {tab === 'friends' && <Friends key={apiAuth?.userId ?? 'demo'} client={friendsClient} parcels={parcels} demo={mode === 'demo'} onExitDemo={onExitDemo} />}
       </main>
 
       {adding && (

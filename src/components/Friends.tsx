@@ -10,7 +10,7 @@ import { Icon, PostageStamp } from './Icon';
 import { useFriendsActivity } from './FriendsActivity';
 
 type Panel = 'settings' | 'invite' | 'accept' | 'disable' | ApiFriendCard | null;
-export function Friends({ client, parcels, demo }: { client: FriendsClient; parcels: ParcelWithEvents[]; demo: boolean }) {
+export function Friends({ client, parcels, demo, onExitDemo }: { client: FriendsClient; parcels: ParcelWithEvents[]; demo: boolean; onExitDemo?: () => void }) {
   const { t } = useI18n();
   const activity = useFriendsActivity();
   const [data, setData] = useState<ApiFriendsSnapshot | null>(() => activity?.arrival?.snapshot ?? null);
@@ -119,7 +119,10 @@ export function Friends({ client, parcels, demo }: { client: FriendsClient; parc
       {errorView}
       {panel === 'settings' && data?.profile && <><FriendProfileForm profile={data.profile} parcels={parcels} busy={busy} onSave={async (profile) => { if (await act({ action: 'save_profile', ...profile })) close(); }} /><button className="friends-remove" onClick={() => setPanel('disable')}>{t('friends.disable')}</button></>}
       {panel === 'disable' && <><p>{t('friends.disableDetail')}</p><button className="button button--primary" disabled={busy} onClick={async () => { if (await act({ action: 'disable' })) close(); }}>{t('friends.disable')}</button></>}
-      {(panel === 'invite' || panel === 'accept') && (demo ? <p>{t('friends.demoInvites')}</p> : panel === 'invite' ? <FriendsInvite code={inviteCode} busy={busy} act={act} onRetry={inviteFriend} onClose={close} /> : <FriendsAccept onOpen={() => setPanel(null)} />)}
+      {(panel === 'invite' || panel === 'accept') && (demo ? <>
+        <p>{t('friends.demoInvites')}</p>
+        {onExitDemo && <button className="button button--primary" onClick={() => { close(); onExitDemo(); }}>{t('welcome.signInInstead')}</button>}
+      </> : panel === 'invite' ? <FriendsInvite code={inviteCode} busy={busy} act={act} onRetry={inviteFriend} onClose={close} /> : <FriendsAccept onOpen={() => setPanel(null)} />)}
       {selected && <FriendDetails friend={selected} busy={busy} onRemove={async () => { if (await act({ action: 'remove_friend', friendId: selected.id })) close(); }} />}
     </FriendsSheet>}
   </div>;

@@ -158,7 +158,18 @@ struct FriendsView: View {
             Text(text("friends.disableDetail")).font(.subheadline).foregroundStyle(.secondary)
             Button(text("friends.disable")) { Task { if await model.act(FriendsActionRequest(action: .disable), parcels: parcels.parcels) != nil { panel = nil } } }.buttonStyle(.borderedProminent).disabled(model.working).tint(Brand.accent).foregroundStyle(Brand.onAccent)
         case .invite, .accept:
-            if session.isDemo { Text(text("friends.demoInvites")).font(.subheadline).foregroundStyle(.secondary) }
+            if session.isDemo {
+                Text(text("friends.demoInvites")).font(.subheadline).foregroundStyle(.secondary)
+                Button {
+                    panel = nil
+                    model.errorKey = nil
+                    session.showWelcome()
+                } label: {
+                    Text(text("welcome.signInInstead")).frame(maxWidth: .infinity, minHeight: 48)
+                }
+                .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
+                .accessibilityIdentifier("friends.demoSignIn")
+            }
             else { FriendsInvitationView(accepting: value.id == "accept", busy: model.working, act: { await model.act($0, parcels: parcels.parcels) }, completed: { panel = nil }, open: { url in panel = nil; invitation.open(url) }) }
         case .friend(let initial):
             if let friend = model.snapshot?.friends.first(where: { $0.id == initial.id }) {

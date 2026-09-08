@@ -14,8 +14,10 @@ beforeEach(() => vi.stubGlobal('crypto', webcrypto));
 const enrolled = (): ApiFriendsSnapshot => ({ ...structuredClone(fixture), ownCard: ownFriendCard([], fixture.profile) }) as ApiFriendsSnapshot;
 function realClient(): FriendsClient { return { checkInvitation: vi.fn().mockResolvedValue(undefined), load: vi.fn().mockResolvedValue(enrolled()), action: vi.fn() }; }
 async function show(client = createFriendsClient(true), demo = true) {
-  const user = userEvent.setup(); render(<Friends client={client} parcels={[]} demo={demo} />);
-  await screen.findByRole('button', { name: 'Invite a friend' }); return { user, client };
+  const user = userEvent.setup();
+  const onExitDemo = vi.fn();
+  render(<Friends client={client} parcels={[]} demo={demo} onExitDemo={onExitDemo} />);
+  await screen.findByRole('button', { name: 'Invite a friend' }); return { user, client, onExitDemo };
 }
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); sessionStorage.clear(); history.replaceState(null, '', '/'); });
 
@@ -77,15 +79,23 @@ describe('Friends', () => {
     expect(within(own).getByText('Delivered')).toBeVisible();
     expect(within(own).getByText('No arrivals this week')).toBeVisible();
   });
-  it('makes demo invitations clearly fictional without calling a server', async () => {
+  it('lets demo users continue toward sign-in from either invitation action without calling a server', async () => {
     const fetch = vi.fn(); vi.stubGlobal('fetch', fetch);
-    const { user } = await show();
+    const { user, onExitDemo } = await show();
     await user.click(screen.getByRole('button', { name: 'Invite a friend' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('Sign in to invite friends');
+    expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Sign in instead' })).toBeVisible();
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Close' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(onExitDemo).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: 'Open an invitation link' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('Sign in to invite friends');
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Sign in instead' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(onExitDemo).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole('button', { name: 'Invite a friend' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Sign in instead' }));
+    expect(onExitDemo).toHaveBeenCalledTimes(2);
     expect(fetch).not.toHaveBeenCalled();
   });
   it('prepares a single-use link on the first invite click, then copies and revokes it', async () => {
