@@ -218,6 +218,8 @@ private struct FriendCardView: View {
 private struct FriendsProfileForm: View {
     @EnvironmentObject private var localizer: Localizer
     @EnvironmentObject private var parcels: ParcelStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     let profile: FriendProfile?
     let busy: Bool
     let save: (FriendProfile) -> Void
@@ -225,6 +227,8 @@ private struct FriendsProfileForm: View {
     @State private var stats: Bool
     @State private var arrival: Bool
     @State private var magicTrigger = 0
+    @State private var settledName: String?
+    @FocusState private var nameFocused: Bool
     init(profile: FriendProfile?, busy: Bool, save: @escaping (FriendProfile) -> Void) {
         self.profile = profile; self.busy = busy; self.save = save
         _name = State(initialValue: profile?.nickname ?? "")
@@ -232,12 +236,20 @@ private struct FriendsProfileForm: View {
         _arrival = State(initialValue: profile?.shareArrival ?? true)
     }
     private var value: FriendProfile { FriendProfile(nickname: name.trimmingCharacters(in: .whitespacesAndNewlines), shareStats: stats, shareArrival: arrival) }
+    private var invitesAttention: Bool { profile == nil && !busy && !reduceMotion && scenePhase == .active }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(localizer.text("friends.nickname")).font(.subheadline.weight(.semibold))
                 TextField(localizer.text("friends.nicknamePlaceholder"), text: $name).textContentType(.nickname).padding(14).background(Brand.paper, in: RoundedRectangle(cornerRadius: 14))
-                    .onChange(of: name) { _, next in if next.unicodeScalars.count > 24 { name = String(String.UnicodeScalarView(next.unicodeScalars.prefix(24))) } }
+                    .focused($nameFocused).submitLabel(.done).onSubmit { nameFocused = false }
+                    .overlay {
+                        if invitesAttention && value.nickname.isEmpty && !nameFocused { FriendsAttentionHalo(cornerRadius: 14) }
+                    }
+                    .onChange(of: name) { _, next in
+                        settledName = nil
+                        if next.unicodeScalars.count > 24 { name = String(String.UnicodeScalarView(next.unicodeScalars.prefix(24))) }
+                    }
             }
             VStack(alignment: .leading, spacing: 8) {
                 Text(localizer.text("friends.preview")).font(.subheadline).foregroundStyle(.secondary)
@@ -252,14 +264,39 @@ private struct FriendsProfileForm: View {
             Label(localizer.text("friends.privacy"), systemImage: "lock").font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Button { save(value) } label: { Text(localizer.text(profile == nil ? "friends.join" : "friends.save")).frame(maxWidth: .infinity, minHeight: 46) }
                 .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent).disabled(busy || value.nickname.isEmpty)
+                .overlay {
+                    if invitesAttention && !value.nickname.isEmpty && settledName == value.nickname { FriendsAttentionHalo(cornerRadius: 100) }
+                }
         }.disabled(busy)
             .sensoryFeedback(.impact(weight: .light, intensity: 0.5), trigger: magicTrigger)
             .onChange(of: stats) { _, _ in magicTrigger += 1 }
             .onChange(of: arrival) { _, _ in magicTrigger += 1 }
+            .task(id: name) {
+                guard profile == nil, !value.nickname.isEmpty else { return }
+                do { try await Task.sleep(for: .milliseconds(900)) } catch { return }
+                guard !Task.isCancelled else { return }
+                settledName = value.nickname
+            }
     }
     private func toggle(_ title: String, detail: String, value: Binding<Bool>) -> some View {
         Toggle(isOn: value) { Text(localizer.text(title)).font(.footnote).foregroundStyle(.secondary) }
             .toggleStyle(FriendsSharingToggleStyle()).frame(maxWidth: .infinity, alignment: .leading).accessibilityHint(localizer.text(detail))
+    }
+}
+
+/// A short breath followed by a long rest; removed entirely once its step is complete.
+private struct FriendsAttentionHalo: View {
+    let cornerRadius: CGFloat
+    @State private var startedAt = Date()
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
+            let phase = max(0, context.date.timeIntervalSince(startedAt) - 0.4).truncatingRemainder(dividingBy: 5.2)
+            let breath = phase < 1.7 ? pow(sin(phase / 1.7 * .pi), 2) : 0
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .stroke(Brand.accent.opacity(0.55 * breath), lineWidth: 1.2)
+                .padding(-2 - 2 * breath)
+        }
+        .allowsHitTesting(false).accessibilityHidden(true)
     }
 }
 

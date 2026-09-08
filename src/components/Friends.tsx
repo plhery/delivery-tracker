@@ -94,16 +94,24 @@ function FriendProfileForm({ profile, parcels, busy, onSave }: { profile: ApiFri
   const [stats, setStats] = useState(profile?.shareStats ?? true);
   const [arrival, setArrival] = useState(profile?.shareArrival ?? true);
   const [magic, setMagic] = useState(0);
+  const [nameFocused, setNameFocused] = useState(false);
+  const [settledName, setSettledName] = useState<string | null>(null);
   const previewId = useId();
   const value = { nickname: name.trim(), shareStats: stats, shareArrival: arrival };
-  return <form className="friends-profile" onSubmit={(event) => { event.preventDefault(); if (value.nickname) void onSave(value); }}>
-    <label className="friends-name">{t('friends.nickname')}<input value={name} onChange={(event) => setName(event.target.value)} maxLength={24} placeholder={t('friends.nicknamePlaceholder')} autoComplete="off" required disabled={busy} /></label>
+  const attention = profile || busy ? undefined : !value.nickname ? (nameFocused ? undefined : 'name') : settledName === value.nickname ? 'create' : undefined;
+  useEffect(() => {
+    if (profile || busy || !name.trim()) return;
+    const timer = window.setTimeout(() => setSettledName(name.trim()), 900);
+    return () => window.clearTimeout(timer);
+  }, [name, profile, busy]);
+  return <form className="friends-profile" data-attention={attention} onSubmit={(event) => { event.preventDefault(); if (value.nickname) void onSave(value); }}>
+    <label className="friends-name">{t('friends.nickname')}<span className="friends-name__field"><input value={name} onChange={(event) => { setName(event.target.value); setSettledName(null); }} onFocus={() => setNameFocused(true)} onBlur={() => setNameFocused(false)} maxLength={24} placeholder={t('friends.nicknamePlaceholder')} autoComplete="off" required disabled={busy} /><span className="friends-attention" aria-hidden="true" /></span></label>
     <section className="friends-preview" aria-labelledby={previewId}><p id={previewId}>{t('friends.preview')}</p><button type="button" className="friend-card tone-blue" disabled={busy} onClick={() => setMagic((value) => value + 1)}><FriendCardBody friend={ownFriendCard(parcels, { ...value, nickname: value.nickname || t('friends.you') })} showSharingStatus magic={magic} /></button></section>
     <div className="friends-sharing">
       <label className="friends-toggle"><input type="checkbox" role="switch" checked={stats} onChange={(event) => { setStats(event.target.checked); setMagic((value) => value + 1); }} disabled={busy} /><span>{t('friends.shareStats')}</span></label>
       <label className="friends-toggle"><input type="checkbox" role="switch" checked={arrival} onChange={(event) => { setArrival(event.target.checked); setMagic((value) => value + 1); }} disabled={busy} /><span>{t('friends.shareArrival')}</span></label>
     </div>
-    <p className="friends-privacy"><Icon name="lock" />{t('friends.privacy')}</p><button className="button button--primary" disabled={busy || !value.nickname}>{t(profile ? 'friends.save' : 'friends.join')}</button>
+    <p className="friends-privacy"><Icon name="lock" />{t('friends.privacy')}</p><button className="button button--primary friends-join" disabled={busy || !value.nickname}>{t(profile ? 'friends.save' : 'friends.join')}<span className="friends-attention" aria-hidden="true" /></button>
   </form>;
 }
 function FriendsSheet({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {

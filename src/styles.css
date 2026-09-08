@@ -697,6 +697,14 @@ button.friend-card:focus-visible .friend-avatar .postage-stamp { scale: 1.035; }
 .friends-sharing { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .friends-name, .friends-invite label { display: grid; gap: 8px; font-size: 13px; font-weight: 600; }
 .friends-name input, .friends-invite input { width: 100%; min-width: 0; min-height: 50px; background: var(--control); color: var(--ink); border: 1px solid var(--line); border-radius: 15px; padding: 12px 14px; }
+.friends-name__field { position: relative; display: block; min-width: 0; border-radius: 15px; }
+.friends-name__field input { display: block; }
+.friends-join { position: relative; }
+.friends-attention { position: absolute; inset: -2px; border: 1.2px solid var(--yellow); border-radius: inherit; opacity: 0; pointer-events: none; }
+.friends-profile[data-attention="name"] .friends-name__field > .friends-attention,
+.friends-profile[data-attention="create"] .friends-join:not(:active):not(:focus-visible) > .friends-attention { animation: friends-attention-breathe 5.2s ease-in-out .4s infinite; }
+@keyframes friends-attention-breathe { 0%, 33%, 100% { opacity: 0; transform: scale(1); } 16.5% { opacity: .55; transform: scale(1.012, 1.07); } }
+@media (prefers-reduced-motion: reduce), (forced-colors: active) { .friends-attention { display: none; animation: none !important; } }
 .friends-toggle { display: flex; align-items: center; gap: 7px; min-height: 44px; font-size: 12px; color: var(--ink-soft); cursor: pointer; }
 .friends-toggle input { appearance: none; position: relative; width: 17px; height: 17px; margin: 0; border-radius: 4px; background: transparent; border: 1px solid var(--ink-soft); flex-shrink: 0; cursor: pointer; transition: background .18s, border-color .18s; }
 .friends-toggle input:checked { background: var(--green); border-color: var(--green); }

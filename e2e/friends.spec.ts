@@ -107,3 +107,37 @@ test('An empty Friends circle and sharing settings fit a phone without scrolling
     await page.keyboard.press('Escape');
   }
 });
+
+test('Profile creation gently guides the next step without interrupting typing', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.addInitScript(() => localStorage.setItem('sdt.web.experience.v1', 'demo'));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Friends', exact: true }).click();
+  await page.locator('.friends-own').click();
+  await expect(page.locator('.friends-profile')).not.toHaveAttribute('data-attention');
+  await page.getByRole('dialog').getByRole('button', { name: 'Turn off Friends' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Turn off Friends' }).click();
+  const form = page.locator('.friends-profile');
+  const name = form.getByRole('textbox', { name: 'Nickname' });
+  const create = form.getByRole('button', { name: 'Create profile' });
+  await expect(form).toHaveAttribute('data-attention', 'name');
+  await expect(form.locator('.friends-name__field .friends-attention')).toHaveCSS('animation-name', 'friends-attention-breathe');
+  await name.focus();
+  await expect(form).not.toHaveAttribute('data-attention');
+  await name.fill('   ');
+  await expect(create).toBeDisabled();
+  await name.fill('Robin');
+  await expect(form).not.toHaveAttribute('data-attention');
+  await expect(form).toHaveAttribute('data-attention', 'create');
+  await expect(create.locator('.friends-attention')).toHaveCSS('animation-name', 'friends-attention-breathe');
+  await expect(name).toBeFocused();
+  await name.press('End');
+  await name.press('!');
+  await expect(form).not.toHaveAttribute('data-attention');
+  await expect(form).toHaveAttribute('data-attention', 'create');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(create.locator('.friends-attention')).toHaveCSS('display', 'none');
+  await expect(create.locator('.friends-attention')).toHaveCSS('animation-name', 'none');
+  await create.click();
+  await expect(page.locator('.friends-own')).toContainText('Robin!');
+});
