@@ -29,6 +29,29 @@ beforeEach(() => {
 });
 
 describe('App', () => {
+  it('lets the demo start fresh from account settings after a gentle confirmation', async () => {
+    const repo = createDemoRepo(window.localStorage);
+    const original = await repo.list();
+    await repo.remove(original[0].id);
+    await repo.add({ trackingNumber: '123456789012', label: 'My demo parcel' });
+    const user = userEvent.setup();
+    renderApp(repo);
+    expect(await screen.findByText('My demo parcel')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Account' }));
+    await user.click(screen.getByRole('button', { name: 'Reset demo data' }));
+    expect(screen.getByText('Start the demo fresh?')).toBeInTheDocument();
+    expect(screen.queryByText(/permanently delete/i)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(await repo.list()).toHaveLength(4);
+
+    await user.click(screen.getByRole('button', { name: 'Reset demo data' }));
+    await user.click(screen.getByRole('button', { name: 'Reset demo data' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.queryByText('My demo parcel')).not.toBeInTheDocument();
+    expect(await screen.findByText(original[0].label!)).toBeInTheDocument();
+    expect(await repo.list()).toHaveLength(3);
+  });
+
   it('adds a Dutch postal shipment with automatic PostNL / Spring GDS tracking', async () => {
     const repo = createDemoRepo(window.localStorage);
     const add = vi.spyOn(repo, 'add');

@@ -29,6 +29,25 @@ describe('nextStage', () => {
 });
 
 describe('createDemoRepo', () => {
+  it('resets changed and archived demo parcels without clearing other browser data', async () => {
+    let now = Date.parse('2026-09-08T10:00:00Z');
+    const repo = createDemoRepo(window.localStorage, () => now);
+    const original = await repo.list();
+    await repo.remove(original[0].id);
+    await repo.rename(original[1].id, 'Changed sample');
+    await repo.add({ trackingNumber: '123456789012', label: 'My demo parcel' });
+    window.localStorage.setItem('unrelated-setting', 'keep');
+    now += 86_400_000;
+
+    const reset = await repo.resetDemo!();
+
+    expect(reset.map((parcel) => parcel.label)).toEqual(original.map((parcel) => parcel.label));
+    expect(reset.every((parcel) => !parcel.archivedAt)).toBe(true);
+    expect(Date.parse(reset[0].createdAt) - Date.parse(original[0].createdAt)).toBe(86_400_000);
+    expect(await createDemoRepo(window.localStorage).list()).toEqual(reset);
+    expect(window.localStorage.getItem('unrelated-setting')).toBe('keep');
+  });
+
   it('seeds example parcels on first use and persists them', async () => {
     const repo = createDemoRepo(window.localStorage);
     const parcels = await repo.list();

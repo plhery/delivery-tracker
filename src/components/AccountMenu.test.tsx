@@ -12,6 +12,7 @@ describe('AccountMenu', () => {
     await user.click(screen.getByLabelText('Account options for owner@example.test'));
     expect(screen.getByText('owner@example.test')).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Language' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reset demo data' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Privacy notice' }))
       .toHaveAttribute('href', '/privacy.html');
     await user.click(screen.getByRole('button', { name: 'Sign out' }));

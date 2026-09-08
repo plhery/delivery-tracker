@@ -78,6 +78,8 @@ export type SyncProgress = 'queued' | 'running';
 export interface ParcelRepo {
   readonly mode: 'api' | 'demo';
   list(): Promise<ParcelWithEvents[]>;
+  /** Restore the original sample parcels; available only in the local demo. */
+  resetDemo?(): Promise<ParcelWithEvents[]>;
   add(input: NewParcelInput): Promise<ParcelWithEvents>;
   rename(id: string, label: string): Promise<ParcelWithEvents>;
   changeCarrier?(id: string, input: ParcelCarrierInput): Promise<ParcelWithEvents>;

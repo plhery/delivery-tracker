@@ -36,6 +36,7 @@ interface ParcelsState {
   refresh: (onProgress?: (progress: SyncProgress) => void) => Promise<void>;
   refreshParcel: (id: string, onProgress?: (progress: SyncProgress) => void) => Promise<void>;
   retryLoad: () => Promise<void>;
+  resetDemoData: () => Promise<void>;
 }
 
 const ParcelsContext = createContext<ParcelsState | null>(null);
@@ -99,6 +100,17 @@ export function ParcelsProvider({
     if (parcelsRef.current.length === 0) setLoading(true);
     await reload();
   }, [reload]);
+
+  const resetDemoData = useCallback(async () => {
+    if (repo.mode !== 'demo' || !repo.resetDemo) throw new Error('Demo reset is unavailable');
+    const list = await repo.resetDemo();
+    if (mounted.current) {
+      setParcels(list);
+      setError(null);
+      setAuthenticationRequired(false);
+      setUsingCachedData(false);
+    }
+  }, [repo]);
 
   useEffect(() => {
     // Fetching from and subscribing to the repository is the external system
@@ -285,6 +297,7 @@ export function ParcelsProvider({
       refresh,
       refreshParcel,
       retryLoad,
+      resetDemoData,
     }),
     [
       parcels,
@@ -304,6 +317,7 @@ export function ParcelsProvider({
       refresh,
       refreshParcel,
       retryLoad,
+      resetDemoData,
     ],
   );
 

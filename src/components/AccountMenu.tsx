@@ -8,14 +8,15 @@ import type { ApiAuth } from '../lib/apiClient';
 import { Icon } from './Icon';
 import { NotificationControl } from './NotificationControl';
 
-type AccountAction = 'export' | 'delete' | 'sign-out';
+type AccountAction = 'export' | 'delete' | 'sign-out' | 'reset-demo';
 
-export function AccountMenu({ email, onExport, onDelete, onSignOut, onExitDemo, apiAuth }: {
+export function AccountMenu({ email, onExport, onDelete, onSignOut, onExitDemo, onResetDemo, apiAuth }: {
   email?: string;
   onExport?: () => Promise<void>;
   onDelete?: (confirmation: string) => Promise<void>;
   onSignOut?: () => Promise<void>;
   onExitDemo?: () => void;
+  onResetDemo?: () => Promise<void>;
   apiAuth?: ApiAuth;
 }) {
   const { t } = useI18n();
@@ -24,16 +25,17 @@ export function AccountMenu({ email, onExport, onDelete, onSignOut, onExitDemo, 
   const [open, setOpen] = useState(false);
   const [working, setWorking] = useState<AccountAction | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [confirmingReset, setConfirmingReset] = useState(false);
   const [confirmation, setConfirmation] = useState('');
   const [error, setError] = useState<string | null>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
-  const [dialog, close] = useSheetDialog<HTMLDivElement>(open, () => setOpen(false), closeButton);
+  const [dialog, close] = useSheetDialog<HTMLDivElement>(open, () => { setOpen(false); setConfirmingReset(false); }, closeButton);
 
   async function run(action: AccountAction, operation: () => Promise<void>) {
     if (working) return;
     setWorking(action);
     setError(null);
-    try { await operation(); if (action === 'export') setWorking(null); }
+    try { await operation(); if (action === 'export' || action === 'reset-demo') setWorking(null); }
     catch (reason) { setError(userErrorMessage(reason, t, 'account.actionFailed')); setWorking(null); }
   }
 
@@ -48,6 +50,13 @@ export function AccountMenu({ email, onExport, onDelete, onSignOut, onExitDemo, 
         <div className="settings-profile"><span className="settings-profile__avatar">{initial || <Icon name="account" />}</span>
           <div>{email && <span>{t('account.signedIn')}</span>}<strong>{email || t('app.demo')}</strong></div></div>
         {onExitDemo && <button type="button" className="settings-row settings-row--exit" onClick={onExitDemo}><Icon name="exit" />{t('native.exitDemo')}<Icon name="arrow" /></button>}
+        {onResetDemo && (confirmingReset ? <div className="settings-reset">
+          <h3>{t('native.resetDemoQuestion')}</h3><p>{t('native.resetDemoDescription')}</p>
+          <div className="sheet__actions">
+            <button className="button button--secondary" type="button" autoFocus disabled={Boolean(working)} onClick={() => { setConfirmingReset(false); setError(null); }}>{t('common.cancel')}</button>
+            <button className="button button--primary" type="button" disabled={Boolean(working)} aria-busy={working === 'reset-demo'} onClick={() => void run('reset-demo', async () => { await onResetDemo(); close(); })}>{t('native.resetDemo')}</button>
+          </div>
+        </div> : <button type="button" className="settings-row settings-row--reset" disabled={Boolean(working)} onClick={() => setConfirmingReset(true)}><Icon name="refresh" />{t('native.resetDemo')}<Icon name="arrow" /></button>)}
         <section className="settings-section"><LanguageControl className="language-control--account" /></section>
         <fieldset className="settings-section appearance-control"><legend>{t('native.appearance.title')}</legend>
           <div>{(['system', 'light', 'dark'] as Appearance[]).map((option) => <button type="button" key={option} aria-pressed={appearance === option} onClick={() => setAppearance(option)}><Icon name={option === 'light' ? 'sun' : option === 'dark' ? 'moon' : 'system'} />{t(`native.appearance.${option}`)}</button>)}</div>

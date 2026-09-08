@@ -104,6 +104,7 @@ export default function App({
     refresh,
     refreshParcel,
     retryLoad,
+    resetDemoData,
   } = useParcels();
   const [sharedParcelInput, setSharedParcelInput] = useState<SharedParcelInput | null>(null);
   const [adding, setAdding] = useState(false);
@@ -332,6 +333,14 @@ export default function App({
     }
   }
 
+  async function resetDemo() {
+    await resetDemoData();
+    setUndoParcel(null); setUndoError(null); setRefreshNotice(null);
+    setParcelBurst(null); setOpenParcelId(null); setDetailOrigin(null);
+    setQuery(''); setStatusFilter('all'); setCarrierFilter('');
+    setViewNow(Date.now());
+  }
+
   return (
     <div className="app" onClickCapture={focusClickedButton}>
       <a className="skip-link" href="#main-content">{t('web.skipContent')}</a>
@@ -341,7 +350,7 @@ export default function App({
           <button type="button" className="app__add-button" aria-label={t('app.addParcelAria')} onClick={() => setAdding(true)}><Icon name="plus" /><span>{t('app.addParcel')}</span></button>
           <h1 className="app__title">{t(tab === 'deliveries' ? 'native.deliveries' : tab === 'passport' ? 'passport.title' : 'friends.title')}</h1>
           <AppNavigation selected={tab} onSelect={switchTab} />
-          <AccountMenu email={accountEmail} onExport={onExportAccount} onDelete={onDeleteAccount} onSignOut={onSignOut} onExitDemo={onExitDemo} apiAuth={apiAuth} />
+          <AccountMenu email={accountEmail} onExport={onExportAccount} onDelete={onDeleteAccount} onSignOut={onSignOut} onExitDemo={onExitDemo} onResetDemo={mode === 'demo' ? resetDemo : undefined} apiAuth={apiAuth} />
         </div>
       </header>
       {mode === 'demo' && <div className="demo-banner"><span>{t('app.demo')}</span>{onExitDemo && <button type="button" onClick={onExitDemo}>{t('native.exitDemo')}<Icon name="close" /></button>}</div>}

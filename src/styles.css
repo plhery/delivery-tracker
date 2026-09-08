@@ -221,9 +221,10 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .settings-row--danger, .settings-row--danger > svg { color: var(--ink-soft); }
 .settings-row--exit { margin-top: 10px; background: var(--yellow-soft); border-radius: 17px; color: var(--ochre); }
 .settings-row--exit svg { color: inherit; }
-.settings-delete { padding-top: 24px; font-size: 13px; }
-.settings-delete p { color: var(--ink-soft); }
-.settings-delete .sheet__actions { padding-top: 20px; }
+.settings-row--reset { margin-top: 6px; border-radius: 17px; }
+.settings-delete, .settings-reset { padding-top: 24px; font-size: 13px; }
+.settings-delete p, .settings-reset p { color: var(--ink-soft); }
+.settings-delete .sheet__actions, .settings-reset .sheet__actions { padding-top: 20px; }
 .notification-button.settings-row { border-radius: 18px; }
 .notification-status { display: flex; align-items: center; gap: 13px; padding: 18px; border-radius: 18px; background: var(--control); font-size: 14px; }
 .notification-status > div { display: flex; flex-direction: column; gap: 3px; }

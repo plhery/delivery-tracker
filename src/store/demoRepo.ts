@@ -258,6 +258,12 @@ export function createDemoRepo(
       return sortNewestFirst(getAll());
     },
 
+    async resetDemo() {
+      const parcels = seedParcels(now());
+      save(storage, parcels);
+      return sortNewestFirst(parcels);
+    },
+
     async add(input: NewParcelInput) {
       const parcels = getAll();
       const trackingNumber = normalizeTrackingNumber(input.trackingNumber);
