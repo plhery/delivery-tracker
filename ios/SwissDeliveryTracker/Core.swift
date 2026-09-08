@@ -249,18 +249,22 @@ final class Localizer: ObservableObject {
     func shortDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = language.locale
-        formatter.dateStyle = .short
-        formatter.timeStyle = .none
-        return formatter.string(from: date)
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateFormat = "EEE"
+        let weekday = formatter.string(from: date).replacingOccurrences(of: ".", with: "")
+        formatter.dateFormat = "d"
+        let day = formatter.string(from: date)
+        formatter.dateFormat = "MMM"
+        let month = formatter.string(from: date).replacingOccurrences(of: ".", with: "").lowercased(with: language.locale)
+        return "\(weekday.prefix(1).uppercased(with: language.locale))\(weekday.dropFirst()) \(day) \(month)"
     }
 
     func dateTime(_ value: String) -> String {
         guard let date = DateParser.date(value) else { return value }
         let formatter = DateFormatter()
         formatter.locale = language.locale
-        formatter.dateStyle = .short
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
+        formatter.dateFormat = "HH:mm"
+        return "\(shortDate(date)), \(formatter.string(from: date))"
     }
 
     func parcelStatus(_ parcel: Parcel) -> String {

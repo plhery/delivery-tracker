@@ -580,7 +580,7 @@ private struct ExperimentalCurrentTimelineRow: View {
                 Text(localizer.eventDescription(event.description))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Text([event.location, localizer.dateTime(event.occurredAt)]
+                Text([event.location.map(TrackingLocation.label), localizer.dateTime(event.occurredAt)]
                     .compactMap { $0 }
                     .joined(separator: " · "))
                     .font(.caption.weight(.medium))
@@ -624,7 +624,7 @@ private struct ExperimentalTimelineRow: View {
                 Text(localizer.eventDescription(event.description))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text([event.location, localizer.dateTime(event.occurredAt)]
+                Text([event.location.map(TrackingLocation.label), localizer.dateTime(event.occurredAt)]
                     .compactMap { $0 }
                     .joined(separator: " · "))
                     .font(.caption2.weight(.medium))

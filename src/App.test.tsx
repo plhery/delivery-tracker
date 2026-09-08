@@ -360,7 +360,7 @@ describe('App', () => {
     renderApp(repo);
 
     expect(await screen.findByText('Returned shoes')).toBeInTheDocument();
-    expect(document.querySelector('.delivery-overview__count')).toHaveTextContent('0 Active');
+    expect(document.querySelector('.delivery-overview__count')).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'On the way' })).not.toBeInTheDocument();
     expect(
       within(screen.getByRole('region', { name: 'Returned' })).getByText('Returned shoes'),
@@ -1062,22 +1062,6 @@ describe('App', () => {
     expect(screen.queryByRole('region', { name: 'Archived' })).not.toBeInTheDocument();
   });
 
-  it('reveals an explicit archive action from the parcel overflow menu', async () => {
-    const user = userEvent.setup();
-    renderApp();
-
-    const actions = await screen.findByRole('button', {
-      name: 'Actions for Coffee beans ☕',
-    });
-    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
-
-    await user.click(actions);
-    const menu = screen.getByRole('menu');
-    await user.click(within(menu).getByRole('menuitem', { name: 'Archive' }));
-
-    expect(await screen.findByRole('status')).toHaveTextContent('Coffee beans ☕ archived');
-  });
-
   it('archives a parcel with a long swipe to the left', async () => {
     renderApp();
 
@@ -1482,6 +1466,6 @@ describe('App', () => {
     renderApp(repo);
 
     expect(await screen.findByText(/no parcels yet/i)).toBeInTheDocument();
-    expect(document.querySelector('.delivery-overview__count')).toHaveTextContent('0 Active');
+    expect(document.querySelector('.delivery-overview__count')).not.toBeInTheDocument();
   });
 });

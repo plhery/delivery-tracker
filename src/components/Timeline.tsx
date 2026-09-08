@@ -1,3 +1,5 @@
+import { localizedCalendarDateTime } from '../lib/format';
+import { trackingLocationLabel } from '../lib/trackingLocation';
 import { useState } from 'react';
 import { localizedEventDescription, stageLabel, useI18n } from '../i18n';
 import { currentEvent, sortEventsDesc, stageMeta } from '../lib/stages';
@@ -53,10 +55,8 @@ export function Timeline({
               </div>
               <div className="timeline__description">{localizedEventDescription(event.description, t)}</div>
               <div className="timeline__meta">
-                {event.location ? `${event.location} · ` : ''}
-                {Number.isFinite(Date.parse(event.occurredAt)) ? new Intl.DateTimeFormat(languageTag, {
-                  dateStyle: 'medium', timeStyle: 'short',
-                }).format(new Date(event.occurredAt)) : event.occurredAt}
+                {event.location && <><span aria-label={event.location}>{trackingLocationLabel(event.location)}</span>{' · '}</>}
+                {Number.isFinite(Date.parse(event.occurredAt)) ? localizedCalendarDateTime(new Date(event.occurredAt), languageTag) : event.occurredAt}
               </div>
             </div>
           </li>

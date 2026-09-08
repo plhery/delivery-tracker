@@ -307,19 +307,6 @@ private struct DeliveryListView: View {
 
     private var listOverview: some View {
         HStack(alignment: .center, spacing: 12) {
-            HStack(spacing: 7) {
-                Circle()
-                    .fill(ExperimentalPalette.transit)
-                    .frame(width: 6, height: 6)
-                Text("\(store.parcels.filter(\.isActive).count)")
-                    .fontWeight(.semibold)
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                Text(ExperimentalCopy(localizer: localizer).active)
-                    .foregroundStyle(.secondary)
-            }
-            .font(.subheadline)
-            .accessibilityElement(children: .combine)
             Spacer(minLength: 0)
             Button { showingFilters = true } label: {
                 Image(systemName: hasCustomView
@@ -645,7 +632,7 @@ private struct ExperimentalNextDeliveryPass: View {
                     Text(catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName)
                         .font(.subheadline.weight(.semibold))
                     if let location = parcel.experimentalLatestLocation {
-                        Text(location)
+                        Text(TrackingLocation.label(location))
                             .font(.caption)
                             .foregroundStyle(Brand.onAccent.opacity(0.75))
                             .fixedSize(horizontal: false, vertical: true)
@@ -690,7 +677,6 @@ private struct ExperimentalParcelPassCard: View {
 
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject private var catalog = CarrierCatalog.shared
 
     private var tint: Color { ExperimentalPalette.tint(for: parcel) }
@@ -732,8 +718,6 @@ private struct ExperimentalParcelPassCard: View {
             title: localizer.text("parcel.archive"),
             cornerRadius: DeliveryTicketShape.cornerRadius,
             shadow: false,
-            protectedTrailingWidth: onArchive == nil ? 0 : DeliveryTicketShape.stubWidth,
-            protectedTrailingHeight: 44,
             onOpen: onOpen,
             action: onArchive
         )
@@ -780,27 +764,20 @@ private struct ExperimentalParcelPassCard: View {
     private var metadata: String {
         let carrier = catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName
         let date = localizer.parcelDeliveryEstimate(parcel) ?? localizer.parcelCompletionDate(parcel)
-        return [carrier, date, compact ? nil : parcel.experimentalLatestLocation]
+        return [carrier, date, compact ? nil : parcel.experimentalLatestLocation.map(TrackingLocation.label)]
             .compactMap { $0 }.joined(separator: " · ")
     }
 
     private var ticketStub: some View {
-        VStack(spacing: 7) {
-            Image(systemName: parcel.currentStage?.metadata.symbol ?? "shippingbox")
-                .font(.system(size: 22, weight: .regular))
-                .symbolRenderingMode(.monochrome)
-                .foregroundStyle(tint)
-                .contentTransition(reduceMotion ? .identity : .symbolEffect(.replace))
-                .accessibilityHidden(true)
-            Text(String(parcel.trackingNumber.suffix(4)))
-                .font(.system(size: 10, weight: .medium, design: .monospaced))
-                .tracking(1)
-                .opacity(0.65)
-                .accessibilityHidden(true)
+        ZStack {
+            if parcel.currentStage == .delivered {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 22, weight: .regular))
+                    .foregroundStyle(tint)
+            }
         }
-        .foregroundStyle(tint)
-        .padding(.top, onArchive == nil ? 12 : 36)
-        .padding(.bottom, 12)
+        .accessibilityHidden(true)
+        .padding(.vertical, 12)
         .frame(width: DeliveryTicketShape.stubWidth)
         .frame(maxHeight: .infinity)
         .overlay(alignment: .leading) {
@@ -813,22 +790,6 @@ private struct ExperimentalParcelPassCard: View {
             }
             .allowsHitTesting(false)
             .accessibilityHidden(true)
-        }
-        .overlay(alignment: .top) {
-            if let onArchive {
-                Menu {
-                    Button(localizer.text("parcel.archive"), systemImage: "archivebox") {
-                        Task { await onArchive() }
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.body.weight(.bold))
-                        .foregroundStyle(tint)
-                        .frame(width: DeliveryTicketShape.stubWidth, height: 44)
-                        .contentShape(Rectangle())
-                }
-                .accessibilityLabel(localizer.text("parcel.actionsAria", ["name": name]))
-            }
         }
     }
 }
@@ -856,8 +817,6 @@ private extension View {
         title: String,
         cornerRadius: CGFloat,
         shadow: Bool = true,
-        protectedTrailingWidth: CGFloat = 0,
-        protectedTrailingHeight: CGFloat = .infinity,
         onOpen: @escaping () -> Void,
         action: (() async -> Void)?
     ) -> some View {
@@ -865,8 +824,6 @@ private extension View {
             title: title,
             cornerRadius: cornerRadius,
             shadow: shadow,
-            protectedTrailingWidth: protectedTrailingWidth,
-            protectedTrailingHeight: protectedTrailingHeight,
             onOpen: onOpen,
             action: action
         ))
@@ -960,8 +917,6 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
     let title: String
     let cornerRadius: CGFloat
     let shadow: Bool
-    let protectedTrailingWidth: CGFloat
-    let protectedTrailingHeight: CGFloat
     let onOpen: () -> Void
     let action: (() async -> Void)?
 
@@ -1121,9 +1076,6 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
             settle(.closed)
             return
         }
-        // Only the menu's 44pt target is reserved; the lower ticket stub opens the parcel.
-        let isMenu = location.x >= width - protectedTrailingWidth && location.y < protectedTrailingHeight
-        guard !isMenu else { return }
         onOpen()
     }
 

@@ -1,3 +1,4 @@
+import { localizedCalendarDate } from './lib/format';
 import { trackAction } from './lib/analytics';
 import {
   createContext,
@@ -147,7 +148,7 @@ export function localizedRelativeTime(
   if (hours < 24) return t('time.hoursAgo', { count: hours });
   const days = Math.floor(hours / 24);
   if (days < 7) return t('time.daysAgo', { count: days });
-  return new Intl.DateTimeFormat(languageTag).format(new Date(iso));
+  return localizedCalendarDate(new Date(iso), languageTag);
 }
 
 export function localizedExpectedDelivery(
@@ -170,7 +171,7 @@ export function localizedExpectedDelivery(
   const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
   const day = dayKey(expected) === dayKey(today) ? t('time.today')
     : dayKey(expected) === dayKey(tomorrow) ? t('time.tomorrow')
-      : new Intl.DateTimeFormat(languageTag).format(expected);
+      : localizedCalendarDate(expected, languageTag);
   if (/T\d{2}:\d{2}/.test(value)) {
     const time = new Intl.DateTimeFormat(languageTag, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(expected);
     return `${day}, ${time}`;

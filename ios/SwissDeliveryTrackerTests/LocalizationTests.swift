@@ -113,6 +113,35 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(localizer.errorMessage(AuthenticationError.server("Token has expired or is invalid")), localizer.text("error.invalidCode"))
     }
 
+    func testReadableCalendarDatesInEveryLanguage() throws {
+        let localizer = Localizer()
+        let date = try XCTUnwrap(DateParser.deliveryDate("2026-09-12"))
+        let cases: [(AppLanguage, String)] = [
+            (.en, "Sat 12 sep"), (.de, "Sa 12 sept"),
+            (.fr, "Sam 12 sept"), (.it, "Sab 12 set"),
+        ]
+        for (language, expected) in cases {
+            localizer.language = language
+            XCTAssertEqual(localizer.shortDate(date), expected)
+            XCTAssertEqual(localizer.expectedDelivery("2026-09-12", now: date.addingTimeInterval(-3 * 86400)), expected)
+        }
+    }
+
+    func testTrackingLocationFlagsPreserveCitiesAndAmbiguousAddresses() {
+        let cases = [
+            "France": "🇫🇷", "Germany": "🇩🇪", "Switzerland": "🇨🇭",
+            "Zürich, Schweiz": "Zürich, 🇨🇭", "Bâle (Suisse)": "Bâle (🇨🇭)",
+            "Milano, Italia": "Milano, 🇮🇹", "Paris; France": "Paris; 🇫🇷",
+            "DE": "🇩🇪", "London, UK": "London, 🇬🇧", "CH ": "🇨🇭 ",
+            "": "", "Warehouse": "Warehouse", "Paris": "Paris",
+            "Buchs AG": "Buchs AG", "Basel, BS": "Basel, BS",
+            "Wilmington, DE": "Wilmington, DE", "France distribution center": "France distribution center",
+        ]
+        for (location, expected) in cases {
+            XCTAssertEqual(TrackingLocation.label(location), expected)
+        }
+    }
+
     private func localizationDictionaries() throws -> [String: [String: String]] {
         let url = try XCTUnwrap(Bundle.main.url(forResource: "Localization", withExtension: "json"))
         return try JSONDecoder().decode([String: [String: String]].self, from: Data(contentsOf: url))

@@ -1,3 +1,4 @@
+import { localizedCalendarDate } from './format';
 import type { ParcelWithEvents } from '../types';
 import type { MessageKey } from '../i18n';
 import { currentEvent, stageMeta } from './stages';
@@ -93,11 +94,7 @@ export function localizedParcelCompletionDate(
   if (current?.stage === 'delivered' || current?.stage === 'returned') {
     const occurredAt = new Date(current.occurredAt);
     if (!Number.isNaN(occurredAt.getTime())) {
-      return new Intl.DateTimeFormat(languageTag, {
-        day: 'numeric',
-        month: 'numeric',
-        year: '2-digit',
-      }).format(occurredAt);
+      return localizedCalendarDate(occurredAt, languageTag);
     }
   }
   return null;

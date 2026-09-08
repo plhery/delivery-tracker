@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { activeTrackingCarrierId, carrierInfo } from '../lib/carriers';
 import { localizedExpectedDelivery, useI18n } from '../i18n';
 import { localizedParcelCompletionDate, parcelDeliveryEstimate, parcelDisplayStatusKey } from '../lib/parcelStatus';
 import { currentEvent, isFinal } from '../lib/stages';
+import { trackingLocationLabel } from '../lib/trackingLocation';
 import { parcelIcon, parcelTone } from '../lib/parcelDesign';
 import { userErrorMessage } from '../lib/userMessages';
 import type { ParcelWithEvents } from '../types';
@@ -118,139 +118,17 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
           <span className="parcel-card__hero-main"><span>{expectedDelivery && <strong className="parcel-card__hero-date">{expectedDelivery}</strong>}<span className="parcel-card__label">{parcelName}</span></span><PostageStamp icon={parcelIcon(current?.stage)} /></span>
           <ProgressTrack stage={current?.stage ?? null} />
           {(parcel.syncStatus === 'error' || notice) && <span className="parcel-card__hero-notice">{parcel.syncStatus === 'error' ? t('parcel.syncAttention') : notice}</span>}
-          <span className="parcel-card__hero-bottom"><span><strong>{carrier.name}</strong>{current?.location && <span>{current.location}</span>}</span><Icon name="arrow" /></span>
+          <span className="parcel-card__hero-bottom"><span><strong>{carrier.name}</strong>{current?.location && <span aria-label={current.location}>{trackingLocationLabel(current.location)}</span>}</span><Icon name="arrow" /></span>
         </> : <>
           <span className="parcel-card__body"><span className="parcel-card__top"><strong className="parcel-card__label">{parcelName}</strong><span className="parcel-card__state">{statusLabel}</span></span>
-            <span className="parcel-card__meta"><span className="parcel-card__carrier">{carrier.name}</span>{(expectedDelivery || completionDate) && <><span aria-hidden="true">·</span><span className={completionDate ? "parcel-card__completion" : "parcel-card__eta"}>{expectedDelivery || completionDate}</span></>}{current?.location && <><span aria-hidden="true">·</span><span className="parcel-card__location">{current.location}</span></>}</span>
+            <span className="parcel-card__meta"><span className="parcel-card__carrier">{carrier.name}</span>{(expectedDelivery || completionDate) && <><span aria-hidden="true">·</span><span className={completionDate ? "parcel-card__completion" : "parcel-card__eta"}>{expectedDelivery || completionDate}</span></>}{current?.location && <><span aria-hidden="true">·</span><span className="parcel-card__location" aria-label={current.location}>{trackingLocationLabel(current.location)}</span></>}</span>
             {parcel.syncStatus === 'error' ? <span className="parcel-card__notice">{t('parcel.syncAttention')}</span> : notice && <span className="parcel-card__notice">{notice}</span>}
             {!compact && <ProgressTrack stage={current?.stage ?? null} />}
           </span>
-          <span className="parcel-card__stub" aria-hidden="true"><Icon name={parcelIcon(current?.stage)} /><span>{parcel.trackingNumber.slice(-4)}</span></span>
+          <span className="parcel-card__stub" aria-hidden="true">{current?.stage === 'delivered' && <Icon name="check" />}</span>
         </>}
       </button>
-      {onArchive && !hero && !archiving && <ParcelActionsMenu label={t('parcel.actionsAria', { name: parcelName })} archiveLabel={t('parcel.archive')} archiving={archiving} onArchive={() => void archive()} />}
     </div>
     {archiveError && <p className="parcel-card__error" role="alert">{archiveError}</p>}
   </div>;
-}
-
-function ParcelActionsMenu({
-  label,
-  archiveLabel,
-  archiving,
-  onArchive,
-}: {
-  label: string;
-  archiveLabel: string;
-  archiving: boolean;
-  onArchive: () => void;
-}) {
-  const trigger = useRef<HTMLButtonElement>(null);
-  const menu = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
-  const open = position !== null;
-
-  const close = useCallback((restoreFocus = false) => {
-    setPosition(null);
-    if (restoreFocus) trigger.current?.focus();
-  }, []);
-
-  function toggle() {
-    if (open) {
-      close();
-      return;
-    }
-    const bounds = trigger.current?.getBoundingClientRect();
-    if (!bounds) return;
-    const menuWidth = 188;
-    const menuHeight = 58;
-    const left = Math.min(
-      Math.max(8, bounds.right - menuWidth),
-      window.innerWidth - menuWidth - 8,
-    );
-    const below = bounds.bottom + 6;
-    const top = below + menuHeight <= window.innerHeight - 8
-      ? below
-      : Math.max(8, bounds.top - menuHeight - 6);
-    setPosition({ top, left });
-  }
-
-  useEffect(() => {
-    if (!open) return;
-    menu.current?.querySelector<HTMLButtonElement>('button')?.focus();
-
-    function handlePointerDown(event: globalThis.PointerEvent) {
-      const target = event.target as Node;
-      if (menu.current?.contains(target) || trigger.current?.contains(target)) return;
-      close();
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      close(true);
-    }
-
-    function handleViewportChange() {
-      close();
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown);
-    document.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('resize', handleViewportChange);
-    window.addEventListener('scroll', handleViewportChange, true);
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown);
-      document.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('resize', handleViewportChange);
-      window.removeEventListener('scroll', handleViewportChange, true);
-    };
-  }, [close, open]);
-
-  return (
-    <>
-      <button
-        ref={trigger}
-        type="button"
-        className="parcel-card-menu"
-        aria-label={label}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-busy={archiving}
-        disabled={archiving}
-        onClick={toggle}
-      >
-        <svg aria-hidden="true" viewBox="0 0 24 24">
-          <circle cx="5" cy="12" r="1.7" />
-          <circle cx="12" cy="12" r="1.7" />
-          <circle cx="19" cy="12" r="1.7" />
-        </svg>
-      </button>
-      {position && createPortal(
-        <div
-          ref={menu}
-          className="parcel-card-menu__popover"
-          role="menu"
-          style={position}
-        >
-          <button
-            type="button"
-            role="menuitem"
-            disabled={archiving}
-            onClick={() => {
-              close();
-              onArchive();
-            }}
-          >
-            <svg aria-hidden="true" viewBox="0 0 24 24">
-              <path d="M4 5h16v4H4z" />
-              <path d="M6 9v10h12V9" />
-            </svg>
-            <span>{archiveLabel}</span>
-          </button>
-        </div>,
-        document.body,
-      )}
-    </>
-  );
 }

@@ -44,11 +44,9 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 /* A quiet navigation bar; color belongs to the parcels. */
 .app { width: min(100%, 1100px); min-height: 100dvh; margin: 0 auto; padding-bottom: 32px; }
 .app__header { position: sticky; top: 0; z-index: 25; background: var(--canvas); padding: env(safe-area-inset-top) 28px 0; }
-.app__masthead { min-height: 90px; display: flex; align-items: center; gap: 24px; border-bottom: 1px solid var(--line); }
-.app__wordmark { display: flex; gap: 10px; align-items: center; font-weight: 700; font-size: 16px; letter-spacing: -.3px; margin-right: auto; }
-.app__wordmark svg { width: 27px; height: 27px; padding: 3px; color: var(--on-yellow); background: var(--yellow); border-radius: 8px; }
-.app__title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-.app__navigation { position: relative; isolation: isolate; display: flex; align-items: center; padding: 4px; gap: 4px; order: 1; background: var(--control); border-radius: 18px; }
+.app__masthead { min-height: 90px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.app__title { grid-column: 2; grid-row: 1; margin: 0; font-size: 26px; letter-spacing: -1px; line-height: 1.15; font-weight: 650; text-align: center; }
+.app__navigation { grid-column: 1 / -1; grid-row: 2; justify-self: center; position: relative; isolation: isolate; display: flex; align-items: center; padding: 4px; gap: 4px; order: 1; background: var(--control); border-radius: 18px; }
 .app__navigation-selection { position: absolute; left: 0; pointer-events: none; border-radius: 14px; background: var(--paper); box-shadow: var(--shadow); opacity: 0; }
 .app__navigation[data-selection-ready] .app__navigation-selection { opacity: 1; }
 .app__navigation button { position: relative; display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 10px 15px; border-radius: 14px; color: var(--ink-soft); background: transparent; font-size: 13px; font-weight: 600; transition: background .2s, color .2s, scale .2s var(--spring); }
@@ -56,28 +54,28 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .app__navigation[data-selection-ready] button[aria-current="page"] { background: transparent; box-shadow: none; }
 .app__navigation button:active { scale: .96; }
 .app__navigation svg { width: 18px; height: 18px; }
-.app__add-button { display: flex; justify-content: center; align-items: center; gap: 7px; background: transparent; border-radius: 14px; min-height: 44px; padding: 8px; order: 2; font-weight: 600; font-size: 13px; }
-.account-trigger { background: var(--yellow); color: var(--on-yellow); width: 36px; height: 36px; padding: 9px; margin: 4px; order: 3; font-weight: 700; font-size: 14px; }
+.app__add-button span { display: none; }
+.app__add-button { grid-column: 1; grid-row: 1; justify-self: start; display: flex; justify-content: center; align-items: center; gap: 7px; background: transparent; border-radius: 14px; min-height: 44px; padding: 8px; order: 2; font-weight: 600; font-size: 13px; }
+.account-trigger { grid-column: 3; grid-row: 1; justify-self: end; background: var(--yellow); color: var(--on-yellow); width: 36px; height: 36px; padding: 9px; margin: 4px; order: 3; font-weight: 700; font-size: 14px; }
 .account-trigger svg { width: 17px; height: 17px; }
 .demo-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 46px; padding: 5px 32px; color: var(--ink-soft); border-bottom: 1px solid var(--line); font-size: 12px; }
 .demo-banner button { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; background: transparent; font-size: 12px; font-weight: 600; color: var(--ink); }
 .demo-banner svg { width: 16px; height: 16px; border: 1px solid var(--line); border-radius: 50%; padding: 2px; }
 .app__content { padding: 20px 28px 32px; }
 .deliveries-page, .passport-page { animation: page-arrive .25s var(--ease-out) both; }
-.delivery-overview { display: flex; align-items: center; justify-content: space-between; margin: -4px 0 10px; }
+.delivery-overview { display: flex; align-items: center; justify-content: flex-end; margin: -4px 0 10px; }
 .delivery-overview__actions { display: flex; align-items: center; gap: 2px; }
 .delivery-search { position: relative; }
 .delivery-search[aria-expanded="true"] { background: var(--control); }
 .delivery-search__dot { position: absolute; top: 8px; right: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 2px var(--canvas); }
-.delivery-overview__count { display: flex; align-items: center; gap: 7px; color: var(--ink-soft); font-size: 14px; padding-left: 3px; }
-.delivery-overview__count strong { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
-.delivery-overview__count i { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); margin-right: 1px; }
 .delivery-next { margin-bottom: 20px; }
 .parcel-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 26px 20px; margin-top: 24px; }
 .parcel-section { min-width: 0; }
 .archived-section, .parcel-section:only-child { grid-column: 1 / -1; }
 .archived-section .parcel-grid, .parcel-section:only-child .parcel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .parcel-section__heading, .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 3px 12px; }
+.parcel-section__heading { justify-content: flex-start; align-items: center; gap: 9px; }
+.parcel-section__heading > span { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 8px; border-radius: 999px; background: var(--control); font-weight: 600; }
 .parcel-section__heading h2, .section-heading h2 { margin: 0; }
 .parcel-section__heading > span, .section-heading > span { color: var(--ink-soft); font-size: 13px; font-variant-numeric: tabular-nums; }
 .parcel-grid { display: grid; gap: 12px; }
@@ -95,10 +93,9 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .parcel-card__location { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
 .parcel-card__notice, .parcel-card__error { font-size: 12px; line-height: 1.45; color: var(--orange-text); }
 .parcel-card__error { background: var(--orange-soft); margin: 6px 0 0; padding: 12px; border-radius: 12px; }
-.parcel-card__stub { position: relative; flex: 0 0 64px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px; border-left: 1px dashed color-mix(in srgb, var(--tone) 25%, transparent); padding: 28px 8px 12px; color: var(--tone); }
+.parcel-card__stub { position: relative; flex: 0 0 64px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px; border-left: 1px dashed color-mix(in srgb, var(--tone) 25%, transparent); padding: 12px 8px; color: var(--tone); }
 .parcel-card__stub::before, .parcel-card__stub::after { content: ''; position: absolute; left: -6px; width: 12px; height: 12px; border-radius: 50%; background: var(--canvas); }
 .parcel-card__stub::before { top: -6px; }.parcel-card__stub::after { bottom: -6px; }
-.parcel-card__stub > span { font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 1px; opacity: .6; }
 .parcel-card--compact { min-height: 106px; }
 .parcel-card--archived { background: var(--paper); }
 .parcel-card--hero { display: flex; flex-direction: column; gap: 16px; min-height: 232px; background: var(--yellow); color: var(--on-yellow); padding: 22px; }
@@ -130,15 +127,11 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .parcel-card-swipe__archive { position: absolute; right: 0; top: 0; bottom: 0; width: 88px; background: var(--orange-text); color: var(--canvas); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 5px; font-size: 10px; font-weight: 600; }
 .parcel-card-swipe__archive--armed svg { scale: 1.25; }
 .parcel-card-swipe__archive svg { transition: scale .2s var(--spring); }
-.parcel-card-menu { position: absolute; right: 10px; top: 3px; z-index: 2; display: grid; place-items: center; width: 44px; height: 32px; padding: 0; background: transparent; border-radius: 12px; color: var(--tone); }
-.parcel-card-menu svg { width: 17px; height: 17px; fill: currentColor; stroke: none; }
-.parcel-card-menu__popover { position: fixed; z-index: var(--z-popover); width: 188px; padding: 6px; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 10px 30px rgb(0 0 0 / 12%); animation: page-arrive .15s; }
-.parcel-card-menu__popover button { width: 100%; min-height: 44px; border-radius: 10px; background: transparent; display: flex; gap: 10px; align-items: center; padding: 8px 12px; color: var(--orange-text); font-size: 13px; }
 .archived-section > details > summary { list-style: none; display: flex; align-items: center; gap: 8px; cursor: pointer; min-height: 48px; border-radius: 15px; color: var(--ink-soft); font-size: 14px; padding: 9px 4px; }
-.archived-section > details > summary::after { content: '+'; font-size: 22px; font-weight: 300; margin-left: auto; }
-.archived-section > details[open] > summary::after { content: '−'; }
+.archived-section__chevron { width: 16px; height: 16px; rotate: 90deg; transition: rotate .2s; }
+.archived-section > details[open] .archived-section__chevron { rotate: -90deg; }
 .archived-section summary::-webkit-details-marker { display: none; }
-.archived-section__count { font-variant-numeric: tabular-nums; font-size: 12px; padding: 1px 7px; background: var(--control); border-radius: 10px; }
+.archived-section__count { margin-left: auto; font-variant-numeric: tabular-nums; font-size: 12px; padding: 1px 7px; background: var(--control); border-radius: 10px; }
 
 /* Search expands only when it is useful. */
 .parcel-view-shell { margin-bottom: 18px; border-radius: 18px; background: var(--control); overflow: clip; animation: page-arrive .18s var(--ease-out) both; }
@@ -508,20 +501,18 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
   .button--primary:hover { filter: brightness(1.025); }
   .parcel-card:hover:not(.parcel-card--dragging) .postage-stamp { scale: 1.025; }
   .postage-stamp { transition: scale .18s ease-out; }
-  .parcel-card-menu:hover, .parcel-card-menu__popover button:hover, .detail__actions-menu button:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
   .time-card:hover, .stamp-card:hover { scale: 1.012; }
   .settings-row:hover { filter: brightness(.97); }
   .arrival__open:hover { color: var(--ink); }
+  .detail__actions-menu button:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
   .arrival__demo:hover { color: var(--ink); }
 }
 
 @media (max-width: 760px) {
   .app { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
   .app__header { padding: env(safe-area-inset-top) 20px 0; }
-  .app__masthead { min-height: 74px; gap: 14px; border-bottom: 0; }
-  .app__wordmark { display: none; }
-  .app__title { position: static; width: auto; height: auto; overflow: visible; clip-path: none; font-size: 26px; letter-spacing: -1px; line-height: 1.15; margin: 0 auto 0 0; font-weight: 650; order: 0; }
-  .app__navigation { position: fixed; z-index: 30; bottom: max(14px, env(safe-area-inset-bottom)); left: 50%; translate: -50% 0; background: var(--paper); padding: 5px; border: 1px solid var(--line); border-radius: 24px; box-shadow: 0 4px 18px rgb(0 0 0 / 9%); width: 288px; max-width: calc(100% - 48px); gap: 5px; }
+  .app__masthead { min-height: 74px; gap: 14px; padding: 0; border-bottom: 0; }
+  .app__navigation { justify-self: auto; position: fixed; z-index: 30; bottom: max(14px, env(safe-area-inset-bottom)); left: 50%; translate: -50% 0; background: var(--paper); padding: 5px; border: 1px solid var(--line); border-radius: 24px; box-shadow: 0 4px 18px rgb(0 0 0 / 9%); width: 288px; max-width: calc(100% - 48px); gap: 5px; }
   .app__navigation button { flex: 1; min-width: 0; min-height: 49px; flex-direction: column; gap: 4px; padding: 6px 8px; font-size: 10px; border-radius: 19px; }
   .app__navigation button[aria-current="page"] { background: var(--yellow); color: var(--on-yellow); box-shadow: none; }
   .app__navigation-selection { border-radius: 19px; background: var(--yellow); box-shadow: none; }
@@ -533,7 +524,6 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
   .demo-banner button { font-size: 11px; }
   .app__content { padding: 15px 20px 24px; }
   .delivery-overview { margin-bottom: 7px; }
-  .delivery-overview__count { font-size: 13px; }
   .delivery-next { margin-bottom: 16px; }
   .parcel-card--hero { min-height: 224px; padding: 19px; gap: 14px; }
   .parcel-card__hero-main .postage-stamp { width: 62px; height: 74px; }
@@ -548,7 +538,6 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
   .parcel-card__label { font-size: 16px; }
   .parcel-section__heading h2 { font-size: 18px; }
   .parcel-card__stub { flex-basis: 60px; }
-  .parcel-card-menu { right: 8px; }
   .parcel-view__filter-button > span { display: none; }
   .parcel-view__selects { grid-template-columns: 1fr; }
   .parcel-view__selects label { grid-template-columns: 80px 1fr; align-items: center; }
@@ -614,7 +603,6 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
   .parcel-card__hero-main { gap: 12px; }
   .parcel-card__label { font-size: 15px; }
   .parcel-card__stub { flex-basis: 50px; }
-  .parcel-card-menu { right: 3px; }
   .time-card { padding: 16px; }.time-card > strong { font-size: 24px; }
   .appearance-control button { flex-direction: column; gap: 4px; }
   .arrival { padding-left: 20px; padding-right: 20px; }.arrival__brand { font-size: 12px; gap: 6px; }
@@ -637,8 +625,6 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .parcel-card-swipe--revealed .parcel-card-swipe__clip { background: var(--orange-text); }
 .parcel-card--hero .parcel-card__state { color: inherit; max-width: 55%; text-align: left; }
 .parcel-card__hero-notice { color: #745300; font-size: 12px; margin-top: -8px; }
-.parcel-card-menu { height: 44px; top: 0; }
-.parcel-card__stub { padding-top: 36px; }
 .auth-flow__heading h1:focus { outline: none; }
 .auth-loading { min-height: 100dvh; display: grid; align-content: center; justify-items: center; gap: 20px; padding: 24px; color: var(--ink-soft); font-size: 13px; }
 .auth-loading .parcel-illustration { width: 190px; }

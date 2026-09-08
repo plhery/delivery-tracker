@@ -78,7 +78,7 @@ describe('parcelDisplayStatus', () => {
     const delivered = parcel('ok', 'in_transit');
     delivered.events[0].stage = 'delivered';
     delivered.events[0].occurredAt = '2026-07-16T10:00:00Z';
-    expect(localizedParcelCompletionDate(delivered, 'de-CH')).toBe('16.7.26');
+    expect(localizedParcelCompletionDate(delivered, 'de-CH')).toBe('Do 16 juli');
   });
 });
 

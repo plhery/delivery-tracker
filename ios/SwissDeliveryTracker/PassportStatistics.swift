@@ -70,7 +70,7 @@ struct PassportStatistics {
 
             // Never skip an unknown first scan and promote a destination scan into
             // an origin. City names and tracking-number suffixes are insufficient.
-            if let country = Self.countryCode(in: first.event.location) {
+            if let country = TrackingLocation.countryCode(in: first.event.location) {
                 countries[country, default: 0] += 1
             }
 
@@ -121,6 +121,10 @@ struct PassportStatistics {
         return left.event.id.uuidString < right.event.id.uuidString
     }
 
+}
+
+/// Country fields shared by parcel display and first-scan statistics.
+enum TrackingLocation {
     private static let regionCodes = Set(Locale.Region.isoRegions.map(\.identifier).filter {
         $0.count == 2 && !["EU", "UN", "QO"].contains($0)
     })
@@ -155,7 +159,7 @@ struct PassportStatistics {
             .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
     }
 
-    private static func countryCode(in location: String?) -> String? {
+    static func countryCode(in location: String?) -> String? {
         guard let location else { return nil }
         // Require a whole country field: "Milano, IT", "Paris, France", or
         // "Berlin (Germany)". A bare city or an undelimited "Buchs AG" is unknown.
@@ -168,5 +172,20 @@ struct PassportStatistics {
             return standalone || !ambiguousAddressCodes.contains(field) ? field : nil
         }
         return countryNames[normalized(field)]
+    }
+
+    static func label(_ location: String) -> String {
+        guard let country = countryCode(in: location),
+              let expression = try? NSRegularExpression(pattern: "[^,;|()]+") else { return location }
+        let matches = expression.matches(in: location, range: NSRange(location.startIndex..., in: location))
+        guard let field = matches.compactMap({ Range($0.range, in: location) }).last(where: {
+            !location[$0].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }) else { return location }
+        let name = location[field].trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let range = location.range(of: name, range: field) else { return location }
+        let flag = String(String.UnicodeScalarView(country.unicodeScalars.compactMap {
+            UnicodeScalar(127_397 + $0.value)
+        }))
+        return location.replacingCharacters(in: range, with: flag)
     }
 }

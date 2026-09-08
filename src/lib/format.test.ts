@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  localizedCalendarDate,
+  localizedCalendarDateTime,
   formatDate,
   formatDateTime,
   formatExpectedDelivery,
@@ -73,5 +75,17 @@ describe('formatExpectedDelivery', () => {
   it('handles tomorrow across month boundaries', () => {
     const endOfMonth = new Date(2026, 6, 31, 12).getTime();
     expect(formatExpectedDelivery('2026-08-01', endOfMonth)).toBe('tomorrow');
+  });
+});
+
+
+describe('readable localized calendar dates', () => {
+  it.each([
+    ['en-CH', 'Sat 12 sep'], ['de-CH', 'Sa 12 sept'],
+    ['fr-CH', 'Sam 12 sept'], ['it-CH', 'Sab 12 set'],
+  ])('formats dates and times in %s', (locale, expected) => {
+    const date = new Date(2026, 8, 12, 14, 5);
+    expect(localizedCalendarDate(date, locale)).toBe(expected);
+    expect(localizedCalendarDateTime(date, locale)).toBe(`${expected}, 14:05`);
   });
 });

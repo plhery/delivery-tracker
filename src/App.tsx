@@ -262,10 +262,6 @@ export default function App({
     () => prioritizeActiveParcels(activeParcels.filter((parcel) => parcel.id !== nextParcel?.id), viewNow, parcelComparator(sort)),
     [activeParcels, nextParcel, sort, viewNow],
   );
-  const activeCount = useMemo(
-    () => parcels.filter(isActiveParcel).length,
-    [parcels],
-  );
   const deliveredParcels = useMemo(
     () => visibleParcels.filter((p) => !p.archivedAt && isDelivered(p.events)),
     [visibleParcels],
@@ -357,7 +353,6 @@ export default function App({
       <a className="skip-link" href="#main-content">{t('web.skipContent')}</a>
       <header className="app__header">
         <div className="app__masthead">
-          <span className="app__wordmark"><Icon name="parcel" />{t('app.title')}</span>
           <button type="button" className="app__add-button" aria-label={t('app.addParcelAria')} onClick={() => setAdding(true)}><Icon name="plus" /><span>{t('app.addParcel')}</span></button>
           <h1 className="app__title">{t(tab === 'deliveries' ? 'native.deliveries' : tab === 'passport' ? 'passport.title' : 'friends.title')}</h1>
           <AppNavigation selected={tab} onSelect={switchTab} />
@@ -394,7 +389,6 @@ export default function App({
 
         <div className="deliveries-page" hidden={tab !== 'deliveries'}>
         <div className="delivery-overview">
-          <span className="delivery-overview__count"><i aria-hidden="true" /><strong>{loading ? '—' : activeCount}</strong> {t('design.active')}</span>
           <div className="delivery-overview__actions">
             {!loading && parcels.length > 0 && <button
               ref={searchToggle}
@@ -592,8 +586,9 @@ export default function App({
           >
             <details onToggle={(event) => { if (event.currentTarget.open) trackAction('archive-open'); }}>
               <summary>
-                <span id="archived-parcels-title">{t('app.archived')}</span>
+                <Icon name="archive" /><span id="archived-parcels-title">{t('app.archived')}</span>
                 <span className="archived-section__count">{archivedParcels.length}</span>
+                <Icon name="chevron" className="archived-section__chevron" />
               </summary>
               <div className="parcel-grid">
                 {archivedParcels.map((parcel) => (

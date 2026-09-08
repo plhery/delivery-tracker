@@ -1,3 +1,4 @@
+import { localizedCalendarDate } from '../lib/format';
 import { trackAction } from '../lib/analytics';
 import { useMemo, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
@@ -37,7 +38,7 @@ export function Passport({ parcels, loading }: { parcels: ParcelWithEvents[]; lo
     <section className="passport-times" aria-labelledby="passport-times-title"><h2 id="passport-times-title">{t('passport.deliveryTimes')}</h2>
       <div className="passport-times__grid">{([
         { title: t('passport.average'), value: format(stats.averageDeliveryDuration), icon: 'clock', tone: 'blue', explanation: t(stats.durationSampleCount ? 'passport.timingExplanation' : 'passport.noTimingExplanation') },
-        { title: t('passport.personalBest'), value: format(stats.fastestDelivery?.duration ?? null), icon: 'express', tone: 'peach', explanation: stats.fastestDelivery ? `${stats.fastestDelivery.label || t('common.parcel')} · ${new Intl.DateTimeFormat(languageTag, { dateStyle: 'medium' }).format(stats.fastestDelivery.deliveredAt)}\n${t('passport.timingExplanation')}` : t('passport.noTimingExplanation') },
+        { title: t('passport.personalBest'), value: format(stats.fastestDelivery?.duration ?? null), icon: 'express', tone: 'peach', explanation: stats.fastestDelivery ? `${stats.fastestDelivery.label || t('common.parcel')} · ${localizedCalendarDate(new Date(stats.fastestDelivery.deliveredAt), languageTag)}\n${t('passport.timingExplanation')}` : t('passport.noTimingExplanation') },
       ] satisfies PassportDetail[]).map((card) => <button type="button" className={`time-card tone-${card.tone}`} key={card.title} onClick={() => { trackAction('stamp-open'); setDetail(card); }}><span><Icon name={card.icon} /><Icon name="arrow" /></span><strong>{card.value}</strong><span>{card.title}</span></button>)}</div>
       <p className="passport-note">{stats.durationSampleCount ? t(stats.durationSampleCount === 1 ? 'passport.timedJourneys.one' : 'passport.timedJourneys.many', { count: stats.durationSampleCount }) : t('passport.waitingForTimes')}</p>
     </section>

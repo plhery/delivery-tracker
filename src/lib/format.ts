@@ -88,3 +88,20 @@ export function formatExpectedDelivery(
   const pad = (x: number) => String(x).padStart(2, '0');
   return `${pad(expected.getDate())}.${pad(expected.getMonth() + 1)}.${expected.getFullYear()}`;
 }
+
+/** Compact calendar dates with explicit weekdays and months: "Sat 12 sep". */
+export function localizedCalendarDate(date: Date, languageTag: string): string {
+  const parts = new Intl.DateTimeFormat(new Intl.Locale(languageTag).language, {
+    weekday: 'short', day: 'numeric', month: 'short',
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((entry) => entry.type === type)!.value.replaceAll('.', '');
+  const weekday = part('weekday');
+  return `${weekday[0].toLocaleUpperCase(languageTag)}${weekday.slice(1)} ${part('day')} ${part('month').toLocaleLowerCase(languageTag)}`;
+}
+
+export function localizedCalendarDateTime(date: Date, languageTag: string): string {
+  const time = new Intl.DateTimeFormat(languageTag, {
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).format(date);
+  return `${localizedCalendarDate(date, languageTag)}, ${time}`;
+}

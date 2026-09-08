@@ -65,14 +65,13 @@ describe('localization', () => {
   it('formats calendar dates with the selected language tag', () => {
     const t = ((key: string) => key) as Translate;
     const now = new Date(2026, 0, 1, 12).getTime();
-    const delivery = new Date(2026, 11, 31);
     const update = new Date(2025, 11, 20, 12);
 
     expect(localizedExpectedDelivery('2026-12-31', t, 'en-CH', now)).toBe(
-      new Intl.DateTimeFormat('en-CH').format(delivery),
+      'Thu 31 dec',
     );
     expect(localizedRelativeTime(update.toISOString(), t, 'it-CH', now)).toBe(
-      new Intl.DateTimeFormat('it-CH').format(update),
+      'Sab 20 dic',
     );
   });
 });
