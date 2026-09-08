@@ -25,6 +25,9 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   poweredByHeader: false,
   reactStrictMode: true,
+  // Link previews may use browser-like user agents and only inspect the head.
+  // Keep social metadata in the initial HTML for every client.
+  htmlLimitedBots: /.*/,
   experimental: {
     // Keep production stack traces actionable without exposing browser maps.
     serverSourceMaps: true,

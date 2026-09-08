@@ -5,9 +5,16 @@ const preview = 'Ab7kP2mQ9xR4tY6n';
 // These tests stub the server response; worker-owned requests bypass routing in WebKit.
 test.use({ locale: 'en-US', serviceWorkers: 'block' });
 
-test('social crawlers receive a parcel card in the initial HTML head', async ({ request }) => {
+test('social crawlers and browser-like preview readers receive a parcel card in the initial HTML head', async ({ request }) => {
   test.skip(test.info().project.name !== 'desktop-chromium');
-  for (const userAgent of ['WhatsApp/2.24', 'facebookexternalhit/1.1', 'Twitterbot/1.0']) {
+  for (const userAgent of [
+    'WhatsApp/2.24',
+    'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+    'Twitterbot/1.0',
+    'Facebot',
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+    'DeliveryPreviewReader/1.0',
+  ]) {
     const response = await request.get('/i/' + preview, { headers: { 'user-agent': userAgent } });
     expect(response.ok()).toBe(true);
     expect(response.headers()['cache-control']).toContain('no-store');
