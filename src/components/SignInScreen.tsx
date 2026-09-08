@@ -1,5 +1,5 @@
 import { userErrorMessage } from '../lib/userMessages';
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { useI18n } from '../i18n';
 
 export function SignInScreen({
@@ -14,7 +14,7 @@ export function SignInScreen({
   showConfigurationHelp = true,
 }: {
   showConfigurationHelp?: boolean;
-  title?: string;
+  title?: ReactNode;
   subtitle?: string;
   configured: boolean;
   googleEnabled?: boolean;

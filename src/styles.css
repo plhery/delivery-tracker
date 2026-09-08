@@ -379,10 +379,11 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .arrival__scene { position: relative; width: min(100%, 820px); min-height: min(680px, calc(100dvh - 144px)); margin: 12px auto 0; }
 .arrival__welcome { position: relative; text-align: center; display: flex; align-items: center; flex-direction: column; padding-top: 28px; }
 .arrival__welcome h1 { font-size: clamp(38px, 5vw, 58px); line-height: 1.06; letter-spacing: -2.6px; font-weight: 650; white-space: pre-line; margin: 0; max-width: 680px; transition: opacity .35s, transform .55s var(--ease-out); }
-.arrival--invitation .arrival__welcome h1 { max-width: 660px; overflow-wrap: anywhere; }
+.arrival--invitation .arrival__welcome h1,
+.arrival--invitation .auth-flow__heading h1 { max-width: 520px; font-size: clamp(28px, 3.5vw, 36px); line-height: 1.2; letter-spacing: -.8px; font-weight: 500; overflow-wrap: anywhere; }
+.invitation-name { font-family: Georgia, "Times New Roman", serif; font-style: italic; font-weight: 600; }
+.invitation-accept .auth-flow__heading { margin-bottom: 24px; }
 .arrival--invitation.arrival--welcome .arrival__parcel { top: var(--invite-parcel-top, 132px); }
-.arrival__invitation-subtitle { margin: 12px 0 0; color: var(--ink-soft); font-size: 15px; transition: opacity .35s; }
-.arrival--opening .arrival__invitation-subtitle { opacity: 0; }
 .invitation-notice { color: var(--ink-soft); font-size: 14px; text-align: center; max-width: 340px; }
 .invitation-notice p { margin: 0 0 10px; }
 .arrival__app-link { padding: 12px 0; color: var(--ink-soft); font-size: 12px; line-height: 1.3; text-align: center; text-underline-offset: 4px; }

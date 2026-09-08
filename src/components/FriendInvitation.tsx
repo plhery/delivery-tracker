@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ComponentProps } from 'react';
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import { useI18n, type MessageKey } from '../i18n';
 import type { ApiFriendProfile, ApiFriendsSnapshot } from '../generated/apiContract';
 import { FriendsError, type FriendsClient } from '../lib/friends';
@@ -41,21 +41,22 @@ export function FriendInvitation({ invitation, onDismiss, client, parcels = empt
     document.addEventListener('visibilitychange', load);
     return () => { disposed = true; controller?.abort(); document.removeEventListener('visibilitychange', load); };
   }, [code, retry]);
-  const title = nickname ? t('friends.invitationTitle', { name: nickname }) : t('friends.invitationGeneric');
+  const [beforeName, afterName] = t('friends.invitationTitle').split('{{name}}');
+  const title = nickname ? <>{beforeName}<em className="invitation-name">{nickname}</em>{afterName}</> : t('friends.invitationGeneric');
   const failure = !code ? 'friends.inviteUnavailable' : error;
   const notice = failure ? <div className="invitation-notice" role="alert"><p>{t(failure)}</p>{failure !== 'friends.inviteUnavailable' && <button className="text-button" onClick={() => setRetry((value) => value + 1)}>{t('common.retry')}</button>}</div> : !nickname ? <p className="invitation-notice" role="status">{t('auth.loading')}</p> : undefined;
   const ios = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
   return <ArrivalScreen {...signIn} title={title} subtitle={t('friends.signInToAccept')} showConfigurationHelp={false}
     screen={invitation.pending?.opened ? 'sign-in' : 'welcome'}
     onNavigate={(screen) => invitation.setOpened(screen === 'sign-in')}
-    invitation={{ title, subtitle: nickname ? t('friends.invitationSubtitle') : undefined, canOpen: !!nickname,
+    invitation={{ title, canOpen: !!nickname,
       onDismiss, notice, appURL: ios && code ? `swissdeliverytracker://invite#${code}` : undefined,
       afterOpen: !nickname ? <section className="auth-flow"><div className="auth-flow__heading"><h1 tabIndex={-1}>{title}</h1></div>{notice}</section>
         : client && code ? <InvitationAcceptance key={code} title={title} code={code} client={client} parcels={parcels} onAccepted={() => invitation.clear(true)} /> : undefined,
     }} />;
 }
 
-function InvitationAcceptance({ title, code, client, parcels, onAccepted }: { title: string; code: string; client: FriendsClient; parcels: ParcelWithEvents[]; onAccepted: () => void }) {
+function InvitationAcceptance({ title, code, client, parcels, onAccepted }: { title: ReactNode; code: string; client: FriendsClient; parcels: ParcelWithEvents[]; onAccepted: () => void }) {
   const { t } = useI18n();
   const [snapshot, setSnapshot] = useState<ApiFriendsSnapshot | null>(null);
   const [error, setError] = useState<MessageKey | null>(null);
@@ -91,7 +92,7 @@ function InvitationAcceptance({ title, code, client, parcels, onAccepted }: { ti
     } finally { working.current = false; if (generation.current === current) setBusy(false); }
   }
   return <section className="auth-flow invitation-accept" aria-labelledby="invite-title">
-    <div className="auth-flow__heading"><h1 id="invite-title" tabIndex={-1}>{title}</h1><p>{t('friends.invitationSubtitle')}</p></div>
+    <div className="auth-flow__heading"><h1 id="invite-title" tabIndex={-1}>{title}</h1></div>
     {error && <div className="invitation-notice" role="alert"><p>{t(error)}</p>{!snapshot && <button className="text-button" onClick={() => setRetry((value) => value + 1)}>{t('common.retry')}</button>}</div>}
     {!snapshot ? !error && <p role="status">{t('auth.loading')}</p> : creating
       ? <FriendProfileForm profile={null} parcels={parcels} busy={busy} submitKey="friends.joinAndAccept" onSave={accept} />

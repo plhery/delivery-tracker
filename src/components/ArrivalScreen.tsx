@@ -12,7 +12,7 @@ const serverReady = () => false;
 export function ArrivalScreen({ screen, onNavigate, invitation, ...signIn }: ComponentProps<typeof SignInScreen> & {
   screen: Exclude<EntryScreen, 'demo'>;
   onNavigate: (screen: EntryScreen) => void;
-  invitation?: { title: string; subtitle?: string; canOpen: boolean; notice?: ReactNode; afterOpen?: ReactNode; onDismiss: () => void; appURL?: string };
+  invitation?: { title: ReactNode; canOpen: boolean; notice?: ReactNode; afterOpen?: ReactNode; onDismiss: () => void; appURL?: string };
 }) {
   const { t } = useI18n();
   const ready = useSyncExternalStore(subscribeToHydration, clientReady, serverReady);
@@ -65,7 +65,6 @@ export function ArrivalScreen({ screen, onNavigate, invitation, ...signIn }: Com
       <div className="arrival__parcel"><div className="arrival__ground" /><div className="arrival__tilt"><div className="arrival__press"><ParcelIllustration /></div></div></div>
       {welcome ? <div className="arrival__welcome">
         <h1>{invitation?.title ?? t('arrival.welcomeTitle')}</h1>
-        {invitation?.subtitle && <p className="arrival__invitation-subtitle">{invitation.subtitle}</p>}
         <button type="button" className="arrival__open" onClick={unwrap} disabled={!ready || opening || (invitation && !invitation.canOpen)} aria-describedby="parcel-open-hint">
           <span className="arrival__parcel-space" aria-hidden="true" />
           <span>{t('arrival.tapToOpen')}<Icon name="arrow" /></span>

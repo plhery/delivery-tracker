@@ -177,16 +177,17 @@ private struct WelcomeView: View {
 
                     Spacer(minLength: 36)
 
-                    Text(invitation.map { $0.nickname.map { localizer.text("friends.invitationTitle", ["name": $0]) } ?? localizer.text("friends.invitationGeneric") } ?? copy.welcomeTitle)
-                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                        .tracking(-1.2)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, 8)
-
-                    if invitation?.nickname != nil {
-                        Text(localizer.text("friends.invitationSubtitle")).font(.subheadline).foregroundStyle(.secondary).padding(.top, 8)
+                    Group {
+                        if let invitation { InvitationHeading(nickname: invitation.nickname) }
+                        else {
+                            Text(copy.welcomeTitle)
+                                .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                                .tracking(-1.2)
+                        }
                     }
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 8)
 
                     Button(action: onOpen) {
                         VStack(spacing: 8) {
@@ -288,9 +289,12 @@ struct SignInView: View {
                         .accessibilityHidden(true)
 
                     VStack(spacing: 8) {
-                        Text(invitation.map { $0.nickname.map { localizer.text("friends.invitationTitle", ["name": $0]) } ?? localizer.text("friends.invitationGeneric") } ?? copy.signInTitle)
-                            .font(.system(.title, design: .rounded, weight: .bold))
-                            .tracking(-0.6)
+                        if let invitation { InvitationHeading(nickname: invitation.nickname) }
+                        else {
+                            Text(copy.signInTitle)
+                                .font(.system(.title, design: .rounded, weight: .bold))
+                                .tracking(-0.6)
+                        }
                         Text(invitation == nil ? copy.signInSubtitle : localizer.text("friends.signInToAccept"))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
@@ -548,6 +552,32 @@ struct SignInView: View {
     }
 }
 
+private struct InvitationHeading: View {
+    let nickname: String?
+    @EnvironmentObject private var localizer: Localizer
+
+    private var sentence: AttributedString {
+        guard let nickname else { return AttributedString(localizer.text("friends.invitationGeneric")) }
+        let template = localizer.text("friends.invitationTitle")
+        guard let slot = template.range(of: "{{name}}") else { return AttributedString(template) }
+        var text = AttributedString(String(template[..<slot.lowerBound]))
+        var name = AttributedString(nickname)
+        name.font = .system(.title, design: .serif, weight: .semibold).italic()
+        text.append(name)
+        text.append(AttributedString(String(template[slot.upperBound...])))
+        return text
+    }
+
+    var body: some View {
+        Text(sentence)
+            .font(.system(.title, design: .rounded, weight: .medium))
+            .tracking(-0.6)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
 private struct FriendInvitationAcceptanceView: View {
     let onBack: () -> Void
     @EnvironmentObject private var session: SessionStore
@@ -570,11 +600,7 @@ private struct FriendInvitationAcceptanceView: View {
                 }
                 Color.clear.frame(width: 180, height: 186)
                     .anchorPreference(key: ArrivalParcelFrame.self, value: .bounds) { [.signIn: $0] }.accessibilityHidden(true)
-                VStack(spacing: 8) {
-                    Text(invitation.nickname.map { localizer.text("friends.invitationTitle", ["name": $0]) } ?? localizer.text("friends.invitationGeneric"))
-                        .font(.system(.title, design: .rounded, weight: .bold)).tracking(-0.6)
-                    Text(localizer.text("friends.invitationSubtitle")).font(.subheadline).foregroundStyle(.secondary)
-                }.multilineTextAlignment(.center)
+                InvitationHeading(nickname: invitation.nickname)
                 if let error = invitation.errorKey ?? model.errorKey {
                     Text(localizer.text(error)).font(.footnote).foregroundStyle(.secondary)
                     if error != "friends.inviteUnavailable" {

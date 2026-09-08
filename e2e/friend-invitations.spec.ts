@@ -16,7 +16,7 @@ test('a shared link opens the same parcel into personalized sign-in and survives
     await route.fulfill({ json: { previewNickname: 'Paul' } });
   });
   await page.goto(`/invite#${token}`);
-  await expect(page.getByRole('heading', { name: 'Your friend Paul' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your friend Paul sent you an invitation' })).toBeVisible();
   await expect(page).toHaveURL(/\/invite$/);
   await expect(page.getByRole('button', { name: /try the demo/i })).toHaveCount(0);
   await page.locator('.arrival__parcel').evaluate((element) => element.setAttribute('data-continuity', 'original'));
@@ -27,7 +27,7 @@ test('a shared link opens the same parcel into personalized sign-in and survives
   await expect(page.locator('.arrival__parcel')).toHaveAttribute('data-continuity', 'original');
   await page.screenshot({ path: `/tmp/invitation-${test.info().project.name}.png` });
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Your friend Paul' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your friend Paul sent you an invitation' })).toBeVisible();
   await expect(page.locator('.arrival')).toHaveClass(/arrival--sign-in/);
   await page.getByRole('button', { name: 'Back' }).click();
   await expect(page.getByRole('button', { name: 'Tap to open your parcel' })).toBeEnabled();
@@ -52,9 +52,9 @@ test('long sender names and expired invitations fit narrow screens in every loca
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect(page.locator('.arrival__open')).toBeInViewport({ ratio: 1 });
     await expect(page.locator('.arrival__app-link')).toBeInViewport({ ratio: 1 });
-    const subtitle = await page.locator('.arrival__invitation-subtitle').boundingBox();
+    const heading = await page.locator('.arrival__welcome h1').boundingBox();
     const parcel = await page.locator('.arrival__parcel').boundingBox();
-    expect(parcel!.y).toBeGreaterThan(subtitle!.y + subtitle!.height - 5);
+    expect(parcel!.y).toBeGreaterThan(heading!.y + heading!.height - 5);
   }
   await page.screenshot({ path: `/tmp/invitation-long-${test.info().project.name}.png` });
   expired = true;

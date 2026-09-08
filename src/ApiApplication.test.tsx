@@ -104,7 +104,7 @@ describe('ApiApplication', () => {
     vi.stubGlobal('fetch', fetch);
     const user = userEvent.setup();
     const view = render(<ApiApplication />);
-    expect(await screen.findByText('Your friend Paul')).toBeVisible();
+    expect(await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' })).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
     expect(await screen.findByText('Configured sign in')).toBeVisible();
     mocks.auth.status = 'authenticated'; mocks.auth.user = USER;

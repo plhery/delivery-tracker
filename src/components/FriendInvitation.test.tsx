@@ -24,7 +24,7 @@ afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); sessionStorage.cl
 
 it('opens into personalized sign-in and never offers the demo or accepts automatically', async () => {
   const user = userEvent.setup(); render(<Harness />);
-  expect(await screen.findByRole('heading', { name: 'Your friend Paul' })).toBeVisible();
+  expect(await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' })).toBeVisible();
   expect(screen.queryByRole('button', { name: /Google/ })).toBeNull();
   await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
   await user.click(await screen.findByRole('button', { name: 'Continue with Google' }));
@@ -38,7 +38,7 @@ it('requires an explicit accept and ignores repeated taps', async () => {
   let finish!: (value: { snapshot: ApiFriendsSnapshot }) => void;
   const client: FriendsClient = { load: vi.fn().mockResolvedValue(enrolled), action: vi.fn().mockImplementation(() => new Promise((resolve) => { finish = resolve; })) };
   const user = userEvent.setup(); render(<Harness client={client} />);
-  await screen.findByText('Your friend Paul');
+  await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' });
   await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
   const accept = await screen.findByRole('button', { name: 'Become friends' });
   expect(client.action).not.toHaveBeenCalled();
@@ -46,7 +46,7 @@ it('requires an explicit accept and ignores repeated taps', async () => {
   expect(client.action).toHaveBeenCalledExactlyOnceWith({ action: 'accept_invite', code }, []);
   vi.spyOn(document, 'hidden', 'get').mockReturnValue(true);
   fireEvent(document, new Event('visibilitychange'));
-  expect(screen.queryByText('Your friend Paul')).toBeNull();
+  expect(screen.queryByRole('heading', { name: 'Your friend Paul sent you an invitation' })).toBeNull();
   await act(async () => finish({ snapshot: enrolled }));
   expect(screen.getByText('Invitation closed')).toBeVisible();
   expect(location.search).toBe('?view=friends');
@@ -54,7 +54,7 @@ it('requires an explicit accept and ignores repeated taps', async () => {
 it('shows the profile preview and saves explicit sharing choices before joining', async () => {
   const client: FriendsClient = { load: vi.fn().mockResolvedValue(noProfile), action: vi.fn().mockResolvedValue({ snapshot: enrolled }) };
   const user = userEvent.setup(); render(<Harness client={client} />);
-  await screen.findByText('Your friend Paul');
+  await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' });
   await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
   await user.click(await screen.findByRole('button', { name: 'Become friends' }));
   expect(screen.getByRole('region', { name: 'Profile preview:' })).toBeVisible();
@@ -84,5 +84,5 @@ it('clears sender information on background and ignores a late preview', async (
   vi.spyOn(document, 'hidden', 'get').mockReturnValue(true);
   fireEvent(document, new Event('visibilitychange'));
   await act(async () => finish(new Response(JSON.stringify({ previewNickname: 'Paul' }))));
-  expect(screen.queryByText('Your friend Paul')).toBeNull();
+  expect(screen.queryByRole('heading', { name: 'Your friend Paul sent you an invitation' })).toBeNull();
 });
