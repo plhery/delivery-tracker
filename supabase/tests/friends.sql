@@ -88,10 +88,9 @@ begin
  old_code := public.friends_action('create_invite')->>'inviteCode';
  code := public.friends_action('create_invite')->>'inviteCode';
  perform set_config('request.jwt.claim.sub',b::text,true);
- begin
-   perform public.friends_action('preview_invite',p_code=>old_code);
-   raise exception 'Rotated invitation survived';
- exception when no_data_found then null; end;
+ if public.friends_action('preview_invite',p_code=>old_code)->>'previewNickname' <> 'A friend' then
+   raise exception 'Creating another invitation invalidated a previous link';
+ end if;
  perform public.friends_action('accept_invite',p_code=>code);
  perform set_config('request.jwt.claim.sub',a::text,true);
  perform public.friends_action('create_invite');

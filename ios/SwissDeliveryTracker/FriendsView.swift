@@ -9,6 +9,7 @@ struct FriendsView: View {
     @EnvironmentObject private var activity: FriendsActivityStore
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @StateObject private var model = FriendsStore()
     @State private var showingAccount = false
     @State private var visible = false
@@ -106,7 +107,7 @@ struct FriendsView: View {
                 .navigationTitle(value.title(localizer)).navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button(text("common.close")) { panel = nil; model.errorKey = nil }.disabled(model.working) } }
             }
-            .presentationDetents(value.id == "revokeInvites" ? [.medium] : [.large])
+            .presentationDetents(dynamicTypeSize.isAccessibilitySize ? [.large] : value.detents)
             .presentationDragIndicator(.visible).interactiveDismissDisabled(model.working)
         }
     }
@@ -212,6 +213,14 @@ struct FriendsView: View {
 private enum FriendsPanel: Identifiable {
     case profile, invite, accept, revokeInvites, disable, friend(FriendCard)
     var id: String { switch self { case .profile: "profile"; case .invite: "invite"; case .accept: "accept"; case .revokeInvites: "revokeInvites"; case .disable: "disable"; case .friend(let friend): friend.id.uuidString } }
+    var detents: Set<PresentationDetent> {
+        switch self {
+        case .invite: [.height(520), .large]
+        case .accept: [.height(260), .large]
+        case .revokeInvites: [.medium]
+        default: [.large]
+        }
+    }
     @MainActor func title(_ localizer: Localizer) -> String {
         switch self { case .friend(let friend): friend.nickname; case .profile: localizer.text("friends.settings"); case .invite: localizer.text("friends.inviteTitle"); case .accept: localizer.text("friends.enterCode"); case .revokeInvites: localizer.text("friends.revokeAllTitle"); case .disable: localizer.text("friends.disableTitle") }
     }
@@ -401,15 +410,18 @@ private struct FriendsInvitationView: View {
     @State private var previewId: String?
     @State private var copied = false
     @State private var requestedInvitation = false
+    @State private var previousInviteCount = 0
+    @State private var previousInvitationsCancelled = false
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: .leading, spacing: 14) {
             if accepting {
                 TextField(localizer.text("friends.linkPlaceholder"), text: $code).accessibilityLabel(localizer.text("friends.link")).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL).font(.footnote).padding(14).background(Brand.paper, in: RoundedRectangle(cornerRadius: 14))
                     .onChange(of: code) { _, next in code = String(next.prefix(2048)) }
-                Button(localizer.text("friends.openLink")) { if let url = URL(string: code.trimmingCharacters(in: .whitespacesAndNewlines)) { open(url) } }
+                Button { if let url = URL(string: code.trimmingCharacters(in: .whitespacesAndNewlines)) { open(url) } } label: {
+                    Text(localizer.text("friends.openLink")).frame(maxWidth: .infinity, minHeight: 44)
+                }
                     .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent).disabled(FriendInvitationLink.code(from: code) == nil)
             } else {
-                Text(localizer.text("friends.inviteHint")).font(.subheadline).foregroundStyle(.secondary)
                 if code.isEmpty {
                     if !requestedInvitation || busy {
                         ProgressView().frame(maxWidth: .infinity, minHeight: 44)
@@ -420,12 +432,37 @@ private struct FriendsInvitationView: View {
                 }
                 else {
                     let link = FriendInvitationLink.url(code: code, previewId: previewId)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(localizer.text("friends.link")).font(.caption).foregroundStyle(.secondary)
+                        Text(link.absoluteString).font(.system(.footnote, design: .monospaced))
+                            .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading).padding(14)
+                            .background(Brand.paper, in: RoundedRectangle(cornerRadius: 14))
+                            .accessibilityIdentifier("friends.invitationURL")
+                    }
+                    Text(localizer.text("friends.inviteExpiry")).font(.caption).foregroundStyle(.secondary)
                     ShareLink(item: link) { Label(localizer.text("friends.shareLink"), systemImage: "square.and.arrow.up").frame(maxWidth: .infinity, minHeight: 44) }
                         .simultaneousGesture(TapGesture().onEnded { DeliveryAnalytics.shared.action("friend-invite-share", .started) })
                         .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
-                    Text(localizer.text("friends.inviteExpiry")).font(.caption).foregroundStyle(.secondary)
                     Button { UIPasteboard.general.url = link; copied = true; DeliveryAnalytics.shared.action("friend-invite-copy", .success) } label: { Label(localizer.text(copied ? "friends.copied" : "friends.copyLink"), systemImage: copied ? "checkmark" : "doc.on.doc").frame(maxWidth: .infinity, minHeight: 44) }.foregroundStyle(Brand.ink)
-                    Button(localizer.text("friends.revoke")) { Task { if await act(FriendsActionRequest(action: .revokeInvite)) != nil { completed() } } }.font(.footnote).frame(maxWidth: .infinity)
+                    if previousInvitationsCancelled {
+                        Label(localizer.text("friends.previousRevoked"), systemImage: "checkmark")
+                            .font(.caption).foregroundStyle(ExperimentalPalette.delivered)
+                    }
+                    if previousInviteCount > 0 {
+                        Button(localizer.text(previousInviteCount == 1 ? "friends.revokePreviousOne" : "friends.revokePreviousMany", ["count": previousInviteCount])) {
+                            Task {
+                                if await act(FriendsActionRequest(action: .revokePreviousInvites, code: code)) != nil {
+                                    previousInviteCount = 0
+                                    previousInvitationsCancelled = true
+                                }
+                            }
+                        }.font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44)
+                    } else {
+                        Button(localizer.text("friends.revoke")) {
+                            Task { if await act(FriendsActionRequest(action: .revokeInvite, code: code)) != nil { completed() } }
+                        }.font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44)
+                    }
                 }
             }
         }.disabled(busy)
@@ -440,6 +477,8 @@ private struct FriendsInvitationView: View {
         guard !Task.isCancelled else { return }
         previewId = result?.previewID
         code = result?.inviteCode ?? ""
+        previousInviteCount = result?.previousInviteCount ?? 0
+        previousInvitationsCancelled = false
     }
     private func actionButton(_ key: String, action: @escaping () async -> Void) -> some View {
         Button { Task { await action() } } label: { Text(localizer.text(key)).frame(maxWidth: .infinity, minHeight: 44) }.buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)

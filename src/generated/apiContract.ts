@@ -1492,7 +1492,7 @@ export interface ApiFriendsSnapshot {
   "friends": Array<ApiFriendCard>;
 }
 
-export type ApiFriendsAction = "save_profile" | "create_invite" | "revoke_invite" | "preview_invite" | "accept_invite" | "remove_friend" | "disable" | "acknowledge_friend";
+export type ApiFriendsAction = "save_profile" | "create_invite" | "revoke_invite" | "revoke_previous_invites" | "preview_invite" | "accept_invite" | "remove_friend" | "disable" | "acknowledge_friend";
 
 export interface ApiFriendsActionRequest {
   "action": ApiFriendsAction;
@@ -1510,6 +1510,7 @@ export interface ApiFriendsActionResponse {
   "expiresAt"?: string;
   "previewNickname"?: string;
   "acceptedFriend"?: ApiFriendCard;
+  "previousInviteCount"?: number;
 }
 
 export interface ApiFriendExportConnection {

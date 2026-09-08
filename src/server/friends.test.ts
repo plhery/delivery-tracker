@@ -67,6 +67,27 @@ describe('Friends privacy boundary', () => {
     expect((await call({ action: 'accept_invite', code: 'short' })).status).toBe(400);
     expect(rpc).not.toHaveBeenCalled();
   });
+  it('requires a bearer token to cancel older invitations and supports revoking one specific link', async () => {
+    const code = 'a'.repeat(32);
+    expect(friendsAction({ action: 'revoke_invite', code })).toEqual({ action: 'revoke_invite', code });
+    expect(friendsAction({ action: 'revoke_previous_invites', code })).toEqual({ action: 'revoke_previous_invites', code });
+    for (const body of [{ action: 'revoke_previous_invites' }, { action: 'revoke_invite', code: null }, { action: 'revoke_previous_invites', code: 'short' }, { action: 'revoke_previous_invites', code, userId: id }]) {
+      expect(() => friendsAction(body)).toThrow();
+    }
+    const rpc = vi.spyOn(SupabaseUserClient.prototype, 'request').mockResolvedValue({ snapshot, previousInviteCount: 0 });
+    const response = await call({ action: 'revoke_previous_invites', code });
+    expect(await response.json()).toEqual({ snapshot, previousInviteCount: 0 });
+    expect(rpc).toHaveBeenCalledWith('/rest/v1/rpc/friends_action', { method: 'POST', body: { p_action: 'revoke_previous_invites', p_code: code, p_nickname: null, p_share_stats: null, p_share_arrival: null, p_friend_id: null } });
+  });
+  it('projects only a valid owner invitation count and never adds it to public previews', () => {
+    const invite = { inviteCode: 'a'.repeat(32), expiresAt: '2026-09-16T00:00:00Z', previousInviteCount: 6 };
+    expect(friendsActionResponse({ ...invite, emails: ['private'] }, 'create_invite')).toEqual(invite);
+    expect(friendsActionResponse({ previewNickname: 'Paul', previousInviteCount: 6 }, 'preview_invite')).toEqual({ previewNickname: 'Paul' });
+    for (const previousInviteCount of [-1, 1.5, '6', null, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(() => friendsActionResponse({ ...invite, previousInviteCount }, 'create_invite')).toThrow();
+      expect(() => friendsActionResponse({ snapshot, previousInviteCount }, 'revoke_previous_invites')).toThrow();
+    }
+  });
   it('revokes the caller’s outstanding invitations without needing a saved link or accepting another owner', async () => {
     const rpc = vi.spyOn(SupabaseUserClient.prototype, 'request').mockResolvedValue({ snapshot });
     expect((await call({ action: 'revoke_invite' }, false)).status).toBe(401);

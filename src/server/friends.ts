@@ -9,7 +9,7 @@ import { SupabaseError, type SupabaseUserClient, type SupabaseServiceClient } fr
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const stamps = new Set<ApiFriendStamp>(['first', 'ten', 'connected', 'express']);
 const fields: Record<ApiFriendsActionRequest['action'], string[]> = {
-  save_profile: ['nickname', 'shareStats', 'shareArrival'], create_invite: [], revoke_invite: [],
+  save_profile: ['nickname', 'shareStats', 'shareArrival'], create_invite: [], revoke_invite: [], revoke_previous_invites: ['code'],
   preview_invite: ['code'], accept_invite: ['code'], remove_friend: ['friendId'], acknowledge_friend: ['friendId'], disable: [],
 };
 const invalid = () => new HttpError(400, 'Invalid Friends request');
@@ -18,10 +18,11 @@ function nickname(value: unknown): value is string {
 }
 export function friendsAction(payload: JsonObject): ApiFriendsActionRequest {
   if (typeof payload.action !== 'string' || !Object.hasOwn(fields, payload.action)) throw invalid();
-  const allowed = fields[payload.action as ApiFriendsActionRequest['action']];
-  if (Object.keys(payload).some((key) => key !== 'action' && !allowed.includes(key)) || allowed.some((key) => payload[key] === undefined)) throw invalid();
+  const required = fields[payload.action as ApiFriendsActionRequest['action']];
+  const allowed = payload.action === 'revoke_invite' ? [...required, 'code'] : required;
+  if (Object.keys(payload).some((key) => key !== 'action' && !allowed.includes(key)) || required.some((key) => payload[key] === undefined)) throw invalid();
   if (payload.action === 'save_profile' && (!nickname(payload.nickname) || typeof payload.shareStats !== 'boolean' || typeof payload.shareArrival !== 'boolean')) throw invalid();
-  if (allowed.includes('code') && (typeof payload.code !== 'string' || !/^[a-f0-9]{32}$/.test(payload.code))) throw invalid();
+  if (allowed.includes('code') && payload.code !== undefined && (typeof payload.code !== 'string' || !/^[a-f0-9]{32}$/.test(payload.code))) throw invalid();
   if (allowed.includes('friendId') && (typeof payload.friendId !== 'string' || !uuid.test(payload.friendId))) throw invalid();
   return { ...payload, ...(typeof payload.nickname === 'string' ? { nickname: payload.nickname.trim() } : {}) } as unknown as ApiFriendsActionRequest;
 }
@@ -101,16 +102,21 @@ export async function friendsRPC(client: SupabaseUserClient, action?: ApiFriends
 }
 export function friendsActionResponse(value: unknown, action: ApiFriendsActionRequest['action']): ApiFriendsActionResponse {
   if (!isRecord(value)) return corrupt();
+  const invitationCount = () => {
+    if (value.previousInviteCount === undefined) return {};
+    if (!Number.isSafeInteger(value.previousInviteCount) || Number(value.previousInviteCount) < 0) return corrupt();
+    return { previousInviteCount: Number(value.previousInviteCount) };
+  };
   if (action === 'create_invite') {
     if (typeof value.inviteCode !== 'string' || !/^[a-f0-9]{32}$/.test(value.inviteCode) || typeof value.expiresAt !== 'string' || !Number.isFinite(Date.parse(value.expiresAt))) return corrupt();
     if (value.previewId !== undefined && !isInvitationPreviewId(value.previewId)) return corrupt();
-    return { inviteCode: value.inviteCode, expiresAt: value.expiresAt, ...(value.previewId !== undefined ? { previewId: value.previewId } : {}) };
+    return { inviteCode: value.inviteCode, expiresAt: value.expiresAt, ...(value.previewId !== undefined ? { previewId: value.previewId } : {}), ...invitationCount() };
   }
   if (action === 'preview_invite') {
     if (!nickname(value.previewNickname)) return corrupt();
     return { previewNickname: value.previewNickname };
   }
-  return { snapshot: friendsSnapshot(value.snapshot), ...(action === 'accept_invite' && value.acceptedFriend ? { acceptedFriend: friendCard(value.acceptedFriend) } : {}) };
+  return { snapshot: friendsSnapshot(value.snapshot), ...(action === 'accept_invite' && value.acceptedFriend ? { acceptedFriend: friendCard(value.acceptedFriend) } : {}), ...(action === 'revoke_previous_invites' ? invitationCount() : {}) };
 }
 
 export function friendsActivity(value: unknown): ApiFriendsActivity {

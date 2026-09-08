@@ -518,6 +518,7 @@ enum FriendsAction: String, Codable, CaseIterable, Hashable, Sendable, Identifia
     case saveProfile = "save_profile"
     case createInvite = "create_invite"
     case revokeInvite = "revoke_invite"
+    case revokePreviousInvites = "revoke_previous_invites"
     case previewInvite = "preview_invite"
     case acceptInvite = "accept_invite"
     case removeFriend = "remove_friend"
@@ -552,6 +553,7 @@ struct FriendsActionResponse: Codable, Equatable, Hashable, Sendable {
     var expiresAt: String? = nil
     var previewNickname: String? = nil
     var acceptedFriend: FriendCard? = nil
+    var previousInviteCount: Int? = nil
 
     private enum CodingKeys: String, CodingKey {
         case snapshot
@@ -560,6 +562,7 @@ struct FriendsActionResponse: Codable, Equatable, Hashable, Sendable {
         case expiresAt
         case previewNickname
         case acceptedFriend
+        case previousInviteCount
     }
 }
 

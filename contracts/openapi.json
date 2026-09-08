@@ -3383,6 +3383,7 @@
           "save_profile",
           "create_invite",
           "revoke_invite",
+          "revoke_previous_invites",
           "preview_invite",
           "accept_invite",
           "remove_friend",
@@ -3448,6 +3449,11 @@
           },
           "acceptedFriend": {
             "$ref": "#/components/schemas/FriendCard"
+          },
+          "previousInviteCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of still-active invitations created before the returned invitation. Visible only to their owner."
           }
         }
       },

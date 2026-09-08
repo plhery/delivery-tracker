@@ -37,6 +37,10 @@ while IFS= read -r migration; do
     psql "$database_url" -X -v ON_ERROR_STOP=1 \
       -f "$repo_root/supabase/tests/pre_short_invitation_previews.sql"
   fi
+  if [[ "$(basename "$migration")" == "20260911180000_keep_previous_invitations.sql" ]]; then
+    psql "$database_url" -X -v ON_ERROR_STOP=1 \
+      -f "$repo_root/supabase/tests/pre_multiple_invitations.sql"
+  fi
   psql "$database_url" -X -v ON_ERROR_STOP=1 -f "$migration"
   if [[ "$(basename "$migration")" == "20260911150000_short_invitation_previews.sql" ]]; then
     psql "$database_url" -X -v ON_ERROR_STOP=1 \
@@ -67,3 +71,6 @@ psql "$database_url" -X -v ON_ERROR_STOP=1 \
 
 psql "$database_url" -X -v ON_ERROR_STOP=1 \
   -f "$repo_root/supabase/tests/live_activity_revocation.sql"
+
+psql "$database_url" -X -v ON_ERROR_STOP=1 \
+  -f "$repo_root/supabase/tests/multiple_invitations.sql"

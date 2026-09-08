@@ -23,7 +23,7 @@ export function Friends({ client, parcels, demo, onExitDemo }: { client: Friends
   const [error, setError] = useState<MessageKey | null>(null);
   const [busy, setBusy] = useState(false);
   const [panel, setPanel] = useState<Panel>(null);
-  const [invite, setInvite] = useState<{ code: string; previewId?: string } | null>(null);
+  const [invite, setInvite] = useState<{ code: string; previewId?: string; previousInviteCount?: number } | null>(null);
   const [notice, setNotice] = useState<MessageKey | null>(null);
   const generation = useRef(0);
   const working = useRef(false);
@@ -90,7 +90,7 @@ export function Friends({ client, parcels, demo, onExitDemo }: { client: Friends
     setInvite(null); setPanel('invite');
     if (demo) return;
     const result = await act({ action: 'create_invite' });
-    if (result?.inviteCode) setInvite({ code: result.inviteCode, previewId: result.previewId });
+    if (result?.inviteCode) setInvite({ code: result.inviteCode, previewId: result.previewId, previousInviteCount: result.previousInviteCount });
   }
   const close = () => { if (!busy) { setPanel(null); setError(null); } };
   const errorView = error && <p className="friends-error" role="alert">{t(error)}</p>;
@@ -134,7 +134,7 @@ export function Friends({ client, parcels, demo, onExitDemo }: { client: Friends
       {(panel === 'invite' || panel === 'accept') && (demo ? <>
         <p>{t('friends.demoInvites')}</p>
         {onExitDemo && <button className="button button--primary" onClick={() => { close(); onExitDemo(); }}>{t('welcome.signInInstead')}</button>}
-      </> : panel === 'invite' ? <FriendsInvite code={invite?.code ?? null} previewId={invite?.previewId} busy={busy} act={act} onRetry={inviteFriend} onClose={close} /> : <FriendsAccept onOpen={() => setPanel(null)} />)}
+      </> : panel === 'invite' ? <FriendsInvite code={invite?.code ?? null} previewId={invite?.previewId} previousInviteCount={invite?.previousInviteCount ?? 0} busy={busy} act={act} onRetry={inviteFriend} onClose={close} /> : <FriendsAccept onOpen={() => setPanel(null)} />)}
       {selected && <FriendDetails friend={selected} busy={busy} onRemove={async () => { if (await act({ action: 'remove_friend', friendId: selected.id })) close(); }} />}
     </FriendsSheet>}
   </div>;
@@ -178,10 +178,13 @@ export function FriendsSheet({ title, children, onClose, busy = false }: { title
   return createPortal(<div className="sheet-backdrop" onClick={close}><div ref={dialog} className="sheet friends-sheet" role="dialog" aria-modal="true" aria-labelledby="friends-sheet-title" aria-busy={busy} tabIndex={-1} onClick={(event) => event.stopPropagation()}><div className="sheet__grabber" aria-hidden="true" /><div className="sheet__heading"><h2 id="friends-sheet-title" className="sheet__title">{title}</h2><button className="sheet__close" aria-label={t('common.close')} disabled={busy} onClick={close}><Icon name="close" /></button></div>{children}</div></div>, document.body);
 }
 type Act = (action: ApiFriendsActionRequest) => Promise<ApiFriendsActionResponse | null>;
-function FriendsInvite({ code, previewId, busy, act, onRetry, onClose }: { code: string | null; previewId?: string; busy: boolean; act: Act; onRetry: () => Promise<void>; onClose: () => void }) {
+function FriendsInvite({ code, previewId, previousInviteCount, busy, act, onRetry, onClose }: { code: string | null; previewId?: string; previousInviteCount: number; busy: boolean; act: Act; onRetry: () => Promise<void>; onClose: () => void }) {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
+  const [cancelledForCode, setCancelledForCode] = useState<string | null>(null);
+  const previousCancelled = !!code && cancelledForCode === code;
+  const previousCount = previousCancelled ? 0 : previousInviteCount;
   const [prepared, setPrepared] = useState<{ code: string; previewId?: string; link: string } | null>(null);
   const link = prepared?.code === code && prepared?.previewId === previewId ? prepared.link : null;
   useEffect(() => {
@@ -201,7 +204,11 @@ function FriendsInvite({ code, previewId, busy, act, onRetry, onClose }: { code:
     {typeof navigator.share === 'function' && <button className="button button--primary" onClick={async () => { try { await navigator.share({ url: link }); trackAction('friend-invite-share', 'success'); } catch (error) { if (!(error instanceof Error && error.name === 'AbortError')) await copy(); } }}>{t('friends.shareLink')}<Icon name="arrow" /></button>}
     <button className={typeof navigator.share === 'function' ? 'text-button' : 'button button--primary'} onClick={() => void copy()}>{t(copied ? 'friends.copied' : 'friends.copyLink')}<Icon name={copied ? 'check' : 'copy'} /></button>
     {copyFailed && <p className="friends-error" role="alert">{t('friends.actionFailed')}</p>}
-    <button className="text-button" disabled={busy} onClick={async () => { if (await act({ action: 'revoke_invite' })) onClose(); }}>{t('friends.revoke')}</button>
+    {previousCancelled && <p className="friends-notice" role="status"><Icon name="check" />{t('friends.previousRevoked')}</p>}
+    {previousCount > 0 ? <button className="text-button" disabled={busy} onClick={async () => {
+      if (code && await act({ action: 'revoke_previous_invites', code })) setCancelledForCode(code);
+    }}>{t(previousCount === 1 ? 'friends.revokePreviousOne' : 'friends.revokePreviousMany', { count: previousCount })}</button>
+      : <button className="text-button" disabled={busy} onClick={async () => { if (code && await act({ action: 'revoke_invite', code })) onClose(); }}>{t('friends.revoke')}</button>}
   </> : busy || code ? <div className="friends-invite__loading" role="status" aria-label={t('friends.link')}><Icon name="refresh" className="spin" /></div> : <button className="button button--primary" onClick={() => void onRetry()}>{t('common.retry')}</button>}</div>;
 }
 function FriendsAccept({ onOpen }: { onOpen: () => void }) {
