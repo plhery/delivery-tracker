@@ -1,4 +1,5 @@
-import { useEffect, useRef, type RefObject, type MouseEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, type RefObject, type MouseEvent } from 'react';
+import { expandCardIntoDialog, type CardOrigin } from './cardTransition';
 
 /** Safari leaves clicked buttons unfocused; preserve the actual modal launcher. */
 export function focusClickedButton(event: MouseEvent<HTMLElement>) {
@@ -159,10 +160,12 @@ export function useSheetDialog<T extends HTMLElement>(
   open: boolean,
   onClose: () => void,
   initialFocus?: RefObject<HTMLElement | null>,
+  origin?: CardOrigin | null,
 ): readonly [RefObject<T | null>, () => void] {
   const finish = useRef(onClose);
   const closing = useRef(false);
   const alive = useRef(true);
+  const stopOpening = useRef<() => void>(() => {});
   useEffect(() => { finish.current = onClose; }, [onClose]);
   useEffect(() => {
     alive.current = true;
@@ -170,6 +173,12 @@ export function useSheetDialog<T extends HTMLElement>(
     return () => { alive.current = false; };
   }, [open]);
   const dialog = useModalDialog<T>(open, dismiss, initialFocus);
+  useLayoutEffect(() => {
+    if (!open || !origin || !dialog.current) return;
+    const stop = expandCardIntoDialog(dialog.current, origin);
+    stopOpening.current = stop;
+    return stop;
+  }, [open, origin, dialog]);
   function dismiss() {
     if (closing.current) return;
     const element = dialog.current;
@@ -178,10 +187,20 @@ export function useSheetDialog<T extends HTMLElement>(
       return;
     }
     closing.current = true;
+    const visible = getComputedStyle(element);
+    const from = {
+      opacity: visible.opacity, transform: visible.transform, transformOrigin: visible.transformOrigin,
+      borderRadius: visible.borderRadius, backgroundColor: visible.backgroundColor,
+    };
+    stopOpening.current();
+    const rest = getComputedStyle(element);
     const isDetail = element.classList.contains('detail');
     const animation = element.animate([
-      { opacity: 1, transform: 'translate(0, 0)' },
-      { opacity: 0, transform: isDetail ? 'translateX(24px)' : 'translateY(28px)' },
+      from,
+      {
+        opacity: 0, transform: isDetail ? 'translateX(24px)' : 'translateY(28px)',
+        transformOrigin: from.transformOrigin, borderRadius: rest.borderRadius, backgroundColor: rest.backgroundColor,
+      },
     ], { duration: 160, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
     element.closest('.sheet-backdrop')?.animate([
       { backgroundColor: 'rgba(15,22,15,.28)' },

@@ -14,7 +14,7 @@ type Drag = { x: number; y: number; pointerId: number; origin: number; width: nu
 
 export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regular' }: {
   parcel: ParcelWithEvents;
-  onOpen: (parcel: ParcelWithEvents) => void;
+  onOpen: (parcel: ParcelWithEvents, source: HTMLButtonElement) => void;
   onArchive?: (parcel: ParcelWithEvents) => Promise<unknown>;
   notice?: string;
   variant?: 'regular' | 'hero';
@@ -111,7 +111,7 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
         aria-hidden={offset > -8} tabIndex={offset <= -8 ? 0 : -1} disabled={archiving} style={{ visibility: offset <= -8 ? 'visible' : 'hidden' }} onClick={() => void archive()}><Icon name="archive" /><span>{archiving ? t('detail.archiving') : t('parcel.archive')}</span></button>}
       <button ref={button} type="button" className={`parcel-card${hero ? ' parcel-card--hero' : ''}${compact ? ' parcel-card--compact' : ''}${parcel.archivedAt ? ' parcel-card--archived' : ''}${dragging ? ' parcel-card--dragging' : ''}`}
         style={{ transform: `translateX(${offset}px)` }} disabled={archiving} aria-busy={archiving} aria-label={hero ? `${t('app.nextUp')}: ${label}` : label}
-        onClick={() => { if (suppressClick.current) return; if (offset) setOffset(0); else onOpen(parcel); }}
+        onClick={(event) => { if (suppressClick.current) return; if (offset) setOffset(0); else onOpen(parcel, event.currentTarget); }}
         onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={finishSwipe} onPointerCancel={cancelSwipe}>
         {hero ? <>
           <span className="parcel-card__hero-top"><span className="eyebrow">{t('app.nextUp')}</span><span className="status-badge parcel-card__state"><i aria-hidden="true" />{statusLabel}</span></span>

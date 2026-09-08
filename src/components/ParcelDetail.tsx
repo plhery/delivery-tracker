@@ -30,6 +30,7 @@ import { Timeline } from './Timeline';
 import { Icon, PostageStamp } from './Icon';
 import { parcelIcon, parcelTone } from '../lib/parcelDesign';
 import { ProgressTrack } from './ProgressTrack';
+import type { CardOrigin } from '../lib/cardTransition';
 
 export function ParcelDetail({
   parcel,
@@ -42,8 +43,10 @@ export function ParcelDetail({
   onArchive,
   onDelete,
   onExitDemo,
+  openingOrigin,
 }: {
   parcel: ParcelWithEvents;
+  openingOrigin?: CardOrigin | null;
   onExitDemo?: () => void;
   onBack: () => void;
   onRename: (parcel: ParcelWithEvents, label: string) => Promise<unknown>;
@@ -93,7 +96,7 @@ export function ParcelDetail({
   const [notificationError, setNotificationError] = useState<string | null>(null);
   const backButton = useRef<HTMLButtonElement>(null);
   const actionsMenu = useRef<HTMLDetailsElement>(null);
-  const [dialog, onBack] = useSheetDialog<HTMLDivElement>(true, onDismissed, backButton);
+  const [dialog, onBack] = useSheetDialog<HTMLDivElement>(true, onDismissed, backButton, openingOrigin);
 
   function beginTitleEdit() {
     setTitle(parcel.label);
@@ -231,7 +234,7 @@ export function ParcelDetail({
   return createPortal(
     <div
       ref={dialog}
-      className={`detail tone-${parcelTone(current?.stage)}`}
+      className={`detail tone-${parcelTone(current?.stage)}${openingOrigin ? ' detail--from-card' : ''}`}
       role="dialog"
       aria-modal="true"
       aria-label={parcel.label || t('common.parcel')}

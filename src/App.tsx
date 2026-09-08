@@ -8,6 +8,7 @@ import { ParcelDetail } from './components/ParcelDetail';
 import { Passport } from './components/Passport';
 import { Friends } from './components/Friends';
 import { createFriendsClient } from './lib/friends';
+import { captureCardOrigin, type CardOrigin } from './lib/cardTransition';
 import { Icon, ParcelIllustration } from './components/Icon';
 import { ParcelViewControls } from './components/ParcelViewControls';
 import {
@@ -116,6 +117,7 @@ export default function App({
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
   const [viewNow, setViewNow] = useState(() => Date.now());
   const [openParcelId, setOpenParcelId] = useState<string | null>(null);
+  const [detailOrigin, setDetailOrigin] = useState<CardOrigin | null>(null);
   const [tab, setTab] = useState<'deliveries' | 'passport' | 'friends'>('deliveries');
   const scrollPositions = useRef({ deliveries: 0, passport: 0, friends: 0 });
 
@@ -154,6 +156,7 @@ export default function App({
 
   useEffect(() => {
     const onPopState = () => {
+      setDetailOrigin(null);
       const params = new URLSearchParams(window.location.search);
       setOpenParcelId(params.get('parcel'));
       setTab(params.get('view') === 'friends' ? 'friends' : params.get('view') === 'passport' ? 'passport' : 'deliveries');
@@ -174,7 +177,8 @@ export default function App({
     requestAnimationFrame(() => window.scrollTo({ top: scrollPositions.current[next], behavior: 'instant' }));
   }
 
-  function openParcelDetail(packageId: string) {
+  function openParcelDetail(packageId: string, source?: HTMLElement) {
+    setDetailOrigin(captureCardOrigin(source));
     const url = new URL(window.location.href);
     url.searchParams.set('parcel', packageId);
     const currentState = typeof window.history.state === 'object' && window.history.state
@@ -189,6 +193,7 @@ export default function App({
   }
 
   function closeParcelDetail() {
+    setDetailOrigin(null);
     if (window.history.state?.[DETAIL_HISTORY_KEY] === openParcelId) {
       setOpenParcelId(null);
       window.history.back();
@@ -367,7 +372,7 @@ export default function App({
 
         <div className="deliveries-page" hidden={tab !== 'deliveries'}>
         <div className="delivery-overview"><span className="delivery-overview__count"><i aria-hidden="true" /><strong>{loading ? '—' : activeCount}</strong> {t('design.active')}</span><button type="button" className="icon-button" aria-label={refreshing ? t('app.refreshing') : t('app.refresh')} aria-busy={refreshing} disabled={refreshing} onClick={() => void refreshAll()}><Icon name="refresh" className={refreshing ? 'spin' : undefined} /></button></div>
-        {!loading && nextParcel && <div className="delivery-next"><ParcelCard parcel={nextParcel} variant="hero" notice={nextAttention ? t(ATTENTION_LABELS[nextAttention]) : undefined} onOpen={(parcel) => openParcelDetail(parcel.id)} onArchive={handleArchive} /></div>}
+        {!loading && nextParcel && <div className="delivery-next"><ParcelCard parcel={nextParcel} variant="hero" notice={nextAttention ? t(ATTENTION_LABELS[nextAttention]) : undefined} onOpen={(parcel, source) => openParcelDetail(parcel.id, source)} onArchive={handleArchive} /></div>}
         {!loading && parcels.length > 0 && (
           <div className="parcel-view-shell">
             <button
@@ -461,7 +466,7 @@ export default function App({
                   key={parcel.id}
                   parcel={parcel}
                   notice={t(ATTENTION_LABELS[reason])}
-                  onOpen={(p) => openParcelDetail(p.id)}
+                  onOpen={(p, source) => openParcelDetail(p.id, source)}
                   onArchive={handleArchive}
                 />
               ))}
@@ -483,7 +488,7 @@ export default function App({
                 <ParcelCard
                   key={parcel.id}
                   parcel={parcel}
-                  onOpen={(p) => openParcelDetail(p.id)}
+                  onOpen={(p, source) => openParcelDetail(p.id, source)}
                   onArchive={handleArchive}
                 />
               ))}
@@ -505,7 +510,7 @@ export default function App({
                 <ParcelCard
                   key={parcel.id}
                   parcel={parcel}
-                  onOpen={(p) => openParcelDetail(p.id)}
+                  onOpen={(p, source) => openParcelDetail(p.id, source)}
                   onArchive={handleArchive}
                 />
               ))}
@@ -527,7 +532,7 @@ export default function App({
                 <ParcelCard
                   key={parcel.id}
                   parcel={parcel}
-                  onOpen={(p) => openParcelDetail(p.id)}
+                  onOpen={(p, source) => openParcelDetail(p.id, source)}
                   onArchive={handleArchive}
                 />
               ))}
@@ -549,7 +554,7 @@ export default function App({
                 <ParcelCard
                   key={parcel.id}
                   parcel={parcel}
-                  onOpen={(p) => openParcelDetail(p.id)}
+                  onOpen={(p, source) => openParcelDetail(p.id, source)}
                   onArchive={handleArchive}
                 />
               ))}
@@ -572,7 +577,7 @@ export default function App({
                   <ParcelCard
                     key={parcel.id}
                     parcel={parcel}
-                    onOpen={(p) => openParcelDetail(p.id)}
+                    onOpen={(p, source) => openParcelDetail(p.id, source)}
                   />
                 ))}
               </div>
@@ -601,6 +606,7 @@ export default function App({
           key={openParcel.id}
           onExitDemo={onExitDemo}
           parcel={openParcel}
+          openingOrigin={detailOrigin}
           onBack={closeParcelDetail}
           onRename={(p, label) => renameParcel(p.id, label)}
           onChangeCarrier={(p, input) => changeParcelCarrier(p.id, input)}
