@@ -221,6 +221,7 @@ struct ParcelDetailView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(tint)
+                .simultaneousGesture(TapGesture().onEnded { DeliveryAnalytics.shared.action("parcel-carrier-link") })
             }
         }
     }
@@ -313,6 +314,7 @@ struct ParcelDetailView: View {
     }
 
     private func copy(_ value: String) {
+        DeliveryAnalytics.shared.action("parcel-copy-tracking")
         UIPasteboard.general.string = value
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         copied = true

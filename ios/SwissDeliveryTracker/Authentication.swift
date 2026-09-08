@@ -146,6 +146,7 @@ final class SessionStore: ObservableObject {
     }
 
     func enterDemo() {
+        DeliveryAnalytics.shared.action("demo-start")
         rememberExperience("demo")
         state = .demo
     }
@@ -156,11 +157,15 @@ final class SessionStore: ObservableObject {
     }
 
     func showWelcome() {
+        if isDemo { DeliveryAnalytics.shared.action("demo-exit") }
         defaults.removeObject(forKey: experienceKey)
         state = .welcome
     }
 
     func sendCode(to email: String) async throws {
+        var analyticsSucceeded = false
+        DeliveryAnalytics.shared.action("sign-in-code-send", .started)
+        defer { DeliveryAnalytics.shared.action("sign-in-code-send", analyticsSucceeded ? .success : .error) }
         let body = ["email": email, "create_user": true] as [String: Any]
         _ = try await authRequest(
             path: "otp",
@@ -168,9 +173,13 @@ final class SessionStore: ObservableObject {
             jsonObject: body,
             response: EmptyAuthResponse.self
         )
+        analyticsSucceeded = true
     }
 
     func verifyCode(email: String, code: String) async throws {
+        var analyticsSucceeded = false
+        DeliveryAnalytics.shared.action("sign-in-code-verify", .started)
+        defer { DeliveryAnalytics.shared.action("sign-in-code-verify", analyticsSucceeded ? .success : .error) }
         let generation = generation
         let result = try await authRequest(
             path: "verify",
@@ -180,9 +189,14 @@ final class SessionStore: ObservableObject {
         )
         try checkGeneration(generation)
         try accept(result)
+        DeliveryAnalytics.shared.action("sign-in-complete", .success)
+        analyticsSucceeded = true
     }
 
     func signInWithGoogle() async throws {
+        var analyticsSucceeded = false
+        DeliveryAnalytics.shared.action("sign-in-google", .started)
+        defer { DeliveryAnalytics.shared.action("sign-in-google", analyticsSucceeded ? .success : .error) }
         let generation = generation
         guard let base = configuration.supabaseURL else { throw AuthenticationError.notConfigured }
         let verifier = try Self.randomVerifier()
@@ -204,6 +218,8 @@ final class SessionStore: ObservableObject {
         )
         try checkGeneration(generation)
         try accept(result)
+        DeliveryAnalytics.shared.action("sign-in-complete", .success)
+        analyticsSucceeded = true
     }
 
     func accessToken(forceRefresh: Bool = false) async throws -> String? {
@@ -218,6 +234,7 @@ final class SessionStore: ObservableObject {
     }
 
     func signOut() async throws {
+        DeliveryAnalytics.shared.action("sign-out")
         let token = session?.accessToken
         clearLocalSession()
         showWelcome()

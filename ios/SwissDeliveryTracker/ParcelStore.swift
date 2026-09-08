@@ -124,6 +124,7 @@ final class ParcelStore: ObservableObject {
     }
 
     func setDeliveryWidgetEnabled(_ enabled: Bool) {
+        DeliveryAnalytics.shared.action("widget-change")
         guard deliveryWidgetEnabled != enabled else { return }
         deliveryWidgetEnabled = enabled
         deliveryWidgetStore?.setEnabled(enabled)
@@ -131,6 +132,7 @@ final class ParcelStore: ObservableObject {
     }
 
     func setDeliveryLiveActivitiesEnabled(_ enabled: Bool) {
+        DeliveryAnalytics.shared.action("live-activities-change")
         guard deliveryLiveActivitiesEnabled != enabled else { return }
         deliveryLiveActivitiesEnabled = enabled
         deliveryWidgetStore?.setLiveActivitiesEnabled(enabled)
@@ -395,6 +397,7 @@ final class ParcelStore: ObservableObject {
     }
 
     func resetDemoData() async {
+        DeliveryAnalytics.shared.action("demo-reset")
         guard isDemo else { return }
         demo.reset()
         undoParcel = nil
@@ -479,6 +482,9 @@ final class ParcelStore: ObservableObject {
     }
 
     func enableNotifications(language: AppLanguage) async throws -> Bool {
+        DeliveryAnalytics.shared.action("notifications-enable", .started)
+        var succeeded = false
+        defer { DeliveryAnalytics.shared.action("notifications-enable", succeeded ? .success : .error) }
         notificationEnableInProgress = true
         defer { notificationEnableInProgress = false }
         let granted = try await UNUserNotificationCenter.current().requestAuthorization(
@@ -491,6 +497,7 @@ final class ParcelStore: ObservableObject {
         if isDemo {
             UserDefaults.standard.set(true, forKey: demoNotificationsKey)
             notificationsEnabledOnDevice = true
+            succeeded = true
             return true
         }
         guard let token = await waitForAPNSToken() else {
@@ -504,10 +511,12 @@ final class ParcelStore: ObservableObject {
         )
         UserDefaults.standard.set(true, forKey: nativePushRegisteredKey)
         notificationsEnabledOnDevice = true
+        succeeded = true
         return sent
     }
 
     func disableNotifications() async throws {
+        DeliveryAnalytics.shared.action("notifications-disable", .started)
         nativePushGeneration += 1
         let token = AppDelegate.currentDeviceToken
         if let token, !isDemo { try await api.unregisterNativePushToken(token) }
@@ -518,9 +527,11 @@ final class ParcelStore: ObservableObject {
         UserDefaults.standard.set(false, forKey: demoNotificationsKey)
         notificationsEnabledOnDevice = false
         await refreshNotificationState()
+        DeliveryAnalytics.shared.action("notifications-disable", .success)
     }
 
     func deferNotificationOnboarding() {
+        DeliveryAnalytics.shared.action("notifications-defer")
         nativePushGeneration += 1
         let token = AppDelegate.currentDeviceToken
         if let token, !isDemo {

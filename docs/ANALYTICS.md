@@ -28,7 +28,9 @@ and builds configured for local demo mode always disable collection.
 Both clients use Umami's `/api/send` collection protocol. Queues are bounded to
 30 pending events; requests time out after five seconds, failures are dropped,
 and analytics never delay or fail user operations. Events are not persisted or
-replayed after offline use. Session cache tokens live in memory only.
+replayed after offline use. Session cache tokens live in memory only. Native requests use an iOS-compatible
+user agent with a DeliveryTracker suffix because Umami filters bare app user
+agents as bots; explicit payload metadata still identifies the native app.
 
 ## Event catalog
 

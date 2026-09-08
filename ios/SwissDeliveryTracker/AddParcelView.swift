@@ -245,6 +245,7 @@ struct AddParcelView: View {
                     .accessibilityIdentifier("addParcel.paste")
                 if scannerAvailable {
                     captureButton(localizer.text("add.scan"), symbol: "barcode.viewfinder") {
+                    DeliveryAnalytics.shared.action("parcel-scan")
                         focusedField = nil
                         showingScanner = true
                     }
@@ -567,6 +568,7 @@ struct AddParcelView: View {
     }
 
     private func paste() {
+        DeliveryAnalytics.shared.action("parcel-paste")
         guard let value = UIPasteboard.general.string?.trimmingCharacters(
             in: .whitespacesAndNewlines
         ), !value.isEmpty else {

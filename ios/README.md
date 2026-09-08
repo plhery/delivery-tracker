@@ -147,3 +147,14 @@ Use an available simulator name or identifier with the same command and replace
 `build` with `test` to run the Swift unit tests. APNs itself requires a signed
 build on a physical device; the simulator and demo mode exercise the surrounding
 UI without Apple credentials.
+
+## Usage analytics
+
+The app reads the service's public `/api/analytics/config` at launch, then sends
+bounded, best-effort screen views and named actions directly to self-hosted
+Umami. No SDK, credentials, tracking permission, account IDs, parcel contents,
+referrers or persistent analytics device identifiers are used. Account's **Usage
+analytics** setting disables collection on this device. Simulator and local demo
+builds never send events. An installed app needs to be rebuilt/updated to include
+this client; enabling the server configuration alone cannot instrument older
+native builds. See [the analytics runbook](../docs/ANALYTICS.md).

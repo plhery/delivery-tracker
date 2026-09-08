@@ -25,6 +25,9 @@ struct ParcelListView: View {
         }
         .tint(Brand.ink)
         .sensoryFeedback(.selection, trigger: selection)
+        .onChange(of: selection) { _, tab in
+            DeliveryAnalytics.shared.view(tab == 1 ? "passport" : tab == 2 ? "friends" : "deliveries")
+        }
     }
 }
 
@@ -107,6 +110,15 @@ private struct DeliveryListView: View {
             }
             .safeAreaInset(edge: .bottom, spacing: 8) { bottomControls }
         }
+        .task(id: query) {
+            guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+            do { try await Task.sleep(for: .milliseconds(800)) } catch { return }
+            DeliveryAnalytics.shared.action("search")
+        }
+        .onChange(of: statusFilter) { _, _ in DeliveryAnalytics.shared.action("filter-status") }
+        .onChange(of: carrierFilter) { _, _ in DeliveryAnalytics.shared.action("filter-carrier") }
+        .onChange(of: sort) { _, _ in DeliveryAnalytics.shared.action("sort-change") }
+        .onChange(of: archivedExpanded) { _, open in if open { DeliveryAnalytics.shared.action("archive-open") } }
         .sensoryFeedback(.success, trigger: parcelBurstID) { _, next in next != nil }
         .sheet(isPresented: $showingAdd, onDismiss: {
             if let id = addedParcelID, scenePhase == .active {
@@ -155,14 +167,15 @@ private struct DeliveryListView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { addedParcelID = nil; revealParcelID = nil; parcelBurstID = nil }
         }
-        .onChange(of: path) { _, _ in revealParcelID = nil; parcelBurstID = nil }
-        .onChange(of: showingAdd) { _, open in if open { revealParcelID = nil; parcelBurstID = nil } }
-        .onChange(of: showingAccount) { _, open in if open { revealParcelID = nil; parcelBurstID = nil } }
-        .onChange(of: showingFilters) { _, open in if open { revealParcelID = nil; parcelBurstID = nil } }
+        .onChange(of: path) { _, value in DeliveryAnalytics.shared.view(value.isEmpty ? "deliveries" : "parcel"); revealParcelID = nil; parcelBurstID = nil }
+        .onChange(of: showingAdd) { _, open in DeliveryAnalytics.shared.view(open ? "add-parcel" : "deliveries"); if open { revealParcelID = nil; parcelBurstID = nil } }
+        .onChange(of: showingAccount) { _, open in DeliveryAnalytics.shared.view(open ? "account" : "deliveries"); if open { revealParcelID = nil; parcelBurstID = nil } }
+        .onChange(of: showingFilters) { _, open in if open { DeliveryAnalytics.shared.action("filters-open"); revealParcelID = nil; parcelBurstID = nil } }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             consumeSharedDraft()
         }
         .onReceive(NotificationCenter.default.publisher(for: .didOpenParcelNotification)) { notification in
+            DeliveryAnalytics.shared.action("notification-open")
             openParcelNotification(AppDelegate.consumePendingParcelID() ?? (notification.object as? UUID))
         }
         .onOpenURL(perform: handleURL)
@@ -544,6 +557,7 @@ private struct DeliveryListView: View {
 
     private func consumeSharedDraft() {
         guard let draft = ShareInbox.consume() else { return }
+        DeliveryAnalytics.shared.action("parcel-share-received")
         sharedDraft = draft
         showingAdd = true
     }

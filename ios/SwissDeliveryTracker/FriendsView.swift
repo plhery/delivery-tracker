@@ -148,7 +148,7 @@ struct FriendsView: View {
     }
 
     private func friendButton(_ friend: FriendCard) -> some View {
-        Button { panel = .friend(friend) } label: { FriendCardView(friend: friend, showsArrow: true) }
+        Button { DeliveryAnalytics.shared.action("friend-open"); panel = .friend(friend) } label: { FriendCardView(friend: friend, showsArrow: true) }
             .buttonStyle(TactileButtonStyle(scale: 0.98)).id(friend.id)
             .offset(x: friend.id == (arrivingID ?? activity.focusID) && !cardLanded && !reduceMotion ? 100 : 0)
             .opacity(friend.id == (arrivingID ?? activity.focusID) && !cardLanded ? 0 : 1)
@@ -421,9 +421,10 @@ private struct FriendsInvitationView: View {
                 else {
                     let link = FriendInvitationLink.url(code: code, previewId: previewId)
                     ShareLink(item: link) { Label(localizer.text("friends.shareLink"), systemImage: "square.and.arrow.up").frame(maxWidth: .infinity, minHeight: 44) }
+                        .simultaneousGesture(TapGesture().onEnded { DeliveryAnalytics.shared.action("friend-invite-share", .started) })
                         .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
                     Text(localizer.text("friends.inviteExpiry")).font(.caption).foregroundStyle(.secondary)
-                    Button { UIPasteboard.general.url = link; copied = true } label: { Label(localizer.text(copied ? "friends.copied" : "friends.copyLink"), systemImage: copied ? "checkmark" : "doc.on.doc").frame(maxWidth: .infinity, minHeight: 44) }.foregroundStyle(Brand.ink)
+                    Button { UIPasteboard.general.url = link; copied = true; DeliveryAnalytics.shared.action("friend-invite-copy", .success) } label: { Label(localizer.text(copied ? "friends.copied" : "friends.copyLink"), systemImage: copied ? "checkmark" : "doc.on.doc").frame(maxWidth: .infinity, minHeight: 44) }.foregroundStyle(Brand.ink)
                     Button(localizer.text("friends.revoke")) { Task { if await act(FriendsActionRequest(action: .revokeInvite)) != nil { completed() } } }.font(.footnote).frame(maxWidth: .infinity)
                 }
             }

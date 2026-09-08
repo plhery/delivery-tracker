@@ -25,6 +25,7 @@ struct SwissDeliveryTrackerApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                .background { AnalyticsLifecycleObserver() }
                 .environmentObject(session)
                 .environmentObject(parcels)
                 .environmentObject(localizer)

@@ -180,6 +180,7 @@ struct NotificationSettingsView: View {
 }
 
 struct AccountView: View {
+    @AppStorage(DeliveryAnalytics.preferenceKey) private var usageAnalytics = true
     @EnvironmentObject private var store: ParcelStore
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var localizer: Localizer
@@ -224,6 +225,11 @@ struct AccountView: View {
                     }
                 }
 
+                Section {
+                    Toggle(localizer.text("analytics.label"), isOn: $usageAnalytics)
+                        .onChange(of: usageAnalytics) { _, value in DeliveryAnalytics.shared.setEnabled(value) }
+                    Text(localizer.text("analytics.detail")).font(.footnote).foregroundStyle(.secondary)
+                }
                 Section(localizer.text("language.label")) {
                     Picker(localizer.text("language.label"), selection: $localizer.language) {
                         ForEach(AppLanguage.allCases) { language in
@@ -240,10 +246,12 @@ struct AccountView: View {
                     }
                     .pickerStyle(.segmented)
                     .accessibilityIdentifier("settings.appearance")
+                    .onChange(of: appearance) { _, _ in DeliveryAnalytics.shared.action("appearance-change") }
                 }
 
                 Section {
                     Button(localizer.text("notifications.title"), systemImage: "bell.badge") {
+                        DeliveryAnalytics.shared.view("notifications")
                         showingNotifications = true
                     }
                     .foregroundStyle(Brand.ink)

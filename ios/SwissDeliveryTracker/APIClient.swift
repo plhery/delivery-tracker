@@ -330,7 +330,7 @@ final class DeliveryAPIClient {
         try await request(path, method: method, body: Optional<String>.none)
     }
 
-    private func rawRequest(
+    private func performRawRequest(
         _ path: String,
         method: String = "GET",
         body: Data? = nil
@@ -386,6 +386,18 @@ final class DeliveryAPIClient {
             throw DeliveryAPIError.serviceFailed(result.1.statusCode)
         }
         return result
+    }
+
+    private func rawRequest(_ path: String, method: String = "GET", body: Data? = nil) async throws -> (Data, HTTPURLResponse) {
+        let event = AnalyticsCatalog.bundled?.event(path: path, method: method, body: body)
+        do {
+            let result = try await performRawRequest(path, method: method, body: body)
+            if let event { DeliveryAnalytics.shared.action(event, result.1.statusCode == 202 ? .accepted : .success) }
+            return result
+        } catch {
+            if let event, !(error is CancellationError) { DeliveryAnalytics.shared.action(event, .error) }
+            throw error
+        }
     }
 
     static func retryAfterSeconds(_ value: String?, now: Date = Date()) -> TimeInterval {
