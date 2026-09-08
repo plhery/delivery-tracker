@@ -77,7 +77,7 @@ struct ParcelDetailView: View {
                             }
                         }
                         Divider()
-                        Button(role: .destructive) {
+                        Button {
                             showingDeleteConfirmation = true
                         } label: {
                             Label(localizer.text("detail.delete"), systemImage: "trash")
@@ -109,7 +109,7 @@ struct ParcelDetailView: View {
             isPresented: $showingDeleteConfirmation,
             titleVisibility: .visible
         ) {
-            Button(localizer.text("detail.delete"), role: .destructive) {
+            Button(localizer.text("detail.delete")) {
                 if let parcel { delete(parcel) }
             }
             Button(localizer.text("common.cancel"), role: .cancel) {}

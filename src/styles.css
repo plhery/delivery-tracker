@@ -33,7 +33,7 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .button { min-height: 50px; padding: 13px 20px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; border: 1px solid transparent; border-radius: 16px; font-weight: 650; text-decoration: none; line-height: 1.35; transition: scale .18s var(--spring), background .18s, opacity .18s; }
 .button--primary { background: var(--yellow); color: var(--on-yellow); }
 .button--secondary { background: var(--control); color: var(--ink); }
-.button--danger { background: var(--orange-soft); color: var(--orange-text); }
+.button--danger { background: var(--control); color: var(--ink); }
 .button:active:not(:disabled), .text-button:active { scale: .975; }
 .button:disabled { opacity: .48; }
 .text-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; background: transparent; padding: 8px 0; font-weight: 550; transition: scale .18s; }
@@ -218,7 +218,7 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .settings-row > svg { color: var(--ink-soft); width: 19px; height: 19px; }
 .settings-row > svg:last-child:not(:first-child) { margin-left: auto; width: 16px; }
 .settings-links > .settings-row + .settings-row { border-top: 1px solid var(--line); }
-.settings-row--danger, .settings-row--danger > svg { color: var(--orange-text); }
+.settings-row--danger, .settings-row--danger > svg { color: var(--ink-soft); }
 .settings-row--exit { margin-top: 10px; background: var(--yellow-soft); border-radius: 17px; color: var(--ochre); }
 .settings-row--exit svg { color: inherit; }
 .settings-delete { padding-top: 24px; font-size: 13px; }
@@ -312,7 +312,7 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .detail__actions-menu summary::-webkit-details-marker { display: none; }
 .detail__actions-menu > div { position: absolute; top: 52px; right: 0; width: 230px; max-width: calc(100vw - 48px); padding: 6px; background: var(--paper); border: 1px solid var(--line); box-shadow: 0 10px 30px rgb(0 0 0 / 12%); border-radius: 16px; animation: page-arrive .15s; }
 .detail__actions-menu button { display: block; width: 100%; text-align: left; padding: 12px; min-height: 44px; background: transparent; border-radius: 10px; font-size: 13px; }
-.detail__actions-menu-danger { color: var(--orange-text); }
+.detail__actions-menu-danger { color: var(--ink-soft); }
 .detail__hero { margin: 24px; background: var(--tone-surface); border-radius: 26px; padding: 24px; }
 .detail__hero-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .detail__carrier { display: inline-flex; align-items: center; gap: 7px; background: transparent; color: var(--tone); font-size: 13px; font-weight: 550; padding: 4px 0; min-height: 44px; }
@@ -363,7 +363,7 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .timeline-expand span { font-size: 20px; font-weight: 400; }
 .detail__footer { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 24px 0; }
 .detail__footer > button { flex: 1; min-height: 50px; border-radius: 16px; padding: 12px 16px; font-size: 13px; font-weight: 550; }
-.detail__restore { background: var(--yellow); color: var(--on-yellow); }.detail__delete { background: var(--orange-soft); color: var(--orange-text); }
+.detail__restore { background: var(--yellow); color: var(--on-yellow); }.detail__delete { background: var(--control); color: var(--ink); }
 .delete-parcel-dialog { color: var(--ink); background: var(--canvas); border: 1px solid var(--line); width: min(440px, calc(100vw - 36px)); max-height: calc(100dvh - 48px); border-radius: 24px; padding: 26px; box-shadow: 0 20px 60px rgb(0 0 0 / 15%); animation: sheet-arrive .25s var(--spring); }
 .delete-parcel-dialog::backdrop { background: rgb(15 22 15 / 45%); }
 .delete-parcel-dialog > p:not(.sheet__eyebrow) { font-size: 13px; color: var(--ink-soft); }

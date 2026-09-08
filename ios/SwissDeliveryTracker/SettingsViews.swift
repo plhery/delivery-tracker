@@ -17,7 +17,7 @@ struct NotificationSettingsView: View {
                     HStack(alignment: .top, spacing: 13) {
                         Image(systemName: store.notificationsEnabledOnDevice ? "bell.badge.fill" : "bell")
                             .font(.title2)
-                            .foregroundStyle(store.notificationsEnabledOnDevice ? Brand.accent : .secondary)
+                            .foregroundStyle(Brand.ink)
                             .frame(width: 42, height: 42)
                             .background(.secondary.opacity(0.09), in: Circle())
                         VStack(alignment: .leading, spacing: 4) {
@@ -139,6 +139,7 @@ struct NotificationSettingsView: View {
             }
             .onChange(of: store.notificationPreferences) { _, _ in hydrate() }
         }
+        .tint(Brand.ink)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }
@@ -253,7 +254,12 @@ struct AccountView: View {
                         get: { store.deliveryWidgetEnabled },
                         set: { store.setDeliveryWidgetEnabled($0) }
                     )) {
-                        Label(localizer.text("widget.settingTitle"), systemImage: "rectangle.3.group")
+                        Label {
+                            Text(localizer.text("widget.settingTitle"))
+                        } icon: {
+                            Image(systemName: "rectangle.3.group")
+                                .foregroundStyle(Brand.ink)
+                        }
                     }
                     .tint(Brand.accent)
                     .accessibilityIdentifier("settings.widgets")
@@ -266,7 +272,12 @@ struct AccountView: View {
                         get: { store.deliveryLiveActivitiesEnabled },
                         set: { store.setDeliveryLiveActivitiesEnabled($0) }
                     )) {
-                        Label(localizer.text("liveActivity.settingTitle"), systemImage: "wave.3.right.circle")
+                        Label {
+                            Text(localizer.text("liveActivity.settingTitle"))
+                        } icon: {
+                            Image(systemName: "wave.3.right.circle")
+                                .foregroundStyle(Brand.ink)
+                        }
                     }
                     .tint(Brand.accent)
                     .accessibilityIdentifier("settings.liveActivities")
@@ -311,7 +322,7 @@ struct AccountView: View {
                     }
                 } else {
                     Section {
-                        Button(localizer.text("account.delete"), systemImage: "trash", role: .destructive) {
+                        Button(localizer.text("account.delete"), systemImage: "trash") {
                             confirmation = ""
                             confirmingDeletion = true
                         }
@@ -364,7 +375,7 @@ struct AccountView: View {
                 .textInputAutocapitalization(.never)
             }
             Button(localizer.text("common.cancel"), role: .cancel) {}
-            Button(localizer.text("account.deletePermanent"), role: .destructive) {
+            Button(localizer.text("account.deletePermanent")) {
                 run {
                     try await store.deleteAccount(confirmation: confirmation)
                     dismiss()
@@ -374,6 +385,7 @@ struct AccountView: View {
         } message: {
             Text(localizer.text("account.deleteDescription"))
         }
+        .tint(Brand.ink)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }
