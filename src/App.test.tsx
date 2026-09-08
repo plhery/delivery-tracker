@@ -397,6 +397,10 @@ describe('App', () => {
 
     expect(await screen.findByText('tomorrow', { selector: '.parcel-card__hero-date' }))
       .toBeInTheDocument();
+    const onTheWay = screen.getByRole('region', { name: 'On the way' });
+    expect(within(onTheWay).getByRole('button', { name: /Next up: Tomorrow parcel/ })).toBeInTheDocument();
+    expect(within(onTheWay).getAllByText('Tomorrow parcel')).toHaveLength(1);
+    expect(onTheWay.querySelector('.parcel-section__heading > span')).toHaveTextContent('1');
   });
 
   it('features today’s delivery window once in the next parcel', async () => {

@@ -258,6 +258,7 @@ export default function App({
   );
   const nextParcel = useMemo(() => hasCustomView ? null : nextPriorityParcel(parcels, viewNow), [parcels, viewNow, hasCustomView]);
   const nextAttention = nextParcel ? parcelAttention(nextParcel, viewNow) : null;
+  const nextIsOnTheWay = Boolean(nextParcel && prioritizeActiveParcels([nextParcel], viewNow).onTheWay.length);
   const prioritized = useMemo(
     () => prioritizeActiveParcels(activeParcels.filter((parcel) => parcel.id !== nextParcel?.id), viewNow, parcelComparator(sort)),
     [activeParcels, nextParcel, sort, viewNow],
@@ -348,6 +349,20 @@ export default function App({
     setViewNow(Date.now());
   }
 
+  const onTheWayCards = prioritized.onTheWay.length > 0 ? (
+    <div className="parcel-grid">
+      {prioritized.onTheWay.map((parcel) => (
+        <ParcelCard
+          key={parcel.id}
+          parcel={parcel}
+          onOpen={(p, source) => openParcelDetail(p.id, source)}
+          onArchive={handleArchive}
+        />
+      ))}
+    </div>
+  ) : null;
+  const nextCard = nextParcel && <div className="delivery-next"><ParcelCard parcel={nextParcel} variant="hero" notice={nextAttention ? t(ATTENTION_LABELS[nextAttention]) : undefined} onOpen={(parcel, source) => openParcelDetail(parcel.id, source)} onArchive={handleArchive} /></div>;
+
   return (
     <div className="app" onClickCapture={focusClickedButton}>
       <a className="skip-link" href="#main-content">{t('web.skipContent')}</a>
@@ -433,7 +448,16 @@ export default function App({
             />
           </div>
         )}
-        {!loading && nextParcel && <div className="delivery-next"><ParcelCard parcel={nextParcel} variant="hero" notice={nextAttention ? t(ATTENTION_LABELS[nextAttention]) : undefined} onOpen={(parcel, source) => openParcelDetail(parcel.id, source)} onArchive={handleArchive} /></div>}
+        {!loading && nextParcel && (nextIsOnTheWay ? (
+          <section className="parcel-section delivery-on-the-way" aria-labelledby="active-parcels-title">
+            <div className="parcel-section__heading">
+              <h2 id="active-parcels-title">{t('app.onTheWaySection')}</h2>
+              <span>{prioritized.onTheWay.length + 1}</span>
+            </div>
+            {nextCard}
+            {onTheWayCards}
+          </section>
+        ) : nextCard)}
 
         {loading && (
           <div className="parcel-grid" aria-label={t('app.loadingParcels')}>
@@ -513,7 +537,7 @@ export default function App({
           </section>
         )}
 
-        {!loading && prioritized.onTheWay.length > 0 && (
+        {!loading && !nextIsOnTheWay && prioritized.onTheWay.length > 0 && (
           <section
             className="parcel-section parcel-section--wide"
             aria-labelledby="active-parcels-title"
@@ -522,16 +546,7 @@ export default function App({
               <h2 id="active-parcels-title">{t('app.onTheWaySection')}</h2>
               <span>{prioritized.onTheWay.length}</span>
             </div>
-            <div className="parcel-grid">
-              {prioritized.onTheWay.map((parcel) => (
-                <ParcelCard
-                  key={parcel.id}
-                  parcel={parcel}
-                  onOpen={(p, source) => openParcelDetail(p.id, source)}
-                  onArchive={handleArchive}
-                />
-              ))}
-            </div>
+            {onTheWayCards}
           </section>
         )}
 

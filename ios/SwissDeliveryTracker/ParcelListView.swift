@@ -194,7 +194,7 @@ private struct DeliveryListView: View {
                 LazyVStack(alignment: .leading, spacing: 22) {
                     listOverview
 
-                    if !hasCustomView, let nextParcel {
+                    if !hasCustomView, !nextIsOnTheWay, let nextParcel {
                         ExperimentalNextDeliveryPass(
                             parcel: nextParcel,
                             transition: parcelTransition,
@@ -374,6 +374,11 @@ private struct DeliveryListView: View {
     private var sections: [ParcelSection] {
         let organized = ParcelOrganizer.sections(from: visibleParcels)
         guard !hasCustomView, let highlighted = nextParcel?.id else { return organized }
+        if nextIsOnTheWay, let section = organized.first(where: { $0.kind == .active }),
+           let featured = section.parcels.first(where: { $0.id == highlighted }) {
+            let active = ParcelSection(kind: .active, parcels: [featured] + section.parcels.filter { $0.id != highlighted })
+            return [active] + organized.filter { $0.kind != .active }
+        }
         return organized.compactMap { section in
             let remaining = section.parcels.filter { $0.id != highlighted }
             return remaining.isEmpty ? nil : ParcelSection(kind: section.kind, parcels: remaining)
@@ -395,6 +400,11 @@ private struct DeliveryListView: View {
             sort: .priority,
             catalog: catalog
         ).first
+    }
+
+    private var nextIsOnTheWay: Bool {
+        guard let nextParcel else { return false }
+        return ParcelOrganizer.sections(from: [nextParcel]).first?.kind == .active
     }
 
     private var hasCustomView: Bool {
@@ -497,17 +507,28 @@ private struct DeliveryListView: View {
             VStack(alignment: .leading, spacing: 12) {
                 sectionHeader(section)
                 ForEach(section.parcels) { parcel in
-                    ExperimentalParcelPassCard(
-                        parcel: parcel,
-                        notice: section.kind == .attention
-                            ? parcel.attention().map { localizer.text($0.localizationKey) }
-                            : nil,
-                        transition: parcelTransition,
-                        onOpen: { path.append(parcel.id) },
-                        onArchive: parcel.isArchived ? nil : { await archive(parcel) }
-                    )
-                    .modifier(arrivalCelebration(for: parcel.id))
-                    .id(parcel.id)
+                    if !hasCustomView, parcel.id == nextParcel?.id {
+                        ExperimentalNextDeliveryPass(
+                            parcel: parcel,
+                            transition: parcelTransition,
+                            onOpen: { path.append(parcel.id) },
+                            onArchive: { await archive(parcel) }
+                        )
+                        .modifier(arrivalCelebration(for: parcel.id, stubInset: 56))
+                        .id(parcel.id)
+                    } else {
+                        ExperimentalParcelPassCard(
+                            parcel: parcel,
+                            notice: section.kind == .attention
+                                ? parcel.attention().map { localizer.text($0.localizationKey) }
+                                : nil,
+                            transition: parcelTransition,
+                            onOpen: { path.append(parcel.id) },
+                            onArchive: parcel.isArchived ? nil : { await archive(parcel) }
+                        )
+                        .modifier(arrivalCelebration(for: parcel.id))
+                        .id(parcel.id)
+                    }
                 }
             }
         }
@@ -587,7 +608,7 @@ private struct ExperimentalNextDeliveryPass: View {
         let tint = Brand.onAccent
         let deliveryDate = localizer.parcelCompletionDate(parcel) ?? localizer.parcelDeliveryEstimate(parcel)
 
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Text(localizer.text("app.nextUp"))
                     .font(.caption.weight(.semibold))
@@ -646,7 +667,8 @@ private struct ExperimentalNextDeliveryPass: View {
             .padding(.top, 2)
         }
         .foregroundStyle(Brand.onAccent)
-        .padding(20)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
         .experimentalSurface(fill: Brand.accent, cornerRadius: 24)
         .matchedTransitionSource(id: parcel.id, in: transition)
         .accessibilityElement(children: .combine)
@@ -683,7 +705,7 @@ private struct ExperimentalParcelPassCard: View {
     private var name: String { parcel.label.nonEmpty ?? localizer.text("common.parcel") }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             heading
 
             Text(metadata)
@@ -705,10 +727,10 @@ private struct ExperimentalParcelPassCard: View {
             }
         }
         .fixedSize(horizontal: false, vertical: true)
-        .padding(.vertical, 18)
+        .padding(.vertical, 12)
         .padding(.leading, 18)
         .padding(.trailing, 14)
-        .frame(maxWidth: .infinity, minHeight: compact ? 106 : 128, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: compact ? 82 : 104, alignment: .leading)
         .padding(.trailing, DeliveryTicketShape.stubWidth)
         .overlay(alignment: .trailing) { ticketStub }
         .background(ExperimentalPalette.surface(for: parcel), in: DeliveryTicketShape())

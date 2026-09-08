@@ -236,10 +236,10 @@ struct ExperimentalJourneyRail: View {
             ForEach(Array(TrackingStage.core.enumerated()), id: \.offset) { index, _ in
                 Capsule()
                     .fill(index <= current ? tint : Color.secondary.opacity(0.15))
-                    .frame(height: index == current ? (compact ? 4 : 5) : 3)
+                    .frame(height: 3)
             }
         }
-        .frame(height: compact ? 5 : 6)
+        .frame(height: 3)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.24), value: current)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(localizer.text("native.deliveryProgress"))
