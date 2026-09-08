@@ -243,9 +243,7 @@ private struct FriendsProfileForm: View {
                 Text(localizer.text("friends.nickname")).font(.subheadline.weight(.semibold))
                 TextField(localizer.text("friends.nicknamePlaceholder"), text: $name).textContentType(.nickname).padding(14).background(Brand.paper, in: RoundedRectangle(cornerRadius: 14))
                     .focused($nameFocused).submitLabel(.done).onSubmit { nameFocused = false }
-                    .overlay {
-                        if invitesAttention && value.nickname.isEmpty && !nameFocused { FriendsAttentionHalo(cornerRadius: 14) }
-                    }
+                    .modifier(FriendsAttentionCue(active: invitesAttention && value.nickname.isEmpty && !nameFocused, cornerRadius: 14, growth: 0.01))
                     .onChange(of: name) { _, next in
                         settledName = nil
                         if next.unicodeScalars.count > 24 { name = String(String.UnicodeScalarView(next.unicodeScalars.prefix(24))) }
@@ -264,9 +262,7 @@ private struct FriendsProfileForm: View {
             Label(localizer.text("friends.privacy"), systemImage: "lock").font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Button { save(value) } label: { Text(localizer.text(profile == nil ? "friends.join" : "friends.save")).frame(maxWidth: .infinity, minHeight: 46) }
                 .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent).disabled(busy || value.nickname.isEmpty)
-                .overlay {
-                    if invitesAttention && !value.nickname.isEmpty && settledName == value.nickname { FriendsAttentionHalo(cornerRadius: 100) }
-                }
+                .modifier(FriendsAttentionCue(active: invitesAttention && !value.nickname.isEmpty && settledName == value.nickname, cornerRadius: 100, growth: 0.016))
         }.disabled(busy)
             .sensoryFeedback(.impact(weight: .light, intensity: 0.5), trigger: magicTrigger)
             .onChange(of: stats) { _, _ in magicTrigger += 1 }
@@ -284,19 +280,25 @@ private struct FriendsProfileForm: View {
     }
 }
 
-/// A short breath followed by a long rest; removed entirely once its step is complete.
-private struct FriendsAttentionHalo: View {
+/// Keep the control mounted while its repeating cue starts and stops, preserving text focus.
+private struct FriendsAttentionCue: ViewModifier {
+    let active: Bool
     let cornerRadius: CGFloat
+    let growth: CGFloat
     @State private var startedAt = Date()
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
-            let phase = max(0, context.date.timeIntervalSince(startedAt) - 0.4).truncatingRemainder(dividingBy: 5.2)
-            let breath = phase < 1.7 ? pow(sin(phase / 1.7 * .pi), 2) : 0
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .stroke(Brand.accent.opacity(0.55 * breath), lineWidth: 1.2)
-                .padding(-2 - 2 * breath)
+    func body(content: Content) -> some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !active)) { context in
+            let phase = max(0, context.date.timeIntervalSince(startedAt) - 0.2).truncatingRemainder(dividingBy: 2.6)
+            let breath = active && phase < 1.6 ? pow(sin(phase / 1.6 * .pi), 2) : 0
+            content.scaleEffect(1 + growth * breath)
+                .overlay {
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(Brand.accent.opacity(0.85 * breath), lineWidth: 1.8)
+                        .padding(-2 - 2.5 * breath)
+                        .allowsHitTesting(false).accessibilityHidden(true)
+                }
         }
-        .allowsHitTesting(false).accessibilityHidden(true)
+        .onChange(of: active) { _, next in if next { startedAt = .now } }
     }
 }
 

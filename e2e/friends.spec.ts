@@ -122,6 +122,7 @@ test('Profile creation gently guides the next step without interrupting typing',
   const create = form.getByRole('button', { name: 'Create profile' });
   await expect(form).toHaveAttribute('data-attention', 'name');
   await expect(form.locator('.friends-name__field .friends-attention')).toHaveCSS('animation-name', 'friends-attention-breathe');
+  await expect(form.locator('.friends-name__field')).toHaveCSS('animation-iteration-count', 'infinite');
   await name.focus();
   await expect(form).not.toHaveAttribute('data-attention');
   await name.fill('   ');
@@ -130,6 +131,7 @@ test('Profile creation gently guides the next step without interrupting typing',
   await expect(form).not.toHaveAttribute('data-attention');
   await expect(form).toHaveAttribute('data-attention', 'create');
   await expect(create.locator('.friends-attention')).toHaveCSS('animation-name', 'friends-attention-breathe');
+  await expect(create).toHaveCSS('animation-iteration-count', 'infinite');
   await expect(name).toBeFocused();
   await name.press('End');
   await name.press('!');
@@ -138,6 +140,7 @@ test('Profile creation gently guides the next step without interrupting typing',
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(create.locator('.friends-attention')).toHaveCSS('display', 'none');
   await expect(create.locator('.friends-attention')).toHaveCSS('animation-name', 'none');
+  await expect(create).toHaveCSS('animation-name', 'none');
   await create.click();
   await expect(page.locator('.friends-own')).toContainText('Robin!');
 });
