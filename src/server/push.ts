@@ -1,3 +1,4 @@
+import { EVENT_STAGE_ORDER } from '../lib/stages';
 import 'server-only';
 
 import { connect, constants as http2Constants } from 'node:http2';
@@ -285,8 +286,7 @@ function notificationBody(
 
 // Database insertion times are identical for events imported in one transaction.
 // Prefer carrier chronology; resolve coarse/missing timestamps by delivery progress.
-const NOTIFICATION_STAGES = ['pending', 'registered', 'accepted', 'in_transit', 'customs',
-  'out_for_delivery', 'failed_attempt', 'ready_for_pickup', 'delivered', 'returned'];
+
 
 export function compareNotificationEvents(left: JsonObject, right: JsonObject): number {
   const timestamp = (row: JsonObject, key: string) => {
@@ -294,7 +294,7 @@ export function compareNotificationEvents(left: JsonObject, right: JsonObject): 
     return Number.isFinite(value) ? value : 0;
   };
   return timestamp(right, 'occurred_at') - timestamp(left, 'occurred_at')
-    || NOTIFICATION_STAGES.indexOf(stringField(right, 'stage')) - NOTIFICATION_STAGES.indexOf(stringField(left, 'stage'))
+    || EVENT_STAGE_ORDER.indexOf(stringField(right, 'stage')) - EVENT_STAGE_ORDER.indexOf(stringField(left, 'stage'))
     || timestamp(right, 'event_created_at') - timestamp(left, 'event_created_at')
     || stringField(right, 'event_id').localeCompare(stringField(left, 'event_id'));
 }

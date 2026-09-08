@@ -163,3 +163,29 @@ final class AppRoutingTests: XCTestCase {
         ))
     }
 }
+
+final class ShareInboxTests: XCTestCase {
+    func testOnlySavedFreshDraftsAreConsumedOnce() {
+        let defaults = UserDefaults(suiteName: "share-inbox-tests")!
+        defer { defaults.removePersistentDomain(forName: "share-inbox-tests") }
+        let now = Date()
+        let draft = SharedParcelDraft(trackingInput: "12345678", createdAt: now)
+        XCTAssertNil(ShareInbox.consume(defaults: defaults, now: now))
+        XCTAssertTrue(ShareInbox.save(draft, defaults: defaults))
+        XCTAssertEqual(ShareInbox.consume(defaults: defaults, now: now), draft)
+        XCTAssertNil(ShareInbox.consume(defaults: defaults, now: now))
+        ShareInbox.save(draft, defaults: defaults)
+        XCTAssertNil(ShareInbox.consume(defaults: defaults, now: now.addingTimeInterval(601)))
+        XCTAssertNil(defaults.data(forKey: "sdt.sharedParcelDraft"))
+    }
+
+    func testDiscardLegacyUnconfirmedAndMalformedDrafts() {
+        let defaults = UserDefaults(suiteName: "share-inbox-legacy-tests")!
+        defer { defaults.removePersistentDomain(forName: "share-inbox-legacy-tests") }
+        for data in [Data("broken".utf8), Data("{\"id\":\"00000000-0000-4000-8000-000000000001\",\"label\":\"\",\"trackingInput\":\"12345678\"}".utf8)] {
+            defaults.set(data, forKey: "sdt.sharedParcelDraft")
+            XCTAssertNil(ShareInbox.consume(defaults: defaults))
+            XCTAssertNil(defaults.data(forKey: "sdt.sharedParcelDraft"))
+        }
+    }
+}

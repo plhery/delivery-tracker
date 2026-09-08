@@ -2170,6 +2170,41 @@
           }
         }
       }
+    },
+    "/api/live-activities/revoke": {
+      "post": {
+        "operationId": "revokeLiveActivityDevice",
+        "security": [],
+        "summary": "Revoke only the installation binding proved by a secret saved before registration; usable after sign-out.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeLiveActivityDeviceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Revocation recorded, including when the registration is already absent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid revocation proof"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2964,6 +2999,12 @@
           },
           "locale": {
             "$ref": "#/components/schemas/NativePushLocale"
+          },
+          "revocationToken": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "minLength": 64,
+            "maxLength": 64
           }
         }
       },
@@ -3480,6 +3521,26 @@
             "items": {
               "$ref": "#/components/schemas/FriendUpdate"
             }
+          }
+        }
+      },
+      "RevokeLiveActivityDeviceRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "installationId",
+          "revocationToken"
+        ],
+        "properties": {
+          "installationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revocationToken": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "minLength": 64,
+            "maxLength": 64
           }
         }
       }

@@ -213,3 +213,22 @@ repository secrets when they are no longer used.
   exposed APNs key in the Apple Developer portal before replacing it.
 - If auth or ownership verification fails during cutover, re-enable Cloudflare
   Access immediately. Do not undo ownership by setting `user_id` back to null.
+
+## Session and logout fixes (September 2026)
+
+Apply `20260911120000_live_activity_session_revocation.sql` before deploying the
+matching server/iOS release. It supports installations with ActivityKit disabled
+and does not enable that channel. If enabling ActivityKit later, apply its base
+migration and rerun the session-revocation migration afterward.
+
+Existing ActivityKit registrations without a session binding are disabled; opening
+the updated app registers them again. Registrations now belong to a verified Auth
+session and disappear when that session is deleted. The native app saves a
+separate deletion capability in Keychain before registering, retains failed cleanup
+across sign-out/restarts, and retries without retaining account credentials. As
+with any remote operation, an offline revocation reaches the server once network
+access resumes. A one-day tombstone rejects registration requests that arrive
+after cleanup; old capabilities cannot delete a newer binding.
+
+The share extension saves only after explicit confirmation. Users then open the
+app to finish adding the parcel; unconsumed drafts expire after ten minutes.

@@ -51,11 +51,17 @@ export function stageMeta(stage: Stage): StageMeta {
   return STAGE_META[stage];
 }
 
-/** Newest first; ties broken by id so ordering is stable. */
+/** Shared with notification ordering; coarse carrier times resolve by delivery progress. */
+export const EVENT_STAGE_ORDER: readonly string[] = ['pending', 'registered', 'accepted', 'in_transit', 'customs',
+  'out_for_delivery', 'failed_attempt', 'ready_for_pickup', 'delivered', 'returned'];
+
+/** Newest first, then delivery progress, then stable event identity. */
 export function sortEventsDesc(events: TrackingEvent[]): TrackingEvent[] {
   return [...events].sort((a, b) => {
-    const cmp = b.occurredAt.localeCompare(a.occurredAt);
-    return cmp !== 0 ? cmp : b.id.localeCompare(a.id);
+    const timestamp = (value: string) => Date.parse(value) || 0;
+    return timestamp(b.occurredAt) - timestamp(a.occurredAt)
+      || EVENT_STAGE_ORDER.indexOf(b.stage) - EVENT_STAGE_ORDER.indexOf(a.stage)
+      || b.id.localeCompare(a.id);
   });
 }
 

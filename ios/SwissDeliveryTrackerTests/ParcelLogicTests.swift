@@ -1039,3 +1039,52 @@ final class SessionIsolationTests: XCTestCase {
         XCTAssertTrue(relaunchedStore.parcels.isEmpty)
     }
 }
+
+extension SessionIsolationTests {
+    @MainActor func testLiveActivityRevocationSurvivesOfflineSignOutAndRestart() async throws {
+        let persistence = MemorySessionPersistence()
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let original = LiveActivityRevocations(configuration: configuration, transport: transport, persistence: persistence)
+        let installationID = UUID()
+        let old = try original.registration(ownerID: UUID(), installationID: installationID)
+        try original.queue()
+        offline()
+        await original.drain()
+        let saved: [LiveActivityRevocations.Registration]? = persistence.load()
+        XCTAssertEqual(saved?.first?.pending, true)
+
+        let restarted = LiveActivityRevocations(configuration: configuration, transport: transport, persistence: persistence)
+        let new = try restarted.registration(ownerID: UUID(), installationID: installationID)
+        XCTAssertNotEqual(new.revocationToken, old.revocationToken)
+        SessionTestURLProtocol.handler = { request, complete in
+            XCTAssertEqual(request.url?.path, "/api/live-activities/revoke")
+            XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+            complete(.success((200, Data("{\"ok\":true}".utf8))))
+        }
+        await restarted.drain()
+        let remaining: [LiveActivityRevocations.Registration]? = persistence.load()
+        XCTAssertEqual(remaining, [new])
+    }
+
+    @MainActor func testAuthOutageDoesNotForceSignOut() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let session = SessionStore(configuration: configuration, persistence: MemorySessionPersistence(), transport: transport)
+        try await authorize(session)
+        let store = store(session, transport)
+        respond(Data("{\"error\":\"Authentication temporarily unavailable\"}".utf8), status: 503)
+        await store.load()
+        XCTAssertNotNil(session.user)
+        XCTAssertFalse(store.authenticationRequired)
+    }
+
+    func testEqualTimeEventsPreferDeliveryProgressRegardlessOfUUIDOrTimeZone() {
+        var value = parcel()
+        value.trackingEvents = [
+            TrackingEvent(id: UUID(uuidString: "ffffffff-ffff-4fff-8fff-ffffffffffff")!, packageID: value.id, stage: .inTransit, description: "Transit", occurredAt: "2026-09-08T12:00:00+02:00"),
+            TrackingEvent(id: UUID(uuidString: "00000000-0000-4000-8000-000000000001")!, packageID: value.id, stage: .delivered, description: "Delivered", occurredAt: "2026-09-08T10:00:00Z")
+        ]
+        XCTAssertEqual(value.currentStage, .delivered)
+    }
+}

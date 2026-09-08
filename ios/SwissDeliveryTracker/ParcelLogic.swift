@@ -39,6 +39,21 @@ extension TrackingStage {
         }
     }
 
+    var eventOrder: Int {
+        switch self {
+        case .pending: 0
+        case .registered: 1
+        case .accepted: 2
+        case .inTransit: 3
+        case .customs: 4
+        case .outForDelivery: 5
+        case .failedAttempt: 6
+        case .readyForPickup: 7
+        case .delivered: 8
+        case .returned: 9
+        }
+    }
+
     var localizationKey: String { "stage.\(rawValue)" }
     var isFinal: Bool { self == .delivered || self == .returned }
 
@@ -57,8 +72,13 @@ extension TrackingStage {
 extension Parcel {
     var sortedEvents: [TrackingEvent] {
         trackingEvents.sorted {
-            if $0.occurredAt == $1.occurredAt { return $0.id.uuidString > $1.id.uuidString }
-            return $0.occurredAt > $1.occurredAt
+            let left = DateParser.date($0.occurredAt)?.timeIntervalSince1970 ?? 0
+            let right = DateParser.date($1.occurredAt)?.timeIntervalSince1970 ?? 0
+            if left == right {
+                if $0.stage != $1.stage { return $0.stage.eventOrder > $1.stage.eventOrder }
+                return $0.id.uuidString > $1.id.uuidString
+            }
+            return left > right
         }
     }
 

@@ -30,6 +30,11 @@ create table if not exists auth.users (
   is_anonymous boolean not null default false
 );
 
+create table if not exists auth.sessions (
+  id uuid primary key,
+  user_id uuid not null references auth.users(id) on delete cascade
+);
+
 create or replace function auth.uid()
 returns uuid
 language sql

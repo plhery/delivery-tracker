@@ -25,9 +25,10 @@ final class ParcelStore: ObservableObject {
     @Published var undoParcel: Parcel?
 
     let configuration: AppConfiguration
-    private unowned let session: SessionStore
+    private let session: SessionStore
     private let localizer: Localizer
     private let api: DeliveryAPIClient
+    private let liveActivityRevocations: LiveActivityRevocations
     private let demo: DemoRepository
     private let deliveryWidgetStore: DeliveryWidgetSharedStore?
     private let cache = ParcelCache()
@@ -64,6 +65,7 @@ final class ParcelStore: ObservableObject {
             appGroupIdentifier: configuration.appGroupIdentifier,
             fallbackToStandard: true
         )
+        liveActivityRevocations = LiveActivityRevocations(configuration: configuration, transport: transport)
         api = DeliveryAPIClient(configuration: configuration, session: session, transport: transport)
         demo = DemoRepository()
         deliveryWidgetEnabled = deliveryWidgetStore?.isEnabled ?? true
@@ -84,6 +86,8 @@ final class ParcelStore: ObservableObject {
         deliveryLiveActivityGeneration += 1
         stopDeliveryLiveActivityObservers()
         if let cacheOwnerID {
+            try? liveActivityRevocations.queue()
+            liveActivityRevocations.retry()
             cache.delete(userID: cacheOwnerID)
             UIApplication.shared.unregisterForRemoteNotifications()
             AppDelegate.clearDeviceToken()
@@ -135,6 +139,8 @@ final class ParcelStore: ObservableObject {
         if enabled {
             startDeliveryLiveActivityObservers()
         } else {
+            try? liveActivityRevocations.queue()
+            liveActivityRevocations.retry()
             stopDeliveryLiveActivityObservers()
         }
         scheduleDeliveryLiveActivities()
@@ -147,6 +153,10 @@ final class ParcelStore: ObservableObject {
     }
 
     func clearDeliverySurfaces() {
+        if !session.isAuthenticated {
+            try? liveActivityRevocations.queue()
+            liveActivityRevocations.retry()
+        }
         deliveryWidgetStore?.setLanguageCode(localizer.language.rawValue)
         deliveryWidgetStore?.clearSnapshot()
         WidgetCenter.shared.reloadTimelines(ofKind: DeliveryWidgetSharedStore.kind)
@@ -154,6 +164,8 @@ final class ParcelStore: ObservableObject {
     }
 
     func start() async {
+        try? liveActivityRevocations.queue(except: session.user?.id)
+        liveActivityRevocations.retry()
         pollingTask?.cancel()
         jobMonitoringTask?.cancel()
         jobMonitoringTask = nil
@@ -181,6 +193,7 @@ final class ParcelStore: ObservableObject {
 
     func setActive(_ active: Bool) {
         isActive = active
+        if active { liveActivityRevocations.retry() }
         if active && session.isAuthenticated {
             registerCurrentDeliveryPushToStartToken()
             registerCurrentDeliveryActivityUpdateTokens()
@@ -417,6 +430,9 @@ final class ParcelStore: ObservableObject {
     }
 
     func signOut() async throws {
+        // Save cleanup intent before discarding the account session.
+        try liveActivityRevocations.queue()
+        liveActivityRevocations.retry()
         let generation = session.generation
         nativePushGeneration += 1
         deliveryLiveActivityGeneration += 1
@@ -427,7 +443,7 @@ final class ParcelStore: ObservableObject {
             try? await api.unregisterNativePushToken(token)
         }
         try session.checkGeneration(generation)
-        if !isDemo { try? await api.unregisterLiveActivityDevice(installationID: installationID) }
+        if !isDemo { await liveActivityRevocations.drain() }
         stopDeliveryLiveActivityObservers()
         try session.checkGeneration(generation)
         await endAllDeliveryLiveActivities()
@@ -629,7 +645,7 @@ final class ParcelStore: ObservableObject {
     private func scheduleDeliveryLiveActivities(forceEnd: Bool = false) {
         deliveryActivityTask?.cancel()
         deliveryActivityTask = Task { [weak self] in
-            guard let self else { return }
+            guard let self, !Task.isCancelled else { return }
             if forceEnd {
                 await self.endAllDeliveryLiveActivities()
             } else {
@@ -639,9 +655,11 @@ final class ParcelStore: ObservableObject {
     }
 
     private func updateDeliveryLiveActivities(parcels: [Parcel]) async {
+        guard !Task.isCancelled else { return }
         let activities = Activity<DeliveryActivityAttributes>.activities
         guard deliveryLiveActivitiesEnabled else {
             await endAllDeliveryLiveActivities()
+            guard !Task.isCancelled, !deliveryLiveActivitiesEnabled else { return }
             await unregisterDeliveryLiveActivityDevice()
             return
         }
@@ -919,14 +937,17 @@ final class ParcelStore: ObservableObject {
               !isDemo,
               session.isAuthenticated else { return }
         do {
+            guard let ownerID = session.user?.id else { return }
+            let registration = try liveActivityRevocations.registration(ownerID: ownerID, installationID: installationID)
             try await api.registerLiveActivityDevice(
                 token: token.hexadecimalString,
                 installationID: installationID,
-                language: localizer.language
+                language: localizer.language,
+                revocationToken: registration.revocationToken
             )
             guard generation == deliveryLiveActivityGeneration else {
                 if deliveryLiveActivityRegistrationRemovalPending {
-                    try? await api.unregisterLiveActivityDevice(installationID: installationID)
+                    liveActivityRevocations.retry()
                 } else {
                     registerCurrentDeliveryPushToStartToken()
                 }
@@ -977,9 +998,11 @@ final class ParcelStore: ObservableObject {
     }
 
     private func unregisterDeliveryLiveActivityDevice() async {
-        guard !isDemo, session.isAuthenticated else { return }
+        guard !Task.isCancelled, !deliveryLiveActivitiesEnabled else { return }
         do {
-            try await api.unregisterLiveActivityDevice(installationID: installationID)
+            try liveActivityRevocations.queue()
+            await liveActivityRevocations.drain()
+            liveActivityRevocations.retry()
             deliveryLiveActivityError = nil
         } catch {
             deliveryLiveActivityError = localizer.errorMessage(error)
@@ -1016,9 +1039,8 @@ final class ParcelStore: ObservableObject {
         pollingTask?.cancel()
         pollingTask = Task { [weak self] in
             while !Task.isCancelled {
-                guard let self else { return }
                 try? await Task.sleep(for: .seconds(30))
-                if Task.isCancelled { return }
+                guard !Task.isCancelled, let self else { return }
                 if self.isActive { await self.load(showSpinner: false) }
             }
         }

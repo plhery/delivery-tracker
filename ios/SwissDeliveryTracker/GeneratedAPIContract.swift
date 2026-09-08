@@ -377,12 +377,14 @@ struct LiveActivityDeviceRequest: Codable, Equatable, Hashable, Sendable {
     var token: String
     var environment: NativePushEnvironment
     var locale: NativePushLocale
+    var revocationToken: String? = nil
 
     private enum CodingKeys: String, CodingKey {
         case installationID = "installationId"
         case token
         case environment
         case locale
+        case revocationToken
     }
 }
 
@@ -573,6 +575,16 @@ struct FriendUpdate: Codable, Equatable, Hashable, Sendable {
 
 struct FriendsActivity: Codable, Equatable, Hashable, Sendable {
     var updates: [FriendUpdate]
+}
+
+struct RevokeLiveActivityDeviceRequest: Codable, Equatable, Hashable, Sendable {
+    var installationID: UUID
+    var revocationToken: String
+
+    private enum CodingKeys: String, CodingKey {
+        case installationID = "installationId"
+        case revocationToken
+    }
 }
 
 struct AccountExportAccount: Codable, Equatable, Hashable, Sendable, Identifiable {

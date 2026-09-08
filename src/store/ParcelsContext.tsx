@@ -56,6 +56,8 @@ export function ParcelsProvider({
   const [usingCachedData, setUsingCachedData] = useState(false);
   const mounted = useRef(true);
   const parcelsRef = useRef<ParcelWithEvents[]>([]);
+  const revision = useRef(0);
+  const loadSequence = useRef(0);
 
   useEffect(() => {
     parcelsRef.current = parcels;
@@ -75,9 +77,12 @@ export function ParcelsProvider({
   }, []);
 
   const reload = useCallback(async () => {
+    const sequence = ++loadSequence.current;
+    const startedRevision = revision.current;
+    const isCurrent = () => mounted.current && sequence === loadSequence.current && startedRevision === revision.current;
     try {
       const list = await repo.list();
-      if (mounted.current) {
+      if (isCurrent()) {
         setParcels(list);
         setError(null);
         setAuthenticationRequired(false);
@@ -85,14 +90,15 @@ export function ParcelsProvider({
       }
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') return;
+      if (!isCurrent()) return;
       const cached = repo.cachedList?.() ?? null;
-      if (mounted.current) {
+      if (isCurrent()) {
         if (parcelsRef.current.length === 0 && cached?.length) setParcels(cached);
         setUsingCachedData(parcelsRef.current.length > 0 || Boolean(cached?.length));
       }
-      rememberError(e);
+      if (isCurrent()) rememberError(e);
     } finally {
-      if (mounted.current) setLoading(false);
+      if (mounted.current && sequence === loadSequence.current) setLoading(false);
     }
   }, [repo, rememberError]);
 
@@ -104,6 +110,7 @@ export function ParcelsProvider({
   const resetDemoData = useCallback(async () => {
     if (repo.mode !== 'demo' || !repo.resetDemo) throw new Error('Demo reset is unavailable');
     const list = await repo.resetDemo();
+    revision.current += 1;
     if (mounted.current) {
       setParcels(list);
       setError(null);
@@ -125,6 +132,7 @@ export function ParcelsProvider({
     async (input: NewParcelInput) => {
       try {
         const parcel = await repo.add(input);
+        revision.current += 1;
         await reload();
         return parcel;
       } catch (error) {
@@ -139,6 +147,7 @@ export function ParcelsProvider({
     async (id: string) => {
       try {
         await repo.remove(id);
+        revision.current += 1;
         await reload();
       } catch (error) {
         rememberError(error);
@@ -152,6 +161,7 @@ export function ParcelsProvider({
     async (id: string, label: string) => {
       try {
         const renamed = await repo.rename(id, label);
+        revision.current += 1;
         if (mounted.current) {
           setParcels((current) =>
             current.map((parcel) => parcel.id === renamed.id ? renamed : parcel),
@@ -173,6 +183,7 @@ export function ParcelsProvider({
       try {
         if (!repo.changeCarrier) throw new Error('Changing parcel carriers is unavailable');
         const updated = await repo.changeCarrier(id, input);
+        revision.current += 1;
         if (mounted.current) {
           setParcels((current) =>
             current.map((parcel) => parcel.id === updated.id ? updated : parcel),
@@ -193,6 +204,7 @@ export function ParcelsProvider({
     try {
       if (!repo.restore) throw new Error('Restoring archived parcels is unavailable');
       const restored = await repo.restore(id);
+      revision.current += 1;
       if (mounted.current) {
         setParcels((current) =>
           current.map((parcel) => parcel.id === restored.id ? restored : parcel),
@@ -212,6 +224,7 @@ export function ParcelsProvider({
         throw new Error('Permanently deleting parcels is unavailable');
       }
       await repo.deletePermanently(id);
+      revision.current += 1;
       if (mounted.current) {
         setParcels((current) => current.filter((parcel) => parcel.id !== id));
         setError(null);
@@ -229,6 +242,7 @@ export function ParcelsProvider({
         throw new Error('Parcel notification settings are unavailable');
       }
       const updated = await repo.setNotificationsMuted(id, muted);
+      revision.current += 1;
       if (mounted.current) {
         setParcels((current) =>
           current.map((parcel) => parcel.id === updated.id ? updated : parcel),
@@ -244,8 +258,11 @@ export function ParcelsProvider({
 
   const refresh = useCallback(async (onProgress?: (progress: SyncProgress) => void) => {
     setRefreshing(true);
+    const startedRevision = revision.current;
     try {
       const list = await repo.refresh(onProgress);
+      if (startedRevision !== revision.current) return;
+      revision.current += 1;
       if (mounted.current) {
         setParcels(list);
         setError(null);
@@ -265,6 +282,7 @@ export function ParcelsProvider({
         ? await repo.refreshParcel(id, onProgress)
         : (await repo.refresh()).find((candidate) => candidate.id === id);
       if (!parcel) throw new Error('Parcel not found after refreshing');
+      revision.current += 1;
       if (mounted.current) {
         setParcels((current) =>
           current.map((candidate) => candidate.id === parcel.id ? parcel : candidate),

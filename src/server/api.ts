@@ -3,7 +3,7 @@ import 'server-only';
 import { createHash, randomUUID } from 'node:crypto';
 import { isIP } from 'node:net';
 import type { NextRequest } from 'next/server';
-import { authenticator, SupabaseAuthError, type SupabaseUser } from './auth';
+import { authenticator, SupabaseAuthError, SupabaseAuthUnavailableError, type SupabaseUser } from './auth';
 import { captureOperationalError, logOperationalEvent } from './observability';
 import { RateLimiter } from './rateLimit';
 import { serviceClient } from './runtime';
@@ -187,10 +187,12 @@ export function apiRoute<Parameters extends RouteParameters = RouteParameters>(
         const credential = token
           ? createHash('sha256').update(token).digest('hex').slice(0, 24)
           : null;
-        let retryAfter = rateLimiter.retryAfter(`preauth-client:${clientIp(request)}`, {
+        const ip = clientIp(request);
+        // Unknown callers must not share an admission bucket with every signed-in user.
+        let retryAfter = isIP(ip) ? rateLimiter.retryAfter(`preauth-client:${ip}`, {
           limit: PREAUTH_REQUEST_LIMIT * 3,
           window: PREAUTH_REQUEST_WINDOW_SECONDS,
-        });
+        }) : 0;
         if (!retryAfter && credential) {
           retryAfter = rateLimiter.retryAfter(`preauth-credential:${credential}`, {
             limit: PREAUTH_REQUEST_LIMIT,
@@ -220,6 +222,9 @@ export function apiRoute<Parameters extends RouteParameters = RouteParameters>(
         } catch (error) {
           if (error instanceof SupabaseAuthError) {
             throw new HttpError(401, 'Authentication is required', undefined, { cause: error });
+          }
+          if (error instanceof SupabaseAuthUnavailableError) {
+            throw new HttpError(503, error.message, { 'Retry-After': '5' }, { cause: error });
           }
           throw error;
         }

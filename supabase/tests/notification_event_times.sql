@@ -4,6 +4,7 @@ begin;
 insert into auth.users (id, email)
 values ('97000000-0000-0000-0000-000000000001', 'notification-times@example.invalid');
 
+insert into auth.sessions(id, user_id) values ('97000000-0000-0000-0000-000000000001', '97000000-0000-0000-0000-000000000001');
 set local role service_role;
 insert into public.packages (id, user_id, tracking_number, carrier, current_stage)
 values ('97000000-0000-0000-0000-000000000002',
@@ -14,8 +15,8 @@ values ('97000000-0000-0000-0000-000000000001',
   'https://fcm.googleapis.com/fcm/send/notification-times', 'test-key', 'test-auth', '2000-01-01');
 insert into public.native_push_devices (user_id, token, environment, subscribed_at)
 values ('97000000-0000-0000-0000-000000000001', repeat('97', 32), 'development', '2000-01-01');
-insert into public.live_activity_devices (user_id, installation_id, token, environment, subscribed_at)
-values ('97000000-0000-0000-0000-000000000001', '97000000-0000-0000-0000-000000000003',
+insert into public.live_activity_devices (session_id, user_id, installation_id, token, environment, subscribed_at)
+values ('97000000-0000-0000-0000-000000000001', '97000000-0000-0000-0000-000000000001', '97000000-0000-0000-0000-000000000003',
   repeat('98', 32), 'development', '2000-01-01');
 
 insert into public.tracking_events (package_id, stage, description, occurred_at, provider_event_id, raw_data)

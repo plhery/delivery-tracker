@@ -276,6 +276,7 @@ export function nativePushDevice(
 }
 
 export interface LiveActivityDeviceValues {
+  revocationToken?: string;
   installationId: string;
   token: string;
   environment: NativePushEnvironment;
@@ -284,6 +285,7 @@ export interface LiveActivityDeviceValues {
 
 export function liveActivityDevice(payload: JsonObject): LiveActivityDeviceValues {
   return {
+    ...(payload.revocationToken === undefined ? {} : { revocationToken: liveActivityRevocationToken(payload.revocationToken) }),
     installationId: installationId(payload.installationId),
     token: apnsToken(payload.token, 'Live Activity push-to-start token'),
     environment: nativePushEnvironment(payload.environment),
@@ -389,4 +391,11 @@ export function syncJobResponse(row: JsonObject): JsonObject {
     result: row.result ?? null,
     error: row.last_error ?? null,
   };
+}
+
+export function liveActivityRevocationToken(value: unknown): string {
+  if (typeof value !== 'string' || !/^[0-9a-f]{64}$/.test(value)) {
+    throw new HttpError(400, 'Invalid Live Activity revocation proof');
+  }
+  return value;
 }

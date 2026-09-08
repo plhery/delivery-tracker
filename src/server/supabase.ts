@@ -354,6 +354,8 @@ export class SupabaseClient {
     token: string,
     environment: string,
     locale: string,
+    sessionId: string,
+    revocationHash: string | null,
   ): Promise<JsonObject> {
     const now = new Date().toISOString();
     const result = rows(await this.request(`/rest/v1/live_activity_devices?${query({
@@ -363,6 +365,8 @@ export class SupabaseClient {
       body: {
         user_id: userId,
         installation_id: installationId,
+        session_id: sessionId,
+        revocation_hash: revocationHash,
         token,
         environment,
         locale,
@@ -374,6 +378,13 @@ export class SupabaseClient {
     }));
     if (!result[0]) throw new SupabaseError('Supabase did not return the Live Activity device');
     return result[0];
+  }
+
+  async revokeLiveActivityDevice(installationId: string, revocationHash: string): Promise<void> {
+    await this.request('/rest/v1/rpc/revoke_live_activity_device', {
+      method: 'POST',
+      body: { p_installation_id: installationId, p_revocation_hash: revocationHash },
+    });
   }
 
   async getLiveActivityDevice(

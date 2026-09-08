@@ -36,7 +36,7 @@ enum DeliveryAPIError: LocalizedError {
 @MainActor
 final class DeliveryAPIClient {
     private let configuration: AppConfiguration
-    private unowned let session: SessionStore
+    private let session: SessionStore
     private let transport: URLSession
 
     init(configuration: AppConfiguration, session: SessionStore, transport: URLSession = .shared) {
@@ -228,7 +228,8 @@ final class DeliveryAPIClient {
     func registerLiveActivityDevice(
         token: String,
         installationID: UUID,
-        language: AppLanguage
+        language: AppLanguage,
+        revocationToken: String
     ) async throws {
         #if DEBUG
         let environment = NativePushEnvironment.development
@@ -242,7 +243,8 @@ final class DeliveryAPIClient {
                 installationID: installationID,
                 token: token,
                 environment: environment,
-                locale: NativePushLocale(rawValue: language.rawValue) ?? .en
+                locale: NativePushLocale(rawValue: language.rawValue) ?? .en,
+                revocationToken: revocationToken
             )
         )
     }
@@ -394,5 +396,86 @@ final class DeliveryAPIClient {
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
         return max(0, formatter.date(from: value)?.timeIntervalSince(now) ?? 0)
+    }
+}
+
+
+/// Contains only a capability to DELETE one registration, never login credentials.
+/// Persist before sending registration so even an interrupted response is recoverable.
+@MainActor
+final class LiveActivityRevocations {
+    struct Registration: Codable, Equatable {
+        let ownerID: UUID
+        let installationID: UUID
+        let revocationToken: String
+        var pending: Bool
+    }
+
+    private let persistence: any SessionPersistence
+    private let configuration: AppConfiguration
+    private let transport: URLSession
+    private var registrations: [Registration]
+    private var retryTask: Task<Void, Never>?
+
+    init(configuration: AppConfiguration, transport: URLSession = .shared,
+         persistence: any SessionPersistence = KeychainStore(service: "com.plhery.SwissDeliveryTracker.liveActivityRevocations")) {
+        self.configuration = configuration
+        self.transport = transport
+        self.persistence = persistence
+        registrations = persistence.load() ?? []
+    }
+
+    func registration(ownerID: UUID, installationID: UUID) throws -> Registration {
+        if let existing = registrations.first(where: { !$0.pending && $0.ownerID == ownerID && $0.installationID == installationID }) {
+            return existing
+        }
+        let token = (UUID().uuidString + UUID().uuidString).replacingOccurrences(of: "-", with: "").lowercased()
+        let value = Registration(ownerID: ownerID, installationID: installationID, revocationToken: token, pending: false)
+        try persist(registrations + [value])
+        return value
+    }
+
+    func queue(except ownerID: UUID? = nil) throws {
+        try persist(registrations.map { value in
+            var value = value
+            if value.ownerID != ownerID { value.pending = true }
+            return value
+        })
+    }
+
+    private func persist(_ values: [Registration]) throws {
+        try persistence.save(values)
+        registrations = values
+    }
+
+    func drain() async {
+        for value in registrations where value.pending {
+            if Task.isCancelled { return }
+            do {
+                var request = URLRequest(url: configuration.apiBaseURL.appending(path: "api/live-activities/revoke"))
+                request.httpMethod = "POST"
+                request.timeoutInterval = 10
+                request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.httpBody = try JSONEncoder.deliveryTracker.encode(RevokeLiveActivityDeviceRequest(
+                    installationID: value.installationID, revocationToken: value.revocationToken
+                ))
+                let (_, response) = try await transport.data(for: request)
+                guard let response = response as? HTTPURLResponse, (200...299).contains(response.statusCode) else { continue }
+                try persist(registrations.filter { $0.revocationToken != value.revocationToken })
+            } catch { /* Keep the durable revocation for a later network opportunity. */ }
+        }
+    }
+
+    func retry() {
+        guard retryTask == nil, registrations.contains(where: \.pending) else { return }
+        retryTask = Task { [weak self] in
+            while let self, !Task.isCancelled {
+                await self.drain()
+                if !self.registrations.contains(where: \.pending) { break }
+                do { try await Task.sleep(for: .seconds(30)) } catch { break }
+            }
+            self?.retryTask = nil
+        }
     }
 }

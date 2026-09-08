@@ -29,6 +29,13 @@ export class SupabaseAuthError extends Error {
   }
 }
 
+export class SupabaseAuthUnavailableError extends Error {
+  constructor(options?: ErrorOptions) {
+    super('Supabase authentication is temporarily unavailable', options);
+    this.name = 'SupabaseAuthUnavailableError';
+  }
+}
+
 export class SupabaseAuthenticator {
   readonly #cache = new Map<string, { expiresAt: number; user: SupabaseUser }>();
 
@@ -70,18 +77,19 @@ export class SupabaseAuthenticator {
         signal: AbortSignal.timeout(this.options.timeoutMs ?? 5_000),
       });
     } catch (error) {
-      throw new SupabaseAuthError(undefined, { cause: error });
+      throw new SupabaseAuthUnavailableError({ cause: error });
     }
-    if (!response.ok) throw new SupabaseAuthError();
+    if (response.status === 401 || response.status === 403) throw new SupabaseAuthError();
+    if (!response.ok) throw new SupabaseAuthUnavailableError();
 
     let payload: unknown;
     try {
       payload = await response.json();
     } catch (error) {
-      throw new SupabaseAuthError('Supabase returned an invalid user', { cause: error });
+      throw new SupabaseAuthUnavailableError({ cause: error });
     }
     if (!isRecord(payload) || typeof payload.id !== 'string' || !UUID.test(payload.id)) {
-      throw new SupabaseAuthError('Supabase returned an invalid user');
+      throw new SupabaseAuthUnavailableError();
     }
     if (payload.is_anonymous === true) {
       throw new SupabaseAuthError('Anonymous Supabase users are not accepted');

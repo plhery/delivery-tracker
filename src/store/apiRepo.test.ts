@@ -527,3 +527,20 @@ describe('createApiRepo', () => {
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 });
+
+it('rejects stale collection data after a mutation without regressing the offline cache', async () => {
+  const fetcher = vi.fn().mockResolvedValue(response({ packages: [packageRow] }));
+  vi.stubGlobal('fetch', fetcher);
+  const repo = createApiRepo();
+  await repo.list();
+  let finish!: (value: unknown) => void;
+  fetcher.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  const poll = repo.list();
+  const rejection = expect(poll).rejects.toMatchObject({ name: 'AbortError' });
+  fetcher.mockResolvedValueOnce(response({ ...packageRow, label: 'Renamed offline too' }));
+  await repo.rename(packageRow.id, 'Renamed offline too');
+  finish(response({ packages: [packageRow] }));
+  await rejection;
+  expect(repo.cachedList?.()?.[0].label).toBe('Renamed offline too');
+  vi.unstubAllGlobals();
+});

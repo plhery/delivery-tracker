@@ -1406,6 +1406,7 @@ export interface ApiLiveActivityDeviceRequest {
   "token": string;
   "environment": ApiNativePushEnvironment;
   "locale": ApiNativePushLocale;
+  "revocationToken"?: string;
 }
 
 export interface ApiDeleteLiveActivityDeviceRequest {
@@ -1527,4 +1528,9 @@ export interface ApiFriendUpdate {
 
 export interface ApiFriendsActivity {
   "updates": Array<ApiFriendUpdate>;
+}
+
+export interface ApiRevokeLiveActivityDeviceRequest {
+  "installationId": string;
+  "revocationToken": string;
 }

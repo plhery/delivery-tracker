@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { abortable } from '../lib/apiClient';
 import { browserStorage, clearApiCache } from '../store/apiRepo';
+import { SessionStorage } from './sessionStorage';
 
 export interface AuthConfig {
   url: string;
@@ -37,7 +38,7 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-function configuredClient(config: AuthConfig | null): SupabaseClient | null {
+function configuredClient(config: AuthConfig | null, storage: SessionStorage | null): SupabaseClient | null {
   if (!config?.url || !config.publishableKey) return null;
   return createClient(config.url, config.publishableKey, {
     global: {
@@ -47,6 +48,7 @@ function configuredClient(config: AuthConfig | null): SupabaseClient | null {
       },
     },
     auth: {
+      ...(storage ? { storage, storageKey: storage.key } : {}),
       autoRefreshToken: true,
       detectSessionInUrl: true,
       persistSession: true,
@@ -85,9 +87,12 @@ export function AuthProvider({
   client?: SupabaseClient;
   children: ReactNode;
 }) {
+  const storage = useMemo(() => config?.url && !suppliedClient
+    ? new SessionStorage(`sb-${new URL(config.url).hostname.split('.')[0]}-auth-token`) : null,
+  [config, suppliedClient]);
   const client = useMemo(
-    () => suppliedClient ?? configuredClient(config),
-    [config, suppliedClient],
+    () => suppliedClient ?? configuredClient(config, storage),
+    [config, suppliedClient, storage],
   );
   const [initialController] = useState(() => new AbortController());
   const identity = useRef({ userId: null as string | null, controller: initialController });
@@ -97,6 +102,7 @@ export function AuthProvider({
       : sessionState(null, null)), signal: initialController.signal }),
   );
   const acceptSession = useCallback((session: Session | null) => {
+    if (storage?.blocked) session = null;
     const next = sessionState(client, session);
     const userId = next.user?.id ?? null;
     if (identity.current.userId !== userId || identity.current.controller.signal.aborted) {
@@ -105,7 +111,7 @@ export function AuthProvider({
       identity.current = { userId, controller: new AbortController() };
     }
     setState({ ...next, signal: identity.current.controller.signal });
-  }, [client]);
+  }, [client, storage]);
 
   useEffect(() => {
     if (!client) return;
@@ -129,27 +135,30 @@ export function AuthProvider({
   const sendCode = useCallback(async (email: string) => {
     if (!client) throw new Error('Authentication is not configured');
     await logout.current;
+    storage?.allowSignIn();
     const { error } = await client.auth.signInWithOtp({
       email,
       options: { shouldCreateUser: true },
     });
     if (error) throw error;
-  }, [client]);
+  }, [client, storage]);
 
   const signInWithGoogle = useCallback(async () => {
     if (!client) throw new Error('Authentication is not configured');
     await logout.current;
+    storage?.allowSignIn();
     const redirectTo = typeof window === 'undefined' ? undefined : window.location.origin;
     const { error } = await client.auth.signInWithOAuth({
       provider: 'google',
       ...(redirectTo ? { options: { redirectTo } } : {}),
     });
     if (error) throw error;
-  }, [client]);
+  }, [client, storage]);
 
   const verifyCode = useCallback(async (email: string, code: string) => {
     if (!client) throw new Error('Authentication is not configured');
     await logout.current;
+    storage?.allowSignIn();
     const { data, error } = await client.auth.verifyOtp({
       email,
       token: code,
@@ -158,16 +167,23 @@ export function AuthProvider({
     if (error) throw error;
     if (!data.session) throw new Error('The sign-in code did not create a session');
     acceptSession(data.session);
-  }, [client, acceptSession]);
+  }, [client, acceptSession, storage]);
 
   const signOut = useCallback(async () => {
     if (!client) return;
     if (logout.current) return logout.current;
+    const token = state.accessToken;
+    storage?.signOut();
     acceptSession(null);
-    const operation = client.auth.signOut({ scope: 'local' }).then(() => undefined);
+    const operation = (async () => {
+      // Purging first prevents the SDK from refreshing expired credentials during logout.
+      // Revoke the captured session separately; local logout also works without a network.
+      await client.auth.signOut({ scope: 'local' });
+      if (storage && token) await client.auth.admin.signOut(token, 'local');
+    })().catch(() => undefined);
     logout.current = operation;
     try { await operation; } finally { logout.current = null; }
-  }, [client, acceptSession]);
+  }, [client, acceptSession, storage, state.accessToken]);
 
   const getAccessToken = useCallback(async (refresh = false) => {
     state.signal.throwIfAborted();

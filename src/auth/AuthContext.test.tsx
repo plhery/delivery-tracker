@@ -199,3 +199,19 @@ it('clears the account immediately while remote sign-out is pending', async () =
   finish({ error: null });
   await pending;
 });
+
+it('treats a local logout tombstone as authoritative over late token storage writes', async () => {
+  const { SessionStorage } = await import('./sessionStorage');
+  const key = 'logout-race-test';
+  const firstTab = new SessionStorage(key, window.localStorage);
+  const secondTab = new SessionStorage(key, window.localStorage);
+  firstTab.setItem(key, JSON.stringify(SESSION));
+  secondTab.signOut();
+  firstTab.setItem(key, JSON.stringify(SESSION));
+  expect(firstTab.getItem(key)).toBeNull();
+  expect(window.localStorage.getItem(key)).toBeNull();
+  secondTab.allowSignIn();
+  secondTab.setItem(key, JSON.stringify(SESSION));
+  expect(secondTab.getItem(key)).not.toBeNull();
+  secondTab.removeItem(key);
+});

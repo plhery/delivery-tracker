@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import {
   apiRoute,
   HttpError,
@@ -21,12 +22,16 @@ export const POST = apiRoute(async (context) => {
     throw new HttpError(503, 'Live Activity push notifications are not configured');
   }
   const values = liveActivityDevice(await readJsonObject(context.request));
+  const user = requireUser(context);
+  if (!user.sessionId) throw new HttpError(401, 'A current sign-in session is required');
   await service.upsertLiveActivityDevice(
-    requireUser(context).id,
+    user.id,
     values.installationId,
     values.token,
     values.environment,
     values.locale,
+    user.sessionId,
+    values.revocationToken ? createHash('sha256').update(values.revocationToken).digest('hex') : null,
   );
   return json({ ok: true }, 201);
 }, { serviceRequired: true });

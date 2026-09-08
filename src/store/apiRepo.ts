@@ -158,6 +158,8 @@ export function createApiRepo(
   const monitoredJobIds = new Set<string>();
   let monitorTask: Promise<void> | null = null;
   let lifecycle = new AbortController();
+  let revision = 0;
+  let listSequence = 0;
   const cacheKey = auth ? `${API_CACHE_KEY}.${auth.userId}` : API_CACHE_KEY;
 
   async function request<T>(path: string, requestAuth: ApiAuth | undefined, init?: RequestInit): Promise<T> {
@@ -167,6 +169,7 @@ export function createApiRepo(
     signal.throwIfAborted();
     const value = await apiRequest<T>(path, requestAuth, { ...init, signal });
     signal.throwIfAborted();
+    if (init?.method && init.method !== 'GET') revision += 1;
     return value;
   }
 
@@ -258,6 +261,8 @@ export function createApiRepo(
   }
 
   async function list(): Promise<ParcelWithEvents[]> {
+    const sequence = ++listSequence;
+    const startedRevision = revision;
     const signal = lifecycle.signal;
     const payload = await request<ApiPackageListResponse>(
       '/api/packages?includeArchived=true',
@@ -265,9 +270,20 @@ export function createApiRepo(
     );
     signal.throwIfAborted();
     auth?.signal?.throwIfAborted();
+    if (sequence !== listSequence || startedRevision !== revision) {
+      throw new DOMException('A newer parcel request or mutation completed', 'AbortError');
+    }
     const parcels = payload.packages.map(toParcel);
     saveCachedParcels(storage, cacheKey, parcels);
     return parcels;
+  }
+
+  function rememberParcel(parcel: ParcelWithEvents): ParcelWithEvents {
+    const cached = cachedParcels(storage, cacheKey);
+    if (cached) saveCachedParcels(storage, cacheKey, [
+      ...cached.filter((current) => current.id !== parcel.id), parcel,
+    ]);
+    return parcel;
   }
 
   return {
@@ -289,7 +305,7 @@ export function createApiRepo(
         method: 'POST',
         body: JSON.stringify(body),
       });
-      const parcel = toParcel(payload.package);
+      const parcel = rememberParcel(toParcel(payload.package));
       monitorJobs(payload.jobIds);
       return parcel;
     },
@@ -304,7 +320,7 @@ export function createApiRepo(
           body: JSON.stringify(body),
         },
       );
-      return toParcel(row);
+      return rememberParcel(toParcel(row));
     },
 
     async changeCarrier(id: string, input: ParcelCarrierInput): Promise<ParcelWithEvents> {
@@ -322,7 +338,7 @@ export function createApiRepo(
         },
       );
       monitorJobs(payload.jobIds);
-      return toParcel(payload.package);
+      return rememberParcel(toParcel(payload.package));
     },
 
     async setNotificationsMuted(id: string, muted: boolean): Promise<ParcelWithEvents> {
@@ -335,13 +351,16 @@ export function createApiRepo(
           body: JSON.stringify(body),
         },
       );
-      return toParcel(row);
+      return rememberParcel(toParcel(row));
     },
 
     async remove(id: string): Promise<void> {
       await request<ApiOkResponse>(`/api/packages/${encodeURIComponent(id)}`, auth, {
         method: 'DELETE',
       });
+      const cached = cachedParcels(storage, cacheKey);
+      if (cached) saveCachedParcels(storage, cacheKey, cached.map((parcel) =>
+        parcel.id === id ? { ...parcel, archivedAt: new Date().toISOString() } : parcel));
     },
 
     async restore(id: string): Promise<ParcelWithEvents> {
@@ -350,7 +369,7 @@ export function createApiRepo(
         auth,
         { method: 'POST' },
       );
-      return toParcel(row);
+      return rememberParcel(toParcel(row));
     },
 
     async deletePermanently(id: string): Promise<void> {

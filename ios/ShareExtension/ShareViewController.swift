@@ -3,6 +3,9 @@ import UniformTypeIdentifiers
 
 final class ShareViewController: UIViewController {
     private let statusLabel = UILabel()
+    private var finished = false
+    private var saved = false
+    private let cancelButton = UIButton(type: .system)
     private let openButton = UIButton(type: .system)
     private var parcelLabel = ""
     private var trackingInput = ""
@@ -35,21 +38,20 @@ final class ShareViewController: UIViewController {
         statusLabel.textAlignment = .center
 
         var openConfiguration = UIButton.Configuration.filled()
-        openConfiguration.title = ShareCopy.text("open")
-        openConfiguration.image = UIImage(systemName: "arrow.up.forward.app")
+        openConfiguration.title = ShareCopy.text("save")
+        openConfiguration.image = UIImage(systemName: "tray.and.arrow.down")
         openConfiguration.imagePadding = 8
         openConfiguration.cornerStyle = .large
         openConfiguration.baseBackgroundColor = UIColor(red: 1, green: 0.81, blue: 0, alpha: 1)
         openConfiguration.baseForegroundColor = UIColor(red: 0.09, green: 0.09, blue: 0.08, alpha: 1)
         openButton.configuration = openConfiguration
         openButton.isEnabled = false
-        openButton.addTarget(self, action: #selector(openApp), for: .touchUpInside)
+        openButton.addTarget(self, action: #selector(saveShare), for: .touchUpInside)
 
-        let cancel = UIButton(type: .system)
-        cancel.setTitle(ShareCopy.text("cancel"), for: .normal)
-        cancel.addTarget(self, action: #selector(cancelShare), for: .touchUpInside)
+        cancelButton.setTitle(ShareCopy.text("cancel"), for: .normal)
+        cancelButton.addTarget(self, action: #selector(cancelShare), for: .touchUpInside)
 
-        let stack = UIStackView(arrangedSubviews: [mark, title, statusLabel, openButton, cancel])
+        let stack = UIStackView(arrangedSubviews: [mark, title, statusLabel, openButton, cancelButton])
         stack.axis = .vertical
         stack.alignment = .center
         stack.spacing = 18
@@ -107,7 +109,7 @@ final class ShareViewController: UIViewController {
             }
         }
         group.notify(queue: .main) { [weak self] in
-            guard let self else { return }
+            guard let self, !self.finished else { return }
             let parts = (loaded.compactMap { $0 } + itemText).reduce(into: [String]()) { result, value in
                 if !result.contains(value) { result.append(value) }
             }
@@ -115,35 +117,33 @@ final class ShareViewController: UIViewController {
             if self.trackingInput.isEmpty {
                 self.statusLabel.text = lastError?.localizedDescription ?? ShareCopy.text("notFound")
             } else {
-                self.saveDraft()
                 self.statusLabel.text = ShareCopy.text("ready")
                 self.openButton.isEnabled = true
             }
         }
     }
 
-    private func saveDraft() {
-        let group = Bundle.main.object(forInfoDictionaryKey: "SDTAppGroupIdentifier") as? String
-            ?? "group.com.plhery.SwissDeliveryTracker"
-        let value: [String: String] = [
-            "id": UUID().uuidString,
-            "label": parcelLabel,
-            "trackingInput": trackingInput,
-        ]
-        guard let data = try? JSONEncoder().encode(value) else { return }
-        UserDefaults(suiteName: group)?.set(data, forKey: "sdt.sharedParcelDraft")
-    }
-
-    @objc private func openApp() {
-        guard let url = URL(string: "swissdeliverytracker://add") else { return }
-        extensionContext?.open(url) { [weak self] _ in
-            self?.extensionContext?.completeRequest(returningItems: nil)
+    @objc private func saveShare() {
+        guard !finished, !saved, !trackingInput.isEmpty else { return }
+        guard ShareInbox.save(SharedParcelDraft(label: parcelLabel, trackingInput: trackingInput)) else {
+            statusLabel.text = ShareCopy.text("saveFailed")
+            return
         }
+        saved = true
+        statusLabel.text = ShareCopy.text("saved")
+        openButton.isHidden = true
+        cancelButton.setTitle(ShareCopy.text("done"), for: .normal)
     }
 
     @objc private func cancelShare() {
-        extensionContext?.cancelRequest(withError: NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError))
+        finished = true
+        if saved {
+            extensionContext?.completeRequest(returningItems: nil)
+        } else {
+            extensionContext?.cancelRequest(withError: NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError))
+        }
     }
+
 }
 
 private enum ShareCopy {
@@ -151,34 +151,46 @@ private enum ShareCopy {
         "en": [
             "title": "Add to Delivery Tracker",
             "reading": "Reading the shared tracking information…",
-            "open": "Open Delivery Tracker",
+            "save": "Save tracking details",
+            "saved": "Saved. Open Delivery Tracker within 10 minutes to review and add your parcel.",
+            "done": "Done",
+            "saveFailed": "Could not save. Please paste the tracking information directly in the app.",
             "cancel": "Cancel",
             "notFound": "Share a tracking number or link, or paste it directly in the app.",
-            "ready": "Open the app to review the tracking details and add your parcel.",
+            "ready": "Save these tracking details, then open Delivery Tracker to add your parcel.",
         ],
         "de": [
             "title": "Zu Delivery Tracker hinzufügen",
             "reading": "Geteilte Sendungsinformationen werden gelesen…",
-            "open": "Delivery Tracker öffnen",
+            "save": "Sendungsangaben speichern",
+            "saved": "Gespeichert. Öffne Delivery Tracker innerhalb von 10 Minuten, um dein Paket zu prüfen und hinzuzufügen.",
+            "done": "Fertig",
+            "saveFailed": "Speichern fehlgeschlagen. Bitte füge die Sendungsangaben direkt in der App ein.",
             "cancel": "Abbrechen",
             "notFound": "Teile eine Sendungsnummer oder einen Link oder füge sie direkt in der App ein.",
-            "ready": "Öffne die App, um die Sendungsangaben zu prüfen und dein Paket hinzuzufügen.",
+            "ready": "Speichere die Sendungsangaben und öffne dann Delivery Tracker, um dein Paket hinzuzufügen.",
         ],
         "fr": [
             "title": "Ajouter à Delivery Tracker",
             "reading": "Lecture des informations de suivi partagées…",
-            "open": "Ouvrir Delivery Tracker",
+            "save": "Enregistrer le suivi",
+            "saved": "Enregistré. Ouvrez Delivery Tracker dans les 10 minutes pour vérifier et ajouter votre colis.",
+            "done": "Terminé",
+            "saveFailed": "Échec de l’enregistrement. Collez les informations de suivi directement dans l’app.",
             "cancel": "Annuler",
             "notFound": "Partagez un numéro ou un lien de suivi, ou collez-le directement dans l’app.",
-            "ready": "Ouvrez l’app pour vérifier le suivi et ajouter votre colis.",
+            "ready": "Enregistrez le suivi, puis ouvrez Delivery Tracker pour ajouter votre colis.",
         ],
         "it": [
             "title": "Aggiungi a Delivery Tracker",
             "reading": "Lettura delle informazioni di tracciamento condivise…",
-            "open": "Apri Delivery Tracker",
+            "save": "Salva il tracciamento",
+            "saved": "Salvato. Apri Delivery Tracker entro 10 minuti per verificare e aggiungere il pacco.",
+            "done": "Fine",
+            "saveFailed": "Salvataggio non riuscito. Incolla il tracciamento direttamente nell’app.",
             "cancel": "Annulla",
             "notFound": "Condividi un numero o un link di tracciamento, oppure incollalo direttamente nell’app.",
-            "ready": "Apri l’app per verificare il tracciamento e aggiungere il pacco.",
+            "ready": "Salva il tracciamento, poi apri Delivery Tracker per aggiungere il pacco.",
         ],
     ]
 

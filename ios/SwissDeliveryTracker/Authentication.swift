@@ -395,7 +395,7 @@ private final class AuthenticationAnchorProvider: NSObject, ASWebAuthenticationP
     }
 }
 
-private struct KeychainStore: SessionPersistence {
+struct KeychainStore: SessionPersistence {
     let service: String
     private let account = "session"
 

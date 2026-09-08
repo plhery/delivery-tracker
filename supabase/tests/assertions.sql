@@ -1196,6 +1196,10 @@ begin
 end;
 $$;
 
+reset role;
+insert into auth.sessions (id, user_id) select id, id from auth.users on conflict do nothing;
+set local role service_role;
+
 -- Delivery-day activities start only when a parcel goes out for delivery,
 -- continue through the per-activity update token, and end on a terminal event.
 -- A successful ActivityKit delivery is also visible to the matching native
@@ -1205,9 +1209,10 @@ set installation_id = 'd0000000-0000-0000-0000-000000000001'
 where id = 'a0000000-0000-0000-0000-000000000001';
 
 insert into public.live_activity_devices (
-  id, user_id, installation_id, token, environment, locale, subscribed_at
+  id, session_id, user_id, installation_id, token, environment, locale, subscribed_at
 ) values (
   'c0000000-0000-0000-0000-000000000001',
+  '20000000-0000-0000-0000-000000000002',
   '20000000-0000-0000-0000-000000000002',
   'd0000000-0000-0000-0000-000000000001',
   repeat('ef', 32),
@@ -1444,8 +1449,9 @@ end;
 $$;
 
 insert into public.live_activity_devices (
-  user_id, installation_id, token, environment, locale
+  session_id, user_id, installation_id, token, environment, locale
 ) values (
+  '10000000-0000-0000-0000-000000000001',
   '10000000-0000-0000-0000-000000000001',
   'd0000000-0000-0000-0000-000000000001',
   repeat('34', 32),
@@ -1454,6 +1460,7 @@ insert into public.live_activity_devices (
 )
 on conflict (installation_id) do update set
   user_id = excluded.user_id,
+  session_id = excluded.session_id,
   token = excluded.token,
   environment = excluded.environment,
   locale = excluded.locale,
