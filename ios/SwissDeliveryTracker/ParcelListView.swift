@@ -3,7 +3,7 @@ import UIKit
 
 struct ParcelListView: View {
     @EnvironmentObject private var localizer: Localizer
-    @State private var selection = 0
+    @Binding var selection: Int
 
     var body: some View {
         TabView(selection: $selection) {

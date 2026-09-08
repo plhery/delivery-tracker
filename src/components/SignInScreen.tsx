@@ -9,7 +9,13 @@ export function SignInScreen({
   signInWithGoogle,
   sendCode,
   verifyCode,
+  title,
+  subtitle,
+  showConfigurationHelp = true,
 }: {
+  showConfigurationHelp?: boolean;
+  title?: string;
+  subtitle?: string;
   configured: boolean;
   googleEnabled?: boolean;
   emailOtpEnabled?: boolean;
@@ -70,13 +76,13 @@ export function SignInScreen({
   return (
         <section className="auth-flow" aria-labelledby="sign-in-title">
           <div className="auth-flow__heading">
-            <h1 id="sign-in-title" tabIndex={-1}>{t('arrival.signInTitle')}</h1>
-            <p>{t('arrival.signInSubtitle')}</p>
+            <h1 id="sign-in-title" tabIndex={-1}>{title ?? t('arrival.signInTitle')}</h1>
+            <p>{subtitle ?? t('arrival.signInSubtitle')}</p>
           </div>
         {!configured ? (
           <div className="auth-flow__configuration" role="alert">
             <strong>{t('auth.configTitle')}</strong>
-            <span>{t('native.configurationHelp')}</span>
+            {showConfigurationHelp && <span>{t('native.configurationHelp')}</span>}
           </div>
         ) : codeSent && emailOtpEnabled ? (
           <form className="auth-flow__form auth-flow__form--code" onSubmit={(event) => void submitCode(event)}>

@@ -1,8 +1,9 @@
 import 'server-only';
+import { createHash } from 'node:crypto';
 import type { ApiFriendCard, ApiFriendProfile, ApiFriendsActionRequest, ApiFriendsActionResponse, ApiFriendsSnapshot, ApiFriendStamp } from '../generated/apiContract';
 import { HttpError } from './api';
 import { isRecord, type JsonObject } from './types';
-import { SupabaseError, type SupabaseUserClient } from './supabase';
+import { SupabaseError, type SupabaseUserClient, type SupabaseServiceClient } from './supabase';
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const stamps = new Set<ApiFriendStamp>(['first', 'ten', 'connected', 'express']);
@@ -24,6 +25,23 @@ export function friendsAction(payload: JsonObject): ApiFriendsActionRequest {
   return { ...payload, ...(typeof payload.nickname === 'string' ? { nickname: payload.nickname.trim() } : {}) } as unknown as ApiFriendsActionRequest;
 }
 function corrupt(): never { throw new HttpError(502, 'Friends is temporarily unavailable'); }
+
+/** A bearer invitation reveals only its sender's nickname, without consuming it. */
+export async function invitationPreview(client: SupabaseServiceClient, payload: JsonObject): Promise<{ previewNickname: string }> {
+  if (Object.keys(payload).length !== 1 || typeof payload.code !== 'string' || !/^[a-f0-9]{32}$/.test(payload.code)) throw invalid();
+  const query = new URLSearchParams({
+    select: 'friend_profiles!inner(nickname)',
+    code_hash: `eq.${createHash('sha256').update(payload.code).digest('hex')}`,
+    expires_at: `gt.${new Date().toISOString()}`,
+    limit: '1',
+  });
+  const result = await client.request(`/rest/v1/friend_invites?${query}`);
+  if (!Array.isArray(result)) return corrupt();
+  if (!result.length) throw new HttpError(404, 'Invitation unavailable');
+  const sender = isRecord(result[0]) ? result[0].friend_profiles : null;
+  if (!isRecord(sender) || !nickname(sender.nickname)) return corrupt();
+  return { previewNickname: sender.nickname };
+}
 function profile(value: unknown): ApiFriendProfile | null {
   if (value === null) return null;
   if (!isRecord(value) || !nickname(value.nickname) || typeof value.shareStats !== 'boolean' || typeof value.shareArrival !== 'boolean') return corrupt();

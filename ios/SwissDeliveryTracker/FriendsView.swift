@@ -5,13 +5,13 @@ struct FriendsView: View {
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var parcels: ParcelStore
     @EnvironmentObject private var localizer: Localizer
+    @EnvironmentObject private var invitation: FriendInvitationStore
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var model = FriendsStore()
     @State private var showingAccount = false
     @State private var visible = false
     @State private var panel: FriendsPanel?
-    @State private var joined = false
     private var active: Bool { visible && scenePhase == .active }
     private func text(_ key: String) -> String { localizer.text(key) }
 
@@ -20,7 +20,6 @@ struct FriendsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     if let error = model.errorKey, panel == nil { errorView(error) }
-                    if joined { Label(text("friends.accepted"), systemImage: "checkmark.circle").foregroundStyle(ExperimentalPalette.delivered).font(.subheadline) }
                     if let data = model.snapshot {
                         if data.profile != nil { circle(data) }
                         else {
@@ -72,7 +71,6 @@ struct FriendsView: View {
             }
             .presentationDragIndicator(.visible).interactiveDismissDisabled(model.working)
         }
-        .sensoryFeedback(.success, trigger: joined)
     }
 
     @ViewBuilder private func circle(_ data: FriendsSnapshot) -> some View {
@@ -123,7 +121,7 @@ struct FriendsView: View {
             Button(text("friends.disable")) { Task { if await model.act(FriendsActionRequest(action: .disable), parcels: parcels.parcels) != nil { panel = nil } } }.buttonStyle(.borderedProminent).disabled(model.working).tint(Brand.accent).foregroundStyle(Brand.onAccent)
         case .invite, .accept:
             if session.isDemo { Text(text("friends.demoInvites")).font(.subheadline).foregroundStyle(.secondary) }
-            else { FriendsInvitationView(accepting: value.id == "accept", busy: model.working, act: { await model.act($0, parcels: parcels.parcels) }, completed: { panel = nil; if value.id == "accept" { joined = true } }) }
+            else { FriendsInvitationView(accepting: value.id == "accept", busy: model.working, act: { await model.act($0, parcels: parcels.parcels) }, completed: { panel = nil }, open: { url in panel = nil; invitation.open(url) }) }
         case .friend(let initial):
             if let friend = model.snapshot?.friends.first(where: { $0.id == initial.id }) {
                 FriendDetailView(friend: friend, busy: model.working) {
@@ -215,13 +213,14 @@ private struct FriendCardView: View {
     private func metric(_ value: String, _ key: String) -> some View { VStack(alignment: .leading, spacing: 4) { Text(value).font(.title2.bold().monospacedDigit()); Text(localizer.text(key)).font(.caption).foregroundStyle(.secondary) } }
 }
 
-private struct FriendsProfileForm: View {
+struct FriendsProfileForm: View {
     @EnvironmentObject private var localizer: Localizer
     @EnvironmentObject private var parcels: ParcelStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     let profile: FriendProfile?
     let busy: Bool
+    let submitKey: String?
     let save: (FriendProfile) -> Void
     @State private var name: String
     @State private var stats: Bool
@@ -229,8 +228,8 @@ private struct FriendsProfileForm: View {
     @State private var magicTrigger = 0
     @State private var settledName: String?
     @FocusState private var nameFocused: Bool
-    init(profile: FriendProfile?, busy: Bool, save: @escaping (FriendProfile) -> Void) {
-        self.profile = profile; self.busy = busy; self.save = save
+    init(profile: FriendProfile?, busy: Bool, submitKey: String? = nil, save: @escaping (FriendProfile) -> Void) {
+        self.profile = profile; self.busy = busy; self.submitKey = submitKey; self.save = save
         _name = State(initialValue: profile?.nickname ?? "")
         _stats = State(initialValue: profile?.shareStats ?? true)
         _arrival = State(initialValue: profile?.shareArrival ?? true)
@@ -260,7 +259,7 @@ private struct FriendsProfileForm: View {
                 toggle("friends.shareArrival", detail: "friends.shareArrivalDetail", value: $arrival)
             }
             Label(localizer.text("friends.privacy"), systemImage: "lock").font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-            Button { save(value) } label: { Text(localizer.text(profile == nil ? "friends.join" : "friends.save")).frame(maxWidth: .infinity, minHeight: 46) }
+            Button { save(value) } label: { Text(localizer.text(submitKey ?? (profile == nil ? "friends.join" : "friends.save"))).frame(maxWidth: .infinity, minHeight: 46) }
                 .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent).disabled(busy || value.nickname.isEmpty)
                 .modifier(FriendsAttentionCue(active: invitesAttention && !value.nickname.isEmpty && settledName == value.nickname, cornerRadius: 100, growth: 0.016))
         }.disabled(busy)
@@ -321,27 +320,25 @@ private struct FriendsInvitationView: View {
     let busy: Bool
     let act: (FriendsActionRequest) async -> FriendsActionResponse?
     let completed: () -> Void
+    let open: (URL) -> Void
     @State private var code = ""
-    @State private var name: String?
     @State private var copied = false
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             if accepting {
-                TextField(localizer.text("friends.codePlaceholder"), text: $code).accessibilityLabel(localizer.text("friends.code")).textInputAutocapitalization(.never).autocorrectionDisabled().font(.footnote.monospaced()).padding(14).background(Brand.paper, in: RoundedRectangle(cornerRadius: 14))
-                    .onChange(of: code) { _, next in code = String(next.lowercased().filter { !$0.isWhitespace }.prefix(64)); name = nil }
-                if let name {
-                    Text(localizer.text("friends.invitedBy", ["name": name])).font(.title3.bold())
-                    Text(localizer.text("friends.privacy")).font(.caption).foregroundStyle(.secondary)
-                    actionButton("friends.accept") { if await act(FriendsActionRequest(action: .acceptInvite, code: code)) != nil { completed() } }
-                } else { actionButton("friends.checkCode") { name = await act(FriendsActionRequest(action: .previewInvite, code: code))?.previewNickname }.disabled(code.range(of: "^[a-f0-9]{32}$", options: .regularExpression) == nil) }
+                TextField(localizer.text("friends.linkPlaceholder"), text: $code).accessibilityLabel(localizer.text("friends.link")).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL).font(.footnote).padding(14).background(Brand.paper, in: RoundedRectangle(cornerRadius: 14))
+                    .onChange(of: code) { _, next in code = String(next.prefix(2048)) }
+                Button(localizer.text("friends.openLink")) { if let url = URL(string: code.trimmingCharacters(in: .whitespacesAndNewlines)) { open(url) } }
+                    .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent).disabled(FriendInvitationLink.code(from: code) == nil)
             } else {
                 Text(localizer.text("friends.inviteHint")).font(.subheadline).foregroundStyle(.secondary)
                 if code.isEmpty { actionButton("friends.invite") { code = await act(FriendsActionRequest(action: .createInvite))?.inviteCode ?? "" } }
                 else {
-                    Text(code).font(.footnote.monospaced()).textSelection(.enabled).padding(14).frame(maxWidth: .infinity).background(Brand.paper, in: RoundedRectangle(cornerRadius: 14))
+                    let link = FriendInvitationLink.url(code: code)
+                    ShareLink(item: link) { Label(localizer.text("friends.shareLink"), systemImage: "square.and.arrow.up").frame(maxWidth: .infinity, minHeight: 44) }
+                        .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
                     Text(localizer.text("friends.inviteExpiry")).font(.caption).foregroundStyle(.secondary)
-                    Button { UIPasteboard.general.string = code; copied = true } label: { Label(localizer.text(copied ? "friends.copied" : "friends.copyCode"), systemImage: copied ? "checkmark" : "doc.on.doc").frame(maxWidth: .infinity, minHeight: 44) }.buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
-                    ShareLink(item: code) { Image(systemName: "square.and.arrow.up").frame(maxWidth: .infinity, minHeight: 44) }.accessibilityLabel(localizer.text("friends.invite"))
+                    Button { UIPasteboard.general.url = link; copied = true } label: { Label(localizer.text(copied ? "friends.copied" : "friends.copyLink"), systemImage: copied ? "checkmark" : "doc.on.doc").frame(maxWidth: .infinity, minHeight: 44) }.foregroundStyle(Brand.ink)
                     Button(localizer.text("friends.revoke")) { Task { if await act(FriendsActionRequest(action: .revokeInvite)) != nil { completed() } } }.font(.footnote).frame(maxWidth: .infinity)
                 }
             }

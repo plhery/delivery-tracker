@@ -5,6 +5,7 @@ import UserNotifications
 /// One parcel stays alive across both layouts, so opening flows into sign-in.
 struct ArrivalView: View {
     @EnvironmentObject private var session: SessionStore
+    @EnvironmentObject private var invitation: FriendInvitationStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @State private var opening = false
@@ -13,6 +14,7 @@ struct ArrivalView: View {
     @StateObject private var motion = ArrivalMotion()
 
     private var screen: ArrivalScreen {
+        if invitation.isPresenting { return invitation.opened ? .signIn : .welcome }
         if case .welcome = session.state { return .welcome }
         return .signIn
     }
@@ -30,10 +32,16 @@ struct ArrivalView: View {
         ZStack {
             Brand.background.ignoresSafeArea()
             if screen == .welcome {
-                WelcomeView(opening: opening, onOpen: unwrap, onPressChanged: { pressed = $0 })
+                WelcomeView(opening: opening, onOpen: unwrap, onPressChanged: { pressed = $0 }, invitation: invitation.isPresenting ? invitation : nil, onDismiss: dismissInvitation)
                     .transition(.opacity)
             } else {
-                SignInView(configured: session.configuration.authenticationConfigured, onBack: goBack)
+                Group {
+                    if invitation.isPresenting && session.user != nil {
+                        FriendInvitationAcceptanceView(onBack: goBack)
+                    } else {
+                        SignInView(configured: session.configuration.authenticationConfigured, onBack: goBack, invitation: invitation.isPresenting ? invitation : nil)
+                    }
+                }
                     .transition(.asymmetric(
                         insertion: .opacity.animation(.easeOut(duration: reduceMotion ? 0.15 : 0.35).delay(reduceMotion ? 0 : 0.25)),
                         removal: .opacity
@@ -78,6 +86,10 @@ struct ArrivalView: View {
         }
         .onChange(of: greetingActive, initial: true) { _, active in motion.setActive(active) }
         .onDisappear { motion.setActive(false) }
+        .task(id: invitation.isPresenting && scenePhase == .active) {
+            guard invitation.isPresenting, scenePhase == .active else { return }
+            await invitation.loadPreview()
+        }
         .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.65), trigger: opening) { _, newValue in newValue }
         .sensoryFeedback(.impact(weight: .light, intensity: 0.35), trigger: screen) { old, new in
             old == .welcome && new == .signIn
@@ -99,7 +111,8 @@ struct ArrivalView: View {
             } catch { return }
             guard !Task.isCancelled else { return }
             withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.45)) {
-                session.showSignIn()
+                if invitation.isPresenting { invitation.opened = true }
+                else { session.showSignIn() }
             }
         }
     }
@@ -115,8 +128,14 @@ struct ArrivalView: View {
     private func goBack() {
         withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.45)) {
             opening = false
-            session.showWelcome()
+            if invitation.isPresenting { invitation.opened = false }
+            else { session.showWelcome() }
         }
+    }
+
+    private func dismissInvitation() {
+        invitation.dismiss()
+        if !session.isAuthenticated { session.showWelcome() }
     }
 }
 
@@ -135,6 +154,8 @@ private struct WelcomeView: View {
     let opening: Bool
     let onOpen: () -> Void
     let onPressChanged: (Bool) -> Void
+    var invitation: FriendInvitationStore? = nil
+    var onDismiss: () -> Void = {}
 
     private var copy: ArrivalCopy { ArrivalCopy(localizer: localizer) }
 
@@ -143,6 +164,10 @@ private struct WelcomeView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     HStack {
+                        if invitation != nil {
+                            Button(action: onDismiss) { Image(systemName: "xmark").frame(width: 44, height: 44) }
+                                .foregroundStyle(Brand.ink).accessibilityLabel(localizer.text("common.close"))
+                        }
                         Text(localizer.text("app.title"))
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(Brand.ink)
@@ -152,12 +177,16 @@ private struct WelcomeView: View {
 
                     Spacer(minLength: 36)
 
-                    Text(copy.welcomeTitle)
+                    Text(invitation.map { $0.nickname.map { localizer.text("friends.invitationTitle", ["name": $0]) } ?? localizer.text("friends.invitationGeneric") } ?? copy.welcomeTitle)
                         .font(.system(.largeTitle, design: .rounded, weight: .bold))
                         .tracking(-1.2)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, 8)
+
+                    if invitation?.nickname != nil {
+                        Text(localizer.text("friends.invitationSubtitle")).font(.subheadline).foregroundStyle(.secondary).padding(.top, 8)
+                    }
 
                     Button(action: onOpen) {
                         VStack(spacing: 8) {
@@ -177,8 +206,18 @@ private struct WelcomeView: View {
                     .accessibilityLabel(copy.tapToOpen)
                     .accessibilityHint(copy.openHint)
                     .accessibilityIdentifier("welcome.openParcel")
-                    .disabled(opening)
+                    .disabled(opening || (invitation != nil && invitation?.nickname == nil))
                     .padding(.top, 12)
+
+                    if let invitation {
+                        if invitation.loading { ProgressView().padding(.top, 12) }
+                        if let error = invitation.errorKey {
+                            Text(localizer.text(error)).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                            if error != "friends.inviteUnavailable" {
+                                Button(localizer.text("common.retry")) { Task { await invitation.loadPreview() } }.padding(.top, 8)
+                            }
+                        }
+                    }
 
                     Spacer(minLength: 64)
                 }
@@ -211,6 +250,7 @@ struct SignInView: View {
 
     let configured: Bool
     let onBack: () -> Void
+    var invitation: FriendInvitationStore? = nil
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -248,10 +288,10 @@ struct SignInView: View {
                         .accessibilityHidden(true)
 
                     VStack(spacing: 8) {
-                        Text(copy.signInTitle)
+                        Text(invitation.map { $0.nickname.map { localizer.text("friends.invitationTitle", ["name": $0]) } ?? localizer.text("friends.invitationGeneric") } ?? copy.signInTitle)
                             .font(.system(.title, design: .rounded, weight: .bold))
                             .tracking(-0.6)
-                        Text(copy.signInSubtitle)
+                        Text(invitation == nil ? copy.signInSubtitle : localizer.text("friends.signInToAccept"))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -259,15 +299,21 @@ struct SignInView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 8)
 
-                    if !configured {
-                        configurationNotice.padding(.top, 28)
+                    if let invitation, invitation.nickname == nil {
+                        if let error = invitation.errorKey {
+                            Text(localizer.text(error)).font(.footnote).foregroundStyle(.secondary).padding(.top, 20)
+                            Button(localizer.text("common.retry")) { Task { await invitation.loadPreview() } }.padding(.top, 12)
+                        } else { ProgressView().padding(.top, 24) }
+                    } else if !configured {
+                        if invitation == nil { configurationNotice.padding(.top, 28) }
+                        else { Text(localizer.text("auth.configTitle")).font(.subheadline).foregroundStyle(.secondary).padding(.top, 28) }
                     } else if step == .code {
                         codeForm.padding(.top, 28)
                     } else {
                         methods.padding(.top, 28)
                     }
 
-                    Button {
+                    if invitation == nil { Button {
                         session.enterDemo()
                     } label: {
                         Text(localizer.text("welcome.demo"))
@@ -279,6 +325,7 @@ struct SignInView: View {
                     .accessibilityHint(localizer.text("welcome.demoDescription"))
                     .disabled(working)
                     .padding(.top, 8)
+                    }
 
                     privacyNotice.padding(.top, 12)
                 }
@@ -498,6 +545,71 @@ struct SignInView: View {
             catch { errorMessage = localizer.errorMessage(error) }
             working = false
         }
+    }
+}
+
+private struct FriendInvitationAcceptanceView: View {
+    let onBack: () -> Void
+    @EnvironmentObject private var session: SessionStore
+    @EnvironmentObject private var parcels: ParcelStore
+    @EnvironmentObject private var invitation: FriendInvitationStore
+    @EnvironmentObject private var localizer: Localizer
+    @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var model = FriendsStore()
+    @State private var creatingProfile = false
+    @State private var joining = false
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 18) {
+                HStack {
+                    Button(action: onBack) { Image(systemName: "chevron.left").frame(width: 44, height: 44) }
+                        .foregroundStyle(Brand.ink).accessibilityLabel(localizer.text("welcome.back")).disabled(joining)
+                    Spacer()
+                    AuthenticationLanguageMenu()
+                }
+                Color.clear.frame(width: 180, height: 186)
+                    .anchorPreference(key: ArrivalParcelFrame.self, value: .bounds) { [.signIn: $0] }.accessibilityHidden(true)
+                VStack(spacing: 8) {
+                    Text(invitation.nickname.map { localizer.text("friends.invitationTitle", ["name": $0]) } ?? localizer.text("friends.invitationGeneric"))
+                        .font(.system(.title, design: .rounded, weight: .bold)).tracking(-0.6)
+                    Text(localizer.text("friends.invitationSubtitle")).font(.subheadline).foregroundStyle(.secondary)
+                }.multilineTextAlignment(.center)
+                if let error = invitation.errorKey ?? model.errorKey {
+                    Text(localizer.text(error)).font(.footnote).foregroundStyle(.secondary)
+                    if error != "friends.inviteUnavailable" {
+                        Button(localizer.text("common.retry")) { Task { await invitation.loadPreview(); await model.load(parcels: parcels.parcels) } }
+                    }
+                }
+                if invitation.nickname != nil, model.snapshot != nil {
+                    if creatingProfile {
+                        FriendsProfileForm(profile: nil, busy: joining, submitKey: "friends.joinAndAccept") { profile in Task { await accept(profile: profile) } }
+                    } else {
+                        Button { if model.snapshot?.profile == nil { creatingProfile = true } else { Task { await accept() } } } label: {
+                            Text(localizer.text("friends.accept")).frame(maxWidth: .infinity, minHeight: 46)
+                        }.buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent).disabled(joining)
+                    }
+                } else if invitation.errorKey == nil && model.errorKey == nil { ProgressView() }
+            }.padding(24).frame(maxWidth: 520).frame(maxWidth: .infinity)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { model.clear(); return }
+            model.configure(session: session); await model.load(parcels: parcels.parcels)
+        }
+        .onDisappear { model.clear() }
+    }
+
+    private func accept(profile: FriendProfile? = nil) async {
+        guard !joining, let code = invitation.code else { return }
+        joining = true
+        defer { joining = false }
+        if let profile {
+            guard await model.act(FriendsActionRequest(action: .saveProfile, nickname: profile.nickname, shareStats: profile.shareStats, shareArrival: profile.shareArrival), parcels: parcels.parcels) != nil else { return }
+        }
+        _ = await model.act(FriendsActionRequest(action: .acceptInvite, code: code), parcels: parcels.parcels, onCommitted: { _ in
+            if invitation.isPresenting, invitation.code == code { invitation.finish() }
+        })
     }
 }
 

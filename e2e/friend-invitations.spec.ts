@@ -1,0 +1,65 @@
+import { expect, test } from '@playwright/test';
+
+const token = 'ab'.repeat(16);
+// These tests stub the server response; worker-owned requests bypass routing in WebKit.
+test.use({ locale: 'en-US', serviceWorkers: 'block' });
+
+test('a shared link opens the same parcel into personalized sign-in and survives a return visit', async ({ page }) => {
+  const errors: string[] = [];
+  const urls: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('request', (request) => urls.push(request.url()));
+  await page.addInitScript(() => localStorage.setItem('sdt.web.experience.v1', 'demo'));
+  await page.route('**/api/friends/invite-preview', async (route) => {
+    expect(route.request().method()).toBe('POST');
+    expect(route.request().postDataJSON()).toEqual({ code: token });
+    await route.fulfill({ json: { previewNickname: 'Paul' } });
+  });
+  await page.goto(`/invite#${token}`);
+  await expect(page.getByRole('heading', { name: 'Your friend Paul' })).toBeVisible();
+  await expect(page).toHaveURL(/\/invite$/);
+  await expect(page.getByRole('button', { name: /try the demo/i })).toHaveCount(0);
+  await page.locator('.arrival__parcel').evaluate((element) => element.setAttribute('data-continuity', 'original'));
+  await page.getByRole('button', { name: 'Tap to open your parcel' }).click();
+  await expect(page.locator('.arrival')).toHaveClass(/arrival--opening/);
+  await expect(page.locator('.arrival')).toHaveClass(/arrival--sign-in/);
+  await expect(page.getByText('Sign in to accept the invitation')).toBeVisible();
+  await expect(page.locator('.arrival__parcel')).toHaveAttribute('data-continuity', 'original');
+  await page.screenshot({ path: `/tmp/invitation-${test.info().project.name}.png` });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Your friend Paul' })).toBeVisible();
+  await expect(page.locator('.arrival')).toHaveClass(/arrival--sign-in/);
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page.getByRole('button', { name: 'Tap to open your parcel' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page.locator('.arrival')).not.toHaveClass(/arrival--invitation/);
+  expect(await page.evaluate(() => sessionStorage.getItem('sdt.pendingFriendInvitation.v1'))).toBeNull();
+  expect(urls.some((url) => url.includes(token))).toBe(false);
+  expect(errors).toEqual([]);
+});
+
+test('long sender names and expired invitations fit narrow screens in every locale', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  await page.addInitScript(() => Object.defineProperty(navigator, 'userAgent', { value: 'Mozilla/5.0 (iPhone)' }));
+  let expired = false;
+  await page.route('**/api/friends/invite-preview', (route) => route.fulfill(expired ? { status: 404, json: { error: 'Invitation unavailable' } } : { json: { previewNickname: 'AlexandertheGreatestEver' } }));
+  await page.goto(`/invite#${token}`);
+  await expect(page.locator('.arrival__open')).toBeEnabled();
+  await expect(page.getByRole('link', { name: 'Open in iOS app' })).toHaveAttribute('href', `swissdeliverytracker://invite#${token}`);
+  for (const language of ['fr', 'de', 'it', 'en']) {
+    await page.getByRole('combobox').selectOption(language);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await expect(page.locator('.arrival__open')).toBeInViewport({ ratio: 1 });
+    await expect(page.locator('.arrival__app-link')).toBeInViewport({ ratio: 1 });
+    const subtitle = await page.locator('.arrival__invitation-subtitle').boundingBox();
+    const parcel = await page.locator('.arrival__parcel').boundingBox();
+    expect(parcel!.y).toBeGreaterThan(subtitle!.y + subtitle!.height - 5);
+  }
+  await page.screenshot({ path: `/tmp/invitation-long-${test.info().project.name}.png` });
+  expired = true;
+  await page.reload();
+  await expect(page.locator('.invitation-notice[role="alert"]')).toContainText('This invitation is no longer available');
+  await expect(page.locator('.arrival__open')).toBeDisabled();
+  await expect(page.getByRole('button', { name: /Google|Become friends/ })).toHaveCount(0);
+});

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import fixture from '../../shared/friends-demo.json';
 import type { ApiFriendsActionResponse, ApiFriendsSnapshot } from '../generated/apiContract';
-import { createFriendsClient, FriendsError, ownFriendCard, type FriendsClient } from '../lib/friends';
+import { createFriendsClient, ownFriendCard, type FriendsClient } from '../lib/friends';
 import { Friends } from './Friends';
 
 const enrolled = (): ApiFriendsSnapshot => ({ ...structuredClone(fixture), ownCard: ownFriendCard([], fixture.profile) }) as ApiFriendsSnapshot;
@@ -12,7 +12,7 @@ async function show(client = createFriendsClient(true), demo = true) {
   const user = userEvent.setup(); render(<Friends client={client} parcels={[]} demo={demo} />);
   await screen.findByRole('button', { name: 'Invite a friend' }); return { user, client };
 }
-afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); sessionStorage.clear(); history.replaceState(null, '', '/'); });
 
 describe('Friends', () => {
   it('shows only safe stats, opens stamps, and requires confirmation to remove a friend', async () => {
@@ -79,7 +79,7 @@ describe('Friends', () => {
     expect(screen.getByRole('dialog')).toHaveTextContent('Sign in to invite friends');
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Close' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    await user.click(screen.getByRole('button', { name: 'Enter an invite code' }));
+    await user.click(screen.getByRole('button', { name: 'Open an invitation link' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('Sign in to invite friends');
     expect(fetch).not.toHaveBeenCalled();
   });
@@ -92,42 +92,32 @@ describe('Friends', () => {
     const sheet = screen.getByRole('dialog');
     expect(client.action).not.toHaveBeenCalled();
     await user.click(within(sheet).getByRole('button', { name: 'Invite a friend' }));
-    await user.click(await within(sheet).findByRole('button', { name: 'Copy invite code' }));
-    expect(copy).toHaveBeenCalledWith('a'.repeat(32));
+    await user.click(await within(sheet).findByRole('button', { name: 'Copy link' }));
+    expect(copy).toHaveBeenCalledWith(window.location.origin + '/invite#' + 'a'.repeat(32));
     expect(within(sheet).getByRole('button', { name: 'Copied' })).toBeVisible();
-    const field = within(sheet).getByRole('textbox', { name: 'Invite code' });
-    fireEvent.focus(field); expect(field).toHaveValue('a'.repeat(32));
+    const field = within(sheet).getByRole('textbox', { name: 'Invitation link' });
+    fireEvent.focus(field); expect(field).toHaveValue(window.location.origin + '/invite#' + 'a'.repeat(32));
     await user.click(within(sheet).getByRole('button', { name: 'Cancel this invitation' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(client.action).toHaveBeenLastCalledWith({ action: 'revoke_invite' }, []);
   });
-  it('previews only a nickname, clears that preview when editing, and accepts explicitly', async () => {
+  it('opens a pasted link into the parcel welcome without accepting it', async () => {
     const client = realClient();
-    vi.mocked(client.action).mockImplementation(async (input) => input.action === 'preview_invite' ? { previewNickname: 'Mila' } : { snapshot: enrolled() });
     const { user } = await show(client, false);
-    await user.click(screen.getByRole('button', { name: 'Enter an invite code' }));
+    await user.click(screen.getByRole('button', { name: 'Open an invitation link' }));
     const sheet = screen.getByRole('dialog');
-    const field = within(sheet).getByRole('textbox', { name: 'Invite code' });
-    expect(within(sheet).getByRole('button', { name: 'Preview invitation' })).toBeDisabled();
-    await user.type(field, 'A'.repeat(32));
-    await user.click(within(sheet).getByRole('button', { name: 'Preview invitation' }));
-    expect(await within(sheet).findByText('Join Mila’s circle?')).toBeVisible();
-    expect(client.action).toHaveBeenCalledTimes(1);
-    fireEvent.change(field, { target: { value: 'b'.repeat(32) } });
-    expect(within(sheet).queryByText('Join Mila’s circle?')).toBeNull();
-    await user.click(within(sheet).getByRole('button', { name: 'Preview invitation' }));
-    await user.click(await within(sheet).findByRole('button', { name: 'Become friends' }));
-    expect(await screen.findByRole('status')).toHaveTextContent('A new friend');
-  });
-  it('reports expired invitations in the sheet without losing the input', async () => {
-    const client = realClient(); vi.mocked(client.action).mockRejectedValue(new FriendsError('friends.inviteUnavailable'));
-    const { user } = await show(client, false);
-    await user.click(screen.getByRole('button', { name: 'Enter an invite code' }));
-    const sheet = screen.getByRole('dialog');
-    await user.type(within(sheet).getByRole('textbox', { name: 'Invite code' }), 'a'.repeat(32));
-    await user.click(within(sheet).getByRole('button', { name: 'Preview invitation' }));
-    expect(await within(sheet).findByRole('alert')).toHaveTextContent('This code has expired');
-    expect(within(sheet).getByRole('textbox', { name: 'Invite code' })).toHaveValue('a'.repeat(32));
+    const field = within(sheet).getByRole('textbox', { name: 'Invitation link' });
+    const open = within(sheet).getByRole('button', { name: 'Open invitation' });
+    expect(open).toBeDisabled();
+    await user.type(field, 'https://untrusted.example/invite#' + 'a'.repeat(32));
+    expect(open).toBeDisabled();
+    await user.clear(field);
+    await user.type(field, window.location.origin + '/invite#' + 'a'.repeat(32));
+    await user.click(open);
+    expect(client.action).not.toHaveBeenCalled();
+    expect(window.location.pathname).toBe('/invite');
+    expect(window.location.hash).toBe('');
+    expect(sessionStorage.getItem('sdt.pendingFriendInvitation.v1')).toContain('a'.repeat(32));
   });
   it('clears background data and ignores an old request after privacy changes', async () => {
     const client = realClient(); await show(client, false);

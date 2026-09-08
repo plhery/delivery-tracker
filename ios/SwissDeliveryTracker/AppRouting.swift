@@ -1,5 +1,29 @@
 import Foundation
 
+enum FriendInvitationLink {
+    static func isInvitation(_ url: URL, baseURL: URL = AppConfiguration.current.apiBaseURL) -> Bool {
+        guard url.user == nil, url.password == nil else { return false }
+        if url.scheme?.lowercased() == OAuthFlow.callbackScheme { return url.host?.lowercased() == "invite" && url.path.isEmpty }
+        return url.scheme == baseURL.scheme && url.host?.lowercased() == baseURL.host?.lowercased()
+            && url.port == baseURL.port && url.path == "/invite"
+    }
+
+    static func code(from text: String, baseURL: URL = AppConfiguration.current.apiBaseURL) -> String? {
+        guard let url = URL(string: text.trimmingCharacters(in: .whitespacesAndNewlines)),
+              isInvitation(url, baseURL: baseURL), url.query == nil,
+              let code = url.fragment, code.range(of: "^[a-f0-9]{32}$", options: .regularExpression) != nil else { return nil }
+        return code
+    }
+
+    static func url(code: String, baseURL: URL = AppConfiguration.current.apiBaseURL) -> URL {
+        var components = URLComponents(url: baseURL.appending(path: "invite"), resolvingAgainstBaseURL: false)!
+        // Fragments never travel in HTTP requests or Referer headers.
+        components.query = nil
+        components.fragment = code
+        return components.url!
+    }
+}
+
 enum NativeRoute: Equatable {
     case parcel(UUID)
     case add(trackingInput: String)

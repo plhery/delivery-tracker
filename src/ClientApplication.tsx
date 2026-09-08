@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import App from './App';
 import { ApiApplication } from './ApiApplication';
 import { AuthProvider } from './auth/AuthContext';
@@ -13,6 +13,8 @@ import { ParcelsProvider } from './store/ParcelsContext';
 import { AppearanceProvider } from './lib/appearance';
 import { useEntryExperience } from './lib/experience';
 import { ArrivalScreen } from './components/ArrivalScreen';
+import { FriendInvitation } from './components/FriendInvitation';
+import { usePendingInvitation } from './lib/friendInvites';
 
 export function shouldUseDemoRepository(
   nodeEnvironment: string | undefined,
@@ -36,7 +38,7 @@ const authConfig = authConfigFromEnvironment({
   emailOtpEnabled: process.env.NEXT_PUBLIC_AUTH_EMAIL_OTP_ENABLED,
 });
 
-export function ClientApplication() {
+export function ClientApplication({ invitationRoute = false }: { invitationRoute?: boolean }) {
   const demoRepo = useMemo(
     () => useDemo ? createDemoRepo() : null,
     [],
@@ -58,7 +60,8 @@ export function ClientApplication() {
   return (
     <I18nProvider>
       <AppearanceProvider>
-      {demoRepo ? (
+      {demoRepo ? <DemoInvitation invitationRoute={invitationRoute}>
+        {(
         experience.screen === 'demo' ? (
           <ParcelsProvider repo={demoRepo}>
             <App onExitDemo={() => experience.navigate('welcome')} />
@@ -66,12 +69,21 @@ export function ClientApplication() {
         ) : <ArrivalScreen screen={experience.screen} onNavigate={experience.navigate}
           configured={false} googleEnabled={false} emailOtpEnabled={false}
           sendCode={async () => undefined} verifyCode={async () => undefined} />
-      ) : (
+      )}</DemoInvitation> : (
         <AuthProvider config={authConfig}>
-          <ApiApplication />
+          <ApiApplication invitationRoute={invitationRoute} />
         </AuthProvider>
       )}
       </AppearanceProvider>
     </I18nProvider>
   );
+}
+
+function DemoInvitation({ children, invitationRoute }: { children: ReactNode; invitationRoute: boolean }) {
+  const invitation = usePendingInvitation(invitationRoute);
+  const experience = useEntryExperience();
+  return invitation.pending ? <FriendInvitation key={invitation.pending.code ?? 'invalid'} invitation={invitation}
+    onDismiss={() => { invitation.clear(); experience.navigate('welcome'); }}
+    configured={false} googleEnabled={false} emailOtpEnabled={false}
+    sendCode={async () => undefined} verifyCode={async () => undefined} /> : children;
 }

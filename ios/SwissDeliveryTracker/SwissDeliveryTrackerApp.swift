@@ -6,6 +6,7 @@ struct SwissDeliveryTrackerApp: App {
     @StateObject private var session: SessionStore
     @StateObject private var parcels: ParcelStore
     @StateObject private var localizer: Localizer
+    @StateObject private var invitation = FriendInvitationStore()
     @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system
 
     init() {
@@ -26,6 +27,7 @@ struct SwissDeliveryTrackerApp: App {
                 .environmentObject(session)
                 .environmentObject(parcels)
                 .environmentObject(localizer)
+                .environmentObject(invitation)
                 .environment(\.locale, localizer.language.locale)
                 .background { AppWindowAppearance(appearance: appearance) }
                 .tint(Brand.accent)
@@ -37,20 +39,26 @@ struct RootView: View {
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var parcels: ParcelStore
     @EnvironmentObject private var localizer: Localizer
+    @EnvironmentObject private var invitation: FriendInvitationStore
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("sdt.notificationOnboardingCompleted.v1") private var notificationOnboardingCompleted = false
     @State private var showingNotificationOnboarding = false
+    @State private var selectedTab = 0
     private let carrierCatalog = CarrierCatalog.shared
 
     var body: some View {
         Group {
+            if invitation.isPresenting, sessionIdentity != "loading" {
+                ArrivalView().id(invitation.presentationID)
+            } else {
             switch session.state {
             case .loading:
                 LaunchView()
             case .welcome, .unconfigured, .signedOut:
                 ArrivalView()
             case .demo, .signedIn:
-                ParcelListView()
+                ParcelListView(selection: $selectedTab)
+            }
             }
         }
         .task { await session.bootstrap() }
@@ -59,7 +67,7 @@ struct RootView: View {
                 parcels.refreshDeliverySurfaces()
             }
         }
-        .task(id: sessionIdentity) {
+        .task(id: sessionIdentity + (invitation.isPresenting ? "-invitation" : "")) {
             guard session.isAuthenticated else {
                 showingNotificationOnboarding = false
                 switch session.state {
@@ -72,11 +80,12 @@ struct RootView: View {
                 isAuthenticated: session.isAuthenticated,
                 isDemo: session.isDemo,
                 completed: notificationOnboardingCompleted
-            )
+            ) && !invitation.isPresenting
             await parcels.start()
         }
         .onChange(of: scenePhase) { _, phase in
             parcels.setActive(phase == .active)
+            if phase != .active { invitation.clearPreview() }
             guard phase == .active else { return }
             Task {
                 if await carrierCatalog.refresh(
@@ -86,6 +95,10 @@ struct RootView: View {
                 }
             }
         }
+        .onOpenURL { invitation.open($0) }
+        .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { if let url = $0.webpageURL { invitation.open(url) } }
+        .sensoryFeedback(.success, trigger: invitation.completed)
+        .onChange(of: invitation.completed) { _, _ in selectedTab = 2 }
         .onReceive(NotificationCenter.default.publisher(for: .didReceiveAPNSToken)) { notification in
             guard let token = notification.object as? String else { return }
             Task {

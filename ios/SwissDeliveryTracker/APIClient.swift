@@ -51,6 +51,20 @@ final class DeliveryAPIClient {
         try await request("/api/friends", method: "POST", body: value)
     }
 
+    static func invitationPreview(code: String, configuration: AppConfiguration = .current, transport: URLSession = .shared) async throws -> String {
+        var request = URLRequest(url: configuration.apiBaseURL.appending(path: "api/friends/invite-preview"), cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["code": code])
+        let (data, response) = try await transport.data(for: request)
+        guard let response = response as? HTTPURLResponse else { throw DeliveryAPIError.invalidResponse }
+        if response.statusCode == 400 || response.statusCode == 404 { throw DeliveryAPIError.service("Invitation unavailable") }
+        guard response.statusCode == 200 else { throw DeliveryAPIError.serviceFailed(response.statusCode) }
+        let result = try JSONDecoder.deliveryTracker.decode(FriendsActionResponse.self, from: data)
+        guard let name = result.previewNickname, !name.isEmpty, name.unicodeScalars.count <= 24 else { throw DeliveryAPIError.invalidResponse }
+        return name
+    }
+
     func listPackages() async throws -> [Parcel] {
         let response: PackageListResponse = try await request("/api/packages?includeArchived=true")
         return response.packages

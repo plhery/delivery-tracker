@@ -1,6 +1,69 @@
 import Foundation
 
 @MainActor
+final class FriendInvitationStore: ObservableObject {
+    @Published private(set) var isPresenting = false
+    @Published private(set) var presentationID = UUID()
+    @Published private(set) var code: String?
+    @Published private(set) var nickname: String?
+    @Published private(set) var errorKey: String?
+    @Published private(set) var loading = false
+    @Published private(set) var completed = 0
+    @Published var opened = false { didSet { persist() } }
+    private let defaults: UserDefaults
+    private let storageKey = "sdt.pendingFriendInvitation.v1"
+    private var receivedAt = Date()
+    private var generation = 0
+    private struct Pending: Codable { let code: String; let opened: Bool; let receivedAt: Date }
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        if let data = defaults.data(forKey: storageKey), let pending = try? JSONDecoder().decode(Pending.self, from: data),
+           pending.code.range(of: "^[a-f0-9]{32}$", options: .regularExpression) != nil,
+           Date().timeIntervalSince(pending.receivedAt) >= 0, Date().timeIntervalSince(pending.receivedAt) < 604_800 {
+            code = pending.code; opened = pending.opened; receivedAt = pending.receivedAt; isPresenting = true
+        } else { defaults.removeObject(forKey: storageKey) }
+    }
+
+    func open(_ url: URL) {
+        guard FriendInvitationLink.isInvitation(url) else { return }
+        clearPreview()
+        code = FriendInvitationLink.code(from: url.absoluteString)
+        presentationID = UUID(); receivedAt = .now; isPresenting = true; opened = false
+        if code == nil { errorKey = "friends.inviteUnavailable"; defaults.removeObject(forKey: storageKey) }
+        persist()
+    }
+
+    func loadPreview() async {
+        guard isPresenting else { return }
+        guard let code else { errorKey = "friends.inviteUnavailable"; return }
+        generation += 1; let current = generation
+        loading = true; errorKey = nil
+        defer { if generation == current { loading = false } }
+        do {
+            let name = try await DeliveryAPIClient.invitationPreview(code: code)
+            guard generation == current, !Task.isCancelled else { return }
+            nickname = name
+        } catch {
+            guard generation == current, !Task.isCancelled else { return }
+            nickname = nil
+            if case DeliveryAPIError.service("Invitation unavailable") = error { errorKey = "friends.inviteUnavailable" }
+            else { errorKey = "friends.unavailable" }
+        }
+    }
+
+    func clearPreview() { generation += 1; nickname = nil; errorKey = nil; loading = false }
+    func dismiss() { isPresenting = false; code = nil; opened = false; clearPreview(); defaults.removeObject(forKey: storageKey) }
+    func finish() { completed += 1; dismiss() }
+    private func persist() {
+        guard isPresenting, let code else { return }
+        // Only the pending link survives authentication; sender information is fetched afresh.
+        let value = Pending(code: code, opened: opened, receivedAt: receivedAt)
+        if let data = try? JSONEncoder().encode(value) { defaults.set(data, forKey: storageKey) }
+    }
+}
+
+@MainActor
 final class FriendsStore: ObservableObject {
     @Published private(set) var snapshot: FriendsSnapshot?
     @Published private(set) var working = false
@@ -43,7 +106,7 @@ final class FriendsStore: ObservableObject {
         }
     }
 
-    func act(_ request: FriendsActionRequest, parcels: [Parcel]) async -> FriendsActionResponse? {
+    func act(_ request: FriendsActionRequest, parcels: [Parcel], onCommitted: ((FriendsActionResponse) -> Void)? = nil) async -> FriendsActionResponse? {
         guard !working else { return nil }
         working = true
         errorKey = nil
@@ -68,6 +131,7 @@ final class FriendsStore: ObservableObject {
                 guard let api else { return nil }
                 result = try await api.friendsAction(request)
             }
+            onCommitted?(result)
             guard current == generation, !Task.isCancelled else { return nil }
             if let next = result.snapshot { snapshot = next }
             return result

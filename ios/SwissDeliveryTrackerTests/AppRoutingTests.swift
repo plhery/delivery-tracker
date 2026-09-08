@@ -30,6 +30,47 @@ final class AppRoutingTests: XCTestCase {
         XCTAssertNil(defaults.object(forKey: preference))
     }
 
+    func testInvitationLinksKeepTheTokenOutOfHTTPPathsAndQueries() {
+        let code = String(repeating: "a", count: 32)
+        let base = URL(string: "https://delivery.plhery.com")!
+        let url = FriendInvitationLink.url(code: code, baseURL: base)
+        XCTAssertEqual(url.path, "/invite")
+        XCTAssertNil(url.query)
+        XCTAssertEqual(url.fragment, code)
+        XCTAssertEqual(FriendInvitationLink.code(from: url.absoluteString, baseURL: base), code)
+        XCTAssertEqual(FriendInvitationLink.code(from: "swissdeliverytracker://invite#" + code), code)
+        for text in ["https://evil.example/invite#" + code, "https://delivery.plhery.com/invite?name=Paul#" + code,
+                     "https://user@delivery.plhery.com/invite#" + code, "https://delivery.plhery.com/invite#short",
+                     "http://delivery.plhery.com/invite#" + code, "swissdeliverytracker://auth-callback#" + code] {
+            XCTAssertNil(FriendInvitationLink.code(from: text, baseURL: base))
+        }
+    }
+
+    @MainActor
+    func testPendingInvitationSurvivesAuthenticationButNotDismissalOrInvalidReplacement() async {
+        let suite = "InvitationRoutingTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = FriendInvitationStore(defaults: defaults)
+        store.open(URL(string: "swissdeliverytracker://invite#" + String(repeating: "a", count: 32))!)
+        store.opened = true
+        let restored = FriendInvitationStore(defaults: defaults)
+        XCTAssertTrue(restored.isPresenting)
+        XCTAssertTrue(restored.opened)
+        XCTAssertEqual(restored.code, store.code)
+        XCTAssertNil(restored.nickname)
+        restored.open(OAuthFlow.callbackURL)
+        XCTAssertEqual(restored.code, store.code)
+        restored.dismiss()
+        XCTAssertFalse(FriendInvitationStore(defaults: defaults).isPresenting)
+        store.open(URL(string: "swissdeliverytracker://invite#" + String(repeating: "b", count: 32))!)
+        store.open(URL(string: "swissdeliverytracker://invite#invalid")!)
+        store.clearPreview()
+        await store.loadPreview()
+        XCTAssertEqual(store.errorKey, "friends.inviteUnavailable")
+        XCTAssertFalse(FriendInvitationStore(defaults: defaults).isPresenting)
+    }
+
     func testParsesParcelDeepLink() {
         let parcelID = UUID()
         let url = URL(string: "swissdeliverytracker://parcel/\(parcelID.uuidString)")!

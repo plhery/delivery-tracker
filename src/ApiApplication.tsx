@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, type ComponentProps } from 'react';
 import App from './App';
 import { useAuth } from './auth/AuthContext';
 import { ArrivalScreen } from './components/ArrivalScreen';
@@ -13,11 +13,16 @@ import {
 import { browserStorage, clearApiCache, createApiRepo } from './store/apiRepo';
 import { ParcelsProvider } from './store/ParcelsContext';
 import { useI18n } from './i18n';
+import { usePendingInvitation } from './lib/friendInvites';
+import { createFriendsClient } from './lib/friends';
+import { FriendInvitation } from './components/FriendInvitation';
+import { useParcels } from './store/ParcelsContext';
 
-export function ApiApplication() {
+export function ApiApplication({ invitationRoute = false }: { invitationRoute?: boolean }) {
   const { t } = useI18n();
   const auth = useAuth();
   const experience = useEntryExperience();
+  const invitation = usePendingInvitation(invitationRoute);
   const demoRepo = useMemo(() => createDemoRepo(), []);
   const signOut = auth.signOut;
   const navigate = experience.navigate;
@@ -65,10 +70,17 @@ export function ApiApplication() {
     ) : null,
     [apiAuth, storage],
   );
+  const friendsClient = useMemo(() => createFriendsClient(false, apiAuth), [apiAuth]);
+  const invitationProps: ComponentProps<typeof FriendInvitation> = {
+    invitation, onDismiss: () => { invitation.clear(); if (!auth.user) experience.navigate('welcome'); },
+    configured: auth.status !== 'unconfigured', googleEnabled: auth.googleEnabled, emailOtpEnabled: auth.emailOtpEnabled,
+    signInWithGoogle: auth.signInWithGoogle, sendCode: auth.sendCode, verifyCode: auth.verifyCode,
+  };
   if (auth.status === 'loading') {
     return <div className="auth-loading" role="status"><ParcelIllustration /><span>{t('auth.loading')}</span></div>;
   }
   if (auth.status === 'unconfigured' || auth.status === 'anonymous') {
+    if (invitation.pending) return <FriendInvitation key={invitation.pending.code ?? 'invalid'} {...invitationProps} />;
     if (experience.screen === 'demo') return <ParcelsProvider key="demo" repo={demoRepo}>
       <App onExitDemo={() => experience.navigate('welcome')} />
     </ParcelsProvider>;
@@ -88,13 +100,18 @@ export function ApiApplication() {
   if (!repo) return null;
   return (
     <ParcelsProvider key={auth.user?.id} repo={repo}>
-      <App
+      {invitation.pending ? <AuthenticatedInvitation key={invitation.pending.code ?? 'invalid'} {...invitationProps} client={friendsClient} /> : <App
         accountEmail={auth.user?.email ?? t('native.account')}
         onSignOut={handleSignOut}
         onExportAccount={handleExport}
         onDeleteAccount={handleDelete}
         apiAuth={apiAuth}
-      />
+      />}
     </ParcelsProvider>
   );
+}
+
+function AuthenticatedInvitation(props: ComponentProps<typeof FriendInvitation>) {
+  const { parcels } = useParcels();
+  return <FriendInvitation {...props} parcels={parcels} />;
 }

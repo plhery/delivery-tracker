@@ -2048,6 +2048,65 @@
           }
         }
       }
+    },
+    "/api/friends/invite-preview": {
+      "post": {
+        "operationId": "previewFriendInvitation",
+        "summary": "Resolve an unexpired invitation to its sender nickname without accepting it",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{32}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Only the sender nickname; never cached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "previewNickname"
+                  ],
+                  "properties": {
+                    "previewNickname": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 24
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid invitation"
+          },
+          "404": {
+            "description": "Expired, revoked, or missing invitation"
+          },
+          "429": {
+            "description": "Too many previews"
+          }
+        }
+      }
     }
   },
   "components": {

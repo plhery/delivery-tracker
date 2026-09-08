@@ -54,6 +54,7 @@ interface ApiRouteOptions {
   authenticated?: boolean;
   serviceRequired?: boolean;
   loadService?: boolean;
+  publicRateLimit?: { limit: number; window: number };
 }
 
 type ApiHandler<Parameters extends RouteParameters> = (
@@ -176,6 +177,11 @@ export function apiRoute<Parameters extends RouteParameters = RouteParameters>(
       const token = bearerToken(request);
       let user: SupabaseUser | null = null;
       let userClient: SupabaseUserClient | null = null;
+
+      if (!authenticated && options.publicRateLimit) {
+        const retryAfter = rateLimiter.retryAfter(`public:${new URL(request.url).pathname}:${clientIp(request)}`, options.publicRateLimit);
+        if (retryAfter) throw new HttpError(429, 'Too many requests. Try again shortly.', { 'Retry-After': String(retryAfter) });
+      }
 
       if (authenticated) {
         const credential = token

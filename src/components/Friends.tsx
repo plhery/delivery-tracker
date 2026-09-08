@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import type { ApiFriendCard, ApiFriendProfile, ApiFriendsActionRequest, ApiFriendsActionResponse, ApiFriendsSnapshot, ApiFriendStamp } from '../generated/apiContract';
 import { useI18n, type MessageKey } from '../i18n';
 import { FriendsError, friendStamps, friendTone, ownFriendCard, type FriendsClient } from '../lib/friends';
+import { invitationCode, invitationURL, openPendingInvitation } from '../lib/friendInvites';
 import { useSheetDialog } from '../lib/modal';
 import type { ParcelWithEvents } from '../types';
 import { Icon, PostageStamp } from './Icon';
@@ -76,7 +77,7 @@ export function Friends({ client, parcels, demo }: { client: FriendsClient; parc
       {errorView}
       {panel === 'settings' && data?.profile && <><FriendProfileForm profile={data.profile} parcels={parcels} busy={busy} onSave={async (profile) => { if (await act({ action: 'save_profile', ...profile })) close(); }} /><button className="friends-remove" onClick={() => setPanel('disable')}>{t('friends.disable')}</button></>}
       {panel === 'disable' && <><p>{t('friends.disableDetail')}</p><button className="button button--primary" disabled={busy} onClick={async () => { if (await act({ action: 'disable' })) close(); }}>{t('friends.disable')}</button></>}
-      {(panel === 'invite' || panel === 'accept') && (demo ? <p>{t('friends.demoInvites')}</p> : panel === 'invite' ? <FriendsInvite busy={busy} act={act} onClose={close} /> : <FriendsAccept busy={busy} act={act} onAccepted={() => { setPanel(null); setNotice('friends.accepted'); }} />)}
+      {(panel === 'invite' || panel === 'accept') && (demo ? <p>{t('friends.demoInvites')}</p> : panel === 'invite' ? <FriendsInvite busy={busy} act={act} onClose={close} /> : <FriendsAccept onOpen={() => setPanel(null)} />)}
       {selected && <FriendDetails friend={selected} busy={busy} onRemove={async () => { if (await act({ action: 'remove_friend', friendId: selected.id })) close(); }} />}
     </FriendsSheet>}
   </div>;
@@ -88,7 +89,7 @@ function FriendCardBody({ friend, showSharingStatus = false, magic = 0 }: { frie
     <span className="friend-card__collection">{friend.stats ? <><span className="friend-card__stats"><span><strong>{friend.stats.deliveredCount}</strong>{t('passport.delivered')}</span><span><strong>{days == null ? '—' : t(days === 1 ? 'friends.day' : 'friends.days', { count: days })}</strong>{t('passport.average')}</span></span><span className="friend-card__stamps" aria-label={t('friends.stamps')}>{friend.stats.stamps.map((stamp) => <span key={stamp} title={t(friendStamps[stamp].title)}><PostageStamp icon={friendStamps[stamp].icon} /></span>)}</span></> : <span className="friend-card__private"><Icon name="lock" />{t('friends.privateStats')}</span>}</span>
     {(friend.arrivedThisWeek || showSharingStatus) && <span className={`friend-card__arrival${friend.arrivedThisWeek ? '' : ' friend-card__arrival--quiet'}`}><Icon name={friend.arrivedThisWeek == null ? 'lock' : 'parcel'} />{t(friend.arrivedThisWeek ? 'friends.arrived' : friend.arrivedThisWeek === false ? 'friends.noArrival' : 'friends.privateArrival')}</span>}</>;
 }
-function FriendProfileForm({ profile, parcels, busy, onSave }: { profile: ApiFriendProfile | null; parcels: ParcelWithEvents[]; busy: boolean; onSave: (value: ApiFriendProfile) => Promise<void> }) {
+export function FriendProfileForm({ profile, parcels, busy, onSave, submitKey }: { profile: ApiFriendProfile | null; parcels: ParcelWithEvents[]; busy: boolean; onSave: (value: ApiFriendProfile) => Promise<void>; submitKey?: MessageKey }) {
   const { t } = useI18n();
   const [name, setName] = useState(profile?.nickname ?? '');
   const [stats, setStats] = useState(profile?.shareStats ?? true);
@@ -111,7 +112,7 @@ function FriendProfileForm({ profile, parcels, busy, onSave }: { profile: ApiFri
       <label className="friends-toggle"><input type="checkbox" role="switch" checked={stats} onChange={(event) => { setStats(event.target.checked); setMagic((value) => value + 1); }} disabled={busy} /><span>{t('friends.shareStats')}</span></label>
       <label className="friends-toggle"><input type="checkbox" role="switch" checked={arrival} onChange={(event) => { setArrival(event.target.checked); setMagic((value) => value + 1); }} disabled={busy} /><span>{t('friends.shareArrival')}</span></label>
     </div>
-    <p className="friends-privacy"><Icon name="lock" />{t('friends.privacy')}</p><button className="button button--primary friends-join" disabled={busy || !value.nickname}>{t(profile ? 'friends.save' : 'friends.join')}<span className="friends-attention" aria-hidden="true" /></button>
+    <p className="friends-privacy"><Icon name="lock" />{t('friends.privacy')}</p><button className="button button--primary friends-join" disabled={busy || !value.nickname}>{t(submitKey ?? (profile ? 'friends.save' : 'friends.join'))}<span className="friends-attention" aria-hidden="true" /></button>
   </form>;
 }
 function FriendsSheet({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
@@ -121,12 +122,31 @@ function FriendsSheet({ title, children, onClose }: { title: string; children: R
 }
 type Act = (action: ApiFriendsActionRequest) => Promise<ApiFriendsActionResponse | null>;
 function FriendsInvite({ busy, act, onClose }: { busy: boolean; act: Act; onClose: () => void }) {
-  const { t } = useI18n(); const [code, setCode] = useState<string | null>(null); const [copied, setCopied] = useState(false);
-  return <div className="friends-invite"><p>{t('friends.inviteHint')}</p>{code ? <><label>{t('friends.code')}<input readOnly value={code} onFocus={(event) => event.target.select()} /></label><small>{t('friends.inviteExpiry')}</small><button className="button button--primary" onClick={async () => { try { await navigator.clipboard.writeText(code); setCopied(true); } catch { setCopied(false); } }}>{t(copied ? 'friends.copied' : 'friends.copyCode')}<Icon name={copied ? 'check' : 'copy'} /></button><button className="text-button" disabled={busy} onClick={async () => { if (await act({ action: 'revoke_invite' })) onClose(); }}>{t('friends.revoke')}</button></> : <button className="button button--primary" disabled={busy} onClick={async () => { const result = await act({ action: 'create_invite' }); if (result?.inviteCode) setCode(result.inviteCode); }}>{t('friends.invite')}</button>}</div>;
+  const { t } = useI18n();
+  const [code, setCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const link = code ? invitationURL(code) : null;
+  async function copy() {
+    if (!link) return;
+    try { await navigator.clipboard.writeText(link); setCopied(true); setCopyFailed(false); }
+    catch { setCopyFailed(true); }
+  }
+  return <div className="friends-invite">{link ? <>
+    <label>{t('friends.link')}<input readOnly value={link} onFocus={(event) => event.target.select()} /></label>
+    <small>{t('friends.inviteExpiry')}</small>
+    {typeof navigator.share === 'function' && <button className="button button--primary" onClick={async () => { try { await navigator.share({ url: link }); } catch (error) { if (!(error instanceof Error && error.name === 'AbortError')) await copy(); } }}>{t('friends.shareLink')}<Icon name="arrow" /></button>}
+    <button className={typeof navigator.share === 'function' ? 'text-button' : 'button button--primary'} onClick={() => void copy()}>{t(copied ? 'friends.copied' : 'friends.copyLink')}<Icon name={copied ? 'check' : 'copy'} /></button>
+    {copyFailed && <p className="friends-error" role="alert">{t('friends.actionFailed')}</p>}
+    <button className="text-button" disabled={busy} onClick={async () => { if (await act({ action: 'revoke_invite' })) onClose(); }}>{t('friends.revoke')}</button>
+  </> : <button className="button button--primary" disabled={busy} onClick={async () => { const result = await act({ action: 'create_invite' }); if (result?.inviteCode) setCode(result.inviteCode); }}>{t('friends.invite')}</button>}</div>;
 }
-function FriendsAccept({ busy, act, onAccepted }: { busy: boolean; act: Act; onAccepted: () => void }) {
-  const { t } = useI18n(); const [code, setCode] = useState(''); const [name, setName] = useState<string | null>(null);
-  return <form className="friends-invite" onSubmit={async (event) => { event.preventDefault(); const result = await act({ action: 'preview_invite', code }); if (result?.previewNickname) setName(result.previewNickname); }}><label>{t('friends.code')}<input value={code} onChange={(event) => { setCode(event.target.value.replace(/\s/g, '').toLowerCase()); setName(null); }} placeholder={t('friends.codePlaceholder')} autoCapitalize="none" autoComplete="off" maxLength={64} disabled={busy} /></label>{name ? <><h3>{t('friends.invitedBy', { name })}</h3><p className="friends-privacy">{t('friends.privacy')}</p><button type="button" className="button button--primary" disabled={busy} onClick={async () => { if (await act({ action: 'accept_invite', code })) onAccepted(); }}>{t('friends.accept')}</button></> : <button className="button button--primary" disabled={busy || !/^[a-f0-9]{32}$/.test(code)}>{t('friends.checkCode')}</button>}</form>;
+function FriendsAccept({ onOpen }: { onOpen: () => void }) {
+  const { t } = useI18n(); const [link, setLink] = useState('');
+  return <form className="friends-invite" onSubmit={(event) => { event.preventDefault(); if (invitationCode(link)) { onOpen(); openPendingInvitation(link); } }}>
+    <label>{t('friends.link')}<input type="url" value={link} onChange={(event) => setLink(event.target.value)} placeholder={t('friends.linkPlaceholder')} autoCapitalize="none" autoComplete="off" spellCheck={false} maxLength={2048} /></label>
+    <button className="button button--primary" disabled={!invitationCode(link)}>{t('friends.openLink')}</button>
+  </form>;
 }
 function FriendDetails({ friend, busy, onRemove }: { friend: ApiFriendCard; busy: boolean; onRemove: () => Promise<void> }) {
   const { t } = useI18n(); const [stamp, setStamp] = useState<ApiFriendStamp | null>(null); const [removing, setRemoving] = useState(false);
