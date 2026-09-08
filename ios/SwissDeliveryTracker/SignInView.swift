@@ -9,6 +9,8 @@ struct ArrivalView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var opening = false
     @State private var greeting = 0
+    @State private var pressed = false
+    @StateObject private var motion = ArrivalMotion()
 
     private var screen: ArrivalScreen {
         if case .welcome = session.state { return .welcome }
@@ -21,10 +23,13 @@ struct ArrivalView: View {
 
     var body: some View {
         let animateGreeting = !reduceMotion
+        let currentTilt = reduceMotion ? ArrivalTilt() : motion.tilt
+        let isPressed = pressed && !reduceMotion
+        let reveal = opening || screen == .signIn ? 1.0 : 0.0
         ZStack {
             Brand.background.ignoresSafeArea()
             if screen == .welcome {
-                WelcomeView(opening: opening, onOpen: unwrap)
+                WelcomeView(opening: opening, onOpen: unwrap, onPressChanged: { pressed = $0 })
                     .transition(.opacity)
             } else {
                 SignInView(configured: session.configuration.authenticationConfigured, onBack: goBack)
@@ -35,31 +40,28 @@ struct ArrivalView: View {
             GeometryReader { geometry in
                 if let anchor = frames[screen] {
                     let frame = geometry[anchor]
-                    UnwrappingParcel(open: opening || screen == .signIn ? 1 : 0)
-                        .frame(width: 300, height: 310)
-                        .keyframeAnimator(initialValue: ParcelGreeting(), trigger: greeting) { content, pose in
-                            content
-                                .offset(y: animateGreeting ? pose.lift : 0)
-                                .rotationEffect(.degrees(animateGreeting ? pose.angle : 0), anchor: .bottom)
-                                .scaleEffect(x: 1, y: animateGreeting ? pose.squash : 1, anchor: .bottom)
+                    Color.clear
+                        .keyframeAnimator(initialValue: ParcelGreeting(), trigger: greeting) { _, pose in
+                            UnwrappingParcel(
+                                open: reveal,
+                                tilt: currentTilt,
+                                lift: animateGreeting ? pose.lift : 0,
+                                sway: animateGreeting ? pose.angle : 0,
+                                pressed: isPressed
+                            )
+                            .animation(.linear(duration: 0.07), value: currentTilt)
+                            .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isPressed)
                         } keyframes: { _ in
                             KeyframeTrack(\.lift) {
-                                CubicKeyframe(0, duration: 0.12)
-                                CubicKeyframe(-7, duration: 0.24)
-                                SpringKeyframe(0, duration: 0.46, spring: .smooth)
+                                CubicKeyframe(-7, duration: 2.3)
+                                CubicKeyframe(0, duration: 2.3)
                             }
                             KeyframeTrack(\.angle) {
-                                CubicKeyframe(-2.5, duration: 0.16)
-                                CubicKeyframe(2, duration: 0.2)
-                                CubicKeyframe(-0.8, duration: 0.2)
-                                SpringKeyframe(0, duration: 0.26, spring: .smooth)
-                            }
-                            KeyframeTrack(\.squash) {
-                                CubicKeyframe(0.975, duration: 0.12)
-                                CubicKeyframe(1.02, duration: 0.24)
-                                SpringKeyframe(1, duration: 0.46, spring: .smooth)
+                                CubicKeyframe(0.7, duration: 2.3)
+                                CubicKeyframe(-0.5, duration: 2.3)
                             }
                         }
+                        .frame(width: 300, height: 310)
                         .scaleEffect(frame.width / 300)
                         .position(x: frame.midX, y: frame.midY)
                         .animation(reduceMotion ? nil : .spring(duration: 0.75, bounce: 0.08), value: screen)
@@ -69,21 +71,26 @@ struct ArrivalView: View {
             .allowsHitTesting(false)
             .accessibilityHidden(true)
         }
+        .onChange(of: greetingActive, initial: true) { _, active in motion.setActive(active) }
+        .onDisappear { motion.setActive(false) }
         .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.65), trigger: opening) { _, newValue in newValue }
+        .sensoryFeedback(.impact(weight: .light, intensity: 0.35), trigger: screen) { old, new in
+            old == .welcome && new == .signIn
+        }
         .task(id: greetingActive) {
             guard greetingActive else { return }
             do {
-                try await Task.sleep(for: .milliseconds(900))
+                try await Task.sleep(for: .milliseconds(250))
                 while !Task.isCancelled {
                     greeting += 1
-                    try await Task.sleep(for: .seconds(3.6))
+                    try await Task.sleep(for: .seconds(4.6))
                 }
             } catch { return }
         }
         .task(id: opening && screen == .welcome) {
             guard opening, screen == .welcome else { return }
             do {
-                try await Task.sleep(for: .milliseconds(reduceMotion ? 150 : 750))
+                try await Task.sleep(for: .milliseconds(reduceMotion ? 150 : 980))
             } catch { return }
             guard !Task.isCancelled else { return }
             withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.45)) {
@@ -94,7 +101,7 @@ struct ArrivalView: View {
 
     private func unwrap() {
         guard !opening, screen == .welcome else { return }
-        withAnimation(reduceMotion ? nil : .spring(response: 0.65, dampingFraction: 0.82)) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.95)) {
             opening = true
         }
     }
@@ -121,6 +128,7 @@ private struct WelcomeView: View {
     @EnvironmentObject private var localizer: Localizer
     let opening: Bool
     let onOpen: () -> Void
+    let onPressChanged: (Bool) -> Void
 
     private var copy: ArrivalCopy { ArrivalCopy(localizer: localizer) }
 
@@ -159,7 +167,7 @@ private struct WelcomeView: View {
                         }
                         .contentShape(Rectangle())
                     }
-                    .buttonStyle(TactileButtonStyle(scale: 0.98))
+                    .buttonStyle(ParcelOpeningButtonStyle(onPressChanged: onPressChanged))
                     .accessibilityLabel(copy.tapToOpen)
                     .accessibilityHint(copy.openHint)
                     .accessibilityIdentifier("welcome.openParcel")
@@ -179,10 +187,17 @@ private struct WelcomeView: View {
     }
 }
 
+private struct ParcelOpeningButtonStyle: ButtonStyle {
+    let onPressChanged: (Bool) -> Void
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .onChange(of: configuration.isPressed) { _, pressed in onPressChanged(pressed) }
+    }
+}
+
 private struct ParcelGreeting {
     var lift: CGFloat = 0
     var angle: Double = 0
-    var squash: CGFloat = 1
 }
 
 struct SignInView: View {
@@ -714,7 +729,12 @@ private struct AuthenticationLanguageMenu: View {
 /// A little paper object, drawn in points so its folds stay crisp at every size.
 /// The welcome screen gives it a small greeting; a tap unfolds the paper.
 private struct UnwrappingParcel: View, Animatable {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var open: Double
+    var tilt = ArrivalTilt()
+    var lift: CGFloat = 0
+    var sway: Double = 0
+    var pressed = false
 
     var animatableData: Double {
         get { open }
@@ -724,99 +744,139 @@ private struct UnwrappingParcel: View, Animatable {
     var body: some View {
         GeometryReader { geometry in
             let scale = geometry.size.width / 300
+            let card = phase(0.24, 0.76)
+            let breath = reduceMotion ? 0 : sin(open * .pi)
+            let anticipation = reduceMotion ? 0 : max(0, 1 - abs(open - 0.12) / 0.12)
             ZStack {
                 Ellipse()
-                    .fill(.black.opacity(0.08))
-                    .frame(width: 180, height: 20)
+                    .fill(.black.opacity(pressed ? 0.12 : 0.08 + Double(lift) * 0.004))
+                    .frame(width: 180 + lift * 3, height: pressed ? 15 : 20)
                     .blur(radius: 9)
-                    .position(x: 151, y: 283)
+                    .position(x: 151 - tilt.x * 4, y: 286 - tilt.y * 2)
 
-                polygon([(55, 142), (150, 95), (245, 142), (150, 190)])
-                    .fill(Color(hex: "#806345"))
+                ZStack {
+                    polygon([(55, 142), (150, 95), (245, 142), (150, 190)])
+                        .fill(Color(hex: "#806345"))
 
-                // The rear pair folds away before the front panels reveal the box.
-                flap(
-                    closed: [(55, 142), (150, 95), (190, 143), (95, 190)],
-                    opened: [(55, 142), (150, 95), (112, 48), (17, 95)],
-                    color: Color(hex: "#C4A078")
-                )
-                .opacity(open)
-                flap(
-                    closed: [(150, 95), (245, 142), (197.5, 166), (102.5, 118.5)],
-                    opened: [(150, 95), (245, 142), (270, 88), (175, 41)],
-                    color: Color(hex: "#D8B997")
-                )
+                    // The rear pair folds away before the front panels reveal the box.
+                    flap(
+                        closed: [(55, 142), (150, 95), (190, 143), (95, 190)],
+                        opened: [(55, 142), (150, 95), (112, 48), (17, 95)],
+                        color: Color(hex: "#C4A078"), progress: phase(0.06, 0.66)
+                    )
+                    .opacity(open)
+                    flap(
+                        closed: [(150, 95), (245, 142), (197.5, 166), (102.5, 118.5)],
+                        opened: [(150, 95), (245, 142), (270, 88), (175, 41)],
+                        color: Color(hex: "#D8B997"), progress: phase(0.06, 0.66)
+                    )
 
-                // A small delivery card rises from inside. It has no fake data.
-                VStack(alignment: .leading, spacing: 10) {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(Color(hex: "#587260"))
-                        .frame(width: 38, height: 38)
-                        .background(Color(hex: "#E7ECE4"), in: Circle())
-                    Capsule().fill(Color(hex: "#DAD7CE")).frame(width: 45, height: 4)
-                    Capsule().fill(Color(hex: "#E7E4DC")).frame(width: 29, height: 4)
-                }
-                .padding(14)
-                .frame(width: 83, height: 111)
-                .background(Color(hex: "#FCFAF4"), in: RoundedRectangle(cornerRadius: 7))
-                .rotationEffect(.degrees(-8 + open * 3))
-                .position(x: 152, y: 174 - 69 * open)
-                .opacity(min(1, max(0, open * 2)))
+                    Ellipse()
+                        .fill(Color(hex: "#FFE8AE").opacity(breath * 0.48))
+                        .frame(width: 124, height: 40)
+                        .blur(radius: 10)
+                        .position(x: 150, y: 140)
 
-                polygon([(55, 142), (150, 190), (150, 277), (55, 229)])
-                    .fill(Color(hex: "#C9A47B"))
-                polygon([(150, 190), (245, 142), (245, 229), (150, 277)])
-                    .fill(Color(hex: "#B78F66"))
+                    // A small delivery card rises from inside. It has no fake data.
+                    VStack(alignment: .leading, spacing: 10) {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(Color(hex: "#587260"))
+                            .frame(width: 38, height: 38)
+                            .background(Color(hex: "#E7ECE4"), in: Circle())
+                        Capsule().fill(Color(hex: "#DAD7CE")).frame(width: 45, height: 4)
+                        Capsule().fill(Color(hex: "#E7E4DC")).frame(width: 29, height: 4)
+                    }
+                    .padding(14)
+                    .frame(width: 83, height: 111)
+                    .background(Color(hex: "#FCFAF4"), in: RoundedRectangle(cornerRadius: 7))
+                    .overlay(RoundedRectangle(cornerRadius: 7).stroke(.white.opacity(0.6), lineWidth: 0.8))
+                    .rotationEffect(.degrees(-11 + card * 6))
+                    .position(x: 152 + tilt.x * 2, y: 174 - 69 * card)
+                    .opacity(min(1, card * 3))
 
-                // The quiet shipping label is part of the illustration.
-                HStack(alignment: .bottom, spacing: 2) {
-                    ForEach(0..<10) { index in
-                        Rectangle()
-                            .fill(Color(hex: "#4E677A"))
-                            .frame(width: index.isMultiple(of: 3) ? 2 : 1, height: 17)
+                    polygon([(55, 142), (150, 190), (150, 277), (55, 229)])
+                        .fill(Color(hex: "#C9A47B"))
+                    polygon([(150, 190), (245, 142), (245, 229), (150, 277)])
+                        .fill(Color(hex: "#B78F66"))
+
+                    polygon([(55, 142), (150, 190), (150, 277), (55, 229)])
+                        .fill(Color(hex: "#FFF4D6").opacity(0.025 + (tilt.x + 1) * 0.045))
+                    Path { path in
+                        path.move(to: CGPoint(x: 55, y: 142))
+                        path.addLine(to: CGPoint(x: 150, y: 190))
+                        path.addLine(to: CGPoint(x: 245, y: 142))
+                        path.move(to: CGPoint(x: 150, y: 190))
+                        path.addLine(to: CGPoint(x: 150, y: 277))
+                    }
+                    .stroke(Color(hex: "#FFF2CF").opacity(0.22 + (tilt.x + 1) * 0.18), lineWidth: 1)
+
+                    // The quiet shipping label is part of the illustration.
+                    HStack(alignment: .bottom, spacing: 2) {
+                        ForEach(0..<10) { index in
+                            Rectangle()
+                                .fill(Color(hex: "#4E677A"))
+                                .frame(width: index.isMultiple(of: 3) ? 2 : 1, height: 17)
+                        }
+                    }
+                    .frame(width: 51, height: 32)
+                    .background(Color(hex: "#D8E5EA"), in: RoundedRectangle(cornerRadius: 3))
+                    .rotationEffect(.degrees(27))
+                    .position(x: 101, y: 221)
+
+                    Image(systemName: "arrow.up")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(Color(hex: "#735C43"))
+                        .rotationEffect(.degrees(-27))
+                        .position(x: 218, y: 214)
+
+                    Image(systemName: "asterisk")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(Color(hex: "#7C6787"))
+                        .frame(width: 28, height: 28)
+                        .background(Color(hex: "#DECCE2"), in: Circle())
+                        .overlay(Circle().inset(by: 2.5).stroke(Color(hex: "#FFF6FF").opacity(0.2 + (tilt.y + 1) * 0.28), lineWidth: 1.2))
+                        .rotationEffect(.degrees(-27))
+                        .position(x: 183, y: 234)
+
+                    flap(
+                        closed: [(245, 142), (150, 190), (110, 142), (205, 95)],
+                        opened: [(245, 142), (150, 190), (186, 231), (281, 183)],
+                        color: Color(hex: "#D1AE85"), progress: phase(0.2, 0.8)
+                    )
+                    .opacity(open)
+                    flap(
+                        closed: [(55, 142), (150, 190), (197.5, 166), (102.5, 118.5)],
+                        opened: [(55, 142), (150, 190), (121, 234), (26, 186)],
+                        color: Color(hex: "#DDBD96"), progress: phase(0.2, 0.8)
+                    )
+
+                    // The tape tears out of sight as the flaps open.
+                    polygon([(96, 122), (109, 115), (204, 163), (191, 170)])
+                        .fill(Color(hex: "#EBDDCA"))
+                        .opacity(max(0, 1 - open * 4))
+                        .offset(x: -6 * phase(0, 0.3), y: -19 * phase(0, 0.3))
+                        .rotationEffect(.degrees(-8 * phase(0, 0.3)))
+                    Path { path in
+                        path.move(to: CGPoint(x: 102.5, y: 118.5))
+                        path.addLine(to: CGPoint(x: 197.5, y: 166))
+                    }
+                    .stroke(Color(hex: "#AF9474").opacity(max(0, 0.6 - open * 3)), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    ForEach(0..<4) { index in
+                        let points: [CGPoint] = [CGPoint(x: 72, y: 84), CGPoint(x: 225, y: 86), CGPoint(x: 204, y: 53), CGPoint(x: 93, y: 58)]
+                        Image(systemName: index.isMultiple(of: 2) ? "sparkle" : "circle.fill")
+                            .font(.system(size: index.isMultiple(of: 2) ? 10 : 3, weight: .regular))
+                            .foregroundStyle(Color(hex: "#C9A47B"))
+                            .opacity(reduceMotion ? 0 : sin(phase(0.2, 0.8) * .pi) * 0.7)
+                            .position(x: points[index].x, y: points[index].y + 25 - 37 * phase(0.2, 0.8))
                     }
                 }
-                .frame(width: 51, height: 32)
-                .background(Color(hex: "#D8E5EA"), in: RoundedRectangle(cornerRadius: 3))
-                .rotationEffect(.degrees(27))
-                .position(x: 101, y: 221)
-
-                Image(systemName: "arrow.up")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(Color(hex: "#735C43"))
-                    .rotationEffect(.degrees(-27))
-                    .position(x: 218, y: 214)
-
-                Image(systemName: "asterisk")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Color(hex: "#7C6787"))
-                    .frame(width: 28, height: 28)
-                    .background(Color(hex: "#DECCE2"), in: Circle())
-                    .rotationEffect(.degrees(-27))
-                    .position(x: 183, y: 234)
-
-                flap(
-                    closed: [(245, 142), (150, 190), (110, 142), (205, 95)],
-                    opened: [(245, 142), (150, 190), (186, 231), (281, 183)],
-                    color: Color(hex: "#D1AE85")
-                )
-                .opacity(open)
-                flap(
-                    closed: [(55, 142), (150, 190), (197.5, 166), (102.5, 118.5)],
-                    opened: [(55, 142), (150, 190), (121, 234), (26, 186)],
-                    color: Color(hex: "#DDBD96")
-                )
-
-                // The tape tears out of sight as the flaps open.
-                polygon([(96, 122), (109, 115), (204, 163), (191, 170)])
-                    .fill(Color(hex: "#EBDDCA"))
-                    .opacity(max(0, 1 - open * 4))
-                Path { path in
-                    path.move(to: CGPoint(x: 102.5, y: 118.5))
-                    path.addLine(to: CGPoint(x: 197.5, y: 166))
-                }
-                .stroke(Color(hex: "#AF9474").opacity(max(0, 0.6 - open * 3)), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                .frame(width: 300, height: 310)
+                .rotation3DEffect(.degrees(tilt.y * -4), axis: (x: 1, y: 0, z: 0), perspective: 0.35)
+                .rotation3DEffect(.degrees(tilt.x * 5), axis: (x: 0, y: 1, z: 0), perspective: 0.35)
+                .rotationEffect(.degrees(sway * (1 - open)))
+                .scaleEffect(pressed ? 0.976 : 1 - anticipation * 0.022 + breath * 0.012, anchor: .bottom)
+                .offset(x: tilt.x * 7, y: Double(lift) * (1 - open) + tilt.y * 4 + (pressed ? 3 : anticipation * 3 - breath * 6))
             }
             .frame(width: 300, height: 310)
             .scaleEffect(scale, anchor: .topLeading)
@@ -824,9 +884,13 @@ private struct UnwrappingParcel: View, Animatable {
         .accessibilityHidden(true)
     }
 
-    private func flap(closed: [(Double, Double)], opened: [(Double, Double)], color: Color) -> some View {
+    private func phase(_ start: Double, _ duration: Double) -> Double {
+        min(1, max(0, (open - start) / duration))
+    }
+
+    private func flap(closed: [(Double, Double)], opened: [(Double, Double)], color: Color, progress: Double) -> some View {
         let points = zip(closed, opened).map { from, to in
-            (from.0 + (to.0 - from.0) * open, from.1 + (to.1 - from.1) * open)
+            (from.0 + (to.0 - from.0) * progress, from.1 + (to.1 - from.1) * progress)
         }
         return polygon(points)
             .fill(color)

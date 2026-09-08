@@ -43,6 +43,60 @@ test('opens the looping package into sign-in, then leaves demo without a reload'
   await expect(page.locator('.demo-banner')).toHaveCount(0);
 });
 
+test('gives the parcel bounded depth without moving the controls, and stops on opening', async ({ page, browserName }) => {
+  await page.goto('/');
+  const arrival = page.locator('.arrival');
+  const open = page.getByRole('button', { name: 'Tap to open your parcel' });
+  await expect(open).toBeEnabled();
+  const title = page.getByRole('heading', { name: 'Good things are on their way.' });
+  const titleFrame = await title.boundingBox();
+  const pose = () => arrival.evaluate((element) => Number((element as HTMLElement).style.getPropertyValue('--parcel-x')));
+  await page.mouse.move(8, 220);
+  await expect.poll(pose).toBeLessThan(-.7);
+  expect(await title.boundingBox()).toEqual(titleFrame);
+  await arrival.dispatchEvent('pointerleave');
+  await expect.poll(pose).toBe(0);
+  // WebKit gates even synthetic orientation events behind sensor permission;
+  // it deliberately retains pointer/touch motion without showing a prompt.
+  if (browserName !== 'webkit') {
+    await page.evaluate(() => {
+      for (const gamma of [0, 75]) {
+        const event = new Event('deviceorientation');
+        Object.assign(event, { beta: 0, gamma });
+        window.dispatchEvent(event);
+      }
+    });
+    await expect.poll(pose).toBe(1);
+  }
+  expect(await title.boundingBox()).toEqual(titleFrame);
+  await noOverflow(page);
+  await open.click();
+  await expect(page.getByRole('heading', { name: 'Your deliveries, together.' })).toBeVisible();
+  await page.mouse.move(8, 220);
+  await page.evaluate(() => {
+    const event = new Event('deviceorientation');
+    Object.assign(event, { beta: 25, gamma: -25 });
+    window.dispatchEvent(event);
+  });
+  await expect.poll(pose).toBe(0);
+  await expect(page.locator('.arrival__tilt')).toHaveCSS('transform', 'none');
+});
+
+test('turns off active tilt immediately when reduced motion is enabled', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Tap to open your parcel' })).toBeEnabled();
+  await page.mouse.move(8, 220);
+  const arrival = page.locator('.arrival');
+  const pose = () => arrival.evaluate((element) => Number((element as HTMLElement).style.getPropertyValue('--parcel-x')));
+  await expect.poll(pose).toBeLessThan(-.7);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect.poll(pose).toBe(0);
+  await expect(arrival).toHaveAttribute('data-motion-paused', 'true');
+  await page.mouse.move(280, 350);
+  await expect(page.locator('.arrival__tilt')).toHaveCSS('transform', 'none');
+  expect(await pose()).toBe(0);
+});
+
 test('keeps demo exit available from parcel details and account', async ({ page }) => {
   await demo(page);
   await page.getByText('Coffee beans ☕', { exact: true }).click();

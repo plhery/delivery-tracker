@@ -1,4 +1,4 @@
-import type { SVGProps } from 'react';
+import type { CSSProperties, SVGProps } from 'react';
 
 const paths = {
   parcel: 'M3 7l9-5 9 5v10l-9 5-9-5V7Zm0 0 9 5 9-5M12 12v10M7.5 4.5l9 5',
@@ -42,21 +42,71 @@ export function PostageStamp({ icon = 'truck' }: { icon?: IconName }) {
   return <span className="postage-stamp" aria-hidden="true"><span className="postage-stamp__print"><Icon name={icon} /></span><span className="postage-stamp__cancel" /></span>;
 }
 
-/** The same illustration stays mounted while the welcome opens into sign-in. */
+type PaperPoint = readonly [number, number];
+
+/** A hinge stays fixed while the paper folds through it, just like the native parcel. */
+function ParcelFlap({ points, openedCorner, tone, rear = false, hidden = false }: {
+  points: readonly [PaperPoint, PaperPoint, PaperPoint, PaperPoint];
+  openedCorner: PaperPoint;
+  tone: string;
+  rear?: boolean;
+  hidden?: boolean;
+}) {
+  const [origin, hinge, corner] = points;
+  const angle = Math.atan2(hinge[1] - origin[1], hinge[0] - origin[0]);
+  const local = ([x, y]: PaperPoint) => [
+    (x - origin[0]) * Math.cos(angle) + (y - origin[1]) * Math.sin(angle),
+    (y - origin[1]) * Math.cos(angle) - (x - origin[0]) * Math.sin(angle),
+  ];
+  const from = local(corner), to = local(openedCorner);
+  const fold = {
+    '--fold-scale': to[1] / from[1],
+    '--fold-skew': `${Math.atan((to[0] - from[0]) / from[1]) * 180 / Math.PI}deg`,
+  } as CSSProperties;
+  return <g transform={`translate(${origin.join(' ')}) rotate(${angle * 180 / Math.PI})`}>
+    <g className={`parcel-illustration__flap${rear ? ' parcel-illustration__flap--rear' : ''}${hidden ? ' parcel-illustration__flap--hidden' : ''}`} style={fold}>
+      <polygon points={points.map((point) => local(point).join(',')).join(' ')} fill={tone} stroke="#987450" strokeOpacity=".24" strokeWidth=".7" />
+    </g>
+  </g>;
+}
+
+/** Kraft paper, printed labels, and a card tucked behind the front faces. */
 export function ParcelIllustration({ className = '' }: { className?: string }) {
-  return <svg className={`parcel-illustration ${className}`} viewBox="0 0 300 300" fill="none" aria-hidden="true">
-    <ellipse className="parcel-illustration__shadow" cx="150" cy="257" rx="85" ry="12" fill="currentColor" opacity=".08" />
+  return <svg className={`parcel-illustration ${className}`} viewBox="0 0 300 310" fill="none" aria-hidden="true">
+    <ellipse className="parcel-illustration__shadow" cx="150" cy="286" rx="84" ry="10" fill="currentColor" opacity=".08" />
     <g className="parcel-illustration__body">
-      <path d="m54 113 96-48 96 48-96 50-96-50Z" fill="#AA7E35" />
-      <path className="parcel-illustration__inside" d="m69 115 81-38 81 38-81 40-81-40Z" fill="#725A34" />
-      <path d="m54 113 96 50v90l-96-49v-91Z" fill="#E5BA55" />
-      <path d="m150 163 96-50v91l-96 49v-90Z" fill="#F3CF48" />
-      <path d="m150 163 96-50v91l-96 49v-90Z" stroke="#A68235" strokeOpacity=".25" />
-      <g className="parcel-illustration__flap parcel-illustration__flap--left"><path d="m54 113 96-48 48 25-96 48-48-25Z" fill="#F4D577" /><path d="m54 113 48 25 96-48" stroke="#C29A46" strokeWidth="1" /></g>
-      <g className="parcel-illustration__flap parcel-illustration__flap--right"><path d="m102 138 96-48 48 23-96 50-48-25Z" fill="#F8DF8C" /><path d="m102 138 48 25 96-50" stroke="#C29A46" strokeWidth="1" /></g>
-      <path className="parcel-illustration__tape" d="m95 93 14-7 97 49-14 7-97-49Z" fill="#E4B939" /><path d="m95 134 14 7v33l-14-7v-33Z" fill="#D1A339" />
-      <g transform="matrix(1 .51 0 1 73 167)"><rect width="47" height="29" rx="3" fill="#FFF9E8" /><path d="M7 8h25M7 13h18M7 19h3m4 0h2m4 0h3m4 0h2m4 0h5" stroke="#826838" strokeWidth="2" /></g>
-      <g transform="matrix(1 -.51 0 1 195 165)"><rect width="30" height="34" rx="2" fill="#FFF9E8" /><path d="M7 24V11l8-4 8 4v13l-8 4-8-4Zm0-13 8 4 8-4m-8 4v13" stroke="#6B673A" strokeWidth="1.5" /></g>
+      <path d="m55 142 95-47 95 47-95 48-95-48Z" fill="#806345" />
+      <ParcelFlap points={[[55, 142], [150, 95], [190, 143], [95, 190]]} openedCorner={[112, 48]} tone="#C4A078" rear hidden />
+      <ParcelFlap points={[[150, 95], [245, 142], [197.5, 166], [102.5, 118.5]]} openedCorner={[270, 88]} tone="#D8B997" rear />
+      <ellipse className="parcel-illustration__light" cx="150" cy="140" rx="62" ry="20" fill="#FFE8AE" />
+      <g className="parcel-illustration__delivery-card">
+        <rect x="110" y="111" width="83" height="111" rx="7" fill="#FCFAF4" stroke="#E6E0D4" strokeWidth=".7" />
+        <path d="M112 120v-2a5 5 0 0 1 5-5h69" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="143" cy="145" r="19" fill="#E7ECE4" />
+        <path className="parcel-illustration__check" d="m135 145 5 5 11-12" stroke="#587260" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M124 181h45" stroke="#DAD7CE" strokeWidth="4" strokeLinecap="round" />
+        <path d="M124 194h29" stroke="#E7E4DC" strokeWidth="4" strokeLinecap="round" />
+      </g>
+      <path d="m55 142 95 48v87l-95-48v-87Z" fill="#C9A47B" />
+      <path d="m150 190 95-48v87l-95 48v-87Z" fill="#B78F66" />
+      <path className="parcel-illustration__face-light" d="m55 142 95 48v87l-95-48v-87Z" fill="#FFF4D6" />
+      <path d="M56 144v84l93 47m2 0 92-46v-84" stroke="#987450" strokeOpacity=".25" strokeWidth=".8" />
+      <path className="parcel-illustration__edge" d="m55 142 95 48 95-48m-95 48v87" stroke="#FFF2CF" strokeWidth="1" />
+      <g transform="translate(77 193) rotate(27)">
+        <rect width="51" height="32" rx="3" fill="#D8E5EA" />
+        <path d="M8 8v17m4-17v17m3-17v17m5-17v17m3-17v17m5-17v17m4-17v17m3-17v17m5-17v17" stroke="#4E677A" strokeWidth="1.5" />
+        <path d="M3 5V3h45" stroke="white" strokeOpacity=".5" />
+      </g>
+      <g transform="translate(201 201) rotate(-27)"><path d="M10 22V4m-5 5 5-5 5 5" stroke="#735C43" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></g>
+      <g transform="translate(183 234) rotate(-27)">
+        <circle r="14" fill="#DECCE2" />
+        <circle className="parcel-illustration__seal-light" r="11.5" stroke="#FFF6FF" strokeWidth="1.2" />
+        <path d="M0-7V7m-6-10 12 6M-6 3 6-3" stroke="#7C6787" strokeWidth="2" strokeLinecap="round" />
+      </g>
+      <ParcelFlap points={[[245, 142], [150, 190], [110, 142], [205, 95]]} openedCorner={[186, 231]} tone="#D1AE85" hidden />
+      <ParcelFlap points={[[55, 142], [150, 190], [197.5, 166], [102.5, 118.5]]} openedCorner={[121, 234]} tone="#DDBD96" />
+      <g className="parcel-illustration__tape"><path d="m96 122 13-7 95 48-13 7-95-48Z" fill="#EBDDCA" /><path d="m103 119 94 47" stroke="#AF9474" strokeOpacity=".6" strokeWidth="1" strokeDasharray="3 3" /></g>
+      <g className="parcel-illustration__glints" fill="#C9A47B"><path d="m70 84 2-6 2 6 6 2-6 2-2 6-2-6-6-2Z" /><circle cx="225" cy="86" r="2.5" /><path d="m202 52 1.5-4 1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5Z" /><circle cx="93" cy="58" r="1.5" /></g>
     </g>
   </svg>;
 }

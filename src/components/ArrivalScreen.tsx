@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ComponentProps } from 'react';
 import { LanguageControl, useI18n } from '../i18n';
+import { bindArrivalMotion } from '../lib/arrivalMotion';
 import type { EntryScreen } from '../lib/experience';
 import { Icon, ParcelIllustration } from './Icon';
 import { SignInScreen } from './SignInScreen';
@@ -18,6 +19,10 @@ export function ArrivalScreen({ screen, onNavigate, ...signIn }: ComponentProps<
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const welcome = screen === 'welcome';
   const signInPanel = useRef<HTMLDivElement>(null);
+  const scene = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (welcome && !opening && scene.current) return bindArrivalMotion(scene.current);
+  }, [welcome, opening]);
   useEffect(() => {
     if (screen === 'sign-in' && opening) signInPanel.current?.querySelector<HTMLElement>('h1')?.focus({ preventScroll: true });
   }, [screen, opening]);
@@ -25,19 +30,21 @@ export function ArrivalScreen({ screen, onNavigate, ...signIn }: ComponentProps<
 
   function unwrap() {
     if (opening) return;
+    const paper = scene.current?.querySelector('.parcel-illustration__body');
+    if (paper) scene.current?.style.setProperty('--parcel-rest', getComputedStyle(paper).transform);
     setOpening(true);
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    timer.current = setTimeout(() => onNavigate('sign-in'), reduced ? 80 : 680);
+    timer.current = setTimeout(() => onNavigate('sign-in'), reduced ? 80 : 960);
   }
 
-  return <main className={`arrival arrival--${screen}${opening ? ' arrival--opening' : ''}`}>
+  return <main ref={scene} className={`arrival arrival--${screen}${opening ? ' arrival--opening' : ''}`}>
     <header className="arrival__header">
       {welcome ? <span className="arrival__brand"><Icon name="parcel" />{t('app.title')}</span> :
         <button className="text-button arrival__back" type="button" onClick={() => { setOpening(false); onNavigate('welcome'); }}><Icon name="back" />{t('welcome.back')}</button>}
       <LanguageControl />
     </header>
     <div className="arrival__scene">
-      <div className="arrival__parcel"><ParcelIllustration /></div>
+      <div className="arrival__parcel"><div className="arrival__ground" /><div className="arrival__tilt"><div className="arrival__press"><ParcelIllustration /></div></div></div>
       {welcome ? <div className="arrival__welcome">
         <h1>{t('arrival.welcomeTitle')}</h1>
         <button type="button" className="arrival__open" onClick={unwrap} disabled={!ready || opening} aria-describedby="parcel-open-hint">

@@ -3,6 +3,30 @@ import UIKit
 @testable import SwissDeliveryTracker
 
 final class ParcelLogicTests: XCTestCase {
+    func testArrivalTiltFiltersJitterAndBoundsLargeMovements() {
+        var tilt = ArrivalTilt()
+        tilt.follow(roll: 0.44, pitch: -0.44)
+        XCTAssertEqual(tilt.x, 0.22, accuracy: 0.0001)
+        XCTAssertEqual(tilt.y, -0.22, accuracy: 0.0001)
+        for _ in 0..<100 { tilt.follow(roll: 50, pitch: -50) }
+        XCTAssertLessThanOrEqual(tilt.x, 1)
+        XCTAssertGreaterThanOrEqual(tilt.y, -1)
+        let prior = tilt
+        tilt.follow(roll: .nan, pitch: .infinity)
+        XCTAssertEqual(tilt, prior)
+    }
+
+    func testArrivalTiltFollowsScreenOrientationAndSettlesAtRest() {
+        var portrait = ArrivalTilt()
+        var landscape = ArrivalTilt()
+        portrait.follow(roll: 0.44, pitch: 0)
+        landscape.follow(roll: 0.44, pitch: 0, quarterTurns: 1)
+        XCTAssertEqual(landscape.x, 0, accuracy: 0.0001)
+        XCTAssertEqual(landscape.y, -portrait.x, accuracy: 0.0001)
+        for _ in 0..<40 { landscape.follow(roll: 0, pitch: 0) }
+        XCTAssertEqual(landscape.y, 0, accuracy: 0.0001)
+    }
+
     @MainActor
     func testArchiveRecognizerDeclinesVerticalDragsBeforeTheyCanBlockScrolling() {
         let delegate = ArchivePanGestureDelegate()
@@ -99,13 +123,13 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertEqual(swipe.offset, -360)
     }
 
-    func testLinkOnlyParcelDoesNotPromiseAnAutomaticCheck() {
+    func testInternationalPostWaitsForItsAutomaticLookup() {
         let id = UUID()
         var parcel = makeParcel(id: id, events: [])
         parcel.carrier = .internationalPost
         parcel.syncStatus = .pending
-        XCTAssertEqual(parcel.displayStatus.key, "status.unsupported")
-        XCTAssertFalse(parcel.displayStatus.syncing)
+        XCTAssertEqual(parcel.displayStatus.key, "status.syncing")
+        XCTAssertTrue(parcel.displayStatus.syncing)
     }
 
     @MainActor
