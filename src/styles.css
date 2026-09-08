@@ -707,3 +707,7 @@ button.friend-card .friend-card__heading { padding-right: 16px; }
 .friends-loading .skeleton { height: 280px; border-radius: 28px; background: var(--control); }
 @media (max-width: 600px) { .friends-grid { grid-template-columns: 1fr; }.friends-cover .postage-stamp { width: 57px; height: 69px; }.friends-sheet { padding: 22px 22px max(22px, env(safe-area-inset-bottom)); } }
 @media (prefers-reduced-motion: reduce) { .friends-stamp-album button[aria-pressed="true"] { scale: 1; rotate: 0deg; } }
+
+.parcel-added-burst { position: fixed; inset: 0; z-index: 150; overflow: hidden; pointer-events: none; contain: strict; }
+.parcel-added-burst > span { position: absolute; left: 50%; top: var(--burst-y, 60%); display: grid; place-items: center; width: 1.4em; height: 1.4em; margin: -.7em; line-height: 1; opacity: 0; user-select: none; }
+.parcel-added-burst[data-reduced="true"] > span:first-child { font-size: 42px !important; }

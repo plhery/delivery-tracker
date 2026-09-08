@@ -69,6 +69,7 @@ private struct DeliveryListView: View {
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
     @Namespace private var parcelTransition
     @State private var path: [UUID] = []
@@ -78,6 +79,8 @@ private struct DeliveryListView: View {
     @State private var sort: ParcelSort = .priority
     @State private var showingFilters = false
     @State private var showingAdd = false
+    @State private var addedParcel = false
+    @State private var parcelBurstID: UUID?
     @State private var showingAccount = false
     @State private var archivedExpanded = false
     @State private var sharedDraft: SharedParcelDraft?
@@ -103,11 +106,22 @@ private struct DeliveryListView: View {
             }
             .safeAreaInset(edge: .bottom, spacing: 8) { bottomControls }
         }
-        .sheet(isPresented: $showingAdd) {
-            AddParcelView(draft: sharedDraft) { parcelID in
+        .overlay {
+            if let burstID = parcelBurstID {
+                ParcelAddedBurst {
+                    if parcelBurstID == burstID { parcelBurstID = nil }
+                }.id(burstID)
+            }
+        }
+        .sensoryFeedback(.success, trigger: parcelBurstID) { _, next in next != nil }
+        .sheet(isPresented: $showingAdd, onDismiss: {
+            if addedParcel && scenePhase == .active { parcelBurstID = UUID() }
+            addedParcel = false
+        }) {
+            AddParcelView(draft: sharedDraft, onOpenParcel: { parcelID in
                 showingAdd = false
                 path = [parcelID]
-            }
+            }, onAdded: { addedParcel = scenePhase == .active })
                 .environmentObject(store)
                 .environmentObject(localizer)
         }
@@ -138,6 +152,14 @@ private struct DeliveryListView: View {
             consumeSharedDraft()
             consumePendingParcelNotification()
         }
+        .onDisappear { addedParcel = false; parcelBurstID = nil }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { addedParcel = false; parcelBurstID = nil }
+        }
+        .onChange(of: path) { _, _ in parcelBurstID = nil }
+        .onChange(of: showingAdd) { _, open in if open { parcelBurstID = nil } }
+        .onChange(of: showingAccount) { _, open in if open { parcelBurstID = nil } }
+        .onChange(of: showingFilters) { _, open in if open { parcelBurstID = nil } }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             consumeSharedDraft()
         }

@@ -1,5 +1,5 @@
 import { userErrorMessage } from '../lib/userMessages';
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import {
   type CarrierInputField,
@@ -27,10 +27,12 @@ export function AddParcelSheet({
   initialLabel = '',
   initialTrackingInput = '',
   onOpenParcel,
+  onAdded,
 }: {
   onAdd: (input: NewParcelInput) => Promise<unknown>;
   onClose: () => void;
   onOpenParcel?: (parcelId: string) => void;
+  onAdded?: () => void;
   lastDpdPostcode?: string;
   initialLabel?: string;
   initialTrackingInput?: string;
@@ -53,7 +55,16 @@ export function AddParcelSheet({
   const [pasteError, setPasteError] = useState<string | null>(null);
   const trackingInput = useRef<HTMLTextAreaElement>(null);
   const titleInput = useRef<HTMLInputElement>(null);
-  const [dialog, onClose] = useSheetDialog<HTMLDivElement>(true, onDismissed, titleInput);
+  const saved = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+  const [dialog, onClose] = useSheetDialog<HTMLDivElement>(true, () => {
+    onDismissed();
+    if (saved.current) onAdded?.();
+  }, titleInput);
 
   const parsedTracking = parseTrackingInput(trackingInputValue);
   const trackingNumber = parsedTracking.trackingNumber;
@@ -117,8 +128,11 @@ export function AddParcelSheet({
           ? carrierInputValue('dpdPostcode').trim()
           : undefined,
       });
+      if (!mounted.current) return;
+      saved.current = true;
       onClose();
     } catch (err) {
+      if (!mounted.current) return;
       if (err instanceof ParcelAlreadyExistsError) {
         setError(t('add.alreadyExists'));
         setExistingParcelId(err.parcelId);

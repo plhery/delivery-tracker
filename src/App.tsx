@@ -1,7 +1,8 @@
 import { focusClickedButton } from './lib/modal';
 import { userErrorMessage } from './lib/userMessages';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AddParcelSheet } from './components/AddParcelSheet';
+import { ParcelAddedBurst } from './components/ParcelAddedBurst';
 import { AccountMenu } from './components/AccountMenu';
 import { AppNavigation, type AppTab } from './components/AppNavigation';
 import { ParcelCard } from './components/ParcelCard';
@@ -106,6 +107,8 @@ export default function App({
   } = useParcels();
   const [sharedParcelInput, setSharedParcelInput] = useState<SharedParcelInput | null>(null);
   const [adding, setAdding] = useState(false);
+  const [parcelBurst, setParcelBurst] = useState(0);
+  const finishParcelBurst = useCallback(() => setParcelBurst(0), []);
   const [undoParcel, setUndoParcel] = useState<ParcelWithEvents | null>(null);
   const [undoing, setUndoing] = useState(false);
   const [undoError, setUndoError] = useState<string | null>(null);
@@ -593,12 +596,15 @@ export default function App({
         <AddParcelSheet
           onAdd={addParcel}
           onClose={() => setAdding(false)}
+          onAdded={() => setParcelBurst((previous) => previous + 1)}
           onOpenParcel={(parcelId) => openParcelDetail(parcelId)}
           lastDpdPostcode={lastDpdPostcode}
           initialLabel={sharedParcelInput?.label}
           initialTrackingInput={sharedParcelInput?.trackingInput}
         />
       )}
+
+      {parcelBurst > 0 && <ParcelAddedBurst key={parcelBurst} onFinished={finishParcelBurst} />}
 
       {openParcel && (
         <ParcelDetail

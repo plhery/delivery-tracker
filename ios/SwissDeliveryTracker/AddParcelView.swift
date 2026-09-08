@@ -4,6 +4,7 @@ import VisionKit
 
 struct AddParcelView: View {
     let onOpenParcel: (UUID) -> Void
+    let onAdded: () -> Void
 
     @EnvironmentObject private var store: ParcelStore
     @EnvironmentObject private var localizer: Localizer
@@ -31,8 +32,9 @@ struct AddParcelView: View {
         case deliveryPostcode
     }
 
-    init(draft: SharedParcelDraft?, onOpenParcel: @escaping (UUID) -> Void = { _ in }) {
+    init(draft: SharedParcelDraft?, onOpenParcel: @escaping (UUID) -> Void = { _ in }, onAdded: @escaping () -> Void = {}) {
         self.onOpenParcel = onOpenParcel
+        self.onAdded = onAdded
         _label = State(initialValue: draft?.label ?? "")
         _trackingInput = State(initialValue: draft?.trackingInput ?? "")
     }
@@ -582,6 +584,7 @@ struct AddParcelView: View {
                         ? (parsed.trackingURL ?? trackingURL) : nil,
                     dpdPostcode: postcodeRequirement != nil ? deliveryPostcode : nil
                 )
+                onAdded()
                 dismiss()
             } catch {
                 if let apiError = error as? DeliveryAPIError,
@@ -592,6 +595,62 @@ struct AddParcelView: View {
                 saving = false
             }
         }
+    }
+}
+
+/// A brief, deliberately uneven toss; never takes focus or intercepts a touch.
+struct ParcelAddedBurst: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var started = Date()
+    let onFinished: () -> Void
+
+    // Horizontal spread, upward impulse, rotation, size, launch delay.
+    private static let parcels: [(Double, Double, Double, Double, Double)] = [
+        (-0.94, 148, -112, 26, 0.02), (-0.68, 242, 78, 34, 0),
+        (-0.45, 186, -158, 29, 0.07), (-0.21, 282, 106, 37, 0.03),
+        (0.08, 218, -72, 31, 0.09), (0.32, 166, 142, 25, 0.01),
+        (0.54, 256, -128, 35, 0.05), (0.76, 212, 94, 28, 0.08),
+        (0.96, 152, 164, 32, 0.04),
+    ]
+
+    var body: some View {
+        GeometryReader { geometry in
+            TimelineView(.animation) { timeline in
+                let elapsed = max(0, timeline.date.timeIntervalSince(started))
+                let origin = CGPoint(x: geometry.size.width / 2, y: geometry.size.height * 0.6)
+                if reduceMotion {
+                    Text("📦").font(.system(size: 42))
+                        .opacity(min(1, elapsed / 0.1) * max(0, min(1, (0.55 - elapsed) / 0.18)))
+                        .position(origin)
+                } else {
+                    let spread = min(geometry.size.width - 60, 350) / 2
+                    ForEach(Self.parcels.indices, id: \.self) { index in
+                        particle(index, elapsed: elapsed, origin: origin, spread: spread)
+                    }
+                }
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .task {
+            do { try await Task.sleep(for: .seconds(reduceMotion ? 0.55 : 1.2)) }
+            catch { return }
+            onFinished()
+        }
+        .onChange(of: reduceMotion) { _, _ in onFinished() }
+    }
+
+    private func particle(_ index: Int, elapsed: TimeInterval, origin: CGPoint, spread: CGFloat) -> some View {
+        let parcel = Self.parcels[index]
+        let progress = max(0, min(1, (elapsed - parcel.4) / 1.05))
+        let rotation = parcel.2 * progress + sin(progress * .pi * 2) * 12
+        let scale = min(1, progress / 0.1) * (1 - progress * 0.18)
+        let opacity = min(1, progress / 0.04) * min(1, (1 - progress) / 0.24)
+        let x = origin.x + CGFloat(parcel.0 * (1 - pow(1 - progress, 2))) * spread
+        let y = origin.y + CGFloat(-parcel.1 * progress + 220 * progress * progress)
+        return Text("📦").font(.system(size: CGFloat(parcel.3)))
+            .rotationEffect(.degrees(rotation)).scaleEffect(scale).opacity(opacity)
+            .position(x: x, y: y)
     }
 }
 

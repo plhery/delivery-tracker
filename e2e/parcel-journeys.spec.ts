@@ -84,6 +84,35 @@ test('adds a parcel from tracking text', async ({ page }) => {
 
   await expect(page.getByText('Fondue set')).toBeVisible();
   await expect(sheet).toBeHidden();
+  const burst = page.locator('.parcel-added-burst');
+  await expect(burst).toBeVisible();
+  await expect(burst).toHaveAttribute('aria-hidden', 'true');
+  expect(await burst.evaluate((element) => getComputedStyle(element).pointerEvents)).toBe('none');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(burst).toHaveCount(0);
+});
+
+test('parcel celebration respects reduced motion and clears before the next interaction', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.getByRole('button', { name: 'Add a parcel' }).click();
+  let sheet = page.getByRole('dialog', { name: 'Add a parcel' });
+  await sheet.getByLabel('Tracking number or link').fill('99.34.111111.22222222');
+  await sheet.getByRole('button', { name: 'Add parcel' }).click();
+  const burst = page.locator('.parcel-added-burst');
+  await expect(burst).toHaveAttribute('data-reduced', 'true');
+  expect(await burst.evaluate((element) => element.getAnimations({ subtree: true })
+    .every((animation) => (animation.effect as KeyframeEffect).getKeyframes()
+      .every((frame) => frame.transform === undefined)))).toBe(true);
+  // The decorative layer must let the next tap through, and leave no stale burst.
+  await page.getByRole('button', { name: 'Add a parcel' }).click();
+  await expect(burst).toHaveCount(0);
+  sheet = page.getByRole('dialog', { name: 'Add a parcel' });
+  await sheet.getByLabel('Tracking number or link').fill('99.34.111111.22222222');
+  await sheet.getByRole('button', { name: 'Add parcel' }).click();
+  await expect(sheet.getByRole('alert')).toContainText('already tracking this parcel');
+  await expect(burst).toHaveCount(0);
+  await sheet.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(burst).toHaveCount(0);
 });
 
 test('opens unknown postal tracking on 17TRACK in the selected language', async ({ page }) => {
