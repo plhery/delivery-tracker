@@ -1,7 +1,6 @@
 # Architecture
 
-Delivery Tracker is a full-stack Next.js PWA for French and Swiss parcel
-tracking. Supabase Auth identifies
+Delivery Tracker is a full-stack Next.js PWA for parcel tracking. Supabase Auth identifies
 users, Postgres row-level security (RLS) isolates their parcels, and only
 server-side route handlers and the background tracker can access the
 service-role key.

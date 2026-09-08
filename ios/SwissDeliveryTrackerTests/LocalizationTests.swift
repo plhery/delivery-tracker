@@ -79,10 +79,10 @@ final class LocalizationTests: XCTestCase {
     func testNativeWelcomeExplainsCrossDeviceTrackingInEveryLanguage() throws {
         let dictionaries = try localizationDictionaries()
         let expected = [
-            "en": "Track French and Swiss deliveries on the web and this iPhone.",
-            "de": "Verfolge französische und Schweizer Lieferungen im Web und auf diesem iPhone.",
-            "fr": "Suivez vos livraisons françaises et suisses sur le web et sur cet iPhone.",
-            "it": "Segui le consegne francesi e svizzere sul web e su questo iPhone.",
+            "en": "Track deliveries on the web and this iPhone.",
+            "de": "Verfolge Lieferungen im Web und auf diesem iPhone.",
+            "fr": "Suivez vos livraisons sur le web et sur cet iPhone.",
+            "it": "Segui le consegne sul web e su questo iPhone.",
         ]
 
         for (language, subtitle) in expected {

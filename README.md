@@ -5,7 +5,7 @@
 <h1 align="center">Delivery Tracker</h1>
 
 <p align="center">
-  A new home for your packages across Switzerland and France.
+  A new home for your packages.
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 
 ![Delivery Tracker showing fictional demo parcels](docs/screenshot.jpg)
 
-Delivery Tracker follows French and Swiss parcel deliveries in one tidy,
+Delivery Tracker follows parcel deliveries in one tidy,
 installable web app. Its shared carrier picker includes Swiss Post, Swiss Post
 Cargo, Quickpac, Planzer, DPD Switzerland, GLS Switzerland, UPS, Cainiao /
 AliExpress, SunYou, Hermes Einrichtungs-Service, Spring GDS, PostLogistics and

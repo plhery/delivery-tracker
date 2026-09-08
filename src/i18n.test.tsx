@@ -41,12 +41,12 @@ describe('localization', () => {
 
     await waitFor(() => {
       expect(screen.getByLabelText('Sprache')).toHaveValue('de');
-      expect(screen.getByText('Französische und Schweizer Sendungen')).toBeInTheDocument();
+      expect(screen.getByText('Sendungsverfolgung')).toBeInTheDocument();
       expect(screen.getByText('In Zustellung')).toBeInTheDocument();
     });
 
     await user.selectOptions(screen.getByLabelText('Sprache'), 'fr');
-    expect(screen.getByText('Suivi de colis français et suisses')).toBeInTheDocument();
+    expect(screen.getByText('Suivi de colis')).toBeInTheDocument();
     expect(screen.getByText('En livraison')).toBeInTheDocument();
     await waitFor(() => {
       expect(document.documentElement.lang).toBe('fr');

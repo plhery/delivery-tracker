@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'Delivery Tracker',
     short_name: 'Delivery Tracker',
     description:
-      'Private parcel tracking across France and Switzerland for French, Swiss, and international carriers.',
+      'Private parcel tracking, with alerts and history synced across your devices.',
     lang: 'en',
     id: '/',
     start_url: '/',

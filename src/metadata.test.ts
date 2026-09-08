@@ -11,12 +11,12 @@ import { metadata as layoutMetadata } from '../app/layout';
 import manifest from '../app/manifest';
 import { generateMetadata } from '../app/page';
 
-const TITLE = 'French & Swiss Parcel Tracking | Delivery Tracker';
+const TITLE = 'Delivery Tracker';
 const DESCRIPTION =
-  'Private parcel tracking across France and Switzerland for French, Swiss, and international carriers.';
+  'Private parcel tracking, with alerts and history synced across your devices.';
 
 describe('public product metadata', () => {
-  it('positions the site and installed PWA for France and Switzerland', () => {
+  it('uses Delivery Tracker branding for the site and installed PWA', () => {
     expect(layoutMetadata).toMatchObject({
       applicationName: 'Delivery Tracker',
       title: TITLE,

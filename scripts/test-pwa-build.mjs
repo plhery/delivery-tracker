@@ -71,8 +71,7 @@ assert.equal(manifest.start_url, '/');
 assert.equal(manifest.scope, '/');
 assert.equal(manifest.display, 'standalone');
 assert.equal(manifest.id, '/');
-assert.match(manifest.description, /France/, 'the manifest must describe French delivery tracking');
-assert.match(manifest.description, /Switzerland/, 'the manifest must describe Swiss delivery tracking');
+assert.equal(manifest.description, 'Private parcel tracking, with alerts and history synced across your devices.');
 assert.deepEqual(manifest.share_target, {
   action: '/share-target',
   method: 'POST',

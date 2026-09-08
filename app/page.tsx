@@ -3,9 +3,9 @@ import { headers } from 'next/headers';
 import { connection } from 'next/server';
 import { ClientApplication } from '../src/ClientApplication';
 
-const title = 'French & Swiss Parcel Tracking | Delivery Tracker';
+const title = 'Delivery Tracker';
 const description =
-  'Private parcel tracking across France and Switzerland for French, Swiss, and international carriers.';
+  'Private parcel tracking, with alerts and history synced across your devices.';
 
 function firstHeaderValue(value: string | null): string | null {
   const first = value?.split(',')[0]?.trim();
@@ -60,7 +60,7 @@ export async function generateMetadata(): Promise<Metadata> {
         url: image,
         width: 1_734,
         height: 907,
-        alt: 'Delivery Tracker for French and Swiss parcel deliveries',
+        alt: 'Delivery Tracker for parcel deliveries',
       }],
     },
     twitter: {

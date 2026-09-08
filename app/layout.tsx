@@ -5,9 +5,9 @@ import { APPEARANCE_BOOTSTRAP } from '../src/lib/appearanceConfig';
 
 export const metadata: Metadata = {
   applicationName: 'Delivery Tracker',
-  title: 'French & Swiss Parcel Tracking | Delivery Tracker',
+  title: 'Delivery Tracker',
   description:
-    'Private parcel tracking across France and Switzerland for French, Swiss, and international carriers.',
+    'Private parcel tracking, with alerts and history synced across your devices.',
   manifest: '/manifest.webmanifest',
   icons: {
     icon: '/icons/icon.svg',
