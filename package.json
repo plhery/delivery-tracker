@@ -52,7 +52,7 @@
     "fetch-cookie": "^3.1.0",
     "jose": "^6.2.10",
     "luxon": "^3.7.2",
-    "next": "^16.3.2",
+    "next": "^16.3.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "serwist": "^9.5.12",
@@ -74,7 +74,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "ajv": "^8.20.0",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.3.2",
+    "eslint-config-next": "^16.3.4",
     "jsdom": "^30.0.1",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
