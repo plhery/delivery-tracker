@@ -35,6 +35,7 @@ enum AppAppearance: String, CaseIterable, Identifiable {
     case system, light, dark
 
     static let storageKey = "sdt.appearance.v1"
+    static let defaultValue = AppAppearance.light
     var id: String { rawValue }
     var titleKey: String { "native.appearance.\(rawValue)" }
     var interfaceStyle: UIUserInterfaceStyle {
@@ -62,7 +63,7 @@ struct AppWindowAppearance: UIViewRepresentable {
     }
 
     final class AppearanceView: UIView {
-        var appearance = AppAppearance.system {
+        var appearance = AppAppearance.defaultValue {
             didSet {
                 guard appearance != oldValue else { return }
                 // Propagate UIKit traits after SwiftUI finishes its current update.

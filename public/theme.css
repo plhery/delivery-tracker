@@ -21,7 +21,7 @@
   --shadow: 0 3px 16px rgb(0 0 0 / 10%);
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-appearance="light"]):not([data-appearance="dark"]) {
+  :root[data-appearance="system"] {
     color-scheme: dark;
     --ink: #f5f6f2; --ink-soft: #afb9a9; --canvas: #151915; --paper: #242824;
     --control: #2e342d; --line: #3e463b; --green: #9be0b5; --green-soft: #243d2e;

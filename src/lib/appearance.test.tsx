@@ -19,6 +19,35 @@ beforeEach(() => {
 });
 
 describe('appearance', () => {
+  it('defaults to light on a dark device, before and after React renders', () => {
+    dark = true;
+    window.eval(APPEARANCE_BOOTSTRAP);
+    expect(document.documentElement.dataset.appearance).toBe('light');
+    render(<AppearanceProvider><Controls /></AppearanceProvider>);
+    expect(screen.getByRole('status')).toHaveTextContent('light');
+    expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute('content', '#F4F5F1');
+  });
+  it.each(['light', 'dark', 'system'])('preserves an explicitly saved %s choice', (choice) => {
+    dark = true;
+    window.localStorage.setItem(APPEARANCE_STORAGE_KEY, choice);
+    window.eval(APPEARANCE_BOOTSTRAP);
+    expect(document.documentElement.dataset.appearance).toBe(choice);
+    render(<AppearanceProvider><Controls /></AppearanceProvider>);
+    expect(screen.getByRole('status')).toHaveTextContent(choice);
+    expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute('content', choice === 'light' ? '#F4F5F1' : '#151915');
+  });
+  it('defaults to light when a stored value is invalid or storage cannot be read', () => {
+    window.localStorage.setItem(APPEARANCE_STORAGE_KEY, 'invalid');
+    window.eval(APPEARANCE_BOOTSTRAP);
+    expect(document.documentElement.dataset.appearance).toBe('light');
+    const read = vi.spyOn(window.localStorage, 'getItem').mockImplementation(() => { throw new Error('Storage blocked'); });
+    window.eval(APPEARANCE_BOOTSTRAP);
+    expect(document.documentElement.dataset.appearance).toBe('light');
+    render(<AppearanceProvider><Controls /></AppearanceProvider>);
+    expect(screen.getByRole('status')).toHaveTextContent('light');
+    read.mockRestore();
+  });
+
   it('returns an open screen from forced dark to the light system immediately', () => {
     render(<AppearanceProvider><Controls /></AppearanceProvider>);
     fireEvent.click(screen.getByRole('button', { name: 'dark' }));
@@ -31,6 +60,7 @@ describe('appearance', () => {
   });
   it('follows system changes only while system is selected', () => {
     render(<AppearanceProvider><Controls /></AppearanceProvider>);
+    fireEvent.click(screen.getByRole('button', { name: 'system' }));
     act(() => { dark = true; changes.forEach((listener) => listener()); });
     expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute('content', '#151915');
     fireEvent.click(screen.getByRole('button', { name: 'light' }));

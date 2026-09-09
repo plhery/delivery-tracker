@@ -8,7 +8,7 @@ struct SwissDeliveryTrackerApp: App {
     @StateObject private var localizer: Localizer
     @StateObject private var invitation = FriendInvitationStore()
     @StateObject private var friendsActivity = FriendsActivityStore()
-    @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system
+    @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.defaultValue
 
     init() {
         let localizer = Localizer()

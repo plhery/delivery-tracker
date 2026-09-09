@@ -154,7 +154,7 @@ struct AccountView: View {
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.dismiss) private var dismiss
-    @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.system
+    @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.defaultValue
     @State private var working = false
     @State private var exportURL: URL?
     @State private var showingShareSheet = false
