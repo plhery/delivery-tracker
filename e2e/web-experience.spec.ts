@@ -168,12 +168,10 @@ test('keeps language and account consistent across deliveries, Passport, and par
 test('opens Passport explanation bubbles without moving the journal and restores focus', async ({ page }) => {
   await demo(page);
   await page.getByRole('button', { name: 'Passport', exact: true }).click();
-  await expect(page.locator('.passport-cover__count')).toHaveText('1');
+  await expect(page.locator('.passport-cover__count')).toHaveText('10');
   await expect(page.locator('.passport-note')).toHaveCount(0);
   await expect(page.locator('.country-row')).toHaveCount(3);
   await expect(page.locator('.passport-count')).toHaveCount(0);
-  await expect(page.locator('.stamp-card')).toHaveCount(6);
-  await page.getByRole('button', { name: 'All stamps', exact: true }).click();
   await expect(page.locator('.stamp-card')).toHaveCount(12);
   const positions = await page.locator('.stamp-card').evaluateAll((cards) => cards.slice(0, 4).map((card) => card.getBoundingClientRect().top));
   expect(new Set(positions).size).toBe(1);
@@ -206,7 +204,7 @@ test('anchors every Passport bubble within a narrow screen and explains the coun
   await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'dark' });
   await demo(page);
   await page.getByRole('button', { name: 'Passport', exact: true }).click();
-  await page.getByRole('button', { name: 'All stamps', exact: true }).click();
+  await expect(page.locator('.stamp-card')).toHaveCount(12);
   const cards = page.locator('.passport-page button[aria-haspopup="dialog"]');
   for (const card of await cards.all()) {
     await card.click();
@@ -288,9 +286,11 @@ test('scrolls from a card, reveals archive smoothly, and supports reversing the 
   await swipe(box!.x + 100, box!.y + box!.height / 2, 6, -150);
   await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(50);
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.evaluate(() => scrollTo(0, 0));
-  await page.waitForTimeout(300);
-  const x = box!.x + 230; const y = box!.y + box!.height / 2;
+  await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+  await card.scrollIntoViewIfNeeded();
+  const swipeBox = (await card.boundingBox())!;
+  const x = swipeBox.x + 230; const y = swipeBox.y + swipeBox.height / 2;
   await swipe(x, y, -70, 3);
   await expect(card).toHaveCSS('transform', 'matrix(1, 0, 0, 1, -88, 0)');
   const archive = page.getByRole('button', { name: 'Archive Birthday gift 🎁', exact: true });

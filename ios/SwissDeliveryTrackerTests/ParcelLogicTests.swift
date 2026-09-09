@@ -3,6 +3,48 @@ import UIKit
 @testable import SwissDeliveryTracker
 
 final class ParcelLogicTests: XCTestCase {
+    func testSharedDemoCatalogHasVariedHistoriesAndRelativeDates() {
+        let now = DateParser.date("2026-09-09T12:00:00Z")!
+        let parcels = DemoRepository.seed(now: now)
+        XCTAssertEqual(parcels.count, 16)
+        XCTAssertEqual(Set(parcels.map(\.trackingNumber)).count, 16)
+        XCTAssertEqual(parcels.filter(\.isActive).count, 6)
+        XCTAssertEqual(parcels.filter(\.isDelivered).count, 10)
+        XCTAssertEqual(parcels.filter(\.isArchived).count, 5)
+        XCTAssertEqual(ParcelOrganizer.nextDelivery(from: parcels, now: now)?.label, "New sneakers 👟")
+        XCTAssertTrue(parcels.contains { $0.expectedDelivery != nil })
+        XCTAssertTrue(parcels.contains { $0.currentStage == .inTransit && $0.expectedDelivery == nil })
+        for parcel in parcels {
+            XCTAssertTrue(CarrierID.allCases.contains(parcel.carrier))
+            let dates = parcel.trackingEvents.compactMap { DateParser.date($0.occurredAt) }
+            XCTAssertEqual(dates.count, parcel.trackingEvents.count)
+            XCTAssertEqual(dates, dates.sorted())
+            XCTAssertTrue(dates.allSatisfy { $0 <= now })
+            XCTAssertTrue(parcel.trackingEvents.allSatisfy { $0.packageID == parcel.id })
+        }
+    }
+
+    func testDemoUpgradePreservesEditsAndOnlyAddsExamplesOnce() throws {
+        let suite = "demo-catalog-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var coffee = try XCTUnwrap(DemoRepository.seed().first { $0.trackingNumber == "993412345678901234" })
+        coffee.label = "My edited coffee"
+        coffee.archivedAt = DateParser.isoString(Date())
+        defaults.set(try JSONEncoder.deliveryTracker.encode([coffee]), forKey: "sdt.native.demo.parcels.v1")
+        let repo = DemoRepository(defaults: defaults)
+        let upgraded = repo.list()
+        XCTAssertEqual(upgraded.count, 16)
+        XCTAssertEqual(upgraded.first { $0.id == coffee.id }?.label, "My edited coffee")
+        XCTAssertTrue(try XCTUnwrap(upgraded.first { $0.id == coffee.id }).isArchived)
+        let lamp = try XCTUnwrap(upgraded.first { $0.label == "Moon lamp 🌙" })
+        try repo.permanentlyDelete(id: lamp.id)
+        XCTAssertEqual(DemoRepository(defaults: defaults).list().count, 15)
+        defaults.set(try JSONEncoder.deliveryTracker.encode([Parcel]()), forKey: "sdt.native.demo.parcels.v1")
+        defaults.removeObject(forKey: "sdt.native.demo.catalog.v2")
+        XCTAssertTrue(DemoRepository(defaults: defaults).list().isEmpty)
+    }
+
     func testArrivalTiltFiltersJitterAndBoundsLargeMovements() {
         var tilt = ArrivalTilt()
         tilt.follow(roll: 0.44, pitch: -0.44)

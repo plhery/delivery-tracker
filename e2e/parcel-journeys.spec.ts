@@ -210,7 +210,7 @@ test('opens unknown postal tracking on 17TRACK in the selected language', async 
   await page.getByRole('button', { name: /^(?:Next up: )?Postal shipment —/ }).click();
   detail = page.getByRole('dialog', { name: 'Postal shipment' });
   await expect(detail.getByRole('button', { name: /Transporteur postal inconnu/ })).toBeVisible();
-  const frenchLink = detail.getByRole('link', { name: 'Ouvrir sur 17TRACK ↗' });
+  const frenchLink = detail.getByRole('link', { name: 'Ouvrir le site 17TRACK' });
   await expect(frenchLink).toBeVisible();
   await expect(frenchLink).toHaveAttribute('href', 'https://t.17track.net/fr#nums=RA123456785DE');
   await expect(detail.getByText(/Consultez 17TRACK ou choisissez le transporteur/)).toHaveCount(0);

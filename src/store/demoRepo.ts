@@ -1,3 +1,4 @@
+import demoCatalog from '../../shared/delivery-demo.json';
 import {
   detectCarrier,
   normalizeTrackingNumber,
@@ -18,6 +19,7 @@ import {
 export const DEMO_STORAGE_KEY = 'sdt.demo.parcels.v1';
 
 const HOUR = 3_600_000;
+const CATALOG_KEY = 'sdt.demo.catalog.v2';
 
 function createMemoryStorage(): Storage {
   const values = new Map<string, string>();
@@ -141,58 +143,30 @@ function event(
   };
 }
 
-function seedParcels(now: number): ParcelWithEvents[] {
-  const iso = (msAgo: number) => new Date(now - msAgo).toISOString();
-
-  const coffee: ParcelWithEvents = {
-    id: uid(),
-    trackingNumber: '993412345678901234',
-    label: 'Coffee beans ☕',
-    carrier: 'swiss-post',
-    createdAt: iso(72 * HOUR),
-    syncStatus: 'ok',
-    events: [],
-  };
-  coffee.events = [
-    event(coffee.id, 'registered', iso(72 * HOUR)),
-    { ...event(coffee.id, 'accepted', iso(60 * HOUR)), location: 'Zürich, Switzerland' },
-    event(coffee.id, 'in_transit', iso(40 * HOUR)),
-    event(coffee.id, 'out_for_delivery', iso(28 * HOUR)),
-    event(coffee.id, 'delivered', iso(26 * HOUR)),
-  ];
-
-  const sneakers: ParcelWithEvents = {
-    id: uid(),
-    trackingNumber: '1234567899',
-    label: 'New sneakers 👟',
-    carrier: 'dhl',
-    createdAt: iso(30 * HOUR),
-    syncStatus: 'ok',
-    events: [],
-  };
-  sneakers.events = [
-    event(sneakers.id, 'registered', iso(30 * HOUR)),
-    { ...event(sneakers.id, 'accepted', iso(20 * HOUR)), location: 'Hamburg, Germany' },
-    event(sneakers.id, 'in_transit', iso(10 * HOUR)),
-    event(sneakers.id, 'out_for_delivery', iso(2 * HOUR)),
-  ];
-
-  const gift: ParcelWithEvents = {
-    id: uid(),
-    trackingNumber: 'LX123456789DE',
-    label: 'Birthday gift 🎁',
-    carrier: 'intl-post',
-    createdAt: iso(50 * HOUR),
-    syncStatus: 'ok',
-    events: [],
-  };
-  gift.events = [
-    event(gift.id, 'registered', iso(50 * HOUR)),
-    { ...event(gift.id, 'accepted', iso(44 * HOUR)), location: 'Lyon, France' },
-    event(gift.id, 'customs', iso(12 * HOUR)),
-  ];
-
-  return [coffee, sneakers, gift];
+/** Shared with the iPhone demo; dates are relative to the moment it is seeded. */
+export function seedParcels(now: number): ParcelWithEvents[] {
+  const iso = (hoursAgo: number) => new Date(now - hoursAgo * HOUR).toISOString();
+  return demoCatalog.map((sample) => {
+    const id = uid();
+    let expectedDelivery: string | undefined;
+    if (sample.expectedInDays !== undefined) {
+      const date = new Date(now);
+      date.setDate(date.getDate() + sample.expectedInDays);
+      expectedDelivery = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+    return {
+      id, label: sample.label, trackingNumber: sample.trackingNumber,
+      carrier: sample.carrier as ParcelWithEvents['carrier'],
+      createdAt: iso(Math.max(...sample.events.map((event) => event.hoursAgo))),
+      expectedDelivery, syncStatus: 'ok',
+      archivedAt: sample.archivedHoursAgo === undefined ? undefined : iso(sample.archivedHoursAgo),
+      dpdPostcode: sample.carrier === 'dpd' ? '8004' : undefined,
+      events: sample.events.map((event) => ({
+        id: uid(), parcelId: id, stage: event.stage as Stage,
+        description: event.description, location: event.location, occurredAt: iso(event.hoursAgo),
+      })),
+    };
+  });
 }
 
 function load(storage: Storage): ParcelWithEvents[] | null {
@@ -224,6 +198,17 @@ export function createDemoRepo(
     if (!parcels) {
       parcels = seedParcels(now());
       save(storage, parcels);
+      storage.setItem(CATALOG_KEY, '1');
+    } else if (!storage.getItem(CATALOG_KEY)) {
+      // Upgrade existing demos once, preserving edits, archives, and custom parcels.
+      // Empty lists and separately seeded test/showcase data stay as they are.
+      const legacyNumbers = ['993412345678901234', '1234567899', 'LX123456789DE'];
+      if (parcels.some((parcel) => legacyNumbers.includes(parcel.trackingNumber))) {
+        const existing = new Set(parcels.map((parcel) => parcel.trackingNumber));
+        parcels = [...parcels, ...seedParcels(now()).filter((parcel) => !legacyNumbers.includes(parcel.trackingNumber) && !existing.has(parcel.trackingNumber))];
+        save(storage, parcels);
+      }
+      storage.setItem(CATALOG_KEY, '1');
     }
     return parcels;
   }
@@ -261,6 +246,7 @@ export function createDemoRepo(
     async resetDemo() {
       const parcels = seedParcels(now());
       save(storage, parcels);
+      storage.setItem(CATALOG_KEY, '1');
       return sortNewestFirst(parcels);
     },
 

@@ -43,14 +43,14 @@ describe('App', () => {
     expect(screen.getByText('Start the demo fresh?')).toBeInTheDocument();
     expect(screen.queryByText(/permanently delete/i)).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(await repo.list()).toHaveLength(4);
+    expect(await repo.list()).toHaveLength(original.length + 1);
 
     await user.click(screen.getByRole('button', { name: 'Reset demo data' }));
     await user.click(screen.getByRole('button', { name: 'Reset demo data' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(screen.queryByText('My demo parcel')).not.toBeInTheDocument();
     expect(await screen.findByText(original[0].label!)).toBeInTheDocument();
-    expect(await repo.list()).toHaveLength(3);
+    expect(await repo.list()).toHaveLength(original.length);
   });
 
   it('adds a Dutch postal shipment with automatic PostNL tracking', async () => {
@@ -327,7 +327,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Clear filters' }));
 
     expect(await screen.findByText('Coffee beans ☕')).toBeInTheDocument();
-    expect(screen.getByText('3 shown')).toBeInTheDocument();
+    expect(screen.getByText('16 shown')).toBeInTheDocument();
   });
 
   it('filters parcels by status and carrier', async () => {
@@ -363,8 +363,8 @@ describe('App', () => {
     using clock = vi.spyOn(Date, 'now');
     clock.mockReturnValue(new Date(2026, 8, 9, 12).getTime());
     renderApp();
-    expect(await screen.findByText('Delivered', { selector: '.parcel-card__state' }))
-      .toBeInTheDocument();
+    expect((await screen.findAllByText('Delivered', { selector: '.parcel-card__state' })).length)
+      .toBeGreaterThan(1);
     const deliveredDate = document.querySelector('.parcel-card__completion');
     expect(deliveredDate).toHaveTextContent(/^yesterday$/);
     expect(deliveredDate).not.toHaveTextContent(/^on /);
@@ -528,7 +528,8 @@ describe('App', () => {
 
     const postcode = within(sheet).getByLabelText(/delivery postcode/i);
     expect(postcode).toBeRequired();
-    expect(postcode).toHaveValue('');
+    expect(postcode).toHaveValue('8004');
+    await user.clear(postcode);
     expect(within(sheet).getByRole('button', { name: /add parcel/i })).toBeDisabled();
 
     await user.type(postcode, '80A04');
@@ -929,7 +930,7 @@ describe('App', () => {
 
     // The full history starts open, newest first, without a second preview toggle.
     expect(items[0]).toHaveTextContent('Delivered');
-    expect(items[4]).toHaveTextContent('sender');
+    expect(items[4]).toHaveTextContent('The roastery packed your monthly coffee');
     expect(
       within(detail).getByRole('link', { name: /open swiss post website/i }),
     ).toBeInTheDocument();
@@ -1103,7 +1104,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Undo' }));
 
     expect(await screen.findByText('Coffee beans ☕')).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Archived' })).not.toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Archived' })).queryByText('Coffee beans ☕')).not.toBeInTheDocument();
   });
 
   it('archives a parcel with a long swipe to the left', async () => {

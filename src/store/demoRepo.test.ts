@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { currentStage, isDelivered } from '../lib/stages';
 import { createDemoRepo, DEMO_STORAGE_KEY, nextStage } from './demoRepo';
+import { CARRIER_CAPABILITIES } from '../generated/apiContract';
+import { passportStatistics } from '../lib/passport';
+import { nextPriorityParcel } from '../lib/parcelPriority';
 import { ParcelAlreadyExistsError } from '../types';
 
 beforeEach(() => {
@@ -42,7 +45,8 @@ describe('createDemoRepo', () => {
     const reset = await repo.resetDemo!();
 
     expect(reset.map((parcel) => parcel.label)).toEqual(original.map((parcel) => parcel.label));
-    expect(reset.every((parcel) => !parcel.archivedAt)).toBe(true);
+    expect(reset.filter((parcel) => parcel.archivedAt).map((parcel) => parcel.label))
+      .toEqual(original.filter((parcel) => parcel.archivedAt).map((parcel) => parcel.label));
     expect(Date.parse(reset[0].createdAt) - Date.parse(original[0].createdAt)).toBe(86_400_000);
     expect(await createDemoRepo(window.localStorage).list()).toEqual(reset);
     expect(window.localStorage.getItem('unrelated-setting')).toBe('keep');
@@ -59,6 +63,48 @@ describe('createDemoRepo', () => {
     expect(again.map((p) => p.id).sort()).toEqual(
       parcels.map((p) => p.id).sort(),
     );
+  });
+
+  it('offers varied arrivals, dates, and real histories for the Passport', async () => {
+    const now = Date.parse('2026-09-09T12:00:00Z');
+    const parcels = await createDemoRepo(window.localStorage, () => now).list();
+    expect(parcels).toHaveLength(16);
+    expect(new Set(parcels.map(parcel => parcel.trackingNumber)).size).toBe(parcels.length);
+    expect(parcels.filter(parcel => parcel.archivedAt)).toHaveLength(5);
+    expect(nextPriorityParcel(parcels, now)?.label).toBe('New sneakers 👟');
+    expect(parcels.some(parcel => parcel.expectedDelivery)).toBe(true);
+    expect(parcels.some(parcel => currentStage(parcel.events) === 'in_transit' && !parcel.expectedDelivery)).toBe(true);
+    for (const parcel of parcels) {
+      expect(CARRIER_CAPABILITIES).toHaveProperty(parcel.carrier);
+      expect(parcel.events.every(event => event.parcelId === parcel.id && Date.parse(event.occurredAt) <= now)).toBe(true);
+      const times = parcel.events.map(event => Date.parse(event.occurredAt));
+      expect(times).toEqual([...times].sort((a, b) => a - b));
+    }
+    expect(passportStatistics(parcels)).toMatchObject({
+      deliveredCount: 10, activeCount: 6, domesticDeliveryCount: 2,
+      crossBorderCount: 8, pickupDeliveryCount: 1, longWaitDeliveryCount: 1,
+    });
+    expect(passportStatistics(parcels).originCountries.length).toBe(6);
+  });
+
+  it('upgrades legacy examples once without replacing edits or restoring deleted samples', async () => {
+    const original = await createDemoRepo(window.localStorage).list();
+    const coffee = { ...original.find(parcel => parcel.label === 'Coffee beans ☕')!, label: 'My edited coffee', archivedAt: '2026-09-08T12:00:00Z' };
+    window.localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify([coffee]));
+    window.localStorage.removeItem('sdt.demo.catalog.v2');
+    const repo = createDemoRepo(window.localStorage);
+    const upgraded = await repo.list();
+    expect(upgraded).toHaveLength(14);
+    expect(upgraded.find(parcel => parcel.id === coffee.id)).toEqual(coffee);
+    const lamp = upgraded.find(parcel => parcel.label === 'Moon lamp 🌙')!;
+    await repo.deletePermanently!(lamp.id);
+    expect(await createDemoRepo(window.localStorage).list()).toHaveLength(13);
+    expect(window.localStorage.getItem('sdt.demo.catalog.v2')).toBe('1');
+  });
+
+  it('does not populate an intentionally empty demo', async () => {
+    window.localStorage.setItem(DEMO_STORAGE_KEY, '[]');
+    expect(await createDemoRepo(window.localStorage).list()).toEqual([]);
   });
 
   it('adds a parcel as pending until the carrier announces it', async () => {

@@ -80,8 +80,11 @@ configure Supabase Auth, the App Group, signing, and APNs.
 
 ## Try it locally
 
-The local app starts in demo mode with fictional parcels, so no account or
-database is needed:
+The local app starts in demo mode with 16 fictional parcels: six on the way,
+five recent arrivals, and five archived deliveries. Vinyl, film rolls, a moon
+lamp, and parcels from six countries give you plenty to explore, including
+tracking histories and Passport stamps. The iPhone app uses the same examples.
+No account or database is needed:
 
 ```bash
 git clone https://github.com/plhery/swiss-delivery-tracker.git
@@ -92,7 +95,9 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000). Refreshing advances the
-sample deliveries through their journey.
+sample deliveries through their journey. Use **Settings → Account & data →
+Reset demo data** to start fresh. Existing demos receive the new examples once,
+preserving your edits and custom parcels.
 
 ## Self-host it
 

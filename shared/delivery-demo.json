@@ -1,0 +1,503 @@
+[
+  {
+    "label": "Coffee beans ☕",
+    "trackingNumber": "993412345678901234",
+    "carrier": "swiss-post",
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 72,
+        "description": "The roastery packed your monthly coffee"
+      },
+      {
+        "stage": "accepted",
+        "hoursAgo": 60,
+        "description": "Freshly roasted beans handed to Swiss Post",
+        "location": "Zürich, Switzerland"
+      },
+      {
+        "stage": "in_transit",
+        "hoursAgo": 40,
+        "description": "Sorted at the parcel center",
+        "location": "Härkingen, Switzerland"
+      },
+      {
+        "stage": "out_for_delivery",
+        "hoursAgo": 28,
+        "description": "With your local delivery round",
+        "location": "Zürich, Switzerland"
+      },
+      {
+        "stage": "delivered",
+        "hoursAgo": 26,
+        "description": "Delivered to your mailbox",
+        "location": "Zürich, Switzerland"
+      }
+    ]
+  },
+  {
+    "label": "New sneakers 👟",
+    "trackingNumber": "1234567899",
+    "carrier": "dhl",
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 30,
+        "description": "Your running shoes are packed"
+      },
+      {
+        "stage": "accepted",
+        "hoursAgo": 20,
+        "description": "Collected from the running shop",
+        "location": "Hamburg, Germany"
+      },
+      {
+        "stage": "in_transit",
+        "hoursAgo": 10,
+        "description": "Arrived at the destination depot",
+        "location": "Regensdorf, Switzerland"
+      },
+      {
+        "stage": "out_for_delivery",
+        "hoursAgo": 2,
+        "description": "With the courier for delivery today",
+        "location": "Zürich, Switzerland"
+      }
+    ],
+    "expectedInDays": 0
+  },
+  {
+    "label": "Birthday gift 🎁",
+    "trackingNumber": "LX123456789DE",
+    "carrier": "intl-post",
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 50,
+        "description": "A little surprise is on its way"
+      },
+      {
+        "stage": "accepted",
+        "hoursAgo": 44,
+        "description": "Accepted by the origin post",
+        "location": "Lyon, France"
+      },
+      {
+        "stage": "customs",
+        "hoursAgo": 12,
+        "description": "The parcel is being cleared for import",
+        "location": "Basel, Switzerland"
+      }
+    ]
+  },
+  {
+    "label": "Moon lamp 🌙",
+    "trackingNumber": "DEMOGLS20260001",
+    "carrier": "gls-de",
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 54,
+        "description": "Your bedside moon is ready to travel"
+      },
+      {
+        "stage": "accepted",
+        "hoursAgo": 40,
+        "description": "Collected from the design studio",
+        "location": "Berlin, Germany"
+      },
+      {
+        "stage": "in_transit",
+        "hoursAgo": 5,
+        "description": "Departed the sorting center",
+        "location": "Neuenstein, Germany"
+      }
+    ],
+    "expectedInDays": 1
+  },
+  {
+    "label": "Kind of Blue · vinyl 🎷",
+    "trackingNumber": "1ZDEMO202600000001",
+    "carrier": "ups",
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 56,
+        "description": "The record shop packed your pressing"
+      },
+      {
+        "stage": "accepted",
+        "hoursAgo": 43,
+        "description": "Collected from the record shop",
+        "location": "Amsterdam, Netherlands"
+      },
+      {
+        "stage": "in_transit",
+        "hoursAgo": 6,
+        "description": "Travelling to the Swiss delivery network",
+        "location": "Eindhoven, Netherlands"
+      }
+    ]
+  },
+  {
+    "label": "Trail weekend kit 🏕️",
+    "trackingNumber": "DEMODPD20260001",
+    "carrier": "dpd",
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 38,
+        "description": "Your trail essentials are packed"
+      },
+      {
+        "stage": "accepted",
+        "hoursAgo": 8,
+        "description": "Collected from the outdoor shop",
+        "location": "Buchs, Switzerland"
+      }
+    ],
+    "expectedInDays": 2
+  },
+  {
+    "label": "35mm film rolls 🎞️",
+    "trackingNumber": "DEMOQUICK20260001",
+    "carrier": "quickpac",
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 36,
+        "description": "The photo lab has announced your parcel"
+      }
+    ],
+    "expectedInDays": 2
+  },
+  {
+    "label": "Matcha ritual 🍵",
+    "trackingNumber": "DEMOMATCHA20260001",
+    "carrier": "fedex",
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 178,
+        "description": "The sender prepared your parcel"
+      },
+      {
+        "stage": "accepted",
+        "hoursAgo": 170,
+        "description": "Collected from the sender",
+        "location": "Kyoto, Japan"
+      },
+      {
+        "stage": "in_transit",
+        "hoursAgo": 110.0,
+        "description": "Sorted for the journey to Zürich",
+        "location": "Härkingen, Switzerland"
+      },
+      {
+        "stage": "out_for_delivery",
+        "hoursAgo": 52,
+        "description": "On the final stretch to your door",
+        "location": "Zürich, Switzerland"
+      },
+      {
+        "stage": "delivered",
+        "hoursAgo": 50,
+        "description": "Delivered — enjoy your new arrival",
+        "location": "Zürich, Switzerland"
+      }
+    ]
+  },
+  {
+    "label": "Sunday in Kyoto 📚",
+    "trackingNumber": "DEMOBOOK20260001",
+    "carrier": "chronopost",
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 118,
+        "description": "The sender prepared your parcel"
+      },
+      {
+        "stage": "accepted",
+        "hoursAgo": 110,
+        "description": "Collected from the sender",
+        "location": "Paris, France"
+      },
+      {
+        "stage": "in_transit",
+        "hoursAgo": 92.0,
+        "description": "Sorted for the journey to Zürich",
+        "location": "Härkingen, Switzerland"
+      },
+      {
+        "stage": "out_for_delivery",
+        "hoursAgo": 76,
+        "description": "On the final stretch to your door",
+        "location": "Zürich, Switzerland"
+      },
+      {
+        "stage": "delivered",
+        "hoursAgo": 74,
+        "description": "Delivered — enjoy your new arrival",
+        "location": "Zürich, Switzerland"
+      }
+    ]
+  },
+  {
+    "label": "Mechanical keyboard ⌨️",
+    "trackingNumber": "DEMOKEYS20260001",
+    "carrier": "dhl",
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 148,
+        "description": "The sender prepared your parcel"
+      },
+      {
+        "stage": "accepted",
+        "hoursAgo": 140,
+        "description": "Collected from the sender",
+        "location": "Berlin, Germany"
+      },
+      {
+        "stage": "in_transit",
+        "hoursAgo": 119.0,
+        "description": "Sorted for the journey to Zürich",
+        "location": "Härkingen, Switzerland"
+      },
+      {
+        "stage": "out_for_delivery",
+        "hoursAgo": 100,
+        "description": "On the final stretch to your door",
+        "location": "Zürich, Switzerland"
+      },
+      {
+        "stage": "delivered",
+        "hoursAgo": 98,
+        "description": "Delivered — enjoy your new arrival",
+        "location": "Zürich, Switzerland"
+      }
+    ]
+  },
+  {
+    "label": "Studio headphones 🎧",
+    "trackingNumber": "DEMOAUDIO20260001",
+    "carrier": "spring-gds",
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 208,
+        "description": "The sender prepared your parcel"
+      },
+      {
+        "stage": "accepted",
+        "hoursAgo": 200,
+        "description": "Collected from the sender",
+        "location": "Rotterdam, Netherlands"
+      },
+      {
+        "stage": "in_transit",
+        "hoursAgo": 173.0,
+        "description": "Sorted for the journey to Zürich",
+        "location": "Härkingen, Switzerland"
+      },
+      {
+        "stage": "out_for_delivery",
+        "hoursAgo": 148,
+        "description": "On the final stretch to your door",
+        "location": "Zürich, Switzerland"
+      },
+      {
+        "stage": "delivered",
+        "hoursAgo": 146,
+        "description": "Delivered — enjoy your new arrival",
+        "location": "Zürich, Switzerland"
+      }
+    ]
+  },
+  {
+    "label": "Linen weekend bag 🧳",
+    "trackingNumber": "DEMOBAG20260001",
+    "carrier": "la-poste",
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 286,
+        "description": "The sender prepared your parcel"
+      },
+      {
+        "stage": "accepted",
+        "hoursAgo": 278,
+        "description": "Collected from the sender",
+        "location": "Lille, France"
+      },
+      {
+        "stage": "in_transit",
+        "hoursAgo": 248.0,
+        "description": "Sorted for the journey to Zürich",
+        "location": "Härkingen, Switzerland"
+      },
+      {
+        "stage": "out_for_delivery",
+        "hoursAgo": 220,
+        "description": "On the final stretch to your door",
+        "location": "Zürich, Switzerland"
+      },
+      {
+        "stage": "delivered",
+        "hoursAgo": 218,
+        "description": "Delivered — enjoy your new arrival",
+        "location": "Zürich, Switzerland"
+      }
+    ],
+    "archivedHoursAgo": 194
+  },
+  {
+    "label": "Espresso tools ☕️",
+    "trackingNumber": "1ZDEMO202600000002",
+    "carrier": "ups",
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 368,
+        "description": "The sender prepared your parcel"
+      },
+      {
+        "stage": "accepted",
+        "hoursAgo": 360,
+        "description": "Collected from the sender",
+        "location": "Milano, Italy"
+      },
+      {
+        "stage": "in_transit",
+        "hoursAgo": 337.0,
+        "description": "Sorted for the journey to Zürich",
+        "location": "Härkingen, Switzerland"
+      },
+      {
+        "stage": "out_for_delivery",
+        "hoursAgo": 316,
+        "description": "On the final stretch to your door",
+        "location": "Zürich, Switzerland"
+      },
+      {
+        "stage": "delivered",
+        "hoursAgo": 314,
+        "description": "Delivered — enjoy your new arrival",
+        "location": "Zürich, Switzerland"
+      }
+    ],
+    "archivedHoursAgo": 290
+  },
+  {
+    "label": "Alpine trail map 🗺️",
+    "trackingNumber": "DEMOMAP20260001",
+    "carrier": "swiss-post",
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 436,
+        "description": "The sender prepared your parcel"
+      },
+      {
+        "stage": "accepted",
+        "hoursAgo": 428,
+        "description": "Collected from the sender",
+        "location": "Bern, Switzerland"
+      },
+      {
+        "stage": "in_transit",
+        "hoursAgo": 419.0,
+        "description": "Sorted for the journey to Zürich",
+        "location": "Härkingen, Switzerland"
+      },
+      {
+        "stage": "out_for_delivery",
+        "hoursAgo": 412,
+        "description": "On the final stretch to your door",
+        "location": "Zürich, Switzerland"
+      },
+      {
+        "stage": "delivered",
+        "hoursAgo": 410,
+        "description": "Delivered — enjoy your new arrival",
+        "location": "Zürich, Switzerland"
+      }
+    ],
+    "archivedHoursAgo": 386
+  },
+  {
+    "label": "Ceramic ramen bowls 🍜",
+    "trackingNumber": "DEMOBOWLS20260001",
+    "carrier": "dhl",
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 1282,
+        "description": "The sender prepared your parcel"
+      },
+      {
+        "stage": "accepted",
+        "hoursAgo": 1274,
+        "description": "Collected from the sender",
+        "location": "Osaka, Japan"
+      },
+      {
+        "stage": "in_transit",
+        "hoursAgo": 890.0,
+        "description": "Sorted for the journey to Zürich",
+        "location": "Härkingen, Switzerland"
+      },
+      {
+        "stage": "out_for_delivery",
+        "hoursAgo": 508,
+        "description": "On the final stretch to your door",
+        "location": "Zürich, Switzerland"
+      },
+      {
+        "stage": "delivered",
+        "hoursAgo": 506,
+        "description": "Delivered — enjoy your new arrival",
+        "location": "Zürich, Switzerland"
+      }
+    ],
+    "archivedHoursAgo": 482
+  },
+  {
+    "label": "Limited-edition art print 🖼️",
+    "trackingNumber": "DEMOART20260001",
+    "carrier": "gls-fr",
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 682,
+        "description": "The sender prepared your parcel"
+      },
+      {
+        "stage": "accepted",
+        "hoursAgo": 674,
+        "description": "Collected from the sender",
+        "location": "Lyon, France"
+      },
+      {
+        "stage": "in_transit",
+        "hoursAgo": 638.0,
+        "description": "Sorted for the journey to Zürich",
+        "location": "Härkingen, Switzerland"
+      },
+      {
+        "stage": "ready_for_pickup",
+        "hoursAgo": 604,
+        "description": "Ready at the neighbourhood parcel shop",
+        "location": "Zürich, Switzerland"
+      },
+      {
+        "stage": "delivered",
+        "hoursAgo": 602,
+        "description": "Collected from the parcel shop",
+        "location": "Zürich, Switzerland"
+      }
+    ],
+    "archivedHoursAgo": 578
+  }
+]

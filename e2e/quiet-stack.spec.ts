@@ -27,7 +27,7 @@ test('keeps the next arrival, issue notice, and search tools in one compact feed
   await expect(notice).toContainText('Birthday gift');
   await expect(notice).not.toContainText('Next up');
   const region = page.getByRole('region', { name: 'On the way' });
-  await expect(region.locator('.parcel-section__heading > span')).toHaveText('2');
+  await expect(region.locator('.parcel-section__heading > span')).toHaveText('6');
   const row = await page.locator('.delivery-overview').boundingBox();
   const searchButton = page.getByRole('button', { name: 'Search & filters' });
   const searchBounds = await searchButton.boundingBox();
@@ -36,7 +36,7 @@ test('keeps the next arrival, issue notice, and search tools in one compact feed
   expect(await page.locator('.deliveries-page').evaluate(el => el.clientWidth)).toBeLessThanOrEqual(660);
   if (isMobile) {
     const list = await page.locator('.parcel-section--past .parcel-grid').boundingBox();
-    const card = await page.locator('.parcel-section--past .parcel-card').boundingBox();
+    const card = await page.locator('.parcel-section--past .parcel-card').first().boundingBox();
     expect(card!.width).toBeGreaterThan(list!.width - 2);
   }
   await searchButton.click();

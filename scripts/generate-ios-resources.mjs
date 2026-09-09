@@ -29,6 +29,7 @@ const outputs = new Map([
   ['Analytics.json', fs.readFileSync(path.join(root, 'shared', 'analytics.json'), 'utf8')],
   ['Localization.json', `${JSON.stringify(languages, null, 2)}\n`],
   ['CarrierCatalog.json', `${JSON.stringify({ 'x-carriers': contract['x-carriers'] }, null, 2)}\n`],
+  ['DeliveryDemo.json', fs.readFileSync(path.join(root, 'shared', 'delivery-demo.json'), 'utf8')],
   ['FriendsDemo.json', fs.readFileSync(path.join(root, 'shared', 'friends-demo.json'), 'utf8')],
   ['ContractFixtures.json', `${JSON.stringify(apiFixture, null, 2)}\n`],
 ]);

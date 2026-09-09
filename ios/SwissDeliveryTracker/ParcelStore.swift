@@ -1135,7 +1135,8 @@ private struct ParcelCache {
     }
 }
 
-private final class DemoRepository {
+final class DemoRepository {
+    private let catalogKey = "sdt.native.demo.catalog.v2"
     private let key = "sdt.native.demo.parcels.v1"
     private let preferencesKey = "sdt.native.demo.preferences.v1"
     private let defaults: UserDefaults
@@ -1269,6 +1270,16 @@ private final class DemoRepository {
     private func load() -> [Parcel] {
         if let data = defaults.data(forKey: key),
            let parcels = try? JSONDecoder.deliveryTracker.decode([Parcel].self, from: data) {
+            if !defaults.bool(forKey: catalogKey) {
+                let legacyNumbers = ["12345678901234", "993412345678901234", "1Z999AA10123456784", "RR123456785DE", "443412345678901234"]
+                if parcels.contains(where: { legacyNumbers.contains($0.trackingNumber) }) {
+                    let existing = Set(parcels.map(\.trackingNumber))
+                    let upgraded = parcels + Self.seed().filter { !existing.contains($0.trackingNumber) }
+                    save(upgraded)
+                    return upgraded
+                }
+                defaults.set(true, forKey: catalogKey)
+            }
             return parcels
         }
         let seeded = Self.seed()
@@ -1278,6 +1289,7 @@ private final class DemoRepository {
 
     private func save(_ parcels: [Parcel]) {
         defaults.set(try? JSONEncoder.deliveryTracker.encode(parcels), forKey: key)
+        defaults.set(true, forKey: catalogKey)
     }
 
     private func update(id: UUID, change: (inout Parcel) -> Void) throws -> Parcel {
@@ -1336,60 +1348,43 @@ private final class DemoRepository {
         timezone: TimeZone.current.identifier
     )
 
-    private static func seed() -> [Parcel] {
-        let now = Date()
-        func iso(hoursAgo: Double) -> String { DateParser.isoString(now.addingTimeInterval(-hoursAgo * 3_600)) }
-        func event(_ id: UUID, _ stage: TrackingStage, _ hours: Double, _ text: String, _ place: String? = nil) -> TrackingEvent {
-            TrackingEvent(id: UUID(), packageID: id, stage: stage, description: text, location: place, occurredAt: iso(hoursAgo: hours))
+    static func seed(now: Date = Date()) -> [Parcel] {
+        struct Sample: Decodable {
+            struct Event: Decodable {
+                let stage: TrackingStage
+                let hoursAgo: Double
+                let description: String
+                let location: String?
+            }
+            let label: String
+            let trackingNumber: String
+            let carrier: CarrierID
+            let expectedInDays: Int?
+            let archivedHoursAgo: Double?
+            let events: [Event]
         }
-        func parcel(
-            label: String, number: String, carrier: CarrierID, created: Double,
-            expected: String? = nil, events: (UUID) -> [TrackingEvent]
-        ) -> Parcel {
+        guard let url = Bundle.main.url(forResource: "DeliveryDemo", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let samples = try? JSONDecoder().decode([Sample].self, from: data) else { return [] }
+        func iso(_ hoursAgo: Double) -> String { DateParser.isoString(now.addingTimeInterval(-hoursAgo * 3_600)) }
+        return samples.map { sample in
             let id = UUID()
-            let history = events(id)
+            let history = sample.events.map { event in
+                TrackingEvent(id: UUID(), packageID: id, stage: event.stage,
+                    description: event.description, location: event.location, occurredAt: iso(event.hoursAgo))
+            }
+            let expected = sample.expectedInDays.flatMap { days in
+                Calendar.current.date(byAdding: .day, value: days, to: now).map { ParcelOrganizer.dayKey($0) }
+            }
             return Parcel(
-                id: id, trackingNumber: number, label: label, carrier: carrier,
-                createdAt: iso(hoursAgo: created), expectedDelivery: expected,
+                id: id, trackingNumber: sample.trackingNumber, label: sample.label, carrier: sample.carrier,
+                createdAt: iso(sample.events.map(\.hoursAgo).max() ?? 0), expectedDelivery: expected,
                 lastStatusText: history.sorted(by: { $0.occurredAt > $1.occurredAt }).first?.description,
-                lastSyncedAt: iso(hoursAgo: 0.2), syncStatus: .ok, syncError: nil,
-                trackingURL: nil, dpdPostcode: carrier == .dpd ? "8004" : nil,
-                carrierData: nil, archivedAt: nil, notificationsMuted: false,
+                lastSyncedAt: iso(0.2), syncStatus: .ok, syncError: nil,
+                trackingURL: nil, dpdPostcode: sample.carrier == .dpd ? "8004" : nil,
+                carrierData: nil, archivedAt: sample.archivedHoursAgo.map(iso), notificationsMuted: false,
                 trackingEvents: history
             )
         }
-        let today = ParcelOrganizer.dayKey(now)
-        let tomorrow = ParcelOrganizer.dayKey(Calendar.current.date(byAdding: .day, value: 1, to: now)!)
-        return [
-            parcel(label: "Alpine running shoes 👟", number: "12345678901234", carrier: .dpd, created: 32, expected: "\(today) 14:10–16:10") { id in [
-                event(id, .registered, 31, "Shipment data received"),
-                event(id, .accepted, 22, "Parcel received by DPD", "Buchs AG"),
-                event(id, .inTransit, 8, "At the sorting depot", "Mägenwil"),
-                event(id, .outForDelivery, 1.5, "Out for delivery", "Zürich"),
-            ] },
-            parcel(label: "Birthday surprise 🎁", number: "993412345678901234", carrier: .swissPost, created: 74) { id in [
-                event(id, .registered, 73, "The sender announced the parcel"),
-                event(id, .accepted, 58, "Consignment posted", "Bern"),
-                event(id, .inTransit, 18, "Sorted at the parcel center", "Härkingen"),
-                event(id, .readyForPickup, 3, "Ready for collection", "Post branch 8004"),
-            ] },
-            parcel(label: "Coffee grinder ☕️", number: "1Z999AA10123456784", carrier: .ups, created: 48, expected: tomorrow) { id in [
-                event(id, .registered, 47, "Label created"),
-                event(id, .accepted, 39, "We have your package", "Milano, IT"),
-                event(id, .inTransit, 5, "Departed from facility", "Bergamo, IT"),
-            ] },
-            parcel(label: "Camera strap", number: "RR123456785DE", carrier: .internationalPost, created: 138) { id in [
-                event(id, .registered, 137, "Posting prepared"),
-                event(id, .accepted, 130, "Accepted by origin post", "Hamburg, Germany"),
-                event(id, .customs, 10, "Awaiting customs clearance", "Basel"),
-            ] },
-            parcel(label: "Coffee beans", number: "443412345678901234", carrier: .quickpac, created: 96) { id in [
-                event(id, .registered, 95, "Shipment announced"),
-                event(id, .accepted, 80, "Parcel received"),
-                event(id, .inTransit, 56, "In transit", "Dietikon"),
-                event(id, .outForDelivery, 28, "Out for delivery"),
-                event(id, .delivered, 26, "Delivered to your mailbox", "Home"),
-            ] },
-        ]
     }
 }
