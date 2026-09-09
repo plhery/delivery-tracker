@@ -21,6 +21,7 @@ function response(body: unknown, ok = true): Response {
 }
 
 beforeEach(() => {
+  Object.defineProperty(navigator, 'maxTouchPoints', { configurable: true, get: () => 0 });
   vi.stubGlobal('PushManager', function PushManager() {});
   vi.stubGlobal('Notification', {
     permission: 'default',
@@ -42,6 +43,23 @@ afterEach(() => {
 });
 
 describe('inspectPushState', () => {
+  it('offers installation only on iOS browsers with an available push service', async () => {
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('iPhone');
+    vi.stubGlobal('PushManager', undefined);
+    await expect(inspectPushState()).resolves.toEqual({ kind: 'install' });
+    vi.mocked(fetch).mockResolvedValueOnce(response({ available: false }));
+    await expect(inspectPushState()).resolves.toEqual({ kind: 'unavailable' });
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }));
+    await expect(inspectPushState()).resolves.toEqual({ kind: 'unsupported' });
+  });
+
+  it('recognizes iPad desktop user agents and installed standalone apps', async () => {
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel');
+    vi.spyOn(navigator, 'maxTouchPoints', 'get').mockReturnValue(5);
+    await expect(inspectPushState()).resolves.toEqual({ kind: 'install' });
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }));
+    await expect(inspectPushState()).resolves.toEqual({ kind: 'prompt', publicKey: 'AQID' });
+  });
   it('explains unsupported and server-unavailable installations', async () => {
     vi.stubGlobal('PushManager', undefined);
     await expect(inspectPushState()).resolves.toEqual({ kind: 'unsupported' });
@@ -146,6 +164,12 @@ describe('app badge lifecycle', () => {
 });
 
 describe('push subscription lifecycle', () => {
+  it('reuses granted permission when retrying or re-enabling alerts', async () => {
+    vi.stubGlobal('Notification', { permission: 'granted', requestPermission: vi.fn() });
+    getSubscription.mockResolvedValue({ toJSON: () => ({ endpoint: 'https://push.example/token' }) });
+    await enablePushNotifications('AQID');
+    expect(Notification.requestPermission).not.toHaveBeenCalled();
+  });
   it('decodes VAPID keys and registers a new subscription', async () => {
     expect([...new Uint8Array(decodePublicKey('AQID'))]).toEqual([1, 2, 3]);
     const subscription = {

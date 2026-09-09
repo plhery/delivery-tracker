@@ -6,6 +6,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { AddParcelSheet } from './components/AddParcelSheet';
 import { ParcelAddedBurst } from './components/ParcelAddedBurst';
 import { AccountMenu } from './components/AccountMenu';
+import { NotificationPrompt } from './components/NotificationPrompt';
 import { AppNavigation, type AppTab } from './components/AppNavigation';
 import { ParcelCard } from './components/ParcelCard';
 import { ParcelDetail } from './components/ParcelDetail';
@@ -595,6 +596,16 @@ export default function App({
           lastDpdPostcode={lastDpdPostcode}
           initialLabel={sharedParcelInput?.label}
           initialTrackingInput={sharedParcelInput?.trackingInput}
+        />
+      )}
+
+      {mode === 'api' && apiAuth && (
+        <NotificationPrompt
+          key={apiAuth.userId}
+          apiAuth={apiAuth}
+          eligible={tab === 'deliveries' && parcels.length > 0 && !loading && !error
+            && !authenticationRequired && !adding && !openParcelId && !parcelBurst
+            && !undoParcel && !refreshNotice}
         />
       )}
 

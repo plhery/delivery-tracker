@@ -9,6 +9,7 @@ import {
   saveNotificationPreferences,
 } from '../lib/pushNotifications';
 import { NotificationControl } from './NotificationControl';
+import { notificationInvitationDismissed } from '../lib/notificationInvitation';
 
 vi.mock('../lib/pushNotifications', () => ({
   inspectPushState: vi.fn(),
@@ -60,6 +61,7 @@ describe('NotificationControl', () => {
     expect(inspectPushState).toHaveBeenCalledWith(apiAuth);
     expect(enablePushNotifications).toHaveBeenCalledWith('public', apiAuth, 'en');
     expect(await screen.findByText("You’re set for parcel updates")).toBeInTheDocument();
+    expect(notificationInvitationDismissed(apiAuth.userId)).toBe(true);
   });
 
   it('turns alerts off for only this device', async () => {
@@ -73,6 +75,18 @@ describe('NotificationControl', () => {
     await user.click(screen.getByRole('switch', { name: 'Delivery updates' }));
     expect(disablePushNotifications).toHaveBeenCalled();
     expect(await screen.findByText(/Know when your parcel needs you/i)).toBeInTheDocument();
+  });
+
+  it('remembers an explicit switch-off even if server cleanup fails', async () => {
+    vi.mocked(inspectPushState).mockResolvedValue({ kind: 'enabled', publicKey: 'public' });
+    vi.mocked(disablePushNotifications).mockRejectedValue(new Error('offline'));
+    const apiAuth = { userId: 'user-1', getAccessToken: vi.fn() };
+    const user = userEvent.setup();
+    render(<NotificationControl apiAuth={apiAuth} />);
+    await user.click(await screen.findByRole('button', { name: 'Notifications enabled' }));
+    await user.click(screen.getByRole('switch', { name: 'Delivery updates' }));
+    expect(notificationInvitationDismissed(apiAuth.userId)).toBe(true);
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
   });
 
   it('gives iPhone installation guidance when Web Push is unavailable', async () => {

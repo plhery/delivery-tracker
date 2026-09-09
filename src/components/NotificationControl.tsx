@@ -18,6 +18,7 @@ import {
 } from '../lib/pushNotifications';
 import type { ApiAuth } from '../lib/apiClient';
 import { useSheetDialog } from '../lib/modal';
+import { dismissNotificationInvitation } from '../lib/notificationInvitation';
 import { type Translate, useI18n } from '../i18n';
 import './Settings.css';
 
@@ -77,6 +78,7 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
     setError(null);
     try {
       const testSent = await enablePushNotifications(state.publicKey, apiAuth, locale);
+      if (apiAuth) dismissNotificationInvitation(apiAuth.userId);
       trackAction('notifications-enable', 'success');
       setState({ kind: 'enabled', publicKey: state.publicKey });
       if (!testSent) setError(t('notifications.error.welcome'));
@@ -90,6 +92,7 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
   }
 
   async function disable() {
+    if (apiAuth) dismissNotificationInvitation(apiAuth.userId);
     setBusy(true);
     setError(null);
     try {
@@ -265,6 +268,7 @@ function copyFor(state: PushState | null, hasError: boolean, t: Translate): stri
   if (hasError) return t('notifications.state.retry');
   switch (state?.kind) {
     case 'enabled': return t('notifications.state.enabled');
+    case 'install':
     case 'unsupported': return t('notifications.state.unsupported');
     case 'unavailable': return t('notifications.state.unavailable');
     case 'blocked': return t('notifications.state.blocked');

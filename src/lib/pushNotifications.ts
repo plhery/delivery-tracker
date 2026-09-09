@@ -39,6 +39,7 @@ export const DELIVERY_DAY_NOTIFICATION_STAGES: NotificationStage[] = [
 
 export type PushState =
   | { kind: 'unsupported' }
+  | { kind: 'install' }
   | { kind: 'unavailable' }
   | { kind: 'prompt'; publicKey: string }
   | { kind: 'blocked' }
@@ -83,9 +84,14 @@ function supported(): boolean {
 }
 
 export async function inspectPushState(auth?: ApiAuth): Promise<PushState> {
-  if (!supported()) return { kind: 'unsupported' };
+  const needsInstallation = (/iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
+    && !window.matchMedia?.('(display-mode: standalone)').matches
+    && !(navigator as Navigator & { standalone?: boolean }).standalone;
+  if (!supported() && !needsInstallation) return { kind: 'unsupported' };
   const config = await request<ApiPushConfigResponse>('/api/push/config', auth);
   if (!config.available || !config.publicKey) return { kind: 'unavailable' };
+  if (needsInstallation) return { kind: 'install' };
   if (Notification.permission === 'denied') return { kind: 'blocked' };
   const registration = await navigator.serviceWorker.ready;
   const subscription = await registration.pushManager.getSubscription();
@@ -115,7 +121,9 @@ export async function enablePushNotifications(
   auth?: ApiAuth,
   locale: Locale = 'en',
 ): Promise<boolean> {
-  const permission = await Notification.requestPermission();
+  const permission = Notification.permission === 'granted'
+    ? 'granted'
+    : await Notification.requestPermission();
   if (permission !== 'granted') throw new Error('Notifications were not allowed');
   const registration = await navigator.serviceWorker.ready;
   let subscription = await registration.pushManager.getSubscription();

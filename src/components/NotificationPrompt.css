@@ -1,0 +1,37 @@
+.notification-prompt {
+  position: fixed;
+  z-index: 35;
+  right: max(24px, env(safe-area-inset-right));
+  bottom: max(24px, env(safe-area-inset-bottom));
+  width: 330px;
+  max-width: calc(100% - 32px);
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  padding: 23px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 14%);
+}
+
+/* Sheets own interaction while open, including the Settings entry point. */
+.app[inert] .notification-prompt { visibility: hidden; }
+.notification-prompt h2 { margin: 0 0 10px; padding-right: 30px; font-size: 21px; font-weight: 550; line-height: 1.2; letter-spacing: -.4px; }
+.notification-prompt p, .notification-prompt ol { margin: 0; font-size: 13px; line-height: 1.6; color: var(--ink-soft); }
+.notification-prompt ol { padding-left: 20px; }
+.notification-prompt li + li { margin-top: 8px; }
+.notification-prompt__close { position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: 44px; height: 44px; padding: 12px; background: transparent; border-radius: 50%; }
+.notification-prompt__actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.notification-prompt .button, .notification-prompt__later { min-height: 44px; padding: 10px 14px; font-size: 12px; font-weight: 550; border-radius: 11px; }
+.notification-prompt__later { background: transparent; color: var(--ink-soft); }
+.notification-prompt .notification-prompt__error { margin-top: 12px; color: var(--orange-text); }
+.notification-prompt button:disabled { opacity: .55; }
+
+@media (max-width: 760px) {
+  .notification-prompt {
+    right: max(16px, env(safe-area-inset-right));
+    bottom: calc(90px + env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 120px - env(safe-area-inset-bottom));
+  }
+}
