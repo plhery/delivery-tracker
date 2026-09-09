@@ -49,41 +49,6 @@ struct ExperimentalBackdrop: View {
     }
 }
 
-/// A continuous outline lets the notches reveal the actual surface during a swipe.
-struct DeliveryTicketShape: Shape {
-    static let stubWidth: CGFloat = 88
-    static let cornerRadius: CGFloat = 24
-    static let notchRadius: CGFloat = 6
-
-    func path(in rect: CGRect) -> Path {
-        let corner = min(Self.cornerRadius, rect.height / 2, rect.width / 2)
-        let notch = Self.notchRadius
-        let seam = rect.maxX - Self.stubWidth
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX + corner, y: rect.minY))
-        path.addLine(to: CGPoint(x: seam - notch, y: rect.minY))
-        path.addArc(center: CGPoint(x: seam, y: rect.minY), radius: notch,
-                    startAngle: .degrees(180), endAngle: .degrees(0), clockwise: true)
-        path.addLine(to: CGPoint(x: rect.maxX - corner, y: rect.minY))
-        path.addQuadCurve(to: CGPoint(x: rect.maxX, y: rect.minY + corner),
-                          control: CGPoint(x: rect.maxX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - corner))
-        path.addQuadCurve(to: CGPoint(x: rect.maxX - corner, y: rect.maxY),
-                          control: CGPoint(x: rect.maxX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: seam + notch, y: rect.maxY))
-        path.addArc(center: CGPoint(x: seam, y: rect.maxY), radius: notch,
-                    startAngle: .degrees(0), endAngle: .degrees(180), clockwise: true)
-        path.addLine(to: CGPoint(x: rect.minX + corner, y: rect.maxY))
-        path.addQuadCurve(to: CGPoint(x: rect.minX, y: rect.maxY - corner),
-                          control: CGPoint(x: rect.minX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + corner))
-        path.addQuadCurve(to: CGPoint(x: rect.minX + corner, y: rect.minY),
-                          control: CGPoint(x: rect.minX, y: rect.minY))
-        path.closeSubpath()
-        return path
-    }
-}
-
 /// Cut-out perforations make this read as a paper stamp, even at card size.
 struct PostageStampShape: Shape {
     func path(in rect: CGRect) -> Path {
@@ -139,12 +104,12 @@ struct DeliveryPostageStamp: View {
                 .overlay(Rectangle().stroke(Brand.onAccent.opacity(0.3), lineWidth: 0.75))
                 .padding(9)
             Image(systemName: stage?.metadata.symbol ?? "shippingbox")
-                .font(.system(size: 27, weight: .light))
+                .font(.system(size: 24, weight: .light))
                 .foregroundStyle(Brand.onAccent)
                 .contentTransition(reduceMotion ? .identity : .symbolEffect(.replace))
                 .symbolEffect(.bounce, options: .nonRepeating, value: reduceMotion ? nil : stage)
         }
-        .frame(width: 72, height: 86)
+        .frame(width: 55, height: 67)
         .overlay(alignment: .bottomTrailing) {
             // A partial cancellation mark crosses the printed frame and paper edge.
             ZStack {
@@ -280,5 +245,104 @@ struct ExperimentalCopy {
 extension Parcel {
     var experimentalLatestLocation: String? {
         sortedEvents.compactMap { $0.location?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty }.first
+    }
+}
+
+/// The approved Fleet palettes; catalog colors cover other and newly added carriers.
+struct CarrierVisualIdentity {
+    let family: String
+    let name: String
+    let fullName: String
+    private let colors: [String]
+
+    init(id: String, carrier: CarrierDefinition) {
+        family = id.hasPrefix("gls-") ? "gls" : id
+        fullName = carrier.displayName
+        switch family {
+        case "dhl":
+            name = "DHL"
+            colors = ["#f7e8aa", "#514727", "#6c5419", "#ead695", "#d40511", "#ffe274", "#ffcc00", "#b88d16", "#d40511"]
+        case "gls":
+            name = "GLS"
+            colors = ["#dfebfa", "#293e57", "#355e8a", "#b7d1ee", "#1634a7", "#abc7ff", "#1634a7", "#1634a7", "#ffcf00"]
+        case "ups":
+            name = "ups"
+            colors = ["#ede3d5", "#463a2c", "#78573e", "#dbc2a4", "#573626", "#ebca99", "#573626", "#573626", "#f5c86b"]
+        default:
+            name = carrier.displayName
+            let color = carrier.color
+            colors = [Self.mix(color, "#ffffff", 0.86), Self.mix(color, "#20261f", 0.8),
+                      Self.mix(color, "#000000", 0.55), Self.mix(color, "#ffffff", 0.65),
+                      Self.mix(color, "#000000", 0.3), Self.mix(color, "#ffffff", 0.6),
+                      Self.mix(color, "#000000", 0), Self.mix(color, "#000000", 0.2), "#ffffff"]
+        }
+    }
+
+    var surface: Color { Brand.color(light: colors[0], dark: colors[1]) }
+    var ink: Color { Brand.color(light: colors[2], dark: colors[3]) }
+    var brand: Color { Brand.color(light: colors[4], dark: colors[5]) }
+    var truck: Color { Color(hex: colors[6]) }
+    var edge: Color { Color(hex: colors[7]) }
+    var accent: Color { Color(hex: colors[8]) }
+
+    private static func mix(_ color: String, _ base: String, _ amount: Double) -> String {
+        let value = color.count == 7 ? UInt32(color.dropFirst(), radix: 16) ?? 0x657060 : 0x657060
+        let background = UInt32(base.dropFirst(), radix: 16) ?? 0
+        let channels = [16, 8, 0].map { shift in
+            Int((Double((value >> shift) & 255) * (1 - amount) + Double((background >> shift) & 255) * amount).rounded())
+        }
+        return String(format: "#%02x%02x%02x", channels[0], channels[1], channels[2])
+    }
+}
+
+struct CarrierFleetMark: View {
+    let identity: CarrierVisualIdentity
+
+    var body: some View {
+        HStack(spacing: 7) {
+            Canvas { context, size in
+                context.scaleBy(x: size.width / 32, y: size.height / 21)
+                let body = Path(roundedRect: CGRect(x: 2, y: 3, width: 18, height: 13), cornerRadius: 1.3)
+                context.fill(body, with: .color(identity.truck))
+                context.stroke(body, with: .color(identity.edge), lineWidth: 0.6)
+                let cab = polygon([CGPoint(x: 20, y: 8), CGPoint(x: 25, y: 8), CGPoint(x: 30, y: 13), CGPoint(x: 30, y: 16), CGPoint(x: 20, y: 16)])
+                context.fill(cab, with: .color(identity.truck))
+                context.stroke(cab, with: .color(identity.edge), lineWidth: 0.6)
+                context.fill(polygon([CGPoint(x: 22, y: 9.5), CGPoint(x: 24.5, y: 9.5), CGPoint(x: 27.5, y: 12.5), CGPoint(x: 22, y: 12.5)]), with: .color(Color(hex: "#edf1ee")))
+                if identity.family == "dhl" {
+                    var stripes = Path()
+                    stripes.move(to: CGPoint(x: 4, y: 8)); stripes.addLine(to: CGPoint(x: 16, y: 8))
+                    stripes.move(to: CGPoint(x: 3, y: 10)); stripes.addLine(to: CGPoint(x: 15, y: 10))
+                    context.stroke(stripes, with: .color(identity.accent), lineWidth: 1.1)
+                } else if identity.family == "ups" {
+                    context.fill(polygon([CGPoint(x: 8, y: 5), CGPoint(x: 13, y: 5), CGPoint(x: 13, y: 10), CGPoint(x: 10.5, y: 12), CGPoint(x: 8, y: 10)]), with: .color(identity.accent))
+                } else {
+                    context.fill(Path(CGRect(x: 5, y: 8, width: 8, height: 2)), with: .color(identity.accent))
+                    context.fill(Path(ellipseIn: CGRect(x: 13.9, y: 7.9, width: 2.2, height: 2.2)), with: .color(identity.accent))
+                }
+                for x in [8.0, 25.0] {
+                    context.fill(Path(ellipseIn: CGRect(x: x - 2.4, y: 14.1, width: 4.8, height: 4.8)), with: .color(Color(hex: "#42483d")))
+                    context.fill(Path(ellipseIn: CGRect(x: x - 0.9, y: 15.6, width: 1.8, height: 1.8)), with: .color(Color(hex: "#d2d4c7")))
+                }
+            }
+            .frame(width: 27, height: 18)
+            .accessibilityHidden(true)
+            Text(identity.name + (identity.family == "gls" ? "." : ""))
+                .font(.caption.weight(.bold))
+                .italic(identity.family == "dhl")
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .foregroundStyle(identity.brand)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(identity.fullName)
+    }
+
+    private func polygon(_ points: [CGPoint]) -> Path {
+        Path { path in
+            guard let first = points.first else { return }
+            path.move(to: first)
+            for point in points.dropFirst() { path.addLine(to: point) }
+            path.closeSubpath()
+        }
     }
 }

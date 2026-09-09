@@ -2,12 +2,12 @@ import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { activeTrackingCarrierId, carrierInfo } from '../lib/carriers';
 import { localizedExpectedDelivery, useI18n } from '../i18n';
 import { localizedParcelCompletionDate, parcelDeliveryEstimate, parcelDisplayStatusKey } from '../lib/parcelStatus';
-import { currentEvent, isFinal } from '../lib/stages';
-import { trackingLocationLabel } from '../lib/trackingLocation';
-import { parcelIcon, parcelTone } from '../lib/parcelDesign';
+import { currentEvent } from '../lib/stages';
+import { parcelIcon } from '../lib/parcelDesign';
 import { userErrorMessage } from '../lib/userMessages';
 import type { ParcelWithEvents } from '../types';
-import { ProgressTrack } from './ProgressTrack';
+import { CarrierMark } from './CarrierMark';
+import { carrierBrand } from '../lib/carrierBrand';
 import { Icon, PostageStamp } from './Icon';
 
 type Drag = { x: number; y: number; pointerId: number; origin: number; width: number; direction: 'horizontal' | 'vertical' | null };
@@ -26,9 +26,8 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
   const expectedDelivery = estimate ? localizedExpectedDelivery(estimate, t, languageTag) : null;
   const statusLabel = t(parcelDisplayStatusKey(parcel));
   const completionDate = localizedParcelCompletionDate(parcel, languageTag, t);
-  const compact = Boolean((current && isFinal(current.stage)) || parcel.archivedAt);
   const parcelName = parcel.label || t('common.parcel');
-  const tone = parcelTone(current?.stage);
+  const branding = carrierBrand(carrier);
   const hero = variant === 'hero';
   const drag = useRef<Drag | null>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -105,26 +104,24 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
   const statusSummary = completionDate ? `${statusLabel} ${t('parcel.onDate', { date: completionDate })}` : statusLabel;
   const label = expectedDelivery ? t('parcel.ariaExpected', { name: parcelName, status: statusSummary, date: expectedDelivery }) : t('parcel.aria', { name: parcelName, status: statusSummary });
 
-  return <div data-parcel-id={parcel.id} className={`parcel-card-swipe tone-${tone}${hero ? ' parcel-card-swipe--hero' : ''}${offset ? ' parcel-card-swipe--revealed' : ''}${collapsing ? ' parcel-card-swipe--collapsing' : ''}`}>
+  return <div data-parcel-id={parcel.id} data-carrier={carrier.id} style={branding.style} className={`parcel-card-swipe${hero ? ' parcel-card-swipe--hero' : ''}${offset ? ' parcel-card-swipe--revealed' : ''}${collapsing ? ' parcel-card-swipe--collapsing' : ''}`}>
     <div className="parcel-card-swipe__clip">
       {onArchive && <button type="button" className={`parcel-card-swipe__archive${armed ? ' parcel-card-swipe__archive--armed' : ''}`} aria-label={t('parcel.archiveAria', { name: parcelName })}
         aria-hidden={offset > -8} tabIndex={offset <= -8 ? 0 : -1} disabled={archiving} style={{ visibility: offset <= -8 ? 'visible' : 'hidden' }} onClick={() => void archive()}><Icon name="archive" /><span>{archiving ? t('detail.archiving') : t('parcel.archive')}</span></button>}
-      <button ref={button} type="button" className={`parcel-card${hero ? ' parcel-card--hero' : ''}${compact ? ' parcel-card--compact' : ''}${parcel.archivedAt ? ' parcel-card--archived' : ''}${dragging ? ' parcel-card--dragging' : ''}`}
+      <button ref={button} type="button" className={`parcel-card${hero ? ' parcel-card--hero' : ''}${parcel.archivedAt ? ' parcel-card--archived' : ''}${dragging ? ' parcel-card--dragging' : ''}`}
         style={{ transform: `translateX(${offset}px)` }} disabled={archiving} aria-busy={archiving} aria-label={hero ? `${t('app.nextUp')}: ${label}` : label}
         onClick={(event) => { if (suppressClick.current) return; if (offset) setOffset(0); else onOpen(parcel, event.currentTarget); }}
         onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={finishSwipe} onPointerCancel={cancelSwipe}>
         {hero ? <>
-          <span className="parcel-card__hero-top"><span className="eyebrow">{t('app.nextUp')}</span><span className="status-badge parcel-card__state"><i aria-hidden="true" />{statusLabel}</span></span>
-          <span className="parcel-card__hero-main"><span>{expectedDelivery && <strong className="parcel-card__hero-date">{expectedDelivery}</strong>}<span className="parcel-card__label">{parcelName}</span></span><PostageStamp icon={parcelIcon(current?.stage)} /></span>
-          <ProgressTrack stage={current?.stage ?? null} />
-          <span className="parcel-card__hero-bottom"><span><strong>{carrier.name}</strong>{current?.location && <span aria-label={current.location}>{trackingLocationLabel(current.location)}</span>}</span></span>
+          <span className="parcel-card__hero-top"><CarrierMark carrier={carrier} /><span className="parcel-card__next-label">{t('app.nextUp')}</span></span>
+          <span className="parcel-card__hero-main"><strong className="parcel-card__label">{parcelName}</strong><PostageStamp icon={parcelIcon(current?.stage)} /></span>
+          <span className="parcel-card__summary"><span className="parcel-card__state">{statusLabel}</span>{expectedDelivery && <><span aria-hidden="true">·</span><span className="parcel-card__eta">{expectedDelivery}</span></>}</span>
+          {parcel.syncStatus === 'error' && <span className="parcel-card__notice">{t('parcel.syncAttention')}</span>}
         </> : <>
-          <span className="parcel-card__body"><strong className="parcel-card__label">{parcelName}</strong>
-            <span className="parcel-card__meta"><span className="parcel-card__carrier">{carrier.name}</span>{(expectedDelivery || completionDate) && <><span aria-hidden="true">·</span><span className={completionDate ? "parcel-card__completion" : "parcel-card__eta"}>{expectedDelivery || completionDate}</span></>}{current?.location && <><span aria-hidden="true">·</span><span className="parcel-card__location" aria-label={current.location}>{trackingLocationLabel(current.location)}</span></>}</span>
-            {parcel.syncStatus === 'error' ? <span className="parcel-card__notice">{t('parcel.syncAttention')}</span> : notice && <span className="parcel-card__notice">{notice}</span>}
-            {!compact && <ProgressTrack stage={current?.stage ?? null} />}
-        </span>
-        <span className="parcel-card__stub" aria-hidden="true"><Icon name={parcelIcon(current?.stage)} strokeWidth="1.3" /><span className="parcel-card__state">{statusLabel}</span></span>
+          <span className="parcel-card__top"><CarrierMark carrier={carrier} />{(expectedDelivery || completionDate) && <span className={completionDate ? 'parcel-card__completion' : 'parcel-card__eta'}>{expectedDelivery || completionDate}</span>}</span>
+          <strong className="parcel-card__label">{parcelName}</strong>
+          <span className="parcel-card__state">{statusLabel}</span>
+          {parcel.syncStatus === 'error' ? <span className="parcel-card__notice">{t('parcel.syncAttention')}</span> : notice && !['customs', 'ready_for_pickup', 'failed_attempt'].includes(current?.stage ?? '') && <span className="parcel-card__notice">{notice}</span>}
         </>}
       </button>
     </div>

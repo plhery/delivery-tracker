@@ -80,26 +80,38 @@ test('adds a parcel from tracking text', async ({ page }) => {
   await sheet.getByLabel(/^Title/).fill('Fondue set');
   await sheet.getByLabel('Tracking number or link').fill('Track 99.34.111111.22222222');
   await expect(sheet.getByText('Swiss Post', { exact: true })).toBeVisible();
+  // Observe the short-lived animation in the page so slow tool round trips cannot miss it.
+  await page.evaluate(() => {
+    const observer = new MutationObserver(() => {
+      const burst = document.querySelector<HTMLElement>('.parcel-added-burst[data-phase="playing"]');
+      if (!burst) return;
+      const element = document.querySelector<HTMLElement>(`.parcel-card-swipe[data-parcel-id="${burst.dataset.parcelId}"]`);
+      if (!element) return;
+      const card = element.getBoundingClientRect();
+      const stamp = element.querySelector('.postage-stamp')?.getBoundingClientRect();
+      const snapshot = {
+        distance: Math.hypot(parseFloat(burst.style.getPropertyValue('--burst-x')) - (stamp ? stamp.x + stamp.width / 2 : card.right - 30),
+          parseFloat(burst.style.getPropertyValue('--burst-y')) - (stamp ? stamp.y + stamp.height / 2 : card.y + card.height / 2)),
+        hidden: burst.getAttribute('aria-hidden'),
+        celebrating: element.getAttribute('data-celebrating'),
+        matchingParcel: element.textContent?.includes('Fondue set'),
+        focused: element.querySelector('.parcel-card') === document.activeElement,
+        inViewport: card.top >= 0 && card.bottom <= innerHeight,
+        pointerEvents: getComputedStyle(burst).pointerEvents,
+      };
+      observer.disconnect();
+      document.documentElement.dataset.testBurstSnapshot = JSON.stringify(snapshot);
+    });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+  });
   await sheet.getByRole('button', { name: 'Add parcel' }).click();
-
   await expect(page.getByText('Fondue set')).toBeVisible();
   await expect(sheet).toBeHidden();
+  await expect(page.locator('html')).toHaveAttribute('data-test-burst-snapshot');
+  const snapshot = JSON.parse((await page.locator('html').getAttribute('data-test-burst-snapshot'))!);
   const burst = page.locator('.parcel-added-burst');
-  await expect(burst).toBeVisible();
-  await expect(burst).toHaveAttribute('aria-hidden', 'true');
-  const card = page.locator('.parcel-card-swipe').filter({ hasText: 'Fondue set' });
-  await expect(card).toBeInViewport();
-  await expect(card).toHaveAttribute('data-celebrating', 'rumble');
-  await expect(burst).toHaveAttribute('data-parcel-id', (await card.getAttribute('data-parcel-id'))!);
-  await expect(card.locator('.parcel-card')).toBeFocused();
-  const anchorDistance = await card.evaluate((element) => {
-    const stamp = element.querySelector('.parcel-card__stub, .postage-stamp')!.getBoundingClientRect();
-    const burst = document.querySelector<HTMLElement>('.parcel-added-burst')!;
-    return Math.hypot(parseFloat(burst.style.getPropertyValue('--burst-x')) - stamp.x - stamp.width / 2,
-      parseFloat(burst.style.getPropertyValue('--burst-y')) - stamp.y - stamp.height / 2);
-  });
-  expect(anchorDistance).toBeLessThan(6);
-  expect(await burst.evaluate((element) => getComputedStyle(element).pointerEvents)).toBe('none');
+  expect(snapshot).toMatchObject({ hidden: 'true', celebrating: 'rumble', matchingParcel: true, focused: true, inViewport: true, pointerEvents: 'none' });
+  expect(snapshot.distance).toBeLessThan(6);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await expect(burst).toHaveCount(0);
 });

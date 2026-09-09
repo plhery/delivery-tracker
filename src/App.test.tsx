@@ -225,7 +225,8 @@ describe('App', () => {
     expect(within(next).getByText('At customs')).toBeInTheDocument();
     expect(next.querySelector('.postage-stamp')).toBeInTheDocument();
     expect(within(next).queryByText('Customs clearance')).not.toBeInTheDocument();
-    expect(next.querySelector('.progress-track')).toBeInTheDocument();
+    expect(next.querySelector('.progress-track')).not.toBeInTheDocument();
+    expect(next.querySelector('.carrier-mark')).toBeInTheDocument();
     expect(next.querySelector('.parcel-card__hero-bottom > svg')).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Needs attention' })).not.toBeInTheDocument();
 
@@ -421,7 +422,7 @@ describe('App', () => {
 
     renderApp(repo);
 
-    expect(await screen.findByText('tomorrow', { selector: '.parcel-card__hero-date' }))
+    expect(await screen.findByText('tomorrow', { selector: '.parcel-card__eta' }))
       .toBeInTheDocument();
     const onTheWay = screen.getByRole('region', { name: 'On the way' });
     expect(within(onTheWay).getByRole('button', { name: /Next up: Tomorrow parcel/ })).toBeInTheDocument();
@@ -1438,7 +1439,7 @@ describe('App', () => {
     const card = await screen.findByRole('button', {
       name: /Early shipping label — Waiting for the carrier/i,
     });
-    expect(card.closest('.parcel-card-swipe')).toHaveClass('tone-lilac');
+    expect(card.closest('.parcel-card-swipe')).toHaveAttribute('data-carrier', 'swiss-post');
     expect(screen.queryByText("Update unavailable")).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Needs attention' })).not.toBeInTheDocument();
     expect(
