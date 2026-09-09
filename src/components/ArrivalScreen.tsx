@@ -6,6 +6,7 @@ import type { EntryScreen } from '../lib/experience';
 import { InvitationParcelArtwork } from './InvitationParcel';
 import { Icon, ParcelIllustration } from './Icon';
 import { SignInScreen } from './SignInScreen';
+import './Arrival.css';
 
 const subscribeToHydration = () => () => undefined;
 const clientReady = () => true;
@@ -44,7 +45,7 @@ export function ArrivalScreen({ screen, onNavigate, invitation, ...signIn }: Com
     if (welcome && !opening && scene.current) return bindArrivalMotion(scene.current);
   }, [welcome, opening]);
   useEffect(() => {
-    if (screen === 'sign-in' && opening) signInPanel.current?.querySelector<HTMLElement>('h1')?.focus({ preventScroll: true });
+    if (screen === 'sign-in') signInPanel.current?.querySelector<HTMLElement>('h1')?.focus({ preventScroll: true });
   }, [screen, opening]);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
@@ -57,12 +58,12 @@ export function ArrivalScreen({ screen, onNavigate, invitation, ...signIn }: Com
     timer.current = setTimeout(() => onNavigate('sign-in'), reduced ? 80 : 960);
   }
 
-  return <main ref={scene} className={`arrival arrival--${screen}${opening ? ' arrival--opening' : ''}${invitation ? ' arrival--invitation' : ''}${invitation?.received ? ' arrival--received' : ''}${!welcome && invitation?.afterOpen && !invitation.received ? ' arrival--accepting' : ''}`}>
+  return <main ref={scene} className={`arrival arrival--${screen}${opening ? ' arrival--opening' : ''}${invitation ? ' arrival--invitation' : ' arrival--onboarding'}${invitation?.received ? ' arrival--received' : ''}${!welcome && invitation?.afterOpen && !invitation.received ? ' arrival--accepting' : ''}`}>
     <header className="arrival__header">
       {welcome ? invitation ? <button className="text-button arrival__back" type="button" aria-label={t('common.close')} onClick={invitation.onDismiss}><Icon name="close" /></button> : <span className="arrival__brand"><Icon name="parcel" />{t('app.title')}</span> :
         <button className="text-button arrival__back" type="button" disabled={invitation?.received} onClick={() => { setOpening(false); onNavigate('welcome'); }}><Icon name="back" />{t('welcome.back')}</button>}
       {invitation?.appURL && <a className="arrival__app-link" href={invitation.appURL}>{t('friends.openInApp')}</a>}
-      <LanguageControl />
+      {welcome && !invitation ? <button type="button" className="arrival__shortcut" disabled={!ready || opening} onClick={() => onNavigate('sign-in')}>{t('arrival.signInTitle')}</button> : <LanguageControl />}
     </header>
     <div className="arrival__scene">
       <div className="arrival__parcel"><div className="arrival__ground" /><div className="arrival__tilt"><div className="arrival__press">{invitation?.nickname ? <InvitationParcelArtwork nickname={invitation.nickname} /> : <ParcelIllustration />}</div></div>
@@ -70,6 +71,7 @@ export function ArrivalScreen({ screen, onNavigate, invitation, ...signIn }: Com
       </div>
       {welcome ? <div className="arrival__welcome">
         <h1>{invitation?.title ?? t('arrival.welcomeTitle')}</h1>
+        {!invitation && <p className="arrival__explanation">{t('arrival.welcomeSubtitle')}</p>}
         {invitation && !invitation.canOpen ? <div className="arrival__parcel-space" aria-hidden="true" /> : <><button type="button" className="arrival__open" onClick={unwrap} disabled={!ready || opening} aria-describedby="parcel-open-hint">
           <span className="arrival__parcel-space" aria-hidden="true" />
           <span>{t('arrival.tapToOpen')}<Icon name="arrow" /></span>
@@ -77,7 +79,7 @@ export function ArrivalScreen({ screen, onNavigate, invitation, ...signIn }: Com
         <span className="sr-only" id="parcel-open-hint">{t('arrival.openHint')}</span></>}
         {invitation?.notice}
       </div> : <div className="arrival__sign-in" ref={signInPanel}>
-        {invitation?.afterOpen ?? <SignInScreen {...signIn} />}
+        {invitation?.afterOpen ?? <SignInScreen {...signIn} card={!invitation} />}
         {!invitation && <button type="button" className="text-button arrival__demo" onClick={() => onNavigate('demo')}>{t('welcome.demo')}<Icon name="arrow" /></button>}
       </div>}
     </div>

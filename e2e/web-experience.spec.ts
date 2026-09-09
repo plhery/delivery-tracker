@@ -23,24 +23,39 @@ async function noOverflow(page: Page) {
 test('opens the looping package into sign-in, then leaves demo without a reload', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Good things are on their way.' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /try the demo/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Explore the demo/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Tap to open your parcel' })).toBeEnabled();
   const illustration = page.locator('.arrival__parcel');
   await illustration.evaluate((element) => element.setAttribute('data-kept', 'yes'));
   expect(await page.locator('.parcel-illustration__body').evaluate((element) => getComputedStyle(element).animationIterationCount)).toBe('infinite');
   await page.getByRole('button', { name: 'Tap to open your parcel' }).click();
-  await expect(page.getByRole('heading', { name: 'Your deliveries, together.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   await expect(illustration).toHaveAttribute('data-kept', 'yes');
-  await expect(page.getByRole('heading', { name: 'Your deliveries, together.' })).toBeFocused();
-  await page.getByRole('button', { name: 'or try the demo' }).click();
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeFocused();
+  await page.getByRole('button', { name: 'Explore the demo' }).click();
   await expect(page.getByRole('heading', { name: 'Deliveries', exact: true })).toBeAttached();
   await page.getByRole('button', { name: 'Exit demo', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Tap to open your parcel' })).toBeEnabled();
-  await expect(page.getByRole('button', { name: /try the demo/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Explore the demo/ })).toHaveCount(0);
   expect(await page.locator('.parcel-illustration__body').evaluate((element) => getComputedStyle(element).animationIterationCount)).toBe('infinite');
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Good things are on their way.' })).toBeVisible();
   await expect(page.locator('.demo-banner')).toHaveCount(0);
+});
+
+test('offers direct sign-in with a compact card and keeps the parcel when returning', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByText('All your deliveries, in one place.', { exact: true })).toBeVisible();
+  await page.locator('.arrival__parcel').evaluate((element) => element.setAttribute('data-kept', 'yes'));
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeFocused();
+  await expect(page.locator('.auth-flow--card')).toBeVisible();
+  await expect(page.locator('.arrival__parcel')).toHaveAttribute('data-kept', 'yes');
+  await expect(page.getByRole('button', { name: 'Explore the demo', exact: true })).toBeVisible();
+  await noOverflow(page);
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Tap to open your parcel' })).toBeEnabled();
+  await expect(page.locator('.arrival__parcel')).toHaveAttribute('data-kept', 'yes');
 });
 
 test('gives the parcel bounded depth without moving the controls, and stops on opening', async ({ page, browserName }) => {
@@ -71,7 +86,7 @@ test('gives the parcel bounded depth without moving the controls, and stops on o
   expect(await title.boundingBox()).toEqual(titleFrame);
   await noOverflow(page);
   await open.click();
-  await expect(page.getByRole('heading', { name: 'Your deliveries, together.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   await page.mouse.move(8, 220);
   await page.evaluate(() => {
     const event = new Event('deviceorientation');
@@ -104,7 +119,7 @@ test('keeps demo exit available from parcel details and account', async ({ page 
   await expect(page.getByRole('heading', { name: 'Good things are on their way.' })).toBeVisible();
   await expect(page).not.toHaveURL(/parcel=/);
   await page.getByRole('button', { name: 'Tap to open your parcel' }).click();
-  await page.getByRole('button', { name: 'or try the demo' }).click();
+  await page.getByRole('button', { name: 'Explore the demo' }).click();
   const account = await settings(page);
   await account.getByRole('button', { name: 'Demo & data' }).click();
   await account.getByRole('button', { name: 'Exit demo' }).click();
@@ -228,9 +243,9 @@ test('respects reduced motion while retaining every action', async ({ page }) =>
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await page.getByRole('button', { name: 'Tap to open your parcel' }).click();
-  await expect(page.getByRole('heading', { name: 'Your deliveries, together.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   expect(await page.locator('.parcel-illustration__body').evaluate((element) => getComputedStyle(element).animationIterationCount)).not.toBe('infinite');
-  await page.getByRole('button', { name: 'or try the demo' }).click();
+  await page.getByRole('button', { name: 'Explore the demo' }).click();
   await page.getByRole('button', { name: 'Add a parcel', exact: true }).click();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);

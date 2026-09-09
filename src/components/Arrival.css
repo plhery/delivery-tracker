@@ -1,0 +1,34 @@
+/* Regular onboarding keeps the open parcel beside a quiet sign-in card. */
+.arrival__shortcut { background: var(--control); color: var(--ink); padding: 10px 14px; min-height: 44px; border-radius: 12px; font-size: 12px; }
+.arrival__explanation { font-size: 14px; color: var(--ink-soft); margin: 19px 0 0; transition: opacity .25s; }
+.arrival--opening .arrival__explanation { opacity: 0; }
+.arrival--onboarding .arrival__welcome h1 { font-size: clamp(34px, 5vw, 54px); }
+.arrival--onboarding.arrival--welcome .arrival__parcel { top: 162px; }
+.arrival--onboarding .arrival__open { margin-top: 8px; }
+.arrival--onboarding .arrival__sign-in { padding-top: 0; width: 365px; max-width: 100%; margin-top: 90px; }
+.arrival--onboarding.arrival--sign-in .arrival__parcel { top: 60px; transform: translateX(-210px) scale(.78) rotate(-4deg); }
+.auth-flow--card { background: var(--paper); border: 1px solid var(--line); border-radius: 24px; padding: 25px 22px; }
+.auth-flow--card .auth-flow__heading h1 { font-size: 28px; letter-spacing: -.8px; margin-bottom: 9px; }
+.auth-flow--card .auth-flow__heading > p { font-size: 12px; margin-bottom: 23px; }
+.auth-flow--card .auth-flow__methods { gap: 9px; }
+.auth-flow--card .auth-flow__methods > .button { min-height: 48px; font-size: 13px; border-radius: 13px; }
+.auth-flow--card .auth-flow__form input { min-width: 0; width: 100%; }
+.auth-flow--card .auth-flow__privacy { margin: 18px 0 0; }
+.auth-flow--card .auth-flow__privacy > svg { width: 12px; }
+.auth-flow--card .auth-flow__privacy p { font-size: 10px; }
+.arrival--onboarding .arrival__demo { font-size: 12px; margin-top: 12px; }
+@media (max-width: 760px) {
+  .arrival--onboarding .arrival__header { min-height: 76px; }
+  .arrival--onboarding .arrival__scene { margin-top: 0; }
+  .arrival--onboarding .arrival__welcome { padding-top: 34px; }
+  .arrival--onboarding .arrival__welcome h1 { font-size: clamp(34px, 8.8vw, 48px); }
+  .arrival__explanation { font-size: 13px; }
+  .arrival--onboarding .arrival__sign-in { padding-top: 172px; margin: 0 auto; }
+  .arrival--onboarding.arrival--sign-in .arrival__parcel { top: -31px; transform: scale(.5) rotate(-4deg); }
+  .auth-flow--card { padding: 23px 20px; }
+}
+@media (max-width: 360px) {
+  .arrival--onboarding { padding-left: 17px; padding-right: 17px; }
+  .auth-flow--card { padding: 21px 17px; }
+  .arrival__explanation { font-size: 12px; }
+}

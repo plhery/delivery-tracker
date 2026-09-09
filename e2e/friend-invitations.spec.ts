@@ -48,7 +48,7 @@ for (const suffix of ['', '?fbclid=tracking#discardable']) test(`a shared link (
   await page.goto(`/i/${preview}${suffix}`);
   await expect(page.getByRole('heading', { name: 'Your friend Paul sent you an invitation' })).toBeVisible();
   await expect(page).toHaveURL(/\/invite$/);
-  await expect(page.getByRole('button', { name: /try the demo/i })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Explore the demo/i })).toHaveCount(0);
   await page.locator('.arrival__parcel').evaluate((element) => element.setAttribute('data-continuity', 'original'));
   await page.getByRole('button', { name: 'Tap to open your parcel' }).click();
   await expect(page.locator('.arrival')).toHaveClass(/arrival--opening/);

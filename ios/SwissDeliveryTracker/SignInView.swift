@@ -36,7 +36,7 @@ struct ArrivalView: View {
         ZStack {
             Brand.background.ignoresSafeArea()
             if screen == .welcome {
-                WelcomeView(opening: opening, onOpen: unwrap, onPressChanged: { pressed = $0 }, invitation: invitation.isPresenting ? invitation : nil, onDismiss: dismissInvitation)
+                WelcomeView(opening: opening, onOpen: unwrap, onSignIn: showSignIn, onPressChanged: { pressed = $0 }, invitation: invitation.isPresenting ? invitation : nil, onDismiss: dismissInvitation)
                     .transition(.opacity)
             } else {
                 Group {
@@ -153,6 +153,14 @@ struct ArrivalView: View {
         }
     }
 
+    private func showSignIn() {
+        guard !opening, !invitation.isPresenting else { return }
+        pressed = false
+        withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.45)) {
+            session.showSignIn()
+        }
+    }
+
     private func goBack() {
         guard invitation.receipt == nil else { return }
         withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.45)) {
@@ -204,6 +212,7 @@ private struct WelcomeView: View {
     @EnvironmentObject private var localizer: Localizer
     let opening: Bool
     let onOpen: () -> Void
+    let onSignIn: () -> Void
     let onPressChanged: (Bool) -> Void
     var invitation: FriendInvitationStore? = nil
     var onDismiss: () -> Void = {}
@@ -223,7 +232,18 @@ private struct WelcomeView: View {
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(Brand.ink)
                         Spacer()
-                        AuthenticationLanguageMenu()
+                        if invitation == nil {
+                            Button(copy.signInTitle, action: onSignIn)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(Brand.ink)
+                                .padding(.horizontal, 14)
+                                .frame(minHeight: 44)
+                                .background(Brand.cream, in: RoundedRectangle(cornerRadius: 12))
+                                .disabled(opening)
+                                .accessibilityIdentifier("welcome.signIn")
+                        } else {
+                            AuthenticationLanguageMenu()
+                        }
                     }
 
                     Spacer(minLength: 36)
@@ -239,6 +259,16 @@ private struct WelcomeView: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 8)
+
+                    if invitation == nil {
+                        Text(localizer.text("arrival.welcomeSubtitle"))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 18)
+                            .opacity(opening ? 0 : 1)
+                    }
 
                     if let invitation, invitation.nickname == nil {
                         Color.clear
@@ -345,54 +375,41 @@ struct SignInView: View {
                     .padding(.bottom, 12)
 
                     Color.clear
-                        .frame(width: 180, height: 186)
+                        .frame(width: invitation == nil ? 160 : 180, height: invitation == nil ? 165 : 186)
                         .anchorPreference(key: ArrivalParcelFrame.self, value: .bounds) { [.signIn: $0] }
                         .accessibilityHidden(true)
 
-                    VStack(spacing: 8) {
-                        if let invitation { InvitationHeading(nickname: invitation.nickname) }
-                        else {
-                            Text(copy.signInTitle)
-                                .font(.system(.title, design: .rounded, weight: .bold))
-                                .tracking(-0.6)
+                    Group {
+                        if invitation == nil {
+                            authenticationContent
+                                .padding(22)
+                                .background(Brand.paper, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                                .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(Brand.separator.opacity(0.35), lineWidth: 0.75) }
+                                .accessibilityIdentifier("auth.card")
+                        } else {
+                            authenticationContent
                         }
-                        Text(invitation == nil ? copy.signInSubtitle : localizer.text("friends.signInToAccept"))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
                     }
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 8)
+                    .frame(maxWidth: invitation == nil ? 365 : .infinity)
 
-                    if let invitation, invitation.nickname == nil {
-                        if let error = invitation.errorKey {
-                            Text(localizer.text(error)).font(.footnote).foregroundStyle(.secondary).padding(.top, 20)
-                            Button(localizer.text("common.retry")) { Task { await invitation.loadPreview(session: session) } }.padding(.top, 12)
-                        } else { ProgressView().padding(.top, 24) }
-                    } else if !configured {
-                        if invitation == nil { configurationNotice.padding(.top, 28) }
-                        else { Text(localizer.text("auth.configTitle")).font(.subheadline).foregroundStyle(.secondary).padding(.top, 28) }
-                    } else if step == .code {
-                        codeForm.padding(.top, 28)
-                    } else {
-                        methods.padding(.top, 28)
-                    }
-
-                    if invitation == nil { Button {
-                        session.enterDemo()
-                    } label: {
-                        Text(localizer.text("welcome.demo"))
+                    if invitation == nil {
+                        Button { session.enterDemo() } label: {
+                            HStack(spacing: 7) {
+                                Text(localizer.text("welcome.demo"))
+                                Image(systemName: "arrow.up.right").font(.caption)
+                            }
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(.secondary)
                             .frame(minHeight: 44)
+                        }
+                        .buttonStyle(TactileButtonStyle())
+                        .accessibilityIdentifier("auth.demo")
+                        .accessibilityHint(localizer.text("welcome.demoDescription"))
+                        .disabled(working)
+                        .padding(.top, 12)
+                    } else {
+                        privacyNotice.padding(.top, 12)
                     }
-                    .buttonStyle(TactileButtonStyle())
-                    .accessibilityHint(localizer.text("welcome.demoDescription"))
-                    .disabled(working)
-                    .padding(.top, 8)
-                    }
-
-                    privacyNotice.padding(.top, 12)
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 20)
@@ -401,6 +418,59 @@ struct SignInView: View {
             }
             .scrollDismissesKeyboard(.interactively)
         }
+    }
+
+    private var authenticationContent: some View {
+        VStack(spacing: 0) {
+            VStack(spacing: 8) {
+                if let invitation { InvitationHeading(nickname: invitation.nickname) }
+                else {
+                    Text(copy.signInTitle)
+                        .font(.title.weight(.semibold))
+                        .tracking(-0.6)
+                }
+                Text(invitation == nil ? copy.signInSubtitle : localizer.text("friends.signInToAccept"))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, invitation == nil ? 0 : 8)
+
+            Group {
+                if let invitation, invitation.nickname == nil {
+                    if let error = invitation.errorKey {
+                        Text(localizer.text(error)).font(.footnote).foregroundStyle(.secondary)
+                        Button(localizer.text("common.retry")) { Task { await invitation.loadPreview(session: session) } }
+                    } else { ProgressView() }
+                } else if !configured {
+                    if invitation == nil { configurationNotice }
+                    else { Text(localizer.text("auth.configTitle")).font(.subheadline).foregroundStyle(.secondary) }
+                } else if step == .code {
+                    codeForm
+                } else {
+                    methods
+                }
+            }
+            .padding(.top, invitation == nil ? 23 : 28)
+
+            if invitation == nil { compactPrivacyNotice.padding(.top, 18) }
+        }
+    }
+
+    private var compactPrivacyNotice: some View {
+        var text = AttributedString(localizer.text("auth.privacyShort") + " ")
+        var link = AttributedString(localizer.text("auth.privacyLink"))
+        link.link = session.configuration.privacyURL
+        link.underlineStyle = .single
+        text.append(link)
+        return HStack(alignment: .top, spacing: 7) {
+            Image(systemName: "lock").font(.caption2).padding(.top, 2)
+            Text(text).font(.caption2).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .foregroundStyle(.secondary)
+        .tint(Color(uiColor: .secondaryLabel))
     }
 
     private var privacyNotice: some View {
@@ -436,13 +506,13 @@ struct SignInView: View {
     }
 
     private var methods: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: invitation == nil ? 9 : 12) {
             if session.configuration.appleAuthEnabled {
-                AppleAuthenticationButton {
+                AppleAuthenticationButton(cornerRadius: invitation == nil ? 13 : 18) {
                     run(provider: "apple") { try await session.signInWithApple() }
                 }
                 .id(colorScheme)
-                .frame(height: 56)
+                .frame(height: invitation == nil ? 48 : 56)
                 .overlay(alignment: .trailing) {
                     if activeProvider == "apple" {
                         ProgressView().tint(colorScheme == .dark ? .black : .white)
@@ -457,28 +527,21 @@ struct SignInView: View {
                 Button {
                     run(provider: "google") { try await session.signInWithGoogle() }
                 } label: {
-                    HStack {
+                    HStack(spacing: 10) {
                         GoogleSignInMark()
                             .frame(width: 20, height: 20)
                             .accessibilityHidden(true)
-                        Spacer(minLength: 8)
                         Text(activeProvider == "google" ? localizer.text("auth.googleOpening") : localizer.text("auth.google"))
-                            .font(.headline)
-                        Spacer(minLength: 8)
-                        if activeProvider == "google" {
-                            ProgressView().controlSize(.small)
-                        } else {
-                            Image(systemName: "arrow.right")
-                                .font(.caption.weight(.semibold))
-                        }
+                            .font(.subheadline.weight(.medium))
+                        if activeProvider == "google" { ProgressView().controlSize(.small) }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 14)
-                    .frame(minHeight: 56)
-                    .foregroundStyle(Brand.onAccent)
-                    .background(Brand.accent, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(Brand.separator.opacity(0.35), lineWidth: 1))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .frame(minHeight: 48)
+                    .foregroundStyle(Brand.ink)
+                    .background(Brand.paper, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 13).stroke(Brand.separator.opacity(0.35), lineWidth: 0.75))
                 }
                 .buttonStyle(TactileButtonStyle())
                 .accessibilityIdentifier("auth.google")
@@ -508,6 +571,7 @@ struct SignInView: View {
                         .font(.subheadline.weight(.medium))
                         .frame(maxWidth: .infinity)
                         .frame(minHeight: 48)
+                        .background(invitation == nil ? Brand.cream : Color.clear, in: RoundedRectangle(cornerRadius: 13))
                 }
                 .buttonStyle(TactileButtonStyle())
                 .foregroundStyle(Brand.ink)
@@ -530,7 +594,7 @@ struct SignInView: View {
 
     private var emailForm: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(localizer.text("auth.emailIntro"))
+            Text(localizer.text(invitation == nil ? "auth.emailIntroShort" : "auth.emailIntro"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             TextField(localizer.text("auth.email"), text: $email)
@@ -562,8 +626,7 @@ struct SignInView: View {
             .foregroundStyle(Brand.onAccent)
             .disabled(working || !email.cleanedEmail.contains("@"))
         }
-        .padding(18)
-        .parcelCardSurface()
+        .modifier(SignInFormSurface(embedded: invitation == nil, padding: 18))
     }
 
     private var codeForm: some View {
@@ -609,8 +672,7 @@ struct SignInView: View {
             .frame(maxWidth: .infinity)
             .disabled(working)
         }
-        .padding(20)
-        .parcelCardSurface()
+        .modifier(SignInFormSurface(embedded: invitation == nil, padding: 20))
     }
 
     @ViewBuilder private var errorView: some View {
@@ -637,22 +699,34 @@ struct SignInView: View {
     }
 }
 
+private struct SignInFormSurface: ViewModifier {
+    let embedded: Bool
+    let padding: CGFloat
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if embedded { content }
+        else { content.padding(padding).parcelCardSurface() }
+    }
+}
+
 private struct AppleAuthenticationButton: UIViewRepresentable {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.isEnabled) private var isEnabled
+    var cornerRadius: CGFloat = 18
     let action: () -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(action: action) }
 
     func makeUIView(context: Context) -> ASAuthorizationAppleIDButton {
         let button = ASAuthorizationAppleIDButton(type: .continue, style: colorScheme == .dark ? .white : .black)
-        button.cornerRadius = 18
+        button.cornerRadius = cornerRadius
         button.addTarget(context.coordinator, action: #selector(Coordinator.tapped), for: .touchUpInside)
         return button
     }
 
     func updateUIView(_ button: ASAuthorizationAppleIDButton, context: Context) {
         button.isEnabled = isEnabled
+        button.cornerRadius = cornerRadius
         context.coordinator.action = action
     }
 
@@ -1323,7 +1397,7 @@ private struct GoogleSignInMark: View {
     var body: some View {
         Text("G")
             .font(.system(size: 21, weight: .semibold))
-            .foregroundStyle(Brand.onAccent)
+            .foregroundStyle(Color(red: 0.259, green: 0.522, blue: 0.957))
     }
 }
 

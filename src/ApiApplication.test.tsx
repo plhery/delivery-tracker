@@ -134,7 +134,7 @@ describe('ApiApplication', () => {
     result.rerender(<ApiApplication />);
     expect(screen.getByRole('button', { name: 'Tap to open your parcel' })).toBeEnabled();
     expect(screen.queryByText('Configured sign in')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /try the demo/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Explore the demo/ })).not.toBeInTheDocument();
   });
 
   it('signs out and clears private cache while push deregistration is stalled', async () => {

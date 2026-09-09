@@ -4,6 +4,7 @@ import { useI18n } from '../i18n';
 
 export function SignInScreen({
   configured,
+  card = false,
   googleEnabled = false,
   appleEnabled = false,
   emailOtpEnabled = true,
@@ -15,6 +16,7 @@ export function SignInScreen({
   subtitle,
   showConfigurationHelp = true,
 }: {
+  card?: boolean;
   showConfigurationHelp?: boolean;
   title?: ReactNode;
   subtitle?: string;
@@ -80,7 +82,7 @@ export function SignInScreen({
   }
 
   return (
-        <section className="auth-flow" aria-labelledby="sign-in-title">
+        <section className={`auth-flow${card ? ' auth-flow--card' : ''}`} aria-labelledby="sign-in-title">
           <div className="auth-flow__heading">
             <h1 id="sign-in-title" tabIndex={-1}>{title ?? t('arrival.signInTitle')}</h1>
             <p>{subtitle ?? t('arrival.signInSubtitle')}</p>
@@ -175,7 +177,7 @@ export function SignInScreen({
             {emailVisible && (
               <form className="auth-flow__form auth-flow__form--email" onSubmit={(event) => void requestCode(event)}>
                 <p className="auth-flow__intro">
-                  {t('auth.emailIntro')}
+                  {t(card ? 'auth.emailIntroShort' : 'auth.emailIntro')}
                 </p>
                 <label htmlFor="sign-in-email">{t('auth.email')}</label>
                 <input
@@ -203,8 +205,8 @@ export function SignInScreen({
               <path d="M8 10V7a4 4 0 0 1 8 0v3" />
             </svg>
             <p>
-              {t('auth.privacy')}{' '}
-              <a href="/privacy.html">{t('auth.readPrivacy')}</a>
+              {t(card ? 'auth.privacyShort' : 'auth.privacy')}{' '}
+              <a href="/privacy.html">{t(card ? 'auth.privacyLink' : 'auth.readPrivacy')}</a>
             </p>
           </div>
         </section>

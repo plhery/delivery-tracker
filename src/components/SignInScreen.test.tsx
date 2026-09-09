@@ -9,15 +9,16 @@ describe('SignInScreen', () => {
     const verifyCode = vi.fn().mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(
-      <SignInScreen configured sendCode={sendCode} verifyCode={verifyCode} />,
+      <SignInScreen card configured sendCode={sendCode} verifyCode={verifyCode} />,
     );
 
     expect(screen.getByRole('heading', {
-      name: 'Your deliveries, together.',
+      name: 'Sign in',
     })).toBeInTheDocument();
-    expect(screen.getByText('Sign in to start tracking.'))
+    expect(screen.getByText('Keep your deliveries synced.'))
       .toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Read the privacy notice.' }))
+    expect(screen.getByText('Your tracking details stay private.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Privacy' }))
       .toHaveAttribute('href', '/privacy.html');
 
     await user.type(screen.getByLabelText('Email address'), 'Owner@Example.Test');
