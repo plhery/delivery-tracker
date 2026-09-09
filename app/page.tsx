@@ -9,7 +9,7 @@ const description =
 
 export async function generateMetadata(): Promise<Metadata> {
   const origin = await requestOrigin();
-  const image = new URL('/og.png?v=8bd21a86', origin).href;
+  const image = new URL('/og.png?v=2047ad49', origin).href;
   return {
     metadataBase: origin,
     title,
@@ -23,9 +23,9 @@ export async function generateMetadata(): Promise<Metadata> {
       description,
       images: [{
         url: image,
-        width: 1_734,
-        height: 907,
-        alt: 'Delivery Tracker for parcel deliveries',
+        width: 1_200,
+        height: 630,
+        alt: 'Delivery Tracker — all your parcels in one place.',
       }],
     },
     twitter: {
