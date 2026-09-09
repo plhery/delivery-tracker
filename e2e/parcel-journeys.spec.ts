@@ -141,6 +141,12 @@ test('accepts a Swiss postcode for GLS Germany and labels unknown carriers', asy
 });
 
 test('parcel celebration respects reduced motion and clears before the next interaction', async ({ page }) => {
+  // Hold the short celebration while inspecting it, even on a busy CI runner.
+  const now = Date.now();
+  await page.clock.install({ time: now });
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Search & filters' })).toBeVisible();
+  await page.clock.pauseAt(now + 60_000);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByRole('button', { name: 'Add a parcel' }).click();
   let sheet = page.getByRole('dialog', { name: 'Add a parcel' });
@@ -148,6 +154,7 @@ test('parcel celebration respects reduced motion and clears before the next inte
   await sheet.getByRole('button', { name: 'Add parcel' }).click();
   const burst = page.locator('.parcel-added-burst');
   await expect(burst).toHaveAttribute('data-reduced', 'true');
+  await page.clock.runFor(150);
   const card = page.locator('.parcel-card-swipe[data-celebrating="highlight"]');
   await expect(card).toBeInViewport();
   expect(await card.evaluate((element) => element.getAnimations()

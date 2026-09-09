@@ -173,8 +173,11 @@ test('opens Passport explanation bubbles without moving the journal and restores
   await expect(page.locator('.country-row')).toHaveCount(3);
   await expect(page.locator('.passport-count')).toHaveCount(0);
   await expect(page.locator('.stamp-card')).toHaveCount(12);
-  const positions = await page.locator('.stamp-card').evaluateAll((cards) => cards.slice(0, 4).map((card) => card.getBoundingClientRect().top));
-  expect(new Set(positions).size).toBe(1);
+  // Allow subpixel rounding while the page's entrance transform settles.
+  await expect.poll(() => page.locator('.stamp-card').evaluateAll((cards) => {
+    const positions = cards.slice(0, 4).map((card) => card.getBoundingClientRect().top);
+    return Math.max(...positions) - Math.min(...positions);
+  })).toBeLessThan(0.01);
   await expect(page.getByText('Unlocked', { exact: true })).toHaveCount(0);
   const stamp = page.getByRole('button', { name: 'First arrival', exact: true });
   const explanation = page.locator(`[id="${await stamp.getAttribute('aria-controls')}"]`);
@@ -186,7 +189,8 @@ test('opens Passport explanation bubbles without moving the journal and restores
   await expect(stamp).toHaveAttribute('aria-expanded', 'true');
   await expect(explanation).toContainText('Your first delivered parcel earns this stamp.');
   await expect(explanation).toBeVisible();
-  expect((await page.locator('.passport-stamps').boundingBox())!.height).toBe(height);
+  // Transformed bounds can differ by floating-point rounding between frames.
+  expect((await page.locator('.passport-stamps').boundingBox())!.height).toBeCloseTo(height, 2);
   await expect(stamp).toHaveAttribute('data-kept', 'yes');
   await expect(page.getByRole('dialog', { name: 'First arrival', exact: true })).toBeVisible();
   await expect(explanation).toBeFocused();
@@ -282,9 +286,18 @@ test('scrolls from a card, reveals archive smoothly, and supports reversing the 
     await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   }
   const card = page.getByRole('button', { name: /^(?:Next up: )?Birthday gift 🎁 —/ });
+  await card.scrollIntoViewIfNeeded();
+  const initialScroll = await page.evaluate(() => scrollY);
   const box = await card.boundingBox();
-  await swipe(box!.x + 100, box!.y + box!.height / 2, 6, -150);
-  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(50);
+  // Wait for native momentum to finish before resetting the scroll position.
+  // Otherwise the remaining touch scroll can move the page after scrollTo.
+  await Promise.all([
+    page.evaluate(() => new Promise<void>((resolve) => {
+      document.addEventListener('scrollend', () => resolve(), { once: true });
+    })),
+    swipe(box!.x + 100, box!.y + box!.height / 2, 6, -150),
+  ]);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(initialScroll + 50);
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
   await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);

@@ -54,6 +54,13 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .app__navigation[data-selection-ready] button[aria-current="page"] { background: transparent; box-shadow: none; }
 .app__navigation button:active { scale: .96; }
 .app__navigation svg { width: 18px; height: 18px; }
+/* Keep the desktop tabs the same size on every page so the pill can glide
+   without its centered navigation container shifting underneath it. */
+@media (min-width: 761px) {
+  .app__navigation { background: transparent; gap: 5px; padding: 0; }
+  .app__navigation button { padding: 8px 12px; min-height: 40px; font-weight: 500; font-size: 12px; }
+  .app__navigation-selection { background: var(--control); box-shadow: none; }
+}
 .app__add-button span { display: none; }
 .app__add-button { grid-column: 1; grid-row: 1; justify-self: start; display: flex; justify-content: center; align-items: center; gap: 7px; background: transparent; border-radius: 14px; min-height: 44px; padding: 8px; order: 2; font-weight: 600; font-size: 13px; }
 .account-trigger { grid-column: 3; grid-row: 1; justify-self: end; background: var(--yellow); color: var(--on-yellow); width: 36px; height: 36px; padding: 9px; margin: 4px; order: 3; font-weight: 700; font-size: 14px; }

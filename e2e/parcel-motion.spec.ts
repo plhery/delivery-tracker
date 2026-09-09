@@ -23,10 +23,11 @@ async function demo(page: Page) {
 test('opens from the tapped mobile card, retaining focus and browser history', async ({ page, isMobile }) => {
   await demo(page);
   const card = page.locator('.parcel-card--hero');
+  const parcelName = await card.locator('.parcel-card__label').innerText();
   await card.scrollIntoViewIfNeeded();
   const original = await card.boundingBox();
   await card.click();
-  const detail = page.getByRole('dialog', { name: 'Birthday gift 🎁' });
+  const detail = page.getByRole('dialog', { name: parcelName, exact: true });
   await expect(detail).toBeVisible();
   const opening = () => detail.evaluate((element) => element.getAnimations().some((animation) => animation.id === 'parcel-card-expand'));
   expect(await opening()).toBe(isMobile);
@@ -60,8 +61,9 @@ test('handles an interrupted opening and changing motion preferences', async ({ 
   test.skip(!isMobile, 'Expansion is reserved for the phone layout.');
   await demo(page);
   const card = page.locator('.parcel-card--hero');
+  const parcelName = await card.locator('.parcel-card__label').innerText();
   await card.click();
-  const detail = page.getByRole('dialog', { name: 'Birthday gift 🎁' });
+  const detail = page.getByRole('dialog', { name: parcelName, exact: true });
   await expect(detail).toHaveClass(/detail--from-card/);
   await detail.evaluate((element) => element.getAnimations().forEach((animation) => { animation.currentTime = 80; }));
   await page.keyboard.press('Escape');

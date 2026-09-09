@@ -43,9 +43,6 @@
 .delivery-arrived p { font-size: 13px; color: var(--ink-soft); margin-bottom: 20px; }
 .delivery-arrived .button { min-height: 44px; font-size: 13px; padding: 10px 16px; border-radius: 12px; }
 @media (min-width: 761px) {
-  .app--deliveries .app__navigation { background: transparent; gap: 5px; padding: 0; }
-  .app--deliveries .app__navigation button { padding: 8px 12px; min-height: 40px; font-weight: 500; font-size: 12px; }
-  .app--deliveries .app__navigation-selection { background: var(--control); box-shadow: none; }
   .app--deliveries .app__add-button span { display: inline; font-size: 12px; font-weight: 500; }
 }
 @media (max-width: 760px) {
