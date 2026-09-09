@@ -9,6 +9,18 @@ const parcel = { id: 'p1', label: 'Private contents', carrier: 'ups', trackingNu
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 describe('Friends client and self preview', () => {
+  it('uses the complete shared collection and UTC calendar in self previews', () => {
+    const origins = ['CH', 'DE', 'FR', 'IT', 'GB'];
+    const parcels = Array.from({ length: 25 }, (_, i) => ({ ...parcel, id: `p${i}`, carrier: (['ups', 'dhl', 'dpd'] as const)[i % 3], archivedAt: '2024-12-02T00:00:00Z', events: [
+      { id: 'start', parcelId: `p${i}`, description: 'Private', stage: 'accepted' as const, occurredAt: i === 0 ? '2024-10-01T00:00:00Z' : '2024-11-30T12:00:00Z', location: origins[i % 5] },
+      { id: 'pickup', parcelId: `p${i}`, description: 'Private', stage: 'ready_for_pickup' as const, occurredAt: '2024-12-01T10:00:00Z', location: 'CH' },
+      { id: 'end', parcelId: `p${i}`, description: 'Private', stage: 'delivered' as const, occurredAt: '2024-12-01T12:00:00Z', location: 'CH' },
+    ] }));
+    expect(ownFriendCard(parcels, profile).stats?.stamps).toEqual(['first', 'ten', 'connected', 'express', 'acrossBorders', 'aroundWorld', 'theRegular', 'rightNextDoor', 'worthTheWait', 'busyDoorstep', 'pickedUp', 'homeForHolidays']);
+    expect(ownFriendCard(parcels, { ...profile, shareStats: false }).stats).toBeNull();
+    expect(ownFriendCard([{ ...parcel, events: [{ id: 'end', parcelId: 'p1', description: 'Private', stage: 'delivered', occurredAt: '2024-11-30T23:30:00Z' }] }], profile).stats?.stamps).not.toContain('homeForHolidays');
+  });
+
   it('rounds journeys and keeps all private parcel fields out of the preview', () => {
     vi.useFakeTimers(); vi.setSystemTime(new Date('2026-09-10T00:00:00Z'));
     const card = ownFriendCard([parcel], { ...profile, shareArrival: true });

@@ -178,12 +178,20 @@ final class FriendsStore: ObservableObject {
     }
 
     static func ownCard(parcels: [Parcel], profile: FriendProfile, now: Date = Date()) -> FriendCard {
-        let stats = PassportStatistics(parcels: parcels)
+        let stats = PassportStatistics(parcels: parcels, timeZone: TimeZone(secondsFromGMT: 0)!)
         var stamps: [FriendStamp] = []
         if stats.deliveredCount >= 1 { stamps.append(.first) }
         if stats.deliveredCount >= 10 { stamps.append(.ten) }
         if Set(parcels.map(\.carrier)).count >= 3 { stamps.append(.connected) }
         if let fastest = stats.fastestDelivery, fastest.duration <= 172_800 { stamps.append(.express) }
+        if stats.crossBorderCount >= 1 { stamps.append(.acrossBorders) }
+        if stats.originCountries.count >= 5 { stamps.append(.aroundWorld) }
+        if stats.deliveredCount >= 25 { stamps.append(.theRegular) }
+        if stats.domesticDeliveryCount >= 1 { stamps.append(.rightNextDoor) }
+        if stats.longWaitDeliveryCount >= 1 { stamps.append(.worthTheWait) }
+        if stats.maxDeliveriesInOneDay >= 3 { stamps.append(.busyDoorstep) }
+        if stats.pickupDeliveryCount >= 1 { stamps.append(.pickedUp) }
+        if stats.decemberDeliveryCount >= 1 { stamps.append(.homeForHolidays) }
         var calendar = Calendar(identifier: .iso8601)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let week = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
@@ -202,13 +210,13 @@ final class FriendsStore: ObservableObject {
 
 extension FriendStamp {
     var titleKey: String {
-        switch self { case .first: "passport.firstArrival"; case .ten: "passport.doubleDigits"; case .connected: "passport.wellConnected"; case .express: "passport.expressArrival" }
+        switch self { case .first: "passport.firstArrival"; case .ten: "passport.doubleDigits"; case .connected: "passport.wellConnected"; case .express: "passport.expressArrival"; case .acrossBorders: "passport.acrossBorders"; case .aroundWorld: "passport.aroundWorld"; case .theRegular: "passport.theRegular"; case .rightNextDoor: "passport.rightNextDoor"; case .worthTheWait: "passport.worthTheWait"; case .busyDoorstep: "passport.busyDoorstep"; case .pickedUp: "passport.pickedUp"; case .homeForHolidays: "passport.homeForHolidays" }
     }
     var explanationKey: String {
-        switch self { case .first: "friends.firstStampDetail"; case .ten: "friends.tenStampDetail"; case .connected: "friends.connectedStampDetail"; case .express: "friends.expressStampDetail" }
+        switch self { case .first: "friends.firstStampDetail"; case .ten: "friends.tenStampDetail"; case .connected: "friends.connectedStampDetail"; case .express: "friends.expressStampDetail"; case .acrossBorders: "passport.acrossExplanation"; case .aroundWorld: "passport.aroundExplanation"; case .theRegular: "passport.regularExplanation"; case .rightNextDoor: "passport.domesticExplanation"; case .worthTheWait: "passport.waitExplanation"; case .busyDoorstep: "friends.busyStampDetail"; case .pickedUp: "passport.pickupExplanation"; case .homeForHolidays: "friends.holidayStampDetail" }
     }
     var symbol: String {
-        switch self { case .first: "shippingbox"; case .ten: "seal"; case .connected: "globe"; case .express: "bolt" }
+        switch self { case .first: "shippingbox"; case .ten: "seal"; case .connected: "globe"; case .express: "bolt"; case .acrossBorders: "globe.europe.africa"; case .aroundWorld: "map"; case .theRegular: "25.circle"; case .rightNextDoor: "house"; case .worthTheWait: "hourglass"; case .busyDoorstep: "shippingbox"; case .pickedUp: "storefront"; case .homeForHolidays: "gift" }
     }
 }
 

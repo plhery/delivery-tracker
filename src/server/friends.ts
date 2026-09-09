@@ -7,7 +7,7 @@ import { isRecord, type JsonObject } from './types';
 import { SupabaseError, type SupabaseUserClient, type SupabaseServiceClient } from './supabase';
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const stamps = new Set<ApiFriendStamp>(['first', 'ten', 'connected', 'express']);
+const stamps = new Set<ApiFriendStamp>(['first', 'ten', 'connected', 'express', 'acrossBorders', 'aroundWorld', 'theRegular', 'rightNextDoor', 'worthTheWait', 'busyDoorstep', 'pickedUp', 'homeForHolidays']);
 const fields: Record<ApiFriendsActionRequest['action'], string[]> = {
   save_profile: ['nickname', 'shareStats', 'shareArrival'], create_invite: [], revoke_invite: [], revoke_previous_invites: ['code'],
   preview_invite: ['code'], accept_invite: ['code'], remove_friend: ['friendId'], acknowledge_friend: ['friendId'], disable: [],
@@ -72,7 +72,7 @@ export function friendCard(value: unknown): ApiFriendCard {
   let stats: ApiFriendCard['stats'] = null;
   if (value.stats !== null) {
     const s = value.stats;
-    if (!isRecord(s) || !Number.isSafeInteger(s.deliveredCount) || Number(s.deliveredCount) < 0 || !(s.averageDays === null || (Number.isSafeInteger(s.averageDays) && Number(s.averageDays) >= 1)) || !Array.isArray(s.stamps) || s.stamps.length > 4 || s.stamps.some((stamp) => !stamps.has(stamp as ApiFriendStamp))) return corrupt();
+    if (!isRecord(s) || !Number.isSafeInteger(s.deliveredCount) || Number(s.deliveredCount) < 0 || !(s.averageDays === null || (Number.isSafeInteger(s.averageDays) && Number(s.averageDays) >= 1)) || !Array.isArray(s.stamps) || s.stamps.length > stamps.size || s.stamps.some((stamp) => !stamps.has(stamp as ApiFriendStamp))) return corrupt();
     stats = { deliveredCount: Number(s.deliveredCount), averageDays: s.averageDays === null ? null : Number(s.averageDays), stamps: [...new Set(s.stamps as ApiFriendStamp[])] };
   }
   return { id: value.id, nickname: value.nickname, stats, arrivedThisWeek: value.arrivedThisWeek };

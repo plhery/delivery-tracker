@@ -1483,7 +1483,7 @@ export interface ApiUpdatePushSubscriptionLocaleRequest {
   "locale": ApiNativePushLocale;
 }
 
-export type ApiFriendStamp = "first" | "ten" | "connected" | "express";
+export type ApiFriendStamp = "first" | "ten" | "connected" | "express" | "acrossBorders" | "aroundWorld" | "theRegular" | "rightNextDoor" | "worthTheWait" | "busyDoorstep" | "pickedUp" | "homeForHolidays";
 
 export interface ApiFriendStats {
   "deliveredCount": number;

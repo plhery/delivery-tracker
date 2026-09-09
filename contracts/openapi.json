@@ -3249,7 +3249,15 @@
           "first",
           "ten",
           "connected",
-          "express"
+          "express",
+          "acrossBorders",
+          "aroundWorld",
+          "theRegular",
+          "rightNextDoor",
+          "worthTheWait",
+          "busyDoorstep",
+          "pickedUp",
+          "homeForHolidays"
         ]
       },
       "FriendStats": {
@@ -3282,7 +3290,7 @@
               "$ref": "#/components/schemas/FriendStamp"
             },
             "uniqueItems": true,
-            "maxItems": 4
+            "maxItems": 12
           }
         }
       },

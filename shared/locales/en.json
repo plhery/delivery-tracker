@@ -272,6 +272,8 @@
   "friends.shareStats": "Stats & stamps",
   "friends.shareStatsDetail": "Delivery count, average days, stamps.",
   "friends.stampHint": "Tap a stamp for a closer look",
+  "friends.busyStampDetail": "Three parcels delivered on the same day, using UTC for shared passports.",
+  "friends.holidayStampDetail": "A parcel delivered in December, using UTC for shared passports.",
   "friends.stamps": "Earned stamps",
   "friends.tenStampDetail": "Ten parcels delivered, including archived arrivals.",
   "friends.title": "Friends",

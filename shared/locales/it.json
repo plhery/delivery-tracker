@@ -272,6 +272,8 @@
   "friends.shareStats": "Statistiche e timbri",
   "friends.shareStatsDetail": "Consegne, giorni medi, timbri.",
   "friends.stampHint": "Tocca un timbro per guardarlo da vicino",
+  "friends.busyStampDetail": "Tre pacchi consegnati nello stesso giorno. I passaporti condivisi usano il fuso UTC.",
+  "friends.holidayStampDetail": "Un pacco consegnato a dicembre. I passaporti condivisi usano il fuso UTC.",
   "friends.stamps": "Timbri ottenuti",
   "friends.tenStampDetail": "Dieci pacchi consegnati, inclusi gli arrivi archiviati.",
   "friends.title": "Amici",

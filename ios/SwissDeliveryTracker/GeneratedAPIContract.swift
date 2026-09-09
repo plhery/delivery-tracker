@@ -485,6 +485,14 @@ enum FriendStamp: String, Codable, CaseIterable, Hashable, Sendable, Identifiabl
     case ten
     case connected
     case express
+    case acrossBorders
+    case aroundWorld
+    case theRegular
+    case rightNextDoor
+    case worthTheWait
+    case busyDoorstep
+    case pickedUp
+    case homeForHolidays
 
     var id: String { rawValue }
 }

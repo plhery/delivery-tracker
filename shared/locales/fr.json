@@ -272,6 +272,8 @@
   "friends.shareStats": "Statistiques et timbres",
   "friends.shareStatsDetail": "Colis livrés, durée moyenne, timbres.",
   "friends.stampHint": "Touche un timbre pour le découvrir",
+  "friends.busyStampDetail": "Trois colis livrés le même jour, selon le fuseau UTC utilisé pour les passeports partagés.",
+  "friends.holidayStampDetail": "Un colis livré en décembre, selon le fuseau UTC utilisé pour les passeports partagés.",
   "friends.stamps": "Timbres gagnés",
   "friends.tenStampDetail": "Dix colis livrés, arrivées archivées comprises.",
   "friends.title": "Amis",

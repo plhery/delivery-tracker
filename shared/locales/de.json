@@ -272,6 +272,8 @@
   "friends.shareStats": "Statistiken & Stempel",
   "friends.shareStatsDetail": "Zustellungen, Tage im Schnitt, Stempel.",
   "friends.stampHint": "Tippe auf einen Stempel, um mehr zu sehen",
+  "friends.busyStampDetail": "Drei Pakete am selben Tag zugestellt. Geteilte Pässe verwenden UTC.",
+  "friends.holidayStampDetail": "Ein im Dezember zugestelltes Paket. Geteilte Pässe verwenden UTC.",
   "friends.stamps": "Verdiente Stempel",
   "friends.tenStampDetail": "Zehn zugestellte Pakete, einschließlich archivierter Ankünfte.",
   "friends.title": "Freunde",

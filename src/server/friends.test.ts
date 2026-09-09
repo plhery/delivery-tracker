@@ -22,6 +22,18 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
 describe('Friends privacy boundary', () => {
+  it('shares all twelve known stamps while rejecting unknown or oversized collections', async () => {
+    const stamps = ['first', 'ten', 'connected', 'express', 'acrossBorders', 'aroundWorld', 'theRegular', 'rightNextDoor', 'worthTheWait', 'busyDoorstep', 'pickedUp', 'homeForHolidays'];
+    const full = { ...card, stats: { ...card.stats, deliveredCount: 25, stamps } };
+    vi.spyOn(SupabaseUserClient.prototype, 'request').mockResolvedValue({ ...snapshot, ownCard: full, friends: [full] });
+    const response = await call();
+    expect(response.status).toBe(200);
+    expect((await response.json()).friends[0].stats.stamps).toEqual(stamps);
+    expect(() => friendCard({ ...full, stats: { ...full.stats, stamps: [...stamps, 'first'] } })).toThrow();
+    expect(() => friendCard({ ...full, stats: { ...full.stats, stamps: ['centuryClub'] } })).toThrow();
+    expect(friendCard({ ...full, stats: null }).stats).toBeNull();
+  });
+
   it('returns only shared nicknames and profile IDs in authenticated sender notices', async () => {
     const updates = { updates: [{ friendId: id, nickname: 'Mila' }] };
     const rpc = vi.spyOn(SupabaseUserClient.prototype, 'request').mockResolvedValue({ updates: [{ ...updates.updates[0], email: 'private', parcel: 'private' }] });
