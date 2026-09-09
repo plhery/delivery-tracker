@@ -77,6 +77,12 @@ Before installing on a physical iPhone:
    `APNS_KEY_ID`, `APNS_PRIVATE_KEY`, and `APNS_BUNDLE_ID`. The bundle ID must
    exactly match the installed app.
 
+A compact invitation appears above the Deliveries tab bar once a signed-in user
+has a parcel. It waits until sheets, search, parcel details, and arrival effects
+are finished. Not now is remembered on this device for that account; previous
+onboarding choices, disabled notifications, and denied permission are respected.
+Notifications remain available in Account settings.
+
 The app asks for notification permission only after the user taps Enable. It
 requests the current opaque device token from Apple at launch and forwards it
 over the authenticated API; it does not persist that token locally. Debug

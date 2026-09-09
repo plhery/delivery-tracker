@@ -75,12 +75,34 @@ enum NotificationDevicePolicy {
     }
 }
 
-enum NotificationOnboardingPolicy {
+enum NotificationInvitationPolicy {
     static func shouldPresent(
         isAuthenticated: Bool,
         isDemo: Bool,
-        completed: Bool
+        hasParcels: Bool,
+        status: UNAuthorizationStatus?,
+        enabled: Bool,
+        optedOut: Bool,
+        dismissed: Bool
     ) -> Bool {
-        isAuthenticated && !isDemo && !completed
+        guard isAuthenticated, !isDemo, hasParcels, !enabled, !optedOut, !dismissed,
+              let status else { return false }
+        return status == .notDetermined || status == .authorized || status == .provisional
+    }
+}
+
+enum NotificationInvitationPreference {
+    private static func key(for userID: UUID) -> String {
+        "sdt.notificationInvitationDismissed.v1.\(userID.uuidString)"
+    }
+
+    static func isDismissed(for userID: UUID, defaults: UserDefaults = .standard) -> Bool {
+        // Preserve choices made in the previous full-screen onboarding.
+        defaults.bool(forKey: "sdt.notificationOnboardingCompleted.v1")
+            || defaults.bool(forKey: key(for: userID))
+    }
+
+    static func dismiss(for userID: UUID, defaults: UserDefaults = .standard) {
+        defaults.set(true, forKey: key(for: userID))
     }
 }

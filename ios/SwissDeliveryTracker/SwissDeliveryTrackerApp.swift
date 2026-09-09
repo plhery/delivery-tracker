@@ -45,8 +45,6 @@ struct RootView: View {
     @EnvironmentObject private var invitation: FriendInvitationStore
     @EnvironmentObject private var friendsActivity: FriendsActivityStore
     @Environment(\.scenePhase) private var scenePhase
-    @AppStorage("sdt.notificationOnboardingCompleted.v1") private var notificationOnboardingCompleted = false
-    @State private var showingNotificationOnboarding = false
     @State private var selectedTab = 0
     private let carrierCatalog = CarrierCatalog.shared
 
@@ -97,18 +95,12 @@ struct RootView: View {
         }
         .task(id: sessionIdentity + (invitation.isPresenting ? "-invitation" : "")) {
             guard session.isAuthenticated else {
-                showingNotificationOnboarding = false
                 switch session.state {
                 case .loading: break
                 default: parcels.clearDeliverySurfaces()
                 }
                 return
             }
-            showingNotificationOnboarding = NotificationOnboardingPolicy.shouldPresent(
-                isAuthenticated: session.isAuthenticated,
-                isDemo: session.isDemo,
-                completed: notificationOnboardingCompleted
-            ) && !invitation.isPresenting && friendsActivity.focusID == nil
             await parcels.start()
         }
         .onChange(of: scenePhase) { _, phase in
@@ -159,15 +151,6 @@ struct RootView: View {
             parcels.refreshDeliverySurfaces()
             guard let token = AppDelegate.currentDeviceToken else { return }
             Task { await parcels.forwardNativePushToken(token, language: language) }
-        }
-        .fullScreenCover(isPresented: $showingNotificationOnboarding) {
-            NotificationOnboardingView {
-                notificationOnboardingCompleted = true
-                showingNotificationOnboarding = false
-            }
-            .environmentObject(parcels)
-            .environmentObject(localizer)
-            .interactiveDismissDisabled()
         }
     }
 

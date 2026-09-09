@@ -7,7 +7,7 @@ struct ParcelListView: View {
 
     var body: some View {
         TabView(selection: $selection) {
-            DeliveryListView()
+            DeliveryListView(isSelected: selection == 0)
                 .tag(0)
                 .tabItem {
                     Label(localizer.text("native.deliveries"), systemImage: "shippingbox.fill")
@@ -68,6 +68,7 @@ struct DemoModeBar: View {
 }
 
 private struct DeliveryListView: View {
+    let isSelected: Bool
     @EnvironmentObject private var store: ParcelStore
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var localizer: Localizer
@@ -418,7 +419,25 @@ private struct DeliveryListView: View {
                 try? await Task.sleep(for: .seconds(4))
                 self.actionMessage = nil
             }
+        } else if shouldShowNotificationInvitation {
+            HStack {
+                Spacer(minLength: 0)
+                NotificationPromptView()
+                    .id(session.user?.id)
+                    .frame(maxWidth: 380)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
         }
+    }
+
+    private var shouldShowNotificationInvitation: Bool {
+        isSelected && (scenePhase == .active || store.notificationEnableInProgress)
+            && path.isEmpty && !showingAdd && !showingAccount && !showingFilters
+            && !showingSearch && !searchFocused && !refreshing && actionError == nil
+            && addedParcelID == nil && revealParcelID == nil && parcelBurstID == nil
+            && store.shouldInviteNotifications
     }
 
     private var visibleParcels: [Parcel] {

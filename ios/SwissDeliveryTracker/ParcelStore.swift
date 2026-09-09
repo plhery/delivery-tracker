@@ -15,6 +15,9 @@ final class ParcelStore: ObservableObject {
     @Published private(set) var errorMessage: String?
     @Published private(set) var authenticationRequired = false
     @Published private(set) var usingCachedData = false
+    @Published private(set) var notificationEnableInProgress = false
+    @Published private(set) var notificationStateLoaded = false
+    @Published private(set) var notificationInvitationDismissed = false
     @Published private(set) var notificationStatus: UNAuthorizationStatus = .notDetermined
     @Published private(set) var notificationsEnabledOnDevice = false
     @Published private(set) var notificationPreferences: NotificationPreferences?
@@ -46,7 +49,6 @@ final class ParcelStore: ObservableObject {
     private var cacheOwnerID: UUID?
     private var mutationRevision = 0
     private var loadSequence = 0
-    private var notificationEnableInProgress = false
     private var nativePushGeneration = 0
     private var deliveryLiveActivityGeneration = 0
     private var deliveryLiveActivitySystemDisabled = false
@@ -74,6 +76,7 @@ final class ParcelStore: ObservableObject {
         deliveryLiveActivityRegistrationRemovalPending = !deliveryLiveActivitiesEnabled
         deliveryWidgetStore?.setLiveActivitiesEnabled(deliveryLiveActivitiesEnabled)
         cacheOwnerID = session.user?.id
+        notificationInvitationDismissed = session.user.map { NotificationInvitationPreference.isDismissed(for: $0.id) } ?? false
         identityObservation = session.identityChanges.sink { [weak self] in self?.resetForSessionChange() }
     }
 
@@ -96,6 +99,7 @@ final class ParcelStore: ObservableObject {
             UserDefaults.standard.set(false, forKey: nativePushRegisteredKey)
         }
         cacheOwnerID = session.user?.id
+        notificationInvitationDismissed = session.user.map { NotificationInvitationPreference.isDismissed(for: $0.id) } ?? false
         mutationRevision += 1
         loadSequence += 1
         parcels = []
@@ -109,6 +113,8 @@ final class ParcelStore: ObservableObject {
         notificationError = nil
         notificationEnableInProgress = false
         notificationsEnabledOnDevice = false
+        notificationStateLoaded = false
+        notificationStatus = .notDetermined
         deliveryLiveActivityError = nil
         clearDeliverySurfaces()
     }
@@ -200,7 +206,10 @@ final class ParcelStore: ObservableObject {
         if active && session.isAuthenticated {
             registerCurrentDeliveryPushToStartToken()
             registerCurrentDeliveryActivityUpdateTokens()
-            Task { await load(showSpinner: false) }
+            Task {
+                await refreshNotificationState()
+                await load(showSpinner: false)
+            }
         }
     }
 
@@ -464,7 +473,10 @@ final class ParcelStore: ObservableObject {
     }
 
     func refreshNotificationState() async {
-        notificationStatus = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+        let generation = session.generation
+        let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+        guard (try? session.checkGeneration(generation)) != nil else { return }
+        notificationStatus = status
         let optedOut = UserDefaults.standard.bool(forKey: notificationOptOutKey)
         notificationsEnabledOnDevice = NotificationDevicePolicy.isEnabled(
             isDemo: isDemo,
@@ -473,6 +485,7 @@ final class ParcelStore: ObservableObject {
             nativePushRegistered: UserDefaults.standard.bool(forKey: nativePushRegisteredKey),
             demoNotificationsEnabled: UserDefaults.standard.bool(forKey: demoNotificationsKey)
         )
+        notificationStateLoaded = true
         if NotificationDevicePolicy.shouldRegisterForRemoteNotifications(
             status: notificationStatus,
             optedOut: optedOut
@@ -485,13 +498,21 @@ final class ParcelStore: ObservableObject {
         DeliveryAnalytics.shared.action("notifications-enable", .started)
         var succeeded = false
         defer { DeliveryAnalytics.shared.action("notifications-enable", succeeded ? .success : .error) }
+        let generation = session.generation
         notificationEnableInProgress = true
-        defer { notificationEnableInProgress = false }
+        defer {
+            if (try? session.checkGeneration(generation)) != nil { notificationEnableInProgress = false }
+        }
         let granted = try await UNUserNotificationCenter.current().requestAuthorization(
             options: [.alert, .badge, .sound]
         )
+        try session.checkGeneration(generation)
         await refreshNotificationState()
-        guard granted else { throw DeliveryAPIError.notificationsDenied }
+        try session.checkGeneration(generation)
+        guard granted else {
+            dismissNotificationInvitation()
+            throw DeliveryAPIError.notificationsDenied
+        }
         UserDefaults.standard.set(false, forKey: notificationOptOutKey)
         UIApplication.shared.registerForRemoteNotifications()
         if isDemo {
@@ -503,20 +524,24 @@ final class ParcelStore: ObservableObject {
         guard let token = await waitForAPNSToken() else {
             throw DeliveryAPIError.pushTokenUnavailable
         }
+        try session.checkGeneration(generation)
         let sent = try await api.registerNativePushToken(
             token,
             installationID: installationID,
             language: language,
             sendTest: true
         )
+        try session.checkGeneration(generation)
         UserDefaults.standard.set(true, forKey: nativePushRegisteredKey)
         notificationsEnabledOnDevice = true
+        dismissNotificationInvitation()
         succeeded = true
         return sent
     }
 
     func disableNotifications() async throws {
         DeliveryAnalytics.shared.action("notifications-disable", .started)
+        dismissNotificationInvitation()
         nativePushGeneration += 1
         let token = AppDelegate.currentDeviceToken
         if let token, !isDemo { try await api.unregisterNativePushToken(token) }
@@ -530,20 +555,23 @@ final class ParcelStore: ObservableObject {
         DeliveryAnalytics.shared.action("notifications-disable", .success)
     }
 
-    func deferNotificationOnboarding() {
-        DeliveryAnalytics.shared.action("notifications-defer")
-        nativePushGeneration += 1
-        let token = AppDelegate.currentDeviceToken
-        if let token, !isDemo {
-            Task { try? await api.unregisterNativePushToken(token) }
-        }
-        UIApplication.shared.unregisterForRemoteNotifications()
-        AppDelegate.clearDeviceToken()
-        UserDefaults.standard.set(true, forKey: notificationOptOutKey)
-        UserDefaults.standard.set(false, forKey: nativePushRegisteredKey)
-        UserDefaults.standard.set(false, forKey: demoNotificationsKey)
-        notificationsEnabledOnDevice = false
-        notificationError = nil
+    var shouldInviteNotifications: Bool {
+        !loading && errorMessage == nil && !authenticationRequired
+            && NotificationInvitationPolicy.shouldPresent(
+                isAuthenticated: session.isAuthenticated,
+                isDemo: isDemo,
+                hasParcels: !parcels.isEmpty,
+                status: notificationStateLoaded ? notificationStatus : nil,
+                enabled: notificationsEnabledOnDevice,
+                optedOut: UserDefaults.standard.bool(forKey: notificationOptOutKey),
+                dismissed: notificationInvitationDismissed
+            )
+    }
+
+    func dismissNotificationInvitation() {
+        guard !isDemo, let userID = session.user?.id else { return }
+        NotificationInvitationPreference.dismiss(for: userID)
+        notificationInvitationDismissed = true
     }
 
     func loadNotificationPreferences() async {

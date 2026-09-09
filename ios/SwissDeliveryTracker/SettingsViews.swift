@@ -1,6 +1,97 @@
 import SwiftUI
 import UIKit
 
+struct NotificationPromptView: View {
+    @EnvironmentObject private var store: ParcelStore
+    @EnvironmentObject private var localizer: Localizer
+    @State private var errorMessage: String?
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                if !dynamicTypeSize.isAccessibilitySize {
+                    Image(systemName: "bell.badge.fill")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(Brand.onAccent)
+                        .frame(width: 44, height: 44)
+                        .background(Brand.accent, in: RoundedRectangle(cornerRadius: 14))
+                        .accessibilityHidden(true)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(localizer.text("notifications.prompt.title"))
+                        .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
+                    Text(localizer.text("notifications.prompt.description"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.caption)
+                    .foregroundStyle(Brand.warning)
+                    .accessibilityIdentifier("notifications.prompt.error")
+            }
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) { enableButton; dismissButton }
+                VStack(spacing: 4) { enableButton; dismissButton }
+            }
+        }
+        .padding(16)
+        .foregroundStyle(Brand.ink)
+        .background(Brand.paper, in: RoundedRectangle(cornerRadius: 22))
+        .overlay { RoundedRectangle(cornerRadius: 22).stroke(Brand.ink.opacity(0.1), lineWidth: 1) }
+        .shadow(color: .black.opacity(0.1), radius: 16, y: 4)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("notifications.prompt")
+    }
+
+    private var enableButton: some View {
+        Button {
+            guard !store.notificationEnableInProgress else { return }
+            errorMessage = nil
+            Task {
+                do { _ = try await store.enableNotifications(language: localizer.language) }
+                catch { errorMessage = localizer.text("notifications.error.enable") }
+            }
+        } label: {
+            HStack(spacing: 8) {
+                if store.notificationEnableInProgress { ProgressView().tint(Brand.onAccent) }
+                Text(localizer.text(store.notificationEnableInProgress ? "notifications.enabling" : "notifications.enable"))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .font(.subheadline.weight(.semibold))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .foregroundStyle(Brand.onAccent)
+            .background(Brand.accent, in: RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+        .disabled(store.notificationEnableInProgress)
+        .accessibilityIdentifier("notifications.prompt.enable")
+    }
+
+    private var dismissButton: some View {
+        Button {
+            DeliveryAnalytics.shared.action("notifications-defer")
+            store.dismissNotificationInvitation()
+        } label: {
+            Text(localizer.text("onboarding.notifications.notNow"))
+                .font(.subheadline.weight(.medium))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 10)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(store.notificationEnableInProgress)
+        .accessibilityIdentifier("notifications.prompt.dismiss")
+    }
+}
+
 struct NotificationSettingsView: View {
     @EnvironmentObject private var store: ParcelStore
     @EnvironmentObject private var localizer: Localizer
