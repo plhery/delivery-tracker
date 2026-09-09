@@ -18,43 +18,60 @@
   <strong><a href="https://delivery.plhery.com">Open the public instance →</a></strong>
 </p>
 
-![Delivery Tracker showing fictional demo parcels](docs/screenshot.jpg)
+![The web app’s compact deliveries feed, with a carrier-colored Next up card, a customs notice, and recent arrivals](docs/screenshot.jpg)
 
-Delivery Tracker follows parcel deliveries in one tidy,
-installable web app. Its shared carrier picker includes Swiss Post, Swiss Post
+Delivery Tracker gives your packages a home on iPhone and the web. Small carrier
+trucks and familiar brand colors make each delivery easy to recognize. A stamped
+**Next up** card highlights the next arrival or pickup, compact notices surface
+tracking issues, and past deliveries stay together with the latest first.
+
+<p align="center">
+  <img src="docs/screenshot-ios.png" width="240" alt="Native iPhone deliveries screen with compact notices, a stamped Next up card, and a quiet archive row">
+  <img src="docs/screenshot-detail.jpg" width="240" alt="Mobile web parcel detail showing its carrier, tracking number, and tracking history">
+  <img src="docs/screenshot-passport.jpg" width="240" alt="Mobile web Passport with collectible stamps and delivery statistics">
+</p>
+
+<p align="center"><sub>Native iPhone deliveries · Mobile web tracking history · Delivery Passport. All screenshots use fictional demo parcels.</sub></p>
+
+## What it does
+
+- Gives the parcel name priority, with a readable ETA when one is available.
+- Keeps search and filters tucked away until needed, with swipe-to-archive on cards.
+- Shows the tracking number, carrier website, and a clear timeline when you open a parcel.
+- Collects twelve Passport stamps and shows statistics from your delivery history.
+- Lets friends exchange invitations and choose which delivery statistics to share.
+- Tracks supported carriers automatically and links out gracefully for the rest.
+- Checks active deliveries every 10 minutes from 08:00 to 22:00, and hourly overnight.
+- Understands tracking numbers, carrier URLs and text pasted from shipping emails, with
+  one-tap paste on web and barcode scanning on iPhone.
+- Keeps delivery history in sync across your devices.
+- Sends optional browser and native iPhone notifications without putting tracking numbers in them.
+- Shows up to two delivery-day Live Activities only while parcels are out for delivery,
+  then keeps the final outcome visible briefly before dismissing it.
+- Includes a native SwiftUI iPhone app and Share extension, plus an installable PWA.
+- Uses Supabase Auth and Postgres row-level security to isolate every account.
+
+## Carrier coverage
+
+The shared carrier picker includes Swiss Post, Swiss Post
 Cargo, Quickpac, Planzer, DPD Switzerland, GLS Switzerland, UPS, Cainiao /
 AliExpress, SunYou, Hermes Einrichtungs-Service, PostNL, PostLogistics and
 Dachser, plus DPD France, Mondial Relay, Relais Colis, La Poste / Colissimo,
 Chronopost, GLS France, Colis Privé, GEODIS, Colisweb, C Chez Vous, Heppner,
 Ciblex, Paack and DHL / Deutsche Post (German parcels and tracked mail).
 Asendia and FedEx use carrier links; ShipUp stays
-available as a manual record. Sign in on any device, get push notifications,
-and keep every tracking credential private to your account.
-
-## What it does
-
-- Tracks supported carriers automatically and links out gracefully for the rest.
-- Checks active deliveries every 10 minutes from 08:00 to 22:00, and hourly overnight.
-- Understands tracking numbers, carrier URLs and text pasted from shipping emails, with
-  one-tap paste on web and barcode scanning on iPhone.
-- Keeps search and filters tucked away until needed, and surfaces the next parcel and ETA.
-- Keeps delivery history in sync across your devices.
-- Sends optional browser and native iPhone notifications without putting tracking numbers in them.
-- Shows up to two delivery-day Live Activities only while parcels are out for delivery,
-  then keeps the final outcome visible briefly before dismissing it.
-- Includes a real SwiftUI iPhone app and Share extension, plus the installable PWA.
-- Uses Supabase Auth and Postgres row-level security to isolate every account.
+available as a manual record. Tracking credentials stay private to your account.
 
 The full [carrier list and caveats](docs/CARRIERS.md) are documented separately.
 
 ## Native iPhone app
 
 The native SwiftUI target lives in [`ios/`](ios/README.md). It mirrors the web
-app’s authentication, carrier parsing, parcel actions, search/filter/sort,
-tracking timeline, notification preferences, archive, guarded direct parcel deletion,
-account export/deletion,
-offline snapshot, demo mode, and four languages. It uses standard iOS lists,
-forms, menus, sheets, swipe actions and sharing, with a restrained Liquid Glass
+app’s compact delivery cards, carrier colors, tracking timeline, Passport, and
+Friends. It includes authentication, carrier parsing, search/filter/sort,
+notification preferences, archive, guarded direct parcel deletion, account
+export/deletion, an offline snapshot, demo mode, and four languages. Native sheets,
+swipe actions, and sharing complement the cards, with a restrained Liquid Glass
 treatment on iOS 26 and a material fallback on iOS 18–25.
 
 Open `ios/SwissDeliveryTracker.xcodeproj` in Xcode to run the self-contained
