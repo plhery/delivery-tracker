@@ -435,11 +435,13 @@ private struct DeliveryListView: View {
     private var activeParcels: [Parcel] { visibleParcels.filter(\.isActive) }
 
     private var attentionParcels: [Parcel] {
-        activeParcels.filter { $0.id != nextParcel?.id && $0.attention() != nil }
+        let featuredID = nextParcel?.id
+        return activeParcels.filter { $0.id != featuredID && $0.attention() != nil }
     }
 
     private var remainingActiveParcels: [Parcel] {
-        activeParcels.filter { $0.id != nextParcel?.id && $0.attention() == nil }
+        let featuredID = nextParcel?.id
+        return activeParcels.filter { $0.id != featuredID && $0.attention() == nil }
     }
 
     private var sections: [ParcelSection] {

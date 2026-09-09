@@ -308,13 +308,33 @@ extension Parcel {
 }
 
 enum DateParser {
-    private static let internetWithFraction = ISO8601DateFormatter()
-    private static let internet = ISO8601DateFormatter()
+    private static let internetWithFraction: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+    private static let internet: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+    private static let parsedDates: NSCache<NSString, NSDate> = {
+        let cache = NSCache<NSString, NSDate>()
+        cache.countLimit = 4_096
+        return cache
+    }()
+    private static let parserLock = NSLock()
 
     static func date(_ value: String) -> Date? {
-        internetWithFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        internet.formatOptions = [.withInternetDateTime]
-        return internetWithFraction.date(from: value) ?? internet.date(from: value)
+        // Rendering asks for the same event timestamps repeatedly. Reconfiguring
+        // a formatter here discards its internal state on every comparison.
+        let key = value as NSString
+        if let cached = parsedDates.object(forKey: key) { return cached as Date }
+        return parserLock.withLock {
+            guard let date = internetWithFraction.date(from: value) ?? internet.date(from: value) else { return nil }
+            parsedDates.setObject(date as NSDate, forKey: key)
+            return date
+        }
     }
 
     static func deliveryDate(_ value: String) -> Date? {

@@ -483,6 +483,70 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertEqual(parcel.currentEvent?.stage, .inTransit)
     }
 
+    func testEventOrderingUsesInstantsAndStableTieBreakers() {
+        let id = UUID()
+        let accepted = event(id, .accepted, "2026-08-08T10:00:00Z")
+        var transit = event(id, .inTransit, "2026-08-08T12:00:00.000+02:00")
+        transit.id = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+        var tied = transit
+        tied.id = UUID(uuidString: "00000000-0000-0000-0000-000000000002")!
+        let older = event(id, .registered, "2026-08-08T09:59:59.999Z")
+        let invalid = event(id, .delivered, "invalid")
+        let pending = event(id, .pending, "2026-08-09T10:00:00Z")
+        let events = [older, tied, invalid, pending, accepted, transit]
+        let expected = [pending, tied, transit, accepted, older, invalid].map(\.id)
+        for offset in events.indices {
+            let reordered = Array(events[offset...] + events[..<offset])
+            let parcel = makeParcel(id: id, events: reordered)
+            XCTAssertEqual(parcel.sortedEvents.map(\.id), expected)
+            XCTAssertEqual(parcel.currentEvent?.id, tied.id)
+        }
+    }
+
+    func testCurrentEventHandlesEmptyPendingAndUpdatedHistories() {
+        let id = UUID()
+        var parcel = makeParcel(id: id)
+        XCTAssertNil(parcel.currentEvent)
+        let pending = event(id, .pending, "2026-08-09T10:00:00Z")
+        parcel.trackingEvents = [pending, event(id, .pending, "2026-08-08T10:00:00Z")]
+        XCTAssertEqual(parcel.currentEvent?.id, pending.id)
+        let accepted = event(id, .accepted, "2026-08-07T10:00:00Z")
+        parcel.trackingEvents.append(accepted)
+        XCTAssertEqual(parcel.currentEvent?.id, accepted.id)
+        parcel.trackingEvents = [event(id, .delivered, "2026-08-10T10:00:00Z")]
+        XCTAssertEqual(parcel.currentStage, .delivered)
+    }
+
+    func testRepeatedTimestampParsingPreservesFormatsAndInvalidValues() throws {
+        let expected = try XCTUnwrap(DateParser.date("2026-08-08T10:00:00Z"))
+        for _ in 0..<3 {
+            XCTAssertEqual(DateParser.date("2026-08-08T12:00:00.000+02:00"), expected)
+            XCTAssertEqual(DateParser.date("2026-08-08T10:00:00.123456Z")!.timeIntervalSince(expected), 0.123456, accuracy: 0.001)
+            XCTAssertEqual(DateParser.date("2026-08-08T10:00:00Z"), expected)
+            XCTAssertNil(DateParser.date("invalid"))
+            XCTAssertNil(DateParser.date(""))
+        }
+    }
+
+    func testParcelStatusLookupPerformance() {
+        let parcels = (0..<30).map { index in
+            let id = UUID()
+            return makeParcel(id: id, events: (0..<20).map { day in
+                event(id, .inTransit, String(format: "2026-08-%02dT%02d:00:00.000Z", day + 1, index % 24))
+            })
+        }
+        measure {
+            var count = 0
+            // List grouping and card rendering repeatedly inspect each parcel's status.
+            for parcel in parcels {
+                for _ in 0..<20 {
+                    if parcel.currentStage == .inTransit { count += 1 }
+                }
+            }
+            XCTAssertEqual(count, 600)
+        }
+    }
+
     func testAttentionRulesMatchWebApp() {
         let now = DateParser.date("2026-08-09T12:00:00Z")!
         let id = UUID()

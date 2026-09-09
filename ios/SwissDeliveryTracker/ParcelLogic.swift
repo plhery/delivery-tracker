@@ -71,19 +71,23 @@ extension TrackingStage {
 
 extension Parcel {
     var sortedEvents: [TrackingEvent] {
-        trackingEvents.sorted {
-            let left = DateParser.date($0.occurredAt)?.timeIntervalSince1970 ?? 0
-            let right = DateParser.date($1.occurredAt)?.timeIntervalSince1970 ?? 0
-            if left == right {
-                if $0.stage != $1.stage { return $0.stage.eventOrder > $1.stage.eventOrder }
-                return $0.id.uuidString > $1.id.uuidString
-            }
-            return left > right
+        trackingEvents.sorted(by: Self.eventPrecedes)
+    }
+
+    private static func eventPrecedes(_ lhs: TrackingEvent, _ rhs: TrackingEvent) -> Bool {
+        let left = DateParser.date(lhs.occurredAt)?.timeIntervalSince1970 ?? 0
+        let right = DateParser.date(rhs.occurredAt)?.timeIntervalSince1970 ?? 0
+        if left == right {
+            if lhs.stage != rhs.stage { return lhs.stage.eventOrder > rhs.stage.eventOrder }
+            return lhs.id.uuidString > rhs.id.uuidString
         }
+        return left > right
     }
 
     var currentEvent: TrackingEvent? {
-        sortedEvents.first(where: { $0.stage != .pending }) ?? sortedEvents.first
+        // Status checks need only the latest carrier event, not a sorted history.
+        trackingEvents.lazy.filter { $0.stage != .pending }.min(by: Self.eventPrecedes)
+            ?? trackingEvents.min(by: Self.eventPrecedes)
     }
 
     var currentStage: TrackingStage? { currentEvent?.stage }

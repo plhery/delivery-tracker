@@ -290,6 +290,9 @@ struct ParcelDetailView: View {
     private func journey(_ parcel: Parcel) -> some View {
         let groups = journalDays(parcel)
         let tint = identity(parcel).ink
+        let eventCount = parcel.trackingEvents.count
+        let currentEventID = parcel.currentEvent?.id
+        let syncing = parcel.displayStatus.syncing
         return VStack(alignment: .leading, spacing: 0) {
             Button {
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { showingFullJourney.toggle() }
@@ -297,7 +300,7 @@ struct ParcelDetailView: View {
                 HStack(spacing: 12) {
                     Text(localizer.text("timeline.label")).font(.subheadline.weight(.semibold))
                     Spacer(minLength: 4)
-                    Text(localizer.text(parcel.sortedEvents.count == 1 ? "detail.updateCount.one" : "detail.updateCount.many", ["count": parcel.sortedEvents.count]))
+                    Text(localizer.text(eventCount == 1 ? "detail.updateCount.one" : "detail.updateCount.many", ["count": eventCount]))
                         .font(.caption2).foregroundStyle(.secondary)
                     Image(systemName: showingFullJourney ? "chevron.up" : "chevron.down")
                         .font(.system(size: 10, weight: .regular)).foregroundStyle(.secondary)
@@ -309,7 +312,7 @@ struct ParcelDetailView: View {
             .accessibilityValue(localizer.text(showingFullJourney ? "design.lessJourney" : "design.fullJourney"))
             if showingFullJourney {
                 if groups.isEmpty {
-                    Text(localizer.text(parcel.displayStatus.syncing ? "timeline.emptySyncing" : "timeline.empty"))
+                    Text(localizer.text(syncing ? "timeline.emptySyncing" : "timeline.empty"))
                         .font(.footnote).foregroundStyle(.secondary).padding(.vertical, 12)
                 }
                 ForEach(groups) { group in
@@ -320,8 +323,8 @@ struct ParcelDetailView: View {
                     VStack(alignment: .leading, spacing: 18) {
                         ForEach(group.events) { event in
                             JournalEventRow(event: event, tint: tint,
-                                isCurrent: event.id == parcel.currentEvent?.id,
-                                syncing: parcel.displayStatus.syncing)
+                                isCurrent: event.id == currentEventID,
+                                syncing: syncing)
                         }
                     }
                 }
