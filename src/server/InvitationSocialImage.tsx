@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { invitationInitial } from '../lib/invitationInitial';
 
 // Preserve ImageResponse's bundled sans face when adding the serif name font.
 const sansFont = readFileSync(join(process.cwd(), 'node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf'));
@@ -8,6 +9,12 @@ const nameFont = readFileSync(join(process.cwd(), 'public/fonts/gelasio/Gelasio-
 
 /** A still of the welcome parcel, drawn with the same kraft paper and labels. */
 export function invitationSocialImage(nickname: string | null): ImageResponse {
+  const initial = invitationInitial(nickname);
+  // Project the seal's SVG coordinates into ImageResponse's 360 × 300 image.
+  const parcelScale = 300 / 215;
+  const sealSize = 28 * parcelScale;
+  const sealLeft = (183 - 25) * (360 / 250) - sealSize / 2;
+  const sealTop = (234 - 85) * parcelScale - sealSize / 2;
   const nameLength = [...(nickname ?? '')].length;
   const greetingSize = nameLength > 18 ? 34 : nameLength > 12 ? 44 : 54;
   return new ImageResponse(
@@ -20,6 +27,7 @@ export function invitationSocialImage(nickname: string | null): ImageResponse {
         </div>
         <div style={{ display: 'flex', fontSize: 54 }}>sent you an invitation</div>
       </div>
+      <div style={{ display: 'flex', position: 'relative', width: 360, height: 300 }}>
       <svg width="360" height="300" viewBox="25 85 250 215" fill="none">
         <ellipse cx="150" cy="286" rx="84" ry="10" fill="#26372E" opacity=".08" />
         <path d="m55 142 95-47 95 47-95 48-95-48Z" fill="#DDBD96" />
@@ -36,11 +44,13 @@ export function invitationSocialImage(nickname: string | null): ImageResponse {
         <g transform="translate(183 234) rotate(-27)">
           <circle r="14" fill="#DECCE2" />
           <circle r="11.5" stroke="#FFF6FF" strokeWidth="1.2" />
-          <path d="M-6 6V-6l6 7 6-7V6" stroke="#7C6787" strokeWidth="1.5" strokeLinejoin="round" />
+          {!initial && <path d="M0-7V7m-6-10 12 6M-6 3 6-3" stroke="#7C6787" strokeWidth="1.5" strokeLinecap="round" />}
         </g>
         <path d="m96 122 13-7 95 48-13 7-95-48Z" fill="#EBDDCA" />
         <path d="m103 119 94 47" stroke="#AF9474" strokeOpacity=".6" strokeWidth="1" strokeDasharray="3 3" />
       </svg>
+      {initial && <div style={{ display: 'flex', position: 'absolute', left: sealLeft, top: sealTop, width: sealSize, height: sealSize, alignItems: 'center', justifyContent: 'center', fontSize: 18 * parcelScale, color: '#7C6787', transform: 'rotate(-27deg)', lineHeight: 1 }}>{initial}</div>}
+      </div>
       <div style={{ display: 'flex', alignItems: 'center', marginTop: 16, fontSize: 28, color: '#526E5B' }}>Tap to open your parcel →</div>
     </div>,
     {
