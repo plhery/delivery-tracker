@@ -15,7 +15,7 @@ Delivery Tracker can refresh these carriers automatically:
 | Cainiao / AliExpress | Automatic. |
 | SunYou | Automatic. |
 | Hermes Einrichtungs-Service | Automatic. |
-| PostNL / Spring GDS | Automatic. Recognises valid Dutch postal S10 numbers ending in `NL` and PostNL tracking links. |
+| PostNL | Automatic. Recognises valid Dutch postal S10 numbers ending in `NL`, PostNL links, and Spring mailingtechnology.com links. |
 | PostLogistics | Automatic. |
 | Dachser | Automatic for Customer Iberia shipments when the complete public detail URL is supplied. |
 | DPD Switzerland | Automatic through the myDPD guest flow. The parcel's delivery postcode unlocks verified scans and delivery windows. |
@@ -83,16 +83,23 @@ than recipient data. Protocol references: [myHermes public web app](https://www.
 [Delivengo FAQ](https://mydelivengo.laposte.fr/easy/faq/), and
 [TRAWL native API](https://github.com/germondai/trawl/blob/main/apps/docs/api-reference/native-api.md).
 
-Dutch postal numbers resolve to PostNL / Spring GDS instead. Its existing automatic tracker uses
-[PostNL international tracking](https://postnl.post/);
-[Spring GDS](https://track-trace.spring-gds.com/) describes its international
-network and local delivery partners.
+Dutch postal numbers resolve to PostNL. Its automatic tracker uses
+[PostNL international tracking](https://postnl.post/), and links open
+`https://postnl.post/track?barcodes={trackingNumber}`. The retired `/details/`
+links are still recognised when pasted and repaired if saved on a parcel.
+[Spring GDS](https://www.spring-gds.com/) is PostNL's international subsidiary;
+its mailingtechnology.com portal can show additional transport history for the
+same PostNL barcode. The internal `spring-gds` carrier ID is retained for
+existing parcels and client compatibility, while the app and diagnostics use
+the PostNL name.
 
-PostNL / Spring GDS and Planzer / Quickpac tracking requests retry once after
-a transport failure or HTTP 429, 502, 503, or 504. A supplied `Retry-After`
+PostNL and Planzer / Quickpac tracking requests retry once after
+a transport failure or HTTP 502, 503, or 504. HTTP 429 is retried only when it
+supplies a valid, short `Retry-After`. A supplied `Retry-After`
 is respected when it fits the one-minute retry budget; longer delays and
 persistent failures remain visible as sync errors and in Sentry. Invalid
-tracking data and other HTTP errors are not retried.
+tracking data and other HTTP errors are not retried. PostNL uses the regular
+ten-minute daytime/hourly overnight schedule and supports manual refreshes.
 
 Asendia and FedEx parcels are saved with a direct carrier link. Asendia's
 public flow requires a fresh Cloudflare Turnstile
@@ -245,7 +252,7 @@ npm run test:carriers:live
 
 The opt-in suite sends validly shaped, deliberately wrong shipment numbers
 through every automatic adapter family. That includes Swiss Post, Swiss Post
-Cargo, Planzer and Quickpac, Cainiao, SunYou, Hermes, Spring GDS,
+Cargo, Planzer and Quickpac, Cainiao, SunYou, Hermes, PostNL,
 PostLogistics, Dachser, UPS, Amazon Shipping France, GLS Switzerland, DPD Switzerland, DPD France,
 Mondial Relay, Relais Colis, La Poste and Chronopost, GLS France, Colis Privé,
 GEODIS, Colisweb, C Chez Vous, Heppner, Ciblex and Paack. It also checks

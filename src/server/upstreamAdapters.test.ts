@@ -3,7 +3,7 @@ import {
   fetchCainiao,
   fetchPlanzer,
   fetchPostlogistics,
-  fetchSpringGds,
+  fetchPostNL,
   fetchSunYou,
   planzerShipmentNumber,
   UpstreamTrackingError,
@@ -11,7 +11,7 @@ import {
 
 const CAINIAO_WRONG_NUMBER = 'LP00000000000000';
 const POSTLOGISTICS_WRONG_NUMBER = '000000000000000000';
-const SPRING_WRONG_NUMBER = 'LT000000000NL';
+const POSTNL_WRONG_NUMBER = 'LT000000000NL';
 const SUNYOU_WRONG_NUMBER = 'SY00000000000';
 
 function jsonResponse(payload: unknown): Response {
@@ -43,16 +43,16 @@ afterEach(() => {
 describe('PostNL and Quickpac transient failures', () => {
   beforeEach(() => vi.useFakeTimers());
 
-  it.each(['authentication', 'tracking'])('recovers from a rate-limited Spring GDS %s request', async (step) => {
+  it.each(['authentication', 'tracking'])('recovers from a rate-limited PostNL %s request', async (step) => {
     const responses = [
       jsonResponse({ access_token: 'visitor-token' }),
-      jsonResponse({ data: { items: [{ item: SPRING_WRONG_NUMBER, events: [] }] } }),
+      jsonResponse({ data: { items: [{ item: POSTNL_WRONG_NUMBER, events: [] }] } }),
     ];
     responses.splice(step === 'authentication' ? 0 : 1, 0, new Response('', {
       status: 429, headers: { 'Retry-After': '6' },
     }));
     const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => responses.shift()!);
-    const result = fetchSpringGds(SPRING_WRONG_NUMBER);
+    const result = fetchPostNL(POSTNL_WRONG_NUMBER);
     await vi.advanceTimersByTimeAsync(5_999);
     expect(fetcher).toHaveBeenCalledTimes(step === 'authentication' ? 1 : 2);
     await vi.advanceTimersByTimeAsync(1);
@@ -61,7 +61,7 @@ describe('PostNL and Quickpac transient failures', () => {
     const trackingRequests = fetcher.mock.calls.filter(([url]) => String(url).endsWith('/tracking-items'));
     for (const [, init] of trackingRequests) {
       expect(init?.headers).toMatchObject({ Authorization: 'Bearer visitor-token' });
-      expect(JSON.parse(String(init?.body))).toEqual({ items: [SPRING_WRONG_NUMBER], language_code: 'en' });
+      expect(JSON.parse(String(init?.body))).toEqual({ items: [POSTNL_WRONG_NUMBER], language_code: 'en' });
     }
   });
 
@@ -196,25 +196,25 @@ describe('upstream carrier wrong-number handling', () => {
     });
   });
 
-  it('maps Spring GDS\'s explicit barcode-not-found item to a privacy-safe 404', async () => {
+  it('maps PostNL\'s explicit barcode-not-found item to a privacy-safe 404', async () => {
     const fetcher = vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(jsonResponse({ access_token: 'visitor-token' }))
       .mockResolvedValueOnce(jsonResponse({
         status: 'success',
         data: {
           items: [{
-            item: SPRING_WRONG_NUMBER,
+            item: POSTNL_WRONG_NUMBER,
             message: 'The shipment barcode was not found. Private upstream details',
             events: [],
           }],
         },
       }));
 
-    await expectPrivacySafeNotFound(fetchSpringGds(SPRING_WRONG_NUMBER), 'Spring GDS');
+    await expectPrivacySafeNotFound(fetchPostNL(POSTNL_WRONG_NUMBER), 'PostNL');
     expect(fetcher).toHaveBeenCalledTimes(2);
     const [, init] = fetcher.mock.calls[1]!;
     expect(JSON.parse(String(init?.body))).toEqual({
-      items: [SPRING_WRONG_NUMBER],
+      items: [POSTNL_WRONG_NUMBER],
       language_code: 'en',
     });
   });
@@ -269,7 +269,7 @@ describe('upstream carrier wrong-number handling', () => {
       .mockResolvedValueOnce(jsonResponse({
         data: { items: [{ item: 'LT111111111NL', events: [] }] },
       }));
-    await expect(fetchSpringGds(SPRING_WRONG_NUMBER)).rejects.toThrow('different shipment');
+    await expect(fetchPostNL(POSTNL_WRONG_NUMBER)).rejects.toThrow('different shipment');
 
     fetcher.mockResolvedValueOnce(new Response(
       'searchCallback({"data":[{"orderNo":"SY11111111111","has":false}]})',
@@ -372,7 +372,7 @@ describe('PostLogistics response types and event ordering', () => {
   });
 });
 
-describe('official Spring GDS status categories', () => {
+describe('official PostNL status categories', () => {
   it.each([
     ['Pre-advised', 'pending', 'registered'],
     ['Departed', 'in_transit', 'in_transit'],
@@ -388,7 +388,7 @@ describe('official Spring GDS status categories', () => {
       .mockResolvedValueOnce(jsonResponse({
         data: {
           items: [{
-            item: SPRING_WRONG_NUMBER,
+            item: POSTNL_WRONG_NUMBER,
             events: [{
               category,
               datetime_local: '2026-08-30T12:00:00Z',
@@ -398,7 +398,7 @@ describe('official Spring GDS status categories', () => {
         },
       }));
 
-    await expect(fetchSpringGds(SPRING_WRONG_NUMBER)).resolves.toMatchObject({
+    await expect(fetchPostNL(POSTNL_WRONG_NUMBER)).resolves.toMatchObject({
       status,
       current_stage: stage,
       events: [{ stage }],

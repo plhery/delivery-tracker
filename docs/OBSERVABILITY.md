@@ -54,13 +54,15 @@ provider response remains visible in the audit and Sentry anomaly.
 
 ## Carrier check frequency
 
-GLS Germany, Switzerland and France, and Spring GDS are checked at most once an
+GLS Germany, Switzerland and France are checked at most once an
 hour per parcel. After a failed check, they wait four hours. Both scheduled and
 manual refreshes use the persisted `last_synced_at` and `sync_status`, so a
 worker restart or repeated Refresh action does not bypass the cooldown. New or
 reconfigured parcels are checked immediately. Other carriers keep the existing
 daytime/overnight schedule, and cooling parcels do not consume the five-parcel
-per-owner scheduled quota.
+per-owner scheduled quota. PostNL uses the regular ten-minute daytime and
+hourly overnight schedule, including after a failed check; manual refreshes
+are available without the GLS cooldown.
 
 HTTP 429 responses without `Retry-After` are not immediately retried. Explicit
 retry windows up to one minute are still honored by adapters that enable a

@@ -209,18 +209,36 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": []
   },
   "spring-gds": {
-    "displayName": "PostNL / Spring GDS",
+    "displayName": "PostNL",
     "color": "#ef7d00",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
       "adapter": "upstream",
-      "upstreamName": "Spring GDS"
+      "upstreamName": "PostNL"
     },
     "canaryUrl": "https://postnl.post/",
-    "trackingUrlTemplate": "https://postnl.post/details/{trackingNumber}",
+    "trackingUrlTemplate": "https://postnl.post/track?barcodes={trackingNumber}",
     "linkRules": [
+      {
+        "domains": [
+          "postnl.post"
+        ],
+        "pathPattern": "^/track/?$",
+        "params": [
+          "barcodes"
+        ]
+      },
+      {
+        "domains": [
+          "mailingtechnology.com"
+        ],
+        "pathPattern": "^/tracking/?$",
+        "params": [
+          "tn"
+        ]
+      },
       {
         "domains": [
           "postnl.post"

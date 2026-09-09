@@ -196,13 +196,13 @@ describe('detectCarrier', () => {
     expect(carrierTrackingHintKey('dhl')).toBe('add.autoSync');
   });
 
-  it('recognises Dutch postal numbers as PostNL / Spring GDS with a valid checksum', () => {
+  it('recognises Dutch postal numbers as PostNL with a valid checksum', () => {
     expect(detectCarrierMatch('LX123456785NL')).toEqual({
       carrier: 'spring-gds', confidence: 'high', candidates: ['spring-gds'],
     });
     expect(detectCarrier('lx 123.456-785 nl')).toBe('spring-gds');
     expect(detectCarrier('LX123456789NL')).toBe('unknown');
-    expect(carrierInfo('spring-gds').name).toBe('PostNL / Spring GDS');
+    expect(carrierInfo('spring-gds').name).toBe('PostNL');
     expect(tracksAutomatically('spring-gds')).toBe(true);
   });
 
@@ -357,8 +357,10 @@ describe('parseTrackingInput', () => {
     expect(parseTrackingInput('https://dhl.de.example.com/?piececode=1234567890').carrier).not.toBe('dhl');
   });
 
-  it('recognises PostNL / Spring GDS numbers in carrier links and shipping messages', () => {
+  it('recognises PostNL numbers in carrier links and shipping messages', () => {
     for (const input of [
+      'https://postnl.post/track?barcodes=LX123456785NL',
+      'https://mailingtechnology.com/tracking/?tn=LX123456785NL',
       'https://postnl.post/details/LX123456785NL',
       'https://postnl.post/tracktrace?B=LX123456785NL',
       'Your Myprotein shipment: LX123456785NL',
@@ -367,6 +369,16 @@ describe('parseTrackingInput', () => {
         trackingNumber: 'LX123456785NL', carrier: 'spring-gds', confidence: 'high',
       });
     }
+  });
+
+  it('opens the current PostNL page and repairs previously saved obsolete links', () => {
+    for (const trackingUrl of [undefined, 'https://postnl.post/details/LX123456785NL']) {
+      const [link] = parcelTrackingLinks({ carrier: 'spring-gds', trackingNumber: 'LX123456785NL', trackingUrl });
+      expect(link).toMatchObject({ name: 'PostNL', url: 'https://postnl.post/track?barcodes=LX123456785NL' });
+    }
+    const springUrl = 'https://mailingtechnology.com/tracking/?tn=LX123456785NL';
+    expect(parcelTrackingLinks({ carrier: 'spring-gds', trackingNumber: 'LX123456785NL', trackingUrl: springUrl })[0].url)
+      .toBe(springUrl);
   });
 
   it.each([

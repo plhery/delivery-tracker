@@ -364,8 +364,12 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     func trackingLinks(for parcel: Parcel, language: AppLanguage) -> [ParcelTrackingLink] {
         if !Self.supportsSwissPostHandoff(parcel.trackingNumber) {
             let definition = info(for: parcel.carrier, language: language)
-            // Replace the Swiss Post fallback previously saved on generic postal parcels.
-            let savedURL = parcel.carrier == .internationalPost ? nil : parcel.trackingURL
+            // Replace obsolete generated links saved by earlier app versions.
+            let savedPostNLURL = parcel.trackingURL.flatMap { URL(string: $0) }
+            let obsoletePostNLLink = parcel.carrier == .springGDS
+                && savedPostNLURL?.host?.lowercased() == "postnl.post"
+                && savedPostNLURL?.path.hasPrefix("/details/") == true
+            let savedURL = parcel.carrier == .internationalPost || obsoletePostNLLink ? nil : parcel.trackingURL
             guard let raw = savedURL
                     ?? Self.renderTrackingURL(
                         definition.trackingURLTemplate,

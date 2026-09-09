@@ -213,8 +213,18 @@ export function parcelTrackingLinks(
 ): ParcelTrackingLink[] {
   if (!supportsSwissPostHandoff(parcel.trackingNumber)) {
     const carrier = carrierInfo(parcel.carrier, locale);
-    // Older generic postal parcels may have a Swiss Post fallback saved on them.
-    const savedUrl = parcel.carrier === 'intl-post' ? undefined : parcel.trackingUrl;
+    // Repair obsolete generated links saved by earlier app versions.
+    let savedUrl = parcel.carrier === 'intl-post' ? undefined : parcel.trackingUrl;
+    if (parcel.carrier === 'spring-gds' && savedUrl) {
+      try {
+        const saved = new URL(savedUrl);
+        if (saved.hostname === 'postnl.post' && saved.pathname.startsWith('/details/')) {
+          savedUrl = undefined;
+        }
+      } catch {
+        // Leave other saved URLs to the existing link validation.
+      }
+    }
     const url = savedUrl ?? carrier.trackingUrl?.(parcel.trackingNumber);
     return url ? [{
       carrier,

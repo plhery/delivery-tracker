@@ -52,7 +52,7 @@ describe('App', () => {
     expect(await repo.list()).toHaveLength(3);
   });
 
-  it('adds a Dutch postal shipment with automatic PostNL / Spring GDS tracking', async () => {
+  it('adds a Dutch postal shipment with automatic PostNL tracking', async () => {
     const repo = createDemoRepo(window.localStorage);
     const add = vi.spyOn(repo, 'add');
     const user = userEvent.setup();
@@ -60,7 +60,7 @@ describe('App', () => {
     await user.click(await screen.findByRole('button', { name: 'Add a parcel' }));
     const sheet = screen.getByRole('dialog', { name: 'Add a parcel' });
     await user.type(within(sheet).getByLabelText('Tracking number or link'), 'LX123456785NL');
-    expect(within(sheet).getByText('PostNL / Spring GDS', { selector: 'strong' })).toBeInTheDocument();
+    expect(within(sheet).getByText('PostNL', { selector: 'strong' })).toBeInTheDocument();
     await user.click(within(sheet).getByRole('button', { name: 'Add parcel' }));
     await waitFor(() => expect(add).toHaveBeenCalledWith(expect.objectContaining({
       trackingNumber: 'LX123456785NL', carrier: 'spring-gds',

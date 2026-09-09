@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   fetchCainiao,
   fetchPostlogistics,
-  fetchSpringGds,
+  fetchPostNL,
   fetchSunYou,
 } from './upstreamAdapters';
 
 const CAINIAO_WRONG_NUMBER = 'LP00000000000000';
 const POSTLOGISTICS_WRONG_NUMBER = '000000000000000000';
-const SPRING_WRONG_NUMBER = 'LT000000000NL';
+const POSTNL_WRONG_NUMBER = 'LT000000000NL';
 const SUNYOU_WRONG_NUMBER = 'SY00000000000';
 
 describe('shared upstream adapters live wrong-number handling', () => {
@@ -28,11 +28,11 @@ describe('shared upstream adapters live wrong-number handling', () => {
     });
   });
 
-  it('maps Spring GDS\' official barcode-not-found result to a clean 404', async () => {
-    await expect(fetchSpringGds(SPRING_WRONG_NUMBER)).rejects.toMatchObject({
+  it('maps PostNL\' official barcode-not-found result to a clean 404', async () => {
+    await expect(fetchPostNL(POSTNL_WRONG_NUMBER)).rejects.toMatchObject({
       name: 'UpstreamTrackingError',
       status: 404,
-      message: 'Spring GDS could not locate the shipment',
+      message: 'PostNL could not locate the shipment',
     });
   });
 

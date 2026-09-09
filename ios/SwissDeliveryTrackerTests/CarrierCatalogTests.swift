@@ -54,11 +54,13 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(catalog.detect("LX123456789NL").carrier, .unknown)
         XCTAssertEqual(catalog.detect("RA123456785DE").carrier, .internationalPost)
         XCTAssertTrue(catalog.tracksAutomatically(.springGDS))
-        XCTAssertEqual(catalog.info(for: .springGDS).displayName, "PostNL / Spring GDS")
+        XCTAssertEqual(catalog.info(for: .springGDS).displayName, "PostNL")
         XCTAssertEqual(catalog.trackingHintKey(for: .internationalPost), "add.autoSync")
         XCTAssertEqual(catalog.trackingHintKey(for: .unknown), "add.autoSync")
         XCTAssertEqual(catalog.trackingHintKey(for: .dhl), "add.autoSync")
         for input in [
+            "https://postnl.post/track?barcodes=LX123456785NL",
+            "https://mailingtechnology.com/tracking/?tn=LX123456785NL",
             "https://postnl.post/details/LX123456785NL",
             "https://postnl.post/tracktrace?B=LX123456785NL",
             "Your Myprotein shipment: LX123456785NL",
@@ -66,6 +68,23 @@ final class CarrierCatalogTests: XCTestCase {
             XCTAssertEqual(catalog.parse(input).carrier, .springGDS)
             XCTAssertEqual(catalog.parse(input).trackingNumber, "LX123456785NL")
         }
+    }
+
+    func testPostNLTrackingLinkRepairsObsoleteSavedRoute() throws {
+        var parcel = Parcel(
+            id: UUID(), trackingNumber: "LX123456785NL", label: "Postal shipment",
+            carrier: .springGDS, createdAt: "2026-09-07T13:00:00Z",
+            syncStatus: .ok, notificationsMuted: false
+        )
+        for savedURL in [nil, "https://postnl.post/details/LX123456785NL"] as [String?] {
+            parcel.trackingURL = savedURL
+            let link = try XCTUnwrap(catalog.trackingLinks(for: parcel, language: .en).first)
+            XCTAssertEqual(link.name, "PostNL")
+            XCTAssertEqual(link.url.absoluteString, "https://postnl.post/track?barcodes=LX123456785NL")
+        }
+        parcel.trackingURL = "https://mailingtechnology.com/tracking/?tn=LX123456785NL"
+        XCTAssertEqual(try XCTUnwrap(catalog.trackingLinks(for: parcel, language: .en).first).url.absoluteString,
+                       parcel.trackingURL)
     }
 
     func testRecognisesDHLGermanPostalNumbersAndLinks() {

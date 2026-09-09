@@ -23,7 +23,7 @@
 Delivery Tracker follows parcel deliveries in one tidy,
 installable web app. Its shared carrier picker includes Swiss Post, Swiss Post
 Cargo, Quickpac, Planzer, DPD Switzerland, GLS Switzerland, UPS, Cainiao /
-AliExpress, SunYou, Hermes Einrichtungs-Service, Spring GDS, PostLogistics and
+AliExpress, SunYou, Hermes Einrichtungs-Service, PostNL, PostLogistics and
 Dachser, plus DPD France, Mondial Relay, Relais Colis, La Poste / Colissimo,
 Chronopost, GLS France, Colis Privé, GEODIS, Colisweb, C Chez Vous, Heppner,
 Ciblex, Paack and DHL / Deutsche Post (German parcels and tracked mail).

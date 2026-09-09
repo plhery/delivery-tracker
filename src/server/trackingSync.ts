@@ -50,7 +50,7 @@ import { UniversalTracker } from './universalTracking';
 
 const MAX_PACKAGES_PER_OWNER_PER_SYNC = 5;
 const VALID_STAGES = new Set<string>(STAGES);
-const SLOW_POLL_CARRIERS = new Set(['gls-de', 'gls-ch', 'gls-fr', 'spring-gds']);
+const SLOW_POLL_CARRIERS = new Set(['gls-de', 'gls-ch', 'gls-fr']);
 const SLOW_POLL_INTERVAL_MS = 60 * 60 * 1_000;
 const FAILED_SLOW_POLL_INTERVAL_MS = 4 * SLOW_POLL_INTERVAL_MS;
 

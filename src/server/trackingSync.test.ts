@@ -282,7 +282,7 @@ function fakeClient(packages: JsonObject[] = []) {
 }
 
 describe('TrackingSyncService', () => {
-  it.each(['gls-de', 'gls-ch', 'gls-fr', 'spring-gds'])(
+  it.each(['gls-de', 'gls-ch', 'gls-fr'])(
     'checks %s hourly and waits four hours after failures', (carrier) => {
       const parcel = { carrier, last_synced_at: '2026-09-09T10:00:00Z', sync_status: 'ok' };
       expect(isTrackingSyncDue({ carrier }, new Date('2026-09-09T10:00:00Z'))).toBe(true);
@@ -293,6 +293,20 @@ describe('TrackingSyncService', () => {
       expect(isTrackingSyncDue({ ...parcel, last_synced_at: 'invalid' }, new Date())).toBe(true);
     },
   );
+
+  it.each(['ok', 'error'])('keeps PostNL on the regular schedule after %s checks', async (syncStatus) => {
+    const parcel = {
+      id: 'postnl', carrier: 'spring-gds', tracking_number: 'LX123456785NL',
+      last_synced_at: '2026-09-09T10:00:00Z', sync_status: syncStatus,
+    };
+    const client = fakeClient([parcel]);
+    const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      adapter, null, () => new Date('2026-09-09T10:10:00Z'));
+    await expect(service.sync()).resolves.toMatchObject({ checked: 1, updated: 1 });
+    await expect(service.syncPackage(parcel)).resolves.toMatchObject({ checked: 1, updated: 1 });
+    expect(adapter.fetch).toHaveBeenCalledTimes(2);
+  });
 
   it('filters cooldowns before the per-owner quota without delaying other carriers', async () => {
     const parcels = Array.from({ length: 5 }, (_, index) => ({

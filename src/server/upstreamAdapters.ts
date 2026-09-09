@@ -284,7 +284,7 @@ export async function fetchPostlogistics(trackingNumber: string): Promise<Carrie
   };
 }
 
-const SPRING_STATUS = new Map<string, { status: CarrierStatus; stage: string }>([
+const POSTNL_STATUS = new Map<string, { status: CarrierStatus; stage: string }>([
   ['pre-advised', { status: 'pending', stage: 'registered' }],
   ['preparing', { status: 'pending', stage: 'registered' }],
   ['processing', { status: 'in_transit', stage: 'accepted' }],
@@ -303,11 +303,11 @@ const SPRING_STATUS = new Map<string, { status: CarrierStatus; stage: string }>(
   ['exception', { status: 'exception', stage: 'failed_attempt' }],
 ]);
 
-function springStatus(category: unknown): { status: CarrierStatus; stage: string } | undefined {
-  return SPRING_STATUS.get(text(category).trim().toLocaleLowerCase('en-US'));
+function postNLStatus(category: unknown): { status: CarrierStatus; stage: string } | undefined {
+  return POSTNL_STATUS.get(text(category).trim().toLocaleLowerCase('en-US'));
 }
 
-export async function fetchSpringGds(trackingNumber: string): Promise<CarrierResult> {
+export async function fetchPostNL(trackingNumber: string): Promise<CarrierResult> {
   const tokenPayload = record(await fetchJson(
     'https://postnl.post/api/v1/auth/token',
     {
@@ -320,13 +320,13 @@ export async function fetchSpringGds(trackingNumber: string): Promise<CarrierRes
       },
       body: '{}',
     },
-    'Spring GDS authentication',
+    'PostNL authentication',
     10_000,
     true,
   ));
   const accessToken = text(tokenPayload.access_token);
   if (!accessToken || accessToken.length > 16_384) {
-    throw new TypeError('Spring GDS returned an invalid visitor token');
+    throw new TypeError('PostNL returned an invalid visitor token');
   }
   const payload = record(await fetchJson(
     'https://postnl.post/api/v1/tracking-items',
@@ -341,38 +341,38 @@ export async function fetchSpringGds(trackingNumber: string): Promise<CarrierRes
       },
       body: JSON.stringify({ items: [trackingNumber], language_code: 'en' }),
     },
-    'Spring GDS tracking',
+    'PostNL tracking',
     15_000,
     true,
   ));
   const rawItems = record(payload.data).items;
   if (!Array.isArray(rawItems)) {
-    throw new TypeError('Spring GDS returned an invalid tracking response');
+    throw new TypeError('PostNL returned an invalid tracking response');
   }
   const items = recordArray(rawItems);
   if (items.length !== rawItems.length) {
-    throw new TypeError('Spring GDS returned an invalid shipment entry');
+    throw new TypeError('PostNL returned an invalid shipment entry');
   }
-  if (items.length === 0) throw new TypeError('Spring GDS did not return a shipment entry');
+  if (items.length === 0) throw new TypeError('PostNL did not return a shipment entry');
   const requested = comparableIdentifier(trackingNumber);
   const identified = items.filter((candidate) => comparableIdentifier(candidate.item));
   if (identified.length === 0) {
-    throw new TypeError('Spring GDS did not return a shipment identifier');
+    throw new TypeError('PostNL did not return a shipment identifier');
   }
   const item = identified.find((candidate) => comparableIdentifier(candidate.item) === requested);
-  if (!item) throw new RangeError('Spring GDS returned a different shipment');
+  if (!item) throw new RangeError('PostNL returned a different shipment');
   if (!Array.isArray(item.events)) {
-    throw new TypeError('Spring GDS returned invalid tracking history');
+    throw new TypeError('PostNL returned invalid tracking history');
   }
   const rawEvents = recordArray(item.events);
   if (rawEvents.length !== item.events.length) {
-    throw new TypeError('Spring GDS returned an invalid tracking event');
+    throw new TypeError('PostNL returned an invalid tracking event');
   }
   if (rawEvents.length === 0 && /barcode was not found/i.test(text(item.message))) {
-    throw new UpstreamTrackingError('Spring GDS');
+    throw new UpstreamTrackingError('PostNL');
   }
   const events = rawEvents.map((event): CarrierEvent => {
-    const classified = springStatus(event.category);
+    const classified = postNLStatus(event.category);
     return {
       time: text(event.datetime_local),
       location: text(event.country_name) || text(event.country_code),
@@ -382,7 +382,7 @@ export async function fetchSpringGds(trackingNumber: string): Promise<CarrierRes
   });
   const latest = rawEvents[0] ?? {};
   const category = text(latest.category);
-  const classified = springStatus(category);
+  const classified = postNLStatus(category);
   return {
     status: classified?.status ?? (category ? 'in_transit' : 'unknown'),
     ...(classified ? { current_stage: classified.stage } : {}),
@@ -475,7 +475,7 @@ export async function fetchUpstreamCarrier(
     case 'postlogistics':
       return fetchPostlogistics(trackingNumber);
     case 'spring-gds':
-      return fetchSpringGds(trackingNumber);
+      return fetchPostNL(trackingNumber);
     case 'sunyou':
       return fetchSunYou(trackingNumber);
     default:
