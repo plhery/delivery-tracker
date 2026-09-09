@@ -117,16 +117,18 @@ struct FriendsView: View {
         let remaining = data.friends.filter { $0.id != featured?.id }
         if let profile = data.profile {
             Button { panel = .profile } label: {
-                HStack(spacing: 12) {
-                    FriendAvatarView(name: profile.nickname, tint: ExperimentalPalette.transit, surface: ExperimentalPalette.transitSurface).frame(width: 31, height: 38)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(text("friends.yourSharing")).font(.subheadline.weight(.medium)).foregroundStyle(Brand.ink)
-                        Text(text(profile.shareStats ? "friends.shareStats" : "friends.privateStats") + (profile.shareArrival ? " · " + text("friends.shareArrival") : "")).font(.caption2).foregroundStyle(.secondary)
-                    }
-                    Spacer(minLength: 6)
-                    Image(systemName: "slider.horizontal.3").font(.footnote).foregroundStyle(.secondary)
-                }.padding(.bottom, 18).frame(maxWidth: .infinity, alignment: .leading)
-                    .overlay(alignment: .bottom) { Divider() }
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(spacing: 12) {
+                        FriendAvatarView(name: profile.nickname, tint: ExperimentalPalette.transit, surface: ExperimentalPalette.transitSurface).frame(width: 31, height: 38)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(text("friends.yourSharing")).font(.subheadline.weight(.medium)).foregroundStyle(Brand.ink)
+                            Text(text(profile.shareStats ? "friends.shareStats" : "friends.privateStats") + (profile.shareArrival ? " · " + text("friends.shareArrival") : "")).font(.caption2).foregroundStyle(.secondary)
+                        }
+                        Spacer(minLength: 6)
+                        Image(systemName: "slider.horizontal.3").font(.footnote).foregroundStyle(.secondary)
+                    }.padding(.bottom, 18)
+                    Divider()
+                }.frame(maxWidth: .infinity, alignment: .leading)
             }.buttonStyle(.plain).accessibilityLabel(text("friends.settings"))
         }
         if data.friends.isEmpty {
