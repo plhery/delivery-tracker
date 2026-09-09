@@ -269,7 +269,7 @@ it('saves sharing edits without accepting the invitation', async () => {
   await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
   await user.click(await screen.findByRole('button', { name: 'Edit' }));
   await user.click(screen.getByRole('switch', { name: 'Arrivals this week' }));
-  await user.click(screen.getByRole('button', { name: 'Save', exact: true }));
+  await user.click(screen.getByRole('button', { name: 'Save' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   expect(client.action).toHaveBeenCalledExactlyOnceWith({ action: 'save_profile', nickname: 'Alex', shareStats: true, shareArrival: true }, []);
   expect(screen.getByRole('button', { name: 'Become friends' })).toBeEnabled();
