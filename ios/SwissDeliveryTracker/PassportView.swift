@@ -73,7 +73,9 @@ struct PassportView: View {
             .accessibilityLabel("\(stats.deliveredCount) \(copy.delivered)")
             .accessibilityValue(expansionValue(.cover, explanation: copy.deliveredExplanation))
             .accessibilityHint(copy.expansionHint(expanded: expandedCard == .cover))
-            inlineDetails(.cover, explanation: copy.deliveredExplanation, onAccent: true)
+            .popover(isPresented: presentation(.cover)) {
+                explanationBubble(title: copy.delivered, explanation: copy.deliveredExplanation)
+            }
         }
         .padding(.vertical, 26)
         .padding(.horizontal, 24)
@@ -106,10 +108,10 @@ struct PassportView: View {
                     .accessibilityLabel(milestone.earned ? milestone.title : "\(milestone.title), \(milestone.progressLabel)")
                     .accessibilityValue(expansionValue(id, explanation: milestone.explanation))
                     .accessibilityHint(copy.expansionHint(expanded: expandedCard == id))
+                    .popover(isPresented: presentation(id)) {
+                        explanationBubble(title: milestone.title, explanation: milestone.explanation + (milestone.earned ? "" : "\n\(milestone.progressLabel)"))
+                    }
                 }
-            }
-            ForEach(collection) { milestone in
-                inlineDetails(.milestone(milestone.id), explanation: milestone.explanation + (milestone.earned ? "" : "\n\(milestone.progressLabel)"), topPadding: 0)
             }
         }
     }
@@ -127,8 +129,6 @@ struct PassportView: View {
                     timeCard(id: .personalBest, title: copy.personalBest, duration: fastest.duration,
                              explanation: fastestExplanation(stats))
                 }
-                inlineDetails(.average, explanation: "\(copy.timedJourneys(stats.durationSampleCount)). \(copy.timingExplanation)")
-                inlineDetails(.personalBest, explanation: fastestExplanation(stats))
             } else {
                 Text(copy.waitingForTimes).font(.footnote).foregroundStyle(.secondary)
             }
@@ -157,27 +157,28 @@ struct PassportView: View {
         .accessibilityLabel("\(title), \(formattedDuration(duration, full: true))")
         .accessibilityValue(expansionValue(id, explanation: explanation))
         .accessibilityHint(copy.expansionHint(expanded: expandedCard == id))
+        .popover(isPresented: presentation(id)) {
+            explanationBubble(title: title, explanation: explanation)
+        }
     }
 
     private func countries(_ stats: PassportStatistics) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 2) {
-                Text(copy.firstSeenIn).font(.subheadline.weight(.semibold))
+            Button { toggle(.countries) } label: {
+                Text(copy.firstSeenIn)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Brand.ink)
                     .fixedSize(horizontal: false, vertical: true)
-                Button { toggle(.countries) } label: {
-                    Image(systemName: "questionmark.circle")
-                        .font(.system(size: 14, weight: .light))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(PassportPressStyle())
-                .accessibilityLabel("\(copy.firstSeenIn): \(localizer.text("passport.detailsHint"))")
-                .accessibilityValue(expansionValue(.countries, explanation: copy.countryExplanation))
-                .accessibilityHint(copy.expansionHint(expanded: expandedCard == .countries))
+                    .frame(minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(PassportPressStyle())
             .padding(.vertical, -10)
-            inlineDetails(.countries, explanation: copy.countryExplanation, topPadding: 0)
+            .accessibilityValue(copy.expansionState(expanded: expandedCard == .countries))
+            .accessibilityHint(copy.expansionHint(expanded: expandedCard == .countries))
+            .popover(isPresented: presentation(.countries)) {
+                explanationBubble(title: copy.firstSeenIn, explanation: copy.countryExplanation)
+            }
             VStack(spacing: 0) {
                 ForEach(Array(stats.originCountries.prefix(3).enumerated()), id: \.element.id) { index, country in
                     let name = localizer.language.locale.localizedString(forRegionCode: country.code) ?? country.code
@@ -233,17 +234,24 @@ struct PassportView: View {
     }
 
 
-    @ViewBuilder
-    private func inlineDetails(_ id: PassportSelection, explanation: String, onAccent: Bool = false, topPadding: CGFloat = 16) -> some View {
-        if expandedCard == id {
-            Text(explanation)
-                .font(.footnote)
-                .foregroundStyle(onAccent ? Brand.onAccent.opacity(0.85) : Brand.ink.opacity(0.75))
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, topPadding)
-                .transition(reduceMotion ? .identity : .opacity)
+    private func presentation(_ id: PassportSelection) -> Binding<Bool> {
+        Binding(get: { expandedCard == id }, set: { presented in
+            if presented { expandedCard = id }
+            else if expandedCard == id { expandedCard = nil }
+        })
+    }
+
+    private func explanationBubble(title: String, explanation: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(.headline).accessibilityAddTraits(.isHeader)
+            Text(explanation).font(.subheadline).foregroundStyle(.secondary)
         }
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(idealWidth: 260, maxWidth: 280, alignment: .leading)
+        .padding(20)
+        .foregroundStyle(Brand.ink)
+        .presentationBackground(Brand.paper)
+        .presentationCompactAdaptation(.popover)
     }
 
     private func expansionValue(_ id: PassportSelection, explanation: String) -> String {

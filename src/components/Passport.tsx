@@ -1,6 +1,6 @@
 import { localizedCalendarDate } from '../lib/format';
 import { trackAction } from '../lib/analytics';
-import { useId, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useI18n, type MessageKey } from '../i18n';
 import { formatJourneyDuration, passportStatistics } from '../lib/passport';
 import type { ParcelWithEvents } from '../types';
@@ -16,13 +16,42 @@ export function Passport({ parcels, loading }: { parcels: ParcelWithEvents[]; lo
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const idPrefix = useId();
   const detailId = (id: string) => `${idPrefix}-${id}`;
+  const anchors = useRef(new Map<string, HTMLButtonElement>());
+  useEffect(() => {
+    if (!expandedCard) return;
+    const bubble = document.getElementById(`${idPrefix}-${expandedCard}`);
+    const dismiss = (event: Event) => {
+      if (event.target instanceof Node && bubble?.contains(event.target)) return;
+      if (bubble?.matches(':popover-open')) bubble.hidePopover();
+    };
+    window.addEventListener('resize', dismiss);
+    window.addEventListener('scroll', dismiss, true);
+    return () => {
+      window.removeEventListener('resize', dismiss);
+      window.removeEventListener('scroll', dismiss, true);
+    };
+  }, [expandedCard, idPrefix]);
   const button = (id: string, className: string, label: string, children: ReactNode) => <button type="button" className={className} aria-label={label}
-    aria-expanded={expandedCard === id} aria-controls={detailId(id)} aria-describedby={expandedCard === id ? detailId(id) : undefined}
-    onClick={() => {
-      if (expandedCard !== id) trackAction('stamp-open');
-      setExpandedCard((current) => current === id ? null : id);
-    }}>{children}</button>;
-  const detail = (id: string, explanation: string) => <div id={detailId(id)} className="passport-card__detail" hidden={expandedCard !== id}>{explanation}</div>;
+    ref={(node) => { if (node) anchors.current.set(id, node); else anchors.current.delete(id); }}
+    popoverTarget={detailId(id)} aria-haspopup="dialog" aria-expanded={expandedCard === id} aria-controls={detailId(id)}
+    onClick={() => { if (expandedCard !== id) trackAction('stamp-open'); }}>{children}</button>;
+  const detail = (id: string, title: string, explanation: string) => <div id={detailId(id)} className="passport-bubble" popover="auto" role="dialog"
+    aria-labelledby={`${detailId(id)}-title`} tabIndex={-1} onToggle={(event) => {
+      const bubble = event.currentTarget;
+      const open = bubble.matches(':popover-open');
+      setExpandedCard((current) => open ? id : current === id ? null : current);
+      if (!open) { delete bubble.dataset.positioned; return; }
+      const anchor = anchors.current.get(id);
+      if (!anchor) { bubble.hidePopover(); return; }
+      const rect = anchor.getBoundingClientRect();
+      const { width, height } = bubble.getBoundingClientRect();
+      const below = rect.bottom + 10;
+      const top = below + height <= window.innerHeight - 12 ? below : rect.top - height - 10;
+      bubble.style.left = `${Math.max(12, Math.min(window.innerWidth - width - 12, rect.left + rect.width / 2 - width / 2))}px`;
+      bubble.style.top = `${Math.max(12, Math.min(window.innerHeight - height - 12, top))}px`;
+      bubble.dataset.positioned = 'true';
+      bubble.focus({ preventScroll: true });
+    }}><h3 id={`${detailId(id)}-title`}>{title}</h3><p>{explanation}</p></div>;
   const format = (duration: number) => duration < 60_000 ? t('passport.underOneMinute') : formatJourneyDuration(duration, languageTag);
   const stamps: { title: MessageKey; explanation: MessageKey; icon: IconName; tone: string; count: number; total: number }[] = [
     { title: 'passport.firstArrival', explanation: 'passport.firstExplanation', icon: 'parcel', tone: 'green', count: stats.deliveredCount, total: 1 },
@@ -34,12 +63,12 @@ export function Passport({ parcels, loading }: { parcels: ParcelWithEvents[]; lo
   const timingExplanation = `${t(stats.durationSampleCount === 1 ? 'passport.timedJourneys.one' : 'passport.timedJourneys.many', { count: stats.durationSampleCount })}. ${t('passport.timingExplanation')}`;
   if (loading) return <div className="passport-loading" role="status" aria-label={t('app.loadingParcels')}><div className="skeleton" /><div className="skeleton" /></div>;
 
-  return <div className="passport-page" onKeyDown={(event) => { if (event.key === 'Escape' && expandedCard) { event.stopPropagation(); setExpandedCard(null); } }}>
+  return <div className="passport-page">
     <div className="passport-cover">
       {button('delivered', 'passport-cover__main', `${stats.deliveredCount} ${t('passport.delivered')}`, <>
         <span><strong className="passport-cover__count">{stats.deliveredCount.toLocaleString(languageTag)}</strong><span>{t('passport.delivered')}</span></span><Seal icon="parcel" />
       </>)}
-      {detail('delivered', t('passport.deliveredExplanation'))}
+      {detail('delivered', t('passport.delivered'), t('passport.deliveredExplanation'))}
     </div>
     <section className="passport-stamps" aria-labelledby="passport-stamps-title">
       <h2 id="passport-stamps-title">{t('passport.stamps')}</h2>
@@ -49,7 +78,7 @@ export function Passport({ parcels, loading }: { parcels: ParcelWithEvents[]; lo
           [t(stamp.title), earned ? '' : progress(stamp)].filter(Boolean).join(', '),
           <><Seal icon={stamp.icon} earned={earned} /><span>{t(stamp.title)}</span></>)}</div>;
       })}</div>
-      {stamps.map((stamp) => <div key={stamp.title}>{detail(stamp.title, `${t(stamp.explanation)}${stamp.count >= stamp.total ? '' : `\n${progress(stamp)}`}`)}</div>)}
+      {stamps.map((stamp) => <div key={stamp.title}>{detail(stamp.title, t(stamp.title), `${t(stamp.explanation)}${stamp.count >= stamp.total ? '' : `\n${progress(stamp)}`}`)}</div>)}
     </section>
     <section className="passport-times" aria-label={t('passport.deliveryTimes')}>
       {stats.averageDeliveryDuration != null && stats.fastestDelivery ? <>
@@ -57,15 +86,15 @@ export function Passport({ parcels, loading }: { parcels: ParcelWithEvents[]; lo
           {button('average', 'time-card', `${t('passport.average')}, ${format(stats.averageDeliveryDuration)}`, <><strong>{format(stats.averageDeliveryDuration)}</strong><span>{t('passport.average')}</span></>)}
           {button('best', 'time-card', `${t('passport.personalBest')}, ${format(stats.fastestDelivery.duration)}`, <><strong>{format(stats.fastestDelivery.duration)}</strong><span>{t('passport.personalBest')}</span></>)}
         </div>
-        {detail('average', timingExplanation)}
-        {detail('best', `${stats.fastestDelivery.label || t('common.parcel')} · ${localizedCalendarDate(new Date(stats.fastestDelivery.deliveredAt), languageTag)}\n${timingExplanation}`)}
+        {detail('average', t('passport.average'), timingExplanation)}
+        {detail('best', t('passport.personalBest'), `${stats.fastestDelivery.label || t('common.parcel')} · ${localizedCalendarDate(new Date(stats.fastestDelivery.deliveredAt), languageTag)}\n${timingExplanation}`)}
       </> : <p className="passport-note">{t('passport.waitingForTimes')}</p>}
     </section>
     {stats.originCountries.length > 0 && <section className="passport-countries" aria-labelledby="passport-countries-title">
-      <div className="passport-section-heading"><h2 id="passport-countries-title">{t('passport.firstSeenIn')}</h2>
-        {button('countries', 'passport-help', `${t('passport.firstSeenIn')}: ${t('passport.detailsHint')}`, <span aria-hidden="true">?</span>)}
-      </div>
-      {detail('countries', t('passport.countryExplanation'))}
+      <div className="passport-section-heading"><h2 id="passport-countries-title">
+        {button('countries', 'passport-heading-button', t('passport.firstSeenIn'), t('passport.firstSeenIn'))}
+      </h2></div>
+      {detail('countries', t('passport.firstSeenIn'), t('passport.countryExplanation'))}
       <div className="country-list">{stats.originCountries.slice(0, 3).map((country) => {
         const name = new Intl.DisplayNames([locale], { type: 'region' }).of(country.code) ?? country.code;
         return <div className="country-row" key={country.code}>

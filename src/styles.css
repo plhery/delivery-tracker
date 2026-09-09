@@ -259,17 +259,19 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .passport-note { font-size: 12px; line-height: 1.6; color: var(--ink-soft); margin: 0; }
 .passport-section-heading { display: flex; align-items: center; gap: 2px; margin-bottom: 12px; }
 .passport-section-heading h2 { margin: 0; }
-.passport-help { display: grid; place-items: center; width: 44px; height: 44px; margin: -10px 0; background: transparent; color: var(--ink-soft); border-radius: 50%; }
-.passport-help > span { display: grid; place-items: center; width: 15px; height: 15px; border: 1px solid currentColor; border-radius: 50%; font-size: 10px; font-weight: 400; }
+.passport-heading-button { min-height: 44px; margin: -10px 0; padding: 0; background: transparent; color: inherit; font: inherit; text-align: left; border-radius: 6px; }
 .country-list { display: flex; flex-direction: column; }
 .country-row { display: flex; align-items: center; gap: 11px; min-height: 44px; padding: 10px 0; font-size: 13px; }
 .country-row + .country-row { border-top: 1px solid var(--line); }
 .country-row__flag { font-size: 16px; }
 .country-row__count { margin-left: auto; font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
-.passport-card__detail { margin-top: 16px; font-size: 13px; font-weight: 400; line-height: 1.65; color: var(--ink-soft); white-space: pre-line; overflow-wrap: anywhere; animation: page-arrive .2s var(--ease-out); }
-.passport-card__detail[hidden] { display: none; }
-.passport-cover .passport-card__detail { color: var(--on-yellow); }
-.passport-countries .passport-card__detail { margin: 0 0 12px; }
+/* Native popovers live above the page and never move the journal beneath them. */
+.passport-bubble { position: fixed; inset: auto; margin: 0; width: min(300px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; padding: 20px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); color: var(--ink); box-shadow: 0 8px 32px rgb(0 0 0 / 12%); opacity: 0; }
+.passport-bubble[data-positioned="true"] { opacity: 1; }
+.passport-bubble:focus { outline: none; }
+.passport-bubble h3 { font-size: 14px; font-weight: 600; margin: 0 0 8px; }
+.passport-bubble p { font-size: 13px; line-height: 1.65; white-space: pre-line; overflow-wrap: anywhere; color: var(--ink-soft); margin: 0; }
+
 
 
 /* A shipment opens as a full page on a phone and a focused paper panel on desktop. */
