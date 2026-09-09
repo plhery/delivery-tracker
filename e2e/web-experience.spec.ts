@@ -149,23 +149,58 @@ test('keeps language and account consistent across deliveries, Passport, and par
   await noOverflow(page);
 });
 
-test('shows real Passport rewards and opens stamp explanations accessibly', async ({ page }) => {
+test('expands Passport stamps in place and keeps keyboard focus on the card', async ({ page }) => {
   await demo(page);
   await page.getByRole('button', { name: 'Passport', exact: true }).click();
   await expect(page.locator('.passport-cover__count')).toHaveText('1');
-  await expect(page.locator('.passport-note')).toHaveText('From 1 timed journey');
+  await expect(page.locator('.passport-note')).toHaveCount(0);
   await expect(page.locator('.country-row')).toHaveCount(3);
-  const stamp = page.getByRole('button', { name: 'First arrival Unlocked', exact: true });
-  await stamp.click();
-  const sheet = page.getByRole('dialog', { name: 'First arrival' });
-  await expect(sheet).toBeVisible();
-  await page.keyboard.press('Tab');
-  await expect(sheet.getByRole('button', { name: 'Close' })).toBeFocused();
+  await expect(page.locator('.passport-count')).toHaveCount(0);
+  await expect(page.locator('.stamp-card')).toHaveCount(4);
+  const positions = await page.locator('.stamp-card').evaluateAll((cards) => cards.map((card) => card.getBoundingClientRect().top));
+  expect(new Set(positions).size).toBe(1);
+  await expect(page.getByText('Unlocked', { exact: true })).toHaveCount(0);
+  const stamp = page.getByRole('button', { name: 'First arrival', exact: true });
+  const explanation = page.locator(`[id="${await stamp.getAttribute('aria-controls')}"]`);
+  await expect(explanation).toBeHidden();
+  const height = (await page.locator('.passport-stamps').boundingBox())!.height;
+  await stamp.evaluate((element) => element.setAttribute('data-kept', 'yes'));
+  await stamp.focus();
+  await page.keyboard.press('Enter');
+  await expect(stamp).toHaveAttribute('aria-expanded', 'true');
+  await expect(explanation).toContainText('Your first delivered parcel earns this stamp.');
+  await expect(explanation).toBeVisible();
+  await expect.poll(async () => (await page.locator('.passport-stamps').boundingBox())!.height).toBeGreaterThan(height + 30);
+  await expect(stamp).toHaveAttribute('data-kept', 'yes');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(stamp).toBeFocused();
+  await noOverflow(page);
   await page.keyboard.press('Escape');
-  await expect(sheet).toBeHidden();
+  await expect(stamp).toHaveAttribute('aria-expanded', 'false');
+  await expect(explanation).toBeHidden();
   await expect(stamp).toBeFocused();
   await page.goBack();
   await expect(page.locator('.deliveries-page')).toBeVisible();
+});
+
+test('expands every Passport card inline with reduced motion on a narrow screen', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'dark' });
+  await demo(page);
+  await page.getByRole('button', { name: 'Passport', exact: true }).click();
+  const cards = page.locator('.passport-page button[aria-expanded]');
+  for (const card of await cards.all()) {
+    await card.click();
+    await expect(card).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator(`[id="${await card.getAttribute('aria-controls')}"]`)).toBeVisible();
+    await expect(page.locator('.passport-page button[aria-expanded="true"]')).toHaveCount(1);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await noOverflow(page);
+  }
+  const last = cards.last();
+  await last.click();
+  await expect(last).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator(`[id="${await last.getAttribute('aria-controls')}"]`)).toBeHidden();
 });
 
 test('respects reduced motion while retaining every action', async ({ page }) => {
