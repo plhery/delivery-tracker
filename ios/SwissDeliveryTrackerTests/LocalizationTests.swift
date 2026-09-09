@@ -7,8 +7,8 @@ final class LocalizationTests: XCTestCase {
         let dictionaries = try localizationDictionaries()
         let englishKeys = Set(try XCTUnwrap(dictionaries["en"]).keys)
 
-        XCTAssertEqual(Set(dictionaries.keys), Set(["en", "de", "fr", "it"]))
-        for language in ["de", "fr", "it"] {
+        XCTAssertEqual(Set(dictionaries.keys), Set(["en", "de", "fr", "it", "es", "pt", "pl"]))
+        for language in ["de", "fr", "it", "es", "pt", "pl"] {
             XCTAssertEqual(Set(try XCTUnwrap(dictionaries[language]).keys), englishKeys, language)
         }
     }
@@ -17,7 +17,7 @@ final class LocalizationTests: XCTestCase {
         let dictionaries = try localizationDictionaries()
         let english = try XCTUnwrap(dictionaries["en"])
 
-        for language in ["de", "fr", "it"] {
+        for language in ["de", "fr", "it", "es", "pt", "pl"] {
             let translated = try XCTUnwrap(dictionaries[language])
             for (key, englishValue) in english {
                 XCTAssertEqual(
@@ -113,6 +113,28 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(localizer.errorMessage(AuthenticationError.server("Token has expired or is invalid")), localizer.text("error.invalidCode"))
     }
 
+    func testPolishPluralForms() {
+        let localizer = Localizer()
+        localizer.language = .pl
+        for count in [0, 1, 2, 4, 5, 12, 14, 21, 22, 25, 101, 102, 112] {
+            let few = [2, 4, 22, 102].contains(count)
+            let stamp = count == 1 ? "znaczek" : few ? "znaczki" : "znaczków"
+            let parcel = count == 1 ? "przesyłka" : few ? "przesyłki" : "przesyłek"
+            XCTAssertEqual(localizer.text("friends.stampCount", ["count": count]), "\(count) \(stamp)")
+            XCTAssertEqual(localizer.text(count == 1 ? "passport.parcels.one" : "passport.parcels.many", ["count": count]), "\(count) \(parcel)")
+        }
+        XCTAssertEqual(localizer.text("time.daysAgo", ["count": 1]), "1 dzień temu")
+    }
+
+    func testNewLanguageNamesAndCopy() {
+        let localizer = Localizer()
+        for (language, name, title) in [(AppLanguage.es, "Español", "Entregas"), (.pt, "Português", "Entregas"), (.pl, "Polski", "Dostawy")] {
+            localizer.language = language
+            XCTAssertEqual(language.nativeName, name)
+            XCTAssertEqual(localizer.text("native.deliveries"), title)
+        }
+    }
+
     func testReadableCalendarDatesInEveryLanguage() throws {
         let localizer = Localizer()
         let date = try XCTUnwrap(DateParser.deliveryDate("2026-09-12"))
@@ -154,6 +176,9 @@ final class LocalizationTests: XCTestCase {
             (.de, ["gestern", "heute", "morgen"]),
             (.fr, ["hier", "aujourd’hui", "demain"]),
             (.it, ["ieri", "oggi", "domani"]),
+            (.es, ["ayer", "hoy", "mañana"]),
+            (.pt, ["ontem", "hoje", "amanhã"]),
+            (.pl, ["wczoraj", "dziś", "jutro"]),
         ]
         for (language, labels) in cases {
             localizer.language = language

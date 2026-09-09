@@ -11,7 +11,7 @@ function Seal({ icon, earned = true, numeral = '10' }: { icon: IconName; earned?
 }
 
 export function Passport({ parcels, loading }: { parcels: ParcelWithEvents[]; loading: boolean }) {
-  const { t, locale, languageTag } = useI18n();
+  const { t, languageTag } = useI18n();
   const stats = useMemo(() => passportStatistics(parcels), [parcels]);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [showAllStamps, setShowAllStamps] = useState(false);
@@ -109,7 +109,7 @@ export function Passport({ parcels, loading }: { parcels: ParcelWithEvents[]; lo
       </h2></div>
       {detail('countries', t('passport.firstSeenIn'), t('passport.countryExplanation'))}
       <div className="country-list">{stats.originCountries.slice(0, 3).map((country) => {
-        const name = new Intl.DisplayNames([locale], { type: 'region' }).of(country.code) ?? country.code;
+        const name = new Intl.DisplayNames([languageTag], { type: 'region' }).of(country.code) ?? country.code;
         return <div className="country-row" key={country.code}>
           <span className="country-row__flag" aria-hidden="true">{[...country.code].map((letter) => String.fromCodePoint(letter.charCodeAt(0) + 127397)).join('')}</span>
           <span>{name}</span><span className="country-row__count">{country.count.toLocaleString(languageTag)}</span>

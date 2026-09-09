@@ -176,7 +176,7 @@ enum TrackingLocation {
     private static let countryNames: [String: String] = {
         var names: [String: String] = [:]
         for code in regionCodes.sorted() {
-            for language in ["en", "de", "fr", "it"] {
+            for language in ["en", "de", "fr", "it", "es", "pt", "pl"] {
                 if let name = Locale(identifier: language).localizedString(forRegionCode: code) {
                     names[normalized(name)] = code
                 }

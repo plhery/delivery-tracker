@@ -438,11 +438,14 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         if carrier == .swissPost {
             var items = components.queryItems ?? []
             items.removeAll { $0.name == "lang" }
-            items.append(URLQueryItem(name: "lang", value: language.rawValue))
+            let siteLanguage = [AppLanguage.en, .de, .fr, .it].contains(language) ? language : .en
+            items.append(URLQueryItem(name: "lang", value: siteLanguage.rawValue))
             components.queryItems = items
         } else if components.host == "t.17track.net" || components.host == "parcelsapp.com" {
+            // Parcels has no Polish page; 17TRACK supports all app languages.
+            let siteLanguage = components.host == "parcelsapp.com" && language == .pl ? AppLanguage.en : language
             components.path = components.path.replacingOccurrences(
-                of: "^/[a-z]{2}(?=/|$)", with: "/\(language.rawValue)", options: .regularExpression
+                of: "^/[a-z]{2}(?=/|$)", with: "/\(siteLanguage.rawValue)", options: .regularExpression
             )
         }
         return components.url

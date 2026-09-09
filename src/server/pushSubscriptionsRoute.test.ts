@@ -35,7 +35,7 @@ it('changes the language only on the signed-in user’s enabled browser subscrip
   expect(options?.body).toEqual({ locale: 'fr' }); // No re-enable, new cursor, or test notification.
 });
 
-it.each([undefined, 'es', ['fr'], '', null])('rejects invalid language %j without changing the subscription', async (locale) => {
+it.each([undefined, 'nl', ['fr'], '', null])('rejects invalid language %j without changing the subscription', async (locale) => {
   const write = vi.spyOn(SupabaseServiceClient.prototype, 'request');
   expect((await request({ endpoint, locale })).status).toBe(400);
   expect(write).not.toHaveBeenCalled();
@@ -45,4 +45,10 @@ it('requires authentication before updating a language', async () => {
   const write = vi.spyOn(SupabaseServiceClient.prototype, 'request');
   expect((await request({ endpoint, locale: 'fr' }, false)).status).toBe(401);
   expect(write).not.toHaveBeenCalled();
+});
+
+it.each(['es', 'pt', 'pl'])('stores the new notification locale %s', async (locale) => {
+  const write = vi.spyOn(SupabaseServiceClient.prototype, 'request').mockResolvedValue(null);
+  expect((await request({ endpoint, locale })).status).toBe(200);
+  expect(write.mock.calls[0]?.[1]?.body).toEqual({ locale });
 });

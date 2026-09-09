@@ -10,7 +10,7 @@ export function trackingLocationCountry(location?: string): string | null {
   if (regionCodes.has(field)) return location.trim() === field || !ambiguousAddressCodes.has(field) ? field : null;
   if (!countryNames) {
     countryNames = new Map([['usa', 'US'], ['uk', 'GB']]);
-    for (const language of ['en', 'de', 'fr', 'it']) {
+    for (const language of ['en', 'de', 'fr', 'it', 'es', 'pt', 'pl']) {
       const names = new Intl.DisplayNames([language], { type: 'region' });
       for (const code of regionCodes) countryNames.set(normalized(names.of(code) ?? code), code);
     }

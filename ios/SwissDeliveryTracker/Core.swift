@@ -54,16 +54,19 @@ extension String {
 }
 
 enum AppLanguage: String, CaseIterable, Identifiable, Codable, Hashable {
-    case en, de, fr, it
+    case en, de, fr, it, es, pt, pl
 
     var id: String { rawValue }
-    var locale: Locale { Locale(identifier: rawValue) }
+    var locale: Locale { Locale(identifier: self == .pt ? "pt-PT" : rawValue) }
     var nativeName: String {
         switch self {
         case .en: "English"
         case .de: "Deutsch"
         case .fr: "Français"
         case .it: "Italiano"
+        case .es: "Español"
+        case .pt: "Português"
+        case .pl: "Polski"
         }
     }
 }
@@ -105,8 +108,22 @@ final class Localizer: ObservableObject {
 
     func text(_ key: String, _ variables: [String: CustomStringConvertible] = [:]) -> String {
         let messages = dictionaries[language.rawValue] ?? dictionaries["en"] ?? [:]
-        let singularKey = "\(key).one"
-        let selectedKey = variables["count"]?.description == "1" && messages[singularKey] != nil ? singularKey : key
+        let count = variables["count"].flatMap { Double($0.description) }
+        let category: String
+        if count == 1 {
+            category = "one"
+        } else if language == .pl, let count, count.isFinite, count >= 0,
+                  count.rounded(.towardZero) == count {
+            // Polish integer counts: 2–4, except 12–14, use the few form.
+            let last = count.truncatingRemainder(dividingBy: 10)
+            let lastTwo = count.truncatingRemainder(dividingBy: 100)
+            category = (2...4).contains(last) && !(12...14).contains(lastTwo) ? "few" : "many"
+        } else {
+            category = "other"
+        }
+        let baseKey = key.replacingOccurrences(of: "\\.(one|few|many)$", with: "", options: .regularExpression)
+        let pluralKey = "\(baseKey).\(category)"
+        let selectedKey = category != "other" && messages[pluralKey] != nil ? pluralKey : key
         var result = messages[selectedKey]
             ?? dictionaries["en"]?[selectedKey]
             ?? key

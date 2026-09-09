@@ -288,6 +288,9 @@ test('keeps translated add-parcel guidance readable in every app language', asyn
     ['de', 'Ein Paket hinzufügen', 'Paket hinzufügen', 'Abbrechen'],
     ['fr', 'Ajouter un colis', 'Ajouter un colis', 'Annuler'],
     ['it', 'Aggiungi un pacco', 'Aggiungi un pacco', 'Annulla'],
+    ['es', 'Añadir un paquete', 'Añadir un paquete', 'Cancelar'],
+    ['pt', 'Adicionar um envio', 'Adicionar um envio', 'Cancelar'],
+    ['pl', 'Dodaj przesyłkę', 'Dodaj przesyłkę', 'Anuluj'],
     ['en', 'Add a parcel', 'Add a parcel', 'Cancel'],
   ]) {
     await page.locator('.account-trigger').click();

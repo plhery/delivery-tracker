@@ -576,5 +576,14 @@
   "app.trackAnother": "Track another parcel",
   "friends.stampCount.one": "{{count}} stamp",
   "friends.cancelPrevious.one": "Cancel {{count}} previous link",
-  "passport.delivered.one": "Delivered"
+  "passport.delivered.one": "Delivered",
+  "language.es": "Español",
+  "language.pt": "Português",
+  "language.pl": "Polski",
+  "friends.stampCount.few": "{{count}} stamps",
+  "passport.parcels.few": "{{count}} parcels",
+  "detail.updateCount.few": "{{count}} updates",
+  "passport.delivered.many": "Delivered",
+  "time.daysAgo.one": "{{count}} d ago",
+  "app.parcel.few": "parcels"
 }

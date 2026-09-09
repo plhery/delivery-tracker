@@ -576,5 +576,14 @@
   "app.trackAnother": "Traccia un altro pacco",
   "friends.stampCount.one": "{{count}} francobollo",
   "friends.cancelPrevious.one": "Annulla {{count}} link precedente",
-  "passport.delivered.one": "Consegnato"
+  "passport.delivered.one": "Consegnato",
+  "language.es": "Español",
+  "language.pt": "Português",
+  "language.pl": "Polski",
+  "friends.stampCount.few": "{{count}} francobolli",
+  "passport.parcels.few": "{{count}} pacchi",
+  "detail.updateCount.few": "{{count}} aggiornamenti",
+  "passport.delivered.many": "Consegnati",
+  "time.daysAgo.one": "{{count}} g fa",
+  "app.parcel.few": "pacchi"
 }

@@ -33,7 +33,10 @@ describe('localization', () => {
   it('detects all supported Swiss languages and falls back to English', () => {
     expect(detectLocale(['de-CH'])).toBe('de');
     expect(detectLocale(['rm-CH', 'it-CH'])).toBe('it');
-    expect(detectLocale(['es-ES'])).toBe('en');
+    expect(detectLocale(['es-ES'])).toBe('es');
+    expect(detectLocale(['pt-PT'])).toBe('pt');
+    expect(detectLocale(['pl-PL'])).toBe('pl');
+    expect(detectLocale(['nl-NL'])).toBe('en');
   });
 
   it('persists an explicit language and updates the document language', async () => {
@@ -84,6 +87,32 @@ describe('localization', () => {
 });
 
 describe('relative delivery dates', () => {
+  it.each([
+    ['es', ['ayer', 'hoy', 'mañana'], '1 sello', '2 sellos'],
+    ['pt', ['ontem', 'hoje', 'amanhã'], '1 selo', '2 selos'],
+    ['pl', ['wczoraj', 'dziś', 'jutro'], '1 znaczek', '2 znaczki'],
+  ] as const)('supports dates and counts in %s', (locale, days, one, two) => {
+    const t: Translate = (key, variables) => translate(locale, key, variables);
+    const now = new Date(2026, 8, 9, 12).getTime();
+    for (const [index, day] of [8, 9, 10].entries()) {
+      const date = localizedDeliveryDate(new Date(2026, 8, day), t, locale, now);
+      expect(date).toBe(days[index]);
+      expect(localizedDatePhrase(date, t)).toBe(date);
+    }
+    expect(t('friends.stampCount', { count: 1 })).toBe(one);
+    expect(t('friends.stampCount', { count: 2 })).toBe(two);
+  });
+
+  it.each([0, 1, 2, 4, 5, 12, 14, 21, 22, 25, 101, 102, 112])('declines Polish quantities for %i', (count) => {
+    const few = [2, 4, 22, 102].includes(count);
+    expect(translate('pl', 'friends.stampCount', { count }))
+      .toBe(`${count} ${count === 1 ? 'znaczek' : few ? 'znaczki' : 'znaczków'}`);
+    expect(translate('pl', count === 1 ? 'detail.updateCount.one' : 'detail.updateCount.many', { count }))
+      .toBe(`${count} ${count === 1 ? 'aktualizacja' : few ? 'aktualizacje' : 'aktualizacji'}`);
+    expect(translate('pl', count === 1 ? 'passport.parcels.one' : 'passport.parcels.many', { count }))
+      .toBe(`${count} ${count === 1 ? 'przesyłka' : few ? 'przesyłki' : 'przesyłek'}`);
+  });
+
   it.each(['en', 'de', 'fr', 'it'] as const)('uses natural date phrases and singular counts in %s', (locale) => {
     const t: Translate = (key, variables) => translate(locale, key, variables);
     for (const key of ['time.yesterday', 'time.today', 'time.tomorrow'] as const) {

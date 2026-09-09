@@ -129,7 +129,7 @@ constraints.
 
 ### Message and notification copy
 
-App-owned copy is localized in English, German, French and Italian. The shared
+App-owned copy is localized in English, German, French, Italian, Spanish, Portuguese and Polish. The shared
 web catalog generates the native catalog; generation checks key and interpolation
 parity. Original carrier scan notes and user-entered parcel names stay unchanged.
 Known app-generated timeline messages are translated at display time.

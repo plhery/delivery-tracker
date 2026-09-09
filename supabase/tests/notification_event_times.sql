@@ -69,7 +69,7 @@ begin
     raise exception 'Locale update restarted the subscription cursor';
   end if;
   begin
-    update public.push_subscriptions set locale = 'es'
+    update public.push_subscriptions set locale = 'nl'
     where user_id = '97000000-0000-0000-0000-000000000001';
     raise exception 'Invalid locale was accepted';
   exception when check_violation then null;

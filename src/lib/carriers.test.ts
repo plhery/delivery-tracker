@@ -56,6 +56,8 @@ describe('normalizeTrackingNumber', () => {
   it.each([
     ['en', 'Unknown carrier'], ['de', 'Paketdienst unbekannt'],
     ['fr', 'Transporteur inconnu'], ['it', 'Corriere sconosciuto'],
+    ['es', 'Transportista desconocido'], ['pt', 'Transportadora desconhecida'],
+    ['pl', 'Nieznany przewoźnik'],
   ])('names undetected carriers clearly in %s', (locale, name) => {
     expect(carrierInfo('unknown', locale).name).toBe(name);
   });
@@ -112,11 +114,24 @@ describe('supportsSwissPostHandoff', () => {
 });
 
 describe('unknown postal carrier links', () => {
+  it.each(['es', 'pt', 'pl'])('uses supported external-site languages for %s', (locale) => {
+    const [swissPost] = parcelTrackingLinks({ carrier: 'swiss-post', trackingNumber: '993412345612345678' }, locale);
+    expect(new URL(swissPost.url).searchParams.get('lang')).toBe('en');
+    const [parcels] = parcelTrackingLinks({
+      carrier: 'unknown', trackingNumber: 'ZZ12345678900',
+      trackingUrl: 'https://parcelsapp.com/fr/tracking/ZZ12345678900',
+    }, locale);
+    expect(parcels.url).toBe(`https://parcelsapp.com/${locale === 'pl' ? 'en' : locale}/tracking/ZZ12345678900`);
+  });
+
   it.each([
     ['en', 'Unknown postal carrier'],
     ['de', 'Postanbieter unbekannt'],
     ['fr', 'Transporteur postal inconnu'],
     ['it', 'Corriere postale sconosciuto'],
+    ['es', 'Operador postal desconocido'],
+    ['pt', 'Operador postal desconhecido'],
+    ['pl', 'Nieznany operator pocztowy'],
   ])('names the fallback and opens 17TRACK in %s', (locale, name) => {
     for (const trackingUrl of [undefined, 'https://service.post.ch/ekp-web/ui/entry/search/RA123456785DE']) {
       const [link] = parcelTrackingLinks({

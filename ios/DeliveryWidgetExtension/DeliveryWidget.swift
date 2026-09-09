@@ -63,7 +63,7 @@ private struct DeliveryWidgetProvider: TimelineProvider {
     private var preferredLanguageCode: String {
         guard let code = Locale.preferredLanguages.first.map({
             String($0.prefix(2)).lowercased()
-        }), ["en", "de", "fr", "it"].contains(code) else {
+        }), ["en", "de", "fr", "it", "es", "pt", "pl"].contains(code) else {
             return "en"
         }
         return code
@@ -111,7 +111,7 @@ private struct DeliveryWidgetView: View {
             )
         }
         .widgetURL(family == .systemSmall ? parcels.first?.deepLink : nil)
-        .environment(\.locale, Locale(identifier: entry.languageCode))
+        .environment(\.locale, Locale(identifier: entry.languageCode == "pt" ? "pt-PT" : entry.languageCode))
     }
 
     private func smallContent(_ parcel: DeliveryWidgetParcel) -> some View {
@@ -289,7 +289,7 @@ private struct DeliveryLiveActivityView: View {
         .activityBackgroundTint(Color(red: 0.12, green: 0.12, blue: 0.11))
         .activitySystemActionForegroundColor(WidgetPalette.accentBright)
         .widgetURL(state.parcel.deepLink)
-        .environment(\.locale, Locale(identifier: state.languageCode))
+        .environment(\.locale, Locale(identifier: state.languageCode == "pt" ? "pt-PT" : state.languageCode))
     }
 }
 

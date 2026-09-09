@@ -4,7 +4,7 @@ import { nativeLocalizationReferences } from './native-localization.mjs';
 import { validateLocalizationCatalogs } from './localization-catalog.mjs';
 
 describe('Shared localization catalogs', () => {
-  const catalogs = () => Object.fromEntries(['en', 'de', 'fr', 'it'].map((locale) => [locale, {
+  const catalogs = () => Object.fromEntries(['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'].map((locale) => [locale, {
     'passport.stampsEarned': '{{count}} / {{total}}',
     'arrival.tapToOpen': 'Open',
   }]));

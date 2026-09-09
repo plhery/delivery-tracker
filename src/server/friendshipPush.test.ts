@@ -15,7 +15,8 @@ afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 describe('friendship receipts', () => {
   it.each([
     ['en', 'Alex accepted your invitation'], ['fr-CH', 'Alex a accepté ton invitation'],
-    ['de', 'Alex hat deine Einladung angenommen'], ['it', 'Alex ha accettato il tuo invito'], ['unknown', 'Alex accepted your invitation'],
+    ['de', 'Alex hat deine Einladung angenommen'], ['it', 'Alex ha accettato il tuo invito'], ['es', 'Alex ha aceptado tu invitación'], ['pt-PT', 'Alex aceitou o teu convite'],
+    ['pl', 'Zaproszenie przyjęte przez Alex'], ['unknown', 'Alex accepted your invitation'],
   ])('shares localized copy between app and both push channels: %s', (locale, title) => {
     const payload = friendshipNotification({ ...row, locale, email: 'PRIVATE', label: 'PRIVATE', location: 'PRIVATE' });
     expect(payload.web.title).toBe(title);

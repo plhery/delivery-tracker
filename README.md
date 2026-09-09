@@ -29,7 +29,7 @@
 - Optional notifications with quiet hours and per-parcel mute.
 - Passport stamps and statistics from delivery history. Share selected stats
   with friends by invitation; parcel details stay private.
-- Synced accounts, light and dark themes, and English, German, French, and Italian.
+- Synced accounts, light and dark themes, and English, German, French, Italian, Spanish, Portuguese, and Polish.
 - Installable web app and native iPhone app with barcode scanning, a Share
   extension, offline snapshots, widgets, and Live Activities.
 

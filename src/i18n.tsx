@@ -11,7 +11,7 @@ import {
 } from 'react';
 import type { Stage } from './types';
 
-export const SUPPORTED_LOCALES = ['en', 'de', 'fr', 'it'] as const;
+export const SUPPORTED_LOCALES = ['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
 
 const STORAGE_KEY = 'deliveryTrackerLocale';
@@ -20,11 +20,16 @@ import en from '../shared/locales/en.json';
 import de from '../shared/locales/de.json';
 import fr from '../shared/locales/fr.json';
 import it from '../shared/locales/it.json';
+import es from '../shared/locales/es.json';
+import pt from '../shared/locales/pt.json';
+import pl from '../shared/locales/pl.json';
 
 export type MessageKey = keyof typeof en;
 type Messages = Record<MessageKey, string>;
 
-const dictionaries: Record<Locale, Messages> = { en, de, fr, it };
+const dictionaries: Record<Locale, Messages> = { en, de, fr, it, es, pt, pl };
+const languageTags: Record<Locale, string> = { en: 'en-CH', de: 'de-CH', fr: 'fr-CH', it: 'it-CH', es: 'es-ES', pt: 'pt-PT', pl: 'pl-PL' };
+const polishPluralRules = new Intl.PluralRules('pl-PL');
 
 export type Translate = (
   key: MessageKey,
@@ -40,8 +45,12 @@ interface I18nValue {
 
 export function translate(locale: Locale, key: MessageKey, variables?: Record<string, string | number>) {
   const messages = dictionaries[locale];
-  const singularKey = `${key}.one` as MessageKey;
-  let message: string = variables?.count === 1 && singularKey in messages ? messages[singularKey] : messages[key];
+  const count = variables?.count;
+  const category = typeof count === 'number' && locale === 'pl'
+    ? polishPluralRules.select(count) : count === 1 ? 'one' : 'other';
+  const baseKey = key.replace(/\.(one|few|many)$/, '');
+  const pluralKey = `${baseKey}.${category}` as MessageKey;
+  let message: string = category !== 'other' && pluralKey in messages ? messages[pluralKey] : messages[key];
   for (const [name, value] of Object.entries(variables ?? {})) {
     message = message.replaceAll(`{{${name}}}`, String(value));
   }
@@ -101,7 +110,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<I18nValue>(() => ({
     locale,
-    languageTag: `${locale}-CH`,
+    languageTag: languageTags[locale],
     setLocale,
     t: (key, variables) => translate(locale, key, variables),
   }), [locale]);

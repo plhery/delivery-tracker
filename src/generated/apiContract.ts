@@ -1136,7 +1136,10 @@ export const CARRIER_CAPABILITIES = {
       "en": "Unknown postal carrier",
       "de": "Postanbieter unbekannt",
       "fr": "Transporteur postal inconnu",
-      "it": "Corriere postale sconosciuto"
+      "it": "Corriere postale sconosciuto",
+      "es": "Operador postal desconocido",
+      "pt": "Operador postal desconhecido",
+      "pl": "Nieznany operator pocztowy"
     },
     "trackingSiteName": "17TRACK",
     "color": "#2c6fb5",
@@ -1163,7 +1166,10 @@ export const CARRIER_CAPABILITIES = {
       "en": "Unknown carrier",
       "de": "Paketdienst unbekannt",
       "fr": "Transporteur inconnu",
-      "it": "Corriere sconosciuto"
+      "it": "Corriere sconosciuto",
+      "es": "Transportista desconocido",
+      "pt": "Transportadora desconhecida",
+      "pl": "Nieznany przewoźnik"
     },
     "color": "#8e8e93",
     "selectable": false,
@@ -1404,7 +1410,7 @@ export interface ApiPushSubscriptionResponse {
 
 export type ApiNativePushEnvironment = "development" | "production";
 
-export type ApiNativePushLocale = "en" | "de" | "fr" | "it";
+export type ApiNativePushLocale = "en" | "de" | "fr" | "it" | "es" | "pt" | "pl";
 
 export interface ApiNativePushDeviceRequest {
   "token": string;

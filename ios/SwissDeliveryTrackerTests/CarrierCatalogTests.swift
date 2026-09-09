@@ -219,6 +219,26 @@ final class CarrierCatalogTests: XCTestCase {
         )
     }
 
+    func testExternalTrackingSitesUseSupportedLanguages() throws {
+        var parcel = Parcel(
+            id: UUID(), trackingNumber: "993412345612345678", label: "Parcel",
+            carrier: .swissPost, createdAt: "2026-09-07T13:00:00Z",
+            syncStatus: .unsupported, notificationsMuted: false
+        )
+        for language in [AppLanguage.es, .pt, .pl] {
+            let url = try XCTUnwrap(catalog.trackingLinks(for: parcel, language: language).first).url
+            XCTAssertEqual(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "lang" }?.value, "en")
+        }
+        parcel.carrier = .unknown
+        parcel.trackingNumber = "ZZ12345678900"
+        parcel.trackingURL = "https://parcelsapp.com/fr/tracking/ZZ12345678900"
+        for (language, name) in [(AppLanguage.es, "Transportista desconocido"), (.pt, "Transportadora desconhecida"), (.pl, "Nieznany przewoźnik")] {
+            XCTAssertEqual(catalog.info(for: .unknown, language: language).displayName, name)
+            let url = try XCTUnwrap(catalog.trackingLinks(for: parcel, language: language).first).url
+            XCTAssertEqual(url.absoluteString, "https://parcelsapp.com/\(language == .pl ? "en" : language.rawValue)/tracking/ZZ12345678900")
+        }
+    }
+
     func testUnknownPostalCarrierUsesLocalized17TrackInsteadOfLegacySwissPostLink() throws {
         var parcel = Parcel(
             id: UUID(), trackingNumber: "RA123456785DE", label: "Postal shipment",
@@ -228,6 +248,8 @@ final class CarrierCatalogTests: XCTestCase {
         let names: [AppLanguage: String] = [
             .en: "Unknown postal carrier", .de: "Postanbieter unbekannt",
             .fr: "Transporteur postal inconnu", .it: "Corriere postale sconosciuto",
+            .es: "Operador postal desconocido", .pt: "Operador postal desconhecido",
+            .pl: "Nieznany operator pocztowy",
         ]
         for language in AppLanguage.allCases {
             for savedURL in [nil, "https://service.post.ch/ekp-web/ui/entry/search/RA123456785DE"] as [String?] {

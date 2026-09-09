@@ -576,5 +576,14 @@
   "app.trackAnother": "Suivre un autre colis",
   "friends.stampCount.one": "{{count}} timbre",
   "friends.cancelPrevious.one": "Annuler {{count}} lien précédent",
-  "passport.delivered.one": "Livré"
+  "passport.delivered.one": "Livré",
+  "language.es": "Español",
+  "language.pt": "Português",
+  "language.pl": "Polski",
+  "friends.stampCount.few": "{{count}} timbres",
+  "passport.parcels.few": "{{count}} colis",
+  "detail.updateCount.few": "{{count}} mises à jour",
+  "passport.delivered.many": "Livrés",
+  "time.daysAgo.one": "il y a {{count}} j",
+  "app.parcel.few": "colis"
 }

@@ -263,13 +263,15 @@ function localizedCarrierUrl(
   url: string,
   locale?: string,
 ): string {
-  if (!locale || !['en', 'de', 'fr', 'it'].includes(locale)) return url;
+  if (!locale || !['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'].includes(locale)) return url;
   try {
     const localizedUrl = new URL(url);
     if (carrierId === 'swiss-post') {
-      localizedUrl.searchParams.set('lang', locale);
+      localizedUrl.searchParams.set('lang', ['en', 'de', 'fr', 'it'].includes(locale) ? locale : 'en');
     } else if (localizedUrl.hostname === 't.17track.net' || localizedUrl.hostname === 'parcelsapp.com') {
-      localizedUrl.pathname = localizedUrl.pathname.replace(/^\/[a-z]{2}(?=\/|$)/i, `/${locale}`);
+      // Parcels supports Spanish and Portuguese, but has no Polish page.
+      const siteLocale = localizedUrl.hostname === 'parcelsapp.com' && locale === 'pl' ? 'en' : locale;
+      localizedUrl.pathname = localizedUrl.pathname.replace(/^\/[a-z]{2}(?=\/|$)/i, `/${siteLocale}`);
     } else {
       return url;
     }

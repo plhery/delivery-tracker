@@ -126,7 +126,7 @@ ActivityKit updates while closed. A paid-team build enables both.
 | Next-up and out-for-delivery glance surface | Small/medium Home Screen widget plus Lock Screen and Dynamic Island Live Activity |
 | Offline snapshot and demo mode | Protected per-account cache and persistent fictional demo |
 | Account export, privacy, account deletion | System share sheet, privacy link, destructive account flow |
-| English, German, French, Italian | Catalog generated from `src/i18n.tsx` plus native-only copy |
+| English, German, French, Italian, Spanish, Portuguese, Polish | Catalog generated from `shared/locales/` for app and widget copy |
 
 Regenerate contract-backed Swift models and native resources after changing the
 OpenAPI contract, carriers, or copy:

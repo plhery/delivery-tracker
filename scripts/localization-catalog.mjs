@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const locales = ['en', 'de', 'fr', 'it'];
+export const locales = ['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'];
 
 export function validateLocalizationCatalogs(catalogs) {
   const englishKeys = Object.keys(catalogs.en ?? {}).sort();

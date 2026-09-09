@@ -50,6 +50,9 @@ describe('friendly parcel notifications', () => {
     ['de-CH', "Dein Paket wurde um 14:32 Uhr zugestellt."],
     ['fr', "Ton colis a été livré à 14:32."],
     ['it', "Il tuo pacco è stato consegnato alle 14:32."],
+    ['es-ES', "Tu paquete se entregó a las 14:32."],
+    ['pt-PT', "O teu envio foi entregue às 14:32."],
+    ['pl-PL', "Twoja przesyłka została dostarczona o 14:32."],
   ])('localizes delivery sentences for %s devices', (locale, body) => {
     expect(alert(native.eventPayload({ ...delivered, locale })).body).toBe(body);
   });
@@ -100,7 +103,7 @@ describe('friendly parcel notifications', () => {
 });
 
 describe('useful, localized tracking updates', () => {
-  it.each(['en', 'de', 'fr', 'it'])('uses the same %s copy on web, iOS and Live Activities', (locale) => {
+  it.each(['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'])('uses the same %s copy on web, iOS and Live Activities', (locale) => {
     for (const stage of ['pending', 'registered', 'accepted', 'in_transit', 'customs', 'out_for_delivery', 'ready_for_pickup', 'delivered', 'failed_attempt', 'returned']) {
       const row = { ...delivered, locale, stage };
       const browser = web.payload(row);

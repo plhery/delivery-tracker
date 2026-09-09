@@ -188,7 +188,7 @@ export interface NativePushDeviceValues {
   token: string;
   installationId: string | null;
   environment: 'development' | 'production';
-  locale: 'en' | 'de' | 'fr' | 'it';
+  locale: 'en' | 'de' | 'fr' | 'it' | 'es' | 'pt' | 'pl';
   deviceName: string | null;
   sendTest: boolean;
 }
@@ -216,7 +216,7 @@ function nativePushEnvironment(value: unknown): NativePushEnvironment {
 }
 
 function nativePushLocale(value: unknown): NativePushLocale {
-  if (typeof value !== 'string' || !['en', 'de', 'fr', 'it'].includes(value)) {
+  if (typeof value !== 'string' || !['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'].includes(value)) {
     throw new HttpError(400, 'Choose a supported notification locale');
   }
   return value as NativePushLocale;

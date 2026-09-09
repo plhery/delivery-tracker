@@ -100,6 +100,11 @@ For a local database test, run `scripts/test-migrations.sh` with
 `TEST_DATABASE_URL` pointing at a disposable database; it includes generation,
 transaction rollback, ownership, and privilege assertions.
 
+Before deploying Spanish, Portuguese and Polish support, apply
+`20260912090000_add_es_pt_pl_locales.sql`. It expands the locale constraints
+for browser push, APNs and both Live Activity tables without changing existing
+subscriptions, delivery cursors or notification preferences.
+
 ## 3. Configure Auth and email
 
 1. Set the Auth Site URL to the public HTTPS origin and restrict redirect URLs.

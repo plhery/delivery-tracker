@@ -576,5 +576,14 @@
   "app.trackAnother": "Ein weiteres Paket verfolgen",
   "friends.stampCount.one": "{{count}} Briefmarke",
   "friends.cancelPrevious.one": "{{count}} früheren Link widerrufen",
-  "passport.delivered.one": "Zugestellt"
+  "passport.delivered.one": "Zugestellt",
+  "language.es": "Español",
+  "language.pt": "Português",
+  "language.pl": "Polski",
+  "friends.stampCount.few": "{{count}} Briefmarken",
+  "passport.parcels.few": "{{count}} Pakete",
+  "detail.updateCount.few": "{{count}} Updates",
+  "passport.delivered.many": "Zugestellt",
+  "time.daysAgo.one": "vor {{count}} T.",
+  "app.parcel.few": "Pakete"
 }

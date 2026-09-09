@@ -3,12 +3,15 @@ import en from '../../shared/locales/en.json';
 import fr from '../../shared/locales/fr.json';
 import de from '../../shared/locales/de.json';
 import it from '../../shared/locales/it.json';
+import es from '../../shared/locales/es.json';
+import pt from '../../shared/locales/pt.json';
+import pl from '../../shared/locales/pl.json';
 import type { NativePushNotificationService, WebPushNotificationService, PushSummary } from './push';
 import type { SupabaseServiceClient } from './supabase';
 import type { JsonObject } from './types';
 import { captureOperationalError, logOperationalEvent, errorType } from './observability';
 
-const copy = { en, fr, de, it };
+const copy = { en, fr, de, it, es, pt, pl };
 export function friendshipNotification(row: JsonObject): { web: JsonObject; native: JsonObject } {
   const requested = String(row.locale ?? 'en').split(/[-_]/)[0]!.toLowerCase();
   const language = Object.hasOwn(copy, requested) ? requested as keyof typeof copy : 'en';

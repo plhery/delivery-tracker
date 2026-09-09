@@ -346,6 +346,9 @@ enum NativePushLocale: String, Codable, CaseIterable, Hashable, Sendable, Identi
     case de
     case fr
     case it
+    case es
+    case pt
+    case pl
 
     var id: String { rawValue }
 }
