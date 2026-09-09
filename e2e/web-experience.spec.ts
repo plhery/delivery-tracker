@@ -157,8 +157,10 @@ test('opens Passport explanation bubbles without moving the journal and restores
   await expect(page.locator('.passport-note')).toHaveCount(0);
   await expect(page.locator('.country-row')).toHaveCount(3);
   await expect(page.locator('.passport-count')).toHaveCount(0);
-  await expect(page.locator('.stamp-card')).toHaveCount(4);
-  const positions = await page.locator('.stamp-card').evaluateAll((cards) => cards.map((card) => card.getBoundingClientRect().top));
+  await expect(page.locator('.stamp-card')).toHaveCount(6);
+  await page.getByRole('button', { name: 'All stamps', exact: true }).click();
+  await expect(page.locator('.stamp-card')).toHaveCount(12);
+  const positions = await page.locator('.stamp-card').evaluateAll((cards) => cards.slice(0, 4).map((card) => card.getBoundingClientRect().top));
   expect(new Set(positions).size).toBe(1);
   await expect(page.getByText('Unlocked', { exact: true })).toHaveCount(0);
   const stamp = page.getByRole('button', { name: 'First arrival', exact: true });
@@ -189,12 +191,13 @@ test('anchors every Passport bubble within a narrow screen and explains the coun
   await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'dark' });
   await demo(page);
   await page.getByRole('button', { name: 'Passport', exact: true }).click();
-  const cards = page.locator('.passport-page button[aria-expanded]');
+  await page.getByRole('button', { name: 'All stamps', exact: true }).click();
+  const cards = page.locator('.passport-page button[aria-haspopup="dialog"]');
   for (const card of await cards.all()) {
     await card.click();
     await expect(card).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator(`[id="${await card.getAttribute('aria-controls')}"]`)).toBeVisible();
-    await expect(page.locator('.passport-page button[aria-expanded="true"]')).toHaveCount(1);
+    await expect(page.locator('.passport-page button[aria-haspopup="dialog"][aria-expanded="true"]')).toHaveCount(1);
     const bubble = page.getByRole('dialog');
     await expect(bubble).toHaveCount(1);
     await expect(bubble).toBeFocused();

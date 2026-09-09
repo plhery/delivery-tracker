@@ -9,11 +9,14 @@ const stageOrder: Stage[] = ['registered', 'accepted', 'in_transit', 'customs', 
 export interface DeliveryRecord { parcelId: string; label: string; duration: number; deliveredAt: number }
 
 /** Match iOS: the clock starts at a physical scan, never when a parcel is added. */
-export function passportStatistics(parcels: readonly ParcelWithEvents[]) {
+export function passportStatistics(parcels: readonly ParcelWithEvents[], timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone) {
   let deliveredCount = 0;
   let activeCount = 0;
   const records: DeliveryRecord[] = [];
   const countries = new Map<string, number>();
+  const deliveredDays = new Map<string, number>();
+  const calendar = new Intl.DateTimeFormat('en-US', { timeZone, calendar: 'gregory', year: 'numeric', month: '2-digit', day: '2-digit' });
+  let crossBorderCount = 0, domesticDeliveryCount = 0, longWaitDeliveryCount = 0, pickupDeliveryCount = 0, decemberDeliveryCount = 0;
   for (const parcel of parcels) {
     const meaningful = parcel.events.filter((event) => event.stage !== 'pending');
     const dated = meaningful.map((event) => ({ event, date: Date.parse(event.occurredAt) }))
@@ -25,15 +28,30 @@ export function passportStatistics(parcels: readonly ParcelWithEvents[]) {
     if (!parcel.archivedAt && stage !== 'delivered' && stage !== 'returned') activeCount += 1;
     const physical = dated.filter(({ event }) => event.stage !== 'registered');
     const first = physical[0];
+    const completion = physical.find(({ event }) => event.stage === 'delivered');
+    if (datesAreComplete && stage === 'delivered' && completion) {
+      // One completion per parcel, even when the carrier repeats its delivery scan.
+      const parts = calendar.formatToParts(completion.date);
+      const day = parts.filter(({ type }) => ['year', 'month', 'day'].includes(type)).map(({ value }) => value).join('-');
+      deliveredDays.set(day, (deliveredDays.get(day) ?? 0) + 1);
+      if (parts.some(({ type, value }) => type === 'month' && value === '12')) decemberDeliveryCount += 1;
+      if (physical.some(({ event, date }) => event.stage === 'ready_for_pickup' && date < completion.date)) pickupDeliveryCount += 1;
+      const located = physical.filter(({ date }) => date <= completion.date).map(({ event, date }) => ({ country: trackingLocationCountry(event.location), date })).filter(({ country }) => country);
+      // Different countries must be observed at different instants; tied scans do not prove travel.
+      if (located.some((scan, index) => located.slice(0, index).some((prior) => prior.date < scan.date && prior.country !== scan.country))) crossBorderCount += 1;
+    }
     if (!datesAreComplete || !first || !['accepted', 'in_transit'].includes(first.event.stage)) continue;
     const country = trackingLocationCountry(first.event.location);
     if (country) countries.set(country, (countries.get(country) ?? 0) + 1);
-    const completion = physical.find(({ event }) => event.stage === 'delivered');
     if (stage !== 'delivered' || !completion || completion.date <= first.date) continue;
+    if (country && country === trackingLocationCountry(completion.event.location)) domesticDeliveryCount += 1;
+    if (completion.date - first.date > 30 * 86400_000) longWaitDeliveryCount += 1;
     records.push({ parcelId: parcel.id, label: parcel.label, duration: completion.date - first.date, deliveredAt: completion.date });
   }
   records.sort((a, b) => a.duration - b.duration || a.parcelId.localeCompare(b.parcelId));
   return {
+    crossBorderCount, domesticDeliveryCount, longWaitDeliveryCount, pickupDeliveryCount, decemberDeliveryCount,
+    maxDeliveriesInOneDay: Math.max(0, ...deliveredDays.values()),
     deliveredCount, activeCount, carrierCount: new Set(parcels.map((parcel) => parcel.carrier)).size,
     durationSampleCount: records.length,
     averageDeliveryDuration: records.length ? records.reduce((sum, record) => sum + record.duration, 0) / records.length : null,

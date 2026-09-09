@@ -25,6 +25,12 @@ struct PassportStatistics {
     let trackedCount: Int
     let deliveredCount: Int
     let activeCount: Int
+    let crossBorderCount: Int
+    let domesticDeliveryCount: Int
+    let longWaitDeliveryCount: Int
+    let pickupDeliveryCount: Int
+    let decemberDeliveryCount: Int
+    let maxDeliveriesInOneDay: Int
     let durationSampleCount: Int
     let averageDeliveryDuration: TimeInterval?
     let fastestDelivery: DeliveryRecord?
@@ -43,11 +49,15 @@ struct PassportStatistics {
         Double(deliveredCount) / Double(nextMilestoneCount)
     }
 
-    init(parcels: [Parcel]) {
+    init(parcels: [Parcel], timeZone: TimeZone = .current) {
         var delivered = 0
         var active = 0
         var records: [DeliveryRecord] = []
         var countries: [String: Int] = [:]
+        var deliveredDays: [Date: Int] = [:]
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        var crossBorder = 0, domestic = 0, longWait = 0, pickup = 0, december = 0
 
         for parcel in parcels {
             let meaningful = parcel.trackingEvents.filter { $0.stage != .pending }
@@ -65,6 +75,20 @@ struct PassportStatistics {
             }
 
             let physical = dated.filter { $0.event.stage != .registered }
+            let completion = physical.first(where: { $0.event.stage == .delivered })
+            if datesAreComplete, currentStage == .delivered, let completion {
+                // Count each parcel once, using the device's Gregorian calendar day.
+                deliveredDays[calendar.startOfDay(for: completion.date), default: 0] += 1
+                if calendar.component(.month, from: completion.date) == 12 { december += 1 }
+                if physical.contains(where: { $0.event.stage == .readyForPickup && $0.date < completion.date }) { pickup += 1 }
+                let located = physical.filter { $0.date <= completion.date }.compactMap { scan -> (country: String, date: Date)? in
+                    guard let country = TrackingLocation.countryCode(in: scan.event.location) else { return nil }
+                    return (country, scan.date)
+                }
+                if located.enumerated().contains(where: { index, scan in
+                    located.prefix(index).contains { $0.date < scan.date && $0.country != scan.country }
+                }) { crossBorder += 1 }
+            }
             guard datesAreComplete, let first = physical.first,
                   first.event.stage == .accepted || first.event.stage == .inTransit else { continue }
 
@@ -75,15 +99,24 @@ struct PassportStatistics {
             }
 
             guard currentStage == .delivered,
-                  let completion = physical.first(where: { $0.event.stage == .delivered }) else { continue }
+                  let completion else { continue }
             let duration = completion.date.timeIntervalSince(first.date)
             guard duration.isFinite, duration > 0 else { continue }
+            if let country = TrackingLocation.countryCode(in: first.event.location),
+               country == TrackingLocation.countryCode(in: completion.event.location) { domestic += 1 }
+            if duration > 30 * 86_400 { longWait += 1 }
             records.append(DeliveryRecord(
                 parcelID: parcel.id, label: parcel.label,
                 duration: duration, deliveredAt: completion.date
             ))
         }
 
+        crossBorderCount = crossBorder
+        domesticDeliveryCount = domestic
+        longWaitDeliveryCount = longWait
+        pickupDeliveryCount = pickup
+        decemberDeliveryCount = december
+        maxDeliveriesInOneDay = deliveredDays.values.max() ?? 0
         trackedCount = parcels.count
         deliveredCount = delivered
         activeCount = active

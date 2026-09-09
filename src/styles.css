@@ -251,6 +251,7 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .stamp-card--earned { color: var(--ink); }
 .stamp-card > span:last-child { font-size: 10px; font-weight: 400; line-height: 1.4; overflow-wrap: anywhere; }
 .stamp-card:active .passport-seal { animation: seal-press .38s var(--spring); }
+.passport-collection-toggle { display: block; min-height: 44px; padding: 0; margin: 8px 0 -10px; background: transparent; color: var(--ink-soft); font-size: 12px; text-align: left; border-radius: 6px; }
 .passport-times { padding: 21px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .passport-times__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .time-card { display: flex; flex-direction: column; gap: 6px; min-height: 48px; padding: 0; background: transparent; color: var(--ink); text-align: left; border-radius: 6px; }

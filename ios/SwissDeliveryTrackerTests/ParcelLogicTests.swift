@@ -608,6 +608,71 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertNil(localizer.parcelCompletionDate(makeParcel(id: id, events: [event(id, .delivered, "invalid")]), now: now))
     }
 
+    func testPassportNewStampsUseExplicitScansAndLocalCompletionDates() throws {
+        func shipment(_ scans: [(TrackingStage, String, String?)]) -> Parcel {
+            let id = UUID()
+            return makeParcel(id: id, events: scans.map { stage, date, location in
+                var scan = event(id, stage, date)
+                scan.location = location
+                return scan
+            })
+        }
+        var international = shipment([
+            (.accepted, "2026-10-31T12:00:00Z", "Berlin, Germany"),
+            (.readyForPickup, "2026-11-30T12:00:00Z", "Zurich, Switzerland"),
+            (.delivered, "2026-12-01T08:00:00Z", "Zurich, Switzerland"),
+            (.delivered, "2026-12-01T08:10:00Z", "Zurich, Switzerland"),
+        ])
+        international.archivedAt = "2026-12-02T12:00:00Z"
+        let parcels = [international,
+            shipment([(.accepted, "2026-11-29T12:00:00Z", "CH"), (.delivered, "2026-12-01T09:00:00Z", "CH")]),
+            shipment([(.delivered, "2026-11-30T23:30:00Z", nil)]),
+        ]
+        let stats = PassportStatistics(parcels: parcels, timeZone: try XCTUnwrap(TimeZone(identifier: "Europe/Zurich")))
+        XCTAssertEqual(stats.crossBorderCount, 1)
+        XCTAssertEqual(stats.domesticDeliveryCount, 1)
+        XCTAssertEqual(stats.longWaitDeliveryCount, 1)
+        XCTAssertEqual(stats.pickupDeliveryCount, 1)
+        XCTAssertEqual(stats.decemberDeliveryCount, 3)
+        XCTAssertEqual(stats.maxDeliveriesInOneDay, 3)
+        let utc = PassportStatistics(parcels: parcels, timeZone: try XCTUnwrap(TimeZone(secondsFromGMT: 0)))
+        XCTAssertEqual(utc.decemberDeliveryCount, 2)
+        XCTAssertEqual(utc.maxDeliveriesInOneDay, 2)
+    }
+
+    func testPassportNewStampsRejectUnprovenJourneys() throws {
+        func shipment(_ scans: [(TrackingStage, String, String?)]) -> Parcel {
+            let id = UUID()
+            return makeParcel(id: id, events: scans.map { stage, date, location in
+                var scan = event(id, stage, date)
+                scan.location = location
+                return scan
+            })
+        }
+        let stats = PassportStatistics(parcels: [
+            shipment([(.registered, "2026-11-01T00:00:00Z", "DE"), (.accepted, "2026-11-02T00:00:00Z", nil), (.delivered, "2026-11-03T00:00:00Z", "CH")]),
+            shipment([(.accepted, "2026-11-01T00:00:00Z", "Wilmington, DE"), (.delivered, "2026-11-03T00:00:00Z", "Geneva, GE")]),
+            shipment([(.accepted, "2026-11-01T00:00:00Z", "DE"), (.readyForPickup, "2026-11-01T00:00:00Z", "CH"), (.delivered, "2026-11-01T00:00:00Z", "CH")]),
+            shipment([(.accepted, "2026-11-01T00:00:00Z", "DE"), (.readyForPickup, "2026-12-02T00:00:00Z", "CH")]),
+            shipment([(.accepted, "2026-11-01T00:00:00Z", "DE"), (.delivered, "2026-12-02T00:00:00Z", "CH"), (.returned, "2026-12-03T00:00:00Z", nil)]),
+            shipment([(.accepted, "invalid", "DE"), (.delivered, "2026-12-02T00:00:00Z", "CH")]),
+        ], timeZone: try XCTUnwrap(TimeZone(secondsFromGMT: 0)))
+        XCTAssertEqual(stats.crossBorderCount, 0)
+        XCTAssertEqual(stats.domesticDeliveryCount, 0)
+        XCTAssertEqual(stats.longWaitDeliveryCount, 0)
+        XCTAssertEqual(stats.pickupDeliveryCount, 0)
+        XCTAssertEqual(stats.decemberDeliveryCount, 0)
+    }
+
+    func testPassportWaitingStampRequiresMoreThanThirtyDays() {
+        let id = UUID()
+        let start = event(id, .accepted, "2026-11-01T00:00:00Z")
+        let exact = makeParcel(id: id, events: [start, event(id, .delivered, "2026-12-01T00:00:00Z")])
+        let longer = makeParcel(id: id, events: [start, event(id, .delivered, "2026-12-01T00:00:00.001Z")])
+        XCTAssertEqual(PassportStatistics(parcels: [exact]).longWaitDeliveryCount, 0)
+        XCTAssertEqual(PassportStatistics(parcels: [longer]).longWaitDeliveryCount, 1)
+    }
+
     func testEmptyPassportHasNoInventedRecordsOrCountries() {
         let statistics = PassportStatistics(parcels: [])
         XCTAssertEqual(statistics.trackedCount, 0)

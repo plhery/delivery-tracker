@@ -9,6 +9,7 @@ struct PassportView: View {
     @State private var showingAccount = false
     @State private var expandedCard: PassportSelection?
     @State private var touchCount = 0
+    @State private var showAllStamps = false
 
     private var copy: PassportCopy { PassportCopy(localizer: localizer) }
     private var statistics: PassportStatistics { PassportStatistics(parcels: store.parcels) }
@@ -85,10 +86,13 @@ struct PassportView: View {
 
     private func stamps(_ stats: PassportStatistics) -> some View {
         let collection = milestones(stats)
+        let upcoming = Set(collection.filter { !$0.earned }.prefix(3).map(\.id))
+        let visible = showAllStamps ? collection : collection.filter { $0.earned || upcoming.contains($0.id) }
+        let hasMore = collection.contains { !$0.earned && !upcoming.contains($0.id) }
         return VStack(alignment: .leading, spacing: 16) {
             Text(copy.stamps).font(.subheadline.weight(.semibold))
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8, alignment: .top), count: dynamicTypeSize.isAccessibilitySize ? 2 : 4), alignment: .leading, spacing: 16) {
-                ForEach(collection) { milestone in
+                ForEach(visible) { milestone in
                     let id = PassportSelection.milestone(milestone.id)
                     Button { toggle(id) } label: {
                         VStack(spacing: 10) {
@@ -112,6 +116,17 @@ struct PassportView: View {
                         explanationBubble(title: milestone.title, explanation: milestone.explanation + (milestone.earned ? "" : "\n\(milestone.progressLabel)"))
                     }
                 }
+            }
+            if hasMore {
+                Button { showAllStamps.toggle() } label: {
+                    Text(localizer.text(showAllStamps ? "passport.showLess" : "passport.showAll"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(minHeight: 44, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PassportPressStyle())
+                .padding(.vertical, -8)
             }
         }
     }
@@ -211,6 +226,22 @@ struct PassportView: View {
             PassportMilestone(id: "speed", title: copy.expressArrival, symbol: "bolt", tint: ExperimentalPalette.pickup, surface: ExperimentalPalette.pickupSurface,
                               current: stats.fastestDelivery.map { $0.duration <= 48 * 60 * 60 ? 1 : 0 } ?? 0,
                               target: 1, explanation: copy.expressExplanation, pendingLabel: copy.underTwoDays),
+            PassportMilestone(id: "acrossBorders", title: localizer.text("passport.acrossBorders"), symbol: "globe.europe.africa", tint: ExperimentalPalette.transit, surface: ExperimentalPalette.transitSurface,
+                              current: stats.crossBorderCount, target: 1, explanation: localizer.text("passport.acrossExplanation")),
+            PassportMilestone(id: "aroundWorld", title: localizer.text("passport.aroundWorld"), symbol: "map", tint: ExperimentalPalette.delivered, surface: ExperimentalPalette.deliveredSurface,
+                              current: stats.originCountries.count, target: 5, explanation: localizer.text("passport.aroundExplanation")),
+            PassportMilestone(id: "theRegular", title: localizer.text("passport.theRegular"), symbol: "25", tint: ExperimentalPalette.lilac, surface: ExperimentalPalette.lilacSurface,
+                              current: stats.deliveredCount, target: 25, explanation: localizer.text("passport.regularExplanation")),
+            PassportMilestone(id: "rightNextDoor", title: localizer.text("passport.rightNextDoor"), symbol: "house", tint: ExperimentalPalette.delivered, surface: ExperimentalPalette.deliveredSurface,
+                              current: stats.domesticDeliveryCount, target: 1, explanation: localizer.text("passport.domesticExplanation")),
+            PassportMilestone(id: "worthTheWait", title: localizer.text("passport.worthTheWait"), symbol: "hourglass", tint: ExperimentalPalette.ochre, surface: ExperimentalPalette.ochreSurface,
+                              current: stats.longWaitDeliveryCount, target: 1, explanation: localizer.text("passport.waitExplanation")),
+            PassportMilestone(id: "busyDoorstep", title: localizer.text("passport.busyDoorstep"), symbol: "parcels", tint: ExperimentalPalette.pickup, surface: ExperimentalPalette.pickupSurface,
+                              current: stats.maxDeliveriesInOneDay, target: 3, explanation: localizer.text("passport.busyExplanation")),
+            PassportMilestone(id: "pickedUp", title: localizer.text("passport.pickedUp"), symbol: "storefront", tint: ExperimentalPalette.transit, surface: ExperimentalPalette.transitSurface,
+                              current: stats.pickupDeliveryCount, target: 1, explanation: localizer.text("passport.pickupExplanation")),
+            PassportMilestone(id: "homeForHolidays", title: localizer.text("passport.homeForHolidays"), symbol: "gift", tint: ExperimentalPalette.delivered, surface: ExperimentalPalette.deliveredSurface,
+                              current: stats.decemberDeliveryCount, target: 1, explanation: localizer.text("passport.holidayExplanation")),
         ]
     }
 
@@ -302,8 +333,16 @@ private struct PassportSeal: View {
         ZStack {
             PostageStampShape().fill(surface)
             Rectangle().strokeBorder(tint.opacity(0.4), lineWidth: 0.7).padding(6)
-            if symbol == "10" {
-                Text("10").font(.system(size: 20, weight: .light)).foregroundStyle(tint)
+            if symbol == "10" || symbol == "25" {
+                Text(symbol).font(.system(size: 20, weight: .light)).foregroundStyle(tint)
+            } else if symbol == "parcels" {
+                ZStack {
+                    Image(systemName: "shippingbox").offset(y: -7)
+                    Image(systemName: "shippingbox").offset(x: -7, y: 6)
+                    Image(systemName: "shippingbox").offset(x: 7, y: 6)
+                }
+                .font(.system(size: 13, weight: .ultraLight))
+                .foregroundStyle(tint)
             } else {
                 Image(systemName: symbol)
                     .font(.system(size: 22, weight: .ultraLight))

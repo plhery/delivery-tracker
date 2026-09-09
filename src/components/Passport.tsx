@@ -6,14 +6,15 @@ import { formatJourneyDuration, passportStatistics } from '../lib/passport';
 import type { ParcelWithEvents } from '../types';
 import { Icon, type IconName } from './Icon';
 
-function Seal({ icon, earned = true }: { icon: IconName; earned?: boolean }) {
-  return <span className={`passport-seal${earned ? '' : ' passport-seal--locked'}`} aria-hidden="true"><span className="passport-seal__frame">{icon === 'stamp' ? <span className="passport-seal__ten">10</span> : <Icon name={icon} />}</span></span>;
+function Seal({ icon, earned = true, numeral = '10' }: { icon: IconName; earned?: boolean; numeral?: string }) {
+  return <span className={`passport-seal${earned ? '' : ' passport-seal--locked'}`} aria-hidden="true"><span className="passport-seal__frame">{icon === 'stamp' ? <span className="passport-seal__ten">{numeral}</span> : <Icon name={icon} />}</span></span>;
 }
 
 export function Passport({ parcels, loading }: { parcels: ParcelWithEvents[]; loading: boolean }) {
   const { t, locale, languageTag } = useI18n();
   const stats = useMemo(() => passportStatistics(parcels), [parcels]);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [showAllStamps, setShowAllStamps] = useState(false);
   const idPrefix = useId();
   const detailId = (id: string) => `${idPrefix}-${id}`;
   const anchors = useRef(new Map<string, HTMLButtonElement>());
@@ -53,12 +54,23 @@ export function Passport({ parcels, loading }: { parcels: ParcelWithEvents[]; lo
       bubble.focus({ preventScroll: true });
     }}><h3 id={`${detailId(id)}-title`}>{title}</h3><p>{explanation}</p></div>;
   const format = (duration: number) => duration < 60_000 ? t('passport.underOneMinute') : formatJourneyDuration(duration, languageTag);
-  const stamps: { title: MessageKey; explanation: MessageKey; icon: IconName; tone: string; count: number; total: number }[] = [
+  const stamps: { title: MessageKey; explanation: MessageKey; icon: IconName; tone: string; count: number; total: number; numeral?: string }[] = [
     { title: 'passport.firstArrival', explanation: 'passport.firstExplanation', icon: 'parcel', tone: 'green', count: stats.deliveredCount, total: 1 },
     { title: 'passport.doubleDigits', explanation: 'passport.tenExplanation', icon: 'stamp', tone: 'lilac', count: stats.deliveredCount, total: 10 },
     { title: 'passport.wellConnected', explanation: 'passport.carrierExplanation', icon: 'globe', tone: 'blue', count: stats.carrierCount, total: 3 },
     { title: 'passport.expressArrival', explanation: 'passport.expressExplanation', icon: 'express', tone: 'peach', count: stats.fastestDelivery && stats.fastestDelivery.duration <= 48 * 3600_000 ? 1 : 0, total: 1 },
+    { title: 'passport.acrossBorders', explanation: 'passport.acrossExplanation', icon: 'border', tone: 'blue', count: stats.crossBorderCount, total: 1 },
+    { title: 'passport.aroundWorld', explanation: 'passport.aroundExplanation', icon: 'worldMap', tone: 'green', count: stats.originCountries.length, total: 5 },
+    { title: 'passport.theRegular', explanation: 'passport.regularExplanation', icon: 'stamp', tone: 'lilac', count: stats.deliveredCount, total: 25, numeral: '25' },
+    { title: 'passport.rightNextDoor', explanation: 'passport.domesticExplanation', icon: 'houses', tone: 'green', count: stats.domesticDeliveryCount, total: 1 },
+    { title: 'passport.worthTheWait', explanation: 'passport.waitExplanation', icon: 'hourglass', tone: 'ochre', count: stats.longWaitDeliveryCount, total: 1 },
+    { title: 'passport.busyDoorstep', explanation: 'passport.busyExplanation', icon: 'parcels', tone: 'peach', count: stats.maxDeliveriesInOneDay, total: 3 },
+    { title: 'passport.pickedUp', explanation: 'passport.pickupExplanation', icon: 'storefront', tone: 'blue', count: stats.pickupDeliveryCount, total: 1 },
+    { title: 'passport.homeForHolidays', explanation: 'passport.holidayExplanation', icon: 'gift', tone: 'green', count: stats.decemberDeliveryCount, total: 1 },
   ];
+  const upcoming = new Set(stamps.filter((stamp) => stamp.count < stamp.total).slice(0, 3).map((stamp) => stamp.title));
+  const visibleStamps = showAllStamps ? stamps : stamps.filter((stamp) => stamp.count >= stamp.total || upcoming.has(stamp.title));
+  const hasMoreStamps = stamps.some((stamp) => stamp.count < stamp.total && !upcoming.has(stamp.title));
   const progress = (stamp: typeof stamps[number]) => stamp.icon === 'express' ? t('passport.underTwoDays') : `${Math.min(stamp.count, stamp.total)} / ${stamp.total}`;
   const timingExplanation = `${t(stats.durationSampleCount === 1 ? 'passport.timedJourneys.one' : 'passport.timedJourneys.many', { count: stats.durationSampleCount })}. ${t('passport.timingExplanation')}`;
   if (loading) return <div className="passport-loading" role="status" aria-label={t('app.loadingParcels')}><div className="skeleton" /><div className="skeleton" /></div>;
@@ -72,13 +84,14 @@ export function Passport({ parcels, loading }: { parcels: ParcelWithEvents[]; lo
     </div>
     <section className="passport-stamps" aria-labelledby="passport-stamps-title">
       <h2 id="passport-stamps-title">{t('passport.stamps')}</h2>
-      <div className="passport-stamps__grid">{stamps.map((stamp) => {
+      <div className="passport-stamps__grid" id={`${idPrefix}-stamps`}>{visibleStamps.map((stamp) => {
         const earned = stamp.count >= stamp.total;
         return <div key={stamp.title}>{button(stamp.title, `stamp-card tone-${stamp.tone}${earned ? ' stamp-card--earned' : ''}`,
           [t(stamp.title), earned ? '' : progress(stamp)].filter(Boolean).join(', '),
-          <><Seal icon={stamp.icon} earned={earned} /><span>{t(stamp.title)}</span></>)}</div>;
+          <><Seal icon={stamp.icon} earned={earned} numeral={stamp.numeral} /><span>{t(stamp.title)}</span></>)}</div>;
       })}</div>
-      {stamps.map((stamp) => <div key={stamp.title}>{detail(stamp.title, t(stamp.title), `${t(stamp.explanation)}${stamp.count >= stamp.total ? '' : `\n${progress(stamp)}`}`)}</div>)}
+      {hasMoreStamps && <button type="button" className="passport-collection-toggle" aria-expanded={showAllStamps} aria-controls={`${idPrefix}-stamps`} onClick={() => setShowAllStamps((value) => !value)}>{t(showAllStamps ? 'passport.showLess' : 'passport.showAll')}</button>}
+      {visibleStamps.map((stamp) => <div key={stamp.title}>{detail(stamp.title, t(stamp.title), `${t(stamp.explanation)}${stamp.count >= stamp.total ? '' : `\n${progress(stamp)}`}`)}</div>)}
     </section>
     <section className="passport-times" aria-label={t('passport.deliveryTimes')}>
       {stats.averageDeliveryDuration != null && stats.fastestDelivery ? <>

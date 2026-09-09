@@ -69,3 +69,42 @@ describe('explicit origin countries', () => {
     expect(formatJourneyDuration(90 * 60_000, 'fr-CH')).toBe('1h 30min');
   });
 });
+
+describe('new passport stamps', () => {
+  it('uses observed routes and local completion dates, including archived and partial histories', () => {
+    const parcels = [
+      parcel('international', [
+        ['accepted', '2026-10-31T12:00:00Z', 'Berlin, Germany'],
+        ['ready_for_pickup', '2026-11-30T12:00:00Z', 'Zurich, Switzerland'],
+        ['delivered', '2026-12-01T08:00:00Z', 'Zurich, Switzerland'],
+        ['delivered', '2026-12-01T08:10:00Z', 'Zurich, Switzerland'],
+      ], { archivedAt: '2026-12-02T12:00:00Z' }),
+      parcel('domestic', [['accepted', '2026-11-29T12:00:00Z', 'CH'], ['delivered', '2026-12-01T09:00:00Z', 'CH']]),
+      parcel('partial', [['delivered', '2026-11-30T23:30:00Z']]),
+    ];
+    expect(passportStatistics(parcels, 'Europe/Zurich')).toMatchObject({ crossBorderCount: 1, domesticDeliveryCount: 1,
+      longWaitDeliveryCount: 1, pickupDeliveryCount: 1, decemberDeliveryCount: 3, maxDeliveriesInOneDay: 3 });
+    expect(passportStatistics(parcels, 'UTC')).toMatchObject({ decemberDeliveryCount: 2, maxDeliveriesInOneDay: 2 });
+  });
+
+  it('does not award route or pickup stamps from labels, ambiguous locations, tied scans, or unfinished journeys', () => {
+    const stats = passportStatistics([
+      parcel('label', [['registered', '2026-11-01T00:00:00Z', 'DE'], ['accepted', '2026-11-02T00:00:00Z'], ['delivered', '2026-11-03T00:00:00Z', 'CH']]),
+      parcel('ambiguous', [['accepted', '2026-11-01T00:00:00Z', 'Wilmington, DE'], ['delivered', '2026-11-03T00:00:00Z', 'Geneva, GE']]),
+      parcel('tied', [['accepted', '2026-11-01T00:00:00Z', 'DE'], ['ready_for_pickup', '2026-11-01T00:00:00Z', 'CH'], ['delivered', '2026-11-01T00:00:00Z', 'CH']]),
+      parcel('waiting', [['accepted', '2026-11-01T00:00:00Z', 'DE'], ['ready_for_pickup', '2026-12-02T00:00:00Z', 'CH']]),
+      parcel('returned', [['accepted', '2026-11-01T00:00:00Z', 'DE'], ['delivered', '2026-12-02T00:00:00Z', 'CH'], ['returned', '2026-12-03T00:00:00Z']]),
+      parcel('invalid', [['accepted', 'invalid', 'DE'], ['delivered', '2026-12-02T00:00:00Z', 'CH']]),
+    ], 'UTC');
+    expect(stats).toMatchObject({ crossBorderCount: 0, domesticDeliveryCount: 0, longWaitDeliveryCount: 0, pickupDeliveryCount: 0, decemberDeliveryCount: 0 });
+  });
+
+  it('requires more than 30 elapsed days and counts five distinct first-scan countries', () => {
+    const countries = ['CH', 'DE', 'FR', 'IT', 'GB'];
+    const parcels = countries.map((country, i) => parcel(String(i), [['accepted', '2026-11-01T00:00:00Z', country], ['delivered', '2026-12-01T00:00:00Z']]));
+    expect(passportStatistics(parcels, 'UTC')).toMatchObject({ longWaitDeliveryCount: 0 });
+    expect(passportStatistics(parcels, 'UTC').originCountries).toHaveLength(5);
+    parcels[0].events[1].occurredAt = '2026-12-01T00:00:00.001Z';
+    expect(passportStatistics(parcels, 'UTC').longWaitDeliveryCount).toBe(1);
+  });
+});
