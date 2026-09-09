@@ -12,7 +12,7 @@ test('The compact circle opens Passport stamps and keeps bubble dismissal inside
   page.on('pageerror', (error) => errors.push(error.message));
   const mila = page.getByRole('button', { name: /^Mila/ });
   await expect(mila).toBeVisible();
-  await expect(page.locator('.friends-own-row')).toContainText('Your sharing');
+  await expect(page.locator('.friends-own-row')).toContainText('What you share');
   await expect(page.locator('.friends-cover')).toHaveCount(0);
   await page.screenshot({ path: `/tmp/friends-circle-${test.info().project.name}.png` });
   await mila.click();
@@ -52,9 +52,10 @@ test('Sharing controls stay in place and preserve saved privacy preferences', as
 test('Circle and sharing fit narrow screens in all languages', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 });
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
-  for (const language of ['fr', 'de', 'it', 'en']) {
+  for (const language of ['fr', 'de', 'it', 'es', 'pt', 'pl', 'en']) {
     await page.locator('.account-trigger').click();
     await page.getByRole('dialog').getByRole('combobox').selectOption(language);
+    await expect(page.locator('html')).toHaveAttribute('lang', language);
     await page.keyboard.press('Escape');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.locator('.friends-own-row').click();
