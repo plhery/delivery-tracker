@@ -56,7 +56,7 @@ export function formatDateTime(iso: string): string {
   return `${formatDate(iso)}, ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-/** Friendly expected-delivery date: "today", "tomorrow", or 24.12.2025. */
+/** Friendly expected-delivery date: "yesterday", "today", "tomorrow", or 24.12.2025. */
 export function formatExpectedDelivery(
   value: string,
   now: number = Date.now(),
@@ -77,6 +77,9 @@ export function formatExpectedDelivery(
 
   const today = new Date(now);
   if (isSameCalendarDay(expected, today)) return 'today';
+
+  const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+  if (isSameCalendarDay(expected, yesterday)) return 'yesterday';
 
   const tomorrow = new Date(
     today.getFullYear(),

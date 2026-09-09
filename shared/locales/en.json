@@ -439,6 +439,7 @@
   "time.hoursAgo": "{{count}} h ago",
   "time.justNow": "just now",
   "time.minutesAgo": "{{count}} min ago",
+  "time.yesterday": "yesterday",
   "time.today": "today",
   "time.tomorrow": "tomorrow",
   "timeline.empty": "No tracking updates yet.",

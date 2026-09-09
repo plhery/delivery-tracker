@@ -151,6 +151,22 @@ export function localizedRelativeTime(
   return localizedCalendarDate(new Date(iso), languageTag);
 }
 
+/** Relative labels for nearby local calendar days, otherwise a compact date. */
+export function localizedDeliveryDate(
+  date: Date,
+  t: Translate,
+  languageTag: string,
+  now: number = Date.now(),
+): string {
+  const today = new Date(now);
+  for (const [offset, key] of [[-1, 'time.yesterday'], [0, 'time.today'], [1, 'time.tomorrow']] as const) {
+    const day = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset);
+    if (date.getFullYear() === day.getFullYear() &&
+        date.getMonth() === day.getMonth() && date.getDate() === day.getDate()) return t(key);
+  }
+  return localizedCalendarDate(date, languageTag);
+}
+
 export function localizedExpectedDelivery(
   value: string,
   t: Translate,
@@ -166,12 +182,7 @@ export function localizedExpectedDelivery(
     ? new Date(`${value}T00:00:00`)
     : new Date(value);
   if (Number.isNaN(expected.getTime())) return value;
-  const today = new Date(now);
-  const dayKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-  const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-  const day = dayKey(expected) === dayKey(today) ? t('time.today')
-    : dayKey(expected) === dayKey(tomorrow) ? t('time.tomorrow')
-      : localizedCalendarDate(expected, languageTag);
+  const day = localizedDeliveryDate(expected, t, languageTag, now);
   if (/T\d{2}:\d{2}/.test(value)) {
     const time = new Intl.DateTimeFormat(languageTag, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(expected);
     return `${day}, ${time}`;

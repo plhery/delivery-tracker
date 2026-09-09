@@ -237,8 +237,16 @@ final class Localizer: ObservableObject {
             dayFormatter.dateFormat = "yyyy-MM-dd"
             return "\(expectedDelivery(dayFormatter.string(from: timestamp), now: now)), \(formatter.string(from: timestamp))"
         }
+        return deliveryDate(date, now: now)
+    }
+
+    func deliveryDate(_ date: Date, now: Date = Date()) -> String {
         let calendar = Calendar.current
         if calendar.isDate(date, inSameDayAs: now) { return text("time.today") }
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
+           calendar.isDate(date, inSameDayAs: yesterday) {
+            return text("time.yesterday")
+        }
         if let tomorrow = calendar.date(byAdding: .day, value: 1, to: now),
            calendar.isDate(date, inSameDayAs: tomorrow) {
             return text("time.tomorrow")
@@ -284,11 +292,11 @@ final class Localizer: ObservableObject {
         return expectedDelivery(value, now: now)
     }
 
-    func parcelCompletionDate(_ parcel: Parcel) -> String? {
+    func parcelCompletionDate(_ parcel: Parcel, now: Date = Date()) -> String? {
         if let event = parcel.currentEvent,
            event.stage.isFinal,
            let date = DateParser.date(event.occurredAt) {
-            return shortDate(date)
+            return deliveryDate(date, now: now)
         }
         return nil
     }

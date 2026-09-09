@@ -1,3 +1,4 @@
+import en from '../../shared/locales/en.json';
 import { describe, expect, it } from 'vitest';
 import type { ParcelWithEvents, SyncStatus } from '../types';
 import { parcelDeliveryEstimate, localizedParcelCompletionDate, parcelDisplayStatus, parcelDisplayStatusKey } from './parcelStatus';
@@ -78,7 +79,7 @@ describe('parcelDisplayStatus', () => {
     const delivered = parcel('ok', 'in_transit');
     delivered.events[0].stage = 'delivered';
     delivered.events[0].occurredAt = '2026-07-16T10:00:00Z';
-    expect(localizedParcelCompletionDate(delivered, 'de-CH')).toBe('Do 16 juli');
+    expect(localizedParcelCompletionDate(delivered, 'de-CH', (key) => en[key], new Date(2026, 8, 9).getTime())).toBe('Do 16 juli');
   });
 });
 
@@ -104,5 +105,23 @@ describe('useful delivery estimates', () => {
       saved.expectedDelivery = value;
       expect(parcelDeliveryEstimate(saved, now)).toBeNull();
     }
+  });
+});
+
+describe('relative completion dates', () => {
+  it.each(['delivered', 'returned'] as const)('uses nearby day labels for %s without a time', (stage) => {
+    const saved = parcel('ok');
+    saved.events[0].stage = stage;
+    const now = new Date(2026, 8, 9, 12).getTime();
+    for (const [day, expected] of [[8, 'yesterday'], [9, 'today'], [10, 'tomorrow'], [12, 'Sat 12 sep']] as const) {
+      saved.events[0].occurredAt = new Date(2026, 8, day, 23, 55).toISOString();
+      expect(localizedParcelCompletionDate(saved, 'en-CH', (key) => en[key], now)).toBe(expected);
+    }
+    saved.events[0].occurredAt = 'invalid';
+    expect(localizedParcelCompletionDate(saved, 'en-CH', (key) => en[key], now)).toBeNull();
+  });
+
+  it('does not show completion dates for active parcels', () => {
+    expect(localizedParcelCompletionDate(parcel('ok', 'in_transit'), 'en-CH', (key) => en[key])).toBeNull();
   });
 });

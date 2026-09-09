@@ -439,6 +439,7 @@
   "time.hoursAgo": "vor {{count}} Std.",
   "time.justNow": "gerade eben",
   "time.minutesAgo": "vor {{count}} Min.",
+  "time.yesterday": "gestern",
   "time.today": "heute",
   "time.tomorrow": "morgen",
   "timeline.empty": "Noch keine Sendungsmeldungen.",

@@ -439,6 +439,7 @@
   "time.hoursAgo": "{{count}} h fa",
   "time.justNow": "proprio ora",
   "time.minutesAgo": "{{count}} min fa",
+  "time.yesterday": "ieri",
   "time.today": "oggi",
   "time.tomorrow": "domani",
   "timeline.empty": "Ancora nessun aggiornamento sul pacco.",

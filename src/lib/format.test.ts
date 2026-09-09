@@ -48,7 +48,8 @@ describe('formatDate / formatDateTime', () => {
 describe('formatExpectedDelivery', () => {
   const today = new Date(2026, 6, 15, 12).getTime();
 
-  it('uses friendly labels for today and tomorrow', () => {
+  it('uses friendly labels for yesterday, today and tomorrow', () => {
+    expect(formatExpectedDelivery('2026-07-14', today)).toBe('yesterday');
     expect(formatExpectedDelivery('2026-07-15', today)).toBe('today');
     expect(formatExpectedDelivery('2026-07-16', today)).toBe('tomorrow');
   });

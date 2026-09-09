@@ -590,6 +590,24 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertNil(localizer.parcelDeliveryEstimate(parcel, now: now))
     }
 
+    @MainActor
+    func testCompletionDatesUseRelativeLabelsForFinalEvents() throws {
+        let localizer = Localizer()
+        localizer.language = .en
+        let now = try XCTUnwrap(DateParser.deliveryDate("2026-09-09"))
+        let id = UUID()
+        for stage in [TrackingStage.delivered, .returned] {
+            for (value, expected) in [("2026-09-08", "yesterday"), ("2026-09-09", "today"), ("2026-09-10", "tomorrow"), ("2026-09-12", "Sat 12 sep")] {
+                let day = try XCTUnwrap(DateParser.deliveryDate(value))
+                let late = try XCTUnwrap(Calendar.current.date(bySettingHour: 23, minute: 55, second: 0, of: day))
+                let parcel = makeParcel(id: id, events: [event(id, stage, DateParser.isoString(late))])
+                XCTAssertEqual(localizer.parcelCompletionDate(parcel, now: now), expected)
+            }
+        }
+        XCTAssertNil(localizer.parcelCompletionDate(makeParcel(id: id, events: [event(id, .inTransit, DateParser.isoString(now))]), now: now))
+        XCTAssertNil(localizer.parcelCompletionDate(makeParcel(id: id, events: [event(id, .delivered, "invalid")]), now: now))
+    }
+
     func testEmptyPassportHasNoInventedRecordsOrCountries() {
         let statistics = PassportStatistics(parcels: [])
         XCTAssertEqual(statistics.trackedCount, 0)

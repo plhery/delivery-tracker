@@ -70,7 +70,7 @@ export function ParcelDetail({
   const current = currentEvent(parcel.events);
   const status = parcelDisplayStatus(parcel);
   const statusLabel = t(parcelDisplayStatusKey(parcel));
-  const completionDate = localizedParcelCompletionDate(parcel, languageTag);
+  const completionDate = localizedParcelCompletionDate(parcel, languageTag, t);
   const estimate = parcelDeliveryEstimate(parcel);
   const trackingLinks = parcelTrackingLinks(parcel, locale);
   const lastChecked = parcel.lastSyncedAt

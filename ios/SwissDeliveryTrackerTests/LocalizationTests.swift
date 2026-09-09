@@ -127,6 +127,47 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    func testRelativeDeliveryDatesInEveryLanguage() throws {
+        let localizer = Localizer()
+        let now = try XCTUnwrap(DateParser.deliveryDate("2026-09-09"))
+        let cases: [(AppLanguage, [String])] = [
+            (.en, ["yesterday", "today", "tomorrow"]),
+            (.de, ["gestern", "heute", "morgen"]),
+            (.fr, ["hier", "aujourd’hui", "demain"]),
+            (.it, ["ieri", "oggi", "domani"]),
+        ]
+        for (language, labels) in cases {
+            localizer.language = language
+            for (index, value) in ["2026-09-08", "2026-09-09", "2026-09-10"].enumerated() {
+                let day = try XCTUnwrap(DateParser.deliveryDate(value))
+                let timestamp = try XCTUnwrap(Calendar.current.date(bySettingHour: 14, minute: 5, second: 0, of: day))
+                XCTAssertEqual(localizer.expectedDelivery(value, now: now), labels[index])
+                XCTAssertEqual(localizer.expectedDelivery("\(value) 14:00-16:00", now: now), "\(labels[index]), 14:00–16:00")
+                XCTAssertEqual(localizer.expectedDelivery(DateParser.isoString(timestamp), now: now), "\(labels[index]), 14:05")
+            }
+            XCTAssertEqual(localizer.expectedDelivery("Awaiting estimate", now: now), "Awaiting estimate")
+        }
+    }
+
+    func testRelativeDeliveryDatesUseCalendarDaysAtBoundaries() throws {
+        let localizer = Localizer()
+        localizer.language = .en
+        let cases = [
+            ("2026-01-01", "2025-12-31", "yesterday"),
+            ("2026-12-31", "2027-01-01", "tomorrow"),
+            ("2026-03-30", "2026-03-29", "yesterday"),
+            ("2026-10-25", "2026-10-26", "tomorrow"),
+        ]
+        for (today, value, expected) in cases {
+            let now = try XCTUnwrap(DateParser.deliveryDate(today))
+            XCTAssertEqual(localizer.expectedDelivery(value, now: now), expected)
+        }
+        let day = try XCTUnwrap(DateParser.deliveryDate("2026-09-09"))
+        let late = try XCTUnwrap(Calendar.current.date(bySettingHour: 23, minute: 55, second: 0, of: day))
+        XCTAssertEqual(localizer.deliveryDate(day, now: late), "today")
+        XCTAssertEqual(localizer.expectedDelivery("2026-09-11", now: late), "Fri 11 sep")
+    }
+
     func testTrackingLocationFlagsPreserveCitiesAndAmbiguousAddresses() {
         let cases = [
             "France": "🇫🇷", "Germany": "🇩🇪", "Switzerland": "🇨🇭",

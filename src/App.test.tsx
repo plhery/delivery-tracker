@@ -346,11 +346,13 @@ describe('App', () => {
   });
 
   it('shows one concise status line on each card', async () => {
+    using clock = vi.spyOn(Date, 'now');
+    clock.mockReturnValue(new Date(2026, 8, 9, 12).getTime());
     renderApp();
     expect(await screen.findByText('Delivered', { selector: '.parcel-card__state' }))
       .toBeInTheDocument();
     const deliveredDate = document.querySelector('.parcel-card__completion');
-    expect(deliveredDate).toHaveTextContent(/\d/);
+    expect(deliveredDate).toHaveTextContent(/^yesterday$/);
     expect(deliveredDate).not.toHaveTextContent(/^on /);
     expect(screen.getByText('Out for delivery')).toBeInTheDocument();
     expect(screen.getByText('At customs', { selector: '.parcel-card__state' })).toBeInTheDocument();

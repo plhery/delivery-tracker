@@ -1,4 +1,4 @@
-import { localizedCalendarDate } from './format';
+import { localizedDeliveryDate, type Translate } from '../i18n';
 import type { ParcelWithEvents } from '../types';
 import type { MessageKey } from '../i18n';
 import { currentEvent, stageMeta } from './stages';
@@ -89,12 +89,14 @@ export function parcelDisplayStatusKey(parcel: ParcelWithEvents): MessageKey {
 export function localizedParcelCompletionDate(
   parcel: ParcelWithEvents,
   languageTag: string,
+  t: Translate,
+  now: number = Date.now(),
 ): string | null {
   const current = currentEvent(parcel.events);
   if (current?.stage === 'delivered' || current?.stage === 'returned') {
     const occurredAt = new Date(current.occurredAt);
     if (!Number.isNaN(occurredAt.getTime())) {
-      return localizedCalendarDate(occurredAt, languageTag);
+      return localizedDeliveryDate(occurredAt, t, languageTag, now);
     }
   }
   return null;

@@ -439,6 +439,7 @@
   "time.hoursAgo": "il y a {{count}} h",
   "time.justNow": "à l’instant",
   "time.minutesAgo": "il y a {{count}} min",
+  "time.yesterday": "hier",
   "time.today": "aujourd’hui",
   "time.tomorrow": "demain",
   "timeline.empty": "Aucune mise à jour du suivi pour le moment.",
