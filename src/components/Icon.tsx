@@ -104,7 +104,7 @@ export function ParcelIllustration({ className = '' }: { className?: string }) {
       <path className="parcel-illustration__face-light" d="m55 142 95 48v87l-95-48v-87Z" fill="#FFF4D6" />
       <path d="M56 144v84l93 47m2 0 92-46v-84" stroke="#987450" strokeOpacity=".25" strokeWidth=".8" />
       <path className="parcel-illustration__edge" d="m55 142 95 48 95-48m-95 48v87" stroke="#FFF2CF" strokeWidth="1" />
-      <g transform="translate(77 193) rotate(27)">
+      <g transform="matrix(1 0.505263 0 1 77 193)">
         <rect width="51" height="32" rx="3" fill="#D8E5EA" />
         <path d="M8 8v17m4-17v17m3-17v17m5-17v17m3-17v17m5-17v17m4-17v17m3-17v17m5-17v17" stroke="#4E677A" strokeWidth="1.5" />
         <path d="M3 5V3h45" stroke="white" strokeOpacity=".5" />
