@@ -105,7 +105,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /Postal shipment — Checking for updates/ }));
     const detail = screen.getByRole('dialog', { name: 'Postal shipment' });
     expect(within(detail).getByText('Unknown postal carrier', { exact: true })).toBeInTheDocument();
-    expect(within(detail).getByRole('link', { name: 'Open on 17TRACK ↗' }))
+    expect(within(detail).getByRole('link', { name: 'Open 17TRACK website' }))
       .toHaveAttribute('href', 'https://t.17track.net/en#nums=RA123456785DE');
     expect(within(detail).queryByRole('link', { name: /Swiss Post|International Post/ })).not.toBeInTheDocument();
     expect(within(detail).queryByText(/automatic adapter/)).not.toBeInTheDocument();
@@ -908,16 +908,15 @@ describe('App', () => {
     const timeline = within(detail).getByRole('list', {
       name: /tracking history/i,
     });
-    expect(within(timeline).getAllByRole('listitem')).toHaveLength(3);
-    await user.click(within(detail).getByRole('button', { name: 'Show full journey' }));
-    const items = within(timeline).getAllByRole('listitem');
+    expect(timeline.closest('details')).toHaveAttribute('open');
+    const items = timeline.querySelectorAll('.tracking-journal__events > li');
     expect(items).toHaveLength(5);
 
-    // Newest first: delivered on top, announcement at the bottom.
-    expect(within(items[0]).getByText('Delivered')).toBeInTheDocument();
-    expect(within(items[4]).getByText('Announced')).toBeInTheDocument();
+    // The full history starts open, newest first, without a second preview toggle.
+    expect(items[0]).toHaveTextContent('Delivered');
+    expect(items[4]).toHaveTextContent('sender');
     expect(
-      within(detail).getByRole('link', { name: /open on swiss post/i }),
+      within(detail).getByRole('link', { name: /open swiss post website/i }),
     ).toBeInTheDocument();
 
     fireEvent(
@@ -975,10 +974,10 @@ describe('App', () => {
 
     const detail = screen.getByRole('dialog', { name: 'AliExpress parcel' });
     const sources = within(detail).getByLabelText('Tracking sources');
-    expect(within(sources).getByRole('link', { name: /open on aliexpress/i }))
+    expect(within(sources).getByRole('link', { name: /open aliexpress.*website/i }))
       .toHaveAttribute('href', expect.stringContaining('global.cainiao.com'));
     expect(within(sources).queryByText('Active source')).not.toBeInTheDocument();
-    expect(within(sources).getByRole('link', { name: /open on swiss post.*not ready yet/i }))
+    expect(within(sources).getByRole('link', { name: /open swiss post website.*not ready yet/i }))
       .toHaveAttribute('href', expect.stringContaining('service.post.ch'));
   });
 
@@ -1015,17 +1014,16 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /copy tracking number/i })).toHaveTextContent('Copied');
   });
 
-  it('mutes one parcel from the discreet parcel actions menu', async () => {
+  it('mutes one parcel directly from its postcard header', async () => {
     const user = userEvent.setup();
     renderApp();
     await user.click(await screen.findByText('New sneakers 👟'));
 
-    await user.click(screen.getByLabelText('Parcel actions'));
     await user.click(screen.getByRole('button', { name: 'Mute this parcel' }));
-    await user.click(screen.getByLabelText('Parcel actions'));
-
-    expect(screen.getByRole('button', { name: 'Turn parcel alerts on' }))
-      .toBeInTheDocument();
+    const unmute = screen.getByRole('button', { name: 'Turn parcel alerts on' });
+    expect(unmute).toHaveAttribute('aria-pressed', 'true');
+    await user.click(unmute);
+    expect(screen.getByRole('button', { name: 'Mute this parcel' })).toHaveAttribute('aria-pressed', 'false');
     expect(document.querySelector('.detail__notification-footer')).not.toBeInTheDocument();
   });
 

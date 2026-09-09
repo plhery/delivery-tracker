@@ -196,7 +196,7 @@ test('opens unknown postal tracking on 17TRACK in the selected language', async 
   await sheet.getByRole('button', { name: 'Add parcel' }).click();
   await page.getByRole('button', { name: /^(?:Next up: )?Postal shipment —/ }).click();
   let detail = page.getByRole('dialog', { name: 'Postal shipment' });
-  const link = detail.getByRole('link', { name: 'Open on 17TRACK ↗' });
+  const link = detail.getByRole('link', { name: 'Open 17TRACK website' });
   await expect(link).toBeVisible();
   await expect(link).toHaveAttribute('href', 'https://t.17track.net/en#nums=RA123456785DE');
   await expect(detail.getByRole('button', { name: 'Check now', exact: true })).toBeVisible();

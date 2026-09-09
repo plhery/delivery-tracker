@@ -27,7 +27,10 @@ import { isBackSwipe, type TouchPoint } from '../lib/swipe';
 import { useSheetDialog } from '../lib/modal';
 import type { ParcelCarrierInput, ParcelWithEvents, SyncProgress } from '../types';
 import { ChangeCarrierSheet } from './ChangeCarrierSheet';
-import { Timeline } from './Timeline';
+import { TrackingJournal } from './TrackingJournal';
+import { CarrierMark } from './CarrierMark';
+import { carrierBrand } from '../lib/carrierBrand';
+import './ParcelDetail.css';
 import { Icon, PostageStamp } from './Icon';
 import { parcelIcon, parcelTone } from '../lib/parcelDesign';
 import { ProgressTrack } from './ProgressTrack';
@@ -236,7 +239,8 @@ export function ParcelDetail({
   return createPortal(
     <div
       ref={dialog}
-      className={`detail tone-${parcelTone(current?.stage)}${openingOrigin ? ' detail--from-card' : ''}`}
+      style={carrierBrand(carrier).style}
+      className={`detail detail--postcard tone-${parcelTone(current?.stage)}${openingOrigin ? ' detail--from-card' : ''}`}
       role="dialog"
       aria-modal="true"
       aria-label={parcel.label || t('common.parcel')}
@@ -256,6 +260,10 @@ export function ParcelDetail({
             <span aria-hidden="true">•••</span>
           </summary>
           <div>
+            <button type="button" onClick={() => {
+              if (actionsMenu.current) actionsMenu.current.open = false;
+              beginTitleEdit();
+            }}>{t('detail.editTitle')}</button>
             <button
               type="button"
               disabled={deleting}
@@ -265,16 +273,6 @@ export function ParcelDetail({
               }}
             >
               {t('detail.changeCarrier')}
-            </button>
-            <button
-              type="button"
-              disabled={savingNotifications || deleting}
-              onClick={() => {
-                if (actionsMenu.current) actionsMenu.current.open = false;
-                void toggleNotifications();
-              }}
-            >
-              {parcel.notificationsMuted ? t('detail.unmute') : t('detail.mute')}
             </button>
             {!parcel.archivedAt && (
               <button
@@ -315,15 +313,13 @@ export function ParcelDetail({
             onClick={() => setEditingCarrier(true)}
             aria-label={t('detail.changeCarrierFrom', { carrier: carrier.name })}
           >
-            <svg aria-hidden="true" viewBox="0 0 24 24">
-              <path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5zM4 7.5l8 4.5 8-4.5M12 12v9" />
-            </svg>
-            {carrier.name}
-            <span aria-hidden="true">›</span>
+            <CarrierMark carrier={carrier} />
           </button>
-          <span className={`detail__state detail__state--${status.tone}`}>
-            {statusLabel}
-          </span>
+          <button type="button" className="detail__notification" disabled={savingNotifications}
+            aria-label={parcel.notificationsMuted ? t('detail.unmute') : t('detail.mute')}
+            aria-pressed={!!parcel.notificationsMuted} onClick={() => void toggleNotifications()}>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />{parcel.notificationsMuted && <path d="m3 3 18 18" />}</svg>
+          </button>
         </div>
         {editingTitle ? (
           <form className="detail__title-form" onSubmit={handleTitleSubmit}>
@@ -361,18 +357,10 @@ export function ParcelDetail({
         ) : (
           <div className="detail__title-row">
             <h1 className="detail__title">{parcel.label || t('common.parcel')}</h1>
-            <button
-              type="button"
-              className="detail__title-edit"
-              aria-label={t('detail.editTitle')}
-              onClick={beginTitleEdit}
-            >
-              <svg aria-hidden="true" viewBox="0 0 20 20">
-                <path d="m13.8 3.2 3 3L7.2 15.8 3 17l1.2-4.2 9.6-9.6Z" />
-              </svg>
-            </button>
+            <PostageStamp icon={parcelIcon(current?.stage)} />
           </div>
         )}
+        <p className="detail__state">{statusLabel}</p>
         {(completionDate || estimate) && (
           <p className="detail__arrival">
             {completionDate
@@ -380,7 +368,9 @@ export function ParcelDetail({
               : localizedExpectedDelivery(estimate!, t, languageTag)}
           </p>
         )}
-        <div className="detail__progress"><ProgressTrack stage={current?.stage ?? null} /><PostageStamp icon={parcelIcon(current?.stage)} /></div>
+        <div className="detail__progress"><ProgressTrack stage={current?.stage ?? null} /></div>
+      </section>
+      <section className="detail__information">
         <div className="detail__shipment">
           <div className="detail__tracking-ticket">
             <span className="detail__tracking-label">{t('detail.trackingNumber')}</span>
@@ -391,7 +381,8 @@ export function ParcelDetail({
               onClick={() => void copyTrackingNumber()}
               aria-label={t('detail.copyTracking')}
             >
-              {copyStatus === 'copied' ? t('detail.copied') : t('detail.copy')}
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d={copyStatus === 'copied' ? 'm5 12 4 4L19 6' : 'M9 9h11v12H9V9ZM5 15H3V3h12v2'} /></svg>
+              <span className="sr-only" aria-live="polite">{copyStatus === 'copied' ? t('detail.copied') : ''}</span>
             </button>
           </div>
           {trackingLinks.length > 0 && (
@@ -402,9 +393,9 @@ export function ParcelDetail({
                   className={`detail__carrier-link detail__carrier-link--${link.role}`}
                   href={link.url} onClick={() => trackAction('parcel-carrier-link')}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                 >
-                  <span>{t('detail.openCarrier', { carrier: link.name })}</span>
+                  <span>{t('detail.carrierWebsite', { carrier: link.name })}</span><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 18 18 6M6 6h12v12" /></svg>
                   {link.role !== 'active' && (
                     <small>
                       {link.role === 'waiting'
@@ -437,6 +428,21 @@ export function ParcelDetail({
         {automaticTracking && parcel.syncError && (
           <p className="detail__sync-error" role="status">{t('detail.trackingUnavailable')}</p>
         )}
+
+        {checkError && <p className="detail__check-error" role="alert">{checkError}</p>}
+        {checkNotice && <p className="detail__check-notice" role="status">{checkNotice}</p>}
+        {notificationError && (
+          <p className="detail__check-error" role="alert">{notificationError}</p>
+        )}
+      </section>
+
+      {(automaticTracking || parcelHasCarrierUpdate(parcel)) && (
+        <section className="detail__timeline">
+          <TrackingJournal events={parcel.events} syncing={status.syncing} />
+        </section>
+      )}
+
+      <div className="detail__sync">
         <div className="detail__freshness">
           <div className="detail__freshness-times">
             {lastChecked && <span>{t('detail.lastChecked', { date: lastChecked })}</span>}
@@ -456,21 +462,7 @@ export function ParcelDetail({
             </button>
           )}
         </div>
-        {checkError && <p className="detail__check-error" role="alert">{checkError}</p>}
-        {checkNotice && <p className="detail__check-notice" role="status">{checkNotice}</p>}
-        {notificationError && (
-          <p className="detail__check-error" role="alert">{notificationError}</p>
-        )}
-      </section>
-
-      {(automaticTracking || parcelHasCarrierUpdate(parcel)) && (
-        <section className="detail__timeline">
-          <div className="detail__section-heading">
-            <h2 className="detail__section-title">{t('detail.journey')}</h2>
-          </div>
-          <Timeline events={parcel.events} syncing={status.syncing} preview />
-        </section>
-      )}
+      </div>
 
       {parcel.archivedAt && (
         <footer className="detail__footer detail__footer--archived">

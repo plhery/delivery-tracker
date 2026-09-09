@@ -50,7 +50,7 @@ struct RootView: View {
     @State private var selectedTab = 0
     private let carrierCatalog = CarrierCatalog.shared
 
-    var body: some View {
+    private var sessionContent: some View {
         Group {
             if invitation.isPresenting, sessionIdentity != "loading" {
                 ArrivalView().id(invitation.presentationID)
@@ -76,6 +76,10 @@ struct RootView: View {
                 do { try await Task.sleep(for: .seconds(30)) } catch { return }
             }
         }
+    }
+
+    private var lifecycleContent: some View {
+        sessionContent
         .overlay(alignment: .top) {
             if !invitation.isPresenting, session.user != nil, let update = friendsActivity.updates.first {
                 FriendAcceptedNotice(update: update) {
@@ -119,6 +123,10 @@ struct RootView: View {
                 }
             }
         }
+    }
+
+    private var routedContent: some View {
+        lifecycleContent
         .onOpenURL { url in
             if case .friend(let friendID) = NativeRoute(url: url), session.user != nil { friendsActivity.reveal(friendID) }
             else { invitation.open(url) }
@@ -137,6 +145,10 @@ struct RootView: View {
             guard session.user != nil, scenePhase == .active else { return }
             Task { await friendsActivity.refresh(session: session) }
         }
+    }
+
+    var body: some View {
+        routedContent
         .onReceive(NotificationCenter.default.publisher(for: .didReceiveAPNSToken)) { notification in
             guard let token = notification.object as? String else { return }
             Task {

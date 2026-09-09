@@ -1,0 +1,58 @@
+/* Approved postcard header (04), compact tracking utilities (05), and journal. */
+.detail.detail--postcard {
+  --tone: light-dark(var(--carrier-ink-light), var(--carrier-ink-dark));
+  --tone-surface: light-dark(var(--carrier-surface-light), var(--carrier-surface-dark));
+  --carrier-brand: light-dark(var(--carrier-brand-light), var(--carrier-brand-dark));
+  max-width: 560px;
+  background: var(--paper);
+}
+.detail--postcard .detail__header { background: var(--paper); min-height: 64px; }
+.detail--postcard .detail__hero { margin: 20px 24px 0; padding: 20px; border-radius: 20px; background: var(--tone-surface); }
+.detail--postcard .detail__carrier { min-height: 36px; padding: 0; }
+.detail--postcard .detail__carrier .carrier-mark__truck { width: 27px; height: 18px; }
+.detail--postcard .detail__notification { display: grid; place-items: center; width: 44px; height: 44px; background: transparent; color: var(--tone); opacity: .75; }
+.detail--postcard .detail__notification svg { width: 18px; height: 18px; stroke-width: 1.2; }
+.detail--postcard .detail__title-row { align-items: center; margin-top: 16px; gap: 20px; }
+.detail--postcard .detail__title { flex: 1; min-width: 0; font-size: 28px; letter-spacing: -.8px; }
+.detail--postcard .detail__title-row .postage-stamp { flex-shrink: 0; width: 45px; height: 56px; padding: 7px; }
+.detail--postcard .detail__title-row .postage-stamp svg { width: 22px; height: 22px; stroke-width: 1.1; }
+.detail--postcard .detail__state { margin: 18px 0 0; text-align: left; color: var(--tone); font-size: 14px; font-weight: 400; }
+.detail--postcard .detail__arrival { margin-top: 6px; color: var(--tone); font-size: 12px; font-weight: 400; }
+.detail--postcard .detail__progress { padding: 0; margin-top: 18px; }
+.detail--postcard .progress-track { gap: 4px; height: 3px; }
+.detail--postcard .progress-track__dot { height: 3px; background: color-mix(in srgb, var(--tone) 12%, transparent); }
+.detail--postcard .progress-track__dot--filled { background: color-mix(in srgb, var(--tone) 50%, var(--tone-surface)); }
+.detail--postcard .detail__information { margin: 0 26px; padding: 12px 0 15px; border-bottom: 1px solid var(--line); }
+.detail--postcard .detail__shipment { gap: 0; }
+.detail--postcard .detail__tracking-ticket { display: flex; gap: 8px; padding: 0; border: 0; border-radius: 0; background: transparent; flex-wrap: wrap; }
+.detail--postcard .detail__tracking-ticket strong { font-size: 12px; font-weight: 400; min-width: 0; }
+.detail--postcard .detail__tracking-copy { margin-left: auto; display: grid; place-items: center; padding: 8px; width: 44px; flex-shrink: 0; color: var(--ink-soft); }
+.detail--postcard .detail__tracking-copy svg { width: 15px; height: 15px; stroke-width: 1.2; }
+.detail--postcard .detail__carrier-links { gap: 0; }
+.detail--postcard .detail__carrier-link { justify-content: flex-start; gap: 7px; min-height: 36px; padding: 4px 0; color: var(--tone); font-weight: 400; }
+.detail--postcard .detail__carrier-link svg { width: 13px; height: 13px; }
+.detail--postcard .detail__timeline { margin: 22px 26px 0; }
+.detail--postcard .detail__sync { margin: 8px 26px 20px; }
+.detail--postcard .detail__freshness { padding-top: 10px; }
+.tracking-journal > summary { display: flex; justify-content: space-between; gap: 12px; align-items: center; list-style: none; cursor: pointer; min-height: 36px; font-size: 14px; font-weight: 550; }
+.tracking-journal > summary::-webkit-details-marker { display: none; }
+.tracking-journal__count { display: inline-flex; align-items: center; gap: 10px; color: var(--ink-soft); font-size: 11px; font-weight: 400; }
+.tracking-journal__count svg { width: 13px; height: 13px; }
+.tracking-journal[open] > summary svg { transform: rotate(180deg); }
+.tracking-journal ol { list-style: none; margin: 0; padding: 0; }
+.tracking-journal h3 { color: var(--ink-soft); text-transform: uppercase; font-size: 10px; font-weight: 400; letter-spacing: 1px; margin: 22px 0 14px; }
+.tracking-journal__events > li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; margin-bottom: 20px; }
+.tracking-journal time { color: var(--ink-soft); font-size: 11px; padding-top: 1px; font-variant-numeric: tabular-nums; }
+.tracking-journal__current time { color: var(--tone); }
+.tracking-journal p { margin: 0; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.tracking-journal__location { display: block; margin-top: 3px; font-size: 11px; color: var(--ink-soft); }
+.tracking-journal .timeline-empty { margin-top: 12px; color: var(--ink-soft); }
+@media (max-width: 480px) {
+  .detail--postcard .detail__hero { margin: 16px 16px 0; padding: 18px; }
+  .detail--postcard .detail__title { font-size: 25px; }
+  .detail--postcard .detail__information, .detail--postcard .detail__timeline, .detail--postcard .detail__sync { margin-left: 20px; margin-right: 20px; }
+  .detail--postcard .detail__tracking-ticket { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 3px 8px; }
+  .detail--postcard .detail__tracking-label { padding-top: 7px; }
+  .detail--postcard .detail__tracking-copy { grid-column: 2; grid-row: 1 / 3; }
+}
+.tracking-journal__count svg { fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
