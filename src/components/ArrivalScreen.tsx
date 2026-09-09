@@ -80,7 +80,7 @@ export function ArrivalScreen({ screen, onNavigate, invitation, ...signIn }: Com
         {invitation?.notice}
       </div> : <div className="arrival__sign-in" ref={signInPanel}>
         {invitation?.afterOpen ?? <SignInScreen {...signIn} card={!invitation} />}
-        {!invitation && <button type="button" className="text-button arrival__demo" onClick={() => onNavigate('demo')}>{t('welcome.demo')}<Icon name="arrow" /></button>}
+        {!invitation?.afterOpen && <button type="button" className="text-button arrival__demo" onClick={() => onNavigate('demo')}>{t('welcome.demo')}<Icon name="arrow" /></button>}
       </div>}
     </div>
   </main>;

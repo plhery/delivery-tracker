@@ -56,6 +56,13 @@ for (const suffix of ['', '?fbclid=tracking#discardable']) test(`a shared link (
   await expect(page.getByText('Sign in to accept the invitation')).toBeVisible();
   await expect(page.locator('.arrival__parcel')).toHaveAttribute('data-continuity', 'original');
   await page.screenshot({ path: `/tmp/invitation-${test.info().project.name}.png` });
+  const pendingInvitation = await page.evaluate(() => sessionStorage.getItem('sdt.pendingFriendInvitation.v1'));
+  await page.getByRole('button', { name: /Explore the demo/i }).click();
+  await expect(page.locator('.demo-banner')).toBeVisible();
+  expect(await page.evaluate(() => sessionStorage.getItem('sdt.pendingFriendInvitation.v1'))).toBe(pendingInvitation);
+  await page.locator('.demo-banner').getByRole('button', { name: /Exit demo/i }).click();
+  await expect(page.getByText('Sign in to accept the invitation')).toBeVisible();
+  expect(await page.evaluate(() => sessionStorage.getItem('sdt.pendingFriendInvitation.v1'))).toBe(pendingInvitation);
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Your friend Paul sent you an invitation' })).toBeVisible();
   await expect(page.locator('.arrival')).toHaveClass(/arrival--sign-in/);

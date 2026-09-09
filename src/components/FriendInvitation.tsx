@@ -8,6 +8,10 @@ import { ArrivalScreen } from './ArrivalScreen';
 import { FriendProfileForm, FriendsSheet, FriendPostcard, FriendSharingPreview } from './Friends';
 import type { SignInScreen } from './SignInScreen';
 import { useFriendsActivity } from './FriendsActivity';
+import App from '../App';
+import { createDemoRepo } from '../store/demoRepo';
+import { ParcelsProvider } from '../store/ParcelsContext';
+import { useEntryExperience } from '../lib/experience';
 
 type Props = ComponentProps<typeof SignInScreen> & {
   invitation: PendingInvitationState;
@@ -20,6 +24,8 @@ const emptyParcels: ParcelWithEvents[] = [];
 export function FriendInvitation({ invitation, onDismiss, client, parcels = emptyParcels, ...signIn }: Props) {
   const { t } = useI18n();
   const activity = useFriendsActivity();
+  const experience = useEntryExperience();
+  const [demoRepo, setDemoRepo] = useState<ReturnType<typeof createDemoRepo> | null>(null);
   const [receipt, setReceipt] = useState<ApiFriendsActionResponse | null>(null);
   const alive = useRef(true);
   const receiptCallbacks = useRef({ invitation, activity });
@@ -79,9 +85,15 @@ export function FriendInvitation({ invitation, onDismiss, client, parcels = empt
   const failure = !code ? 'friends.inviteUnavailable' : error;
   const notice = failure ? <div className="invitation-notice" role="alert"><p>{t(failure)}</p>{failure !== 'friends.inviteUnavailable' && <button className="text-button" onClick={() => setRetry((value) => value + 1)}>{t('common.retry')}</button>}</div> : !nickname ? <p className="invitation-notice" role="status">{t('auth.loading')}</p> : undefined;
   const ios = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+  if (demoRepo && !client) return <ParcelsProvider repo={demoRepo}>
+    <App onExitDemo={() => { experience.navigate('welcome'); setDemoRepo(null); }} />
+  </ParcelsProvider>;
   return <ArrivalScreen {...signIn} title={title} subtitle={t('friends.signInToAccept')} showConfigurationHelp={false}
     screen={invitation.pending?.opened ? 'sign-in' : 'welcome'}
-    onNavigate={(screen) => invitation.setOpened(screen === 'sign-in')}
+    onNavigate={(screen) => {
+      if (screen === 'demo') { experience.navigate('demo'); setDemoRepo(createDemoRepo()); }
+      else invitation.setOpened(screen === 'sign-in');
+    }}
     invitation={{ title, nickname: nickname ?? undefined, canOpen: !!nickname, received: !!receipt,
       onDismiss, notice, appURL: ios && code ? `swissdeliverytracker://invite#${code}` : undefined,
       afterOpen: receipt ? <section className="auth-flow friendship-received" role="status"><div className="auth-flow__heading"><h1 tabIndex={-1}>{t('friends.friendshipDelivered')}</h1></div></section>

@@ -44,7 +44,7 @@ it('reveals the self-invitation message only after opening the package, without 
   expect(screen.getByText('Invitation closed')).toBeVisible();
 });
 
-it('opens into personalized sign-in and never offers the demo or accepts automatically', async () => {
+it('opens into personalized sign-in with a demo option and never accepts automatically', async () => {
   const user = userEvent.setup(); render(<Harness />);
   expect(await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' })).toBeVisible();
   expect(screen.queryByRole('button', { name: /Google/ })).toBeNull();
@@ -52,7 +52,7 @@ it('opens into personalized sign-in and never offers the demo or accepts automat
   await user.click(await screen.findByRole('button', { name: 'Continue with Google' }));
   expect(signIn).toHaveBeenCalledOnce();
   expect(screen.getByText('Sign in to accept the invitation')).toBeVisible();
-  expect(screen.queryByRole('button', { name: /demo/i })).toBeNull();
+  expect(screen.getByRole('button', { name: /Explore the demo/i })).toBeVisible();
   expect(JSON.parse(sessionStorage.getItem('sdt.pendingFriendInvitation.v1')!).opened).toBe(true);
   expect(fetch).toHaveBeenCalledWith('/api/friends/invite-preview', expect.objectContaining({ credentials: 'omit', cache: 'no-store', body: JSON.stringify({ code }) }));
 });
