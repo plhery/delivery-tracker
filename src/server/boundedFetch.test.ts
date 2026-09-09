@@ -56,7 +56,7 @@ describe('bounded carrier request retries', () => {
     await expect(result).resolves.toMatchObject({ response: { status: 200 } });
   });
 
-  it.each([429, 502, 503, 504])('retries HTTP %s once after a short delay when no header is supplied', async (status) => {
+  it.each([502, 503, 504])('retries HTTP %s once after a short delay when no header is supplied', async (status) => {
     const fetcher = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(new Response('', { status }))
       .mockResolvedValueOnce(new Response('ok'));
@@ -65,6 +65,15 @@ describe('bounded carrier request retries', () => {
     expect(fetcher).toHaveBeenCalledOnce();
     await vi.advanceTimersByTimeAsync(1);
     await expect(result).resolves.toMatchObject({ response: { status: 200 } });
+  });
+
+  it('does not immediately retry a rate limit without Retry-After', async () => {
+    const limited = new Response('Too many requests', { status: 429 });
+    const cancel = vi.spyOn(limited.body!, 'cancel');
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(limited);
+    await expect(fetchBounded(URL, {}, { ...OPTIONS, fetcher })).rejects.toMatchObject({ status: 429 });
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(cancel).toHaveBeenCalledOnce();
   });
 
   it.each(['61', '-1', 'invalid'])('leaves a long or malformed Retry-After (%s) as a real error', async (retryAfter) => {
@@ -90,10 +99,10 @@ describe('bounded carrier request retries', () => {
   it.each(['http', 'network'])('surfaces persistent %s failures after the single retry', async (kind) => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => {
       if (kind === 'network') throw new TypeError('fetch failed');
-      return new Response('', { status: 429 });
+      return new Response('', { status: 503 });
     });
     const failure = expect(fetchBounded(URL, {}, { ...OPTIONS, fetcher })).rejects.toThrow(
-      kind === 'network' ? 'is unreachable' : 'HTTP 429',
+      kind === 'network' ? 'is unreachable' : 'HTTP 503',
     );
     await vi.advanceTimersByTimeAsync(1_000);
     await failure;

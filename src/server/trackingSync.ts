@@ -50,6 +50,18 @@ import { UniversalTracker } from './universalTracking';
 
 const MAX_PACKAGES_PER_OWNER_PER_SYNC = 5;
 const VALID_STAGES = new Set<string>(STAGES);
+const SLOW_POLL_CARRIERS = new Set(['gls-de', 'gls-ch', 'gls-fr', 'spring-gds']);
+const SLOW_POLL_INTERVAL_MS = 60 * 60 * 1_000;
+const FAILED_SLOW_POLL_INTERVAL_MS = 4 * SLOW_POLL_INTERVAL_MS;
+
+export function isTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
+  if (!SLOW_POLL_CARRIERS.has(String(parcel.carrier))) return true;
+  const lastChecked = Date.parse(String(parcel.last_synced_at ?? ''));
+  if (!Number.isFinite(lastChecked)) return true;
+  const interval = parcel.sync_status === 'error'
+    ? FAILED_SLOW_POLL_INTERVAL_MS : SLOW_POLL_INTERVAL_MS;
+  return now.getTime() >= lastChecked + interval;
+}
 
 export interface TrackingAdapter {
   fetch(
@@ -478,7 +490,9 @@ export class TrackingSyncService {
     return await this.exclusive(async () => {
       context.signal?.throwIfAborted();
       const summary = emptySyncSummary();
-      for (const parcel of fairSyncPackages(await this.client.listActivePackages())) {
+      const due = (await this.client.listActivePackages())
+        .filter((parcel) => isTrackingSyncDue(parcel, this.now()));
+      for (const parcel of fairSyncPackages(due)) {
         summary.checked += 1;
         summary[await this.syncOne(parcel, context)] += 1;
       }
@@ -494,8 +508,11 @@ export class TrackingSyncService {
     return await this.exclusive(async () => {
       context.signal?.throwIfAborted();
       const summary = emptySyncSummary();
-      summary.checked = 1;
-      summary[await this.syncOne(parcel, context)] += 1;
+      // Manual refreshes share the persisted cooldown with scheduled checks.
+      if (isTrackingSyncDue(parcel, this.now())) {
+        summary.checked = 1;
+        summary[await this.syncOne(parcel, context)] += 1;
+      }
       await this.dispatchNotifications(summary, context.signal);
       return summary;
     });
@@ -702,6 +719,7 @@ export class TrackingSyncService {
       );
       const handoff = supportsSwissPostHandoff(String(parcel.tracking_number ?? ''));
       const knownUpdate = hasUpdate || Boolean(handoff && swissPostReady);
+      const progressDisappeared = anomalies.includes('progress_disappeared');
       const carrierData: JsonObject = Object.fromEntries(
         Object.entries(result).filter(([key, value]) => key !== 'events' && value != null),
       );
@@ -711,25 +729,30 @@ export class TrackingSyncService {
       }
       const values: JsonObject = {
         last_synced_at: this.now().toISOString(),
-        sync_status: knownUpdate ? 'ok' : 'waiting',
-        sync_error: null,
-        last_status_text: result.last_status_text || null,
-        expected_delivery: result.expected_delivery ? String(result.expected_delivery) : null,
-        carrier_data: carrierData,
+        sync_status: progressDisappeared ? 'error' : knownUpdate ? 'ok' : 'waiting',
+        sync_error: progressDisappeared
+          ? 'The carrier temporarily returned no tracking progress. Previous tracking details have been kept.'
+          : null,
       };
-      if (selectedStage && (hasUpdate || !swissPostReady)) values.current_stage = selectedStage;
+      if (!progressDisappeared) {
+        values.last_status_text = result.last_status_text || null;
+        values.expected_delivery = result.expected_delivery ? String(result.expected_delivery) : null;
+        values.carrier_data = carrierData;
+        if (selectedStage && (hasUpdate || !swissPostReady)) values.current_stage = selectedStage;
+      }
+      const outcome = progressDisappeared ? 'error' : knownUpdate ? 'updated' : 'waiting';
+      const eventsToPersist = progressDisappeared ? [] : events;
       operation = 'persist_package';
       await audit.step('persist_package', async () => {
-        await persist(values, events, deleteDescriptions);
+        await persist(values, eventsToPersist, progressDisappeared ? [] : deleteDescriptions);
       }, () => ({
-        outcome: knownUpdate ? 'updated' : 'waiting',
+        outcome,
         selected_stage: selectedStage,
       }));
       audit.record('persist_events', 'succeeded', 0, {
-        events_persisted: events.length,
+        events_persisted: eventsToPersist.length,
         atomic_with_package: true,
       });
-      const outcome = knownUpdate ? 'updated' : 'waiting';
       const completion = {
         outcome,
         sourceCarrier: sourceCarrierId,
@@ -743,7 +766,7 @@ export class TrackingSyncService {
       } as const;
       await audit.finish(completion);
       audit.reportAnomalies(anomalies, completion);
-      return outcome;
+      return outcome === 'error' ? 'errors' : outcome;
     } catch (error) {
       context.signal?.throwIfAborted();
       if (error instanceof SupersededTrackingSync) return superseded();

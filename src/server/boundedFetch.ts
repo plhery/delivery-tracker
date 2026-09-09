@@ -3,8 +3,10 @@ const TRANSIENT_HTTP_STATUSES = new Set([429, 502, 503, 504]);
 const DEFAULT_RETRY_DELAY_MS = 1_000;
 const MAX_RETRY_DELAY_MS = 60_000;
 
-function retryDelay(header: string | null): number | null {
-  if (header === null) return DEFAULT_RETRY_DELAY_MS;
+function retryDelay(header: string | null, status: number): number | null {
+  // A rate limit without a retry window needs a later check, not another
+  // request one second later. Explicit, short Retry-After windows remain safe.
+  if (header === null) return status === 429 ? null : DEFAULT_RETRY_DELAY_MS;
   const value = header.trim();
   const delay = /^\d+$/.test(value)
     ? Number(value) * 1_000
@@ -76,7 +78,7 @@ export async function fetchBounded(
       throw new UpstreamNetworkError(options.provider, error);
     }
     if (response.ok || options.allowHttpError) break;
-    const delay = retryDelay(response.headers.get('retry-after'));
+    const delay = retryDelay(response.headers.get('retry-after'), response.status);
     await cancelQuietly(response.body);
     if (options.retryTransient && attempt === 0
       && TRANSIENT_HTTP_STATUSES.has(response.status) && delay !== null) {

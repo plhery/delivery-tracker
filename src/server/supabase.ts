@@ -222,7 +222,7 @@ export class SupabaseClient {
     const params = query([
       [
         'select',
-        'id,user_id,tracking_number,label,carrier,current_stage,tracking_url,dpd_postcode,last_synced_at,carrier_data,tracking_generation',
+        'id,user_id,tracking_number,label,carrier,current_stage,tracking_url,dpd_postcode,last_synced_at,sync_status,carrier_data,tracking_generation',
       ],
       ['archived_at', 'is.null'],
       ['or', '(current_stage.not.in.(delivered,returned),last_status_text.eq.TO_BE_DELIVERED)'],

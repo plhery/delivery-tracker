@@ -25,6 +25,7 @@ import {
   eventTimestamp,
   fairSyncPackages,
   inferStage,
+  isTrackingSyncDue,
   isUnannouncedTrackingError,
   providerEventId,
   resultHasUpdate,
@@ -281,6 +282,90 @@ function fakeClient(packages: JsonObject[] = []) {
 }
 
 describe('TrackingSyncService', () => {
+  it.each(['gls-de', 'gls-ch', 'gls-fr', 'spring-gds'])(
+    'checks %s hourly and waits four hours after failures', (carrier) => {
+      const parcel = { carrier, last_synced_at: '2026-09-09T10:00:00Z', sync_status: 'ok' };
+      expect(isTrackingSyncDue({ carrier }, new Date('2026-09-09T10:00:00Z'))).toBe(true);
+      expect(isTrackingSyncDue(parcel, new Date('2026-09-09T10:59:59.999Z'))).toBe(false);
+      expect(isTrackingSyncDue(parcel, new Date('2026-09-09T11:00:00Z'))).toBe(true);
+      expect(isTrackingSyncDue({ ...parcel, sync_status: 'error' }, new Date('2026-09-09T13:59:59Z'))).toBe(false);
+      expect(isTrackingSyncDue({ ...parcel, sync_status: 'error' }, new Date('2026-09-09T14:00:00Z'))).toBe(true);
+      expect(isTrackingSyncDue({ ...parcel, last_synced_at: 'invalid' }, new Date())).toBe(true);
+    },
+  );
+
+  it('filters cooldowns before the per-owner quota without delaying other carriers', async () => {
+    const parcels = Array.from({ length: 5 }, (_, index) => ({
+      id: `cooling-${index}`, user_id: 'owner', carrier: 'gls-de',
+      last_synced_at: '2026-09-09T10:00:00Z', sync_status: 'error',
+    }));
+    const client = fakeClient([...parcels, {
+      id: 'due', user_id: 'owner', carrier: 'dpd', tracking_number: 'TEST1234',
+      last_synced_at: '2026-09-09T10:00:00Z',
+    }]);
+    const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      adapter, null, () => new Date('2026-09-09T10:10:00Z'));
+    await expect(service.sync()).resolves.toMatchObject({ checked: 1, updated: 1 });
+    expect(adapter.fetch).toHaveBeenCalledExactlyOnceWith('dpd', 'TEST1234', null, null);
+    expect(client.startSyncAttempt).toHaveBeenCalledOnce();
+  });
+
+  it('uses persisted failures across service restarts and manual refreshes', async () => {
+    const parcel: JsonObject = {
+      id: 'gls-retry', carrier: 'gls-de', tracking_number: 'TEST1234', current_stage: 'in_transit',
+    };
+    const client = fakeClient();
+    client.updatePackage.mockImplementation(async (_id, values) => { Object.assign(parcel, values); });
+    const adapter = { fetch: vi.fn().mockRejectedValue(new Error('Provider unavailable')) };
+    let now = new Date('2026-09-09T10:00:00Z');
+    const service = () => new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      adapter, null, () => now);
+    await expect(service().syncPackage(parcel)).resolves.toMatchObject({ checked: 1, errors: 1 });
+    now = new Date('2026-09-09T13:59:59Z');
+    await expect(service().syncPackage(parcel)).resolves.toMatchObject({ checked: 0, errors: 0 });
+    expect(adapter.fetch).toHaveBeenCalledOnce();
+    now = new Date('2026-09-09T14:00:00Z');
+    adapter.fetch.mockResolvedValue({ status: 'in_transit' });
+    await expect(service().syncPackage(parcel)).resolves.toMatchObject({ checked: 1, updated: 1 });
+    now = new Date('2026-09-09T14:59:59Z');
+    await expect(service().syncPackage(parcel)).resolves.toMatchObject({ checked: 0 });
+    now = new Date('2026-09-09T15:00:00Z');
+    await expect(service().syncPackage(parcel)).resolves.toMatchObject({ checked: 1, updated: 1 });
+    expect(adapter.fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it.each(['unknown', 'pending'] as const)(
+    'preserves DHL progress and delivery details when the provider returns empty %s data', async (status) => {
+      const parcel: JsonObject = {
+        id: 'dhl-progress', carrier: 'dhl', tracking_number: 'TEST1234', current_stage: 'customs',
+        last_status_text: 'At customs', expected_delivery: '2026-09-10',
+        carrier_data: { status: 'in_transit', current_stage: 'customs' },
+      };
+      const client = fakeClient();
+      const adapter = { fetch: vi.fn().mockResolvedValue({
+        status, last_status_text: 'No tracking information yet', events: status === 'pending'
+          ? [{ stage: 'pending', description: 'Pending', time: '2026-09-09T14:00:00Z' }] : [],
+      }) };
+      const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter);
+      await expect(service.syncPackage(parcel)).resolves.toMatchObject({ errors: 1, waiting: 0 });
+      const saved = client.updatePackage.mock.calls.at(-1)![1];
+      expect(saved).toEqual({
+        last_synced_at: expect.any(String), sync_status: 'error',
+        sync_error: 'The carrier temporarily returned no tracking progress. Previous tracking details have been kept.',
+      });
+      expect(client.insertEvents).not.toHaveBeenCalled();
+      expect(client.completeSyncAttempt).toHaveBeenCalledWith(expect.any(String),
+        expect.objectContaining({ outcome: 'error', anomaly_codes: ['progress_disappeared'] }), expect.any(Array));
+      adapter.fetch.mockResolvedValue({ status: 'in_transit', current_stage: 'in_transit',
+        last_status_text: 'Departed customs', events: [] });
+      await expect(service.syncPackage(parcel)).resolves.toMatchObject({ updated: 1, errors: 0 });
+      expect(client.updatePackage).toHaveBeenLastCalledWith(parcel.id, expect.objectContaining({
+        sync_status: 'ok', sync_error: null, current_stage: 'in_transit', last_status_text: 'Departed customs',
+      }));
+    },
+  );
+
   it.each(['result', 'error', 'unannounced'] as const)(
     'discards a late %s after the tracking configuration changes', async (outcome) => {
       const parcel = {

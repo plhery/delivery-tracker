@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/node';
 import type { Event } from '@sentry/node';
 import { captureOperationalError, flushObservability, initObservability } from './observability';
 import { UniversalTrackingError } from './universalTracking';
+import { UpstreamHttpError } from './boundedFetch';
 
 const captured = vi.hoisted(() => ({ events: [] as Event[] }));
 
@@ -101,4 +102,19 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   expect(options.integrations?.map((integration) => integration.name)).toEqual(expect.arrayContaining([
     'Console', 'Http', 'NodeFetch', 'RequestData', 'ExtraErrorData',
   ]));
+
+  const ids = ['first', 'second'].map((attemptId) => captureOperationalError(
+    new UpstreamHttpError('GLS Germany tracking', 404), {
+      component: 'tracking-sync', operation: 'fetch', carrier: 'gls-de',
+      attemptId, jobId: `job-${attemptId}`,
+    },
+  ));
+  await flushObservability();
+  const repeats = captured.events.filter((event) => ids.includes(event.event_id!));
+  expect(repeats).toHaveLength(2);
+  expect(repeats[0].fingerprint).toEqual([
+    'delivery-tracker', 'tracking-sync', 'fetch', 'gls-de', 'UpstreamHttpError',
+  ]);
+  expect(repeats[1].fingerprint).toEqual(repeats[0].fingerprint);
+  expect(repeats.map((event) => event.tags?.attempt_id).sort()).toEqual(['first', 'second']);
 });

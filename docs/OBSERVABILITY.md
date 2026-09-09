@@ -48,6 +48,26 @@ Anomalies currently mean:
 - `progress_disappeared`: a parcel with prior progress suddenly has no usable
   provider evidence.
 
+When progress disappears, the refresh is marked as an error and the last known
+stage, status text, estimated delivery and carrier data are retained. The empty
+provider response remains visible in the audit and Sentry anomaly.
+
+## Carrier check frequency
+
+GLS Germany, Switzerland and France, and Spring GDS are checked at most once an
+hour per parcel. After a failed check, they wait four hours. Both scheduled and
+manual refreshes use the persisted `last_synced_at` and `sync_status`, so a
+worker restart or repeated Refresh action does not bypass the cooldown. New or
+reconfigured parcels are checked immediately. Other carriers keep the existing
+daytime/overnight schedule, and cooling parcels do not consume the five-parcel
+per-owner scheduled quota.
+
+HTTP 429 responses without `Retry-After` are not immediately retried. Explicit
+retry windows up to one minute are still honored by adapters that enable a
+single transient retry; longer windows fail the attempt rather than blocking
+the worker. Each attempted check still has its own audit and Sentry event when
+it fails; issue grouping does not discard repeated events.
+
 ## First-response queries
 
 Run these with the Supabase service role or directly as a database operator.
@@ -159,6 +179,11 @@ Recommended project alerts:
 - notify on every new issue in the `production` environment;
 - notify when a resolved issue regresses; and
 - keep the automatically-created Cron monitor alerts enabled.
+
+An issue-frequency rule such as "more than 0 times in 5 minutes" with a
+five-minute action interval alerts on each ten-minute failed check, even when
+all events share one fingerprint and issue. Use new-issue and regression
+conditions for incident notifications instead of that per-occurrence rule.
 
 ## Incident sequence
 

@@ -2,6 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { SupabaseServiceClient, SupabaseUserClient } from './supabase';
 
 describe('guarded tracking writes', () => {
+  it('loads persisted sync status and timestamps for scheduled carrier cooldowns', async () => {
+    const client = new SupabaseServiceClient('https://database.example', 'service-key');
+    const request = vi.spyOn(client, 'request').mockResolvedValue([]);
+    await client.listActivePackages();
+    const selected = new URL(`https://database.example${request.mock.calls[0][0]}`).searchParams.get('select')!.split(',');
+    expect(selected).toEqual(expect.arrayContaining(['sync_status', 'last_synced_at', 'carrier']));
+  });
+
   it('atomically submits events, cleanup and status with the configuration generation', async () => {
     const client = new SupabaseServiceClient('https://database.example', 'service-key');
     const request = vi.spyOn(client, 'request').mockResolvedValue(true);
