@@ -1,0 +1,65 @@
+/* Quiet stack: a bounded feed, with tools sharing the active section heading. */
+.app--deliveries .deliveries-page { max-width: 660px; margin-inline: auto; }
+.app--deliveries .app__masthead { border-bottom: 0; row-gap: 4px; padding-bottom: 0; }
+.app--deliveries .app__content { padding-top: 12px; }
+.app--deliveries .delivery-overview { min-height: 44px; margin: 0 0 10px; gap: 12px; }
+.app--deliveries .delivery-overview > .parcel-section__heading { margin: 0; flex: 1; }
+.app--deliveries .delivery-overview__actions { margin-left: auto; }
+.app--deliveries .delivery-overview__actions .icon-button { color: var(--ink-soft); }
+.app--deliveries .delivery-overview__actions svg { width: 18px; height: 18px; stroke-width: 1.4; }
+.app--deliveries .parcel-section__heading h2 { font-size: 17px; font-weight: 600; letter-spacing: -.3px; }
+.app--deliveries .parcel-section__heading > span { min-width: 20px; height: 20px; padding: 0 6px; font-size: 11px; font-weight: 400; }
+.app--deliveries .parcel-sections { display: flex; flex-direction: column; gap: 24px; margin-top: 24px; }
+.app--deliveries .parcel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.app--deliveries .delivery-notices { margin-bottom: 18px; }
+.app--deliveries .delivery-notices .parcel-grid { grid-template-columns: 1fr; }
+.app--deliveries .delivery-next { margin-bottom: 10px; }
+.app--deliveries .parcel-card { min-height: 102px; padding: 13px 15px; border-radius: 16px; gap: 5px; }
+.app--deliveries .parcel-card__top { margin-bottom: 3px; }
+.app--deliveries .parcel-card__label { font-size: 17px; font-weight: 600; }
+.app--deliveries .parcel-card__state { display: flex; align-items: center; gap: 5px; }
+.app--deliveries .parcel-card__state > svg { width: 12px; height: 12px; stroke-width: 1.3; }
+.app--deliveries .parcel-card--hero { min-height: 166px; padding: 18px 20px; border-radius: 22px; gap: 0; }
+.app--deliveries .parcel-card__hero-main { min-height: 53px; margin: 19px 0 15px; }
+.app--deliveries .parcel-card--hero .parcel-card__label { font-size: 24px; }
+.app--deliveries .parcel-card__hero-main .postage-stamp { width: 43px; height: 53px; padding: 6px; }
+.app--deliveries .parcel-card__hero-main .postage-stamp svg { width: 22px; height: 22px; stroke-width: 1.2; }
+.app--deliveries .parcel-card__hero-main .postage-stamp__cancel { width: 24px; height: 24px; }
+.app--deliveries .parcel-section--past .parcel-card,
+.app--deliveries .archived-section .parcel-card { background: color-mix(in srgb, var(--tone-surface) 35%, var(--paper)); }
+.app--deliveries .parcel-card--notice { display: flex; flex-direction: row; align-items: center; min-height: 62px; gap: 10px; background: color-mix(in srgb, var(--orange-soft) 35%, var(--canvas)); border: 1px solid color-mix(in srgb, var(--orange-text) 18%, var(--line)); padding: 12px 14px; border-radius: 13px; }
+.app--deliveries .parcel-card--notice > svg { width: 16px; height: 16px; color: var(--orange-text); stroke-width: 1.3; }
+.app--deliveries .parcel-card--notice > svg:last-child { width: 12px; height: 12px; margin-left: auto; color: var(--ink-soft); }
+.app--deliveries .parcel-card__notice-content { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.app--deliveries .parcel-card__notice-content strong { font-size: 12px; font-weight: 550; line-height: 1.45; }
+.app--deliveries .parcel-card__notice-content .parcel-card__label { font-size: 11px; color: var(--ink-soft); font-weight: 400; letter-spacing: 0; }
+.app--deliveries .archived-section { border-top: 1px solid var(--line); padding-top: 5px; }
+.app--deliveries .archived-section__count { background: none; padding: 0; font-weight: 400; }
+.app--deliveries .archived-section__count::before { content: '('; }
+.app--deliveries .archived-section__count::after { content: ')'; }
+.delivery-arrived { text-align: center; padding: 36px 16px 28px; }
+.delivery-arrived > svg { width: 45px; height: 45px; fill: none; stroke: var(--ink-soft); stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 18px; }
+.delivery-arrived h2 { font-size: 24px; letter-spacing: -.6px; margin-bottom: 8px; }
+.delivery-arrived p { font-size: 13px; color: var(--ink-soft); margin-bottom: 20px; }
+.delivery-arrived .button { min-height: 44px; font-size: 13px; padding: 10px 16px; border-radius: 12px; }
+@media (min-width: 761px) {
+  .app--deliveries .app__navigation { background: transparent; gap: 5px; padding: 0; }
+  .app--deliveries .app__navigation button { padding: 8px 12px; min-height: 40px; font-weight: 500; font-size: 12px; }
+  .app--deliveries .app__navigation-selection { background: var(--control); box-shadow: none; }
+  .app--deliveries .app__add-button span { display: inline; font-size: 12px; font-weight: 500; }
+}
+@media (max-width: 760px) {
+  .app--deliveries .app__masthead { min-height: 64px; }
+  .app--deliveries .app__title { font-size: 23px; }
+  .app--deliveries .app__content { padding-top: 8px; }
+  .app--deliveries .parcel-grid { grid-template-columns: 1fr; }
+  .app--deliveries .parcel-card--hero { padding: 17px 18px 18px; }
+  .app--deliveries .parcel-card__hero-main { margin: 19px 0 15px; }
+}
+
+.app--deliveries .parcel-card-swipe__clip { border-radius: 16px; }
+.app--deliveries .parcel-card-swipe--hero .parcel-card-swipe__clip { border-radius: 22px; }
+.app--deliveries .delivery-notices .parcel-card-swipe__clip { border-radius: 13px; }
+@media (max-width: 760px) {
+  .app--deliveries .parcel-sections .parcel-section .parcel-grid { grid-template-columns: 1fr; }
+}

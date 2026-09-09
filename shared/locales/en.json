@@ -557,5 +557,8 @@
   "friends.manageFriendship": "Manage friendship",
   "friends.cancelPrevious": "Cancel {{count}} previous links",
   "friends.editSharing": "Edit",
-  "friends.sharedStatsSummary": "Deliveries, average days & stamps"
+  "friends.sharedStatsSummary": "Deliveries, average days & stamps",
+  "app.allArrived": "Everything has arrived.",
+  "app.allArrivedDescription": "Your recent deliveries are kept below.",
+  "app.trackAnother": "Track another parcel"
 }

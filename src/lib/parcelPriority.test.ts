@@ -33,9 +33,18 @@ describe('parcel priority', () => {
     const pickup = { ...parcel('pickup', 'ready_for_pickup'), syncStatus: 'error' as const };
     expect(nextPriorityParcel([outage, delivery], NOW)?.id).toBe('delivery');
     expect(nextPriorityParcel([outage, delivery, pickup], NOW)?.id).toBe('pickup');
-    expect(nextPriorityParcel([outage, { ...delivery, archivedAt: '2026-08-05' }], NOW)?.id).toBe('outage');
+    expect(nextPriorityParcel([outage, { ...delivery, archivedAt: '2026-08-05' }], NOW)).toBeNull();
     expect(nextPriorityParcel([], NOW)).toBeNull();
   });
+  it('separates customs and failed delivery notices from the next arrival', () => {
+    const customs = { ...parcel('customs', 'customs'), expectedDelivery: '2026-08-05' };
+    const failed = parcel('failed', 'failed_attempt');
+    const delivery = { ...parcel('delivery', 'out_for_delivery'), syncStatus: 'error' as const };
+    expect(nextPriorityParcel([customs, failed, delivery], NOW)?.id).toBe('delivery');
+    expect(nextPriorityParcel([customs, failed], NOW)).toBeNull();
+    expect(prioritizeActiveParcels([customs, failed], NOW).attention).toHaveLength(2);
+  });
+
   it('recognizes dates with or without delivery windows', () => {
     expect(expectedDeliveryDay('2026-08-05')).toBe('2026-08-05');
     expect(expectedDeliveryDay('2026-08-05 13:00–15:00')).toBe('2026-08-05');

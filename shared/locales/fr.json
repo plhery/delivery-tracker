@@ -557,5 +557,8 @@
   "friends.manageFriendship": "Gérer cette amitié",
   "friends.cancelPrevious": "Annuler les {{count}} liens précédents",
   "friends.editSharing": "Modifier",
-  "friends.sharedStatsSummary": "Livraisons, délai moyen et timbres"
+  "friends.sharedStatsSummary": "Livraisons, délai moyen et timbres",
+  "app.allArrived": "Tout est arrivé.",
+  "app.allArrivedDescription": "Vos dernières livraisons sont conservées ci-dessous.",
+  "app.trackAnother": "Suivre un autre colis"
 }

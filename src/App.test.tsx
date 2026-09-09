@@ -38,6 +38,7 @@ describe('App', () => {
     renderApp(repo);
     expect(await screen.findByText('My demo parcel')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Account' }));
+    await user.click(screen.getByRole('button', { name: 'Account & data' }));
     await user.click(screen.getByRole('button', { name: 'Reset demo data' }));
     expect(screen.getByText('Start the demo fresh?')).toBeInTheDocument();
     expect(screen.queryByText(/permanently delete/i)).not.toBeInTheDocument();
@@ -219,16 +220,16 @@ describe('App', () => {
 
     const active = screen.getByRole('region', { name: 'On the way' });
     expect(within(active).getByText('New sneakers 👟')).toBeInTheDocument();
-    expect(within(active).queryByText('Birthday gift 🎁')).not.toBeInTheDocument();
+    expect(within(active).getByText('Birthday gift 🎁')).toBeInTheDocument();
 
-    const next = screen.getByRole('button', { name: /Next up: Birthday gift/ });
-    expect(within(next).getByText('At customs')).toBeInTheDocument();
+    const next = screen.getByRole('button', { name: /Next up: New sneakers/ });
+    expect(within(next).getByText('Out for delivery')).toBeInTheDocument();
     expect(next.querySelector('.postage-stamp')).toBeInTheDocument();
     expect(within(next).queryByText('Customs clearance')).not.toBeInTheDocument();
     expect(next.querySelector('.progress-track')).not.toBeInTheDocument();
     expect(next.querySelector('.carrier-mark')).toBeInTheDocument();
     expect(next.querySelector('.parcel-card__hero-bottom > svg')).not.toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Needs attention' })).not.toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Needs attention' })).getByText('Birthday gift 🎁')).toBeInTheDocument();
 
     const past = screen.getByRole('region', { name: 'Past deliveries' });
     expect(within(past).getByText('Coffee beans ☕')).toBeInTheDocument();
@@ -254,15 +255,27 @@ describe('App', () => {
       .toEqual(['Newer delivery', 'Older delivery']);
   });
 
+  it('celebrates completed deliveries while preserving the past list and add action', async () => {
+    const user = userEvent.setup();
+    const repo = createDemoRepo(window.localStorage);
+    const delivered = (await repo.list()).filter(parcel => parcel.events.some(event => event.stage === 'delivered'));
+    vi.spyOn(repo, 'list').mockResolvedValue(delivered);
+    renderApp(repo);
+    expect(await screen.findByRole('heading', { name: 'Everything has arrived.' })).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Past deliveries' })).getByText('Coffee beans ☕')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Track another parcel' }));
+    expect(screen.getByRole('dialog', { name: 'Add a parcel' })).toBeInTheDocument();
+  });
+
   it('opens the next parcel from the summary', async () => {
     const user = userEvent.setup();
     renderApp();
 
     await user.click(await screen.findByRole('button', {
-      name: /next up: birthday gift/i,
+      name: /next up: new sneakers/i,
     }));
 
-    expect(screen.getByRole('dialog', { name: 'Birthday gift 🎁' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'New sneakers 👟' })).toBeInTheDocument();
     expect(window.location.search).toContain('parcel=');
   });
 
@@ -272,7 +285,7 @@ describe('App', () => {
 
     expect(container.querySelector('.language-control--header')).not.toBeInTheDocument();
     await user.click(screen.getByLabelText('Account options for owner@example.test'));
-    const accountMenu = screen.getByRole('dialog', { name: 'Account' });
+    const accountMenu = screen.getByRole('dialog', { name: 'Settings' });
     expect(accountMenu).not.toBeNull();
     expect(within(accountMenu as HTMLElement).getByRole('combobox', { name: 'Language' }))
       .toBeInTheDocument();
@@ -328,7 +341,7 @@ describe('App', () => {
 
     await user.selectOptions(screen.getByLabelText('Status'), 'delivered');
     expect(screen.getByText('Coffee beans ☕')).toBeInTheDocument();
-    const parcelSections = document.querySelector('.parcel-sections');
+    const parcelSections = document.querySelector('.deliveries-page');
     expect(parcelSections).not.toBeNull();
     expect(within(parcelSections as HTMLElement).queryByText('Birthday gift 🎁'))
       .not.toBeInTheDocument();
@@ -356,7 +369,7 @@ describe('App', () => {
     expect(deliveredDate).toHaveTextContent(/^yesterday$/);
     expect(deliveredDate).not.toHaveTextContent(/^on /);
     expect(screen.getByText('Out for delivery')).toBeInTheDocument();
-    expect(screen.getByText('At customs', { selector: '.parcel-card__state' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Birthday gift.*At customs/ })).toHaveClass('parcel-card--notice');
   });
 
   it('treats returned parcels as final without calling them delivered', async () => {
@@ -387,6 +400,8 @@ describe('App', () => {
     renderApp(repo);
 
     expect(await screen.findByText('Returned shoes')).toBeInTheDocument();
+    expect(screen.queryByText('Everything has arrived.')).not.toBeInTheDocument();
+    expect(document.querySelector('.parcel-card__state > svg')).not.toBeInTheDocument();
     expect(document.querySelector('.delivery-overview__count')).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'On the way' })).not.toBeInTheDocument();
     expect(
@@ -464,7 +479,7 @@ describe('App', () => {
     const section = await screen.findByRole('button', { name: /Next up: Today parcel/ });
     expect(within(section).getByText('Today parcel')).toBeInTheDocument();
     expect(within(section).getAllByText(/^today/)).toHaveLength(1);
-    expect(screen.queryByRole('region', { name: 'On the way' })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'On the way' })).toContainElement(section);
   });
 
   it('adds a parcel through the bottom sheet', async () => {
@@ -661,7 +676,7 @@ describe('App', () => {
       await notify?.();
     });
 
-    expect(screen.getByText('Announced', { selector: '.parcel-card__state' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: / — Announced/ })).toBeInTheDocument();
     expect(screen.queryByText("Checking for updates")).not.toBeInTheDocument();
   });
 
@@ -1469,7 +1484,7 @@ describe('App', () => {
     const user = userEvent.setup();
     renderApp(repo);
 
-    expect((await screen.findAllByText("Update unavailable")).length).toBeGreaterThan(0);
+    expect(await screen.findByRole('button', { name: /Parcel — Update unavailable/ })).toBeInTheDocument();
     await user.click(
       screen.getByRole('button', { name: /Parcel — Update unavailable/i }),
     );

@@ -81,6 +81,9 @@ private struct DeliveryListView: View {
     @State private var carrierFilter: CarrierID?
     @State private var sort: ParcelSort = .priority
     @State private var showingFilters = false
+    @State private var showingSearch = false
+    @State private var refreshing = false
+    @FocusState private var searchFocused: Bool
     @State private var showingAdd = false
     @State private var addedParcelID: UUID?
     @State private var revealParcelID: UUID?
@@ -103,7 +106,6 @@ private struct DeliveryListView: View {
             .navigationTitle(localizer.text("native.deliveries"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
-            .searchable(text: $query, prompt: localizer.text("view.searchPlaceholder"))
             .navigationDestination(for: UUID.self) { parcelID in
                 ParcelDetailView(parcelID: parcelID, transition: parcelTransition)
                     .safeAreaInset(edge: .top, spacing: 0) { DemoModeBar() }
@@ -191,58 +193,42 @@ private struct DeliveryListView: View {
     private var content: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 22) {
-                    listOverview
-
-                    if !hasCustomView, !nextIsOnTheWay, let nextParcel {
-                        ExperimentalNextDeliveryPass(
-                            parcel: nextParcel,
-                            transition: parcelTransition,
-                            onOpen: { path.append(nextParcel.id) },
-                            onArchive: { await archive(nextParcel) }
-                        )
-                        .modifier(arrivalCelebration(for: nextParcel.id, stubInset: 49))
-                        .id(nextParcel.id)
-                    }
-
-                    if let message = store.errorMessage {
-                        NoticeBanner(
-                            symbol: "wifi.exclamationmark",
-                            title: localizer.text(store.authenticationRequired ? "app.signInNeeded" : "app.trackingBreak"),
-                            message: store.usingCachedData
-                                ? "\(message) \(localizer.text("app.cachedData"))"
-                                : message,
-                            tint: Brand.warning,
-                            actionTitle: localizer.text(store.authenticationRequired ? "app.signInAgain" : "app.tryAgain"),
-                            action: { Task { await store.load(showSpinner: true) } }
-                        )
-                    }
-
-                    if hasCustomView { filterChips }
-
-                    if !store.loading && store.parcels.isEmpty {
-                        ContentUnavailableView(
-                            localizer.text("app.emptyTitle"),
-                            systemImage: "shippingbox",
-                            description: Text(localizer.text("app.emptyDescription"))
-                        )
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 52)
-                    } else if !store.loading && visibleParcels.isEmpty {
-                        ContentUnavailableView {
-                            Label(localizer.text("view.noResultsTitle"), systemImage: "line.3.horizontal.decrease.circle")
-                        } description: {
-                            Text(localizer.text("view.noResultsDescription"))
-                        } actions: {
-                            Button(localizer.text("view.clear")) { clearFilters() }
+                LazyVStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        if !store.parcels.isEmpty { listOverview }
+                        if showingSearch { searchControls }
+                        if hasCustomView { filterChips }
+                        if let message = store.errorMessage {
+                            NoticeBanner(
+                                symbol: "wifi.exclamationmark",
+                                title: localizer.text(store.authenticationRequired ? "app.signInNeeded" : "app.trackingBreak"),
+                                message: store.usingCachedData ? "\(message) \(localizer.text("app.cachedData"))" : message,
+                                tint: Brand.warning,
+                                actionTitle: localizer.text(store.authenticationRequired ? "app.signInAgain" : "app.tryAgain"),
+                                action: { Task { await store.load(showSpinner: true) } }
+                            )
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 40)
+                        listEmptyState
+                        ForEach(attentionParcels) { parcel in
+                            DeliveryAttentionNotice(parcel: parcel, transition: parcelTransition,
+                                onOpen: { path.append(parcel.id) }, onArchive: { await archive(parcel) })
+                                .modifier(arrivalCelebration(for: parcel.id))
+                                .id(parcel.id)
+                        }
+                        if let nextParcel {
+                            ExperimentalNextDeliveryPass(parcel: nextParcel, transition: parcelTransition,
+                                onOpen: { path.append(nextParcel.id) }, onArchive: { await archive(nextParcel) })
+                                .modifier(arrivalCelebration(for: nextParcel.id, stubInset: 43))
+                                .id(nextParcel.id)
+                        }
+                        ForEach(remainingActiveParcels) { parcel in
+                            ExperimentalParcelPassCard(parcel: parcel, notice: nil, transition: parcelTransition,
+                                onOpen: { path.append(parcel.id) }, onArchive: { await archive(parcel) })
+                                .modifier(arrivalCelebration(for: parcel.id))
+                                .id(parcel.id)
+                        }
                     }
-
-                    ForEach(sections) { section in
-                        sectionContent(section)
-                    }
+                    ForEach(sections) { section in sectionContent(section) }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
@@ -250,14 +236,7 @@ private struct DeliveryListView: View {
                 .animation(reduceMotion ? nil : .snappy(duration: 0.32), value: store.parcels.filter { !$0.isArchived }.map(\.id))
             }
             .scrollIndicators(.hidden)
-            .refreshable {
-                do {
-                    try await store.refreshAll()
-                    actionMessage = localizer.text("app.refreshQueued")
-                } catch {
-                    actionError = localizer.errorMessage(error)
-                }
-            }
+            .refreshable { await refreshDeliveries() }
             .overlay {
                 if store.loading && store.parcels.isEmpty {
                     VStack(spacing: 12) {
@@ -306,22 +285,104 @@ private struct DeliveryListView: View {
     }
 
     private var listOverview: some View {
-        HStack(alignment: .center, spacing: 12) {
-            Spacer(minLength: 0)
-            Button { showingFilters = true } label: {
-                Image(systemName: hasCustomView
-                    ? "line.3.horizontal.decrease.circle.fill"
-                    : "line.3.horizontal.decrease")
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(hasCustomView ? ExperimentalPalette.transit : Brand.ink)
-                    .frame(width: 44, height: 44)
-                    .background(hasCustomView ? ExperimentalPalette.transit.opacity(0.09) : .clear, in: Circle())
+        HStack(spacing: 8) {
+            if !activeParcels.isEmpty {
+                Text(localizer.text("app.onTheWaySection"))
+                    .font(.headline.weight(.semibold))
+                Text("\(activeParcels.count)")
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 6).frame(minHeight: 20)
+                    .background(.secondary.opacity(0.09), in: Capsule())
             }
-            .buttonStyle(ExperimentalLiftButtonStyle())
+            Spacer(minLength: 0)
+            Button {
+                showingSearch.toggle()
+                searchFocused = showingSearch
+            } label: {
+                Image(systemName: "magnifyingglass")
+                    .font(.body.weight(.regular))
+                    .frame(width: 44, height: 44)
+                    .background(showingSearch || hasCustomView ? Brand.ink.opacity(0.06) : .clear, in: Circle())
+            }
+            .accessibilityLabel(localizer.text(showingSearch ? "view.hideControls" : "view.showControls"))
+            .accessibilityIdentifier("deliveries.search")
+            Button { Task { await refreshDeliveries() } } label: {
+                Group {
+                    if refreshing { ProgressView() }
+                    else { Image(systemName: "arrow.clockwise").font(.body.weight(.regular)) }
+                }.frame(width: 44, height: 44)
+            }
+            .disabled(refreshing)
+            .accessibilityLabel(localizer.text(refreshing ? "app.refreshing" : "app.refresh"))
+        }
+        .foregroundStyle(Brand.ink)
+        .buttonStyle(.plain)
+    }
+
+    private var searchControls: some View {
+        HStack(spacing: 8) {
+            TextField(localizer.text("view.searchPlaceholder"), text: $query)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+                .focused($searchFocused)
+                .onAppear { searchFocused = true }
+                .accessibilityLabel(localizer.text("view.search"))
+                .padding(.horizontal, 12).frame(minHeight: 44)
+                .background(Brand.paper, in: RoundedRectangle(cornerRadius: 12))
+            if !query.isEmpty {
+                Button { query = "" } label: {
+                    Image(systemName: "xmark.circle").frame(width: 44, height: 44)
+                }.accessibilityLabel(localizer.text("view.clear"))
+            }
+            Button { searchFocused = false; showingFilters = true } label: {
+                Image(systemName: "line.3.horizontal.decrease").frame(width: 44, height: 44)
+            }
             .accessibilityLabel(localizer.text("view.showControls"))
         }
-        .padding(.leading, 4)
-        .padding(.bottom, -12)
+        .font(.subheadline)
+        .buttonStyle(.plain)
+        .onKeyPress(.escape) { showingSearch = false; searchFocused = false; return .handled }
+    }
+
+    @ViewBuilder private var listEmptyState: some View {
+        if !store.loading {
+            if store.parcels.isEmpty {
+                VStack(spacing: 18) {
+                    ContentUnavailableView(localizer.text("app.emptyTitle"), systemImage: "shippingbox",
+                        description: Text(localizer.text("app.emptyDescription")))
+                    Button(localizer.text("app.addParcel")) { sharedDraft = nil; showingAdd = true }
+                        .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
+                }.frame(maxWidth: .infinity).padding(.vertical, 32)
+            } else if visibleParcels.isEmpty {
+                ContentUnavailableView {
+                    Label(localizer.text("view.noResultsTitle"), systemImage: "magnifyingglass")
+                } description: { Text(localizer.text("view.noResultsDescription")) }
+                actions: { Button(localizer.text("view.clear")) { clearFilters() } }
+                    .frame(maxWidth: .infinity).padding(.vertical, 32)
+            } else if !hasCustomView, store.errorMessage == nil, store.parcels.allSatisfy(\.isDelivered) {
+                VStack(spacing: 12) {
+                    Image(systemName: "checkmark").font(.system(size: 36, weight: .ultraLight))
+                        .foregroundStyle(.secondary).padding(.bottom, 6).accessibilityHidden(true)
+                    Text(localizer.text("app.allArrived")).font(.title2.weight(.semibold))
+                    Text(localizer.text("app.allArrivedDescription")).font(.subheadline).foregroundStyle(.secondary)
+                    Button(localizer.text("app.trackAnother")) { sharedDraft = nil; showingAdd = true }
+                        .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
+                        .padding(.top, 6)
+                }
+                .multilineTextAlignment(.center).frame(maxWidth: .infinity).padding(.vertical, 32)
+                .accessibilityIdentifier("deliveries.allArrived")
+            }
+        }
+    }
+
+    private func refreshDeliveries() async {
+        guard !refreshing else { return }
+        refreshing = true
+        defer { refreshing = false }
+        do { try await store.refreshAll(); actionMessage = localizer.text("app.refreshQueued") }
+        catch { actionError = localizer.errorMessage(error) }
     }
 
     @ViewBuilder private var bottomControls: some View {
@@ -371,17 +432,19 @@ private struct DeliveryListView: View {
         )
     }
 
+    private var activeParcels: [Parcel] { visibleParcels.filter(\.isActive) }
+
+    private var attentionParcels: [Parcel] {
+        activeParcels.filter { $0.id != nextParcel?.id && $0.attention() != nil }
+    }
+
+    private var remainingActiveParcels: [Parcel] {
+        activeParcels.filter { $0.id != nextParcel?.id && $0.attention() == nil }
+    }
+
     private var sections: [ParcelSection] {
-        let organized = ParcelOrganizer.sections(from: visibleParcels)
-        guard !hasCustomView, let highlighted = nextParcel?.id else { return organized }
-        if nextIsOnTheWay, let section = organized.first(where: { $0.kind == .active }),
-           let featured = section.parcels.first(where: { $0.id == highlighted }) {
-            let active = ParcelSection(kind: .active, parcels: [featured] + section.parcels.filter { $0.id != highlighted })
-            return [active] + organized.filter { $0.kind != .active }
-        }
-        return organized.compactMap { section in
-            let remaining = section.parcels.filter { $0.id != highlighted }
-            return remaining.isEmpty ? nil : ParcelSection(kind: section.kind, parcels: remaining)
+        ParcelOrganizer.sections(from: visibleParcels).filter {
+            $0.kind == .delivered || $0.kind == .returned || $0.kind == .archived
         }
     }
 
@@ -392,19 +455,7 @@ private struct DeliveryListView: View {
     }
 
     private var nextParcel: Parcel? {
-        ParcelOrganizer.visible(
-            store.parcels,
-            query: "",
-            status: .active,
-            carrier: nil,
-            sort: .priority,
-            catalog: catalog
-        ).first
-    }
-
-    private var nextIsOnTheWay: Bool {
-        guard let nextParcel else { return false }
-        return ParcelOrganizer.sections(from: [nextParcel]).first?.kind == .active
+        hasCustomView ? nil : ParcelOrganizer.nextDelivery(from: activeParcels)
     }
 
     private var hasCustomView: Bool {
@@ -455,12 +506,12 @@ private struct DeliveryListView: View {
     private func sectionHeader(_ section: ParcelSection) -> some View {
         HStack(spacing: 9) {
             Text(sectionTitle(section.kind))
-                .font(.title3.weight(.bold))
+                .font(.headline.weight(.semibold))
             Text("\(section.parcels.count)")
-                .font(.caption2.weight(.bold).monospacedDigit())
+                .font(.caption2.monospacedDigit())
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 8)
-                .frame(height: 24)
+                .frame(minHeight: 20)
                 .background(.secondary.opacity(0.09), in: Capsule())
             Spacer()
         }
@@ -593,6 +644,35 @@ private struct DeliveryListView: View {
     }
 }
 
+private struct DeliveryAttentionNotice: View {
+    let parcel: Parcel
+    let transition: Namespace.ID
+    let onOpen: () -> Void
+    let onArchive: () async -> Void
+    @EnvironmentObject private var localizer: Localizer
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: parcel.currentStage?.metadata.symbol ?? "info.circle")
+                .font(.system(size: 16, weight: .light)).foregroundStyle(Brand.warning).accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(parcel.attention().map { localizer.text($0.localizationKey) } ?? localizer.parcelStatus(parcel))
+                    .font(.subheadline.weight(.medium))
+                Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
+                    .font(.caption).foregroundStyle(.secondary)
+            }.frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: "chevron.right").font(.caption2.weight(.light)).foregroundStyle(.secondary).accessibilityHidden(true)
+        }
+        .padding(13).frame(maxWidth: .infinity, minHeight: 62, alignment: .leading)
+        .background(Brand.warning.opacity(0.06), in: RoundedRectangle(cornerRadius: 13))
+        .overlay { RoundedRectangle(cornerRadius: 13).stroke(Brand.warning.opacity(0.18), lineWidth: 0.75) }
+        .matchedTransitionSource(id: parcel.id, in: transition)
+        .experimentalSwipeToArchive(title: localizer.text("parcel.archive"), cornerRadius: 13, shadow: false, onOpen: onOpen, action: onArchive)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint(localizer.text("detail.label"))
+    }
+}
+
 private struct ExperimentalNextDeliveryPass: View {
     let parcel: Parcel
     let transition: Namespace.ID
@@ -627,9 +707,10 @@ private struct ExperimentalNextDeliveryPass: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 DeliveryPostageStamp(stage: parcel.currentStage, appeared: appeared)
+                    .scaleEffect(0.8).frame(width: 43, height: 53)
             }
-            .padding(.top, 25)
-            .padding(.bottom, 20)
+            .padding(.top, 19)
+            .padding(.bottom, 15)
 
             Text([localizer.parcelStatus(parcel), localizer.parcelDeliveryEstimate(parcel)]
                 .compactMap { $0 }.joined(separator: " · "))
@@ -644,8 +725,8 @@ private struct ExperimentalNextDeliveryPass: View {
             }
         }
         .foregroundStyle(.primary)
-        .padding(21)
-        .frame(maxWidth: .infinity, minHeight: 200, alignment: .leading)
+        .padding(18)
+        .frame(maxWidth: .infinity, minHeight: 166, alignment: .leading)
         .experimentalSurface(fill: identity.surface, cornerRadius: 24)
         .matchedTransitionSource(id: parcel.id, in: transition)
         .accessibilityElement(children: .combine)
@@ -676,7 +757,7 @@ private struct ExperimentalParcelPassCard: View {
     private var date: String? { localizer.parcelDeliveryEstimate(parcel) ?? localizer.parcelCompletionDate(parcel) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
+        VStack(alignment: .leading, spacing: 5) {
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .top, spacing: 12) {
                     CarrierFleetMark(identity: identity).fixedSize()
@@ -688,11 +769,14 @@ private struct ExperimentalParcelPassCard: View {
                     if let date { dateLabel(date) }
                 }
             }
-            .padding(.bottom, 5)
+            .padding(.bottom, 3)
             Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
                 .font(.headline.weight(.semibold))
                 .fixedSize(horizontal: false, vertical: true)
-            Text(localizer.parcelStatus(parcel))
+            HStack(spacing: 5) {
+                if parcel.isDelivered { Image(systemName: "checkmark").font(.caption2.weight(.light)).accessibilityHidden(true) }
+                Text(localizer.parcelStatus(parcel))
+            }
                 .font(.caption)
                 .foregroundStyle(identity.ink)
                 .fixedSize(horizontal: false, vertical: true)
@@ -705,14 +789,17 @@ private struct ExperimentalParcelPassCard: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 16)
-        .padding(.horizontal, 18)
-        .frame(minHeight: 117)
-        .background(identity.surface, in: RoundedRectangle(cornerRadius: 18))
-        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .padding(.vertical, 13)
+        .padding(.horizontal, 15)
+        .frame(minHeight: 102)
+        .background {
+            RoundedRectangle(cornerRadius: 16).fill(Brand.paper)
+                .overlay { RoundedRectangle(cornerRadius: 16).fill(identity.surface.opacity(parcel.currentStage?.isFinal == true || parcel.isArchived ? 0.35 : 1)) }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 16))
         .matchedTransitionSource(id: parcel.id, in: transition)
         .experimentalSwipeToArchive(
-            title: localizer.text("parcel.archive"), cornerRadius: 18, shadow: false,
+            title: localizer.text("parcel.archive"), cornerRadius: 16, shadow: false,
             onOpen: onOpen, action: onArchive
         )
         .accessibilityElement(children: .combine)
@@ -1045,26 +1132,27 @@ private struct ExperimentalArchiveShelf: View {
                 }
             } label: {
                 HStack(spacing: 9) {
-                    Image(systemName: "archivebox.fill")
+                    Image(systemName: "archivebox")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .frame(width: 22)
 
                     Text(localizer.text("app.archived"))
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(.primary)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
 
                     Spacer(minLength: 6)
 
-                    CountPill(count: parcels.count)
+                    Text("(\(parcels.count))").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
 
                     Image(systemName: "chevron.down")
-                        .font(.caption.weight(.semibold))
+                        .font(.caption.weight(.regular))
                         .foregroundStyle(.secondary)
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                 }
                 .padding(.vertical, 9)
                 .padding(.horizontal, 2)
+                .frame(minHeight: 44)
                 .contentShape(Rectangle())
             }
             .buttonStyle(ExperimentalLiftButtonStyle())

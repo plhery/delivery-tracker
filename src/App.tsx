@@ -1,3 +1,4 @@
+import './components/Deliveries.css';
 import { trackAction, trackScreen } from './lib/analytics';
 import { focusClickedButton } from './lib/modal';
 import { userErrorMessage } from './lib/userMessages';
@@ -21,7 +22,6 @@ import {
 import type { ApiAuth } from './lib/apiClient';
 import {
   isActiveParcel,
-  parcelAttention,
   nextPriorityParcel,
   prioritizeActiveParcels,
   type ParcelAttention,
@@ -257,8 +257,6 @@ export default function App({
     [visibleParcels],
   );
   const nextParcel = useMemo(() => hasCustomView ? null : nextPriorityParcel(parcels, viewNow), [parcels, viewNow, hasCustomView]);
-  const nextAttention = nextParcel ? parcelAttention(nextParcel, viewNow) : null;
-  const nextIsOnTheWay = Boolean(nextParcel && prioritizeActiveParcels([nextParcel], viewNow).onTheWay.length);
   const prioritized = useMemo(
     () => prioritizeActiveParcels(activeParcels.filter((parcel) => parcel.id !== nextParcel?.id), viewNow, parcelComparator(sort)),
     [activeParcels, nextParcel, sort, viewNow],
@@ -349,9 +347,12 @@ export default function App({
     setViewNow(Date.now());
   }
 
-  const onTheWayCards = prioritized.onTheWay.length > 0 ? (
+  const remainingDeliveries = [...prioritized.arrivingToday, ...prioritized.onTheWay];
+  const allArrived = !hasCustomView && parcels.length > 0
+    && parcels.every((parcel) => isDelivered(parcel.events));
+  const onTheWayCards = remainingDeliveries.length > 0 ? (
     <div className="parcel-grid">
-      {prioritized.onTheWay.map((parcel) => (
+      {remainingDeliveries.map((parcel) => (
         <ParcelCard
           key={parcel.id}
           parcel={parcel}
@@ -361,10 +362,10 @@ export default function App({
       ))}
     </div>
   ) : null;
-  const nextCard = nextParcel && <div className="delivery-next"><ParcelCard parcel={nextParcel} variant="hero" notice={nextAttention ? t(ATTENTION_LABELS[nextAttention]) : undefined} onOpen={(parcel, source) => openParcelDetail(parcel.id, source)} onArchive={handleArchive} /></div>;
+  const nextCard = nextParcel && <div className="delivery-next"><ParcelCard parcel={nextParcel} variant="hero" onOpen={(parcel, source) => openParcelDetail(parcel.id, source)} onArchive={handleArchive} /></div>;
 
   return (
-    <div className="app" onClickCapture={focusClickedButton}>
+    <div className={`app${tab === 'deliveries' ? ' app--deliveries' : ''}`} onClickCapture={focusClickedButton}>
       <a className="skip-link" href="#main-content">{t('web.skipContent')}</a>
       <header className="app__header">
         <div className="app__masthead">
@@ -403,7 +404,9 @@ export default function App({
         )}
 
         <div className="deliveries-page" hidden={tab !== 'deliveries'}>
+        <div className="delivery-active" role={activeParcels.length ? 'region' : undefined} aria-labelledby={activeParcels.length ? 'active-parcels-title' : undefined}>
         <div className="delivery-overview">
+          {activeParcels.length > 0 && <div className="parcel-section__heading"><h2 id="active-parcels-title">{t('app.onTheWaySection')}</h2><span>{activeParcels.length}</span></div>}
           <div className="delivery-overview__actions">
             {!loading && parcels.length > 0 && <button
               ref={searchToggle}
@@ -448,17 +451,6 @@ export default function App({
             />
           </div>
         )}
-        {!loading && nextParcel && (nextIsOnTheWay ? (
-          <section className="parcel-section delivery-on-the-way" aria-labelledby="active-parcels-title">
-            <div className="parcel-section__heading">
-              <h2 id="active-parcels-title">{t('app.onTheWaySection')}</h2>
-              <span>{prioritized.onTheWay.length + 1}</span>
-            </div>
-            {nextCard}
-            {onTheWayCards}
-          </section>
-        ) : nextCard)}
-
         {loading && (
           <div className="parcel-grid" aria-label={t('app.loadingParcels')}>
             <div className="parcel-card parcel-card--skeleton" />
@@ -491,65 +483,30 @@ export default function App({
           </div>
         )}
 
-        <div className="parcel-sections">
         {!loading && prioritized.attention.length > 0 && (
-          <section
-            className="parcel-section parcel-section--attention"
-            aria-labelledby="attention-parcels-title"
-          >
-            <div className="parcel-section__heading">
-              <h2 id="attention-parcels-title">{t('app.needsAttention')}</h2>
-              <span>{prioritized.attention.length}</span>
-            </div>
+          <section className="delivery-notices" aria-labelledby="attention-parcels-title">
+            <h2 id="attention-parcels-title" className="sr-only">{t('app.needsAttention')}</h2>
             <div className="parcel-grid">
               {prioritized.attention.map(({ parcel, reason }) => (
-                <ParcelCard
-                  key={parcel.id}
-                  parcel={parcel}
+                <ParcelCard key={parcel.id} parcel={parcel} variant="notice"
                   notice={t(ATTENTION_LABELS[reason])}
-                  onOpen={(p, source) => openParcelDetail(p.id, source)}
-                  onArchive={handleArchive}
-                />
+                  onOpen={(p, source) => openParcelDetail(p.id, source)} onArchive={handleArchive} />
               ))}
             </div>
           </section>
         )}
-
-        {!loading && prioritized.arrivingToday.length > 0 && (
-          <section
-            className="parcel-section parcel-section--today"
-            aria-labelledby="today-parcels-title"
-          >
-            <div className="parcel-section__heading">
-              <h2 id="today-parcels-title">{t('app.arrivingToday')}</h2>
-              <span>{prioritized.arrivingToday.length}</span>
-            </div>
-            <div className="parcel-grid">
-              {prioritized.arrivingToday.map((parcel) => (
-                <ParcelCard
-                  key={parcel.id}
-                  parcel={parcel}
-                  onOpen={(p, source) => openParcelDetail(p.id, source)}
-                  onArchive={handleArchive}
-                />
-              ))}
-            </div>
-          </section>
+        {!loading && nextCard}
+        {!loading && onTheWayCards}
+        {!loading && !error && allArrived && (
+          <div className="delivery-arrived">
+            <Icon name="check" />
+            <h2>{t('app.allArrived')}</h2>
+            <p>{t('app.allArrivedDescription')}</p>
+            <button type="button" className="button button--primary" onClick={() => setAdding(true)}>{t('app.trackAnother')}</button>
+          </div>
         )}
-
-        {!loading && !nextIsOnTheWay && prioritized.onTheWay.length > 0 && (
-          <section
-            className="parcel-section parcel-section--wide"
-            aria-labelledby="active-parcels-title"
-          >
-            <div className="parcel-section__heading">
-              <h2 id="active-parcels-title">{t('app.onTheWaySection')}</h2>
-              <span>{prioritized.onTheWay.length}</span>
-            </div>
-            {onTheWayCards}
-          </section>
-        )}
-
+        </div>
+        <div className="parcel-sections">
         {!loading && deliveredParcels.length > 0 && (
           <section
             className="parcel-section parcel-section--past"

@@ -102,17 +102,19 @@ export function isActiveParcel(parcel: ParcelWithEvents): boolean {
   return !parcel.archivedAt && (stage === null || (stage !== 'delivered' && stage !== 'returned'));
 }
 
-/** A carrier outage must not displace a pickup or delivery happening today. */
+/** Next up describes an arrival or pickup; tracking problems have their own notices. */
 export function nextPriorityParcel(parcels: ParcelWithEvents[], now = Date.now()): ParcelWithEvents | null {
   const today = dateKey(new Date(now));
-  const urgency = (parcel: ParcelWithEvents) => {
+  const candidates = parcels.filter((parcel) => {
+    if (!isActiveParcel(parcel)) return false;
     const reason = parcelAttention(parcel, now);
-    if (reason === 'ready_for_pickup' || reason === 'failed_attempt' || reason === 'customs') return 0;
-    if (currentStage(parcel.events) === 'out_for_delivery' || expectedDeliveryDay(parcel.expectedDelivery) === today) return 1;
-    if (reason === 'stalled' || reason === 'not_announced') return 2;
-    return reason === 'sync_error' ? 3 : 4;
+    return !reason || reason === 'ready_for_pickup'
+      || (reason === 'sync_error' && currentStage(parcel.events) === 'out_for_delivery');
+  });
+  const urgency = (parcel: ParcelWithEvents) => {
+    if (currentStage(parcel.events) === 'ready_for_pickup') return 0;
+    return currentStage(parcel.events) === 'out_for_delivery'
+      || expectedDeliveryDay(parcel.expectedDelivery) === today ? 1 : 2;
   };
-  return parcels.filter(isActiveParcel).sort((a, b) => (
-    urgency(a) - urgency(b) || compareParcelPriority(a, b)
-  ))[0] ?? null;
+  return candidates.sort((a, b) => urgency(a) - urgency(b) || compareParcelPriority(a, b))[0] ?? null;
 }

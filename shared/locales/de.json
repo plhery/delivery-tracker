@@ -557,5 +557,8 @@
   "friends.manageFriendship": "Freundschaft verwalten",
   "friends.cancelPrevious": "{{count}} frühere Links widerrufen",
   "friends.editSharing": "Bearbeiten",
-  "friends.sharedStatsSummary": "Lieferungen, durchschnittliche Dauer und Briefmarken"
+  "friends.sharedStatsSummary": "Lieferungen, durchschnittliche Dauer und Briefmarken",
+  "app.allArrived": "Alles ist angekommen.",
+  "app.allArrivedDescription": "Deine letzten Lieferungen findest du unten.",
+  "app.trackAnother": "Ein weiteres Paket verfolgen"
 }

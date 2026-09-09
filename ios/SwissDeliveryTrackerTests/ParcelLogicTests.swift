@@ -879,6 +879,26 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertEqual(snapshot.profile?.shareArrival, false)
     }
 
+    func testNextDeliveryKeepsIssuesSeparateAndPrioritizesPickup() {
+        let now = DateParser.date("2026-09-09T12:00:00Z")!
+        func shipment(_ stage: TrackingStage) -> Parcel {
+            let id = UUID()
+            return makeParcel(id: id, events: [event(id, stage, "2026-09-09T08:00:00Z")])
+        }
+        let customs = shipment(.customs)
+        let failed = shipment(.failedAttempt)
+        var delivery = shipment(.outForDelivery)
+        delivery.syncStatus = .error
+        let pickup = shipment(.readyForPickup)
+        XCTAssertEqual(ParcelOrganizer.nextDelivery(from: [customs, failed, delivery], now: now)?.id, delivery.id)
+        XCTAssertEqual(ParcelOrganizer.nextDelivery(from: [customs, delivery, pickup], now: now)?.id, pickup.id)
+        XCTAssertNil(ParcelOrganizer.nextDelivery(from: [customs, failed], now: now))
+        XCTAssertNil(ParcelOrganizer.nextDelivery(from: [shipment(.delivered), shipment(.returned)], now: now))
+        var archived = delivery
+        archived.archivedAt = "2026-09-09T10:00:00Z"
+        XCTAssertNil(ParcelOrganizer.nextDelivery(from: [archived], now: now))
+    }
+
     private func makeParcel(
         id: UUID = UUID(),
         trackingNumber: String = "1Z999AA10123456784",

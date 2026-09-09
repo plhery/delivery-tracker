@@ -557,5 +557,8 @@
   "friends.manageFriendship": "Gestisci amicizia",
   "friends.cancelPrevious": "Annulla i {{count}} link precedenti",
   "friends.editSharing": "Modifica",
-  "friends.sharedStatsSummary": "Consegne, tempo medio e francobolli"
+  "friends.sharedStatsSummary": "Consegne, tempo medio e francobolli",
+  "app.allArrived": "È arrivato tutto.",
+  "app.allArrivedDescription": "Le tue consegne recenti sono conservate qui sotto.",
+  "app.trackAnother": "Traccia un altro pacco"
 }

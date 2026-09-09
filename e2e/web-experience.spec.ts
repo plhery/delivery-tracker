@@ -268,7 +268,7 @@ test('scrolls from a card, reveals archive smoothly, and supports reversing the 
     }
     await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   }
-  const card = page.getByRole('button', { name: /^Next up: Birthday gift 🎁 —/ });
+  const card = page.getByRole('button', { name: /^(?:Next up: )?Birthday gift 🎁 —/ });
   const box = await card.boundingBox();
   await swipe(box!.x + 100, box!.y + box!.height / 2, 6, -150);
   await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(50);

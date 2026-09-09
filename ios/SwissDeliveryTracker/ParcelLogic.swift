@@ -239,6 +239,24 @@ enum ParcelOrganizer {
             .sorted { compare($0, $1, by: sort, catalog: catalog) }
     }
 
+    /// Feature an arrival or pickup. Issues are shown separately as compact notices.
+    static func nextDelivery(from parcels: [Parcel], now: Date = Date()) -> Parcel? {
+        let candidates = parcels.filter { parcel in
+            guard parcel.isActive else { return false }
+            let reason = parcel.attention(now: now)
+            return reason == nil || reason == .readyForPickup
+                || (reason == .syncError && parcel.currentStage == .outForDelivery)
+        }
+        func urgency(_ parcel: Parcel) -> Int {
+            if parcel.currentStage == .readyForPickup { return 0 }
+            return parcel.currentStage == .outForDelivery || parcel.expectedDayKey == dayKey(now) ? 1 : 2
+        }
+        return candidates.sorted { left, right in
+            if urgency(left) != urgency(right) { return urgency(left) < urgency(right) }
+            return compare(left, right, by: .priority)
+        }.first
+    }
+
     static func sections(from parcels: [Parcel], now: Date = Date()) -> [ParcelSection] {
         let active = parcels.filter(\.isActive)
         let attention = active.filter { $0.attention(now: now) != nil }
