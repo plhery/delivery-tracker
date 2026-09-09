@@ -13,39 +13,19 @@ final class NotificationLogicTests: XCTestCase {
         XCTAssertEqual(NotificationPreset.matching([.customs, .delivered]), .all)
     }
 
-    func testPreferencesDraftRoundTripsPresetAndQuietHours() {
+    func testSavingPresetClearsRetiredQuietHours() {
         let original = NotificationPreferences(
             enabledStages: NotificationPreset.important.stages,
-            quietHoursStart: "23:15",
-            quietHoursEnd: "06:45",
-            timezone: "Europe/Zurich"
+            quietHoursStart: "23:15", quietHoursEnd: "06:45", timezone: "Europe/Zurich"
         )
-
-        let draft = NotificationPreferencesDraft(preferences: original, calendar: utcCalendar)
-        let saved = draft.preferences(timezone: original.timezone, calendar: utcCalendar)
-
+        var draft = NotificationPreferencesDraft(preferences: original)
         XCTAssertEqual(draft.preset, .important)
-        XCTAssertTrue(draft.quietHoursEnabled)
-        XCTAssertEqual(saved, original)
-    }
-
-    func testDisablingQuietHoursClearsBothTimes() {
-        var draft = NotificationPreferencesDraft(
-            preferences: NotificationPreferences(
-                enabledStages: NotificationPreset.deliveryDay.stages,
-                quietHoursStart: "22:00",
-                quietHoursEnd: "08:00",
-                timezone: "Europe/Zurich"
-            ),
-            calendar: utcCalendar
-        )
-        draft.quietHoursEnabled = false
-
-        let saved = draft.preferences(timezone: "Europe/Zurich", calendar: utcCalendar)
-
+        draft.preset = .deliveryDay
+        let saved = draft.preferences(timezone: original.timezone)
+        XCTAssertEqual(saved.enabledStages, NotificationPreset.deliveryDay.stages)
         XCTAssertNil(saved.quietHoursStart)
         XCTAssertNil(saved.quietHoursEnd)
-        XCTAssertEqual(saved.enabledStages, NotificationPreset.deliveryDay.stages)
+        XCTAssertEqual(saved.timezone, original.timezone)
     }
 
     func testDeviceNotificationStateRequiresPermissionRegistrationAndNoOptOut() {
@@ -134,9 +114,4 @@ final class NotificationLogicTests: XCTestCase {
         ))
     }
 
-    private var utcCalendar: Calendar {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
-        return calendar
-    }
 }

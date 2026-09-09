@@ -368,7 +368,7 @@
   "onboarding.notifications.feature.delivery": "Savoir quand un colis est en livraison",
   "onboarding.notifications.feature.issues": "Soyez informé des contrôles douaniers et des livraisons manquées",
   "onboarding.notifications.feature.pickup": "Sachez quand votre colis est prêt à être retiré",
-  "onboarding.notifications.fineTune": "Vous gardez le contrôle. Ajustez les alertes et les heures silencieuses à tout moment dans les réglages des notifications.",
+  "onboarding.notifications.fineTune": "Personnalisez les notifications de livraison à tout moment dans les réglages.",
   "onboarding.notifications.notNow": "Pas maintenant",
   "onboarding.notifications.subtitle": "Choisissez les nouvelles de livraison que vous souhaitez recevoir. Vous pourrez changer d’avis à tout moment.",
   "onboarding.notifications.title": "Gardez un œil sur vos colis",
@@ -517,5 +517,12 @@
   "friends.friendUnavailable": "Cet ami ne fait plus partie de ton cercle.",
   "friends.selfInvitation": "Bien tenté, mais tu ne peux pas être ton propre ami.",
   "analytics.label": "Statistiques d’utilisation",
-  "analytics.detail": "Partager les écrans consultés et les actions anonymes pour améliorer Delivery Tracker. Le contenu des colis et les informations du compte sont exclus."
+  "analytics.detail": "Partager les écrans consultés et les actions anonymes pour améliorer Delivery Tracker. Le contenu des colis et les informations du compte sont exclus.",
+  "settings.title": "Réglages",
+  "settings.preferences": "Préférences",
+  "settings.accountData": "Compte et données",
+  "settings.demoData": "Démo et données",
+  "settings.yourData": "Vos données",
+  "settings.deliveryUpdates": "Notifications de livraison",
+  "settings.off": "Désactivées"
 }

@@ -368,7 +368,7 @@
   "onboarding.notifications.feature.delivery": "Know when a parcel is out for delivery",
   "onboarding.notifications.feature.issues": "Know about customs checks and missed deliveries",
   "onboarding.notifications.feature.pickup": "Know when your parcel is ready to collect",
-  "onboarding.notifications.fineTune": "You stay in control. Fine-tune updates and quiet hours anytime in Notification Settings.",
+  "onboarding.notifications.fineTune": "Fine-tune your delivery updates anytime in Settings.",
   "onboarding.notifications.notNow": "Not now",
   "onboarding.notifications.subtitle": "Choose the delivery updates you’d like to receive. You can change this anytime.",
   "onboarding.notifications.title": "Stay up to date with your parcels",
@@ -517,5 +517,12 @@
   "friends.friendUnavailable": "This friend is no longer in your circle.",
   "friends.selfInvitation": "Aw nice try, but you can’t be your own friend.",
   "analytics.label": "Usage analytics",
-  "analytics.detail": "Share anonymous screen views and actions to improve Delivery Tracker. Parcel contents and account details are excluded."
+  "analytics.detail": "Share anonymous screen views and actions to improve Delivery Tracker. Parcel contents and account details are excluded.",
+  "settings.title": "Settings",
+  "settings.preferences": "Preferences",
+  "settings.accountData": "Account & data",
+  "settings.demoData": "Demo & data",
+  "settings.yourData": "Your data",
+  "settings.deliveryUpdates": "Delivery updates",
+  "settings.off": "Off"
 }

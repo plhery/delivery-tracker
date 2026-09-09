@@ -14,7 +14,7 @@ async function demo(page: Page) {
 }
 async function settings(page: Page) {
   await page.locator('.account-trigger').click();
-  return page.getByRole('dialog', { name: 'Account', exact: true });
+  return page.locator('.account-menu');
 }
 async function noOverflow(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
@@ -106,6 +106,7 @@ test('keeps demo exit available from parcel details and account', async ({ page 
   await page.getByRole('button', { name: 'Tap to open your parcel' }).click();
   await page.getByRole('button', { name: 'or try the demo' }).click();
   const account = await settings(page);
+  await account.getByRole('button', { name: 'Demo & data' }).click();
   await account.getByRole('button', { name: 'Exit demo' }).click();
   await expect(page.locator('.arrival--welcome')).toBeVisible();
   await expect(page.locator('[inert]')).toHaveCount(0);

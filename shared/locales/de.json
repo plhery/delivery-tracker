@@ -368,7 +368,7 @@
   "onboarding.notifications.feature.delivery": "Erfahre, wenn ein Paket in Zustellung ist",
   "onboarding.notifications.feature.issues": "Erfahre von Zollprüfungen und verpassten Zustellungen",
   "onboarding.notifications.feature.pickup": "Erfahre, wann dein Paket abholbereit ist",
-  "onboarding.notifications.fineTune": "Du behältst die Kontrolle. Updates und Ruhezeiten kannst du jederzeit in den Benachrichtigungseinstellungen anpassen.",
+  "onboarding.notifications.fineTune": "Passe deine Lieferbenachrichtigungen jederzeit in den Einstellungen an.",
   "onboarding.notifications.notNow": "Nicht jetzt",
   "onboarding.notifications.subtitle": "Wähle die Liefermeldungen, die du erhalten möchtest. Du kannst das jederzeit ändern.",
   "onboarding.notifications.title": "Bleib über deine Pakete informiert",
@@ -517,5 +517,12 @@
   "friends.friendUnavailable": "Diese Person ist nicht mehr in deinem Kreis.",
   "friends.selfInvitation": "Netter Versuch, aber du kannst nicht mit dir selbst befreundet sein.",
   "analytics.label": "Nutzungsstatistik",
-  "analytics.detail": "Anonyme Bildschirmaufrufe und Aktionen teilen, um Delivery Tracker zu verbessern. Paketinhalte und Kontodaten werden nicht erfasst."
+  "analytics.detail": "Anonyme Bildschirmaufrufe und Aktionen teilen, um Delivery Tracker zu verbessern. Paketinhalte und Kontodaten werden nicht erfasst.",
+  "settings.title": "Einstellungen",
+  "settings.preferences": "Präferenzen",
+  "settings.accountData": "Konto & Daten",
+  "settings.demoData": "Demo & Daten",
+  "settings.yourData": "Deine Daten",
+  "settings.deliveryUpdates": "Lieferbenachrichtigungen",
+  "settings.off": "Aus"
 }

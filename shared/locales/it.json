@@ -368,7 +368,7 @@
   "onboarding.notifications.feature.delivery": "Scopri quando un pacco è in consegna",
   "onboarding.notifications.feature.issues": "Scopri i controlli doganali e le consegne non riuscite",
   "onboarding.notifications.feature.pickup": "Scopri quando il pacco è pronto per il ritiro",
-  "onboarding.notifications.fineTune": "Hai sempre il controllo. Modifica aggiornamenti e ore silenziose in qualsiasi momento nelle impostazioni delle notifiche.",
+  "onboarding.notifications.fineTune": "Personalizza gli aggiornamenti sulle consegne in qualsiasi momento nelle impostazioni.",
   "onboarding.notifications.notNow": "Non ora",
   "onboarding.notifications.subtitle": "Scegli quali aggiornamenti ricevere. Puoi cambiare le preferenze in qualsiasi momento.",
   "onboarding.notifications.title": "Resta aggiornato sui tuoi pacchi",
@@ -517,5 +517,12 @@
   "friends.friendUnavailable": "Questa persona non fa più parte della tua cerchia.",
   "friends.selfInvitation": "Bel tentativo, ma non puoi essere amico di te stesso.",
   "analytics.label": "Statistiche di utilizzo",
-  "analytics.detail": "Condividi schermate e azioni anonime per migliorare Delivery Tracker. Il contenuto dei pacchi e i dati dell’account sono esclusi."
+  "analytics.detail": "Condividi schermate e azioni anonime per migliorare Delivery Tracker. Il contenuto dei pacchi e i dati dell’account sono esclusi.",
+  "settings.title": "Impostazioni",
+  "settings.preferences": "Preferenze",
+  "settings.accountData": "Account e dati",
+  "settings.demoData": "Demo e dati",
+  "settings.yourData": "I tuoi dati",
+  "settings.deliveryUpdates": "Aggiornamenti sulle consegne",
+  "settings.off": "Disattivati"
 }

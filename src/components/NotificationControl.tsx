@@ -19,6 +19,7 @@ import {
 import type { ApiAuth } from '../lib/apiClient';
 import { useSheetDialog } from '../lib/modal';
 import { type Translate, useI18n } from '../i18n';
+import './Settings.css';
 
 type EventPreset = 'all' | 'important' | 'delivery-day';
 
@@ -37,9 +38,6 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
   const [error, setError] = useState<string | null>(null);
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [preset, setPreset] = useState<EventPreset>('all');
-  const [quietHours, setQuietHours] = useState(false);
-  const [quietStart, setQuietStart] = useState('22:00');
-  const [quietEnd, setQuietEnd] = useState('08:00');
   const [preferencesBusy, setPreferencesBusy] = useState(false);
   const [preferencesNotice, setPreferencesNotice] = useState<string | null>(null);
   const enabled = state?.kind === 'enabled';
@@ -68,9 +66,6 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
     void getNotificationPreferences(apiAuth).then((next) => {
       setPreferences(next);
       setPreset(presetFor(next.enabledStages));
-      setQuietHours(Boolean(next.quietHoursStart && next.quietHoursEnd));
-      setQuietStart(next.quietHoursStart ?? '22:00');
-      setQuietEnd(next.quietHoursEnd ?? '08:00');
     }).catch((reason: unknown) => {
       setError(userErrorMessage(reason, t, 'notifications.error.preferences'));
     });
@@ -120,8 +115,8 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
         || 'Europe/Zurich';
       const saved = await saveNotificationPreferences({
         enabledStages: PRESET_STAGES[preset],
-        quietHoursStart: quietHours ? quietStart : null,
-        quietHoursEnd: quietHours ? quietEnd : null,
+        quietHoursStart: null,
+        quietHoursEnd: null,
         timezone,
       }, apiAuth);
       setPreferences(saved);
@@ -144,14 +139,14 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
         <svg aria-hidden="true" viewBox="0 0 24 24">
           <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
         </svg>
-        {variant === 'row' && <span>{t('notifications.title')}</span>}
+        {variant === 'row' && <><span>{t('settings.deliveryUpdates')}</span><span className="settings-value">{enabled && preferences ? t(presetTitle(presetFor(preferences.enabledStages))) : state?.kind === 'prompt' ? t('settings.off') : ''}</span><span className="settings-chevron" aria-hidden="true">›</span></>}
       </button>
 
       {open && createPortal(
         <div className="sheet-backdrop" role="presentation" onMouseDown={close}>
           <section
             ref={dialog}
-            className="sheet notification-sheet"
+            className="sheet notification-sheet refined-settings"
             role="dialog"
             aria-modal="true"
             aria-labelledby="notifications-title"
@@ -161,8 +156,7 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
             <div className="sheet__grabber" />
             <div className="sheet__heading">
               <div>
-                <p className="sheet__eyebrow">{t('notifications.eyebrow')}</p>
-                <h2 className="sheet__title" id="notifications-title">{t('notifications.title')}</h2>
+                <h2 className="sheet__title" id="notifications-title">{t('settings.deliveryUpdates')}</h2>
               </div>
               <button ref={closeButton} className="sheet__close" type="button" aria-label={t('common.close')} onClick={close}>×</button>
             </div>
@@ -175,14 +169,12 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
               </div>
             </div>
 
-            <p className="notification-schedule">
-              {t('notifications.schedule')}
-            </p>
+            {(state?.kind === 'prompt' || enabled) && <div className="settings-box settings-device-control"><button className="settings-row" type="button" role="switch" aria-checked={enabled} aria-label={t('settings.deliveryUpdates')} disabled={busy} onClick={() => void (enabled ? disable() : enable())}><span>{t('settings.deliveryUpdates')}</span><span className="settings-switch" aria-hidden="true" /></button></div>}
             {error && <p className="sheet__error" role="alert">{error}</p>}
 
             {apiAuth && preferences && (
               <div className="notification-preferences">
-                <fieldset>
+                <fieldset disabled={preferencesBusy}>
                   <legend>{t('notifications.preferencesTitle')}</legend>
                   <PreferenceOption
                     value="all"
@@ -207,39 +199,6 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
                   />
                 </fieldset>
 
-                <label className="notification-preferences__quiet">
-                  <input
-                    type="checkbox"
-                    checked={quietHours}
-                    onChange={(event) => setQuietHours(event.target.checked)}
-                  />
-                  <span>
-                    <strong>{t('notifications.quietHours')}</strong>
-                    <small>{t('notifications.quietDescription')}</small>
-                  </span>
-                </label>
-                {quietHours && (
-                  <div className="notification-preferences__times">
-                    <label>
-                      <span>{t('notifications.from')}</span>
-                      <input
-                        type="time"
-                        value={quietStart}
-                        onChange={(event) => setQuietStart(event.target.value)}
-                        required
-                      />
-                    </label>
-                    <label>
-                      <span>{t('notifications.until')}</span>
-                      <input
-                        type="time"
-                        value={quietEnd}
-                        onChange={(event) => setQuietEnd(event.target.value)}
-                        required
-                      />
-                    </label>
-                  </div>
-                )}
                 {preferencesNotice && (
                   <p className="notification-preferences__saved" role="status">
                     {preferencesNotice}
@@ -248,7 +207,7 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
                 <button
                   className="button button--primary notification-action"
                   type="button"
-                  disabled={preferencesBusy || (quietHours && (!quietStart || !quietEnd))}
+                  disabled={preferencesBusy}
                   onClick={() => void savePreferences()}
                 >
                   {preferencesBusy ? t('notifications.saving') : t('notifications.save')}
@@ -256,16 +215,7 @@ export function NotificationControl({ apiAuth, variant = 'icon' }: { apiAuth?: A
               </div>
             )}
 
-            {state?.kind === 'prompt' && (
-              <button className="button button--primary notification-action" type="button" disabled={busy} onClick={() => void enable()}>
-                {busy ? t('notifications.enabling') : t('notifications.enable')}
-              </button>
-            )}
-            {enabled && (
-              <button className="button button--secondary notification-action" type="button" disabled={busy} onClick={() => void disable()}>
-                {busy ? t('notifications.disabling') : t('notifications.disable')}
-              </button>
-            )}
+            <p className="notification-schedule">{t('notifications.schedule')}</p>
           </section>
         </div>,
         document.body,
@@ -321,4 +271,8 @@ function copyFor(state: PushState | null, hasError: boolean, t: Translate): stri
     case 'prompt': return t('notifications.state.prompt');
     default: return t('notifications.state.checking');
   }
+}
+
+function presetTitle(preset: EventPreset) {
+  return preset === 'all' ? 'notifications.preset.all' : preset === 'important' ? 'notifications.preset.important' : 'notifications.preset.deliveryDay';
 }

@@ -35,53 +35,19 @@ enum NotificationPreset: String, CaseIterable, Identifiable {
 }
 
 struct NotificationPreferencesDraft: Equatable {
-    private static let defaultQuietStart = "22:00"
-    private static let defaultQuietEnd = "08:00"
-
     var preset: NotificationPreset
-    var quietHoursEnabled: Bool
-    var quietStart: Date
-    var quietEnd: Date
 
-    init(preferences: NotificationPreferences? = nil, calendar: Calendar = .current) {
+    init(preferences: NotificationPreferences? = nil) {
         preset = preferences.map { NotificationPreset.matching($0.enabledStages) } ?? .all
-        quietHoursEnabled = preferences?.quietHoursStart != nil && preferences?.quietHoursEnd != nil
-        quietStart = Self.date(
-            from: preferences?.quietHoursStart ?? Self.defaultQuietStart,
-            calendar: calendar
-        )
-        quietEnd = Self.date(
-            from: preferences?.quietHoursEnd ?? Self.defaultQuietEnd,
-            calendar: calendar
-        )
     }
 
-    func preferences(timezone: String, calendar: Calendar = .current) -> NotificationPreferences {
+    func preferences(timezone: String) -> NotificationPreferences {
         NotificationPreferences(
             enabledStages: preset.stages,
-            quietHoursStart: quietHoursEnabled ? Self.string(from: quietStart, calendar: calendar) : nil,
-            quietHoursEnd: quietHoursEnabled ? Self.string(from: quietEnd, calendar: calendar) : nil,
+            quietHoursStart: nil,
+            quietHoursEnd: nil,
             timezone: timezone
         )
-    }
-
-    private static func date(from value: String, calendar: Calendar) -> Date {
-        formatter(calendar: calendar).date(from: value)
-            ?? formatter(calendar: calendar).date(from: defaultQuietStart)
-            ?? Date(timeIntervalSince1970: 0)
-    }
-
-    private static func string(from date: Date, calendar: Calendar) -> String {
-        formatter(calendar: calendar).string(from: date)
-    }
-
-    private static func formatter(calendar: Calendar) -> DateFormatter {
-        let formatter = DateFormatter()
-        formatter.calendar = calendar
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = calendar.timeZone
-        formatter.dateFormat = "HH:mm"
-        return formatter
     }
 }
 

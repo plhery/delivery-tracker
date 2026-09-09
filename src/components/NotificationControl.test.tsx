@@ -56,7 +56,7 @@ describe('NotificationControl', () => {
 
     await user.click(screen.getByRole('button', { name: 'Notification settings' }));
     expect(await screen.findByText(/every 10 minutes from 08:00 to 22:00/i)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Enable notifications' }));
+    await user.click(screen.getByRole('switch', { name: 'Delivery updates' }));
     expect(inspectPushState).toHaveBeenCalledWith(apiAuth);
     expect(enablePushNotifications).toHaveBeenCalledWith('public', apiAuth, 'en');
     expect(await screen.findByText("You’re set for parcel updates")).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe('NotificationControl', () => {
     const user = userEvent.setup();
     render(<NotificationControl />);
     await user.click(await screen.findByRole('button', { name: 'Notifications enabled' }));
-    await user.click(screen.getByRole('button', { name: /turn off on this device/i }));
+    await user.click(screen.getByRole('switch', { name: 'Delivery updates' }));
     expect(disablePushNotifications).toHaveBeenCalled();
     expect(await screen.findByText(/Know when your parcel needs you/i)).toBeInTheDocument();
   });
@@ -83,7 +83,10 @@ describe('NotificationControl', () => {
     expect(await screen.findByText(/add Delivery Tracker to your Home Screen/i)).toBeInTheDocument();
   });
 
-  it('saves account-wide event presets and quiet hours', async () => {
+  it('saves event presets and clears the retired quiet hours', async () => {
+    vi.mocked(getNotificationPreferences).mockResolvedValue({
+      enabledStages: ['out_for_delivery', 'delivered'], quietHoursStart: '22:00', quietHoursEnd: '08:00', timezone: 'Europe/Zurich',
+    });
     vi.mocked(inspectPushState).mockResolvedValue({ kind: 'enabled', publicKey: 'public' });
     const apiAuth = {
       userId: 'user-1',
@@ -94,11 +97,7 @@ describe('NotificationControl', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Notifications enabled' }));
     await user.click(await screen.findByRole('radio', { name: /important only/i }));
-    await user.click(screen.getByRole('checkbox', { name: /quiet hours/i }));
-    await user.clear(screen.getByLabelText('From'));
-    await user.type(screen.getByLabelText('From'), '21:30');
-    await user.clear(screen.getByLabelText('Until'));
-    await user.type(screen.getByLabelText('Until'), '07:30');
+    expect(screen.queryByRole('checkbox', { name: /quiet hours/i })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Save preferences' }));
 
     expect(saveNotificationPreferences).toHaveBeenCalledWith({
@@ -106,8 +105,8 @@ describe('NotificationControl', () => {
         'customs', 'out_for_delivery', 'failed_attempt', 'ready_for_pickup',
         'delivered', 'returned',
       ],
-      quietHoursStart: '21:30',
-      quietHoursEnd: '07:30',
+      quietHoursStart: null,
+      quietHoursEnd: null,
       timezone: expect.any(String),
     }, apiAuth);
     expect(await screen.findByText('Preferences saved')).toBeInTheDocument();
