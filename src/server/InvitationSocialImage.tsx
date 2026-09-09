@@ -1,15 +1,23 @@
 import { ImageResponse } from 'next/og';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+// Preserve ImageResponse's bundled sans face when adding the serif name font.
+const sansFont = readFileSync(join(process.cwd(), 'node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf'));
+const nameFont = readFileSync(join(process.cwd(), 'public/fonts/gelasio/Gelasio-SemiBoldItalic.ttf'));
 
 /** A still of the welcome parcel, drawn with the same kraft paper and labels. */
 export function invitationSocialImage(nickname: string | null): ImageResponse {
-  const greeting = nickname ? `Your friend ${nickname}` : 'A friend';
   const nameLength = [...(nickname ?? '')].length;
   const greetingSize = nameLength > 18 ? 34 : nameLength > 12 ? 44 : 54;
   return new ImageResponse(
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#F4F5F1', color: '#26372E', padding: '38px 60px' }}>
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#F4F5F1', color: '#26372E', padding: '38px 60px', fontFamily: 'Geist' }}>
       <div style={{ display: 'flex', alignItems: 'center', fontSize: 20, color: '#637568', letterSpacing: 1 }}>DELIVERY TRACKER</div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: 1020, height: 160, marginTop: 16, textAlign: 'center', fontWeight: 700, lineHeight: 1.15 }}>
-        <div style={{ display: 'flex', fontSize: greetingSize }}>{greeting}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: 1020, height: 160, marginTop: 4, textAlign: 'center', fontWeight: 700, lineHeight: 1.15 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: greetingSize * 0.26, fontSize: greetingSize }}>
+          <span>{nickname ? 'Your friend' : 'A friend'}</span>
+          {nickname && <span style={{ fontFamily: 'Gelasio', fontStyle: 'italic', fontWeight: 600 }}>{nickname}</span>}
+        </div>
         <div style={{ display: 'flex', fontSize: 54 }}>sent you an invitation</div>
       </div>
       <svg width="360" height="300" viewBox="25 85 250 215" fill="none">
@@ -35,6 +43,13 @@ export function invitationSocialImage(nickname: string | null): ImageResponse {
       </svg>
       <div style={{ display: 'flex', alignItems: 'center', marginTop: 16, fontSize: 28, color: '#526E5B' }}>Tap to open your parcel →</div>
     </div>,
-    { width: 1200, height: 630, headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow' } },
+    {
+      width: 1200, height: 630,
+      fonts: [
+        { name: 'Geist', data: sansFont, weight: 400, style: 'normal' },
+        { name: 'Gelasio', data: nameFont, weight: 600, style: 'italic' },
+      ],
+      headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow' },
+    },
   );
 }
