@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><title>Delivery updates · Web exploration</title>
+<style>
+#notification-exploration{--dt-bg:light-dark(#f5f6f0,#20271f);--dt-paper:light-dark(#fffefa,#2a3228);--dt-ink:light-dark(#283124,#e7ebdf);--dt-muted:light-dark(#69735f,#adb8a1);--dt-line:light-dark(#dfe4d7,#414c3a);--dt-wash:light-dark(#ecefe4,#343f2e);--dt-yellow:light-dark(#f1d44f,#ecd053);--dt-yellow-ink:#39331b;--dt-green:light-dark(#657b51,#a4b38b);--dt-shade:light-dark(#29302538,#0008);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--dt-ink);width:100%;background:transparent}
+#notification-exploration *{box-sizing:border-box}#notification-exploration [hidden]{display:none!important}#notification-exploration button{font:inherit;cursor:pointer;color:inherit}#notification-exploration button:focus-visible{outline:3px solid var(--dt-green);outline-offset:3px}#notification-exploration svg{flex-shrink:0;width:19px;height:19px;stroke-width:1.6}#notification-exploration h1,#notification-exploration h2,#notification-exploration p{margin:0}#notification-exploration .dt-window{position:relative;isolation:isolate;max-width:690px;margin:auto;background:var(--dt-bg);border:1px solid var(--dt-line);border-radius:22px;overflow:hidden;min-height:560px}#notification-exploration .dt-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:24px 28px;border-bottom:1px solid var(--dt-line)}#notification-exploration .dt-header h1{font-size:23px;font-weight:500;letter-spacing:-.7px}#notification-exploration .dt-add{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--dt-muted)}#notification-exploration .dt-icon{display:grid;place-items:center;border:0;width:44px;height:44px;background:transparent;border-radius:50%;padding:0}#notification-exploration .dt-page{padding:24px 28px 20px}#notification-exploration .dt-section{display:flex;align-items:center;justify-content:space-between;letter-spacing:1.4px;font-size:11px;margin-bottom:18px;color:var(--dt-muted)}#notification-exploration .dt-count{margin-left:10px;letter-spacing:0}#notification-exploration .dt-parcel{padding:22px;border:1px solid var(--dt-line);border-radius:20px;background:var(--dt-paper)}#notification-exploration .dt-carrier{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;color:var(--dt-muted);margin-bottom:24px}#notification-exploration .dt-post{background:var(--dt-yellow);color:var(--dt-yellow-ink);padding:4px 8px;border-radius:5px;font-weight:600}#notification-exploration .dt-parcel h2{font-size:23px;font-weight:500;letter-spacing:-.6px;margin-bottom:4px}#notification-exploration .dt-parcel>p{font-size:13px;color:var(--dt-green)}#notification-exploration .dt-track{display:flex;gap:5px;margin:22px 0 11px}#notification-exploration .dt-track span{height:4px;border-radius:4px;background:var(--dt-green);flex:1}#notification-exploration .dt-track span:last-child{background:var(--dt-line)}#notification-exploration .dt-parcel-foot{display:flex;justify-content:space-between;gap:15px;font-size:11px;color:var(--dt-muted)}#notification-exploration .dt-small-parcel{display:flex;align-items:center;gap:12px;padding:22px 2px;border-bottom:1px solid var(--dt-line)}#notification-exploration .dt-box{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--dt-wash);flex-shrink:0}#notification-exploration .dt-small-parcel strong{font-size:13px;font-weight:500}#notification-exploration .dt-small-parcel p{font-size:12px;color:var(--dt-muted);margin-top:3px}#notification-exploration .dt-date{font-size:11px;margin-left:auto;color:var(--dt-muted)}#notification-exploration .dt-footnote{display:flex;justify-content:center;align-items:center;gap:6px;font-size:11px;color:var(--dt-muted);padding-top:24px}#notification-exploration .dt-footnote svg{width:14px;height:14px}
+#notification-exploration .dt-prompt{background:var(--dt-paper);border:1px solid var(--dt-line);border-radius:18px;padding:23px;position:relative}#notification-exploration .dt-inline-prompt{background:var(--dt-wash);margin-bottom:18px;padding:19px 20px}#notification-exploration .dt-prompt-top{display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--dt-muted);padding-right:30px;margin-bottom:12px}#notification-exploration .dt-prompt-top svg{width:16px;height:16px}#notification-exploration .dt-prompt h2{font-size:24px;line-height:1.18;letter-spacing:-.65px;font-weight:500;max-width:300px;margin-bottom:10px}#notification-exploration .dt-inline-prompt h2{font-size:20px;max-width:none}#notification-exploration .dt-prompt p{font-size:13px;color:var(--dt-muted);max-width:340px;line-height:1.6}#notification-exploration .dt-close{position:absolute;right:9px;top:9px}#notification-exploration .dt-example{background:var(--dt-wash);border-radius:12px;padding:14px;margin:20px 0;display:flex;gap:10px;align-items:start}#notification-exploration .dt-example>svg{margin-top:3px;color:var(--dt-green)}#notification-exploration .dt-example small{display:block;font-size:10px;color:var(--dt-muted);margin-bottom:4px;letter-spacing:.5px}#notification-exploration .dt-example strong{font-size:13px;font-weight:500;display:block}#notification-exploration .dt-example p{font-size:12px}#notification-exploration .dt-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:18px}#notification-exploration .dt-primary,#notification-exploration .dt-secondary{border:0;min-height:44px;padding:11px 15px;border-radius:11px;font-size:12px;font-weight:500}#notification-exploration .dt-primary{background:var(--dt-yellow);color:var(--dt-yellow-ink)}#notification-exploration .dt-secondary{background:transparent;color:var(--dt-muted)}#notification-exploration .dt-help{margin-top:12px!important;font-size:11px!important}#notification-exploration .dt-float{position:absolute;inset:0;z-index:2;display:flex;justify-content:flex-end;align-items:flex-end;padding:22px;pointer-events:none}#notification-exploration .dt-float .dt-prompt{pointer-events:auto;max-width:370px;width:100%;box-shadow:0 12px 40px var(--dt-shade)}#notification-exploration .dt-scrim{position:absolute;inset:0;z-index:3;display:flex;align-items:flex-end;justify-content:center;background:var(--dt-shade);padding:42px 22px 0}#notification-exploration .dt-sheet{max-width:440px;width:100%;border-bottom:0;border-radius:24px 24px 0 0;padding:26px}#notification-exploration .dt-grabber{width:32px;height:4px;background:var(--dt-line);border-radius:10px;margin:-12px auto 22px}#notification-exploration .dt-sheet .dt-primary{flex:1}#notification-exploration .dt-sheet .dt-actions{flex-wrap:nowrap}#notification-exploration .dt-permission{align-items:center;padding:22px}#notification-exploration .dt-permission .dt-prompt{width:100%;max-width:380px}#notification-exploration .dt-permission h2{font-size:21px}#notification-exploration #dt-message:empty{display:none}#notification-exploration #dt-message{margin-top:18px;padding:12px 14px;border-radius:12px;background:var(--dt-wash);font-size:12px}#notification-exploration .dt-steps{margin:18px 0;padding-left:22px;color:var(--dt-muted);font-size:13px}#notification-exploration .dt-steps li+li{margin-top:8px}
+@media(max-width:460px){#notification-exploration .dt-header{padding:16px}#notification-exploration .dt-header h1{font-size:21px}#notification-exploration .dt-add{font-size:0;gap:0}#notification-exploration .dt-page{padding:20px 16px}#notification-exploration .dt-parcel{padding:18px}#notification-exploration .dt-parcel h2{font-size:21px}#notification-exploration .dt-date{display:none}#notification-exploration .dt-float{padding:12px}#notification-exploration .dt-scrim{padding:40px 0 0}#notification-exploration .dt-sheet{padding:24px 20px}#notification-exploration .dt-permission{padding:16px}#notification-exploration .dt-window{min-height:600px}#notification-exploration .dt-prompt h2{font-size:23px}#notification-exploration .dt-inline-prompt h2{font-size:20px}}
+
+:root{color-scheme:light;--study-bg:#eeefe9;--study-ink:#293026;--study-muted:#69735f;--study-paper:#fffefa;--study-line:#dce1d4}html.dark{color-scheme:dark;--study-bg:#1d241f;--study-ink:#eeefe5;--study-muted:#adb8a1;--study-paper:#2d352d;--study-line:#414c3a}*{box-sizing:border-box}body{margin:0;background:var(--study-bg);color:var(--study-ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,select{font:inherit;color:inherit;cursor:pointer}button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #7896be;outline-offset:3px}button{min-height:44px}button:disabled{opacity:.5;cursor:default}[hidden]{display:none!important}.study{max-width:1250px;margin:auto;padding:24px 32px 40px}.study-head{display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid var(--study-line);padding-bottom:16px;font-size:12px}.study-head a{color:var(--study-muted);text-decoration:none}.study-intro{display:flex;justify-content:space-between;gap:30px;align-items:end;padding:25px 0}.study-intro h1{font-size:30px;font-weight:600;letter-spacing:-1px;line-height:1.2;margin:0 0 9px}.study-intro p{color:var(--study-muted);font-size:13px;margin:0;max-width:620px}.study-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}.design-tabs{display:flex;flex-wrap:wrap;gap:4px;background:var(--study-line);padding:4px;border-radius:13px}.design-tabs button{border:0;background:transparent;border-radius:10px;padding:9px 13px;font-size:12px}.design-tabs button[aria-pressed=true]{background:var(--study-paper)}.study-controls label{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--study-muted)}.study-controls select{max-width:100%;min-height:44px;border:1px solid var(--study-line);border-radius:10px;background:var(--study-paper);padding:8px;font-size:12px}.study-button{background:transparent;border:1px solid var(--study-line);padding:8px 12px;border-radius:10px;font-size:12px}.study-note{font-size:12px;color:var(--study-muted);margin-top:15px;display:flex;gap:16px;justify-content:space-between;flex-wrap:wrap}.study-note p{margin:0;max-width:700px}.study-state{font-size:11px;margin-top:7px;color:var(--study-muted)}.study-rules{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;border-top:1px solid var(--study-line);margin-top:25px;padding-top:20px}.study-rules h2{font-size:13px;font-weight:600;margin:0 0 6px}.study-rules p{font-size:12px;color:var(--study-muted);margin:0}.study-rules a{color:inherit}.study-footer{font-size:11px;color:var(--study-muted);margin-top:22px}
+#notification-exploration .dt-window{max-width:1100px;min-height:650px;border-radius:18px}#notification-exploration .dt-header{padding:22px 34px;display:grid;grid-template-columns:1fr auto 1fr}#notification-exploration .dt-header h1{grid-column:2;grid-row:1;font-weight:650;font-size:26px}#notification-exploration .dt-add{border:0;background:transparent;justify-self:start;grid-column:1;grid-row:1;padding:0;font-weight:600}#notification-exploration .dt-account{grid-column:3;grid-row:1;justify-self:end;background:var(--dt-yellow);color:var(--dt-yellow-ink);width:36px;height:36px;min-height:36px;margin:4px;font-size:12px;font-weight:650}#notification-exploration .dt-nav{grid-column:1/-1;grid-row:2;justify-self:center;display:flex;gap:4px;padding:4px;border-radius:16px;background:var(--dt-wash);font-size:12px;color:var(--dt-muted)}#notification-exploration .dt-nav span{padding:9px 15px;border-radius:12px;display:flex;align-items:center;gap:7px}#notification-exploration .dt-nav .selected{background:var(--dt-paper);color:var(--dt-ink)}#notification-exploration .dt-nav svg{width:16px;height:16px}#notification-exploration .dt-page{padding:24px 34px 30px}#notification-exploration .dt-section{font-size:16px;letter-spacing:-.2px;color:var(--dt-ink);font-weight:600}#notification-exploration .dt-parcel-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:18px}#notification-exploration .dt-parcel{background:light-dark(#f7efce,#45432b);border:0;min-height:224px;display:flex;flex-direction:column}#notification-exploration .dt-parcel.secondary{background:light-dark(#e1ebf6,#2c4057)}#notification-exploration .dt-parcel .dt-track{margin-top:auto;padding-top:23px}#notification-exploration .dt-carrier{margin-bottom:25px}#notification-exploration .dt-parcel-foot{padding-top:4px}#notification-exploration .dt-past{margin-top:28px;font-size:14px;font-weight:600}#notification-exploration .dt-small-parcel{padding:14px 2px}#notification-exploration .dt-inline-prompt{display:grid;grid-template-columns:1fr auto;column-gap:22px;padding:18px 22px;background:var(--dt-paper)}#notification-exploration .dt-inline-prompt .dt-prompt-top{grid-column:1;margin-bottom:7px}#notification-exploration .dt-inline-prompt h2{grid-column:1;font-size:20px;margin-bottom:6px}#notification-exploration .dt-inline-prompt>p{grid-column:1;max-width:none}#notification-exploration .dt-inline-prompt .dt-actions{grid-column:2;grid-row:2/4;margin:0;align-self:center;padding-right:15px}#notification-exploration .dt-inline-prompt .dt-help{display:none}#notification-exploration .dt-float{align-items:flex-end;padding:24px}#notification-exploration .dt-float .dt-prompt{max-width:370px}#notification-exploration .dt-scrim{align-items:center;padding:28px}#notification-exploration .dt-sheet{border:1px solid var(--dt-line);border-radius:24px;padding:30px;max-width:440px}#notification-exploration .dt-grabber{display:none}#notification-exploration .dt-empty{text-align:center;padding:65px 20px}#notification-exploration .dt-empty h2{font-size:26px;margin:15px 0 8px;font-weight:500}#notification-exploration .dt-empty p{color:var(--dt-muted);max-width:320px;margin:0 auto 18px}#notification-exploration .dt-preferences{padding:15px 0;margin-top:12px;border-top:1px solid var(--dt-line)}#notification-exploration .dt-preferences label{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px}#notification-exploration .dt-preferences select{max-width:65%;border:1px solid var(--dt-line);border-radius:8px;background:var(--dt-bg);padding:10px;font-size:12px}#notification-exploration .dt-alert{margin-top:13px!important;color:light-dark(#9c453c,#e9aaa0)!important}#notification-exploration .dt-busy{display:flex;align-items:center;gap:8px;margin-top:20px;color:var(--dt-muted)}#notification-exploration .dt-browser-bar{display:flex;align-items:center;justify-content:space-between;padding:9px 17px;font-size:10px;color:var(--dt-muted);border-bottom:1px solid var(--dt-line);background:var(--dt-paper)}#notification-exploration .dt-browser-bar span{display:flex;align-items:center;gap:6px}#notification-exploration .dt-browser-bar svg{width:12px;height:12px}#notification-exploration svg{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#notification-exploration.compact .dt-window{max-width:390px;min-height:790px}#notification-exploration.compact .dt-header{padding:14px 18px}#notification-exploration.compact .dt-page{padding:20px 18px}#notification-exploration.compact .dt-parcel-grid{grid-template-columns:1fr}#notification-exploration.compact .dt-parcel.secondary{display:none}#notification-exploration.compact .dt-inline-prompt{display:block}#notification-exploration.compact .dt-inline-prompt .dt-actions{margin-top:15px;padding:0}#notification-exploration.compact .dt-scrim{align-items:flex-end;padding:40px 0 0}#notification-exploration.compact .dt-sheet{border-radius:24px 24px 0 0;padding:26px 22px}#notification-exploration.compact .dt-grabber{display:block}#notification-exploration.compact .dt-permission{align-items:center;padding:16px}#notification-exploration.compact .dt-add span{display:none}
+@media(max-width:700px){.study{padding:18px 16px 30px}.study-intro{display:block;padding:22px 0}.study-intro h1{font-size:26px}.study-controls{gap:8px}.design-tabs{width:100%}.design-tabs button{flex:1;padding:9px 7px}.study-controls label{flex-wrap:wrap}.study-rules{grid-template-columns:1fr;gap:18px}#notification-exploration .dt-header{padding:14px 18px}#notification-exploration .dt-page{padding:20px 18px}#notification-exploration .dt-add span{display:none}#notification-exploration .dt-parcel-grid{grid-template-columns:1fr}#notification-exploration .dt-parcel.secondary{display:none}#notification-exploration .dt-inline-prompt{display:block}#notification-exploration .dt-inline-prompt .dt-actions{margin-top:15px;padding:0}#notification-exploration .dt-scrim{align-items:flex-end;padding:40px 0 0}#notification-exploration .dt-sheet{border-radius:24px 24px 0 0;padding:26px 22px}#notification-exploration .dt-grabber{display:block}#notification-exploration .dt-permission{align-items:center;padding:16px}#notification-exploration .dt-float{padding:12px}#notification-exploration .dt-header h1{font-size:23px}#notification-exploration .dt-window{min-height:740px}#notification-exploration .dt-nav span{padding:8px 11px;font-size:11px}}
+</style></head><body><main class="study">
+<header class="study-head"><strong>Delivery Tracker / Web exploration</strong><a href="settings-refined.html">Settings exploration ↗</a></header>
+<div class="study-intro"><div><h1>A little invitation to stay updated.</h1><p>Three ways to introduce notifications after a parcel is added. Try each invitation, then follow the permission flow.</p></div></div>
+<div class="study-controls" aria-label="Exploration controls">
+<div class="design-tabs" role="group" aria-label="Invitation design"><button type="button" data-design="popup" aria-pressed="true">A · Corner popup</button><button type="button" data-design="inline" aria-pressed="false">B · Inline card</button><button type="button" data-design="sheet" aria-pressed="false">C · Dialog / sheet</button></div>
+<label>Scenario <select id="scenario"><option value="off">Not enabled yet</option><option value="empty">Before first parcel</option><option value="granted">Allowed, not subscribed</option><option value="blocked">Browser permission blocked</option><option value="enabled">Already enabled</option><option value="disabled">Turned off in Settings</option><option value="ios">iPhone browser, not installed</option><option value="unsupported">Unsupported browser</option><option value="unavailable">Service unavailable</option><option value="demo">Demo account</option><option value="error">Subscription fails</option></select></label>
+<label>View <select id="viewport"><option value="desktop">Desktop web</option><option value="compact">Mobile web</option></select></label><button type="button" class="study-button" id="theme" aria-pressed="false">Dark mode</button><button type="button" class="study-button" id="restart">Restart flow</button>
+</div>
+<div id="notification-exploration" aria-label="Web notification invitation preview"><div class="dt-window">
+<div class="dt-browser-bar"><span>● ● ●</span><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10h14v11H5zM8 10V7a4 4 0 0 1 8 0v3"/></svg>Delivery Tracker</span><span>Design preview</span></div>
+<div id="dt-background"><header class="dt-header"><button type="button" class="dt-add" data-action="add" aria-label="Add a sample parcel"><span>Add parcel</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><h1>Deliveries</h1><button type="button" class="dt-icon dt-account" data-action="settings" aria-label="Settings">AM</button><div class="dt-nav" aria-label="App navigation preview"><span class="selected">Deliveries</span><span>Passport</span><span>Friends</span></div></header>
+<div class="dt-page"><div id="dt-empty" class="dt-empty" hidden><h2>Your deliveries start here</h2><p>Add your first parcel to follow its journey, all the way to your door.</p><button type="button" class="dt-primary" data-action="add">Add a sample parcel</button></div><div id="dt-deliveries"><div class="dt-section"><span>On the way <span class="dt-count" id="parcel-count">2</span></span><button type="button" class="dt-icon" data-action="revisit" aria-label="Simulate revisiting deliveries"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 6M4 12l2 6a7 7 0 0 0 12-1"/></svg></button></div><div id="dt-inline"></div><div class="dt-parcel-grid"><article class="dt-parcel"><div class="dt-carrier"><span class="dt-post">Swiss Post</span><span>Arriving today</span></div><h2>Your new headphones</h2><p>Out for delivery</p><div class="dt-track" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div><div class="dt-parcel-foot"><span>Loaded onto the delivery vehicle</span><span>08:42</span></div></article><article class="dt-parcel secondary"><div class="dt-carrier"><strong>GLS</strong><span>Tomorrow</span></div><h2>A little something for home</h2><p>On its way to Switzerland</p><div class="dt-track" aria-hidden="true"><span></span><span></span><span></span></div><div class="dt-parcel-foot"><span>Left the parcel center</span><span>06:15</span></div></article></div><h2 class="dt-past">Delivered</h2><article class="dt-small-parcel"><span class="dt-box">✓</span><div><strong>Your weekend reading</strong><p>Delivered · Swiss Post</p></div><span class="dt-date">Yesterday</span></article></div><div id="dt-message" role="status" aria-live="polite"></div><div class="dt-footnote">All deliveries up to date</div></div></div><div id="dt-overlay"></div></div></div>
+<div class="study-note"><p id="direction-note">A small invitation in the corner. Easy to notice while keeping the delivery list available.</p><button type="button" class="study-button" id="revisit">Revisit deliveries</button></div><p class="study-state" id="flow-state" role="status" aria-live="polite"></p>
+<div class="study-rules"><section><h2>Ask when it makes sense</h2><p>After the first real parcel is saved and its form closes. For existing users, on their next deliveries visit. Skip empty accounts and demo mode.</p></section><section><h2>Remember the answer</h2><p>“Not now” dismisses the invitation in this browser. Never repeat it automatically after denial or an explicit switch-off. Settings remains available.</p></section><section><h2>Let the browser ask</h2><p>Request permission only after Enable is clicked. On iPhone, guide users to add the app to the Home Screen first. <a href="https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/">Platform guidance ↗</a></p></section></div>
+<footer class="study-footer">Web design prototype · Sample deliveries and simulated permissions · No real notifications are requested or sent. Preview choices are remembered in this browser; Restart flow clears them.</footer>
+</main>
+<script>
+(() => {
+  const root = document.getElementById('notification-exploration');
+  const $ = selector => document.querySelector(selector);
+  const storageKey = 'delivery-tracker.design.notifications-web.v1';
+  const scenarios = ['off', 'empty', 'granted', 'blocked', 'enabled', 'disabled', 'ios', 'unsupported', 'unavailable', 'demo', 'error'];
+  let state = { scenario: 'off', status: 'off', granted: false, dismissed: false, parcels: 2, preset: 'All tracking updates' };
+  try {
+    const saved = JSON.parse(localStorage.getItem(storageKey));
+    if (saved && scenarios.includes(saved.scenario) && scenarios.includes(saved.status)
+      && typeof saved.dismissed === 'boolean' && Number.isInteger(saved.parcels) && saved.parcels >= 0
+      && ['All tracking updates', 'Important only', 'Delivery day only'].includes(saved.preset)) state = saved;
+  } catch { /* The exploration also works with browser storage disabled. */ }
+  state.granted = typeof state.granted === 'boolean' ? state.granted : ['granted', 'enabled', 'disabled'].includes(state.status);
+  let design = 'popup';
+  let step = 'invite';
+  let message = '';
+  let trigger = null;
+  let timer;
+  let registrationAttempts = 0;
+  const notes = {
+    popup: 'A small invitation in the corner. Easy to notice while keeping the delivery list available.',
+    inline: 'Recommended: a quiet card above the parcels. Visible in context, with no overlay or interruption.',
+    sheet: 'A focused dialog on desktop, a bottom sheet on mobile. Stronger emphasis, but interrupts the current task.',
+  };
+  const icons = {
+    bell: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4',
+    x: 'm6 6 12 12M6 18 18 6',
+    box: 'm3 7 9-4 9 4v10l-9 4-9-4ZM3 7l9 4 9-4M12 11v10',
+    check: 'm5 12 4 4L19 6',
+  };
+  const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${icons[name]}"/></svg>`;
+  const button = (action, label, primary = false) => `<button type="button" class="${primary ? 'dt-primary' : 'dt-secondary'}" data-action="${action}">${label}</button>`;
+  const close = () => `<button type="button" class="dt-icon dt-close" data-action="close" aria-label="Close delivery updates">${icon('x')}</button>`;
+  const heading = title => `${close()}<div class="dt-prompt-top">${icon('bell')} Delivery updates</div><h2 id="prompt-title">${title}</h2>`;
+  const save = () => { try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch { /* Optional preview persistence. */ } };
+  const eligible = () => state.parcels > 0 && !state.dismissed && ['off', 'granted', 'error', 'ios'].includes(state.status);
+  function invite() {
+    if (state.status === 'ios') return `${heading('Delivery updates on your iPhone')}<p>Add Delivery Tracker to your Home Screen, then turn on notifications in the app.</p><div class="dt-actions">${button('help', 'Show me how', true)}${button('later', 'Not now')}</div>`;
+    return `${heading('Know when your parcel arrives')}<p>Get delivery updates without opening the app.</p>${design !== 'inline' ? `<div class="dt-example">${icon('box')}<div><small>EXAMPLE NOTIFICATION</small><strong>Your parcel has arrived</strong><p>Your new headphones · Swiss Post</p></div></div>` : ''}<div class="dt-actions">${button('enable', 'Enable notifications', true)}${button('later', 'Not now')}</div><p class="dt-help">You can change your preferences in Settings.</p>`;
+  }
+  function settings() {
+    const enabled = state.status === 'enabled';
+    const blocked = state.status === 'blocked';
+    const ios = state.status === 'ios';
+    const unavailable = ['unsupported', 'unavailable', 'demo'].includes(state.status);
+    const copy = enabled ? 'Delivery updates are on in this browser.' : blocked ? 'Notifications are blocked in this browser. Change the site permission to allow them.' : ios ? 'Open Delivery Tracker from your Home Screen to enable notifications.' : state.status === 'unsupported' ? 'This browser does not support delivery notifications.' : state.status === 'unavailable' ? 'Delivery notifications are temporarily unavailable. Try again later.' : state.status === 'demo' ? 'Sign in and add a real parcel to receive delivery updates.' : 'Delivery updates are off in this browser.';
+    return `${heading('Delivery updates')}<p>${copy}</p>${enabled ? `<div class="dt-preferences"><label>Notify me about<select id="preset">${['All tracking updates', 'Important only', 'Delivery day only'].map(preset => `<option${preset === state.preset ? ' selected' : ''}>${preset}</option>`).join('')}</select></label></div>` : ''}<div class="dt-actions">${unavailable ? button('close', 'Done', true) : enabled ? button('disable', 'Turn off notifications') + button('close', 'Done', true) : blocked || ios ? button('help', ios ? 'Show me how' : 'How to enable', true) : button('enable', 'Enable notifications', true)}</div>`;
+  }
+  function content() {
+    if (step === 'settings') return settings();
+    if (step === 'permission') return `${heading('Allow delivery notifications?')}<p>This is a preview of the browser permission step. In the app, your browser displays its own request.</p><div class="dt-actions">${button('allow', 'Allow', true)}${button('block', 'Block')}${button('permission-close', 'Dismiss request')}</div><p class="dt-help">Simulated permission · No browser setting will change.</p>`;
+    if (step === 'help') return `${heading(state.status === 'ios' ? 'Add to your Home Screen' : 'Allow notifications in your browser')}<ol class="dt-steps">${state.status === 'ios' ? '<li>Open the browser’s Share menu.</li><li>Choose Add to Home Screen.</li><li>Open Delivery Tracker from its new icon.</li><li>Tap Enable notifications.</li>' : '<li>Open this site’s permissions in your browser settings.</li><li>Change Notifications to Allow.</li><li>Return to Delivery Tracker and enable delivery updates.</li>'}</ol><div class="dt-actions">${button('close', 'Got it', true)}</div>`;
+    if (step === 'enabling') return `${heading('Enabling delivery updates')}<p>Connecting this browser to your deliveries…</p><div class="dt-busy" role="status">Please wait</div>`;
+    if (step === 'error') return `${heading('Let’s try that again')}<p role="alert" class="dt-alert">Your browser allowed notifications, but we couldn’t finish enabling delivery updates.</p><div class="dt-actions">${button('enable', 'Try again', true)}${button('later', 'Not now')}</div>`;
+    return invite();
+  }
+  function render(focusOverlay = false) {
+    $('#scenario').value = state.scenario;
+    $('#dt-empty').hidden = state.parcels > 0;
+    $('#dt-deliveries').hidden = state.parcels === 0;
+    $('#parcel-count').textContent = state.parcels;
+    $('#dt-message').textContent = message;
+    $('#direction-note').textContent = notes[design];
+    $('#flow-state').textContent = `Preview state: ${state.status === 'enabled' ? 'notifications enabled' : state.status === 'blocked' ? 'browser permission blocked' : state.dismissed ? 'invitation dismissed; Settings is still available' : state.parcels === 0 ? 'waiting for the first parcel' : eligible() ? 'eligible for an invitation' : 'automatic invitation suppressed'}.`;
+    $('[data-action="add"]').disabled = step === 'enabling';
+    document.querySelectorAll('[data-design]').forEach(item => item.setAttribute('aria-pressed', String(item.dataset.design === design)));
+    $('#dt-inline').innerHTML = '';
+    const overlay = $('#dt-overlay');
+    overlay.innerHTML = '';
+    $('#dt-background').inert = false;
+    const visible = !['invite', 'closed'].includes(step) || step === 'invite' && eligible();
+    if (visible) {
+      const modal = step !== 'invite' || design === 'sheet';
+      const markup = content();
+      if (design === 'inline' && step === 'invite') $('#dt-inline').innerHTML = `<section class="dt-prompt dt-inline-prompt" aria-labelledby="prompt-title">${markup}</section>`;
+      else {
+        overlay.innerHTML = `<div class="${modal ? 'dt-scrim' : 'dt-float'}"><section class="dt-prompt ${modal ? 'dt-sheet' : ''}" ${modal ? 'role="dialog" aria-modal="true"' : 'role="region"'} aria-labelledby="prompt-title">${modal ? '<div class="dt-grabber"></div>' : ''}${markup}</section></div>`;
+        $('#dt-background').inert = modal;
+        if (modal || focusOverlay) overlay.querySelector('button')?.focus({preventScroll:true});
+      }
+    }
+    if (!visible && trigger?.isConnected) trigger.focus({preventScroll:true});
+    save();
+  }
+  function dismiss() {
+    clearTimeout(timer);
+    state.dismissed = true;
+    step = 'closed';
+    message = '';
+    render();
+  }
+  function subscribe() {
+    step = 'enabling';
+    render(true);
+    timer = setTimeout(() => {
+      if (state.scenario === 'error' && registrationAttempts++ === 0) {
+        state.status = 'granted';
+        step = 'error';
+      } else {
+        state.status = 'enabled';
+        state.dismissed = true;
+        step = 'closed';
+        message = 'Delivery updates are on in this browser. Change your preferences in Settings.';
+      }
+      render(true);
+    }, 550);
+  }
+  function revisit() {
+    clearTimeout(timer);
+    step = 'invite';
+    message = state.dismissed ? 'Your choice is remembered. Delivery updates are available in Settings.' : '';
+    render();
+  }
+  root.addEventListener('click', event => {
+    const target = event.target.closest('[data-action]');
+    if (!target) return;
+    const action = target.dataset.action;
+    if (!target.closest('#dt-overlay') && !target.closest('#dt-inline')) trigger = target;
+    else if (!trigger?.isConnected) trigger = $('[data-action="settings"]');
+    if (['later', 'close', 'permission-close'].includes(action)) { dismiss(); return; }
+    if (action === 'settings') { step = 'settings'; message = ''; }
+    if (action === 'help') step = 'help';
+    if (action === 'enable') { if (state.granted) { subscribe(); return; } step = 'permission'; }
+    if (action === 'allow') { state.status = 'granted'; state.granted = true; subscribe(); return; }
+    if (action === 'block') { state.status = 'blocked'; state.granted = false; state.dismissed = true; step = 'closed'; message = 'Notifications stayed off. You can change the permission in your browser settings.'; }
+    if (action === 'disable') { state.status = 'disabled'; state.dismissed = true; step = 'settings'; }
+    if (action === 'add') { state.parcels = Math.min(state.parcels + 1, 99); if (state.status === 'empty') state.status = 'off'; step = 'invite'; message = 'Sample parcel added.'; }
+    if (action === 'revisit') { revisit(); return; }
+    render(true);
+  });
+  root.addEventListener('change', event => { if (event.target.id === 'preset') { state.preset = event.target.value; save(); } });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && $('#dt-overlay').childElementCount) { event.preventDefault(); dismiss(); return; }
+    const dialog = root.querySelector('[role="dialog"]');
+    if (event.key === 'Tab' && dialog) {
+      const controls = [...dialog.querySelectorAll('button:not(:disabled), select')];
+      const first = controls[0], last = controls.at(-1);
+      if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) { event.preventDefault(); first?.focus(); }
+    }
+  });
+  function resetScenario() {
+    clearTimeout(timer);
+    const scenario = $('#scenario').value;
+    state = { scenario, status: scenario, granted: ['granted', 'enabled', 'disabled'].includes(scenario), dismissed: false, parcels: scenario === 'empty' ? 0 : 2, preset: 'All tracking updates' };
+    registrationAttempts = 0;
+    step = 'invite';
+    message = '';
+    render();
+  }
+  document.querySelectorAll('[data-design]').forEach(item => item.addEventListener('click', () => { design = item.dataset.design; render(); }));
+  $('#scenario').addEventListener('change', resetScenario);
+  $('#restart').addEventListener('click', resetScenario);
+  $('#viewport').addEventListener('change', event => root.classList.toggle('compact', event.target.value === 'compact'));
+  $('#theme').addEventListener('click', event => { const dark = document.documentElement.classList.toggle('dark'); event.target.setAttribute('aria-pressed', String(dark)); event.target.textContent = dark ? 'Light mode' : 'Dark mode'; });
+  $('#revisit').addEventListener('click', revisit);
+  render();
+})();
+</script></body></html>
