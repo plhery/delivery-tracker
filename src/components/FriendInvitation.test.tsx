@@ -30,10 +30,10 @@ it('reveals the self-invitation message only after opening the package, without 
   const user = userEvent.setup(); const { container } = render(<Harness client={client} />);
   await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' });
   expect(client.checkInvitation).not.toHaveBeenCalled();
-  expect(screen.queryByText(/Aw nice try/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Nice try!/)).not.toBeInTheDocument();
   const parcel = container.querySelector('.arrival__parcel');
   await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
-  expect(await screen.findByRole('heading', { name: 'Aw nice try, but you can’t be your own friend.' })).toBeVisible();
+  expect(await screen.findByRole('heading', { name: 'Nice try! You can’t accept your own invitation.' })).toBeVisible();
   expect(container.querySelector('.arrival__parcel')).toBe(parcel);
   expect(client.checkInvitation).toHaveBeenCalledWith(code);
   expect(client.action).not.toHaveBeenCalled();

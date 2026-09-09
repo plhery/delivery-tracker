@@ -12,6 +12,7 @@ import {
 } from '../lib/carriers';
 import {
   localizedExpectedDelivery,
+  localizedDatePhrase,
   localizedRelativeTime,
   useI18n,
 } from '../i18n';
@@ -380,7 +381,7 @@ export function ParcelDetail({
         {(completionDate || estimate) && (
           <p className="detail__arrival">
             {completionDate
-              ? t('parcel.onDate', { date: completionDate })
+              ? localizedDatePhrase(completionDate, t)
               : localizedExpectedDelivery(estimate!, t, languageTag)}
           </p>
         )}

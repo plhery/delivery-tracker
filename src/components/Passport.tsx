@@ -77,10 +77,10 @@ export function Passport({ parcels, loading }: { parcels: ParcelWithEvents[]; lo
 
   return <div className="passport-page">
     <div className="passport-cover">
-      {button('delivered', 'passport-cover__main', `${stats.deliveredCount} ${t('passport.delivered')}`, <>
-        <span><strong className="passport-cover__count">{stats.deliveredCount.toLocaleString(languageTag)}</strong><span>{t('passport.delivered')}</span></span><Seal icon="parcel" />
+      {button('delivered', 'passport-cover__main', `${stats.deliveredCount} ${t('passport.delivered', { count: stats.deliveredCount })}`, <>
+        <span><strong className="passport-cover__count">{stats.deliveredCount.toLocaleString(languageTag)}</strong><span>{t('passport.delivered', { count: stats.deliveredCount })}</span></span><Seal icon="parcel" />
       </>)}
-      {detail('delivered', t('passport.delivered'), t('passport.deliveredExplanation'))}
+      {detail('delivered', t('passport.delivered', { count: stats.deliveredCount }), t('passport.deliveredExplanation'))}
     </div>
     <section className="passport-stamps" aria-labelledby="passport-stamps-title">
       <h2 id="passport-stamps-title">{t('passport.stamps')}</h2>

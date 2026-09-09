@@ -48,7 +48,7 @@ describe('friendly parcel notifications', () => {
   it.each([
     ['en', "Your parcel was delivered at 14:32."],
     ['de-CH', "Dein Paket wurde um 14:32 Uhr zugestellt."],
-    ['fr', "Votre colis a été livré à 14:32."],
+    ['fr', "Ton colis a été livré à 14:32."],
     ['it', "Il tuo pacco è stato consegnato alle 14:32."],
   ])('localizes delivery sentences for %s devices', (locale, body) => {
     expect(alert(native.eventPayload({ ...delivered, locale })).body).toBe(body);
@@ -117,9 +117,9 @@ describe('useful, localized tracking updates', () => {
   it('keeps a useful delivery window but removes past or malformed estimates', () => {
     const row = { ...delivered, stage: 'out_for_delivery', locale: 'fr', expected_delivery_changed: false };
     expect(web.payload({ ...row, expected_delivery: '2026-09-07 14:00–16:00' }).body)
-      .toBe('Votre colis est en cours de livraison. Livraison prévue : aujourd’hui, 14:00–16:00.');
+      .toBe('Ton colis est en livraison. Livraison prévue : aujourd’hui, 14:00–16:00.');
     for (const expected_delivery of ['2026-09-06', 'invalid', '2026-09-07']) {
-      expect(web.payload({ ...row, expected_delivery }).body).toBe('Votre colis est en cours de livraison.');
+      expect(web.payload({ ...row, expected_delivery }).body).toBe('Ton colis est en livraison.');
     }
     expect(((live.payload({ ...row, expected_delivery: '2026-09-07' }, 'start').aps as JsonObject)['content-state'] as JsonObject).parcel)
       .toMatchObject({ detail: 'En cours de livraison', status: 'En cours de livraison' });

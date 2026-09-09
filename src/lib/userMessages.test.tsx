@@ -28,7 +28,7 @@ describe('localized app messages', () => {
   it('translates app messages while preserving original carrier notes', async () => {
     localStorage.setItem('deliveryTrackerLocale', 'fr');
     render(<I18nProvider><Probe /></I18nProvider>);
-    expect(await screen.findByText('Ajouté à vos colis.')).toBeInTheDocument();
+    expect(await screen.findByText('Ajouté à tes colis.')).toBeInTheDocument();
     expect(screen.queryByText(/SQL private failure/)).not.toBeInTheDocument();
     expect(screen.getByText('Original carrier scan')).toBeInTheDocument();
     expect(screen.queryByText(/Couldn’t add/)).not.toBeInTheDocument();

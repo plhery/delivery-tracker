@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { activeTrackingCarrierId, carrierInfo } from '../lib/carriers';
-import { localizedExpectedDelivery, useI18n } from '../i18n';
+import { localizedDatePhrase, localizedExpectedDelivery, useI18n } from '../i18n';
 import { localizedParcelCompletionDate, parcelDeliveryEstimate, parcelDisplayStatusKey } from '../lib/parcelStatus';
 import { currentEvent } from '../lib/stages';
 import { parcelIcon } from '../lib/parcelDesign';
@@ -101,7 +101,7 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
     setDragging(false);
     if (wasHorizontal) { setOffset(offset < -44 ? -88 : 0); suppressReleaseClick(); }
   }
-  const statusSummary = completionDate ? `${statusLabel} ${t('parcel.onDate', { date: completionDate })}` : statusLabel;
+  const statusSummary = completionDate ? `${statusLabel} ${localizedDatePhrase(completionDate, t)}` : statusLabel;
   const label = expectedDelivery ? t('parcel.ariaExpected', { name: parcelName, status: statusSummary, date: expectedDelivery }) : t('parcel.aria', { name: parcelName, status: statusSummary });
 
   return <div data-parcel-id={parcel.id} data-carrier={carrier.id} style={branding.style} className={`parcel-card-swipe${hero ? ' parcel-card-swipe--hero' : ''}${offset ? ' parcel-card-swipe--revealed' : ''}${collapsing ? ' parcel-card-swipe--collapsing' : ''}`}>

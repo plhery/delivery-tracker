@@ -38,8 +38,10 @@ interface I18nValue {
   t: Translate;
 }
 
-function translate(locale: Locale, key: MessageKey, variables?: Record<string, string | number>) {
-  let message: string = dictionaries[locale][key];
+export function translate(locale: Locale, key: MessageKey, variables?: Record<string, string | number>) {
+  const messages = dictionaries[locale];
+  const singularKey = `${key}.one` as MessageKey;
+  let message: string = variables?.count === 1 && singularKey in messages ? messages[singularKey] : messages[key];
   for (const [name, value] of Object.entries(variables ?? {})) {
     message = message.replaceAll(`{{${name}}}`, String(value));
   }
@@ -188,6 +190,13 @@ export function localizedExpectedDelivery(
     return `${day}, ${time}`;
   }
   return day;
+}
+
+/** Calendar dates need a preposition; relative dates such as "today" do not. */
+export function localizedDatePhrase(date: string, t: Translate): string {
+  const relative = (['time.yesterday', 'time.today', 'time.tomorrow'] as const)
+    .some((key) => date === t(key));
+  return relative ? date : t('parcel.onDate', { date });
 }
 
 /** Translate messages created by this app; preserve the carrier’s original scan notes. */

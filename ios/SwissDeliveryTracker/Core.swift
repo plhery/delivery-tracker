@@ -104,8 +104,11 @@ final class Localizer: ObservableObject {
     }
 
     func text(_ key: String, _ variables: [String: CustomStringConvertible] = [:]) -> String {
-        var result = dictionaries[language.rawValue]?[key]
-            ?? dictionaries["en"]?[key]
+        let messages = dictionaries[language.rawValue] ?? dictionaries["en"] ?? [:]
+        let singularKey = "\(key).one"
+        let selectedKey = variables["count"]?.description == "1" && messages[singularKey] != nil ? singularKey : key
+        var result = messages[selectedKey]
+            ?? dictionaries["en"]?[selectedKey]
             ?? key
         for (name, value) in variables {
             result = result.replacingOccurrences(of: "{{\(name)}}", with: value.description)

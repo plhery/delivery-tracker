@@ -55,7 +55,7 @@ struct PassportView: View {
                             .font(.system(size: totalSize, weight: .semibold))
                             .tracking(-2)
                             .contentTransition(.numericText())
-                        Text(copy.delivered)
+                        Text(copy.delivered(stats.deliveredCount))
                             .font(.subheadline)
                             .foregroundStyle(Brand.onAccent.opacity(0.7))
                     }
@@ -71,11 +71,11 @@ struct PassportView: View {
             }
             .buttonStyle(PassportPressStyle())
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(stats.deliveredCount) \(copy.delivered)")
+            .accessibilityLabel("\(stats.deliveredCount) \(copy.delivered(stats.deliveredCount))")
             .accessibilityValue(expansionValue(.cover, explanation: copy.deliveredExplanation))
             .accessibilityHint(copy.expansionHint(expanded: expandedCard == .cover))
             .popover(isPresented: presentation(.cover)) {
-                explanationBubble(title: copy.delivered, explanation: copy.deliveredExplanation)
+                explanationBubble(title: copy.delivered(stats.deliveredCount), explanation: copy.deliveredExplanation)
             }
         }
         .padding(.vertical, 26)
@@ -382,7 +382,7 @@ private struct PassportCopy {
 
     var passport: String { localizer.text("passport.title") }
     var allTime: String { localizer.text("passport.allTime") }
-    var delivered: String { localizer.text("passport.delivered") }
+    func delivered(_ count: Int) -> String { localizer.text("passport.delivered", ["count": count]) }
     var onTheWay: String { localizer.text("passport.onTheWay") }
     var carriers: String { localizer.text("passport.carriers") }
     var deliveryTimes: String { localizer.text("passport.deliveryTimes") }

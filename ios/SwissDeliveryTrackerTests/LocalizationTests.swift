@@ -81,7 +81,7 @@ final class LocalizationTests: XCTestCase {
         let expected = [
             "en": "Track deliveries on the web and this iPhone.",
             "de": "Verfolge Lieferungen im Web und auf diesem iPhone.",
-            "fr": "Suivez vos livraisons sur le web et sur cet iPhone.",
+            "fr": "Suis tes livraisons sur le web et sur cet iPhone.",
             "it": "Segui le consegne sul web e su questo iPhone.",
         ]
 
@@ -107,7 +107,7 @@ final class LocalizationTests: XCTestCase {
     func testServerErrorsAndAppEventsFollowTheSelectedLanguage() {
         let localizer = Localizer()
         localizer.language = .fr
-        XCTAssertEqual(localizer.eventDescription("Tracking added"), "Ajouté à vos colis.")
+        XCTAssertEqual(localizer.eventDescription("Tracking added"), "Ajouté à tes colis.")
         XCTAssertEqual(localizer.eventDescription("Original carrier scan"), "Original carrier scan")
         XCTAssertEqual(localizer.errorMessage(DeliveryAPIError.service("private SQL details")), localizer.text("error.generic"))
         XCTAssertEqual(localizer.errorMessage(AuthenticationError.server("Token has expired or is invalid")), localizer.text("error.invalidCode"))
@@ -124,6 +124,25 @@ final class LocalizationTests: XCTestCase {
             localizer.language = language
             XCTAssertEqual(localizer.shortDate(date), expected)
             XCTAssertEqual(localizer.expectedDelivery("2026-09-12", now: date.addingTimeInterval(-3 * 86400)), expected)
+        }
+    }
+
+    func testSingularCountsInEveryLanguage() {
+        let localizer = Localizer()
+        let cases: [(AppLanguage, String, String, String)] = [
+            (.en, "stamp", "stamps", "Cancel 1 previous link"),
+            (.fr, "timbre", "timbres", "Annuler 1 lien précédent"),
+            (.de, "Briefmarke", "Briefmarken", "1 früheren Link widerrufen"),
+            (.it, "francobollo", "francobolli", "Annulla 1 link precedente"),
+        ]
+        for (language, singular, plural, link) in cases {
+            localizer.language = language
+            XCTAssertEqual(localizer.text("friends.stampCount", ["count": 1]), "1 \(singular)")
+            for count in [0, 2, 10] {
+                XCTAssertEqual(localizer.text("friends.stampCount", ["count": count]), "\(count) \(plural)")
+            }
+            XCTAssertEqual(localizer.text("friends.cancelPrevious", ["count": 1]), link)
+            XCTAssertEqual(localizer.text("friends.day", ["count": 1]), localizer.text("friends.day"))
         }
     }
 

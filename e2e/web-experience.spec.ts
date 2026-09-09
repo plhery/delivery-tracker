@@ -158,7 +158,7 @@ test('keeps language and account consistent across deliveries, Passport, and par
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.getByRole('button', { name: 'Ajouter un colis', exact: true }).click();
   const sheet = page.getByRole('dialog', { name: 'Ajouter un colis' });
-  await expect(sheet.getByLabel(/^Titre/)).toBeFocused();
+  await expect(sheet.getByLabel(/^Nom/)).toBeFocused();
   await sheet.locator('#add-parcel-tracking').fill('993411111122222222');
   await expect(sheet.getByText('Swiss Post', { exact: true })).toBeVisible();
   await expect(sheet.getByText(/Nous consulterons automatiquement/)).toHaveCount(0);

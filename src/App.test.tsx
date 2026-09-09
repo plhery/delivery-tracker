@@ -106,7 +106,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /Postal shipment — Checking for updates/ }));
     const detail = screen.getByRole('dialog', { name: 'Postal shipment' });
     expect(within(detail).getByText('Unknown postal carrier', { exact: true })).toBeInTheDocument();
-    expect(within(detail).getByRole('link', { name: 'Open 17TRACK website' }))
+    expect(within(detail).getByRole('link', { name: 'Open the 17TRACK website' }))
       .toHaveAttribute('href', 'https://t.17track.net/en#nums=RA123456785DE');
     expect(within(detail).queryByRole('link', { name: /Swiss Post|International Post/ })).not.toBeInTheDocument();
     expect(within(detail).queryByText(/automatic adapter/)).not.toBeInTheDocument();
@@ -197,7 +197,7 @@ describe('App', () => {
     renderApp();
 
     const sheet = await screen.findByRole('dialog', { name: 'Add a parcel' });
-    expect(within(sheet).getByLabelText(/^title/i)).toHaveValue('Coffee delivery');
+    expect(within(sheet).getByLabelText(/^name/i)).toHaveValue('Coffee delivery');
     expect(within(sheet).getByLabelText(/tracking number or link/i)).toHaveValue(
       'Track 993412345612345678',
     );
@@ -491,7 +491,7 @@ describe('App', () => {
     const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
 
     await user.type(
-      within(sheet).getByLabelText(/^title/i),
+      within(sheet).getByLabelText(/^name/i),
       'Fondue set 🫕',
     );
     await user.type(
@@ -889,7 +889,7 @@ describe('App', () => {
       within(sheet).getByRole('button', { name: /add parcel/i }),
     ).toBeDisabled();
     await user.type(within(sheet).getByLabelText(/tracking number/i), 'hello there');
-    expect(within(sheet).getByText(/couldn't find a tracking number/i)).toBeInTheDocument();
+    expect(within(sheet).getByText(/couldn’t find a tracking number/i)).toBeInTheDocument();
     expect(within(sheet).getByRole('button', { name: /add parcel/i })).toBeDisabled();
   });
 
@@ -902,7 +902,7 @@ describe('App', () => {
 
     const dialog = screen.getByRole('dialog', { name: /add a parcel/i });
     expect(dialog).toHaveAttribute('aria-modal', 'true');
-    expect(within(dialog).getByLabelText(/^title/i)).toHaveFocus();
+    expect(within(dialog).getByLabelText(/^name/i)).toHaveFocus();
     expect(document.querySelector('.app')).toHaveAttribute('inert');
     expect(document.body.style.overflow).toBe('hidden');
 
@@ -932,7 +932,7 @@ describe('App', () => {
     expect(items[0]).toHaveTextContent('Delivered');
     expect(items[4]).toHaveTextContent('The roastery packed your monthly coffee');
     expect(
-      within(detail).getByRole('link', { name: /open swiss post website/i }),
+      within(detail).getByRole('link', { name: /open the swiss post website/i }),
     ).toBeInTheDocument();
 
     fireEvent(
@@ -990,10 +990,10 @@ describe('App', () => {
 
     const detail = screen.getByRole('dialog', { name: 'AliExpress parcel' });
     const sources = within(detail).getByLabelText('Tracking sources');
-    expect(within(sources).getByRole('link', { name: /open aliexpress.*website/i }))
+    expect(within(sources).getByRole('link', { name: /open the aliexpress.*website/i }))
       .toHaveAttribute('href', expect.stringContaining('global.cainiao.com'));
     expect(within(sources).queryByText('Active source')).not.toBeInTheDocument();
-    expect(within(sources).getByRole('link', { name: /open swiss post website.*not ready yet/i }))
+    expect(within(sources).getByRole('link', { name: /open the swiss post website.*not ready yet/i }))
       .toHaveAttribute('href', expect.stringContaining('service.post.ch'));
   });
 
@@ -1003,14 +1003,14 @@ describe('App', () => {
 
     await user.click(await screen.findByText('Coffee beans ☕'));
     const detail = screen.getByRole('dialog', { name: 'Coffee beans ☕' });
-    await user.click(within(detail).getByRole('button', { name: /edit parcel title/i }));
+    await user.click(within(detail).getByRole('button', { name: /edit parcel name/i }));
 
-    const title = within(detail).getByRole('textbox', { name: /parcel title/i });
+    const title = within(detail).getByRole('textbox', { name: /parcel name/i });
     expect(title).toHaveValue('Coffee beans ☕');
     expect(title).toHaveAttribute('maxlength', '80');
     await user.clear(title);
     await user.type(title, 'Espresso beans');
-    await user.click(within(detail).getByRole('button', { name: /save title/i }));
+    await user.click(within(detail).getByRole('button', { name: /save name/i }));
 
     const renamedDetail = await screen.findByRole('dialog', { name: 'Espresso beans' });
     await user.click(within(renamedDetail).getByRole('button', { name: /back/i }));
@@ -1035,11 +1035,11 @@ describe('App', () => {
     renderApp();
     await user.click(await screen.findByText('New sneakers 👟'));
 
-    await user.click(screen.getByRole('button', { name: 'Mute this parcel' }));
+    await user.click(screen.getByRole('button', { name: 'Turn off parcel alerts' }));
     const unmute = screen.getByRole('button', { name: 'Turn parcel alerts on' });
     expect(unmute).toHaveAttribute('aria-pressed', 'true');
     await user.click(unmute);
-    expect(screen.getByRole('button', { name: 'Mute this parcel' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Turn off parcel alerts' })).toHaveAttribute('aria-pressed', 'false');
     expect(document.querySelector('.detail__notification-footer')).not.toBeInTheDocument();
   });
 

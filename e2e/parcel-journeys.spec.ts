@@ -77,7 +77,7 @@ test('carefully deletes an active parcel from its detail screen', async ({ page 
 test('adds a parcel from tracking text', async ({ page }) => {
   await page.getByRole('button', { name: 'Add a parcel' }).click();
   const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
-  await sheet.getByLabel(/^Title/).fill('Fondue set');
+  await sheet.getByLabel(/^Name/).fill('Fondue set');
   await sheet.getByLabel('Tracking number or link').fill('Track 99.34.111111.22222222');
   await expect(sheet.getByText('Swiss Post', { exact: true })).toBeVisible();
   // Observe the short-lived animation in the page so slow tool round trips cannot miss it.
@@ -119,7 +119,7 @@ test('adds a parcel from tracking text', async ({ page }) => {
 test('accepts a Swiss postcode for GLS Germany and labels unknown carriers', async ({ page }) => {
   await page.getByRole('button', { name: 'Add a parcel' }).click();
   const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
-  await sheet.getByLabel(/^Title/).fill('Cross-border GLS parcel');
+  await sheet.getByLabel(/^Name/).fill('Cross-border GLS parcel');
   await sheet.getByLabel('Tracking number or link').fill('123456789018');
   await expect(sheet.getByText('Unknown carrier', { exact: true })).toBeVisible();
   await sheet.getByLabel('Tracking number or link').fill('https://gls-group.eu/DE/de/paketverfolgung?match=123456789018');
@@ -181,7 +181,7 @@ test('reveals the added card from another tab even when delivery filters hide it
   await page.locator('.app__navigation').getByRole('button', { name: 'Passport' }).click();
   await page.getByRole('button', { name: 'Add a parcel' }).click();
   const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
-  await sheet.getByLabel(/^Title/).fill('A new adventure');
+  await sheet.getByLabel(/^Name/).fill('A new adventure');
   await sheet.getByLabel('Tracking number or link').fill('99.34.111111.33333333');
   await sheet.getByRole('button', { name: 'Add parcel' }).click();
   const card = page.locator('.parcel-card-swipe').filter({ hasText: 'A new adventure' });
@@ -196,14 +196,14 @@ test('reveals the added card from another tab even when delivery filters hide it
 test('opens unknown postal tracking on 17TRACK in the selected language', async ({ page }) => {
   await page.getByRole('button', { name: 'Add a parcel' }).click();
   const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
-  await sheet.getByLabel(/^Title/).fill('Postal shipment');
+  await sheet.getByLabel(/^Name/).fill('Postal shipment');
   await sheet.getByLabel('Tracking number or link').fill('RA123456785DE');
   await expect(sheet.getByText('Unknown postal carrier', { exact: true })).toBeVisible();
   await expect(sheet.getByText(/Automatic updates aren’t available. Check 17TRACK/)).toHaveCount(0);
   await sheet.getByRole('button', { name: 'Add parcel' }).click();
   await page.getByRole('button', { name: /^(?:Next up: )?Postal shipment —/ }).click();
   let detail = page.getByRole('dialog', { name: 'Postal shipment' });
-  const link = detail.getByRole('link', { name: 'Open 17TRACK website' });
+  const link = detail.getByRole('link', { name: 'Open the 17TRACK website' });
   await expect(link).toBeVisible();
   await expect(link).toHaveAttribute('href', 'https://t.17track.net/en#nums=RA123456785DE');
   await expect(detail.getByRole('button', { name: 'Check now', exact: true })).toBeVisible();
@@ -233,7 +233,7 @@ test('keeps invalid tracking input safely in the add sheet', async ({ page }) =>
   const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
   await sheet.getByLabel('Tracking number or link').fill('hello there');
 
-  await expect(sheet.getByText(/couldn't find a tracking number/i)).toBeVisible();
+  await expect(sheet.getByText(/couldn’t find a tracking number/i)).toBeVisible();
   await expect(sheet.getByRole('button', { name: 'Add parcel' })).toBeDisabled();
   const viewport = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,

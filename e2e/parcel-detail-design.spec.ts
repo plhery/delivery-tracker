@@ -35,9 +35,9 @@ test('keeps tracking actions available when history is folded and preserves titl
   await journal.locator('summary').click();
   await expect(journal.locator('time')).toHaveCount(eventCount);
   await detail.getByLabel('Parcel actions', { exact: true }).click();
-  await detail.getByRole('button', { name: 'Edit parcel title' }).click();
+  await detail.getByRole('button', { name: 'Edit parcel name' }).click();
   await detail.getByRole('textbox').fill('New sneakers for the autumn marathon and weekend walks');
-  await detail.getByRole('button', { name: 'Save title' }).click();
+  await detail.getByRole('button', { name: 'Save name' }).click();
   await expect(detail.getByRole('heading', { level: 1 })).toContainText('autumn marathon');
   expect(await detail.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
   await expect(detail.locator('.detail__state')).toHaveCSS('font-weight', '400');

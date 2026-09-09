@@ -258,7 +258,7 @@ struct FriendSharingPreviewView: View {
     private var summary: String {
         guard let stats = friend.stats else { return localizer.text("friends.privateStats") }
         let days = stats.averageDays.map { localizer.text($0 == 1 ? "friends.day" : "friends.days", ["count": $0]) } ?? "—"
-        return "\(stats.deliveredCount) \(localizer.text("passport.delivered")) · \(days) · \(localizer.text("friends.stampCount", ["count": stats.stamps.count]))"
+        return "\(stats.deliveredCount) \(localizer.text("passport.delivered", ["count": stats.deliveredCount])) · \(days) · \(localizer.text("friends.stampCount", ["count": stats.stamps.count]))"
     }
 }
 
@@ -453,8 +453,8 @@ private struct FriendDetailView: View {
             FriendPostcardView(nickname: friend.nickname, arrivedThisWeek: friend.arrivedThisWeek)
             if let stats = friend.stats {
                 HStack(alignment: .top) {
-                    metric(stats.deliveredCount.formatted(), "passport.delivered")
-                    metric(stats.averageDays.map { localizer.text($0 == 1 ? "friends.day" : "friends.days", ["count": $0]) } ?? "—", "passport.average")
+                    metric(stats.deliveredCount.formatted(), localizer.text("passport.delivered", ["count": stats.deliveredCount]))
+                    metric(stats.averageDays.map { localizer.text($0 == 1 ? "friends.day" : "friends.days", ["count": $0]) } ?? "—", localizer.text("passport.average"))
                 }
                 Text(localizer.text("passport.stamps")).font(.subheadline.weight(.semibold))
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .top), count: dynamicTypeSize.isAccessibilitySize ? 2 : 4), spacing: 16) {
@@ -495,7 +495,7 @@ private struct FriendDetailView: View {
         let upcoming = Set(FriendStamp.allCases.filter { !earned.contains($0) }.prefix(3))
         return showAllStamps ? FriendStamp.allCases : FriendStamp.allCases.filter { earned.contains($0) || upcoming.contains($0) }
     }
-    private func metric(_ value: String, _ title: String) -> some View { VStack(alignment: .leading, spacing: 4) { Text(value).font(.title2.weight(.semibold)); Text(localizer.text(title)).font(.caption2).foregroundStyle(.secondary) }.frame(maxWidth: .infinity, alignment: .leading) }
+    private func metric(_ value: String, _ title: String) -> some View { VStack(alignment: .leading, spacing: 4) { Text(value).font(.title2.weight(.semibold)); Text(title).font(.caption2).foregroundStyle(.secondary) }.frame(maxWidth: .infinity, alignment: .leading) }
     private func stampTint(_ stamp: FriendStamp) -> Color { switch stamp { case .first, .aroundWorld, .rightNextDoor, .homeForHolidays: ExperimentalPalette.delivered; case .ten, .theRegular: ExperimentalPalette.lilac; case .connected, .acrossBorders, .pickedUp: ExperimentalPalette.transit; case .express, .busyDoorstep: ExperimentalPalette.pickup; case .worthTheWait: ExperimentalPalette.ochre } }
     private func stampSurface(_ stamp: FriendStamp) -> Color { switch stamp { case .first, .aroundWorld, .rightNextDoor, .homeForHolidays: ExperimentalPalette.deliveredSurface; case .ten, .theRegular: ExperimentalPalette.lilacSurface; case .connected, .acrossBorders, .pickedUp: ExperimentalPalette.transitSurface; case .express, .busyDoorstep: ExperimentalPalette.pickupSurface; case .worthTheWait: ExperimentalPalette.ochreSurface } }
     private func progress(_ stamp: FriendStamp, earned: Bool, count: Int) -> String {

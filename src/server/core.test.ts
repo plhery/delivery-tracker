@@ -563,10 +563,10 @@ describe('native notification boundaries', () => {
     };
 
     expect(web.payload(row)).toMatchObject({
-      body: "Your parcel is on its way. Delivery is now expected tomorrow.\nZürich",
+      body: "Your parcel is on its way. New expected delivery: tomorrow.\nZürich",
     });
     expect(web.payload({ ...row, expected_delivery_changed: false })).toMatchObject({
-      body: "Your parcel is on its way. Expected tomorrow.\nZürich",
+      body: "Your parcel is on its way. Expected: tomorrow.\nZürich",
     });
     expect(notificationExpectedDelivery(
       '2026-08-26 09:00–12:00',

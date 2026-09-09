@@ -11,10 +11,12 @@ import {
   LanguageControl,
   localizedExpectedDelivery,
   localizedDeliveryDate,
+  localizedDatePhrase,
   localizedRelativeTime,
   stageLabel,
   type Translate,
   useI18n,
+  translate,
 } from './i18n';
 
 function TranslationProbe() {
@@ -82,6 +84,27 @@ describe('localization', () => {
 });
 
 describe('relative delivery dates', () => {
+  it.each(['en', 'de', 'fr', 'it'] as const)('uses natural date phrases and singular counts in %s', (locale) => {
+    const t: Translate = (key, variables) => translate(locale, key, variables);
+    for (const key of ['time.yesterday', 'time.today', 'time.tomorrow'] as const) {
+      expect(localizedDatePhrase(t(key), t)).toBe(t(key));
+      expect(t('parcel.ariaExpected', { name: 'Parcel', status: 'In transit', date: t(key) }))
+        .toContain(`: ${t(key)}`);
+    }
+    expect(localizedDatePhrase('12/09/2026', t)).toBe(t('parcel.onDate', { date: '12/09/2026' }));
+    const singularStamps = { en: '1 stamp', fr: '1 timbre', de: '1 Briefmarke', it: '1 francobollo' };
+    const pluralStamps = { en: 'stamps', fr: 'timbres', de: 'Briefmarken', it: 'francobolli' };
+    expect(t('friends.stampCount', { count: 1 })).toBe(singularStamps[locale]);
+    for (const count of [0, 2, 10]) {
+      expect(t('friends.stampCount', { count })).toBe(`${count} ${pluralStamps[locale]}`);
+    }
+    const singleLink = { en: 'Cancel 1 previous link', fr: 'Annuler 1 lien précédent', de: '1 früheren Link widerrufen', it: 'Annulla 1 link precedente' };
+    expect(t('friends.cancelPrevious', { count: 1 })).toBe(singleLink[locale]);
+    const singleDelivered = { en: 'Delivered', fr: 'Livré', de: 'Zugestellt', it: 'Consegnato' };
+    expect(t('passport.delivered', { count: 1 })).toBe(singleDelivered[locale]);
+    expect(t('friends.day', { count: 1 })).toBe(t('friends.day'));
+  });
+
   it.each([
     ['en-CH', en, ['yesterday', 'today', 'tomorrow']],
     ['de-CH', de, ['gestern', 'heute', 'morgen']],

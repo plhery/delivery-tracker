@@ -76,7 +76,7 @@ describe('Friends', () => {
   it('keeps demo invitations local and offers sign-in', async () => {
     const fetch = vi.fn(); vi.stubGlobal('fetch', fetch);
     const { user, onExitDemo } = await show(); await user.click(screen.getByRole('button', { name: 'Invite a friend' }));
-    const sheet = screen.getByRole('dialog'); expect(within(sheet).getByRole('button', { name: 'Replay package opening' })).toBeVisible();
+    const sheet = screen.getByRole('dialog'); expect(within(sheet).getByRole('button', { name: 'Replay parcel opening' })).toBeVisible();
     await user.click(within(sheet).getByRole('button', { name: 'Sign in instead' }));
     expect(onExitDemo).toHaveBeenCalledOnce(); expect(fetch).not.toHaveBeenCalled();
   });
@@ -135,7 +135,7 @@ describe('Friends', () => {
     const sheet = screen.getByRole('dialog');
     await within(sheet).findByRole('textbox', { name: 'Invitation link' });
     await user.click(within(sheet).getByText('Manage links'));
-    expect(await within(sheet).findByRole('button', { name: 'Cancel 1 previous links' })).toBeVisible();
+    expect(await within(sheet).findByRole('button', { name: 'Cancel 1 previous link' })).toBeVisible();
     await user.click(within(sheet).getByRole('button', { name: 'Cancel this invitation' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(client.action).toHaveBeenCalledTimes(2);
@@ -151,7 +151,7 @@ describe('Friends', () => {
     const sheet = screen.getByRole('dialog');
     await within(sheet).findByRole('textbox', { name: 'Invitation link' });
     await user.click(within(sheet).getByText('Manage links'));
-    const cancel = await within(sheet).findByRole('button', { name: 'Cancel 1 previous links' });
+    const cancel = await within(sheet).findByRole('button', { name: 'Cancel 1 previous link' });
     const field = within(sheet).getByRole('textbox', { name: 'Invitation link' });
     const link = (field as HTMLInputElement).value;
     await user.click(cancel);
