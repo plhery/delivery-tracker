@@ -1,15 +1,5 @@
 @import "../public/theme.css";
 
-@font-face {
-  font-family: Courgette;
-  src: url('/fonts/courgette/Courgette-Regular.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-}
-
-.parcel-illustration__initial { font-family: Courgette, cursive; }
-
 .tone-blue { --tone: var(--blue); --tone-surface: var(--blue-soft); }
 .tone-peach { --tone: var(--orange); --tone-surface: var(--orange-soft); }
 .tone-green { --tone: var(--green); --tone-surface: var(--green-soft); }

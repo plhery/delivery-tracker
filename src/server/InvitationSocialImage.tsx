@@ -2,15 +2,16 @@ import { ImageResponse } from 'next/og';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { invitationInitial } from '../lib/invitationInitial';
+import { invitationInitialPath } from '../lib/invitationInitialPath';
 
 // Preserve ImageResponse's bundled sans face when adding the serif name font.
 const sansFont = readFileSync(join(process.cwd(), 'node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf'));
 const nameFont = readFileSync(join(process.cwd(), 'public/fonts/gelasio/Gelasio-SemiBoldItalic.ttf'));
-const initialFont = readFileSync(join(process.cwd(), 'public/fonts/courgette/Courgette-Regular.ttf'));
 
 /** A still of the welcome parcel, drawn with the same kraft paper and labels. */
 export function invitationSocialImage(nickname: string | null): ImageResponse {
   const initial = invitationInitial(nickname);
+  const initialPath = invitationInitialPath(initial);
   // Project the seal's SVG coordinates into ImageResponse's 360 × 300 image.
   const parcelScale = 300 / 215;
   const sealSize = 28 * parcelScale;
@@ -45,12 +46,13 @@ export function invitationSocialImage(nickname: string | null): ImageResponse {
         <g transform="translate(183 234) rotate(-27)">
           <circle r="14" fill="#DECCE2" />
           <circle r="11.5" stroke="#FFF6FF" strokeWidth="1.2" />
+          {initialPath && <path d={initialPath} stroke="#7C6787" strokeWidth="1.5" strokeLinejoin="round" />}
           {!initial && <path d="M0-7V7m-6-10 12 6M-6 3 6-3" stroke="#7C6787" strokeWidth="1.5" strokeLinecap="round" />}
         </g>
         <path d="m96 122 13-7 95 48-13 7-95-48Z" fill="#EBDDCA" />
         <path d="m103 119 94 47" stroke="#AF9474" strokeOpacity=".6" strokeWidth="1" strokeDasharray="3 3" />
       </svg>
-      {initial && <div style={{ display: 'flex', position: 'absolute', left: sealLeft, top: sealTop, width: sealSize, height: sealSize, alignItems: 'center', justifyContent: 'center', fontFamily: 'Courgette', fontSize: 18 * parcelScale, color: '#7C6787', transform: 'rotate(-27deg)', lineHeight: 1 }}>{initial}</div>}
+      {initial && !initialPath && <div style={{ display: 'flex', position: 'absolute', left: sealLeft, top: sealTop, width: sealSize, height: sealSize, alignItems: 'center', justifyContent: 'center', fontSize: 18 * parcelScale, color: '#7C6787', transform: 'rotate(-27deg)', lineHeight: 1 }}>{initial}</div>}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', marginTop: 16, fontSize: 28, color: '#526E5B' }}>Tap to open your parcel →</div>
     </div>,
@@ -59,7 +61,6 @@ export function invitationSocialImage(nickname: string | null): ImageResponse {
       fonts: [
         { name: 'Geist', data: sansFont, weight: 400, style: 'normal' },
         { name: 'Gelasio', data: nameFont, weight: 600, style: 'italic' },
-        { name: 'Courgette', data: initialFont, weight: 400, style: 'normal' },
       ],
       headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow' },
     },
