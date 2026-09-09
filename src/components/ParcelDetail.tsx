@@ -83,6 +83,7 @@ export function ParcelDetail({
     ? localizedRelativeTime(current.occurredAt, t, languageTag)
     : null;
   const swipeStart = useRef<TouchPoint | null>(null);
+  const backdropPress = useRef(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [editingCarrier, setEditingCarrier] = useState(false);
   const [title, setTitle] = useState(parcel.label);
@@ -237,6 +238,21 @@ export function ParcelDetail({
   }
 
   return createPortal(
+    <div
+      className="sheet-backdrop detail-backdrop"
+      onPointerDown={(event) => {
+        backdropPress.current = event.target === event.currentTarget && event.button === 0 && event.isPrimary !== false;
+      }}
+      onPointerUp={(event) => {
+        if (event.target !== event.currentTarget) backdropPress.current = false;
+      }}
+      onPointerCancel={() => { backdropPress.current = false; }}
+      onClick={(event) => {
+        const outside = backdropPress.current && event.target === event.currentTarget;
+        backdropPress.current = false;
+        if (outside && !editingCarrier && !confirmingDelete && !dialog.current?.hasAttribute('inert')) onBack();
+      }}
+    >
     <div
       ref={dialog}
       style={carrierBrand(carrier).style}
@@ -508,6 +524,7 @@ export function ParcelDetail({
           onDelete={() => void deleteNow()}
         />
       )}
+    </div>
     </div>,
     document.body,
   );

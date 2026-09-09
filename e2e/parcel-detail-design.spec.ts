@@ -42,3 +42,31 @@ test('keeps tracking actions available when history is folded and preserves titl
   expect(await detail.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
   await expect(detail.locator('.detail__state')).toHaveCSS('font-weight', '400');
 });
+
+test('closes from the backdrop, but keeps inside clicks and nested dialogs open', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const detail = page.locator('.detail--postcard');
+  await expect(detail).toBeVisible();
+  await detail.getByRole('heading', { level: 1 }).click();
+  await expect(detail).toBeVisible();
+
+  // Releasing a drag outside the card must not dismiss it.
+  const bounds = (await detail.boundingBox())!;
+  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + 180);
+  await page.mouse.down();
+  await page.mouse.move(20, 180);
+  await page.mouse.up();
+  await expect(detail).toBeVisible();
+
+  await detail.getByRole('button', { name: /Change carrier from/ }).click();
+  const carrier = page.getByRole('dialog', { name: 'Change carrier', exact: true });
+  await expect(carrier).toBeVisible();
+  await page.mouse.click(20, 180);
+  await expect(carrier).toHaveCount(0);
+  await expect(detail).toBeVisible();
+
+  await page.mouse.click(20, 180);
+  await expect(detail).toHaveCount(0);
+  await expect(page.locator('.detail-backdrop')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^(?:Next up: )?New sneakers 👟 —/ })).toBeFocused();
+});

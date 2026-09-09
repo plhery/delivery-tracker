@@ -1,3 +1,5 @@
+.sheet-backdrop.detail-backdrop { display: block; padding: 0; z-index: 40; }
+.detail-backdrop .detail { box-shadow: none; }
 /* Approved postcard header (04), compact tracking utilities (05), and journal. */
 .detail.detail--postcard {
   --tone: light-dark(var(--carrier-ink-light), var(--carrier-ink-dark));
