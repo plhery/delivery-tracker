@@ -39,15 +39,15 @@ struct FriendsView: View {
                         }
                         if data.profile != nil { circle(data) }
                         else {
-                            HStack(spacing: 16) {
-                                Text(text("friends.joinTitle")).font(.system(.title2, design: .rounded, weight: .bold)).tracking(-0.5)
-                                Spacer(minLength: 0)
-                                FriendsPostagePair().scaleEffect(0.75).frame(width: 96, height: 76)
-                            }
-                            FriendsProfileForm(profile: nil, busy: model.working) { profile in
-                                Task { _ = await model.act(FriendsActionRequest(action: .saveProfile, nickname: profile.nickname, shareStats: profile.shareStats, shareArrival: profile.shareArrival), parcels: parcels.parcels) }
-                            }
+                            VStack(spacing: 22) {
+                                FriendsPostagePair().padding(.bottom, 12)
+                                Text(text("friends.title")).font(.system(size: 26, weight: .semibold))
+                                Text(text("friends.introSummary")).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                                Button { panel = .create } label: { Text(text("friends.join")).frame(maxWidth: .infinity, minHeight: 46) }
+                                    .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
+                            }.padding(.vertical, 70).frame(maxWidth: .infinity)
                         }
+
                     } else if model.errorKey != nil {
                         Button(text("common.retry")) { Task { await model.load(parcels: parcels.parcels) } }.buttonStyle(.bordered)
                     } else { ProgressView().frame(maxWidth: .infinity, minHeight: 260) }
@@ -113,43 +113,45 @@ struct FriendsView: View {
     }
 
     @ViewBuilder private func circle(_ data: FriendsSnapshot) -> some View {
-        let people = [data.ownCard].compactMap { $0 } + data.friends
-        let total = people.reduce(0) { $0 + ($1.stats?.stamps.count ?? 0) }
         let featured = data.friends.first { $0.id == (arrivingID ?? activity.focusID) }
         let remaining = data.friends.filter { $0.id != featured?.id }
-        if let featured { friendButton(featured) }
         if let profile = data.profile {
             Button { panel = .profile } label: {
-                FriendCardView(friend: data.ownCard ?? FriendsStore.ownCard(parcels: parcels.parcels, profile: profile), showsSettings: true, showsSharingStatus: true)
-            }.buttonStyle(TactileButtonStyle(scale: 0.985))
-                .accessibilityHint(text("friends.settings"))
+                HStack(spacing: 12) {
+                    FriendAvatarView(name: profile.nickname, tint: ExperimentalPalette.transit, surface: ExperimentalPalette.transitSurface).frame(width: 31, height: 38)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(text("friends.yourSharing")).font(.subheadline.weight(.medium)).foregroundStyle(Brand.ink)
+                        Text(text(profile.shareStats ? "friends.shareStats" : "friends.privateStats") + (profile.shareArrival ? " · " + text("friends.shareArrival") : "")).font(.caption2).foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 6)
+                    Image(systemName: "slider.horizontal.3").font(.footnote).foregroundStyle(.secondary)
+                }.padding(.bottom, 18).frame(maxWidth: .infinity, alignment: .leading)
+                    .overlay(alignment: .bottom) { Divider() }
+            }.buttonStyle(.plain).accessibilityLabel(text("friends.settings"))
         }
         if data.friends.isEmpty {
-            Text(text("friends.emptyTitle")).font(.system(.title3, design: .rounded, weight: .bold)).padding(.top, 4)
+            VStack(spacing: 24) {
+                FriendsPostagePair()
+                Text(text("friends.emptyTitle")).font(.title3.weight(.semibold))
+                Button { noticeKey = nil; panel = .invite } label: { Label(text("friends.invite"), systemImage: "plus").frame(maxWidth: .infinity, minHeight: 46) }
+                    .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
+            }.padding(.vertical, 45).frame(maxWidth: .infinity)
         } else {
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(total.formatted()).font(.system(size: 48, weight: .bold, design: .rounded)).tracking(-2).contentTransition(.numericText())
-                    Text(text("friends.collectionNote")).font(.subheadline)
-                }
-                Spacer(minLength: 0)
-                FriendsPostagePair().scaleEffect(0.82).frame(width: 110, height: 90)
+            HStack(alignment: .center) {
+                HStack(alignment: .firstTextBaseline, spacing: 4) { Text(text("friends.circle")).font(.subheadline.weight(.semibold)); Text(data.friends.count.formatted()).font(.caption2).foregroundStyle(.secondary) }
+                Spacer(minLength: 8)
+                Button { noticeKey = nil; panel = .invite } label: { Label(text("friends.invite"), systemImage: "plus").font(.caption.weight(.medium)).padding(.horizontal, 10).frame(minHeight: 36) }
+                    .buttonStyle(.plain).foregroundStyle(Brand.onAccent).background(Brand.accent, in: RoundedRectangle(cornerRadius: 11))
             }
-            .padding(22).foregroundStyle(Brand.onAccent).background(Brand.accent, in: RoundedRectangle(cornerRadius: 26))
-        }
-        VStack(spacing: 4) {
-            Button { noticeKey = nil; panel = .invite } label: { Label(text("friends.invite"), systemImage: "plus").frame(maxWidth: .infinity, minHeight: 48) }
-                .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
-            Button(text("friends.enterCode")) { panel = .accept }.font(.subheadline).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44)
-        }
-        if !remaining.isEmpty {
-            HStack { Text(text("friends.circle")).font(.title2.bold()); Spacer(); Text(session.isDemo ? text("friends.demoPeople") : data.friends.count.formatted()).font(.caption).foregroundStyle(.secondary) }
-            ForEach(remaining) { friendButton($0) }
+            VStack(spacing: 9) {
+                if let featured { friendButton(featured) }
+                ForEach(remaining) { friendButton($0) }
+            }
         }
     }
 
     private func friendButton(_ friend: FriendCard) -> some View {
-        Button { DeliveryAnalytics.shared.action("friend-open"); panel = .friend(friend) } label: { FriendCardView(friend: friend, showsArrow: true) }
+        Button { DeliveryAnalytics.shared.action("friend-open"); panel = .friend(friend) } label: { FriendCardView(friend: friend) }
             .buttonStyle(TactileButtonStyle(scale: 0.98)).id(friend.id)
             .offset(x: friend.id == (arrivingID ?? activity.focusID) && !cardLanded && !reduceMotion ? 100 : 0)
             .opacity(friend.id == (arrivingID ?? activity.focusID) && !cardLanded ? 0 : 1)
@@ -157,48 +159,19 @@ struct FriendsView: View {
 
     @ViewBuilder private func sheetContent(_ value: FriendsPanel) -> some View {
         switch value {
-        case .profile:
-            FriendsProfileForm(profile: model.snapshot?.profile, busy: model.working) { profile in
+        case .profile, .create:
+            FriendsProfileForm(profile: value.id == "create" ? nil : model.snapshot?.profile, busy: model.working) { profile in
                 Task { if await model.act(FriendsActionRequest(action: .saveProfile, nickname: profile.nickname, shareStats: profile.shareStats, shareArrival: profile.shareArrival), parcels: parcels.parcels) != nil { panel = nil } }
             }
-            if !session.isDemo {
-                Button(text("friends.revokeAll")) { noticeKey = nil; panel = .revokeInvites }
-                    .font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44).disabled(model.working)
-                    .accessibilityIdentifier("friends.cancelInvitationLinks")
-            }
-            Button(text("friends.disable")) { panel = .disable }.font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44)
-        case .revokeInvites:
-            Text(text("friends.revokeAllDetail")).font(.subheadline).foregroundStyle(.secondary)
-            Button {
-                Task {
-                    if await model.act(FriendsActionRequest(action: .revokeInvite), parcels: parcels.parcels) != nil {
-                        noticeKey = "friends.revoked"
-                        panel = nil
-                    }
-                }
-            } label: {
-                Text(text("friends.revokeAll")).frame(maxWidth: .infinity, minHeight: 48)
-            }
-            .buttonStyle(.borderedProminent).disabled(model.working).tint(Brand.accent).foregroundStyle(Brand.onAccent)
-            Button(text("friends.keepLinks")) { model.errorKey = nil; panel = .profile }
-                .font(.subheadline).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44).disabled(model.working)
-        case .disable:
-            Text(text("friends.disableDetail")).font(.subheadline).foregroundStyle(.secondary)
-            Button(text("friends.disable")) { Task { if await model.act(FriendsActionRequest(action: .disable), parcels: parcels.parcels) != nil { panel = nil } } }.buttonStyle(.borderedProminent).disabled(model.working).tint(Brand.accent).foregroundStyle(Brand.onAccent)
-        case .invite, .accept:
+        case .invite:
             if session.isDemo {
+                FriendsInvitationParcel(nickname: model.snapshot?.profile?.nickname ?? text("friends.you"))
                 Text(text("friends.demoInvites")).font(.subheadline).foregroundStyle(.secondary)
-                Button {
-                    panel = nil
-                    model.errorKey = nil
-                    session.showWelcome()
-                } label: {
-                    Text(text("welcome.signInInstead")).frame(maxWidth: .infinity, minHeight: 48)
-                }
-                .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
-                .accessibilityIdentifier("friends.demoSignIn")
+                Button { panel = nil; model.errorKey = nil; session.showWelcome() } label: { Text(text("welcome.signInInstead")).frame(maxWidth: .infinity, minHeight: 46) }
+                    .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent).accessibilityIdentifier("friends.demoSignIn")
+            } else {
+                FriendsInvitationView(nickname: model.snapshot?.profile?.nickname ?? text("friends.you"), busy: model.working, act: { await model.act($0, parcels: parcels.parcels) }, completed: { panel = nil })
             }
-            else { FriendsInvitationView(accepting: value.id == "accept", busy: model.working, act: { await model.act($0, parcels: parcels.parcels) }, completed: { panel = nil }, open: { url in panel = nil; invitation.open(url) }) }
         case .friend(let initial):
             if let friend = model.snapshot?.friends.first(where: { $0.id == initial.id }) {
                 FriendDetailView(friend: friend, busy: model.working) {
@@ -211,91 +184,80 @@ struct FriendsView: View {
 }
 
 private enum FriendsPanel: Identifiable {
-    case profile, invite, accept, revokeInvites, disable, friend(FriendCard)
-    var id: String { switch self { case .profile: "profile"; case .invite: "invite"; case .accept: "accept"; case .revokeInvites: "revokeInvites"; case .disable: "disable"; case .friend(let friend): friend.id.uuidString } }
-    var detents: Set<PresentationDetent> {
-        switch self {
-        case .invite: [.height(520), .large]
-        case .accept: [.height(260), .large]
-        case .revokeInvites: [.medium]
-        default: [.large]
-        }
-    }
+    case profile, create, invite, friend(FriendCard)
+    var id: String { switch self { case .profile: "profile"; case .create: "create"; case .invite: "invite"; case .friend(let friend): friend.id.uuidString } }
+    var detents: Set<PresentationDetent> { if case .invite = self { [.height(590), .large] } else { [.large] } }
     @MainActor func title(_ localizer: Localizer) -> String {
-        switch self { case .friend(let friend): friend.nickname; case .profile: localizer.text("friends.settings"); case .invite: localizer.text("friends.inviteTitle"); case .accept: localizer.text("friends.enterCode"); case .revokeInvites: localizer.text("friends.revokeAllTitle"); case .disable: localizer.text("friends.disableTitle") }
+        switch self { case .friend: localizer.text("passport.title"); case .profile: localizer.text("friends.settings"); case .create: localizer.text("friends.join"); case .invite: localizer.text("friends.inviteTitle") }
+    }
+}
+
+struct FriendAvatarView: View {
+    let name: String
+    var tint = ExperimentalPalette.lilac
+    var surface = ExperimentalPalette.lilacSurface
+    var body: some View {
+        GeometryReader { geometry in
+            Text(String(name.prefix(1))).font(.system(size: geometry.size.width * 0.47, weight: .medium))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(surface.mix(with: tint, by: 0.19), in: PostageStampShape())
+                .overlay(Rectangle().stroke(tint.opacity(0.34), lineWidth: 0.7).padding(5))
+                .foregroundStyle(tint).rotationEffect(.degrees(-4))
+        }.accessibilityHidden(true)
     }
 }
 
 private struct FriendCardView: View {
     @EnvironmentObject private var localizer: Localizer
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let friend: FriendCard
-    var showsArrow = false
-    var showsSettings = false
-    var showsSharingStatus = false
-    var magicTrigger = 0
-    @State private var appeared = false
+    private var tone: Int { Int(friend.id.uuid.0) % 4 }
     private var tint: Color { [ExperimentalPalette.transit, ExperimentalPalette.lilac, ExperimentalPalette.pickup, ExperimentalPalette.delivered][tone] }
     private var surface: Color { [ExperimentalPalette.transitSurface, ExperimentalPalette.lilacSurface, ExperimentalPalette.pickupSurface, ExperimentalPalette.deliveredSurface][tone] }
-    private var tone: Int { Int(friend.id.uuid.0) % 4 }
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                ZStack(alignment: .topTrailing) {
-                    Text(String(friend.nickname.prefix(1))).font(.system(.title2, design: .rounded, weight: .bold))
-                        .frame(width: 42, height: 48).background(Brand.paper, in: PostageStampShape())
-                        .overlay(Rectangle().stroke(tint.opacity(0.25), lineWidth: 0.7).padding(6))
-                        .rotationEffect(.degrees(reduceMotion ? -4 : appeared ? -4 : -10))
-                    Image(systemName: "sparkle").font(.system(size: 12, weight: .medium)).offset(x: 6, y: -3)
-                        .phaseAnimator([false, true, false], trigger: magicTrigger) { content, bright in
-                            content.scaleEffect(bright && !reduceMotion ? 1.3 : 1).opacity(bright ? 1 : 0.5)
-                        } animation: { _ in .easeInOut(duration: 0.24) }
-                }.foregroundStyle(tint).accessibilityHidden(true)
-                    .phaseAnimator([false, true, false], trigger: magicTrigger) { content, lifted in
-                        content.offset(y: lifted && !reduceMotion ? -3 : 0).rotationEffect(.degrees(lifted && !reduceMotion ? 3 : 0))
-                    } animation: { _ in .spring(response: 0.3, dampingFraction: 0.6) }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(localizer.text("passport.title")).font(.caption2).foregroundStyle(tint).accessibilityHidden(true)
-                    Text(friend.nickname).font(.system(.title3, design: .rounded, weight: .bold)).lineLimit(2)
-                }
-                Spacer(minLength: 0)
-                if showsSettings || showsArrow { Image(systemName: showsSettings ? "slider.horizontal.3" : "arrow.up.right").font(.subheadline).foregroundStyle(tint) }
+        HStack(spacing: 12) {
+            FriendAvatarView(name: friend.nickname, tint: tint, surface: surface).frame(width: 39, height: 48)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(friend.nickname).font(.system(.title3, weight: .semibold)).foregroundStyle(Brand.ink)
+                Text(friend.stats.map { localizer.text("friends.stampCount", ["count": $0.stamps.count]) } ?? localizer.text("friends.privateStats")).font(.caption2).foregroundStyle(tint)
+                if friend.arrivedThisWeek == true { HStack(spacing: 5) { Circle().fill(tint).frame(width: 4, height: 4); Text(localizer.text("friends.arrived")).font(.caption2).foregroundStyle(tint) }.padding(.top, 1) }
             }
-            VStack(alignment: .leading, spacing: 8) {
-                if let stats = friend.stats {
-                    HStack(alignment: .top, spacing: 32) {
-                        metric(stats.deliveredCount.formatted(), "passport.delivered")
-                        metric(stats.averageDays.map { localizer.text($0 == 1 ? "friends.day" : "friends.days", ["count": $0]) } ?? "—", "passport.average")
-                    }
-                    HStack(spacing: 7) {
-                        ForEach(Array(stats.stamps.enumerated()), id: \.element) { index, stamp in
-                            Image(systemName: stamp.symbol).font(.system(size: 12)).frame(width: 25, height: 28)
-                                .background(tint.opacity(0.09), in: PostageStampShape())
-                                .rotationEffect(.degrees(index.isMultiple(of: 2) ? -4 : 3))
-                                .offset(y: appeared || reduceMotion ? 0 : 4).opacity(appeared ? 1 : 0)
-                                .animation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.7).delay(Double(index) * 0.055), value: appeared)
-                                .transition(.opacity.combined(with: .scale(scale: reduceMotion ? 1 : 0.85)))
-                                .accessibilityLabel(localizer.text(stamp.titleKey))
-                        }
-                    }.foregroundStyle(tint).frame(minHeight: 28)
-                } else {
-                    Label(localizer.text("friends.privateStats"), systemImage: "lock").font(.footnote).foregroundStyle(.secondary)
-                }
-            }.frame(minHeight: 76, alignment: .leading)
-            if friend.arrivedThisWeek == true || showsSharingStatus {
-                Label(localizer.text(friend.arrivedThisWeek == true ? "friends.arrived" : friend.arrivedThisWeek == false ? "friends.noArrival" : "friends.privateArrival"), systemImage: friend.arrivedThisWeek == nil ? "lock" : "shippingbox")
-                    .font(.caption).foregroundStyle(friend.arrivedThisWeek == true ? tint : Brand.ink.opacity(0.65))
-                    .padding(.top, 10).frame(maxWidth: .infinity, alignment: .leading)
-                    .overlay(alignment: .top) { Rectangle().fill(tint.opacity(0.18)).frame(height: 0.5) }
-            }
-        }
-        .foregroundStyle(Brand.ink).padding(18).frame(maxWidth: .infinity, alignment: .leading)
-        .background(surface, in: RoundedRectangle(cornerRadius: 24))
-        .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(tint.opacity(0.12), lineWidth: 0.7) }
-        .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.85), value: friend.stats != nil)
-        .onAppear { withAnimation(reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.6)) { appeared = true } }
+            Spacer(minLength: 0)
+        }.padding(.horizontal, 16).padding(.vertical, 14).frame(maxWidth: .infinity, minHeight: 80, alignment: .leading)
+            .background(surface, in: RoundedRectangle(cornerRadius: 18))
     }
-    private func metric(_ value: String, _ key: String) -> some View { VStack(alignment: .leading, spacing: 4) { Text(value).font(.title2.bold().monospacedDigit()); Text(localizer.text(key)).font(.caption).foregroundStyle(.secondary) } }
+}
+
+struct FriendPostcardView: View {
+    @EnvironmentObject private var localizer: Localizer
+    let nickname: String
+    var arrivedThisWeek: Bool? = nil
+    var body: some View {
+        HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(nickname).font(.system(size: 28, weight: .semibold)).tracking(-1)
+                if arrivedThisWeek == true { HStack(spacing: 5) { Circle().fill(ExperimentalPalette.lilac).frame(width: 4, height: 4); Text(localizer.text("friends.arrived")).font(.caption).foregroundStyle(ExperimentalPalette.lilac) } }
+            }
+            Spacer(minLength: 0)
+            FriendAvatarView(name: nickname).frame(width: 61, height: 74)
+        }.padding(22).frame(maxWidth: .infinity, minHeight: 135, alignment: .leading).background(ExperimentalPalette.lilacSurface, in: RoundedRectangle(cornerRadius: 21))
+    }
+}
+
+struct FriendSharingPreviewView: View {
+    @EnvironmentObject private var localizer: Localizer
+    let friend: FriendCard
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack { Text(friend.nickname).font(.headline).foregroundStyle(Brand.ink); Spacer(minLength: 8); FriendAvatarView(name: friend.nickname, tint: ExperimentalPalette.transit, surface: ExperimentalPalette.transitSurface).frame(width: 33, height: 41) }
+            Text(summary).font(.caption2).frame(minHeight: 36, alignment: .topLeading).fixedSize(horizontal: false, vertical: true)
+            Text(localizer.text(friend.arrivedThisWeek == true ? "friends.arrived" : "friends.noArrival")).font(.caption2).frame(minHeight: 18).opacity(friend.arrivedThisWeek == nil ? 0 : 1).accessibilityHidden(friend.arrivedThisWeek == nil)
+        }.foregroundStyle(ExperimentalPalette.transit).padding(16).frame(maxWidth: .infinity, alignment: .leading).background(ExperimentalPalette.transitSurface, in: RoundedRectangle(cornerRadius: 17))
+    }
+    private var summary: String {
+        guard let stats = friend.stats else { return localizer.text("friends.privateStats") }
+        let days = stats.averageDays.map { localizer.text($0 == 1 ? "friends.day" : "friends.days", ["count": $0]) } ?? "—"
+        return "\(stats.deliveredCount) \(localizer.text("passport.delivered")) · \(days) · \(localizer.text("friends.stampCount", ["count": stats.stamps.count]))"
+    }
 }
 
 struct FriendsProfileForm: View {
@@ -327,7 +289,6 @@ struct FriendsProfileForm: View {
                 Text(localizer.text("friends.nickname")).font(.subheadline.weight(.semibold))
                 TextField(localizer.text("friends.nicknamePlaceholder"), text: $name).textContentType(.nickname).padding(14).background(Brand.paper, in: RoundedRectangle(cornerRadius: 14))
                     .focused($nameFocused).submitLabel(.done).onSubmit { nameFocused = false }
-                    .modifier(FriendsAttentionCue(active: invitesAttention && value.nickname.isEmpty && !nameFocused, cornerRadius: 14, growth: 0.01))
                     .onChange(of: name) { _, next in
                         settledName = nil
                         if next.unicodeScalars.count > 24 { name = String(String.UnicodeScalarView(next.unicodeScalars.prefix(24))) }
@@ -335,18 +296,19 @@ struct FriendsProfileForm: View {
             }
             VStack(alignment: .leading, spacing: 8) {
                 Text(localizer.text("friends.preview")).font(.subheadline).foregroundStyle(.secondary)
-                Button { magicTrigger += 1 } label: {
-                    FriendCardView(friend: FriendsStore.ownCard(parcels: parcels.parcels, profile: FriendProfile(nickname: value.nickname.isEmpty ? localizer.text("friends.you") : value.nickname, shareStats: stats, shareArrival: arrival)), showsSharingStatus: true, magicTrigger: magicTrigger)
-                }.buttonStyle(TactileButtonStyle(scale: 0.99))
+                FriendSharingPreviewView(friend: FriendsStore.ownCard(parcels: parcels.parcels, profile: FriendProfile(nickname: value.nickname.isEmpty ? localizer.text("friends.you") : value.nickname, shareStats: stats, shareArrival: arrival)))
             }
-            HStack(alignment: .top, spacing: 16) {
-                toggle("friends.shareStats", detail: "friends.shareStatsDetail", value: $stats)
+            VStack(spacing: 0) {
+                Divider()
+                toggle("friends.shareStats", detail: "friends.sharedStatsSummary", value: $stats)
+                Divider()
                 toggle("friends.shareArrival", detail: "friends.shareArrivalDetail", value: $arrival)
+                Divider()
             }
+
             Label(localizer.text("friends.privacy"), systemImage: "lock").font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Button { save(value) } label: { Text(localizer.text(submitKey ?? (profile == nil ? "friends.join" : "friends.save"))).frame(maxWidth: .infinity, minHeight: 46) }
                 .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent).disabled(busy || value.nickname.isEmpty)
-                .modifier(FriendsAttentionCue(active: invitesAttention && !value.nickname.isEmpty && settledName == value.nickname, cornerRadius: 100, growth: 0.016))
         }.disabled(busy)
             .sensoryFeedback(.impact(weight: .light, intensity: 0.5), trigger: magicTrigger)
             .onChange(of: stats) { _, _ in magicTrigger += 1 }
@@ -359,8 +321,12 @@ struct FriendsProfileForm: View {
             }
     }
     private func toggle(_ title: String, detail: String, value: Binding<Bool>) -> some View {
-        Toggle(isOn: value) { Text(localizer.text(title)).font(.footnote).foregroundStyle(.secondary) }
-            .toggleStyle(FriendsSharingToggleStyle()).frame(maxWidth: .infinity, alignment: .leading).accessibilityHint(localizer.text(detail))
+        Toggle(isOn: value) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(localizer.text(title)).font(.footnote.weight(.medium))
+                if title == "friends.shareStats" { Text(localizer.text(detail)).font(.caption2).foregroundStyle(.secondary) }
+            }
+        }.toggleStyle(.switch).tint(ExperimentalPalette.delivered).padding(.vertical, 10).accessibilityHint(localizer.text(detail))
     }
 }
 
@@ -401,11 +367,10 @@ private struct FriendsSharingToggleStyle: ToggleStyle {
 
 private struct FriendsInvitationView: View {
     @EnvironmentObject private var localizer: Localizer
-    let accepting: Bool
+    let nickname: String
     let busy: Bool
     let act: (FriendsActionRequest) async -> FriendsActionResponse?
     let completed: () -> Void
-    let open: (URL) -> Void
     @State private var code = ""
     @State private var previewId: String?
     @State private var copied = false
@@ -413,124 +378,132 @@ private struct FriendsInvitationView: View {
     @State private var previousInviteCount = 0
     @State private var previousInvitationsCancelled = false
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            if accepting {
-                TextField(localizer.text("friends.linkPlaceholder"), text: $code).accessibilityLabel(localizer.text("friends.link")).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL).font(.footnote).padding(14).background(Brand.paper, in: RoundedRectangle(cornerRadius: 14))
-                    .onChange(of: code) { _, next in code = String(next.prefix(2048)) }
-                Button { if let url = URL(string: code.trimmingCharacters(in: .whitespacesAndNewlines)) { open(url) } } label: {
-                    Text(localizer.text("friends.openLink")).frame(maxWidth: .infinity, minHeight: 44)
-                }
-                    .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent).disabled(FriendInvitationLink.code(from: code) == nil)
+        VStack(alignment: .leading, spacing: 12) {
+            Text(localizer.text("friends.inviteExpiry")).font(.caption2).foregroundStyle(.secondary)
+            FriendsInvitationParcel(nickname: nickname)
+            if code.isEmpty {
+                if !requestedInvitation || busy { ProgressView().frame(maxWidth: .infinity, minHeight: 44).accessibilityLabel(localizer.text("friends.link")) }
+                else { Button(localizer.text("common.retry")) { Task { await createInvitation() } }.buttonStyle(.borderedProminent) }
             } else {
-                if code.isEmpty {
-                    if !requestedInvitation || busy {
-                        ProgressView().frame(maxWidth: .infinity, minHeight: 44)
-                            .accessibilityLabel(localizer.text("friends.link"))
-                    } else {
-                        actionButton("common.retry") { await createInvitation() }
-                    }
-                }
-                else {
-                    let link = FriendInvitationLink.url(code: code, previewId: previewId)
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(localizer.text("friends.link")).font(.caption).foregroundStyle(.secondary)
-                        Text(link.absoluteString).font(.system(.footnote, design: .monospaced))
-                            .lineLimit(1).truncationMode(.middle).textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading).padding(14)
-                            .background(Brand.paper, in: RoundedRectangle(cornerRadius: 14))
-                            .accessibilityIdentifier("friends.invitationURL")
-                    }
-                    Text(localizer.text("friends.inviteExpiry")).font(.caption).foregroundStyle(.secondary)
-                    ShareLink(item: link) { Label(localizer.text("friends.shareLink"), systemImage: "square.and.arrow.up").frame(maxWidth: .infinity, minHeight: 44) }
-                        .simultaneousGesture(TapGesture().onEnded { DeliveryAnalytics.shared.action("friend-invite-share", .started) })
-                        .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
-                    Button { UIPasteboard.general.url = link; copied = true; DeliveryAnalytics.shared.action("friend-invite-copy", .success) } label: { Label(localizer.text(copied ? "friends.copied" : "friends.copyLink"), systemImage: copied ? "checkmark" : "doc.on.doc").frame(maxWidth: .infinity, minHeight: 44) }.foregroundStyle(Brand.ink)
-                    if previousInvitationsCancelled {
-                        Label(localizer.text("friends.previousRevoked"), systemImage: "checkmark")
-                            .font(.caption).foregroundStyle(ExperimentalPalette.delivered)
-                    }
-                    VStack(spacing: 0) {
-                        Button(localizer.text("friends.revoke")) {
-                            Task { if await act(FriendsActionRequest(action: .revokeInvite, code: code)) != nil { completed() } }
-                        }.font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44)
+                let link = FriendInvitationLink.url(code: code, previewId: previewId)
+                Text(link.absoluteString).font(.caption2).lineLimit(1).truncationMode(.middle).textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(10).background(Brand.ink.opacity(0.04), in: RoundedRectangle(cornerRadius: 9))
+                    .accessibilityLabel(localizer.text("friends.link") + ": " + link.absoluteString).accessibilityIdentifier("friends.invitationURL")
+                ShareLink(item: link) { Label(localizer.text("friends.shareLink"), systemImage: "square.and.arrow.up").frame(maxWidth: .infinity, minHeight: 44) }
+                    .simultaneousGesture(TapGesture().onEnded { DeliveryAnalytics.shared.action("friend-invite-share", .started) })
+                    .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
+                Button { UIPasteboard.general.url = link; copied = true; DeliveryAnalytics.shared.action("friend-invite-copy", .success) } label: { Label(localizer.text(copied ? "friends.copied" : "friends.copyLink"), systemImage: copied ? "checkmark" : "doc.on.doc").font(.footnote).frame(maxWidth: .infinity, minHeight: 36) }.foregroundStyle(Brand.ink)
+                if previousInvitationsCancelled { Label(localizer.text("friends.previousRevoked"), systemImage: "checkmark").font(.caption).foregroundStyle(ExperimentalPalette.delivered) }
+                Divider()
+                DisclosureGroup {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Button(localizer.text("friends.revoke")) { Task { if await act(FriendsActionRequest(action: .revokeInvite, code: code)) != nil { completed() } } }.frame(minHeight: 30)
                         if previousInviteCount > 0 {
-                            Button(localizer.text("friends.revokePrevious", ["count": previousInviteCount])) {
-                                Task {
-                                    if await act(FriendsActionRequest(action: .revokePreviousInvites, code: code)) != nil {
-                                        previousInviteCount = 0
-                                        previousInvitationsCancelled = true
-                                    }
-                                }
-                            }.font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44)
+                            Button(localizer.text("friends.cancelPrevious", ["count": previousInviteCount])) {
+                                Task { if await act(FriendsActionRequest(action: .revokePreviousInvites, code: code)) != nil { previousInviteCount = 0; previousInvitationsCancelled = true } }
+                            }.frame(minHeight: 30)
                         }
-                    }
-                }
+                    }.font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
+                } label: { Text(localizer.text("friends.manageLinks")).font(.caption).foregroundStyle(.secondary) }
             }
-        }.disabled(busy)
-        .task {
-            guard !accepting, !requestedInvitation else { return }
-            requestedInvitation = true
-            await createInvitation()
-        }
+        }.disabled(busy).task { guard !requestedInvitation else { return }; requestedInvitation = true; await createInvitation() }
     }
     private func createInvitation() async {
         let result = await act(FriendsActionRequest(action: .createInvite))
         guard !Task.isCancelled else { return }
-        previewId = result?.previewID
-        code = result?.inviteCode ?? ""
-        previousInviteCount = result?.previousInviteCount ?? 0
-        previousInvitationsCancelled = false
+        previewId = result?.previewID; code = result?.inviteCode ?? ""; previousInviteCount = result?.previousInviteCount ?? 0; previousInvitationsCancelled = false
     }
-    private func actionButton(_ key: String, action: @escaping () async -> Void) -> some View {
-        Button { Task { await action() } } label: { Text(localizer.text(key)).frame(maxWidth: .infinity, minHeight: 44) }.buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
+}
+
+struct FriendsInvitationParcel: View {
+    @EnvironmentObject private var localizer: Localizer
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let nickname: String
+    @State private var iteration = 0
+    @State private var open = 0.0
+    var body: some View {
+        HStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 3) { Text(localizer.text("friends.from")).font(.caption2); Text(nickname).font(.subheadline.weight(.semibold)) }.foregroundStyle(ExperimentalPalette.delivered)
+            Spacer(minLength: 0)
+            Button { iteration += 1 } label: { UnwrappingParcel(open: open, celebrating: open > 0, senderName: nickname).frame(width: 158, height: 163) }
+                .buttonStyle(.plain).accessibilityLabel(localizer.text("friends.replayParcel"))
+        }.padding(.leading, 17).padding(.trailing, 8).frame(maxWidth: .infinity, minHeight: 157).background(ExperimentalPalette.deliveredSurface, in: RoundedRectangle(cornerRadius: 16)).clipped()
+            .task(id: iteration) {
+                var transaction = Transaction(); transaction.disablesAnimations = true
+                withTransaction(transaction) { open = 0 }
+                do { try await Task.sleep(for: .milliseconds(80)) } catch { return }
+                withAnimation(reduceMotion ? .linear(duration: 0.1) : .easeOut(duration: 1.5)) { open = 1 }
+            }
     }
 }
 
 private struct FriendDetailView: View {
     @EnvironmentObject private var localizer: Localizer
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let friend: FriendCard
     let busy: Bool
     let remove: () -> Void
+    @State private var showAllStamps = false
     @State private var stamp: FriendStamp?
     @State private var confirming = false
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
-            FriendCardView(friend: friend)
-            if let stats = friend.stats, !stats.stamps.isEmpty {
-                Text(localizer.text("friends.stampHint")).font(.caption).foregroundStyle(.secondary)
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 64))], spacing: 16) {
-                    ForEach(stats.stamps) { value in
-                        Button { withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.65)) { stamp = value } } label: {
-                            FriendsPostage(symbol: value.symbol).scaleEffect(stamp == value && !reduceMotion ? 1.08 : 1).rotationEffect(.degrees(stamp == value && !reduceMotion ? -5 : 0))
-                        }.buttonStyle(.plain).accessibilityLabel(localizer.text(value.titleKey)).accessibilityAddTraits(stamp == value ? .isSelected : [])
+            FriendPostcardView(nickname: friend.nickname, arrivedThisWeek: friend.arrivedThisWeek)
+            if let stats = friend.stats {
+                HStack(alignment: .top) {
+                    metric(stats.deliveredCount.formatted(), "passport.delivered")
+                    metric(stats.averageDays.map { localizer.text($0 == 1 ? "friends.day" : "friends.days", ["count": $0]) } ?? "—", "passport.average")
+                }
+                Text(localizer.text("passport.stamps")).font(.subheadline.weight(.semibold))
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .top), count: dynamicTypeSize.isAccessibilitySize ? 2 : 4), spacing: 16) {
+                    ForEach(visibleStamps(stats.stamps)) { value in
+                        let earned = stats.stamps.contains(value)
+                        Button { stamp = value } label: {
+                            VStack(spacing: 10) {
+                                PassportSeal(symbol: value == .ten ? "10" : value == .theRegular ? "25" : value == .busyDoorstep ? "parcels" : value.symbol, tint: stampTint(value), surface: stampSurface(value), earned: earned).frame(width: 50, height: 64)
+                                Text(localizer.text(value.titleKey)).font(.caption2).foregroundStyle(earned ? Brand.ink : Brand.ink.opacity(0.6)).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                            }.frame(maxWidth: .infinity, minHeight: 96, alignment: .top)
+                        }.buttonStyle(PassportPressStyle()).accessibilityLabel(localizer.text(value.titleKey))
+                            .popover(isPresented: Binding(get: { stamp == value }, set: { if !$0 { stamp = nil } })) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(localizer.text(value.titleKey)).font(.headline)
+                                    Text(localizer.text(value.explanationKey) + progress(value, earned: earned, count: stats.deliveredCount)).font(.subheadline).foregroundStyle(.secondary)
+                                }.fixedSize(horizontal: false, vertical: true).frame(idealWidth: 260, maxWidth: 280, alignment: .leading).padding(20).foregroundStyle(Brand.ink).presentationBackground(Brand.paper).presentationCompactAdaptation(.popover)
+                            }
                     }
                 }
-                if let stamp { VStack(alignment: .leading, spacing: 8) { Text(localizer.text(stamp.titleKey)).font(.headline); Text(localizer.text(stamp.explanationKey)).font(.subheadline).foregroundStyle(.secondary) } }
-            }
-            if confirming {
-                Divider()
-                Text(localizer.text("friends.removeTitle", ["name": friend.nickname])).font(.headline)
-                Text(localizer.text("friends.removeDetail")).font(.subheadline).foregroundStyle(.secondary)
-                Button(localizer.text("friends.remove"), action: remove).buttonStyle(.bordered).disabled(busy)
-                Button(localizer.text("common.cancel")) { confirming = false }
-            } else { Button(localizer.text("friends.remove")) { confirming = true }.font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 44) }
+                if FriendStamp.allCases.filter({ !stats.stamps.contains($0) }).count > 3 {
+                    Button(localizer.text(showAllStamps ? "passport.showLess" : "passport.showAll")) { showAllStamps.toggle() }.font(.caption).foregroundStyle(.secondary).frame(minHeight: 44).buttonStyle(PassportPressStyle())
+                }
+            } else { Label(localizer.text("friends.privateStats"), systemImage: "lock").font(.footnote).foregroundStyle(.secondary) }
+            Divider()
+            DisclosureGroup {
+                if confirming {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(localizer.text("friends.removeTitle", ["name": friend.nickname])).font(.headline)
+                        Text(localizer.text("friends.removeDetail")).font(.subheadline).foregroundStyle(.secondary)
+                        Button(localizer.text("friends.remove"), action: remove).buttonStyle(.bordered).disabled(busy)
+                        Button(localizer.text("common.cancel")) { confirming = false }.disabled(busy)
+                    }
+                } else { Button(localizer.text("friends.remove")) { confirming = true }.font(.footnote).foregroundStyle(.secondary).frame(minHeight: 36).disabled(busy) }
+            } label: { Text(localizer.text("friends.manageFriendship")).font(.caption).foregroundStyle(.secondary) }
         }.sensoryFeedback(.impact(weight: .light, intensity: 0.6), trigger: stamp)
+    }
+    private func visibleStamps(_ earned: [FriendStamp]) -> [FriendStamp] {
+        let upcoming = Set(FriendStamp.allCases.filter { !earned.contains($0) }.prefix(3))
+        return showAllStamps ? FriendStamp.allCases : FriendStamp.allCases.filter { earned.contains($0) || upcoming.contains($0) }
+    }
+    private func metric(_ value: String, _ title: String) -> some View { VStack(alignment: .leading, spacing: 4) { Text(value).font(.title2.weight(.semibold)); Text(localizer.text(title)).font(.caption2).foregroundStyle(.secondary) }.frame(maxWidth: .infinity, alignment: .leading) }
+    private func stampTint(_ stamp: FriendStamp) -> Color { switch stamp { case .first, .aroundWorld, .rightNextDoor, .homeForHolidays: ExperimentalPalette.delivered; case .ten, .theRegular: ExperimentalPalette.lilac; case .connected, .acrossBorders, .pickedUp: ExperimentalPalette.transit; case .express, .busyDoorstep: ExperimentalPalette.pickup; case .worthTheWait: ExperimentalPalette.ochre } }
+    private func stampSurface(_ stamp: FriendStamp) -> Color { switch stamp { case .first, .aroundWorld, .rightNextDoor, .homeForHolidays: ExperimentalPalette.deliveredSurface; case .ten, .theRegular: ExperimentalPalette.lilacSurface; case .connected, .acrossBorders, .pickedUp: ExperimentalPalette.transitSurface; case .express, .busyDoorstep: ExperimentalPalette.pickupSurface; case .worthTheWait: ExperimentalPalette.ochreSurface } }
+    private func progress(_ stamp: FriendStamp, earned: Bool, count: Int) -> String {
+        guard !earned else { return "" }
+        switch stamp { case .first: return "\n\(min(count, 1)) / 1"; case .ten: return "\n\(min(count, 10)) / 10"; case .express: return "\n" + localizer.text("passport.underTwoDays"); case .theRegular: return "\n\(min(count, 25)) / 25"; default: return "" }
     }
 }
 
-private struct FriendsPostage: View {
-    let symbol: String
-    var body: some View {
-        ZStack {
-            PostageStampShape().fill(Color(hex: "#FFF9E8"))
-            Rectangle().fill(Brand.accent.opacity(0.24)).overlay(Rectangle().stroke(Brand.onAccent.opacity(0.3), lineWidth: 0.7)).padding(8)
-            Image(systemName: symbol).font(.system(size: 25, weight: .regular)).foregroundStyle(Brand.onAccent)
-        }.frame(width: 62, height: 76).accessibilityHidden(true)
-    }
-}
 private struct FriendsPostagePair: View {
-    var body: some View { HStack(spacing: -14) { FriendsPostage(symbol: "shippingbox").rotationEffect(.degrees(-12)); FriendsPostage(symbol: "person.2").rotationEffect(.degrees(10)).offset(y: -8) }.padding(10).accessibilityHidden(true) }
+    var body: some View { HStack(spacing: -8) { FriendAvatarView(name: "A", tint: ExperimentalPalette.transit, surface: ExperimentalPalette.transitSurface).frame(width: 70, height: 85).rotationEffect(.degrees(-9)); FriendAvatarView(name: "M").frame(width: 70, height: 85).rotationEffect(.degrees(12)).offset(y: 12) }.padding(10).accessibilityHidden(true) }
 }
 
 struct FriendAcceptedNotice: View {

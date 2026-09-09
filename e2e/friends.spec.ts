@@ -1,158 +1,76 @@
 import { expect, test } from '@playwright/test';
 
 test.use({ locale: 'en-US' });
-test('Demo invitation actions offer a working route back to the opening parcel', async ({ page }) => {
+test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('sdt.web.experience.v1', 'demo'));
   await page.goto('/');
   await page.getByRole('button', { name: 'Friends', exact: true }).click();
+});
+
+test('The compact circle opens Passport stamps and keeps bubble dismissal inside its sheet', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  const mila = page.getByRole('button', { name: /^Mila/ });
+  await expect(mila).toBeVisible();
+  await expect(page.locator('.friends-own-row')).toContainText('Your sharing');
+  await expect(page.locator('.friends-cover')).toHaveCount(0);
+  await page.screenshot({ path: `/tmp/friends-circle-${test.info().project.name}.png` });
+  await mila.click();
+  const details = page.locator('.friends-sheet');
+  await expect(details.locator('.friend-postcard')).toContainText('Mila');
+  await expect(details.locator('.passport-seal--locked').first()).toBeVisible();
+  await details.getByRole('button', { name: 'First arrival', exact: true }).click();
+  await expect(details.locator('.passport-bubble:popover-open')).toContainText('First arrival');
+  await page.keyboard.press('Escape');
+  await expect(details.locator('.passport-bubble:popover-open')).toHaveCount(0);
+  await expect(details).toBeVisible();
+  await details.getByRole('button', { name: 'All stamps' }).click();
+  await expect(details.locator('.stamp-card')).toHaveCount(12);
+  await page.screenshot({ path: `/tmp/friends-passport-${test.info().project.name}.png` });
+  await page.keyboard.press('Escape');
+  await expect(details).toHaveCount(0);
+  await expect(mila).toBeFocused();
+  expect(errors).toEqual([]);
+});
+
+test('Sharing controls stay in place and preserve saved privacy preferences', async ({ page }) => {
+  await page.getByRole('button', { name: 'Sharing preferences', exact: true }).click();
+  const sheet = page.locator('.friends-sheet');
+  const arrivals = sheet.getByRole('switch', { name: 'Arrivals this week', exact: true });
+  await arrivals.check();
+  const before = await arrivals.boundingBox();
+  await arrivals.click();
+  const after = await arrivals.boundingBox();
+  expect(after!.y).toBeCloseTo(before!.y, 0);
+  await expect(arrivals).not.toBeChecked();
+  await expect(sheet.getByRole('button', { name: 'Turn off Friends' })).toHaveCount(0);
+  await sheet.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByRole('button', { name: 'Sharing preferences', exact: true }).click();
+  await expect(arrivals).not.toBeChecked();
+});
+
+test('Circle and sharing fit narrow screens in all languages', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  for (const language of ['fr', 'de', 'it', 'en']) {
+    await page.locator('.account-trigger').click();
+    await page.getByRole('dialog').getByRole('combobox').selectOption(language);
+    await page.keyboard.press('Escape');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.locator('.friends-own-row').click();
+    const sheet = page.locator('.friends-sheet');
+    await sheet.getByRole('textbox').fill('A long nickname 12345678');
+    await expect(sheet.locator('.friend-sharing-preview')).toContainText('A long nickname 12345678');
+    expect(await sheet.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await page.screenshot({ path: `/tmp/friends-sharing-${language}-${test.info().project.name}.png` });
+    await page.keyboard.press('Escape');
+  }
+});
+
+test('Demo invitations offer sign-in without creating a fake link', async ({ page }) => {
   await page.getByRole('button', { name: 'Invite a friend', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Sign in instead', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Tap to open your parcel' })).toBeVisible();
-  await expect(page.locator('.demo-banner')).toHaveCount(0);
   expect(await page.evaluate(() => localStorage.getItem('sdt.web.experience.v1'))).toBe('welcome');
-});
-
-test('Friends shares the navigation, stamp interactions, and reversible privacy controls', async ({ page }) => {
-  const errors: string[] = [];
-  page.on('pageerror', (error) => errors.push(error.message));
-  await page.addInitScript(() => localStorage.setItem('sdt.web.experience.v1', 'demo'));
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Friends', exact: true }).click();
-  const mila = page.getByRole('button', { name: /^Mila/ });
-  await expect(mila).toBeVisible();
-  await expect(page.locator('.friends-cover')).toContainText('9');
-  await mila.click();
-  const details = page.getByRole('dialog', { name: 'Mila', exact: true });
-  await details.getByRole('button', { name: 'First arrival', exact: true }).click();
-  await expect(details.getByRole('status')).toContainText('First arrival');
-  await page.keyboard.press('Escape');
-  await expect(details).toHaveCount(0);
-  await expect(mila).toBeFocused();
-  await page.goBack();
-  await expect(page.locator('.deliveries-page')).toBeVisible();
-  await page.goForward();
-  await expect(mila).toBeVisible();
-  await page.getByRole('button', { name: 'Sharing preferences', exact: true }).click();
-  const preferences = page.getByRole('dialog');
-  await expect(preferences.getByRole('region', { name: 'Profile preview:' })).toBeVisible();
-  await expect(preferences.locator('.friend-card')).toContainText('Alex');
-  await preferences.locator('.friends-preview button').click();
-  await expect(preferences).toBeVisible();
-  await expect(preferences.getByRole('textbox')).toHaveValue('Alex');
-  await preferences.getByRole('switch').first().uncheck();
-  await expect(preferences.locator('.friend-card')).toContainText('Stats kept private');
-  await expect(preferences.getByRole('switch').nth(1)).not.toBeChecked();
-  await preferences.getByRole('button', { name: 'Save' }).click();
-  await expect(preferences).toHaveCount(0);
-  await expect(page.locator('.friends-cover')).toContainText('6');
-  await page.getByRole('button', { name: 'Invite a friend', exact: true }).click();
-  await expect(page.getByRole('dialog')).toContainText('Sign in');
-  await page.keyboard.press('Escape');
-  await mila.click();
-  await details.getByRole('button', { name: 'Remove friend', exact: true }).click();
-  await expect(details).toContainText('Remove Mila');
-  await details.getByRole('button', { name: 'Remove friend', exact: true }).click();
-  await expect(details).toHaveCount(0);
-  await expect(mila).toHaveCount(0);
-  await page.getByRole('button', { name: 'Passport', exact: true }).click();
-  await page.getByRole('button', { name: 'Friends', exact: true }).click();
-  await expect(mila).toHaveCount(0);
-  expect(errors).toEqual([]);
-});
-
-test('Friends and its preview fit a narrow dark screen in each shared locale', async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 740 });
-  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
-  await page.addInitScript(() => localStorage.setItem('sdt.web.experience.v1', 'demo'));
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Friends', exact: true }).click();
-  for (const language of ['fr', 'de', 'it', 'en']) {
-    await page.locator('.account-trigger').click();
-    await page.getByRole('dialog').getByRole('combobox').selectOption(language);
-    await page.keyboard.press('Escape');
-    await expect(page.locator('.friend-card').first()).toBeVisible();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await page.locator('.friends-own').click();
-    const sheet = page.getByRole('dialog');
-    await expect(sheet.getByRole('switch').first()).toBeVisible();
-    await expect(sheet.locator('.friends-preview .friend-card')).toBeVisible();
-    await sheet.getByRole('textbox').fill('A long nickname 12345678');
-    await expect(sheet.locator('.friend-card')).toContainText('A long nickname 12345678');
-    expect(await sheet.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
-    await page.keyboard.press('Escape');
-  }
-});
-
-test('An empty Friends circle and sharing settings fit a phone without scrolling', async ({ page }) => {
-  await page.setViewportSize({ width: 375, height: 667 });
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.addInitScript(() => localStorage.setItem('sdt.web.experience.v1', 'demo'));
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Friends', exact: true }).click();
-  await page.getByRole('button', { name: 'Sharing preferences', exact: true }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Turn off Friends' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Turn off Friends' }).click();
-  await expect(page.getByRole('heading', { name: 'Share your Passport' })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Profile preview:' })).toBeVisible();
-  await expect(page.getByRole('switch').first()).toBeChecked();
-  await expect(page.getByRole('switch').nth(1)).toBeChecked();
-  await page.getByRole('textbox', { name: 'Nickname' }).fill('Robin');
-  await page.getByRole('button', { name: 'Create profile', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Add your first friend' })).toBeVisible();
-  await expect(page.locator('.friends-own')).toContainText('Robin');
-  await expect(page.locator('.friends-own')).toContainText('Delivered');
-  await expect(page.locator('.friends-own .friend-card__arrival')).toBeVisible();
-  await expect(page.locator('.friends-own')).not.toContainText('Arrivals kept private');
-  await page.evaluate(() => scrollTo(0, 0));
-  for (const language of ['fr', 'de', 'it', 'en']) {
-    await page.locator('.account-trigger').click();
-    await page.getByRole('dialog').getByRole('combobox').selectOption(language);
-    await page.keyboard.press('Escape');
-    expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
-    await expect(page.locator('.friends-code-link')).toBeInViewport({ ratio: 1 });
-    await page.locator('.friends-own').click();
-    const sheet = page.getByRole('dialog');
-    await expect.poll(() => sheet.evaluate((element) => element.scrollHeight <= element.clientHeight + 1)).toBe(true);
-    await expect(sheet.getByRole('switch').first()).toBeChecked();
-    await expect(sheet.getByRole('switch').nth(1)).toBeChecked();
-    await page.keyboard.press('Escape');
-  }
-});
-
-test('Profile creation gently guides the next step without interrupting typing', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.addInitScript(() => localStorage.setItem('sdt.web.experience.v1', 'demo'));
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Friends', exact: true }).click();
-  await page.locator('.friends-own').click();
-  await expect(page.locator('.friends-profile')).not.toHaveAttribute('data-attention');
-  await page.getByRole('dialog').getByRole('button', { name: 'Turn off Friends' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Turn off Friends' }).click();
-  const form = page.locator('.friends-profile');
-  const name = form.getByRole('textbox', { name: 'Nickname' });
-  const create = form.getByRole('button', { name: 'Create profile' });
-  await expect(form).toHaveAttribute('data-attention', 'name');
-  await expect(form.locator('.friends-name__field .friends-attention')).toHaveCSS('animation-name', 'friends-attention-breathe');
-  await expect(form.locator('.friends-name__field')).toHaveCSS('animation-iteration-count', 'infinite');
-  await name.focus();
-  await expect(form).not.toHaveAttribute('data-attention');
-  await name.fill('   ');
-  await expect(create).toBeDisabled();
-  await name.fill('Robin');
-  await expect(form).not.toHaveAttribute('data-attention');
-  await expect(form).toHaveAttribute('data-attention', 'create');
-  await expect(create.locator('.friends-attention')).toHaveCSS('animation-name', 'friends-attention-breathe');
-  await expect(create).toHaveCSS('animation-iteration-count', 'infinite');
-  await expect(name).toBeFocused();
-  await name.press('End');
-  await name.press('!');
-  await expect(form).not.toHaveAttribute('data-attention');
-  await expect(form).toHaveAttribute('data-attention', 'create');
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect(create.locator('.friends-attention')).toHaveCSS('display', 'none');
-  await expect(create.locator('.friends-attention')).toHaveCSS('animation-name', 'none');
-  await expect(create).toHaveCSS('animation-name', 'none');
-  await create.click();
-  await expect(page.locator('.friends-own')).toContainText('Robin!');
 });

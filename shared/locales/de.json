@@ -547,5 +547,15 @@
   "settings.demoData": "Demo & Daten",
   "settings.yourData": "Deine Daten",
   "settings.deliveryUpdates": "Lieferbenachrichtigungen",
-  "settings.off": "Aus"
+  "settings.off": "Aus",
+  "friends.yourSharing": "Deine Freigaben",
+  "friends.introSummary": "Teile Briefmarken und Liefermeilensteine mit Freunden.",
+  "friends.stampCount": "{{count}} Briefmarken",
+  "friends.from": "Von",
+  "friends.replayParcel": "Paketöffnung wiederholen",
+  "friends.manageLinks": "Links verwalten",
+  "friends.manageFriendship": "Freundschaft verwalten",
+  "friends.cancelPrevious": "{{count}} frühere Links widerrufen",
+  "friends.editSharing": "Bearbeiten",
+  "friends.sharedStatsSummary": "Lieferungen, durchschnittliche Dauer und Briefmarken"
 }

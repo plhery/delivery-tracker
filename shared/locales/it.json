@@ -547,5 +547,15 @@
   "settings.demoData": "Demo e dati",
   "settings.yourData": "I tuoi dati",
   "settings.deliveryUpdates": "Aggiornamenti sulle consegne",
-  "settings.off": "Disattivati"
+  "settings.off": "Disattivati",
+  "friends.yourSharing": "Le tue condivisioni",
+  "friends.introSummary": "Condividi francobolli e traguardi delle consegne con gli amici.",
+  "friends.stampCount": "{{count}} francobolli",
+  "friends.from": "Da",
+  "friends.replayParcel": "Ripeti l’apertura del pacco",
+  "friends.manageLinks": "Gestisci link",
+  "friends.manageFriendship": "Gestisci amicizia",
+  "friends.cancelPrevious": "Annulla i {{count}} link precedenti",
+  "friends.editSharing": "Modifica",
+  "friends.sharedStatsSummary": "Consegne, tempo medio e francobolli"
 }

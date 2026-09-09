@@ -1,16 +1,19 @@
 import { trackAction } from '../lib/analytics';
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import type { ApiFriendCard, ApiFriendProfile, ApiFriendsActionRequest, ApiFriendsActionResponse, ApiFriendsSnapshot, ApiFriendStamp } from '../generated/apiContract';
+import type { ApiFriendCard, ApiFriendProfile, ApiFriendsActionRequest, ApiFriendsActionResponse, ApiFriendsSnapshot } from '../generated/apiContract';
 import { useI18n, type MessageKey } from '../i18n';
-import { FriendsError, friendStamps, friendTone, ownFriendCard, type FriendsClient } from '../lib/friends';
-import { invitationCode, invitationURL, openPendingInvitation } from '../lib/friendInvites';
+import { FriendsError, friendTone, ownFriendCard, type FriendsClient } from '../lib/friends';
+import { invitationURL } from '../lib/friendInvites';
 import { useSheetDialog } from '../lib/modal';
 import type { ParcelWithEvents } from '../types';
-import { Icon, PostageStamp } from './Icon';
+import { Icon } from './Icon';
+import { InvitationParcel } from './InvitationParcel';
+import { FriendStampCollection } from './FriendStampCollection';
+import './Friends.css';
 import { useFriendsActivity } from './FriendsActivity';
 
-type Panel = 'settings' | 'invite' | 'accept' | 'revokeInvites' | 'disable' | ApiFriendCard | null;
+type Panel = 'settings' | 'create' | 'invite' | ApiFriendCard | null;
 export function Friends({ client, parcels, demo, onExitDemo }: { client: FriendsClient; parcels: ParcelWithEvents[]; demo: boolean; onExitDemo?: () => void }) {
   const { t } = useI18n();
   const activity = useFriendsActivity();
@@ -94,91 +97,70 @@ export function Friends({ client, parcels, demo, onExitDemo }: { client: Friends
   }
   const close = () => { if (!busy) { setPanel(null); setError(null); } };
   const errorView = error && <p className="friends-error" role="alert">{t(error)}</p>;
-  const total = [data?.ownCard, ...(data?.friends ?? [])].reduce((sum, friend) => sum + (friend?.stats?.stamps.length ?? 0), 0);
   const selected = typeof panel === 'object' && panel ? data?.friends.find((friend) => friend.id === panel.id) : null;
   const featured = data?.friends.find((friend) => friend.id === focusId);
   const remainingFriends = data?.friends.filter((friend) => friend.id !== featured?.id) ?? [];
-  const friendButton = (friend: ApiFriendCard) => <button key={friend.id} ref={friend.id === focusId ? arrivalCard : undefined} data-arriving={friend.id === focusId ? (landed ? 'landed' : 'waiting') : undefined} className={`friend-card tone-${friendTone(friend.id)}`} onClick={() => { setPanel(friend); trackAction('friend-open'); }}><FriendCardBody friend={friend} /><span className="friend-card__more"><Icon name="arrow" /></span></button>;
+  const friendButton = (friend: ApiFriendCard) => <button key={friend.id} ref={friend.id === focusId ? arrivalCard : undefined} data-arriving={friend.id === focusId ? (landed ? 'landed' : 'waiting') : undefined} className={`friend-card tone-${friendTone(friend.id)}`} onClick={() => { setPanel(friend); trackAction('friend-open'); }}><FriendCardBody friend={friend} /></button>;
   return <div className="friends-page" data-empty={!!data?.profile && !data.friends.length}>
     {data && focusId && checkedFocusId === focusId && !focusReady && <p className="friends-notice" role="status">{t('friends.friendUnavailable')}</p>}
     {notice && <p role="status" className="friends-notice"><Icon name="check" />{t(notice)}</p>}
     {!panel && errorView}
-    {!data ? <div className="friends-loading" role="status">{error ? <button className="button button--secondary" onClick={() => void load()}>{t('common.retry')}</button> : <div className="skeleton" aria-label={t('friends.title')} />}</div> : !data.profile ? <>
-      <div className="friends-intro"><h2>{t('friends.joinTitle')}</h2><div className="friends-postage" aria-hidden="true"><PostageStamp icon="parcel" /><PostageStamp icon="friends" /></div></div>
-      <FriendProfileForm profile={null} parcels={parcels} busy={busy} onSave={async (profile) => { await act({ action: 'save_profile', ...profile }); }} />
-    </> : <>
-      {featured && <div className="friends-received-card">{friendButton(featured)}</div>}
-      <div className="friends-summary"><button className="friends-own friend-card tone-blue" aria-label={t('friends.settings')} onClick={() => setPanel('settings')}><FriendCardBody friend={data.ownCard ?? ownFriendCard(parcels, data.profile)} showSharingStatus /><span className="friend-card__more"><Icon name="settings" /></span></button>
-      {!!data.friends.length && <section className="friends-cover"><div className="friends-cover__main"><div><strong>{total}</strong><span>{t('friends.collectionNote')}</span></div><div className="friends-postage" aria-hidden="true"><PostageStamp icon="parcel" /><PostageStamp icon="express" /></div></div></section>}</div>
-      {!data.friends.length && <h2 className="friends-empty-title">{t('friends.emptyTitle')}</h2>}
-      <div className="friends-actions"><button className="button button--primary" disabled={busy} onClick={() => void inviteFriend()}><Icon name="plus" />{t('friends.invite')}</button><button className="text-button friends-code-link" onClick={() => setPanel('accept')}>{t('friends.enterCode')}<Icon name="arrow" /></button></div>
-      {!!remainingFriends.length && <section><div className="section-heading"><h2>{t('friends.circle')}</h2><span>{demo ? t('friends.demoPeople') : data.friends.length}</span></div>
-        <div className="friends-grid">{remainingFriends.map(friendButton)}</div>
-      </section>}
+    {!data ? <div className="friends-loading" role="status">{error ? <button className="button button--secondary" onClick={() => void load()}>{t('common.retry')}</button> : <div className="skeleton" aria-label={t('friends.title')} />}</div> : !data.profile ? <div className="friends-start">
+      <FriendsPostagePair /><h2>{t('friends.title')}</h2><p>{t('friends.introSummary')}</p>
+      <button className="button button--primary" onClick={() => setPanel('create')}>{t('friends.join')}</button>
+    </div> : <>
+      <button className="friends-own-row tone-blue" aria-label={t('friends.settings')} onClick={() => setPanel('settings')}>
+        <FriendAvatar name={data.profile.nickname} /><span><strong>{t('friends.yourSharing')}</strong><small>{t(data.profile.shareStats ? 'friends.shareStats' : 'friends.privateStats')}{data.profile.shareArrival && <> · {t('friends.shareArrival')}</>}</small></span><Icon name="settings" />
+      </button>
+      {data.friends.length ? <section><div className="section-heading friends-circle-heading"><h2>{t('friends.circle')} <span>{data.friends.length}</span></h2><button className="friends-invite-trigger" disabled={busy} onClick={() => void inviteFriend()}><Icon name="plus" />{t('friends.invite')}</button></div>
+        <div className="friends-grid">{featured && friendButton(featured)}{remainingFriends.map(friendButton)}</div>
+      </section> : <div className="friends-empty"><FriendsPostagePair /><h2>{t('friends.emptyTitle')}</h2><button className="button button--primary" disabled={busy} onClick={() => void inviteFriend()}><Icon name="plus" />{t('friends.invite')}</button></div>}
     </>}
-    {panel && <FriendsSheet title={typeof panel === 'object' ? panel.nickname : t(panel === 'settings' ? 'friends.settings' : panel === 'revokeInvites' ? 'friends.revokeAllTitle' : panel === 'disable' ? 'friends.disableTitle' : panel === 'accept' ? 'friends.enterCode' : 'friends.inviteTitle')} onClose={close} busy={busy}>
+    {panel && <FriendsSheet kind={panel === 'invite' ? 'invite' : 'page'} title={typeof panel === 'object' ? t('passport.title') : t(panel === 'settings' ? 'friends.settings' : panel === 'create' ? 'friends.join' : 'friends.inviteTitle')} onClose={close} busy={busy}>
       {errorView}
-      {panel === 'settings' && data?.profile && <>
-        <FriendProfileForm profile={data.profile} parcels={parcels} busy={busy} onSave={async (profile) => { if (await act({ action: 'save_profile', ...profile })) close(); }} />
-        {!demo && <button className="friends-remove" disabled={busy} onClick={() => { setNotice(null); setPanel('revokeInvites'); }}>{t('friends.revokeAll')}</button>}
-        <button className="friends-remove" onClick={() => setPanel('disable')}>{t('friends.disable')}</button>
-      </>}
-      {panel === 'revokeInvites' && <div className="friends-invite">
-        <p>{t('friends.revokeAllDetail')}</p>
-        <button className="button button--primary" disabled={busy} onClick={async () => {
-          if (await act({ action: 'revoke_invite' })) { setInvite(null); setNotice('friends.revoked'); close(); }
-        }}>{t('friends.revokeAll')}</button>
-        <button className="text-button" disabled={busy} onClick={() => { setError(null); setPanel('settings'); }}>{t('friends.keepLinks')}</button>
-      </div>}
-      {panel === 'disable' && <><p>{t('friends.disableDetail')}</p><button className="button button--primary" disabled={busy} onClick={async () => { if (await act({ action: 'disable' })) close(); }}>{t('friends.disable')}</button></>}
-      {(panel === 'invite' || panel === 'accept') && (demo ? <>
-        <p>{t('friends.demoInvites')}</p>
-        {onExitDemo && <button className="button button--primary" onClick={() => { close(); onExitDemo(); }}>{t('welcome.signInInstead')}</button>}
-      </> : panel === 'invite' ? <FriendsInvite code={invite?.code ?? null} previewId={invite?.previewId} previousInviteCount={invite?.previousInviteCount ?? 0} busy={busy} act={act} onRetry={inviteFriend} onClose={close} /> : <FriendsAccept onOpen={() => setPanel(null)} />)}
+      {(panel === 'settings' || panel === 'create') && <FriendProfileForm profile={data?.profile ?? null} parcels={parcels} busy={busy} onSave={async (profile) => { if (await act({ action: 'save_profile', ...profile })) close(); }} />}
+      {panel === 'invite' && (demo ? <><InvitationParcel nickname={data?.profile?.nickname ?? t('friends.you')} /><p>{t('friends.demoInvites')}</p>{onExitDemo && <button className="button button--primary" onClick={() => { close(); onExitDemo(); }}>{t('welcome.signInInstead')}</button>}</> : <FriendsInvite nickname={data?.profile?.nickname ?? t('friends.you')} code={invite?.code ?? null} previewId={invite?.previewId} previousInviteCount={invite?.previousInviteCount ?? 0} busy={busy} act={act} onRetry={inviteFriend} onClose={close} />)}
       {selected && <FriendDetails friend={selected} busy={busy} onRemove={async () => { if (await act({ action: 'remove_friend', friendId: selected.id })) close(); }} />}
     </FriendsSheet>}
   </div>;
 }
-function FriendCardBody({ friend, showSharingStatus = false, magic = 0 }: { friend: ApiFriendCard; showSharingStatus?: boolean; magic?: number }) {
+export function FriendAvatar({ name }: { name: string }) { return <span className="friend-avatar" aria-hidden="true"><span className="postage-stamp"><span className="postage-stamp__print">{Array.from(name)[0]}</span></span></span>; }
+function FriendsPostagePair() { return <div className="friends-postage-pair" aria-hidden="true"><span className="tone-blue"><FriendAvatar name="A" /></span><span className="tone-lilac"><FriendAvatar name="M" /></span></div>; }
+function FriendCardBody({ friend }: { friend: ApiFriendCard }) {
   const { t } = useI18n();
-  const days = friend.stats?.averageDays;
-  return <><span className="friend-card__heading"><span className="friend-avatar" aria-hidden="true" key={magic}><span className="postage-stamp"><span className="postage-stamp__print">{Array.from(friend.nickname)[0]}</span></span><span className="friend-avatar__spark">✦</span></span><span className="friend-card__name"><small aria-hidden="true">{t('passport.title')}</small><strong>{friend.nickname}</strong></span></span>
-    <span className="friend-card__collection">{friend.stats ? <><span className="friend-card__stats"><span><strong>{friend.stats.deliveredCount}</strong>{t('passport.delivered')}</span><span><strong>{days == null ? '—' : t(days === 1 ? 'friends.day' : 'friends.days', { count: days })}</strong>{t('passport.average')}</span></span><span className="friend-card__stamps" aria-label={t('friends.stamps')}>{friend.stats.stamps.map((stamp) => <span key={stamp} title={t(friendStamps[stamp].title)}><PostageStamp icon={friendStamps[stamp].icon} /></span>)}</span></> : <span className="friend-card__private"><Icon name="lock" />{t('friends.privateStats')}</span>}</span>
-    {(friend.arrivedThisWeek || showSharingStatus) && <span className={`friend-card__arrival${friend.arrivedThisWeek ? '' : ' friend-card__arrival--quiet'}`}><Icon name={friend.arrivedThisWeek == null ? 'lock' : 'parcel'} />{t(friend.arrivedThisWeek ? 'friends.arrived' : friend.arrivedThisWeek === false ? 'friends.noArrival' : 'friends.privateArrival')}</span>}</>;
+  return <><FriendAvatar name={friend.nickname} /><span className="friend-card__copy"><strong>{friend.nickname}</strong><span className="friend-card__summary">{friend.stats ? t('friends.stampCount', { count: friend.stats.stamps.length }) : t('friends.privateStats')}</span>{friend.arrivedThisWeek && <span className="friend-card__arrival">{t('friends.arrived')}</span>}</span></>;
+}
+export function FriendSharingPreview({ friend }: { friend: ApiFriendCard }) {
+  const { t } = useI18n();
+  return <div className="friend-sharing-preview tone-blue"><div><strong>{friend.nickname}</strong><FriendAvatar name={friend.nickname} /></div><p className="friend-sharing-preview__stats">{friend.stats ? <>{friend.stats.deliveredCount} {t('passport.delivered').toLocaleLowerCase()} · {friend.stats.averageDays == null ? '—' : t(friend.stats.averageDays === 1 ? 'friends.day' : 'friends.days', { count: friend.stats.averageDays })} · {t('friends.stampCount', { count: friend.stats.stamps.length })}</> : t('friends.privateStats')}</p><p className="friend-sharing-preview__arrival" data-shared={friend.arrivedThisWeek !== null} aria-hidden={friend.arrivedThisWeek === null}>{t(friend.arrivedThisWeek ? 'friends.arrived' : 'friends.noArrival')}</p></div>;
+}
+export function FriendPostcard({ nickname, arrivedThisWeek }: { nickname: string; arrivedThisWeek?: boolean | null }) {
+  const { t } = useI18n();return <div className="friend-postcard tone-lilac"><div><h2>{nickname}</h2>{arrivedThisWeek && <span className="friend-card__arrival">{t('friends.arrived')}</span>}</div><FriendAvatar name={nickname} /></div>;
 }
 export function FriendProfileForm({ profile, parcels, busy, onSave, submitKey }: { profile: ApiFriendProfile | null; parcels: ParcelWithEvents[]; busy: boolean; onSave: (value: ApiFriendProfile) => Promise<void>; submitKey?: MessageKey }) {
   const { t } = useI18n();
   const [name, setName] = useState(profile?.nickname ?? '');
   const [stats, setStats] = useState(profile?.shareStats ?? true);
   const [arrival, setArrival] = useState(profile?.shareArrival ?? true);
-  const [magic, setMagic] = useState(0);
-  const [nameFocused, setNameFocused] = useState(false);
-  const [settledName, setSettledName] = useState<string | null>(null);
   const previewId = useId();
   const value = { nickname: name.trim(), shareStats: stats, shareArrival: arrival };
-  const attention = profile || busy ? undefined : !value.nickname ? (nameFocused ? undefined : 'name') : settledName === value.nickname ? 'create' : undefined;
-  useEffect(() => {
-    if (profile || busy || !name.trim()) return;
-    const timer = window.setTimeout(() => setSettledName(name.trim()), 900);
-    return () => window.clearTimeout(timer);
-  }, [name, profile, busy]);
-  return <form className="friends-profile" data-attention={attention} onSubmit={(event) => { event.preventDefault(); if (value.nickname) void onSave(value); }}>
-    <label className="friends-name">{t('friends.nickname')}<span className="friends-name__field"><input value={name} onChange={(event) => { setName(event.target.value); setSettledName(null); }} onFocus={() => setNameFocused(true)} onBlur={() => setNameFocused(false)} maxLength={24} placeholder={t('friends.nicknamePlaceholder')} autoComplete="off" required disabled={busy} /><span className="friends-attention" aria-hidden="true" /></span></label>
-    <section className="friends-preview" aria-labelledby={previewId}><p id={previewId}>{t('friends.preview')}</p><button type="button" className="friend-card tone-blue" disabled={busy} onClick={() => setMagic((value) => value + 1)}><FriendCardBody friend={ownFriendCard(parcels, { ...value, nickname: value.nickname || t('friends.you') })} showSharingStatus magic={magic} /></button></section>
+  return <form className="friends-profile" onSubmit={(event) => { event.preventDefault(); if (value.nickname) void onSave(value); }}>
+    <label className="friends-name">{t('friends.nickname')}<span className="friends-name__field"><input value={name} onChange={(event) => setName(event.target.value)} maxLength={24} placeholder={t('friends.nicknamePlaceholder')} autoComplete="off" required disabled={busy} /></span></label>
+    <section className="friends-preview" aria-labelledby={previewId}><p id={previewId}>{t('friends.preview')}</p><FriendSharingPreview friend={ownFriendCard(parcels, { ...value, nickname: value.nickname || t('friends.you') })} /></section>
     <div className="friends-sharing">
-      <label className="friends-toggle"><input type="checkbox" role="switch" checked={stats} onChange={(event) => { setStats(event.target.checked); setMagic((value) => value + 1); }} disabled={busy} /><span>{t('friends.shareStats')}</span></label>
-      <label className="friends-toggle"><input type="checkbox" role="switch" checked={arrival} onChange={(event) => { setArrival(event.target.checked); setMagic((value) => value + 1); }} disabled={busy} /><span>{t('friends.shareArrival')}</span></label>
+      <label className="friends-toggle"><input type="checkbox" role="switch" aria-label={t('friends.shareStats')} checked={stats} onChange={(event) => { setStats(event.target.checked); }} disabled={busy} /><span>{t('friends.shareStats')}<small>{t('friends.sharedStatsSummary')}</small></span></label>
+      <label className="friends-toggle"><input type="checkbox" role="switch" aria-label={t('friends.shareArrival')} checked={arrival} onChange={(event) => { setArrival(event.target.checked); }} disabled={busy} /><span>{t('friends.shareArrival')}</span></label>
     </div>
-    <p className="friends-privacy"><Icon name="lock" />{t('friends.privacy')}</p><button className="button button--primary friends-join" disabled={busy || !value.nickname}>{t(submitKey ?? (profile ? 'friends.save' : 'friends.join'))}<span className="friends-attention" aria-hidden="true" /></button>
+    <p className="friends-privacy"><Icon name="lock" />{t('friends.privacy')}</p><button className="button button--primary friends-join" disabled={busy || !value.nickname}>{t(submitKey ?? (profile ? 'friends.save' : 'friends.join'))}</button>
   </form>;
 }
-export function FriendsSheet({ title, children, onClose, busy = false }: { title: string; children: ReactNode; onClose: () => void; busy?: boolean }) {
+export function FriendsSheet({ title, children, onClose, busy = false, kind = 'page' }: { kind?: 'page' | 'invite'; title: string; children: ReactNode; onClose: () => void; busy?: boolean }) {
   const { t } = useI18n();
   const [dialog, close] = useSheetDialog<HTMLDivElement>(true, onClose, undefined, undefined, busy);
-  return createPortal(<div className="sheet-backdrop" onClick={close}><div ref={dialog} className="sheet friends-sheet" role="dialog" aria-modal="true" aria-labelledby="friends-sheet-title" aria-busy={busy} tabIndex={-1} onClick={(event) => event.stopPropagation()}><div className="sheet__grabber" aria-hidden="true" /><div className="sheet__heading"><h2 id="friends-sheet-title" className="sheet__title">{title}</h2><button className="sheet__close" aria-label={t('common.close')} disabled={busy} onClick={close}><Icon name="close" /></button></div>{children}</div></div>, document.body);
+  return createPortal(<div className={`sheet-backdrop friends-backdrop friends-backdrop--${kind}`} onClick={close}><div ref={dialog} className={`sheet friends-sheet friends-sheet--${kind}`} role="dialog" aria-modal="true" aria-labelledby="friends-sheet-title" aria-busy={busy} tabIndex={-1} onClick={(event) => event.stopPropagation()}><div className="sheet__grabber" aria-hidden="true" /><div className="sheet__heading"><h2 id="friends-sheet-title" className="sheet__title">{title}</h2><button className="sheet__close" aria-label={t('common.close')} disabled={busy} onClick={close}><Icon name="close" /></button></div>{children}</div></div>, document.body);
 }
 type Act = (action: ApiFriendsActionRequest) => Promise<ApiFriendsActionResponse | null>;
-function FriendsInvite({ code, previewId, previousInviteCount, busy, act, onRetry, onClose }: { code: string | null; previewId?: string; previousInviteCount: number; busy: boolean; act: Act; onRetry: () => Promise<void>; onClose: () => void }) {
+function FriendsInvite({ nickname, code, previewId, previousInviteCount, busy, act, onRetry, onClose }: { nickname: string; code: string | null; previewId?: string; previousInviteCount: number; busy: boolean; act: Act; onRetry: () => Promise<void>; onClose: () => void }) {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
@@ -199,28 +181,21 @@ function FriendsInvite({ code, previewId, previousInviteCount, busy, act, onRetr
     catch { setCopyFailed(true); }
   }
   return <div className="friends-invite">{link ? <>
-    <label>{t('friends.link')}<input readOnly value={link} onFocus={(event) => event.target.select()} /></label>
-    <small>{t('friends.inviteExpiry')}</small>
+    <p className="friends-invite__expiry">{t('friends.inviteExpiry')}</p><InvitationParcel nickname={nickname} /><label className="friends-invite__url"><span className="sr-only">{t('friends.link')}</span><input readOnly value={link} onFocus={(event) => event.target.select()} /></label>
     {typeof navigator.share === 'function' && <button className="button button--primary" disabled={busy} onClick={async () => { try { await navigator.share({ url: link }); trackAction('friend-invite-share', 'success'); } catch (error) { if (!(error instanceof Error && error.name === 'AbortError')) await copy(); } }}><Icon name="share" />{t('friends.shareLink')}</button>}
     <button className={typeof navigator.share === 'function' ? 'text-button' : 'button button--primary'} disabled={busy} onClick={() => void copy()}><Icon name={copied ? 'check' : 'copy'} />{t(copied ? 'friends.copied' : 'friends.copyLink')}</button>
     {copyFailed && <p className="friends-error" role="alert">{t('friends.actionFailed')}</p>}
     {previousCancelled && <p className="friends-notice" role="status"><Icon name="check" />{t('friends.previousRevoked')}</p>}
-    <div className="friends-invite__cancellations">
+    <details className="friends-invite__cancellations"><summary>{t('friends.manageLinks')}</summary>
       <button className="text-button friends-invite__cancel" disabled={busy} onClick={async () => { if (code && await act({ action: 'revoke_invite', code })) onClose(); }}>{t('friends.revoke')}</button>
       {previousCount > 0 && <button className="text-button friends-invite__cancel" disabled={busy} onClick={async () => {
         if (code && await act({ action: 'revoke_previous_invites', code })) setCancelledForCode(code);
-      }}>{t('friends.revokePrevious', { count: previousCount })}</button>}
-    </div>
+      }}>{t('friends.cancelPrevious', { count: previousCount })}</button>}
+    </details>
   </> : busy || code ? <div className="friends-invite__loading" role="status" aria-label={t('friends.link')}><Icon name="refresh" className="spin" /></div> : <button className="button button--primary" onClick={() => void onRetry()}>{t('common.retry')}</button>}</div>;
 }
-function FriendsAccept({ onOpen }: { onOpen: () => void }) {
-  const { t } = useI18n(); const [link, setLink] = useState('');
-  return <form className="friends-invite" onSubmit={(event) => { event.preventDefault(); if (invitationCode(link)) { onOpen(); openPendingInvitation(link); } }}>
-    <label>{t('friends.link')}<input type="url" value={link} onChange={(event) => setLink(event.target.value)} placeholder={t('friends.linkPlaceholder')} autoCapitalize="none" autoComplete="off" spellCheck={false} maxLength={2048} /></label>
-    <button className="button button--primary" disabled={!invitationCode(link)}>{t('friends.openLink')}</button>
-  </form>;
-}
 function FriendDetails({ friend, busy, onRemove }: { friend: ApiFriendCard; busy: boolean; onRemove: () => Promise<void> }) {
-  const { t } = useI18n(); const [stamp, setStamp] = useState<ApiFriendStamp | null>(null); const [removing, setRemoving] = useState(false);
-  return <div className="friend-details"><div className={`friend-card tone-${friendTone(friend.id)}`}><FriendCardBody friend={friend} /></div>{!!friend.stats?.stamps.length && <><p className="eyebrow">{t('friends.stampHint')}</p><div className="friends-stamp-album">{friend.stats.stamps.map((id) => <button key={id} aria-label={t(friendStamps[id].title)} aria-pressed={stamp === id} className={`tone-${friendStamps[id].tone}`} onClick={() => { setStamp(id); trackAction('stamp-open'); }}><PostageStamp icon={friendStamps[id].icon} /></button>)}</div>{stamp && <p className="friends-stamp-story" key={stamp} role="status"><strong>{t(friendStamps[stamp].title)}</strong>{t(friendStamps[stamp].explanation)}</p>}</>}{removing ? <div className="friends-remove-confirm"><h3>{t('friends.removeTitle', { name: friend.nickname })}</h3><p>{t('friends.removeDetail')}</p><button className="button button--secondary" disabled={busy} onClick={() => void onRemove()}>{t('friends.remove')}</button><button className="text-button" onClick={() => setRemoving(false)}>{t('common.cancel')}</button></div> : <button className="friends-remove" onClick={() => setRemoving(true)}>{t('friends.remove')}</button>}</div>;
+  const { t } = useI18n(); const [removing, setRemoving] = useState(false);
+  return <div className="friend-details"><FriendPostcard nickname={friend.nickname} arrivedThisWeek={friend.arrivedThisWeek} />{friend.stats ? <><div className="friend-details__metrics"><div><strong>{friend.stats.deliveredCount}</strong><span>{t('passport.delivered')}</span></div><div><strong>{friend.stats.averageDays == null ? '—' : t(friend.stats.averageDays === 1 ? 'friends.day' : 'friends.days', { count: friend.stats.averageDays })}</strong><span>{t('passport.average')}</span></div></div><FriendStampCollection stats={friend.stats} /></> : <p className="friends-privacy"><Icon name="lock" />{t('friends.privateStats')}</p>}
+  <details className="friends-manage"><summary>{t('friends.manageFriendship')}</summary>{removing ? <div className="friends-remove-confirm"><h3>{t('friends.removeTitle', { name: friend.nickname })}</h3><p>{t('friends.removeDetail')}</p><button className="button button--secondary" disabled={busy} onClick={() => void onRemove()}>{t('friends.remove')}</button><button className="text-button" disabled={busy} onClick={() => setRemoving(false)}>{t('common.cancel')}</button></div> : <button className="friends-remove" disabled={busy} onClick={() => setRemoving(true)}>{t('friends.remove')}</button>}</details></div>;
 }

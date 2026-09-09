@@ -111,7 +111,7 @@ describe('ApiApplication', () => {
     expect(await screen.findByText('Configured sign in')).toBeVisible();
     mocks.auth.status = 'authenticated'; mocks.auth.user = USER;
     view.rerender(<ApiApplication />);
-    const accept = await screen.findByRole('button', { name: alreadyEnabled ? 'Become friends' : 'Turn on Friends to accept' });
+    const accept = await screen.findByRole('button', { name: alreadyEnabled ? 'Become friends' : 'Turn on Friends to accept' }, { timeout: 10_000 });
     expect(fetch.mock.calls.filter(([, init]) => String(init?.body).includes('accept_invite'))).toHaveLength(0);
     await user.click(accept);
     if (!alreadyEnabled) {

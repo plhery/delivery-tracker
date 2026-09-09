@@ -322,7 +322,7 @@ private struct PassportMilestone: Identifiable {
     var progressLabel: String { pendingLabel ?? "\(min(current, target)) / \(target)" }
 }
 
-private struct PassportSeal: View {
+struct PassportSeal: View {
     let symbol: String
     let tint: Color
     let surface: Color
@@ -365,7 +365,7 @@ private struct PassportSeal: View {
     }
 }
 
-private struct PassportPressStyle: ButtonStyle {
+struct PassportPressStyle: ButtonStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func makeBody(configuration: Configuration) -> some View {

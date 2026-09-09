@@ -1,0 +1,93 @@
+/* Shared postcard hierarchy for the circle, profile, sharing and invitation flows. */
+:root .friends-page { max-width: 680px; margin-inline: auto; }
+:root .friends-page .friends-grid { display: grid; grid-template-columns: 1fr; gap: 9px; }
+:root .friends-page .friend-card { display: flex; flex-direction: row; align-items: center; gap: 12px; min-height: 80px; padding: 14px 16px; border: 0; border-radius: 18px; box-shadow: none; }
+:root .friend-card__copy { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+:root .friend-card__copy > strong { font-size: 18px; font-weight: 650; letter-spacing: -.4px; overflow-wrap: anywhere; }
+:root .friend-card__summary { font-size: 11px; color: var(--tone); }
+:root .friends-page .friend-avatar, :root .friends-sheet .friend-avatar { animation: none; }
+:root .friends-page .friend-avatar .postage-stamp, :root .friends-sheet .friend-avatar .postage-stamp, :root .invitation-accept .friend-avatar .postage-stamp { background: color-mix(in srgb, var(--tone-surface) 81%, var(--tone)); color: var(--tone); filter: none; }
+:root .friend-card__arrival { display: flex; gap: 5px; align-items: center; border: 0; padding: 0; margin-top: 5px; color: var(--tone); font-size: 11px; }
+:root .friend-card__arrival::before { content: ''; width: 4px; height: 4px; background: currentColor; border-radius: 50%; }
+:root .friends-own-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 0 20px; border: 0; border-bottom: 1px solid var(--line); background: transparent; text-align: left; }
+:root .friends-own-row .postage-stamp { width: 31px; height: 38px; padding: 5px; }
+:root .friends-own-row .postage-stamp__print { font-size: 17px; }
+:root .friends-own-row > span:nth-child(2) { flex: 1; min-width: 0; }
+:root .friends-own-row strong { display: block; font-size: 13px; font-weight: 600; }
+:root .friends-own-row small { display: block; font-size: 11px; margin-top: 3px; color: var(--ink-soft); }
+:root .friends-own-row > svg { width: 17px; color: var(--ink-soft); }
+:root .friends-circle-heading { margin: 22px 0 12px; gap: 10px; }
+:root .friends-circle-heading h2 { font-size: 16px; }
+:root .friends-circle-heading h2 span { color: var(--ink-soft); font-size: 11px; font-weight: 400; }
+:root .friends-invite-trigger { display: inline-flex; align-items: center; gap: 5px; padding: 8px 11px; border-radius: 11px; min-height: 36px; font-size: 12px; font-weight: 550; background: var(--yellow); color: var(--on-yellow); }
+:root .friends-invite-trigger svg { width: 14px; height: 14px; }
+:root .friends-start, :root .friends-empty { text-align: center; display: grid; justify-items: center; gap: 18px; padding: 60px 10px; }
+:root .friends-start h2, :root .friends-empty h2 { margin: 0; font-size: 26px; }
+:root .friends-start > p { color: var(--ink-soft); font-size: 14px; max-width: 280px; line-height: 1.6; }
+:root .friends-start .button, :root .friends-empty .button { width: min(100%, 350px); }
+:root .friends-postage-pair { display: flex; align-items: center; padding: 12px 0 26px; }
+:root .friends-postage-pair .postage-stamp { width: 70px; height: 85px; }
+:root .friends-postage-pair > span:first-child { transform: rotate(-9deg); }
+:root .friends-postage-pair > span:last-child { transform: rotate(12deg) translateY(12px); margin-left: -8px; }
+:root .friends-backdrop { padding: 20px; align-items: center; }
+:root .friends-sheet { background: var(--canvas); border-radius: 26px; max-width: 460px; padding: 24px; max-height: calc(100dvh - 40px); }
+:root .friends-sheet .sheet__grabber { display: none; }
+:root .friends-sheet .sheet__heading { margin-bottom: 22px; }
+:root .friends-sheet .sheet__title { font-size: 18px; font-weight: 650; }
+:root .friends-sheet--invite { max-width: 350px; padding: 20px; border-radius: 23px; }
+:root .friends-sheet--invite .sheet__heading { margin-bottom: 6px; }
+:root .friends-sheet--invite .sheet__title { font-size: 21px; }
+:root .friends-profile { gap: 18px; }
+:root .friends-profile .friends-name { font-size: 12px; color: var(--ink-soft); }
+:root .friends-profile .friends-name input { font-size: 15px; font-weight: 500; padding: 12px; min-height: 44px; background: var(--paper); border: 1px solid var(--line); }
+:root .friends-preview > p { font-size: 11px; margin-bottom: 12px; }
+:root .friend-sharing-preview { padding: 16px; background: var(--tone-surface); border-radius: 17px; color: var(--tone); }
+:root .friend-sharing-preview > div { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 42px; }
+:root .friend-sharing-preview strong { color: var(--ink); font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
+:root .friend-sharing-preview .postage-stamp { width: 33px; height: 41px; padding: 5px; }
+:root .friend-sharing-preview .postage-stamp__print { font-size: 19px; }
+:root .friend-sharing-preview__stats { font-size: 11px; line-height: 18px; min-height: 36px; margin: 9px 0 0; }
+:root .friend-sharing-preview__arrival { font-size: 11px; line-height: 18px; min-height: 18px; margin: 0; }
+:root .friend-sharing-preview__arrival[data-shared=false] { visibility: hidden; }
+:root .friends-sharing { display: grid; grid-template-columns: 1fr; gap: 0; border-top: 1px solid var(--line); }
+:root .friends-toggle { display: flex; flex-direction: row-reverse; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid var(--line); }
+:root .friends-toggle > span { flex: 1; font-size: 12px; font-weight: 550; color: var(--ink); }
+:root .friends-toggle small { display: block; font-size: 10px; color: var(--ink-soft); font-weight: 400; margin-top: 3px; }
+:root .friends-toggle input { appearance: none; width: 31px; height: 18px; border: 0; border-radius: 20px; background: var(--line); position: relative; flex-shrink: 0; cursor: pointer; }
+:root .friends-toggle input::before { content: ''; position: absolute; width: 14px; height: 14px; top: 2px; left: 2px; background: var(--paper); border-radius: 50%; }
+:root .friends-toggle input:checked { background: var(--green); }:root .friends-toggle input:checked::before { left: 15px; }
+:root .friends-privacy { margin: 0; font-size: 11px; }:root .friends-join { min-height: 44px; }
+:root .friend-postcard { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 22px; border-radius: 21px; background: var(--tone-surface); min-height: 135px; }
+:root .friend-postcard h2 { font-size: 28px; font-weight: 650; letter-spacing: -1px; overflow-wrap: anywhere; margin: 0; }
+:root .friend-postcard .postage-stamp { width: 61px; height: 74px; padding: 6px; }
+:root .friend-postcard .postage-stamp__print { font-size: 29px; }
+:root .friend-details__metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; }
+:root .friend-details__metrics strong, :root .friend-details__metrics span { display: block; }:root .friend-details__metrics strong { font-size: 24px; font-weight: 600; letter-spacing: -.7px; }:root .friend-details__metrics span { margin-top: 4px; font-size: 11px; color: var(--ink-soft); }
+:root .friend-stamps h2 { font-size: 16px; margin-bottom: 16px; }:root .friends-manage { border-top: 1px solid var(--line); margin-top: 28px; padding-top: 12px; }:root .friends-manage summary, :root .friends-invite__cancellations summary { cursor: pointer; color: var(--ink-soft); font-size: 11px; }
+:root .friends-manage .friends-remove { text-align: left; padding: 6px 0; margin: 4px 0; }
+:root .friends-invite { gap: 12px; }:root .friends-invite__expiry { font-size: 10px; color: var(--ink-soft); margin: 0 0 2px; }
+:root .friends-invite__url input { min-height: 36px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--control); font-size: 11px; color: var(--ink-soft); }
+:root .friends-invite .button { min-height: 43px; padding: 10px 14px; font-size: 13px; border-radius: 13px; }
+:root .friends-invite > .text-button { min-height: 36px; font-size: 12px; padding: 5px; }
+:root .friends-invite__cancellations { border-top: 1px solid var(--line); padding-top: 11px; margin-top: 4px; }
+:root .friends-invite__cancellations[open] summary { margin-bottom: 5px; }
+:root .friends-invite__cancellations .text-button { display: flex; min-height: 28px; padding: 3px 0; line-height: 20px; font-size: 11px; }
+:root .invitation-parcel-card { display: flex; align-items: center; height: 157px; padding: 8px 8px 8px 17px; border-radius: 16px; background: var(--tone-surface); overflow: hidden; }
+:root .invitation-parcel-card > span { flex: 1; min-width: 0; color: var(--tone); font-size: 11px; }:root .invitation-parcel-card strong { display: block; font-size: 16px; margin-top: 2px; overflow-wrap: anywhere; }
+:root .invitation-parcel { width: 158px; height: 150px; padding: 0; flex-shrink: 0; background: transparent; border-radius: 12px; }:root .invitation-parcel > span { display: block; width: 158px; margin-top: -7px; }:root .invitation-parcel svg { width: 100%; height: auto; stroke: none; }
+:root .invitation-parcel .parcel-illustration__body, :root .invitation-parcel .parcel-illustration__shadow { animation: none; }
+:root .invitation-parcel.opening .parcel-illustration__flap { transform: scaleY(var(--fold-scale)) skewX(var(--fold-skew)); opacity: 1; }
+:root .invitation-parcel.opening .parcel-illustration__tape { opacity: 0; transform: translate(-11px,-27px) rotate(-14deg); }
+:root .invitation-parcel.opening .parcel-illustration__delivery-card { opacity: 1; transform: translateY(-74px) rotate(-4deg); }
+:root .invitation-parcel.opening .parcel-illustration__glints { opacity: 1; }:root .invitation-parcel.opening .parcel-illustration__sparkle { animation: friend-parcel-glint .8s ease-out calc(.5s + var(--sparkle-delay)) both; }
+@keyframes friend-parcel-glint { 0% { opacity: 0; transform: scale(.3); } 35% { opacity: .65; } 100% { opacity: 0; transform: translateY(-7px) scale(.65); } }
+:root .invitation-accept .friend-postcard { margin-bottom: 22px; }:root .invitation-accept .friends-privacy { margin-top: 15px; }:root .invitation-sharing-heading { display: flex; align-items: center; justify-content: space-between; margin: 0 0 12px; }:root .invitation-sharing-heading h2 { font-size: 16px; margin: 0; }:root .invitation-sharing-heading button { font-size: 12px; background: none; text-decoration: underline; color: var(--ink-soft); }
+@media(max-width:600px) { :root .friends-backdrop--page { padding: 0; }:root .friends-sheet--page { border-radius: 0; max-height: 100dvh; height: 100dvh; max-width: none; padding: max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom)); }:root .friends-backdrop--invite { padding: 18px; }:root .friends-invite-trigger { font-size: 11px; }:root .friends-sheet .sheet__title { font-size: 18px; } }
+@media(prefers-reduced-motion:reduce) { :root .invitation-parcel *, :root .invitation-parcel.opening * { animation: none!important; transition: none!important; } }
+:root .arrival--accepting .arrival__parcel { display: none; }
+:root .arrival--accepting .arrival__sign-in { padding-top: 10px; }
+:root .arrival--accepting .auth-flow { max-width: 420px; }
+:root .invitation-accept > .button--primary { margin-top: 22px; }
+:root .arrival--accepting .arrival__sign-in { width: 420px; margin-inline: auto; }
+:root .friends-toggle input:checked::after { content: none; }
+:root .friends-invite__url input { font-weight: 400; letter-spacing: 0; }

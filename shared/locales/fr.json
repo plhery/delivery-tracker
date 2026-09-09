@@ -547,5 +547,15 @@
   "settings.demoData": "Démo et données",
   "settings.yourData": "Vos données",
   "settings.deliveryUpdates": "Notifications de livraison",
-  "settings.off": "Désactivées"
+  "settings.off": "Désactivées",
+  "friends.yourSharing": "Votre partage",
+  "friends.introSummary": "Partagez vos timbres et vos livraisons avec vos amis.",
+  "friends.stampCount": "{{count}} timbres",
+  "friends.from": "De",
+  "friends.replayParcel": "Rejouer l’ouverture du colis",
+  "friends.manageLinks": "Gérer les liens",
+  "friends.manageFriendship": "Gérer cette amitié",
+  "friends.cancelPrevious": "Annuler les {{count}} liens précédents",
+  "friends.editSharing": "Modifier",
+  "friends.sharedStatsSummary": "Livraisons, délai moyen et timbres"
 }

@@ -257,3 +257,21 @@ it('keeps a consumed invitation closed for another account', async () => {
   expect(screen.queryByText('Tap to open your parcel')).not.toBeInTheDocument();
   expect(client.action).not.toHaveBeenCalled();
 });
+
+it('saves sharing edits without accepting the invitation', async () => {
+  const updated = { ...enrolled, profile: { ...enrolled.profile!, shareArrival: true } };
+  const client: FriendsClient = {
+    checkInvitation: vi.fn().mockResolvedValue({ previewNickname: 'Paul' }),
+    load: vi.fn().mockResolvedValue(enrolled), action: vi.fn().mockResolvedValue({ snapshot: updated }),
+  };
+  const user = userEvent.setup(); render(<Harness client={client} />);
+  await screen.findByRole('heading', { name: 'Your friend Paul sent you an invitation' });
+  await user.click(screen.getByRole('button', { name: 'Tap to open your parcel' }));
+  await user.click(await screen.findByRole('button', { name: 'Edit' }));
+  await user.click(screen.getByRole('switch', { name: 'Arrivals this week' }));
+  await user.click(screen.getByRole('button', { name: 'Save', exact: true }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  expect(client.action).toHaveBeenCalledExactlyOnceWith({ action: 'save_profile', nickname: 'Alex', shareStats: true, shareArrival: true }, []);
+  expect(screen.getByRole('button', { name: 'Become friends' })).toBeEnabled();
+  expect(sessionStorage.getItem('sdt.pendingFriendInvitation.v1')).not.toBeNull();
+});

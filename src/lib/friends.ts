@@ -8,10 +8,10 @@ import { currentStage } from './stages';
 import { passportStatistics } from './passport';
 
 export const friendStamps: Record<ApiFriendStamp, { title: MessageKey; explanation: MessageKey; icon: IconName; tone: string; numeral?: string }> = {
-  first: { title: 'passport.firstArrival', explanation: 'friends.firstStampDetail', icon: 'parcel', tone: 'green' },
-  ten: { title: 'passport.doubleDigits', explanation: 'friends.tenStampDetail', icon: 'stamp', tone: 'lilac' },
-  connected: { title: 'passport.wellConnected', explanation: 'friends.connectedStampDetail', icon: 'globe', tone: 'blue' },
-  express: { title: 'passport.expressArrival', explanation: 'friends.expressStampDetail', icon: 'express', tone: 'peach' },
+  first: { title: 'passport.firstArrival', explanation: 'passport.firstExplanation', icon: 'parcel', tone: 'green' },
+  ten: { title: 'passport.doubleDigits', explanation: 'passport.tenExplanation', icon: 'stamp', tone: 'lilac' },
+  connected: { title: 'passport.wellConnected', explanation: 'passport.carrierExplanation', icon: 'globe', tone: 'blue' },
+  express: { title: 'passport.expressArrival', explanation: 'passport.expressExplanation', icon: 'express', tone: 'peach' },
   acrossBorders: { title: 'passport.acrossBorders', explanation: 'passport.acrossExplanation', icon: 'border', tone: 'blue' },
   aroundWorld: { title: 'passport.aroundWorld', explanation: 'passport.aroundExplanation', icon: 'worldMap', tone: 'green' },
   theRegular: { title: 'passport.theRegular', explanation: 'passport.regularExplanation', icon: 'stamp', tone: 'lilac', numeral: '25' },

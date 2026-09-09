@@ -64,7 +64,8 @@ struct ArrivalView: View {
                                 lift: animateGreeting ? pose.lift : 0,
                                 sway: animateGreeting ? pose.angle : 0,
                                 pressed: isPressed,
-                                celebrating: isOpening
+                                celebrating: isOpening,
+                                senderName: invitation.isPresenting ? invitation.nickname : nil
                             )
                             .animation(.easeOut(duration: isOpening ? 0.35 : 0.07), value: currentTilt)
                             .animation(.spring(response: 0.3, dampingFraction: 0.64), value: isPressed)
@@ -697,6 +698,7 @@ private struct FriendInvitationAcceptanceView: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var model = FriendsStore()
     @State private var creatingProfile = false
+    @State private var editingProfile = false
     @State private var joining = false
     @State private var checkingInvitation = true
     @State private var invitationState: FriendsActionResponseInvitationState?
@@ -717,8 +719,9 @@ private struct FriendInvitationAcceptanceView: View {
                     Spacer()
                     AuthenticationLanguageMenu()
                 }
-                Color.clear.frame(width: 180, height: 186)
-                    .anchorPreference(key: ArrivalParcelFrame.self, value: .bounds) { [.signIn: $0] }.accessibilityHidden(true)
+                if invitation.receipt != nil {
+                    Color.clear.frame(width: 180, height: 186).anchorPreference(key: ArrivalParcelFrame.self, value: .bounds) { [.signIn: $0] }.accessibilityHidden(true)
+                }
                 if invitation.receipt != nil {
                     Text(localizer.text("friends.friendshipDelivered"))
                         .font(.system(.title, design: .rounded, weight: .medium)).multilineTextAlignment(.center)
@@ -727,11 +730,18 @@ private struct FriendInvitationAcceptanceView: View {
                     Text(localizer.text(outcomeMessage))
                         .font(.system(.title, design: .rounded, weight: .medium)).multilineTextAlignment(.center)
                         .accessibilityAddTraits(.isHeader)
-                } else { InvitationHeading(nickname: invitation.nickname) }
+                } else if let name = invitation.nickname { FriendPostcardView(nickname: name) }
                 if let error = invitation.errorKey ?? model.errorKey, !creatingProfile, outcomeMessage == nil, invitation.receipt == nil {
                     Text(localizer.text(error)).font(.footnote).foregroundStyle(.secondary)
                     if error != "friends.inviteUnavailable" {
                         Button(localizer.text("common.retry")) { Task { await invitation.loadPreview(session: session); await checkInvitation() } }
+                    }
+                }
+                if outcomeMessage == nil, invitation.receipt == nil, let profile = model.snapshot?.profile {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack { Text(localizer.text("friends.yourSharing")).font(.subheadline.weight(.semibold)); Spacer(); Button(localizer.text("friends.editSharing")) { editingProfile = true; creatingProfile = true; model.errorKey = nil }.font(.caption).disabled(joining) }
+                        FriendSharingPreviewView(friend: model.snapshot?.ownCard ?? FriendsStore.ownCard(parcels: parcels.parcels, profile: profile))
+                        Label(localizer.text("friends.privacy"), systemImage: "lock").font(.caption2).foregroundStyle(.secondary)
                     }
                 }
                 if outcomeMessage != nil {
@@ -741,7 +751,7 @@ private struct FriendInvitationAcceptanceView: View {
                         .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
                 } else if !checkingInvitation, invitation.receipt == nil, invitation.nickname != nil, model.snapshot != nil {
                     Button {
-                        if model.snapshot?.profile == nil { model.errorKey = nil; creatingProfile = true }
+                        if model.snapshot?.profile == nil { model.errorKey = nil; editingProfile = false; creatingProfile = true }
                         else { Task { await accept() } }
                     } label: {
                         HStack {
@@ -761,14 +771,14 @@ private struct FriendInvitationAcceptanceView: View {
                         if let error = model.errorKey {
                             Text(localizer.text(error)).font(.footnote).foregroundStyle(.secondary)
                         }
-                        FriendsProfileForm(profile: nil, busy: joining, submitKey: "friends.joinAndAccept") { profile in
-                            Task { await accept(profile: profile) }
+                        FriendsProfileForm(profile: editingProfile ? model.snapshot?.profile : nil, busy: joining, submitKey: editingProfile ? "friends.save" : "friends.joinAndAccept") { profile in
+                            Task { if editingProfile { await saveSharing(profile) } else { await accept(profile: profile) } }
                         }
                     }.padding(24).frame(maxWidth: 520).frame(maxWidth: .infinity)
                 }
                 .scrollDismissesKeyboard(.interactively)
                 .background(Brand.background)
-                .navigationTitle(localizer.text("friends.enable")).navigationBarTitleDisplayMode(.inline)
+                .navigationTitle(localizer.text(editingProfile ? "friends.settings" : "friends.enable")).navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         Button(localizer.text("common.close")) { creatingProfile = false; model.errorKey = nil }
@@ -783,6 +793,13 @@ private struct FriendInvitationAcceptanceView: View {
             model.configure(session: session); await checkInvitation()
         }
         .onDisappear { model.clear() }
+    }
+
+    private func saveSharing(_ profile: FriendProfile) async {
+        guard !joining else { return }
+        joining = true
+        defer { joining = false }
+        if await model.act(FriendsActionRequest(action: .saveProfile, nickname: profile.nickname, shareStats: profile.shareStats, shareArrival: profile.shareArrival), parcels: parcels.parcels) != nil { creatingProfile = false }
     }
 
     private func checkInvitation() async {
@@ -1053,7 +1070,7 @@ private struct AuthenticationLanguageMenu: View {
 
 /// A little paper object, drawn in points so its folds stay crisp at every size.
 /// The welcome screen gives it a small greeting; a tap unfolds the paper.
-private struct UnwrappingParcel: View, Animatable {
+struct UnwrappingParcel: View, Animatable {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var open: Double
     var tilt = ArrivalTilt()
@@ -1061,6 +1078,8 @@ private struct UnwrappingParcel: View, Animatable {
     var sway: Double = 0
     var pressed = false
     var celebrating = false
+    var senderName: String? = nil
+    @EnvironmentObject private var localizer: Localizer
 
     var animatableData: Double {
         get { open }
@@ -1104,7 +1123,13 @@ private struct UnwrappingParcel: View, Animatable {
                         .position(x: 150, y: 140)
 
                     // A small delivery card rises from inside. It has no fake data.
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        if let senderName {
+                            Text(String(senderName.prefix(1))).font(.system(size: 13, weight: .medium)).frame(width: 21, height: 26).background(Color(hex: "#D1BEDF"), in: PostageStampShape()).frame(maxWidth: .infinity, alignment: .trailing)
+                            Text(localizer.text("friends.from")).font(.system(size: 8))
+                            Text(senderName).font(.system(size: 17, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.45)
+                            Capsule().fill(Color(hex: "#B39BC7")).frame(width: 29, height: 1)
+                        } else {
                         Path { path in
                             path.move(to: CGPoint(x: 10, y: 19))
                             path.addLine(to: CGPoint(x: 16, y: 25))
@@ -1116,19 +1141,20 @@ private struct UnwrappingParcel: View, Animatable {
                             .background(Color(hex: "#E7ECE4"), in: Circle())
                         Capsule().fill(Color(hex: "#DAD7CE")).frame(width: 45, height: 4)
                         Capsule().fill(Color(hex: "#E7E4DC")).frame(width: 29, height: 4)
-                    }
+                        }
+                    }.foregroundStyle(Color(hex: "#69517F"))
                     .padding(14)
                     .frame(width: 83, height: 111)
-                    .background(Color(hex: "#FCFAF4"), in: RoundedRectangle(cornerRadius: 7))
+                    .background(Color(hex: senderName == nil ? "#FCFAF4" : "#E7DCF4"), in: RoundedRectangle(cornerRadius: 7))
                     .overlay(RoundedRectangle(cornerRadius: 7).stroke(.white.opacity(0.6), lineWidth: 0.8))
                     .rotationEffect(.degrees(-11 + card * 6))
                     .position(x: 152 + tilt.x * 2, y: 174 - 69 * card)
                     .opacity(min(1, card * 3))
 
                     polygon([(55, 142), (150, 190), (150, 277), (55, 229)])
-                        .fill(Color(hex: "#C9A47B"))
+                        .fill(LinearGradient(colors: [Color(hex: "#DDBC95"), Color(hex: "#C49A6E")], startPoint: .topLeading, endPoint: .bottomTrailing))
                     polygon([(150, 190), (245, 142), (245, 229), (150, 277)])
-                        .fill(Color(hex: "#B78F66"))
+                        .fill(LinearGradient(colors: [Color(hex: "#BB946A"), Color(hex: "#A77E55")], startPoint: .topLeading, endPoint: .bottomTrailing))
 
                     polygon([(55, 142), (150, 190), (150, 277), (55, 229)])
                         .fill(Color(hex: "#FFF4D6").opacity(0.025 + (tilt.x + 1) * 0.045))
@@ -1151,8 +1177,8 @@ private struct UnwrappingParcel: View, Animatable {
                     }
                     .frame(width: 51, height: 32)
                     .background(Color(hex: "#D8E5EA"), in: RoundedRectangle(cornerRadius: 3))
-                    .rotationEffect(.degrees(27))
-                    .position(x: 101, y: 221)
+                    .projectionEffect(ProjectionTransform(CGAffineTransform(a: 1, b: 48.0 / 95.0, c: 0, d: 1, tx: 0, ty: 0)))
+                    .position(x: 101, y: 209)
 
                     Image(systemName: "arrow.up")
                         .font(.system(size: 18, weight: .medium))

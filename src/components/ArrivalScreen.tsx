@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, typ
 import { LanguageControl, useI18n } from '../i18n';
 import { bindArrivalMotion } from '../lib/arrivalMotion';
 import type { EntryScreen } from '../lib/experience';
+import { InvitationParcelArtwork } from './InvitationParcel';
 import { Icon, ParcelIllustration } from './Icon';
 import { SignInScreen } from './SignInScreen';
 
@@ -13,7 +14,7 @@ const serverReady = () => false;
 export function ArrivalScreen({ screen, onNavigate, invitation, ...signIn }: ComponentProps<typeof SignInScreen> & {
   screen: Exclude<EntryScreen, 'demo'>;
   onNavigate: (screen: EntryScreen) => void;
-  invitation?: { title: ReactNode; canOpen: boolean; notice?: ReactNode; afterOpen?: ReactNode; onDismiss: () => void; appURL?: string; received?: boolean };
+  invitation?: { nickname?: string; title: ReactNode; canOpen: boolean; notice?: ReactNode; afterOpen?: ReactNode; onDismiss: () => void; appURL?: string; received?: boolean };
 }) {
   const { t } = useI18n();
   useEffect(() => { trackScreen(invitation ? 'invitation' : screen, 'anonymous'); }, [screen, invitation]);
@@ -56,7 +57,7 @@ export function ArrivalScreen({ screen, onNavigate, invitation, ...signIn }: Com
     timer.current = setTimeout(() => onNavigate('sign-in'), reduced ? 80 : 960);
   }
 
-  return <main ref={scene} className={`arrival arrival--${screen}${opening ? ' arrival--opening' : ''}${invitation ? ' arrival--invitation' : ''}${invitation?.received ? ' arrival--received' : ''}`}>
+  return <main ref={scene} className={`arrival arrival--${screen}${opening ? ' arrival--opening' : ''}${invitation ? ' arrival--invitation' : ''}${invitation?.received ? ' arrival--received' : ''}${!welcome && invitation?.afterOpen && !invitation.received ? ' arrival--accepting' : ''}`}>
     <header className="arrival__header">
       {welcome ? invitation ? <button className="text-button arrival__back" type="button" aria-label={t('common.close')} onClick={invitation.onDismiss}><Icon name="close" /></button> : <span className="arrival__brand"><Icon name="parcel" />{t('app.title')}</span> :
         <button className="text-button arrival__back" type="button" disabled={invitation?.received} onClick={() => { setOpening(false); onNavigate('welcome'); }}><Icon name="back" />{t('welcome.back')}</button>}
@@ -64,7 +65,7 @@ export function ArrivalScreen({ screen, onNavigate, invitation, ...signIn }: Com
       <LanguageControl />
     </header>
     <div className="arrival__scene">
-      <div className="arrival__parcel"><div className="arrival__ground" /><div className="arrival__tilt"><div className="arrival__press"><ParcelIllustration /></div></div>
+      <div className="arrival__parcel"><div className="arrival__ground" /><div className="arrival__tilt"><div className="arrival__press">{invitation?.nickname ? <InvitationParcelArtwork nickname={invitation.nickname} /> : <ParcelIllustration />}</div></div>
         {invitation?.received && <div className="friendship-receipt" aria-hidden="true"><span className="postage-stamp"><span className="postage-stamp__print"><Icon name="friends" /><Icon name="check" /></span></span></div>}
       </div>
       {welcome ? <div className="arrival__welcome">

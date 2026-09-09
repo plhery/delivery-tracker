@@ -104,6 +104,8 @@ export function useModalDialog<T extends HTMLElement>(
       // Native modal dialogs already own focus and Escape. The fallback is
       // needed only in environments without showModal (including JSDOM).
       if (active instanceof HTMLDialogElement && typeof active.showModal === 'function') return;
+      // Let Passport bubbles consume Escape before dismissing their parent sheet.
+      if (typeof HTMLElement.prototype.showPopover === 'function' && modal.querySelector(':popover-open')) return;
       if (event.key === 'Escape') {
         event.preventDefault();
         if (active instanceof HTMLDialogElement) active.dispatchEvent(new Event('cancel', { cancelable: true }));

@@ -547,5 +547,15 @@
   "settings.demoData": "Demo & data",
   "settings.yourData": "Your data",
   "settings.deliveryUpdates": "Delivery updates",
-  "settings.off": "Off"
+  "settings.off": "Off",
+  "friends.yourSharing": "Your sharing",
+  "friends.introSummary": "Share stamps and delivery milestones with friends.",
+  "friends.stampCount": "{{count}} stamps",
+  "friends.from": "From",
+  "friends.replayParcel": "Replay package opening",
+  "friends.manageLinks": "Manage links",
+  "friends.manageFriendship": "Manage friendship",
+  "friends.cancelPrevious": "Cancel {{count}} previous links",
+  "friends.editSharing": "Edit",
+  "friends.sharedStatsSummary": "Deliveries, average days & stamps"
 }

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import { useI18n, type MessageKey } from '../i18n';
 import type { ApiFriendProfile, ApiFriendsActionResponse, ApiFriendsSnapshot } from '../generated/apiContract';
-import { FriendsError, type FriendsClient } from '../lib/friends';
+import { FriendsError, ownFriendCard, type FriendsClient } from '../lib/friends';
 import { previewInvitation, type PendingInvitationState } from '../lib/friendInvites';
 import type { ParcelWithEvents } from '../types';
 import { ArrivalScreen } from './ArrivalScreen';
-import { FriendProfileForm, FriendsSheet } from './Friends';
+import { FriendProfileForm, FriendsSheet, FriendPostcard, FriendSharingPreview } from './Friends';
 import type { SignInScreen } from './SignInScreen';
 import { useFriendsActivity } from './FriendsActivity';
 
@@ -82,20 +82,21 @@ export function FriendInvitation({ invitation, onDismiss, client, parcels = empt
   return <ArrivalScreen {...signIn} title={title} subtitle={t('friends.signInToAccept')} showConfigurationHelp={false}
     screen={invitation.pending?.opened ? 'sign-in' : 'welcome'}
     onNavigate={(screen) => invitation.setOpened(screen === 'sign-in')}
-    invitation={{ title, canOpen: !!nickname, received: !!receipt,
+    invitation={{ title, nickname: nickname ?? undefined, canOpen: !!nickname, received: !!receipt,
       onDismiss, notice, appURL: ios && code ? `swissdeliverytracker://invite#${code}` : undefined,
       afterOpen: receipt ? <section className="auth-flow friendship-received" role="status"><div className="auth-flow__heading"><h1 tabIndex={-1}>{t('friends.friendshipDelivered')}</h1></div></section>
         : !nickname ? <section className="auth-flow"><div className="auth-flow__heading"><h1 tabIndex={-1}>{title}</h1></div>{notice}</section>
-        : client && code ? <InvitationAcceptance key={code} title={title} code={code} client={client} parcels={parcels} onAccepted={received} onDismiss={onDismiss} /> : undefined,
+        : client && code ? <InvitationAcceptance key={code} title={title} nickname={nickname} code={code} client={client} parcels={parcels} onAccepted={received} onDismiss={onDismiss} /> : undefined,
     }} />;
 }
 
-function InvitationAcceptance({ title, code, client, parcels, onAccepted, onDismiss }: { title: ReactNode; code: string; client: FriendsClient; parcels: ParcelWithEvents[]; onAccepted: (result: ApiFriendsActionResponse) => void; onDismiss: () => void }) {
+function InvitationAcceptance({ title, nickname, code, client, parcels, onAccepted, onDismiss }: { title: ReactNode; nickname: string; code: string; client: FriendsClient; parcels: ParcelWithEvents[]; onAccepted: (result: ApiFriendsActionResponse) => void; onDismiss: () => void }) {
   const { t } = useI18n();
   const [snapshot, setSnapshot] = useState<ApiFriendsSnapshot | null>(null);
   const [error, setError] = useState<MessageKey | null>(null);
   const [invitationState, setInvitationState] = useState<ApiFriendsActionResponse['invitationState']>();
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [retry, setRetry] = useState(0);
   const working = useRef(false);
@@ -148,16 +149,28 @@ function InvitationAcceptance({ title, code, client, parcels, onAccepted, onDism
       }
     }
   }
+  async function saveSharing(profile: ApiFriendProfile) {
+    if (working.current) return;
+    working.current = true; setBusy(true); setError(null);
+    const current = generation.current;
+    try {
+      const saved = await client.action({ action: 'save_profile', ...profile }, parcels);
+      if (generation.current === current) { if (!saved.snapshot?.profile) throw new FriendsError('friends.actionFailed'); setSnapshot(saved.snapshot); setEditing(false); }
+    } catch (reason) { if (generation.current === current) setError(reason instanceof FriendsError ? reason.key : 'friends.actionFailed'); }
+    finally { working.current = false; if (generation.current === current) setBusy(false); }
+  }
   const message = invitationState === 'already_accepted' ? 'friends.inviteAlreadyAccepted' : invitationState === 'already_friends' ? 'friends.alreadyFriends' : error === 'friends.selfInvitation' ? error : null;
   if (message) return <section className="auth-flow invitation-accept" aria-labelledby="invite-title">
     <div className="auth-flow__heading"><h1 id="invite-title" tabIndex={-1}>{t(message)}</h1></div>
     <button className="button button--primary" onClick={onDismiss}>{t('common.close')}</button>
   </section>;
   return <section className="auth-flow invitation-accept" aria-labelledby="invite-title">
-    <div className="auth-flow__heading"><h1 id="invite-title" tabIndex={-1}>{title}</h1></div>
+    <h1 id="invite-title" className="sr-only" tabIndex={-1}>{title}</h1><FriendPostcard nickname={nickname} />
     {error && !creating && <div className="invitation-notice" role="alert"><p>{t(error)}</p>{!snapshot && error !== 'friends.inviteUnavailable' && <button className="text-button" onClick={() => setRetry((value) => value + 1)}>{t('common.retry')}</button>}</div>}
+    {snapshot?.profile && <><div className="invitation-sharing-heading"><h2>{t('friends.yourSharing')}</h2><button disabled={busy} onClick={() => { setError(null); setEditing(true); }}>{t('friends.editSharing')}</button></div><FriendSharingPreview friend={snapshot.ownCard ?? ownFriendCard(parcels, snapshot.profile)} /><p className="friends-privacy">{t('friends.privacy')}</p></>}
     {!snapshot ? !error && <p role="status">{t('auth.loading')}</p>
       : <button className="button button--primary" disabled={busy || error === 'friends.inviteUnavailable'} aria-busy={busy} onClick={() => { if (snapshot.profile) void accept(); else { setError(null); setCreating(true); } }}>{t(snapshot.profile ? 'friends.accept' : 'friends.enableToAccept')}</button>}
+    {editing && snapshot?.profile && <FriendsSheet title={t('friends.settings')} busy={busy} onClose={() => { setEditing(false); setError(null); }}>{error && <p role="alert" className="friends-error">{t(error)}</p>}<FriendProfileForm profile={snapshot.profile} parcels={parcels} busy={busy} onSave={saveSharing} /></FriendsSheet>}
     {creating && <FriendsSheet title={t('friends.enable')} busy={busy} onClose={() => { setCreating(false); setError(null); }}>
       {error && <p className="friends-error" role="alert">{t(error)}</p>}
       <FriendProfileForm profile={null} parcels={parcels} busy={busy} submitKey="friends.joinAndAccept" onSave={accept} />
