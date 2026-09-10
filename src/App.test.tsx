@@ -482,7 +482,7 @@ describe('App', () => {
     expect(screen.getByRole('region', { name: 'On the way' })).toContainElement(section);
   });
 
-  it('shows the sender on the parcel card and detail', async () => {
+  it('shows the sender only in the opened parcel detail', async () => {
     const user = userEvent.setup();
     const parcel: ParcelWithEvents = {
       id: 'sender-parcel', trackingNumber: 'TEST1234', label: 'Sender parcel',
@@ -494,8 +494,9 @@ describe('App', () => {
       rename: vi.fn(), remove: vi.fn(), refresh: vi.fn().mockResolvedValue([parcel]),
     };
     renderApp(repo);
-    const card = await screen.findByRole('button', { name: /Sender parcel.*From Example sender/ });
-    expect(within(card).getByText('From Example sender')).toBeVisible();
+    const card = await screen.findByRole('button', { name: /Sender parcel/ });
+    expect(within(card).queryByText('From Example sender')).not.toBeInTheDocument();
+    expect(card).not.toHaveAccessibleName(/Example sender/);
     await user.click(card);
     const detail = screen.getByRole('dialog', { name: 'Sender parcel' });
     expect(within(detail).getByText('From Example sender')).toBeVisible();

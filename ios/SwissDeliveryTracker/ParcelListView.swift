@@ -681,11 +681,6 @@ private struct DeliveryAttentionNotice: View {
                     .font(.subheadline.weight(.medium))
                 Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
                     .font(.caption).foregroundStyle(.secondary)
-                if let sender = parcel.carrierData?.senderName?.nonEmpty {
-                    Text(localizer.text("parcel.sender", ["sender": sender]))
-                        .font(.caption).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
             }.frame(maxWidth: .infinity, alignment: .leading)
             Image(systemName: "chevron.right").font(.caption2.weight(.light)).foregroundStyle(.secondary).accessibilityHidden(true)
         }
@@ -742,12 +737,6 @@ private struct ExperimentalNextDeliveryPass: View {
                 Text(localizer.text("parcel.deliveryCarrier", ["carrier": catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName]))
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-            }
-            if let sender = parcel.carrierData?.senderName?.nonEmpty {
-                Text(localizer.text("parcel.sender", ["sender": sender]))
-                    .font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.bottom, 5)
             }
 
             Text([localizer.parcelStatus(parcel), localizer.parcelDeliveryEstimate(parcel)]
@@ -813,11 +802,6 @@ private struct ExperimentalParcelPassCard: View {
                 .fixedSize(horizontal: false, vertical: true)
             if parcel.activeTrackingCarrier != parcel.displayedCarrier {
                 Text(localizer.text("parcel.deliveryCarrier", ["carrier": catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName]))
-                    .font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            if let sender = parcel.carrierData?.senderName?.nonEmpty {
-                Text(localizer.text("parcel.sender", ["sender": sender]))
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
