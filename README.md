@@ -66,8 +66,9 @@ Supports Swiss Post, Planzer, Quickpac, DPD, GLS, DHL / Deutsche Post, UPS,
 La Poste / Colissimo, Chronopost, Mondial Relay, Amazon Shipping France,
 India Post, and other regional carriers.
 
-The scheduler processes parcels in batches every 10 minutes from 08:00–22:00
-in `Europe/Zurich`, and hourly overnight. Unknown carriers can use 17TRACK and
+In-transit parcels refresh every 2 minutes from 08:00–22:00 in `Europe/Zurich`;
+PostNL and other stages refresh every 10 minutes. Checks run hourly overnight,
+and GLS retains its longer carrier cooldowns. Unknown carriers can use 17TRACK and
 ParcelsApp through a private TRAWL service. Asendia and FedEx are link-only;
 ShipUp is a manual record.
 

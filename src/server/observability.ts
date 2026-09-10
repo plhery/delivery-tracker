@@ -272,7 +272,7 @@ export function beginScheduledSyncCheckIn(now = new Date()): ScheduledCheckIn | 
   const checkInId = Sentry.captureCheckIn({ monitorSlug, status: 'in_progress' }, {
     schedule: {
       type: 'crontab',
-      value: daytime ? '*/10 8-21 * * *' : '0 0-7,22-23 * * *',
+      value: daytime ? '*/2 8-21 * * *' : '0 0-7,22-23 * * *',
     },
     checkinMargin: daytime ? 5 : 15,
     maxRuntime: 30,

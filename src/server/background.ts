@@ -47,7 +47,7 @@ export function secondsUntilNextSync(now = new Date()): number {
   const local = DateTime.fromJSDate(now, { zone: 'Europe/Zurich' });
   let candidate: DateTime;
   if (local.hour >= 8 && local.hour < 22) {
-    const minutes = 10 - (local.minute % 10);
+    const minutes = 2 - (local.minute % 2);
     candidate = local.startOf('minute').plus({ minutes });
   } else {
     candidate = local.startOf('hour').plus({ hours: 1 });

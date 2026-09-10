@@ -63,6 +63,20 @@ export function isTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
   return now.getTime() >= lastChecked + interval;
 }
 
+function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
+  if (!isTrackingSyncDue(parcel, now)) return false;
+  const lastChecked = Date.parse(String(parcel.last_synced_at ?? ''));
+  if (!Number.isFinite(lastChecked)) return true;
+  const local = DateTime.fromJSDate(now, { zone: 'Europe/Zurich' });
+  const intervalMinutes = parcel.current_stage === 'in_transit' && parcel.carrier !== 'spring-gds'
+    ? 2 : 10;
+  // Compare schedule windows so request duration does not skip the next tick.
+  const windowStart = local.hour >= 8 && local.hour < 22
+    ? local.startOf('minute').minus({ minutes: local.minute % intervalMinutes })
+    : local.startOf('hour');
+  return lastChecked < windowStart.toMillis();
+}
+
 export interface TrackingAdapter {
   fetch(
     carrierId: string,
@@ -497,7 +511,7 @@ export class TrackingSyncService {
       context.signal?.throwIfAborted();
       const summary = emptySyncSummary();
       const due = (await this.client.listActivePackages())
-        .filter((parcel) => isTrackingSyncDue(parcel, this.now()));
+        .filter((parcel) => isScheduledTrackingSyncDue(parcel, this.now()));
       for (const parcel of fairSyncPackages(due)) {
         summary.checked += 1;
         summary[await this.syncOne(parcel, context)] += 1;

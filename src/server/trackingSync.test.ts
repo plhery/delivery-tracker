@@ -282,8 +282,11 @@ describe('fair scheduling', () => {
     expect(() => fairSyncPackages(packages, 0)).toThrow('positive');
   });
 
-  it('aligns daytime checks to ten minutes and overnight checks to the hour', () => {
-    expect(secondsUntilNextSync(new Date('2026-07-15T07:03:30Z'))).toBe(390);
+  it('aligns daytime checks to two minutes and overnight checks to the hour', () => {
+    expect(secondsUntilNextSync(new Date('2026-07-15T07:03:30Z'))).toBe(30);
+    expect(secondsUntilNextSync(new Date('2026-07-15T07:04:00Z'))).toBe(120);
+    expect(secondsUntilNextSync(new Date('2026-07-15T19:59:30Z'))).toBe(30);
+    expect(secondsUntilNextSync(new Date('2026-07-15T20:00:00Z'))).toBe(3_600);
     expect(secondsUntilNextSync(new Date('2026-07-15T20:15:00Z'))).toBe(2_700);
     expect(() => secondsUntilNextSync(new Date('invalid'))).toThrow('valid');
   });
@@ -321,6 +324,46 @@ function fakeClient(packages: JsonObject[] = []) {
 }
 
 describe('TrackingSyncService', () => {
+  it.each([
+    { carrier: 'swiss-post', stage: 'in_transit', time: '10:02:00', checked: 1 },
+    { carrier: 'swiss-post', stage: 'in_transit', time: '10:01:59', checked: 0 },
+    { carrier: 'spring-gds', stage: 'in_transit', time: '10:02:00', checked: 0 },
+    { carrier: 'spring-gds', stage: 'in_transit', time: '10:10:00', checked: 1 },
+    { carrier: 'swiss-post', stage: 'registered', time: '10:02:00', checked: 0 },
+    { carrier: 'swiss-post', stage: 'accepted', time: '10:02:00', checked: 0 },
+    { carrier: 'swiss-post', stage: 'customs', time: '10:02:00', checked: 0 },
+    { carrier: 'swiss-post', stage: 'out_for_delivery', time: '10:02:00', checked: 0 },
+    { carrier: 'swiss-post', stage: 'registered', time: '10:10:00', checked: 1 },
+    { carrier: 'gls-de', stage: 'in_transit', time: '10:02:00', checked: 0 },
+  ])('schedules $carrier at $stage at $time: $checked checks', async ({ carrier, stage, time, checked }) => {
+    const parcel = {
+      id: 'scheduled', carrier, current_stage: stage, tracking_number: 'TEST1234',
+      last_synced_at: '2026-09-09T10:00:15Z', sync_status: 'ok',
+    };
+    const client = fakeClient([parcel]);
+    const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      adapter, null, () => new Date(`2026-09-09T${time}Z`));
+    await expect(service.sync()).resolves.toMatchObject({ checked });
+    expect(adapter.fetch).toHaveBeenCalledTimes(checked);
+  });
+
+  it('keeps in-transit parcels hourly overnight and allows manual refreshes', async () => {
+    const parcel = {
+      id: 'overnight', carrier: 'swiss-post', current_stage: 'in_transit', tracking_number: 'TEST1234',
+      last_synced_at: '2026-09-09T20:00:15Z', sync_status: 'ok',
+    };
+    const client = fakeClient([parcel]);
+    const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) };
+    let now = new Date('2026-09-09T20:02:00Z');
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      adapter, null, () => now);
+    await expect(service.sync()).resolves.toMatchObject({ checked: 0 });
+    await expect(service.syncPackage(parcel)).resolves.toMatchObject({ checked: 1 });
+    now = new Date('2026-09-09T21:00:00Z');
+    await expect(service.sync()).resolves.toMatchObject({ checked: 1 });
+  });
+
   it.each([
     { responseSender: undefined, expected: 'Example sender' },
     { responseSender: 'Updated sender', expected: 'Updated sender' },
@@ -374,14 +417,18 @@ describe('TrackingSyncService', () => {
   it.each(['ok', 'error'])('keeps PostNL on the regular schedule after %s checks', async (syncStatus) => {
     const parcel = {
       id: 'postnl', carrier: 'spring-gds', tracking_number: 'LX123456785NL',
+      current_stage: 'in_transit',
       last_synced_at: '2026-09-09T10:00:00Z', sync_status: syncStatus,
     };
     const client = fakeClient([parcel]);
     const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) };
+    let now = new Date('2026-09-09T10:02:00Z');
     const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
-      adapter, null, () => new Date('2026-09-09T10:10:00Z'));
-    await expect(service.sync()).resolves.toMatchObject({ checked: 1, updated: 1 });
+      adapter, null, () => now);
+    await expect(service.sync()).resolves.toMatchObject({ checked: 0 });
     await expect(service.syncPackage(parcel)).resolves.toMatchObject({ checked: 1, updated: 1 });
+    now = new Date('2026-09-09T10:10:00Z');
+    await expect(service.sync()).resolves.toMatchObject({ checked: 1, updated: 1 });
     expect(adapter.fetch).toHaveBeenCalledTimes(2);
   });
 
