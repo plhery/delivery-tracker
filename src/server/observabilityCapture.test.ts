@@ -135,11 +135,12 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   expect(captured.events.some((event) => event.message === 'Tracking routing: direct_support_opportunity')).toBe(true);
 
   const refusedBody = '<h1>Access Denied</h1><p>Reference #18.test.123; parcel 8U00000000000</p>';
-  const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(refusedBody, {
+  const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(refusedBody, {
     status: 403, headers: { 'content-type': 'text/html', 'x-request-id': 'example-request-id',
       'set-cookie': 'session=DO_NOT_CAPTURE', authorization: 'Bearer DO_NOT_CAPTURE', 'retry-after': '120' },
   }));
   const refused = await new LaPosteTracker().fetch('8U00000000000').catch((error: unknown) => error);
+  expect(fetcher).toHaveBeenCalledTimes(3);
   fetcher.mockRestore();
   expect(refused).toBeInstanceOf(UpstreamHttpError);
   reportRoutingEvent('provider_failed', { carrier: 'la-poste', provider: 'la-poste',
@@ -149,6 +150,12 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   });
   reportRoutingEvent('provider_recovered', { carrier: 'la-poste', provider: 'la-poste' });
   await flushObservability();
+  const retries = captured.events.filter((event) => event.message === 'Tracking routing: transport_fallback' && event.tags?.provider === 'la-poste');
+  expect(retries).toHaveLength(2);
+  for (const retry of retries) {
+    expect(retry.tags?.failure_category).toBe('retry');
+    expect(retry.contexts?.upstream_http).toMatchObject({ body_excerpt: refusedBody, body_read: 'complete' });
+  }
   const refusal = captured.events.find((event) => event.message === 'Tracking routing: provider_failed' && event.tags?.provider === 'la-poste')!;
   expect(refusal.contexts?.upstream_http).toMatchObject({ body_excerpt: refusedBody, body_read: 'complete',
     content_type: 'text/html', request_ids: { 'x-request-id': 'example-request-id' }, retry_after_ms: 120_000,

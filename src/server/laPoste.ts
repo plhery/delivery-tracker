@@ -2,7 +2,8 @@ import 'server-only';
 import { trackingLanguageStage, languageStageStatus } from './trackingLanguage';
 
 import { DateTime } from 'luxon';
-import { fetchBounded, parseJsonBytes } from './boundedFetch';
+import { fetchBounded, parseJsonBytes, UpstreamHttpError } from './boundedFetch';
+import { measureScrape, recoverScrape } from './scrapeMonitoring';
 import type { CarrierEvent, CarrierResult, CarrierStatus } from './carrierResult';
 import { isRecord, type JsonObject } from './types';
 
@@ -248,18 +249,37 @@ export class LaPosteTracker {
 
   async fetch(trackingNumber: string): Promise<CarrierResult> {
     const normalized = normalizeLaPosteTrackingNumber(trackingNumber);
-    const { bytes } = await fetchBounded(laPosteTrackingApiUrl(normalized), {
-      headers: {
-        Accept: 'application/json, text/plain, */*',
-        'Accept-Language': 'fr-FR,fr;q=0.9',
-        Referer: laPosteTrackingUrl(normalized),
-        'User-Agent': 'Mozilla/5.0 (compatible; SwissDeliveryTracker/1.0)',
-      },
-    }, {
-      provider: 'La Poste tracking',
-      timeoutMs: this.timeoutMs,
-      maxBytes: MAX_RESPONSE_BYTES,
-    });
-    return parseLaPosteTrackingResponse(parseJsonBytes(bytes, 'La Poste'), normalized);
+    const deadline = performance.now() + this.timeoutMs;
+    const request = async (): Promise<CarrierResult> => {
+      const { bytes } = await fetchBounded(laPosteTrackingApiUrl(normalized), {
+        headers: {
+          Accept: 'application/json, text/plain, */*',
+          'Accept-Language': 'fr-FR,fr;q=0.9',
+          Referer: laPosteTrackingUrl(normalized),
+          'User-Agent': 'Mozilla/5.0 (compatible; SwissDeliveryTracker/1.0)',
+        },
+      }, {
+        provider: 'La Poste tracking',
+        timeoutMs: Math.max(1, Math.floor(deadline - performance.now())),
+        maxBytes: MAX_RESPONSE_BYTES,
+      });
+      return parseLaPosteTrackingResponse(parseJsonBytes(bytes, 'La Poste'), normalized);
+    };
+    let rejection: UpstreamHttpError | undefined;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await (attempt === 0
+          ? measureScrape('la-poste', 'direct', request)
+          : recoverScrape('la-poste', 'retry', rejection, request));
+      } catch (error) {
+        // Production 403s contained La Poste's "Site indisponible - Incident
+        // en cours" page and subsequent checks succeeded. Give this transient
+        // rejection two immediate retries before universal fallback, sharing
+        // the original deadline; do not retry other HTTP or parsing failures.
+        if (!(error instanceof UpstreamHttpError) || error.status !== 403
+          || attempt >= 2 || deadline - performance.now() < 1) throw error;
+        rejection = error;
+      }
+    }
   }
 }

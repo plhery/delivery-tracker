@@ -5,7 +5,7 @@
 - Average and p95 full provider latency, including failed attempts.
 - Attempt counts to distinguish a useful comparison from a small sample.
 - Average direct HTTP/session latency and direct-path failure counts.
-- Browser/TRAWL/page recovery handoffs, latency and failures.
+- Browser/TRAWL/page recovery and immediate HTTP retry counts, latency and failures.
 
 The saved definition is [ops/sentry/scraper-health-dashboard.json](../ops/sentry/scraper-health-dashboard.json). The dashboard is scoped to `delivery-tracker`; its time range can be changed in Sentry. Metrics start with this release, so earlier scraping timings cannot appear retroactively.
 
@@ -15,7 +15,7 @@ The saved definition is [ops/sentry/scraper-health-dashboard.json](../ops/sentry
 
 `phase:total` measures the entire provider call through `CarrierTrackingAdapter` or `UniversalTracker`. The seven hybrid adapters additionally record `direct` and their recovery phase: DHL, DHL eCommerce, UPS, Mondial Relay, DPD, DPD France, and Ship24. A provider's total includes session waiting, retries and internal recovery; it does not include other providers tried by the router. Existing Postgres `tracking_sync_steps` fetch durations cover the whole package lookup, including provider changes.
 
-A direct failure followed by successful browser recovery produces an error direct sample, a recovery-handoff count, a successful browser sample and a successful total sample. Select one phase when counting attempts; summing phases double-counts a lookup. Session refreshes can produce multiple direct samples. Native browser-only providers have total timings; a browser call there is not an API fallback.
+A direct failure followed by successful browser recovery produces an error direct sample, a recovery-handoff count, a successful browser sample and a successful total sample. Select one phase when counting attempts; summing phases double-counts a lookup. Session refreshes can produce multiple direct samples. La Poste records its first request as `direct` and up to two immediate HTTP 403 retries as `retry`, all within its original 15-second deadline. Each retried rejection is reported before the next request, including its bounded response diagnostics. Other HTTP statuses and parsing errors propagate without these retries; after exhaustion, the router reports the final failure and can use universal fallback. Native browser-only providers have total timings; a browser call there is not an API fallback.
 
 Metrics are emitted on success and failure with monotonic elapsed time. They work with `SENTRY_TRACES_SAMPLE_RATE=0`; trace sampling does not disable metrics in the installed SDK. Structured `tracking_scrape` JSON logs carry the same timings even if Sentry is unavailable. Telemetry sink failures preserve the original tracking result/error.
 

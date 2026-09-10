@@ -1,4 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as observability from './observability';
+import { UpstreamHttpError } from './boundedFetch';
 import {
   LaPosteTracker,
   laPosteTrackingApiUrl,
@@ -75,6 +77,73 @@ describe('La Poste tracking input', () => {
     ]) {
       expect(() => laPosteTrackingUrl(value)).toThrow('13- or 15-character');
     }
+  });
+});
+
+describe('La Poste transient 403 recovery', () => {
+  beforeEach(() => {
+    vi.spyOn(observability, 'reportRoutingEvent').mockImplementation(() => {});
+    vi.spyOn(observability, 'logOperationalEvent').mockImplementation(() => {});
+  });
+  const rejection = () => new Response('<title>Site indisponible - Incident en cours - La Poste</title>', {
+    status: 403, headers: { 'Content-Type': 'text/html' },
+  });
+
+  it.each([1, 2])('recovers after %i immediate retries and reports each 403 before retrying', async (failures) => {
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      expect(observability.reportRoutingEvent).toHaveBeenCalledTimes(fetcher.mock.calls.length - 1);
+      return fetcher.mock.calls.length <= failures ? rejection() : Response.json(deliveredFixture());
+    });
+    await expect(new LaPosteTracker().fetch(TRACKING_NUMBER)).resolves.toMatchObject({ status: 'delivered' });
+    expect(fetcher).toHaveBeenCalledTimes(failures + 1);
+    expect(observability.reportRoutingEvent).toHaveBeenLastCalledWith('transport_fallback', expect.objectContaining({
+      carrier: 'la-poste', category: 'retry', error: expect.objectContaining({ status: 403,
+        diagnostics: expect.objectContaining({ body_excerpt: expect.stringContaining('Incident en cours') }),
+      }),
+    }));
+  });
+
+  it('stops after three 403 responses and preserves the last response for router fallback', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => rejection());
+    await expect(new LaPosteTracker().fetch(TRACKING_NUMBER)).rejects.toMatchObject({
+      name: 'UpstreamHttpError', status: 403,
+      diagnostics: expect.objectContaining({ body_excerpt: expect.stringContaining('Incident en cours') }),
+    });
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(observability.reportRoutingEvent).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([401, 404, 429, 500, 503])('does not retry HTTP %i', async (status) => {
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status }));
+    await expect(new LaPosteTracker().fetch(TRACKING_NUMBER)).rejects.toBeInstanceOf(UpstreamHttpError);
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(observability.reportRoutingEvent).not.toHaveBeenCalled();
+  });
+
+  it('stops retrying if a 403 is followed by another failure', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(rejection())
+      .mockResolvedValueOnce(new Response('', { status: 429 }));
+    await expect(new LaPosteTracker().fetch(TRACKING_NUMBER)).rejects.toMatchObject({ status: 429 });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry malformed successful responses', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('invalid json'));
+    await expect(new LaPosteTracker().fetch(TRACKING_NUMBER)).rejects.toThrow('invalid tracking response');
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
+  it('shares the original deadline and stops when a retry exhausts it', async () => {
+    let elapsed = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => elapsed);
+    const timeout = vi.spyOn(AbortSignal, 'timeout');
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      elapsed += 600.25;
+      return rejection();
+    });
+    await expect(new LaPosteTracker(1_000).fetch(TRACKING_NUMBER)).rejects.toMatchObject({ status: 403 });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(timeout.mock.calls.map(([ms]) => ms)).toEqual([1_000, 399]);
   });
 });
 

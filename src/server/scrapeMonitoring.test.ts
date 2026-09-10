@@ -73,6 +73,19 @@ it("records failures and recovery separately, even with tracing disabled, with t
   });
   // Monitoring preserves the caller's diagnostic context.
   expect(Sentry.getIsolationScope().getUser()?.id).toBe('diagnostic-fixture');
+  await expect(recoverScrape('la-poste', 'retry', new UpstreamHttpError('La Poste tracking', 403), async () => {
+    await observability.flushObservability();
+    expect(captured.events).toHaveLength(2);
+    expect(captured.events[1]).toMatchObject({ message: 'Tracking routing: transport_fallback',
+      tags: { carrier: 'la-poste', upstream_status: 403, failure_category: 'retry' },
+    });
+    return value;
+  })).resolves.toBe(value);
+  await observability.flushObservability();
+  expect(captured.metrics.filter(metric => metric.name === 'tracking.scrape.duration').at(-1)).toMatchObject({
+    attributes: { carrier: { value: 'la-poste' }, phase: { value: 'retry' }, outcome: { value: 'success' } },
+  });
+
 });
 
 it('preserves successful results and original failures when every telemetry sink throws', async () => {

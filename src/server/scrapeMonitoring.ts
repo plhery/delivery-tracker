@@ -3,7 +3,7 @@ import 'server-only';
 import * as Sentry from '@sentry/node';
 import { errorType, initObservability, logOperationalEvent, reportRoutingEvent } from './observability';
 
-export type ScrapePhase = 'total' | 'direct' | 'trawl' | 'browser' | 'page';
+export type ScrapePhase = 'total' | 'direct' | 'trawl' | 'browser' | 'page' | 'retry';
 
 function metric(operation: () => void): void {
   try {
