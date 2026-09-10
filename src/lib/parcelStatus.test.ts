@@ -91,11 +91,11 @@ describe('useful delivery estimates', () => {
     saved.expectedDelivery = '2026-09-07';
     expect(parcelDeliveryEstimate(saved, now)).toBeNull();
   });
-  it('keeps windows while omitting redundant today and stale estimates', () => {
+  it('keeps today and time windows while out for delivery, but hides stale estimates', () => {
     const saved = parcel('ok');
     saved.events[0].stage = 'out_for_delivery';
     saved.expectedDelivery = '2026-09-07';
-    expect(parcelDeliveryEstimate(saved, now)).toBeNull();
+    expect(parcelDeliveryEstimate(saved, now)).toBe('2026-09-07');
     saved.expectedDelivery = '2026-09-07 14:00–16:00';
     expect(parcelDeliveryEstimate(saved, now)).toBe(saved.expectedDelivery);
     saved.events[0].stage = 'in_transit';

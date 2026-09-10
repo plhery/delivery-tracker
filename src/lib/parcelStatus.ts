@@ -23,7 +23,6 @@ export function parcelDeliveryEstimate(parcel: ParcelWithEvents, now = Date.now(
   const today = new Date(now);
   today.setHours(0, 0, 0, 0);
   if (!Number.isFinite(day.getTime()) || day < today) return null;
-  if (stage === 'out_for_delivery' && day.getTime() === today.getTime() && !/[T ]\d{2}:\d{2}/.test(value)) return null;
   return value;
 }
 

@@ -306,9 +306,6 @@ final class Localizer: ObservableObject {
               let date = DateParser.deliveryDate(value) else { return nil }
         let calendar = Calendar.current
         guard calendar.startOfDay(for: date) >= calendar.startOfDay(for: now) else { return nil }
-        if parcel.currentStage == .outForDelivery,
-           calendar.isDate(date, inSameDayAs: now),
-           value.range(of: "[T ]\\d{2}:\\d{2}", options: .regularExpression) == nil { return nil }
         return expectedDelivery(value, now: now)
     }
 

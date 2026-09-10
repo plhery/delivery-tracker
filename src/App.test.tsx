@@ -445,10 +445,10 @@ describe('App', () => {
     expect(onTheWay.querySelector('.parcel-section__heading > span')).toHaveTextContent('1');
   });
 
-  it('features today’s delivery window once in the next parcel', async () => {
+  it.each(['', ' 13:00–15:00'])('shows today’s ETA once while out for delivery (window: %s)', async (window) => {
     const today = new Date();
     const pad = (value: number) => String(value).padStart(2, '0');
-    const expectedDelivery = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())} 13:00–15:00`;
+    const expectedDelivery = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}${window}`;
     const parcel: ParcelWithEvents = {
       id: 'parcel-today',
       trackingNumber: '993412345612345678',

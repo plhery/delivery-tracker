@@ -672,7 +672,7 @@ final class ParcelLogicTests: XCTestCase {
     }
 
     @MainActor
-    func testEstimatesKeepUsefulWindowsAndHideObsoleteOrRedundantDates() {
+    func testEstimatesKeepTodayAndWindowsWhileOutForDeliveryAndHideObsoleteDates() {
         let id = UUID()
         let now = DateParser.date("2026-09-07T12:00:00Z")!
         let localizer = Localizer()
@@ -684,7 +684,7 @@ final class ParcelLogicTests: XCTestCase {
         }
         var parcel = makeParcel(id: id, events: [event(id, .outForDelivery, "2026-09-07T10:00:00Z")])
         parcel.expectedDelivery = "2026-09-07"
-        XCTAssertNil(localizer.parcelDeliveryEstimate(parcel, now: now))
+        XCTAssertEqual(localizer.parcelDeliveryEstimate(parcel, now: now), "aujourd’hui")
         parcel.expectedDelivery = "2026-09-07 14:00–16:00"
         XCTAssertEqual(localizer.parcelDeliveryEstimate(parcel, now: now), "aujourd’hui, 14:00–16:00")
         parcel.expectedDelivery = "2026-09-07T12:30:00Z"
