@@ -291,43 +291,66 @@ describe('Mondial Relay response normalization', () => {
 });
 
 describe('Mondial Relay web session', () => {
-  it('uses a bounded direct session, verification token, and current JSON endpoint', async () => {
+  it('goes straight to TRAWL without a direct attempt', async () => {
+    const bootstrap = {
+      tier: 3,
+      statusCode: 200,
+      url: TRACKING_PAGE,
+      body: numericByteObject(tokenPage()),
+    };
+    const tracked = {
+      tier: 2,
+      statusCode: 200,
+      url: apiUrl(),
+      html: `<html><body><pre>${escapeHtml(
+        JSON.stringify(syntheticSuccessFixture()),
+      )}</pre></body></html>`,
+    };
     const fetcher = vi.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce(new Response(tokenPage(), {
-        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      .mockResolvedValueOnce(new Response(JSON.stringify(bootstrap), {
+        headers: { 'Content-Type': 'application/json' },
       }))
-      .mockResolvedValueOnce(new Response(JSON.stringify(syntheticSuccessFixture()), {
+      .mockResolvedValueOnce(new Response(JSON.stringify(tracked), {
         headers: { 'Content-Type': 'application/json' },
       }));
 
     await expect(new MondialRelayTracker({
       timeoutMs: 2_000,
       directTimeoutMs: 1_000,
-      trawlUrl: '',
+      trawlUrl: 'http://trawl.internal:8191/v1',
     }).fetch(PUBLIC_CREDENTIAL)).resolves.toMatchObject({
       status: 'out_for_delivery',
       tracking_url: mondialRelayTrackingUrl(PUBLIC_CREDENTIAL),
-      tracking_source: 'structured-web-response',
+      tracking_source: 'browser-session-response',
     });
 
+    // Both requests go to TRAWL; nothing hits Mondial Relay directly.
     expect(fetcher).toHaveBeenCalledTimes(2);
-    expect(String(fetcher.mock.calls[0]![0])).toBe(TRACKING_PAGE);
-    expect(fetcher.mock.calls[0]![1]).toMatchObject({
-      cache: 'no-store',
-      // fetch-cookie performs its bounded redirect handling with manual requests.
-      redirect: 'manual',
+    for (const call of fetcher.mock.calls) {
+      expect(String(call[0])).toBe('http://trawl.internal:8191/scrape');
+    }
+    const bootstrapRequest = JSON.parse(String(fetcher.mock.calls[0]![1]?.body));
+    expect(bootstrapRequest).toEqual({
+      url: TRACKING_PAGE,
+      skipHttp: true,
+      maxTier: 3,
+      maxTimeout: 2_000,
     });
-    expect(String(fetcher.mock.calls[1]![0])).toBe(apiUrl());
-    expect(fetcher.mock.calls[1]![1]).toMatchObject({
-      cache: 'no-store',
-      redirect: 'manual',
+    const trackingRequest = JSON.parse(String(fetcher.mock.calls[1]![1]?.body));
+    expect(trackingRequest).toMatchObject({
+      url: apiUrl(),
+      skipHttp: true,
+      maxTier: 3,
+      maxTimeout: 2_000,
+      headers: {
+        Accept: 'application/json, text/plain, */*',
+        Referer: TRACKING_PAGE,
+        RequestVerificationToken: TEST_TOKEN,
+      },
     });
-    const apiHeaders = new Headers(fetcher.mock.calls[1]![1]?.headers);
-    expect(apiHeaders.get('RequestVerificationToken')).toBe(TEST_TOKEN);
-    expect(apiHeaders.get('Referer')).toBe(TRACKING_PAGE);
   });
 
-  it.each(['numeric-object', 'buffer'] as const)('uses TRAWL %s bodies when direct access is challenged', async (format) => {
+  it.each(['numeric-object', 'buffer'] as const)('uses TRAWL %s bodies for the token/API sequence', async (format) => {
     const bootstrap = {
       tier: 3,
       statusCode: 200,
@@ -345,10 +368,6 @@ describe('Mondial Relay web session', () => {
       )}</pre></body></html>`,
     };
     const fetcher = vi.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce(new Response('<title>Just a moment...</title>', {
-        status: 403,
-        headers: { 'CF-Mitigated': 'challenge' },
-      }))
       .mockResolvedValueOnce(new Response(JSON.stringify(bootstrap), {
         headers: { 'Content-Type': 'application/json' },
       }))
@@ -365,17 +384,17 @@ describe('Mondial Relay web session', () => {
       tracking_source: 'browser-session-response',
     });
 
-    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(String(fetcher.mock.calls[0]![0])).toBe('http://trawl.internal:8191/scrape');
     expect(String(fetcher.mock.calls[1]![0])).toBe('http://trawl.internal:8191/scrape');
-    expect(String(fetcher.mock.calls[2]![0])).toBe('http://trawl.internal:8191/scrape');
-    const bootstrapRequest = JSON.parse(String(fetcher.mock.calls[1]![1]?.body));
+    const bootstrapRequest = JSON.parse(String(fetcher.mock.calls[0]![1]?.body));
     expect(bootstrapRequest).toEqual({
       url: TRACKING_PAGE,
       skipHttp: true,
       maxTier: 3,
       maxTimeout: 2_000,
     });
-    const trackingRequest = JSON.parse(String(fetcher.mock.calls[2]![1]?.body));
+    const trackingRequest = JSON.parse(String(fetcher.mock.calls[1]![1]?.body));
     expect(trackingRequest).toMatchObject({
       url: apiUrl(),
       skipHttp: true,
@@ -389,20 +408,17 @@ describe('Mondial Relay web session', () => {
     });
   });
 
-  it('fails closed when no browser fallback exists or TRAWL changes shipment', async () => {
-    const challenge = (): Response => new Response('<title>Just a moment...</title>', {
-      status: 403,
-      headers: { 'CF-Mitigated': 'challenge' },
-    });
-    const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(challenge());
+  it('fails closed when no browser session exists or TRAWL changes shipment', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch')
+      .mockRejectedValue(new Error('must not fetch directly'));
     await expect(new MondialRelayTracker({
       timeoutMs: 2_000,
       directTimeoutMs: 1_000,
       trawlUrl: '',
     }).fetch(PUBLIC_CREDENTIAL)).rejects.toThrow('configure FLARESOLVERR_URL');
+    expect(fetcher).not.toHaveBeenCalled();
 
     fetcher
-      .mockResolvedValueOnce(challenge())
       .mockResolvedValueOnce(new Response(JSON.stringify({
         tier: 3,
         statusCode: 200,
@@ -450,10 +466,25 @@ describe('documented Mondial Relay 26-digit label barcode', () => {
   });
   it('fetches the public alias and accepts only its canonical shipment', async () => {
     const fetcher = vi.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce(new Response(tokenPage()))
-      .mockResolvedValueOnce(Response.json(syntheticSuccessFixture('12345678')));
-    const result = await new MondialRelayTracker().fetch(barcode);
-    expect(String(fetcher.mock.calls[1][0])).toBe(apiUrl('121234567801', ''));
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        tier: 3,
+        statusCode: 200,
+        url: TRACKING_PAGE,
+        body: numericByteObject(tokenPage()),
+      }), { headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        tier: 3,
+        statusCode: 200,
+        url: apiUrl('121234567801', ''),
+        body: numericByteObject(JSON.stringify(syntheticSuccessFixture('12345678'))),
+      }), { headers: { 'Content-Type': 'application/json' } }));
+    const result = await new MondialRelayTracker({
+      trawlUrl: 'http://trawl.internal:8191/scrape',
+    }).fetch(barcode);
+    expect(String(fetcher.mock.calls[1]![0])).toBe('http://trawl.internal:8191/scrape');
+    expect(JSON.parse(String(fetcher.mock.calls[1]![1]?.body))).toMatchObject({
+      url: apiUrl('121234567801', ''),
+    });
     expect(result.tracking_url).toBe(`${TRACKING_PAGE}?numeroExpedition=121234567801`);
   });
 });

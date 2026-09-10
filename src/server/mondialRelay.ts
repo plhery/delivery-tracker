@@ -1,17 +1,14 @@
 import 'server-only';
-import { measureScrape, recoverScrape } from './scrapeMonitoring';
+import { measureScrape } from './scrapeMonitoring';
 
 import { isValidMondialRelayBarcode } from '../lib/mondialRelayBarcode';
 
 import { load } from 'cheerio';
-import makeFetchCookie from 'fetch-cookie';
 import { DateTime } from 'luxon';
-import { CookieJar } from 'tough-cookie';
 import {
   decodeText,
   fetchBounded,
   parseJsonBytes,
-  UpstreamHttpError,
 } from './boundedFetch';
 import type { CarrierEvent, CarrierResult, CarrierStatus } from './carrierResult';
 import { isRecord, type JsonObject } from './types';
@@ -29,9 +26,6 @@ const MAX_DIRECT_BYTES = 2_000_000;
 const MAX_TRAWL_BYTES = 10_000_000;
 const DEFAULT_TIMEOUT_MS = 90_000;
 const DEFAULT_DIRECT_TIMEOUT_MS = 20_000;
-const USER_AGENT =
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
-  + 'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36';
 
 interface MondialRelayCredential {
   shipment: string;
@@ -205,12 +199,6 @@ function verificationToken(html: string): string {
   return token;
 }
 
-function challengePage(status: number, html: string, headers: Headers): boolean {
-  return [401, 403, 419, 429].includes(status)
-    || headers.get('cf-mitigated') === 'challenge'
-    || /Just a moment|Enable JavaScript and cookies|cf-chl-/i.test(html);
-}
-
 function eventTime(value: unknown): { value: string; timestamp: number } | null {
   const raw = text(value, 64);
   if (!raw) return null;
@@ -360,70 +348,6 @@ function parseTrackingResponse(payload: unknown, credential: MondialRelayCredent
   };
 }
 
-class MondialRelayHttpSession {
-  readonly jar = new CookieJar();
-  readonly fetcher: typeof fetch;
-
-  constructor(readonly timeoutMs: number) {
-    this.fetcher = makeFetchCookie(fetch, this.jar);
-  }
-
-  async page(): Promise<string> {
-    const result = await fetchBounded(TRACKING_PAGE, {
-      headers: {
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'fr-FR,fr;q=0.9',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': USER_AGENT,
-      },
-    }, {
-      provider: 'Mondial Relay tracking page',
-      timeoutMs: this.timeoutMs,
-      maxBytes: MAX_DIRECT_BYTES,
-      redirect: 'follow',
-      allowHttpError: true,
-      fetcher: this.fetcher,
-    });
-    const html = decodeText(result.bytes);
-    if (challengePage(result.response.status, html, result.response.headers)) {
-      throw new MondialRelaySessionRejected('Mondial Relay returned a browser challenge');
-    }
-    if (!result.response.ok) {
-      throw new UpstreamHttpError('Mondial Relay tracking page', result.response.status);
-    }
-    return html;
-  }
-
-  async payload(credential: MondialRelayCredential, token: string): Promise<unknown> {
-    const url = trackingApiUrl(credential);
-    const result = await fetchBounded(url, {
-      headers: {
-        Accept: 'application/json, text/plain, */*',
-        'Accept-Language': 'fr-FR,fr;q=0.9',
-        Referer: TRACKING_PAGE,
-        RequestVerificationToken: token,
-        'User-Agent': USER_AGENT,
-      },
-    }, {
-      provider: 'Mondial Relay tracking API',
-      timeoutMs: this.timeoutMs,
-      maxBytes: MAX_DIRECT_BYTES,
-      redirect: 'error',
-      allowHttpError: true,
-      fetcher: this.fetcher,
-    });
-    const responseText = decodeText(result.bytes);
-    if (challengePage(result.response.status, responseText, result.response.headers)) {
-      throw new MondialRelaySessionRejected('Mondial Relay rejected the API session');
-    }
-    if (result.response.status === 404) throw new MondialRelayTrackingError();
-    if (!result.response.ok) {
-      throw new UpstreamHttpError('Mondial Relay tracking API', result.response.status);
-    }
-    return parseJsonBytes(result.bytes, 'Mondial Relay');
-  }
-}
-
 function trawlBody(value: JsonObject): string {
   if (typeof value.body === 'string') return value.body;
   const rawBody = value.body;
@@ -529,26 +453,17 @@ export class MondialRelayTracker {
   }
 
   private async fetchLocked(credential: MondialRelayCredential): Promise<CarrierResult> {
-    const direct = new MondialRelayHttpSession(this.directTimeoutMs);
-    let directError: unknown;
-    try {
-      return await measureScrape('mondial-relay', 'direct', async () => {
-        const token = verificationToken(await direct.page());
-        return this.finish(await direct.payload(credential, token), credential, 'structured-web-response');
-      });
-    } catch (error) {
-      if (!(error instanceof MondialRelaySessionRejected)) throw error;
-      directError = error;
-    }
-
+    // Cloudflare blocks every non-browser client with an HTTP 403 WAF block
+    // (verified from multiple networks, 2026-09-10), so a direct attempt only
+    // burns time and emits a transport_fallback warning on each sync.
+    // Go straight to the TRAWL browser session.
     if (!this.trawlUrl) {
       throw new RangeError(
         'Mondial Relay challenged direct tracking; configure FLARESOLVERR_URL for browser fallback',
-        { cause: directError },
       );
     }
 
-    return recoverScrape('mondial-relay', 'trawl', directError, async () => {
+    return measureScrape('mondial-relay', 'trawl', async () => {
       const bootstrap = await this.trawlRequest({
         url: TRACKING_PAGE,
         skipHttp: true,
