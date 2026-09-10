@@ -206,6 +206,15 @@ export function displayedCarrierId(
   return parcel.originalCarrier ?? activeTrackingCarrierId(parcel);
 }
 
+/** Distinct numbers in delivery-first order, including carriers without a website. */
+export function parcelTrackingNumbers(parcel: Pick<Parcel,
+  'carrier' | 'trackingNumber' | 'trackingSource' | 'activeTrackingNumber' | 'originalCarrier' | 'originalTrackingNumber'
+>): { carrier: CarrierId; number: string }[] {
+  const delivery = { carrier: activeTrackingCarrierId(parcel), number: parcel.activeTrackingNumber ?? parcel.trackingNumber };
+  const original = { carrier: parcel.originalCarrier ?? parcel.carrier, number: parcel.originalTrackingNumber ?? parcel.trackingNumber };
+  return delivery.number === original.number ? [delivery] : [delivery, original];
+}
+
 /** Primary delivery tracker first, followed by the earlier international journey. */
 export function parcelTrackingLinks(
   parcel: Pick<

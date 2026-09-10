@@ -503,6 +503,7 @@ describe('App', () => {
 
   it('shows one combined parcel with GLS branding and the Swiss Post link first', async () => {
     const user = userEvent.setup();
+    const writeText = vi.spyOn(window.navigator.clipboard, 'writeText');
     const parcel: ParcelWithEvents = {
       id: 'linked-parcel', trackingNumber: '993412345612345678', label: 'Perfume / Surprise',
       carrier: 'swiss-post', originalCarrier: 'gls-de', originalTrackingNumber: '12345678901',
@@ -513,6 +514,7 @@ describe('App', () => {
       rename: vi.fn(), remove: vi.fn(), refresh: vi.fn().mockResolvedValue([parcel]),
     };
     renderApp(repo);
+    expect(await screen.findByText('Delivery with Swiss Post')).toBeVisible();
     const card = await screen.findByRole('button', { name: /Perfume \/ Surprise/ });
     expect(card.closest('[data-carrier]')).toHaveAttribute('data-carrier', 'gls-de');
     await user.click(card);
@@ -526,6 +528,15 @@ describe('App', () => {
     expect(links[1]).toHaveTextContent('GLS');
     expect(links[1]).toHaveTextContent('Earlier journey');
     expect(links[1]).toHaveAttribute('href', expect.stringContaining(parcel.originalTrackingNumber!));
+    const copyButtons = within(detail).getAllByRole('button', { name: /Copy tracking number/ });
+    expect(copyButtons).toHaveLength(2);
+    await user.click(copyButtons[0]);
+    expect(writeText).toHaveBeenLastCalledWith(parcel.trackingNumber);
+    expect(copyButtons[0]).toHaveTextContent('Copied');
+    await user.click(copyButtons[1]);
+    expect(writeText).toHaveBeenLastCalledWith(parcel.originalTrackingNumber);
+    expect(copyButtons[1]).toHaveTextContent('Copied');
+    expect(copyButtons[0]).not.toHaveTextContent('Copied');
   });
 
   it('adds a parcel through the bottom sheet', async () => {

@@ -98,6 +98,12 @@ extension Parcel {
     var isReturned: Bool { currentStage == .returned }
     var isActive: Bool { !isArchived && !(currentStage?.isFinal ?? false) }
 
+    var trackingNumbers: [(carrier: CarrierID, number: String)] {
+        let delivery = (carrier: activeTrackingCarrier, number: carrierData?.activeTrackingNumber?.nonEmpty ?? trackingNumber)
+        let original = (carrier: carrierData?.originalCarrier ?? carrier, number: carrierData?.originalTrackingNumber?.nonEmpty ?? trackingNumber)
+        return delivery.number == original.number ? [delivery] : [delivery, original]
+    }
+
     var displayedCarrier: CarrierID { carrierData?.originalCarrier ?? activeTrackingCarrier }
 
     var activeTrackingCarrier: CarrierID {

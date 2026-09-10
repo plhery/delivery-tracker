@@ -13,6 +13,7 @@ import {
   isValidS10TrackingNumber,
   normalizeTrackingNumber,
   parcelTrackingLinks,
+  parcelTrackingNumbers,
   parseTrackingInput,
   supportsSwissPostHandoff,
   tracksAutomatically,
@@ -667,5 +668,19 @@ describe('carrier metadata', () => {
     expect(tracksAutomatically('relais-colis')).toBe(true);
     expect(tracksAutomatically('india-post')).toBe(true);
     expect(carrierInfo('planzer')).toBe(CARRIERS.planzer);
+  });
+});
+
+describe('parcelTrackingNumbers', () => {
+  it('prioritizes the domestic number while retaining the original reference', () => {
+    expect(parcelTrackingNumbers({ carrier: 'gls-de', trackingNumber: '123456789011',
+      originalCarrier: 'gls-de', originalTrackingNumber: '123456789011',
+      trackingSource: 'swiss-post', activeTrackingNumber: '990000000000000001',
+    })).toEqual([{ carrier: 'swiss-post', number: '990000000000000001' }, { carrier: 'gls-de', number: '123456789011' }]);
+  });
+  it('shows shared handoff numbers only once', () => {
+    expect(parcelTrackingNumbers({ carrier: 'dhl', trackingNumber: 'LF123456785DE',
+      originalCarrier: 'dhl', originalTrackingNumber: 'LF123456785DE', trackingSource: 'swiss-post',
+    })).toEqual([{ carrier: 'swiss-post', number: 'LF123456785DE' }]);
   });
 });

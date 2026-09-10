@@ -30,6 +30,7 @@ final class CarrierCatalogTests: XCTestCase {
             notificationsMuted: false
         )
         let links = catalog.trackingLinks(for: parcel, language: .en)
+        XCTAssertEqual(parcel.trackingNumbers.count, 1)
         XCTAssertEqual(parcel.displayedCarrier, .dhl)
         XCTAssertEqual(links.map(\.carrier), [.swissPost, .dhl])
         XCTAssertEqual(links[0].url.host, "service.post.ch")
@@ -43,6 +44,8 @@ final class CarrierCatalogTests: XCTestCase {
             carrierData: CarrierData(activeTrackingCarrier: .swissPost, activeTrackingNumber: "990000000000000001",
                 originalCarrier: .glsDe, originalTrackingNumber: "123456789011"), notificationsMuted: false
         )
+        XCTAssertEqual(parcel.trackingNumbers.map(\.number), ["990000000000000001", "123456789011"])
+        XCTAssertEqual(parcel.trackingNumbers.map(\.carrier), [.swissPost, .glsDe])
         let links = catalog.trackingLinks(for: parcel, language: .en)
         XCTAssertEqual(links.map(\.carrier), [.swissPost, .glsDe])
         XCTAssertTrue(links[0].url.absoluteString.contains("990000000000000001"))

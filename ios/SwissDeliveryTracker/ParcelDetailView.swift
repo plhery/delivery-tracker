@@ -13,7 +13,7 @@ struct ParcelDetailView: View {
     @State private var showingFullJourney = true
     @State private var showingTitleEditor = false
     @State private var editedTitle = ""
-    @State private var copied = false
+    @State private var copiedNumber: String?
     @State private var working = false
     @State private var errorMessage: String?
     @State private var showingCarrierEditor = false
@@ -61,7 +61,7 @@ struct ParcelDetailView: View {
                             showingTitleEditor = true
                         }
                         Button(localizer.text("detail.copyTracking"), systemImage: "doc.on.doc") {
-                            copy(parcel.trackingNumber)
+                            copy(parcel.trackingNumbers[0].number)
                         }
                         Button(localizer.text("detail.changeCarrier"), systemImage: "truck.box") {
                             showingCarrierEditor = true
@@ -210,21 +210,28 @@ struct ParcelDetailView: View {
 
     private func shipmentIdentity(_ parcel: Parcel, links: [ParcelTrackingLink], tint: Color) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .center, spacing: 8) {
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 8) { trackingLabel; trackingNumber(parcel) }
-                    VStack(alignment: .leading, spacing: 4) { trackingLabel; trackingNumber(parcel) }
+            ForEach(parcel.trackingNumbers, id: \.number) { entry in
+                HStack(alignment: .center, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(parcel.trackingNumbers.count > 1
+                            ? catalog.info(for: entry.carrier, language: localizer.language).displayName
+                            : localizer.text("detail.trackingNumber"))
+                            .font(.caption2).foregroundStyle(.secondary)
+                        Text(CarrierCatalog.format(entry.number))
+                            .font(.system(.caption, design: .monospaced))
+                            .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
+                    }
+                    Spacer(minLength: 0)
+                    Button { copy(entry.number) } label: {
+                        Image(systemName: copiedNumber == entry.number ? "checkmark" : "doc.on.doc")
+                            .font(.system(size: 14, weight: .regular))
+                            .frame(width: 44, height: 44).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain).foregroundStyle(.secondary)
+                    .accessibilityLabel(localizer.text(copiedNumber == entry.number ? "detail.copied" : "detail.copyTracking")
+                        + (parcel.trackingNumbers.count > 1 ? " — " + catalog.info(for: entry.carrier, language: localizer.language).displayName : ""))
                 }
-                Spacer(minLength: 0)
-                Button { copy(parcel.trackingNumber) } label: {
-                    Image(systemName: copied ? "checkmark" : "doc.on.doc")
-                        .font(.system(size: 14, weight: .regular))
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .accessibilityLabel(localizer.text(copied ? "detail.copied" : "detail.copyTracking"))
             }
             if links.count <= 1 { trackingSources(links, tint: tint) }
         }
@@ -277,18 +284,6 @@ struct ParcelDetailView: View {
                 .simultaneousGesture(TapGesture().onEnded { DeliveryAnalytics.shared.action("parcel-carrier-link") })
             }
         }
-    }
-
-    private var trackingLabel: some View {
-        Text(localizer.text("detail.trackingNumber"))
-            .font(.caption2).foregroundStyle(.secondary)
-    }
-
-    private func trackingNumber(_ parcel: Parcel) -> some View {
-        Text(CarrierCatalog.format(parcel.trackingNumber))
-            .font(.system(.caption, design: .monospaced))
-            .fixedSize(horizontal: false, vertical: true)
-            .textSelection(.enabled)
     }
 
     private func syncStatus(_ parcel: Parcel, tint: Color) -> some View {
@@ -397,10 +392,10 @@ struct ParcelDetailView: View {
         DeliveryAnalytics.shared.action("parcel-copy-tracking")
         UIPasteboard.general.string = value
         UINotificationFeedbackGenerator().notificationOccurred(.success)
-        copied = true
+        copiedNumber = value
         Task {
             try? await Task.sleep(for: .seconds(2))
-            copied = false
+            if copiedNumber == value { copiedNumber = nil }
         }
     }
 
