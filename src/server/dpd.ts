@@ -1,4 +1,5 @@
 import 'server-only';
+import { measureScrape, recoverScrape } from './scrapeMonitoring';
 
 import { randomBytes } from 'node:crypto';
 import { load } from 'cheerio';
@@ -327,11 +328,12 @@ export class DPDTracker {
     let apiError: unknown;
     let result: CarrierResult;
     try {
-      result = await this.apiFetch(trackingNumber, resolvedPostcode);
+      result = await measureScrape('dpd', 'direct', () => this.apiFetch(trackingNumber, resolvedPostcode));
     } catch (error) {
       if (!(error instanceof DPDAPIError || error instanceof RangeError)) throw error;
       apiError = error;
-      result = await this.pageFetch(trackingNumber, Boolean(apiError));
+      result = await recoverScrape('dpd', this.flaresolverrUrl ? 'trawl' : 'page', error,
+        () => this.pageFetch(trackingNumber, Boolean(apiError)));
     }
     result.tracking_url = dpdTrackingUrl(trackingNumber);
     return result;

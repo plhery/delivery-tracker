@@ -7,7 +7,7 @@ import { reportRoutingEvent } from './observability';
 import { UpstreamHttpError } from './boundedFetch';
 
 vi.mock('./universalBrowser', () => ({ scrapeUniversalPage: vi.fn() }));
-vi.mock('./observability', () => ({ reportRoutingEvent: vi.fn() }));
+vi.mock('./observability', async importOriginal => ({ ...await importOriginal<typeof import('./observability')>(), reportRoutingEvent: vi.fn() }));
 const number = 'ZZ12345678900';
 const history = { data: { tracking_number: number,
   events: [{ timestamp: '2026-09-10T10:00:00+02:00', status: 'Delivered', dispatch_code_id: 7 }] } };
@@ -52,11 +52,10 @@ describe('Ship24 anonymous HTTP tracking', () => {
     const { tracker, fetcher } = fixture();
     fetcher.mockResolvedValueOnce(new Response('rejected', { status: 403 }));
     vi.mocked(scrapeUniversalPage).mockImplementationOnce(async () => {
-      expect(reportRoutingEvent).toHaveBeenCalledWith('provider_failed', expect.objectContaining({ provider: 'Ship24 HTTP', category: 'verification' }));
+      expect(reportRoutingEvent).toHaveBeenCalledWith('transport_fallback', expect.objectContaining({ provider: 'Ship24', category: 'browser', error: expect.objectContaining({ status: 403 }) }));
       return { events: [], status: 'delivered' };
     });
     await expect(tracker.fetch(number)).resolves.toMatchObject({ tracking_source: 'browser-session-response' });
-    expect(reportRoutingEvent).toHaveBeenCalledWith('provider_recovered', expect.objectContaining({ provider: 'Ship24 HTTP' }));
     expect(fetcher).toHaveBeenCalledOnce();
   });
   it.each([429, 503])('preserves HTTP %i and Retry-After without browser amplification', async status => {
@@ -71,7 +70,7 @@ describe('Ship24 anonymous HTTP tracking', () => {
     fetcher.mockResolvedValueOnce(reply({ data: { ...history.data, tracking_number: 'OTHER123' } }));
     vi.mocked(scrapeUniversalPage).mockRejectedValueOnce(new UpstreamHttpError('Ship24', 403));
     await expect(tracker.fetch(number)).rejects.toMatchObject({ status: 403 });
-    expect(reportRoutingEvent).toHaveBeenCalledWith('provider_failed', expect.objectContaining({ category: 'schema' }));
+    expect(reportRoutingEvent).toHaveBeenCalledWith('transport_fallback', expect.objectContaining({ category: 'browser', errorClass: 'TypeError' }));
   });
   it('validates inputs before network access', async () => {
     const { client, fetcher } = fixture();

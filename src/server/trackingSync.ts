@@ -50,6 +50,7 @@ import { isRecord, type JsonObject } from './types';
 import { fetchUpstreamCarrier } from './upstreamAdapters';
 import { UPSTracker } from './ups';
 import { UniversalTracker } from './universalTracking';
+import { measureScrape } from './scrapeMonitoring';
 import type { UniversalSource } from './universalTrackingResult';
 import { RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
 
@@ -134,6 +135,12 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     trackingNumber: string,
     trackingUrl: string | null,
     dpdPostcode?: string | null,
+  ): Promise<CarrierResult> {
+    return measureScrape(carrierId, 'total', () => this.fetchCarrier(carrierId, trackingNumber, trackingUrl, dpdPostcode));
+  }
+
+  private async fetchCarrier(
+    carrierId: string, trackingNumber: string, trackingUrl: string | null, dpdPostcode?: string | null,
   ): Promise<CarrierResult> {
     const adapter = carrierAdapter(carrierId);
     let result: CarrierResult;

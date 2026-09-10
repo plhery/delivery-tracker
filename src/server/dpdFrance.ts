@@ -1,4 +1,5 @@
 import 'server-only';
+import { measureScrape, recoverScrape } from './scrapeMonitoring';
 
 import { load } from 'cheerio';
 import { DateTime } from 'luxon';
@@ -280,7 +281,7 @@ export class DPDFranceTracker {
     const url = dpdFranceTrackingUrl(number);
     let html: string;
     try {
-      html = await this.directGet(url);
+      html = await measureScrape('dpd-fr', 'direct', () => this.directGet(url));
     } catch (error) {
       if (!(error instanceof DPDFranceChallengeError)) throw error;
       if (!this.trawlUrl) {
@@ -289,12 +290,12 @@ export class DPDFranceTracker {
           { cause: error },
         );
       }
-      html = (await this.trawlRequest({
+      html = (await recoverScrape('dpd-fr', 'trawl', error, () => this.trawlRequest({
         url,
         skipHttp: true,
         maxTier: 3,
         maxTimeout: this.timeoutMs,
-      })).html;
+      }))).html;
     }
     const result = parseDPDFranceTrackingHtml(html, number);
     result.tracking_url = url;

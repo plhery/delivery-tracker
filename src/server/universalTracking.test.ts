@@ -96,9 +96,9 @@ describe('universal public tracking', () => {
     expect(parseParcelsAppHtml(html + '<p>Delivered 2026-09-01</p>', number)).toMatchObject({ current_stage: 'registered', last_update: '2026-08-18T03:04:00.000Z' });
   });
 
-  it('uses ParcelsApp first and stops after success', async () => {
+  it('uses ParcelsApp after Ship24 fails and stops after success', async () => {
     const fetcher = vi.fn().mockResolvedValue(browserResponse('ParcelsApp', parcels));
-    const result = await new UniversalTracker({ trawlUrl: 'http://browser.test/v1', fetcher }).fetch(number);
+    const result = await new UniversalTracker({ trawlUrl: 'http://browser.test/v1', fetcher, browserLookup: vi.fn().mockRejectedValue(new Error('Unavailable')) }).fetch(number);
     expect(result.current_stage).toBe('registered');
     expect(result.tracking_provider).toBe('ParcelsApp');
     expect(fetcher).toHaveBeenCalledOnce();
@@ -110,7 +110,7 @@ describe('universal public tracking', () => {
   it('falls through an unrelated ParcelsApp result to 17TRACK', async () => {
     const fetcher = vi.fn().mockResolvedValueOnce(browserResponse('ParcelsApp', parcels, { html: identity('OTHER123') }))
       .mockResolvedValueOnce(browserResponse('17TRACK', track17()));
-    const result = await new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher }).fetch(number);
+    const result = await new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher, browserLookup: vi.fn().mockRejectedValue(new Error('Unavailable')) }).fetch(number);
     expect(result.tracking_provider).toBe('17TRACK');
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
@@ -124,26 +124,26 @@ describe('universal public tracking', () => {
   it('retains provider failures for Sentry while keeping the lookup summary readable', async () => {
     const originalError = new Error('SECRET upstream cookie');
     const fetcher = vi.fn().mockRejectedValue(originalError);
-    const error = await new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher }).fetch(number).catch((e: unknown) => e);
+    const error = await new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher, browserLookup: vi.fn().mockRejectedValue(new Error('Unavailable')) }).fetch(number).catch((e: unknown) => e);
     expect(error).toMatchObject({ name: 'UniversalTrackingError' });
     expect(String(error)).not.toContain('SECRET');
     expect(error).toBeInstanceOf(AggregateError);
     expect((error as AggregateError).errors).toHaveLength(3);
-    for (const providerError of (error as AggregateError).errors.slice(0, 2)) {
+    for (const providerError of (error as AggregateError).errors.slice(1)) {
       expect(providerError.cause).toBe(originalError);
     }
     expect(isUnannouncedTrackingError(error)).toBe(false);
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
-  it('tries Ship24 then Postal Ninja after the earlier providers fail', async () => {
+  it('tries Postal Ninja before 17TRACK when Ship24 and ParcelsApp fail', async () => {
     const fetcher = vi.fn().mockRejectedValue(new Error('Unavailable'));
     const browserLookup = vi.fn().mockRejectedValueOnce(new Error('Challenge'))
       .mockResolvedValueOnce({ status: 'delivered', current_stage: 'delivered', tracking_provider: 'Postal Ninja' });
     const result = await new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher, browserLookup, enablePostalNinja: true }).fetch(number);
     expect(result.tracking_provider).toBe('Postal Ninja');
     expect(browserLookup.mock.calls).toEqual([['Ship24', number], ['Postal Ninja', number]]);
-    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher).toHaveBeenCalledOnce();
   });
 
   it('can use the form scrapers without TRAWL and stops on Ship24 success', async () => {

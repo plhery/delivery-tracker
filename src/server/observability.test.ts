@@ -15,7 +15,7 @@ import { DHLEcommerceSessionError } from './dhlEcommerce';
 afterEach(() => vi.restoreAllMocks());
 
 describe('structured operational logs', () => {
-  it('retains tracking numbers while dropping other private fields from structured logs', () => {
+  it('retains supplied diagnostic fields in structured logs', () => {
     const output = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     logOperationalEvent('tracking_sync_step', {
@@ -35,10 +35,10 @@ describe('structured operational logs', () => {
       carrier: 'dpd-fr',
       tracking_number: '250123456789012',
     });
-    expect(payload).not.toHaveProperty('package_id');
-    expect(payload).not.toHaveProperty('status_text');
-    expect(payload).not.toHaveProperty('tracking_url');
-    expect(payload).not.toHaveProperty('authorization');
+    expect(payload).toHaveProperty('package_id');
+    expect(payload).toHaveProperty('status_text');
+    expect(payload).toHaveProperty('tracking_url');
+    expect(payload).toHaveProperty('authorization');
   });
 });
 

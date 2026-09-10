@@ -8,8 +8,9 @@ retain it through their cause chain too.
 The context contains the content type, server header, request/correlation IDs,
 Retry-After in milliseconds when available, recognized body signatures and error
 codes, and the actual textual error-response excerpt. Body excerpts are authorized
-for troubleshooting and may contain tracking identifiers. Cookie and authorization
-headers are excluded. No response is copied wholesale into the error object.
+for troubleshooting and may contain tracking identifiers. All response headers are retained, including session/authentication headers, under the project's Sentry diagnostic policy. The error also retains the requested URL, method,
+headers, textual request body and timeout. Network failures retain request context
+and their original cause. No field-based redaction is applied.
 
 Inspection stops after 8 KiB or 200 ms. `body_read` distinguishes complete, empty,
 truncated, timed-out, unreadable and skipped binary bodies. Partial excerpts remain

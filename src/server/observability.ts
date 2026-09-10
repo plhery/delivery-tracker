@@ -5,8 +5,6 @@ import type { JsonObject } from './types';
 import { UpstreamHttpError } from './boundedFetch';
 import type { UpstreamHttpDiagnostics } from './upstreamHttpDiagnostics';
 
-const PRIVATE_LOG_KEY = /(?:tracking|package|parcel|user|label|description|location|status_text|url|token|cookie|authorization|secret|password)/i;
-
 let initialized = false;
 
 export interface OperationalContext {
@@ -147,7 +145,7 @@ export function initObservability(): boolean {
     tracesSampleRate: parseSampleRate(process.env.SENTRY_TRACES_SAMPLE_RATE),
     integrations: [
       ...Sentry.getDefaultIntegrationsWithoutPerformance(),
-      Sentry.extraErrorDataIntegration(),
+      Sentry.extraErrorDataIntegration({ depth: 8 }),
     ],
   });
   initialized = true;
@@ -161,6 +159,7 @@ function applyContext(
   errorMetadata: OperationalErrorMetadata = {},
 ): void {
   applyUpstreamHttpContext(scope, errorMetadata);
+  scope.setContext('operation', { ...context });
   const tags: Record<string, string | undefined> = {
     anomaly_code: boundedText(context.anomalyCode, 100),
     attempt_id: boundedText(context.attemptId, 100),
@@ -266,7 +265,7 @@ export function reportRoutingEvent(code: string, context: {
       upstream_content_type: metadata.upstreamHttp?.content_type,
       upstream_body_read: metadata.upstreamHttp?.body_read,
       upstream_body_signals: metadata.upstreamHttp?.body_signals.join(','),
-    }, code === 'provider_failed' ? 'warning' : 'info');
+    }, ['provider_failed', 'transport_fallback'].includes(code) ? 'warning' : 'info');
     if (!initObservability()) return;
     Sentry.withScope((scope) => {
       applyContext(scope, { component: 'tracking-routing', operation: code,
@@ -280,11 +279,18 @@ export function reportRoutingEvent(code: string, context: {
       if (metadata.providerCode !== undefined) scope.setTag('provider_code', metadata.providerCode);
       scope.setFingerprint(['delivery-tracker', 'tracking-routing', code,
         context.provider, context.category ?? 'none']);
-      const alert = ['provider_failed', 'all_providers_unavailable', 'carrier_mismatch_confirmed',
+      const alert = ['provider_failed', 'transport_fallback', 'all_providers_unavailable', 'carrier_mismatch_confirmed',
         'direct_support_opportunity', 'carrier_input_required', 'fresher_provider_found',
         'health_store_unavailable', 'carrier_coverage_discovered'].includes(code);
       scope.setLevel(alert ? 'warning' : 'info');
-      if (alert || code === 'provider_recovered' || code === 'carrier_auto_swapped') Sentry.captureMessage(`Tracking routing: ${code}`);
+      if (alert || code === 'provider_recovered' || code === 'carrier_auto_swapped') {
+        const message = `Tracking routing: ${code}`;
+        if (context.error !== undefined) {
+          // Keep stack, causes and custom error fields even if recovery succeeds.
+          scope.addEventProcessor(event => ({ ...event, message }));
+          Sentry.captureException(context.error);
+        } else Sentry.captureMessage(message);
+      }
       else Sentry.addBreadcrumb({ category: 'tracking-routing', message: code, data: { provider: context.provider } });
     });
   } catch {
@@ -292,7 +298,7 @@ export function reportRoutingEvent(code: string, context: {
   }
 }
 
-function sanitizeLogValue(value: unknown): string | number | boolean | null | undefined {
+function boundedLogValue(value: unknown): string | number | boolean | null | undefined {
   if (value === null || typeof value === 'boolean') return value;
   if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
   if (typeof value === 'string') return value.slice(0, 500);
@@ -306,8 +312,7 @@ export function logOperationalEvent(
 ): void {
   const safeFields = Object.fromEntries(
     Object.entries(fields)
-      .filter(([key]) => key === 'tracking_number' || !PRIVATE_LOG_KEY.test(key))
-      .map(([key, value]) => [key, sanitizeLogValue(value)] as const)
+      .map(([key, value]) => [key, boundedLogValue(value)] as const)
       .filter((entry): entry is [string, string | number | boolean | null] => entry[1] !== undefined),
   );
   const payload = JSON.stringify({

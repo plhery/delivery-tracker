@@ -17,6 +17,9 @@ tag on errors, anomalies, and audit-write failures. These diagnostics retain the
 number even after the parcel and its database audit rows are deleted, subject to
 the configured log and Sentry retention. Postgres retains the complete refresh audit.
 
+Per-provider latency and hidden HTTP-to-browser recoveries are documented in
+[scraper monitoring](scraper-monitoring.md), with the live Sentry dashboard.
+
 ## What is recorded
 
 `public.tracking_sync_attempts` stores one row per parcel check. It records the

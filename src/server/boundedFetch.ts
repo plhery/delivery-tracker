@@ -4,6 +4,24 @@ const DEFAULT_MAX_BYTES = 2_000_000;
 const TRANSIENT_HTTP_STATUSES = new Set([429, 502, 503, 504]);
 const DEFAULT_RETRY_DELAY_MS = 1_000;
 const MAX_RETRY_DELAY_MS = 60_000;
+const MAX_DIAGNOSTIC_BODY = 8_192;
+
+interface UpstreamRequestDiagnostics {
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  body?: string;
+  body_truncated?: boolean;
+  timeout_ms: number;
+}
+
+function requestDiagnostics(url: string | URL, init: RequestInit, timeoutMs: number): UpstreamRequestDiagnostics {
+  const body = typeof init.body === 'string' ? init.body
+    : init.body instanceof URLSearchParams ? init.body.toString() : undefined;
+  return { url: String(url), method: init.method ?? 'GET', headers: Object.fromEntries(new Headers(init.headers)),
+    body: body?.slice(0, MAX_DIAGNOSTIC_BODY), body_truncated: body === undefined ? undefined : body.length > MAX_DIAGNOSTIC_BODY,
+    timeout_ms: timeoutMs };
+}
 
 function retryDelay(header: string | null, status: number): number | null {
   // A rate limit without a retry window needs a later check, not another
@@ -29,6 +47,7 @@ export class UpstreamHttpError extends Error {
     readonly status: number,
     readonly retryAfterMs?: number,
     readonly diagnostics?: UpstreamHttpDiagnostics,
+    readonly request?: UpstreamRequestDiagnostics,
   ) {
     super(`${provider} returned HTTP ${status}`);
     this.name = 'UpstreamHttpError';
@@ -36,7 +55,7 @@ export class UpstreamHttpError extends Error {
 }
 
 export class UpstreamNetworkError extends Error {
-  constructor(readonly provider: string, cause: unknown) {
+  constructor(readonly provider: string, cause: unknown, readonly request?: UpstreamRequestDiagnostics) {
     super(`${provider} is unreachable`, { cause });
     this.name = 'UpstreamNetworkError';
   }
@@ -79,7 +98,7 @@ export async function fetchBounded(
         await waitBeforeRetry(DEFAULT_RETRY_DELAY_MS);
         continue;
       }
-      throw new UpstreamNetworkError(options.provider, error);
+      throw new UpstreamNetworkError(options.provider, error, requestDiagnostics(url, init, options.timeoutMs ?? 15_000));
     }
     if (response.ok || options.allowHttpError) break;
     const delay = retryDelay(response.headers.get('retry-after'), response.status);
@@ -95,7 +114,8 @@ export async function fetchBounded(
     // Diagnostic failure must never replace the original HTTP status.
     const diagnostics = await readUpstreamHttpDiagnostics(response).catch(() => undefined);
     throw new UpstreamHttpError(options.provider, response.status,
-      Number.isFinite(retryAfterMs) ? Math.max(0, retryAfterMs!) : undefined, diagnostics);
+      Number.isFinite(retryAfterMs) ? Math.max(0, retryAfterMs!) : undefined, diagnostics,
+      requestDiagnostics(url, init, options.timeoutMs ?? 15_000));
   }
 
   const contentLength = Number(response.headers.get('content-length'));
@@ -111,7 +131,7 @@ export async function fetchBounded(
   try {
     while (true) {
       const { done, value } = await reader.read().catch((error: unknown) => {
-        throw new UpstreamNetworkError(options.provider, error);
+        throw new UpstreamNetworkError(options.provider, error, requestDiagnostics(url, init, options.timeoutMs ?? 15_000));
       });
       if (done) break;
       length += value.byteLength;
@@ -146,6 +166,9 @@ export function parseJsonBytes(bytes: Uint8Array, provider: string): unknown {
   try {
     return JSON.parse(decodeText(bytes).replace(/^\uFEFF/, ''));
   } catch (error) {
-    throw new TypeError(`${provider} returned an invalid tracking response`, { cause: error });
+    throw Object.assign(new TypeError(`${provider} returned an invalid tracking response`, { cause: error }), {
+      provider, response_body: decodeText(bytes.subarray(0, MAX_DIAGNOSTIC_BODY)),
+      response_body_truncated: bytes.byteLength > MAX_DIAGNOSTIC_BODY,
+    });
   }
 }

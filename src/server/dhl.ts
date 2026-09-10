@@ -1,4 +1,5 @@
 import 'server-only';
+import { measureScrape, recoverScrape } from './scrapeMonitoring';
 import { trackingLanguageStage } from './trackingLanguage';
 
 import makeFetchCookie from 'fetch-cookie';
@@ -222,7 +223,7 @@ export class DHLTracker {
       this.session ??= new DHLSession(this.directTimeoutMs);
       let recoveryError: DHLSessionError | UpstreamNetworkError;
       try {
-        return await this.session.fetch(number);
+        return await measureScrape('dhl', 'direct', () => this.session!.fetch(number));
       } catch (error) {
         if (!(error instanceof DHLSessionError || error instanceof UpstreamNetworkError)) throw error;
         recoveryError = error;
@@ -230,30 +231,32 @@ export class DHLTracker {
       // Renew stale sessions and retry interrupted reads once before using a browser.
       if (cached || recoveryError instanceof UpstreamNetworkError) {
         this.session = new DHLSession(this.directTimeoutMs);
-        try { return await this.session.fetch(number); } catch (error) {
+        try { return await measureScrape('dhl', 'direct', () => this.session!.fetch(number)); } catch (error) {
           if (!(error instanceof DHLSessionError || error instanceof UpstreamNetworkError)) throw error;
           recoveryError = error;
         }
       }
       this.session = null;
       if (!this.trawlUrl) throw recoveryError;
-      const endpoint = new URL(this.trawlUrl);
-      if (!['http:', 'https:'].includes(endpoint.protocol)) throw new TypeError('FLARESOLVERR_URL must be an HTTP(S) URL');
-      endpoint.pathname = `${endpoint.pathname.replace(/\/(?:v1|scrape)\/?$/, '').replace(/\/$/, '')}/scrape`;
-      const { bytes } = await fetchBounded(endpoint, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ url: dhlTrackingUrl(number), skipHttp: true, maxTier: 3, maxTimeout: this.timeoutMs }),
-      }, { provider: 'TRAWL while fetching DHL', timeoutMs: this.timeoutMs + 15_000, maxBytes: 10_000_000 });
-      const browser = parseJsonBytes(bytes, 'TRAWL');
-      if (!isRecord(browser) || browser.error || ![2, 3].includes(Number(browser.tier))
-        || browser.statusCode !== 200 || !Array.isArray(browser.cookies)) {
-        throw new DHLSessionError();
-      }
-      const session = new DHLSession(this.directTimeoutMs);
-      await session.seed(browser.cookies, browser.userAgent);
-      const result = await session.fetch(number);
-      this.session = session;
-      return result;
+      return await recoverScrape('dhl', 'trawl', recoveryError, async () => {
+        const endpoint = new URL(this.trawlUrl);
+        if (!['http:', 'https:'].includes(endpoint.protocol)) throw new TypeError('FLARESOLVERR_URL must be an HTTP(S) URL');
+        endpoint.pathname = `${endpoint.pathname.replace(/\/(?:v1|scrape)\/?$/, '').replace(/\/$/, '')}/scrape`;
+        const { bytes } = await fetchBounded(endpoint, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ url: dhlTrackingUrl(number), skipHttp: true, maxTier: 3, maxTimeout: this.timeoutMs }),
+        }, { provider: 'TRAWL while fetching DHL', timeoutMs: this.timeoutMs + 15_000, maxBytes: 10_000_000 });
+        const browser = parseJsonBytes(bytes, 'TRAWL');
+        if (!isRecord(browser) || browser.error || ![2, 3].includes(Number(browser.tier))
+          || browser.statusCode !== 200 || !Array.isArray(browser.cookies)) {
+          throw new DHLSessionError();
+        }
+        const session = new DHLSession(this.directTimeoutMs);
+        await session.seed(browser.cookies, browser.userAgent);
+        const result = await session.fetch(number);
+        this.session = session;
+        return result;
+      });
     } finally { release(); }
   }
 }

@@ -1,4 +1,5 @@
 import 'server-only';
+import { measureScrape, recoverScrape } from './scrapeMonitoring';
 
 import { load } from 'cheerio';
 import makeFetchCookie from 'fetch-cookie';
@@ -380,12 +381,12 @@ export class UPSTracker {
   private async fetchLocked(number: string): Promise<CarrierResult> {
     if (this.#session) {
       try {
-        return await this.apiResult(number, this.#session);
+        return await measureScrape('ups', 'direct', () => this.apiResult(number, this.#session!));
       } catch (error) {
         if (!(error instanceof UPSSessionRejected)) throw error;
         try {
           await this.#session.fetchPage(upsTrackingUrl(number));
-          return await this.apiResult(number, this.#session);
+          return await measureScrape('ups', 'direct', () => this.apiResult(number, this.#session!));
         } catch (refreshError) {
           if (!(refreshError instanceof UPSSessionRejected)) throw refreshError;
           this.#session = null;
@@ -397,11 +398,13 @@ export class UPSTracker {
     let directPage: string | null = null;
     let directError: unknown;
     try {
-      directPage = await direct.fetchPage(upsTrackingUrl(number));
-      if (!await direct.xsrfToken()) throw new Error('UPS challenged the direct tracking session');
-      const result = await this.apiResult(number, direct);
-      this.#session = direct;
-      return result;
+      return await measureScrape('ups', 'direct', async () => {
+        directPage = await direct.fetchPage(upsTrackingUrl(number));
+        if (!await direct.xsrfToken()) throw new Error('UPS challenged the direct tracking session');
+        const result = await this.apiResult(number, direct);
+        this.#session = direct;
+        return result;
+      });
     } catch (error) {
       directError = error;
     }
@@ -419,31 +422,33 @@ export class UPSTracker {
       });
     }
 
-    const bootstrap = await this.trawlRequest({
-      url: upsTrackingUrl(number),
-      skipHttp: true,
-      maxTier: 3,
-      maxTimeout: this.timeoutMs,
-    });
-    const browser = new UPSHttpSession(this.directTimeoutMs);
-    await browser.seedBrowserCookies(bootstrap.cookies, bootstrap.userAgent);
-    let browserError: unknown;
-    if (await browser.xsrfToken()) {
-      try {
-        const result = await this.apiResult(number, browser);
-        this.#session = browser;
-        return result;
-      } catch (error) {
-        browserError = error;
-        if (!(error instanceof UPSSessionRejected)) this.#session = browser;
+    return recoverScrape('ups', 'trawl', directError, async () => {
+      const bootstrap = await this.trawlRequest({
+        url: upsTrackingUrl(number),
+        skipHttp: true,
+        maxTier: 3,
+        maxTimeout: this.timeoutMs,
+      });
+      const browser = new UPSHttpSession(this.directTimeoutMs);
+      await browser.seedBrowserCookies(bootstrap.cookies, bootstrap.userAgent);
+      let browserError: unknown;
+      if (await browser.xsrfToken()) {
+        try {
+          const result = await this.apiResult(number, browser);
+          this.#session = browser;
+          return result;
+        } catch (error) {
+          browserError = error;
+          if (!(error instanceof UPSSessionRejected)) this.#session = browser;
+        }
       }
-    }
-    try {
-      return this.renderedResult(bootstrap.html, number);
-    } catch (error) {
-      if (browserError) throw new Error('UPS rejected the browser-established session', { cause: browserError });
-      throw new Error('TRAWL did not establish a usable UPS session', { cause: error });
-    }
+      try {
+        return this.renderedResult(bootstrap.html, number);
+      } catch (error) {
+        if (browserError) throw new Error('UPS rejected the browser-established session', { cause: browserError });
+        throw new Error('TRAWL did not establish a usable UPS session', { cause: error });
+      }
+    });
   }
 
   private async apiResult(number: string, session: UPSHttpSession): Promise<CarrierResult> {

@@ -5,7 +5,7 @@ import { detectCarrierMatch } from '../lib/carriers';
 import { activeRequirements, AUTOMATIC_CARRIER_IDS, carrierAdapter } from './carriers';
 import { normalizeCarrierResult, type CarrierResult } from './carrierResult';
 import { isRecord, type JsonObject } from './types';
-import { UNIVERSAL_SOURCES } from './universalTracking';
+import { universalSources } from './universalTracking';
 import type { UniversalSource } from './universalTrackingResult';
 import { errorType, reportRoutingEvent } from './observability';
 
@@ -117,7 +117,7 @@ export class TrackingRouter {
     const universalNumber = metadata.original_carrier && metadata.active_tracking_carrier
       && typeof metadata.active_tracking_number === 'string' ? metadata.active_tracking_number : number;
     if (state.preferred_number && state.preferred_number !== universalNumber) state.preferred_provider = undefined;
-    const sources: UniversalSource[] = [...UNIVERSAL_SOURCES, ...(this.options.enablePostalNinja ? ['Postal Ninja' as const] : [])];
+    const sources = universalSources(this.options.enablePostalNinja);
     const recent = () => millis(state.last_success_at) > 0 && now().getTime() - millis(state.last_success_at) < freshnessWindow(now());
     const report = (code: string, provider: string, kind?: string, error?: unknown) => reportRoutingEvent(code, {
       carrier: declared, provider, category: kind, trackingNumber: number,

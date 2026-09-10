@@ -16,7 +16,6 @@ vi.mock('@sentry/node', async (importOriginal) => {
     ...sdk,
     init: vi.fn((options: Parameters<typeof sdk.init>[0]) => sdk.init({
       ...options,
-      skipOpenTelemetrySetup: true,
       registerEsmLoaderHooks: false,
       transport: () => ({
         send: async (envelope) => {
@@ -157,7 +156,9 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   expect(refusal.tags).toMatchObject({ upstream_status: 403, upstream_content_type: 'text/html', upstream_body_read: 'complete' });
   expect(refusal.fingerprint).toEqual(['delivery-tracker', 'tracking-routing', 'provider_failed', 'la-poste', 'verification']);
   expect(captured.events.find((event) => event.event_id === wrappedId)?.contexts?.upstream_http).toEqual(refusal.contexts?.upstream_http);
-  expect(JSON.stringify(refusal)).not.toContain('DO_NOT_CAPTURE');
+  expect(refusal.contexts?.upstream_http?.headers).toMatchObject({ 'set-cookie': 'session=DO_NOT_CAPTURE', authorization: 'Bearer DO_NOT_CAPTURE' });
+  expect(refusal.exception?.values?.at(-1)).toMatchObject({ type: 'UpstreamHttpError', value: 'La Poste tracking returned HTTP 403' });
+  expect(refusal.contexts?.UpstreamHttpError).toHaveProperty('request');
   const recovery = captured.events.find((event) => event.message === 'Tracking routing: provider_recovered' && event.tags?.provider === 'la-poste')!;
   expect(recovery.contexts?.upstream_http).toBeUndefined();
   expect(recovery.tags?.upstream_body_read).toBeUndefined();

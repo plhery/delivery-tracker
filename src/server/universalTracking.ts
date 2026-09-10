@@ -9,7 +9,11 @@ import { event, isNotice, numberOf, result, type UniversalSource as Source } fro
 import { PostalNinjaTracker } from './postalNinja';
 import { Ship24Tracker } from './ship24';
 import { universalCarrierHints } from './universalCarrierHints';
-export const UNIVERSAL_SOURCES: Source[] = ['ParcelsApp', '17TRACK', 'Ship24'];
+import { measureScrape } from './scrapeMonitoring';
+export const UNIVERSAL_SOURCES: Source[] = ['Ship24', 'ParcelsApp', '17TRACK'];
+export function universalSources(enablePostalNinja = false): Source[] {
+  return enablePostalNinja ? ['Ship24', 'ParcelsApp', 'Postal Ninja', '17TRACK'] : [...UNIVERSAL_SOURCES];
+}
 const API_URLS = {
   '17TRACK': 'https://t.17track.net/track/restapi',
   ParcelsApp: 'https://parcelsapp.com/api/v2/parcels',
@@ -146,7 +150,7 @@ export class UniversalTracker {
   async fetch(trackingNumber: string): Promise<CarrierResult> {
     numberOf(trackingNumber);
     const failures: SourceFailure[] = [];
-    const sources = [...UNIVERSAL_SOURCES, ...(this.options.enablePostalNinja ? ['Postal Ninja' as const] : [])];
+    const sources = universalSources(this.options.enablePostalNinja);
     for (const source of sources) {
       try { return await this.fetchSource(source, trackingNumber); }
       catch (error) { failures.push({ source, reason: 'history unavailable; try again later or open the tracking website', error }); }
@@ -155,6 +159,10 @@ export class UniversalTracker {
   }
 
   async fetchSource(source: Source, trackingNumber: string, timeoutMs = this.options.timeoutMs ?? 30_000): Promise<CarrierResult> {
+    return measureScrape(source, 'total', () => this.fetchSourceAttempt(source, trackingNumber, timeoutMs));
+  }
+
+  private async fetchSourceAttempt(source: Source, trackingNumber: string, timeoutMs: number): Promise<CarrierResult> {
     const number = numberOf(trackingNumber);
     const configured = this.options.trawlUrl ?? process.env.FLARESOLVERR_URL;
     const endpoint = configured ? new URL(configured) : null;

@@ -341,7 +341,7 @@ describe('TrackingSyncService', () => {
     const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => now);
     await service.syncPackage(parcel);
     const saved = client.updatePackage.mock.calls.at(-1)![1];
-    expect(saved.carrier_data.tracking_provider).toBe('ParcelsApp');
+    expect(saved.carrier_data.tracking_provider).toBe('Ship24');
     now = new Date('2026-09-10T13:00:00Z');
     await service.syncPackage({ ...parcel, ...saved });
     expect(client.updatePackage.mock.calls.at(-1)![1].carrier_data.tracking_provider).toBeUndefined();
@@ -383,7 +383,7 @@ describe('TrackingSyncService', () => {
     const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => new Date('2026-09-10T12:00:00Z'));
     await expect(service.syncPackage(parcel)).resolves.toMatchObject({ updated: 1 });
     const saved = client.updatePackage.mock.calls.at(-1)![1];
-    expect(saved.carrier_data.routing).toMatchObject({ preferred_provider: 'ParcelsApp', last_success_at: '2026-09-10T12:00:00.000Z' });
+    expect(saved.carrier_data.routing).toMatchObject({ preferred_provider: 'Ship24', last_success_at: '2026-09-10T12:00:00.000Z' });
     await expect(service.syncPackage({ ...parcel, ...saved })).resolves.toMatchObject({ checked: 0 });
     expect(adapter.fetchUniversal).toHaveBeenCalledOnce();
   });

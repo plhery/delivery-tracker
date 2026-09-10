@@ -10,7 +10,7 @@ vi.mock('playwright-core', () => ({ chromium: { launch: vi.fn() } }));
 vi.mock('./ship24Http', () => ({ ship24Http: {
   fetch: vi.fn().mockRejectedValue(new Error('HTTP unavailable')),
 } }));
-vi.mock('./observability', () => ({ reportRoutingEvent: vi.fn() }));
+vi.mock('./observability', async importOriginal => ({ ...await importOriginal<typeof import('./observability')>(), reportRoutingEvent: vi.fn() }));
 const number = 'ZZ12345678900';
 const ninja = (events: unknown[] = [
   { dt: '2026-08-17T07:22:00', dsc: 'Out for delivery' },

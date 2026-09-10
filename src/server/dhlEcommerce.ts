@@ -1,4 +1,5 @@
 import 'server-only';
+import { measureScrape, recoverScrape } from './scrapeMonitoring';
 import { trackingLanguageStage } from './trackingLanguage';
 
 import makeFetchCookie from 'fetch-cookie';
@@ -164,7 +165,7 @@ export class DHLEcommerceTracker {
     try {
       const timeoutMs = this.options.timeoutMs ?? 45_000;
       const deadline = Date.now() + timeoutMs;
-      try { return await this.request(number, Math.min(timeoutMs, this.options.directTimeoutMs ?? 10_000)); } catch (error) {
+      try { return await measureScrape('dhl-ecommerce', 'direct', () => this.request(number, Math.min(timeoutMs, this.options.directTimeoutMs ?? 10_000))); } catch (error) {
         if (!(error instanceof DHLEcommerceSessionError || error instanceof UpstreamNetworkError)) throw error;
         // Browser clearance is not reliably transferable to Node's HTTP client.
         // Keep the challenge and the site's automatic retry in the same browser.
@@ -172,9 +173,9 @@ export class DHLEcommerceTracker {
         this.fetcher = makeFetchCookie(fetch, this.jar);
         const remaining = deadline - Date.now();
         if (remaining <= 0) throw error;
-        try { return await scrapeUniversalPage({ ...this.options, timeoutMs: remaining }, {
+        try { return await recoverScrape('dhl-ecommerce', 'browser', error, () => scrapeUniversalPage({ ...this.options, timeoutMs: remaining }, {
           name: 'DHL eCommerce', url: dhlEcommerceTrackingUrl(number), responseUrl: trackingApiUrl(number),
-        }, parseDHLEcommerceResponse); } catch (recoveryError) {
+        }, parseDHLEcommerceResponse)); } catch (recoveryError) {
           if (recoveryError instanceof Error && recoveryError.cause === undefined) recoveryError.cause = error;
           throw recoveryError;
         }

@@ -6,6 +6,9 @@ const ERROR_CODES = new Set(['ACCESS_DENIED', 'FORBIDDEN', 'UNAUTHORIZED', 'RATE
 
 export interface UpstreamHttpDiagnostics {
   content_type: string;
+  headers: Record<string, string>;
+  response_url: string;
+  status_text: string;
   server?: string;
   request_ids: Record<string, string>;
   body_read: 'complete' | 'truncated' | 'timed_out' | 'unreadable' | 'empty' | 'skipped';
@@ -39,11 +42,12 @@ function recognizedCode(text: string): string | undefined {
   return undefined;
 }
 
-/** Bounded error excerpts are authorized diagnostics; never copy cookie/auth headers. */
+/** Keep original response details; byte/time bounds prevent diagnostics delaying recovery. */
 export async function readUpstreamHttpDiagnostics(response: Response): Promise<UpstreamHttpDiagnostics> {
   const mediaType = response.headers.get('content-type')?.split(';', 1)[0].trim().toLowerCase();
   const diagnostics: UpstreamHttpDiagnostics = {
     content_type: !mediaType ? 'missing' : CONTENT_TYPES.has(mediaType) ? mediaType : 'other',
+    headers: Object.fromEntries(response.headers), response_url: response.url, status_text: response.statusText,
     request_ids: responseIds(response.headers), body_read: 'empty', bytes_inspected: 0, body_signals: [],
     server: response.headers.get('server')?.slice(0, 128),
   };

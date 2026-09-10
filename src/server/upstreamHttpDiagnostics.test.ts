@@ -13,7 +13,7 @@ async function failed(response: Response) {
   }) as Promise<UpstreamHttpError>;
 }
 
-it('retains the actual 403 explanation and diagnostic IDs without cookie or auth headers', async () => {
+it('retains the actual 403 explanation and diagnostic IDs with all response headers', async () => {
   const body = '<h1>Access Denied</h1><p>Reference #18.abc.123</p><a href="https://errors.edgesuite.net/example">Details</a>';
   const error = await failed(new Response(body, { status: 403, headers: {
     'content-type': 'text/html; charset=utf-8', server: 'AkamaiGHost', 'x-request-id': 'request-example-123',
@@ -23,7 +23,7 @@ it('retains the actual 403 explanation and diagnostic IDs without cookie or auth
     content_type: 'text/html', server: 'AkamaiGHost', request_ids: { 'x-request-id': 'request-example-123' },
     body_read: 'complete', body_excerpt: body, body_signals: ['akamai_error_page', 'access_denied'],
   } });
-  expect(JSON.stringify(error)).not.toContain('SECRET');
+  expect(error.diagnostics?.headers).toMatchObject({ 'set-cookie': 'session=SECRET', authorization: 'Bearer SECRET' });
 });
 
 it.each([
@@ -81,4 +81,17 @@ it('skips binary bodies and does not interpret a bare 403 as a known challenge',
   expect(cancel).toHaveBeenCalledOnce();
   const empty = await failed(new Response(null, { status: 403 }));
   expect(empty.diagnostics).toMatchObject({ body_read: 'empty', body_signals: [] });
+});
+
+it('retains request details on HTTP and network failures, including session headers and form inputs', async () => {
+  const url = 'https://carrier.example/tracking?number=TEST123&token=fixture';
+  const init = { method: 'POST', headers: { Cookie: 'session=fixture', Authorization: 'Bearer fixture' }, body: 'number=TEST123&postcode=1234' };
+  for (const fetcher of [
+    async () => new Response('Refused TEST123', { status: 403 }),
+    async () => { throw new Error('Connection reset'); },
+  ]) {
+    const error = await fetchBounded(url, init, { provider: 'Test carrier', timeoutMs: 8000, fetcher }).catch(error => error);
+    expect(error.request).toEqual({ url, method: 'POST', headers: { cookie: 'session=fixture', authorization: 'Bearer fixture' },
+      body: init.body, body_truncated: false, timeout_ms: 8000 });
+  }
 });

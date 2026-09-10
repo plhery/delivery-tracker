@@ -1,0 +1,266 @@
+{
+  "title": "Delivery Tracker \u2014 Scraper Health",
+  "projects": [
+    4512007458652160
+  ],
+  "period": "24h",
+  "environment": [],
+  "widgets": [
+    {
+      "title": "Average provider latency",
+      "description": "Average full provider attempt, including internal recovery and failed attempts.",
+      "displayType": "categorical_bar",
+      "widgetType": "tracemetrics",
+      "interval": "5m",
+      "limit": 25,
+      "queries": [
+        {
+          "name": "",
+          "fields": [
+            "carrier",
+            "avg(value,tracking.scrape.duration,distribution,millisecond)"
+          ],
+          "columns": [
+            "carrier"
+          ],
+          "aggregates": [
+            "avg(value,tracking.scrape.duration,distribution,millisecond)"
+          ],
+          "conditions": "phase:total",
+          "orderby": "-avg(value,tracking.scrape.duration,distribution,millisecond)"
+        }
+      ],
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "w": 3,
+        "h": 3,
+        "minH": 2
+      }
+    },
+    {
+      "title": "p95 provider latency",
+      "description": "Tail latency by provider; failed attempts are included.",
+      "displayType": "categorical_bar",
+      "widgetType": "tracemetrics",
+      "interval": "5m",
+      "limit": 25,
+      "queries": [
+        {
+          "name": "",
+          "fields": [
+            "carrier",
+            "p95(value,tracking.scrape.duration,distribution,millisecond)"
+          ],
+          "columns": [
+            "carrier"
+          ],
+          "aggregates": [
+            "p95(value,tracking.scrape.duration,distribution,millisecond)"
+          ],
+          "conditions": "phase:total",
+          "orderby": "-p95(value,tracking.scrape.duration,distribution,millisecond)"
+        }
+      ],
+      "layout": {
+        "x": 3,
+        "y": 0,
+        "w": 3,
+        "h": 3,
+        "minH": 2
+      }
+    },
+    {
+      "title": "Provider attempts",
+      "description": "Sample count for comparing provider latency.",
+      "displayType": "categorical_bar",
+      "widgetType": "tracemetrics",
+      "interval": "5m",
+      "limit": 25,
+      "queries": [
+        {
+          "name": "",
+          "fields": [
+            "carrier",
+            "count(value,tracking.scrape.duration,distribution,millisecond)"
+          ],
+          "columns": [
+            "carrier"
+          ],
+          "aggregates": [
+            "count(value,tracking.scrape.duration,distribution,millisecond)"
+          ],
+          "conditions": "phase:total",
+          "orderby": "-count(value,tracking.scrape.duration,distribution,millisecond)"
+        }
+      ],
+      "layout": {
+        "x": 0,
+        "y": 3,
+        "w": 3,
+        "h": 3,
+        "minH": 2
+      }
+    },
+    {
+      "title": "Average direct-path latency",
+      "description": "Direct HTTP/session attempts for hybrid scrapers, including failures.",
+      "displayType": "categorical_bar",
+      "widgetType": "tracemetrics",
+      "interval": "5m",
+      "limit": 25,
+      "queries": [
+        {
+          "name": "",
+          "fields": [
+            "carrier",
+            "avg(value,tracking.scrape.duration,distribution,millisecond)"
+          ],
+          "columns": [
+            "carrier"
+          ],
+          "aggregates": [
+            "avg(value,tracking.scrape.duration,distribution,millisecond)"
+          ],
+          "conditions": "phase:direct",
+          "orderby": "-avg(value,tracking.scrape.duration,distribution,millisecond)"
+        }
+      ],
+      "layout": {
+        "x": 3,
+        "y": 3,
+        "w": 3,
+        "h": 3,
+        "minH": 2
+      }
+    },
+    {
+      "title": "Direct-path failures",
+      "description": "Failures remain visible even if recovery succeeds.",
+      "displayType": "categorical_bar",
+      "widgetType": "tracemetrics",
+      "interval": "5m",
+      "limit": 25,
+      "queries": [
+        {
+          "name": "",
+          "fields": [
+            "carrier",
+            "count(value,tracking.scrape.duration,distribution,millisecond)"
+          ],
+          "columns": [
+            "carrier"
+          ],
+          "aggregates": [
+            "count(value,tracking.scrape.duration,distribution,millisecond)"
+          ],
+          "conditions": "phase:direct outcome:error",
+          "orderby": "-count(value,tracking.scrape.duration,distribution,millisecond)"
+        }
+      ],
+      "layout": {
+        "x": 0,
+        "y": 6,
+        "w": 3,
+        "h": 3,
+        "minH": 2
+      }
+    },
+    {
+      "title": "Recovery handoffs",
+      "description": "Counted before each direct-to-browser, TRAWL or page recovery.",
+      "displayType": "categorical_bar",
+      "widgetType": "tracemetrics",
+      "interval": "5m",
+      "limit": 25,
+      "queries": [
+        {
+          "name": "",
+          "fields": [
+            "carrier",
+            "sum(value,tracking.scrape.fallbacks,counter,none)"
+          ],
+          "columns": [
+            "carrier"
+          ],
+          "aggregates": [
+            "sum(value,tracking.scrape.fallbacks,counter,none)"
+          ],
+          "conditions": "",
+          "orderby": "-sum(value,tracking.scrape.fallbacks,counter,none)"
+        }
+      ],
+      "layout": {
+        "x": 3,
+        "y": 6,
+        "w": 3,
+        "h": 3,
+        "minH": 2
+      }
+    },
+    {
+      "title": "Average recovery latency",
+      "description": "Time spent in recovery, including failed recoveries.",
+      "displayType": "categorical_bar",
+      "widgetType": "tracemetrics",
+      "interval": "5m",
+      "limit": 25,
+      "queries": [
+        {
+          "name": "",
+          "fields": [
+            "carrier",
+            "avg(value,tracking.scrape.duration,distribution,millisecond)"
+          ],
+          "columns": [
+            "carrier"
+          ],
+          "aggregates": [
+            "avg(value,tracking.scrape.duration,distribution,millisecond)"
+          ],
+          "conditions": "phase:[trawl,browser,page]",
+          "orderby": "-avg(value,tracking.scrape.duration,distribution,millisecond)"
+        }
+      ],
+      "layout": {
+        "x": 0,
+        "y": 9,
+        "w": 3,
+        "h": 3,
+        "minH": 2
+      }
+    },
+    {
+      "title": "Recovery failures",
+      "description": "Failed recoveries; see transport_fallback Sentry issues for the original direct failure.",
+      "displayType": "categorical_bar",
+      "widgetType": "tracemetrics",
+      "interval": "5m",
+      "limit": 25,
+      "queries": [
+        {
+          "name": "",
+          "fields": [
+            "carrier",
+            "count(value,tracking.scrape.duration,distribution,millisecond)"
+          ],
+          "columns": [
+            "carrier"
+          ],
+          "aggregates": [
+            "count(value,tracking.scrape.duration,distribution,millisecond)"
+          ],
+          "conditions": "phase:[trawl,browser,page] outcome:error",
+          "orderby": "-count(value,tracking.scrape.duration,distribution,millisecond)"
+        }
+      ],
+      "layout": {
+        "x": 3,
+        "y": 9,
+        "w": 3,
+        "h": 3,
+        "minH": 2
+      }
+    }
+  ]
+}

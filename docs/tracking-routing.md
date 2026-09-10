@@ -5,11 +5,11 @@ Implemented September 2026. Carrier selection and retrieval provider are separat
 ## Provider order and affinity
 
 1. Use the configured/confirmed direct adapter when available. Cainiao (`aliexpress`) is an aggregator too, but stays a targeted direct route for detected AliExpress/international formats and the existing Swiss Post handoff. It is not blindly queried for every parcel.
-2. For discovery: **ParcelsApp → 17TRACK → Ship24**. ParcelsApp is first following observed recoveries where 17TRACK failed. This is an operational preference, not a broad reliability benchmark. Existing per-parcel success takes precedence, including a working 17TRACK affinity.
-3. Postal Ninja is excluded by default while unattended verification is unresolved. Set `TRACKING_ENABLE_POSTAL_NINJA=true` to include it experimentally; do not count it as working coverage without a fresh deployed test.
+2. For discovery: **Ship24 → ParcelsApp → 17TRACK**. Ship24 is first following verified sub-second direct JSON lookups in production. This is an operational preference based on those samples, not a broad reliability benchmark. Existing per-parcel success takes precedence, including a working 17TRACK affinity.
+3. Postal Ninja is excluded by default while unattended verification is unresolved. Set `TRACKING_ENABLE_POSTAL_NINJA=true` to include it experimentally before 17TRACK (which stays last); do not count it as working coverage without a fresh deployed test.
 4. Remember a successful provider and the lookup number in `carrier_data.routing`. A subsequent check starts there, even when it is third in the default list. Respect provider cooldowns before requesting it.
 
-On failure, try **every eligible enabled universal once in the same check**, stopping at the first usable result: ParcelsApp → 17TRACK → Ship24, or the saved successful provider first. A slow direct attempt does not consume the universal budget. Reserve 35 seconds per enabled provider: up to 30 seconds for lookup plus transport allowance, for a 105-second fallback budget by default (140 seconds with experimental Postal Ninja enabled). Timeouts use integer milliseconds. Cooldowns, a recent-success 429 deferral, cancellation, and an exhausted overall budget still prevent calls. If a budget overrun leaves providers untried, the persisted discovery cursor advances for the next check.
+On failure, try **every eligible enabled universal once in the same check**, stopping at the first usable result: Ship24 → ParcelsApp → 17TRACK, or the saved successful provider first. A slow direct attempt does not consume the universal budget. Reserve 35 seconds per enabled provider: up to 30 seconds for lookup plus transport allowance, for a 105-second fallback budget by default (140 seconds with experimental Postal Ninja enabled). Timeouts use integer milliseconds. Cooldowns, a recent-success 429 deferral, cancellation, and an exhausted overall budget still prevent calls. If a budget overrun leaves providers untried, the persisted discovery cursor advances for the next check.
 
 Universal-backed parcels refresh at most every **15 minutes during 08:00–22:00 Europe/Zurich**, hourly overnight. Manual refresh uses the same persisted cooldown. Direct adapters retain their existing schedules; GLS's longer limits also remain.
 
@@ -48,10 +48,11 @@ The table records attempts, successes, consecutive failures, last failure catego
 
 ## Sentry operations
 
-Routing sends fixed messages with `component:tracking-routing`, `operation`, `carrier`, `provider`, `failure_category`, and safe error class. Fingerprints group by decision/provider/category rather than parcel or attempt. As requested in the existing diagnostic policy, the tracking number remains available for investigation; raw HTML, tokens, cookies, capability URLs, and upstream exception text are not attached by the routing reporter. Logging/SDK failures cannot block tracking.
+Routing sends fixed messages with `component:tracking-routing`, `operation`, `carrier`, `provider`, `failure_category`, and safe error class. Fingerprints group by decision/provider/category rather than parcel or attempt. Sentry retains original exceptions, stacks, causes, custom error properties, request/response details, tracking numbers and inherited SDK context without application-level field redaction. Byte/time limits on response inspection and Sentry tag lengths are resource limits. Logging/SDK failures cannot block tracking.
 
 Useful issue searches:
 
+- `component:tracking-routing operation:transport_fallback` — a direct HTTP/session path needed browser, TRAWL or page recovery, even if it succeeded.
 - `component:tracking-routing operation:provider_failed failure_category:rate_limited` — which direct/universal provider needs less traffic.
 - `component:tracking-routing operation:provider_failed failure_category:schema` — parser/protocol investigation.
 - `component:tracking-routing operation:all_providers_unavailable` — uncovered parcels or broad outage.
@@ -64,6 +65,8 @@ Useful issue searches:
 - `component:tracking-routing operation:provider_recovered` — recovery signal (informational; does not auto-resolve an issue).
 
 Existing sync attempt/step audits remain in place. Provider failures are reported before recovery, so a successful fallback does not conceal them. Shadow checks and provider cooldowns limit issue volume. Coverage names are reported once per parcel's retained name set. The reporter uses the existing `SENTRY_DSN`; this change does not create organization-level alert recipients or notification rules.
+
+See [scraper monitoring](scraper-monitoring.md) for per-provider average/p95 timings, direct-path failures and recovery usage.
 
 ## Deployment and verification
 

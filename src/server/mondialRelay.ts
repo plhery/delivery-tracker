@@ -1,4 +1,5 @@
 import 'server-only';
+import { measureScrape, recoverScrape } from './scrapeMonitoring';
 
 import { isValidMondialRelayBarcode } from '../lib/mondialRelayBarcode';
 
@@ -531,8 +532,10 @@ export class MondialRelayTracker {
     const direct = new MondialRelayHttpSession(this.directTimeoutMs);
     let directError: unknown;
     try {
-      const token = verificationToken(await direct.page());
-      return this.finish(await direct.payload(credential, token), credential, 'structured-web-response');
+      return await measureScrape('mondial-relay', 'direct', async () => {
+        const token = verificationToken(await direct.page());
+        return this.finish(await direct.payload(credential, token), credential, 'structured-web-response');
+      });
     } catch (error) {
       if (!(error instanceof MondialRelaySessionRejected)) throw error;
       directError = error;
@@ -545,28 +548,30 @@ export class MondialRelayTracker {
       );
     }
 
-    const bootstrap = await this.trawlRequest({
-      url: TRACKING_PAGE,
-      skipHttp: true,
-      maxTier: 3,
-      maxTimeout: this.timeoutMs,
+    return recoverScrape('mondial-relay', 'trawl', directError, async () => {
+      const bootstrap = await this.trawlRequest({
+        url: TRACKING_PAGE,
+        skipHttp: true,
+        maxTier: 3,
+        maxTimeout: this.timeoutMs,
+      });
+      const token = verificationToken(originalTrawlPage(bootstrap));
+      const apiUrl = trackingApiUrl(credential);
+      const tracked = await this.trawlRequest({
+        url: apiUrl,
+        skipHttp: true,
+        maxTier: 3,
+        maxTimeout: this.timeoutMs,
+        headers: {
+          Accept: 'application/json, text/plain, */*',
+          'Accept-Language': 'fr-FR,fr;q=0.9',
+          Referer: TRACKING_PAGE,
+          RequestVerificationToken: token,
+        },
+      });
+      assertTrawlTarget(tracked, apiUrl);
+      return this.finish(trawlJson(tracked), credential, 'browser-session-response');
     });
-    const token = verificationToken(originalTrawlPage(bootstrap));
-    const apiUrl = trackingApiUrl(credential);
-    const tracked = await this.trawlRequest({
-      url: apiUrl,
-      skipHttp: true,
-      maxTier: 3,
-      maxTimeout: this.timeoutMs,
-      headers: {
-        Accept: 'application/json, text/plain, */*',
-        'Accept-Language': 'fr-FR,fr;q=0.9',
-        Referer: TRACKING_PAGE,
-        RequestVerificationToken: token,
-      },
-    });
-    assertTrawlTarget(tracked, apiUrl);
-    return this.finish(trawlJson(tracked), credential, 'browser-session-response');
   }
 
   private finish(
