@@ -681,6 +681,11 @@ private struct DeliveryAttentionNotice: View {
                     .font(.subheadline.weight(.medium))
                 Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
                     .font(.caption).foregroundStyle(.secondary)
+                if let sender = parcel.carrierData?.senderName?.nonEmpty {
+                    Text(localizer.text("parcel.sender", ["sender": sender]))
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }.frame(maxWidth: .infinity, alignment: .leading)
             Image(systemName: "chevron.right").font(.caption2.weight(.light)).foregroundStyle(.secondary).accessibilityHidden(true)
         }
@@ -732,6 +737,13 @@ private struct ExperimentalNextDeliveryPass: View {
             }
             .padding(.top, 19)
             .padding(.bottom, 15)
+
+            if let sender = parcel.carrierData?.senderName?.nonEmpty {
+                Text(localizer.text("parcel.sender", ["sender": sender]))
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 5)
+            }
 
             Text([localizer.parcelStatus(parcel), localizer.parcelDeliveryEstimate(parcel)]
                 .compactMap { $0 }.joined(separator: " · "))
@@ -794,6 +806,11 @@ private struct ExperimentalParcelPassCard: View {
             Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
                 .font(.headline.weight(.semibold))
                 .fixedSize(horizontal: false, vertical: true)
+            if let sender = parcel.carrierData?.senderName?.nonEmpty {
+                Text(localizer.text("parcel.sender", ["sender": sender]))
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             HStack(spacing: 5) {
                 if parcel.isDelivered { Image(systemName: "checkmark").font(.caption2.weight(.light)).accessibilityHidden(true) }
                 Text(localizer.parcelStatus(parcel))

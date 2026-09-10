@@ -729,6 +729,11 @@ export class TrackingSyncService {
       const carrierData: JsonObject = Object.fromEntries(
         Object.entries(result).filter(([key, value]) => key !== 'events' && value != null),
       );
+      // Some carrier endpoints omit sender details on subsequent updates.
+      const previousSender = isRecord(parcel.carrier_data) ? parcel.carrier_data.sender_name : undefined;
+      if (result.sender_name === undefined && typeof previousSender === 'string') {
+        carrierData.sender_name = previousSender;
+      }
       if (handoff) {
         carrierData.active_tracking_carrier = sourceCarrierId;
         carrierData.swiss_post_ready = swissPostReady;

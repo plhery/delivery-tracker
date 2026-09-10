@@ -23,6 +23,7 @@ export interface CarrierResult extends JsonObject {
   last_status_text?: string | null;
   last_update?: string | null;
   expected_delivery?: string | null;
+  sender_name?: string | null;
   timezone?: string;
   events?: CarrierEvent[];
 }
@@ -40,6 +41,7 @@ const OPTIONAL_TEXT_FIELDS = [
   'last_status_text',
   'last_update',
   'expected_delivery',
+  'sender_name',
   'timezone',
 ] as const;
 const EVENT_TEXT_FIELDS = ['time', 'location', 'description', 'stage'] as const;

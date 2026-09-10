@@ -21,6 +21,7 @@ export interface Parcel {
   carrier: CarrierId;
   createdAt: string; // ISO timestamp
   expectedDelivery?: string;
+  senderName?: string;
   lastStatusText?: string;
   lastSyncedAt?: string;
   syncStatus: SyncStatus;

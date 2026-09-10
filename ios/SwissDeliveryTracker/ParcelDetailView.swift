@@ -171,6 +171,11 @@ struct ParcelDetailView: View {
                         .scaleEffect(0.8)
                         .frame(width: 44, height: 54)
                 }
+                if let sender = parcel.carrierData?.senderName?.nonEmpty {
+                    Text(localizer.text("parcel.sender", ["sender": sender]))
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 VStack(alignment: .leading, spacing: 6) {
                     Text(localizer.parcelStatus(parcel))
                         .font(.subheadline)

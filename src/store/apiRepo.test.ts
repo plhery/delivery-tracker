@@ -38,7 +38,7 @@ describe('createApiRepo', () => {
   });
 
   it('loads and maps the account package collection', async () => {
-    const fetch = vi.fn().mockResolvedValue(response({ packages: [packageRow] }));
+    const fetch = vi.fn().mockResolvedValue(response({ packages: [{ ...packageRow, carrier_data: { ...packageRow.carrier_data, sender_name: 'Example sender' } }] }));
     vi.stubGlobal('fetch', fetch);
 
     const parcels = await createApiRepo().list();
@@ -52,6 +52,7 @@ describe('createApiRepo', () => {
     expect(parcels[0]).toMatchObject({
       trackingNumber: '993412345612345678',
       label: 'Coffee beans',
+      senderName: 'Example sender',
       carrier: 'swiss-post',
       expectedDelivery: '2026-07-16',
       lastStatusText: 'Sorted',
@@ -67,6 +68,7 @@ describe('createApiRepo', () => {
     });
     expect(JSON.parse(window.localStorage.getItem(API_CACHE_KEY) ?? 'null')).toHaveLength(1);
     expect(createApiRepo().cachedList?.()?.[0].id).toBe(packageRow.id);
+    expect(createApiRepo().cachedList?.()?.[0].senderName).toBe('Example sender');
   });
 
   it('ignores a corrupted offline snapshot', () => {

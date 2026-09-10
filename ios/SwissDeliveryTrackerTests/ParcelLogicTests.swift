@@ -211,6 +211,15 @@ final class ParcelLogicTests: XCTestCase {
         }
     }
 
+    func testSenderMetadataDecodesWithoutRequiringItOnOlderResponses() throws {
+        let sender = try JSONDecoder.deliveryTracker.decode(
+            CarrierData.self, from: Data(#"{"sender_name":"Example sender"}"#.utf8)
+        )
+        XCTAssertEqual(sender.senderName, "Example sender")
+        let older = try JSONDecoder.deliveryTracker.decode(CarrierData.self, from: Data("{}".utf8))
+        XCTAssertNil(older.senderName)
+    }
+
     func testDecodesSharedAPIContractFixture() throws {
         struct Fixture: Decodable {
             let packageList: PackageListResponse

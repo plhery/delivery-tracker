@@ -99,6 +99,7 @@ function toParcel(row: ApiPackageRow): ParcelWithEvents {
     carrier: row.carrier,
     createdAt: row.created_at,
     expectedDelivery: row.expected_delivery ?? undefined,
+    senderName: row.carrier_data?.sender_name?.trim() || undefined,
     lastStatusText: row.last_status_text ?? undefined,
     lastSyncedAt: row.last_synced_at ?? undefined,
     syncStatus: row.sync_status,

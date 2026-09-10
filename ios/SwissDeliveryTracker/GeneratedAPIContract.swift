@@ -620,6 +620,7 @@ struct AccountExportAccount: Codable, Equatable, Hashable, Sendable, Identifiabl
 
 struct CarrierData: Codable, Equatable, Hashable, Sendable {
     var activeTrackingCarrier: CarrierID? = nil
+    var senderName: String? = nil
     var swissPostReady: Bool? = nil
 }
 

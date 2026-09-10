@@ -377,6 +377,7 @@ export function ParcelDetail({
             <PostageStamp icon={parcelIcon(current?.stage)} />
           </div>
         )}
+        {parcel.senderName?.trim() && <p className="detail__sender">{t('parcel.sender', { sender: parcel.senderName.trim() })}</p>}
         <p className="detail__state">{statusLabel}</p>
         {(completionDate || estimate) && (
           <p className="detail__arrival">

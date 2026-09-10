@@ -392,6 +392,7 @@
   "parcel.expected": "Erwartet: {{date}}",
   "parcel.expectedToday": "Heute erwartet",
   "parcel.onDate": "am {{date}}",
+  "parcel.sender": "Absender: {{sender}}",
   "parcel.syncAttention": "Aktualisierung nicht verfügbar",
   "parcel.updated": "Aktualisiert: {{date}}",
   "passport.acrossBorders": "Über Grenzen",

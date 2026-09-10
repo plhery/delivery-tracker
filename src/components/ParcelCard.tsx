@@ -27,6 +27,7 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
   const statusLabel = t(parcelDisplayStatusKey(parcel));
   const completionDate = localizedParcelCompletionDate(parcel, languageTag, t);
   const parcelName = parcel.label || t('common.parcel');
+  const sender = parcel.senderName?.trim() ? t('parcel.sender', { sender: parcel.senderName.trim() }) : null;
   const branding = carrierBrand(carrier);
   const hero = variant === 'hero';
   const drag = useRef<Drag | null>(null);
@@ -102,7 +103,9 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
     if (wasHorizontal) { setOffset(offset < -44 ? -88 : 0); suppressReleaseClick(); }
   }
   const statusSummary = completionDate ? `${statusLabel} ${localizedDatePhrase(completionDate, t)}` : statusLabel;
-  const label = expectedDelivery ? t('parcel.ariaExpected', { name: parcelName, status: statusSummary, date: expectedDelivery }) : t('parcel.aria', { name: parcelName, status: statusSummary });
+  const statusAria = expectedDelivery ? t('parcel.ariaExpected', { name: parcelName, status: statusSummary, date: expectedDelivery }) : t('parcel.aria', { name: parcelName, status: statusSummary });
+
+  const label = [statusAria, sender].filter(Boolean).join('. ');
 
   return <div data-parcel-id={parcel.id} data-carrier={carrier.id} style={branding.style} className={`parcel-card-swipe${hero ? ' parcel-card-swipe--hero' : ''}${offset ? ' parcel-card-swipe--revealed' : ''}${collapsing ? ' parcel-card-swipe--collapsing' : ''}`}>
     <div className="parcel-card-swipe__clip">
@@ -114,16 +117,18 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
         onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={finishSwipe} onPointerCancel={cancelSwipe}>
         {variant === 'notice' ? <>
           <Icon name={parcelIcon(current?.stage)} />
-          <span className="parcel-card__notice-content"><strong>{notice || statusLabel}</strong><span className="parcel-card__label">{parcelName}</span></span>
+          <span className="parcel-card__notice-content"><strong>{notice || statusLabel}</strong><span className="parcel-card__label">{parcelName}</span>{sender && <span className="parcel-card__sender">{sender}</span>}</span>
           <Icon name="chevron" />
         </> : hero ? <>
           <span className="parcel-card__hero-top"><CarrierMark carrier={carrier} /><span className="parcel-card__next-label">{t('app.nextUp')}</span></span>
           <span className="parcel-card__hero-main"><strong className="parcel-card__label">{parcelName}</strong><PostageStamp icon={parcelIcon(current?.stage)} /></span>
+          {sender && <span className="parcel-card__sender">{sender}</span>}
           <span className="parcel-card__summary"><span className="parcel-card__state">{statusLabel}</span>{expectedDelivery && <><span aria-hidden="true">·</span><span className="parcel-card__eta">{expectedDelivery}</span></>}</span>
           {parcel.syncStatus === 'error' && <span className="parcel-card__notice">{t('parcel.syncAttention')}</span>}
         </> : <>
           <span className="parcel-card__top"><CarrierMark carrier={carrier} />{(expectedDelivery || completionDate) && <span className={completionDate ? 'parcel-card__completion' : 'parcel-card__eta'}>{expectedDelivery || completionDate}</span>}</span>
           <strong className="parcel-card__label">{parcelName}</strong>
+          {sender && <span className="parcel-card__sender">{sender}</span>}
           <span className="parcel-card__state">{current?.stage === 'delivered' && <Icon name="check" />}{statusLabel}</span>
           {parcel.syncStatus === 'error' ? <span className="parcel-card__notice">{t('parcel.syncAttention')}</span> : notice && !['customs', 'ready_for_pickup', 'failed_attempt'].includes(current?.stage ?? '') && <span className="parcel-card__notice">{notice}</span>}
         </>}

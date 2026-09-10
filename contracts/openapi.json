@@ -2558,6 +2558,10 @@
                   }
                 ]
               },
+              "sender_name": {
+                "type": ["string", "null"],
+                "description": "Verified sender name, retained when a tracking response omits sender details."
+              },
               "swiss_post_ready": {
                 "type": [
                   "boolean",

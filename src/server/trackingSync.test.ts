@@ -321,6 +321,24 @@ function fakeClient(packages: JsonObject[] = []) {
 }
 
 describe('TrackingSyncService', () => {
+  it.each([
+    { responseSender: undefined, expected: 'Example sender' },
+    { responseSender: 'Updated sender', expected: 'Updated sender' },
+    { responseSender: null, expected: undefined },
+  ])('retains omitted sender information and accepts explicit changes: $responseSender', async ({ responseSender, expected }) => {
+    const parcel: JsonObject = {
+      id: 'sender-parcel', carrier: 'swiss-post', tracking_number: 'TEST1234',
+      carrier_data: { sender_name: 'Example sender', obsolete: 'old response data' },
+    };
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit', sender_name: responseSender }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null);
+    await expect(service.syncPackage(parcel)).resolves.toMatchObject({ checked: 1, updated: 1 });
+    const values = client.updatePackage.mock.calls.at(-1)?.[1];
+    expect(values.carrier_data.sender_name).toBe(expected);
+    expect(values.carrier_data.obsolete).toBeUndefined();
+  });
+
   it.each(['gls-de', 'gls-ch', 'gls-fr'])(
     'checks %s hourly and waits four hours after failures', (carrier) => {
       const parcel = { carrier, last_synced_at: '2026-09-09T10:00:00Z', sync_status: 'ok' };

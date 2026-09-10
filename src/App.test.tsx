@@ -482,6 +482,25 @@ describe('App', () => {
     expect(screen.getByRole('region', { name: 'On the way' })).toContainElement(section);
   });
 
+  it('shows the sender on the parcel card and detail', async () => {
+    const user = userEvent.setup();
+    const parcel: ParcelWithEvents = {
+      id: 'sender-parcel', trackingNumber: 'TEST1234', label: 'Sender parcel',
+      carrier: 'gls-de', createdAt: new Date().toISOString(), syncStatus: 'ok',
+      senderName: 'Example sender', events: [],
+    };
+    const repo: ParcelRepo = {
+      mode: 'api', list: vi.fn().mockResolvedValue([parcel]), add: vi.fn(),
+      rename: vi.fn(), remove: vi.fn(), refresh: vi.fn().mockResolvedValue([parcel]),
+    };
+    renderApp(repo);
+    const card = await screen.findByRole('button', { name: /Sender parcel.*From Example sender/ });
+    expect(within(card).getByText('From Example sender')).toBeVisible();
+    await user.click(card);
+    const detail = screen.getByRole('dialog', { name: 'Sender parcel' });
+    expect(within(detail).getByText('From Example sender')).toBeVisible();
+  });
+
   it('adds a parcel through the bottom sheet', async () => {
     const user = userEvent.setup();
     renderApp();
