@@ -1386,9 +1386,9 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "inpost"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://inposteasy.com/",
     "linkRules": [],
     "detectionRules": [
       {

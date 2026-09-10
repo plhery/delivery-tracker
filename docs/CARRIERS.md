@@ -1,7 +1,7 @@
 # Carrier support
 
-Delivery Tracker recognizes 104 carriers: 40 with dedicated direct or upstream
-adapters plus 64 universal-fallback carriers. Tracking availability is shown below:
+Delivery Tracker recognizes 104 carriers: 41 with dedicated direct or upstream
+adapters plus 63 universal-fallback carriers. Tracking availability is shown below:
 
 | Carrier | Notes |
 | --- | --- |
@@ -41,10 +41,11 @@ adapters plus 64 universal-fallback carriers. Tracking availability is shown bel
 | Asendia | Automatic through universal lookup. `ASE…` identifiers are recognized; postal partner numbers stay with their issuing post. |
 | ShipUp | Automatic through universal lookup. Kept as a manual record when no direct route exists. |
 | India Post | Automatic. Recognises checksum-valid `IN` S10 identifiers. |
+| InPost | Automatic through the keyless inposteasy.com hub (24-digit, legacy `JJD`/`JD`, `8YDR`); `JJD` needs domain or explicit selection against DHL. Open cross-border vocabulary reports unknown rather than guessing; event times carry explicit offsets. |
 | FedEx | Automatic through universal lookup. 12/15-digit numbers stay ambiguous suggestions; full routing barcodes are not treated as shipment IDs. |
 | Amazon Shipping | Automatic public-recipient verification for eligible Shipping parcels; retail `FR…` deliveries stay account-only under Amazon France. |
 
-### Universal-fallback carriers (64, no dedicated scraper yet)
+### Universal-fallback carriers (63, no dedicated scraper yet)
 
 Added September 2026 from public shipment/label reports, official documentation
 examples, OSS fixtures and merchant integration samples. They are selectable in
@@ -62,7 +63,6 @@ per-number source URLs and evidence roles.
 | Royal Mail | Checksum-valid `GB` S10 outside Parcelforce `EA/EB/EC/ED/EE/CP` prefixes. |
 | Parcelforce Worldwide | `EA/EB/EC/ED/EE/CP` + 9 digits + `GB` S10. |
 | Evri | `H` + 15 alphanumerics (internal letters allowed; distinct from Hermes Germany `H` + digits). |
-| InPost | `8YDR` + 9 digits high; 24-digit, `JJD` + 16 digits and `JD` + 16 digits low (JJD needs domain/selection context vs DHL). |
 | An Post | Checksum-valid `IE` S10. |
 | bpost | Checksum-valid `BE` S10 high; 18/24-digit numerics low. |
 | Austrian Post | 22-digit numerics low (ambiguous with USPS/CTT Express). |
@@ -124,7 +124,7 @@ per-number source URLs and evidence roles.
 | The Courier Guy | No exclusive detector yet; 5-char short references are not tracking oracles. |
 | J&T Express | 12-digit numerics low. |
 
-Unknown carriers (`unknown` and `intl-post`) plus the 64 universal-fallback carriers above attempt automatic lookup through
+Unknown carriers (`unknown` and `intl-post`) plus the 63 universal-fallback carriers above attempt automatic lookup through
 ParcelsApp → 17TRACK → Ship24, with Postal Ninja opt-in. The first two use the existing
 private TRAWL service (`FLARESOLVERR_URL`); Postal Ninja and Ship24 use a dedicated
 fresh Chromium session (`TRACKING_CHROMIUM_PATH`). These services are **not

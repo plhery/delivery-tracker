@@ -651,7 +651,9 @@ describe('carrier detection', () => {
     // Legacy dotted reference normalizes to 8 digits (shared ambiguous family, not an oracle).
     // Source: https://github.com/jkeen/tracking_number_data/issues/91
     expect(detectCarrier('0980982.1')).toBe('unknown');
-    expectUniversalFallback('inpost');
+    expect(CARRIERS.inpost.capabilities.selectable).toBe(true);
+    expect(CARRIERS.inpost.capabilities.tracking).toMatchObject({ mode: 'automatic', adapter: 'inpost' });
+    expect(tracksAutomatically('inpost')).toBe(true);
   });
 
   it('intl-post — Unknown postal carrier', () => {
