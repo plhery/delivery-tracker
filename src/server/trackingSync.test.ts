@@ -304,6 +304,7 @@ describe('fair scheduling', () => {
 function fakeClient(packages: JsonObject[] = []) {
   const client = {
     listActivePackages: vi.fn().mockResolvedValue(packages),
+    autoLinkPackages: vi.fn().mockResolvedValue(0),
     updatePackage: vi.fn().mockResolvedValue(undefined),
     insertEvents: vi.fn().mockResolvedValue(undefined),
     deleteEventsByDescriptions: vi.fn().mockResolvedValue(undefined),
@@ -324,6 +325,29 @@ function fakeClient(packages: JsonObject[] = []) {
 }
 
 describe('TrackingSyncService', () => {
+  it('reconciles both refresh orders only after the scheduled batch has persisted', async () => {
+    const packages = [
+      { id: 'local', user_id: 'owner', carrier: 'swiss-post', tracking_number: '993412345612345678' },
+      { id: 'origin', user_id: 'owner', carrier: 'gls-de', tracking_number: '123456789011' },
+    ];
+    for (const order of [packages, [...packages].reverse()]) {
+      const client = fakeClient(order);
+      const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) };
+      const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null);
+      await service.sync();
+      expect(client.autoLinkPackages).toHaveBeenCalledOnce();
+      expect(client.autoLinkPackages.mock.invocationCallOrder[0]).toBeGreaterThan(client.completeSyncAttempt.mock.invocationCallOrder.at(-1)!);
+    }
+  });
+
+  it('reconciles a manual refresh within its owner’s account', async () => {
+    const client = fakeClient();
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) }, null);
+    await service.syncPackage({ id: 'parcel', user_id: 'owner', carrier: 'swiss-post', tracking_number: 'TEST1234' });
+    expect(client.autoLinkPackages).toHaveBeenCalledExactlyOnceWith('owner');
+  });
+
   it.each([
     { carrier: 'swiss-post', stage: 'in_transit', time: '10:02:00', checked: 1 },
     { carrier: 'swiss-post', stage: 'in_transit', time: '10:01:59', checked: 0 },

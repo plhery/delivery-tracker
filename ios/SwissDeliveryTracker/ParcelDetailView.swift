@@ -128,7 +128,7 @@ struct ParcelDetailView: View {
         }
     }
 
-    private var parcel: Parcel? { store.parcels.first { $0.id == parcelID } }
+    private var parcel: Parcel? { store.parcels.first { $0.id == parcelID || $0.carrierData?.originalPackageID == parcelID } }
 
     private func identity(_ parcel: Parcel) -> CarrierVisualIdentity {
         CarrierVisualIdentity(id: parcel.displayedCarrier.rawValue,

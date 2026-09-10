@@ -15,6 +15,13 @@ function mockSearchResult(items: unknown): ReturnType<typeof vi.spyOn> {
 afterEach(() => vi.restoreAllMocks());
 
 describe('Swiss Post historical event codes', () => {
+  it('retains the exact international barcode supplied by the carrier', () => {
+    expect(parseSwissPostShipment({ globalStatus: 'TO_BE_DELIVERED', internationalBarcode: '12345678901' }, []))
+      .toMatchObject({ international_tracking_number: '12345678901' });
+    expect(parseSwissPostShipment({ globalStatus: 'TO_BE_DELIVERED', internationalBarcode: null }, []))
+      .not.toHaveProperty('international_tracking_number');
+  });
+
   it.each([
     ['620', 'Consignment recorded by the foreign sender (data delivered)', 'registered'],
     ['803', 'Customs clearance process underway', 'customs'],

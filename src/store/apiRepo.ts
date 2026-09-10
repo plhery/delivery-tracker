@@ -100,6 +100,7 @@ function toParcel(row: ApiPackageRow): ParcelWithEvents {
     createdAt: row.created_at,
     expectedDelivery: row.expected_delivery ?? undefined,
     senderName: row.carrier_data?.sender_name?.trim() || undefined,
+    originalParcelId: row.carrier_data?.original_package_id ?? undefined,
     originalCarrier: row.carrier_data?.original_carrier ?? undefined,
     originalTrackingNumber: row.carrier_data?.original_tracking_number ?? undefined,
     originalTrackingUrl: row.carrier_data?.original_tracking_url ?? undefined,
@@ -406,7 +407,7 @@ export function createApiRepo(
       );
       await waitForJobs(queued.jobIds, onProgress);
       const parcels = await list();
-      const parcel = parcels.find((candidate) => candidate.id === id);
+      const parcel = parcels.find((candidate) => candidate.id === id || candidate.originalParcelId === id);
       if (!parcel) throw new Error('Package not found after queueing its tracking check');
       return parcel;
     },

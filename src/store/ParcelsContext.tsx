@@ -285,7 +285,7 @@ export function ParcelsProvider({
       revision.current += 1;
       if (mounted.current) {
         setParcels((current) =>
-          current.map((candidate) => candidate.id === parcel.id ? parcel : candidate),
+          [...current.filter((candidate) => candidate.id !== id && candidate.id !== parcel.id && candidate.id !== parcel.originalParcelId), parcel],
         );
         setError(null);
         setAuthenticationRequired(false);

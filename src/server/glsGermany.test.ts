@@ -24,7 +24,7 @@ describe('GLS Germany', () => {
       .mockResolvedValueOnce(new Response(JSON.stringify({ tuStatus: [parcel()] })))
       .mockResolvedValueOnce(new Response(JSON.stringify(parcel())));
     const result = await new GLSGermanyTracker().fetch('AB12CD34', '01067');
-    expect(result).toMatchObject({ status: 'delivered', timezone: 'Europe/Berlin', expected_delivery: null });
+    expect(result).toMatchObject({ status: 'delivered', timezone: 'Europe/Berlin', expected_delivery: null, canonical_tracking_number: NUMBER });
     expect(result.events?.map((event) => event.stage)).toEqual(['delivered', 'in_transit']);
     expect(JSON.stringify(result)).not.toContain('PRIVATE');
     const detail = new URL(String(fetcher.mock.calls[1][0]));

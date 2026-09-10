@@ -229,7 +229,7 @@ export default function App({
   }
 
   const openParcel = useMemo(
-    () => parcels.find((p) => p.id === openParcelId) ?? null,
+    () => parcels.find((p) => p.id === openParcelId || p.originalParcelId === openParcelId) ?? null,
     [parcels, openParcelId],
   );
 

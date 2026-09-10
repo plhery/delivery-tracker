@@ -169,6 +169,7 @@ describe('GLS Switzerland response normalization', () => {
     for (const identifier of [OFFICIAL_TEST_PARCEL_NUMBER, OFFICIAL_TEST_TRACK_ID]) {
       expect(parseGLSSwitzerlandTrackingResponse(deliveredOverviewFixture(), identifier)).toEqual({
         status: 'delivered',
+        canonical_tracking_number: OFFICIAL_TEST_PARCEL_NUMBER,
         current_stage: 'delivered',
         last_status_text: 'The parcel has been delivered. For more information, please see the detailed shipment tracking below.',
         last_update: null,

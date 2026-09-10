@@ -140,7 +140,11 @@ export class SupabaseClient {
       ['id', `eq.${packageId}`],
       ['limit', '1'],
     ];
-    return rows(await this.request(`/rest/v1/packages?${query(params)}`))[0] ?? null;
+    const parcel = rows(await this.request(`/rest/v1/packages?${query(params)}`))[0];
+    if (parcel) return parcel;
+    return rows(await this.request(`/rest/v1/packages?${query({
+      select: PACKAGE_SELECT, 'carrier_data->>original_package_id': `eq.${packageId}`, limit: '1',
+    })}`))[0] ?? null;
   }
 
   async getPackageByTrackingNumber(trackingNumber: string): Promise<JsonObject | null> {
@@ -149,7 +153,11 @@ export class SupabaseClient {
       ['tracking_number', `eq.${trackingNumber}`],
       ['limit', '1'],
     ];
-    return rows(await this.request(`/rest/v1/packages?${query(params)}`))[0] ?? null;
+    const parcel = rows(await this.request(`/rest/v1/packages?${query(params)}`))[0];
+    if (parcel) return parcel;
+    return rows(await this.request(`/rest/v1/packages?${query({
+      select: PACKAGE_SELECT, 'carrier_data->>original_tracking_number': `eq.${trackingNumber}`, limit: '1',
+    })}`))[0] ?? null;
   }
 
   async createPackage(
@@ -603,7 +611,18 @@ export class SupabaseServiceClient extends SupabaseClient {
       id: `eq.${packageId}`,
       limit: '1',
     });
-    return rows(await this.request(`/rest/v1/packages?${params}`))[0] ?? null;
+    const parcel = rows(await this.request(`/rest/v1/packages?${params}`))[0];
+    if (parcel) return parcel;
+    return rows(await this.request(`/rest/v1/packages?${query({
+      select: `${PACKAGE_SELECT},current_stage,tracking_generation`,
+      'carrier_data->>original_package_id': `eq.${packageId}`, limit: '1',
+    })}`))[0] ?? null;
+  }
+
+  async autoLinkPackages(userId?: string): Promise<number> {
+    return Number(await this.request('/rest/v1/rpc/auto_link_package_tracking', {
+      method: 'POST', body: { p_user_id: userId ?? null },
+    }));
   }
 
   async applyTrackingSync(

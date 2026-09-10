@@ -220,6 +220,8 @@ export function parseSwissPostShipment(
     expected_delivery: swissPostExpectedDelivery(item),
     timezone: 'Europe/Zurich',
     global_status: globalStatus,
+    ...(/^[A-Z0-9]{4,40}$/.test(comparableShipmentNumber(item.internationalBarcode))
+      ? { international_tracking_number: comparableShipmentNumber(item.internationalBarcode) } : {}),
     delivery_range: item.deliveryRange,
     delivery_time_interval: item.deliveryTimeInterval,
     events,

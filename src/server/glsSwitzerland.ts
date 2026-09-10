@@ -333,6 +333,7 @@ export function parseGLSSwitzerlandTrackingResponse(
   const status = currentMetadata?.status ?? latestKnownEvent?.status ?? 'unknown';
   return {
     status,
+    canonical_tracking_number: normalizedResponseIdentifier(parcel.tuNo),
     current_stage: currentMetadata?.stage ?? latestKnownEvent?.event.stage ?? 'in_transit',
     last_status_text: events[0]?.description ?? currentText,
     last_update: events[0]?.time ?? null,

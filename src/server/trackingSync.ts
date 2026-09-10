@@ -516,6 +516,7 @@ export class TrackingSyncService {
         summary.checked += 1;
         summary[await this.syncOne(parcel, context)] += 1;
       }
+      await this.linkConfirmedParcels();
       await this.dispatchNotifications(summary, context.signal);
       return summary;
     });
@@ -533,9 +534,19 @@ export class TrackingSyncService {
         summary.checked = 1;
         summary[await this.syncOne(parcel, context)] += 1;
       }
+      await this.linkConfirmedParcels(typeof parcel.user_id === 'string' ? parcel.user_id : undefined);
       await this.dispatchNotifications(summary, context.signal);
       return summary;
     });
+  }
+
+  private async linkConfirmedParcels(userId?: string): Promise<void> {
+    try { await this.client.autoLinkPackages(userId); }
+    catch (error) {
+      // A transient linking failure must not erase a successful tracking update.
+      // The next scheduled or manual refresh retries reconciliation.
+      captureOperationalError(error, { component: 'tracking', operation: 'auto_link_packages' });
+    }
   }
 
   private async exclusive<T>(operation: () => Promise<T>): Promise<T> {

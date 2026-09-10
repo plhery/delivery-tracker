@@ -73,6 +73,18 @@ describe('createApiRepo', () => {
     expect(createApiRepo().cachedList?.()?.[0].senderName).toBe('Example sender');
   });
 
+  it('returns the merged parcel after refreshing its former id', async () => {
+    const originalId = '10000000-0000-0000-0000-000000000099';
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce(response({ queued: true, pending: 1, jobIds: [] }))
+      .mockResolvedValueOnce(response({ packages: [{ ...packageRow, label: 'GLS / Post', carrier_data: {
+        ...packageRow.carrier_data, original_package_id: originalId,
+      } }] })));
+    await expect(createApiRepo().refreshParcel!(originalId)).resolves.toMatchObject({
+      id: packageRow.id, originalParcelId: originalId, label: 'GLS / Post',
+    });
+  });
+
   it('ignores a corrupted offline snapshot', () => {
     window.localStorage.setItem(API_CACHE_KEY, '[{"id":"incomplete"}]');
     expect(createApiRepo().cachedList?.()).toBeNull();

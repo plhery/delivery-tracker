@@ -2,6 +2,22 @@ import { describe, expect, it, vi } from 'vitest';
 import { SupabaseServiceClient, SupabaseUserClient } from './supabase';
 
 describe('guarded tracking writes', () => {
+  it('requests account-scoped automatic linking', async () => {
+    const client = new SupabaseServiceClient('https://database.example', 'service-key');
+    const request = vi.spyOn(client, 'request').mockResolvedValue(1);
+    await expect(client.autoLinkPackages('owner')).resolves.toBe(1);
+    expect(request).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/auto_link_package_tracking', {
+      method: 'POST', body: { p_user_id: 'owner' },
+    });
+  });
+
+  it('resolves an old parcel id after a merge', async () => {
+    const client = new SupabaseUserClient('https://database.example', 'public-key', 'token');
+    const request = vi.spyOn(client, 'request').mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: 'delivery' }]);
+    await expect(client.getPackage('origin')).resolves.toEqual({ id: 'delivery' });
+    expect(decodeURIComponent(request.mock.calls[1][0])).toContain('carrier_data->>original_package_id=eq.origin');
+  });
+
   it('loads persisted sync status and timestamps for scheduled carrier cooldowns', async () => {
     const client = new SupabaseServiceClient('https://database.example', 'service-key');
     const request = vi.spyOn(client, 'request').mockResolvedValue([]);

@@ -25,6 +25,8 @@ export interface CarrierResult extends JsonObject {
   expected_delivery?: string | null;
   sender_name?: string | null;
   delivery_carrier?: 'swiss-post';
+  canonical_tracking_number?: string;
+  international_tracking_number?: string;
   timezone?: string;
   events?: CarrierEvent[];
 }
@@ -43,6 +45,8 @@ const OPTIONAL_TEXT_FIELDS = [
   'last_update',
   'expected_delivery',
   'sender_name',
+  'canonical_tracking_number',
+  'international_tracking_number',
   'timezone',
 ] as const;
 const EVENT_TEXT_FIELDS = ['time', 'location', 'description', 'stage'] as const;
