@@ -1,6 +1,7 @@
 # Carrier support
 
-Delivery Tracker recognizes these carriers, with tracking availability shown below:
+Delivery Tracker recognizes 104 carriers: 39 with dedicated direct or upstream
+adapters plus 65 universal-fallback carriers. Tracking availability is shown below:
 
 | Carrier | Notes |
 | --- | --- |
@@ -36,8 +37,94 @@ Delivery Tracker recognizes these carriers, with tracking availability shown bel
 | Heppner | Automatic through the public recipient flow. Requires the shipment receipt number and its four- or five-digit delivery postcode. |
 | Ciblex | Automatic through the public parcel-tracking page for 14-digit shipment numbers. |
 | Paack | Automatic through the public recipient flow. Requires the tracking number and delivery postcode. |
+| Asendia | Automatic through universal lookup. `ASE…` identifiers are recognized; postal partner numbers stay with their issuing post. |
+| ShipUp | Automatic through universal lookup. Kept as a manual record when no direct route exists. |
+| India Post | Automatic. Recognises checksum-valid `IN` S10 identifiers. |
+| FedEx | Automatic through universal lookup. 12/15-digit numbers stay ambiguous suggestions; full routing barcodes are not treated as shipment IDs. |
+| Amazon Shipping | Automatic public-recipient verification for eligible Shipping parcels; retail `FR…` deliveries stay account-only under Amazon France. |
 
-Unknown carriers (`unknown` and `intl-post`) now attempt automatic lookup through
+### Universal-fallback carriers (65, no dedicated scraper yet)
+
+Added September 2026 from public shipment/label reports, official documentation
+examples, OSS fixtures and merchant integration samples. They are selectable in
+the manual picker, use the default carrier color, and track automatically
+through the universal fallback (Ship24 → ParcelsApp → 17TRACK) with the same
+privacy and verification rules as `unknown`. Distinctive number families are
+detected with high confidence; purely numeric families stay low-confidence
+suggestions so ambiguous numbers are never misassigned. Full routing barcodes,
+order references, short pick-up codes and quarantined checksum-failing S10
+shapes are not positive oracles. See `src/lib/carriers-100.test.ts` for the
+per-number source URLs and evidence roles.
+
+| Carrier | Detection |
+| --- | --- |
+| Royal Mail | Checksum-valid `GB` S10 outside Parcelforce `EA/EB/EC/ED/EE/CP` prefixes. |
+| Parcelforce Worldwide | `EA/EB/EC/ED/EE/CP` + 9 digits + `GB` S10. |
+| Evri | `H` + 15 alphanumerics (internal letters allowed; distinct from Hermes Germany `H` + digits). |
+| InPost | `8YDR` + 9 digits high; 24-digit, `JJD` + 16 digits and `JD` + 16 digits low (JJD needs domain/selection context vs DHL). |
+| An Post | Checksum-valid `IE` S10. |
+| bpost | Checksum-valid `BE` S10 high; 18/24-digit numerics low. |
+| Austrian Post | 22-digit numerics low (ambiguous with USPS/CTT Express). |
+| PostNord | 11 digits + `SE` (not S10). |
+| Posti | No exclusive detector yet; the sampled NL-handoff number routes to PostNL. |
+| Correos Express | 16-digit numerics low. |
+| SEUR | 14/21-digit IDs low; 7-digit references are not standalone tracking oracles. |
+| MRW | 5 digits + letter + 6 digits high; 12-digit numerics low. |
+| NACEX | `NNNN/NNNNNNNN` agency/shipment composite (slash preserved). |
+| CTT Portugal | Checksum-valid `PT` S10. |
+| CTT Express | `00` + 20 digits (22 total). |
+| Poste Italiane | `RA` + 11 digits, `1UW/3UW/5P` 13-char families and `2IMA` + 10 digits high; NL handoffs stay with PostNL. |
+| BRT | 14-digit low (shipment vs BRTcode roles preserved). |
+| Ecoscooting | 18-digit low; foreign postal handoffs stay with their issuer. |
+| TIPSA | 10-digit low. |
+| Ukrposhta | No exclusive detector yet; the sampled SG-handoff routes to Singapore Post. |
+| USPS | 20/22-digit numerics low (ambiguous with Planzer/Austrian Post); `420…` 30/34-digit routing barcodes are not shipment IDs. |
+| Canada Post | 16-digit numerics low. |
+| Purolator | 3 letters (not `BYS`) + 9 digits high; 0–5-prefixed 12-digit numerics low. |
+| Canpar | Prefix letter (`C/D/K/L/S/U/X/Z`) + 21 digits. |
+| OnTrac | `C/D` + 14 digits, `L` + letter + 8 digits, `1LS` + 12–14 digits and `1LSCX` + 10 alphanumerics high. |
+| SpeedX | `SPX` + 3 letters + 12 digits. |
+| UniUni | `UUS` + 16 alphanumerics and `4C` + 9 digits + `US`. |
+| Landmark Global | `LTN` + 8 digits + `N1`. |
+| Old Dominion | `072/777/778/780` + 8 digits and `80` + 9 digits (11 total, freight PRO). |
+| Spee-Dee | `SP` + 18 digits (keep the prefix; not a Planzer number). |
+| GOFO Express | `GFUS` + 14 digits. |
+| Estafeta | 10-digit low. |
+| Correios Brazil | Checksum-valid `BR` S10; inbound `CN/HK` partner S10 routes to its issuer. |
+| Correos de Chile | 13-digit numerics low. |
+| YunExpress | `YT` + 16 digits. |
+| 4PX | `4PX` + 13 digits + `CN`. |
+| Blue Dart | 11-digit low. |
+| Delhivery | 13/14-digit numerics low. |
+| NZ Post | Checksum-valid `NZ` S10. |
+| Singapore Post | Checksum-valid `SG` S10. |
+| Japan Post | Checksum-valid `JP` S10. |
+| SF Express | 12-digit and `SF` + 13 digits low. |
+| STO Express | 12-digit low. |
+| Yunda Express | 13-digit low. |
+| YTO Express | `D` + 11 digits. |
+| ZTO Express | 12-digit low. |
+| JD Logistics | `VG` + 11 digits. |
+| Yamato Transport | 12-digit low. |
+| Korea Post | Checksum-valid `KR` S10. |
+| Thailand Post | Checksum-valid `TH` S10. |
+| DTDC | `N` + 8 digits. |
+| Australia Post | No exclusive detector yet; tutorial fixtures stay with generic postal fallback. |
+| Hongkong Post | Checksum-valid `HK` S10. |
+| Pos Malaysia | `MYPM` + 11 digits and checksum-valid `MY` S10. |
+| Ninja Van | No exclusive detector yet; shipper-dependent formats need a broader spec. |
+| China Post | Checksum-valid `CN` S10. |
+| Packeta | `Z` + 10 digits. |
+| Poczta Polska | `PX` + 10 digits high; 19-digit numerics low. |
+| Bring | Checksum-valid `NO` S10. |
+| Aramex | 11-digit low. |
+| TNT | 9-digit low. |
+| Correos | `PR` + 15 digits + `C`. |
+| Yanwen | `BYS` + 9 digits. |
+| The Courier Guy | No exclusive detector yet; 5-char short references are not tracking oracles. |
+| J&T Express | 12-digit numerics low. |
+
+Unknown carriers (`unknown` and `intl-post`) plus the 65 universal-fallback carriers above attempt automatic lookup through
 ParcelsApp → 17TRACK → Ship24, with Postal Ninja opt-in. The first two use the existing
 private TRAWL service (`FLARESOLVERR_URL`); Postal Ninja and Ship24 use a dedicated
 fresh Chromium session (`TRACKING_CHROMIUM_PATH`). These services are **not

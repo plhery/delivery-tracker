@@ -138,7 +138,7 @@ export const CARRIER_CAPABILITIES = {
       },
       {
         "pattern": "^\\d{20}$",
-        "confidence": "high"
+        "confidence": "low"
       }
     ]
   },
@@ -191,6 +191,10 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^SY\\d{11}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^SYAE\\d{9}$",
         "confidence": "high"
       }
     ]
@@ -251,6 +255,10 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}NL$",
         "confidence": "high",
         "checksum": "s10"
+      },
+      {
+        "pattern": "^(?=.{13}$|.{15}$)3S[A-Z]{1,4}\\d+$",
+        "confidence": "high"
       }
     ]
   },
@@ -339,6 +347,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^\\d{10}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^JD\\d{18}$",
+        "confidence": "high"
       }
     ]
   },
@@ -414,6 +426,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^1Z[A-Z0-9]{16}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^[KJV]\\d{10}$",
+        "confidence": "low"
       }
     ]
   },
@@ -694,6 +710,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^CC\\d{10,14}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^\\d{10}$",
+        "confidence": "low"
       }
     ]
   },
@@ -769,7 +789,7 @@ export const CARRIER_CAPABILITIES = {
       },
       {
         "pattern": "^\\d{14}[A-Z]$",
-        "confidence": "high"
+        "confidence": "low"
       },
       {
         "pattern": "^[A-Z]{2}\\d{9}[A-Z]{2}$",
@@ -819,7 +839,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low"
       },
       {
-        "pattern": "^\\d{11}$",
+        "pattern": "^\\d{11,12}$",
         "confidence": "low"
       }
     ]
@@ -849,6 +869,10 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^[A-Z0-9]{12}(?:0[1-9]|[1-8]\\d|9[0-5]|97|98)\\d{3}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^[A-Z0-9]{12}$",
         "confidence": "low"
       }
     ]
@@ -1226,7 +1250,7 @@ export const CARRIER_CAPABILITIES = {
     "linkRules": [],
     "detectionRules": [
       {
-        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}(?!CH$|FR$|IN$|NL$)[A-Z]{2}$",
+        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}(?!CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$)[A-Z]{2}$",
         "confidence": "high",
         "checksum": "s10"
       }
@@ -1274,6 +1298,1374 @@ export const CARRIER_CAPABILITIES = {
     "trackingSiteName": "17TRACK",
     "trackingUrlTemplate": "https://t.17track.net/en#nums={trackingNumber}",
     "canaryUrl": "https://parcelsapp.com/en"
+  },
+  "royal-mail": {
+    "displayName": "Royal Mail",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [
+      {
+        "domains": [
+          "royalmail.com"
+        ],
+        "params": [
+          "trackNumber"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^(?!(?:EA|EB|EC|ED|EE|CP))[A-Z]{2}\\d{9}GB$",
+        "confidence": "high",
+        "checksum": "s10"
+      }
+    ],
+    "trackingUrlTemplate": "https://www.royalmail.com/portal/rm/track?trackNumber={trackingNumber}"
+  },
+  "parcelforce": {
+    "displayName": "Parcelforce Worldwide",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [
+      {
+        "domains": [
+          "parcelforce.com"
+        ],
+        "params": [
+          "trackNumber"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^(?:EA|EB|EC|ED|EE|CP)\\d{9}GB$",
+        "confidence": "high",
+        "checksum": "s10"
+      }
+    ],
+    "trackingUrlTemplate": "https://www.parcelforce.com/portal/pw/track?trackNumber={trackingNumber}"
+  },
+  "evri": {
+    "displayName": "Evri",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^H[A-Z0-9]{15}$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "inpost": {
+    "displayName": "InPost",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{24}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^JJD\\d{16}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^JD\\d{16}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^8YDR\\d{9}$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "an-post": {
+    "displayName": "An Post",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^[A-Z]{2}\\d{9}IE$",
+        "confidence": "high",
+        "checksum": "s10"
+      }
+    ]
+  },
+  "bpost": {
+    "displayName": "bpost",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{18}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{24}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^[A-Z]{2}\\d{9}BE$",
+        "confidence": "high",
+        "checksum": "s10"
+      }
+    ]
+  },
+  "austrian-post": {
+    "displayName": "Austrian Post",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{22}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "postnord": {
+    "displayName": "PostNord",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{11}SE$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "posti": {
+    "displayName": "Posti",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": []
+  },
+  "correos-express": {
+    "displayName": "Correos Express",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{16}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "seur": {
+    "displayName": "SEUR",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{14}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{21}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "mrw": {
+    "displayName": "MRW",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{12}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{5}[A-Z]\\d{6}$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "nacex": {
+    "displayName": "NACEX",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{4}/\\d{8}$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "ctt": {
+    "displayName": "CTT Portugal",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^[A-Z]{2}\\d{9}PT$",
+        "confidence": "high",
+        "checksum": "s10"
+      }
+    ]
+  },
+  "ctt-express": {
+    "displayName": "CTT Express",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^00\\d{20}$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "poste-italiane": {
+    "displayName": "Poste Italiane",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^RA\\d{11}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^(?:[13]UW[A-Z0-9]{10}|5P[A-Z0-9]{11})$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^2IMA\\d{10}$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "brt": {
+    "displayName": "BRT",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{14}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "ecoscooting": {
+    "displayName": "Ecoscooting",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [
+      {
+        "domains": [
+          "ecoscooting.com"
+        ],
+        "path": "^/tracking/([^/?#]+)/?$"
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{18}$",
+        "confidence": "low"
+      }
+    ],
+    "trackingUrlTemplate": "https://ecoscooting.com/tracking/{trackingNumber}"
+  },
+  "tipsa": {
+    "displayName": "TIPSA",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{10}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "ukrposhta": {
+    "displayName": "Ukrposhta",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": []
+  },
+  "usps": {
+    "displayName": "USPS",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [
+      {
+        "domains": [
+          "tools.usps.com",
+          "usps.com"
+        ],
+        "params": [
+          "tLabels"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{20}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{22}$",
+        "confidence": "low"
+      }
+    ],
+    "trackingUrlTemplate": "https://tools.usps.com/go/TrackConfirmAction?tLabels={trackingNumber}"
+  },
+  "canada-post": {
+    "displayName": "Canada Post",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [
+      {
+        "domains": [
+          "canadapost-postescanada.ca",
+          "canadapost.ca"
+        ],
+        "params": [
+          "searchFor"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{16}$",
+        "confidence": "low"
+      }
+    ],
+    "trackingUrlTemplate": "https://www.canadapost-postescanada.ca/track-reperage/en#/search?searchFor={trackingNumber}"
+  },
+  "purolator": {
+    "displayName": "Purolator",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [
+      {
+        "domains": [
+          "purolator.com"
+        ],
+        "params": [
+          "searchValue"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^[0-5]\\d{11}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^(?!BYS)[A-Z]{3}\\d{9}$",
+        "confidence": "high"
+      }
+    ],
+    "trackingUrlTemplate": "https://www.purolator.com/en/shipping/tracker?searchValue={trackingNumber}"
+  },
+  "canpar": {
+    "displayName": "Canpar",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [
+      {
+        "domains": [
+          "canpar.com"
+        ],
+        "params": [
+          "reference"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^[CDKLSUXZ]\\d{21}$",
+        "confidence": "high"
+      }
+    ],
+    "trackingUrlTemplate": "https://www.canpar.com/en/track/tracking.jsp?reference={trackingNumber}&locale=en"
+  },
+  "ontrac": {
+    "displayName": "OnTrac",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [
+      {
+        "domains": [
+          "ontrac.com"
+        ],
+        "params": [
+          "number"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^[CD]\\d{14}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^L[AIEHNX]\\d{8}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^1LS\\d{12,14}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^1LSCX[A-Z0-9]{10}$",
+        "confidence": "high"
+      }
+    ],
+    "trackingUrlTemplate": "https://www.ontrac.com/tracking/?number={trackingNumber}"
+  },
+  "speedx": {
+    "displayName": "SpeedX",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^SPX[A-Z]{3}\\d{12}$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "uniuni": {
+    "displayName": "UniUni",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^UUS[A-Z0-9]{16}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^4C\\d{9}US$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "landmark-global": {
+    "displayName": "Landmark Global",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [
+      {
+        "domains": [
+          "track.landmarkglobal.com",
+          "landmarkglobal.com"
+        ],
+        "params": [
+          "search"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^LTN\\d{8}N1$",
+        "confidence": "high"
+      }
+    ],
+    "trackingUrlTemplate": "https://track.landmarkglobal.com/?search={trackingNumber}"
+  },
+  "old-dominion": {
+    "displayName": "Old Dominion",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [
+      {
+        "domains": [
+          "odfl.com"
+        ],
+        "params": [
+          "proNumbers"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^(?:072|777|778|780)\\d{8}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^80\\d{9}$",
+        "confidence": "high"
+      }
+    ],
+    "trackingUrlTemplate": "https://www.odfl.com/us/en/tools/trace-track-ltl-freight/trace.html?proNumbers={trackingNumber}"
+  },
+  "spee-dee": {
+    "displayName": "Spee-Dee",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [
+      {
+        "domains": [
+          "speedeedelivery.com"
+        ],
+        "params": [
+          "tracking"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^SP\\d{18}$",
+        "confidence": "high"
+      }
+    ],
+    "trackingUrlTemplate": "https://www.speedeedelivery.com/track/?tracking={trackingNumber}"
+  },
+  "gofo": {
+    "displayName": "GOFO Express",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [
+      {
+        "domains": [
+          "gofoexpress.com"
+        ],
+        "params": [
+          "searchID"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^GFUS\\d{14}$",
+        "confidence": "high"
+      }
+    ],
+    "trackingUrlTemplate": "https://www.gofoexpress.com/tracking.html?searchID={trackingNumber}"
+  },
+  "estafeta": {
+    "displayName": "Estafeta",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{10}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "correios-br": {
+    "displayName": "Correios Brazil",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^[A-Z]{2}\\d{9}BR$",
+        "confidence": "high",
+        "checksum": "s10"
+      }
+    ]
+  },
+  "correos-chile": {
+    "displayName": "Correos de Chile",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{13}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "yunexpress": {
+    "displayName": "YunExpress",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^YT\\d{16}$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "four-px": {
+    "displayName": "4PX",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^4PX\\d{13}CN$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "blue-dart": {
+    "displayName": "Blue Dart",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{11}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "delhivery": {
+    "displayName": "Delhivery",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{13,14}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "nz-post": {
+    "displayName": "NZ Post",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^[A-Z]{2}\\d{9}NZ$",
+        "confidence": "high",
+        "checksum": "s10"
+      }
+    ]
+  },
+  "singapore-post": {
+    "displayName": "Singapore Post",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^[A-Z]{2}\\d{9}SG$",
+        "confidence": "high",
+        "checksum": "s10"
+      }
+    ]
+  },
+  "japan-post": {
+    "displayName": "Japan Post",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^[A-Z]{2}\\d{9}JP$",
+        "confidence": "high",
+        "checksum": "s10"
+      }
+    ]
+  },
+  "sf-express": {
+    "displayName": "SF Express",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{12}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^SF\\d{13}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "sto": {
+    "displayName": "STO Express",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{12}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "yunda": {
+    "displayName": "Yunda Express",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{13}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "yto": {
+    "displayName": "YTO Express",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^D\\d{11}$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "zto": {
+    "displayName": "ZTO Express",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{12}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "jd-logistics": {
+    "displayName": "JD Logistics",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^VG\\d{11}$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "yamato": {
+    "displayName": "Yamato Transport",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{12}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "korea-post": {
+    "displayName": "Korea Post",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^[A-Z]{2}\\d{9}KR$",
+        "confidence": "high",
+        "checksum": "s10"
+      }
+    ]
+  },
+  "thailand-post": {
+    "displayName": "Thailand Post",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^[A-Z]{2}\\d{9}TH$",
+        "confidence": "high",
+        "checksum": "s10"
+      }
+    ]
+  },
+  "dtdc": {
+    "displayName": "DTDC",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^N\\d{8}$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "australia-post": {
+    "displayName": "Australia Post",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": []
+  },
+  "hongkong-post": {
+    "displayName": "Hongkong Post",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^[A-Z]{2}\\d{9}HK$",
+        "confidence": "high",
+        "checksum": "s10"
+      }
+    ]
+  },
+  "pos-malaysia": {
+    "displayName": "Pos Malaysia",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^MYPM\\d{11}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^[A-Z]{2}\\d{9}MY$",
+        "confidence": "high",
+        "checksum": "s10"
+      }
+    ]
+  },
+  "ninja-van": {
+    "displayName": "Ninja Van",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": []
+  },
+  "china-post": {
+    "displayName": "China Post",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^[A-Z]{2}\\d{9}CN$",
+        "confidence": "high",
+        "checksum": "s10"
+      }
+    ]
+  },
+  "packeta": {
+    "displayName": "Packeta",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [
+      {
+        "domains": [
+          "tracking.packeta.com",
+          "packeta.com"
+        ],
+        "params": [
+          "id"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^Z\\d{10}$",
+        "confidence": "high"
+      }
+    ],
+    "trackingUrlTemplate": "https://tracking.packeta.com/en/?id={trackingNumber}"
+  },
+  "poczta-polska": {
+    "displayName": "Poczta Polska",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{19}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^PX\\d{10}$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "bring-posten": {
+    "displayName": "Bring",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^[A-Z]{2}\\d{9}NO$",
+        "confidence": "high",
+        "checksum": "s10"
+      }
+    ]
+  },
+  "aramex": {
+    "displayName": "Aramex",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{11}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "tnt": {
+    "displayName": "TNT",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{9}$",
+        "confidence": "low"
+      }
+    ]
+  },
+  "correos-spain": {
+    "displayName": "Correos",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^PR\\d{15}C$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "yanwen": {
+    "displayName": "Yanwen",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^BYS\\d{9}$",
+        "confidence": "high"
+      }
+    ]
+  },
+  "the-courier-guy": {
+    "displayName": "The Courier Guy",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": []
+  },
+  "j-and-t": {
+    "displayName": "J&T Express",
+    "color": "#8e8e93",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "universal"
+    },
+    "canaryUrl": "https://t.17track.net/",
+    "linkRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{12}$",
+        "confidence": "low"
+      }
+    ]
   }
 } as const;
 
@@ -1339,6 +2731,71 @@ export const CARRIER_IDS = [
   "hermes-de",
   "gls-de",
   "delivengo",
+  "an-post",
+  "aramex",
+  "australia-post",
+  "austrian-post",
+  "blue-dart",
+  "bpost",
+  "bring-posten",
+  "brt",
+  "canada-post",
+  "canpar",
+  "china-post",
+  "correios-br",
+  "correos-chile",
+  "correos-express",
+  "correos-spain",
+  "ctt",
+  "ctt-express",
+  "delhivery",
+  "dtdc",
+  "ecoscooting",
+  "estafeta",
+  "evri",
+  "four-px",
+  "gofo",
+  "hongkong-post",
+  "inpost",
+  "j-and-t",
+  "japan-post",
+  "jd-logistics",
+  "korea-post",
+  "landmark-global",
+  "mrw",
+  "nacex",
+  "ninja-van",
+  "nz-post",
+  "old-dominion",
+  "ontrac",
+  "packeta",
+  "parcelforce",
+  "poczta-polska",
+  "pos-malaysia",
+  "poste-italiane",
+  "posti",
+  "postnord",
+  "purolator",
+  "royal-mail",
+  "seur",
+  "sf-express",
+  "singapore-post",
+  "spee-dee",
+  "speedx",
+  "sto",
+  "thailand-post",
+  "the-courier-guy",
+  "tipsa",
+  "tnt",
+  "ukrposhta",
+  "uniuni",
+  "usps",
+  "yamato",
+  "yanwen",
+  "yto",
+  "yunda",
+  "yunexpress",
+  "zto",
   "intl-post",
   "unknown"
 ] as const;

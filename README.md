@@ -62,7 +62,7 @@ Supabase, and set `NEXT_PUBLIC_USE_API=true`. See [Authentication](docs/AUTHENTI
 
 ## Carriers
 
-35+ carrier integrations, mostly European, combining dedicated scrapers with
+104 carrier integrations, combining dedicated scrapers with
 aggregator fallbacks. Coverage includes Swiss Post, Planzer, Quickpac, DHL,
 DPD, GLS, La Poste / Colissimo, Chronopost, Mondial Relay, PostNL, Hermes, UPS,
 and regional delivery services.

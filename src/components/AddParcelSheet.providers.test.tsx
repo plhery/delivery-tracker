@@ -9,7 +9,7 @@ afterEach(() => vi.resetAllMocks());
 const apiAuth = { userId: 'test-user', getAccessToken: async () => 'test-token' };
 
 describe('automatic unknown-carrier lookup', () => {
-  it.each(['12345678901234', 'YT2621200705470145'])('saves %s without requiring a guessed carrier', async (number) => {
+  it.each(['12345678901234'])('saves %s without requiring a guessed carrier', async (number) => {
     const onAdd = vi.fn().mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(<AddParcelSheet onAdd={onAdd} onClose={vi.fn()} initialTrackingInput={number} />);
@@ -20,6 +20,20 @@ describe('automatic unknown-carrier lookup', () => {
     expect(screen.queryByRole('option', { name: 'ParcelsApp' })).not.toBeInTheDocument();
     await user.click(button);
     expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ trackingNumber: number, carrier: 'unknown' }));
+  });
+
+  it('detects the YunExpress YT family directly instead of leaving it unknown', async () => {
+    // REPORTED REAL cross-border shipment; YunExpress is now a universal-fallback carrier.
+    // Source: https://www.reddit.com/r/AirReps/comments/1vfhh53/please_help_yunexpress_alibaba_tracking_stuck_on/
+    const number = 'YT2621200705470145';
+    const onAdd = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<AddParcelSheet onAdd={onAdd} onClose={vi.fn()} initialTrackingInput={number} />);
+    const button = screen.getByRole('button', { name: /^add parcel$/i });
+    expect(button).toBeEnabled();
+    expect(screen.getByText('YunExpress')).toBeInTheDocument();
+    await user.click(button);
+    expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ trackingNumber: number, carrier: 'yunexpress' }));
   });
 });
 

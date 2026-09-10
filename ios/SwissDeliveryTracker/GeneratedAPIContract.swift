@@ -67,6 +67,71 @@ struct CarrierID: RawRepresentable, Codable, CaseIterable, Hashable, Sendable, I
     static let hermesDe = CarrierID(rawValue: "hermes-de")
     static let glsDe = CarrierID(rawValue: "gls-de")
     static let delivengo = CarrierID(rawValue: "delivengo")
+    static let anPost = CarrierID(rawValue: "an-post")
+    static let aramex = CarrierID(rawValue: "aramex")
+    static let australiaPost = CarrierID(rawValue: "australia-post")
+    static let austrianPost = CarrierID(rawValue: "austrian-post")
+    static let blueDart = CarrierID(rawValue: "blue-dart")
+    static let bpost = CarrierID(rawValue: "bpost")
+    static let bringPosten = CarrierID(rawValue: "bring-posten")
+    static let brt = CarrierID(rawValue: "brt")
+    static let canadaPost = CarrierID(rawValue: "canada-post")
+    static let canpar = CarrierID(rawValue: "canpar")
+    static let chinaPost = CarrierID(rawValue: "china-post")
+    static let correiosBr = CarrierID(rawValue: "correios-br")
+    static let correosChile = CarrierID(rawValue: "correos-chile")
+    static let correosExpress = CarrierID(rawValue: "correos-express")
+    static let correosSpain = CarrierID(rawValue: "correos-spain")
+    static let ctt = CarrierID(rawValue: "ctt")
+    static let cttExpress = CarrierID(rawValue: "ctt-express")
+    static let delhivery = CarrierID(rawValue: "delhivery")
+    static let dtdc = CarrierID(rawValue: "dtdc")
+    static let ecoscooting = CarrierID(rawValue: "ecoscooting")
+    static let estafeta = CarrierID(rawValue: "estafeta")
+    static let evri = CarrierID(rawValue: "evri")
+    static let fourPx = CarrierID(rawValue: "four-px")
+    static let gofo = CarrierID(rawValue: "gofo")
+    static let hongkongPost = CarrierID(rawValue: "hongkong-post")
+    static let inpost = CarrierID(rawValue: "inpost")
+    static let jAndT = CarrierID(rawValue: "j-and-t")
+    static let japanPost = CarrierID(rawValue: "japan-post")
+    static let jdLogistics = CarrierID(rawValue: "jd-logistics")
+    static let koreaPost = CarrierID(rawValue: "korea-post")
+    static let landmarkGlobal = CarrierID(rawValue: "landmark-global")
+    static let mrw = CarrierID(rawValue: "mrw")
+    static let nacex = CarrierID(rawValue: "nacex")
+    static let ninjaVan = CarrierID(rawValue: "ninja-van")
+    static let nzPost = CarrierID(rawValue: "nz-post")
+    static let oldDominion = CarrierID(rawValue: "old-dominion")
+    static let ontrac = CarrierID(rawValue: "ontrac")
+    static let packeta = CarrierID(rawValue: "packeta")
+    static let parcelforce = CarrierID(rawValue: "parcelforce")
+    static let pocztaPolska = CarrierID(rawValue: "poczta-polska")
+    static let posMalaysia = CarrierID(rawValue: "pos-malaysia")
+    static let posteItaliane = CarrierID(rawValue: "poste-italiane")
+    static let posti = CarrierID(rawValue: "posti")
+    static let postnord = CarrierID(rawValue: "postnord")
+    static let purolator = CarrierID(rawValue: "purolator")
+    static let royalMail = CarrierID(rawValue: "royal-mail")
+    static let seur = CarrierID(rawValue: "seur")
+    static let sfExpress = CarrierID(rawValue: "sf-express")
+    static let singaporePost = CarrierID(rawValue: "singapore-post")
+    static let speeDee = CarrierID(rawValue: "spee-dee")
+    static let speedx = CarrierID(rawValue: "speedx")
+    static let sto = CarrierID(rawValue: "sto")
+    static let thailandPost = CarrierID(rawValue: "thailand-post")
+    static let theCourierGuy = CarrierID(rawValue: "the-courier-guy")
+    static let tipsa = CarrierID(rawValue: "tipsa")
+    static let tnt = CarrierID(rawValue: "tnt")
+    static let ukrposhta = CarrierID(rawValue: "ukrposhta")
+    static let uniuni = CarrierID(rawValue: "uniuni")
+    static let usps = CarrierID(rawValue: "usps")
+    static let yamato = CarrierID(rawValue: "yamato")
+    static let yanwen = CarrierID(rawValue: "yanwen")
+    static let yto = CarrierID(rawValue: "yto")
+    static let yunda = CarrierID(rawValue: "yunda")
+    static let yunexpress = CarrierID(rawValue: "yunexpress")
+    static let zto = CarrierID(rawValue: "zto")
     static let internationalPost = CarrierID(rawValue: "intl-post")
     static let unknown = CarrierID(rawValue: "unknown")
 
@@ -108,6 +173,71 @@ struct CarrierID: RawRepresentable, Codable, CaseIterable, Hashable, Sendable, I
         .hermesDe,
         .glsDe,
         .delivengo,
+        .anPost,
+        .aramex,
+        .australiaPost,
+        .austrianPost,
+        .blueDart,
+        .bpost,
+        .bringPosten,
+        .brt,
+        .canadaPost,
+        .canpar,
+        .chinaPost,
+        .correiosBr,
+        .correosChile,
+        .correosExpress,
+        .correosSpain,
+        .ctt,
+        .cttExpress,
+        .delhivery,
+        .dtdc,
+        .ecoscooting,
+        .estafeta,
+        .evri,
+        .fourPx,
+        .gofo,
+        .hongkongPost,
+        .inpost,
+        .jAndT,
+        .japanPost,
+        .jdLogistics,
+        .koreaPost,
+        .landmarkGlobal,
+        .mrw,
+        .nacex,
+        .ninjaVan,
+        .nzPost,
+        .oldDominion,
+        .ontrac,
+        .packeta,
+        .parcelforce,
+        .pocztaPolska,
+        .posMalaysia,
+        .posteItaliane,
+        .posti,
+        .postnord,
+        .purolator,
+        .royalMail,
+        .seur,
+        .sfExpress,
+        .singaporePost,
+        .speeDee,
+        .speedx,
+        .sto,
+        .thailandPost,
+        .theCourierGuy,
+        .tipsa,
+        .tnt,
+        .ukrposhta,
+        .uniuni,
+        .usps,
+        .yamato,
+        .yanwen,
+        .yto,
+        .yunda,
+        .yunexpress,
+        .zto,
         .internationalPost,
         .unknown,
     ]

@@ -204,9 +204,20 @@ describe('unknown postal carrier links', () => {
 });
 
 describe('detectCarrier', () => {
-  it('recognises Planzer 20-digit delivery numbers', () => {
-    expect(detectCarrier('91346097020038089282')).toBe('planzer');
-    expect(detectCarrier('91346 09702 00380 89282')).toBe('planzer');
+  it('keeps bare 20-digit numbers ambiguous between Planzer and USPS', () => {
+    // High-impact fix: the blanket high-confidence Planzer 20-digit rule stole
+    // reported DHL (https://www.paketda.de/fragen-antworten, 00340434633751428115)
+    // and USPS OSS fixtures (https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json).
+    expect(detectCarrierMatch('91346097020038089282')).toMatchObject({
+      carrier: 'unknown',
+      confidence: 'low',
+      candidates: ['planzer', 'usps'],
+    });
+    expect(detectCarrierMatch('91346 09702 00380 89282')).toMatchObject({
+      carrier: 'unknown',
+      confidence: 'low',
+      candidates: ['planzer', 'usps'],
+    });
   });
 
   it('recognises Planzer shared-link shipment numbers', () => {
@@ -269,7 +280,13 @@ describe('detectCarrier', () => {
   it('recognises French postal and Chronopost identifiers', () => {
     expect(detectCarrier('8G12345678901')).toBe('la-poste');
     expect(detectCarrier('RA123456785FR')).toBe('la-poste');
-    expect(detectCarrier('12345678901234Q')).toBe('chronopost');
+    // High-impact fix: 14-digits-plus-letter was overbroad high-confidence Chronopost
+    // (stole DPD trailing-L reports and La Poste Y merchant examples). Now a low candidate.
+    expect(detectCarrierMatch('12345678901234Q')).toMatchObject({
+      carrier: 'unknown',
+      confidence: 'low',
+      candidates: ['chronopost'],
+    });
     expect(detectCarrier('XU123456785FR')).toBe('chronopost');
     expect(detectCarrier('XW123456785TS')).toBe('chronopost');
     expect(detectCarrier('PZ123456785JF')).toBe('chronopost');
@@ -285,7 +302,7 @@ describe('detectCarrier', () => {
     expect(detectCarrierMatch('36631000001')).toMatchObject({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['gls-ch', 'gls-fr', 'gls-de'],
+      candidates: ['gls-ch', 'gls-fr', 'gls-de', 'blue-dart', 'aramex'],
     });
     expect(detectCarrierMatch('99112233445575012')).toMatchObject({
       carrier: 'unknown',
@@ -308,7 +325,7 @@ describe('detectCarrier', () => {
     expect(detectCarrierMatch('10594002378611')).toMatchObject({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['gls-ch', 'dpd', 'dpd-fr', 'ciblex', 'hermes-de', 'gls-de'],
+      candidates: ['gls-ch', 'dpd', 'dpd-fr', 'ciblex', 'hermes-de', 'gls-de', 'seur', 'brt', 'delhivery'],
     });
     expect(detectCarrierMatch('76434219')).toMatchObject({
       carrier: 'unknown',
@@ -338,7 +355,7 @@ describe('detectCarrier', () => {
     expect(detectCarrierMatch('1234567890')).toMatchObject({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['dhl', 'mondial-relay'],
+      candidates: ['dhl', 'mondial-relay', 'relais-colis', 'tipsa', 'estafeta'],
     });
     expect(detectCarrier('JJD0099999999')).toBe('dhl');
     expect(detectCarrier('JVGL0099999999')).toBe('dhl');
@@ -348,7 +365,7 @@ describe('detectCarrier', () => {
     expect(detectCarrierMatch('123456789012')).toMatchObject({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['fedex', 'gls-ch', 'dpd-fr', 'mondial-relay', 'gls-de'],
+      candidates: ['fedex', 'gls-ch', 'dpd-fr', 'mondial-relay', 'gls-fr', 'colis-prive', 'gls-de', 'mrw', 'purolator', 'sf-express', 'sto', 'zto', 'yamato', 'j-and-t'],
     });
     expect(detectCarrierMatch('123456789012345')).toMatchObject({
       carrier: 'unknown',
@@ -361,7 +378,7 @@ describe('detectCarrier', () => {
     expect(detectCarrierMatch('01234567890123')).toMatchObject({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['gls-ch', 'dpd', 'dpd-fr', 'ciblex', 'hermes-de', 'gls-de'],
+      candidates: ['gls-ch', 'dpd', 'dpd-fr', 'ciblex', 'hermes-de', 'gls-de', 'seur', 'brt', 'delhivery'],
     });
   });
 

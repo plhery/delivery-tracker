@@ -760,7 +760,10 @@ describe('App', () => {
     });
   });
 
-  it('automatically detects a Planzer delivery number', async () => {
+  it('leaves bare 20-digit numbers to universal lookup instead of guessing Planzer', async () => {
+    // High-impact fix: blanket high-confidence Planzer 20-digit detection stole
+    // reported DHL (https://www.paketda.de/fragen-antworten) and USPS
+    // (https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json) inputs.
     const base = createDemoRepo(window.localStorage);
     const add = vi.fn(base.add);
     const user = userEvent.setup();
@@ -775,14 +778,14 @@ describe('App', () => {
     );
 
     expect(
-      within(sheet).getByText(/Planzer/i, { selector: 'strong' }),
+      within(sheet).getByText(/unknown carrier/i, { selector: 'strong' }),
     ).toBeInTheDocument();
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
 
     expect(add).toHaveBeenCalledWith({
       trackingNumber: '91346097020038089282',
       label: '',
-      carrier: 'planzer',
+      carrier: 'unknown',
     });
   });
 
