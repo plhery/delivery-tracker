@@ -1,4 +1,4 @@
-import { AMAZON_ORDERS_URL, requiresAmazonAccount } from './amazonFrance';
+import { AMAZON_NUMBER_PATTERN, amazonOrdersUrl, amazonShippingUrl, requiresAmazonAccount } from './amazon';
 import { isValidMondialRelayBarcode } from './mondialRelayBarcode';
 import {
   CARRIER_CAPABILITIES,
@@ -122,6 +122,8 @@ function trackingNumberForLink(carrierId: CarrierId, raw: string): string {
 }
 
 function trackingLink(carrierId: CarrierId, template: string | undefined) {
+  if (carrierId === 'amazon-logistics') return amazonOrdersUrl;
+  if (carrierId === 'amazon-shipping') return amazonShippingUrl;
   if (!template) return undefined;
   return (trackingNumber: string) =>
     template.replace(
@@ -225,7 +227,7 @@ export function parcelTrackingLinks(
 ): ParcelTrackingLink[] {
   if (requiresAmazonAccount(parcel.carrier, parcel.trackingNumber)) {
     const carrier = carrierInfo('amazon-logistics', locale);
-    return [{ carrier, name: carrier.name, url: AMAZON_ORDERS_URL, active: true, ready: true, role: 'active' }];
+    return [{ carrier, name: carrier.name, url: amazonOrdersUrl(parcel.trackingNumber), active: true, ready: true, role: 'active' }];
   }
   const links = carrierTrackingLinks(parcel, locale);
   const number = encodeURIComponent(parcel.originalCarrier && parcel.trackingSource
@@ -401,7 +403,7 @@ export function detectCarrier(raw: string): CarrierId {
 }
 
 const TRACKING_CANDIDATE_PATTERNS = [
-  /\bFR\s*\d(?:[\s.-]?\d){9}\b/gi,
+  new RegExp(`\\b${AMAZON_NUMBER_PATTERN.slice(1, -1).replaceAll('[0-9]', '(?:[\\s.-]*[0-9])')}\\b`, 'gi'),
   /\b\d{26}\b/g,
   /\bH\d{15,19}\b/gi,
   /\b1Z[A-Z0-9]{16}\b/gi,

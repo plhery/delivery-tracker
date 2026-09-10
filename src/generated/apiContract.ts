@@ -418,29 +418,48 @@ export const CARRIER_CAPABILITIES = {
     ]
   },
   "amazon-logistics": {
-    "displayName": "Amazon France",
+    "displayName": "Amazon Logistics",
     "color": "#ff9900",
     "selectable": true,
-    "timezone": "Europe/Paris",
+    "timezone": "UTC",
     "tracking": {
       "mode": "link-only",
       "adapter": null
     },
-    "trackingUrlTemplate": "https://www.amazon.fr/gp/your-account/order-history",
+    "trackingUrlTemplate": "https://www.amazon.com/gp/your-account/order-history",
     "linkRules": [
       {
         "domains": [
-          "track.amazon.fr"
+          "track.amazon.fr",
+          "track.amazon.it",
+          "track.amazon.es",
+          "track.amazon.co.uk",
+          "track.amazon.com"
         ],
-        "path": "^/tracking/([^/?#]+)/?$"
+        "path": "^/tracking/([^/?#]+)/?$",
+        "detectFromNumber": true
       }
     ],
     "detectionRules": [
       {
-        "pattern": "^FR\\d{10}$",
+        "pattern": "^(?:(?:FR|DE|BE|UK|GB|IT|ES|NL|AT|IE|PL|SE|PT|LU|DK|FI|CZ|SK|HU|RO|BG|HR|SI|EE|LV|LT|GR|CY|MT|CH|NO|IS|LI|TR)[0-9]{10}|TBA[0-9]{12})$",
         "confidence": "high"
       }
     ]
+  },
+  "amazon-shipping": {
+    "displayName": "Amazon Shipping",
+    "color": "#ff9900",
+    "selectable": false,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "amazon-shipping"
+    },
+    "canaryUrl": "https://track.amazon.fr/",
+    "trackingUrlTemplate": "https://track.amazon.fr/tracking/{trackingNumber}",
+    "linkRules": [],
+    "detectionRules": []
   },
   "fedex": {
     "displayName": "FedEx",
@@ -1264,6 +1283,7 @@ export interface ApiCarrierDetectionRequest {
 
 export interface ApiCarrierDetectionResponse {
   "trackingNumber": string;
+  "amazonShippingStatus"?: "available" | "expired" | "not-found" | "unavailable";
   "carrier": ApiCarrierId;
 }
 
@@ -1296,6 +1316,7 @@ export const CARRIER_IDS = [
   "dhl-ecommerce",
   "ups",
   "amazon-logistics",
+  "amazon-shipping",
   "fedex",
   "gls-ch",
   "dpd",

@@ -1,5 +1,6 @@
 import 'server-only';
-import { AMAZON_ACCOUNT_MESSAGE, requiresAmazonAccount } from '../lib/amazonFrance';
+import { AmazonShippingHistoryExpiredError, AmazonShippingTracker } from './amazonShipping';
+import { AMAZON_ACCOUNT_MESSAGE, AMAZON_HISTORY_EXPIRED, requiresAmazonAccount } from '../lib/amazon';
 import { trackingLanguageStage } from './trackingLanguage';
 
 import { createHash } from 'node:crypto';
@@ -61,6 +62,7 @@ const SLOW_POLL_INTERVAL_MS = 60 * 60 * 1_000;
 const FAILED_SLOW_POLL_INTERVAL_MS = 4 * SLOW_POLL_INTERVAL_MS;
 
 export function isTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
+  if (parcel.sync_status === 'unsupported' && parcel.carrier === 'amazon-shipping' && parcel.sync_error === AMAZON_HISTORY_EXPIRED) return false;
   if (parcel.sync_status === 'unsupported' && requiresAmazonAccount(String(parcel.carrier), String(parcel.tracking_number ?? ''))) return false;
   const routing = routingState(parcel);
   if (routing.next_check_at && Date.parse(routing.next_check_at) > now.getTime()) return false;
@@ -122,6 +124,7 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     readonly heppner = new HeppnerTracker(),
     readonly ciblex = new CiblexTracker(),
     readonly paack = new PaackTracker(),
+    readonly amazonShipping = new AmazonShippingTracker(),
     readonly indiaPost = new IndiaPostTracker(),
     readonly dhl = new DHLTracker(),
     readonly hermesGermany = new HermesGermanyTracker(),
@@ -193,6 +196,8 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
       result = await this.ciblex.fetch(trackingNumber);
     } else if (adapter === 'paack') {
       result = await this.paack.fetch(trackingNumber, dpdPostcode ?? '');
+    } else if (adapter === 'amazon-shipping') {
+      result = await this.amazonShipping.fetch(trackingNumber);
     } else if (adapter === 'india-post') {
       result = await this.indiaPost.fetch(trackingNumber);
     } else if (adapter === 'planzer' && trackingUrl) {
@@ -691,7 +696,7 @@ export class TrackingSyncService {
       };
       const fetchStartedAt = performance.now();
       try {
-        fetched = this.adapter.fetchUniversal
+        fetched = this.adapter.fetchUniversal && carrierId !== 'amazon-shipping'
           ? await new TrackingRouter({
             direct: (candidate, carrier) => this.fetchResult(candidate, carrier),
             universal: (source, number, timeout) => this.adapter.fetchUniversal!(source, number, timeout),
@@ -700,6 +705,13 @@ export class TrackingSyncService {
           }).fetch(parcel, context.trigger === 'scheduled', context.signal)
           : await this.fetchResult(parcel, carrierId);
       } catch (error) {
+        if (carrierId === 'amazon-shipping' && error instanceof AmazonShippingHistoryExpiredError) {
+          audit.skip('normalize', 'history_expired');
+          audit.skip('persist_events', 'history_expired');
+          await persist({ sync_status: 'unsupported', sync_error: AMAZON_HISTORY_EXPIRED, last_synced_at: this.now().toISOString() });
+          await audit.finish({ outcome: 'unsupported' });
+          return 'unsupported';
+        }
         const hasProgress = previousStage !== 'pending';
         if (!hasProgress && isUnannouncedTrackingError(error)) {
           audit.record('fetch', 'succeeded', performance.now() - fetchStartedAt, {

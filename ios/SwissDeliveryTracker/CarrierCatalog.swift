@@ -248,8 +248,30 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         info(for: carrier).tracking.mode == "automatic"
     }
 
+    func isAmazonTrackingNumber(_ raw: String) -> Bool {
+        guard let pattern = definitions[.amazonLogistics]?.detectionRules.first?.pattern else { return false }
+        return Self.matches(Self.normalize(raw), pattern: pattern)
+    }
+
     func requiresAmazonAccount(_ carrier: CarrierID, trackingNumber: String = "") -> Bool {
-        carrier == .amazonLogistics || Self.matches(Self.normalize(trackingNumber), pattern: "^FR[0-9]{10}$")
+        carrier != .amazonShipping && (carrier == .amazonLogistics || isAmazonTrackingNumber(trackingNumber))
+    }
+
+    static func amazonMarketplace(_ number: String) -> String {
+        let domains = ["FR": "fr", "DE": "de", "AT": "de", "BE": "com.be", "UK": "co.uk", "GB": "co.uk",
+            "IT": "it", "ES": "es", "PT": "es", "NL": "nl", "IE": "ie", "PL": "pl", "SE": "se", "TR": "com.tr"]
+        return domains[String(normalize(number).prefix(2))] ?? "com"
+    }
+
+    static func amazonOrdersURL(_ number: String) -> URL {
+        URL(string: "https://www.amazon.\(amazonMarketplace(number))/gp/your-account/order-history")!
+    }
+
+    static func amazonShippingURL(_ number: String) -> URL {
+        let normalized = normalize(number)
+        let domains = ["IT": "it", "ES": "es", "UK": "co.uk", "GB": "co.uk", "TB": "com"]
+        let domain = domains[String(normalized.prefix(2))] ?? "fr"
+        return URL(string: "https://track.amazon.\(domain)/tracking/\(urlEncode(normalized))")!
     }
 
     func trackingHintKey(for carrier: CarrierID) -> String {
@@ -379,7 +401,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         if requiresAmazonAccount(parcel.carrier, trackingNumber: parcel.trackingNumber) {
             return [ParcelTrackingLink(carrier: .amazonLogistics,
                 name: info(for: .amazonLogistics, language: language).displayName,
-                url: URL(string: "https://www.amazon.fr/gp/your-account/order-history")!, role: .active)]
+                url: Self.amazonOrdersURL(parcel.trackingNumber), role: .active)]
         }
         let links = carrierTrackingLinks(for: parcel, language: language)
         let lookupNumber = parcel.carrierData?.originalCarrier != nil && parcel.carrierData?.activeTrackingCarrier != nil
@@ -464,7 +486,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
 
     private func recognizedNumber(in text: String) -> String? {
         let patterns = [
-            "\\bFR\\s*\\d(?:[\\s.-]?\\d){9}\\b",
+            "\\b(?:[A-Z]{2}[\\s.-]*[0-9](?:[\\s.-]?[0-9]){9}|TBA[\\s.-]*[0-9](?:[\\s.-]?[0-9]){11})\\b",
             "\\b\\d{26}\\b",
             "\\bH\\d{15,19}\\b",
             "\\b1Z[A-Z0-9]{16}\\b",
@@ -609,6 +631,8 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         carrier: CarrierID,
         trackingNumber: String
     ) -> String? {
+        if carrier == .amazonLogistics { return amazonOrdersURL(trackingNumber).absoluteString }
+        if carrier == .amazonShipping { return amazonShippingURL(trackingNumber).absoluteString }
         guard let template else { return nil }
         let normalized = normalize(trackingNumber)
         var linkNumber = trackingNumber

@@ -1,3 +1,4 @@
+import { AMAZON_HISTORY_EXPIRED } from '../lib/amazon';
 import { AutoCarrierNotice } from './AutoCarrierNotice';
 import { trackAction } from '../lib/analytics';
 import { userErrorMessage } from '../lib/userMessages';
@@ -74,7 +75,8 @@ export function ParcelDetail({
   const { locale, languageTag, t } = useI18n();
   const carrier = carrierInfo(activeTrackingCarrierId(parcel), locale);
   const displayedCarrier = carrierInfo(displayedCarrierId(parcel), locale);
-  const automaticTracking = tracksAutomatically(carrier.id);
+  const amazonHistoryExpired = carrier.id === 'amazon-shipping' && parcel.syncError === AMAZON_HISTORY_EXPIRED;
+  const automaticTracking = tracksAutomatically(carrier.id) && !amazonHistoryExpired;
   const current = currentEvent(parcel.events);
   const status = parcelDisplayStatus(parcel);
   const statusLabel = t(parcelDisplayStatusKey(parcel));
@@ -442,8 +444,8 @@ export function ParcelDetail({
         )}
         {!automaticTracking && (
           <div className="detail__tracking-help" role="note">
-            <p>{t(carrierTrackingHintKey(carrier.id), { carrier: carrier.name })}</p>
-            {carrier.id !== 'amazon-logistics' && (
+            <p>{t(amazonHistoryExpired ? 'add.amazonHistoryExpired' : carrierTrackingHintKey(carrier.id), { carrier: carrier.name })}</p>
+            {carrier.id !== 'amazon-logistics' && !amazonHistoryExpired && (
               <button
                 type="button"
                 className="button button--secondary"

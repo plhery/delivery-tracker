@@ -220,7 +220,7 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(numeric.source, .link)
     }
 
-    func testAmazonFranceRequiresAnAccountEvenWithACarrierOverride() {
+    func testAmazonLogisticsRequiresAnAccountEvenWithACarrierOverride() {
         XCTAssertEqual(catalog.parse("Your parcel: FR3000000001").carrier, .amazonLogistics)
         XCTAssertTrue(catalog.requiresAmazonAccount(.unknown, trackingNumber: "fr 3000-000001"))
         XCTAssertTrue(catalog.requiresAmazonAccount(.ups, trackingNumber: "FR3000000001"))
@@ -229,18 +229,40 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertFalse(catalog.tracksAutomatically(.amazonLogistics))
         XCTAssertEqual(catalog.trackingHintKey(for: .amazonLogistics), "add.amazonAccount")
         XCTAssertEqual(catalog.info(for: .amazonLogistics).trackingURLTemplate,
-                       "https://www.amazon.fr/gp/your-account/order-history")
+                       "https://www.amazon.com/gp/your-account/order-history")
     }
 
-    func testAmazonFranceReplacesSavedFallbackLinks() throws {
+    func testAmazonLogisticsReplacesSavedFallbackLinks() throws {
         var parcel = Parcel(id: UUID(), trackingNumber: "FR3000000001", label: "Example", carrier: .unknown,
             createdAt: "2026-09-10T12:00:00Z", syncStatus: .error, notificationsMuted: false)
         parcel.carrierData = CarrierData(trackingProvider: "ParcelsApp")
         parcel.trackingURL = "https://track.amazon.fr/tracking/FR3000000001"
         XCTAssertEqual(parcel.activeTrackingCarrier, .amazonLogistics)
         let link = try XCTUnwrap(catalog.trackingLinks(for: parcel, language: .fr).first)
-        XCTAssertEqual(link.name, "Amazon France")
+        XCTAssertEqual(link.name, "Amazon Logistics")
         XCTAssertEqual(link.url.absoluteString, "https://www.amazon.fr/gp/your-account/order-history")
+    }
+
+    func testDetectsInternationalAmazonAndKeepsConfirmedShippingDistinct() {
+        for prefix in ["FR", "DE", "BE", "UK", "GB", "IT", "ES", "NL", "AT", "IE", "PL", "SE", "PT", "CH"] {
+            let number = "\(prefix)0000000001"
+            XCTAssertEqual(catalog.parse(number).carrier, .amazonLogistics)
+            XCTAssertEqual(catalog.parse("Your parcel: \(number)").carrier, .amazonLogistics)
+            XCTAssertTrue(catalog.requiresAmazonAccount(.unknown, trackingNumber: number))
+            XCTAssertFalse(catalog.requiresAmazonAccount(.amazonShipping, trackingNumber: number))
+        }
+        XCTAssertEqual(catalog.parse("TBA000000000001").carrier, .amazonLogistics)
+        XCTAssertFalse(catalog.isAmazonTrackingNumber("ZZ0000000001"))
+        XCTAssertFalse(catalog.isAmazonTrackingNumber("TBA00000000001"))
+        XCTAssertTrue(catalog.tracksAutomatically(.amazonShipping))
+        XCTAssertEqual(CarrierCatalog.amazonOrdersURL("BE0000000001").host, "www.amazon.com.be")
+        XCTAssertEqual(CarrierCatalog.amazonOrdersURL("UK0000000001").host, "www.amazon.co.uk")
+        XCTAssertEqual(CarrierCatalog.amazonShippingURL("IT0000000001").host, "track.amazon.it")
+        XCTAssertEqual(CarrierCatalog.amazonShippingURL("TBA000000000001").host, "track.amazon.com")
+        let parcel = Parcel(id: UUID(), trackingNumber: "UK0000000001", label: "Example", carrier: .amazonShipping,
+            createdAt: "2026-09-10T12:00:00Z", syncStatus: .ok, notificationsMuted: false)
+        XCTAssertEqual(parcel.activeTrackingCarrier, .amazonShipping)
+        XCTAssertEqual(catalog.trackingLinks(for: parcel, language: .en).first?.url.host, "track.amazon.co.uk")
     }
 
     func testParsesKnownCarrierLink() {
@@ -507,7 +529,7 @@ final class CarrierCatalogTests: XCTestCase {
             force: true
         )
         XCTAssertEqual(result, .failed)
-        XCTAssertEqual(original.info(for: .amazonLogistics).displayName, "Amazon France")
+        XCTAssertEqual(original.info(for: .amazonLogistics).displayName, "Amazon Logistics")
     }
 
     private static var bundledCatalogData: Data {

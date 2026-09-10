@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { AmazonLogisticsTracker } from './amazonLogistics';
+import { AmazonShippingHistoryExpiredError, AmazonShippingNotFoundError, AmazonShippingTracker } from './amazonShipping';
 
-const LIVE_TRACKING_NUMBER = process.env.AMAZON_LOGISTICS_LIVE_TRACKING_NUMBER ?? '';
+const LIVE_TRACKING_NUMBER = process.env.AMAZON_SHIPPING_LIVE_TRACKING_NUMBER ?? '';
 
-describe('Amazon Shipping France live anonymous tracking', () => {
+describe('Amazon Shipping live anonymous tracking', () => {
   it('maps the official valid-shaped wrong-number response to a clean 404', async () => {
-    await expect(new AmazonLogisticsTracker().fetch('FR0000000000')).rejects.toMatchObject({
-      name: 'AmazonLogisticsTrackingError',
+    await expect(new AmazonShippingTracker().fetch('FR0000000000')).rejects.toMatchObject({
+      name: 'AmazonShippingNotFoundError',
       message: 'Amazon Shipping could not locate the shipment',
       status: 404,
     });
@@ -15,7 +15,15 @@ describe('Amazon Shipping France live anonymous tracking', () => {
   it.runIf(Boolean(LIVE_TRACKING_NUMBER))(
     'normalizes a caller-supplied real shipment without retaining private response fields',
     async () => {
-      const result = await new AmazonLogisticsTracker().fetch(LIVE_TRACKING_NUMBER);
+      if (process.env.AMAZON_SHIPPING_EXPECT_NOT_FOUND === 'true') {
+        await expect(new AmazonShippingTracker().fetch(LIVE_TRACKING_NUMBER)).rejects.toBeInstanceOf(AmazonShippingNotFoundError);
+        return;
+      }
+      if (process.env.AMAZON_SHIPPING_EXPECT_EXPIRED === 'true') {
+        await expect(new AmazonShippingTracker().fetch(LIVE_TRACKING_NUMBER)).rejects.toBeInstanceOf(AmazonShippingHistoryExpiredError);
+        return;
+      }
+      const result = await new AmazonShippingTracker().fetch(LIVE_TRACKING_NUMBER);
       expect(result.status).not.toBe('unknown');
       expect(result.current_stage).toEqual(expect.any(String));
       expect(result.last_status_text).toEqual(expect.any(String));
@@ -26,7 +34,7 @@ describe('Amazon Shipping France live anonymous tracking', () => {
         'last_status_text',
         'last_update',
         'status',
-        'timezone',
+        ...(/^TBA/i.test(LIVE_TRACKING_NUMBER) ? [] : ['timezone']),
       ]);
       for (const event of result.events ?? []) {
         expect(Object.keys(event).every((key) => [

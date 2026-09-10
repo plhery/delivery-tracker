@@ -22,7 +22,7 @@ Delivery Tracker recognizes these carriers, with tracking availability shown bel
 | DPD Switzerland | Automatic through the myDPD guest flow. The parcel's delivery postcode unlocks verified scans and delivery windows. |
 | GLS Switzerland | Automatic through GLS's public tracking services. The four-digit recipient postcode unlocks the detailed event history. |
 | UPS | Automatic. Direct HTTP is tried first; a private TRAWL instance can handle browser challenges. |
-| Amazon France | Account-only. `FR` followed by ten digits is recognized, but cannot be added; follow the delivery in Your Orders on Amazon.fr. |
+| Amazon Logistics / Shipping | European country prefix + ten digits, or `TBA` + twelve digits. Account-only by default; public Shipping verification unlocks addition. |
 | DPD France | Automatic through the recipient trace page. Direct HTTP is tried first; a private TRAWL instance is required when Cloudflare challenges it. |
 | Mondial Relay | Automatic through the recipient web flow. Short shipment numbers require the five-digit recipient postcode. Validated 26-digit label barcodes work without it. Can use private TRAWL for Cloudflare. |
 | Relais Colis | Automatic through the public recipient form and its CSRF-bound session. |
@@ -283,18 +283,31 @@ checks, and privacy-safe projections; failures remain visible for retry. La
 Poste's supported Okapi-key API is the preferred future production path when
 deployment credentials are available.
 
-Amazon France retail deliveries (`FR` followed by ten digits) require the
-recipient's Amazon account. The legacy `amazon-logistics` identifier is retained
-for compatibility, but is displayed as Amazon France. New additions are rejected
-by the web app, native app and API. Existing parcels link to Amazon's Your Orders;
-sync marks them unsupported without calling direct or universal trackers.
+Amazon Logistics and Amazon Shipping share tracking-number formats: a recognized
+European country prefix followed by ten digits, or `TBA` followed by twelve digits.
+The format initially resolves to `amazon-logistics`. The web and native add forms
+immediately explain account-only tracking and disable addition while the server
+checks the public Amazon Shipping endpoint. Only a structured SWA or MCF response
+unlocks `amazon-shipping`; the create and carrier-change APIs independently verify
+that choice. A timeout keeps addition blocked with a retry action. Expected
+not-found results do not become Sentry failures.
 
-Amazon Shipping is a separate service with a public recipient tracker. The FR
-number format alone does not establish that a retail delivery is available there.
-The historical Shipping parser remains tested but is not connected to automatic
-tracking. Support needs a reliable way to distinguish eligible Shipping parcels
-before it can be re-enabled. Production Sentry events on 2026-09-10 confirmed two
-retail FR numbers entering this adapter and failing through universal fallbacks.
+The public portals use `track.amazon.fr`, `.it`, `.es`, `.co.uk`, and `.com` with
+`/api/tracker/{number}`. Other European prefixes are checked through the French
+portal and require the same positive evidence; there is no assumption that every
+country or number is supported. Shipping sync calls the direct adapter without
+universal fallbacks. Offset-free US event times are omitted because a `TBA` number
+does not identify a timezone.
+
+Amazon may recognize a Shipping/MCF parcel but return
+`SHIPMENT_OLDER_THAN_SUPPORTED_AGE`. Its accompanying `IN_TRANSIT` summary is a
+placeholder, not shipment movement. These parcels can be saved as references;
+sync stores an explicit history-expired marker and the details explain the limit
+in every locale. No scans or statuses are invented, and no repeated sync is due.
+
+Existing account-only Logistics parcels link to the appropriate Amazon Your Orders
+page and explain the limitation. Sync marks them unsupported without calling
+direct or universal trackers, including previously misclassified Amazon numbers.
 
 ## Swiss carrier handling and privacy
 

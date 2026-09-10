@@ -11,5 +11,6 @@ export async function lookupCarrier(trackingNumber: string, auth: ApiAuth, signa
   if (result.trackingNumber !== trackingNumber || !Object.hasOwn(CARRIERS, result.carrier)) {
     throw new Error('Invalid carrier lookup response');
   }
+  if (result.carrier === 'amazon-shipping' && !['available', 'expired'].includes(result.amazonShippingStatus ?? '')) throw new Error('Unverified Amazon Shipping response');
   return result;
 }

@@ -5,7 +5,7 @@ import { fetchBounded, parseJsonBytes } from './boundedFetch';
 import type { CarrierEvent, CarrierResult, CarrierStatus } from './carrierResult';
 import { isRecord, type JsonObject } from './types';
 
-const TRACKING_ORIGIN = 'https://track.amazon.fr';
+import { amazonShippingOrigin, amazonShippingUrl, isAmazonTrackingNumber } from '../lib/amazon';
 const DEFAULT_TIMEOUT_MS = 15_000;
 const MAX_RESPONSE_BYTES = 2_000_000;
 const MAX_EVENTS_TO_INSPECT = 500;
@@ -35,12 +35,19 @@ const UNKNOWN_STATUS: ClassifiedStatus = {
   description: 'Amazon Shipping update',
 };
 
-export class AmazonLogisticsTrackingError extends Error {
+export class AmazonShippingNotFoundError extends Error {
   readonly status = 404;
 
   constructor() {
     super('Amazon Shipping could not locate the shipment');
-    this.name = 'AmazonLogisticsTrackingError';
+    this.name = 'AmazonShippingNotFoundError';
+  }
+}
+
+export class AmazonShippingHistoryExpiredError extends Error {
+  constructor() {
+    super('Amazon Shipping tracking history has expired');
+    this.name = 'AmazonShippingHistoryExpiredError';
   }
 }
 
@@ -153,7 +160,7 @@ function classifyStatus(...values: unknown[]): ClassifiedStatus {
   return UNKNOWN_STATUS;
 }
 
-export function amazonLogisticsStatus(value: unknown): CarrierStatus {
+export function amazonShippingStatus(value: unknown): CarrierStatus {
   return classifyStatus(value).status;
 }
 
@@ -170,12 +177,13 @@ function eventDescription(raw: JsonObject, classified: ClassifiedStatus): string
   return classified.description;
 }
 
-function parseDate(value: unknown): ParsedDate | null {
+function parseDate(value: unknown, zone: string | null): ParsedDate | null {
   const raw = clean(value, 100);
   if (!raw) return null;
   const isoHasZone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(raw);
+  if (!zone && !isoHasZone && !/[+-][0-9]{4}$|GMT|UTC/i.test(raw)) return null;
   const candidates = [
-    DateTime.fromISO(raw, { setZone: isoHasZone, zone: 'Europe/Paris' }),
+    DateTime.fromISO(raw, { setZone: isoHasZone, zone: zone ?? 'UTC' }),
     DateTime.fromRFC2822(raw, { setZone: true }),
     ...[
       'LLL d, yyyy, h:mm:ss a',
@@ -184,7 +192,7 @@ function parseDate(value: unknown): ParsedDate | null {
       'LLLL d, yyyy, h:mm a',
     ].map((format) => DateTime.fromFormat(raw, format, {
       locale: 'en-US',
-      zone: 'Europe/Paris',
+      zone: zone ?? 'UTC',
     })),
   ];
   const parsed = candidates.find((candidate) => candidate.isValid);
@@ -238,14 +246,14 @@ function eventRecords(value: JsonObject | null): JsonObject[] {
   return Array.isArray(events) ? events.filter(isRecord) : [];
 }
 
-function parseEvent(raw: JsonObject, sourceIndex: number): ParsedEvent | null {
+function parseEvent(raw: JsonObject, sourceIndex: number, zone: string | null): ParsedEvent | null {
   const summary = isRecord(raw.statusSummary) ? raw.statusSummary : {};
   const classified = classifyStatus(
     summary.localisedStringId,
     raw.eventCode,
     raw.subReasonCode,
   );
-  const time = parseDate(raw.eventTime);
+  const time = parseDate(raw.eventTime, zone);
   const code = providerCode(raw.eventCode);
   if (!time && !code && classified.status === 'unknown') return null;
   const eventLocation = location(raw.location);
@@ -269,37 +277,51 @@ function metadataValue(metadata: JsonObject, field: string): unknown {
   return value.stringValue ?? value.date ?? value.value;
 }
 
-export function normalizeAmazonLogisticsTrackingNumber(raw: string): string {
+export function normalizeAmazonShippingTrackingNumber(raw: string): string {
   const value = raw.trim().toLocaleUpperCase('en-US').replace(/[\s.-]/g, '');
-  if (!/^FR\d{10}$/.test(value)) {
-    throw new TypeError('Amazon Shipping France tracking numbers must start with FR followed by 10 digits');
+  if (!isAmazonTrackingNumber(value)) {
+    throw new TypeError('Amazon tracking numbers need a European country prefix and 10 digits, or TBA and 12 digits');
   }
   return value;
 }
 
-export function amazonLogisticsTrackingUrl(rawTrackingNumber: string): string {
-  const trackingNumber = normalizeAmazonLogisticsTrackingNumber(rawTrackingNumber);
-  return `${TRACKING_ORIGIN}/tracking/${encodeURIComponent(trackingNumber)}`;
+export function amazonShippingTrackingUrl(rawTrackingNumber: string): string {
+  const trackingNumber = normalizeAmazonShippingTrackingNumber(rawTrackingNumber);
+  return amazonShippingUrl(trackingNumber);
 }
 
-export function amazonLogisticsTrackingApiUrl(rawTrackingNumber: string): string {
-  const trackingNumber = normalizeAmazonLogisticsTrackingNumber(rawTrackingNumber);
-  return `${TRACKING_ORIGIN}/api/tracker/${encodeURIComponent(trackingNumber)}`;
+export function amazonShippingTrackingApiUrl(rawTrackingNumber: string): string {
+  const trackingNumber = normalizeAmazonShippingTrackingNumber(rawTrackingNumber);
+  return `${amazonShippingOrigin(trackingNumber)}/api/tracker/${encodeURIComponent(trackingNumber)}`;
 }
 
-export function parseAmazonLogisticsTrackingResponse(payload: unknown): CarrierResult {
+export function parseAmazonShippingTrackingResponse(payload: unknown, zone: string | null = 'Europe/Paris', trackingNumber?: string): CarrierResult {
   if (!isRecord(payload)) {
     throw new TypeError('Amazon Shipping returned an invalid tracking response');
   }
   const progress = parseSerializedRecord(payload.progressTracker, 'progress tracker');
   const errors = Array.isArray(progress.errors) ? progress.errors : [];
-  if (errors.some(isNotFoundError)) throw new AmazonLogisticsTrackingError();
+  if (errors.some(isNotFoundError)) throw new AmazonShippingNotFoundError();
 
+  // The endpoint is shipment-scoped but does not normally echo identity. Reject a
+  // contradictory ID when supplied; never accept a generic page or status alone.
+  const identitySummary = isRecord(progress.summary) ? progress.summary : {};
+  const identityMetadata = isRecord(identitySummary.metadata) ? identitySummary.metadata : {};
+  for (const identity of [payload.trackingId, payload.trackingID, progress.trackingId, metadataValue(identityMetadata, 'trackingId')]) {
+    if (trackingNumber && identity != null && String(identity).toUpperCase() !== trackingNumber) {
+      throw new TypeError('Amazon Shipping returned a different tracking number');
+    }
+  }
+  if (!['SWA', 'MCF'].includes(String(progress.trackerSource))) throw new AmazonShippingNotFoundError();
+  if (errors.length && errors.every((error) => isRecord(error) && error.errorCode === 'SHIPMENT_OLDER_THAN_SUPPORTED_AGE')) {
+    throw new AmazonShippingHistoryExpiredError();
+  }
+  if (errors.length) throw new TypeError('Amazon Shipping returned tracking errors');
   const history = optionalSerializedRecord(payload.eventHistory, 'event history');
   const seen = new Set<string>();
   const parsedEvents: ParsedEvent[] = [];
   eventRecords(history).slice(0, MAX_EVENTS_TO_INSPECT).forEach((raw, index) => {
-    const parsed = parseEvent(raw, index);
+    const parsed = parseEvent(raw, index, zone);
     if (!parsed) return;
     const identity = JSON.stringify([
       parsed.event.time ?? '',
@@ -336,11 +358,11 @@ export function parseAmazonLogisticsTrackingResponse(payload: unknown): CarrierR
     'deliveryDate',
     'pickupEventDate',
     'creationDate',
-  ].map((field) => parseDate(metadataValue(metadata, field))).find(Boolean) ?? null;
+  ].map((field) => parseDate(metadataValue(metadata, field), zone)).find(Boolean) ?? null;
   const expected = parseDate(
     progress.expectedDeliveryDate
       ?? metadataValue(metadata, 'expectedDeliveryDate')
-      ?? metadataValue(metadata, 'promisedDeliveryDate'),
+      ?? metadataValue(metadata, 'promisedDeliveryDate'), zone,
   );
   return {
     status: active.status,
@@ -348,12 +370,23 @@ export function parseAmazonLogisticsTrackingResponse(payload: unknown): CarrierR
     last_status_text: active.description,
     last_update: events[0]?.time ?? fallbackUpdate?.iso ?? null,
     expected_delivery: expected?.iso.slice(0, 10) ?? null,
-    timezone: 'Europe/Paris',
+    ...(zone ? { timezone: zone } : {}),
     events,
   };
 }
 
-export class AmazonLogisticsTracker {
+export function amazonShippingTimezone(number: string): string | null {
+  if (number.startsWith('TBA')) return null; // A US number cannot establish a local timezone.
+  const zones: Record<string, string> = {
+    UK: 'Europe/London', GB: 'Europe/London', IE: 'Europe/Dublin', PT: 'Europe/Lisbon',
+    FI: 'Europe/Helsinki', EE: 'Europe/Tallinn', LV: 'Europe/Riga', LT: 'Europe/Vilnius',
+    GR: 'Europe/Athens', CY: 'Asia/Nicosia', RO: 'Europe/Bucharest', BG: 'Europe/Sofia',
+    IS: 'Atlantic/Reykjavik', TR: 'Europe/Istanbul',
+  };
+  return zones[number.slice(0, 2)] ?? 'Europe/Paris';
+}
+
+export class AmazonShippingTracker {
   constructor(readonly timeoutMs = DEFAULT_TIMEOUT_MS) {
     if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
       throw new TypeError('Amazon Shipping timeout must be positive');
@@ -361,12 +394,12 @@ export class AmazonLogisticsTracker {
   }
 
   async fetch(rawTrackingNumber: string): Promise<CarrierResult> {
-    const trackingNumber = normalizeAmazonLogisticsTrackingNumber(rawTrackingNumber);
-    const { bytes } = await fetchBounded(amazonLogisticsTrackingApiUrl(trackingNumber), {
+    const trackingNumber = normalizeAmazonShippingTrackingNumber(rawTrackingNumber);
+    const { bytes } = await fetchBounded(amazonShippingTrackingApiUrl(trackingNumber), {
       headers: {
         Accept: 'application/json',
-        'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
-        Referer: amazonLogisticsTrackingUrl(trackingNumber),
+        'Accept-Language': 'en-US,en;q=0.9',
+        Referer: amazonShippingTrackingUrl(trackingNumber),
         'User-Agent': 'Mozilla/5.0 (compatible; DeliveryTracker/1.0)',
       },
     }, {
@@ -374,6 +407,6 @@ export class AmazonLogisticsTracker {
       timeoutMs: this.timeoutMs,
       maxBytes: MAX_RESPONSE_BYTES,
     });
-    return parseAmazonLogisticsTrackingResponse(parseJsonBytes(bytes, 'Amazon Shipping'));
+    return parseAmazonShippingTrackingResponse(parseJsonBytes(bytes, 'Amazon Shipping'), amazonShippingTimezone(trackingNumber), trackingNumber);
   }
 }

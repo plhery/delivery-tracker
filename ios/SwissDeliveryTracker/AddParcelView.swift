@@ -21,6 +21,7 @@ struct AddParcelView: View {
     @State private var errorMessage: String?
     @State private var duplicateParcelID: UUID?
     @State private var carrierOverride: CarrierID?
+    @State private var lookupAttempt = 0
     @State private var verifiedCarrier: CarrierDetectionResponse?
     @FocusState private var focusedField: Field?
 
@@ -109,7 +110,7 @@ struct AddParcelView: View {
             .onChange(of: resolvedCarrier, initial: true) { _, carrier in
                 prepareRequiredDetails(for: carrier)
             }
-            .task(id: lookupTrackingNumber) {
+            .task(id: "\(lookupTrackingNumber ?? ""):\(lookupAttempt)") {
                 guard let number = lookupTrackingNumber else { return }
                 do {
                     try await Task.sleep(for: .milliseconds(350))
@@ -119,7 +120,7 @@ struct AddParcelView: View {
                     verifiedCarrier = result
                 } catch {
                     guard !Task.isCancelled else { return }
-                    verifiedCarrier = CarrierDetectionResponse(trackingNumber: number, carrier: .unknown)
+                    verifiedCarrier = CarrierDetectionResponse(trackingNumber: number, amazonShippingStatus: catalog.isAmazonTrackingNumber(number) ? .unavailable : nil, carrier: catalog.isAmazonTrackingNumber(number) ? .amazonLogistics : .unknown)
                 }
             }
         }
@@ -326,14 +327,28 @@ struct AddParcelView: View {
                     ]))
             }
 
-            if !automatic {
-                Text(localizer.text(catalog.trackingHintKey(for: resolvedCarrier), ["carrier": definition.displayName]))
+            if !automatic || shippingConfirmed {
+                Text(localizer.text(shippingConfirmed ? (currentVerification?.amazonShippingStatus == .expired ? "add.amazonHistoryExpired" : "add.amazonShippingConfirmed") : catalog.trackingHintKey(for: resolvedCarrier), ["carrier": definition.displayName]))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            if amazonNumber, let number = lookupTrackingNumber, currentVerification == nil {
+                HStack {
+                    ProgressView()
+                    Text(localizer.text("add.amazonChecking")).font(.caption)
+                }
+                .id(number)
+            }
+            if amazonNumber && currentVerification?.amazonShippingStatus == .unavailable {
+                Text(localizer.text("add.amazonCheckUnavailable")).font(.caption).foregroundStyle(.secondary)
+                Button(localizer.text("add.amazonRetry")) {
+                    verifiedCarrier = nil
+                    lookupAttempt += 1
+                }.font(.subheadline)
+            }
             if accountRequired {
-                Link(localizer.text("add.openAmazonOrders"), destination: URL(string: "https://www.amazon.fr/gp/your-account/order-history")!)
+                Link(localizer.text("add.openAmazonOrders"), destination: CarrierCatalog.amazonOrdersURL(parsed.trackingNumber))
                     .font(.subheadline)
             }
         }
@@ -476,22 +491,31 @@ struct AddParcelView: View {
 
     private var parsed: TrackingInputMatch { catalog.parse(trackingInput) }
 
+    private var amazonNumber: Bool { catalog.isAmazonTrackingNumber(parsed.trackingNumber) }
+
+    private var currentVerification: CarrierDetectionResponse? {
+        verifiedCarrier?.trackingNumber == CarrierCatalog.normalize(parsed.trackingNumber) ? verifiedCarrier : nil
+    }
+
+    private var shippingConfirmed: Bool {
+        amazonNumber && currentVerification?.carrier == .amazonShipping && (currentVerification?.amazonShippingStatus == .available || currentVerification?.amazonShippingStatus == .expired)
+    }
+
     private var accountRequired: Bool {
-        catalog.requiresAmazonAccount(carrierOverride ?? parsed.carrier, trackingNumber: parsed.trackingNumber)
+        amazonNumber ? !shippingConfirmed : catalog.requiresAmazonAccount(carrierOverride ?? parsed.carrier)
     }
 
     private var resolvedCarrier: CarrierID {
-        if accountRequired { return .amazonLogistics }
+        if amazonNumber { return shippingConfirmed ? .amazonShipping : .amazonLogistics }
         if let carrierOverride { return carrierOverride }
-        if let number = lookupTrackingNumber, verifiedCarrier?.trackingNumber == number {
-            return verifiedCarrier?.carrier ?? parsed.carrier
-        }
-        return parsed.carrier
+        return currentVerification?.carrier ?? parsed.carrier
     }
 
     private var lookupTrackingNumber: String? {
         let number = CarrierCatalog.normalize(parsed.trackingNumber)
-        guard !store.isDemo, carrierOverride == nil, parsed.carrier == .unknown,
+        guard !store.isDemo else { return nil }
+        if amazonNumber { return number }
+        guard carrierOverride == nil, parsed.carrier == .unknown,
               number.range(of: "^[0-9]{11,12}$", options: .regularExpression) != nil else { return nil }
         return number
     }

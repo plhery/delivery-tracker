@@ -1,3 +1,4 @@
+import { verifyAmazonShippingAddition } from '../../../../../src/server/amazonShippingEligibility';
 import {
   apiRoute,
   HttpError,
@@ -44,6 +45,7 @@ export const PATCH = apiRoute<PackageParameters>(async (context) => {
     && nullableText(original.dpd_postcode) === values.dpdPostcode;
   if (unchanged) return json({ package: original, jobIds: [] });
 
+  await verifyAmazonShippingAddition(values.carrier, original.tracking_number);
   if (!await client.changePackageCarrier(
     packageId,
     values.carrier,

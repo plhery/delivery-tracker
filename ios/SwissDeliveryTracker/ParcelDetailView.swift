@@ -193,11 +193,11 @@ struct ParcelDetailView: View {
             .background(branding.surface, in: RoundedRectangle(cornerRadius: 18))
 
             shipmentIdentity(parcel, links: trackingLinks, tint: branding.ink)
-            if !catalog.tracksAutomatically(parcel.activeTrackingCarrier) {
+            if !catalog.tracksAutomatically(parcel.activeTrackingCarrier) || parcel.amazonShippingHistoryExpired {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text(localizer.text(catalog.trackingHintKey(for: parcel.activeTrackingCarrier), ["carrier": carrier.displayName]))
+                    Text(localizer.text(parcel.amazonShippingHistoryExpired ? "add.amazonHistoryExpired" : catalog.trackingHintKey(for: parcel.activeTrackingCarrier), ["carrier": carrier.displayName]))
                         .font(.footnote).foregroundStyle(.secondary)
-                    if !catalog.requiresAmazonAccount(parcel.activeTrackingCarrier) {
+                    if !catalog.requiresAmazonAccount(parcel.activeTrackingCarrier) && !parcel.amazonShippingHistoryExpired {
                         Button(localizer.text("detail.changeCarrier")) { showingCarrierEditor = true }
                             .font(.footnote).foregroundStyle(branding.ink)
                     }

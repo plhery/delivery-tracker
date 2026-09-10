@@ -1,3 +1,4 @@
+import { AmazonShippingHistoryExpiredError, AmazonShippingTracker } from './amazonShipping';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { secondsUntilNextSync, workerPollDelay } from './background';
 import { normalizeCarrierResult, type CarrierResult } from './carrierResult';
@@ -973,7 +974,7 @@ describe('TrackingSyncService', () => {
     );
   });
 
-  it.each(['amazon-logistics', 'unknown', 'ups'])('stops existing Amazon France parcels routed as %s before any provider call', async (carrier) => {
+  it.each(['amazon-logistics', 'unknown', 'ups'])('stops existing Amazon Logistics parcels routed as %s before any provider call', async (carrier) => {
     const client = fakeClient();
     const adapter: TrackingAdapter = { fetch: vi.fn(), fetchUniversal: vi.fn() };
     const capture = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
@@ -987,6 +988,30 @@ describe('TrackingSyncService', () => {
       sync_status: 'unsupported', sync_error: expect.stringContaining('Amazon account'),
     }));
     expect(isTrackingSyncDue({ ...parcel, sync_status: 'unsupported' }, new Date())).toBe(false);
+  });
+
+  it('dispatches confirmed Shipping without applying the retail guard or trying universal providers', async () => {
+    const client = fakeClient();
+    const fetch = vi.spyOn(AmazonShippingTracker.prototype, 'fetch').mockResolvedValue({ status: 'in_transit', current_stage: 'in_transit' });
+    const adapter = new CarrierTrackingAdapter();
+    const universal = vi.spyOn(adapter, 'fetchUniversal');
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter);
+    await service.syncPackage({ id: 'shipping-parcel', carrier: 'amazon-shipping', tracking_number: 'FR0000000001' });
+    expect(fetch).toHaveBeenCalledWith('FR0000000001');
+    expect(universal).not.toHaveBeenCalled();
+  });
+
+  it('keeps expired Shipping history out of the timeline and Sentry', async () => {
+    const client = fakeClient();
+    const fetch = vi.fn().mockRejectedValue(new AmazonShippingHistoryExpiredError());
+    const universal = vi.fn();
+    const capture = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, { fetch, fetchUniversal: universal });
+    await expect(service.syncPackage({ id: 'shipping-parcel', carrier: 'amazon-shipping', tracking_number: 'UK0000000001' }))
+      .resolves.toMatchObject({ unsupported: 1, errors: 0 });
+    expect(client.updatePackage).toHaveBeenCalledWith('shipping-parcel', expect.objectContaining({ sync_status: 'unsupported', sync_error: 'amazon_shipping_history_expired' }));
+    expect(universal).not.toHaveBeenCalled();
+    expect(capture).not.toHaveBeenCalled();
   });
 
   it('marks an unavailable catalog carrier unsupported without pretending it was checked', async () => {

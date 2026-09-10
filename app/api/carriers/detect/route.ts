@@ -1,3 +1,5 @@
+import { isAmazonTrackingNumber } from '../../../../src/lib/amazon';
+import { checkAmazonShipping } from '../../../../src/server/amazonShippingEligibility';
 import { apiRoute, HttpError, json, readJsonObject } from '../../../../src/server/api';
 import { GLSGermanyTracker } from '../../../../src/server/glsGermany';
 import { detectCarrierMatch, normalizeTrackingNumber } from '../../../../src/lib/carriers';
@@ -14,6 +16,10 @@ export const POST = apiRoute(async ({ request }) => {
   const trackingNumber = normalizeTrackingNumber(body.trackingNumber);
   if (!/^(?=.*\d)[A-Z0-9]{4,40}$/.test(trackingNumber)) {
     throw new HttpError(400, 'Invalid tracking number');
+  }
+  if (isAmazonTrackingNumber(trackingNumber)) {
+    const amazonShippingStatus = await checkAmazonShipping(trackingNumber);
+    return json({ trackingNumber, carrier: ['available', 'expired'].includes(amazonShippingStatus) ? 'amazon-shipping' : 'amazon-logistics', amazonShippingStatus } satisfies ApiCarrierDetectionResponse);
   }
   let carrier = detectCarrierMatch(trackingNumber).carrier;
   // Numeric shapes overlap between carriers. Only promote GLS after its own

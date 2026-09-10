@@ -1,4 +1,4 @@
-import { AMAZON_ORDERS_URL, requiresAmazonAccount } from '../lib/amazonFrance';
+import { amazonOrdersUrl, isAmazonTrackingNumber, requiresAmazonAccount } from '../lib/amazon';
 import { trackAction } from '../lib/analytics';
 import { userErrorMessage } from '../lib/userMessages';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
@@ -58,6 +58,7 @@ export function AddParcelSheet({
   });
   const [selectedCarrier, setSelectedCarrier] = useState<CarrierId | 'auto'>('auto');
   const [verifiedCarrier, setVerifiedCarrier] = useState<ApiCarrierDetectionResponse>();
+  const [lookupAttempt, setLookupAttempt] = useState(0);
   const [showCarrierPicker, setShowCarrierPicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,14 +101,16 @@ export function AddParcelSheet({
   const parsedTracking = parseTrackingInput(trackingInputValue);
   const trackingNumber = parsedTracking.trackingNumber;
   const normalizedNumber = normalizeTrackingNumber(trackingNumber);
-  const shouldLookup = Boolean(apiAuth) && selectedCarrier === 'auto'
-    && parsedTracking.carrier === 'unknown' && /^\d{11,12}$/.test(normalizedNumber);
+  const amazonNumber = isAmazonTrackingNumber(normalizedNumber);
+  const shouldLookup = Boolean(apiAuth) && (amazonNumber || (selectedCarrier === 'auto'
+    && parsedTracking.carrier === 'unknown' && /^\d{11,12}$/.test(normalizedNumber)));
   const lookingUp = shouldLookup && verifiedCarrier?.trackingNumber !== normalizedNumber;
-  const detectedCarrier = shouldLookup && verifiedCarrier?.trackingNumber === normalizedNumber
-    ? verifiedCarrier.carrier : parsedTracking.carrier;
-  const amazonNumber = requiresAmazonAccount('', normalizedNumber);
-  const accountRequired = requiresAmazonAccount(selectedCarrier, normalizedNumber);
-  const resolvedCarrier = accountRequired ? 'amazon-logistics'
+  const currentVerification = verifiedCarrier?.trackingNumber === normalizedNumber ? verifiedCarrier : undefined;
+  const shippingConfirmed = amazonNumber && currentVerification?.carrier === 'amazon-shipping'
+    && ['available', 'expired'].includes(currentVerification.amazonShippingStatus ?? '');
+  const accountRequired = amazonNumber ? !shippingConfirmed : requiresAmazonAccount(selectedCarrier);
+  const detectedCarrier = shouldLookup && currentVerification ? currentVerification.carrier : parsedTracking.carrier;
+  const resolvedCarrier = amazonNumber ? shippingConfirmed ? 'amazon-shipping' : 'amazon-logistics'
     : selectedCarrier === 'auto' ? detectedCarrier : selectedCarrier;
   useEffect(() => {
     if (!shouldLookup || !apiAuth) return;
@@ -116,11 +119,11 @@ export function AddParcelSheet({
       void lookupCarrier(normalizedNumber, apiAuth, controller.signal).then((result) => {
         if (!controller.signal.aborted) setVerifiedCarrier(result);
       }).catch(() => {
-        if (!controller.signal.aborted) setVerifiedCarrier({ trackingNumber: normalizedNumber, carrier: 'unknown' });
+        if (!controller.signal.aborted) setVerifiedCarrier({ trackingNumber: normalizedNumber, carrier: amazonNumber ? 'amazon-logistics' : 'unknown', ...(amazonNumber ? { amazonShippingStatus: 'unavailable' as const } : {}) });
       });
     }, 350);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [shouldLookup, normalizedNumber, apiAuth]);
+  }, [shouldLookup, normalizedNumber, apiAuth, amazonNumber, lookupAttempt]);
   const carrier = trackingNumber ? carrierInfo(resolvedCarrier, locale) : null;
   const requirements = carrier ? carrierRequirements(carrier.id, trackingNumber) : [];
   const requiresCarrierConfirmation =
@@ -139,7 +142,7 @@ export function AddParcelSheet({
     return value && (!requirement.pattern || new RegExp(requirement.pattern).test(value));
   });
   const carrierHint = carrier
-    ? requiresCarrierConfirmation
+    ? shippingConfirmed ? t(currentVerification?.amazonShippingStatus === 'expired' ? 'add.amazonHistoryExpired' : 'add.amazonShippingConfirmed') : requiresCarrierConfirmation
       ? t('add.confirmCarrier', {
         carriers: parsedTracking.candidates
           .map((candidate) => carrierInfo(candidate, locale).name)
@@ -270,7 +273,7 @@ export function AddParcelSheet({
                 </p>
               )}
               {carrier && trackingNumber && (
-                <div className={`add-parcel-carrier${accountRequired ? ' add-parcel-carrier--account' : ''}`} aria-live="polite" aria-busy={lookingUp}>
+                <div className={`add-parcel-carrier${amazonNumber ? ' add-parcel-carrier--account' : ''}`} aria-live="polite" aria-busy={lookingUp}>
                   <div className="add-parcel-carrier__row">
                     <Icon name="truck" />
                     <span className="add-parcel-carrier__identity">
@@ -294,11 +297,18 @@ export function AddParcelSheet({
                       </button>
                     )}
                   </div>
-                  {(requiresCarrierConfirmation || !tracksAutomatically(carrier.id)) && (
+                  {(shippingConfirmed || requiresCarrierConfirmation || !tracksAutomatically(carrier.id)) && (
                     <p className="add-parcel-carrier__hint">{carrierHint}</p>
                   )}
+                  {amazonNumber && lookingUp && <p className="add-parcel-carrier__hint">{t('add.amazonChecking')}</p>}
+                  {amazonNumber && currentVerification?.amazonShippingStatus === 'unavailable' && (
+                    <div>
+                      <p className="add-parcel-carrier__hint">{t('add.amazonCheckUnavailable')}</p>
+                      <button type="button" className="add-parcel-carrier__account-link" onClick={() => { setVerifiedCarrier(undefined); setLookupAttempt((attempt) => attempt + 1); }}>{t('add.amazonRetry')}</button>
+                    </div>
+                  )}
                   {accountRequired && (
-                    <a className="add-parcel-carrier__account-link" href={AMAZON_ORDERS_URL} target="_blank" rel="noopener noreferrer">
+                    <a className="add-parcel-carrier__account-link" href={amazonOrdersUrl(normalizedNumber)} target="_blank" rel="noopener noreferrer">
                       {t('add.openAmazonOrders')}
                     </a>
                   )}

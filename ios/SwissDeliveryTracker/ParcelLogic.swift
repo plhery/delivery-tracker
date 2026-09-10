@@ -114,6 +114,10 @@ extension Parcel {
 
     var displayedCarrier: CarrierID { carrierData?.originalCarrier ?? activeTrackingCarrier }
 
+    var amazonShippingHistoryExpired: Bool {
+        carrier == .amazonShipping && syncError == "amazon_shipping_history_expired"
+    }
+
     var activeTrackingCarrier: CarrierID {
         if CarrierCatalog.shared.requiresAmazonAccount(carrier, trackingNumber: trackingNumber) { return .amazonLogistics }
         if let trackingSource { return trackingSource }

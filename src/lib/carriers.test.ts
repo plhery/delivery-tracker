@@ -329,7 +329,7 @@ describe('detectCarrier', () => {
     expect(detectCarrier('1Z999AA10123456784')).toBe('ups');
   });
 
-  it('recognises Amazon France identifiers', () => {
+  it('recognises Amazon Logistics identifiers', () => {
     expect(detectCarrier('FR1234567890')).toBe('amazon-logistics');
     expect(detectCarrier('fr 1234-567890')).toBe('amazon-logistics');
   });
@@ -639,7 +639,9 @@ describe('carrier metadata', () => {
     expect(linked.length).toBeGreaterThan(0);
     for (const carrier of linked) {
       if (carrier.id === 'amazon-logistics') {
-        expect(carrier.trackingUrl?.('AB 12/3')).toBe('https://www.amazon.fr/gp/your-account/order-history');
+        expect(carrier.trackingUrl?.('AB 12/3')).toBe('https://www.amazon.com/gp/your-account/order-history');
+      } else if (carrier.id === 'amazon-shipping') {
+        expect(carrier.trackingUrl?.('fr 1234-567890')).toBe('https://track.amazon.fr/tracking/FR1234567890');
       } else {
         expect(carrier.trackingUrl?.('AB 12/3')).toContain('AB%2012%2F3');
       }
@@ -767,11 +769,24 @@ describe('Mondial Relay label barcode detection', () => {
   });
 });
 
-describe('Amazon France account links', () => {
+describe('Amazon Logistics account links', () => {
   it('replaces saved public tracker URLs with Amazon orders', () => {
     const [link] = parcelTrackingLinks({ carrier: 'amazon-logistics', trackingNumber: 'FR3000000001',
       trackingUrl: 'https://track.amazon.fr/tracking/FR3000000001', trackingProvider: 'ParcelsApp' });
-    expect(link).toMatchObject({ name: 'Amazon France', url: 'https://www.amazon.fr/gp/your-account/order-history' });
+    expect(link).toMatchObject({ name: 'Amazon Logistics', url: 'https://www.amazon.fr/gp/your-account/order-history' });
     expect(tracksAutomatically('amazon-logistics')).toBe(false);
+  });
+});
+
+describe('international Amazon identification', () => {
+  it.each(['FR', 'DE', 'BE', 'UK', 'GB', 'IT', 'ES', 'NL', 'AT', 'IE', 'PL', 'SE', 'PT', 'CH'])('detects %s as Logistics before verification', (prefix) => {
+    expect(parseTrackingInput(`Your parcel: ${prefix}0000000001`)).toMatchObject({ carrier: 'amazon-logistics', trackingNumber: `${prefix}0000000001` });
+    expect(parseTrackingInput(`Your parcel: ${prefix} 0000-000001`)).toMatchObject({ carrier: 'amazon-logistics', trackingNumber: `${prefix} 0000-000001` });
+  });
+  it('keeps Shipping parcels on their public tracker', () => {
+    expect(detectCarrier('TBA000000000001')).toBe('amazon-logistics');
+    expect(detectCarrier('ZZ0000000001')).not.toBe('amazon-logistics');
+    expect(parcelTrackingLinks({ carrier: 'amazon-shipping', trackingNumber: 'UK0000000001' })[0])
+      .toMatchObject({ name: 'Amazon Shipping', url: 'https://track.amazon.co.uk/tracking/UK0000000001' });
   });
 });

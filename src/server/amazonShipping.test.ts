@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  AmazonLogisticsTracker,
-  AmazonLogisticsTrackingError,
-  amazonLogisticsStatus,
-  amazonLogisticsTrackingApiUrl,
-  amazonLogisticsTrackingUrl,
-  normalizeAmazonLogisticsTrackingNumber,
-  parseAmazonLogisticsTrackingResponse,
-} from './amazonLogistics';
+  AmazonShippingTracker,
+  AmazonShippingNotFoundError,
+  amazonShippingStatus,
+  amazonShippingTrackingApiUrl,
+  amazonShippingTrackingUrl,
+  normalizeAmazonShippingTrackingNumber,
+  parseAmazonShippingTrackingResponse,
+} from './amazonShipping';
 
 const TRACKING_NUMBER = 'FR1234567890';
 
@@ -94,11 +94,11 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('Amazon Shipping France input', () => {
   it('normalizes the documented FR plus ten-digit format and builds official URLs', () => {
-    expect(normalizeAmazonLogisticsTrackingNumber(' fr12 3456-7890 '))
+    expect(normalizeAmazonShippingTrackingNumber(' fr12 3456-7890 '))
       .toBe(TRACKING_NUMBER);
-    expect(amazonLogisticsTrackingUrl(TRACKING_NUMBER))
+    expect(amazonShippingTrackingUrl(TRACKING_NUMBER))
       .toBe(`https://track.amazon.fr/tracking/${TRACKING_NUMBER}`);
-    expect(amazonLogisticsTrackingApiUrl(TRACKING_NUMBER))
+    expect(amazonShippingTrackingApiUrl(TRACKING_NUMBER))
       .toBe(`https://track.amazon.fr/api/tracker/${TRACKING_NUMBER}`);
   });
 
@@ -106,11 +106,13 @@ describe('Amazon Shipping France input', () => {
     for (const value of [
       'FR123456789',
       'FR12345678901',
-      'DE1234567890',
+      'ZZ1234567890',
+      'TBA12345678901',
+      'TBA1234567890123',
       'FR123456789A',
       'FR1234567890?admin=true',
       'FR123456789É',
-    ]) expect(() => normalizeAmazonLogisticsTrackingNumber(value)).toThrow('FR followed by 10 digits');
+    ]) expect(() => normalizeAmazonShippingTrackingNumber(value)).toThrow('European country prefix');
   });
 });
 
@@ -128,13 +130,13 @@ describe('Amazon Shipping France status normalization', () => {
     ['RETURNED_TO_SENDER', 'exception'],
     ['NEW_PROVIDER_STATUS', 'unknown'],
   ] as const)('maps %s to %s', (value, expected) => {
-    expect(amazonLogisticsStatus(value)).toBe(expected);
+    expect(amazonShippingStatus(value)).toBe(expected);
   });
 });
 
 describe('Amazon Shipping France response normalization', () => {
   it('sorts safe events and discards recipient, street, postcode, merchant, and proof fields', () => {
-    const result = parseAmazonLogisticsTrackingResponse(deliveredFixture());
+    const result = parseAmazonShippingTrackingResponse(deliveredFixture());
 
     expect(result).toEqual({
       status: 'delivered',
@@ -180,7 +182,7 @@ describe('Amazon Shipping France response normalization', () => {
       trackerSource: 'SWA',
     });
 
-    expect(parseAmazonLogisticsTrackingResponse(fixture)).toMatchObject({
+    expect(parseAmazonShippingTrackingResponse(fixture)).toMatchObject({
       status: 'delivered',
       current_stage: 'delivered',
       last_status_text: 'Delivered',
@@ -188,13 +190,13 @@ describe('Amazon Shipping France response normalization', () => {
   });
 
   it('maps Amazon\'s HTTP 200 not-found payload to a clean 404 error', () => {
-    expect(() => parseAmazonLogisticsTrackingResponse(notFoundFixture()))
-      .toThrow(AmazonLogisticsTrackingError);
+    expect(() => parseAmazonShippingTrackingResponse(notFoundFixture()))
+      .toThrow(AmazonShippingNotFoundError);
     try {
-      parseAmazonLogisticsTrackingResponse(notFoundFixture());
+      parseAmazonShippingTrackingResponse(notFoundFixture());
     } catch (error) {
       expect(error).toMatchObject({
-        name: 'AmazonLogisticsTrackingError',
+        name: 'AmazonShippingNotFoundError',
         status: 404,
         message: 'Amazon Shipping could not locate the shipment',
       });
@@ -202,12 +204,12 @@ describe('Amazon Shipping France response normalization', () => {
   });
 
   it('rejects malformed and status-free responses instead of inventing a state', () => {
-    expect(() => parseAmazonLogisticsTrackingResponse([]))
+    expect(() => parseAmazonShippingTrackingResponse([]))
       .toThrow('invalid tracking response');
-    expect(() => parseAmazonLogisticsTrackingResponse({ progressTracker: '{' }))
+    expect(() => parseAmazonShippingTrackingResponse({ progressTracker: '{' }))
       .toThrow('invalid progress tracker');
-    expect(() => parseAmazonLogisticsTrackingResponse({
-      progressTracker: JSON.stringify({ summary: { status: null, metadata: {} } }),
+    expect(() => parseAmazonShippingTrackingResponse({
+      progressTracker: JSON.stringify({ trackerSource: 'SWA', summary: { status: null, metadata: {} } }),
       eventHistory: null,
     })).toThrow('incomplete tracking details');
   });
@@ -220,16 +222,16 @@ describe('Amazon Shipping France tracker', () => {
       { headers: { 'Content-Type': 'application/json' } },
     ));
 
-    await expect(new AmazonLogisticsTracker(1_000).fetch(TRACKING_NUMBER))
+    await expect(new AmazonShippingTracker(1_000).fetch(TRACKING_NUMBER))
       .resolves.toMatchObject({ status: 'delivered' });
     expect(fetcher).toHaveBeenCalledTimes(1);
-    expect(fetcher.mock.calls[0]?.[0]).toBe(amazonLogisticsTrackingApiUrl(TRACKING_NUMBER));
+    expect(fetcher.mock.calls[0]?.[0]).toBe(amazonShippingTrackingApiUrl(TRACKING_NUMBER));
     expect(fetcher.mock.calls[0]?.[1]).toMatchObject({
       cache: 'no-store',
       redirect: 'error',
       headers: expect.objectContaining({
         Accept: 'application/json',
-        Referer: amazonLogisticsTrackingUrl(TRACKING_NUMBER),
+        Referer: amazonShippingTrackingUrl(TRACKING_NUMBER),
       }),
     });
   });
@@ -241,9 +243,9 @@ describe('Amazon Shipping France tracker', () => {
       { headers: { 'Content-Type': 'application/json' } },
     ));
 
-    await expect(new AmazonLogisticsTracker(1_000).fetch(wrongNumber))
+    await expect(new AmazonShippingTracker(1_000).fetch(wrongNumber))
       .rejects.toMatchObject({
-        name: 'AmazonLogisticsTrackingError',
+        name: 'AmazonShippingNotFoundError',
         status: 404,
       });
   });
@@ -253,7 +255,38 @@ describe('Amazon Shipping France tracker', () => {
       headers: { 'Content-Length': '2000001' },
     }));
 
-    await expect(new AmazonLogisticsTracker(1_000).fetch(TRACKING_NUMBER))
+    await expect(new AmazonShippingTracker(1_000).fetch(TRACKING_NUMBER))
       .rejects.toThrow('unexpectedly large response');
+  });
+});
+
+describe('Amazon Shipping discovery boundaries', () => {
+  it.each(['FR', 'DE', 'BE', 'UK', 'GB', 'IT', 'ES', 'NL', 'AT', 'IE', 'PL', 'SE', 'PT', 'CH'])(
+    'supports the %s format', (prefix) => expect(normalizeAmazonShippingTrackingNumber(`${prefix}0000000001`)).toBe(`${prefix}0000000001`),
+  );
+  it('uses official regional portals and recognizes US numbers', () => {
+    expect(amazonShippingTrackingApiUrl('UK0000000001')).toBe('https://track.amazon.co.uk/api/tracker/UK0000000001');
+    expect(amazonShippingTrackingApiUrl('IT0000000001')).toContain('track.amazon.it');
+    expect(amazonShippingTrackingApiUrl('ES0000000001')).toContain('track.amazon.es');
+    expect(amazonShippingTrackingApiUrl('TBA000000000001')).toContain('track.amazon.com/api/tracker/TBA000000000001');
+    expect(amazonShippingTrackingApiUrl('BE0000000001')).toContain('track.amazon.fr');
+  });
+  it('does not mistake an expired shipment placeholder for real movement', () => {
+    expect(() => parseAmazonShippingTrackingResponse({ progressTracker: {
+      errors: [{ errorCode: 'SHIPMENT_OLDER_THAN_SUPPORTED_AGE', errorMessage: 'SHIPMENT_OLDER_THAN_45_DAYS' }],
+      trackerSource: 'MCF', summary: { status: 'IN_TRANSIT', metadata: {} },
+    } })).toThrow('history has expired');
+  });
+  it('rejects contradictory identity even with usable tracking history', () => {
+    expect(() => parseAmazonShippingTrackingResponse({ ...deliveredFixture(), trackingId: 'FR0000000002' }, 'Europe/Paris', 'FR0000000001'))
+      .toThrow('different tracking number');
+  });
+  it('uses the UK timezone and does not invent US timezones', () => {
+    const uk = parseAmazonShippingTrackingResponse(deliveredFixture(), 'Europe/London');
+    expect(uk.events?.[0]?.time).toContain('+01:00');
+    const us = parseAmazonShippingTrackingResponse(deliveredFixture(), null);
+    expect(us.events?.every((event) => event.time === undefined)).toBe(true);
+    expect(us.last_update).toBeNull();
+    expect(us.timezone).toBeUndefined();
   });
 });

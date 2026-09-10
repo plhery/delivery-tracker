@@ -8,6 +8,7 @@ struct CarrierDetectionRequest: Codable, Equatable, Hashable, Sendable {
 
 struct CarrierDetectionResponse: Codable, Equatable, Hashable, Sendable {
     var trackingNumber: String
+    var amazonShippingStatus: CarrierDetectionResponseAmazonShippingStatus? = nil
     var carrier: CarrierID
 }
 
@@ -43,6 +44,7 @@ struct CarrierID: RawRepresentable, Codable, CaseIterable, Hashable, Sendable, I
     static let dhlEcommerce = CarrierID(rawValue: "dhl-ecommerce")
     static let ups = CarrierID(rawValue: "ups")
     static let amazonLogistics = CarrierID(rawValue: "amazon-logistics")
+    static let amazonShipping = CarrierID(rawValue: "amazon-shipping")
     static let fedex = CarrierID(rawValue: "fedex")
     static let glsCh = CarrierID(rawValue: "gls-ch")
     static let dpd = CarrierID(rawValue: "dpd")
@@ -83,6 +85,7 @@ struct CarrierID: RawRepresentable, Codable, CaseIterable, Hashable, Sendable, I
         .dhlEcommerce,
         .ups,
         .amazonLogistics,
+        .amazonShipping,
         .fedex,
         .glsCh,
         .dpd,
@@ -613,6 +616,15 @@ struct RevokeLiveActivityDeviceRequest: Codable, Equatable, Hashable, Sendable {
         case installationID = "installationId"
         case revocationToken
     }
+}
+
+enum CarrierDetectionResponseAmazonShippingStatus: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case available
+    case expired
+    case notFound = "not-found"
+    case unavailable
+
+    var id: String { rawValue }
 }
 
 struct AccountExportAccount: Codable, Equatable, Hashable, Sendable, Identifiable {

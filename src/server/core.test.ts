@@ -858,12 +858,12 @@ describe('rate limiting', () => {
   });
 });
 
-describe('Amazon France addition policy', () => {
+describe('Amazon Logistics addition policy', () => {
   it.each(['amazon-logistics', 'unknown', 'ups'])('rejects retail FR codes even when submitted as %s', (carrier) => {
     expect(() => newPackageValues({ trackingNumber: 'fr 3000-000001', carrier }))
       .toThrow(expect.objectContaining({ status: 400, message: expect.stringContaining('Amazon account') }));
   });
-  it('rejects manually selected Amazon France and carrier changes', () => {
+  it('rejects manually selected Amazon Logistics and carrier changes', () => {
     expect(() => newPackageValues({ trackingNumber: '12345678', carrier: 'amazon-logistics' }))
       .toThrow('Amazon account');
     expect(() => packageCarrierValues({ carrier: 'ups' }, 'FR3000000001')).toThrow('Amazon account');

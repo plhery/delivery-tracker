@@ -26,6 +26,11 @@ Take a fresh database backup. Apply every `supabase/migrations/*.sql` file in
 filename order and stop on the first error. The migration CI job applies the
 complete history to a clean PostgreSQL 16 database and runs RLS assertions.
 
+Before deploying the Amazon Shipping distinction, apply
+`20260912210000_add_amazon_shipping.sql`. It adds `amazon-shipping` to the package
+carrier constraint and both ownership-enforcing package RPCs. It is compatible
+with the previous app version and does not reclassify existing parcels.
+
 For an existing private/shared deployment, the migrations preserve old parcels
 with `user_id IS NULL`. Those rows are invisible to every signed-in user. Do not
 assign them until the intended owner has successfully signed in once and has an
