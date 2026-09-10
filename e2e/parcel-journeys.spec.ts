@@ -171,7 +171,7 @@ test('parcel celebration respects reduced motion and clears before the next inte
   await sheet.getByRole('button', { name: 'Add parcel' }).click();
   await expect(sheet.getByRole('alert')).toContainText('already tracking this parcel');
   await expect(burst).toHaveCount(0);
-  await sheet.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await sheet.getByRole('button', { name: 'Close', exact: true }).click();
   await expect(burst).toHaveCount(0);
 });
 
@@ -284,14 +284,14 @@ test('navigates nested carrier dialogs entirely by keyboard', async ({ page }) =
 test('keeps translated add-parcel guidance readable in every app language', async ({ page }) => {
   // Change away from the initial English value first: selecting an unchanged
   // option does not emit a change event or save a language preference.
-  for (const [locale, action, title, cancel] of [
-    ['de', 'Ein Paket hinzufügen', 'Paket hinzufügen', 'Abbrechen'],
-    ['fr', 'Ajouter un colis', 'Ajouter un colis', 'Annuler'],
-    ['it', 'Aggiungi un pacco', 'Aggiungi un pacco', 'Annulla'],
-    ['es', 'Añadir un paquete', 'Añadir un paquete', 'Cancelar'],
-    ['pt', 'Adicionar um envio', 'Adicionar um envio', 'Cancelar'],
-    ['pl', 'Dodaj przesyłkę', 'Dodaj przesyłkę', 'Anuluj'],
-    ['en', 'Add a parcel', 'Add a parcel', 'Cancel'],
+  for (const [locale, action, title, close] of [
+    ['de', 'Ein Paket hinzufügen', 'Paket hinzufügen', 'Schliessen'],
+    ['fr', 'Ajouter un colis', 'Ajouter un colis', 'Fermer'],
+    ['it', 'Aggiungi un pacco', 'Aggiungi un pacco', 'Chiudi'],
+    ['es', 'Añadir un paquete', 'Añadir un paquete', 'Cerrar'],
+    ['pt', 'Adicionar um envio', 'Adicionar um envio', 'Fechar'],
+    ['pl', 'Dodaj przesyłkę', 'Dodaj przesyłkę', 'Zamknij'],
+    ['en', 'Add a parcel', 'Add a parcel', 'Close'],
   ]) {
     await page.locator('.account-trigger').click();
     await page.locator('.language-control select').selectOption(locale);
@@ -303,7 +303,7 @@ test('keeps translated add-parcel guidance readable in every app language', asyn
     await sheet.locator('#add-parcel-tracking').fill('99.34.111111.22222222');
     await expect(sheet.getByText('Swiss Post', { exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    await sheet.getByRole('button', { name: cancel, exact: true }).click();
+    await sheet.getByRole('button', { name: close, exact: true }).click();
     expect(await page.evaluate(() => localStorage.getItem('deliveryTrackerLocale'))).toBe(locale);
   }
 });

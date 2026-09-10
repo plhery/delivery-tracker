@@ -21,6 +21,7 @@ import {
 import { useSheetDialog } from '../lib/modal';
 import { useI18n } from '../i18n';
 import { Icon } from './Icon';
+import './AddParcelSheet.css';
 import { lookupCarrier } from '../lib/carrierDetection';
 import type { ApiAuth } from '../lib/apiClient';
 import type { ApiCarrierDetectionResponse } from '../generated/apiContract';
@@ -62,7 +63,7 @@ export function AddParcelSheet({
   const [existingParcelId, setExistingParcelId] = useState<string | null>(null);
   const [pasteError, setPasteError] = useState<string | null>(null);
   const trackingInput = useRef<HTMLTextAreaElement>(null);
-  const titleInput = useRef<HTMLInputElement>(null);
+  const backdrop = useRef<HTMLDivElement>(null);
   const saved = useRef<string | null>(null);
   const mounted = useRef(true);
   useEffect(() => {
@@ -72,7 +73,28 @@ export function AddParcelSheet({
   const [dialog, onClose] = useSheetDialog<HTMLDivElement>(true, () => {
     onDismissed();
     if (saved.current) onAdded?.(saved.current);
-  }, titleInput);
+  }, trackingInput);
+
+  // Mobile keyboards resize the visual viewport without resizing the layout
+  // viewport. Keep the full-screen form and its action inside the visible area.
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const element = backdrop.current;
+    if (!viewport || !element) return;
+    const update = () => {
+      // Leave native pinch zoom alone rather than shrinking the form with it.
+      if (viewport.scale !== 1) return;
+      element.style.setProperty('--add-viewport-height', `${viewport.height}px`);
+      element.style.setProperty('--add-viewport-top', `${viewport.offsetTop}px`);
+    };
+    update();
+    viewport.addEventListener('resize', update);
+    viewport.addEventListener('scroll', update);
+    return () => {
+      viewport.removeEventListener('resize', update);
+      viewport.removeEventListener('scroll', update);
+    };
+  }, []);
 
   const parsedTracking = parseTrackingInput(trackingInputValue);
   const trackingNumber = parsedTracking.trackingNumber;
@@ -171,7 +193,7 @@ export function AddParcelSheet({
   }
 
   return createPortal(
-    <div className="sheet-backdrop" onClick={onClose}>
+    <div ref={backdrop} className="sheet-backdrop add-parcel-backdrop" onClick={onClose}>
       <div
         ref={dialog}
         className="sheet add-parcel-sheet"
@@ -181,7 +203,6 @@ export function AddParcelSheet({
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sheet__grabber" aria-hidden="true" />
         <div className="sheet__heading">
           <div>
             <h2 className="sheet__title" id="add-parcel-title">{t('add.title')}</h2>
@@ -196,177 +217,185 @@ export function AddParcelSheet({
           </button>
         </div>
         <form onSubmit={handleSubmit} className="sheet__form">
-          <label className="field">
-            <span className="field__label">{t('design.parcelTitle')} <small>{t('add.optional')}</small></span>
-            <input
-              className="field__input"
-              type="text"
-              ref={titleInput}
-              value={label}
-              placeholder={t('add.contentsPlaceholder')}
-              onChange={(e) => setLabel(e.target.value)}
-              maxLength={80}
-            />
-          </label>
-
-          <div className="field">
-            <div className="field__label">
-              <label htmlFor="add-parcel-tracking">{t('add.tracking')}</label>
-              <button
-                type="button"
-                className="field__inline-action"
-                onClick={() => void pasteTrackingInput()}
-              >
-                <Icon name="copy" />{t('add.paste')}
-              </button>
-            </div>
-            <textarea
-              id="add-parcel-tracking"
-              className="field__input field__input--tracking"
-              ref={trackingInput}
-              value={trackingInputValue}
-              placeholder={t('add.trackingPlaceholder')}
-              onChange={(e) => {
-                setTrackingInputValue(e.target.value);
-                if (existingParcelId) {
-                  setExistingParcelId(null);
-                  setError(null);
-                }
-              }}
-              autoCapitalize="characters"
-              autoCorrect="off"
-              spellCheck={false}
-              required
-            />
-          </div>
-          {pasteError && <p className="sheet__error" role="status">{pasteError}</p>}
-          {trackingInputValue.trim() && !trackingNumber && (
-            <p className="sheet__error" role="status">
-              {t('add.notFound')}
-            </p>
-          )}
-          {parsedTracking.source !== 'number' && trackingNumber && (
-            <p className="sheet__carrier-hint">
-              {t('add.foundPrefix')}{t('add.foundPrefix') ? ' ' : ''}
-              <strong>{formatTrackingNumber(trackingNumber)}</strong>{' '}
-              {t(parsedTracking.source === 'link'
-                ? 'add.foundLinkSuffix'
-                : 'add.foundTextSuffix')}
-            </p>
-          )}
-          {carrier && trackingNumber && (
-            <div aria-busy={lookingUp} className={`sheet__carrier-card${requiresCarrierConfirmation || !tracksAutomatically(carrier.id) ? ' sheet__carrier-card--warning' : ''}`}>
-              <span className="sheet__carrier-mark" aria-hidden="true" />
-              <span className="sheet__carrier-copy">
-                <small>{selectedCarrier === 'auto' && carrier.id !== 'intl-post' && carrier.id !== 'unknown'
-                  ? t('add.detectedCarrier')
-                  : t('add.carrier')}</small>
-                <strong>{carrier.name}</strong>
-                {(requiresCarrierConfirmation || !tracksAutomatically(carrier.id)) && <span>{carrierHint}</span>}
-              </span>
-              {!requiresCarrierConfirmation
-                && (selectedCarrier !== 'auto' || detectedCarrier !== 'unknown') && (
-                <button
-                  type="button"
-                  onClick={() => setShowCarrierPicker((visible) => !visible)}
-                >
-                  {carrierPickerVisible
-                    ? selectedCarrier === 'auto'
-                      ? t('add.useDetectedCarrier')
-                      : t('common.close')
-                    : t('add.changeCarrier')}
-                </button>
-              )}
-            </div>
-          )}
-          {carrierPickerVisible && (
-            <label className="field">
-              <span className="field__label">{t('add.carrier')}</span>
-              <select
-                className="field__input"
-                value={selectedCarrier}
-                onChange={(e) => setSelectedCarrier(e.target.value as CarrierId | 'auto')}
-              >
-                <option value="auto">{t('add.detect')}</option>
-                {SELECTABLE_CARRIERS.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.name}{tracksAutomatically(option.id) ? '' : ` (${t('add.linkOnly')})`}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          {requirements
-            .filter(({ field }) => field !== 'trackingUrl' || !parsedCarrierTrackingUrl)
-            .map((requirement) => (
-              <label className="field" key={requirement.field}>
-                <span className="field__label">
-                  {locale === 'en'
-                    ? requirement.label
-                    : t(`add.requirement.${requirement.field}`)}
-                </span>
-                <input
-                  className="field__input"
-                  type={requirement.type}
-                  inputMode={requirement.inputMode}
-                  autoComplete={requirement.autoComplete}
-                  value={carrierInputValue(requirement.field)}
-                  placeholder={requirement.placeholder}
-                  pattern={requirement.pattern}
-                  maxLength={requirement.maxLength}
-                  onChange={(event) => {
-                    const value = requirement.inputMode === 'numeric'
-                      ? event.target.value.replace(/\D/g, '').slice(0, requirement.maxLength)
-                      : event.target.value;
-                    if (requirement.field === 'dpdPostcode') {
-                      setCarrierPostcodes((current) => ({
-                        ...current,
-                        [resolvedCarrier]: value,
-                      }));
-                    } else {
-                      setCarrierInputs((current) => ({
-                        ...current,
-                        [requirement.field]: value,
-                      }));
+          <div className="add-parcel-fields">
+            <div className="add-parcel-tracking">
+              <div className="field">
+                <div className="field__label">
+                  <label htmlFor="add-parcel-tracking">{t('add.tracking')}</label>
+                  <button
+                    type="button"
+                    className="field__inline-action"
+                    onClick={() => void pasteTrackingInput()}
+                  >
+                    <Icon name="copy" />{t('add.paste')}
+                  </button>
+                </div>
+                <textarea
+                  id="add-parcel-tracking"
+                  className="field__input field__input--tracking"
+                  ref={trackingInput}
+                  value={trackingInputValue}
+                  placeholder={t('add.trackingPlaceholder')}
+                  onChange={(e) => {
+                    setTrackingInputValue(e.target.value);
+                    if (existingParcelId) {
+                      setExistingParcelId(null);
+                      setError(null);
                     }
                   }}
-                  autoCapitalize={requirement.type === 'url' ? 'none' : undefined}
+                  autoCapitalize="characters"
                   autoCorrect="off"
                   spellCheck={false}
+                  rows={2}
                   required
                 />
-                {requirement.help && (
-                  <small className="field__help">
-                    {t(requirement.field === 'dpdPostcode'
-                      ? 'add.requirement.dpdPostcodeHelp'
-                      : 'add.requirement.trackingUrlHelp')}
-                  </small>
-                )}
-              </label>
-            ))}
-          {error && (
-            <p className="sheet__error" role="alert">
-              <span>{error}</span>
-              {existingParcelId && onOpenParcel && (
-                <>{' '}
-                  <a
-                    href={`/?parcel=${encodeURIComponent(existingParcelId)}`}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      onClose();
-                      onOpenParcel(existingParcelId);
-                    }}
-                  >
-                    {t('add.openExisting')}
-                  </a>
-                </>
+              </div>
+              {pasteError && <p className="sheet__error" role="status">{pasteError}</p>}
+              {trackingInputValue.trim() && !trackingNumber && (
+                <p className="sheet__error" role="status">
+                  {t('add.notFound')}
+                </p>
               )}
-            </p>
-          )}
+              {parsedTracking.source !== 'number' && trackingNumber && (
+                <p className="sheet__carrier-hint">
+                  {t('add.foundPrefix')}{t('add.foundPrefix') ? ' ' : ''}
+                  <strong>{formatTrackingNumber(trackingNumber)}</strong>{' '}
+                  {t(parsedTracking.source === 'link'
+                    ? 'add.foundLinkSuffix'
+                    : 'add.foundTextSuffix')}
+                </p>
+              )}
+              {carrier && trackingNumber && (
+                <div className="add-parcel-carrier" aria-live="polite" aria-busy={lookingUp}>
+                  <div className="add-parcel-carrier__row">
+                    <Icon name="truck" />
+                    <span className="add-parcel-carrier__identity">
+                      <strong>{carrier.name}</strong>
+                      <small>{selectedCarrier === 'auto' && carrier.id !== 'intl-post' && carrier.id !== 'unknown'
+                        ? t('add.detectedCarrier')
+                        : t('add.carrier')}</small>
+                    </span>
+                    {!requiresCarrierConfirmation
+                      && (selectedCarrier !== 'auto' || detectedCarrier !== 'unknown') && (
+                      <button
+                        type="button"
+                        aria-expanded={carrierPickerVisible}
+                        onClick={() => setShowCarrierPicker((visible) => !visible)}
+                      >
+                        {carrierPickerVisible
+                          ? selectedCarrier === 'auto'
+                            ? t('add.useDetectedCarrier')
+                            : t('common.close')
+                          : t('add.changeCarrier')}
+                      </button>
+                    )}
+                  </div>
+                  {(requiresCarrierConfirmation || !tracksAutomatically(carrier.id)) && (
+                    <p className="add-parcel-carrier__hint">{carrierHint}</p>
+                  )}
+                </div>
+              )}
+              {carrierPickerVisible && (
+                <label className="field">
+                  <span className="field__label">{t('add.carrier')}</span>
+                  <select
+                    className="field__input"
+                    value={selectedCarrier}
+                    onChange={(e) => setSelectedCarrier(e.target.value as CarrierId | 'auto')}
+                  >
+                    <option value="auto">{t('add.detect')}</option>
+                    {SELECTABLE_CARRIERS.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.name}{tracksAutomatically(option.id) ? '' : ` (${t('add.linkOnly')})`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {requirements
+                .filter(({ field }) => field !== 'trackingUrl' || !parsedCarrierTrackingUrl)
+                .map((requirement) => (
+                  <label className="field" key={requirement.field}>
+                    <span className="field__label">
+                      {locale === 'en'
+                        ? requirement.label
+                        : t(`add.requirement.${requirement.field}`)}
+                    </span>
+                    <input
+                      className="field__input"
+                      type={requirement.type}
+                      inputMode={requirement.inputMode}
+                      autoComplete={requirement.autoComplete}
+                      value={carrierInputValue(requirement.field)}
+                      placeholder={requirement.placeholder}
+                      pattern={requirement.pattern}
+                      maxLength={requirement.maxLength}
+                      onChange={(event) => {
+                        const value = requirement.inputMode === 'numeric'
+                          ? event.target.value.replace(/\D/g, '').slice(0, requirement.maxLength)
+                          : event.target.value;
+                        if (requirement.field === 'dpdPostcode') {
+                          setCarrierPostcodes((current) => ({
+                            ...current,
+                            [resolvedCarrier]: value,
+                          }));
+                        } else {
+                          setCarrierInputs((current) => ({
+                            ...current,
+                            [requirement.field]: value,
+                          }));
+                        }
+                      }}
+                      autoCapitalize={requirement.type === 'url' ? 'none' : undefined}
+                      autoCorrect="off"
+                      spellCheck={false}
+                      required
+                    />
+                    {requirement.help && (
+                      <small className="field__help">
+                        {t(requirement.field === 'dpdPostcode'
+                          ? 'add.requirement.dpdPostcodeHelp'
+                          : 'add.requirement.trackingUrlHelp')}
+                      </small>
+                    )}
+                  </label>
+                ))}
+            </div>
+            <label className="field">
+              <span className="field__label">{t('design.parcelTitle')} <small>{t('add.optional')}</small></span>
+              <input
+                className="field__input"
+                type="text"
+                value={label}
+                placeholder={t('add.contentsPlaceholder')}
+                onChange={(e) => setLabel(e.target.value)}
+                maxLength={80}
+              />
+            </label>
+            {error && (
+              <p className="sheet__error" role="alert">
+                <span>{error}</span>
+                {existingParcelId && onOpenParcel && (
+                  <>{' '}
+                    <a
+                      href={`/?parcel=${encodeURIComponent(existingParcelId)}`}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        onClose();
+                        onOpenParcel(existingParcelId);
+                      }}
+                    >
+                      {t('add.openExisting')}
+                    </a>
+                  </>
+                )}
+              </p>
+            )}
+          </div>
           <div className="sheet__actions">
             <button
               type="button"
-              className="button button--secondary"
+              className="text-button add-parcel-cancel"
               onClick={onClose}
             >
               {t('common.cancel')}

@@ -1,0 +1,32 @@
+/* Quiet Stack: tracking owns the hierarchy; carrier feedback stays inline. */
+.sheet.add-parcel-sheet { max-width: 440px; display: flex; flex-direction: column; overflow: hidden; border-radius: 26px; }
+.add-parcel-sheet .sheet__heading { flex-shrink: 0; margin-bottom: 22px; }
+.add-parcel-sheet .sheet__title { font-weight: 600; }
+.add-parcel-sheet .sheet__form { display: flex; flex-direction: column; min-height: 0; gap: 0; }
+.add-parcel-fields { display: grid; gap: 20px; overflow-y: auto; overscroll-behavior: contain; padding: 4px; margin: -4px; }
+.add-parcel-tracking { display: grid; gap: 10px; min-width: 0; }
+.add-parcel-sheet .field__input { border-radius: 14px; padding: 13px 14px; min-height: 50px; }
+.add-parcel-sheet .field__input--tracking { min-height: 82px; font: inherit; font-size: 16px; line-height: 1.5; background: var(--paper); border-color: var(--line); }
+.add-parcel-sheet .field__input--tracking:focus { border-color: var(--ochre); }
+.add-parcel-sheet .sheet__carrier-hint { margin: 0; font-size: 12px; overflow-wrap: anywhere; }
+.add-parcel-carrier__row { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+.add-parcel-carrier__row > svg { width: 17px; height: 17px; flex-shrink: 0; color: var(--ink-soft); }
+.add-parcel-carrier__identity { display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 8px; min-width: 0; }
+.add-parcel-carrier__identity strong { font-size: 13px; font-weight: 550; overflow-wrap: anywhere; }
+.add-parcel-carrier__identity small { color: var(--ink-soft); font-size: 12px; }
+.add-parcel-carrier__row > button { background: transparent; color: var(--ink-soft); font-size: 12px; min-height: 44px; padding: 5px 0 5px 8px; margin-left: auto; text-decoration: underline; text-underline-offset: 3px; flex-shrink: 0; max-width: 42%; }
+.add-parcel-carrier__hint { font-size: 12px; color: var(--orange-text); margin: 4px 0 0; }
+.add-parcel-sheet .sheet__actions { flex-shrink: 0; justify-content: flex-end; align-items: center; gap: 16px; padding-top: 24px; }
+.add-parcel-sheet .sheet__actions > * { flex: none; }
+.add-parcel-sheet .add-parcel-cancel { color: var(--ink-soft); font-size: 13px; font-weight: 400; padding-inline: 8px; }
+.add-parcel-sheet .button--primary { min-height: 48px; border-radius: 14px; padding: 12px 23px; font-weight: 600; }
+
+@media (max-width: 760px) {
+  .sheet-backdrop.add-parcel-backdrop { top: var(--add-viewport-top, 0px); bottom: auto; height: var(--add-viewport-height, 100dvh); padding: 0; overflow: hidden; align-items: stretch; }
+  .sheet.add-parcel-sheet { max-width: none; max-height: none; height: 100%; border: 0; border-radius: 0; padding: max(16px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); box-shadow: none; }
+  .add-parcel-sheet .sheet__form { flex: 1; }
+  .add-parcel-fields { flex: 1; align-content: start; }
+  .add-parcel-sheet .sheet__actions { padding-top: 20px; }
+  .add-parcel-sheet .add-parcel-cancel { display: none; }
+  .add-parcel-sheet .sheet__actions > .button--primary { width: 100%; min-height: 50px; }
+}

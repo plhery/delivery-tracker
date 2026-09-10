@@ -948,7 +948,7 @@ describe('App', () => {
 
     const dialog = screen.getByRole('dialog', { name: /add a parcel/i });
     expect(dialog).toHaveAttribute('aria-modal', 'true');
-    expect(within(dialog).getByLabelText(/^name/i)).toHaveFocus();
+    expect(within(dialog).getByLabelText('Tracking number or link')).toHaveFocus();
     expect(document.querySelector('.app')).toHaveAttribute('inert');
     expect(document.body.style.overflow).toBe('hidden');
 

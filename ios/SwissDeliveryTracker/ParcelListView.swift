@@ -123,7 +123,7 @@ private struct DeliveryListView: View {
         .onChange(of: sort) { _, _ in DeliveryAnalytics.shared.action("sort-change") }
         .onChange(of: archivedExpanded) { _, open in if open { DeliveryAnalytics.shared.action("archive-open") } }
         .sensoryFeedback(.success, trigger: parcelBurstID) { _, next in next != nil }
-        .sheet(isPresented: $showingAdd, onDismiss: {
+        .fullScreenCover(isPresented: $showingAdd, onDismiss: {
             if let id = addedParcelID, scenePhase == .active {
                 if !visibleParcels.contains(where: { $0.id == id }) { clearFilters() }
                 revealParcelID = id

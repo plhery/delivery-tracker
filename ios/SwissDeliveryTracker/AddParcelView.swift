@@ -10,13 +10,13 @@ struct AddParcelView: View {
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var label: String
     @State private var trackingInput: String
     @State private var trackingURL = ""
     @State private var deliveryPostcode = ""
     @State private var showingScanner = false
+    @State private var didFocusTracking = false
     @State private var saving = false
     @State private var errorMessage: String?
     @State private var duplicateParcelID: UUID?
@@ -42,23 +42,25 @@ struct AddParcelView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                ExperimentalBackdrop()
+            VStack(spacing: 0) {
+                heading
 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 14) {
-                        labelCard
-                        trackingCard
-
-                        if !parsed.trackingNumber.isEmpty {
-                            detectionCard
-                                .transition(reduceMotion ? .opacity : .offset(y: 6).combined(with: .opacity))
+                    VStack(alignment: .leading, spacing: 20) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            trackingField
+                            if !parsed.trackingNumber.isEmpty {
+                                carrierFeedback
+                                    .transition(reduceMotion ? .opacity : .offset(y: 6).combined(with: .opacity))
+                            }
                         }
 
                         if needsRequiredDetails {
-                            requiredDetailsCard
+                            requiredDetails
                                 .transition(reduceMotion ? .opacity : .offset(y: 6).combined(with: .opacity))
                         }
+
+                        nameField
 
                         if let errorMessage {
                             errorBanner(errorMessage)
@@ -66,8 +68,8 @@ struct AddParcelView: View {
                         }
                     }
                     .disabled(saving)
-                    .padding(.horizontal, 18)
-                    .padding(.top, 14)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 4)
                     .padding(.bottom, 24)
                     .frame(maxWidth: 560)
                     .frame(maxWidth: .infinity)
@@ -75,20 +77,8 @@ struct AddParcelView: View {
                 .scrollIndicators(.hidden)
                 .scrollDismissesKeyboard(.interactively)
             }
-            .navigationTitle(localizer.text("add.title"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark")
-                            .font(.body.weight(.medium))
-                            .frame(width: 44, height: 44)
-                    }
-                    .accessibilityLabel(localizer.text("common.cancel"))
-                    .disabled(saving)
-                    .tint(Brand.ink)
-                }
-            }
+            .background(Brand.background)
+            .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 primaryAction
             }
@@ -109,6 +99,13 @@ struct AddParcelView: View {
                 }
                 .environmentObject(localizer)
             }
+            .task {
+                guard !didFocusTracking else { return }
+                didFocusTracking = true
+                // Wait for the full-screen presentation before opening the keyboard.
+                do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
+                focusedField = .tracking
+            }
             .onChange(of: resolvedCarrier, initial: true) { _, carrier in
                 prepareRequiredDetails(for: carrier)
             }
@@ -126,174 +123,149 @@ struct AddParcelView: View {
                 }
             }
         }
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
     }
 
-    private var labelCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(localizer.text("add.contents"))
-                    .font(.subheadline.weight(.semibold))
-                Spacer()
+    private var heading: some View {
+        HStack(spacing: 12) {
+            Text(localizer.text("add.title"))
+                .font(.title2.weight(.semibold))
+                .tracking(-0.5)
+                .accessibilityAddTraits(.isHeader)
+            Spacer(minLength: 0)
+            Button { dismiss() } label: {
+                Image(systemName: "xmark")
+                    .font(.body.weight(.medium))
+                    .frame(width: 36, height: 36)
+                    .background(Brand.cream, in: Circle())
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(localizer.text("common.close"))
+            .accessibilityIdentifier("addParcel.close")
+            .disabled(saving)
+        }
+        .foregroundStyle(Brand.ink)
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .padding(.bottom, 18)
+        .frame(maxWidth: 560)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var nameField: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(localizer.text("design.parcelTitle"))
+                    .font(.subheadline.weight(.medium))
                 Text(localizer.text("add.optional"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Image(systemName: "tag")
-                    .font(.subheadline)
-                    .foregroundStyle(ExperimentalPalette.ochre)
-                TextField(
-                    localizer.text("add.contentsPlaceholder"),
-                    text: $label,
-                    axis: .vertical
-                )
+            TextField(localizer.text("add.contentsPlaceholder"), text: $label)
                 .font(.body)
-                .lineLimit(1...2)
-                .accessibilityLabel(localizer.text("add.contents"))
+                .accessibilityLabel(localizer.text("design.parcelTitle"))
                 .accessibilityIdentifier("addParcel.name")
                 .submitLabel(.done)
                 .focused($focusedField, equals: .label)
-                .onSubmit { focusedField = nil }
+                .onSubmit {
+                    if canSave { save() } else { focusedField = .tracking }
+                }
                 .onChange(of: label) { _, value in
                     if value.count > 80 { label = String(value.prefix(80)) }
                 }
-            }
+                .padding(14)
+                .background(Brand.paper, in: RoundedRectangle(cornerRadius: 14))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14)
+                        .strokeBorder(focusedField == .label ? ExperimentalPalette.ochre : Brand.separator.opacity(0.3), lineWidth: 1)
+                }
         }
-        .padding(18)
-        .experimentalSurface(cornerRadius: 20, shadow: false)
-        .overlay {
-            RoundedRectangle(cornerRadius: 20)
-                .strokeBorder(ExperimentalPalette.ochre.opacity(focusedField == .label ? 0.5 : 0), lineWidth: 1)
-        }
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: focusedField == .label)
+        .foregroundStyle(Brand.ink)
     }
 
-    private var trackingCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .center, spacing: 18) {
-                Text(localizer.text("add.tracking"))
-                    .font(.system(.title2, design: .rounded, weight: .bold))
-                    .tracking(-0.4)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if !dynamicTypeSize.isAccessibilitySize {
-                    trackingStamp
+    private var trackingField: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    trackingLabel
+                    Spacer(minLength: 4)
+                    captureActions
+                }
+                VStack(alignment: .leading, spacing: 0) {
+                    trackingLabel
+                    captureActions
                 }
             }
-
-            HStack(alignment: .top, spacing: 4) {
-                TextField(
-                    text: $trackingInput,
-                    prompt: Text(localizer.text("add.trackingPlaceholder"))
-                        .foregroundStyle(Brand.onAccent.opacity(0.55)),
-                    axis: .vertical
-                ) {
-                    Text(localizer.text("add.tracking"))
-                }
-                .font(.system(.body, design: .monospaced, weight: .medium))
-                .lineLimit(2...4)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .tint(Brand.onAccent)
-                .accessibilityIdentifier("addParcel.tracking")
-                .submitLabel(.done)
-                .focused($focusedField, equals: .tracking)
-                .onSubmit(submitTracking)
-                .onChange(of: trackingInput) { _, _ in
-                    duplicateParcelID = nil
-                    errorMessage = nil
-                    carrierOverride = nil
-                }
-
-                if !cleanedInput.isEmpty {
-                    Button {
-                        withAnimation(reduceMotion ? nil : .snappy) {
-                            trackingInput = ""
-                            errorMessage = nil
-                            duplicateParcelID = nil
-                        }
-                        focusedField = .tracking
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.body)
-                            .foregroundStyle(Brand.onAccent.opacity(0.45))
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(TactileButtonStyle())
-                    .accessibilityLabel(localizer.text("view.clearAll"))
-                }
+            TextField(
+                localizer.text("add.trackingPlaceholder"),
+                text: $trackingInput,
+                axis: .vertical
+            )
+            .font(.body)
+            .lineLimit(2...4)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .accessibilityLabel(localizer.text("add.tracking"))
+            .accessibilityIdentifier("addParcel.tracking")
+            .submitLabel(.next)
+            .focused($focusedField, equals: .tracking)
+            .onSubmit(submitTracking)
+            .onChange(of: trackingInput) { _, _ in
+                duplicateParcelID = nil
+                errorMessage = nil
+                carrierOverride = nil
             }
-            .padding(.leading, 14)
-            .padding(.trailing, cleanedInput.isEmpty ? 14 : 2)
-            .padding(.vertical, 14)
-            .background(Color(hex: "#FFF9E8"), in: RoundedRectangle(cornerRadius: 14))
+            .padding(14)
+            .background(Brand.paper, in: RoundedRectangle(cornerRadius: 14))
             .overlay {
                 RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(Brand.onAccent.opacity(focusedField == .tracking ? 0.5 : 0.12), lineWidth: 1)
-            }
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: focusedField == .tracking)
-
-            let actionLayout = dynamicTypeSize.isAccessibilitySize
-                ? AnyLayout(VStackLayout(spacing: 10))
-                : AnyLayout(HStackLayout(spacing: 10))
-            actionLayout {
-                captureButton(localizer.text("add.paste"), symbol: "doc.on.clipboard", action: paste)
-                    .accessibilityIdentifier("addParcel.paste")
-                if scannerAvailable {
-                    captureButton(localizer.text("add.scan"), symbol: "barcode.viewfinder") {
-                    DeliveryAnalytics.shared.action("parcel-scan")
-                        focusedField = nil
-                        showingScanner = true
-                    }
-                }
+                    .strokeBorder(focusedField == .tracking ? ExperimentalPalette.ochre : Brand.separator.opacity(0.3), lineWidth: 1)
             }
 
             if parsed.trackingNumber.isEmpty && !cleanedInput.isEmpty {
-                Label(localizer.text("add.notFound"), systemImage: "text.magnifyingglass")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(Brand.onAccent.opacity(0.75))
+                Text(localizer.text("add.notFound"))
+                    .font(.caption)
+                    .foregroundStyle(Brand.warning)
                     .fixedSize(horizontal: false, vertical: true)
-                    .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .foregroundStyle(Brand.onAccent)
-        .padding(20)
-        .experimentalSurface(fill: Brand.accent, cornerRadius: 24, shadow: false)
+        .foregroundStyle(Brand.ink)
     }
 
-    private var trackingStamp: some View {
-        Image(systemName: "shippingbox")
-            .font(.system(size: 24, weight: .regular))
-            .foregroundStyle(Brand.onAccent)
-            .frame(width: 54, height: 64)
-            .background {
-                PostageStampShape().fill(Color(hex: "#FFF9E8"))
-                    .shadow(color: .black.opacity(0.08), radius: 2, y: 2)
-                Rectangle().stroke(Brand.onAccent.opacity(0.25), lineWidth: 0.7).padding(8)
+    private var trackingLabel: some View {
+        Text(localizer.text("add.tracking"))
+            .font(.subheadline.weight(.medium))
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var captureActions: some View {
+        HStack(spacing: 12) {
+            Button(action: paste) {
+                Label(localizer.text("add.paste"), systemImage: "doc.on.clipboard")
+                    .font(.caption)
+                    .fixedSize()
+                    .frame(minHeight: 44)
             }
-            .rotationEffect(.degrees(-4))
-            .symbolEffect(.bounce, options: .nonRepeating, value: reduceMotion ? nil : resolvedCarrier)
-            .accessibilityHidden(true)
-    }
-
-    private func captureButton(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(title, systemImage: symbol)
-                .font(.subheadline.weight(.semibold))
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, minHeight: 46)
-                .padding(.horizontal, 8)
-                .padding(.vertical, dynamicTypeSize.isAccessibilitySize ? 6 : 0)
-                .background(.white.opacity(0.42), in: RoundedRectangle(cornerRadius: 12))
+            .accessibilityIdentifier("addParcel.paste")
+            if scannerAvailable {
+                Button {
+                    DeliveryAnalytics.shared.action("parcel-scan")
+                    focusedField = nil
+                    showingScanner = true
+                } label: {
+                    Image(systemName: "barcode.viewfinder")
+                        .font(.body)
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel(localizer.text("add.scan"))
+            }
         }
-        .buttonStyle(TactileButtonStyle(scale: 0.97))
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
     }
 
-    private var detectionCard: some View {
+    private var carrierFeedback: some View {
         let definition = catalog.info(for: resolvedCarrier, language: localizer.language)
         let automatic = catalog.tracksAutomatically(resolvedCarrier)
 
@@ -315,23 +287,26 @@ struct AddParcelView: View {
                     }
                 }
             } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: automatic ? "checkmark.circle.fill" : "questionmark.circle")
-                        .font(.title2)
-                        .foregroundStyle(detectedTint)
-                        .contentTransition(reduceMotion ? .identity : .symbolEffect(.replace))
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(localizer.text(carrierOverride == nil && resolvedCarrier != .unknown ? "add.detectedCarrier" : "add.carrier"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(definition.displayName)
-                            .font(.headline)
-                            .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 8) {
+                    Image(systemName: "truck.box")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    ViewThatFits(in: .horizontal) {
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Text(definition.displayName).font(.subheadline.weight(.medium))
+                            carrierDetectionLabel
+                        }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(definition.displayName).font(.subheadline.weight(.medium))
+                            carrierDetectionLabel
+                        }
                     }
                     Spacer(minLength: 0)
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(detectedTint)
+                    Text(localizer.text("add.changeCarrier"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .underline()
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())
@@ -358,19 +333,16 @@ struct AddParcelView: View {
             }
         }
         .foregroundStyle(Brand.ink)
-        .padding(16)
-        .experimentalSurface(fill: automatic ? ExperimentalPalette.transitSurface : ExperimentalPalette.pickupSurface,
-                             cornerRadius: 20, shadow: false)
     }
 
-    private var requiredDetailsCard: some View {
-        let strings = ExperimentalCopy(localizer: localizer)
+    private var carrierDetectionLabel: some View {
+        Text(localizer.text(carrierOverride == nil && resolvedCarrier != .unknown ? "add.detectedCarrier" : "add.carrier"))
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
 
-        return VStack(alignment: .leading, spacing: 14) {
-            Label(strings.oneMoreDetail, systemImage: postcodeRequirement != nil ? "mappin.and.ellipse" : "link")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(ExperimentalPalette.pickup)
-
+    private var requiredDetails: some View {
+        VStack(alignment: .leading, spacing: 20) {
             if let requirement = trackingURLRequirement,
                parsed.trackingURL == nil {
                 requirementField(
@@ -410,8 +382,6 @@ struct AddParcelView: View {
                 }
             }
         }
-        .padding(18)
-        .experimentalSurface(fill: ExperimentalPalette.pickupSurface, cornerRadius: 20, shadow: false)
     }
 
     private func requirementField<FieldContent: View>(
@@ -460,8 +430,8 @@ struct AddParcelView: View {
 
     private var primaryAction: some View {
         addButton
-            .padding(.horizontal, 18)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
             .frame(maxWidth: 560)
             .frame(maxWidth: .infinity)
             .background(Brand.background)
@@ -474,16 +444,15 @@ struct AddParcelView: View {
                     ProgressView().tint(Brand.onAccent)
                     Text(localizer.text("add.adding"))
                 } else {
-                    Image(systemName: "plus")
-                        .fontWeight(.bold)
                     Text(localizer.text("app.addParcel"))
                 }
             }
             .font(.headline)
-            .foregroundStyle(canSave || saving ? Brand.onAccent : Brand.ink.opacity(0.45))
-            .frame(maxWidth: .infinity, minHeight: 56)
+            .foregroundStyle(Brand.onAccent)
+            .frame(maxWidth: .infinity, minHeight: 50)
             .padding(.horizontal, 16)
-            .background(canSave || saving ? Brand.accent : Brand.cream, in: RoundedRectangle(cornerRadius: 18))
+            .background(Brand.accent, in: RoundedRectangle(cornerRadius: 14))
+            .opacity(canSave || saving ? 1 : 0.45)
             .contentTransition(.opacity)
         }
         .buttonStyle(TactileButtonStyle())
@@ -515,12 +484,6 @@ struct AddParcelView: View {
         guard !store.isDemo, carrierOverride == nil, parsed.carrier == .unknown,
               number.range(of: "^[0-9]{11,12}$", options: .regularExpression) != nil else { return nil }
         return number
-    }
-
-    private var detectedTint: Color {
-        catalog.tracksAutomatically(resolvedCarrier)
-            ? ExperimentalPalette.transit
-            : ExperimentalPalette.pickup
     }
 
     private var requirements: [CarrierRequirement] {
@@ -579,7 +542,7 @@ struct AddParcelView: View {
             errorMessage = nil
             trackingInput = value
         }
-        focusedField = nil
+        focusedField = .tracking
     }
 
     private func submitTracking() {
@@ -590,8 +553,8 @@ struct AddParcelView: View {
         } else if let requirement = postcodeRequirement,
                   !requirement.accepts(deliveryPostcode) {
             focusedField = .deliveryPostcode
-        } else if canSave {
-            save()
+        } else {
+            focusedField = .label
         }
     }
 
