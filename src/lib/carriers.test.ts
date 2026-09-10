@@ -397,12 +397,11 @@ describe('carrier detection', () => {
     // and from InPost legacy JD + 16 digits).
     // Source: https://marketplace.fnacdarty.com/s/article/Dois-je-obligatoirement-renseigner-un-num%C3%A9ro-de-suivi-tracking-pour-ma-commande?language=fr_BE
     expect(detectCarrier('JD014600011678034918')).toBe('dhl');
-    // REPORTED REAL 20-digit DHL shipment: purely numeric 20-digit IDs stay ambiguous
-    // between Planzer and USPS and never route to DHL by number alone.
+    // REPORTED REAL 20-digit DHL shipment in the 00340434 range.
     // Source: https://www.paketda.de/fragen-antworten
-    const ambiguous = detectCarrierMatch('00340434633751428115');
-    expect(ambiguous).toMatchObject({ carrier: 'unknown', confidence: 'low' });
-    expect(ambiguous.candidates).not.toContain('dhl');
+    expect(detectCarrierMatch('00340434633751428115')).toEqual({
+      carrier: 'dhl', confidence: 'high', candidates: ['dhl'],
+    });
     expect(detectCarrier('JJD0099999999')).toBe('dhl');
     expect(detectCarrier('JVGL0099999999')).toBe('dhl');
     expect(tracksAutomatically('dhl')).toBe(true);
@@ -870,21 +869,18 @@ describe('carrier detection', () => {
   });
 
   it('planzer — Planzer', () => {
-    // Bare 20-digit delivery IDs stay ambiguous with USPS (high-impact fix, see corpus).
-    expect(detectCarrierMatch('91346097020038089282')).toMatchObject({
-      carrier: 'unknown',
-      confidence: 'low',
-      candidates: ['planzer', 'usps'],
+    // Planzer-issued 20-digit delivery IDs carry the 91346097 prefix (synthetic
+    // shape checks); any other bare 20-digit number stays out of Planzer routing.
+    expect(detectCarrierMatch('91346097123456789012')).toEqual({
+      carrier: 'planzer', confidence: 'high', candidates: ['planzer'],
     });
-    expect(detectCarrierMatch('91346 09702 00380 89282')).toMatchObject({
-      carrier: 'unknown',
-      confidence: 'low',
-      candidates: ['planzer', 'usps'],
+    expect(detectCarrierMatch('91346 09712 34567 89012')).toEqual({
+      carrier: 'planzer', confidence: 'high', candidates: ['planzer'],
     });
     expect(detectCarrier('999.90.03316119')).toBe('planzer');
     expect(detectCarrier('9999003316119')).toBe('planzer');
     expect(isPlanzerSharedTrackingNumber('999.90.03316119')).toBe(true);
-    expect(isPlanzerSharedTrackingNumber('91346097020038089282')).toBe(false);
+    expect(isPlanzerSharedTrackingNumber('91346097123456789012')).toBe(false);
     // OSS alternate-route examples (eight-digit shipment route and IKEA composite order
     // reference) belong to a separate integration lead, not the 20-digit deliveryNumber route.
     // Source: https://github.com/ha-parcel-integrations/ha-planzer/blob/main/README.md
@@ -1223,7 +1219,8 @@ describe('carrier detection', () => {
   });
 
   it('usps — USPS', () => {
-    // OSS EXAMPLE legacy 20-digit numbers: ambiguous with Planzer, never exclusive.
+    // OSS EXAMPLE legacy 20-digit numbers: low suggestions outside the Planzer/DHL
+    // prefixed ranges, never exclusive.
     // Source: https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json
     for (const number of ['03071790000523483741', '71123456789123456787', '71969010756003077385']) {
       const match = detectCarrierMatch(number);
@@ -1306,13 +1303,16 @@ describe('carrier detection', () => {
 describe('ambiguous number shapes', () => {
   // Shared numeric lengths belong to no single carrier: they stay low-confidence
   // with exact candidate sets. Adding a detector must update these lists consciously.
-  it('keeps bare 20-digit numbers ambiguous between Planzer and USPS', () => {
-    expect(detectCarrierMatch('91346097020038089282')).toEqual({
-      carrier: 'unknown', confidence: 'low', candidates: ['planzer', 'usps'],
+  it('keeps non-prefixed 20-digit numbers as USPS suggestions', () => {
+    // Only the 91346097 (Planzer) and 00340434 (DHL) 20-digit ranges route by number;
+    // everything else stays out of Planzer/DHL routing. OSS fixtures below.
+    // Source: https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json
+    expect(detectCarrierMatch('03071790000523483741')).toEqual({
+      carrier: 'unknown', confidence: 'low', candidates: ['usps'],
     });
-    expect(detectCarrierMatch('91346 09702 00380 89282')).toEqual({
-      carrier: 'unknown', confidence: 'low', candidates: ['planzer', 'usps'],
-    });
+    const second = detectCarrierMatch('71123456789123456787');
+    expect(second).toMatchObject({ carrier: 'unknown', confidence: 'low' });
+    expect(second.candidates).toEqual(['usps']);
   });
 
   it('keeps 10-digit numbers ambiguous', () => {
@@ -1632,7 +1632,7 @@ describe('parseTrackingInput', () => {
     ['swiss-post', '993412345612345678'],
     ['swiss-post-cargo', '1234ABC789'],
     ['quickpac', '440012345612345678'],
-    ['planzer', '91346097020038089282'],
+    ['planzer', '91346097123456789012'],
     ['aliexpress', 'LP123456789CN'],
     ['sunyou', 'SY12345678901'],
     ['spring-gds', 'LX123456789DE'],
@@ -1791,8 +1791,8 @@ describe('carrier metadata', () => {
   });
 
   it('links Planzer deliveries to the current tracking app', () => {
-    expect(CARRIERS.planzer.trackingUrl?.('91346097020038089282')).toBe(
-      'https://tracking.app.planzer.ch/delivery/info?deliveryNumber=91346097020038089282',
+    expect(CARRIERS.planzer.trackingUrl?.('91346097123456789012')).toBe(
+      'https://tracking.app.planzer.ch/delivery/info?deliveryNumber=91346097123456789012',
     );
   });
 

@@ -9,11 +9,11 @@ adapters plus 65 universal-fallback carriers. Tracking availability is shown bel
 | Hermes Germany | Automatic parcel tracking through the anonymous myHermes recipient API. Separate from Hermes Einrichtungs-Service. |
 | GLS Germany | Automatic through the GLS Group recipient service. Accepts four-digit Swiss and five-digit German delivery postcodes. Ambiguous 11/12-digit numbers are verified with GLS during entry. |
 | Delivengo | Automatic through La Poste. Choose it manually: its postal number ranges overlap other La Poste services. |
-| DHL / Deutsche Post | Automatic German parcel and tracked-mail updates through DHL's public tracking session, with the existing private TRAWL browser as a challenge fallback. |
+| DHL / Deutsche Post | Automatic German parcel and tracked-mail updates through DHL's public tracking session, with the existing private TRAWL browser as a challenge fallback. Recognises S10 `C…DE`/`L…DE`, `JJD`/`JVGL`/`JD` codes and `00340434`-prefixed 20-digit numbers; other bare 20-digit numbers stay out of DHL routing. |
 | DHL eCommerce | Automatic international parcel tracking through DHL’s global recipient API, with browser-established sessions when challenged. Separate from DHL Paket / Deutsche Post. |
 | Swiss Post Cargo | Automatic through the official anonymous public tracker. |
 | Quickpac | Automatic through Planzer's current tracking API. Existing Quickpac numbers keep their carrier label. |
-| Planzer | Automatic. Shared `999.90.########` shipments need the complete shared tracking URL. |
+| Planzer | Automatic. 20-digit delivery IDs carry the `91346097` prefix; other bare 20-digit numbers stay out of Planzer routing. Shared `999.90.########` shipments need the complete shared tracking URL. |
 | Cainiao / AliExpress | Automatic. |
 | SunYou | Automatic. |
 | Hermes Einrichtungs-Service | Automatic. |
@@ -78,7 +78,7 @@ per-number source URLs and evidence roles.
 | Ecoscooting | 18-digit low; foreign postal handoffs stay with their issuer. |
 | TIPSA | 10-digit low. |
 | Ukrposhta | No exclusive detector yet; the sampled SG-handoff routes to Singapore Post. |
-| USPS | 20/22-digit numerics low (ambiguous with Planzer/Austrian Post); `420…` 30/34-digit routing barcodes are not shipment IDs. |
+| USPS | 20-digit numerics low (outside the Planzer/DHL prefixed ranges) and 22-digit numerics low (ambiguous with Austrian Post); `420…` 30/34-digit routing barcodes are not shipment IDs. |
 | Canada Post | 16-digit numerics low. |
 | Purolator | 3 letters (not `BYS`) + 9 digits high; 0–5-prefixed 12-digit numerics low. |
 | Canpar | Prefix letter (`C/D/K/L/S/U/X/Z`) + 21 digits. |

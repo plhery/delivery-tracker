@@ -137,8 +137,8 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       },
       {
-        "pattern": "^\\d{20}$",
-        "confidence": "low"
+        "pattern": "^91346097\\d{12}$",
+        "confidence": "high"
       }
     ]
   },
@@ -350,6 +350,10 @@ export const CARRIER_CAPABILITIES = {
       },
       {
         "pattern": "^JD\\d{18}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^00340434\\d{12}$",
         "confidence": "high"
       }
     ]
