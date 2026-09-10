@@ -1,6 +1,6 @@
 # Scraper monitoring
 
-[Delivery Tracker — Scraper Health](https://paul-louis-hery.sentry.io/insights/dashboards/10017590/) shows the last 24 hours by default:
+[Delivery Tracker — Scraper Health](https://paul-louis-hery.sentry.io/dashboard/10017590/) shows the last 24 hours by default:
 
 - Average and p95 full provider latency, including failed attempts.
 - Attempt counts to distinguish a useful comparison from a small sample.
