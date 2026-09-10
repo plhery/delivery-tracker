@@ -2505,9 +2505,9 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "packeta"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://tracking.packeta.com/",
     "linkRules": [
       {
         "domains": [

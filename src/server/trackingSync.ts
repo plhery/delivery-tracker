@@ -36,6 +36,7 @@ import { LaPosteTracker } from './laPoste';
 import { MondialRelayTracker } from './mondialRelay';
 import { captureOperationalError, errorType, reportRoutingEvent } from './observability';
 import { PaackTracker } from './paack';
+import { PacketaTracker } from './packeta';
 import { PlanzerSharedTracker } from './planzerShared';
 import type { CompositePushNotificationService } from './push';
 import { RelaisColisTracker } from './relaisColis';
@@ -124,6 +125,7 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     readonly heppner = new HeppnerTracker(),
     readonly ciblex = new CiblexTracker(),
     readonly paack = new PaackTracker(),
+    readonly packeta = new PacketaTracker(),
     readonly amazonShipping = new AmazonShippingTracker(),
     readonly indiaPost = new IndiaPostTracker(),
     readonly dhl = new DHLTracker(),
@@ -196,6 +198,8 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
       result = await this.ciblex.fetch(trackingNumber);
     } else if (adapter === 'paack') {
       result = await this.paack.fetch(trackingNumber, dpdPostcode ?? '');
+    } else if (adapter === 'packeta') {
+      result = await this.packeta.fetch(trackingNumber);
     } else if (adapter === 'amazon-shipping') {
       result = await this.amazonShipping.fetch(trackingNumber);
     } else if (adapter === 'india-post') {

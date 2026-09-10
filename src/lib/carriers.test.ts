@@ -857,7 +857,9 @@ describe('carrier detection', () => {
     for (const number of ['Z8328162951', 'Z8328162946', 'Z8360329994', 'Z1234567890']) {
       expect(detectCarrier(number)).toBe('packeta');
     }
-    expectUniversalFallback('packeta');
+    expect(CARRIERS.packeta.capabilities.selectable).toBe(true);
+    expect(CARRIERS.packeta.capabilities.tracking).toMatchObject({ mode: 'automatic', adapter: 'packeta' });
+    expect(tracksAutomatically('packeta')).toBe(true);
   });
 
   it('parcelforce — Parcelforce Worldwide', () => {

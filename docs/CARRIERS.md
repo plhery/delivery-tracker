@@ -1,7 +1,7 @@
 # Carrier support
 
-Delivery Tracker recognizes 104 carriers: 39 with dedicated direct or upstream
-adapters plus 65 universal-fallback carriers. Tracking availability is shown below:
+Delivery Tracker recognizes 104 carriers: 40 with dedicated direct or upstream
+adapters plus 64 universal-fallback carriers. Tracking availability is shown below:
 
 | Carrier | Notes |
 | --- | --- |
@@ -37,13 +37,14 @@ adapters plus 65 universal-fallback carriers. Tracking availability is shown bel
 | Heppner | Automatic through the public recipient flow. Requires the shipment receipt number and its four- or five-digit delivery postcode. |
 | Ciblex | Automatic through the public parcel-tracking page for 14-digit shipment numbers. |
 | Paack | Automatic through the public recipient flow. Requires the tracking number and delivery postcode. |
+| Packeta | Automatic through the keyless consumer tracking endpoint (`Z` + 10 digits, no postcode). Naive event times are Europe/Prague wall time; sender and pickup-point names are discarded. Expired numbers return the same clean not-found as unknown ones. |
 | Asendia | Automatic through universal lookup. `ASE…` identifiers are recognized; postal partner numbers stay with their issuing post. |
 | ShipUp | Automatic through universal lookup. Kept as a manual record when no direct route exists. |
 | India Post | Automatic. Recognises checksum-valid `IN` S10 identifiers. |
 | FedEx | Automatic through universal lookup. 12/15-digit numbers stay ambiguous suggestions; full routing barcodes are not treated as shipment IDs. |
 | Amazon Shipping | Automatic public-recipient verification for eligible Shipping parcels; retail `FR…` deliveries stay account-only under Amazon France. |
 
-### Universal-fallback carriers (65, no dedicated scraper yet)
+### Universal-fallback carriers (64, no dedicated scraper yet)
 
 Added September 2026 from public shipment/label reports, official documentation
 examples, OSS fixtures and merchant integration samples. They are selectable in
@@ -114,7 +115,6 @@ per-number source URLs and evidence roles.
 | Pos Malaysia | `MYPM` + 11 digits and checksum-valid `MY` S10. |
 | Ninja Van | No exclusive detector yet; shipper-dependent formats need a broader spec. |
 | China Post | Checksum-valid `CN` S10. |
-| Packeta | `Z` + 10 digits. |
 | Poczta Polska | `PX` + 10 digits high; 19-digit numerics low. |
 | Bring | Checksum-valid `NO` S10. |
 | Aramex | 11-digit low. |
@@ -124,7 +124,7 @@ per-number source URLs and evidence roles.
 | The Courier Guy | No exclusive detector yet; 5-char short references are not tracking oracles. |
 | J&T Express | 12-digit numerics low. |
 
-Unknown carriers (`unknown` and `intl-post`) plus the 65 universal-fallback carriers above attempt automatic lookup through
+Unknown carriers (`unknown` and `intl-post`) plus the 64 universal-fallback carriers above attempt automatic lookup through
 ParcelsApp → 17TRACK → Ship24, with Postal Ninja opt-in. The first two use the existing
 private TRAWL service (`FLARESOLVERR_URL`); Postal Ninja and Ship24 use a dedicated
 fresh Chromium session (`TRACKING_CHROMIUM_PATH`). These services are **not
