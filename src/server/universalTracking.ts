@@ -2,13 +2,14 @@ import 'server-only';
 
 import { load } from 'cheerio';
 import { DateTime } from 'luxon';
-import { fetchBounded, parseJsonBytes } from './boundedFetch';
+import { fetchBounded, parseJsonBytes, UpstreamHttpError } from './boundedFetch';
 import type { CarrierEvent, CarrierResult } from './carrierResult';
 import { isRecord } from './types';
 import { event, isNotice, numberOf, result, type UniversalSource as Source } from './universalTrackingResult';
 import { PostalNinjaTracker } from './postalNinja';
 import { Ship24Tracker } from './ship24';
-const SOURCES: Source[] = ['17TRACK', 'ParcelsApp', 'Ship24', 'Postal Ninja'];
+import { universalCarrierHints } from './universalCarrierHints';
+export const UNIVERSAL_SOURCES: Source[] = ['17TRACK', 'ParcelsApp', 'Ship24'];
 const API_URLS = {
   '17TRACK': 'https://t.17track.net/track/restapi',
   ParcelsApp: 'https://parcelsapp.com/api/v2/parcels',
@@ -50,7 +51,8 @@ export function parse17TrackResponse(payload: unknown, trackingNumber: string): 
       if (parsed) events.push(parsed);
     }
   }
-  return result(events, '17TRACK');
+  return { ...result(events, '17TRACK'), ...universalCarrierHints(tracking.providers.map((provider) =>
+    isRecord(provider) && isRecord(provider.provider) ? provider.provider.name : undefined)) };
 }
 
 // ParcelsApp's response omits the number. Bind it to the rendered result's
@@ -111,6 +113,7 @@ export class UniversalTracker {
     timeoutMs?: number;
     fetcher?: typeof fetch;
     executablePath?: string;
+    enablePostalNinja?: boolean;
     browserLookup?: (source: 'Postal Ninja' | 'Ship24', number: string) => Promise<CarrierResult>;
   } = {}) {
     if (options.timeoutMs !== undefined && (!Number.isFinite(options.timeoutMs) || options.timeoutMs <= 0)) {
@@ -119,6 +122,17 @@ export class UniversalTracker {
   }
 
   async fetch(trackingNumber: string): Promise<CarrierResult> {
+    numberOf(trackingNumber);
+    const failures: SourceFailure[] = [];
+    const sources = [...UNIVERSAL_SOURCES, ...(this.options.enablePostalNinja ? ['Postal Ninja' as const] : [])];
+    for (const source of sources) {
+      try { return await this.fetchSource(source, trackingNumber); }
+      catch (error) { failures.push({ source, reason: 'history unavailable; try again later or open the tracking website', error }); }
+    }
+    throw new UniversalTrackingError(failures);
+  }
+
+  async fetchSource(source: Source, trackingNumber: string, timeoutMs = this.options.timeoutMs ?? 30_000): Promise<CarrierResult> {
     const number = numberOf(trackingNumber);
     const configured = this.options.trawlUrl ?? process.env.FLARESOLVERR_URL;
     const endpoint = configured ? new URL(configured) : null;
@@ -126,49 +140,41 @@ export class UniversalTracker {
       endpoint.pathname = `${endpoint.pathname.replace(/\/(?:v1|scrape)\/?$/, '').replace(/\/$/, '')}/scrape`;
       endpoint.search = ''; endpoint.hash = '';
     }
-    const failures: SourceFailure[] = [];
-    for (const source of SOURCES) {
+    if (source === 'Postal Ninja' || source === 'Ship24') {
+      if (this.options.browserLookup) return await this.options.browserLookup(source, number);
+      const tracker = source === 'Postal Ninja' ? new PostalNinjaTracker({ ...this.options, timeoutMs }) : new Ship24Tracker({ ...this.options, timeoutMs });
+      return await tracker.fetch(number);
+    }
+    if (!endpoint) throw new Error('Automatic carrier lookup requires the tracking browser service');
+    const url = pageUrl(source, number);
+    const { bytes } = await fetchBounded(endpoint, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url, skipHttp: true, maxTier: 3, maxTimeout: timeoutMs,
+        captureResponses: [API_URLS[source]], settleTimeout: 15_000,
+      }),
+    }, { provider: `${source} tracking browser`, fetcher: this.options.fetcher,
+      timeoutMs: (timeoutMs) + 5000, maxBytes: 10_000_000 });
+    const payload = parseJsonBytes(bytes, `${source} tracking browser`);
+    if (isRecord(payload) && typeof payload.statusCode === 'number' && payload.statusCode >= 400) throw new UpstreamHttpError(source, payload.statusCode);
+    if (!isRecord(payload) || payload.error || payload.statusCode !== 200
+      || ![2, 3].includes(Number(payload.tier)) || payload.url !== url || typeof payload.html !== 'string') {
+      throw new TypeError('Tracking browser returned an incomplete page');
+    }
+    const responses = Array.isArray(payload.capturedResponses) ? payload.capturedResponses : [];
+    for (const raw of responses.slice(0, 20).reverse()) {
+      if (isRecord(raw) && raw.url === API_URLS[source] && raw.status === 429) throw new UpstreamHttpError(source, 429);
+      if (!isRecord(raw) || raw.url !== API_URLS[source] || raw.status !== 200
+        || raw.truncated || raw.base64Encoded || typeof raw.body !== 'string') continue;
       try {
-        if (source === 'Postal Ninja' || source === 'Ship24') {
-          if (this.options.browserLookup) return await this.options.browserLookup(source, number);
-          const tracker = source === 'Postal Ninja' ? new PostalNinjaTracker(this.options) : new Ship24Tracker(this.options);
-          return await tracker.fetch(number);
-        }
-        if (!endpoint) throw new Error('Automatic carrier lookup requires the tracking browser service');
-        const url = pageUrl(source, number);
-        const { bytes } = await fetchBounded(endpoint, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            url, skipHttp: true, maxTier: 3, maxTimeout: this.options.timeoutMs ?? 45_000,
-            captureResponses: [API_URLS[source]], settleTimeout: 15_000,
-          }),
-        }, { provider: `${source} tracking browser`, fetcher: this.options.fetcher,
-          timeoutMs: (this.options.timeoutMs ?? 45_000) + 5000, maxBytes: 10_000_000 });
-        const payload = parseJsonBytes(bytes, `${source} tracking browser`);
-        if (!isRecord(payload) || payload.error || payload.statusCode !== 200
-          || ![2, 3].includes(Number(payload.tier)) || payload.url !== url || typeof payload.html !== 'string') {
-          throw new TypeError('Tracking browser returned an incomplete page');
-        }
-        const responses = Array.isArray(payload.capturedResponses) ? payload.capturedResponses : [];
-        for (const raw of responses.slice(0, 20).reverse()) {
-          if (!isRecord(raw) || raw.url !== API_URLS[source] || raw.status !== 200
-            || raw.truncated || raw.base64Encoded || typeof raw.body !== 'string') continue;
-          try {
-            const data: unknown = JSON.parse(raw.body);
-            return source === '17TRACK' ? parse17TrackResponse(data, number)
-              : parseParcelsAppResponse(data, number, payload.html);
-          } catch {
-            // Initial polling replies and unrelated/demo numbers are not history.
-          }
-        }
-        if (source === 'ParcelsApp') return parseParcelsAppHtml(payload.html, number);
-        throw new TypeError('No matching tracking response');
-      } catch (error) {
-        // Keep the user-facing summary readable and retain the original provider
-        // errors for Sentry's AggregateError diagnostics.
-        failures.push({ source, reason: 'history unavailable; try again later or open the tracking website', error });
+        const data: unknown = JSON.parse(raw.body);
+        return source === '17TRACK' ? parse17TrackResponse(data, number)
+          : parseParcelsAppResponse(data, number, payload.html);
+      } catch {
+        // Initial polling replies and unrelated/demo numbers are not history.
       }
     }
-    throw new UniversalTrackingError(failures);
+    if (source === 'ParcelsApp') return parseParcelsAppHtml(payload.html, number);
+    throw new TypeError('No matching tracking response');
   }
 }

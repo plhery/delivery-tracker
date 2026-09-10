@@ -148,7 +148,7 @@
   "detail.archiving": "Archiving…",
   "detail.back": "Back",
   "detail.changeCarrier": "Change carrier",
-  "detail.changeCarrierDescription": "Choose the carrier for {{number}}. We’ll replace the old tracking history with updates from that carrier.",
+  "detail.changeCarrierDescription": "Choose the carrier for {{number}}. Your tracking history is kept while we check the new carrier.",
   "detail.changeCarrierFailed": "Couldn’t change the carrier. Try again.",
   "detail.changeCarrierFrom": "Change carrier from {{carrier}}",
   "detail.changingCarrier": "Changing…",

@@ -148,7 +148,7 @@
   "detail.archiving": "Archiviazione…",
   "detail.back": "Indietro",
   "detail.changeCarrier": "Cambia corriere",
-  "detail.changeCarrierDescription": "Scegli il corriere per {{number}}. Sostituiremo la vecchia cronologia con i suoi aggiornamenti.",
+  "detail.changeCarrierDescription": "Scegli il corriere per {{number}}. La cronologia viene conservata mentre verifichiamo il nuovo corriere.",
   "detail.changeCarrierFailed": "Impossibile cambiare il corriere. Riprova.",
   "detail.changeCarrierFrom": "Cambia corriere ({{carrier}})",
   "detail.changingCarrier": "Modifica…",

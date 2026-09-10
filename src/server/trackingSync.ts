@@ -32,7 +32,7 @@ import { HermesGermanyTracker } from './hermesGermany';
 import { IndiaPostTracker } from './indiaPost';
 import { LaPosteTracker } from './laPoste';
 import { MondialRelayTracker } from './mondialRelay';
-import { captureOperationalError, errorType } from './observability';
+import { captureOperationalError, errorType, reportRoutingEvent } from './observability';
 import { PaackTracker } from './paack';
 import { PlanzerSharedTracker } from './planzerShared';
 import type { CompositePushNotificationService } from './push';
@@ -49,6 +49,8 @@ import { isRecord, type JsonObject } from './types';
 import { fetchUpstreamCarrier } from './upstreamAdapters';
 import { UPSTracker } from './ups';
 import { UniversalTracker } from './universalTracking';
+import type { UniversalSource } from './universalTrackingResult';
+import { RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
 
 const MAX_PACKAGES_PER_OWNER_PER_SYNC = 5;
 const VALID_STAGES = new Set<string>(STAGES);
@@ -57,6 +59,8 @@ const SLOW_POLL_INTERVAL_MS = 60 * 60 * 1_000;
 const FAILED_SLOW_POLL_INTERVAL_MS = 4 * SLOW_POLL_INTERVAL_MS;
 
 export function isTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
+  const routing = routingState(parcel);
+  if (routing.next_check_at && Date.parse(routing.next_check_at) > now.getTime()) return false;
   const activeCarrier = isRecord(parcel.carrier_data) ? parcel.carrier_data.active_tracking_carrier : undefined;
   if (!SLOW_POLL_CARRIERS.has(String(activeCarrier ?? parcel.carrier))) return true;
   const lastChecked = Date.parse(String(parcel.last_synced_at ?? ''));
@@ -81,6 +85,7 @@ function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
 }
 
 export interface TrackingAdapter {
+  fetchUniversal?(source: UniversalSource, trackingNumber: string, timeoutMs: number): Promise<CarrierResult>;
   fetch(
     carrierId: string,
     trackingNumber: string,
@@ -90,6 +95,9 @@ export interface TrackingAdapter {
 }
 
 export class CarrierTrackingAdapter implements TrackingAdapter {
+  async fetchUniversal(source: UniversalSource, trackingNumber: string, timeoutMs: number): Promise<CarrierResult> {
+    return this.universal.fetchSource(source, trackingNumber, timeoutMs);
+  }
   constructor(
     readonly dpd = new DPDTracker(),
     readonly dachser = new DachserTracker(),
@@ -625,7 +633,7 @@ export class TrackingSyncService {
       return 'superseded';
     };
 
-    if (!AUTOMATIC_CARRIER_IDS.has(carrierId)) {
+    if (!AUTOMATIC_CARRIER_IDS.has(carrierId) && !this.adapter.fetchUniversal) {
       audit.record('selected', 'succeeded', 0, { automatic: false });
       audit.skip('fetch', 'unsupported_carrier');
       audit.skip('normalize', 'unsupported_carrier');
@@ -673,7 +681,14 @@ export class TrackingSyncService {
       };
       const fetchStartedAt = performance.now();
       try {
-        fetched = await this.fetchResult(parcel, carrierId);
+        fetched = this.adapter.fetchUniversal
+          ? await new TrackingRouter({
+            direct: (candidate, carrier) => this.fetchResult(candidate, carrier),
+            universal: (source, number, timeout) => this.adapter.fetchUniversal!(source, number, timeout),
+            health: this.client, now: this.now,
+            enablePostalNinja: process.env.TRACKING_ENABLE_POSTAL_NINJA === 'true',
+          }).fetch(parcel, context.trigger === 'scheduled', context.signal)
+          : await this.fetchResult(parcel, carrierId);
       } catch (error) {
         const hasProgress = previousStage !== 'pending';
         if (!hasProgress && isUnannouncedTrackingError(error)) {
@@ -764,13 +779,20 @@ export class TrackingSyncService {
       const handoff = supportsSwissPostHandoff(String(parcel.tracking_number ?? ''));
       const knownUpdate = hasUpdate || Boolean(handoff && swissPostReady);
       const progressDisappeared = anomalies.includes('progress_disappeared');
+      const previousRouting = routingState(parcel);
+      const previousEventTime = Date.parse(previousRouting.last_event_at ?? '');
+      const returnedEventTime = Date.parse(String(result.last_update ?? ''));
+      const olderSnapshot = Number.isFinite(previousEventTime) && Number.isFinite(returnedEventTime)
+        && returnedEventTime < previousEventTime;
+      const preserveSummary = progressDisappeared || olderSnapshot
+        || (['delivered', 'returned'].includes(previousStage) && selectedStage !== previousStage);
       const carrierData: JsonObject = Object.fromEntries(
         Object.entries(result).filter(([key, value]) => key !== 'events' && value != null),
       );
       // Linked journey identity belongs to the parcel, not an individual carrier response.
       if (isRecord(parcel.carrier_data)) {
         for (const key of ['original_carrier', 'original_tracking_number', 'original_tracking_url', 'original_package_id', 'active_tracking_carrier', 'active_tracking_number', 'original_canonical_tracking_number']) {
-          if (parcel.carrier_data[key] != null) carrierData[key] = parcel.carrier_data[key];
+          if (parcel.carrier_data[key] != null && carrierData[key] == null) carrierData[key] = parcel.carrier_data[key];
         }
       }
       // Some carrier endpoints omit sender details on subsequent updates.
@@ -789,7 +811,13 @@ export class TrackingSyncService {
           ? 'The carrier temporarily returned no tracking progress. Previous tracking details have been kept.'
           : null,
       };
-      if (!progressDisappeared) {
+      if (isRecord(result.routing)) {
+        values.carrier_data = { ...(isRecord(parcel.carrier_data) ? parcel.carrier_data : {}), routing: {
+          ...result.routing,
+          ...(olderSnapshot ? { last_event_at: previousRouting.last_event_at } : {}),
+        } };
+      }
+      if (!preserveSummary) {
         values.last_status_text = result.last_status_text || null;
         values.expected_delivery = result.expected_delivery ? String(result.expected_delivery) : null;
         values.carrier_data = carrierData;
@@ -825,6 +853,21 @@ export class TrackingSyncService {
     } catch (error) {
       context.signal?.throwIfAborted();
       if (error instanceof SupersededTrackingSync) return superseded();
+      if (error instanceof RoutingDeferred) {
+        try {
+          await persist({ last_synced_at: this.now().toISOString(),
+            sync_status: error.stale ? 'error' : previousStage === 'pending' ? 'waiting' : 'ok',
+            sync_error: error.stale ? error.message : null,
+            carrier_data: { ...(isRecord(parcel.carrier_data) ? parcel.carrier_data : {}), routing: error.routing },
+          });
+        } catch (persistenceError) {
+          if (persistenceError instanceof SupersededTrackingSync) return superseded();
+          audit.reportError(persistenceError, 'persist_routing_state');
+          throw persistenceError;
+        }
+        await audit.finish({ outcome: error.stale ? 'error' : 'waiting', sourceCarrier: carrierId });
+        return error.stale ? 'errors' : 'waiting';
+      }
       let message = error instanceof Error ? error.message.trim() || error.name : String(error);
       if (error instanceof SyntaxError) {
         message = 'The carrier returned a maintenance page instead of tracking data.';
@@ -903,6 +946,9 @@ export class TrackingSyncService {
       } catch (error) {
         // An international operator outage must not hide a confirmed local delivery.
         if (!swissPostHandoffNumber(carrierId, trackingNumber, {})) throw error;
+        if (!isUnannouncedTrackingError(error)) reportRoutingEvent('provider_failed', {
+          carrier: carrierId, provider: carrierId, trackingNumber, category: routingFailure(error).kind,
+        });
         originError = error;
         origin = {};
       }
@@ -928,6 +974,9 @@ export class TrackingSyncService {
           }
         } catch (error) {
           fallbackError = errorType(error);
+          if (!isUnannouncedTrackingError(error)) reportRoutingEvent('provider_failed', {
+            carrier: carrierId, provider: 'swiss-post', trackingNumber, category: routingFailure(error).kind,
+          });
         }
       }
       if (originError) throw originError;
@@ -961,6 +1010,9 @@ export class TrackingSyncService {
       }
     } catch (error) {
       handoffFallbackErrorType = errorType(error);
+      if (!isUnannouncedTrackingError(error)) reportRoutingEvent('provider_failed', {
+        carrier: carrierId, provider: 'swiss-post', trackingNumber, category: routingFailure(error).kind,
+      });
       // Cainiao still covers the international leg if Swiss Post is not ready.
     }
     const cainiao = await this.adapter.fetch('aliexpress', trackingNumber, null, null);

@@ -36,6 +36,7 @@ import {
 import type { JsonObject } from './types';
 import * as observability from './observability';
 import { UniversalTrackingError } from './universalTracking';
+import { UpstreamHttpError } from './boundedFetch';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -327,6 +328,50 @@ function fakeClient(packages: JsonObject[] = []) {
 }
 
 describe('TrackingSyncService', () => {
+  it('persists routing for a universal-only carrier and respects it on the next manual check', async () => {
+    const client = { ...fakeClient(),
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T12:01:30Z' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
+    };
+    const adapter = { fetch: vi.fn(), fetchUniversal: vi.fn().mockResolvedValue({ status: 'in_transit',
+      current_stage: 'in_transit', last_update: '2026-09-10T11:00:00Z', events: [] }) };
+    const parcel = { id: 'routed', carrier: 'fedex', tracking_number: 'TEST1234', current_stage: 'pending' };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => new Date('2026-09-10T12:00:00Z'));
+    await expect(service.syncPackage(parcel)).resolves.toMatchObject({ updated: 1 });
+    const saved = client.updatePackage.mock.calls.at(-1)![1];
+    expect(saved.carrier_data.routing).toMatchObject({ preferred_provider: '17TRACK', last_success_at: '2026-09-10T12:00:00.000Z' });
+    await expect(service.syncPackage({ ...parcel, ...saved })).resolves.toMatchObject({ checked: 0 });
+    expect(adapter.fetchUniversal).toHaveBeenCalledOnce();
+  });
+
+  it('keeps last-good progress and persisted success time when a recent direct fetch is rate limited', async () => {
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn().mockRejectedValue(new UpstreamHttpError('UPS', 429)), fetchUniversal: vi.fn() };
+    const parcel = { id: 'rate-limited', carrier: 'ups', tracking_number: 'TEST1234', current_stage: 'in_transit',
+      sync_status: 'ok', last_synced_at: '2026-09-10T11:30:00Z', carrier_data: { last_status_text: 'On the way' } };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => new Date('2026-09-10T12:00:00Z'));
+    await expect(service.syncPackage(parcel)).resolves.toMatchObject({ waiting: 1, errors: 0 });
+    const values = client.updatePackage.mock.calls.at(-1)![1];
+    expect(values).toMatchObject({ sync_status: 'ok', carrier_data: { last_status_text: 'On the way', routing: {
+      last_success_at: '2026-09-10T11:30:00Z', next_check_at: '2026-09-10T12:15:00.000Z',
+    } } });
+    expect(values.current_stage).toBeUndefined();
+    expect(adapter.fetchUniversal).not.toHaveBeenCalled();
+  });
+
+  it('does not regress a newer saved summary when a fallback returns older history', async () => {
+    const client = { ...fakeClient(),
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T12:01:30Z' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
+    };
+    const adapter = { fetch: vi.fn(), fetchUniversal: vi.fn().mockResolvedValue({ status: 'in_transit', current_stage: 'in_transit', last_update: '2026-09-09T10:00:00Z' }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => new Date('2026-09-10T12:00:00Z'));
+    await service.syncPackage({ id: 'older', carrier: 'unknown', tracking_number: 'TEST1234', current_stage: 'out_for_delivery',
+      carrier_data: { routing: { version: 1, configured_carrier: 'unknown', last_event_at: '2026-09-10T11:00:00Z' } } });
+    const values = client.updatePackage.mock.calls.at(-1)![1];
+    expect(values.current_stage).toBeUndefined();
+    expect(values.carrier_data.routing.last_event_at).toBe('2026-09-10T11:00:00Z');
+  });
   it('reconciles both refresh orders only after the scheduled batch has persisted', async () => {
     const packages = [
       { id: 'local', user_id: 'owner', carrier: 'swiss-post', tracking_number: '993412345612345678' },
@@ -889,7 +934,7 @@ describe('TrackingSyncService', () => {
     );
   });
 
-  it('marks link-only carriers unsupported without pretending they were checked', async () => {
+  it('marks an unavailable catalog carrier unsupported without pretending it was checked', async () => {
     const client = fakeClient();
     const adapter: TrackingAdapter = { fetch: vi.fn() };
     const service = new TrackingSyncService(
@@ -897,7 +942,7 @@ describe('TrackingSyncService', () => {
       adapter,
     );
 
-    await expect(service.syncPackage({ id: 'package-3', carrier: 'fedex' }))
+    await expect(service.syncPackage({ id: 'package-3', carrier: 'unavailable-carrier' }))
       .resolves.toMatchObject({ unsupported: 1, checked: 1 });
     expect(adapter.fetch).not.toHaveBeenCalled();
     expect(client.updatePackage).toHaveBeenCalledWith('package-3', expect.objectContaining({

@@ -25,6 +25,7 @@ export class UpstreamHttpError extends Error {
   constructor(
     readonly provider: string,
     readonly status: number,
+    readonly retryAfterMs?: number,
   ) {
     super(`${provider} returned HTTP ${status}`);
     this.name = 'UpstreamHttpError';
@@ -85,7 +86,11 @@ export async function fetchBounded(
       await waitBeforeRetry(delay);
       continue;
     }
-    throw new UpstreamHttpError(options.provider, response.status);
+    const retryHeader = response.headers.get('retry-after');
+    const retryAfterMs = retryHeader === null ? undefined : /^\d+$/.test(retryHeader.trim())
+      ? Number(retryHeader) * 1000 : Date.parse(retryHeader) - Date.now();
+    throw new UpstreamHttpError(options.provider, response.status,
+      Number.isFinite(retryAfterMs) ? Math.max(0, retryAfterMs!) : undefined);
   }
 
   const contentLength = Number(response.headers.get('content-length'));

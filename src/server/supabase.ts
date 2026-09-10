@@ -1,6 +1,5 @@
 import 'server-only';
 
-import { AUTOMATIC_CARRIER_IDS } from './carriers';
 import { isRecord, type JsonObject } from './types';
 
 const REQUEST_TIMEOUT_MS = 20_000;
@@ -234,7 +233,6 @@ export class SupabaseClient {
       ],
       ['archived_at', 'is.null'],
       ['or', '(current_stage.not.in.(delivered,returned),last_status_text.eq.TO_BE_DELIVERED)'],
-      ['carrier', `in.(${[...AUTOMATIC_CARRIER_IDS].sort().join(',')})`],
       ['order', 'last_synced_at.asc.nullsfirst,created_at.asc'],
     ]);
     return rows(await this.request(`/rest/v1/packages?${params}`));
@@ -246,6 +244,22 @@ export class SupabaseClient {
       body: values,
       prefer: 'return=minimal',
     });
+  }
+
+  async acquireTrackingProvider(provider: string): Promise<{ token: string | null; retry_at: string }> {
+    const result = await this.request('/rest/v1/rpc/acquire_tracking_provider', {
+      method: 'POST', body: { p_provider: provider },
+    });
+    if (!isRecord(result) || !(typeof result.token === 'string' || result.token === null)
+      || typeof result.retry_at !== 'string') throw new TypeError('Invalid provider health response');
+    return { token: result.token, retry_at: result.retry_at };
+  }
+
+  async finishTrackingProvider(provider: string, token: string, kind: string | null, retryAfterMs: number, durationMs: number): Promise<void> {
+    await this.request('/rest/v1/rpc/finish_tracking_provider', { method: 'POST', body: {
+      p_provider: provider, p_token: token, p_kind: kind,
+      p_retry_ms: Math.ceil(Math.max(0, retryAfterMs)), p_duration_ms: Math.round(durationMs),
+    } });
   }
 
   async insertEvents(events: JsonObject[]): Promise<void> {

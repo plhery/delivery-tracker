@@ -659,7 +659,7 @@ describe('App', () => {
       'Heppner',
       'Ciblex',
       'Paack',
-      "Asendia (check tracking website)",
+      "Asendia",
     ]) {
       expect(within(carrier).getByRole('option', { name })).toBeInTheDocument();
     }

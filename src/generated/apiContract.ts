@@ -449,9 +449,10 @@ export const CARRIER_CAPABILITIES = {
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
-      "mode": "link-only",
-      "adapter": null
+      "mode": "automatic",
+      "adapter": "universal"
     },
+    "canaryUrl": "https://t.17track.net/",
     "trackingUrlTemplate": "https://www.fedex.com/fedextrack/?trknbr={trackingNumber}",
     "linkRules": [
       {
@@ -1011,9 +1012,10 @@ export const CARRIER_CAPABILITIES = {
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
-      "mode": "link-only",
-      "adapter": null
+      "mode": "automatic",
+      "adapter": "universal"
     },
+    "canaryUrl": "https://t.17track.net/",
     "trackingUrlTemplate": "https://track.asendia.com/track/{trackingNumber}",
     "linkRules": [
       {
@@ -1036,9 +1038,10 @@ export const CARRIER_CAPABILITIES = {
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
-      "mode": "link-only",
-      "adapter": null
+      "mode": "automatic",
+      "adapter": "universal"
     },
+    "canaryUrl": "https://t.17track.net/",
     "linkRules": [],
     "detectionRules": []
   },

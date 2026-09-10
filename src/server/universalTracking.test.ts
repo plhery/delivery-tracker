@@ -94,6 +94,12 @@ describe('universal public tracking', () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
+  it('exposes a provider 429 to the routing cooldown instead of masking it as invalid HTML', async () => {
+    const fetcher = vi.fn().mockResolvedValue(browserResponse('17TRACK', null, { statusCode: 429 }));
+    await expect(new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher }).fetchSource('17TRACK', number))
+      .rejects.toMatchObject({ name: 'UpstreamHttpError', status: 429 });
+  });
+
   it('retains provider failures for Sentry while keeping the lookup summary readable', async () => {
     const originalError = new Error('SECRET upstream cookie');
     const fetcher = vi.fn().mockRejectedValue(originalError);
@@ -101,7 +107,7 @@ describe('universal public tracking', () => {
     expect(error).toMatchObject({ name: 'UniversalTrackingError' });
     expect(String(error)).not.toContain('SECRET');
     expect(error).toBeInstanceOf(AggregateError);
-    expect((error as AggregateError).errors).toHaveLength(4);
+    expect((error as AggregateError).errors).toHaveLength(3);
     for (const providerError of (error as AggregateError).errors.slice(0, 2)) {
       expect(providerError.cause).toBe(originalError);
     }
@@ -113,7 +119,7 @@ describe('universal public tracking', () => {
     const fetcher = vi.fn().mockRejectedValue(new Error('Unavailable'));
     const browserLookup = vi.fn().mockRejectedValueOnce(new Error('Challenge'))
       .mockResolvedValueOnce({ status: 'delivered', current_stage: 'delivered', tracking_provider: 'Postal Ninja' });
-    const result = await new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher, browserLookup }).fetch(number);
+    const result = await new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher, browserLookup, enablePostalNinja: true }).fetch(number);
     expect(result.tracking_provider).toBe('Postal Ninja');
     expect(browserLookup.mock.calls).toEqual([['Ship24', number], ['Postal Ninja', number]]);
     expect(fetcher).toHaveBeenCalledTimes(2);

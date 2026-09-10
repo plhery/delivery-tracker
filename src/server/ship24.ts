@@ -4,6 +4,7 @@ import type { CarrierEvent, CarrierResult } from './carrierResult';
 import { isRecord } from './types';
 import { scrapeUniversalPage, type UniversalBrowserOptions } from './universalBrowser';
 import { event, numberOf, result } from './universalTrackingResult';
+import { universalCarrierHints } from './universalCarrierHints';
 
 export function parseShip24Response(payload: unknown, trackingNumber: string): CarrierResult {
   const number = numberOf(trackingNumber);
@@ -19,7 +20,11 @@ export function parseShip24Response(payload: unknown, trackingNumber: string): C
     const parsed = event(raw.timestamp, raw.status, raw.dispatch_code_id === 7 ? 'Delivered' : undefined);
     if (parsed) events.push(parsed);
   }
-  return result(events, 'Ship24');
+  // The public frontend renders couriers[].translation.name. Keep names only;
+  // website/phone fields and alternate numbers are not needed for discovery.
+  const couriers = Array.isArray(payload.data.couriers) ? payload.data.couriers.slice(0, 20) : [];
+  return { ...result(events, 'Ship24'), ...universalCarrierHints(couriers.map((courier) =>
+    isRecord(courier) && isRecord(courier.translation) ? courier.translation.name : undefined)) };
 }
 
 export class Ship24Tracker {

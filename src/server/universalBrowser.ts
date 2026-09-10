@@ -2,6 +2,7 @@ import 'server-only';
 
 import { chromium, type Browser, type Page, type Response } from 'playwright-core';
 import type { CarrierResult } from './carrierResult';
+import { UpstreamHttpError } from './boundedFetch';
 
 export interface UniversalBrowserOptions {
   executablePath?: string;
@@ -58,6 +59,12 @@ export async function scrapeUniversalPage(
       const page = await context.newPage();
       page.setDefaultTimeout(remaining);
       page.on('response', async (response: Response) => {
+        if (!expired && response.url() === spec.responseUrl && response.status() === 429) {
+          const raw = response.headers()['retry-after'];
+          const delay = raw && /^\d+$/.test(raw) ? Number(raw) * 1000 : raw ? Date.parse(raw) - Date.now() : undefined;
+          rejectHistory(new UpstreamHttpError(spec.name, 429, delay));
+          return;
+        }
         if (expired || response.url() !== spec.responseUrl || ![200, 201].includes(response.status())) return;
         if (++received > 20) { rejectHistory(new Error(`${spec.name} returned too many polling responses`)); return; }
         try {
@@ -74,7 +81,8 @@ export async function scrapeUniversalPage(
       // Cloudflare initially responds with 403, then navigates after its
       // automatic browser check. Let the bounded lookup wait for that reload.
       const challenge = response?.status() === 403 && response.headers()['cf-mitigated'] === 'challenge';
-      if (!response || (response.status() !== 200 && !challenge)) throw new Error(`${spec.name} tracking page is unavailable (HTTP ${response?.status() ?? 0})`);
+      if (!response) throw new Error(`${spec.name} tracking page is unavailable`);
+      if (response.status() !== 200 && !challenge) throw new UpstreamHttpError(spec.name, response.status());
       if (spec.submit) await spec.submit(page);
       return history;
     })();

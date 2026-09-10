@@ -79,6 +79,13 @@ deployment, the validation and `NOT NULL` steps can be performed immediately.
 
 ### Tracking generation rollout (September 2026)
 
+Before deploying persistent universal routing, apply
+`20260912150000_tracking_provider_health.sql` and
+`20260912160000_preserve_carrier_change_history.sql`.
+They add shared service-only provider leases/cooldowns and preserve existing
+history when a carrier changes. See [Tracking routing](tracking-routing.md) for
+provider order, schedules, Sentry searches, and the experimental Postal Ninja flag.
+
 Before deploying the worker that calls `apply_tracking_sync`, apply
 `20260906120000_guard_tracking_sync_generation.sql`. This additive migration
 assigns configuration tokens to existing parcels and exposes a service-only

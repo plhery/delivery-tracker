@@ -222,6 +222,36 @@ export function captureSyncAnomaly(
   return eventId;
 }
 
+/** Fixed messages and bounded dimensions: never attach upstream HTML/tokens. */
+export function reportRoutingEvent(code: string, context: {
+  carrier: string; provider: string; category?: string; trackingNumber?: string; errorClass?: string;
+}): void {
+  try {
+    logOperationalEvent('tracking_routing', {
+      decision: code, carrier: context.carrier, provider: context.provider,
+      category: context.category ?? null, tracking_number: context.trackingNumber ?? null,
+    }, code === 'provider_failed' ? 'warning' : 'info');
+    if (!initObservability()) return;
+    Sentry.withScope((scope) => {
+      applyContext(scope, { component: 'tracking-routing', operation: code,
+        carrier: context.carrier, trackingNumber: context.trackingNumber });
+      scope.setTag('provider', context.provider.slice(0, 80));
+      scope.setTag('failure_category', context.category ?? 'none');
+      if (context.errorClass) scope.setTag('error_type', context.errorClass);
+      scope.setFingerprint(['delivery-tracker', 'tracking-routing', code,
+        context.provider, context.category ?? 'none']);
+      const alert = ['provider_failed', 'all_providers_unavailable', 'carrier_mismatch_confirmed',
+        'direct_support_opportunity', 'carrier_input_required', 'fresher_provider_found',
+        'health_store_unavailable', 'carrier_coverage_discovered'].includes(code);
+      scope.setLevel(alert ? 'warning' : 'info');
+      if (alert || code === 'provider_recovered') Sentry.captureMessage(`Tracking routing: ${code}`);
+      else Sentry.addBreadcrumb({ category: 'tracking-routing', message: code, data: { provider: context.provider } });
+    });
+  } catch {
+    // Monitoring must never prevent fallback or turn valid data into an error.
+  }
+}
+
 function sanitizeLogValue(value: unknown): string | number | boolean | null | undefined {
   if (value === null || typeof value === 'boolean') return value;
   if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;

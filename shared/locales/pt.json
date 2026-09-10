@@ -148,7 +148,7 @@
   "detail.archiving": "A arquivar…",
   "detail.back": "Voltar",
   "detail.changeCarrier": "Alterar transportadora",
-  "detail.changeCarrierDescription": "Escolhe a transportadora de {{number}}. Vamos substituir o histórico anterior pelas suas atualizações.",
+  "detail.changeCarrierDescription": "Escolhe a transportadora para {{number}}. O histórico é mantido enquanto verificamos a nova transportadora.",
   "detail.changeCarrierFailed": "Não foi possível alterar a transportadora. Tenta novamente.",
   "detail.changeCarrierFrom": "Alterar transportadora ({{carrier}})",
   "detail.changingCarrier": "A alterar…",

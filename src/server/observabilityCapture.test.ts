@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import * as Sentry from '@sentry/node';
 import type { Event } from '@sentry/node';
-import { captureOperationalError, flushObservability, initObservability } from './observability';
+import { captureOperationalError, flushObservability, initObservability, reportRoutingEvent } from './observability';
 import { UniversalTrackingError } from './universalTracking';
 import { UpstreamHttpError } from './boundedFetch';
 
@@ -119,4 +119,15 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   expect(repeats[1].fingerprint).toEqual(repeats[0].fingerprint);
   expect(repeats.map((event) => event.tags?.attempt_id).sort()).toEqual(['first', 'second']);
   expect(repeats.map((event) => event.tags?.tracking_number).sort()).toEqual(['TEST-first', 'TEST-second']);
+  reportRoutingEvent('provider_failed', { carrier: 'dhl', provider: '17TRACK',
+    category: 'rate_limited', trackingNumber: 'TEST-first', errorClass: 'UpstreamHttpError' });
+  reportRoutingEvent('provider_recovered', { carrier: 'dhl', provider: '17TRACK' });
+  reportRoutingEvent('direct_support_opportunity', { carrier: 'fedex', provider: 'fedex' });
+  await flushObservability();
+  const rateLimit = captured.events.find((event) => event.message === 'Tracking routing: provider_failed')!;
+  expect(rateLimit.tags).toMatchObject({ component: 'tracking-routing', provider: '17TRACK', failure_category: 'rate_limited', error_type: 'UpstreamHttpError' });
+  expect(rateLimit.fingerprint).toEqual(['delivery-tracker', 'tracking-routing', 'provider_failed', '17TRACK', 'rate_limited']);
+  expect(captured.events.some((event) => event.message === 'Tracking routing: provider_recovered')).toBe(true);
+  expect(captured.events.some((event) => event.message === 'Tracking routing: direct_support_opportunity')).toBe(true);
+
 });

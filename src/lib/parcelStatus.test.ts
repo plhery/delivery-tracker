@@ -39,13 +39,13 @@ describe('parcelDisplayStatus', () => {
     expect(parcelDisplayStatus(parcel('unsupported')).label).toBe("Check tracking website");
   });
 
-  it('explains link-only tracking immediately, before a worker checks it', () => {
+  it('checks universal-backed carriers automatically before their first result', () => {
     for (const carrier of ['fedex', 'asendia'] as const) {
       const saved = { ...parcel('pending'), carrier };
       expect(parcelDisplayStatus(saved)).toEqual({
-        label: "Check tracking website", tone: 'warn', syncing: false,
+        label: "Checking for updates", tone: 'ok', syncing: true,
       });
-      expect(parcelDisplayStatusKey(saved)).toBe('status.unsupported');
+      expect(parcelDisplayStatusKey(saved)).toBe('status.syncing');
       saved.events[0].stage = 'in_transit';
       expect(parcelDisplayStatusKey(saved)).toBe('stage.in_transit');
     }

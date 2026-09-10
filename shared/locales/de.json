@@ -148,7 +148,7 @@
   "detail.archiving": "Wird archiviert…",
   "detail.back": "Zurück",
   "detail.changeCarrier": "Paketdienst ändern",
-  "detail.changeCarrierDescription": "Wähle den Paketdienst für {{number}}. Wir ersetzen den bisherigen Verlauf durch seine Meldungen.",
+  "detail.changeCarrierDescription": "Wähle den Zusteller für {{number}}. Dein Sendungsverlauf bleibt erhalten, während wir den neuen Zusteller prüfen.",
   "detail.changeCarrierFailed": "Der Paketdienst konnte nicht geändert werden. Versuche es erneut.",
   "detail.changeCarrierFrom": "Paketdienst ändern ({{carrier}})",
   "detail.changingCarrier": "Wird geändert…",

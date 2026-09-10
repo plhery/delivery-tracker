@@ -148,7 +148,7 @@
   "detail.archiving": "Archivage…",
   "detail.back": "Retour",
   "detail.changeCarrier": "Changer de transporteur",
-  "detail.changeCarrierDescription": "Choisis le transporteur de {{number}}. L’ancien historique sera remplacé par son suivi.",
+  "detail.changeCarrierDescription": "Choisis le transporteur pour {{number}}. Ton historique est conservé pendant la vérification du nouveau transporteur.",
   "detail.changeCarrierFailed": "Impossible de changer de transporteur. Réessaie.",
   "detail.changeCarrierFrom": "Changer de transporteur ({{carrier}})",
   "detail.changingCarrier": "Modification…",
