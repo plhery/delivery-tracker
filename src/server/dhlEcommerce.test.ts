@@ -86,40 +86,26 @@ describe('DHL eCommerce fetching', () => {
   it('rejects invalid timeouts before doing any work', () => {
     for (const timeoutMs of [0, -1, Infinity, NaN, 60_001]) {
       expect(() => new DHLEcommerceTracker({ timeoutMs })).toThrow('timeout');
-      expect(() => new DHLEcommerceTracker({ directTimeoutMs: timeoutMs })).toThrow('timeout');
     }
   });
-  it('queries the exact requested alias at the fixed official endpoint', async () => {
-    const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => Response.json(shipment()));
-    await new DHLEcommerceTracker().fetch(NUMBER);
-    expect(String(fetcher.mock.calls[0][0])).toBe(`https://www.dhl.com/utapi?trackingNumber=${NUMBER}&language=en&requesterCountryCode=CH&source=tt`);
-  });
-  it.each([403, 428])('recovers HTTP %s inside the browser instead of transferring cookies back to HTTP', async (status) => {
-    const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Blocked', { status }));
+  it('goes straight to the browser without a direct HTTP attempt', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch');
     const browser = vi.spyOn(trackingBrowser, 'scrapeUniversalPage').mockImplementation(async (_options, spec, parse) => {
+      expect(spec.url).toBe(dhlEcommerceTrackingUrl(NUMBER));
       expect(spec.responseUrl).toBe(`https://www.dhl.com/utapi?trackingNumber=${NUMBER}&language=en&requesterCountryCode=CH&source=tt`);
       return parse(shipment());
     });
     const result = await new DHLEcommerceTracker({ executablePath: '/test/chromium', timeoutMs: 30000 }).fetch(NUMBER);
     expect(result.current_stage).toBe('in_transit');
-    expect(fetcher).toHaveBeenCalledOnce();
+    expect(fetcher).not.toHaveBeenCalled();
     expect(browser).toHaveBeenCalledOnce();
     expect(browser.mock.calls[0][0].timeoutMs).toBeLessThanOrEqual(30000);
   });
-  it.each([429, 500, 404])('does not bootstrap for HTTP %s', async (status) => {
-    const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status }));
-    await expect(new DHLEcommerceTracker({ executablePath: '/test/chromium' }).fetch(NUMBER)).rejects.toThrow(`HTTP ${status}`);
-    expect(fetcher).toHaveBeenCalledTimes(1);
-  });
-  it('does not bootstrap on invalid data and keeps recovery failures visible', async () => {
-    const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(Response.json({}));
+  it('propagates browser failures without a direct attempt', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch');
     const browser = vi.spyOn(trackingBrowser, 'scrapeUniversalPage').mockRejectedValue(new Error('Browser unavailable'));
-    const tracker = new DHLEcommerceTracker({ executablePath: '/test/chromium' });
-    await expect(tracker.fetch(NUMBER)).rejects.toThrow('invalid tracking response');
-    expect(browser).not.toHaveBeenCalled();
-    fetcher.mockResolvedValueOnce(new Response('', { status: 428 }));
-    await expect(tracker.fetch(NUMBER)).rejects.toMatchObject({ message: 'Browser unavailable',
-      cause: { name: 'DHLEcommerceSessionError', status: 428 } });
-    expect(fetcher).toHaveBeenCalledTimes(2);
+    await expect(new DHLEcommerceTracker({ executablePath: '/test/chromium' }).fetch(NUMBER)).rejects.toThrow('Browser unavailable');
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(browser).toHaveBeenCalledOnce();
   });
 });

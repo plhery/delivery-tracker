@@ -266,13 +266,15 @@ DHL division or a request for additional verification remains an explicit error
 with the tracking website available, rather than being mistaken for a parcel
 that has not yet been announced.
 
-DHL eCommerce uses the public `www.dhl.com/utapi` recipient endpoint. A
-challenge (including HTTP 428) or interrupted connection opens a fresh local
-Chromium session and observes the site's own API retry inside that session.
-Browser clearance is not copied back to Node. Two production-host tests recovered
-from a forced 428 in about eight seconds. The direct request has a 10-second
-budget within a 45-second total; rate limits and server errors go to routing
-without spawning a browser. Browser work shares the existing concurrency limit.
+DHL eCommerce uses the public `www.dhl.com/utapi` recipient endpoint through a
+fresh local Chromium session, which observes the site's own API request inside
+that session. The endpoint answers every direct server request with an Akamai
+crypto proof-of-work challenge (HTTP 428) that plain HTTP cannot solve, so no
+direct attempt is made; browser clearance is never copied back to Node. The
+direct path was dropped on September 10, 2026 after cookie replay and
+page-visit-first session establishment were both verified to still return 428.
+Rate limits and server errors go to routing without further browser work.
+Browser work shares the existing concurrency limit.
 The API may return a customer-confirmation ID instead of the queried alias,
 so the adapter accepts one eCommerce shipment only from its exact request URL.
 It retains status, broad locations, delivery estimate and dated scans, never
