@@ -1316,6 +1316,9 @@ export interface ApiPackageRow {
   "dpd_postcode": string | null;
   "carrier_data"?: {
   "active_tracking_carrier"?: ApiCarrierId | null;
+  "original_carrier"?: ApiCarrierId | null;
+  "original_tracking_number"?: string | null;
+  "original_tracking_url"?: string | null;
   "sender_name"?: string | null;
   "swiss_post_ready"?: boolean | null;
 };

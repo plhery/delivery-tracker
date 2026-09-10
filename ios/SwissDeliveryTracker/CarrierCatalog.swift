@@ -362,6 +362,20 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     }
 
     func trackingLinks(for parcel: Parcel, language: AppLanguage) -> [ParcelTrackingLink] {
+        if let originalCarrier = parcel.carrierData?.originalCarrier,
+           let originalNumber = parcel.carrierData?.originalTrackingNumber?.nonEmpty {
+            var delivery = parcel
+            delivery.carrier = parcel.activeTrackingCarrier
+            delivery.carrierData = nil
+            var original = delivery
+            original.carrier = originalCarrier
+            original.trackingNumber = originalNumber
+            original.trackingURL = parcel.carrierData?.originalTrackingURL
+            let history = trackingLinks(for: original, language: language).map {
+                ParcelTrackingLink(carrier: $0.carrier, name: $0.name, url: $0.url, role: .history)
+            }
+            return trackingLinks(for: delivery, language: language) + history
+        }
         if !Self.supportsSwissPostHandoff(parcel.trackingNumber) {
             let definition = info(for: parcel.carrier, language: language)
             // Replace obsolete generated links saved by earlier app versions.

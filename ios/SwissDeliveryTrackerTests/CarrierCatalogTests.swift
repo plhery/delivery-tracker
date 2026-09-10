@@ -5,6 +5,22 @@ final class CarrierCatalogTests: XCTestCase {
     // Exercise the bundled rules without inheriting a previously cached live catalog.
     private let catalog = CarrierCatalog(cacheURL: nil)
 
+    func testLinkedGLSParcelKeepsOriginalIdentityAndSwissPostPrimaryLink() throws {
+        let parcel = Parcel(
+            id: UUID(), trackingNumber: "993412345612345678", label: "Perfume / Surprise",
+            carrier: .swissPost, createdAt: "2026-09-10T07:00:00Z", syncStatus: .ok,
+            carrierData: CarrierData(originalCarrier: .glsDe, originalTrackingNumber: "12345678901"),
+            notificationsMuted: false
+        )
+        XCTAssertEqual(parcel.displayedCarrier, .glsDe)
+        XCTAssertEqual(parcel.activeTrackingCarrier, .swissPost)
+        let links = catalog.trackingLinks(for: parcel, language: .fr)
+        XCTAssertEqual(links.map(\.carrier), [.swissPost, .glsDe])
+        XCTAssertEqual(links.map(\.role), [.active, .history])
+        XCTAssertTrue(links[0].url.absoluteString.contains("993412345612345678"))
+        XCTAssertTrue(links[1].url.absoluteString.contains("12345678901"))
+    }
+
     func testExpandedCarriersAndHiddenUniversalLookup() {
         for raw in ["hermes-de", "gls-de", "delivengo"] {
             let carrier = CarrierID(rawValue: raw)

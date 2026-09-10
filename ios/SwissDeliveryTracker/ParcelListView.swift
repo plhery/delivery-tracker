@@ -711,8 +711,8 @@ private struct ExperimentalNextDeliveryPass: View {
     @ObservedObject private var catalog = CarrierCatalog.shared
 
     private var identity: CarrierVisualIdentity {
-        CarrierVisualIdentity(id: parcel.activeTrackingCarrier.rawValue,
-            carrier: catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language))
+        CarrierVisualIdentity(id: parcel.displayedCarrier.rawValue,
+            carrier: catalog.info(for: parcel.displayedCarrier, language: localizer.language))
     }
 
     var body: some View {
@@ -784,8 +784,8 @@ private struct ExperimentalParcelPassCard: View {
     @ObservedObject private var catalog = CarrierCatalog.shared
 
     private var identity: CarrierVisualIdentity {
-        CarrierVisualIdentity(id: parcel.activeTrackingCarrier.rawValue,
-            carrier: catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language))
+        CarrierVisualIdentity(id: parcel.displayedCarrier.rawValue,
+            carrier: catalog.info(for: parcel.displayedCarrier, language: localizer.language))
     }
     private var date: String? { localizer.parcelDeliveryEstimate(parcel) ?? localizer.parcelCompletionDate(parcel) }
 

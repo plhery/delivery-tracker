@@ -3,6 +3,7 @@ import {
   CARRIERS,
   SELECTABLE_CARRIERS,
   carrierInfo,
+  displayedCarrierId,
   carrierTrackingHintKey,
   carrierRequirements,
   detectCarrier,
@@ -74,6 +75,21 @@ describe('supportsSwissPostHandoff', () => {
     expect(supportsSwissPostHandoff('LW230226618CH')).toBe(true);
     expect(supportsSwissPostHandoff('LW230226619CH')).toBe(false);
     expect(supportsSwissPostHandoff('RR230226618CH')).toBe(false);
+  });
+
+  it('keeps GLS identity and uses Swiss Post first for linked tracking numbers', () => {
+    const parcel = {
+      carrier: 'swiss-post' as const, trackingNumber: '993412345612345678',
+      originalCarrier: 'gls-de' as const, originalTrackingNumber: '12345678901',
+      originalTrackingUrl: 'https://www.gls-pakete.de/reach-sendungsverfolgung?match=12345678901',
+    };
+    expect(displayedCarrierId(parcel)).toBe('gls-de');
+    const links = parcelTrackingLinks(parcel, 'fr');
+    expect(links.map(({ carrier, role }) => [carrier.id, role])).toEqual([
+      ['swiss-post', 'active'], ['gls-de', 'history'],
+    ]);
+    expect(links[0].url).toContain('993412345612345678?lang=fr');
+    expect(links[1].url).toBe(parcel.originalTrackingUrl);
   });
 
   it('orders Cainiao first until Swiss Post becomes the active source', () => {

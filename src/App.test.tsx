@@ -501,6 +501,31 @@ describe('App', () => {
     expect(within(detail).getByText('From Example sender')).toBeVisible();
   });
 
+  it('shows one combined parcel with GLS branding and the Swiss Post link first', async () => {
+    const user = userEvent.setup();
+    const parcel: ParcelWithEvents = {
+      id: 'linked-parcel', trackingNumber: '993412345612345678', label: 'Perfume / Surprise',
+      carrier: 'swiss-post', originalCarrier: 'gls-de', originalTrackingNumber: '12345678901',
+      createdAt: new Date().toISOString(), syncStatus: 'ok', events: [],
+    };
+    const repo: ParcelRepo = {
+      mode: 'api', list: vi.fn().mockResolvedValue([parcel]), add: vi.fn(),
+      rename: vi.fn(), remove: vi.fn(), refresh: vi.fn().mockResolvedValue([parcel]),
+    };
+    renderApp(repo);
+    const card = await screen.findByRole('button', { name: /Perfume \/ Surprise/ });
+    expect(card.closest('[data-carrier]')).toHaveAttribute('data-carrier', 'gls-de');
+    await user.click(card);
+    const detail = screen.getByRole('dialog', { name: 'Perfume / Surprise' });
+    const links = within(within(detail).getByLabelText('Tracking sources')).getAllByRole('link');
+    expect(links).toHaveLength(2);
+    expect(links[0]).toHaveTextContent('Swiss Post');
+    expect(links[0]).toHaveAttribute('href', expect.stringContaining(parcel.trackingNumber));
+    expect(links[1]).toHaveTextContent('GLS');
+    expect(links[1]).toHaveTextContent('Earlier journey');
+    expect(links[1]).toHaveAttribute('href', expect.stringContaining(parcel.originalTrackingNumber!));
+  });
+
   it('adds a parcel through the bottom sheet', async () => {
     const user = userEvent.setup();
     renderApp();

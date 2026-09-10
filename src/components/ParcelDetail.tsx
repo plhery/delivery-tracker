@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, type FormEvent, type PointerEvent } from '
 import { createPortal } from 'react-dom';
 import {
   activeTrackingCarrierId,
+  displayedCarrierId,
   carrierInfo,
   carrierTrackingHintKey,
   formatTrackingNumber,
@@ -70,6 +71,7 @@ export function ParcelDetail({
 }) {
   const { locale, languageTag, t } = useI18n();
   const carrier = carrierInfo(activeTrackingCarrierId(parcel), locale);
+  const displayedCarrier = carrierInfo(displayedCarrierId(parcel), locale);
   const automaticTracking = tracksAutomatically(carrier.id);
   const current = currentEvent(parcel.events);
   const status = parcelDisplayStatus(parcel);
@@ -256,7 +258,7 @@ export function ParcelDetail({
     >
     <div
       ref={dialog}
-      style={carrierBrand(carrier).style}
+      style={carrierBrand(displayedCarrier).style}
       className={`detail detail--postcard tone-${parcelTone(current?.stage)}${openingOrigin ? ' detail--from-card' : ''}`}
       role="dialog"
       aria-modal="true"
@@ -330,7 +332,7 @@ export function ParcelDetail({
             onClick={() => setEditingCarrier(true)}
             aria-label={t('detail.changeCarrierFrom', { carrier: carrier.name })}
           >
-            <CarrierMark carrier={carrier} />
+            <CarrierMark carrier={displayedCarrier} />
           </button>
           <button type="button" className="detail__notification" disabled={savingNotifications}
             aria-label={parcel.notificationsMuted ? t('detail.unmute') : t('detail.mute')}

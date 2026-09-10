@@ -620,8 +620,20 @@ struct AccountExportAccount: Codable, Equatable, Hashable, Sendable, Identifiabl
 
 struct CarrierData: Codable, Equatable, Hashable, Sendable {
     var activeTrackingCarrier: CarrierID? = nil
+    var originalCarrier: CarrierID? = nil
+    var originalTrackingNumber: String? = nil
+    var originalTrackingURL: String? = nil
     var senderName: String? = nil
     var swissPostReady: Bool? = nil
+
+    private enum CodingKeys: String, CodingKey {
+        case activeTrackingCarrier
+        case originalCarrier
+        case originalTrackingNumber
+        case originalTrackingURL = "originalTrackingUrl"
+        case senderName
+        case swissPostReady
+    }
 }
 
 enum FriendsActionResponseInvitationState: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {

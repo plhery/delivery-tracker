@@ -729,6 +729,12 @@ export class TrackingSyncService {
       const carrierData: JsonObject = Object.fromEntries(
         Object.entries(result).filter(([key, value]) => key !== 'events' && value != null),
       );
+      // Linked journey identity belongs to the parcel, not an individual carrier response.
+      if (isRecord(parcel.carrier_data)) {
+        for (const key of ['original_carrier', 'original_tracking_number', 'original_tracking_url', 'original_package_id']) {
+          if (parcel.carrier_data[key] != null) carrierData[key] = parcel.carrier_data[key];
+        }
+      }
       // Some carrier endpoints omit sender details on subsequent updates.
       const previousSender = isRecord(parcel.carrier_data) ? parcel.carrier_data.sender_name : undefined;
       if (result.sender_name === undefined && typeof previousSender === 'string') {

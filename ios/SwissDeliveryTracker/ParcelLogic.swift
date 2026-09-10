@@ -98,6 +98,8 @@ extension Parcel {
     var isReturned: Bool { currentStage == .returned }
     var isActive: Bool { !isArchived && !(currentStage?.isFinal ?? false) }
 
+    var displayedCarrier: CarrierID { carrierData?.originalCarrier ?? activeTrackingCarrier }
+
     var activeTrackingCarrier: CarrierID {
         if let trackingSource { return trackingSource }
         return CarrierCatalog.supportsSwissPostHandoff(trackingNumber) ? .aliexpress : carrier

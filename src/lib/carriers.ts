@@ -199,7 +199,14 @@ export function activeTrackingCarrierId(
   return supportsSwissPostHandoff(parcel.trackingNumber) ? 'aliexpress' : parcel.carrier;
 }
 
-/** Build the primary and secondary links for a possible Cainiao → Swiss Post handoff. */
+/** Keep the original carrier identity when separate tracking numbers have been linked. */
+export function displayedCarrierId(
+  parcel: Pick<Parcel, 'carrier' | 'trackingNumber' | 'trackingSource' | 'originalCarrier'>,
+): CarrierId {
+  return parcel.originalCarrier ?? activeTrackingCarrierId(parcel);
+}
+
+/** Primary delivery tracker first, followed by the earlier international journey. */
 export function parcelTrackingLinks(
   parcel: Pick<
     Parcel,
@@ -208,9 +215,23 @@ export function parcelTrackingLinks(
     | 'trackingUrl'
     | 'trackingSource'
     | 'swissPostReady'
+    | 'originalCarrier'
+    | 'originalTrackingNumber'
+    | 'originalTrackingUrl'
   >,
   locale?: string,
 ): ParcelTrackingLink[] {
+  if (parcel.originalCarrier && parcel.originalTrackingNumber) {
+    const active = parcelTrackingLinks({
+      carrier: activeTrackingCarrierId(parcel), trackingNumber: parcel.trackingNumber,
+      trackingUrl: parcel.trackingUrl,
+    }, locale);
+    const original = parcelTrackingLinks({
+      carrier: parcel.originalCarrier, trackingNumber: parcel.originalTrackingNumber,
+      trackingUrl: parcel.originalTrackingUrl,
+    }, locale).map((link) => ({ ...link, active: false, role: 'history' as const }));
+    return [...active, ...original];
+  }
   if (!supportsSwissPostHandoff(parcel.trackingNumber)) {
     const carrier = carrierInfo(parcel.carrier, locale);
     // Repair obsolete generated links saved by earlier app versions.

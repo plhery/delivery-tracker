@@ -339,6 +339,26 @@ describe('TrackingSyncService', () => {
     expect(values.carrier_data.obsolete).toBeUndefined();
   });
 
+  it('refreshes the delivery carrier and retains linked original tracking', async () => {
+    const identity = {
+      original_carrier: 'gls-de', original_tracking_number: '12345678901',
+      original_tracking_url: 'https://www.gls-pakete.de/reach-sendungsverfolgung?match=12345678901',
+      original_package_id: 'original-id',
+    };
+    const parcel: JsonObject = {
+      id: 'delivery-parcel', carrier: 'swiss-post', tracking_number: '993412345612345678',
+      carrier_data: identity,
+    };
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'out_for_delivery', expected_delivery: '2026-09-10' }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null);
+    await service.syncPackage(parcel);
+    expect(adapter.fetch).toHaveBeenCalledExactlyOnceWith('swiss-post', parcel.tracking_number, null, null);
+    expect(client.updatePackage.mock.calls.at(-1)?.[1]).toMatchObject({
+      carrier_data: identity, current_stage: 'out_for_delivery', expected_delivery: '2026-09-10',
+    });
+  });
+
   it.each(['gls-de', 'gls-ch', 'gls-fr'])(
     'checks %s hourly and waits four hours after failures', (carrier) => {
       const parcel = { carrier, last_synced_at: '2026-09-09T10:00:00Z', sync_status: 'ok' };

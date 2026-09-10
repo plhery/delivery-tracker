@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
-import { activeTrackingCarrierId, carrierInfo } from '../lib/carriers';
+import { displayedCarrierId, carrierInfo } from '../lib/carriers';
 import { localizedDatePhrase, localizedExpectedDelivery, useI18n } from '../i18n';
 import { localizedParcelCompletionDate, parcelDeliveryEstimate, parcelDisplayStatusKey } from '../lib/parcelStatus';
 import { currentEvent } from '../lib/stages';
@@ -20,7 +20,7 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
   variant?: 'regular' | 'hero' | 'notice';
 }) {
   const { locale, languageTag, t } = useI18n();
-  const carrier = carrierInfo(activeTrackingCarrierId(parcel), locale);
+  const carrier = carrierInfo(displayedCarrierId(parcel), locale);
   const current = currentEvent(parcel.events);
   const estimate = parcelDeliveryEstimate(parcel);
   const expectedDelivery = estimate ? localizedExpectedDelivery(estimate, t, languageTag) : null;

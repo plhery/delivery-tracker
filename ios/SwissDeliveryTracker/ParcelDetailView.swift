@@ -131,8 +131,8 @@ struct ParcelDetailView: View {
     private var parcel: Parcel? { store.parcels.first { $0.id == parcelID } }
 
     private func identity(_ parcel: Parcel) -> CarrierVisualIdentity {
-        CarrierVisualIdentity(id: parcel.activeTrackingCarrier.rawValue,
-            carrier: catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language))
+        CarrierVisualIdentity(id: parcel.displayedCarrier.rawValue,
+            carrier: catalog.info(for: parcel.displayedCarrier, language: localizer.language))
     }
 
     private func liveParcelPass(_ parcel: Parcel) -> some View {
