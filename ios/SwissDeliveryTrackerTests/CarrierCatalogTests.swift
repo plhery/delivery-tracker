@@ -194,7 +194,9 @@ final class CarrierCatalogTests: XCTestCase {
             XCTAssertTrue(catalog.tracksAutomatically(carrier), carrier.rawValue)
         }
         XCTAssertTrue(catalog.selectableCarriers.contains(.asendia))
-        XCTAssertFalse(catalog.tracksAutomatically(.asendia))
+        for carrier in [CarrierID.asendia, .fedex, .shipup] {
+            XCTAssertTrue(catalog.tracksAutomatically(carrier), carrier.rawValue)
+        }
     }
 
     func testCountrySpecificPostcodeRequirementsNormalizeAndValidate() throws {
