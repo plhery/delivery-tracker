@@ -2,6 +2,22 @@ import XCTest
 @testable import SwissDeliveryTracker
 
 final class CarrierCatalogTests: XCTestCase {
+    func testMondialRelayLabelBarcodeDetectionAndPublicLink() throws {
+        // Published example in Mondial Relay's label specification, not customer data.
+        let barcode = "12123456780101006623123454"
+        XCTAssertEqual(catalog.detect(barcode).carrier, .mondialRelay)
+        XCTAssertEqual(catalog.detect(barcode).confidence, .high)
+        XCTAssertEqual(catalog.parse("Mon colis: \(barcode)").trackingNumber, barcode)
+        XCTAssertTrue(catalog.requirements(for: .mondialRelay, trackingNumber: barcode).isEmpty)
+        for invalid in ["00000000000000000000000000", "12123456780101106623123454", "12123456780101006623123455"] {
+            XCTAssertNotEqual(catalog.detect(invalid).carrier, .mondialRelay)
+        }
+        let parcel = Parcel(id: UUID(), trackingNumber: barcode, label: "Example", carrier: .mondialRelay,
+            createdAt: "2026-09-10T12:00:00Z", syncStatus: .ok, notificationsMuted: false)
+        XCTAssertEqual(try XCTUnwrap(catalog.trackingLinks(for: parcel, language: .fr).first).url.absoluteString,
+            "https://www.mondialrelay.fr/suivi-de-colis/?numeroExpedition=121234567801")
+    }
+
     func testLinksFollowWorkingUniversalAndReturnToDirectOnRecovery() throws {
         var parcel = Parcel(id: UUID(), trackingNumber: "TEST1234", label: "Test", carrier: .dhl,
             createdAt: "2026-09-10T12:00:00Z", syncStatus: .ok, notificationsMuted: false)

@@ -1,3 +1,4 @@
+import { isValidMondialRelayBarcode } from './mondialRelayBarcode';
 import {
   CARRIER_CAPABILITIES,
   type ApiCarrierId as CarrierId,
@@ -65,7 +66,7 @@ export interface ParcelTrackingLink {
 interface DetectionRule {
   pattern: string;
   confidence: Exclude<DetectionConfidence, 'none'>;
-  checksum?: 's10';
+  checksum?: 's10' | 'mondial-relay';
 }
 
 interface TrackingLinkRule {
@@ -111,6 +112,7 @@ const RAW_CARRIERS = CARRIER_CAPABILITIES as unknown as Record<
 
 function trackingNumberForLink(carrierId: CarrierId, raw: string): string {
   const normalized = normalizeTrackingNumber(raw);
+  if (carrierId === 'mondial-relay' && isValidMondialRelayBarcode(normalized)) return normalized.slice(0, 12);
   if (carrierId === 'c-chez-vous') {
     const composite = /^([A-Z0-9]{11})(\d{5})$/.exec(normalized);
     if (composite) return `${composite[1]}--${composite[2]}`;
@@ -366,6 +368,7 @@ export function detectCarrierMatch(raw: string): CarrierDetection {
   for (const [carrier, definition] of Object.entries(RAW_CARRIERS)) {
     for (const rule of definition.detectionRules) {
       if (!new RegExp(rule.pattern).test(trackingNumber)) continue;
+      if (rule.checksum === 'mondial-relay' && !isValidMondialRelayBarcode(trackingNumber)) continue;
       if (rule.checksum === 's10' && !isValidS10TrackingNumber(trackingNumber)) continue;
       matches.push({ carrier: carrier as CarrierId, confidence: rule.confidence });
       break;
@@ -391,6 +394,7 @@ export function detectCarrier(raw: string): CarrierId {
 }
 
 const TRACKING_CANDIDATE_PATTERNS = [
+  /\b\d{26}\b/g,
   /\bH\d{15,19}\b/gi,
   /\b1Z[A-Z0-9]{16}\b/gi,
   /\b1G[A-Z0-9]{10}\b/gi,

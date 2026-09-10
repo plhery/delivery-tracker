@@ -518,11 +518,12 @@
         "requirements": [
           {
             "field": "dpdPostcode",
+            "whenTrackingNumber": "^(?![0-9]{26}$).*$",
             "validator": "francePostcode",
             "label": "Delivery postcode",
             "type": "text",
             "placeholder": "75001",
-            "help": "Mondial Relay requires the recipient postcode to disclose shipment events.",
+            "help": "Short Mondial Relay shipment numbers require the recipient postcode; validated 26-digit label barcodes do not.",
             "pattern": "^[0-9]{5}$",
             "maxLength": 5,
             "inputMode": "numeric",
@@ -539,6 +540,7 @@
         }
       ],
       "detectionRules": [
+        { "pattern": "^[0-9]{26}$", "confidence": "high", "checksum": "mondial-relay" },
         {
           "pattern": "^(?:\\d{8}|\\d{10}|\\d{12})$",
           "confidence": "low"
@@ -2690,7 +2692,7 @@
           "dpdPostcode": {
             "type": "string",
             "pattern": "^(?=.{3,10}$)(?=.*[0-9])[A-Za-z0-9]+(?:[ -][A-Za-z0-9]+)*$",
-            "description": "Recipient postcode required by DPD and GLS Switzerland (four digits), Mondial Relay (five digits), Heppner (four or five digits) and Paack (carrier-specific alphanumeric format), and rejected for other carriers. This property keeps its historical name for API compatibility."
+            "description": "Recipient postcode required by DPD and GLS Switzerland (four digits), Mondial Relay short shipment numbers (five digits; optional for validated 26-digit barcodes), Heppner (four or five digits) and Paack (carrier-specific alphanumeric format), and rejected for other carriers. This property keeps its historical name for API compatibility."
           }
         }
       },

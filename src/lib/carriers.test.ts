@@ -746,3 +746,20 @@ describe('links follow successful tracking retrieval', () => {
     }
   });
 });
+
+
+describe('Mondial Relay label barcode detection', () => {
+  const barcode = '12123456780101006623123454';
+  it('detects the checksum-validated label and uses its public alias', () => {
+    expect(detectCarrierMatch(barcode)).toMatchObject({ carrier: 'mondial-relay', confidence: 'high' });
+    expect(parseTrackingInput(`Parcel tracking: ${barcode}`)).toMatchObject({ carrier: 'mondial-relay', trackingNumber: barcode });
+    expect(carrierRequirements('mondial-relay', barcode)).toEqual([]);
+    expect(parcelTrackingLinks({ carrier: 'mondial-relay', trackingNumber: barcode })[0].url)
+      .toBe('https://www.mondialrelay.fr/suivi-de-colis/?numeroExpedition=121234567801');
+  });
+  it('does not guess Mondial Relay for an arbitrary 26-digit number or damaged checksums', () => {
+    for (const number of ['0'.repeat(26), barcode.slice(0,-1)+'5', barcode.slice(0,14)+'1'+barcode.slice(15)]) {
+      expect(detectCarrierMatch(number).carrier).not.toBe('mondial-relay');
+    }
+  });
+});

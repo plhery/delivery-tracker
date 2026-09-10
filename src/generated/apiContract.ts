@@ -610,11 +610,12 @@ export const CARRIER_CAPABILITIES = {
       "requirements": [
         {
           "field": "dpdPostcode",
+          "whenTrackingNumber": "^(?![0-9]{26}$).*$",
           "validator": "francePostcode",
           "label": "Delivery postcode",
           "type": "text",
           "placeholder": "75001",
-          "help": "Mondial Relay requires the recipient postcode to disclose shipment events.",
+          "help": "Short Mondial Relay shipment numbers require the recipient postcode; validated 26-digit label barcodes do not.",
           "pattern": "^[0-9]{5}$",
           "maxLength": 5,
           "inputMode": "numeric",
@@ -638,6 +639,11 @@ export const CARRIER_CAPABILITIES = {
       }
     ],
     "detectionRules": [
+      {
+        "pattern": "^[0-9]{26}$",
+        "confidence": "high",
+        "checksum": "mondial-relay"
+      },
       {
         "pattern": "^(?:\\d{8}|\\d{10}|\\d{12})$",
         "confidence": "low"

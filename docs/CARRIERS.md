@@ -24,7 +24,7 @@ Delivery Tracker can refresh these carriers automatically:
 | UPS | Automatic. Direct HTTP is tried first; a private TRAWL instance can handle browser challenges. |
 | Amazon Shipping France | Automatic through Amazon Shipping's anonymous recipient tracker for `FR` followed by ten digits. |
 | DPD France | Automatic through the recipient trace page. Direct HTTP is tried first; a private TRAWL instance is required when Cloudflare challenges it. |
-| Mondial Relay | Automatic through the recipient web flow. Requires the five-digit recipient postcode and can use private TRAWL for Cloudflare. |
+| Mondial Relay | Automatic through the recipient web flow. Short shipment numbers require the five-digit recipient postcode. Validated 26-digit label barcodes work without it. Can use private TRAWL for Cloudflare. |
 | Relais Colis | Automatic through the public recipient form and its CSRF-bound session. |
 | La Poste / Colissimo | Automatic through La Poste's public unified tracking feed. |
 | Chronopost | Automatic through the same privacy-minimizing La Poste unified feed; the Chronopost SOAP scraper is intentionally not used. |
@@ -250,7 +250,13 @@ eight-, ten- or twelve-digit shipment number, the recipient postcode and a
 page-scoped verification token. The historic `dpdPostcode` API property and
 `dpd_postcode` database column are reused for that five-digit value to preserve
 backward compatibility; they remain four digits for DPD Switzerland. Treat the
-postcode as part of the tracking credential. TRAWL's Redis-backed session cache
+postcode as part of the tracking credential for short numbers. The 26-digit
+label barcode is also supported: both modulo-11 check digits and the parcel
+sequence are validated using the [official label specification](https://storage.mondialrelay.fr/etiquette-mondial-relay-v-24.pdf).
+Its first 12 digits form a public alias that works without a postcode; API
+responses must echo that alias or the embedded eight-digit shipment number.
+Keep the full barcode as the parcel's stored identity, use the alias for official
+links, and never interpret the routing suffix as a postcode. TRAWL's Redis-backed session cache
 keeps the page token and API request on the same solved browser identity. Relais
 Colis uses a normal bounded HTTP session: the adapter obtains the form's CSRF
 token, submits the shipment number, verifies the echoed identifier and projects

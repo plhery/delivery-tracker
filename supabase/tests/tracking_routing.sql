@@ -83,4 +83,40 @@ begin
   if has_function_privilege('authenticated','public.apply_tracking_sync(uuid,uuid,jsonb,jsonb,text[])','execute') then raise exception 'Correction callable by client'; end if;
 end;
 $$;
+-- Public specification barcode: both creation and a carrier edit may omit the postcode.
+do $$
+declare parcel public.packages; changed boolean; bad text;
+begin
+  perform set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000001', true);
+  if not public.is_valid_mondial_relay_barcode('12123456780101006623123454') then
+    raise exception 'Published barcode checksum rejected';
+  end if;
+  foreach bad in array array['00000000000000000000000000', '12123456780101106623123454', '12123456780101006623123455'] loop
+    if public.is_valid_mondial_relay_barcode(bad) then raise exception 'Invalid barcode accepted'; end if;
+  end loop;
+  parcel := public.create_owned_package('12123456780101006623123454', 'Public example', 'mondial-relay');
+  if parcel.dpd_postcode is not null or parcel.tracking_number <> '12123456780101006623123454' then
+    raise exception 'Barcode identity or empty postcode changed';
+  end if;
+  changed := public.change_owned_package_carrier(parcel.id, 'unknown');
+  if not changed then raise exception 'Carrier change rejected'; end if;
+  changed := public.change_owned_package_carrier(parcel.id, 'mondial-relay');
+  if not changed or not exists(select 1 from public.packages where id = parcel.id and carrier = 'mondial-relay' and dpd_postcode is null) then
+    raise exception 'Barcode carrier edit requires postcode';
+  end if;
+  foreach bad in array array['87654321', '12123456780101006623123455'] loop
+    begin
+      perform public.create_owned_package(bad, '', 'mondial-relay');
+      raise exception 'Unverified barcode or short number created without postcode';
+    exception when invalid_parameter_value then null;
+    end;
+    parcel := public.create_owned_package(bad, '', 'unknown');
+    begin
+      perform public.change_owned_package_carrier(parcel.id, 'mondial-relay');
+      raise exception 'Unverified barcode or short number switched without postcode';
+    exception when invalid_parameter_value then null;
+    end;
+  end loop;
+end;
+$$;
 rollback;

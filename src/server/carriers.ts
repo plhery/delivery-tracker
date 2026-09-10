@@ -1,4 +1,5 @@
 import { CARRIER_CAPABILITIES } from '../generated/apiContract';
+import { isValidMondialRelayBarcode } from '../lib/mondialRelayBarcode';
 import { validateDachserTrackingUrl } from './dachser';
 import { validatePlanzerSharedUrl } from './planzerShared';
 
@@ -93,9 +94,18 @@ export function normalizeCarrierInputs(
     trackingUrl: trackingUrl.trim() || null,
     dpdPostcode: dpdPostcode.trim() || null,
   };
+  const mondialBarcode = carrierId === 'mondial-relay' && /^\d{26}$/.test(trackingNumber);
+  if (mondialBarcode && !isValidMondialRelayBarcode(trackingNumber)) {
+    throw new TypeError('Invalid Mondial Relay barcode');
+  }
   const requirements = new Map(
     activeRequirements(carrierId, trackingNumber).map((item) => [item.field, item]),
   );
+  // Older clients may still supply a postcode for label barcodes. Validate it
+  // when present, while allowing the public alias to work without one.
+  if (mondialBarcode && supplied.dpdPostcode) {
+    requirements.set('dpdPostcode', { field: 'dpdPostcode', validator: 'francePostcode' });
+  }
   for (const [field, value] of Object.entries(supplied) as Array<[
     'trackingUrl' | 'dpdPostcode',
     string | null,

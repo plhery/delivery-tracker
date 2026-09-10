@@ -131,7 +131,7 @@ for (const [carrierId, definition] of Object.entries(carrierCapabilities)) {
   }
   for (const rule of definition.detectionRules ?? []) {
     new RegExp(rule.pattern);
-    if (!['high', 'low'].includes(rule.confidence) || ![undefined, 's10'].includes(rule.checksum)) {
+    if (!['high', 'low'].includes(rule.confidence) || ![undefined, 's10', 'mondial-relay'].includes(rule.checksum)) {
       throw new Error(`x-carriers.${carrierId} has an invalid detection rule`);
     }
   }

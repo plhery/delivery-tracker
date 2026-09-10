@@ -269,6 +269,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         for (carrier, definition) in definitions {
             for rule in definition.detectionRules {
                 guard Self.matches(number, pattern: rule.pattern) else { continue }
+                if rule.checksum == "mondial-relay" && !Self.isValidMondialRelayBarcode(number) { continue }
                 if rule.checksum == "s10" && !Self.isValidS10(number) { continue }
                 matches.append((carrier, rule.confidence == "high" ? .high : .low))
                 break
@@ -453,6 +454,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
 
     private func recognizedNumber(in text: String) -> String? {
         let patterns = [
+            "\\b\\d{26}\\b",
             "\\bH\\d{15,19}\\b",
             "\\b1Z[A-Z0-9]{16}\\b",
             "\\b1G[A-Z0-9]{10}\\b",
@@ -511,6 +513,19 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             return "\(value.prefix(2)).\(value.dropFirst(2).prefix(2)).\(value.dropFirst(4).prefix(6)).\(value.dropFirst(10))"
         }
         return value
+    }
+
+    static func isValidMondialRelayBarcode(_ value: String) -> Bool {
+        guard matches(value, pattern: "^[0-9]{26}$") else { return false }
+        let digits = value.compactMap(\.wholeNumberValue)
+        func check(_ range: Range<Int>) -> Int {
+            let sum = digits[range].reversed().enumerated().reduce(0) { $0 + $1.element * (2 + $1.offset % 6) }
+            let remainder = 11 - sum % 11
+            return remainder >= 10 ? 0 : remainder
+        }
+        let sequence = digits[10] * 10 + digits[11]
+        let count = digits[12] * 10 + digits[13]
+        return sequence > 0 && sequence <= count && check(0..<14) == digits[14] && check(15..<25) == digits[25]
     }
 
     static func isValidS10(_ raw: String) -> Bool {
@@ -586,6 +601,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         guard let template else { return nil }
         let normalized = normalize(trackingNumber)
         var linkNumber = trackingNumber
+        if carrier == .mondialRelay, isValidMondialRelayBarcode(normalized) { linkNumber = String(normalized.prefix(12)) }
         if carrier == .cChezVous,
            normalized.range(of: "^[A-Z0-9]{11}[0-9]{5}$", options: .regularExpression) != nil {
             let split = normalized.index(normalized.startIndex, offsetBy: 11)

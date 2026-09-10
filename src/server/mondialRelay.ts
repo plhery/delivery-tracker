@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { isValidMondialRelayBarcode } from '../lib/mondialRelayBarcode';
+
 import { load } from 'cheerio';
 import makeFetchCookie from 'fetch-cookie';
 import { DateTime } from 'luxon';
@@ -33,6 +35,7 @@ const USER_AGENT =
 interface MondialRelayCredential {
   shipment: string;
   postcode: string;
+  canonicalShipment?: string;
 }
 
 interface ClassifiedStatus {
@@ -127,8 +130,11 @@ function classifyStatus(description: string): ClassifiedStatus {
     'colis enregistre',
   ])) return { status: 'pending', stage: 'registered' };
 
+  if (includesAny(value, ['pris en charge', 'prise en charge'])) {
+    return { status: 'in_transit', stage: 'accepted' };
+  }
+
   if (includesAny(value, [
-    'pris en charge',
     'en cours d acheminement',
     'en transit',
     'arrive sur l agence',
@@ -150,8 +156,15 @@ export function normalizeMondialRelayCredential(
   rawShipment: string,
   rawPostcode = '',
 ): MondialRelayCredential {
-  let shipment = rawShipment.trim();
+  let shipment = rawShipment.trim().replace(/[\s.-]/g, '');
   let postcode = rawPostcode.trim();
+  if (/^\d{26}$/.test(shipment)) {
+    if (!isValidMondialRelayBarcode(shipment) || (postcode && !plausibleFrenchPostcode(postcode))) {
+      throw new TypeError('Invalid Mondial Relay barcode or postcode');
+    }
+    // The public alias carries brand/shipment/parcel sequence, not a postcode.
+    return { shipment: shipment.slice(0, 12), postcode, canonicalShipment: shipment.slice(2, 10) };
+  }
   if (!postcode && /^(?:\d{13}|\d{15}|\d{17})$/.test(shipment)) {
     postcode = shipment.slice(-5);
     shipment = shipment.slice(0, -5);
@@ -299,7 +312,10 @@ export function parseMondialRelayTrackingResponse(
   rawShipment: string,
   rawPostcode = '',
 ): CarrierResult {
-  const credential = normalizeMondialRelayCredential(rawShipment, rawPostcode);
+  return parseTrackingResponse(payload, normalizeMondialRelayCredential(rawShipment, rawPostcode));
+}
+
+function parseTrackingResponse(payload: unknown, credential: MondialRelayCredential): CarrierResult {
   if (!isRecord(payload)) {
     throw new TypeError('Mondial Relay returned an invalid tracking response');
   }
@@ -315,7 +331,7 @@ export function parseMondialRelayTrackingResponse(
   if (!/^(?:\d{8}|\d{10}|\d{12})$/.test(returnedShipment)) {
     throw new TypeError('Mondial Relay returned an invalid shipment number');
   }
-  if (returnedShipment !== credential.shipment) {
+  if (returnedShipment !== credential.shipment && returnedShipment !== credential.canonicalShipment) {
     throw new RangeError('Mondial Relay returned a different shipment');
   }
 
@@ -414,6 +430,12 @@ function trawlBody(value: JsonObject): string {
   if (Array.isArray(rawBody)) {
     bytes = rawBody.every((entry) => Number.isInteger(entry) && entry >= 0 && entry <= 255)
       ? rawBody as number[]
+      : null;
+  } else if (isRecord(rawBody) && rawBody.type === 'Buffer' && Array.isArray(rawBody.data)) {
+    // JSON serialization of Node's Buffer, used by current TRAWL releases.
+    bytes = rawBody.data.length <= MAX_DIRECT_BYTES
+      && rawBody.data.every((entry) => Number.isInteger(entry) && entry >= 0 && entry <= 255)
+      ? rawBody.data as number[]
       : null;
   } else if (isRecord(rawBody)) {
     const entries = Object.entries(rawBody);
@@ -552,12 +574,10 @@ export class MondialRelayTracker {
     credential: MondialRelayCredential,
     trackingSource: string,
   ): CarrierResult {
-    const result = parseMondialRelayTrackingResponse(
-      payload,
-      credential.shipment,
-      credential.postcode,
-    );
-    result.tracking_url = mondialRelayTrackingUrl(credential.shipment, credential.postcode);
+    const result = parseTrackingResponse(payload, credential);
+    const url = new URL(TRACKING_PAGE);
+    url.searchParams.set('numeroExpedition', credential.shipment);
+    result.tracking_url = url.toString();
     result.tracking_source = trackingSource;
     return result;
   }
