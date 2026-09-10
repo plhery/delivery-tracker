@@ -62,19 +62,19 @@ Supabase, and set `NEXT_PUBLIC_USE_API=true`. See [Authentication](docs/AUTHENTI
 
 ## Carriers
 
-Supports Swiss Post, Planzer, Quickpac, DPD, GLS, DHL / Deutsche Post, UPS,
-La Poste / Colissimo, Chronopost, Mondial Relay, Amazon Shipping France,
-India Post, and other regional carriers.
+35+ carrier integrations, mostly European, combining dedicated scrapers with
+aggregator fallbacks. Coverage includes Swiss Post, Planzer, Quickpac, DHL,
+DPD, GLS, La Poste / Colissimo, Chronopost, Mondial Relay, PostNL, Hermes, UPS,
+and regional delivery services.
 
-In-transit parcels refresh every 2 minutes from 08:00–22:00 in `Europe/Zurich`;
-PostNL refreshes every 30 minutes, and other stages refresh every 10 minutes. Checks run hourly overnight,
-and GLS retains its longer carrier cooldowns. Unknown carriers can use 17TRACK and
-ParcelsApp through a private TRAWL service. Asendia and FedEx are link-only;
-ShipUp is a manual record.
+Tracking numbers and carriers are detected from pasted numbers, tracking links,
+or shipping messages. Carrier-specific status codes and multilingual tracking
+text are parsed into consistent delivery stages and timelines. Tracking history
+and available delivery estimates refresh automatically in the background.
 
-Some integrations require a delivery postcode or complete tracking URL.
-Carrier sites can change or block requests. See [carrier support](docs/CARRIERS.md)
-for requirements and limitations.
+Ship24, ParcelsApp, and 17TRACK provide fallback tracking and carrier discovery
+when a direct integration is unavailable. See [carrier support](docs/CARRIERS.md)
+for the full list and setup details.
 
 ## iPhone
 
