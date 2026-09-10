@@ -8,7 +8,7 @@ const PAGE = 'https://www.ship24.com/tracking';
 // Source (verified 2026-09-10):
 // https://cdn.ship24.com/assets/main.16f5bc7c0914804e.js
 // getOneParcel's N(...) argument and the first value appended to $zoho_.
-const WEBSITE_SIGNING_KEY = "qxV6SOr2tqw9m36j0-R-ohPt1PAB2et0";
+const WEBSITE_SIGNING_KEY = "qxV6SOr2tqw9m36j0-R-ohPt1PAB2et0"; // gitleaks:allow -- public frontend checksum constant, not an API credential
 const WEBSITE_SALT = '\u1780';
 
 // Standard MurmurHash3 x86/32, used by the public frontend's request checksum.

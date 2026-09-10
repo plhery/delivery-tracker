@@ -5,3 +5,12 @@
 # Current declarations carry inline annotations; these cover their original commit.
 f437eb60624597271db7cf510989c66401240f49:ios/SwissDeliveryTrackerTests/AppRoutingTests.swift:generic-api-key:77
 f437eb60624597271db7cf510989c66401240f49:src/server/invitationPreview.test.ts:generic-api-key:64
+
+# Public Ship24 frontend checksum constant, not a provisioned API credential.
+# Verified in https://cdn.ship24.com/assets/main.16f5bc7c0914804e.js (2026-09-10).
+# Current declaration carries an inline annotation; this covers its original commit.
+43aafbad8f7e35a188d3bf8738d006ffbe34a339:src/server/ship24Http.ts:generic-api-key:11
+
+# Historical Python isinstance check for the P-256 elliptic curve type.
+# The scanner mistakes the public cryptography class name for a key value.
+4884b7dab3b0131df8159ad249dadb32c7e576de:server/push.py:generic-api-key:254
