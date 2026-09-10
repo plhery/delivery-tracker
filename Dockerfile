@@ -30,9 +30,10 @@ ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     NODE_OPTIONS=--enable-source-maps \
     HOSTNAME=0.0.0.0 \
-    PORT=3000
+    PORT=3000 \
+    TRACKING_CHROMIUM_PATH=/usr/bin/chromium
 # Coolify probes Dockerfile applications with curl from inside the container.
-RUN apk add --no-cache curl \
+RUN apk add --no-cache curl chromium \
     && addgroup --system --gid 10001 delivery \
     && adduser --system --uid 10001 --ingroup delivery delivery
 COPY --from=build --chown=delivery:delivery /app/.next/standalone ./

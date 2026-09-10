@@ -38,16 +38,18 @@ Delivery Tracker can refresh these carriers automatically:
 | Paack | Automatic through the public recipient flow. Requires the tracking number and delivery postcode. |
 
 Unknown carriers (`unknown` and `intl-post`) now attempt automatic lookup through
-17TRACK and then ParcelsApp's public web apps using the existing private TRAWL
-service (`FLARESOLVERR_URL`). These services are **not selectable carriers**.
+17TRACK → ParcelsApp → Ship24 → Postal Ninja. The first two use the existing
+private TRAWL service (`FLARESOLVERR_URL`); Postal Ninja and Ship24 use a dedicated
+fresh Chromium session (`TRACKING_CHROMIUM_PATH`). These services are **not
+selectable carriers**.
 Ambiguous numbers can be saved for automatic lookup; a known carrier can still
 be selected manually. Pasted 17TRACK/ParcelsApp links resolve to a recognized
 carrier when possible, otherwise to unknown. The external 17TRACK link remains
 available and follows the app language.
 
-Only a matching shipment with dated history is accepted. 17TRACK demo numbers,
+Only history bound to the requested shipment is accepted. 17TRACK demo numbers,
 initial polling replies, carrier-selection prompts, postcode forms, challenges,
-and empty responses cannot manufacture progress. If both lookups fail, sync
+and empty responses cannot manufacture progress. If all lookups fail, sync
 reports an error and retains existing history. No authenticated commercial API
 key is required. A saved arbitrary tracking URL is never fetched by the fallback.
 
@@ -58,6 +60,40 @@ history retrieval, so it fell through to ParcelsApp. A normal interactive
 17TRACK browser did return real history. Aggregators can disagree or require
 additional information, especially for ambiguous numeric identifiers. Carrier
 adapters remain preferable when the carrier is known.
+
+Postal Ninja submits its official embedded tracking widget on `/en/tools` and
+reads `/track/get`; simply
+opening a URL containing the number does not perform the lookup. Ship24 reads
+its public web app's `/api/parcels/{number}?lang=en` response. Neither scraper
+uses a paid API key or a saved browser login. Docker installs Chromium and sets
+`TRACKING_CHROMIUM_PATH=/usr/bin/chromium`; local runs need an explicit executable
+path. Chromium receives no application secrets. Sessions and cookies are deleted
+when each lookup finishes. Only one form scraper runs per server process at a
+time; overlapping requests fail promptly for retry on the next scheduled sync.
+Each source has a 45-second default timeout, and the first successful source wins.
+A full chain can therefore take roughly three minutes when every source times out.
+
+Ship24's `timestamp` includes the carrier offset; its `datetime` field can contain
+local wall-clock time mislabeled with `Z`, so that field is deliberately ignored.
+Postal Ninja normally omits offsets entirely. Those values are retained as
+`local_time` in the adapter result, with no fabricated UTC `time` or `last_update`.
+The shipment status is usable, but those undated scans are excluded from the
+persisted timeline by the existing sync normalizer. A newly observed status
+change can still create a clearly marked observation at sync time, using the
+existing `observed_without_provider_timestamp` path. Explicitly offset Postal
+Ninja dates are accepted. Neither a delivery forecast nor a handoff described as
+“Delivered to local carrier” is treated as final delivery. Delivery descriptions
+are reduced to “Delivered” to omit signatures and access codes.
+
+Offline coverage lives in `universalScrapers.test.ts`; the opt-in
+`universalScrapers.live.test.ts` exercises both full browser workflows using a
+public forum sample. Live site access can still be blocked by browser checks;
+these failures preserve existing tracking data and continue the fallback chain.
+On September 10, 2026, the full Ship24 scraper retrieved the public sample in a
+fresh local Chromium session. Postal Ninja's captured interactive responses
+validated its parser, but its unattended widget lookup still stalled at the
+automatic challenge. It remains the last, experimental fallback; successful
+Postal Ninja automation has not been established.
 
 GLS links are routed by country path (`DE`, `FR`, `CH`/`EU`) instead of treating
 all `gls-group.com` links as French. Hermes Germany's H-prefixed numbers are

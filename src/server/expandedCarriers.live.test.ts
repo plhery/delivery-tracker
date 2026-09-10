@@ -9,9 +9,9 @@ describe('public forum tracking examples', () => {
     // ParcelsApp: 32 events, delivered 2026-08-17; verified 2026-09-08.
     const result = await new CarrierTrackingAdapter().fetch('unknown', 'YT2621200705470145', null);
     expect(result.events?.length).toBeGreaterThan(0);
-    expect(['17TRACK', 'ParcelsApp']).toContain(result.tracking_provider);
+    expect(['17TRACK', 'ParcelsApp', 'Postal Ninja', 'Ship24']).toContain(result.tracking_provider);
     expect(result.current_stage).not.toBe('pending');
-  }, 120_000);
+  }, 210_000);
 
   it('retrieves Hermes history or its explicit retention expiry', async () => {
     // Public Paketda forum sample. Retained delivery history verified 2026-09-08.

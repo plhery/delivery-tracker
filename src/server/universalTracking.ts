@@ -2,22 +2,17 @@ import 'server-only';
 
 import { load } from 'cheerio';
 import { DateTime } from 'luxon';
-import type { Stage } from '../types';
 import { fetchBounded, parseJsonBytes } from './boundedFetch';
-import type { CarrierEvent, CarrierResult, CarrierStatus } from './carrierResult';
+import type { CarrierEvent, CarrierResult } from './carrierResult';
 import { isRecord } from './types';
-
-type Source = '17TRACK' | 'ParcelsApp';
-const SOURCES: Source[] = ['17TRACK', 'ParcelsApp'];
+import { event, isNotice, numberOf, result, type UniversalSource as Source } from './universalTrackingResult';
+import { PostalNinjaTracker } from './postalNinja';
+import { Ship24Tracker } from './ship24';
+const SOURCES: Source[] = ['17TRACK', 'ParcelsApp', 'Ship24', 'Postal Ninja'];
 const API_URLS = {
   '17TRACK': 'https://t.17track.net/track/restapi',
   ParcelsApp: 'https://parcelsapp.com/api/v2/parcels',
 };
-const STAGES: Record<string, Stage> = {
-  InfoReceived: 'registered', InTransit: 'in_transit', AvailableForPickup: 'ready_for_pickup',
-  OutForDelivery: 'out_for_delivery', DeliveryFailure: 'failed_attempt', Delivered: 'delivered',
-};
-
 interface SourceFailure {
   source: Source;
   reason: string;
@@ -31,70 +26,6 @@ export class UniversalTrackingError extends AggregateError {
     ).join('; ')}`);
     this.name = 'UniversalTrackingError';
   }
-}
-
-function numberOf(raw: string): string {
-  const number = raw.toUpperCase().replace(/[\s.-]/g, '');
-  if (!/^(?=.*\d)[A-Z0-9]{4,40}$/.test(number)) throw new TypeError('Invalid tracking number');
-  return number;
-}
-
-function text(value: unknown): string {
-  return typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, 500) : '';
-}
-
-// Both sites mix carrier events with UI notices. Notices must not manufacture a
-// shipment timestamp or make an electronic announcement look like movement.
-function isNotice(description: string): boolean {
-  return /enter .*?(?:postal|post|zip|phone)|select (?:a |the )?carrier|tracking (?:is |temporarily )?unavailable|tracking number (?:not found|is incorrect)|no tracking (?:information|data)|delivery preference|captcha|verify (?:you|your)|enable javascript|try again later/i.test(description);
-}
-
-function eventStage(description: string): Stage | undefined {
-  if (/return(?:ed|ing)? to (?:the )?sender/i.test(description)) return 'returned';
-  if (/not delivered|could not.*deliver|unable to deliver|delivery (?:attempt|failed)/i.test(description)) return 'failed_attempt';
-  if (/\bdelivered\b|delivery completed/i.test(description)) return 'delivered';
-  if (/ready for (?:pickup|collection)|available for (?:pickup|collection)/i.test(description)) return 'ready_for_pickup';
-  if (/out for delivery/i.test(description)) return 'out_for_delivery';
-  if (/customs|clearance/i.test(description)) return 'customs';
-  if (/electronic information|information (?:received|submitted)|label (?:created|printed)|pre.?advice|shipment announced/i.test(description)) return 'registered';
-  if (/accepted|collected|picked up|handed over/i.test(description)) return 'accepted';
-  if (/transit|arrived|departed|processed|sorting|transport|dispatched/i.test(description)) return 'in_transit';
-  return undefined;
-}
-
-function event(time: unknown, description: unknown, stage?: unknown): CarrierEvent | null {
-  const label = text(description);
-  if (!label || isNotice(label)) return null;
-  // Require an explicit offset: universal events can originate in any timezone.
-  if (typeof time !== 'string' || !/(?:Z|[+-]\d{2}:\d{2})$/.test(time)) {
-    throw new TypeError('Tracking event has no valid timezone');
-  }
-  const date = DateTime.fromISO(time, { setZone: true });
-  if (!date.isValid) throw new TypeError('Tracking event has an invalid timestamp');
-  const declared = typeof stage === 'string' && Object.hasOwn(STAGES, stage) ? STAGES[stage] : undefined;
-  const resolved = eventStage(label) ?? declared;
-  return {
-    // Delivery descriptions can include signatures, access codes or door numbers.
-    time: date.toUTC().toISO()!, description: resolved === 'delivered' ? 'Delivered' : label,
-    stage: resolved ?? 'pending',
-  };
-}
-
-function result(events: CarrierEvent[], source: Source): CarrierResult {
-  const unique = [...new Map(events.map((e) => [`${e.time}|${e.description}`, e])).values()]
-    .sort((a, b) => b.time!.localeCompare(a.time!)).slice(0, 100);
-  if (!unique.length) throw new TypeError('No usable tracking events');
-  const current = unique.find((e) => e.stage && e.stage !== 'pending')?.stage as Stage | undefined;
-  // Unknown wording can be displayed, but must not imply movement.
-  const status: CarrierStatus = current === 'delivered' ? 'delivered'
-    : current === 'registered' || !current ? 'pending'
-      : current === 'out_for_delivery' || current === 'ready_for_pickup' ? 'out_for_delivery'
-        : ['returned', 'failed_attempt', 'exception'].includes(current) ? 'exception' : 'in_transit';
-  return {
-    status, current_stage: current ?? 'pending', last_status_text: unique[0].description,
-    last_update: unique[0].time, expected_delivery: null, timezone: 'UTC',
-    tracking_provider: source, events: unique,
-  };
 }
 
 export function parse17TrackResponse(payload: unknown, trackingNumber: string): CarrierResult {
@@ -169,13 +100,19 @@ export function parseParcelsAppHtml(html: string, trackingNumber: string): Carri
   return result(events, 'ParcelsApp');
 }
 
-function pageUrl(source: Source, number: string): string {
+function pageUrl(source: '17TRACK' | 'ParcelsApp', number: string): string {
   return source === '17TRACK' ? `https://t.17track.net/en#nums=${number}`
     : `https://parcelsapp.com/en/tracking/${number}`;
 }
 
 export class UniversalTracker {
-  constructor(readonly options: { trawlUrl?: string; timeoutMs?: number; fetcher?: typeof fetch } = {}) {
+  constructor(readonly options: {
+    trawlUrl?: string;
+    timeoutMs?: number;
+    fetcher?: typeof fetch;
+    executablePath?: string;
+    browserLookup?: (source: 'Postal Ninja' | 'Ship24', number: string) => Promise<CarrierResult>;
+  } = {}) {
     if (options.timeoutMs !== undefined && (!Number.isFinite(options.timeoutMs) || options.timeoutMs <= 0)) {
       throw new TypeError('Universal tracking timeout must be positive');
     }
@@ -184,13 +121,20 @@ export class UniversalTracker {
   async fetch(trackingNumber: string): Promise<CarrierResult> {
     const number = numberOf(trackingNumber);
     const configured = this.options.trawlUrl ?? process.env.FLARESOLVERR_URL;
-    if (!configured) throw new Error('Automatic carrier lookup requires the tracking browser service');
-    const endpoint = new URL(configured);
-    endpoint.pathname = `${endpoint.pathname.replace(/\/(?:v1|scrape)\/?$/, '').replace(/\/$/, '')}/scrape`;
-    endpoint.search = ''; endpoint.hash = '';
+    const endpoint = configured ? new URL(configured) : null;
+    if (endpoint) {
+      endpoint.pathname = `${endpoint.pathname.replace(/\/(?:v1|scrape)\/?$/, '').replace(/\/$/, '')}/scrape`;
+      endpoint.search = ''; endpoint.hash = '';
+    }
     const failures: SourceFailure[] = [];
     for (const source of SOURCES) {
       try {
+        if (source === 'Postal Ninja' || source === 'Ship24') {
+          if (this.options.browserLookup) return await this.options.browserLookup(source, number);
+          const tracker = source === 'Postal Ninja' ? new PostalNinjaTracker(this.options) : new Ship24Tracker(this.options);
+          return await tracker.fetch(number);
+        }
+        if (!endpoint) throw new Error('Automatic carrier lookup requires the tracking browser service');
         const url = pageUrl(source, number);
         const { bytes } = await fetchBounded(endpoint, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },

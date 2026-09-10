@@ -23,6 +23,7 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  serverExternalPackages: ['playwright-core'],
   poweredByHeader: false,
   reactStrictMode: true,
   // Link previews may use browser-like user agents and only inspect the head.
