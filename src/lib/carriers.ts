@@ -215,14 +215,34 @@ export function parcelTrackingNumbers(parcel: Pick<Parcel,
   return delivery.number === original.number ? [delivery] : [delivery, original];
 }
 
-/** Primary delivery tracker first, followed by the earlier international journey. */
+/** Link to the source of the displayed result, never a speculative routing preference. */
 export function parcelTrackingLinks(
+  parcel: Parameters<typeof carrierTrackingLinks>[0], locale?: string,
+): ParcelTrackingLink[] {
+  const links = carrierTrackingLinks(parcel, locale);
+  const number = encodeURIComponent(parcel.originalCarrier && parcel.trackingSource
+    ? parcel.activeTrackingNumber ?? parcel.trackingNumber : parcel.trackingNumber);
+  const provider = parcel.trackingProvider;
+  const url = provider === '17TRACK' ? `https://t.17track.net/en#nums=${number}`
+    : provider === 'ParcelsApp' ? `https://parcelsapp.com/en/tracking/${number}`
+    : provider === 'Ship24' ? `https://www.ship24.com/tracking?p=${number}`
+    // Postal Ninja's verified public entry point; no guessed session/private URL.
+    : provider === 'Postal Ninja' ? 'https://postal.ninja/en/track' : undefined;
+  if (!url || !provider) return links;
+  const primary: ParcelTrackingLink = { carrier: carrierInfo('unknown', locale), name: provider,
+    url: localizedCarrierUrl('unknown', url, locale), active: true, ready: true, role: 'active' };
+  return [primary, ...links.filter((link) => link.role !== 'active' && link.url !== primary.url)];
+}
+
+/** Primary delivery tracker first, followed by the earlier international journey. */
+function carrierTrackingLinks(
   parcel: Pick<
     Parcel,
     | 'carrier'
     | 'trackingNumber'
     | 'trackingUrl'
     | 'trackingSource'
+    | 'trackingProvider'
     | 'activeTrackingNumber'
     | 'swissPostReady'
     | 'originalCarrier'
@@ -234,7 +254,8 @@ export function parcelTrackingLinks(
   if (parcel.originalCarrier && parcel.originalTrackingNumber) {
     const active = parcelTrackingLinks({
       carrier: activeTrackingCarrierId(parcel), trackingNumber: parcel.activeTrackingNumber ?? parcel.trackingNumber,
-      trackingUrl: activeTrackingCarrierId(parcel) === parcel.carrier ? parcel.trackingUrl : undefined,
+      trackingUrl: activeTrackingCarrierId(parcel) === parcel.carrier
+        && (!parcel.activeTrackingNumber || parcel.activeTrackingNumber === parcel.trackingNumber) ? parcel.trackingUrl : undefined,
     }, locale);
     const original = parcelTrackingLinks({
       carrier: parcel.originalCarrier, trackingNumber: parcel.originalTrackingNumber,
@@ -243,9 +264,11 @@ export function parcelTrackingLinks(
     return [...active, ...original];
   }
   if (!supportsSwissPostHandoff(parcel.trackingNumber)) {
-    const carrier = carrierInfo(parcel.carrier, locale);
+    const carrier = carrierInfo(activeTrackingCarrierId(parcel), locale);
+    const number = parcel.activeTrackingNumber ?? parcel.trackingNumber;
     // Repair obsolete generated links saved by earlier app versions.
-    let savedUrl = parcel.carrier === 'intl-post' ? undefined : parcel.trackingUrl;
+    let savedUrl = carrier.id === 'intl-post' || carrier.id !== parcel.carrier
+      || number !== parcel.trackingNumber ? undefined : parcel.trackingUrl;
     if (parcel.carrier === 'spring-gds' && savedUrl) {
       try {
         const saved = new URL(savedUrl);
@@ -256,7 +279,7 @@ export function parcelTrackingLinks(
         // Leave other saved URLs to the existing link validation.
       }
     }
-    const url = savedUrl ?? carrier.trackingUrl?.(parcel.trackingNumber);
+    const url = savedUrl ?? carrier.trackingUrl?.(number);
     return url ? [{
       carrier,
       name: carrier.trackingSiteName ?? carrier.name,

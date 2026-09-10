@@ -328,6 +328,26 @@ function fakeClient(packages: JsonObject[] = []) {
 }
 
 describe('TrackingSyncService', () => {
+  it('clears the displayed universal provider after successful direct recovery', async () => {
+    const client = { ...fakeClient(),
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T12:01:30Z' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
+    };
+    const progress = { status: 'in_transit', current_stage: 'in_transit', last_update: '2026-09-10T11:00:00Z' };
+    const adapter = { fetch: vi.fn().mockRejectedValueOnce(new Error('down')).mockResolvedValue(progress),
+      fetchUniversal: vi.fn().mockResolvedValue(progress) };
+    const parcel = { id: 'link-recovery', carrier: 'dhl', tracking_number: 'TEST1234', current_stage: 'pending' };
+    let now = new Date('2026-09-10T12:00:00Z');
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => now);
+    await service.syncPackage(parcel);
+    const saved = client.updatePackage.mock.calls.at(-1)![1];
+    expect(saved.carrier_data.tracking_provider).toBe('17TRACK');
+    now = new Date('2026-09-10T13:00:00Z');
+    await service.syncPackage({ ...parcel, ...saved });
+    expect(client.updatePackage.mock.calls.at(-1)![1].carrier_data.tracking_provider).toBeUndefined();
+    expect(client.updatePackage.mock.calls.at(-1)![1].carrier_data.active_tracking_carrier).toBe('dhl');
+  });
+
   it('atomically persists a verified correction and retains its timestamp on later syncs', async () => {
     const report = vi.spyOn(observability, 'reportRoutingEvent').mockImplementation(() => undefined);
     const client = fakeClient();

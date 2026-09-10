@@ -36,6 +36,10 @@ Retry failed direct routes after the recorded cooldown; successful direct recove
 
 FedEx, Asendia, and ShipUp are marked automatic through universal lookup in the shared web/native catalog; this does not claim dedicated direct adapters for them. Adding a dedicated adapter later changes the catalog and allows direct discovery/recovery to take over.
 
+## Displayed tracking links
+
+The primary web/iPhone link follows `tracking_provider` on the displayed successful result: 17TRACK, ParcelsApp or Ship24 opens that provider with the matching lookup number. It does not follow a speculative preference or a failed attempt. Direct recovery clears this field and restores the confirmed carrier link. Linked journeys retain the origin link and use the local number for the active provider. Saved capability URLs are reused only for the same carrier and number. Unknown provider names cannot inject a URL. Postal Ninja uses its public tracking form until a stable public parcel deep link is verified.
+
 ## Shared provider protection
 
 `tracking_provider_health` is service-only. An atomic RPC grants one 90-second lease per universal provider across workers. Completion is token-fenced. A crashed worker's lease expires. A healthy completion leaves a five-second spacing interval; 429 opens a minimum 15-minute cooldown, verification one hour, and other failures exponential one minute to one hour. Not-found is parcel-specific and does not open a global outage circuit.

@@ -702,3 +702,47 @@ describe('DHL eCommerce detection', () => {
     expect(parseTrackingInput('https://ecommerceportal.dhl.com.evil.example/?tracking-id=ABC123456').carrier).not.toBe('dhl-ecommerce');
   });
 });
+
+
+describe('links follow successful tracking retrieval', () => {
+  it.each([
+    ['17TRACK', 'https://t.17track.net/fr#nums=TEST1234'],
+    ['ParcelsApp', 'https://parcelsapp.com/fr/tracking/TEST1234'],
+    ['Ship24', 'https://www.ship24.com/tracking?p=TEST1234'],
+    ['Postal Ninja', 'https://postal.ninja/en/track'],
+  ])('uses %s instead of the failing carrier website', (trackingProvider, expected) => {
+    const [link] = parcelTrackingLinks({ carrier: 'dhl', trackingNumber: 'TEST1234', trackingProvider }, 'fr');
+    expect(link.name).toBe(trackingProvider);
+    expect(link.url).toBe(expected);
+    expect(link.role).toBe('active');
+  });
+  it('uses the local number at the working universal and preserves the original journey', () => {
+    const links = parcelTrackingLinks({ carrier: 'dhl', trackingNumber: 'ORIGIN1234',
+      trackingSource: 'swiss-post', activeTrackingNumber: 'LOCAL1234', trackingProvider: 'Ship24',
+      originalCarrier: 'dhl', originalTrackingNumber: 'ORIGIN1234' });
+    expect(links.map(({ name, role }) => [name, role])).toEqual([['Ship24', 'active'], ['DHL', 'history']]);
+    expect(links[0].url).toBe('https://www.ship24.com/tracking?p=LOCAL1234');
+    expect(links[1].url).toContain('ORIGIN1234');
+  });
+  it('uses a confirmed direct source and discards another carrier’s saved URL', () => {
+    const [link] = parcelTrackingLinks({ carrier: 'dhl', trackingNumber: 'TEST1234', trackingSource: 'ups',
+      trackingUrl: 'https://www.dhl.de/old-capability' });
+    expect(link.name).toBe('UPS');
+    expect(link.url).toContain('ups.com');
+    expect(link.url).toContain('TEST1234');
+  });
+  it('does not reuse a saved URL for a different number on the same carrier', () => {
+    const [link] = parcelTrackingLinks({ carrier: 'dhl', trackingNumber: 'ORIGIN1234', trackingSource: 'dhl',
+      activeTrackingNumber: 'LOCAL1234', trackingUrl: 'https://www.dhl.de/?piececode=ORIGIN1234',
+      originalCarrier: 'dhl', originalTrackingNumber: 'ORIGIN1234' });
+    expect(link.url).toContain('LOCAL1234');
+    expect(link.url).not.toContain('ORIGIN1234');
+  });
+  it('ignores unknown provider names and returns to direct links without a universal result', () => {
+    for (const trackingProvider of [undefined, 'https://untrusted.invalid']) {
+      const [link] = parcelTrackingLinks({ carrier: 'ups', trackingNumber: 'TEST1234', trackingProvider });
+      expect(link.name).toBe('UPS');
+      expect(link.url).toContain('ups.com');
+    }
+  });
+});

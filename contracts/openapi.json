@@ -2586,6 +2586,7 @@
               },
               "original_tracking_number": { "type": ["string", "null"] },
               "original_tracking_url": { "type": ["string", "null"] },
+              "tracking_provider": { "type": ["string", "null"], "description": "Universal provider that supplied the displayed tracking result, cleared on direct recovery." },
               "auto_changed_from": {"anyOf": [{"$ref": "#/components/schemas/CarrierId"}, {"type": "null"}]},
               "auto_changed_to": {"anyOf": [{"$ref": "#/components/schemas/CarrierId"}, {"type": "null"}]},
               "auto_changed_at": {"type": ["string", "null"], "format": "date-time"},

@@ -118,7 +118,7 @@ struct ParcelTrackingLink: Identifiable, Sendable {
     let name: String
     let url: URL
     let role: Role
-    var id: CarrierID { carrier }
+    var id: String { "\(role):\(url.absoluteString)" }
 }
 
 enum CarrierCatalogRefreshResult: Equatable, Sendable {
@@ -370,13 +370,33 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     }
 
     func trackingLinks(for parcel: Parcel, language: AppLanguage) -> [ParcelTrackingLink] {
+        let links = carrierTrackingLinks(for: parcel, language: language)
+        let lookupNumber = parcel.carrierData?.originalCarrier != nil && parcel.carrierData?.activeTrackingCarrier != nil
+            ? parcel.carrierData?.activeTrackingNumber?.nonEmpty ?? parcel.trackingNumber : parcel.trackingNumber
+        let number = Self.urlEncode(lookupNumber)
+        guard let provider = parcel.carrierData?.trackingProvider else { return links }
+        let raw: String
+        switch provider {
+        case "17TRACK": raw = "https://t.17track.net/en#nums=\(number)"
+        case "ParcelsApp": raw = "https://parcelsapp.com/en/tracking/\(number)"
+        case "Ship24": raw = "https://www.ship24.com/tracking?p=\(number)"
+        // Public entry point, without guessing a private/session-specific URL.
+        case "Postal Ninja": raw = "https://postal.ninja/en/track"
+        default: return links
+        }
+        guard let url = localizedURL(raw, carrier: .unknown, language: language) else { return links }
+        let primary = ParcelTrackingLink(carrier: .unknown, name: provider, url: url, role: .active)
+        return [primary] + links.filter { $0.role != .active && $0.url != url }
+    }
+
+    private func carrierTrackingLinks(for parcel: Parcel, language: AppLanguage) -> [ParcelTrackingLink] {
         if let originalCarrier = parcel.carrierData?.originalCarrier,
            let originalNumber = parcel.carrierData?.originalTrackingNumber?.nonEmpty {
             var delivery = parcel
             delivery.carrier = parcel.activeTrackingCarrier
             delivery.trackingNumber = parcel.carrierData?.activeTrackingNumber?.nonEmpty ?? parcel.trackingNumber
             delivery.carrierData = nil
-            if delivery.carrier != parcel.carrier { delivery.trackingURL = nil }
+            if delivery.carrier != parcel.carrier || delivery.trackingNumber != parcel.trackingNumber { delivery.trackingURL = nil }
             var original = delivery
             original.carrier = originalCarrier
             original.trackingNumber = originalNumber
@@ -387,22 +407,25 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             return trackingLinks(for: delivery, language: language) + history
         }
         if !Self.supportsSwissPostHandoff(parcel.trackingNumber) {
-            let definition = info(for: parcel.carrier, language: language)
+            let carrier = parcel.activeTrackingCarrier
+            let number = parcel.carrierData?.activeTrackingNumber?.nonEmpty ?? parcel.trackingNumber
+            let definition = info(for: carrier, language: language)
             // Replace obsolete generated links saved by earlier app versions.
             let savedPostNLURL = parcel.trackingURL.flatMap { URL(string: $0) }
             let obsoletePostNLLink = parcel.carrier == .springGDS
                 && savedPostNLURL?.host?.lowercased() == "postnl.post"
                 && savedPostNLURL?.path.hasPrefix("/details/") == true
-            let savedURL = parcel.carrier == .internationalPost || obsoletePostNLLink ? nil : parcel.trackingURL
+            let savedURL = carrier == .internationalPost || obsoletePostNLLink || carrier != parcel.carrier
+                || number != parcel.trackingNumber ? nil : parcel.trackingURL
             guard let raw = savedURL
                     ?? Self.renderTrackingURL(
                         definition.trackingURLTemplate,
-                        carrier: parcel.carrier,
-                        trackingNumber: parcel.trackingNumber
+                        carrier: carrier,
+                        trackingNumber: number
                     ),
-                  let url = localizedURL(raw, carrier: parcel.carrier, language: language) else { return [] }
+                  let url = localizedURL(raw, carrier: carrier, language: language) else { return [] }
             return [ParcelTrackingLink(
-                carrier: parcel.carrier,
+                carrier: carrier,
                 name: definition.trackingSiteName ?? definition.displayName,
                 url: url,
                 role: .active

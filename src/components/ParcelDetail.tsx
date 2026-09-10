@@ -252,7 +252,7 @@ export function ParcelDetail({
           : link.role === 'waiting' ? t('detail.sourceWaiting') : t('detail.sourceHistory');
         const website = t('detail.carrierWebsite', { carrier: link.name });
         return <a
-          key={link.carrier.id}
+          key={`${link.role}:${link.url}`}
           className={`detail__carrier-link detail__carrier-link--${link.role}`}
           aria-label={link.role === 'active' ? website : `${website} — ${role}`}
           href={link.url} onClick={() => trackAction('parcel-carrier-link')}

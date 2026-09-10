@@ -2,6 +2,41 @@ import XCTest
 @testable import SwissDeliveryTracker
 
 final class CarrierCatalogTests: XCTestCase {
+    func testLinksFollowWorkingUniversalAndReturnToDirectOnRecovery() throws {
+        var parcel = Parcel(id: UUID(), trackingNumber: "TEST1234", label: "Test", carrier: .dhl,
+            createdAt: "2026-09-10T12:00:00Z", syncStatus: .ok, notificationsMuted: false)
+        let providers = [
+            ("17TRACK", "https://t.17track.net/fr#nums=TEST1234"),
+            ("ParcelsApp", "https://parcelsapp.com/fr/tracking/TEST1234"),
+            ("Ship24", "https://www.ship24.com/tracking?p=TEST1234"),
+            ("Postal Ninja", "https://postal.ninja/en/track"),
+        ]
+        for (provider, expected) in providers {
+            parcel.carrierData = CarrierData(trackingProvider: provider)
+            let link = try XCTUnwrap(catalog.trackingLinks(for: parcel, language: .fr).first)
+            XCTAssertEqual(link.name, provider)
+            XCTAssertEqual(link.url.absoluteString, expected)
+        }
+        parcel.carrierData = CarrierData(activeTrackingCarrier: .ups)
+        parcel.trackingURL = "https://www.dhl.de/old-capability"
+        let recovered = try XCTUnwrap(catalog.trackingLinks(for: parcel, language: .fr).first)
+        XCTAssertEqual(recovered.carrier, .ups)
+        XCTAssertTrue(recovered.url.absoluteString.contains("ups.com"))
+    }
+
+    func testUniversalUsesLocalNumberAndKeepsOriginLink() throws {
+        let parcel = Parcel(id: UUID(), trackingNumber: "ORIGIN1234", label: "Test", carrier: .dhl,
+            createdAt: "2026-09-10T12:00:00Z", syncStatus: .ok,
+            carrierData: CarrierData(activeTrackingCarrier: .swissPost, activeTrackingNumber: "LOCAL1234",
+                originalCarrier: .dhl, originalTrackingNumber: "ORIGIN1234", trackingProvider: "Ship24"),
+            notificationsMuted: false)
+        let links = catalog.trackingLinks(for: parcel, language: .fr)
+        XCTAssertEqual(links.map(\.name), ["Ship24", "DHL"])
+        XCTAssertEqual(links.map(\.role), [.active, .history])
+        XCTAssertTrue(links[0].url.absoluteString.contains("LOCAL1234"))
+        XCTAssertTrue(links[1].url.absoluteString.contains("ORIGIN1234"))
+    }
+
     // Exercise the bundled rules without inheriting a previously cached live catalog.
     private let catalog = CarrierCatalog(cacheURL: nil)
 
