@@ -436,8 +436,11 @@ describe('TrackingSyncService', () => {
   });
 
   it.each([
-    { carrier: 'swiss-post', stage: 'in_transit', time: '10:02:00', checked: 1 },
-    { carrier: 'swiss-post', stage: 'in_transit', time: '10:01:59', checked: 0 },
+    { carrier: 'swiss-post', stage: 'out_for_delivery', time: '10:02:00', checked: 1 },
+    { carrier: 'swiss-post', stage: 'out_for_delivery', time: '10:01:59', checked: 0 },
+    { carrier: 'swiss-post', stage: 'in_transit', time: '10:02:00', checked: 0 },
+    { carrier: 'swiss-post', stage: 'in_transit', time: '10:10:00', checked: 1 },
+    { carrier: 'spring-gds', stage: 'out_for_delivery', time: '10:02:00', checked: 1 },
     { carrier: 'spring-gds', stage: 'in_transit', time: '10:02:00', checked: 0 },
     { carrier: 'spring-gds', stage: 'in_transit', time: '10:10:00', checked: 0 },
     { carrier: 'spring-gds', stage: 'in_transit', time: '10:29:59', checked: 0 },
@@ -447,7 +450,6 @@ describe('TrackingSyncService', () => {
     { carrier: 'swiss-post', stage: 'registered', time: '10:02:00', checked: 0 },
     { carrier: 'swiss-post', stage: 'accepted', time: '10:02:00', checked: 0 },
     { carrier: 'swiss-post', stage: 'customs', time: '10:02:00', checked: 0 },
-    { carrier: 'swiss-post', stage: 'out_for_delivery', time: '10:02:00', checked: 0 },
     { carrier: 'swiss-post', stage: 'registered', time: '10:10:00', checked: 1 },
     { carrier: 'gls-de', stage: 'in_transit', time: '10:02:00', checked: 0 },
   ])('schedules $carrier at $stage at $time: $checked checks', async ({ carrier, stage, time, checked }) => {
@@ -463,9 +465,9 @@ describe('TrackingSyncService', () => {
     expect(adapter.fetch).toHaveBeenCalledTimes(checked);
   });
 
-  it('keeps in-transit parcels hourly overnight and allows manual refreshes', async () => {
+  it('keeps out-for-delivery parcels hourly overnight and allows manual refreshes', async () => {
     const parcel = {
-      id: 'overnight', carrier: 'swiss-post', current_stage: 'in_transit', tracking_number: 'TEST1234',
+      id: 'overnight', carrier: 'swiss-post', current_stage: 'out_for_delivery', tracking_number: 'TEST1234',
       last_synced_at: '2026-09-09T20:00:15Z', sync_status: 'ok',
     };
     const client = fakeClient([parcel]);
