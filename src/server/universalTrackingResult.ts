@@ -1,4 +1,5 @@
 import 'server-only';
+import { trackingLanguageStage } from './trackingLanguage';
 
 import { DateTime } from 'luxon';
 import type { Stage } from '../types';
@@ -27,10 +28,10 @@ export function isNotice(description: string): boolean {
 }
 
 export function hasPrivateDeliveryDetails(description: string): boolean {
-  return /\bpin\s*:|(?:access|security|pickup|collection) code|(?:door|house) (?:no\b|number)|signed (?:for )?by|signature|numero civico|firmato da/i.test(description);
+  return /\bpin\s*:|(?:access|security|pickup|collection) code|(?:door|house) (?:no\b|number)|signed (?:for )?by|signature|numero civico|firmato da|signe par|signé par|code (?:de retrait|d'acces|d’accès)|numero de (?:rue|maison)|abholcode|zugangscode|hausnummer|unterschrieben von|codice (?:di ritiro|di accesso)/i.test(description);
 }
 
-export function eventStage(description: string): Stage | undefined {
+function sourceEventStage(description: string, includeBroadMovement = true): Stage | undefined {
   // Public aggregators retain the carrier's French wording even in English.
   const french = description.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
   if (/colis en preparation chez l'expediteur/.test(french)) return 'registered';
@@ -38,6 +39,7 @@ export function eventStage(description: string): Stage | undefined {
   if (/return(?:ed|ing)? to (?:the )?sender/i.test(description)) return 'returned';
   if (/not delivered|could not.*deliver|unable to deliver|delivery (?:attempt|failed)/i.test(description)) return 'failed_attempt';
   if (/delivered to (?:the )?(?:local carrier|delivery partner|post office|pickup point)/i.test(description)) return 'in_transit';
+  if (/will be available for (?:pickup|collection)/i.test(description)) return 'in_transit';
   if (/will be delivered|being prepared by the sender|en route to .*awaiting processing/i.test(description)) return 'registered';
   if (/\bdelivered\b|delivery completed/i.test(description)) return 'delivered';
   if (/ready for (?:pickup|collection)|available for (?:pickup|collection)/i.test(description)) return 'ready_for_pickup';
@@ -46,9 +48,14 @@ export function eventStage(description: string): Stage | undefined {
   if (/customs|clearance/i.test(description)) return 'customs';
   if (/instruction data.*provided.*electronically|electronic information|information (?:received|submitted)|label (?:created|printed)|pre.?advice|shipment announced/i.test(description)) return 'registered';
   if (/will be transported to the destination country/i.test(description)) return 'in_transit';
+  if (!includeBroadMovement) return undefined;
   if (/package received at dhl ecommerce|^pick-up was successful[.!]?$|accepted|collected|picked up|handed over/i.test(description)) return 'accepted';
   if (/transit|arrived|departed|processed|processing completed at origin|sorting|sorted|transport|dispatched|en route|loaded to movement/i.test(description)) return 'in_transit';
   return undefined;
+}
+
+export function eventStage(description: string): Stage | undefined {
+  return sourceEventStage(description, false) ?? trackingLanguageStage(description) ?? sourceEventStage(description);
 }
 
 export function event(time: unknown, description: unknown, stage?: unknown): CarrierEvent | null {
@@ -61,7 +68,9 @@ export function event(time: unknown, description: unknown, stage?: unknown): Car
   const date = DateTime.fromISO(time, { setZone: true });
   if (!date.isValid) throw new TypeError('Tracking event has an invalid timestamp');
   const declared = typeof stage === 'string' && Object.hasOwn(STAGES, stage) ? STAGES[stage] : undefined;
-  const resolved = eventStage(label) ?? declared;
+  // Established source semantics (e.g. handoff/negation) remain first. A real
+  // provider stage outranks the new intuitive translation fallback.
+  const resolved = sourceEventStage(label, false) ?? declared ?? trackingLanguageStage(label) ?? sourceEventStage(label);
   if (resolved !== 'delivered' && hasPrivateDeliveryDetails(label)) return null;
   return {
     // Delivery descriptions can include signatures, access codes or door numbers.

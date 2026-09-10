@@ -1,4 +1,5 @@
 import 'server-only';
+import { trackingLanguageStage, languageStageStatus } from './trackingLanguage';
 
 import { DateTime } from 'luxon';
 import { fetchBounded, parseJsonBytes } from './boundedFetch';
@@ -55,6 +56,8 @@ function records(value: unknown): JsonObject[] {
 }
 
 function labelStatus(label: string, hasEvents: boolean): CarrierStatus {
+  const translated = trackingLanguageStage(label);
+  if (translated) return languageStageStatus(translated);
   const value = comparable(label);
   if (['retour', 'incident', 'echec', 'impossible', 'refuse', 'non livre', "n'a pas pu vous etre remis"]
     .some((term) => value.includes(term))) return 'exception';

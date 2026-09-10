@@ -1,4 +1,5 @@
 import 'server-only';
+import { trackingLanguageStage } from './trackingLanguage';
 
 import makeFetchCookie from 'fetch-cookie';
 import { Cookie, CookieJar } from 'tough-cookie';
@@ -71,8 +72,11 @@ function stageFor(event: JsonObject): string {
   if (/label created|manifest data received|en route to dhl ecommerce or awaiting processing|electronic|information received/.test(text)) return 'registered';
   if (/package received at dhl|picked up|accepted/.test(text)) return 'accepted';
   if (/^(?:close bag|scanned into sack\/container)$/.test(text)) return 'in_transit';
+  // A terminal provider code outranks an intuitive translated label.
+  if (event.statusCode === 'delivered') return 'delivered';
+  const translated = trackingLanguageStage(String(event.description ?? ''));
+  if (translated) return translated;
   switch (event.statusCode) {
-    case 'delivered': return 'delivered';
     case 'transit': return 'in_transit';
     case 'pre-transit': return 'registered';
     case 'failure': return 'failed_attempt';

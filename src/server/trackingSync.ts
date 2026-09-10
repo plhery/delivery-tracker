@@ -1,4 +1,5 @@
 import 'server-only';
+import { trackingLanguageStage } from './trackingLanguage';
 
 import { createHash } from 'node:crypto';
 import { DateTime, IANAZone } from 'luxon';
@@ -225,6 +226,8 @@ export function emptySyncSummary(): SyncSummary {
 }
 
 export function inferStage(text: string, fallback = 'in_transit'): string {
+  const translated = trackingLanguageStage(text);
+  if (translated) return translated;
   const value = text.toLocaleLowerCase('en-US').replaceAll('_', ' ').trim().split(/\s+/).join(' ');
   if (value.includes('to be delivered')) return 'in_transit';
   if (value === 'reported') return 'registered';

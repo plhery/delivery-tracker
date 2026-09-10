@@ -1,4 +1,5 @@
 import 'server-only';
+import { trackingLanguageStage } from './trackingLanguage';
 
 import makeFetchCookie from 'fetch-cookie';
 import { Cookie, CookieJar } from 'tough-cookie';
@@ -40,6 +41,11 @@ function stageForText(text: string, fallback = 'in_transit'): string {
   const value = text.toLowerCase();
   if (/return(?:ed|ing)? to (?:the )?sender|zurück.*absender|rücksendung|retour/.test(value)) return 'returned';
   if (/not delivered|could not be delivered|unable to deliver|delivery attempt|nicht.*zugestellt|zustellversuch|nicht angetroffen/.test(value)) return 'failed_attempt';
+  // GENERATED equivalents of DHL's existing forecast behavior: a forecast retains
+  // the structured progress fallback; it cannot establish delivery or pre-advice.
+  if (/will be delivered|sera livr[ée]|wird\s+(?!zugestellt\b).+zugestellt|sar[àa] consegnat/.test(value)) return fallback;
+  const translated = trackingLanguageStage(text);
+  if (translated) return translated;
   if (/ready for (?:pickup|collection)|ready to (?:collect|pick up)|awaiting collection|abholbereit|zur abholung bereit/.test(value)) return 'ready_for_pickup';
   if (/has been delivered|was delivered|successfully delivered|^delivered\b|erfolgreich zugestellt|wurde.*zugestellt/.test(value)) return 'delivered';
   if (/^being delivered[.!]?$|out for delivery|loaded (?:into|onto).*delivery vehicle|in das zustellfahrzeug geladen|in zustellung/.test(value)) return 'out_for_delivery';

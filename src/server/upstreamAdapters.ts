@@ -147,6 +147,17 @@ const PLANZER_EVENT_STAGE = new Map<string, Stage>([
   ['Not delivered', 'failed_attempt'],
 ]);
 
+// GENERATED localization aliases, kept separate from the observed English API
+// labels above. Prefer a future observed label/code if it contradicts an alias.
+// Livré/Zugestellt are semantic equivalents of Planzer's unusual Shipped label;
+// Expédié/Versandt/Spedito are intentionally absent.
+const PLANZER_TRANSLATED_EVENT_STAGE = new Map<string, Stage>([
+  ['enregistré', 'registered'], ['erfasst', 'registered'], ['registrato', 'registered'],
+  ['transféré', 'in_transit'], ['weitergeleitet', 'in_transit'], ['inoltrato', 'in_transit'],
+  ['en cours de livraison', 'out_for_delivery'], ['in zustellung', 'out_for_delivery'], ['in consegna', 'out_for_delivery'],
+  ['livré', 'delivered'], ['zugestellt', 'delivered'], ['consegnato', 'delivered'],
+]);
+
 export function planzerShipmentNumber(trackingNumber: string): string {
   if (!trackingNumber.includes('.')) return trackingNumber;
   const raw = trackingNumber.split('.', 2)[1] ?? '';
@@ -186,7 +197,8 @@ export async function fetchPlanzer(trackingNumber: string): Promise<CarrierResul
   for (const position of matchingPositions) {
     for (const event of recordArray(position.positionEvents)) {
       const description = text(record(event.text).english);
-      const stage = PLANZER_EVENT_STAGE.get(description);
+      const stage = PLANZER_EVENT_STAGE.get(description)
+        ?? PLANZER_TRANSLATED_EVENT_STAGE.get(description.toLowerCase().replace(/[.!]$/, ''));
       if (!stage) {
         // Surface schema changes through the existing sync error monitoring;
         // never silently turn an unfamiliar historical event into a delivery.

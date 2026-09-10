@@ -423,6 +423,22 @@ synthetic values; these are not full captured responses. Expectations are
 reviewed delivery stages, including corrections, rather than copied stored
 classifications. Provider event provenance is retained across carrier changes.
 
+`intuitiveHistoryTranslations.ts` adds English, French, German and Italian
+equivalents: each of the 129 audited cases is replayed in the other three
+languages (387 generated cases). French and German originals are also translated
+back into English. Each row explicitly marks its generated provenance and links
+to the observed source wording. The original fixture remains unchanged. Provider
+codes and categories are retained; translations replace only the description.
+
+These translations are intuitive expectations, not evidence that a carrier uses
+that wording. Comments identify exceptions such as Planzer's observed “Shipped”
+meaning delivered. Verified carrier semantics and structured stages take priority
+over the inferred language fallback. When real wording contradicts a generated
+case, retain the observed evidence, revise the generated row/rule and document why.
+`trackingLanguage.test.ts` also labels generated boundary cases for negation,
+future delivery, handoffs, privacy and carrier-specific precedence. Run `npm test`
+to check all these regressions; no live tracking request or personal data is needed.
+
 The audit fixed DHL delivery-vehicle/collection wording, DHL eCommerce bag/sack
 handling, La Poste's failed delivery wording, and French/untranslated universal
 fallback events, including clearance completion and future international handoff.

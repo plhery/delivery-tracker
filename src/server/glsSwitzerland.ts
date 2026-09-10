@@ -1,4 +1,5 @@
 import 'server-only';
+import { trackingLanguageStage, languageStageStatus } from './trackingLanguage';
 
 import { load } from 'cheerio';
 import { DateTime } from 'luxon';
@@ -81,6 +82,12 @@ export function glsSwitzerlandStatus(value: unknown): CarrierStatus {
 }
 
 function classifyDescription(description: string): GLSStatusMetadata {
+  // EXISTING regression wording: a negative handoff does not prove GLS possession.
+  if (/^(?:the )?parcel has not been handed over to gls[.!]?$/i.test(description.trim())) {
+    return { status: 'unknown', stage: 'in_transit' };
+  }
+  const translated = trackingLanguageStage(description);
+  if (translated) return { status: languageStageStatus(translated), stage: translated };
   const value = description
     .toLocaleLowerCase('en-US')
     .replace(/[^a-z0-9]+/g, ' ')
