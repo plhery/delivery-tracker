@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SwissPostTracker, SwissPostTrackingError } from './swissPost';
+import { parseSwissPostShipment, SwissPostTracker, SwissPostTrackingError } from './swissPost';
 
 const WRONG_SWISS_POST_NUMBER = '989999999999999999';
 
@@ -13,6 +13,27 @@ function mockSearchResult(items: unknown): ReturnType<typeof vi.spyOn> {
 }
 
 afterEach(() => vi.restoreAllMocks());
+
+describe('Swiss Post historical event codes', () => {
+  it('keeps forwarding scans in transit after loading onto the delivery vehicle', () => {
+    const result = parseSwissPostShipment({ globalStatus: 'IN_DELIVERY' }, [
+      { eventCode: 'PARCEL.*.2.820', timestamp: '2026-09-01T05:00:00+02:00' },
+      { eventCode: 'PARCEL.*.1.1003', timestamp: '2026-09-01T08:00:00+02:00' },
+    ]);
+    expect(result.current_stage).toBe('out_for_delivery');
+    expect(result.events?.map((event) => event.stage)).toEqual(['out_for_delivery', 'in_transit']);
+  });
+
+  it('keeps a MyPost24 deposit ready for pickup even if the carrier summary says delivered', () => {
+    const result = parseSwissPostShipment({ globalStatus: 'DELIVERED' }, [
+      { eventCode: 'PARCEL.*.1.2102', timestamp: '2026-09-01T08:00:00+02:00' },
+    ], { 'PARCEL.*.1.2102.INLAND': 'Deposited in the MyPost24 machine' });
+    expect(result).toMatchObject({
+      status: 'in_transit', current_stage: 'ready_for_pickup',
+      events: [{ stage: 'ready_for_pickup' }],
+    });
+  });
+});
 
 describe('Swiss Post no-data response', () => {
   it('runs the anonymous search flow and maps an empty result to a clean 404', async () => {

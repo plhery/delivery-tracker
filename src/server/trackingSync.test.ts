@@ -133,6 +133,45 @@ describe('tracking event normalization', () => {
     expect(eventTimestamp('not-a-date', 'Europe/Zurich')).toBeNull();
   });
 
+  it('does not label unrecognized historical scans with the current delivered status', () => {
+    const events = buildEvents({ id: 'package-1', carrier: 'ups' }, {
+      status: 'delivered', last_status_text: 'Delivered',
+      events: [
+        { time: '2026-07-15T12:00:00Z', description: 'Delivered' },
+        { time: '2026-07-14T12:00:00Z', description: 'Carrier-specific scan' },
+        { time: '2026-07-13T12:00:00Z', description: 'Shipper created a label, UPS has not received the package yet.' },
+      ],
+    });
+    expect(events.map((event) => event.stage)).toEqual(['delivered', 'in_transit', 'registered']);
+  });
+
+  it.each([
+    ['Sorting - forwarding', 'in_transit'],
+    ['REPORTED', 'registered'],
+    ['Paket wurde elektronisch angekündigt', 'registered'],
+    ['Import Scan', 'in_transit'],
+    ['Your package is on the way', 'in_transit'],
+    ['Delivery will be delayed by one business day.', 'in_transit'],
+    ['Your package has been released by a government agency.', 'in_transit'],
+    ['The parcel has not been released by customs.', 'customs'],
+    ["Your package is pending release from a Government Agency. We'll notify the receiver or sender if information is needed.", 'customs'],
+    ['Deposited in the MyPost24 machine', 'ready_for_pickup'],
+    ['Delivered to the mailbox/letter box', 'delivered'],
+  ])('classifies %s independently of a final fallback', (description, stage) => {
+    expect(inferStage(description, 'delivered')).toBe(stage);
+  });
+
+  it('uses the summary for an observed update rather than borrowing an unrelated history description', () => {
+    const events = buildEvents({ id: 'package-1', carrier: 'ups', current_stage: 'in_transit' }, {
+      status: 'delivered', last_status_text: 'Delivered',
+      events: [{ time: '2026-07-14T12:00:00Z', description: 'Carrier-specific scan' }],
+    }, undefined, new Date('2026-07-15T12:00:00Z'));
+    expect(events.map(({ stage, description }) => ({ stage, description }))).toEqual([
+      { stage: 'in_transit', description: 'Carrier-specific scan' },
+      { stage: 'delivered', description: 'Delivered' },
+    ]);
+  });
+
   it('creates stable provider ids and drops events without usable timestamps', () => {
     const result: CarrierResult = {
       status: 'in_transit',

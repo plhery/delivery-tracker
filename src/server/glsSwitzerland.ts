@@ -100,6 +100,12 @@ function classifyDescription(description: string): GLSStatusMetadata {
   if (/(data (?:was )?entered|preadvice|announced|label created)/.test(value)) {
     return { status: 'pending', stage: 'registered' };
   }
+  if (/^(?:the )?parcel (?:was|has been) handed over to gls$/.test(value)) {
+    return { status: 'in_transit', stage: 'accepted' };
+  }
+  if (/^(?:the )?parcel (?:was|has been) released by customs$/.test(value)) {
+    return { status: 'in_transit', stage: 'in_transit' };
+  }
   if (/(transit|parcel cent(?:er|re)|depot|left the gls|reached gls|customs)/.test(value)) {
     return { status: 'in_transit', stage: value.includes('customs') ? 'customs' : 'in_transit' };
   }

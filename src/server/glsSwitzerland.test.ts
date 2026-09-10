@@ -228,6 +228,41 @@ describe('GLS Switzerland response normalization', () => {
     )).toThrow('different shipment');
   });
 
+  it('classifies each cross-border scan independently of the current shipment status', () => {
+    const history = [
+      ['The parcel has left the parcel center.', 'in_transit'],
+      ['The parcel was released by customs.', 'in_transit'],
+      ['Customs Consignment via Customs Portal', 'customs'],
+      ['The parcel was handed over to GLS.', 'accepted'],
+      ['The parcel data was entered into the GLS IT system; the parcel was not yet handed over to GLS.', 'registered'],
+    ];
+    const result = parseGLSSwitzerlandTrackingResponse({
+      tuNo: OFFICIAL_TEST_PARCEL_NUMBER,
+      progressBar: { statusInfo: 'INTRANSIT', statusText: 'In transit' },
+      history: history.map(([evtDscr], index) => ({
+        date: `2026-06-${19 - index}`, time: '05:47:36', evtDscr,
+      })),
+    }, OFFICIAL_TEST_PARCEL_NUMBER);
+    expect(result.current_stage).toBe('in_transit');
+    expect(result.events?.map((event) => event.stage)).toEqual(history.map(([, stage]) => stage));
+  });
+
+  it.each([
+    ['The parcel has been released by customs.', 'in_transit'],
+    ['The parcel has been handed over to GLS.', 'accepted'],
+    ['The parcel has not been handed over to GLS.', 'in_transit'],
+    ['The parcel has not been released by customs.', 'customs'],
+    ['The parcel is in delivery.', 'out_for_delivery'],
+    ['The parcel has reached the parcel center.', 'in_transit'],
+  ])('maps the history scan %s to %s', (evtDscr, stage) => {
+    const result = parseGLSSwitzerlandTrackingResponse({
+      tuNo: OFFICIAL_TEST_PARCEL_NUMBER,
+      progressBar: { statusInfo: 'INTRANSIT' },
+      history: [{ date: '2026-06-19', time: '08:00', evtDscr }],
+    }, OFFICIAL_TEST_PARCEL_NUMBER);
+    expect(result.events?.[0].stage).toBe(stage);
+  });
+
   it.each([
     ['PREADVICE', 'pending'],
     ['INTRANSIT', 'in_transit'],

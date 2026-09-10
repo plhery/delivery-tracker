@@ -86,3 +86,6 @@ psql "$database_url" -X -v ON_ERROR_STOP=1 \
 
 psql "$database_url" -X -v ON_ERROR_STOP=1 \
   -f "$repo_root/supabase/tests/friend_passport_stamps.sql"
+
+psql "$database_url" -X -v ON_ERROR_STOP=1 \
+  -f "$repo_root/supabase/tests/carrier_history_stages.sql"

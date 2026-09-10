@@ -199,6 +199,7 @@ export function emptySyncSummary(): SyncSummary {
 export function inferStage(text: string, fallback = 'in_transit'): string {
   const value = text.toLocaleLowerCase('en-US').replaceAll('_', ' ').trim().split(/\s+/).join(' ');
   if (value.includes('to be delivered')) return 'in_transit';
+  if (value === 'reported') return 'registered';
   if (['will shortly be handed over', 'shipment information received', 'electronic shipment information']
     .some((term) => value.includes(term))) return 'registered';
   if (['return to sender', 'returned', 'retour'].some((term) => value.includes(term))) {
@@ -210,20 +211,24 @@ export function inferStage(text: string, fallback = 'in_transit'): string {
     'échec de livraison', 'mancata consegna'].some((term) => value.includes(term))) {
     return 'failed_attempt';
   }
+  if (['ready for pickup', 'ready for collection', 'abholbereit', 'deposited in the mypost24 machine']
+    .some((term) => value.includes(term))) return 'ready_for_pickup';
   if (['delivered', 'deposited', 'zugestellt', 'confirmation of receipt']
     .some((term) => value.includes(term))) return 'delivered';
-  if (['ready for pickup', 'ready for collection', 'abholbereit']
-    .some((term) => value.includes(term))) return 'ready_for_pickup';
   if (['out for delivery', 'in delivery', 'loading into delivery vehicle',
     'loaded into delivery vehicle', 'zustellung'].some((term) => value.includes(term))) {
     return 'out_for_delivery';
   }
-  if (['customs', 'custom clearance', 'zoll'].some((term) => value.includes(term))) return 'customs';
+  if (['was released by customs', 'has been released by customs', 'has been released by a government agency']
+    .some((term) => value.includes(term))) return 'in_transit';
+  if (['customs', 'custom clearance', 'zoll', 'pending release from a government agency']
+    .some((term) => value.includes(term))) return 'customs';
   if (['accepted', 'received at', 'handed over', 'handed to dpd', 'parcel handed', 'posted']
     .some((term) => value.includes(term))) return 'accepted';
-  if (['announced', 'registered', 'label created', 'information received']
+  if (['announced', 'registered', 'label created', 'created a label', 'information received', 'elektronisch angekündigt']
     .some((term) => value.includes(term))) return 'registered';
-  if (['transit', 'sorted', 'departed', 'arrived', 'transport', 'delivery centre', 'depot']
+  if (['transit', 'sorted', 'sorting', 'departed', 'arrived', 'transport', 'delivery centre', 'depot',
+    'on the way', 'import scan', 'delivery will be delayed']
     .some((term) => value.includes(term))) return 'in_transit';
   return fallback;
 }
@@ -362,7 +367,8 @@ export function buildEvents(
     const declaredStage = String(raw.stage ?? '');
     rows.push({
       package_id: parcel.id,
-      stage: VALID_STAGES.has(declaredStage) ? declaredStage : inferStage(description, current),
+      // Historical scans must not inherit the shipment's current/final stage.
+      stage: VALID_STAGES.has(declaredStage) ? declaredStage : inferStage(description),
       description,
       location: location || null,
       occurred_at: occurredAt,
@@ -399,7 +405,7 @@ export function buildEvents(
     const matchingEvent = (result.events ?? []).find((raw) => {
       const declaredStage = String(raw.stage ?? '');
       const description = String(raw.description ?? '');
-      return (VALID_STAGES.has(declaredStage) ? declaredStage : inferStage(description, current))
+      return (VALID_STAGES.has(declaredStage) ? declaredStage : inferStage(description))
         === current;
     });
     const description = String(

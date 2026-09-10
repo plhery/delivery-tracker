@@ -237,3 +237,13 @@ after cleanup; old capabilities cannot delete a newer binding.
 
 The share extension saves only after explicit confirmation. Users then open the
 app to finish adding the parcel; unconsumed drafts expire after ten minutes.
+
+## Carrier history classification repair
+
+Deploy the corrected classifier, then apply
+`20260912090000_repair_carrier_history_stages.sql` to repair previously saved
+GLS, DHL, Swiss Post, Quickpac and UPS scans, including archived parcels.
+The repair preserves event identities, raw evidence, timestamps and notification
+receipts. It updates a package's current stage only when the corrected latest
+event requires it, such as a MyPost24 deposit becoming `ready_for_pickup`.
+Rerunning the migration makes no further changes.

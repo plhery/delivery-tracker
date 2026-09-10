@@ -32,9 +32,11 @@ const FALLBACK_EVENT_LABELS: Record<string, string> = {
 };
 const EVENT_STAGE_BY_CODE: Record<string, string> = {
   '600': 'registered',
+  '820': 'in_transit',
   '1003': 'out_for_delivery',
   '1201': 'in_transit',
   '1202': 'in_transit',
+  '2102': 'ready_for_pickup',
   '3600': 'returned',
   '4600': 'delivered',
 };
@@ -195,6 +197,7 @@ export function parseSwissPostShipment(
   }
   return {
     status,
+    ...(events[0]?.stage ? { current_stage: events[0].stage } : {}),
     last_status_text: lastStatusText,
     last_update: lastUpdate,
     expected_delivery: swissPostExpectedDelivery(item),
