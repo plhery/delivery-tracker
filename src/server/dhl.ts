@@ -99,6 +99,14 @@ export function parseDHLTrackingResponse(payload: unknown, trackingNumber: strin
     const rightTime = DateTime.fromISO(right.time, { zone: 'Europe/Berlin' }).toMillis();
     return (Number.isFinite(rightTime) ? rightTime : 0) - (Number.isFinite(leftTime) ? leftTime : 0);
   }).slice(0, 100);
+  // DHL includes the destination postal operator in the arrival event. Trust
+  // exact official hosts only; never follow an arbitrary URL from status text.
+  const swissPostHandoff = events.some(({ description }) =>
+    [...String(description).matchAll(/https?:\/\/[^\s<>"')]+/gi)].some(([raw]) => {
+      try { return ['post.ch', 'www.post.ch', 'service.post.ch'].includes(new URL(raw).hostname.toLowerCase()); }
+      catch { return false; }
+    }),
+  );
   const summary = clean(timeline.status);
   if (!events.length && !summary && details.istZugestellt !== true) {
     if (Object.values(missing).some((flag) => flag === true)) return noData();
@@ -117,6 +125,7 @@ export function parseDHLTrackingResponse(payload: unknown, trackingNumber: strin
     last_update: date(timeline.datumAktuellerStatus) || events[0]?.time || null,
     expected_delivery: ['delivered', 'returned'].includes(stage) ? null : expected.slice(0, 10) || null,
     timezone: 'Europe/Berlin', events,
+    ...(swissPostHandoff ? { delivery_carrier: 'swiss-post' as const } : {}),
   };
 }
 

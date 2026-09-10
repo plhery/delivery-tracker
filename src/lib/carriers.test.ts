@@ -77,6 +77,17 @@ describe('supportsSwissPostHandoff', () => {
     expect(supportsSwissPostHandoff('RR230226618CH')).toBe(false);
   });
 
+  it('uses Swiss Post’s URL after a DHL handoff even with a saved DHL URL', () => {
+    const links = parcelTrackingLinks({
+      carrier: 'dhl', trackingNumber: 'LF123456785DE', trackingSource: 'swiss-post',
+      trackingUrl: 'https://www.dhl.de/en/privatkunden/dhl-sendungsverfolgung.html?piececode=LF123456785DE',
+      originalCarrier: 'dhl', originalTrackingNumber: 'LF123456785DE',
+    }, 'en');
+    expect(links.map(({ carrier }) => carrier.id)).toEqual(['swiss-post', 'dhl']);
+    expect(links[0].url).toContain('https://service.post.ch/');
+    expect(links[1].url).toContain('dhl.de');
+  });
+
   it('keeps GLS identity and uses Swiss Post first for linked tracking numbers', () => {
     const parcel = {
       carrier: 'swiss-post' as const, trackingNumber: '993412345612345678',

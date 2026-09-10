@@ -59,3 +59,8 @@
   .detail--postcard .detail__tracking-copy { grid-column: 2; grid-row: 1 / 3; }
 }
 .tracking-journal__count svg { fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+
+.detail--postcard .detail__carrier-links--journey { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.detail--postcard .detail__carrier-links--journey .detail__carrier-link { display: grid; grid-template-columns: minmax(0, 1fr) 14px; flex: 1 1 140px; gap: 4px 8px; min-height: 56px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--tone) 18%, transparent); border-radius: 10px; }
+.detail--postcard .detail__carrier-links--journey small { grid-column: 1 / -1; font-size: 11px; color: var(--ink-soft); }
+.detail--postcard .detail__carrier-links--journey .detail__carrier-link--active { background: color-mix(in srgb, var(--tone) 7%, transparent); }

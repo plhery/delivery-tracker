@@ -24,6 +24,7 @@ export interface CarrierResult extends JsonObject {
   last_update?: string | null;
   expected_delivery?: string | null;
   sender_name?: string | null;
+  delivery_carrier?: 'swiss-post';
   timezone?: string;
   events?: CarrierEvent[];
 }
@@ -64,6 +65,10 @@ export function normalizeCarrierResult(value: unknown): CarrierResult {
     if (fieldValue != null && typeof fieldValue !== 'string') {
       throw new TypeError(`The carrier adapter returned an invalid ${field.replaceAll('_', ' ')}`);
     }
+  }
+
+  if (normalized.delivery_carrier !== undefined && normalized.delivery_carrier !== 'swiss-post') {
+    throw new TypeError('The carrier adapter returned an unsupported delivery carrier');
   }
 
   const rawEvents = normalized.events ?? [];

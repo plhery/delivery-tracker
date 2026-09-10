@@ -176,6 +176,7 @@ struct ParcelDetailView: View {
                         .font(.caption).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                if trackingLinks.count > 1 { trackingSources(trackingLinks, tint: branding.ink) }
                 VStack(alignment: .leading, spacing: 6) {
                     Text(localizer.parcelStatus(parcel))
                         .font(.subheadline)
@@ -225,6 +226,37 @@ struct ParcelDetailView: View {
                 .foregroundStyle(.secondary)
                 .accessibilityLabel(localizer.text(copied ? "detail.copied" : "detail.copyTracking"))
             }
+            if links.count <= 1 { trackingSources(links, tint: tint) }
+        }
+        .padding(.horizontal, 2)
+    }
+
+    @ViewBuilder
+    private func trackingSources(_ links: [ParcelTrackingLink], tint: Color) -> some View {
+        if links.count > 1 {
+            HStack(alignment: .top, spacing: 8) {
+                ForEach(links) { link in
+                    Link(destination: link.url) {
+                        VStack(alignment: .leading, spacing: 5) {
+                            HStack(alignment: .top) {
+                                Text(link.name).font(.caption.weight(.medium))
+                                Spacer(minLength: 4)
+                                Image(systemName: "arrow.up.right").font(.caption2)
+                            }
+                            Text(localizer.text(link.role == .active ? "detail.sourceActive" : link.role == .waiting ? "detail.sourceWaiting" : "detail.sourceHistory"))
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(10).frame(maxWidth: .infinity, minHeight: 58, alignment: .topLeading)
+                        .background(tint.opacity(link.role == .active ? 0.07 : 0), in: RoundedRectangle(cornerRadius: 10))
+                        .overlay { RoundedRectangle(cornerRadius: 10).stroke(tint.opacity(0.18), lineWidth: 0.75) }
+                    }
+                    .foregroundStyle(tint)
+                    .accessibilityLabel(localizer.text("detail.carrierWebsite", ["carrier": link.name]))
+                    .simultaneousGesture(TapGesture().onEnded { DeliveryAnalytics.shared.action("parcel-carrier-link") })
+                }
+            }
+        } else {
             ForEach(links) { link in
                 Link(destination: link.url) {
                     HStack(spacing: 6) {
@@ -245,7 +277,6 @@ struct ParcelDetailView: View {
                 .simultaneousGesture(TapGesture().onEnded { DeliveryAnalytics.shared.action("parcel-carrier-link") })
             }
         }
-        .padding(.horizontal, 2)
     }
 
     private var trackingLabel: some View {

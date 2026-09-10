@@ -240,6 +240,27 @@ export function ParcelDetail({
     }
   }
 
+  const trackingSources = trackingLinks.length > 0 && (
+    <div className={`detail__carrier-links${trackingLinks.length > 1 ? ' detail__carrier-links--journey' : ''}`} aria-label={t('detail.trackingSources')}>
+      {trackingLinks.map((link) => {
+        const role = link.role === 'active' ? t('detail.sourceActive')
+          : link.role === 'waiting' ? t('detail.sourceWaiting') : t('detail.sourceHistory');
+        const website = t('detail.carrierWebsite', { carrier: link.name });
+        return <a
+          key={link.carrier.id}
+          className={`detail__carrier-link detail__carrier-link--${link.role}`}
+          aria-label={link.role === 'active' ? website : `${website} — ${role}`}
+          href={link.url} onClick={() => trackAction('parcel-carrier-link')}
+          target="_blank" rel="noopener noreferrer"
+        >
+          <span>{trackingLinks.length > 1 ? link.name : website}</span>
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 18 18 6M6 6h12v12" /></svg>
+          {(trackingLinks.length > 1 || link.role !== 'active') && <small>{role}</small>}
+        </a>;
+      })}
+    </div>
+  );
+
   return createPortal(
     <div
       className="sheet-backdrop detail-backdrop"
@@ -380,6 +401,7 @@ export function ParcelDetail({
           </div>
         )}
         {parcel.senderName?.trim() && <p className="detail__sender">{t('parcel.sender', { sender: parcel.senderName.trim() })}</p>}
+        {trackingLinks.length > 1 && trackingSources}
         <p className="detail__state">{statusLabel}</p>
         {(completionDate || estimate) && (
           <p className="detail__arrival">
@@ -405,28 +427,7 @@ export function ParcelDetail({
               <span className="sr-only" aria-live="polite">{copyStatus === 'copied' ? t('detail.copied') : ''}</span>
             </button>
           </div>
-          {trackingLinks.length > 0 && (
-            <div className="detail__carrier-links" aria-label={t('detail.trackingSources')}>
-              {trackingLinks.map((link) => (
-                <a
-                  key={link.carrier.id}
-                  className={`detail__carrier-link detail__carrier-link--${link.role}`}
-                  href={link.url} onClick={() => trackAction('parcel-carrier-link')}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span>{t('detail.carrierWebsite', { carrier: link.name })}</span><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 18 18 6M6 6h12v12" /></svg>
-                  {link.role !== 'active' && (
-                    <small>
-                      {link.role === 'waiting'
-                        ? t('detail.sourceWaiting')
-                        : t('detail.sourceHistory')}
-                    </small>
-                  )}
-                </a>
-              ))}
-            </div>
-          )}
+          {trackingLinks.length <= 1 && trackingSources}
         </div>
         {copyStatus === 'error' && (
           <p className="detail__copy-error" role="alert">

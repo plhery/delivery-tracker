@@ -650,6 +650,8 @@ export class TrackingSyncService {
         sourceCarrierId: string;
         swissPostReady: boolean | null;
         handoffFallbackErrorType: string | null;
+        earlierResult?: CarrierResult;
+        earlierCarrierId?: string;
       };
       const fetchStartedAt = performance.now();
       try {
@@ -705,7 +707,11 @@ export class TrackingSyncService {
           ? normalizedReportedStage
           : latestEventStage ?? normalizedReportedStage;
         return {
-          events: normalizedEvents,
+          events: [
+            ...(fetched.earlierResult && fetched.earlierCarrierId
+              ? buildEvents(parcel, fetched.earlierResult, fetched.earlierCarrierId, now) : []),
+            ...normalizedEvents,
+          ],
           reportedStage: normalizedReportedStage,
           selectedStage: normalizedSelectedStage,
         };
@@ -745,7 +751,7 @@ export class TrackingSyncService {
       );
       // Linked journey identity belongs to the parcel, not an individual carrier response.
       if (isRecord(parcel.carrier_data)) {
-        for (const key of ['original_carrier', 'original_tracking_number', 'original_tracking_url', 'original_package_id']) {
+        for (const key of ['original_carrier', 'original_tracking_number', 'original_tracking_url', 'original_package_id', 'active_tracking_carrier']) {
           if (parcel.carrier_data[key] != null) carrierData[key] = parcel.carrier_data[key];
         }
       }
@@ -856,8 +862,17 @@ export class TrackingSyncService {
     sourceCarrierId: string;
     swissPostReady: boolean | null;
     handoffFallbackErrorType: string | null;
+    earlierResult?: CarrierResult;
+    earlierCarrierId?: string;
   }> {
     const trackingNumber = String(parcel.tracking_number ?? '');
+    const metadata = isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
+    if (metadata.original_carrier && metadata.active_tracking_carrier === 'swiss-post') {
+      return {
+        result: normalizeCarrierResult(await this.adapter.fetch('swiss-post', trackingNumber, null, null)),
+        sourceCarrierId: 'swiss-post', swissPostReady: true, handoffFallbackErrorType: null,
+      };
+    }
     if (!supportsSwissPostHandoff(trackingNumber)) {
       const result = await this.adapter.fetch(
         carrierId,
@@ -865,11 +880,31 @@ export class TrackingSyncService {
         typeof parcel.tracking_url === 'string' ? parcel.tracking_url : null,
         typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null,
       );
+      const origin = normalizeCarrierResult(result);
+      let fallbackError: string | null = null;
+      if (origin.delivery_carrier === 'swiss-post' && carrierId !== 'swiss-post'
+        && !['delivered', 'returned'].includes(resultStage(origin) ?? '')) {
+        try {
+          const delivery = normalizeCarrierResult(await this.adapter.fetch('swiss-post', trackingNumber, null, null));
+          if (delivery.status !== 'pending' && resultHasUpdate(delivery)) {
+            return {
+              result: {
+                ...delivery, active_tracking_carrier: 'swiss-post',
+                original_carrier: carrierId, original_tracking_number: trackingNumber,
+                original_tracking_url: typeof parcel.tracking_url === 'string' ? parcel.tracking_url : null,
+                ...(delivery.sender_name === undefined && origin.sender_name ? { sender_name: origin.sender_name } : {}),
+              },
+              sourceCarrierId: 'swiss-post', swissPostReady: true, handoffFallbackErrorType: null,
+              earlierResult: origin, earlierCarrierId: carrierId,
+            };
+          }
+        } catch (error) {
+          fallbackError = errorType(error);
+        }
+      }
       return {
-        result: normalizeCarrierResult(result),
-        sourceCarrierId: carrierId,
-        swissPostReady: null,
-        handoffFallbackErrorType: null,
+        result: origin, sourceCarrierId: carrierId,
+        swissPostReady: null, handoffFallbackErrorType: fallbackError,
       };
     }
     const wasReady = isRecord(parcel.carrier_data) && parcel.carrier_data.swiss_post_ready === true;

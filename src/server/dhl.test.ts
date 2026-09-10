@@ -41,6 +41,22 @@ function config(token = 'test-csrf') {
 afterEach(() => vi.restoreAllMocks());
 
 describe('DHL public tracking normalization', () => {
+  it.each([
+    ['http://www.post.ch', 'swiss-post'],
+    ['https://service.post.ch/ekp-web/ui/entry/search/' + NUMBER, 'swiss-post'],
+    ['https://www.post.ch.evil.example', undefined],
+    ['https://www.post.ch@evil.example', undefined],
+    ['https://example.test/?next=https://www.post.ch', undefined],
+    ['https://other-carrier.example', undefined],
+  ])('recognizes an explicit Swiss Post partner link: %s', (url, expected) => {
+    const payload = shipment();
+    payload.sendungen[0].sendungsdetails.sendungsverlauf.events.push({
+      datum: '2026-08-11T10:00:00+02:00',
+      status: `The shipment has arrived in the destination country/destination area. (Homepage / online shipment tracking: ${url})`,
+    });
+    expect(parseDHLTrackingResponse(payload, NUMBER).delivery_carrier).toBe(expected);
+  });
+
   it('keeps the correct event order, stages and dates without private recipient data', () => {
     const result = parseDHLTrackingResponse(shipment(), NUMBER);
     expect(result).toMatchObject({

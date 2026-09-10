@@ -224,7 +224,7 @@ export function parcelTrackingLinks(
   if (parcel.originalCarrier && parcel.originalTrackingNumber) {
     const active = parcelTrackingLinks({
       carrier: activeTrackingCarrierId(parcel), trackingNumber: parcel.trackingNumber,
-      trackingUrl: parcel.trackingUrl,
+      trackingUrl: activeTrackingCarrierId(parcel) === parcel.carrier ? parcel.trackingUrl : undefined,
     }, locale);
     const original = parcelTrackingLinks({
       carrier: parcel.originalCarrier, trackingNumber: parcel.originalTrackingNumber,

@@ -519,6 +519,8 @@ describe('App', () => {
     const detail = screen.getByRole('dialog', { name: 'Perfume / Surprise' });
     const links = within(within(detail).getByLabelText('Tracking sources')).getAllByRole('link');
     expect(links).toHaveLength(2);
+    expect(links[0].closest('.detail__hero')).not.toBeNull();
+    expect(links[0]).toHaveTextContent('Delivery tracking');
     expect(links[0]).toHaveTextContent('Swiss Post');
     expect(links[0]).toHaveAttribute('href', expect.stringContaining(parcel.trackingNumber));
     expect(links[1]).toHaveTextContent('GLS');

@@ -15,6 +15,25 @@ function mockSearchResult(items: unknown): ReturnType<typeof vi.spyOn> {
 afterEach(() => vi.restoreAllMocks());
 
 describe('Swiss Post historical event codes', () => {
+  it.each([
+    ['620', 'Consignment recorded by the foreign sender (data delivered)', 'registered'],
+    ['803', 'Customs clearance process underway', 'customs'],
+    ['804', 'Completion of customs clearance process', 'in_transit'],
+    ['805', 'Completion of customs clearance process', 'in_transit'],
+    ['818', 'Arrival in destination country', 'in_transit'],
+    ['912', 'Time at which your consignment was mailed', 'accepted'],
+    ['915', 'The consignment has left the border point', 'in_transit'],
+    ['1001', 'Arrival at the collection/delivery point', 'in_transit'],
+    ['1213', 'Sorted for delivery', 'in_transit'],
+    ['1218', 'Sorted for delivery', 'in_transit'],
+  ])('classifies international postal handoff scan %s from its code', (code, description, stage) => {
+    const result = parseSwissPostShipment({ globalStatus: 'TO_BE_DELIVERED' }, [
+      { eventCode: `LETTER.*.90.${code}`, timestamp: '2026-09-10T07:00:00+02:00', externalMetadata: { description } },
+    ]);
+    expect(result.current_stage).toBe(stage);
+    expect(result.events?.[0]).toMatchObject({ description, stage });
+  });
+
   it('keeps forwarding scans in transit after loading onto the delivery vehicle', () => {
     const result = parseSwissPostShipment({ globalStatus: 'IN_DELIVERY' }, [
       { eventCode: 'PARCEL.*.2.820', timestamp: '2026-09-01T05:00:00+02:00' },

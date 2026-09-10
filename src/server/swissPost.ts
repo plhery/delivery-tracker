@@ -41,6 +41,21 @@ const EVENT_STAGE_BY_CODE: Record<string, string> = {
   '4600': 'delivered',
 };
 
+// International letter/packet scans used for postal handoffs (including DHL
+// Kleinpaket). Their wording can otherwise imply delivery or active customs.
+const LETTER_IMPORT_STAGE_BY_CODE: Record<string, string> = {
+  '620': 'registered',
+  '803': 'customs',
+  '804': 'in_transit',
+  '805': 'in_transit',
+  '818': 'in_transit',
+  '912': 'accepted',
+  '915': 'in_transit',
+  '1001': 'in_transit',
+  '1213': 'in_transit',
+  '1218': 'in_transit',
+};
+
 export class SwissPostTrackingError extends Error {
   readonly status = 404;
 
@@ -180,7 +195,9 @@ export function parseSwissPostShipment(
       description: eventDescription(rawEvent, translations, internationalType),
       provider_code: eventCode,
     };
-    const stage = EVENT_STAGE_BY_CODE[eventCode.split('.').at(-1) ?? ''];
+    const code = eventCode.split('.').at(-1) ?? '';
+    const stage = (/^LETTER\.[^.]+\.90\./.test(eventCode) ? LETTER_IMPORT_STAGE_BY_CODE[code] : undefined)
+      ?? EVENT_STAGE_BY_CODE[code];
     if (stage) event.stage = stage;
     events.push(event);
   }

@@ -21,6 +21,21 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertTrue(links[1].url.absoluteString.contains("12345678901"))
     }
 
+    func testDHLHandoffUsesSwissPostURLWhileKeepingDHLHistory() {
+        let parcel = Parcel(
+            id: UUID(), trackingNumber: "LF123456785DE", label: "Garden cable",
+            carrier: .dhl, createdAt: "2026-09-10T07:00:00Z", syncStatus: .ok,
+            trackingURL: "https://www.dhl.de/en/privatkunden/dhl-sendungsverfolgung.html?piececode=LF123456785DE",
+            carrierData: CarrierData(activeTrackingCarrier: .swissPost, originalCarrier: .dhl, originalTrackingNumber: "LF123456785DE"),
+            notificationsMuted: false
+        )
+        let links = catalog.trackingLinks(for: parcel, language: .en)
+        XCTAssertEqual(parcel.displayedCarrier, .dhl)
+        XCTAssertEqual(links.map(\.carrier), [.swissPost, .dhl])
+        XCTAssertEqual(links[0].url.host, "service.post.ch")
+        XCTAssertEqual(links[1].url.host, "www.dhl.de")
+    }
+
     func testExpandedCarriersAndHiddenUniversalLookup() {
         for raw in ["hermes-de", "gls-de", "delivengo"] {
             let carrier = CarrierID(rawValue: raw)
