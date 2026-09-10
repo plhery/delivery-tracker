@@ -70,8 +70,8 @@ function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
   const lastChecked = Date.parse(String(parcel.last_synced_at ?? ''));
   if (!Number.isFinite(lastChecked)) return true;
   const local = DateTime.fromJSDate(now, { zone: 'Europe/Zurich' });
-  const intervalMinutes = parcel.current_stage === 'in_transit' && parcel.carrier !== 'spring-gds'
-    ? 2 : 10;
+  const intervalMinutes = parcel.carrier === 'spring-gds'
+    ? 30 : parcel.current_stage === 'in_transit' ? 2 : 10;
   // Compare schedule windows so request duration does not skip the next tick.
   const windowStart = local.hour >= 8 && local.hour < 22
     ? local.startOf('minute').minus({ minutes: local.minute % intervalMinutes })

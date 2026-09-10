@@ -352,7 +352,11 @@ describe('TrackingSyncService', () => {
     { carrier: 'swiss-post', stage: 'in_transit', time: '10:02:00', checked: 1 },
     { carrier: 'swiss-post', stage: 'in_transit', time: '10:01:59', checked: 0 },
     { carrier: 'spring-gds', stage: 'in_transit', time: '10:02:00', checked: 0 },
-    { carrier: 'spring-gds', stage: 'in_transit', time: '10:10:00', checked: 1 },
+    { carrier: 'spring-gds', stage: 'in_transit', time: '10:10:00', checked: 0 },
+    { carrier: 'spring-gds', stage: 'in_transit', time: '10:29:59', checked: 0 },
+    { carrier: 'spring-gds', stage: 'in_transit', time: '10:30:00', checked: 1 },
+    { carrier: 'spring-gds', stage: 'registered', time: '10:10:00', checked: 0 },
+    { carrier: 'spring-gds', stage: 'registered', time: '10:30:00', checked: 1 },
     { carrier: 'swiss-post', stage: 'registered', time: '10:02:00', checked: 0 },
     { carrier: 'swiss-post', stage: 'accepted', time: '10:02:00', checked: 0 },
     { carrier: 'swiss-post', stage: 'customs', time: '10:02:00', checked: 0 },
@@ -518,7 +522,7 @@ describe('TrackingSyncService', () => {
     },
   );
 
-  it.each(['ok', 'error'])('keeps PostNL on the regular schedule after %s checks', async (syncStatus) => {
+  it.each(['ok', 'error'])('checks PostNL every thirty minutes after %s checks', async (syncStatus) => {
     const parcel = {
       id: 'postnl', carrier: 'spring-gds', tracking_number: 'LX123456785NL',
       current_stage: 'in_transit',
@@ -532,6 +536,8 @@ describe('TrackingSyncService', () => {
     await expect(service.sync()).resolves.toMatchObject({ checked: 0 });
     await expect(service.syncPackage(parcel)).resolves.toMatchObject({ checked: 1, updated: 1 });
     now = new Date('2026-09-09T10:10:00Z');
+    await expect(service.sync()).resolves.toMatchObject({ checked: 0 });
+    now = new Date('2026-09-09T10:30:00Z');
     await expect(service.sync()).resolves.toMatchObject({ checked: 1, updated: 1 });
     expect(adapter.fetch.mock.calls.filter(([carrier]) => carrier === 'spring-gds')).toHaveLength(2);
   });

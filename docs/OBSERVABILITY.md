@@ -62,7 +62,7 @@ reconfigured parcels are checked immediately. From 08:00–22:00 in Europe/Zuric
 other carriers refresh in-transit parcels every two minutes and other stages
 every ten minutes, with hourly checks overnight. Parcels that are not yet due
 do not consume the five-parcel per-owner scheduled quota.
-PostNL retains the ten-minute daytime and
+PostNL uses the thirty-minute daytime and
 hourly overnight schedule, including after a failed check; manual refreshes
 are available without the GLS cooldown.
 

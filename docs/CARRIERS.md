@@ -98,8 +98,8 @@ a transport failure or HTTP 502, 503, or 504. HTTP 429 is retried only when it
 supplies a valid, short `Retry-After`. A supplied `Retry-After`
 is respected when it fits the one-minute retry budget; longer delays and
 persistent failures remain visible as sync errors and in Sentry. Invalid
-tracking data and other HTTP errors are not retried. PostNL uses the regular
-ten-minute daytime/hourly overnight schedule and supports manual refreshes.
+tracking data and other HTTP errors are not retried. PostNL uses a
+thirty-minute daytime/hourly overnight schedule and supports manual refreshes.
 
 Asendia and FedEx parcels are saved with a direct carrier link. Asendia's
 public flow requires a fresh Cloudflare Turnstile
