@@ -36,6 +36,7 @@
     "test:coverage:server": "vitest run --config vitest.server.config.ts --coverage",
     "test:e2e": "playwright test",
     "test:dev": "node scripts/test-dev-startup.mjs",
+    "test:deployment": "node scripts/test-deployment-recovery.mjs",
     "test:pwa": "node scripts/test-pwa-build.mjs",
     "test:watch": "vitest",
     "icons": "node scripts/generate-icons.mjs",

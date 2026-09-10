@@ -29,6 +29,7 @@ export interface BackgroundState {
   lastError: string | null;
   lastAutoArchived: number;
   workerHeartbeat: number | null;
+  draining?: boolean;
 }
 
 function initialState(): BackgroundState {
@@ -76,6 +77,9 @@ export class SyncJobWorker {
   #timer: NodeJS.Timeout | null = null;
   #consecutiveClaimFailures = 0;
   #activeJob: AbortController | null = null;
+  #claim: Promise<JsonObject | null> | null = null;
+  #ownedJob: string | null = null;
+  #handoff: Promise<void> | null = null;
 
   constructor(
     readonly service: TrackingSyncService,
@@ -101,6 +105,26 @@ export class SyncJobWorker {
     this.#timer = null;
   }
 
+  /** Abort local work, then atomically return only our own job to the queue. */
+  async drain(): Promise<void> {
+    this.stop();
+    await this.#claim?.catch(() => null);
+    await this.releaseOwnedJob();
+  }
+
+  private async releaseOwnedJob(): Promise<void> {
+    if (this.#handoff) return this.#handoff;
+    const jobId = this.#ownedJob;
+    if (!jobId) return;
+    this.#handoff = this.service.client.releaseSyncJob(jobId, this.workerId).then((released) => {
+      logOperationalEvent('sync_job_handoff', { job_id: jobId, released });
+    }).catch((error: unknown) => {
+      captureOperationalError(error, { component: 'sync-worker', operation: 'release_job', jobId });
+      throw error;
+    });
+    await this.#handoff;
+  }
+
   private schedule(delayMs: number): void {
     this.#timer = setTimeout(() => {
       this.#timer = null;
@@ -115,6 +139,8 @@ export class SyncJobWorker {
     let processed = false;
     try {
       processed = await this.processNext();
+    } catch (error) {
+      if (!this.#stopped) captureOperationalError(error, { component: 'sync-worker', operation: 'run' });
     } finally {
       this.#running = false;
       if (!this.#stopped) {
@@ -129,7 +155,8 @@ export class SyncJobWorker {
   private async processNext(): Promise<boolean> {
     let job: JsonObject | null;
     try {
-      job = await this.service.client.claimSyncJob(this.workerId);
+      this.#claim = this.service.client.claimSyncJob(this.workerId);
+      job = await this.#claim;
     } catch (error) {
       this.#consecutiveClaimFailures += 1;
       this.state.lastError = errorType(error);
@@ -147,6 +174,7 @@ export class SyncJobWorker {
       }
       return false;
     }
+    this.#claim = null;
     this.#consecutiveClaimFailures = 0;
     this.state.workerHeartbeat = Date.now() / 1_000;
     if (!job) return false;
@@ -162,6 +190,15 @@ export class SyncJobWorker {
       });
       return true;
     }
+    this.#ownedJob = jobId;
+    this.#handoff = null;
+    if (this.#stopped) { await this.releaseOwnedJob(); return true; }
+    if (Number(job.attempts) > 1) {
+      logOperationalEvent('sync_job_reclaimed', { job_id: jobId, attempts: job.attempts });
+      captureOperationalError(new Error('Recovered an expired synchronization job'), {
+        component: 'sync-worker', operation: 'reclaim_job', jobId,
+      });
+    }
     const controller = new AbortController();
     this.#activeJob = controller;
     const { signal } = controller;
@@ -172,7 +209,7 @@ export class SyncJobWorker {
         if (!renewed) throw new Error('Synchronization job lease was lost');
         this.state.workerHeartbeat = Date.now() / 1_000;
       }).catch((error: unknown) => controller.abort(error)).finally(() => { renewal = null; });
-    }, 30_000);
+    }, 15_000);
     heartbeat.unref();
     const context = { jobId, lease: { jobId, workerId: this.workerId }, signal };
     let scheduledCheckIn: ScheduledCheckIn | null = null;
@@ -185,7 +222,12 @@ export class SyncJobWorker {
         if (!parcel) throw new Error('Package no longer exists');
         summary = await this.service.syncPackage(parcel, { ...context, trigger: 'package' });
       } else if (kind === 'scheduled') {
-        scheduledCheckIn = beginScheduledSyncCheckIn();
+        const saved = job.check_in as Partial<ScheduledCheckIn> | null | undefined;
+        const validSaved = saved && typeof saved.checkInId === 'string' && typeof saved.monitorSlug === 'string'
+          && typeof saved.startedAt === 'number';
+        scheduledCheckIn = validSaved ? saved as ScheduledCheckIn : beginScheduledSyncCheckIn();
+        if (scheduledCheckIn && !validSaved) await this.service.client.setSyncJobCheckIn(jobId, this.workerId, scheduledCheckIn);
+        signal.throwIfAborted();
         summary = await this.service.sync({ ...context, trigger: 'scheduled' });
         signal.throwIfAborted();
         archived = await this.service.client.archiveDeliveredBefore(
@@ -227,6 +269,12 @@ export class SyncJobWorker {
       this.state.lastError = null;
       logOperationalEvent('sync_job_completed', { job_id: jobId, kind, ...result });
     } catch (error) {
+      if (this.#stopped) {
+        // The replacement resumes the same persisted Sentry check-in. Shutdown
+        // is not a carrier failure and must not finish a successfully handed-off job.
+        await this.releaseOwnedJob();
+        return true;
+      }
       finishScheduledSyncCheckIn(scheduledCheckIn, 'error');
       const capturedErrorType = errorType(error);
       this.state.lastError = capturedErrorType;
@@ -261,6 +309,7 @@ export class SyncJobWorker {
       clearInterval(heartbeat);
       await renewal;
       this.#activeJob = null;
+      this.#ownedJob = null;
     }
     return true;
   }
@@ -314,7 +363,7 @@ class ScheduledSync {
         trigger: 'scheduled',
       });
     }
-    this.schedule(secondsUntilNextSync() * 1_000);
+    if (!this.#stopped) this.schedule(secondsUntilNextSync() * 1_000);
   }
 }
 
@@ -334,6 +383,7 @@ export function startBackgroundServices(): BackgroundRuntime | null {
   const client = serviceClient();
   if (!client) return null;
   const current = globalBackground.__deliveryBackgroundRuntime;
+  if (current?.state.draining) return current;
   if (current?.client === client && current.friendshipWorker) {
     current.worker.start();
     current.scheduler.start();
@@ -375,4 +425,13 @@ export function wakeFriendshipWorker(): void { globalBackground.__deliveryBackgr
 
 export function backgroundState(): BackgroundState | null {
   return globalBackground.__deliveryBackgroundRuntime?.state ?? null;
+}
+
+export async function drainBackgroundServices(): Promise<void> {
+  const runtime = globalBackground.__deliveryBackgroundRuntime;
+  if (!runtime) return;
+  runtime.state.draining = true;
+  runtime.scheduler.stop();
+  runtime.friendshipWorker.stop();
+  await runtime.worker.drain();
 }

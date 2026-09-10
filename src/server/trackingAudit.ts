@@ -106,7 +106,7 @@ export class TrackingSyncAudit {
         configured_carrier: this.configuredCarrier,
         previous_stage: this.previousStage,
         started_at: this.#startedAtIso,
-      });
+      }, this.context.lease);
     });
     logOperationalEvent('tracking_sync_started', this.logContext());
   }
@@ -253,6 +253,8 @@ export class TrackingSyncAudit {
     try {
       await write();
     } catch (error) {
+      // Shutdown may already have closed the audit and fenced this worker out.
+      if (this.context.signal?.aborted) return;
       logOperationalEvent('tracking_sync_audit_write_failed', {
         ...this.logContext(),
         operation,

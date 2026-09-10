@@ -60,3 +60,52 @@ begin
 end;
 $$;
 rollback;
+
+begin;
+delete from public.sync_jobs;
+insert into public.packages (id, user_id, tracking_number, carrier)
+values ('97000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000001', 'HANDOFFTEST1234', 'ups');
+insert into public.sync_jobs(id, kind, dedupe_key)
+values ('97000000-0000-0000-0000-000000000003', 'scheduled', 'scheduled');
+do $$
+declare
+  job_id uuid := '97000000-0000-0000-0000-000000000003';
+  stored_check_in jsonb := '{"checkInId":"test-check-in","monitorSlug":"delivery-tracker-sync-daytime","startedAt":1}';
+  audit_id uuid;
+  n integer;
+begin
+  if has_function_privilege('authenticated', 'public.release_sync_job(uuid,text)', 'execute')
+    or has_function_privilege('anon', 'public.set_sync_job_check_in(uuid,text,jsonb)', 'execute')
+    or has_function_privilege('authenticated', 'public.start_leased_sync_attempt(uuid,uuid,text,jsonb)', 'execute') then
+    raise exception 'handoff functions exposed';
+  end if;
+  for n in 1..5 loop
+    perform public.claim_sync_job('old-worker');
+    if (select lease_until > clock_timestamp() + interval '91 seconds' from public.sync_jobs where id=job_id) then
+      raise exception 'crash recovery still takes 15 minutes';
+    end if;
+    if public.release_sync_job(job_id, 'other-worker') then raise exception 'nonowner released'; end if;
+    if not public.set_sync_job_check_in(job_id, 'old-worker', stored_check_in) then raise exception 'check-in not saved'; end if;
+    audit_id := gen_random_uuid();
+    if not public.start_leased_sync_attempt(audit_id, job_id, 'old-worker', jsonb_build_object(
+      'package_id','97000000-0000-0000-0000-000000000004', 'trigger','scheduled',
+      'configured_carrier','ups', 'previous_stage','pending', 'started_at',clock_timestamp())) then
+      raise exception 'owner could not start audit';
+    end if;
+    if not public.release_sync_job(job_id, 'old-worker') then raise exception 'handoff failed'; end if;
+    if (select outcome from public.tracking_sync_attempts where id=audit_id) <> 'interrupted' then
+      raise exception 'shutdown left a running audit';
+    end if;
+    if (select attempts from public.sync_jobs where id=job_id) <> 0 then raise exception 'deploy consumed a retry'; end if;
+  end loop;
+  perform public.claim_sync_job('replacement');
+  if (select check_in from public.sync_jobs where id=job_id) <> stored_check_in then raise exception 'check-in lost'; end if;
+  if public.release_sync_job(job_id, 'old-worker') or public.renew_sync_job_lease(job_id, 'old-worker')
+    or public.finish_sync_job(job_id, 'old-worker', '{}') then raise exception 'old worker retained ownership'; end if;
+  if public.start_leased_sync_attempt(gen_random_uuid(), job_id, 'old-worker', '{}') then
+    raise exception 'old worker created a late audit';
+  end if;
+  if not public.finish_sync_job(job_id, 'replacement', '{"updated":1}') then raise exception 'replacement failed'; end if;
+end;
+$$;
+rollback;

@@ -34,9 +34,16 @@ it('bounds the database probe and checks that PostgREST returned a row set', asy
   const client = new SupabaseServiceClient('https://database.test', 'test');
   const request = vi.spyOn(client, 'request').mockResolvedValue([]);
   expect(await client.probeReadiness()).toBe(true);
-  expect(request).toHaveBeenCalledWith('/rest/v1/sync_jobs?select=id&limit=0', { timeoutMs: 2500 });
+  expect(request).toHaveBeenCalledWith('/rest/v1/sync_jobs?select=id,check_in&limit=0', { timeoutMs: 2500 });
   request.mockResolvedValue(null);
   expect(await client.probeReadiness()).toBe(false);
+});
+it('fails readiness immediately during shutdown even with a fresh heartbeat', async () => {
+  configure();
+  vi.mocked(background.backgroundState).mockReturnValue({ ...background.backgroundState()!, draining: true });
+  const probe = vi.spyOn(SupabaseServiceClient.prototype, 'probeReadiness');
+  expect(await deliveryServiceReady()).toBe(false);
+  expect(probe).not.toHaveBeenCalled();
 });
 it('exposes process liveness separately from unavailable dependencies', async () => {
   const response = await live(new NextRequest('https://delivery.test/health/live'), { params: Promise.resolve({}) });

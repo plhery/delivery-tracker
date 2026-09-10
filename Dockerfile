@@ -21,6 +21,9 @@ ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
     NEXT_PUBLIC_AUTH_EMAIL_OTP_ENABLED=$NEXT_PUBLIC_AUTH_EMAIL_OTP_ENABLED
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
+ARG SOURCE_COMMIT
+# Next detects stale browser/server versions during rolling replacement.
+ENV NEXT_DEPLOYMENT_ID=$SOURCE_COMMIT
 RUN npm run validate:production-config \
     && npm run build
 

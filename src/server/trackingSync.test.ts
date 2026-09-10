@@ -800,7 +800,7 @@ describe('TrackingSyncService', () => {
       package_id: 'package-1',
       trigger: 'scheduled',
       configured_carrier: 'dpd',
-    }));
+    }), undefined);
     expect(client.completeSyncAttempt).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({

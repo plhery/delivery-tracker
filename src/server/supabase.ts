@@ -663,7 +663,14 @@ export class SupabaseServiceClient extends SupabaseClient {
     }) === true;
   }
 
-  async startSyncAttempt(attemptId: string, values: JsonObject): Promise<void> {
+  async startSyncAttempt(attemptId: string, values: JsonObject, lease?: { jobId: string; workerId: string }): Promise<void> {
+    if (lease) {
+      const started = await this.request('/rest/v1/rpc/start_leased_sync_attempt', {
+        method: 'POST', body: { p_attempt_id: attemptId, p_job_id: lease.jobId, p_worker_id: lease.workerId, p_values: values },
+      });
+      if (started !== true) throw new Error('Synchronization job lease was lost');
+      return;
+    }
     await this.request('/rest/v1/tracking_sync_attempts', {
       method: 'POST',
       body: { id: attemptId, ...values },
@@ -745,18 +752,31 @@ export class SupabaseServiceClient extends SupabaseClient {
     return { row: existing[0], queued: false };
   }
 
-  async claimSyncJob(workerId: string, leaseSeconds = 900): Promise<JsonObject | null> {
+  async claimSyncJob(workerId: string, leaseSeconds = 90): Promise<JsonObject | null> {
     const result = rows(await this.request('/rest/v1/rpc/claim_sync_job', {
-      method: 'POST',
+      method: 'POST', timeoutMs: 3_000,
       body: { p_worker_id: workerId, p_lease_seconds: leaseSeconds },
     }));
     return result[0] ?? null;
   }
 
-  async renewSyncJobLease(jobId: string, workerId: string, leaseSeconds = 900): Promise<boolean> {
+  async renewSyncJobLease(jobId: string, workerId: string, leaseSeconds = 90): Promise<boolean> {
     return await this.request('/rest/v1/rpc/renew_sync_job_lease', {
       method: 'POST', body: { p_job_id: jobId, p_worker_id: workerId, p_lease_seconds: leaseSeconds },
     }) === true;
+  }
+
+  async releaseSyncJob(jobId: string, workerId: string): Promise<boolean> {
+    return await this.request('/rest/v1/rpc/release_sync_job', {
+      method: 'POST', timeoutMs: 3_000, body: { p_job_id: jobId, p_worker_id: workerId },
+    }) === true;
+  }
+
+  async setSyncJobCheckIn(jobId: string, workerId: string, checkIn: { checkInId: string; monitorSlug: string; startedAt: number }): Promise<void> {
+    const saved = await this.request('/rest/v1/rpc/set_sync_job_check_in', {
+      method: 'POST', body: { p_job_id: jobId, p_worker_id: workerId, p_check_in: checkIn },
+    });
+    if (saved !== true) throw new Error('Synchronization job lease was lost');
   }
 
   async finishSyncJob(
@@ -772,7 +792,7 @@ export class SupabaseServiceClient extends SupabaseClient {
   }
 
   async probeReadiness(): Promise<boolean> {
-    const result = await this.request('/rest/v1/sync_jobs?select=id&limit=0', { timeoutMs: 2_500 });
+    const result = await this.request('/rest/v1/sync_jobs?select=id,check_in&limit=0', { timeoutMs: 2_500 });
     return Array.isArray(result);
   }
 

@@ -26,7 +26,8 @@ jobs:
       - run: npm run test:dev
       - run: npm run test:coverage
       - run: npm run test:coverage:server
-      - run: npm run build
+      - run: NEXT_DEPLOYMENT_ID=${{ github.sha }} npm run build
+      - run: npm run test:deployment
       - run: npm run test:pwa
       - run: npm audit --omit=dev
 
@@ -101,6 +102,7 @@ jobs:
       - name: Build production image
         run: >-
           docker build
+          --build-arg SOURCE_COMMIT=${{ github.sha }}
           --build-arg NEXT_PUBLIC_SUPABASE_URL=https://supabase.invalid
           --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_ci
           --build-arg NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=false
