@@ -53,7 +53,7 @@ privacy and verification rules as `unknown`. Distinctive number families are
 detected with high confidence; purely numeric families stay low-confidence
 suggestions so ambiguous numbers are never misassigned. Full routing barcodes,
 order references, short pick-up codes and quarantined checksum-failing S10
-shapes are not positive oracles. See `src/lib/carriers-100.test.ts` for the
+shapes are not positive oracles. See `src/lib/carriers.test.ts` for the
 per-number source URLs and evidence roles.
 
 | Carrier | Detection |
