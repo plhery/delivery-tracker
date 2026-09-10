@@ -65,8 +65,12 @@ additional information for ambiguous numbers; prefer a validated direct carrier.
 
 Postal Ninja submits its official embedded tracking widget on `/en/tools` and
 reads `/track/get`; simply
-opening a URL containing the number does not perform the lookup. Ship24 reads
-its public web app's `/api/parcels/{number}?lang=en` response. Neither scraper
+opening a URL containing the number does not perform the lookup. Ship24 makes one
+anonymous JSON POST to `/api/parcels/{number}?lang=en`, using the public frontend's
+checksum configuration. No browser, page bootstrap, cookies, or login is needed
+on this path. The HTTP attempt has an eight-second budget; a failed signature,
+transport, or unusable response can use Chromium within the remaining overall
+budget. HTTP 429 and 5xx propagate directly for routing backoff. Neither scraper
 uses a paid API key or a saved browser login. Docker installs Chromium and sets
 `TRACKING_CHROMIUM_PATH=/usr/bin/chromium`; local runs need an explicit executable
 path. Chromium receives no application secrets. Sessions and cookies are deleted
@@ -75,8 +79,11 @@ time; overlapping requests fail promptly for retry on the next scheduled sync.
 The router gives each enabled provider one chance when previous providers fail,
 with up to 30 seconds per lookup and a 105-second universal budget by default,
 starting after direct attempts. It stops at the first success and honors cooldowns.
-Production Ship24 checks on September 10 returned 32 and 6 events for two public
-examples in 2.6 and 2.3 seconds respectively.
+Production-container Ship24 checks on September 10 returned 32 and 6 normalized
+events for two public examples in 409 and 121 ms, each with exactly one request.
+The previous browser path took 2.6 and 2.3 seconds. The public signing scheme may
+change; HTTP failures are reported before browser recovery. See the
+[transport review](scraper-http-review.md) for sources, experiments, and limitations.
 
 Ship24's `timestamp` includes the carrier offset; its `datetime` field can contain
 local wall-clock time mislabeled with `Z`, so that field is deliberately ignored.

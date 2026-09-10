@@ -5,6 +5,9 @@ import { isRecord } from './types';
 import { scrapeUniversalPage, type UniversalBrowserOptions } from './universalBrowser';
 import { event, numberOf, result } from './universalTrackingResult';
 import { universalCarrierHints } from './universalCarrierHints';
+import { UpstreamHttpError } from './boundedFetch';
+import { reportRoutingEvent } from './observability';
+import { ship24Http, type Ship24HttpClient } from './ship24Http';
 
 export function parseShip24Response(payload: unknown, trackingNumber: string): CarrierResult {
   const number = numberOf(trackingNumber);
@@ -28,13 +31,31 @@ export function parseShip24Response(payload: unknown, trackingNumber: string): C
 }
 
 export class Ship24Tracker {
-  constructor(readonly options: UniversalBrowserOptions = {}) {}
+  constructor(readonly options: UniversalBrowserOptions & { httpClient?: Ship24HttpClient } = {}) {}
 
   async fetch(trackingNumber: string): Promise<CarrierResult> {
     const number = numberOf(trackingNumber);
-    return scrapeUniversalPage(this.options, {
+    const timeoutMs = this.options.timeoutMs ?? 45_000;
+    if (!Number.isFinite(timeoutMs) || timeoutMs <= 0 || timeoutMs > 60_000) throw new TypeError('Ship24 timeout must be between 1 and 60000 ms');
+    const deadline = Date.now() + Math.floor(timeoutMs);
+    const http = this.options.httpClient ?? ship24Http;
+    try {
+      return { ...parseShip24Response(await http.fetch(number, Math.min(8_000, timeoutMs)), number),
+        tracking_source: 'structured-web-response' };
+    } catch (error) {
+      // A browser cannot repair a rate limit or server outage. Preserve the
+      // original status/Retry-After for the router's existing backoff policy.
+      if (error instanceof UpstreamHttpError && (error.status === 429 || error.status >= 500)) throw error;
+      reportRoutingEvent('provider_failed', { carrier: 'unknown', provider: 'Ship24 HTTP',
+        category: error instanceof UpstreamHttpError ? 'verification' : error instanceof TypeError ? 'schema' : 'transport',
+        errorClass: error instanceof Error ? error.name : 'Error', error });
+      if (Date.now() >= deadline) throw error;
+    }
+    const recovered = await scrapeUniversalPage({ ...this.options, timeoutMs: deadline - Date.now() }, {
       name: 'Ship24', url: `https://www.ship24.com/tracking?p=${number}`,
       responseUrl: `https://api.ship24.com/api/parcels/${number}?lang=en`,
     }, (payload) => parseShip24Response(payload, number));
+    reportRoutingEvent('provider_recovered', { carrier: 'unknown', provider: 'Ship24 HTTP', category: 'browser_recovery' });
+    return { ...recovered, tracking_source: 'browser-session-response' };
   }
 }
