@@ -11,6 +11,7 @@ export interface OperationalContext {
   component: string;
   operation: string;
   carrier?: string | null;
+  trackingNumber?: string | null;
   anomalyCode?: string | null;
   attemptId?: string | null;
   jobId?: string | null;
@@ -155,6 +156,7 @@ function applyContext(
     route: boundedText(context.route),
     route_type: boundedText(context.routeType, 100),
     trigger: boundedText(context.trigger, 100),
+    tracking_number: boundedText(context.trackingNumber, 40),
     upstream_status: boundedText(errorMetadata.upstreamStatus, 3),
   };
   for (const [key, value] of Object.entries(tags)) {
@@ -234,7 +236,7 @@ export function logOperationalEvent(
 ): void {
   const safeFields = Object.fromEntries(
     Object.entries(fields)
-      .filter(([key]) => !PRIVATE_LOG_KEY.test(key))
+      .filter(([key]) => key === 'tracking_number' || !PRIVATE_LOG_KEY.test(key))
       .map(([key, value]) => [key, sanitizeLogValue(value)] as const)
       .filter((entry): entry is [string, string | number | boolean | null] => entry[1] !== undefined),
   );

@@ -1,6 +1,6 @@
 # Delivery Tracker privacy notice
 
-Effective: 8 September 2026
+Effective: 10 September 2026
 
 This notice describes the official Delivery Tracker service for French
 and Swiss parcel tracking. A third party running a fork controls its own
@@ -21,8 +21,10 @@ deployment and must publish its own notice.
   tokens, delivery acknowledgements, and delivery errors when you enable the
   corresponding notification or Live Activity setting.
 - Technical request data processed by the hosting, reverse-proxy, Auth, and mail
-  infrastructure, such as IP address, timestamp, and user agent. The Swiss
-  Delivery Tracker application does not intentionally retain access logs.
+  infrastructure, such as IP address, timestamp, and user agent.
+- Server diagnostic logs and Sentry error reports include parcel tracking
+  numbers, carrier, synchronization outcomes, and error details to diagnose
+  tracking failures.
 
 ## Why and where data is processed
 
@@ -77,7 +79,8 @@ signing out removes that installation's ActivityKit tokens; disabled browser
 endpoints, ordinary native device registrations, and delivery acknowledgements
 may remain until account deletion or operational cleanup. Infrastructure backups
 and security logs may persist for the limited retention configured by their
-operator.
+operator. Server diagnostic logs and Sentry reports can retain tracking numbers
+after a parcel or account is deleted, until their configured retention expires.
 
 Use **Download my data** in the account menu for a machine-readable export. Use
 **Delete account** to permanently delete the Auth user and cascade-delete their

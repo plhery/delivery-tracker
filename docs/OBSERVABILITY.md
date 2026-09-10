@@ -3,7 +3,7 @@
 Delivery Tracker records a carrier refresh in three deliberately separate
 places:
 
-1. one-line JSON logs explain the live control flow without parcel data;
+1. one-line JSON logs explain the live control flow and identify the tracking number;
 2. private Postgres audit rows retain the classification evidence and every
    completed step; and
 3. Sentry groups actionable failures and suspicious classifications, using an
@@ -11,8 +11,11 @@ places:
 
 Sentry is a protected diagnostic data store for this project. Original errors,
 their causes, custom error properties, and SDK diagnostic context are retained
-there without application-level sanitization. Structured console logs still
-omit parcel and credential fields; Postgres retains the complete refresh audit.
+there without application-level sanitization. Each tracking sync includes the
+parcel's `tracking_number` in structured console logs and as a searchable Sentry
+tag on errors, anomalies, and audit-write failures. These diagnostics retain the
+number even after the parcel and its database audit rows are deleted, subject to
+the configured log and Sentry retention. Postgres retains the complete refresh audit.
 
 ## What is recorded
 
@@ -146,7 +149,8 @@ Important JSON events are:
   correlated by `job_id`; and
 - `http_request`, correlated with Sentry by `request_id` for server errors.
 
-The logging helper drops any field whose name looks like tracking, parcel,
+The logging helper explicitly permits `tracking_number`. It drops other fields
+whose names look like tracking, parcel,
 package, user, label, description, location, status text, URL, token, cookie,
 authorization, secret, or password data. Keep new fields scalar and bounded.
 

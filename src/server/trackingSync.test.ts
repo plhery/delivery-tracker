@@ -34,6 +34,8 @@ import {
   type TrackingAdapter,
 } from './trackingSync';
 import type { JsonObject } from './types';
+import * as observability from './observability';
+import { UniversalTrackingError } from './universalTracking';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -902,6 +904,32 @@ describe('TrackingSyncService', () => {
       sync_status: 'unsupported',
       last_synced_at: null,
     }));
+  });
+
+  it('retains an unknown parcel number in console and Sentry diagnostics when lookup fails', async () => {
+    const parcel = { id: 'unknown-package', carrier: 'unknown', tracking_number: 'TEST1234' };
+    const client = fakeClient();
+    const error = new UniversalTrackingError([
+      { source: '17TRACK', reason: 'history unavailable', error: new TypeError('No matching tracking response') },
+      { source: 'ParcelsApp', reason: 'history unavailable', error: new TypeError('Shipment identity missing') },
+    ]);
+    const output = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const capture = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, {
+      fetch: vi.fn().mockRejectedValue(error),
+    });
+
+    await expect(service.syncPackage(parcel)).resolves.toMatchObject({ errors: 1 });
+    expect(capture).toHaveBeenCalledWith(error, expect.objectContaining({
+      operation: 'fetch', carrier: 'unknown', trackingNumber: 'TEST1234',
+    }));
+    const logs = [...output.mock.calls, ...errors.mock.calls].map(([line]) => JSON.parse(String(line)));
+    expect(logs).toEqual(expect.arrayContaining([
+      expect.objectContaining({ event: 'tracking_sync_started', tracking_number: 'TEST1234' }),
+      expect.objectContaining({ event: 'tracking_sync_step', step: 'fetch', step_status: 'failed', tracking_number: 'TEST1234' }),
+      expect.objectContaining({ event: 'tracking_sync_completed', outcome: 'error', tracking_number: 'TEST1234' }),
+    ]));
   });
 
   it('keeps tracking operational when the private audit store is unavailable', async () => {

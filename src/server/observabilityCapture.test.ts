@@ -53,9 +53,9 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
     scope.addBreadcrumb({ message: 'Looking up parcel TEST1234' });
     scope.setContext('carrier_response', { number: 'TEST1234', status: 'waiting' });
     scope.setExtra('carrier_payload', { number: 'TEST1234' });
-    scope.setTag('tracking_number', 'TEST1234');
     operationalEventId = captureOperationalError(error, {
       component: 'tracking-sync', operation: 'fetch', carrier: 'unknown',
+      trackingNumber: 'TEST1234',
       route: '/api/packages/11111111-1111-1111-1111-111111111111?detail=full',
     });
     Sentry.captureEvent({
@@ -107,6 +107,7 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
     new UpstreamHttpError('GLS Germany tracking', 404), {
       component: 'tracking-sync', operation: 'fetch', carrier: 'gls-de',
       attemptId, jobId: `job-${attemptId}`,
+      trackingNumber: `TEST-${attemptId}`,
     },
   ));
   await flushObservability();
@@ -117,4 +118,5 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   ]);
   expect(repeats[1].fingerprint).toEqual(repeats[0].fingerprint);
   expect(repeats.map((event) => event.tags?.attempt_id).sort()).toEqual(['first', 'second']);
+  expect(repeats.map((event) => event.tags?.tracking_number).sort()).toEqual(['TEST-first', 'TEST-second']);
 });

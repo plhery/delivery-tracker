@@ -13,7 +13,7 @@ import { SupabaseError } from './supabase';
 afterEach(() => vi.restoreAllMocks());
 
 describe('structured operational logs', () => {
-  it('drops private fields from structured operational logs', () => {
+  it('retains tracking numbers while dropping other private fields from structured logs', () => {
     const output = vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     logOperationalEvent('tracking_sync_step', {
@@ -22,6 +22,8 @@ describe('structured operational logs', () => {
       tracking_number: '250123456789012',
       package_id: 'private-package',
       status_text: 'private status',
+      tracking_url: 'https://carrier.example/secret-link',
+      authorization: 'Bearer secret',
     });
 
     const payload = JSON.parse(String(output.mock.calls[0]?.[0]));
@@ -29,10 +31,12 @@ describe('structured operational logs', () => {
       event: 'tracking_sync_step',
       attempt_id: 'opaque-attempt',
       carrier: 'dpd-fr',
+      tracking_number: '250123456789012',
     });
-    expect(payload).not.toHaveProperty('tracking_number');
     expect(payload).not.toHaveProperty('package_id');
     expect(payload).not.toHaveProperty('status_text');
+    expect(payload).not.toHaveProperty('tracking_url');
+    expect(payload).not.toHaveProperty('authorization');
   });
 });
 

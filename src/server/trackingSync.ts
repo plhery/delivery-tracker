@@ -595,6 +595,7 @@ export class TrackingSyncService {
     const audit = new TrackingSyncAudit(
       this.client,
       id,
+      String(parcel.tracking_number ?? ''),
       carrierId || 'unknown',
       previousStage,
       context,

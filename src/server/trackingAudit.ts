@@ -88,6 +88,7 @@ export class TrackingSyncAudit {
   constructor(
     readonly client: SupabaseServiceClient,
     readonly packageId: string,
+    readonly trackingNumber: string,
     readonly configuredCarrier: string,
     readonly previousStage: string,
     readonly context: SyncRunContext,
@@ -162,6 +163,7 @@ export class TrackingSyncAudit {
       component: 'tracking-sync',
       operation,
       carrier: this.configuredCarrier,
+      trackingNumber: this.trackingNumber,
       attemptId: this.attemptId,
       jobId: this.context.jobId,
       trigger: this.context.trigger,
@@ -179,6 +181,7 @@ export class TrackingSyncAudit {
         component: 'tracking-sync',
         operation: 'classify',
         carrier: this.configuredCarrier,
+        trackingNumber: this.trackingNumber,
         attemptId: this.attemptId,
         jobId: this.context.jobId,
         trigger: this.context.trigger,
@@ -242,6 +245,7 @@ export class TrackingSyncAudit {
       job_id: this.context.jobId ?? null,
       trigger: this.context.trigger,
       carrier: this.configuredCarrier,
+      tracking_number: this.trackingNumber,
     };
   }
 
@@ -260,6 +264,7 @@ export class TrackingSyncAudit {
           component: 'tracking-sync-audit',
           operation,
           carrier: this.configuredCarrier,
+          trackingNumber: this.trackingNumber,
           attemptId: this.attemptId,
           jobId: this.context.jobId,
           trigger: this.context.trigger,
