@@ -333,13 +333,6 @@ struct AddParcelView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            if amazonNumber, let number = lookupTrackingNumber, currentVerification == nil {
-                HStack {
-                    ProgressView()
-                    Text(localizer.text("add.amazonChecking")).font(.caption)
-                }
-                .id(number)
-            }
             if amazonNumber && currentVerification?.amazonShippingStatus == .unavailable {
                 Text(localizer.text("add.amazonCheckUnavailable")).font(.caption).foregroundStyle(.secondary)
                 Button(localizer.text("add.amazonRetry")) {

@@ -109,7 +109,7 @@ describe('public Amazon Shipping discovery', () => {
     const button = screen.getByRole('button', { name: /^add parcel$/i });
     expect(button).toBeDisabled();
     expect(screen.getByText(/Amazon Logistics deliveries are usually tracked/)).toBeInTheDocument();
-    expect(screen.getByText(/Checking for public Amazon Shipping tracking/)).toBeInTheDocument();
+    expect(screen.queryByText(/Checking for public Amazon Shipping tracking/)).not.toBeInTheDocument();
     await waitFor(() => expect(button).toBeEnabled());
     expect(screen.getByText('Amazon Shipping')).toBeInTheDocument();
     expect(screen.queryByText(/Amazon Logistics deliveries are usually tracked/)).not.toBeInTheDocument();

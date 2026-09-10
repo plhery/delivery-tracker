@@ -300,7 +300,6 @@ export function AddParcelSheet({
                   {(shippingConfirmed || requiresCarrierConfirmation || !tracksAutomatically(carrier.id)) && (
                     <p className="add-parcel-carrier__hint">{carrierHint}</p>
                   )}
-                  {amazonNumber && lookingUp && <p className="add-parcel-carrier__hint">{t('add.amazonChecking')}</p>}
                   {amazonNumber && currentVerification?.amazonShippingStatus === 'unavailable' && (
                     <div>
                       <p className="add-parcel-carrier__hint">{t('add.amazonCheckUnavailable')}</p>
