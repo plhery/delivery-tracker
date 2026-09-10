@@ -161,6 +161,37 @@ describe('universal public tracking', () => {
     }
   });
 
+  it('distinguishes missing solver capability, unreadable bodies and provider lookup failures', async () => {
+    for (const [data, overrides, expected] of [
+      [null, { capturedResponses: undefined }, { name: 'TrackingCaptureError', reason: 'capture_missing' }],
+      [null, { capturedResponses: [{ url: 'https://t.17track.net/track/restapi', status: 200,
+        body: null, error: 'compressed gzip body was not read safely' }] }, { reason: 'capture_unreadable' }],
+      [{ meta: { code: 200 }, shipments: [{ number, code: 400, shipment: null }] }, {},
+        { name: 'SeventeenTrackLookupError', reason: 'lookup_unavailable', providerCode: 400 }],
+      [{ meta: { code: -14 }, shipments: [] }, {}, { name: 'SeventeenTrackVerificationError', providerCode: -14 }],
+    ] as const) {
+      const fetcher = vi.fn().mockResolvedValue(browserResponse('17TRACK', data, overrides));
+      await expect(new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher }).fetchSource('17TRACK', number))
+        .rejects.toMatchObject(expected);
+    }
+  });
+
+  it('accepts completed matching history after intermediate polling and keeps API Retry-After', async () => {
+    const url = 'https://t.17track.net/track/restapi';
+    const fetcher = vi.fn().mockResolvedValue(browserResponse('17TRACK', null, { capturedResponses: [
+      { url, status: 200, body: JSON.stringify({ meta: { code: 200 }, shipments: [{ number, code: 100 }] }) },
+      { url, status: 200, body: JSON.stringify(track17()) },
+    ] }));
+    const tracker = new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher });
+    await expect(tracker.fetchSource('17TRACK', number)).resolves.toMatchObject({ tracking_provider: '17TRACK' });
+    fetcher.mockResolvedValue(browserResponse('17TRACK', null, { capturedResponses: [
+      { url, status: 429, body: null, headers: { 'retry-after': '300' } },
+    ] }));
+    await expect(tracker.fetchSource('17TRACK', number)).rejects.toMatchObject({ status: 429, retryAfterMs: 300_000 });
+    fetcher.mockResolvedValue(browserResponse('17TRACK', null, { capturedResponses: [{ url, status: 503, body: null }] }));
+    await expect(tracker.fetchSource('17TRACK', number)).rejects.toMatchObject({ name: 'UpstreamHttpError', status: 503 });
+  });
+
   it('does not request arbitrary user URLs and validates identifiers before network access', async () => {
     const fetcher = vi.fn();
     await expect(new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher }).fetch('http://localhost')).rejects.toThrow('Invalid tracking number');

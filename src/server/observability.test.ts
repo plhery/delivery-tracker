@@ -9,6 +9,8 @@ import {
 } from './observability';
 import { UpstreamHttpError } from './boundedFetch';
 import { SupabaseError } from './supabase';
+import { TrackingCaptureError, SeventeenTrackLookupError } from './universalTracking';
+import { DHLEcommerceSessionError } from './dhlEcommerce';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -70,6 +72,18 @@ describe('observability configuration', () => {
     expect(errorType(error)).toBe('Error');
     error.name = 'CarrierTimeoutError';
     expect(errorType(error)).toBe('CarrierTimeoutError');
+  });
+
+  it('keeps actionable scraper reasons and status codes without provider response text', () => {
+    expect(operationalErrorMetadata(new TrackingCaptureError('capture_unreadable')))
+      .toEqual({ providerFailureReason: 'capture_unreadable' });
+    expect(operationalErrorMetadata(new SeventeenTrackLookupError('lookup_unavailable', 400)))
+      .toEqual({ providerFailureReason: 'lookup_unavailable', providerCode: 400 });
+    expect(operationalErrorMetadata(new Error('recovery timed out', { cause: new DHLEcommerceSessionError(428) })))
+      .toEqual({ upstreamStatus: 428 });
+    const forged = Object.assign(new Error('PRIVATE'), { reason: 'PRIVATE', providerCode: 1234567890 });
+    forged.name = 'TrackingCaptureError';
+    expect(operationalErrorMetadata(forged)).toEqual({});
   });
 
   it('extracts only bounded status and database code metadata from known errors', () => {

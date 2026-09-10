@@ -120,7 +120,7 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   expect(repeats.map((event) => event.tags?.attempt_id).sort()).toEqual(['first', 'second']);
   expect(repeats.map((event) => event.tags?.tracking_number).sort()).toEqual(['TEST-first', 'TEST-second']);
   reportRoutingEvent('provider_failed', { carrier: 'dhl', provider: '17TRACK',
-    category: 'rate_limited', trackingNumber: 'TEST-first', errorClass: 'UpstreamHttpError' });
+    category: 'rate_limited', trackingNumber: 'TEST-first', errorClass: 'UpstreamHttpError', error: new UpstreamHttpError('17TRACK', 429) });
   reportRoutingEvent('carrier_auto_swapped', { carrier: 'dhl', provider: 'ups', trackingNumber: 'TEST-first' });
   reportRoutingEvent('provider_recovered', { carrier: 'dhl', provider: '17TRACK' });
   reportRoutingEvent('direct_support_opportunity', { carrier: 'fedex', provider: 'fedex' });
@@ -129,7 +129,7 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   const swap = captured.events.find((event) => event.message === 'Tracking routing: carrier_auto_swapped')!;
   expect(swap.level).toBe('info');
   expect(swap.tags).toMatchObject({ carrier: 'dhl', provider: 'ups', tracking_number: 'TEST-first' });
-  expect(rateLimit.tags).toMatchObject({ component: 'tracking-routing', provider: '17TRACK', failure_category: 'rate_limited', error_type: 'UpstreamHttpError' });
+  expect(rateLimit.tags).toMatchObject({ component: 'tracking-routing', provider: '17TRACK', failure_category: 'rate_limited', error_type: 'UpstreamHttpError', upstream_status: 429 });
   expect(rateLimit.fingerprint).toEqual(['delivery-tracker', 'tracking-routing', 'provider_failed', '17TRACK', 'rate_limited']);
   expect(captured.events.some((event) => event.message === 'Tracking routing: provider_recovered')).toBe(true);
   expect(captured.events.some((event) => event.message === 'Tracking routing: direct_support_opportunity')).toBe(true);

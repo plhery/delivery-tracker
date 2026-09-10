@@ -53,13 +53,15 @@ and empty responses cannot manufacture progress. If all lookups fail, sync
 reports an error and retains existing history. No authenticated commercial API
 key is required. A saved arbitrary tracking URL is never fetched by the fallback.
 
-TRAWL 1.5+ can return captured public API responses; ParcelsApp also supports
-parsing the rendered result on existing TRAWL releases. During the September 8
-checks, 17TRACK's onboarding and compressed response capture prevented automatic
-history retrieval, so it fell through to ParcelsApp. A normal interactive
-17TRACK browser did return real history. Aggregators can disagree or require
-additional information, especially for ambiguous numeric identifiers. Carrier
-adapters remain preferable when the carrier is known.
+17TRACK requires the pinned compatibility build in [`ops/trawl`](../ops/trawl/README.md).
+TRAWL 1.3.1 ignores capture requests; stock 1.5.0 refuses compressed bodies and
+can finish before polling completes. The compatibility build captures the
+browser-decoded JSON and waits through code 100 for a final matching reply.
+Live verification on September 10 returned seven events from a public example.
+A provider code 400 with no history remains an explicit lookup failure, not an
+invented delivery or an automatic carrier correction. ParcelsApp also supports
+rendered history and remains the first discovery provider. Aggregators may need
+additional information for ambiguous numbers; prefer a validated direct carrier.
 
 Postal Ninja submits its official embedded tracking widget on `/en/tools` and
 reads `/track/get`; simply
@@ -168,9 +170,12 @@ with the tracking website available, rather than being mistaken for a parcel
 that has not yet been announced.
 
 DHL eCommerce uses the public `www.dhl.com/utapi` recipient endpoint. A
-challenge (including HTTP 428) or interrupted connection bootstraps cookies
-through the private TRAWL browser and then retries the structured request.
-Sessions are reused; rate limits and upstream server errors remain visible.
+challenge (including HTTP 428) or interrupted connection opens a fresh local
+Chromium session and observes the site's own API retry inside that session.
+Browser clearance is not copied back to Node. Two production-host tests recovered
+from a forced 428 in about eight seconds. The direct request has a 10-second
+budget within a 45-second total; rate limits and server errors go to routing
+without spawning a browser. Browser work shares the existing concurrency limit.
 The API may return a customer-confirmation ID instead of the queried alias,
 so the adapter accepts one eCommerce shipment only from its exact request URL.
 It retains status, broad locations, delivery estimate and dated scans, never

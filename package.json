@@ -30,7 +30,7 @@
     "test": "vitest run",
     "test:carriers:live": "vitest run --config vitest.carriers-live.config.ts",
     "test:tracking-links": "vitest run --config vitest.carriers-live.config.ts src/server/trackingLinks.live.test.ts",
-    "test:scripts": "node --test scripts/native-localization.test.mjs scripts/prepare-personal-ios-project.test.mjs scripts/validate-production-config.test.mjs scripts/smoke-url.test.mjs scripts/validate-ios-install.test.mjs",
+    "test:scripts": "node --test ops/trawl/tracking-capture.test.mjs scripts/native-localization.test.mjs scripts/prepare-personal-ios-project.test.mjs scripts/validate-production-config.test.mjs scripts/smoke-url.test.mjs scripts/validate-ios-install.test.mjs",
     "test:contract": "node scripts/generate-api-contract.mjs --check",
     "test:coverage": "vitest run --coverage",
     "test:coverage:server": "vitest run --config vitest.server.config.ts --coverage",

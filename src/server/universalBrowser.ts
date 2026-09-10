@@ -31,7 +31,7 @@ export async function scrapeUniversalPage(
     const deadline = Date.now() + timeoutMs;
     // Do not pass the application environment (database/API secrets) to Chromium.
     browser = await chromium.launch({ executablePath, headless: true,
-      args: ['--disable-blink-features=AutomationControlled'], timeout: Math.min(timeoutMs, 10_000),
+      args: ['--disable-blink-features=AutomationControlled', '--disable-dev-shm-usage'], timeout: Math.min(timeoutMs, 10_000),
       env: { PATH: process.env.PATH ?? '', HOME: process.env.HOME ?? '/tmp', LANG: 'en_US.UTF-8' } });
     const platform = process.platform === 'darwin' ? 'Macintosh; Intel Mac OS X 10_15_7' : 'X11; Linux x86_64';
     const userAgent = `Mozilla/5.0 (${platform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${browser.version()} Safari/537.36`;
@@ -45,7 +45,8 @@ export async function scrapeUniversalPage(
     });
     // Attach the rejection handler before navigation can fail or time out.
     const navigation = (async () => {
-      const context = await browser!.newContext({ userAgent, locale: 'en-US', timezoneId: 'UTC', acceptDownloads: false, serviceWorkers: 'block' });
+      const context = await browser!.newContext({ userAgent, locale: 'en-US', timezoneId: 'UTC',
+        viewport: { width: 1440, height: 1000 }, acceptDownloads: false, serviceWorkers: 'block' });
       // Only the provider and its challenge resources are needed. This also keeps
       // advertisements and provider scripts from reaching private network hosts.
       const provider = new URL(spec.url).hostname.replace(/^www\./, '');

@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { chromium } from 'playwright-core';
+import { scrapeUniversalPage } from './universalBrowser';
 import { PostalNinjaTracker, parsePostalNinjaResponse } from './postalNinja';
 import { Ship24Tracker, parseShip24Response } from './ship24';
 
@@ -95,7 +96,7 @@ function browserFixture(payload: unknown, responseUrl: string) {
   let respond: ((response: unknown) => Promise<void>) | undefined;
   const locator = { locator: vi.fn(), fill: vi.fn(), count: vi.fn().mockResolvedValue(1), uncheck: vi.fn(), click: vi.fn() };
   locator.locator.mockReturnValue(locator);
-  const emit = () => respond?.({ url: () => responseUrl, status: () => 201, headers: () => ({}), body: async () => Buffer.from(JSON.stringify(payload)) });
+  const emit = (status = 201, url = responseUrl) => respond?.({ url: () => url, status: () => status, headers: () => ({}), body: async () => Buffer.from(JSON.stringify(payload)) });
   const page = { setDefaultTimeout: vi.fn(), on: vi.fn((_: string, callback: typeof respond) => { respond = callback; }),
     goto: vi.fn(async () => { await emit(); return { headers: () => ({}), status: () => 200 as number }; }), locator: vi.fn().mockReturnValue(locator), frameLocator: vi.fn().mockReturnValue(locator) };
   const context = { route: vi.fn(), newPage: vi.fn().mockResolvedValue(page) };
@@ -105,6 +106,23 @@ function browserFixture(payload: unknown, responseUrl: string) {
 }
 
 describe('bounded browser scraper lifecycle', () => {
+  it('lets DHL retry a 428 inside the browser and accepts only its exact tracking request', async () => {
+    const url = 'https://www.dhl.com/utapi?trackingNumber=ZZ12345678900';
+    const f = browserFixture({ history: true }, url);
+    const parse = vi.fn().mockReturnValue({ current_stage: 'in_transit' });
+    f.page.goto.mockImplementationOnce(async () => {
+      await f.emit(428);
+      await f.emit(200, 'https://www.dhl.com/utapi?trackingNumber=OTHER123');
+      await f.emit(200);
+      return { headers: () => ({}), status: () => 200 };
+    });
+    await expect(scrapeUniversalPage({ executablePath: '/test/chromium' }, {
+      name: 'DHL eCommerce', url: 'https://www.dhl.com/ch-en/home/tracking.html', responseUrl: url,
+    }, parse)).resolves.toMatchObject({ current_stage: 'in_transit' });
+    expect(parse).toHaveBeenCalledOnce();
+    expect(f.browser.close).toHaveBeenCalledOnce();
+  });
+
   it('submits Postal Ninja form and captures matching history in a fresh isolated browser', async () => {
     const f = browserFixture(ninja(), 'https://postal.ninja/track/get');
     f.page.goto.mockResolvedValue({ headers: () => ({}), status: () => 200 });

@@ -2,11 +2,12 @@ import 'server-only';
 import { trackingLanguageStage } from './trackingLanguage';
 
 import makeFetchCookie from 'fetch-cookie';
-import { Cookie, CookieJar } from 'tough-cookie';
+import { CookieJar } from 'tough-cookie';
 import { DateTime } from 'luxon';
 import { fetchBounded, parseJsonBytes, UpstreamHttpError, UpstreamNetworkError } from './boundedFetch';
 import type { CarrierEvent, CarrierResult, CarrierStatus } from './carrierResult';
 import { isRecord, type JsonObject } from './types';
+import { scrapeUniversalPage, type UniversalBrowserOptions } from './universalBrowser';
 
 const API = 'https://www.dhl.com/utapi';
 const PROVIDER = 'DHL eCommerce tracking';
@@ -127,15 +128,32 @@ export function parseDHLEcommerceResponse(payload: unknown): CarrierResult {
   };
 }
 
-class SessionRejected extends Error {}
+export class DHLEcommerceSessionError extends UpstreamHttpError {
+  constructor(status: number) {
+    super(PROVIDER, status);
+    this.name = 'DHLEcommerceSessionError';
+  }
+}
+
+function trackingApiUrl(number: string): string {
+  const url = new URL(API);
+  url.search = new URLSearchParams({ trackingNumber: number, language: 'en', requesterCountryCode: 'CH', source: 'tt' }).toString();
+  return url.toString();
+}
 
 export class DHLEcommerceTracker {
   private jar = new CookieJar();
   private fetcher = makeFetchCookie(fetch, this.jar);
-  private userAgent = USER_AGENT;
+  private readonly userAgent = USER_AGENT;
   private tail: Promise<void> = Promise.resolve();
 
-  constructor(readonly options: { timeoutMs?: number; directTimeoutMs?: number; trawlUrl?: string } = {}) {}
+  constructor(readonly options: UniversalBrowserOptions & { directTimeoutMs?: number } = {}) {
+    for (const timeout of [options.timeoutMs, options.directTimeoutMs]) {
+      if (timeout !== undefined && (!Number.isFinite(timeout) || timeout <= 0 || timeout > 60_000)) {
+        throw new TypeError('DHL eCommerce timeout must be between 1 and 60000 ms');
+      }
+    }
+  }
 
   async fetch(trackingNumber: string): Promise<CarrierResult> {
     const number = normalizeDHLEcommerceNumber(trackingNumber);
@@ -144,46 +162,35 @@ export class DHLEcommerceTracker {
     this.tail = new Promise<void>((resolve) => { release = resolve; });
     await previous;
     try {
-      try { return await this.request(number); } catch (error) {
-        if (!(error instanceof SessionRejected || error instanceof UpstreamNetworkError)) throw error;
-        if (!(this.options.trawlUrl ?? process.env.FLARESOLVERR_URL)) throw error;
+      const timeoutMs = this.options.timeoutMs ?? 45_000;
+      const deadline = Date.now() + timeoutMs;
+      try { return await this.request(number, Math.min(timeoutMs, this.options.directTimeoutMs ?? 10_000)); } catch (error) {
+        if (!(error instanceof DHLEcommerceSessionError || error instanceof UpstreamNetworkError)) throw error;
+        // Browser clearance is not reliably transferable to Node's HTTP client.
+        // Keep the challenge and the site's automatic retry in the same browser.
+        this.jar = new CookieJar();
+        this.fetcher = makeFetchCookie(fetch, this.jar);
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) throw error;
+        try { return await scrapeUniversalPage({ ...this.options, timeoutMs: remaining }, {
+          name: 'DHL eCommerce', url: dhlEcommerceTrackingUrl(number), responseUrl: trackingApiUrl(number),
+        }, parseDHLEcommerceResponse); } catch (recoveryError) {
+          if (recoveryError instanceof Error && recoveryError.cause === undefined) recoveryError.cause = error;
+          throw recoveryError;
+        }
       }
-      const endpoint = new URL(this.options.trawlUrl ?? process.env.FLARESOLVERR_URL!);
-      if (!['http:', 'https:'].includes(endpoint.protocol)) throw new TypeError('FLARESOLVERR_URL must be an HTTP(S) URL');
-      endpoint.pathname = `${endpoint.pathname.replace(/\/(?:v1|scrape)\/?$/, '').replace(/\/$/, '')}/scrape`;
-      endpoint.search = ''; endpoint.hash = '';
-      const pageUrl = dhlEcommerceTrackingUrl(number);
-      const { bytes } = await fetchBounded(endpoint, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ url: pageUrl, skipHttp: true, maxTier: 3, maxTimeout: this.options.timeoutMs ?? 45_000 }),
-      }, { provider: 'TRAWL while fetching DHL eCommerce', timeoutMs: (this.options.timeoutMs ?? 45_000) + 15_000, maxBytes: 5_000_000 });
-      const browser = parseJsonBytes(bytes, PROVIDER);
-      if (!isRecord(browser) || browser.error || browser.statusCode !== 200 || ![2, 3].includes(Number(browser.tier))
-        || browser.url !== pageUrl || !Array.isArray(browser.cookies)) throw new SessionRejected('DHL eCommerce rejected the tracking session');
-      this.jar = new CookieJar();
-      this.fetcher = makeFetchCookie(fetch, this.jar);
-      this.userAgent = clean(browser.userAgent, 1024) || USER_AGENT;
-      for (const raw of browser.cookies) {
-        if (!isRecord(raw) || typeof raw.value !== 'string' || !clean(raw.name)) continue;
-        const domain = clean(raw.domain).toLowerCase().replace(/^\./, '');
-        if (domain !== 'dhl.com' && domain !== 'www.dhl.com') continue;
-        await this.jar.setCookie(new Cookie({ key: clean(raw.name), value: raw.value, domain,
-          path: '/', secure: true, httpOnly: raw.httpOnly === true }), `https://${domain}/`);
-      }
-      return await this.request(number);
     } finally { release(); }
   }
 
-  private async request(number: string): Promise<CarrierResult> {
-    const url = new URL(API);
-    url.search = new URLSearchParams({ trackingNumber: number, language: 'en', requesterCountryCode: 'CH', source: 'tt' }).toString();
+  private async request(number: string, timeoutMs: number): Promise<CarrierResult> {
+    const url = trackingApiUrl(number);
     const { response, bytes } = await fetchBounded(url, { headers: {
       Accept: 'application/json', 'User-Agent': this.userAgent, Referer: dhlEcommerceTrackingUrl(number),
-    } }, { provider: PROVIDER, timeoutMs: this.options.directTimeoutMs ?? 10_000, maxBytes: 2_000_000,
+    } }, { provider: PROVIDER, timeoutMs, maxBytes: 2_000_000,
       fetcher: this.fetcher, redirect: 'manual', allowHttpError: true });
-    if ([301, 302, 303, 307, 308, 401, 403, 419, 428].includes(response.status)) throw new SessionRejected('DHL eCommerce rejected the tracking session');
+    if ([301, 302, 303, 307, 308, 401, 403, 419, 428].includes(response.status)) throw new DHLEcommerceSessionError(response.status);
     if (!response.ok) throw new UpstreamHttpError(PROVIDER, response.status);
-    if (!response.headers.get('content-type')?.includes('application/json')) throw new SessionRejected('DHL eCommerce rejected the tracking session');
+    if (!response.headers.get('content-type')?.includes('application/json')) throw new DHLEcommerceSessionError(response.status);
     return parseDHLEcommerceResponse(parseJsonBytes(bytes, PROVIDER));
   }
 }

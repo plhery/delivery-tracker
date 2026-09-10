@@ -122,7 +122,7 @@ export class TrackingRouter {
     const recent = () => millis(state.last_success_at) > 0 && now().getTime() - millis(state.last_success_at) < freshnessWindow(now());
     const report = (code: string, provider: string, kind?: string, error?: unknown) => reportRoutingEvent(code, {
       carrier: declared, provider, category: kind, trackingNumber: number,
-      ...(error ? { errorClass: errorType(error) } : {}),
+      ...(error ? { errorClass: errorType(error), error } : {}),
     });
     const fail = (provider: string, error: unknown): Failure => {
       const { kind, retryAfterMs } = routingFailure(error);

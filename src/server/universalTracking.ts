@@ -29,13 +29,35 @@ export class UniversalTrackingError extends AggregateError {
   }
 }
 
+export class TrackingCaptureError extends TypeError {
+  constructor(readonly reason: 'capture_missing' | 'capture_unreadable' | 'history_missing') {
+    super(`Tracking browser: ${reason}`);
+    this.name = 'TrackingCaptureError';
+  }
+}
+
+export class SeventeenTrackLookupError extends TypeError {
+  constructor(readonly reason: 'verification_required' | 'lookup_unavailable' | 'lookup_pending', readonly providerCode: number) {
+    super(`17TRACK: ${reason} (code ${providerCode})`);
+    this.name = reason === 'verification_required' ? 'SeventeenTrackVerificationError' : 'SeventeenTrackLookupError';
+  }
+}
+
 export function parse17TrackResponse(payload: unknown, trackingNumber: string): CarrierResult {
   const number = numberOf(trackingNumber);
-  if (!isRecord(payload) || !isRecord(payload.meta) || payload.meta.code !== 200
-    || !Array.isArray(payload.shipments)) throw new TypeError('17TRACK lookup unavailable');
+  if (!isRecord(payload) || !isRecord(payload.meta) || !Number.isInteger(payload.meta.code)) {
+    throw new TypeError('17TRACK lookup unavailable');
+  }
+  if (payload.meta.code !== 200) {
+    const code = Number(payload.meta.code);
+    throw new SeventeenTrackLookupError([-11, -13, -14].includes(code) ? 'verification_required' : 'lookup_unavailable', code);
+  }
+  if (!Array.isArray(payload.shipments)) throw new TypeError('17TRACK lookup unavailable');
   const matches = payload.shipments.filter((s) => isRecord(s) && s.number === number);
-  if (matches.length !== 1 || !isRecord(matches[0]) || matches[0].code !== 200
-    || !isRecord(matches[0].shipment)) throw new TypeError('17TRACK has no matching shipment history');
+  if (matches.length === 1 && isRecord(matches[0]) && Number.isInteger(matches[0].code) && matches[0].code !== 200) {
+    throw new SeventeenTrackLookupError(matches[0].code === 100 ? 'lookup_pending' : 'lookup_unavailable', Number(matches[0].code));
+  }
+  if (matches.length !== 1 || !isRecord(matches[0]) || matches[0].code !== 200 || !isRecord(matches[0].shipment)) throw new TypeError('17TRACK has no matching shipment history');
   const shipment = matches[0].shipment;
   const tracking = shipment.tracking;
   if (!isRecord(tracking) || !Array.isArray(tracking.providers) || tracking.providers.length > 20) {
@@ -162,19 +184,33 @@ export class UniversalTracker {
       throw new TypeError('Tracking browser returned an incomplete page');
     }
     const responses = Array.isArray(payload.capturedResponses) ? payload.capturedResponses : [];
+    let lookupError: SeventeenTrackLookupError | undefined;
     for (const raw of responses.slice(0, 20).reverse()) {
-      if (isRecord(raw) && raw.url === API_URLS[source] && raw.status === 429) throw new UpstreamHttpError(source, 429);
+      if (isRecord(raw) && raw.url === API_URLS[source] && raw.status === 429) {
+        const retry = isRecord(raw.headers) ? raw.headers['retry-after'] : undefined;
+        const delay = typeof retry === 'string' && /^\d+$/.test(retry) ? Number(retry) * 1000
+          : typeof retry === 'string' ? Date.parse(retry) - Date.now() : undefined;
+        throw new UpstreamHttpError(source, 429, delay);
+      }
+      if (isRecord(raw) && raw.url === API_URLS[source] && typeof raw.status === 'number' && raw.status >= 400) {
+        throw new UpstreamHttpError(source, raw.status);
+      }
       if (!isRecord(raw) || raw.url !== API_URLS[source] || raw.status !== 200
         || raw.truncated || raw.base64Encoded || typeof raw.body !== 'string') continue;
       try {
         const data: unknown = JSON.parse(raw.body);
         return source === '17TRACK' ? parse17TrackResponse(data, number)
           : parseParcelsAppResponse(data, number, payload.html);
-      } catch {
-        // Initial polling replies and unrelated/demo numbers are not history.
+      } catch (error) {
+        if (error instanceof SeventeenTrackLookupError) lookupError ??= error;
+        // Continue past polling replies and unrelated/demo numbers, but retain
+        // the latest structured failure if no matching history follows.
       }
     }
     if (source === 'ParcelsApp') return parseParcelsAppHtml(payload.html, number);
-    throw new TypeError('No matching tracking response');
+    if (lookupError) throw lookupError;
+    throw new TrackingCaptureError(!Array.isArray(payload.capturedResponses) ? 'capture_missing'
+      : responses.some(raw => isRecord(raw) && raw.url === API_URLS[source] && (raw.error || raw.body === null))
+        ? 'capture_unreadable' : 'history_missing');
   }
 }

@@ -39,6 +39,8 @@ export interface OperationalErrorMetadata {
   upstreamStatus?: number;
   databaseStatus?: number;
   databaseCode?: string;
+  providerFailureReason?: string;
+  providerCode?: number;
 }
 
 export function errorType(error: unknown): string {
@@ -100,9 +102,17 @@ export function operationalErrorMetadata(error: unknown): OperationalErrorMetada
   for (let depth = 0; current instanceof Error && depth < 8; depth += 1) {
     if (seen.has(current)) break;
     seen.add(current);
-    const details = current as Error & { status?: unknown; code?: unknown };
-    if (current.name === 'UpstreamHttpError' && metadata.upstreamStatus === undefined) {
+    const details = current as Error & { status?: unknown; code?: unknown; reason?: unknown; providerCode?: unknown };
+    if (['UpstreamHttpError', 'DHLEcommerceSessionError'].includes(current.name) && metadata.upstreamStatus === undefined) {
       metadata.upstreamStatus = safeHttpStatus(details.status);
+    }
+    if (['TrackingCaptureError', 'SeventeenTrackLookupError', 'SeventeenTrackVerificationError'].includes(current.name)) {
+      if (typeof details.reason === 'string' && ['capture_missing', 'capture_unreadable', 'history_missing',
+        'verification_required', 'lookup_unavailable', 'lookup_pending'].includes(details.reason)) {
+        metadata.providerFailureReason ??= details.reason;
+      }
+      if (typeof details.providerCode === 'number' && Number.isInteger(details.providerCode)
+        && details.providerCode >= -100 && details.providerCode <= 999) metadata.providerCode ??= details.providerCode;
     }
     if (current.name === 'SupabaseError') {
       if (metadata.databaseStatus === undefined) {
@@ -224,7 +234,7 @@ export function captureSyncAnomaly(
 
 /** Fixed messages and bounded dimensions: never attach upstream HTML/tokens. */
 export function reportRoutingEvent(code: string, context: {
-  carrier: string; provider: string; category?: string; trackingNumber?: string; errorClass?: string;
+  carrier: string; provider: string; category?: string; trackingNumber?: string; errorClass?: string; error?: unknown;
 }): void {
   try {
     logOperationalEvent('tracking_routing', {
@@ -238,6 +248,10 @@ export function reportRoutingEvent(code: string, context: {
       scope.setTag('provider', context.provider.slice(0, 80));
       scope.setTag('failure_category', context.category ?? 'none');
       if (context.errorClass) scope.setTag('error_type', context.errorClass);
+      const metadata = operationalErrorMetadata(context.error);
+      if (metadata.upstreamStatus !== undefined) scope.setTag('upstream_status', metadata.upstreamStatus);
+      if (metadata.providerFailureReason) scope.setTag('provider_failure_reason', metadata.providerFailureReason);
+      if (metadata.providerCode !== undefined) scope.setTag('provider_code', metadata.providerCode);
       scope.setFingerprint(['delivery-tracker', 'tracking-routing', code,
         context.provider, context.category ?? 'none']);
       const alert = ['provider_failed', 'all_providers_unavailable', 'carrier_mismatch_confirmed',
