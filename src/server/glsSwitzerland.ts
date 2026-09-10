@@ -334,6 +334,8 @@ export function parseGLSSwitzerlandTrackingResponse(
   return {
     status,
     canonical_tracking_number: normalizedResponseIdentifier(parcel.tuNo),
+    ...(records(parcel.owners).some((owner) => statusCode(owner.type) === 'DELIVERY' && statusCode(owner.code) === 'CH01')
+      ? { delivery_carrier: 'swiss-post' as const, delivery_tracking_number: normalizedResponseIdentifier(parcel.tuNo) } : {}),
     current_stage: currentMetadata?.stage ?? latestKnownEvent?.event.stage ?? 'in_transit',
     last_status_text: events[0]?.description ?? currentText,
     last_update: events[0]?.time ?? null,
@@ -387,7 +389,9 @@ export class GLSSwitzerlandTracker {
       this.now(),
       ownerCode(parcel),
     ));
-    return parseGLSSwitzerlandTrackingResponse(detail, parcelNumber);
+    const result = parseGLSSwitzerlandTrackingResponse(detail, parcelNumber);
+    const overviewResult = parseGLSSwitzerlandTrackingResponse(overview, trackingNumber);
+    return { ...result, ...glsDeliveryReference(overviewResult) };
   }
 
   private async request(url: string): Promise<unknown> {
@@ -403,4 +407,9 @@ export class GLSSwitzerlandTracker {
     if (!response.ok) throw new UpstreamHttpError('GLS Switzerland tracking', response.status);
     return parseJsonBytes(bytes, 'GLS Switzerland');
   }
+}
+
+/** Keep the verified overview's delivery owner when the postcode detail omits it. */
+export function glsDeliveryReference(result: CarrierResult): Partial<CarrierResult> {
+  return result.delivery_carrier ? { delivery_carrier: result.delivery_carrier, delivery_tracking_number: result.delivery_tracking_number } : {};
 }

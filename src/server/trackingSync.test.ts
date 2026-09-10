@@ -448,6 +448,50 @@ describe('TrackingSyncService', () => {
     expect(client.updatePackage.mock.calls.at(-1)?.[1].carrier_data).toMatchObject({ active_tracking_carrier: 'swiss-post', original_carrier: 'dhl' });
   });
 
+  it.each(['aliexpress', 'spring-gds', 'sunyou'])('switches %s foreign postal numbers only after confirmed local progress', async (carrier) => {
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn().mockResolvedValueOnce({ status: 'in_transit' })
+      .mockResolvedValue({ status: 'out_for_delivery', expected_delivery: '2026-09-10' }) };
+    await new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null)
+      .syncPackage({ id: 'postal-handoff', carrier, tracking_number: 'LX123456785NL' });
+    expect(adapter.fetch.mock.calls.map((call) => call.slice(0, 2))).toEqual([
+      [carrier, 'LX123456785NL'], ['swiss-post', 'LX123456785NL'],
+    ]);
+    expect(client.updatePackage.mock.calls.at(-1)?.[1]).toMatchObject({
+      current_stage: 'out_for_delivery', expected_delivery: '2026-09-10',
+      carrier_data: { original_carrier: carrier, active_tracking_carrier: 'swiss-post' },
+    });
+  });
+
+  it('can confirm local delivery while the international postal tracker is unavailable', async () => {
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn().mockRejectedValueOnce(new Error('Cainiao unavailable'))
+      .mockResolvedValueOnce({ status: 'out_for_delivery' }) };
+    await new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null)
+      .syncPackage({ id: 'postal-outage', carrier: 'aliexpress', tracking_number: 'LX123456785NL' });
+    expect(client.updatePackage.mock.calls.at(-1)?.[1]).toMatchObject({
+      sync_status: 'ok', carrier_data: { active_tracking_carrier: 'swiss-post' },
+    });
+  });
+
+  it('persists a different domestic number and uses it for later refreshes', async () => {
+    const parcel = { id: 'gls-handoff', carrier: 'gls-de', tracking_number: '123456789011' };
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn().mockResolvedValueOnce({ status: 'in_transit', delivery_carrier: 'swiss-post',
+      delivery_tracking_number: '12345678901', canonical_tracking_number: '12345678901' })
+      .mockResolvedValue({ status: 'out_for_delivery', canonical_tracking_number: '990000000000000001' }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null);
+    await service.syncPackage(parcel);
+    expect(adapter.fetch.mock.calls[1]).toEqual(['swiss-post', '12345678901', null, null]);
+    const values = client.updatePackage.mock.calls.at(-1)?.[1];
+    expect(values.carrier_data).toMatchObject({ active_tracking_number: '990000000000000001',
+      original_tracking_number: '123456789011', original_canonical_tracking_number: '12345678901' });
+    adapter.fetch.mockClear();
+    await service.syncPackage({ ...parcel, ...values });
+    expect(adapter.fetch).toHaveBeenCalledExactlyOnceWith('swiss-post', '990000000000000001', null, null);
+    expect(client.updatePackage.mock.calls.at(-1)?.[1].carrier_data).toMatchObject({ active_tracking_number: '990000000000000001', original_canonical_tracking_number: '12345678901' });
+  });
+
   it.each(['missing', 'registered', 'error'])('keeps DHL active when Swiss Post is %s', async (state) => {
     const client = fakeClient();
     const adapter = { fetch: vi.fn().mockResolvedValueOnce({ status: 'in_transit', delivery_carrier: 'swiss-post' }) };
@@ -489,7 +533,7 @@ describe('TrackingSyncService', () => {
     await expect(service.syncPackage(parcel)).resolves.toMatchObject({ checked: 1, updated: 1 });
     now = new Date('2026-09-09T10:10:00Z');
     await expect(service.sync()).resolves.toMatchObject({ checked: 1, updated: 1 });
-    expect(adapter.fetch).toHaveBeenCalledTimes(2);
+    expect(adapter.fetch.mock.calls.filter(([carrier]) => carrier === 'spring-gds')).toHaveLength(2);
   });
 
   it('filters cooldowns before the per-owner quota without delaying other carriers', async () => {

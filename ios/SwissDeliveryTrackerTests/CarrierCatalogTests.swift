@@ -36,6 +36,20 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(links[1].url.host, "www.dhl.de")
     }
 
+    func testHandoffUsesDifferentLocalTrackingNumber() {
+        let parcel = Parcel(
+            id: UUID(), trackingNumber: "123456789011", label: "Perfume",
+            carrier: .glsDe, createdAt: "2026-09-10T07:00:00Z", syncStatus: .ok,
+            carrierData: CarrierData(activeTrackingCarrier: .swissPost, activeTrackingNumber: "990000000000000001",
+                originalCarrier: .glsDe, originalTrackingNumber: "123456789011"), notificationsMuted: false
+        )
+        let links = catalog.trackingLinks(for: parcel, language: .en)
+        XCTAssertEqual(links.map(\.carrier), [.swissPost, .glsDe])
+        XCTAssertTrue(links[0].url.absoluteString.contains("990000000000000001"))
+        XCTAssertFalse(links[0].url.absoluteString.contains("123456789011"))
+        XCTAssertTrue(links[1].url.absoluteString.contains("123456789011"))
+    }
+
     func testExpandedCarriersAndHiddenUniversalLookup() {
         for raw in ["hermes-de", "gls-de", "delivengo"] {
             let carrier = CarrierID(rawValue: raw)

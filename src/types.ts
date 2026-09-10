@@ -34,6 +34,7 @@ export interface Parcel {
   dpdPostcode?: string;
   /** Carrier currently supplying automatic updates for a multi-carrier journey. */
   trackingSource?: CarrierId;
+  activeTrackingNumber?: string;
   /** Whether Swiss Post has announced a Swiss-issued inbound shipment. */
   swissPostReady?: boolean;
   archivedAt?: string;

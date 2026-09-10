@@ -4,6 +4,7 @@ import { fetchBounded, parseJsonBytes, UpstreamHttpError } from './boundedFetch'
 import type { CarrierResult } from './carrierResult';
 import {
   glsSwitzerlandDetailApiUrl,
+  glsDeliveryReference,
   glsSwitzerlandOverviewApiUrl,
   GLSSwitzerlandTrackingError,
   normalizeGLSSwitzerlandPostcode,
@@ -57,7 +58,7 @@ export class GLSGermanyTracker {
     try {
       const result = parseGLSSwitzerlandTrackingResponse(detail, String(parcel.tuNo));
       // Both services use CET/CEST; expose the regional timezone to clients.
-      return { ...result, timezone: 'Europe/Berlin' };
+      return { ...result, ...glsDeliveryReference(parseGLSSwitzerlandTrackingResponse(overview, number)), timezone: 'Europe/Berlin' };
     } catch (error) {
       if (error instanceof GLSSwitzerlandTrackingError) throw new GLSGermanyTrackingError();
       throw error;

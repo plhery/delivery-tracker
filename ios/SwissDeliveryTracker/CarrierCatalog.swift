@@ -366,6 +366,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
            let originalNumber = parcel.carrierData?.originalTrackingNumber?.nonEmpty {
             var delivery = parcel
             delivery.carrier = parcel.activeTrackingCarrier
+            delivery.trackingNumber = parcel.carrierData?.activeTrackingNumber?.nonEmpty ?? parcel.trackingNumber
             delivery.carrierData = nil
             if delivery.carrier != parcel.carrier { delivery.trackingURL = nil }
             var original = delivery

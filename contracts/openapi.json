@@ -2558,6 +2558,7 @@
                   }
                 ]
               },
+              "active_tracking_number": { "type": ["string", "null"], "description": "Verified delivery-leg tracking number when the carrier changes." },
               "original_package_id": { "type": ["string", "null"], "format": "uuid" },
               "original_carrier": {
                 "anyOf": [{ "$ref": "#/components/schemas/CarrierId" }, { "type": "null" }]

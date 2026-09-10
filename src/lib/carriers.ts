@@ -214,6 +214,7 @@ export function parcelTrackingLinks(
     | 'trackingNumber'
     | 'trackingUrl'
     | 'trackingSource'
+    | 'activeTrackingNumber'
     | 'swissPostReady'
     | 'originalCarrier'
     | 'originalTrackingNumber'
@@ -223,7 +224,7 @@ export function parcelTrackingLinks(
 ): ParcelTrackingLink[] {
   if (parcel.originalCarrier && parcel.originalTrackingNumber) {
     const active = parcelTrackingLinks({
-      carrier: activeTrackingCarrierId(parcel), trackingNumber: parcel.trackingNumber,
+      carrier: activeTrackingCarrierId(parcel), trackingNumber: parcel.activeTrackingNumber ?? parcel.trackingNumber,
       trackingUrl: activeTrackingCarrierId(parcel) === parcel.carrier ? parcel.trackingUrl : undefined,
     }, locale);
     const original = parcelTrackingLinks({

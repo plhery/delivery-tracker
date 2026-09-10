@@ -5,6 +5,7 @@ import { DateTime, IANAZone } from 'luxon';
 import { STAGES } from '../generated/apiContract';
 import type { CarrierResult } from './carrierResult';
 import { normalizeCarrierResult } from './carrierResult';
+import { swissPostHandoffNumber } from './carrierHandoff';
 import {
   AUTOMATIC_CARRIER_IDS,
   carrierAdapter,
@@ -55,7 +56,8 @@ const SLOW_POLL_INTERVAL_MS = 60 * 60 * 1_000;
 const FAILED_SLOW_POLL_INTERVAL_MS = 4 * SLOW_POLL_INTERVAL_MS;
 
 export function isTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
-  if (!SLOW_POLL_CARRIERS.has(String(parcel.carrier))) return true;
+  const activeCarrier = isRecord(parcel.carrier_data) ? parcel.carrier_data.active_tracking_carrier : undefined;
+  if (!SLOW_POLL_CARRIERS.has(String(activeCarrier ?? parcel.carrier))) return true;
   const lastChecked = Date.parse(String(parcel.last_synced_at ?? ''));
   if (!Number.isFinite(lastChecked)) return true;
   const interval = parcel.sync_status === 'error'
@@ -762,7 +764,7 @@ export class TrackingSyncService {
       );
       // Linked journey identity belongs to the parcel, not an individual carrier response.
       if (isRecord(parcel.carrier_data)) {
-        for (const key of ['original_carrier', 'original_tracking_number', 'original_tracking_url', 'original_package_id', 'active_tracking_carrier']) {
+        for (const key of ['original_carrier', 'original_tracking_number', 'original_tracking_url', 'original_package_id', 'active_tracking_carrier', 'active_tracking_number', 'original_canonical_tracking_number']) {
           if (parcel.carrier_data[key] != null) carrierData[key] = parcel.carrier_data[key];
         }
       }
@@ -880,27 +882,37 @@ export class TrackingSyncService {
     const metadata = isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
     if (metadata.original_carrier && metadata.active_tracking_carrier === 'swiss-post') {
       return {
-        result: normalizeCarrierResult(await this.adapter.fetch('swiss-post', trackingNumber, null, null)),
+        result: normalizeCarrierResult(await this.adapter.fetch('swiss-post', typeof metadata.active_tracking_number === 'string' ? metadata.active_tracking_number : trackingNumber, null, null)),
         sourceCarrierId: 'swiss-post', swissPostReady: true, handoffFallbackErrorType: null,
       };
     }
     if (!supportsSwissPostHandoff(trackingNumber)) {
-      const result = await this.adapter.fetch(
-        carrierId,
-        trackingNumber,
-        typeof parcel.tracking_url === 'string' ? parcel.tracking_url : null,
-        typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null,
-      );
-      const origin = normalizeCarrierResult(result);
+      let origin: CarrierResult;
+      let originError: unknown;
+      try {
+        origin = normalizeCarrierResult(await this.adapter.fetch(
+          carrierId, trackingNumber,
+          typeof parcel.tracking_url === 'string' ? parcel.tracking_url : null,
+          typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null,
+        ));
+      } catch (error) {
+        // An international operator outage must not hide a confirmed local delivery.
+        if (!swissPostHandoffNumber(carrierId, trackingNumber, {})) throw error;
+        originError = error;
+        origin = {};
+      }
       let fallbackError: string | null = null;
-      if (origin.delivery_carrier === 'swiss-post' && carrierId !== 'swiss-post'
+      const deliveryNumber = swissPostHandoffNumber(carrierId, trackingNumber, origin);
+      if (deliveryNumber
         && !['delivered', 'returned'].includes(resultStage(origin) ?? '')) {
         try {
-          const delivery = normalizeCarrierResult(await this.adapter.fetch('swiss-post', trackingNumber, null, null));
-          if (delivery.status !== 'pending' && resultHasUpdate(delivery)) {
+          const delivery = normalizeCarrierResult(await this.adapter.fetch('swiss-post', deliveryNumber, null, null));
+          if (delivery.status !== 'pending' && !['pending', 'registered'].includes(resultStage(delivery) ?? 'pending') && resultHasUpdate(delivery)) {
             return {
               result: {
                 ...delivery, active_tracking_carrier: 'swiss-post',
+                active_tracking_number: delivery.canonical_tracking_number || deliveryNumber,
+                ...(origin.canonical_tracking_number ? { original_canonical_tracking_number: origin.canonical_tracking_number } : {}),
                 original_carrier: carrierId, original_tracking_number: trackingNumber,
                 original_tracking_url: typeof parcel.tracking_url === 'string' ? parcel.tracking_url : null,
                 ...(delivery.sender_name === undefined && origin.sender_name ? { sender_name: origin.sender_name } : {}),
@@ -913,6 +925,7 @@ export class TrackingSyncService {
           fallbackError = errorType(error);
         }
       }
+      if (originError) throw originError;
       return {
         result: origin, sourceCarrierId: carrierId,
         swissPostReady: null, handoffFallbackErrorType: fallbackError,

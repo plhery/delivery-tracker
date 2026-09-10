@@ -620,6 +620,7 @@ struct AccountExportAccount: Codable, Equatable, Hashable, Sendable, Identifiabl
 
 struct CarrierData: Codable, Equatable, Hashable, Sendable {
     var activeTrackingCarrier: CarrierID? = nil
+    var activeTrackingNumber: String? = nil
     var originalPackageID: UUID? = nil
     var originalCarrier: CarrierID? = nil
     var originalTrackingNumber: String? = nil
@@ -629,6 +630,7 @@ struct CarrierData: Codable, Equatable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case activeTrackingCarrier
+        case activeTrackingNumber
         case originalPackageID = "originalPackageId"
         case originalCarrier
         case originalTrackingNumber

@@ -220,6 +220,7 @@ export function parseSwissPostShipment(
     expected_delivery: swissPostExpectedDelivery(item),
     timezone: 'Europe/Zurich',
     global_status: globalStatus,
+    canonical_tracking_number: comparableShipmentNumber(item.shipmentNumber) || undefined,
     ...(/^[A-Z0-9]{4,40}$/.test(comparableShipmentNumber(item.internationalBarcode))
       ? { international_tracking_number: comparableShipmentNumber(item.internationalBarcode) } : {}),
     delivery_range: item.deliveryRange,
@@ -301,10 +302,13 @@ export class SwissPostTracker {
     if (identified.length === 0) {
       throw new TypeError('Swiss Post did not return a shipment identifier');
     }
-    const item = identified.find(
-      (candidate) => comparableShipmentNumber(candidate.shipmentNumber) === requested,
+    const matches = identified.filter((candidate) =>
+      comparableShipmentNumber(candidate.shipmentNumber) === requested
+      || comparableShipmentNumber(candidate.internationalBarcode) === requested,
     );
-    if (!item) throw new RangeError('Swiss Post returned a different shipment');
+    if (matches.length === 0) throw new RangeError('Swiss Post returned a different shipment');
+    if (matches.length !== 1) throw new RangeError('Swiss Post returned an ambiguous shipment');
+    const item = matches[0]!;
     const identity = text(item.identity);
     let events: unknown[] = [];
     if (identity) {

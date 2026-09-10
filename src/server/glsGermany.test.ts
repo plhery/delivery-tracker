@@ -33,6 +33,17 @@ describe('GLS Germany', () => {
     expect(detail.searchParams.get('tuOwnerCode')).toBe('DE01');
   });
 
+  it('retains the Swiss delivery owner from the overview when detail omits it', async () => {
+    const overview = parcel();
+    overview.owners.push({ type: 'DELIVERY', code: 'CH01' });
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ tuStatus: [overview] })))
+      .mockResolvedValueOnce(new Response(JSON.stringify(parcel())));
+    await expect(new GLSGermanyTracker().fetch(NUMBER, '8004')).resolves.toMatchObject({
+      delivery_carrier: 'swiss-post', delivery_tracking_number: NUMBER,
+    });
+  });
+
   it('rejects a different detail shipment', async () => {
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(new Response(JSON.stringify({ tuStatus: [parcel()] })))

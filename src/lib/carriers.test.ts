@@ -88,6 +88,17 @@ describe('supportsSwissPostHandoff', () => {
     expect(links[1].url).toContain('dhl.de');
   });
 
+  it('uses the confirmed local number after a cross-number carrier swap', () => {
+    const links = parcelTrackingLinks({ carrier: 'gls-de', trackingNumber: '123456789011',
+      trackingSource: 'swiss-post', activeTrackingNumber: '990000000000000001',
+      originalCarrier: 'gls-de', originalTrackingNumber: '123456789011',
+    });
+    expect(links.map(({ carrier }) => carrier.id)).toEqual(['swiss-post', 'gls-de']);
+    expect(links[0].url).toContain('990000000000000001');
+    expect(links[0].url).not.toContain('123456789011');
+    expect(links[1].url).toContain('123456789011');
+  });
+
   it('keeps GLS identity and uses Swiss Post first for linked tracking numbers', () => {
     const parcel = {
       carrier: 'swiss-post' as const, trackingNumber: '993412345612345678',

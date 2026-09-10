@@ -117,6 +117,22 @@ describe('Swiss Post no-data response', () => {
     expect(fetcher).toHaveBeenCalledTimes(3);
   });
 
+  it('resolves an exact international barcode to the domestic delivery number', async () => {
+    mockSearchResult([{ shipmentNumber: WRONG_SWISS_POST_NUMBER, internationalBarcode: '12345678901', globalStatus: 'IN_DELIVERY' }]);
+    await expect(new SwissPostTracker().fetch('12345678901')).resolves.toMatchObject({
+      status: 'out_for_delivery', canonical_tracking_number: WRONG_SWISS_POST_NUMBER,
+      international_tracking_number: '12345678901',
+    });
+  });
+
+  it('rejects ambiguous international references even when one domestic number matches', async () => {
+    mockSearchResult([
+      { shipmentNumber: WRONG_SWISS_POST_NUMBER, globalStatus: 'IN_DELIVERY' },
+      { shipmentNumber: '990000000000000001', internationalBarcode: WRONG_SWISS_POST_NUMBER, globalStatus: 'DELIVERED' },
+    ]);
+    await expect(new SwissPostTracker().fetch(WRONG_SWISS_POST_NUMBER)).rejects.toThrow('ambiguous shipment');
+  });
+
   it('rejects mismatched and non-identifying result arrays', async () => {
     mockSearchResult([{ shipmentNumber: 'OTHER-SHIPMENT-ID', globalStatus: 'DELIVERED' }]);
     await expect(new SwissPostTracker().fetch(WRONG_SWISS_POST_NUMBER))
