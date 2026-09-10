@@ -170,14 +170,57 @@ describe('persistent tracking routing', () => {
     expect(universal).toHaveBeenCalledOnce();
     expect(health.finishTrackingProvider).toHaveBeenCalledWith('ParcelsApp', 'lease', 'rate_limited', 7_200_000, expect.any(Number));
   });
-  it('bounds failed discovery and advances to Ship24 on the next check', async () => {
-    const first = setup(); first.universal.mockRejectedValue(new Error('down'));
-    const failed = await first.router.fetch(parcel(), false).catch((error) => error as RoutingDeferred);
-    if (!(failed instanceof RoutingDeferred)) throw new Error('Expected deferred discovery');
-    expect(first.universal).toHaveBeenCalledTimes(2);
+  it('reaches Ship24 in the same check after the first two providers fail, then remembers it', async () => {
+    const first = setup();
+    first.universal.mockRejectedValueOnce(new Error('ParcelsApp down')).mockRejectedValueOnce(new Error('17TRACK down'));
+    const result = await first.router.fetch(parcel(), false);
+    expect(first.universal.mock.calls.map(([source]) => source)).toEqual(['ParcelsApp', '17TRACK', 'Ship24']);
+    expect(result.result.routing).toMatchObject({ preferred_provider: 'Ship24' });
     const second = setup();
-    await second.router.fetch(parcel({ carrier_data: { routing: failed.routing } }), false);
-    expect(second.universal.mock.calls[0][0]).toBe('Ship24');
+    await second.router.fetch(parcel({ carrier_data: result.result }), false);
+    expect(second.universal.mock.calls.map(([source]) => source)).toEqual(['Ship24']);
+  });
+  it('tries every enabled provider only once and includes Postal Ninja only when enabled', async () => {
+    const { direct, universal, health } = setup();
+    universal.mockRejectedValue(new Error('down'));
+    for (const enablePostalNinja of [false, true]) {
+      universal.mockClear();
+      const router = new TrackingRouter({ direct, universal, health, now: () => time, enablePostalNinja });
+      await expect(router.fetch(parcel(), false)).rejects.toBeInstanceOf(RoutingDeferred);
+      expect(universal.mock.calls.map(([source]) => source)).toEqual(
+        ['ParcelsApp', '17TRACK', 'Ship24', ...(enablePostalNinja ? ['Postal Ninja'] : [])]);
+    }
+  });
+  it('gives Ship24 a usable budget even after slow direct and universal failures', async () => {
+    let elapsed = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => elapsed);
+    const { router, direct, universal } = setup();
+    direct.mockImplementation(async () => { elapsed += 90_000.125; throw new Error('slow carrier'); });
+    universal.mockImplementation(async (source, _number, timeoutMs) => {
+      expect(timeoutMs).toBeGreaterThanOrEqual(29_998);
+      expect(Number.isInteger(timeoutMs)).toBe(true);
+      if (source === 'Ship24') return history();
+      elapsed += timeoutMs + 5_000.125;
+      throw new Error('slow universal');
+    });
+    await expect(router.fetch(parcel({ carrier: 'dhl-ecommerce' }), false))
+      .resolves.toMatchObject({ result: { tracking_provider: 'Ship24' } });
+    expect(universal).toHaveBeenCalledTimes(3);
+  });
+  it("skips an unavailable provider without spending another provider's attempt", async () => {
+    const { router, health, universal } = setup();
+    health.acquireTrackingProvider.mockResolvedValueOnce({ token: null, retry_at: '2026-09-10T13:00:00Z' });
+    universal.mockRejectedValueOnce(new Error('17TRACK down'));
+    await expect(router.fetch(parcel(), false)).resolves.toMatchObject({ result: { tracking_provider: 'Ship24' } });
+    expect(universal.mock.calls.map(([source]) => source)).toEqual(['17TRACK', 'Ship24']);
+  });
+  it('stops when a provider overruns the total fallback budget', async () => {
+    let elapsed = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => elapsed);
+    const { router, universal } = setup();
+    universal.mockImplementation(async () => { elapsed = 106_000; throw new Error('overrun'); });
+    await expect(router.fetch(parcel(), false)).rejects.toBeInstanceOf(RoutingDeferred);
+    expect(universal).toHaveBeenCalledOnce();
   });
   it('does one daily scheduled comparison and switches only for newer data', async () => {
     const { router, universal } = setup();

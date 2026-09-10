@@ -117,7 +117,6 @@ export class TrackingRouter {
     const universalNumber = metadata.original_carrier && metadata.active_tracking_carrier
       && typeof metadata.active_tracking_number === 'string' ? metadata.active_tracking_number : number;
     if (state.preferred_number && state.preferred_number !== universalNumber) state.preferred_provider = undefined;
-    const started = performance.now();
     const sources: UniversalSource[] = [...UNIVERSAL_SOURCES, ...(this.options.enablePostalNinja ? ['Postal Ninja' as const] : [])];
     const recent = () => millis(state.last_success_at) > 0 && now().getTime() - millis(state.last_success_at) < freshnessWindow(now());
     const report = (code: string, provider: string, kind?: string, error?: unknown) => reportRoutingEvent(code, {
@@ -229,14 +228,17 @@ export class TrackingRouter {
     const preferred = sources.includes(state.preferred_provider!) ? state.preferred_provider : undefined;
     const offset = state.discovery_cursor % sources.length;
     const ordered = [...new Set([...(preferred ? [preferred] : []), ...sources.slice(offset), ...sources.slice(0, offset)])];
+    // Reserve one 30s lookup plus transport allowance for every enabled source.
+    // Start after direct attempts so a slow carrier cannot starve discovery.
+    const universalDeadline = performance.now() + sources.length * 35_000;
+    const attemptedUniversal = new Set<UniversalSource>();
     let attempts = 0;
     const universal = async (source: UniversalSource): Promise<RoutedResult | null> => {
       signal?.throwIfAborted();
-      // Two routine attempts, at most 65 seconds of universal work per lookup.
-      // Node's AbortSignal.timeout requires integer milliseconds. A slow first
-      // attempt exposes performance.now() fractions once the 30s cap no longer applies.
-      const remaining = Math.floor(65_000 - (performance.now() - started));
-      if (attempts >= 2 || remaining < 5_000 || millis(state.failures[source]?.retry_at) > now().getTime()) return null;
+      // Node's AbortSignal.timeout requires integer milliseconds.
+      const remaining = Math.floor(universalDeadline - performance.now());
+      if (attemptedUniversal.has(source) || remaining <= 5_000 || millis(state.failures[source]?.retry_at) > now().getTime()) return null;
+      attemptedUniversal.add(source);
       let lease: { token: string | null; retry_at: string };
       try { lease = await this.options.health.acquireTrackingProvider(source); }
       catch {

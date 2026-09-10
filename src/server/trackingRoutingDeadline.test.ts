@@ -30,12 +30,14 @@ it.each(['direct', 'universal'])('reaches a real fallback after a slow %s failur
   vi.spyOn(monitoring, 'reportRoutingEvent').mockImplementation(() => undefined);
   const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => {
     if (slow === 'universal' && fetcher.mock.calls.length === 1) {
-      elapsed = 31_366.731;
+      elapsed += 35_000.5;
       return new Response('', { status: 503 });
     }
     return browserReply(slow === 'direct' ? 'ParcelsApp' : '17TRACK');
   });
-  const tracker = new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher });
+  const tracker = new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher,
+    browserLookup: async () => { elapsed += 35_000.25; throw new Error('Ship24 timeout'); },
+  });
   const router = new TrackingRouter({
     direct: async () => { elapsed = 46_366.731; throw new UpstreamHttpError('DHL eCommerce', 428); },
     universal: (source, trackingNumber, timeoutMs) => tracker.fetchSource(source, trackingNumber, timeoutMs),
@@ -44,10 +46,12 @@ it.each(['direct', 'universal'])('reaches a real fallback after a slow %s failur
       finishTrackingProvider: async () => {},
     },
   });
-  const result = await router.fetch({ carrier: slow === 'direct' ? 'dhl-ecommerce' : 'unknown', tracking_number: number }, false);
+  const result = await router.fetch({ carrier: slow === 'direct' ? 'dhl-ecommerce' : 'unknown', tracking_number: number,
+    ...(slow === 'universal' ? { carrier_data: { routing: { version: 1, configured_carrier: 'unknown', preferred_provider: 'Ship24' } } } : {}),
+  }, false);
   expect(result.result.tracking_provider).toBe(slow === 'direct' ? 'ParcelsApp' : '17TRACK');
   expect(fetcher).toHaveBeenCalledTimes(slow === 'direct' ? 1 : 2);
   const sent = JSON.parse(String(fetcher.mock.calls.at(-1)![1]?.body));
   expect(Number.isInteger(sent.maxTimeout)).toBe(true);
-  expect(sent.maxTimeout).toBeLessThanOrEqual(slow === 'direct' ? 13_633.269 : 28_633.269);
+  expect(sent.maxTimeout).toBeLessThanOrEqual(slow === 'direct' ? 30_000 : 29_999.25);
 });

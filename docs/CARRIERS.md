@@ -72,8 +72,11 @@ uses a paid API key or a saved browser login. Docker installs Chromium and sets
 path. Chromium receives no application secrets. Sessions and cookies are deleted
 when each lookup finishes. Only one form scraper runs per server process at a
 time; overlapping requests fail promptly for retry on the next scheduled sync.
-Each source has a 45-second default timeout, and the first successful source wins.
-A full chain can therefore take roughly three minutes when every source times out.
+The router gives each enabled provider one chance when previous providers fail,
+with up to 30 seconds per lookup and a 105-second universal budget by default,
+starting after direct attempts. It stops at the first success and honors cooldowns.
+Production Ship24 checks on September 10 returned 32 and 6 events for two public
+examples in 2.6 and 2.3 seconds respectively.
 
 Ship24's `timestamp` includes the carrier offset; its `datetime` field can contain
 local wall-clock time mislabeled with `Z`, so that field is deliberately ignored.
