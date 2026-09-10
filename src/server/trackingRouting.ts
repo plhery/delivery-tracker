@@ -233,7 +233,9 @@ export class TrackingRouter {
     const universal = async (source: UniversalSource): Promise<RoutedResult | null> => {
       signal?.throwIfAborted();
       // Two routine attempts, at most 65 seconds of universal work per lookup.
-      const remaining = 65_000 - (performance.now() - started);
+      // Node's AbortSignal.timeout requires integer milliseconds. A slow first
+      // attempt exposes performance.now() fractions once the 30s cap no longer applies.
+      const remaining = Math.floor(65_000 - (performance.now() - started));
       if (attempts >= 2 || remaining < 5_000 || millis(state.failures[source]?.retry_at) > now().getTime()) return null;
       let lease: { token: string | null; retry_at: string };
       try { lease = await this.options.health.acquireTrackingProvider(source); }
