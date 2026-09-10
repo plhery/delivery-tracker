@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AmazonLogisticsTracker } from './amazonLogistics';
 import { secondsUntilNextSync, workerPollDelay } from './background';
 import { normalizeCarrierResult, type CarrierResult } from './carrierResult';
 import { ColisPriveTracker, ColisPriveTrackingError } from './colisPrive';
@@ -70,8 +69,6 @@ describe('dedicated carrier dispatch', () => {
       .mockResolvedValue({ status: 'in_transit' });
     const paack = vi.spyOn(PaackTracker.prototype, 'fetch')
       .mockResolvedValue({ status: 'in_transit' });
-    const amazonLogistics = vi.spyOn(AmazonLogisticsTracker.prototype, 'fetch')
-      .mockResolvedValue({ status: 'in_transit' });
     const indiaPost = vi.spyOn(IndiaPostTracker.prototype, 'fetch')
       .mockResolvedValue({ status: 'in_transit' });
     const adapter = new CarrierTrackingAdapter();
@@ -91,7 +88,6 @@ describe('dedicated carrier dispatch', () => {
     await adapter.fetch('heppner', '23456789', null, '75001');
     await adapter.fetch('ciblex', '12345678901234', null);
     await adapter.fetch('paack', 'ORDER1234', null, '75001');
-    await adapter.fetch('amazon-logistics', 'FR1234567890', null);
     await adapter.fetch('india-post', 'JN067614884IN', null);
 
     expect(laPoste).toHaveBeenNthCalledWith(1, '8G12345678901');
@@ -109,7 +105,6 @@ describe('dedicated carrier dispatch', () => {
     expect(heppner).toHaveBeenCalledWith('23456789', '75001');
     expect(ciblex).toHaveBeenCalledWith('12345678901234');
     expect(paack).toHaveBeenCalledWith('ORDER1234', '75001');
-    expect(amazonLogistics).toHaveBeenCalledWith('FR1234567890');
     expect(indiaPost).toHaveBeenCalledWith('JN067614884IN');
   });
 });
@@ -976,6 +971,22 @@ describe('TrackingSyncService', () => {
         }),
       ]),
     );
+  });
+
+  it.each(['amazon-logistics', 'unknown', 'ups'])('stops existing Amazon France parcels routed as %s before any provider call', async (carrier) => {
+    const client = fakeClient();
+    const adapter: TrackingAdapter = { fetch: vi.fn(), fetchUniversal: vi.fn() };
+    const capture = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter);
+    const parcel = { id: 'amazon-parcel', carrier, tracking_number: 'FR3000000001' };
+    await expect(service.syncPackage(parcel)).resolves.toMatchObject({ unsupported: 1, errors: 0 });
+    expect(adapter.fetch).not.toHaveBeenCalled();
+    expect(adapter.fetchUniversal).not.toHaveBeenCalled();
+    expect(capture).not.toHaveBeenCalled();
+    expect(client.updatePackage).toHaveBeenCalledWith('amazon-parcel', expect.objectContaining({
+      sync_status: 'unsupported', sync_error: expect.stringContaining('Amazon account'),
+    }));
+    expect(isTrackingSyncDue({ ...parcel, sync_status: 'unsupported' }, new Date())).toBe(false);
   });
 
   it('marks an unavailable catalog carrier unsupported without pretending it was checked', async () => {

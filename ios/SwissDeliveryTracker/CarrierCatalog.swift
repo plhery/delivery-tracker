@@ -248,7 +248,12 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         info(for: carrier).tracking.mode == "automatic"
     }
 
+    func requiresAmazonAccount(_ carrier: CarrierID, trackingNumber: String = "") -> Bool {
+        carrier == .amazonLogistics || Self.matches(Self.normalize(trackingNumber), pattern: "^FR[0-9]{10}$")
+    }
+
     func trackingHintKey(for carrier: CarrierID) -> String {
+        if requiresAmazonAccount(carrier) { return "add.amazonAccount" }
         return tracksAutomatically(carrier) ? "add.autoSync" : "add.linkSync"
     }
 
@@ -371,6 +376,11 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     }
 
     func trackingLinks(for parcel: Parcel, language: AppLanguage) -> [ParcelTrackingLink] {
+        if requiresAmazonAccount(parcel.carrier, trackingNumber: parcel.trackingNumber) {
+            return [ParcelTrackingLink(carrier: .amazonLogistics,
+                name: info(for: .amazonLogistics, language: language).displayName,
+                url: URL(string: "https://www.amazon.fr/gp/your-account/order-history")!, role: .active)]
+        }
         let links = carrierTrackingLinks(for: parcel, language: language)
         let lookupNumber = parcel.carrierData?.originalCarrier != nil && parcel.carrierData?.activeTrackingCarrier != nil
             ? parcel.carrierData?.activeTrackingNumber?.nonEmpty ?? parcel.trackingNumber : parcel.trackingNumber
@@ -416,7 +426,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             let obsoletePostNLLink = parcel.carrier == .springGDS
                 && savedPostNLURL?.host?.lowercased() == "postnl.post"
                 && savedPostNLURL?.path.hasPrefix("/details/") == true
-            let savedURL = carrier == .internationalPost || obsoletePostNLLink || carrier != parcel.carrier
+            let savedURL = requiresAmazonAccount(carrier, trackingNumber: number) || carrier == .internationalPost || obsoletePostNLLink || carrier != parcel.carrier
                 || number != parcel.trackingNumber ? nil : parcel.trackingURL
             guard let raw = savedURL
                     ?? Self.renderTrackingURL(
@@ -454,6 +464,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
 
     private func recognizedNumber(in text: String) -> String? {
         let patterns = [
+            "\\bFR\\s*\\d(?:[\\s.-]?\\d){9}\\b",
             "\\b\\d{26}\\b",
             "\\bH\\d{15,19}\\b",
             "\\b1Z[A-Z0-9]{16}\\b",

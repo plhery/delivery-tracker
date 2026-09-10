@@ -1,4 +1,5 @@
 import 'server-only';
+import { AMAZON_ACCOUNT_MESSAGE, requiresAmazonAccount } from '../lib/amazonFrance';
 import { trackingLanguageStage } from './trackingLanguage';
 
 import { createHash } from 'node:crypto';
@@ -13,7 +14,6 @@ import {
   carrierTimezone,
   supportsSwissPostHandoff,
 } from './carriers';
-import { AmazonLogisticsTracker } from './amazonLogistics';
 import { ColisPriveTracker } from './colisPrive';
 import { ColiswebTracker } from './colisweb';
 import { CChezVousTracker } from './cChezVous';
@@ -61,6 +61,7 @@ const SLOW_POLL_INTERVAL_MS = 60 * 60 * 1_000;
 const FAILED_SLOW_POLL_INTERVAL_MS = 4 * SLOW_POLL_INTERVAL_MS;
 
 export function isTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
+  if (parcel.sync_status === 'unsupported' && requiresAmazonAccount(String(parcel.carrier), String(parcel.tracking_number ?? ''))) return false;
   const routing = routingState(parcel);
   if (routing.next_check_at && Date.parse(routing.next_check_at) > now.getTime()) return false;
   const activeCarrier = isRecord(parcel.carrier_data) ? parcel.carrier_data.active_tracking_carrier : undefined;
@@ -121,7 +122,6 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     readonly heppner = new HeppnerTracker(),
     readonly ciblex = new CiblexTracker(),
     readonly paack = new PaackTracker(),
-    readonly amazonLogistics = new AmazonLogisticsTracker(),
     readonly indiaPost = new IndiaPostTracker(),
     readonly dhl = new DHLTracker(),
     readonly hermesGermany = new HermesGermanyTracker(),
@@ -193,8 +193,6 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
       result = await this.ciblex.fetch(trackingNumber);
     } else if (adapter === 'paack') {
       result = await this.paack.fetch(trackingNumber, dpdPostcode ?? '');
-    } else if (adapter === 'amazon-logistics') {
-      result = await this.amazonLogistics.fetch(trackingNumber);
     } else if (adapter === 'india-post') {
       result = await this.indiaPost.fetch(trackingNumber);
     } else if (adapter === 'planzer' && trackingUrl) {
@@ -643,7 +641,8 @@ export class TrackingSyncService {
       return 'superseded';
     };
 
-    if (!AUTOMATIC_CARRIER_IDS.has(carrierId) && !this.adapter.fetchUniversal) {
+    const accountRequired = requiresAmazonAccount(carrierId, String(parcel.tracking_number ?? ''));
+    if (accountRequired || (!AUTOMATIC_CARRIER_IDS.has(carrierId) && !this.adapter.fetchUniversal)) {
       audit.record('selected', 'succeeded', 0, { automatic: false });
       audit.skip('fetch', 'unsupported_carrier');
       audit.skip('normalize', 'unsupported_carrier');
@@ -652,7 +651,7 @@ export class TrackingSyncService {
         await audit.step('persist_package', async () => {
           await persist({
             sync_status: 'unsupported',
-            sync_error: 'Automatic updates are unavailable for this carrier. Change the carrier or check the tracking link.',
+            sync_error: accountRequired ? AMAZON_ACCOUNT_MESSAGE : 'Automatic updates are unavailable for this carrier. Change the carrier or check the tracking link.',
             last_synced_at: null,
           });
         });

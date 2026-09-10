@@ -15,6 +15,8 @@
   "account.typeToConfirm": "Wpisz {{email}}, aby potwierdzić",
   "add.adding": "Dodawanie…",
   "add.alreadyExists": "Już śledzisz tę przesyłkę.",
+  "add.amazonAccount": "Aktualizacje dostaw Amazon France są dostępne na Twoim koncie Amazon. Otwórz Twoje zamówienia i wybierz Śledź przesyłkę. Tych dostaw nie można śledzić tutaj.",
+  "add.openAmazonOrders": "Otwórz moje zamówienia Amazon",
   "add.autoSync": "Będziemy automatycznie sprawdzać aktualizacje od {{carrier}}.",
   "add.carrier": "Przewoźnik",
   "add.changeCarrier": "Zmień przewoźnika",

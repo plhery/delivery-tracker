@@ -15,6 +15,8 @@
   "account.typeToConfirm": "Zur Bestätigung {{email}} eingeben",
   "add.adding": "Wird hinzugefügt…",
   "add.alreadyExists": "Du verfolgst dieses Paket bereits.",
+  "add.amazonAccount": "Die Sendungsverfolgung für Amazon France ist in deinem Amazon-Konto verfügbar. Öffne Meine Bestellungen und wähle Lieferung verfolgen. Diese Lieferungen können hier nicht verfolgt werden.",
+  "add.openAmazonOrders": "Meine Amazon-Bestellungen öffnen",
   "add.autoSync": "Wir prüfen den Sendungsstatus bei {{carrier}} automatisch.",
   "add.carrier": "Paketdienst",
   "add.changeCarrier": "Paketdienst ändern",

@@ -115,6 +115,7 @@ extension Parcel {
     var displayedCarrier: CarrierID { carrierData?.originalCarrier ?? activeTrackingCarrier }
 
     var activeTrackingCarrier: CarrierID {
+        if CarrierCatalog.shared.requiresAmazonAccount(carrier, trackingNumber: trackingNumber) { return .amazonLogistics }
         if let trackingSource { return trackingSource }
         return CarrierCatalog.supportsSwissPostHandoff(trackingNumber) ? .aliexpress : carrier
     }

@@ -60,3 +60,28 @@ describe('GLS carrier lookup', () => {
     expect(screen.getByText('Unknown carrier')).toBeInTheDocument();
   });
 });
+
+describe('Amazon France account-only tracking', () => {
+  it.each(['FR3000000001', 'fr 3000-000001', 'Your parcel: FR3000000001', 'https://track.amazon.fr/tracking/FR3000000001'])(
+    'explains account tracking and refuses %s', async (number) => {
+      const onAdd = vi.fn();
+      const user = userEvent.setup();
+      render(<AddParcelSheet apiAuth={apiAuth} onAdd={onAdd} onClose={vi.fn()} initialTrackingInput={number} />);
+      expect(screen.getByText('Amazon France')).toBeInTheDocument();
+      expect(screen.getByText(/Amazon France keeps delivery updates in your Amazon account/)).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Open my Amazon orders' }))
+        .toHaveAttribute('href', 'https://www.amazon.fr/gp/your-account/order-history');
+      const button = screen.getByRole('button', { name: /^add parcel$/i });
+      expect(button).toBeDisabled();
+      await user.click(button);
+      expect(onAdd).not.toHaveBeenCalled();
+      expect(lookupCarrier).not.toHaveBeenCalled();
+      expect(screen.queryByRole('button', { name: /change carrier/i })).not.toBeInTheDocument();
+      const input = screen.getByRole('textbox', { name: /tracking number/i });
+      await user.clear(input);
+      await user.type(input, '1Z999AA10123456784');
+      expect(button).toBeEnabled();
+      expect(screen.queryByRole('link', { name: 'Open my Amazon orders' })).not.toBeInTheDocument();
+    },
+  );
+});

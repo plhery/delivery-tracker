@@ -443,13 +443,15 @@ export function ParcelDetail({
         {!automaticTracking && (
           <div className="detail__tracking-help" role="note">
             <p>{t(carrierTrackingHintKey(carrier.id), { carrier: carrier.name })}</p>
-            <button
-              type="button"
-              className="button button--secondary"
-              onClick={() => setEditingCarrier(true)}
-            >
-              {t('detail.changeCarrier')}
-            </button>
+            {carrier.id !== 'amazon-logistics' && (
+              <button
+                type="button"
+                className="button button--secondary"
+                onClick={() => setEditingCarrier(true)}
+              >
+                {t('detail.changeCarrier')}
+              </button>
+            )}
           </div>
         )}
         {automaticTracking && parcel.syncError && (

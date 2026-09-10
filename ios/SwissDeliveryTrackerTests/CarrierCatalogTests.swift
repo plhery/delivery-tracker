@@ -220,6 +220,29 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(numeric.source, .link)
     }
 
+    func testAmazonFranceRequiresAnAccountEvenWithACarrierOverride() {
+        XCTAssertEqual(catalog.parse("Your parcel: FR3000000001").carrier, .amazonLogistics)
+        XCTAssertTrue(catalog.requiresAmazonAccount(.unknown, trackingNumber: "fr 3000-000001"))
+        XCTAssertTrue(catalog.requiresAmazonAccount(.ups, trackingNumber: "FR3000000001"))
+        XCTAssertTrue(catalog.requiresAmazonAccount(.amazonLogistics))
+        XCTAssertFalse(catalog.requiresAmazonAccount(.ups, trackingNumber: "1Z999AA10123456784"))
+        XCTAssertFalse(catalog.tracksAutomatically(.amazonLogistics))
+        XCTAssertEqual(catalog.trackingHintKey(for: .amazonLogistics), "add.amazonAccount")
+        XCTAssertEqual(catalog.info(for: .amazonLogistics).trackingURLTemplate,
+                       "https://www.amazon.fr/gp/your-account/order-history")
+    }
+
+    func testAmazonFranceReplacesSavedFallbackLinks() throws {
+        var parcel = Parcel(id: UUID(), trackingNumber: "FR3000000001", label: "Example", carrier: .unknown,
+            createdAt: "2026-09-10T12:00:00Z", syncStatus: .error, notificationsMuted: false)
+        parcel.carrierData = CarrierData(trackingProvider: "ParcelsApp")
+        parcel.trackingURL = "https://track.amazon.fr/tracking/FR3000000001"
+        XCTAssertEqual(parcel.activeTrackingCarrier, .amazonLogistics)
+        let link = try XCTUnwrap(catalog.trackingLinks(for: parcel, language: .fr).first)
+        XCTAssertEqual(link.name, "Amazon France")
+        XCTAssertEqual(link.url.absoluteString, "https://www.amazon.fr/gp/your-account/order-history")
+    }
+
     func testParsesKnownCarrierLink() {
         let parsed = catalog.parse("Track it: https://www.ups.com/track?tracknum=1Z999AA10123456784")
         XCTAssertEqual(parsed.trackingNumber, "1Z999AA10123456784")
@@ -239,7 +262,6 @@ final class CarrierCatalogTests: XCTestCase {
             .laPoste, .chronopost, .glsFr, .colisPrive, .geodis,
             .swissPostCargo, .glsCh, .colisweb, .cChezVous,
             .heppner, .ciblex, .paack,
-            .amazonLogistics,
         ] {
             XCTAssertTrue(catalog.selectableCarriers.contains(carrier), carrier.rawValue)
             XCTAssertTrue(catalog.tracksAutomatically(carrier), carrier.rawValue)
@@ -485,7 +507,7 @@ final class CarrierCatalogTests: XCTestCase {
             force: true
         )
         XCTAssertEqual(result, .failed)
-        XCTAssertEqual(original.info(for: .amazonLogistics).displayName, "Amazon Shipping")
+        XCTAssertEqual(original.info(for: .amazonLogistics).displayName, "Amazon France")
     }
 
     private static var bundledCatalogData: Data {

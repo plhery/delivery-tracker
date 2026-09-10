@@ -15,6 +15,8 @@
   "account.typeToConfirm": "Saisis {{email}} pour confirmer",
   "add.adding": "Ajout…",
   "add.alreadyExists": "Tu suis déjà ce colis.",
+  "add.amazonAccount": "Le suivi des livraisons Amazon France est disponible dans votre compte Amazon. Ouvrez Vos commandes, puis sélectionnez Suivre votre colis. Ces livraisons ne peuvent pas être suivies ici.",
+  "add.openAmazonOrders": "Voir mes commandes Amazon",
   "add.autoSync": "Nous consulterons automatiquement le suivi de {{carrier}}.",
   "add.carrier": "Transporteur",
   "add.changeCarrier": "Changer de transporteur",

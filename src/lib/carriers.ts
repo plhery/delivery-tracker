@@ -1,3 +1,4 @@
+import { AMAZON_ORDERS_URL, requiresAmazonAccount } from './amazonFrance';
 import { isValidMondialRelayBarcode } from './mondialRelayBarcode';
 import {
   CARRIER_CAPABILITIES,
@@ -197,6 +198,7 @@ export function supportsSwissPostHandoff(raw: string): boolean {
 export function activeTrackingCarrierId(
   parcel: Pick<Parcel, 'carrier' | 'trackingNumber' | 'trackingSource'>,
 ): CarrierId {
+  if (requiresAmazonAccount(parcel.carrier, parcel.trackingNumber)) return 'amazon-logistics';
   if (parcel.trackingSource) return parcel.trackingSource;
   return supportsSwissPostHandoff(parcel.trackingNumber) ? 'aliexpress' : parcel.carrier;
 }
@@ -221,6 +223,10 @@ export function parcelTrackingNumbers(parcel: Pick<Parcel,
 export function parcelTrackingLinks(
   parcel: Parameters<typeof carrierTrackingLinks>[0], locale?: string,
 ): ParcelTrackingLink[] {
+  if (requiresAmazonAccount(parcel.carrier, parcel.trackingNumber)) {
+    const carrier = carrierInfo('amazon-logistics', locale);
+    return [{ carrier, name: carrier.name, url: AMAZON_ORDERS_URL, active: true, ready: true, role: 'active' }];
+  }
   const links = carrierTrackingLinks(parcel, locale);
   const number = encodeURIComponent(parcel.originalCarrier && parcel.trackingSource
     ? parcel.activeTrackingNumber ?? parcel.trackingNumber : parcel.trackingNumber);
@@ -269,7 +275,7 @@ function carrierTrackingLinks(
     const carrier = carrierInfo(activeTrackingCarrierId(parcel), locale);
     const number = parcel.activeTrackingNumber ?? parcel.trackingNumber;
     // Repair obsolete generated links saved by earlier app versions.
-    let savedUrl = carrier.id === 'intl-post' || carrier.id !== parcel.carrier
+    let savedUrl = requiresAmazonAccount(carrier.id, number) || carrier.id === 'intl-post' || carrier.id !== parcel.carrier
       || number !== parcel.trackingNumber ? undefined : parcel.trackingUrl;
     if (parcel.carrier === 'spring-gds' && savedUrl) {
       try {
@@ -354,7 +360,8 @@ export function tracksAutomatically(carrierId: CarrierId): boolean {
 }
 
 export function carrierTrackingHintKey(carrierId: CarrierId) {
-  return tracksAutomatically(carrierId) ? 'add.autoSync' : 'add.linkSync';
+  return requiresAmazonAccount(carrierId) ? 'add.amazonAccount'
+    : tracksAutomatically(carrierId) ? 'add.autoSync' : 'add.linkSync';
 }
 
 /** Return only a high-confidence carrier; preserve ambiguous candidates for the UI. */
@@ -394,6 +401,7 @@ export function detectCarrier(raw: string): CarrierId {
 }
 
 const TRACKING_CANDIDATE_PATTERNS = [
+  /\bFR\s*\d(?:[\s.-]?\d){9}\b/gi,
   /\b\d{26}\b/g,
   /\bH\d{15,19}\b/gi,
   /\b1Z[A-Z0-9]{16}\b/gi,

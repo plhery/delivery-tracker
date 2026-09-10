@@ -197,8 +197,10 @@ struct ParcelDetailView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(localizer.text(catalog.trackingHintKey(for: parcel.activeTrackingCarrier), ["carrier": carrier.displayName]))
                         .font(.footnote).foregroundStyle(.secondary)
-                    Button(localizer.text("detail.changeCarrier")) { showingCarrierEditor = true }
-                        .font(.footnote).foregroundStyle(branding.ink)
+                    if !catalog.requiresAmazonAccount(parcel.activeTrackingCarrier) {
+                        Button(localizer.text("detail.changeCarrier")) { showingCarrierEditor = true }
+                            .font(.footnote).foregroundStyle(branding.ink)
+                    }
                 }
             } else if parcel.syncError != nil {
                 Text(localizer.text("detail.trackingUnavailable"))

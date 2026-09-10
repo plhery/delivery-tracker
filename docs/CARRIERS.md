@@ -1,6 +1,6 @@
 # Carrier support
 
-Delivery Tracker can refresh these carriers automatically:
+Delivery Tracker recognizes these carriers, with tracking availability shown below:
 
 | Carrier | Notes |
 | --- | --- |
@@ -22,7 +22,7 @@ Delivery Tracker can refresh these carriers automatically:
 | DPD Switzerland | Automatic through the myDPD guest flow. The parcel's delivery postcode unlocks verified scans and delivery windows. |
 | GLS Switzerland | Automatic through GLS's public tracking services. The four-digit recipient postcode unlocks the detailed event history. |
 | UPS | Automatic. Direct HTTP is tried first; a private TRAWL instance can handle browser challenges. |
-| Amazon Shipping France | Automatic through Amazon Shipping's anonymous recipient tracker for `FR` followed by ten digits. |
+| Amazon France | Account-only. `FR` followed by ten digits is recognized, but cannot be added; follow the delivery in Your Orders on Amazon.fr. |
 | DPD France | Automatic through the recipient trace page. Direct HTTP is tried first; a private TRAWL instance is required when Cloudflare challenges it. |
 | Mondial Relay | Automatic through the recipient web flow. Short shipment numbers require the five-digit recipient postcode. Validated 26-digit label barcodes work without it. Can use private TRAWL for Cloudflare. |
 | Relais Colis | Automatic through the public recipient form and its CSRF-bound session. |
@@ -213,7 +213,7 @@ before automatic detection.
 
 ## French carrier handling and privacy
 
-Amazon Shipping France, DPD France, Mondial Relay, Relais Colis, La Poste / Colissimo, Chronopost, GLS
+DPD France, Mondial Relay, Relais Colis, La Poste / Colissimo, Chronopost, GLS
 France, Colis Privé, GEODIS, Colisweb, C Chez Vous, Heppner, Ciblex and Paack
 are visible in the manual carrier picker on the web and in both iPhone
 interfaces. Recognized tracking links and distinctive number formats can still
@@ -283,13 +283,18 @@ checks, and privacy-safe projections; failures remain visible for retry. La
 Poste's supported Okapi-key API is the preferred future production path when
 deployment credentials are available.
 
-Amazon Shipping's public France tracker exposes the shipment summary and event
-history used by its recipient page. The adapter retains only status, dates,
-event codes and coarse city/region/country locations. It discards recipient,
-full-address, postcode, shipper and proof-of-delivery fields. Amazon does not
-echo the requested tracking ID in this response, so the adapter validates the
-request format and response structure but cannot perform an echoed identifier
-check. Detailed history is normally retained for only 45 days.
+Amazon France retail deliveries (`FR` followed by ten digits) require the
+recipient's Amazon account. The legacy `amazon-logistics` identifier is retained
+for compatibility, but is displayed as Amazon France. New additions are rejected
+by the web app, native app and API. Existing parcels link to Amazon's Your Orders;
+sync marks them unsupported without calling direct or universal trackers.
+
+Amazon Shipping is a separate service with a public recipient tracker. The FR
+number format alone does not establish that a retail delivery is available there.
+The historical Shipping parser remains tested but is not connected to automatic
+tracking. Support needs a reliable way to distinguish eligible Shipping parcels
+before it can be re-enabled. Production Sentry events on 2026-09-10 confirmed two
+retail FR numbers entering this adapter and failing through universal fallbacks.
 
 ## Swiss carrier handling and privacy
 
@@ -330,7 +335,7 @@ npm run test:carriers:live
 The opt-in suite sends validly shaped, deliberately wrong shipment numbers
 through every automatic adapter family. That includes Swiss Post, Swiss Post
 Cargo, Planzer and Quickpac, Cainiao, SunYou, Hermes, PostNL,
-PostLogistics, Dachser, UPS, Amazon Shipping France, GLS Switzerland, DPD Switzerland, DPD France,
+PostLogistics, Dachser, UPS, GLS Switzerland, DPD Switzerland, DPD France,
 Mondial Relay, Relais Colis, La Poste and Chronopost, GLS France, Colis Privé,
 GEODIS, Colisweb, C Chez Vous, Heppner, Ciblex and Paack. It also checks
 the still-resolving shipment number published by Swiss Post Cargo as its own

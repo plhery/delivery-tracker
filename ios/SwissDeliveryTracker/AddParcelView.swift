@@ -315,6 +315,7 @@ struct AddParcelView: View {
             .accessibilityLabel(localizer.text("add.changeCarrier"))
             .accessibilityValue(definition.displayName)
             .accessibilityIdentifier("addParcel.carrier")
+            .disabled(catalog.requiresAmazonAccount(.unknown, trackingNumber: parsed.trackingNumber))
 
             if parsed.source == .link || parsed.source == .text {
                 Label(CarrierCatalog.format(parsed.trackingNumber), systemImage: "barcode")
@@ -330,6 +331,10 @@ struct AddParcelView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+            }
+            if accountRequired {
+                Link(localizer.text("add.openAmazonOrders"), destination: URL(string: "https://www.amazon.fr/gp/your-account/order-history")!)
+                    .font(.subheadline)
             }
         }
         .foregroundStyle(Brand.ink)
@@ -471,7 +476,12 @@ struct AddParcelView: View {
 
     private var parsed: TrackingInputMatch { catalog.parse(trackingInput) }
 
+    private var accountRequired: Bool {
+        catalog.requiresAmazonAccount(carrierOverride ?? parsed.carrier, trackingNumber: parsed.trackingNumber)
+    }
+
     private var resolvedCarrier: CarrierID {
+        if accountRequired { return .amazonLogistics }
         if let carrierOverride { return carrierOverride }
         if let number = lookupTrackingNumber, verifiedCarrier?.trackingNumber == number {
             return verifiedCarrier?.carrier ?? parsed.carrier
@@ -504,7 +514,7 @@ struct AddParcelView: View {
     }
 
     private var canSave: Bool {
-        guard !parsed.trackingNumber.isEmpty else { return false }
+        guard !accountRequired, !parsed.trackingNumber.isEmpty else { return false }
         if let number = lookupTrackingNumber, verifiedCarrier?.trackingNumber != number { return false }
         for requirement in requirements {
             switch requirement.field {

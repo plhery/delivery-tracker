@@ -15,6 +15,8 @@
   "account.typeToConfirm": "Type {{email}} to confirm",
   "add.adding": "Adding…",
   "add.alreadyExists": "You’re already tracking this parcel.",
+  "add.amazonAccount": "Amazon France keeps delivery updates in your Amazon account. Open Your Orders, then select Track package. These deliveries can’t be tracked here.",
+  "add.openAmazonOrders": "Open my Amazon orders",
   "add.autoSync": "We’ll check {{carrier}} for updates automatically.",
   "add.carrier": "Carrier",
   "add.changeCarrier": "Change carrier",

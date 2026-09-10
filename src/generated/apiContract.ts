@@ -418,16 +418,15 @@ export const CARRIER_CAPABILITIES = {
     ]
   },
   "amazon-logistics": {
-    "displayName": "Amazon Shipping",
+    "displayName": "Amazon France",
     "color": "#ff9900",
     "selectable": true,
     "timezone": "Europe/Paris",
     "tracking": {
-      "mode": "automatic",
-      "adapter": "amazon-logistics"
+      "mode": "link-only",
+      "adapter": null
     },
-    "canaryUrl": "https://track.amazon.fr/",
-    "trackingUrlTemplate": "https://track.amazon.fr/tracking/{trackingNumber}",
+    "trackingUrlTemplate": "https://www.amazon.fr/gp/your-account/order-history",
     "linkRules": [
       {
         "domains": [

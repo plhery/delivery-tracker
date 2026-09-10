@@ -12,6 +12,7 @@ export function userErrorMessage(error: unknown, t: Translate, fallback: Message
   }
   if (/otp_expired|invalid.*(?:code|token)|(?:code|token).*expired/.test(message + code)) return t('error.invalidCode');
   if (/email.*(?:invalid|valid)|invalid.*email/.test(message)) return t('error.invalidEmail');
+  if (/amazon france.*amazon account/.test(message)) return t('add.amazonAccount');
   if (/postcode|postal code/.test(message)) return t('error.postcode');
   if (/tracking.*(?:url|link)|complete.*link/.test(message)) return t('error.trackingLink');
   if (/tracking (?:number|input)|parcel number/.test(message)) return t('error.trackingNumber');

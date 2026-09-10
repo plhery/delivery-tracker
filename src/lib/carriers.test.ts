@@ -329,7 +329,7 @@ describe('detectCarrier', () => {
     expect(detectCarrier('1Z999AA10123456784')).toBe('ups');
   });
 
-  it('recognises Amazon Shipping France identifiers', () => {
+  it('recognises Amazon France identifiers', () => {
     expect(detectCarrier('FR1234567890')).toBe('amazon-logistics');
     expect(detectCarrier('fr 1234-567890')).toBe('amazon-logistics');
   });
@@ -445,7 +445,6 @@ describe('parseTrackingInput', () => {
     ['spring-gds', 'LX123456789DE'],
     ['dhl', '1234567890'],
     ['ups', '1Z999AA10123456784'],
-    ['amazon-logistics', 'FR1234567890'],
     ['fedex', '123456789012'],
     ['gls-ch', '993990103198'],
     ['dpd', '01234567890123'],
@@ -639,7 +638,11 @@ describe('carrier metadata', () => {
     const linked = Object.values(CARRIERS).filter((carrier) => carrier.trackingUrl);
     expect(linked.length).toBeGreaterThan(0);
     for (const carrier of linked) {
-      expect(carrier.trackingUrl?.('AB 12/3')).toContain('AB%2012%2F3');
+      if (carrier.id === 'amazon-logistics') {
+        expect(carrier.trackingUrl?.('AB 12/3')).toBe('https://www.amazon.fr/gp/your-account/order-history');
+      } else {
+        expect(carrier.trackingUrl?.('AB 12/3')).toContain('AB%2012%2F3');
+      }
     }
   });
 
@@ -761,5 +764,14 @@ describe('Mondial Relay label barcode detection', () => {
     for (const number of ['0'.repeat(26), barcode.slice(0,-1)+'5', barcode.slice(0,14)+'1'+barcode.slice(15)]) {
       expect(detectCarrierMatch(number).carrier).not.toBe('mondial-relay');
     }
+  });
+});
+
+describe('Amazon France account links', () => {
+  it('replaces saved public tracker URLs with Amazon orders', () => {
+    const [link] = parcelTrackingLinks({ carrier: 'amazon-logistics', trackingNumber: 'FR3000000001',
+      trackingUrl: 'https://track.amazon.fr/tracking/FR3000000001', trackingProvider: 'ParcelsApp' });
+    expect(link).toMatchObject({ name: 'Amazon France', url: 'https://www.amazon.fr/gp/your-account/order-history' });
+    expect(tracksAutomatically('amazon-logistics')).toBe(false);
   });
 });

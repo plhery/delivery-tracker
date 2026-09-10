@@ -1,3 +1,4 @@
+import { AMAZON_ORDERS_URL, requiresAmazonAccount } from '../lib/amazonFrance';
 import { trackAction } from '../lib/analytics';
 import { userErrorMessage } from '../lib/userMessages';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
@@ -104,7 +105,10 @@ export function AddParcelSheet({
   const lookingUp = shouldLookup && verifiedCarrier?.trackingNumber !== normalizedNumber;
   const detectedCarrier = shouldLookup && verifiedCarrier?.trackingNumber === normalizedNumber
     ? verifiedCarrier.carrier : parsedTracking.carrier;
-  const resolvedCarrier = selectedCarrier === 'auto' ? detectedCarrier : selectedCarrier;
+  const amazonNumber = requiresAmazonAccount('', normalizedNumber);
+  const accountRequired = requiresAmazonAccount(selectedCarrier, normalizedNumber);
+  const resolvedCarrier = accountRequired ? 'amazon-logistics'
+    : selectedCarrier === 'auto' ? detectedCarrier : selectedCarrier;
   useEffect(() => {
     if (!shouldLookup || !apiAuth) return;
     const controller = new AbortController();
@@ -143,7 +147,7 @@ export function AddParcelSheet({
       })
       : t(carrierTrackingHintKey(carrier.id), { carrier: carrier.name })
     : '';
-  const carrierPickerVisible = Boolean(trackingNumber) && (
+  const carrierPickerVisible = !amazonNumber && Boolean(trackingNumber) && (
     showCarrierPicker || requiresCarrierConfirmation || carrier?.id === 'unknown'
   );
 
@@ -161,7 +165,7 @@ export function AddParcelSheet({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!trackingNumber.trim() || lookingUp || requiresCarrierConfirmation || !requirementsSatisfied || saving) return;
+    if (accountRequired || !trackingNumber.trim() || lookingUp || requiresCarrierConfirmation || !requirementsSatisfied || saving) return;
     setSaving(true);
     setError(null);
     setExistingParcelId(null);
@@ -266,7 +270,7 @@ export function AddParcelSheet({
                 </p>
               )}
               {carrier && trackingNumber && (
-                <div className="add-parcel-carrier" aria-live="polite" aria-busy={lookingUp}>
+                <div className={`add-parcel-carrier${accountRequired ? ' add-parcel-carrier--account' : ''}`} aria-live="polite" aria-busy={lookingUp}>
                   <div className="add-parcel-carrier__row">
                     <Icon name="truck" />
                     <span className="add-parcel-carrier__identity">
@@ -275,7 +279,7 @@ export function AddParcelSheet({
                         ? t('add.detectedCarrier')
                         : t('add.carrier')}</small>
                     </span>
-                    {!requiresCarrierConfirmation
+                    {!amazonNumber && !requiresCarrierConfirmation
                       && (selectedCarrier !== 'auto' || detectedCarrier !== 'unknown') && (
                       <button
                         type="button"
@@ -293,6 +297,11 @@ export function AddParcelSheet({
                   {(requiresCarrierConfirmation || !tracksAutomatically(carrier.id)) && (
                     <p className="add-parcel-carrier__hint">{carrierHint}</p>
                   )}
+                  {accountRequired && (
+                    <a className="add-parcel-carrier__account-link" href={AMAZON_ORDERS_URL} target="_blank" rel="noopener noreferrer">
+                      {t('add.openAmazonOrders')}
+                    </a>
+                  )}
                 </div>
               )}
               {carrierPickerVisible && (
@@ -306,7 +315,7 @@ export function AddParcelSheet({
                     <option value="auto">{t('add.detect')}</option>
                     {SELECTABLE_CARRIERS.map((option) => (
                       <option key={option.id} value={option.id}>
-                        {option.name}{tracksAutomatically(option.id) ? '' : ` (${t('add.linkOnly')})`}
+                        {option.name}{tracksAutomatically(option.id) || requiresAmazonAccount(option.id) ? '' : ` (${t('add.linkOnly')})`}
                       </option>
                     ))}
                   </select>
@@ -405,7 +414,7 @@ export function AddParcelSheet({
               className="button button--primary"
               disabled={
                 !trackingNumber
-                || lookingUp || requiresCarrierConfirmation
+                || accountRequired || lookingUp || requiresCarrierConfirmation
                 || !requirementsSatisfied
                 || saving
               }

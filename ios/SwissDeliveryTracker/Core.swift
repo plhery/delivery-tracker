@@ -192,6 +192,7 @@ final class Localizer: ObservableObject {
             ("rate.?limit|too many requests", "error.rateLimited"),
             ("otp_expired|invalid.*(code|token)|(code|token).*expired", "error.invalidCode"),
             ("email.*(invalid|valid)|invalid.*email", "error.invalidEmail"),
+            ("amazon france.*amazon account", "add.amazonAccount"),
             ("postcode|postal code", "error.postcode"),
             ("tracking.*(url|link)|complete.*link", "error.trackingLink"),
             ("tracking (number|input)|parcel number", "error.trackingNumber"),

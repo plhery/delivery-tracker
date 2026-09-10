@@ -62,3 +62,14 @@ test('keeps Add above a reduced visual viewport while required fields scroll', a
   await add.click();
   await expect(dialog).toBeHidden();
 });
+
+test('explains Amazon France account tracking and blocks addition', async ({ page }, testInfo) => {
+  const dialog = page.getByRole('dialog', { name: 'Add a parcel' });
+  await dialog.getByLabel('Tracking number or link').fill('FR3000000001');
+  await expect(dialog.getByText('Amazon France', { exact: true })).toBeVisible();
+  await expect(dialog.getByText(/Amazon France keeps delivery updates in your Amazon account/)).toBeVisible();
+  await expect(dialog.getByRole('link', { name: 'Open my Amazon orders' }))
+    .toHaveAttribute('href', 'https://www.amazon.fr/gp/your-account/order-history');
+  await expect(dialog.getByRole('button', { name: 'Add parcel', exact: true })).toBeDisabled();
+  await page.screenshot({ path: testInfo.outputPath('amazon-france.png') });
+});

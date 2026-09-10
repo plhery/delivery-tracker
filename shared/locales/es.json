@@ -15,6 +15,8 @@
   "account.typeToConfirm": "Escribe {{email}} para confirmar",
   "add.adding": "Añadiendo…",
   "add.alreadyExists": "Ya estás siguiendo este paquete.",
+  "add.amazonAccount": "El seguimiento de las entregas de Amazon France está disponible en tu cuenta de Amazon. Abre Mis pedidos y selecciona Localizar tu paquete. Estas entregas no se pueden seguir aquí.",
+  "add.openAmazonOrders": "Abrir mis pedidos de Amazon",
   "add.autoSync": "Consultaremos las novedades de {{carrier}} automáticamente.",
   "add.carrier": "Transportista",
   "add.changeCarrier": "Cambiar transportista",
