@@ -42,12 +42,12 @@ function stageForText(text: string, fallback = 'in_transit'): string {
   if (/not delivered|could not be delivered|unable to deliver|delivery attempt|nicht.*zugestellt|zustellversuch|nicht angetroffen/.test(value)) return 'failed_attempt';
   if (/ready for (?:pickup|collection)|ready to (?:collect|pick up)|awaiting collection|abholbereit|zur abholung bereit/.test(value)) return 'ready_for_pickup';
   if (/has been delivered|was delivered|successfully delivered|^delivered\b|erfolgreich zugestellt|wurde.*zugestellt/.test(value)) return 'delivered';
-  if (/out for delivery|loaded into.*delivery vehicle|in das zustellfahrzeug geladen|in zustellung/.test(value)) return 'out_for_delivery';
+  if (/^being delivered[.!]?$|out for delivery|loaded (?:into|onto).*delivery vehicle|in das zustellfahrzeug geladen|in zustellung/.test(value)) return 'out_for_delivery';
   if (/customs clearance process\b[^.]*\bhas been completed\b/.test(value)) return 'in_transit';
   if (/customs|zoll/.test(value)) return 'customs';
   if (/electronically|elektronisch|label created|shipment information|instruction data/.test(value)) return 'registered';
   if (/will be transported to the destination country/.test(value)) return 'in_transit';
-  if (/accepted|handed (?:over|to)|eingeliefert|übergeben/.test(value)) return 'accepted';
+  if (/pick-up was successful|accepted|handed (?:over|to)|eingeliefert|übergeben/.test(value)) return 'accepted';
   if (/processed|sorted|sorting|sortierung|bearbeitet|briefzentrum|paketzentrum|transit|transport|arrived|departed/.test(value)) return 'in_transit';
   return fallback;
 }

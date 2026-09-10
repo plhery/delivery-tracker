@@ -56,7 +56,7 @@ function records(value: unknown): JsonObject[] {
 
 function labelStatus(label: string, hasEvents: boolean): CarrierStatus {
   const value = comparable(label);
-  if (['retour', 'incident', 'echec', 'impossible', 'refuse', 'non livre']
+  if (['retour', 'incident', 'echec', 'impossible', 'refuse', 'non livre', "n'a pas pu vous etre remis"]
     .some((term) => value.includes(term))) return 'exception';
   if (['tournee', 'en cours de livraison', 'distribution ce jour']
     .some((term) => value.includes(term))) return 'out_for_delivery';

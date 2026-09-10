@@ -1,0 +1,696 @@
+[
+  {
+    "provider": "dhl",
+    "description": "Being delivered.",
+    "expected": "out_for_delivery"
+  },
+  {
+    "provider": "dhl",
+    "description": "Die Sendung wurde im Briefzentrum bearbeitet.",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "dhl",
+    "description": "Pick-up was successful.",
+    "expected": "accepted"
+  },
+  {
+    "provider": "dhl",
+    "description": "Shipment ready for collection from PACKSTATION.",
+    "expected": "ready_for_pickup"
+  },
+  {
+    "provider": "dhl",
+    "description": "The customs clearance process for import into the destination country/region has been completed. Please find more information here.",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "dhl",
+    "description": "The customs clearance process for import into the destination country/region has started. Please find more information here.",
+    "expected": "customs"
+  },
+  {
+    "provider": "dhl",
+    "description": "The instruction data for this shipment have been provided by the sender to DHL electronically",
+    "expected": "registered"
+  },
+  {
+    "provider": "dhl",
+    "description": "The shipment arrived in the region of recipient and will be transported to the delivery base in the next step.",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "dhl",
+    "description": "The shipment has arrived at the parcel center",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "dhl",
+    "description": "The shipment has arrived in the destination country/destination area. (Homepage / online shipment tracking: http://www.post.ch)",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "dhl",
+    "description": "The shipment has been loaded onto the delivery vehicle. Delivery is expected to take place today.",
+    "expected": "out_for_delivery"
+  },
+  {
+    "provider": "dhl",
+    "description": "The shipment has been processed in the parcel center of origin",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "dhl",
+    "description": "The shipment has left the import parcel center in the destination country/destination area.",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "dhl",
+    "description": "The shipment is being prepared for delivery in the delivery depot",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "dhl",
+    "description": "The shipment will be transported to the destination country/destination area and, from there, handed over to the delivery organization.",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "dhl-ecommerce",
+    "description": "CLOSE BAG",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "dhl-ecommerce",
+    "description": "DEPARTED FROM LOCAL DISTRIBUTION CENTER",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "dhl-ecommerce",
+    "description": "EN ROUTE",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "dhl-ecommerce",
+    "description": "EN ROUTE TO DHL ECOMMERCE OR AWAITING PROCESSING",
+    "expected": "registered"
+  },
+  {
+    "provider": "dhl-ecommerce",
+    "description": "LABEL CREATED",
+    "expected": "registered"
+  },
+  {
+    "provider": "dhl-ecommerce",
+    "description": "PACKAGE RECEIVED AT DHL ECOMMERCE DISTRIBUTION CENTER",
+    "expected": "accepted"
+  },
+  {
+    "provider": "dhl-ecommerce",
+    "description": "PROCESSED",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "dhl-ecommerce",
+    "description": "PROCESSING COMPLETED AT ORIGIN",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "dhl-ecommerce",
+    "description": "SCANNED INTO SACK/CONTAINER",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "dpd",
+    "description": "At delivery center",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "dpd",
+    "description": "At delivery centre",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "dpd",
+    "description": "Delivered",
+    "expected": "delivered"
+  },
+  {
+    "provider": "dpd",
+    "description": "Parcel handed to DPD",
+    "expected": "accepted"
+  },
+  {
+    "provider": "dpd",
+    "description": "Parcel out for delivery",
+    "expected": "out_for_delivery"
+  },
+  {
+    "provider": "dpd",
+    "description": "Your parcel is on its way",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "gls-de",
+    "description": "Customs Consignment via Customs Portal",
+    "expected": "customs"
+  },
+  {
+    "provider": "gls-de",
+    "description": "The parcel data was entered into the GLS IT system; the parcel was not yet handed over to GLS.",
+    "expected": "registered"
+  },
+  {
+    "provider": "gls-de",
+    "description": "The parcel has left the parcel center.",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "gls-de",
+    "description": "The parcel has reached the parcel center.",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "gls-de",
+    "description": "The parcel was handed over to GLS.",
+    "expected": "accepted"
+  },
+  {
+    "provider": "gls-de",
+    "description": "The parcel was released by customs.",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "india-post",
+    "description": "Item Booked",
+    "code": "ItemBooked",
+    "expected": "accepted"
+  },
+  {
+    "provider": "la-poste",
+    "description": "Colis en cours d'acheminement",
+    "code": "ET1",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "la-poste",
+    "description": "Colis en cours de livraison par le livreur",
+    "code": "MD1",
+    "expected": "out_for_delivery"
+  },
+  {
+    "provider": "la-poste",
+    "description": "Colis en cours de préparation chez l'expéditeur",
+    "code": "DR1",
+    "expected": "registered"
+  },
+  {
+    "provider": "la-poste",
+    "description": "Instruction de livraison reçue",
+    "code": "MD2",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "la-poste",
+    "description": "Tri effectué dans l'agence de départ",
+    "code": "ET1",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "la-poste",
+    "description": "Tri effectué dans l'agence de distribution",
+    "code": "EP1",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "la-poste",
+    "description": "Votre colis a été déposé dans un point postal.",
+    "code": "EDRDEP/PC1",
+    "expected": "accepted"
+  },
+  {
+    "provider": "la-poste",
+    "description": "Votre colis est en cours d'acheminement vers la plate-forme logistique.",
+    "code": "ACHNAT/ET1",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "la-poste",
+    "description": "Votre colis est en transit sur nos plateformes logistiques.",
+    "code": "ACHNAT/ET1",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "la-poste",
+    "description": "Votre colis est livré dans votre boite aux lettres.",
+    "code": "DESBAL/DI1",
+    "expected": "delivered"
+  },
+  {
+    "provider": "la-poste",
+    "description": "Votre colis est sur son site de distribution. Nous le préparons pour le mettre en livraison.",
+    "code": "DISTOU/MD1",
+    "expected": "out_for_delivery"
+  },
+  {
+    "provider": "la-poste",
+    "description": "Votre colis n'a pas pu vous être remis. Il sera mis en livraison demain (hors dimanche et jours fériés).",
+    "code": "DISIPPREZ/MD3",
+    "expected": "failed_attempt"
+  },
+  {
+    "provider": "la-poste",
+    "description": "Votre Colissimo est en cours de traitement sur le site de tri local.",
+    "code": "DISARR/EP1",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "la-poste",
+    "description": "Votre Colissimo va bientôt nous être confié ! Il est en cours de préparation chez votre expéditeur.",
+    "code": "EXPANN/DR1",
+    "expected": "registered"
+  },
+  {
+    "provider": "la-poste",
+    "description": "Votre demande d’envoi à partir de votre boîte aux lettres a bien été prise en compte.",
+    "code": "EXPELV/DR1",
+    "expected": "registered"
+  },
+  {
+    "provider": "la-poste",
+    "description": "Vous avez choisi de vous faire livrer dans un point postal. Votre colis va y être acheminé. Vous recevrez une notification dès que votre colis sera disponible.",
+    "code": "DISILIEU/MD2",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "la-poste",
+    "description": "Vous avez choisi le service d'envoi en boite aux lettres pour votre Colissimo. Nous l'avons bien récupéré dans votre boite aux lettres. Vous avez reçu une notification de prise en charge par mail, si ce n’est pas le cas, un avis de prise en charge a été laissé dans votre boite aux lettres.",
+    "code": "EXPBAL/PC1",
+    "expected": "accepted"
+  },
+  {
+    "provider": "quickpac",
+    "description": "In delivery",
+    "expected": "out_for_delivery"
+  },
+  {
+    "provider": "quickpac",
+    "description": "Paket wurde elektronisch angekündigt",
+    "expected": "registered"
+  },
+  {
+    "provider": "quickpac",
+    "description": "Recorded",
+    "expected": "registered"
+  },
+  {
+    "provider": "quickpac",
+    "description": "Shipped",
+    "expected": "delivered"
+  },
+  {
+    "provider": "quickpac",
+    "description": "Transferred",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "spring-gds",
+    "description": "The item is at the PostNL sorting center",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "spring-gds",
+    "description": "The Item is at the shippers warehouse",
+    "expected": "registered"
+  },
+  {
+    "provider": "spring-gds",
+    "description": "The item is on transport to the country of destination",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "spring-gds",
+    "description": "The item is pre-advised to PostNL",
+    "expected": "registered"
+  },
+  {
+    "provider": "spring-gds",
+    "description": "The item is processed at the PostNL sorting center",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "spring-gds",
+    "description": "The item is received by PostNL",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Arrival at the collection/delivery point",
+    "code": "LETTER.*.90.1001",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Arrival at the processing/collection point",
+    "code": "LETTER.*.90.913",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Arrival in destination country",
+    "code": "LETTER.*.90.818",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Completion of customs clearance process",
+    "code": "LETTER.*.90.804",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Completion of customs clearance process",
+    "code": "LETTER.*.90.805",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Consignment recorded by the foreign sender (data delivered)",
+    "code": "LETTER.*.90.620",
+    "expected": "registered"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Customs clearance process underway",
+    "code": "LETTER.*.90.803",
+    "expected": "customs"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Delivered",
+    "code": "LETTER.*.90.4000",
+    "expected": "delivered"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Delivered",
+    "code": "PARCEL.*.2.4000",
+    "expected": "delivered"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "DELIVERED",
+    "expected": "delivered"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Delivered — Deposited with authorization for delivery",
+    "code": "PARCEL.*.1.4000",
+    "expected": "delivered"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Delivered — Deposited with authorization for delivery",
+    "code": "PARCEL.*.2.4000",
+    "expected": "delivered"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Delivered — Deposited with authorization for delivery",
+    "code": "PARCEL.*.6.4000",
+    "expected": "delivered"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Delivered to the mailbox/letter box",
+    "code": "PARCEL.*.1.3800",
+    "expected": "delivered"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Deposited in the MyPost24 machine",
+    "code": "PARCEL.*.1.2102",
+    "expected": "ready_for_pickup"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Loading into delivery vehicle",
+    "code": "PARCEL.*.1.1003",
+    "expected": "out_for_delivery"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Loading into delivery vehicle",
+    "code": "PARCEL.*.2.1003",
+    "expected": "out_for_delivery"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Loading into delivery vehicle",
+    "code": "PARCEL.*.6.1003",
+    "expected": "out_for_delivery"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "REPORTED",
+    "expected": "registered"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Shipment was sorted",
+    "code": "PARCEL.*.1.1202",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Shipment was sorted",
+    "code": "PARCEL.*.2.1202",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Shipment was sorted",
+    "code": "PARCEL.*.6.1202",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Sorted for delivery",
+    "code": "LETTER.*.90.1213",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Sorted for delivery",
+    "code": "LETTER.*.90.1218",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Sorted for delivery",
+    "code": "PARCEL.*.1.1201",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Sorted for delivery",
+    "code": "PARCEL.*.2.1201",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Sorting - forwarding",
+    "code": "LETTER.*.90.820",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Sorting - forwarding",
+    "code": "PARCEL.*.2.820",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "The consignment has left the border point",
+    "code": "LETTER.*.90.915",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Time at which your consignment was mailed",
+    "code": "LETTER.*.90.912",
+    "expected": "accepted"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "TO_BE_DELIVERED",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Your shipment will shortly be handed over to the Swiss Post",
+    "code": "PARCEL.*.1.600",
+    "expected": "registered"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Your shipment will shortly be handed over to the Swiss Post",
+    "code": "PARCEL.*.2.600",
+    "expected": "registered"
+  },
+  {
+    "provider": "swiss-post",
+    "description": "Your shipment will shortly be handed over to the Swiss Post",
+    "code": "PARCEL.*.6.600",
+    "expected": "registered"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "Colis en préparation chez l'expéditeur",
+    "expected": "registered"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "Prise en charge de votre colis sur notre site logistique de [location].",
+    "expected": "accepted"
+  },
+  {
+    "provider": "ups",
+    "description": "Arrived at Facility",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ups",
+    "description": "DELIVERED",
+    "expected": "delivered"
+  },
+  {
+    "provider": "ups",
+    "description": "Delivery will be delayed by one business day.",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ups",
+    "description": "Departed from Facility",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ups",
+    "description": "Import Scan",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ups",
+    "description": "Out For Delivery",
+    "expected": "out_for_delivery"
+  },
+  {
+    "provider": "ups",
+    "description": "Shipper created a label, UPS has not received the package yet.",
+    "expected": "registered"
+  },
+  {
+    "provider": "ups",
+    "description": "Your package has been released by a government agency.",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ups",
+    "description": "Your package is on the way",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ups",
+    "description": "Your package is pending release from a Government Agency. We'll notify the receiver or sender if information is needed.",
+    "expected": "customs"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "Shipment information received",
+    "expected": "registered"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "En route to DHL eCommerce distribution center or awaiting processing",
+    "expected": "registered"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "The international shipment has been processed in the parcel center of origin",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "The shipment will be transported to the destination country/destination area and, from there, handed over to the delivery organization",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "Processed",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "Sorted",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "Label created",
+    "expected": "registered"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "En route",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "The international shipment has been processed in the export parcel center",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "The shipment has been processed in the parcel center of origin",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "The instruction data for this shipment have been provided by the sender to DHL electronically",
+    "expected": "registered"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "Package received at DHL eCommerce distribution center",
+    "expected": "accepted"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "Pick-up was successful.",
+    "expected": "accepted"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "The shipment has been processed in the destination parcel center",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "Clearance processing completed - Import",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "Loaded to movement / tour vehicle",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "Processing completed at origin",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "Departed from local distribution center",
+    "expected": "in_transit"
+  }
+]

@@ -31,6 +31,10 @@ export function hasPrivateDeliveryDetails(description: string): boolean {
 }
 
 export function eventStage(description: string): Stage | undefined {
+  // Public aggregators retain the carrier's French wording even in English.
+  const french = description.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+  if (/colis en preparation chez l'expediteur/.test(french)) return 'registered';
+  if (/prise en charge de votre colis sur notre site logistique/.test(french)) return 'accepted';
   if (/return(?:ed|ing)? to (?:the )?sender/i.test(description)) return 'returned';
   if (/not delivered|could not.*deliver|unable to deliver|delivery (?:attempt|failed)/i.test(description)) return 'failed_attempt';
   if (/delivered to (?:the )?(?:local carrier|delivery partner|post office|pickup point)/i.test(description)) return 'in_transit';
@@ -38,10 +42,12 @@ export function eventStage(description: string): Stage | undefined {
   if (/\bdelivered\b|delivery completed/i.test(description)) return 'delivered';
   if (/ready for (?:pickup|collection)|available for (?:pickup|collection)/i.test(description)) return 'ready_for_pickup';
   if (/out for delivery/i.test(description)) return 'out_for_delivery';
+  if (/clearance (?:processing )?completed|customs (?:cleared|released)/i.test(description)) return 'in_transit';
   if (/customs|clearance/i.test(description)) return 'customs';
-  if (/electronic information|information (?:received|submitted)|label (?:created|printed)|pre.?advice|shipment announced/i.test(description)) return 'registered';
-  if (/accepted|collected|picked up|handed over/i.test(description)) return 'accepted';
-  if (/transit|arrived|departed|processed|sorting|sorted|transport|dispatched|en route|loaded to movement/i.test(description)) return 'in_transit';
+  if (/instruction data.*provided.*electronically|electronic information|information (?:received|submitted)|label (?:created|printed)|pre.?advice|shipment announced/i.test(description)) return 'registered';
+  if (/will be transported to the destination country/i.test(description)) return 'in_transit';
+  if (/package received at dhl ecommerce|^pick-up was successful[.!]?$|accepted|collected|picked up|handed over/i.test(description)) return 'accepted';
+  if (/transit|arrived|departed|processed|processing completed at origin|sorting|sorted|transport|dispatched|en route|loaded to movement/i.test(description)) return 'in_transit';
   return undefined;
 }
 

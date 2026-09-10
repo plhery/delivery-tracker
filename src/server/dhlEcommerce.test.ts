@@ -32,6 +32,7 @@ describe('DHL eCommerce normalization', () => {
     ['READY FOR COLLECTION', 'transit', 'ready_for_pickup', 'out_for_delivery'],
     ['CUSTOMS CLEARANCE', 'transit', 'customs', 'in_transit'],
     ['CUSTOMS CLEARED', 'transit', 'in_transit', 'in_transit'],
+    ['Carrier exception', 'failure', 'failed_attempt', 'exception'],
     ['DELIVERY ATTEMPT FAILED', 'failure', 'failed_attempt', 'exception'],
     ['RETURNED TO SENDER', 'delivered', 'returned', 'exception'],
     ['Signed by PRIVATE', 'delivered', 'delivered', 'delivered'],

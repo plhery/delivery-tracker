@@ -70,11 +70,12 @@ function stageFor(event: JsonObject): string {
   if (/customs|clearance/.test(text)) return 'customs';
   if (/label created|manifest data received|en route to dhl ecommerce or awaiting processing|electronic|information received/.test(text)) return 'registered';
   if (/package received at dhl|picked up|accepted/.test(text)) return 'accepted';
+  if (/^(?:close bag|scanned into sack\/container)$/.test(text)) return 'in_transit';
   switch (event.statusCode) {
     case 'delivered': return 'delivered';
     case 'transit': return 'in_transit';
     case 'pre-transit': return 'registered';
-    case 'failure': return 'exception';
+    case 'failure': return 'failed_attempt';
     default: return 'pending';
   }
 }

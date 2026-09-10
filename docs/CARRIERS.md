@@ -377,3 +377,57 @@ FLARESOLVERR_URL=http://trawl:8191
 
 Do not expose TRAWL publicly. It controls a real browser and is only a best-effort
 fallback when a carrier requires interactive proof.
+
+### Public links shown in the UI
+
+Run the rendered-page checks separately from scraper data retrieval:
+
+```bash
+npx playwright install chromium
+npm run test:tracking-links
+# Or use an existing browser binary:
+TRACKING_CHROMIUM_PATH=/path/to/chromium npm run test:tracking-links
+```
+
+The existing daily carrier-canary workflow also runs these checks. They call
+`parcelTrackingLinks`, including the ParcelsApp fallback, with synthetic numbers.
+They check HTTP errors, final tracking routes, rendered tracking content, and
+whether the number is prefilled, displayed, or submitted to a lookup API. DPD's
+observed guest unknown-number response is recognized separately. La Poste can
+remove its query string after transferring the number into its search field.
+
+A 404/410 is a broken page, but a 200 can also be a soft 404, empty application,
+or homepage redirect. Conversely, “shipment not found” inside a working tracker
+is expected for a synthetic or expired number. Bot challenges and browser
+transport failures are **unverified skips**, never successful verification.
+Transport failures can skip only when a separate HTTP GET reaches the expected
+route without evidence of a broken page. `TRACKING_LINKS_STRICT=1` makes those
+unverified cases fail as well. DNS failures, missing pages, unexpected redirects,
+missing rendered content, and lost tracking inputs remain failures by default.
+
+The September 10 audit checked all 11 stored carriers, plus GLS, Cainiao and
+ParcelsApp links used for earlier legs or fallback. Seven routes passed headless
+checks; seven were unverified because of bot protection or browser transport.
+Interactive checks confirmed the remaining tracking pages: La Poste, DPD,
+17TRACK, Mondial Relay, UPS, DHL eCommerce and GLS. DPD's synthetic number returns
+a guest “not assigned” result. No broken page URL was found in this sample;
+this does not establish successful tracking-data retrieval for every parcel.
+
+### Audited history regression fixture
+
+`src/server/fixtures/auditedTrackingHistory.json` contains 129 reviewed,
+distinct provider-description-code cases from the September 10 history audit.
+It contains no package/user IDs, tracking numbers, actual timestamps, or
+shipment locations. The test reconstructs minimal provider envelopes with
+synthetic values; these are not full captured responses. Expectations are
+reviewed delivery stages, including corrections, rather than copied stored
+classifications. Provider event provenance is retained across carrier changes.
+
+The audit fixed DHL delivery-vehicle/collection wording, DHL eCommerce bag/sack
+handling, La Poste's failed delivery wording, and French/untranslated universal
+fallback events, including clearance completion and future international handoff.
+Unknown wording remains unknown in the universal parser. The guarded migration
+`20260912180000_repair_audited_tracking_stages.sql` repairs matching stored
+events with raw-description and source checks. It preserves raw evidence,
+timestamps, event IDs and notification receipts, and updates the package summary
+only if its latest meaningful event changes.
