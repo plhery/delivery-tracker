@@ -54,6 +54,8 @@ describe('guarded tracking writes', () => {
     await user.getPackage('package-1');
     expect(decodeURIComponent(serviceRequest.mock.calls[0][0])).toContain('current_stage,tracking_generation');
     expect(userRequest.mock.calls[0][0]).not.toContain('tracking_generation');
+    expect(decodeURIComponent(serviceRequest.mock.calls[0][0])).toContain('tracking_generation,user_id');
+    expect(userRequest.mock.calls[0][0]).not.toContain('user_id');
   });
 
   it('always scopes batch status reads to the requesting owner', async () => {

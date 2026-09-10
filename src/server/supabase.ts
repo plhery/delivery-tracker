@@ -607,14 +607,14 @@ export class SupabaseClient {
 export class SupabaseServiceClient extends SupabaseClient {
   override async getPackage(packageId: string): Promise<JsonObject | null> {
     const params = query({
-      select: `${PACKAGE_SELECT},current_stage,tracking_generation`,
+      select: `${PACKAGE_SELECT},current_stage,tracking_generation,user_id`,
       id: `eq.${packageId}`,
       limit: '1',
     });
     const parcel = rows(await this.request(`/rest/v1/packages?${params}`))[0];
     if (parcel) return parcel;
     return rows(await this.request(`/rest/v1/packages?${query({
-      select: `${PACKAGE_SELECT},current_stage,tracking_generation`,
+      select: `${PACKAGE_SELECT},current_stage,tracking_generation,user_id`,
       'carrier_data->>original_package_id': `eq.${packageId}`, limit: '1',
     })}`))[0] ?? null;
   }

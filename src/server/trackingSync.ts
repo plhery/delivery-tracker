@@ -534,7 +534,7 @@ export class TrackingSyncService {
         summary.checked = 1;
         summary[await this.syncOne(parcel, context)] += 1;
       }
-      await this.linkConfirmedParcels(typeof parcel.user_id === 'string' ? parcel.user_id : undefined);
+      if (typeof parcel.user_id === 'string') await this.linkConfirmedParcels(parcel.user_id);
       await this.dispatchNotifications(summary, context.signal);
       return summary;
     });
