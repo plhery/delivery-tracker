@@ -1,3 +1,4 @@
+import { AutoCarrierNotice } from './AutoCarrierNotice';
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { activeTrackingCarrierId, displayedCarrierId, carrierInfo } from '../lib/carriers';
 import { localizedDatePhrase, localizedExpectedDelivery, useI18n } from '../i18n';
@@ -119,18 +120,20 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
         onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={finishSwipe} onPointerCancel={cancelSwipe}>
         {variant === 'notice' ? <>
           <Icon name={parcelIcon(current?.stage)} />
-          <span className="parcel-card__notice-content"><strong>{notice || statusLabel}</strong><span className="parcel-card__label">{parcelName}</span>{deliveryLabel && <span className="parcel-card__sender">{deliveryLabel}</span>}</span>
+          <span className="parcel-card__notice-content"><strong>{notice || statusLabel}</strong><span className="parcel-card__label">{parcelName}</span>{deliveryLabel && <span className="parcel-card__sender">{deliveryLabel}</span>}<AutoCarrierNotice parcel={parcel} className="parcel-card__sender" /></span>
           <Icon name="chevron" />
         </> : hero ? <>
           <span className="parcel-card__hero-top"><CarrierMark carrier={carrier} /><span className="parcel-card__next-label">{t('app.nextUp')}</span></span>
           <span className="parcel-card__hero-main"><strong className="parcel-card__label">{parcelName}</strong><PostageStamp icon={parcelIcon(current?.stage)} /></span>
           {deliveryLabel && <span className="parcel-card__sender">{deliveryLabel}</span>}
+          <AutoCarrierNotice parcel={parcel} className="parcel-card__sender" />
           <span className="parcel-card__summary"><span className="parcel-card__state">{statusLabel}</span>{expectedDelivery && <><span aria-hidden="true">·</span><span className="parcel-card__eta">{expectedDelivery}</span></>}</span>
           {parcel.syncStatus === 'error' && <span className="parcel-card__notice">{t('parcel.syncAttention')}</span>}
         </> : <>
           <span className="parcel-card__top"><CarrierMark carrier={carrier} />{(expectedDelivery || completionDate) && <span className={completionDate ? 'parcel-card__completion' : 'parcel-card__eta'}>{expectedDelivery || completionDate}</span>}</span>
           <strong className="parcel-card__label">{parcelName}</strong>
           {deliveryLabel && <span className="parcel-card__sender">{deliveryLabel}</span>}
+          <AutoCarrierNotice parcel={parcel} className="parcel-card__sender" />
           <span className="parcel-card__state">{current?.stage === 'delivered' && <Icon name="check" />}{statusLabel}</span>
           {parcel.syncStatus === 'error' ? <span className="parcel-card__notice">{t('parcel.syncAttention')}</span> : notice && !['customs', 'ready_for_pickup', 'failed_attempt'].includes(current?.stage ?? '') && <span className="parcel-card__notice">{notice}</span>}
         </>}

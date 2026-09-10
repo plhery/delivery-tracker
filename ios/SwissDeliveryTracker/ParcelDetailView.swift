@@ -162,6 +162,7 @@ struct ParcelDetailView: View {
                     .disabled(working)
                     .accessibilityLabel(localizer.text(parcel.notificationsMuted ? "detail.unmute" : "detail.mute"))
                 }
+                AutomaticCarrierNotice(parcel: parcel)
                 HStack(alignment: .center, spacing: 18) {
                     Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
                         .font(.title2.weight(.semibold))
@@ -661,5 +662,22 @@ private struct JournalEventRow: View {
         formatter.locale = localizer.language.locale
         formatter.dateFormat = "HH:mm"
         return formatter.string(from: date)
+    }
+}
+
+struct AutomaticCarrierNotice: View {
+    let parcel: Parcel
+    @EnvironmentObject private var localizer: Localizer
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 60)) { context in
+            if let from = parcel.automaticallyChangedFrom(at: context.date) {
+                Text(localizer.text("parcel.autoChangedCarrier", [
+                    "carrier": CarrierCatalog.shared.info(for: from, language: localizer.language).displayName,
+                ]))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 }

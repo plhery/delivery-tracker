@@ -55,4 +55,32 @@ begin
   if public.apply_tracking_sync(parcel_id, old_generation, '{"current_stage":"delivered"}') then raise exception 'Old worker overwrote new selection'; end if;
 end;
 $$;
+do $$
+declare
+  parcel_id uuid := '96000000-0000-0000-0000-000000000005';
+  generation uuid;
+  correction jsonb := '{"carrier":"ups","tracking_url":null,"dpd_postcode":null,"sync_status":"ok","carrier_data":{"auto_changed_from":"fedex","auto_changed_to":"ups","routing":{"confirmed_carrier":"ups","configured_carrier":"ups","confirmed_number":"ROUTING1234"}}}';
+begin
+  select tracking_generation into generation from public.packages where id = parcel_id;
+  if not public.apply_tracking_sync(parcel_id, generation, '{"sync_status":"syncing"}') then raise exception 'Normal sync rejected'; end if;
+  if (select tracking_generation from public.packages where id = parcel_id) <> generation then raise exception 'Normal sync renewed generation'; end if;
+  begin
+    perform public.apply_tracking_sync(parcel_id, generation, jsonb_set(correction, '{carrier_data,routing,confirmed_number}', '"WRONG"'));
+    raise exception 'Unconfirmed correction accepted';
+  exception when invalid_parameter_value then null;
+  end;
+  if not public.apply_tracking_sync(parcel_id, generation, correction,
+    '[{"provider_event_id":"correction:1","stage":"in_transit","description":"Verified UPS history","occurred_at":"2026-09-10T11:00:00Z"}]') then raise exception 'Verified correction rejected'; end if;
+  if not exists (select 1 from public.packages where id = parcel_id and carrier = 'ups'
+    and tracking_generation <> generation and tracking_url is null and dpd_postcode is null
+    and carrier_data->>'auto_changed_from' = 'fedex'
+    and (carrier_data->>'auto_changed_at')::timestamptz = now()) then raise exception 'Correction not atomic or fenced'; end if;
+  if not exists (select 1 from public.tracking_events where package_id = parcel_id and provider_event_id = 'correction:1') then raise exception 'Missing correction evidence'; end if;
+  if public.apply_tracking_sync(parcel_id, generation, '{"sync_status":"error"}') then raise exception 'Old worker overwrote correction'; end if;
+  perform public.change_owned_package_carrier(parcel_id, 'dhl');
+  if exists (select 1 from public.packages where id = parcel_id and carrier_data ?| array['auto_changed_from','auto_changed_to','auto_changed_at']) then raise exception 'Manual edit retained notice'; end if;
+  if not exists (select 1 from public.tracking_events where package_id = parcel_id and provider_event_id = 'correction:1') then raise exception 'Manual edit lost history'; end if;
+  if has_function_privilege('authenticated','public.apply_tracking_sync(uuid,uuid,jsonb,jsonb,text[])','execute') then raise exception 'Correction callable by client'; end if;
+end;
+$$;
 rollback;

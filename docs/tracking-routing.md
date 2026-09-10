@@ -1,6 +1,6 @@
 # Tracking routing policy
 
-Implemented September 2026. Carrier selection and retrieval provider are separate: a user can select FedEx while a universal provider retrieves the history. The user selection is preserved; a confirmed direct correction is stored and exposed as the active tracking carrier.
+Implemented September 2026. Carrier selection and retrieval provider are separate: a user can select FedEx while a universal provider retrieves the history. A verified direct correction automatically updates the selected carrier. The web and native app show “Swapped automatically from XX” for 12 hours; ordinary refreshes preserve its original timestamp, and a manual carrier edit clears it.
 
 ## Provider order and affinity
 
@@ -23,7 +23,7 @@ Retry failed direct routes after the recorded cooldown; successful direct recove
 
 | Situation | Behavior |
 | --- | --- |
-| Wrong carrier; correct carrier supported | Try one high-confidence number candidate, or one unambiguous carrier hint from a matching universal response. A hint alone does not change routing: a usable direct result must confirm it. Ambiguous regional brands are not guessed. Universal-discovered candidates can be checked on the following sync. |
+| Wrong carrier; correct carrier supported | On failure, try high-confidence number detection first, then a saved unambiguous hint/confirmed route, then universals. A universal naming a supported carrier triggers direct confirmation in the same sync. Automatically swap only after the direct scraper returns real progress on the same number, at least as recent as known history. Ambiguous regional brands are not guessed; failed, empty, stale or conflicting confirmation keeps universal coverage. |
 | Candidate needs postcode/capability | Report `carrier_input_required`, continue through universals; never borrow another carrier's credentials. Inputs from the previously confirmed same-carrier/same-number route may be reused. |
 | Correct carrier only covered by one or two universals | Discovery finds a working provider and pins it. Others' failures are cached independently. No broad provider fan-out on ordinary successful checks. |
 | Direct or universal returns 429 with recent success | If last **successful retrieval** was less than one hour ago by day or three hours overnight, preserve current progress and defer fallback until the earlier of freshness expiry and the next retry. The throttled provider's own cooldown still holds. A recent failed attempt never counts as success. |
@@ -31,7 +31,7 @@ Retry failed direct routes after the recorded cooldown; successful direct recove
 | Unknown carrier | Try one strong direct candidate when available; otherwise discover and persist a universal provider. No carrier label is invented from a numeric shape or a generic brand. |
 | Universal fails | Record provider/category, update parcel cooldown and shared health, then try a healthy alternative if allowed. Retain affinity until a replacement succeeds. If none succeed, preserve progress and store the next check time. |
 | Border crossing/double carrier | Preserve origin history. Existing explicit Swiss Post identity/handoff confirmation selects the delivery leg only after real progress. Use its confirmed local number for universal recovery. Multiple reported carrier names alone are insufficient to switch; retain universal coverage for that journey. |
-| Manual good → unsupported/wrong selection | Check the new choice first. Preserve history and the prior confirmed route as recovery; never silently revert the user's selection. Carrier changes invalidate queued/in-flight work through the existing generation/lease fencing. |
+| Manual good → unsupported/wrong selection | Check the new choice first. Preserve history and revalidate the prior confirmed route as recovery. If it still works on this number, automatically restore it and show the temporary notice. Carrier changes invalidate queued/in-flight work through the existing generation/lease fencing. |
 | Older fallback or terminal regression | Preserve the newer/terminal summary and prior event watermark. Provider success does not authorize a status regression. |
 
 FedEx, Asendia, and ShipUp are marked automatic through universal lookup in the shared web/native catalog; this does not claim dedicated direct adapters for them. Adding a dedicated adapter later changes the catalog and allows direct discovery/recovery to take over.
@@ -52,6 +52,7 @@ Useful issue searches:
 - `component:tracking-routing operation:provider_failed failure_category:schema` — parser/protocol investigation.
 - `component:tracking-routing operation:all_providers_unavailable` — uncovered parcels or broad outage.
 - `component:tracking-routing operation:health_store_unavailable` — migration/database coordination problem.
+- `component:tracking-routing operation:carrier_auto_swapped` — a correction was committed successfully (informational).
 - `component:tracking-routing operation:carrier_mismatch_confirmed` — improve carrier detection rules.
 - `component:tracking-routing operation:direct_support_opportunity` — candidate dedicated adapters.
 - `component:tracking-routing operation:carrier_coverage_discovered` — reported carrier names not mapped unambiguously; names are hints, not proven new adapters.
@@ -62,6 +63,6 @@ Existing sync attempt/step audits remain in place. Provider failures are reporte
 
 ## Deployment and verification
 
-Apply `20260912150000_tracking_provider_health.sql` and `20260912160000_preserve_carrier_change_history.sql` before enabling this application build. The former adds service-only coordination RPCs; the latter preserves ownership/input validation, cancellation, and generation fencing while removing destructive history resets. No separate scheduled job is needed: rotation runs through the existing scheduler.
+Apply `20260912150000_tracking_provider_health.sql` and `20260912160000_preserve_carrier_change_history.sql` and `20260912170000_automatic_carrier_correction.sql` before enabling this application build. The correction migration saves carrier/inputs, notice, and tracking evidence atomically, renews generation only on a correction, and rejects stale workers. Ordinary status writes do not change the generation. The former adds service-only coordination RPCs; the latter preserves ownership/input validation, cancellation, and generation fencing while removing destructive history resets. No separate scheduled job is needed: rotation runs through the existing scheduler.
 
 Tests cover routing, rollover/DST boundaries, failed and successful fallback, wrong-carrier confirmation, credential isolation, manual edits, polling persistence, summary preservation, real SDK event tags/grouping, and SQL admission/lease/cooldown/ownership behavior. Live availability of an external scraper is separate from these deterministic tests; in particular Ship24's prior successful test was local, and Postal Ninja remains experimental.

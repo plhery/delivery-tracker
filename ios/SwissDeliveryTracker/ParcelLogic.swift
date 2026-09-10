@@ -70,6 +70,14 @@ extension TrackingStage {
 }
 
 extension Parcel {
+    func automaticallyChangedFrom(at now: Date = Date()) -> CarrierID? {
+        guard let from = carrierData?.autoChangedFrom, from != carrier,
+              carrierData?.autoChangedTo == carrier,
+              let at = carrierData?.autoChangedAt.flatMap(DateParser.date),
+              now >= at, now.timeIntervalSince(at) < 12 * 60 * 60 else { return nil }
+        return from
+    }
+
     var sortedEvents: [TrackingEvent] {
         trackingEvents.sorted(by: Self.eventPrecedes)
     }

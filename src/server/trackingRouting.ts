@@ -17,6 +17,7 @@ export interface ProviderHealth {
   finishTrackingProvider(provider: string, token: string, kind: RoutingFailureKind | null, retryAfterMs: number, durationMs: number): Promise<void>;
 }
 export interface RoutedResult {
+  correction?: { carrier: string; trackingUrl: string | null; postcode: string | null };
   result: CarrierResult;
   sourceCarrierId: string;
   swissPostReady: boolean | null;
@@ -141,19 +142,31 @@ export class TrackingRouter {
       // Universal checks are deliberately less frequent than direct in-transit polls.
       state.next_check_at = sources.includes(provider as UniversalSource)
         ? iso(now().getTime() + (freshnessWindow(now()) === HOUR ? 15 * 60_000 : HOUR)) : undefined;
+      // A correction changes the selected carrier, not merely its display source.
+      // Delivery-leg handoffs remain separate from correcting an incorrect label.
+      const swap = provider !== declared && directCarrier(provider) && value.sourceCarrierId === provider
+        && state.confirmed_number === number && !metadata.original_carrier;
+      if (swap) {
+        state.configured_carrier = provider;
+        value.correction = { carrier: provider, trackingUrl: state.confirmed_tracking_url ?? null,
+          postcode: state.confirmed_postcode ?? null };
+      }
       return { ...value, result: { ...value.result, routing: state,
         ...(directCarrier(provider) ? { active_tracking_carrier: value.sourceCarrierId } : {}),
+        ...(swap ? { auto_changed_from: declared, auto_changed_to: provider, auto_changed_at: now().toISOString() } : {}),
       } };
     };
-    const tryDirect = async (carrier: string, candidate = false): Promise<RoutedResult | null> => {
+    const attemptedDirect = new Set<string>();
+    const tryDirect = async (carrier: string, candidate = false, terminalStage?: string): Promise<RoutedResult | null> => {
       signal?.throwIfAborted();
-      if (!directCarrier(carrier)) return null;
+      if (!directCarrier(carrier) || attemptedDirect.has(carrier)) return null;
       // Never borrow a postcode/capability from another carrier or guess missing input.
       const ownInputs = state.confirmed_carrier === carrier && state.confirmed_number === number;
       if (candidate && !ownInputs && activeRequirements(carrier, number).length) {
         report('carrier_input_required', carrier); return null;
       }
       if (millis(state.failures[carrier]?.retry_at) > now().getTime()) return null;
+      attemptedDirect.add(carrier);
       try {
         const value = await this.options.direct(candidate ? { ...parcel, carrier,
           tracking_url: ownInputs ? state.confirmed_tracking_url : null,
@@ -161,11 +174,18 @@ export class TrackingRouter {
           carrier_data: {} } : parcel, carrier);
         value.result = normalizeCarrierResult(value.result);
         if (!usable(value.result)) throw Object.assign(new Error('No confirmed shipment progress'), { status: 404 });
-        if (candidate && latest(value.result) && latest(value.result) < millis(state.last_event_at)) return null;
+        if (candidate && ![value.result.status, value.result.current_stage, ...(value.result.events ?? []).map((event) => event.stage)]
+          .some((stage) => stage && stage !== 'pending' && stage !== 'unknown')) return null;
+        if (candidate && latest(value.result) < millis(state.last_event_at)) return null;
+        if (terminalStage && ['delivered', 'returned'].includes(terminalStage)
+          && value.result.current_stage !== terminalStage) return null;
         if (carrier !== declared && state.confirmed_carrier !== carrier) report('carrier_mismatch_confirmed', carrier);
         state.confirmed_carrier = carrier;
         state.confirmed_number = number;
-        if (!candidate) {
+        if (candidate && !ownInputs) {
+          state.confirmed_tracking_url = null;
+          state.confirmed_postcode = null;
+        } else if (!candidate) {
           state.confirmed_tracking_url = typeof parcel.tracking_url === 'string' ? parcel.tracking_url : null;
           state.confirmed_postcode = typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null;
         }
@@ -184,8 +204,7 @@ export class TrackingRouter {
       }
     };
 
-    // Respect a new manual selection first. A previously confirmed correction is
-    // preferred on later checks without overwriting the user's selected label.
+    // Try a new manual selection first; revalidate earlier confirmed corrections.
     const old = isRecord(parcel.carrier_data) && isRecord(parcel.carrier_data.routing) ? parcel.carrier_data.routing : {};
     const changed = old.configured_carrier !== undefined && old.configured_carrier !== declared;
     if (changed) { delete state.failures[declared]; report('manual_carrier_change', declared); }
@@ -198,9 +217,11 @@ export class TrackingRouter {
 
     // One evidence-based correction, not a fan-out to every matching number shape.
     const detected = detectCarrierMatch(number);
-    const candidate = changed && state.confirmed_number === number && state.confirmed_carrier !== declared
-      ? state.confirmed_carrier : state.discovered_carrier ?? (detected.confidence === 'high' ? detected.carrier : undefined);
-    if (candidate && candidate !== primary) {
+    const candidates = [...new Set([
+      detected.confidence === 'high' ? detected.carrier : undefined,
+      changed && state.confirmed_number === number ? state.confirmed_carrier : state.discovered_carrier,
+    ])].filter((candidate): candidate is string => Boolean(candidate) && candidate !== primary);
+    for (const candidate of candidates) {
       const value = await tryDirect(candidate, true);
       if (value) return persistResult(value, candidate);
     }
@@ -282,6 +303,19 @@ export class TrackingRouter {
           state.direct_retry_at = now().toISOString();
           report('direct_carrier_discovered', state.discovered_carrier);
         } else if (!directCarrier(state.discovered_carrier)) report('direct_support_opportunity', state.discovered_carrier);
+      }
+      // Confirm a newly reported carrier immediately. Preserve universal data if
+      // confirmation fails, needs credentials, or only returned older history.
+      if (state.discovered_carrier && universalNumber === number && !metadata.original_carrier) {
+        const watermark = state.last_event_at;
+        state.last_event_at = iso(Math.max(millis(watermark), latest(value.result)));
+        const direct = await tryDirect(state.discovered_carrier, state.discovered_carrier !== declared,
+          value.result.current_stage ?? value.result.status).catch((error: unknown) => {
+          if (!(error instanceof RoutingDeferred)) throw error;
+          return null;
+        });
+        state.last_event_at = watermark;
+        if (direct) return persistResult(direct, state.discovered_carrier);
       }
       if (Array.isArray(value.result.reported_carriers)) {
         const seen = Array.isArray(state.reported_carriers_seen) ? state.reported_carriers_seen : [];

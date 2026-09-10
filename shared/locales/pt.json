@@ -394,6 +394,7 @@
   "parcel.expectedToday": "Previsto hoje",
   "parcel.onDate": "em {{date}}",
   "parcel.sender": "Remetente: {{sender}}",
+  "parcel.autoChangedCarrier": "Alterado automaticamente de {{carrier}}",
   "parcel.deliveryCarrier": "Entrega pela {{carrier}}",
   "parcel.syncAttention": "Atualização indisponível",
   "parcel.updated": "Atualizado: {{date}}",

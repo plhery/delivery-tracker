@@ -62,8 +62,61 @@ describe('persistent tracking routing', () => {
     direct.mockRejectedValueOnce(Object.assign(new Error('missing'), { status: 404 }));
     const result = await router.fetch(parcel({ carrier: 'dhl', tracking_number: '1Z999AA10123456784' }), false);
     expect(direct.mock.calls.map(([, carrier]) => carrier)).toEqual(['dhl', 'ups']);
-    expect(result.result.routing).toMatchObject({ confirmed_carrier: 'ups', configured_carrier: 'dhl' });
+    expect(result.result.routing).toMatchObject({ confirmed_carrier: 'ups', configured_carrier: 'ups' });
     expect(universal).not.toHaveBeenCalled();
+  });
+  it('saves a correction and clears inputs belonging to the wrong carrier', async () => {
+    const { router, direct } = setup();
+    direct.mockRejectedValueOnce(new Error('wrong carrier'));
+    const result = await router.fetch(parcel({ carrier: 'dhl', tracking_number: '1Z999AA10123456784',
+      tracking_url: 'https://private.invalid/capability', dpd_postcode: '8000' }), false);
+    expect(result.correction).toEqual({ carrier: 'ups', trackingUrl: null, postcode: null });
+    expect(result.result).toMatchObject({ auto_changed_from: 'dhl', auto_changed_to: 'ups', auto_changed_at: time.toISOString() });
+    expect(direct.mock.calls[1][0]).toMatchObject({ tracking_url: null, dpd_postcode: null });
+  });
+  it('confirms a newly returned universal hint in the same sync and then uses only direct', async () => {
+    const { router, direct, universal } = setup();
+    universal.mockResolvedValue({ ...history(), discovered_carrier: 'ups' });
+    const result = await router.fetch(parcel(), false);
+    expect(universal).toHaveBeenCalledOnce();
+    expect(direct).toHaveBeenCalledWith(expect.objectContaining({ tracking_number: 'TEST1234' }), 'ups');
+    expect(result.correction?.carrier).toBe('ups');
+    const next = setup();
+    const refreshed = await next.router.fetch(parcel({ carrier: 'ups', carrier_data: result.result }), false);
+    expect(refreshed.correction).toBeUndefined();
+    expect(next.universal).not.toHaveBeenCalled();
+  });
+  it.each(['failed', 'older', 'untimed', 'placeholder', 'terminal-conflict'])('keeps universal coverage when direct confirmation is %s', async (reason) => {
+    const { router, direct, universal } = setup();
+    universal.mockResolvedValue({ ...history(), discovered_carrier: 'ups',
+      ...(reason === 'terminal-conflict' ? { current_stage: 'delivered', status: 'delivered' } : {}) });
+    if (reason === 'failed') direct.mockRejectedValue(new Error('not found'));
+    if (reason === 'older') direct.mockResolvedValue({ ...directValue(), result: history('2026-09-09T11:00:00Z') });
+    if (reason === 'untimed') direct.mockResolvedValue({ ...directValue(), result: { status: 'in_transit', events: [] } });
+    if (reason === 'placeholder') direct.mockResolvedValue({ ...directValue(), result: { status: 'pending', events: [{ description: 'Waiting', stage: 'pending' }] } });
+    const result = await router.fetch(parcel(), false);
+    expect(result.correction).toBeUndefined();
+    expect(result.result.tracking_provider).toBe('17TRACK');
+    expect(result.result.routing).not.toHaveProperty('confirmed_carrier');
+  });
+  it('does not repeat the failing selected scraper when the universal names it', async () => {
+    const { router, direct, universal } = setup();
+    direct.mockRejectedValue(new Error('down'));
+    universal.mockResolvedValue({ ...history(), discovered_carrier: 'ups' });
+    const result = await router.fetch(parcel({ carrier: 'ups' }), false);
+    expect(direct).toHaveBeenCalledOnce();
+    expect(result.correction).toBeUndefined();
+    expect(result.result.tracking_provider).toBe('17TRACK');
+  });
+  it('does not relabel an established cross-border journey', async () => {
+    const { router, direct, universal } = setup();
+    direct.mockRejectedValue(new Error('down'));
+    universal.mockResolvedValue({ ...history(), discovered_carrier: 'ups' });
+    const result = await router.fetch(parcel({ carrier: 'dhl', carrier_data: {
+      original_carrier: 'dhl', active_tracking_carrier: 'swiss-post', active_tracking_number: 'LOCAL1234',
+    } }), false);
+    expect(direct).toHaveBeenCalledOnce();
+    expect(result.correction).toBeUndefined();
   });
   it('uses a universal carrier hint only after a matching direct lookup succeeds', async () => {
     const { router, direct } = setup();
@@ -142,12 +195,12 @@ describe('persistent tracking routing', () => {
       .resolves.toMatchObject({ result: { tracking_provider: '17TRACK' } });
   });
   it('tries a new manual carrier, then recovers the previous confirmed route and its own inputs', async () => {
-    const { router, direct } = setup(); direct.mockRejectedValueOnce(new Error('down'));
+    const { router, direct } = setup(); direct.mockRejectedValueOnce(new Error('down')).mockResolvedValueOnce(directValue('dpd'));
     const result = await router.fetch(parcel({ carrier: 'dhl', carrier_data: { routing: state({ configured_carrier: 'dpd',
       confirmed_carrier: 'dpd', confirmed_number: 'TEST1234', confirmed_postcode: '8000', last_success_at: '2026-09-10T11:00:00Z' }) } }), false);
     expect(direct.mock.calls.map(([, carrier]) => carrier)).toEqual(['dhl', 'dpd']);
     expect(direct.mock.calls[1][0].dpd_postcode).toBe('8000');
-    expect(result.result.routing).toMatchObject({ configured_carrier: 'dhl', confirmed_carrier: 'dpd' });
+    expect(result.result.routing).toMatchObject({ configured_carrier: 'dpd', confirmed_carrier: 'dpd' });
   });
   it('keeps a prior confirmed route when the new choice has no direct support', async () => {
     const { router, direct, universal } = setup();

@@ -672,6 +672,7 @@ export class TrackingSyncService {
 
       operation = 'fetch';
       let fetched: {
+        correction?: { carrier: string; trackingUrl: string | null; postcode: string | null };
         result: CarrierResult;
         sourceCarrierId: string;
         swissPostReady: boolean | null;
@@ -791,7 +792,7 @@ export class TrackingSyncService {
       );
       // Linked journey identity belongs to the parcel, not an individual carrier response.
       if (isRecord(parcel.carrier_data)) {
-        for (const key of ['original_carrier', 'original_tracking_number', 'original_tracking_url', 'original_package_id', 'active_tracking_carrier', 'active_tracking_number', 'original_canonical_tracking_number']) {
+        for (const key of ['original_carrier', 'original_tracking_number', 'original_tracking_url', 'original_package_id', 'active_tracking_carrier', 'active_tracking_number', 'original_canonical_tracking_number', 'auto_changed_from', 'auto_changed_to', 'auto_changed_at']) {
           if (parcel.carrier_data[key] != null && carrierData[key] == null) carrierData[key] = parcel.carrier_data[key];
         }
       }
@@ -823,6 +824,14 @@ export class TrackingSyncService {
         values.carrier_data = carrierData;
         if (selectedStage && (hasUpdate || !swissPostReady)) values.current_stage = selectedStage;
       }
+      if (fetched.correction && !preserveSummary) {
+        values.carrier = fetched.correction.carrier;
+        values.tracking_url = fetched.correction.trackingUrl;
+        values.dpd_postcode = fetched.correction.postcode;
+      } else if (fetched.correction && isRecord(values.carrier_data) && isRecord(values.carrier_data.routing)) {
+        // A rejected/older summary must not advertise a swap that was not saved.
+        values.carrier_data.routing.configured_carrier = carrierId;
+      }
       const outcome = progressDisappeared ? 'error' : knownUpdate ? 'updated' : 'waiting';
       const eventsToPersist = progressDisappeared ? [] : events;
       operation = 'persist_package';
@@ -832,6 +841,9 @@ export class TrackingSyncService {
         outcome,
         selected_stage: selectedStage,
       }));
+      if (values.carrier) reportRoutingEvent('carrier_auto_swapped', {
+        carrier: carrierId, provider: String(values.carrier), trackingNumber: String(parcel.tracking_number ?? ''),
+      });
       audit.record('persist_events', 'succeeded', 0, {
         events_persisted: eventsToPersist.length,
         atomic_with_package: true,

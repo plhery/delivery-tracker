@@ -733,6 +733,7 @@ private struct ExperimentalNextDeliveryPass: View {
             .padding(.top, 19)
             .padding(.bottom, 15)
 
+            AutomaticCarrierNotice(parcel: parcel)
             if parcel.activeTrackingCarrier != parcel.displayedCarrier {
                 Text(localizer.text("parcel.deliveryCarrier", ["carrier": catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName]))
                     .font(.caption).foregroundStyle(.secondary)
@@ -800,6 +801,7 @@ private struct ExperimentalParcelPassCard: View {
             Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
                 .font(.headline.weight(.semibold))
                 .fixedSize(horizontal: false, vertical: true)
+            AutomaticCarrierNotice(parcel: parcel)
             if parcel.activeTrackingCarrier != parcel.displayedCarrier {
                 Text(localizer.text("parcel.deliveryCarrier", ["carrier": catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language).displayName]))
                     .font(.caption).foregroundStyle(.secondary)

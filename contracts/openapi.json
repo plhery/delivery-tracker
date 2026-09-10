@@ -2586,6 +2586,9 @@
               },
               "original_tracking_number": { "type": ["string", "null"] },
               "original_tracking_url": { "type": ["string", "null"] },
+              "auto_changed_from": {"anyOf": [{"$ref": "#/components/schemas/CarrierId"}, {"type": "null"}]},
+              "auto_changed_to": {"anyOf": [{"$ref": "#/components/schemas/CarrierId"}, {"type": "null"}]},
+              "auto_changed_at": {"type": ["string", "null"], "format": "date-time"},
               "sender_name": {
                 "type": ["string", "null"],
                 "description": "Verified sender name, retained when a tracking response omits sender details."

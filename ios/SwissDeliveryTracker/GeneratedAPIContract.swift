@@ -627,6 +627,9 @@ struct CarrierData: Codable, Equatable, Hashable, Sendable {
     var originalCarrier: CarrierID? = nil
     var originalTrackingNumber: String? = nil
     var originalTrackingURL: String? = nil
+    var autoChangedFrom: CarrierID? = nil
+    var autoChangedTo: CarrierID? = nil
+    var autoChangedAt: String? = nil
     var senderName: String? = nil
     var swissPostReady: Bool? = nil
 
@@ -637,6 +640,9 @@ struct CarrierData: Codable, Equatable, Hashable, Sendable {
         case originalCarrier
         case originalTrackingNumber
         case originalTrackingURL = "originalTrackingUrl"
+        case autoChangedFrom
+        case autoChangedTo
+        case autoChangedAt
         case senderName
         case swissPostReady
     }

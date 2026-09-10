@@ -244,7 +244,7 @@ export function reportRoutingEvent(code: string, context: {
         'direct_support_opportunity', 'carrier_input_required', 'fresher_provider_found',
         'health_store_unavailable', 'carrier_coverage_discovered'].includes(code);
       scope.setLevel(alert ? 'warning' : 'info');
-      if (alert || code === 'provider_recovered') Sentry.captureMessage(`Tracking routing: ${code}`);
+      if (alert || code === 'provider_recovered' || code === 'carrier_auto_swapped') Sentry.captureMessage(`Tracking routing: ${code}`);
       else Sentry.addBreadcrumb({ category: 'tracking-routing', message: code, data: { provider: context.provider } });
     });
   } catch {
