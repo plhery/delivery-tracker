@@ -68,10 +68,14 @@ describe('bounded carrier request retries', () => {
   });
 
   it('does not immediately retry a rate limit without Retry-After', async () => {
-    const limited = new Response('Too many requests', { status: 429 });
-    const cancel = vi.spyOn(limited.body!, 'cancel');
+    const cancel = vi.fn();
+    const limited = new Response(new ReadableStream({
+      start(controller) { controller.enqueue(new TextEncoder().encode('Too many requests')); }, cancel,
+    }), { status: 429 });
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(limited);
-    await expect(fetchBounded(URL, {}, { ...OPTIONS, fetcher })).rejects.toMatchObject({ status: 429 });
+    const failure = expect(fetchBounded(URL, {}, { ...OPTIONS, fetcher })).rejects.toMatchObject({ status: 429 });
+    await vi.advanceTimersByTimeAsync(200);
+    await failure;
     expect(fetcher).toHaveBeenCalledOnce();
     expect(cancel).toHaveBeenCalledOnce();
   });

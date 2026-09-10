@@ -2,6 +2,8 @@ import 'server-only';
 
 import * as Sentry from '@sentry/node';
 import type { JsonObject } from './types';
+import { UpstreamHttpError } from './boundedFetch';
+import type { UpstreamHttpDiagnostics } from './upstreamHttpDiagnostics';
 
 const PRIVATE_LOG_KEY = /(?:tracking|package|parcel|user|label|description|location|status_text|url|token|cookie|authorization|secret|password)/i;
 
@@ -41,6 +43,8 @@ export interface OperationalErrorMetadata {
   databaseCode?: string;
   providerFailureReason?: string;
   providerCode?: number;
+  upstreamHttp?: UpstreamHttpDiagnostics;
+  retryAfterMs?: number;
 }
 
 export function errorType(error: unknown): string {
@@ -102,6 +106,10 @@ export function operationalErrorMetadata(error: unknown): OperationalErrorMetada
   for (let depth = 0; current instanceof Error && depth < 8; depth += 1) {
     if (seen.has(current)) break;
     seen.add(current);
+    if (current instanceof UpstreamHttpError) {
+      metadata.upstreamHttp ??= current.diagnostics;
+      metadata.retryAfterMs ??= current.retryAfterMs;
+    }
     const details = current as Error & { status?: unknown; code?: unknown; reason?: unknown; providerCode?: unknown };
     if (['UpstreamHttpError', 'DHLEcommerceSessionError'].includes(current.name) && metadata.upstreamStatus === undefined) {
       metadata.upstreamStatus = safeHttpStatus(details.status);
@@ -152,6 +160,7 @@ function applyContext(
   capturedErrorType?: string,
   errorMetadata: OperationalErrorMetadata = {},
 ): void {
+  applyUpstreamHttpContext(scope, errorMetadata);
   const tags: Record<string, string | undefined> = {
     anomaly_code: boundedText(context.anomalyCode, 100),
     attempt_id: boundedText(context.attemptId, 100),
@@ -232,14 +241,31 @@ export function captureSyncAnomaly(
   return eventId;
 }
 
-/** Fixed messages and bounded dimensions: never attach upstream HTML/tokens. */
+function applyUpstreamHttpContext(scope: Sentry.Scope, metadata: OperationalErrorMetadata): void {
+  scope.setContext('upstream_http', null);
+  scope.setTag('upstream_content_type', undefined);
+  scope.setTag('upstream_body_read', undefined);
+  scope.setTag('upstream_error_code', undefined);
+  if (!metadata.upstreamHttp) return;
+  scope.setContext('upstream_http', { ...metadata.upstreamHttp, retry_after_ms: metadata.retryAfterMs });
+  scope.setTag('upstream_content_type', metadata.upstreamHttp.content_type);
+  scope.setTag('upstream_body_read', metadata.upstreamHttp.body_read);
+  if (metadata.upstreamHttp.error_code) scope.setTag('upstream_error_code', metadata.upstreamHttp.error_code);
+}
+
+/** Fixed grouping plus bounded HTTP diagnostics, captured before fallback. */
 export function reportRoutingEvent(code: string, context: {
   carrier: string; provider: string; category?: string; trackingNumber?: string; errorClass?: string; error?: unknown;
 }): void {
   try {
+    const metadata = operationalErrorMetadata(context.error);
     logOperationalEvent('tracking_routing', {
       decision: code, carrier: context.carrier, provider: context.provider,
       category: context.category ?? null, tracking_number: context.trackingNumber ?? null,
+      upstream_status: metadata.upstreamStatus,
+      upstream_content_type: metadata.upstreamHttp?.content_type,
+      upstream_body_read: metadata.upstreamHttp?.body_read,
+      upstream_body_signals: metadata.upstreamHttp?.body_signals.join(','),
     }, code === 'provider_failed' ? 'warning' : 'info');
     if (!initObservability()) return;
     Sentry.withScope((scope) => {
@@ -248,7 +274,7 @@ export function reportRoutingEvent(code: string, context: {
       scope.setTag('provider', context.provider.slice(0, 80));
       scope.setTag('failure_category', context.category ?? 'none');
       if (context.errorClass) scope.setTag('error_type', context.errorClass);
-      const metadata = operationalErrorMetadata(context.error);
+      applyUpstreamHttpContext(scope, metadata);
       if (metadata.upstreamStatus !== undefined) scope.setTag('upstream_status', metadata.upstreamStatus);
       if (metadata.providerFailureReason) scope.setTag('provider_failure_reason', metadata.providerFailureReason);
       if (metadata.providerCode !== undefined) scope.setTag('provider_code', metadata.providerCode);

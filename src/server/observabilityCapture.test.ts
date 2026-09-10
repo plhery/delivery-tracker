@@ -4,6 +4,7 @@ import type { Event } from '@sentry/node';
 import { captureOperationalError, flushObservability, initObservability, reportRoutingEvent } from './observability';
 import { UniversalTrackingError } from './universalTracking';
 import { UpstreamHttpError } from './boundedFetch';
+import { LaPosteTracker } from './laPoste';
 
 const captured = vi.hoisted(() => ({ events: [] as Event[] }));
 
@@ -134,4 +135,30 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   expect(captured.events.some((event) => event.message === 'Tracking routing: provider_recovered')).toBe(true);
   expect(captured.events.some((event) => event.message === 'Tracking routing: direct_support_opportunity')).toBe(true);
 
+  const refusedBody = '<h1>Access Denied</h1><p>Reference #18.test.123; parcel 8U00000000000</p>';
+  const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(refusedBody, {
+    status: 403, headers: { 'content-type': 'text/html', 'x-request-id': 'example-request-id',
+      'set-cookie': 'session=DO_NOT_CAPTURE', authorization: 'Bearer DO_NOT_CAPTURE', 'retry-after': '120' },
+  }));
+  const refused = await new LaPosteTracker().fetch('8U00000000000').catch((error: unknown) => error);
+  fetcher.mockRestore();
+  expect(refused).toBeInstanceOf(UpstreamHttpError);
+  reportRoutingEvent('provider_failed', { carrier: 'la-poste', provider: 'la-poste',
+    category: 'verification', error: refused, errorClass: 'UpstreamHttpError' });
+  const wrappedId = captureOperationalError(new Error('Recovery failed', { cause: refused }), {
+    component: 'tracking-sync', operation: 'fetch', carrier: 'la-poste',
+  });
+  reportRoutingEvent('provider_recovered', { carrier: 'la-poste', provider: 'la-poste' });
+  await flushObservability();
+  const refusal = captured.events.find((event) => event.message === 'Tracking routing: provider_failed' && event.tags?.provider === 'la-poste')!;
+  expect(refusal.contexts?.upstream_http).toMatchObject({ body_excerpt: refusedBody, body_read: 'complete',
+    content_type: 'text/html', request_ids: { 'x-request-id': 'example-request-id' }, retry_after_ms: 120_000,
+    body_signals: ['access_denied'] });
+  expect(refusal.tags).toMatchObject({ upstream_status: 403, upstream_content_type: 'text/html', upstream_body_read: 'complete' });
+  expect(refusal.fingerprint).toEqual(['delivery-tracker', 'tracking-routing', 'provider_failed', 'la-poste', 'verification']);
+  expect(captured.events.find((event) => event.event_id === wrappedId)?.contexts?.upstream_http).toEqual(refusal.contexts?.upstream_http);
+  expect(JSON.stringify(refusal)).not.toContain('DO_NOT_CAPTURE');
+  const recovery = captured.events.find((event) => event.message === 'Tracking routing: provider_recovered' && event.tags?.provider === 'la-poste')!;
+  expect(recovery.contexts?.upstream_http).toBeUndefined();
+  expect(recovery.tags?.upstream_body_read).toBeUndefined();
 });

@@ -1,3 +1,5 @@
+import { readUpstreamHttpDiagnostics, type UpstreamHttpDiagnostics } from './upstreamHttpDiagnostics';
+
 const DEFAULT_MAX_BYTES = 2_000_000;
 const TRANSIENT_HTTP_STATUSES = new Set([429, 502, 503, 504]);
 const DEFAULT_RETRY_DELAY_MS = 1_000;
@@ -26,6 +28,7 @@ export class UpstreamHttpError extends Error {
     readonly provider: string,
     readonly status: number,
     readonly retryAfterMs?: number,
+    readonly diagnostics?: UpstreamHttpDiagnostics,
   ) {
     super(`${provider} returned HTTP ${status}`);
     this.name = 'UpstreamHttpError';
@@ -80,17 +83,19 @@ export async function fetchBounded(
     }
     if (response.ok || options.allowHttpError) break;
     const delay = retryDelay(response.headers.get('retry-after'), response.status);
-    await cancelQuietly(response.body);
     if (options.retryTransient && attempt === 0
       && TRANSIENT_HTTP_STATUSES.has(response.status) && delay !== null) {
+      await cancelQuietly(response.body);
       await waitBeforeRetry(delay);
       continue;
     }
     const retryHeader = response.headers.get('retry-after');
     const retryAfterMs = retryHeader === null ? undefined : /^\d+$/.test(retryHeader.trim())
       ? Number(retryHeader) * 1000 : Date.parse(retryHeader) - Date.now();
+    // Diagnostic failure must never replace the original HTTP status.
+    const diagnostics = await readUpstreamHttpDiagnostics(response).catch(() => undefined);
     throw new UpstreamHttpError(options.provider, response.status,
-      Number.isFinite(retryAfterMs) ? Math.max(0, retryAfterMs!) : undefined);
+      Number.isFinite(retryAfterMs) ? Math.max(0, retryAfterMs!) : undefined, diagnostics);
   }
 
   const contentLength = Number(response.headers.get('content-length'));
