@@ -48,6 +48,26 @@ describe('universal public tracking', () => {
     expect(() => parseParcelsAppResponse({ states: [{ date: '2026-08-18T00:00:00Z', status: 'Enter the recipient postal code', require_fields: [{}] }] }, number, identity())).toThrow();
   });
 
+  it.each(['json', 'html'])('classifies French preparation and carrier acceptance separately (%s)', (transport) => {
+    // Synthetic identifier, dates and depot; preserve only the wording that caused the bug.
+    const states = [
+      { date: '2026-01-05T08:30:00Z', status: 'Prise en charge de votre colis sur notre site logistique de VILLE-EXEMPLE.' },
+      { date: '2026-01-04T09:15:00Z', status: "Colis en préparation chez l'expéditeur" },
+    ];
+    const html = identity().replace('</table>', `</table><ul class="events">
+      <li class="event"><div class="event-time"><strong>05 Jan 2026</strong><span>08:30</span></div>
+        <div class="event-content"><strong>${states[0].status}</strong></div></li>
+      <li class="event"><div class="event-time"><strong>04 Jan 2026</strong><span>09:15</span></div>
+        <div class="event-content"><strong>${states[1].status}</strong></div></li></ul>`);
+    const parsed = transport === 'json' ? parseParcelsAppResponse({ states }, number, identity())
+      : parseParcelsAppHtml(html, number);
+    expect(parsed).toMatchObject({ status: 'in_transit', current_stage: 'accepted',
+      last_update: '2026-01-05T08:30:00.000Z', tracking_provider: 'ParcelsApp' });
+    expect(parsed.events?.map(({ stage }) => stage)).toEqual(['accepted', 'registered']);
+    const preparationOnly = parseParcelsAppResponse({ states: [states[1]] }, number, identity());
+    expect(preparationOnly).toMatchObject({ status: 'pending', current_stage: 'registered' });
+  });
+
   it('binds a numberless ParcelsApp response to its rendered result', () => {
     for (const html of [identity('OTHER123'), `<input value="${number}">`, identity() + identity()]) {
       expect(() => parseParcelsAppResponse(parcels, number, html)).toThrow();
@@ -76,21 +96,22 @@ describe('universal public tracking', () => {
     expect(parseParcelsAppHtml(html + '<p>Delivered 2026-09-01</p>', number)).toMatchObject({ current_stage: 'registered', last_update: '2026-08-18T03:04:00.000Z' });
   });
 
-  it('uses 17TRACK first and stops after success', async () => {
-    const fetcher = vi.fn().mockResolvedValue(browserResponse('17TRACK', track17()));
+  it('uses ParcelsApp first and stops after success', async () => {
+    const fetcher = vi.fn().mockResolvedValue(browserResponse('ParcelsApp', parcels));
     const result = await new UniversalTracker({ trawlUrl: 'http://browser.test/v1', fetcher }).fetch(number);
-    expect(result.current_stage).toBe('delivered');
+    expect(result.current_stage).toBe('registered');
+    expect(result.tracking_provider).toBe('ParcelsApp');
     expect(fetcher).toHaveBeenCalledOnce();
     const [url, options] = fetcher.mock.calls[0];
     expect(String(url)).toBe('http://browser.test/scrape');
-    expect(JSON.parse(options.body)).toMatchObject({ skipHttp: true, captureResponses: ['https://t.17track.net/track/restapi'] });
+    expect(JSON.parse(options.body)).toMatchObject({ skipHttp: true, captureResponses: ['https://parcelsapp.com/api/v2/parcels'] });
   });
 
-  it('falls through challenges and unrelated responses to ParcelsApp', async () => {
-    const fetcher = vi.fn().mockResolvedValueOnce(browserResponse('17TRACK', track17('OTHER123')))
-      .mockResolvedValueOnce(browserResponse('ParcelsApp', parcels));
+  it('falls through an unrelated ParcelsApp result to 17TRACK', async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(browserResponse('ParcelsApp', parcels, { html: identity('OTHER123') }))
+      .mockResolvedValueOnce(browserResponse('17TRACK', track17()));
     const result = await new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher }).fetch(number);
-    expect(result.tracking_provider).toBe('ParcelsApp');
+    expect(result.tracking_provider).toBe('17TRACK');
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
@@ -136,7 +157,7 @@ describe('universal public tracking', () => {
       { capturedResponses: [{ url: 'https://t.17track.net/track/restapi', body: JSON.stringify(track17()), status: 200, truncated: true }] },
       { capturedResponses: [{ url: 'https://t.17track.net/track/restapi', body: JSON.stringify(track17()), status: 200, base64Encoded: true }] }]) {
       const fetcher = vi.fn().mockResolvedValueOnce(browserResponse('17TRACK', track17(), overrides)).mockRejectedValueOnce(new Error());
-      await expect(new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher }).fetch(number)).rejects.toThrow('Automatic carrier lookup');
+      await expect(new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher }).fetchSource('17TRACK', number)).rejects.toThrow();
     }
   });
 

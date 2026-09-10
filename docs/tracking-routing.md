@@ -5,7 +5,7 @@ Implemented September 2026. Carrier selection and retrieval provider are separat
 ## Provider order and affinity
 
 1. Use the configured/confirmed direct adapter when available. Cainiao (`aliexpress`) is an aggregator too, but stays a targeted direct route for detected AliExpress/international formats and the existing Swiss Post handoff. It is not blindly queried for every parcel.
-2. For discovery: **17TRACK → ParcelsApp → Ship24**. This is the starting policy, not a claim that the first provider is always fastest. Existing per-parcel success takes precedence.
+2. For discovery: **ParcelsApp → 17TRACK → Ship24**. ParcelsApp is first following observed recoveries where 17TRACK failed. This is an operational preference, not a broad reliability benchmark. Existing per-parcel success takes precedence, including a working 17TRACK affinity.
 3. Postal Ninja is excluded by default while unattended verification is unresolved. Set `TRACKING_ENABLE_POSTAL_NINJA=true` to include it experimentally; do not count it as working coverage without a fresh deployed test.
 4. Remember a successful provider and the lookup number in `carrier_data.routing`. A subsequent check starts there, even when it is third in the default list. Respect provider cooldowns before requesting it.
 

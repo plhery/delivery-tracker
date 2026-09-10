@@ -35,10 +35,15 @@ describe('persistent tracking routing', () => {
     const first = setup();
     first.universal.mockRejectedValueOnce(new Error('down'));
     const result = await first.router.fetch(parcel(), false);
-    expect(first.universal.mock.calls.map(([source]) => source)).toEqual(['17TRACK', 'ParcelsApp']);
+    expect(first.universal.mock.calls.map(([source]) => source)).toEqual(['ParcelsApp', '17TRACK']);
     const second = setup(new Date('2026-09-10T12:20:00Z'));
     await second.router.fetch(parcel({ carrier_data: result.result }), false);
-    expect(second.universal.mock.calls.map(([source]) => source)).toEqual(['ParcelsApp']);
+    expect(second.universal.mock.calls.map(([source]) => source)).toEqual(['17TRACK']);
+  });
+  it('keeps an already successful 17TRACK affinity after the default order changes', async () => {
+    const { router, universal } = setup();
+    await router.fetch(parcel({ carrier_data: { routing: state({ preferred_provider: '17TRACK' }) } }), false);
+    expect(universal.mock.calls.map(([source]) => source)).toEqual(['17TRACK']);
   });
   it('records original direct failure before a successful fallback', async () => {
     const { router, direct, universal } = setup();
@@ -48,14 +53,14 @@ describe('persistent tracking routing', () => {
       return history();
     });
     const result = await router.fetch(parcel({ carrier: 'dhl' }), false);
-    expect(result.result.routing).toMatchObject({ preferred_provider: '17TRACK' });
+    expect(result.result.routing).toMatchObject({ preferred_provider: 'ParcelsApp' });
     expect(JSON.stringify(vi.mocked(monitoring.reportRoutingEvent).mock.calls)).not.toContain('SECRET');
   });
   it.each(['fedex', 'unknown'])('uses universals for %s and still keeps the user selection', async (carrier) => {
     const { router, direct } = setup();
     const result = await router.fetch(parcel({ carrier }), false);
     expect(direct).not.toHaveBeenCalled();
-    expect(result.result.routing).toMatchObject({ configured_carrier: carrier, preferred_provider: '17TRACK' });
+    expect(result.result.routing).toMatchObject({ configured_carrier: carrier, preferred_provider: 'ParcelsApp' });
   });
   it('confirms a strong supported-carrier correction before adopting it', async () => {
     const { router, direct, universal } = setup();
@@ -96,7 +101,7 @@ describe('persistent tracking routing', () => {
     if (reason === 'placeholder') direct.mockResolvedValue({ ...directValue(), result: { status: 'pending', events: [{ description: 'Waiting', stage: 'pending' }] } });
     const result = await router.fetch(parcel(), false);
     expect(result.correction).toBeUndefined();
-    expect(result.result.tracking_provider).toBe('17TRACK');
+    expect(result.result.tracking_provider).toBe('ParcelsApp');
     expect(result.result.routing).not.toHaveProperty('confirmed_carrier');
   });
   it('does not repeat the failing selected scraper when the universal names it', async () => {
@@ -106,7 +111,7 @@ describe('persistent tracking routing', () => {
     const result = await router.fetch(parcel({ carrier: 'ups' }), false);
     expect(direct).toHaveBeenCalledOnce();
     expect(result.correction).toBeUndefined();
-    expect(result.result.tracking_provider).toBe('17TRACK');
+    expect(result.result.tracking_provider).toBe('ParcelsApp');
   });
   it('does not relabel an established cross-border journey', async () => {
     const { router, direct, universal } = setup();
@@ -143,7 +148,7 @@ describe('persistent tracking routing', () => {
     if (fresh) {
       await expect(task).rejects.toMatchObject({ name: 'RoutingDeferred', stale: false });
       expect(universal).not.toHaveBeenCalled();
-    } else await expect(task).resolves.toMatchObject({ result: { tracking_provider: '17TRACK' } });
+    } else await expect(task).resolves.toMatchObject({ result: { tracking_provider: 'ParcelsApp' } });
   });
   it('does not confuse a recent failed attempt with a successful retrieval', async () => {
     const { router, direct, universal } = setup();
@@ -155,15 +160,15 @@ describe('persistent tracking routing', () => {
     const { router, health, universal } = setup();
     health.acquireTrackingProvider.mockResolvedValueOnce({ token: null, retry_at: '2026-09-10T13:00:00Z' });
     await router.fetch(parcel(), false);
-    expect(universal.mock.calls.map(([source]) => source)).toEqual(['ParcelsApp']);
+    expect(universal.mock.calls.map(([source]) => source)).toEqual(['17TRACK']);
   });
   it('retains provider-specific Retry-After and stops cascading on a fresh universal 429', async () => {
     const { router, universal, health } = setup();
-    universal.mockRejectedValue(new UpstreamHttpError('17TRACK', 429, 2 * 3_600_000));
-    await expect(router.fetch(parcel({ carrier_data: { routing: state({ preferred_provider: '17TRACK', last_success_at: '2026-09-10T11:30:00Z' }) } }), false))
-      .rejects.toMatchObject({ stale: false, routing: { failures: { '17TRACK': { retry_at: '2026-09-10T14:00:00.000Z' } } } });
+    universal.mockRejectedValue(new UpstreamHttpError('ParcelsApp', 429, 2 * 3_600_000));
+    await expect(router.fetch(parcel({ carrier_data: { routing: state({ preferred_provider: 'ParcelsApp', last_success_at: '2026-09-10T11:30:00Z' }) } }), false))
+      .rejects.toMatchObject({ stale: false, routing: { failures: { 'ParcelsApp': { retry_at: '2026-09-10T14:00:00.000Z' } } } });
     expect(universal).toHaveBeenCalledOnce();
-    expect(health.finishTrackingProvider).toHaveBeenCalledWith('17TRACK', 'lease', 'rate_limited', 7_200_000, expect.any(Number));
+    expect(health.finishTrackingProvider).toHaveBeenCalledWith('ParcelsApp', 'lease', 'rate_limited', 7_200_000, expect.any(Number));
   });
   it('bounds failed discovery and advances to Ship24 on the next check', async () => {
     const first = setup(); first.universal.mockRejectedValue(new Error('down'));
@@ -177,9 +182,9 @@ describe('persistent tracking routing', () => {
   it('does one daily scheduled comparison and switches only for newer data', async () => {
     const { router, universal } = setup();
     universal.mockResolvedValueOnce(history('2026-09-10T10:00:00Z')).mockResolvedValueOnce(history('2026-09-10T11:00:00Z'));
-    const result = await router.fetch(parcel({ carrier_data: { routing: state({ preferred_provider: '17TRACK', last_probe_at: '2026-09-08T12:00:00Z' }) } }), true);
-    expect(universal.mock.calls.map(([source]) => source)).toEqual(['17TRACK', 'ParcelsApp']);
-    expect(result.result.routing).toMatchObject({ preferred_provider: 'ParcelsApp', probe_cursor: 1 });
+    const result = await router.fetch(parcel({ carrier_data: { routing: state({ preferred_provider: 'ParcelsApp', last_probe_at: '2026-09-08T12:00:00Z' }) } }), true);
+    expect(universal.mock.calls.map(([source]) => source)).toEqual(['ParcelsApp', '17TRACK']);
+    expect(result.result.routing).toMatchObject({ preferred_provider: '17TRACK', probe_cursor: 1 });
   });
   it.each([false, true])('keeps affinity on older alternative data (scheduled=%s)', async (scheduled) => {
     const { router, universal } = setup();
@@ -190,9 +195,9 @@ describe('persistent tracking routing', () => {
   });
   it('does not throw away successful history when a shadow check fails', async () => {
     const { router, universal } = setup();
-    universal.mockResolvedValueOnce(history()).mockRejectedValueOnce(new UpstreamHttpError('ParcelsApp', 429));
-    await expect(router.fetch(parcel({ carrier_data: { routing: state({ preferred_provider: '17TRACK', last_probe_at: '2026-09-08T12:00:00Z', last_success_at: '2026-09-10T11:50:00Z' }) } }), true))
-      .resolves.toMatchObject({ result: { tracking_provider: '17TRACK' } });
+    universal.mockResolvedValueOnce(history()).mockRejectedValueOnce(new UpstreamHttpError('17TRACK', 429));
+    await expect(router.fetch(parcel({ carrier_data: { routing: state({ preferred_provider: 'ParcelsApp', last_probe_at: '2026-09-08T12:00:00Z', last_success_at: '2026-09-10T11:50:00Z' }) } }), true))
+      .resolves.toMatchObject({ result: { tracking_provider: 'ParcelsApp' } });
   });
   it('tries a new manual carrier, then recovers the previous confirmed route and its own inputs', async () => {
     const { router, direct } = setup(); direct.mockRejectedValueOnce(new Error('down')).mockResolvedValueOnce(directValue('dpd'));
@@ -217,7 +222,7 @@ describe('persistent tracking routing', () => {
     const { router, direct, universal } = setup(); direct.mockRejectedValue(new Error('delivery unavailable'));
     await router.fetch(parcel({ carrier: 'dhl', carrier_data: { original_carrier: 'dhl', active_tracking_carrier: 'swiss-post',
       active_tracking_number: 'LOCAL1234' } }), false);
-    expect(universal).toHaveBeenCalledWith('17TRACK', 'LOCAL1234', expect.any(Number));
+    expect(universal).toHaveBeenCalledWith('ParcelsApp', 'LOCAL1234', expect.any(Number));
   });
   it('fails closed when shared coordination is unavailable, with a persisted retry', async () => {
     const { router, health, universal } = setup(); health.acquireTrackingProvider.mockRejectedValue(new Error('db down'));
@@ -226,7 +231,7 @@ describe('persistent tracking routing', () => {
   });
   it('keeps valid data if the health completion write fails', async () => {
     const { router, health } = setup(); health.finishTrackingProvider.mockRejectedValue(new Error('db down'));
-    await expect(router.fetch(parcel(), false)).resolves.toMatchObject({ result: { tracking_provider: '17TRACK' } });
+    await expect(router.fetch(parcel(), false)).resolves.toMatchObject({ result: { tracking_provider: 'ParcelsApp' } });
   });
   it('checks cancellation before contacting a provider', async () => {
     const { router, universal } = setup();

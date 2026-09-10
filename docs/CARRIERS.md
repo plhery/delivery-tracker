@@ -38,7 +38,7 @@ Delivery Tracker can refresh these carriers automatically:
 | Paack | Automatic through the public recipient flow. Requires the tracking number and delivery postcode. |
 
 Unknown carriers (`unknown` and `intl-post`) now attempt automatic lookup through
-17TRACK → ParcelsApp → Ship24 → Postal Ninja. The first two use the existing
+ParcelsApp → 17TRACK → Ship24, with Postal Ninja opt-in. The first two use the existing
 private TRAWL service (`FLARESOLVERR_URL`); Postal Ninja and Ship24 use a dedicated
 fresh Chromium session (`TRACKING_CHROMIUM_PATH`). These services are **not
 selectable carriers**.

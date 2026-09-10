@@ -9,7 +9,7 @@ import { event, isNotice, numberOf, result, type UniversalSource as Source } fro
 import { PostalNinjaTracker } from './postalNinja';
 import { Ship24Tracker } from './ship24';
 import { universalCarrierHints } from './universalCarrierHints';
-export const UNIVERSAL_SOURCES: Source[] = ['17TRACK', 'ParcelsApp', 'Ship24'];
+export const UNIVERSAL_SOURCES: Source[] = ['ParcelsApp', '17TRACK', 'Ship24'];
 const API_URLS = {
   '17TRACK': 'https://t.17track.net/track/restapi',
   ParcelsApp: 'https://parcelsapp.com/api/v2/parcels',
