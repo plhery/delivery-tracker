@@ -9,6 +9,7 @@ Delivery Tracker can refresh these carriers automatically:
 | GLS Germany | Automatic through the GLS Group recipient service. Accepts four-digit Swiss and five-digit German delivery postcodes. Ambiguous 11/12-digit numbers are verified with GLS during entry. |
 | Delivengo | Automatic through La Poste. Choose it manually: its postal number ranges overlap other La Poste services. |
 | DHL / Deutsche Post | Automatic German parcel and tracked-mail updates through DHL's public tracking session, with the existing private TRAWL browser as a challenge fallback. |
+| DHL eCommerce | Automatic international parcel tracking through DHL’s global recipient API, with browser-established sessions when challenged. Separate from DHL Paket / Deutsche Post. |
 | Swiss Post Cargo | Automatic through the official anonymous public tracker. |
 | Quickpac | Automatic through Planzer's current tracking API. Existing Quickpac numbers keep their carrier label. |
 | Planzer | Automatic. Shared `999.90.########` shipments need the complete shared tracking URL. |
@@ -129,6 +130,25 @@ It covers the German parcel/postal tracking service, including `LF…DE`; anothe
 DHL division or a request for additional verification remains an explicit error
 with the tracking website available, rather than being mistaken for a parcel
 that has not yet been announced.
+
+DHL eCommerce uses the public `www.dhl.com/utapi` recipient endpoint. A
+challenge (including HTTP 428) or interrupted connection bootstraps cookies
+through the private TRAWL browser and then retries the structured request.
+Sessions are reused; rate limits and upstream server errors remain visible.
+The API may return a customer-confirmation ID instead of the queried alias,
+so the adapter accepts one eCommerce shipment only from its exact request URL.
+It retains status, broad locations, delivery estimate and dated scans, never
+recipient addresses or customer references. Local timestamps are converted
+only for known countries or hubs; scans with unresolved timezones are omitted
+rather than assigned a fabricated UTC timestamp.
+
+The catalog distinguishes eCommerce portal links and disambiguates global DHL
+tracking links using number candidates. `GM` identifiers are recognized;
+16–17 digit numbers are low-confidence suggestions because other carriers use
+similar formats. DHL documents these identifiers in its
+[Americas reference](https://developer.dhl.com/api-reference/references-dhl-ecommerce-americas).
+Apply `20260912140000_add_dhl_ecommerce.sql` before deployment
+to enable the carrier in the owner-only create/change RPCs.
 
 Carrier names, adapter modes, tracking links, required inputs, timezones and
 detection rules are defined once in `contracts/openapi.json` under

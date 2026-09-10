@@ -1921,7 +1921,7 @@ declare
   parcel public.packages;
   carrier_id text;
 begin
-  foreach carrier_id in array array['hermes-de', 'delivengo', 'unknown', 'intl-post'] loop
+  foreach carrier_id in array array['hermes-de', 'delivengo', 'dhl-ecommerce', 'unknown', 'intl-post'] loop
     select * into parcel from public.create_owned_package('TEST' || replace(carrier_id, '-', '') || '123', '', carrier_id, null, null);
     if parcel.carrier <> carrier_id or parcel.user_id <> auth.uid() then
       raise exception 'New provider lost its carrier or owner';
@@ -1942,6 +1942,11 @@ begin
     perform public.change_owned_package_carrier(parcel.id, 'gls-de', null, null);
     raise exception 'Accepted missing German postcode' using errcode = 'P0002';
   exception when invalid_parameter_value then null; end;
+  perform public.change_owned_package_carrier(parcel.id, 'dhl-ecommerce', null, null);
+  select * into parcel from public.packages where id = parcel.id;
+  if parcel.carrier <> 'dhl-ecommerce' or parcel.dpd_postcode is not null or parcel.sync_status <> 'pending' then
+    raise exception 'Changing to DHL eCommerce did not reset carrier-specific state';
+  end if;
   perform public.change_owned_package_carrier(parcel.id, 'unknown', null, null);
   select * into parcel from public.packages where id = parcel.id;
   if parcel.carrier <> 'unknown' or parcel.dpd_postcode is not null or parcel.sync_status <> 'pending' then

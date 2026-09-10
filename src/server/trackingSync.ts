@@ -19,6 +19,7 @@ import { CChezVousTracker } from './cChezVous';
 import { CiblexTracker } from './ciblex';
 import { DachserTracker } from './dachser';
 import { DHLTracker } from './dhl';
+import { DHLEcommerceTracker } from './dhlEcommerce';
 import { DPDFranceTracker } from './dpdFrance';
 import { DPDTracker } from './dpd';
 import { GeodisTracker } from './geodis';
@@ -116,6 +117,7 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     readonly hermesGermany = new HermesGermanyTracker(),
     readonly glsGermany = new GLSGermanyTracker(),
     readonly universal = new UniversalTracker(),
+    readonly dhlEcommerce = new DHLEcommerceTracker(),
   ) {}
 
   async fetch(
@@ -145,6 +147,8 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
       result = await this.universal.fetch(trackingNumber);
     } else if (adapter === 'ups') {
       result = await this.ups.fetch(trackingNumber);
+    } else if (adapter === 'dhl-ecommerce') {
+      result = await this.dhlEcommerce.fetch(trackingNumber);
     } else if (adapter === 'dhl') {
       result = await this.dhl.fetch(trackingNumber);
     } else if (adapter === 'la-poste') {

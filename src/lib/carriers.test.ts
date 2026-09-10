@@ -290,12 +290,12 @@ describe('detectCarrier', () => {
     expect(detectCarrierMatch('99112233445575012')).toMatchObject({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['colis-prive'],
+      candidates: ['dhl-ecommerce', 'colis-prive'],
     });
     expect(detectCarrierMatch('99112233445500000')).toMatchObject({
       carrier: 'unknown',
-      confidence: 'none',
-      candidates: [],
+      confidence: 'low',
+      candidates: ['dhl-ecommerce'],
     });
     expect(detectCarrier('00123456')).toBe('unknown');
     expect(detectCarrier('DELIVERY')).toBe('unknown');
@@ -682,5 +682,23 @@ describe('parcelTrackingNumbers', () => {
     expect(parcelTrackingNumbers({ carrier: 'dhl', trackingNumber: 'LF123456785DE',
       originalCarrier: 'dhl', originalTrackingNumber: 'LF123456785DE', trackingSource: 'swiss-post',
     })).toEqual([{ carrier: 'swiss-post', number: 'LF123456785DE' }]);
+  });
+});
+
+describe('DHL eCommerce detection', () => {
+  it('keeps generic numeric identifiers as suggestions', () => {
+    expect(detectCarrierMatch('33870000000000001')).toMatchObject({ carrier: 'unknown', confidence: 'low', candidates: ['dhl-ecommerce'] });
+    expect(detectCarrier('GM1234567890123456')).toBe('dhl-ecommerce');
+    expect(tracksAutomatically('dhl-ecommerce')).toBe(true);
+  });
+  it('disambiguates shared DHL links and specific eCommerce hosts', () => {
+    for (const url of [
+      'https://www.dhl.com/ch-en/home/tracking.html?tracking-id=33870000000000001',
+      'https://ecommerceportal.dhl.com/track/?tracking-id=ABC123456',
+      'https://webtrack.dhlglobalmail.com/?trackingnumber=ABC123456',
+    ]) expect(parseTrackingInput(url)).toMatchObject({ carrier: 'dhl-ecommerce', confidence: 'high', source: 'link' });
+    expect(parseTrackingInput('https://www.dhl.com/ch-en/home/tracking.html?tracking-id=LF123456785DE').carrier).toBe('dhl');
+    expect(parseTrackingInput('https://www.dhl.de/int-verfolgen/?piececode=1234567890').carrier).toBe('dhl');
+    expect(parseTrackingInput('https://ecommerceportal.dhl.com.evil.example/?tracking-id=ABC123456').carrier).not.toBe('dhl-ecommerce');
   });
 });

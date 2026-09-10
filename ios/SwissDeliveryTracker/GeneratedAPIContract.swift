@@ -40,6 +40,7 @@ struct CarrierID: RawRepresentable, Codable, CaseIterable, Hashable, Sendable, I
     static let postlogistics = CarrierID(rawValue: "postlogistics")
     static let dachser = CarrierID(rawValue: "dachser")
     static let dhl = CarrierID(rawValue: "dhl")
+    static let dhlEcommerce = CarrierID(rawValue: "dhl-ecommerce")
     static let ups = CarrierID(rawValue: "ups")
     static let amazonLogistics = CarrierID(rawValue: "amazon-logistics")
     static let fedex = CarrierID(rawValue: "fedex")
@@ -79,6 +80,7 @@ struct CarrierID: RawRepresentable, Codable, CaseIterable, Hashable, Sendable, I
         .postlogistics,
         .dachser,
         .dhl,
+        .dhlEcommerce,
         .ups,
         .amazonLogistics,
         .fedex,

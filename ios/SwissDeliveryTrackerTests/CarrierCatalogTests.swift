@@ -53,6 +53,15 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertTrue(links[1].url.absoluteString.contains("123456789011"))
     }
 
+    func testDHLEcommerceDetection() {
+        XCTAssertEqual(catalog.detect("33870000000000001").confidence, .low)
+        XCTAssertEqual(catalog.detect("GM1234567890123456").carrier.rawValue, "dhl-ecommerce")
+        XCTAssertEqual(catalog.parse("https://www.dhl.com/ch-en/home/tracking.html?tracking-id=33870000000000001").carrier.rawValue, "dhl-ecommerce")
+        XCTAssertEqual(catalog.parse("https://ecommerceportal.dhl.com/track/?tracking-id=ABC123456").carrier.rawValue, "dhl-ecommerce")
+        XCTAssertEqual(catalog.parse("https://www.dhl.com/ch-en/home/tracking.html?tracking-id=LF123456785DE").carrier, .dhl)
+        XCTAssertTrue(catalog.tracksAutomatically(CarrierID(rawValue: "dhl-ecommerce")))
+    }
+
     func testExpandedCarriersAndHiddenUniversalLookup() {
         for raw in ["hermes-de", "gls-de", "delivengo"] {
             let carrier = CarrierID(rawValue: raw)
@@ -90,7 +99,7 @@ final class CarrierCatalogTests: XCTestCase {
             XCTAssertEqual(frenchResult.carrier, .unknown)
             XCTAssertEqual(frenchResult.confidence, .low)
         }
-        XCTAssertEqual(catalog.detect("99112233445500000").confidence, .none)
+        XCTAssertEqual(catalog.detect("99112233445500000").confidence, .low)
     }
 
     func testRecognisesDutchPostAndExplainsGenericPostalTracking() {

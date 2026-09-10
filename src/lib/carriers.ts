@@ -463,6 +463,8 @@ export function parseTrackingInput(raw: string): TrackingInputMatch {
         candidate.domains.some((domain) => matchesDomain(url.hostname.toLowerCase(), domain))
         && (!candidate.pathPattern || candidate.pathPattern.test(url.pathname)),
       );
+      const specificity = (rule: TrackingLinkRule) => Math.max(...rule.domains.filter((domain) => matchesDomain(url.hostname.toLowerCase(), domain)).map((domain) => domain.length));
+      rules.sort((a, b) => specificity(b) - specificity(a));
       for (const firstRule of rules) {
         const trackingNumber = numberFromRule(url, firstRule);
         if (trackingNumber) {
@@ -470,9 +472,11 @@ export function parseTrackingInput(raw: string): TrackingInputMatch {
           if (firstRule.detectFromNumber && detected.confidence === 'high') {
             return { trackingNumber, ...detected, source: 'link' };
           }
+          const suggestedRules = rules.filter((candidate) => detected.candidates.includes(candidate.carrier));
+          const suggestedCarriers = new Set(suggestedRules.map((candidate) => candidate.carrier));
           const rule = detected.confidence === 'high'
             ? rules.find((candidate) => candidate.carrier === detected.carrier) ?? firstRule
-            : firstRule;
+            : suggestedCarriers.size === 1 ? suggestedRules[0] : firstRule;
           return {
             trackingNumber,
             carrier: rule.carrier,

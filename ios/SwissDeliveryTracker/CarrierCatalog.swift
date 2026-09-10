@@ -309,7 +309,13 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
                     matchingRules.append((carrier, rule))
                 }
             }
-            matchingRules.sort { $0.carrier.rawValue < $1.carrier.rawValue }
+            func specificity(_ rule: CarrierDefinition.LinkRule) -> Int {
+                rule.domains.filter { host == $0 || host.hasSuffix("." + $0) }.map(\.count).max() ?? 0
+            }
+            matchingRules.sort {
+                let left = specificity($0.rule), right = specificity($1.rule)
+                return left == right ? $0.carrier.rawValue < $1.carrier.rawValue : left > right
+            }
             for firstMatch in matchingRules {
                 let queryValue = components.queryItems?.first { item in
                     firstMatch.rule.params?.contains {
@@ -330,9 +336,11 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
                     if firstMatch.rule.detectFromNumber == true, detected.confidence == .high {
                         return makeMatch(candidate, source: .link)
                     }
+                    let suggested = matchingRules.filter { detected.candidates.contains($0.carrier) }
+                    let uniqueSuggestions = Set(suggested.map { $0.carrier })
                     let selected = detected.confidence == .high
                         ? matchingRules.first(where: { $0.carrier == detected.carrier }) ?? firstMatch
-                        : firstMatch
+                        : (uniqueSuggestions.count == 1 ? suggested[0] : firstMatch)
                     return TrackingInputMatch(
                         trackingNumber: candidate,
                         carrier: selected.carrier,

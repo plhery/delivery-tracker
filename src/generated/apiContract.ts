@@ -342,6 +342,52 @@ export const CARRIER_CAPABILITIES = {
       }
     ]
   },
+  "dhl-ecommerce": {
+    "displayName": "DHL eCommerce",
+    "color": "#ffcc00",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "dhl-ecommerce"
+    },
+    "canaryUrl": "https://www.dhl.com/ch-en/home/tracking.html",
+    "trackingUrlTemplate": "https://www.dhl.com/ch-en/home/tracking.html?tracking-id={trackingNumber}&submit=1",
+    "linkRules": [
+      {
+        "domains": [
+          "ecommerceportal.dhl.com",
+          "webtrack.dhlglobalmail.com"
+        ],
+        "params": [
+          "tracking-id",
+          "trackingNumber",
+          "tracking",
+          "ID"
+        ]
+      },
+      {
+        "domains": [
+          "dhl.com"
+        ],
+        "pathPattern": "/home/tracking[.]html$",
+        "params": [
+          "tracking-id",
+          "trackingId"
+        ]
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^GM[0-9]{16,18}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^[0-9]{16,17}$",
+        "confidence": "low"
+      }
+    ]
+  },
   "ups": {
     "displayName": "UPS",
     "color": "#351c15",
@@ -1239,6 +1285,7 @@ export const CARRIER_IDS = [
   "postlogistics",
   "dachser",
   "dhl",
+  "dhl-ecommerce",
   "ups",
   "amazon-logistics",
   "fedex",
