@@ -404,6 +404,8 @@ export function detectCarrier(raw: string): CarrierId {
 
 const TRACKING_CANDIDATE_PATTERNS = [
   new RegExp(`\\b${AMAZON_NUMBER_PATTERN.slice(1, -1).replaceAll('[0-9]', '(?:[\\s.-]*[0-9])')}\\b`, 'gi'),
+  // NACEX agency/shipment composites keep their slash boundary (never stripped).
+  /\b\d{4}\/\d{8}\b/g,
   /\b\d{26}\b/g,
   /\bH\d{15,19}\b/gi,
   /\b1Z[A-Z0-9]{16}\b/gi,
@@ -429,7 +431,9 @@ function validTrackingNumber(raw: string): boolean {
   const normalized = normalizeTrackingNumber(raw);
   return normalized.length >= 4
     && normalized.length <= 40
-    && /^[A-Z0-9]+$/.test(normalized)
+    // The NACEX agency/shipment composite is the only tracking shape allowed
+    // to keep punctuation; everything else stays strict alphanumeric.
+    && (/^[A-Z0-9]+$/.test(normalized) || /^\d{4}\/\d{8}$/.test(normalized))
     && /\d/.test(normalized);
 }
 

@@ -779,12 +779,21 @@ describe('carrier detection', () => {
   it('nacex — NACEX', () => {
     // REPORTED REAL agency/shipment composites: the slash boundary is preserved and is
     // not a plain numeric tracking ID until carrier-specific parsing applies.
-    // (Note: save-time validation still accepts only alphanumerics, so pasting the
-    // slashed form for detection works while registration of the raw form is a follow-up.)
     // Sources: https://www.ocu.org/reclamar/lista-reclamaciones-publicas/no-entrega-de-envio-a-tiempo/dca1c166a05005867c
     // and https://www.ocu.org/reclamar/lista-reclamaciones-publicas/reclamaci-C3-B3n-por-da-C3-B1o-a-mercanc/7bf1f90f3a5fe7d8cb
     expect(detectCarrier('2103/11207088')).toBe('nacex');
     expect(detectCarrier('2850/11247170')).toBe('nacex');
+    // The slashed form survives pasting as well: manual entry keeps the slash for
+    // saving, and label-led text extracts the composite through candidate scanning.
+    expect(parseTrackingInput('2103/11207088')).toMatchObject({
+      trackingNumber: '2103/11207088', carrier: 'nacex', confidence: 'high', source: 'number',
+    });
+    expect(parseTrackingInput('Tracking: 2103/11207088')).toMatchObject({
+      trackingNumber: '2103/11207088', carrier: 'nacex', source: 'text',
+    });
+    expect(parseTrackingInput('Where is my parcel?')).toMatchObject({
+      trackingNumber: '', carrier: 'unknown', source: 'none',
+    });
     expectUniversalFallback('nacex');
   });
 

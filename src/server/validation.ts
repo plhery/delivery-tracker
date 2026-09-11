@@ -64,7 +64,7 @@ export function newPackageValues(payload: JsonObject): NewPackageValues {
   if (trackingNumber.length < 4 || trackingNumber.length > 40) {
     throw new HttpError(400, 'Enter a tracking number between 4 and 40 characters');
   }
-  if (!/^[A-Z0-9]+$/.test(trackingNumber) || !/\d/.test(trackingNumber)) {
+  if (!/^(?:[A-Z0-9]+|\d{4}\/\d{8})$/.test(trackingNumber) || !/\d/.test(trackingNumber)) {
     throw new HttpError(400, 'Tracking numbers must use letters and numbers and include a digit');
   }
   if (codePointLength(rawLabel) > 80) {

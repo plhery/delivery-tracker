@@ -277,6 +277,26 @@ describe('input validation', () => {
       label: 'Shoes',
       carrier: 'quickpac',
     });
+    expect(newPackageValues({
+      trackingNumber: '2103/11207088',
+      label: 'NACEX parcel',
+      carrier: 'nacex',
+      trackingUrl: '',
+      dpdPostcode: '',
+    })).toMatchObject({
+      trackingNumber: '2103/11207088',
+      label: 'NACEX parcel',
+      carrier: 'nacex',
+      trackingUrl: null,
+      dpdPostcode: null,
+    });
+    expect(() => newPackageValues({
+      trackingNumber: '2103/1120708',
+      label: 'NACEX parcel',
+      carrier: 'nacex',
+      trackingUrl: '',
+      dpdPostcode: '',
+    })).toThrow('letters and numbers');
     expect(() => newPackageValues({
       trackingNumber: '06086514587082',
       label: 'Parcel',

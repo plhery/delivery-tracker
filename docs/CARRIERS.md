@@ -74,7 +74,7 @@ per-number source URLs and evidence roles.
 | Correos Express | 16-digit numerics low. |
 | SEUR | 14/21-digit IDs low; 7-digit references are not standalone tracking oracles. |
 | MRW | 5 digits + letter + 6 digits high; 12-digit numerics low. |
-| NACEX | `NNNN/NNNNNNNN` agency/shipment composite (slash preserved). |
+| NACEX | `NNNN/NNNNNNNN` agency/shipment composite, saveable as typed with the slash preserved (the only tracking shape allowed to keep punctuation). |
 | CTT Portugal | Checksum-valid `PT` S10. |
 | CTT Express | `00` + 20 digits (22 total). |
 | Poste Italiane | `RA` + 11 digits, `1UW/3UW/5P` 13-char families and `2IMA` + 10 digits high (dedicated adapter above; NL handoffs stay with PostNL). |

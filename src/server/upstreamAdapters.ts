@@ -1,4 +1,5 @@
 import { randomInt } from 'node:crypto';
+import { DateTime } from 'luxon';
 import { decodeText, fetchBounded, parseJsonBytes } from './boundedFetch';
 import type { CarrierEvent, CarrierResult, CarrierStatus } from './carrierResult';
 import type { Stage } from '../types';
@@ -513,6 +514,28 @@ const SUNYOU_STATUS = new Map<string, { status: CarrierStatus; stage: string }>(
   ['6', { status: 'exception', stage: 'failed_attempt' }],
 ]);
 
+function sunYouEventTime(event: JsonObject): string {
+  const raw = text(event.createTime);
+  if (!raw || /(?:Z|[+-]\d{2}:?\d{2})$/.test(raw)) return raw;
+  // Origin/destination legs stamp their own zone (observed "+08:00" on origin
+  // scans of a captured SYAE shipment). Honor an explicit offset instead of
+  // comparing wall-clock strings across legs; without a usable offset the
+  // provider text passes through unchanged — never invented.
+  const zone = /^([+-])(\d{2}):?(\d{2})$/.exec(text(event.timeZone));
+  if (!zone) return raw;
+  const parsed = DateTime.fromISO(
+    `${raw.replace(' ', 'T')}${zone[1]}${zone[2]}:${zone[3]}`,
+    { setZone: true },
+  );
+  return parsed.isValid ? parsed.toISO({ suppressMilliseconds: true }) ?? raw : raw;
+}
+
+function sunYouEventInstant(event: JsonObject): number {
+  // fromISO needs the T separator; provider wall-clock strings use a space.
+  const parsed = DateTime.fromISO(sunYouEventTime(event).replace(' ', 'T'), { setZone: true });
+  return parsed.isValid ? parsed.toMillis() : Number.NEGATIVE_INFINITY;
+}
+
 export async function fetchSunYou(trackingNumber: string): Promise<CarrierResult> {
   const queryTime = `${Date.now()}-${randomInt(10_000, 100_000)}`;
   const { bytes } = await fetchBounded(
@@ -555,10 +578,10 @@ export async function fetchSunYou(trackingNumber: string): Promise<CarrierResult
   const allEvents = [
     ...recordArray(record(result.origin).items),
     ...recordArray(record(result.destination).items),
-  ].sort((left, right) => text(right.createTime).localeCompare(text(left.createTime)));
+  ].sort((left, right) => sunYouEventInstant(right) - sunYouEventInstant(left));
   const classified = SUNYOU_STATUS.get(displayStatus);
   const events = allEvents.slice(0, 20).map((event, index): CarrierEvent => ({
-    time: text(event.createTime),
+    time: sunYouEventTime(event),
     location: '',
     description: text(event.content),
     ...(index === 0 && classified ? { stage: classified.stage } : {}),

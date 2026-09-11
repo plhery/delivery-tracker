@@ -487,6 +487,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     private func recognizedNumber(in text: String) -> String? {
         let patterns = [
             "\\b(?:[A-Z]{2}[\\s.-]*[0-9](?:[\\s.-]?[0-9]){9}|TBA[\\s.-]*[0-9](?:[\\s.-]?[0-9]){11})\\b",
+            "\\b\\d{4}/\\d{8}\\b",
             "\\b\\d{26}\\b",
             "\\bH\\d{15,19}\\b",
             "\\b1Z[A-Z0-9]{16}\\b",
@@ -582,7 +583,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     private static func valid(_ raw: String) -> Bool {
         let value = normalize(raw)
         return (4...40).contains(value.count)
-            && matches(value, pattern: "^[A-Z0-9]+$")
+            && (matches(value, pattern: "^[A-Z0-9]+$") || matches(value, pattern: "^\\d{4}/\\d{8}$"))
             && matches(value, pattern: "\\d")
     }
 

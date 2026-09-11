@@ -137,6 +137,9 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(catalog.detect("FGRC45BKLM").carrier, .cChezVous)
         XCTAssertEqual(catalog.detect("ASE12345678").carrier, .asendia)
         XCTAssertEqual(catalog.detect("FR1234567890").carrier, .amazonLogistics)
+        XCTAssertEqual(catalog.detect("2103/11207088").carrier.rawValue, "nacex")
+        XCTAssertEqual(catalog.parse("2103/11207088").carrier.rawValue, "nacex")
+        XCTAssertEqual(catalog.parse("Tracking: 2103/11207088").trackingNumber, "2103/11207088")
     }
 
     func testKeepsAmbiguousCarrierForConfirmation() {

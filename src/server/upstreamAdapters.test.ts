@@ -437,3 +437,52 @@ describe('official SunYou display statuses', () => {
     });
   });
 });
+
+describe('SunYou event timezones', () => {
+  function sunYouResponse(origin: unknown[], destination: unknown[]) {
+    return new Response(
+      `searchCallback(${JSON.stringify({
+        data: [{
+          displayStatus: '4',
+          has: true,
+          orderNo: SUNYOU_WRONG_NUMBER,
+          result: { origin: { items: origin }, destination: { items: destination } },
+        }],
+      })})`,
+    );
+  }
+
+  it('honors per-leg offsets and orders by instant rather than wall-clock string', async () => {
+    // Observed on a captured SYAE shipment: origin scans carry "+08:00" while
+    // the wall-clock strings would sort the other way round.
+    // Source: https://github.com/ha-parcel-integrations/ha-sunyou/blob/main/tests/payloads.py
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(sunYouResponse(
+      [{ createTime: '2021-07-06 01:43:13', timeZone: '+08:00', content: 'Origin scan' }],
+      [{ createTime: '2021-07-05 20:00:00', timeZone: '+02:00', content: 'Destination scan' }],
+    ));
+
+    const result = await fetchSunYou(SUNYOU_WRONG_NUMBER);
+    expect(result.events?.map((event) => [event.description, event.time])).toEqual([
+      ['Destination scan', '2021-07-05T20:00:00+02:00'],
+      ['Origin scan', '2021-07-06T01:43:13+08:00'],
+    ]);
+  });
+
+  it('keeps provider text when no usable offset exists', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(sunYouResponse(
+      [
+        { createTime: '2021-07-06 01:43:13', content: 'No zone' },
+        { createTime: '2021-07-06 01:44:13', timeZone: 'Mars', content: 'Bad zone' },
+        { createTime: '2021-07-07T01:45:13+08:00', timeZone: '+02:00', content: 'Already offset' },
+      ],
+      [],
+    ));
+
+    const result = await fetchSunYou(SUNYOU_WRONG_NUMBER);
+    expect(result.events?.map((event) => event.time)).toEqual([
+      '2021-07-07T01:45:13+08:00',
+      '2021-07-06 01:44:13',
+      '2021-07-06 01:43:13',
+    ]);
+  });
+});
