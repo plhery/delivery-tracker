@@ -82,6 +82,8 @@ describe('Poste Italiane response parsing', () => {
   it('maps documented wordings and reports unmapped ones as unknown', () => {
     const cases: Array<[string, string, string]> = [
       ['a seguito di acquisto da poste.it', 'pending', 'registered'],
+      // ASCII-apostrophe variant observed live on a delivered parcel.
+      ["la spedizione e' stata consegnata", 'delivered', 'delivered'],
       ['completata la fase di verifica per lo svincolo doganale', 'in_transit', 'in_transit'],
       ['consegna non andata a buon fine, riproveremo', 'exception', 'failed_attempt'],
       ['in restituzione al mittente', 'exception', 'returned'],

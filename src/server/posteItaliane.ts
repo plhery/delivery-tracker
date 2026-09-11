@@ -53,6 +53,8 @@ function classifyPosteItalianeStatus(raw: string): ClassifiedStatus | undefined 
     case 'la spedizione è in consegna':
       return { status: 'out_for_delivery', stage: 'out_for_delivery' };
     case 'la spedizione è stata consegnata':
+    // ASCII-apostrophe variant observed live on a delivered parcel.
+    case "la spedizione e' stata consegnata":
     case 'con successo in data':
       return { status: 'delivered', stage: 'delivered' };
     case 'all\u2019estero':
