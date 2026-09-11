@@ -39,6 +39,7 @@ import { captureOperationalError, errorType, reportRoutingEvent } from './observ
 import { PaackTracker } from './paack';
 import { PacketaTracker } from './packeta';
 import { PlanzerSharedTracker } from './planzerShared';
+import { PosMalaysiaTracker } from './posMalaysia';
 import type { CompositePushNotificationService } from './push';
 import { RelaisColisTracker } from './relaisColis';
 import type { SupabaseServiceClient } from './supabase';
@@ -127,6 +128,7 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     readonly ciblex = new CiblexTracker(),
     readonly paack = new PaackTracker(),
     readonly packeta = new PacketaTracker(),
+    readonly posMalaysia = new PosMalaysiaTracker(),
     readonly amazonShipping = new AmazonShippingTracker(),
     readonly indiaPost = new IndiaPostTracker(),
     readonly inpost = new InpostTracker(),
@@ -202,6 +204,8 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
       result = await this.paack.fetch(trackingNumber, dpdPostcode ?? '');
     } else if (adapter === 'packeta') {
       result = await this.packeta.fetch(trackingNumber);
+    } else if (adapter === 'pos-malaysia') {
+      result = await this.posMalaysia.fetch(trackingNumber);
     } else if (adapter === 'amazon-shipping') {
       result = await this.amazonShipping.fetch(trackingNumber);
     } else if (adapter === 'india-post') {

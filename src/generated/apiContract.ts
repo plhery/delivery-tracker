@@ -2450,9 +2450,9 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "pos-malaysia"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://tracking.pos.com.my/",
     "linkRules": [],
     "detectionRules": [
       {

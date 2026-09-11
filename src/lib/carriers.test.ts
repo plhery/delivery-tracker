@@ -915,7 +915,9 @@ describe('carrier detection', () => {
     expect(detectCarrier('MYPM00000000017')).toBe('pos-malaysia');
     expect(detectCarrier('RR157638464MY')).toBe('pos-malaysia');
     expect(detectCarrier('RR158903660MY')).toBe('pos-malaysia');
-    expectUniversalFallback('pos-malaysia');
+    expect(CARRIERS['pos-malaysia'].capabilities.selectable).toBe(true);
+    expect(CARRIERS['pos-malaysia'].capabilities.tracking).toMatchObject({ mode: 'automatic', adapter: 'pos-malaysia' });
+    expect(tracksAutomatically('pos-malaysia')).toBe(true);
   });
 
   it('poste-italiane — Poste Italiane', () => {
