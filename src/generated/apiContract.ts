@@ -210,7 +210,8 @@ export const CARRIER_CAPABILITIES = {
     },
     "canaryUrl": "https://myhes.de/",
     "linkRules": [],
-    "detectionRules": []
+    "detectionRules": [],
+    "trackingUrlTemplate": "https://myhes.de/"
   },
   "spring-gds": {
     "displayName": "PostNL",
@@ -274,7 +275,8 @@ export const CARRIER_CAPABILITIES = {
     },
     "canaryUrl": "https://service.post.ch/",
     "linkRules": [],
-    "detectionRules": []
+    "detectionRules": [],
+    "trackingUrlTemplate": "https://www.swisspost.ch/swisspost-tracking?formattedParcelCodes={trackingNumber}"
   },
   "dachser": {
     "displayName": "Dachser",
@@ -704,6 +706,7 @@ export const CARRIER_CAPABILITIES = {
           "relaiscolis.com"
         ],
         "params": [
+          "tracking_number",
           "trackingNumber",
           "numeroColis",
           "numColis"
@@ -719,7 +722,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{10}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.relaiscolis.com/colis/suivre?tracking_number={trackingNumber}"
   },
   "la-poste": {
     "displayName": "La Poste / Colissimo",
@@ -991,7 +995,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{8}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.heppner-group.com/destinataire-suivez-votre-marchandise/"
   },
   "ciblex": {
     "displayName": "Ciblex",
@@ -1377,7 +1382,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^H[A-Z0-9]{15}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.evri.com/track-a-parcel"
   },
   "inpost": {
     "displayName": "InPost",
@@ -1407,7 +1413,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^8YDR\\d{9}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://inpost.pl/sledzenie-przesylek"
   },
   "an-post": {
     "displayName": "An Post",
@@ -1426,7 +1433,8 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high",
         "checksum": "s10"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://track.anpost.ie/"
   },
   "bpost": {
     "displayName": "bpost",
@@ -1453,7 +1461,8 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high",
         "checksum": "s10"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://track.bpost.cloud/"
   },
   "austrian-post": {
     "displayName": "Austrian Post",
@@ -1471,7 +1480,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{22}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.post.at/en/s/track-and-trace-search"
   },
   "postnord": {
     "displayName": "PostNord",
@@ -1489,7 +1499,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{11}SE$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.postnord.se/en/our-tools/track-and-trace"
   },
   "posti": {
     "displayName": "Posti",
@@ -1501,8 +1512,16 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "universal"
     },
     "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
-    "detectionRules": []
+    "linkRules": [
+      {
+        "domains": [
+          "posti.fi"
+        ],
+        "path": "^/(?:[a-z]{2}/)?tracking/([^/?#]+)/?$"
+      }
+    ],
+    "detectionRules": [],
+    "trackingUrlTemplate": "https://www.posti.fi/en/tracking/{trackingNumber}"
   },
   "correos-express": {
     "displayName": "Correos Express",
@@ -1520,7 +1539,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{16}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://s.correosexpress.com/"
   },
   "seur": {
     "displayName": "SEUR",
@@ -1542,7 +1562,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{21}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.seur.com/miseur/mis-envios"
   },
   "mrw": {
     "displayName": "MRW",
@@ -1564,7 +1585,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{5}[A-Z]\\d{6}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.mrw.es/seguimiento"
   },
   "nacex": {
     "displayName": "NACEX",
@@ -1582,7 +1604,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{4}/\\d{8}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.nacex.es/irSeguimiento.do"
   },
   "ctt": {
     "displayName": "CTT Portugal",
@@ -1594,14 +1617,24 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "universal"
     },
     "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "linkRules": [
+      {
+        "domains": [
+          "ctt.pt"
+        ],
+        "params": [
+          "objects"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^[A-Z]{2}\\d{9}PT$",
         "confidence": "high",
         "checksum": "s10"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.ctt.pt/feapl_2/app/open/objectSearch/objectSearch.jspx?objects={trackingNumber}&request_locale=en"
   },
   "ctt-express": {
     "displayName": "CTT Express",
@@ -1613,13 +1646,23 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "universal"
     },
     "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "linkRules": [
+      {
+        "domains": [
+          "shipping-tracking.production.cloud2.cttexpress.com"
+        ],
+        "params": [
+          "sc"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^00\\d{20}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://shipping-tracking.production.cloud2.cttexpress.com/?sc={trackingNumber}"
   },
   "poste-italiane": {
     "displayName": "Poste Italiane",
@@ -1645,7 +1688,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^2IMA\\d{10}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.poste.it/cerca/index.html"
   },
   "brt": {
     "displayName": "BRT",
@@ -1663,7 +1707,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{14}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://services.brt.it/en/tracking"
   },
   "ecoscooting": {
     "displayName": "Ecoscooting",
@@ -1707,7 +1752,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{10}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.tip-sa.com/es/localizacion-envios"
   },
   "ukrposhta": {
     "displayName": "Ukrposhta",
@@ -1720,7 +1766,8 @@ export const CARRIER_CAPABILITIES = {
     },
     "canaryUrl": "https://t.17track.net/",
     "linkRules": [],
-    "detectionRules": []
+    "detectionRules": [],
+    "trackingUrlTemplate": "https://track.ukrposhta.ua/tracking_EN.html"
   },
   "usps": {
     "displayName": "USPS",
@@ -1894,13 +1941,21 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "universal"
     },
     "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "linkRules": [
+      {
+        "domains": [
+          "tracking.speedx.io"
+        ],
+        "path": "^/([^/?#]+)/?$"
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^SPX[A-Z]{3}\\d{12}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://tracking.speedx.io/{trackingNumber}"
   },
   "uniuni": {
     "displayName": "UniUni",
@@ -1912,7 +1967,16 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "universal"
     },
     "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "linkRules": [
+      {
+        "domains": [
+          "uniuni.com"
+        ],
+        "params": [
+          "no"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^UUS[A-Z0-9]{16}$",
@@ -1922,7 +1986,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^4C\\d{9}US$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.uniuni.com/tracking?no={trackingNumber}"
   },
   "landmark-global": {
     "displayName": "Landmark Global",
@@ -2057,7 +2122,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{10}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.estafeta.com/en/rastrear-envio?{trackingNumber}"
   },
   "correios-br": {
     "displayName": "Correios Brazil",
@@ -2069,14 +2135,24 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "universal"
     },
     "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "linkRules": [
+      {
+        "domains": [
+          "correios.com.br"
+        ],
+        "params": [
+          "objetos"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^[A-Z]{2}\\d{9}BR$",
         "confidence": "high",
         "checksum": "s10"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://rastreamento.correios.com.br/app/index.php?objetos={trackingNumber}"
   },
   "correos-chile": {
     "displayName": "Correos de Chile",
@@ -2094,7 +2170,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{13}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.correos.cl/seguimiento-en-linea"
   },
   "yunexpress": {
     "displayName": "YunExpress",
@@ -2112,7 +2189,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^YT\\d{16}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://track.yunexpress.com/"
   },
   "four-px": {
     "displayName": "4PX",
@@ -2130,7 +2208,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^4PX\\d{13}CN$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://track.4px.com/"
   },
   "blue-dart": {
     "displayName": "Blue Dart",
@@ -2142,13 +2221,23 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "universal"
     },
     "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "linkRules": [
+      {
+        "domains": [
+          "bluedart.com"
+        ],
+        "params": [
+          "trackNo"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^\\d{11}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.bluedart.com/web/guest/trackdartresult?trackFor=0&trackNo={trackingNumber}"
   },
   "delhivery": {
     "displayName": "Delhivery",
@@ -2166,7 +2255,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{13,14}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.delhivery.com/tracking"
   },
   "nz-post": {
     "displayName": "NZ Post",
@@ -2185,7 +2275,8 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high",
         "checksum": "s10"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.nzpost.co.nz/tools/tracking"
   },
   "singapore-post": {
     "displayName": "Singapore Post",
@@ -2204,7 +2295,8 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high",
         "checksum": "s10"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.singpost.com/track-items"
   },
   "japan-post": {
     "displayName": "Japan Post",
@@ -2216,14 +2308,25 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "universal"
     },
     "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "linkRules": [
+      {
+        "domains": [
+          "trackings.post.japanpost.jp"
+        ],
+        "params": [
+          "reqCodeNo1",
+          "requestNo1"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^[A-Z]{2}\\d{9}JP$",
         "confidence": "high",
         "checksum": "s10"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://trackings.post.japanpost.jp/services/srv/search/direct?reqCodeNo1={trackingNumber}&locale=en"
   },
   "sf-express": {
     "displayName": "SF Express",
@@ -2235,7 +2338,14 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "universal"
     },
     "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "linkRules": [
+      {
+        "domains": [
+          "sf-express.com"
+        ],
+        "path": "^/.+/waybill-detail/([^/?#]+)/?$"
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^\\d{12}$",
@@ -2245,7 +2355,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^SF\\d{13}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.sf-express.com/chn/en/waybill/waybill-detail/{trackingNumber}"
   },
   "sto": {
     "displayName": "STO Express",
@@ -2263,7 +2374,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{12}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.sto.cn/"
   },
   "yunda": {
     "displayName": "Yunda Express",
@@ -2281,7 +2393,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{13}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.yunda56.com/"
   },
   "yto": {
     "displayName": "YTO Express",
@@ -2299,7 +2412,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^D\\d{11}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.ytoglobal.com/"
   },
   "zto": {
     "displayName": "ZTO Express",
@@ -2317,7 +2431,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{12}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.zto.com/"
   },
   "jd-logistics": {
     "displayName": "JD Logistics",
@@ -2335,7 +2450,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^VG\\d{11}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.jingdonglogistics.com/Tracking"
   },
   "yamato": {
     "displayName": "Yamato Transport",
@@ -2353,7 +2469,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{12}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://track.kuronekoyamato.co.jp/english/tracking"
   },
   "korea-post": {
     "displayName": "Korea Post",
@@ -2365,14 +2482,24 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "universal"
     },
     "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "linkRules": [
+      {
+        "domains": [
+          "service.epost.go.kr"
+        ],
+        "params": [
+          "sid1"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^[A-Z]{2}\\d{9}KR$",
         "confidence": "high",
         "checksum": "s10"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://service.epost.go.kr/trace.RetrieveEmsRigiTraceList.comm?displayHeader=N&sid1={trackingNumber}"
   },
   "thailand-post": {
     "displayName": "Thailand Post",
@@ -2391,7 +2518,8 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high",
         "checksum": "s10"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://international.thailandpost.com/track-status?lang=en"
   },
   "dtdc": {
     "displayName": "DTDC",
@@ -2403,13 +2531,23 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "universal"
     },
     "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "linkRules": [
+      {
+        "domains": [
+          "dtdc.com"
+        ],
+        "params": [
+          "trackingId"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^N\\d{8}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.dtdc.com/track-your-shipment?trackingId={trackingNumber}"
   },
   "australia-post": {
     "displayName": "Australia Post",
@@ -2421,8 +2559,18 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "universal"
     },
     "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
-    "detectionRules": []
+    "linkRules": [
+      {
+        "domains": [
+          "auspost.com.au"
+        ],
+        "params": [
+          "id"
+        ]
+      }
+    ],
+    "detectionRules": [],
+    "trackingUrlTemplate": "https://auspost.com.au/mypost/track/search?id={trackingNumber}"
   },
   "hongkong-post": {
     "displayName": "Hongkong Post",
@@ -2441,7 +2589,8 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high",
         "checksum": "s10"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://webapp.hongkongpost.hk/en/mail_tracking2/index.html"
   },
   "pos-malaysia": {
     "displayName": "Pos Malaysia",
@@ -2485,7 +2634,8 @@ export const CARRIER_CAPABILITIES = {
     },
     "canaryUrl": "https://t.17track.net/",
     "linkRules": [],
-    "detectionRules": []
+    "detectionRules": [],
+    "trackingUrlTemplate": "https://www.ninjavan.co/en-my/tracking"
   },
   "china-post": {
     "displayName": "China Post",
@@ -2504,7 +2654,8 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high",
         "checksum": "s10"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.ems.com.cn/mailtracking/you_jian_cha_xun.html"
   },
   "packeta": {
     "displayName": "Packeta",
@@ -2551,7 +2702,16 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "universal"
     },
     "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "linkRules": [
+      {
+        "domains": [
+          "emonitoring.poczta-polska.pl"
+        ],
+        "params": [
+          "numer"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^\\d{19}$",
@@ -2561,7 +2721,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^PX\\d{10}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://emonitoring.poczta-polska.pl/?lang=en&numer={trackingNumber}"
   },
   "bring-posten": {
     "displayName": "Bring",
@@ -2580,7 +2741,8 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high",
         "checksum": "s10"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://tracking.bring.com/tracking"
   },
   "aramex": {
     "displayName": "Aramex",
@@ -2598,7 +2760,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{11}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.aramex.com/track/shipments"
   },
   "tnt": {
     "displayName": "TNT",
@@ -2616,7 +2779,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^\\d{9}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.tnt.com/express/en_gc/site/shipping-tools/track.html"
   },
   "correos-spain": {
     "displayName": "Correos",
@@ -2662,7 +2826,8 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^BYS\\d{9}$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://track.yanwenlogistics.com/tracking.php"
   },
   "the-courier-guy": {
     "displayName": "The Courier Guy",
@@ -2675,7 +2840,8 @@ export const CARRIER_CAPABILITIES = {
     },
     "canaryUrl": "https://t.17track.net/",
     "linkRules": [],
-    "detectionRules": []
+    "detectionRules": [],
+    "trackingUrlTemplate": "https://portal.thecourierguy.co.za/track"
   },
   "j-and-t": {
     "displayName": "J&T Express",
@@ -2687,13 +2853,23 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "universal"
     },
     "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "linkRules": [
+      {
+        "domains": [
+          "jtexpress.ph"
+        ],
+        "params": [
+          "waybillNo"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^\\d{12}$",
         "confidence": "low"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.jtexpress.ph/track-and-trace?flag=1&waybillNo={trackingNumber}"
   }
 } as const;
 

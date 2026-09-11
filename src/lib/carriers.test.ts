@@ -1854,7 +1854,12 @@ describe('carrier metadata', () => {
       } else if (carrier.id === 'amazon-shipping') {
         expect(carrier.trackingUrl?.('fr 1234-567890')).toBe('https://track.amazon.fr/tracking/FR1234567890');
       } else {
-        expect(carrier.trackingUrl?.('AB 12/3')).toContain('AB%2012%2F3');
+        const url = carrier.trackingUrl?.('AB 12/3') ?? '';
+        // Carriers with a verified GET deep link embed the encoded number;
+        // form-only official pages link to the static tracking page instead.
+        if (url.includes('AB%2012%2F3')) continue;
+        expect(url).toMatch(/^https:\/\/[^/]+\/.*$/);
+        expect(url).not.toContain('AB 12/3');
       }
     }
   });
