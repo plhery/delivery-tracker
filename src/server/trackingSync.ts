@@ -19,6 +19,7 @@ import { ColisPriveTracker } from './colisPrive';
 import { ColiswebTracker } from './colisweb';
 import { CChezVousTracker } from './cChezVous';
 import { CiblexTracker } from './ciblex';
+import { CorreosSpainTracker } from './correosSpain';
 import { DachserTracker } from './dachser';
 import { DHLTracker } from './dhl';
 import { DHLEcommerceTracker } from './dhlEcommerce';
@@ -124,6 +125,7 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     readonly glsSwitzerland = new GLSSwitzerlandTracker(),
     readonly colisweb = new ColiswebTracker(),
     readonly cChezVous = new CChezVousTracker(),
+    readonly correosSpain = new CorreosSpainTracker(),
     readonly heppner = new HeppnerTracker(),
     readonly ciblex = new CiblexTracker(),
     readonly paack = new PaackTracker(),
@@ -196,6 +198,8 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
       result = await this.colisweb.fetch(trackingNumber);
     } else if (adapter === 'c-chez-vous') {
       result = await this.cChezVous.fetch(trackingNumber);
+    } else if (adapter === 'correos-spain') {
+      result = await this.correosSpain.fetch(trackingNumber);
     } else if (adapter === 'heppner') {
       result = await this.heppner.fetch(trackingNumber, dpdPostcode ?? '');
     } else if (adapter === 'ciblex') {

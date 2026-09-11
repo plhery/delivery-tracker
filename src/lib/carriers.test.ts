@@ -338,7 +338,12 @@ describe('carrier detection', () => {
     // Source: https://gist.github.com/zxp/e83a4a1b7294a5ed6207
     expect(isValidS10TrackingNumber('CV000562646ES')).toBe(false);
     expect(detectCarrier('CV000562646ES')).toBe('unknown');
-    expectUniversalFallback('correos-spain');
+    expect(CARRIERS['correos-spain'].capabilities.selectable).toBe(true);
+    expect(CARRIERS['correos-spain'].capabilities.tracking).toMatchObject({ mode: 'automatic', adapter: 'correos-spain' });
+    expect(tracksAutomatically('correos-spain')).toBe(true);
+    expect(CARRIERS['correos-spain'].trackingUrl?.('PR110604670130400C')).toBe(
+      'https://www.correos.es/es/es/herramientas/localizador/envios/detalle?tracking-number=PR110604670130400C',
+    );
   });
 
   it('ctt — CTT Portugal', () => {
@@ -1664,6 +1669,7 @@ describe('parseTrackingInput', () => {
     ['asendia', 'ASE12345678'],
     ['packeta', 'Z1234567890'],
     ['pos-malaysia', 'MYPM00000000015'],
+    ['correos-spain', 'PR110604670130400C'],
   ] as const)('round-trips a generated %s tracking link', (carrier, trackingNumber) => {
     const link = CARRIERS[carrier].trackingUrl?.(trackingNumber);
     expect(link).toBeDefined();

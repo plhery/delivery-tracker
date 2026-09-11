@@ -2625,16 +2625,26 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "correos-spain"
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://www.correos.es/",
+    "linkRules": [
+      {
+        "domains": [
+          "correos.es"
+        ],
+        "params": [
+          "tracking-number"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^PR\\d{15}C$",
         "confidence": "high"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://www.correos.es/es/es/herramientas/localizador/envios/detalle?tracking-number={trackingNumber}"
   },
   "yanwen": {
     "displayName": "Yanwen",

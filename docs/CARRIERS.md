@@ -1,7 +1,7 @@
 # Carrier support
 
-Delivery Tracker recognizes 104 carriers: 42 with dedicated direct or upstream
-adapters plus 62 universal-fallback carriers. Tracking availability is shown below:
+Delivery Tracker recognizes 104 carriers: 43 with dedicated direct or upstream
+adapters plus 61 universal-fallback carriers. Tracking availability is shown below:
 
 | Carrier | Notes |
 | --- | --- |
@@ -43,10 +43,11 @@ adapters plus 62 universal-fallback carriers. Tracking availability is shown bel
 | India Post | Automatic. Recognises checksum-valid `IN` S10 identifiers. |
 | InPost | Automatic through the keyless inposteasy.com hub (24-digit, legacy `JJD`/`JD`, `8YDR`); `JJD` needs domain or explicit selection against DHL. Open cross-border vocabulary reports unknown rather than guessing; event times carry explicit offsets. |
 | Pos Malaysia | Automatic through the consumer track-and-trace API (`MYPM` barcodes and `MY` S10, no postcode). Unknown codes answer with null history (clean not-found); sender, recipient and proof-of-delivery data are discarded. |
+| Correos | Automatic through the keyless localizador traceability service (any Correos-issued code, no postcode). Unknown codes answer `Sin Trazabilidad` (clean not-found); customer, dimension and office data are discarded; no delivery estimate is exposed. |
 | FedEx | Automatic through universal lookup. 12/15-digit numbers stay ambiguous suggestions; full routing barcodes are not treated as shipment IDs. |
 | Amazon Shipping | Automatic public-recipient verification for eligible Shipping parcels; retail `FR…` deliveries stay account-only under Amazon France. |
 
-### Universal-fallback carriers (62, no dedicated scraper yet)
+### Universal-fallback carriers (61, no dedicated scraper yet)
 
 Added September 2026 from public shipment/label reports, official documentation
 examples, OSS fixtures and merchant integration samples. They are selectable in
@@ -119,12 +120,12 @@ per-number source URLs and evidence roles.
 | Bring | Checksum-valid `NO` S10. |
 | Aramex | 11-digit low. |
 | TNT | 9-digit low. |
-| Correos | `PR` + 15 digits + `C`. |
+| Correos | `PR` + 15 digits + `C` (dedicated adapter above; quarantined `CV` S10 shapes stay out). |
 | Yanwen | `BYS` + 9 digits. |
 | The Courier Guy | No exclusive detector yet; 5-char short references are not tracking oracles. |
 | J&T Express | 12-digit numerics low. |
 
-Unknown carriers (`unknown` and `intl-post`) plus the 62 universal-fallback carriers above attempt automatic lookup through
+Unknown carriers (`unknown` and `intl-post`) plus the 61 universal-fallback carriers above attempt automatic lookup through
 ParcelsApp → 17TRACK → Ship24, with Postal Ninja opt-in. The first two use the existing
 private TRAWL service (`FLARESOLVERR_URL`); Postal Ninja and Ship24 use a dedicated
 fresh Chromium session (`TRACKING_CHROMIUM_PATH`). These services are **not
