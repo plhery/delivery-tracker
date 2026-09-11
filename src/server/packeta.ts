@@ -108,7 +108,8 @@ export function normalizePacketaTrackingNumber(raw: string): string {
 }
 
 export function packetaTrackingUrl(rawTrackingNumber: string): string {
-  return `https://tracking.packeta.com/en/?id=${encodeURIComponent(normalizePacketaTrackingNumber(rawTrackingNumber))}`;
+  // Canonical path form: the legacy ?id= form 301-redirects here (verified live).
+  return `https://tracking.packeta.com/en/${encodeURIComponent(normalizePacketaTrackingNumber(rawTrackingNumber))}`;
 }
 
 export function parsePacketaTrackingResponse(payload: unknown, trackingNumber: string): CarrierResult {

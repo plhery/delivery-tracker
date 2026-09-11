@@ -859,6 +859,7 @@ describe('carrier detection', () => {
     for (const number of ['Z8328162951', 'Z8328162946', 'Z8360329994', 'Z1234567890']) {
       expect(detectCarrier(number)).toBe('packeta');
     }
+    expect(CARRIERS.packeta.trackingUrl?.('Z1234567890')).toBe('https://tracking.packeta.com/en/Z1234567890');
     expect(CARRIERS.packeta.capabilities.selectable).toBe(true);
     expect(CARRIERS.packeta.capabilities.tracking).toMatchObject({ mode: 'automatic', adapter: 'packeta' });
     expect(tracksAutomatically('packeta')).toBe(true);
@@ -918,6 +919,9 @@ describe('carrier detection', () => {
     expect(CARRIERS['pos-malaysia'].capabilities.selectable).toBe(true);
     expect(CARRIERS['pos-malaysia'].capabilities.tracking).toMatchObject({ mode: 'automatic', adapter: 'pos-malaysia' });
     expect(tracksAutomatically('pos-malaysia')).toBe(true);
+    // Path-form deep link: the SPA picks the code up as a chip and runs the
+    // lookup automatically (verified live; ?id= and #trackingIds= do not prefill).
+    expect(CARRIERS['pos-malaysia'].trackingUrl?.('MYPM00000000015')).toBe('https://tracking.pos.com.my/tracking/MYPM00000000015');
   });
 
   it('poste-italiane — Poste Italiane', () => {
@@ -1658,6 +1662,8 @@ describe('parseTrackingInput', () => {
     ['ciblex', '12345678901234'],
     ['paack', 'PAACK12345'],
     ['asendia', 'ASE12345678'],
+    ['packeta', 'Z1234567890'],
+    ['pos-malaysia', 'MYPM00000000015'],
   ] as const)('round-trips a generated %s tracking link', (carrier, trackingNumber) => {
     const link = CARRIERS[carrier].trackingUrl?.(trackingNumber);
     expect(link).toBeDefined();

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   normalizePosMalaysiaTrackingNumber,
   parsePosMalaysiaTrackingResponse,
+  posMalaysiaTrackingUrl,
   PosMalaysiaTracker,
   PosMalaysiaTrackingError,
 } from './posMalaysia';
@@ -55,6 +56,7 @@ describe('Pos Malaysia tracking normalization', () => {
     for (const raw of ['12345', 'Z8328162951', 'MYPM000000001', '']) {
       expect(() => normalizePosMalaysiaTrackingNumber(raw)).toThrow(TypeError);
     }
+    expect(posMalaysiaTrackingUrl(TRACKING_NUMBER)).toBe('https://tracking.pos.com.my/tracking/MYPM00000000015');
   });
 });
 

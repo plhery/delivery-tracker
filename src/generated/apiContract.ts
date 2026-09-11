@@ -2453,7 +2453,14 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "pos-malaysia"
     },
     "canaryUrl": "https://tracking.pos.com.my/",
-    "linkRules": [],
+    "linkRules": [
+      {
+        "domains": [
+          "tracking.pos.com.my"
+        ],
+        "path": "^/tracking/([^/?#]+)/?$"
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^MYPM\\d{11}$",
@@ -2464,7 +2471,8 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high",
         "checksum": "s10"
       }
-    ]
+    ],
+    "trackingUrlTemplate": "https://tracking.pos.com.my/tracking/{trackingNumber}"
   },
   "ninja-van": {
     "displayName": "Ninja Van",
@@ -2517,6 +2525,12 @@ export const CARRIER_CAPABILITIES = {
         "params": [
           "id"
         ]
+      },
+      {
+        "domains": [
+          "tracking.packeta.com"
+        ],
+        "path": "^/[a-z]{2}/([^/?#]+)/?$"
       }
     ],
     "detectionRules": [
@@ -2525,7 +2539,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       }
     ],
-    "trackingUrlTemplate": "https://tracking.packeta.com/en/?id={trackingNumber}"
+    "trackingUrlTemplate": "https://tracking.packeta.com/en/{trackingNumber}"
   },
   "poczta-polska": {
     "displayName": "Poczta Polska",

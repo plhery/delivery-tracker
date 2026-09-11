@@ -46,7 +46,7 @@ describe('Packeta tracking normalization', () => {
     for (const raw of ['1234567890', 'Z123456789', 'Z12345678901', 'ZA234567890', '']) {
       expect(() => normalizePacketaTrackingNumber(raw)).toThrow(TypeError);
     }
-    expect(packetaTrackingUrl(TRACKING_NUMBER)).toBe('https://tracking.packeta.com/en/?id=Z1234567890');
+    expect(packetaTrackingUrl(TRACKING_NUMBER)).toBe('https://tracking.packeta.com/en/Z1234567890');
   });
 });
 

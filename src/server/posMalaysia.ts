@@ -76,6 +76,13 @@ export function normalizePosMalaysiaTrackingNumber(raw: string): string {
   return value;
 }
 
+export function posMalaysiaTrackingUrl(rawTrackingNumber: string): string {
+  // Path-form deep link: the SPA route tracking/:ids picks the code up as a
+  // chip and runs the lookup automatically (verified live; ?id= and
+  // #trackingIds= do not prefill).
+  return `https://tracking.pos.com.my/tracking/${encodeURIComponent(normalizePosMalaysiaTrackingNumber(rawTrackingNumber))}`;
+}
+
 export function parsePosMalaysiaTrackingResponse(payload: unknown, trackingNumber: string): CarrierResult {
   const requested = normalizePosMalaysiaTrackingNumber(trackingNumber);
   if (!isRecord(payload)) throw new TypeError('Pos Malaysia returned an invalid tracking response');
