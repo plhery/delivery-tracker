@@ -1671,10 +1671,17 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "poste-italiane"
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://www.poste.it/",
+    "linkRules": [
+      {
+        "domains": [
+          "poste.it"
+        ],
+        "fragment": "risultati-spedizioni/([^/?#]+)"
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^RA\\d{11}$",
@@ -1689,7 +1696,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       }
     ],
-    "trackingUrlTemplate": "https://www.poste.it/cerca/index.html"
+    "trackingUrlTemplate": "https://www.poste.it/cerca/index.html#/risultati-spedizioni/{trackingNumber}"
   },
   "brt": {
     "displayName": "BRT",
@@ -2499,7 +2506,7 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "s10"
       }
     ],
-    "trackingUrlTemplate": "https://service.epost.go.kr/trace.RetrieveEmsRigiTraceList.comm?displayHeader=N&sid1={trackingNumber}"
+    "trackingUrlTemplate": "https://trace.epost.go.kr/xtts/tt/epost/ems/ems_eng.jsp"
   },
   "thailand-post": {
     "displayName": "Thailand Post",

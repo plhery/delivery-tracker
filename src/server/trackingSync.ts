@@ -41,6 +41,7 @@ import { PaackTracker } from './paack';
 import { PacketaTracker } from './packeta';
 import { PlanzerSharedTracker } from './planzerShared';
 import { PosMalaysiaTracker } from './posMalaysia';
+import { PosteItalianeTracker } from './posteItaliane';
 import type { CompositePushNotificationService } from './push';
 import { RelaisColisTracker } from './relaisColis';
 import type { SupabaseServiceClient } from './supabase';
@@ -131,6 +132,7 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     readonly paack = new PaackTracker(),
     readonly packeta = new PacketaTracker(),
     readonly posMalaysia = new PosMalaysiaTracker(),
+    readonly posteItaliane = new PosteItalianeTracker(),
     readonly amazonShipping = new AmazonShippingTracker(),
     readonly indiaPost = new IndiaPostTracker(),
     readonly inpost = new InpostTracker(),
@@ -210,6 +212,8 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
       result = await this.packeta.fetch(trackingNumber);
     } else if (adapter === 'pos-malaysia') {
       result = await this.posMalaysia.fetch(trackingNumber);
+    } else if (adapter === 'poste-italiane') {
+      result = await this.posteItaliane.fetch(trackingNumber);
     } else if (adapter === 'amazon-shipping') {
       result = await this.amazonShipping.fetch(trackingNumber);
     } else if (adapter === 'india-post') {

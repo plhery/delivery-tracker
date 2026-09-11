@@ -34,7 +34,7 @@ Retry failed direct routes after the recorded cooldown; successful direct recove
 | Manual good → unsupported/wrong selection | Check the new choice first. Preserve history and revalidate the prior confirmed route as recovery. If it still works on this number, automatically restore it and show the temporary notice. Carrier changes invalidate queued/in-flight work through the existing generation/lease fencing. |
 | Older fallback or terminal regression | Preserve the newer/terminal summary and prior event watermark. Provider success does not authorize a status regression. |
 
-FedEx, Asendia, and ShipUp are marked automatic through universal lookup in the shared web/native catalog; this does not claim dedicated direct adapters for them. The 61 universal-fallback carriers added in the September 2026 detection pass (see `docs/CARRIERS.md` and `src/lib/carriers.test.ts`) use the same universal route. Packeta, InPost, Pos Malaysia and Correos have since graduated to dedicated adapters. Adding a dedicated adapter later changes the catalog and allows direct discovery/recovery to take over.
+FedEx, Asendia, and ShipUp are marked automatic through universal lookup in the shared web/native catalog; this does not claim dedicated direct adapters for them. The 60 universal-fallback carriers added in the September 2026 detection pass (see `docs/CARRIERS.md` and `src/lib/carriers.test.ts`) use the same universal route. Packeta, InPost, Pos Malaysia, Correos and Poste Italiane have since graduated to dedicated adapters. Adding a dedicated adapter later changes the catalog and allows direct discovery/recovery to take over.
 
 ## Displayed tracking links
 

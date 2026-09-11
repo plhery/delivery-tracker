@@ -1,7 +1,7 @@
 # Carrier support
 
-Delivery Tracker recognizes 104 carriers: 43 with dedicated direct or upstream
-adapters plus 61 universal-fallback carriers. Tracking availability is shown below:
+Delivery Tracker recognizes 104 carriers: 44 with dedicated direct or upstream
+adapters plus 60 universal-fallback carriers. Tracking availability is shown below:
 
 | Carrier | Notes |
 | --- | --- |
@@ -44,10 +44,11 @@ adapters plus 61 universal-fallback carriers. Tracking availability is shown bel
 | InPost | Automatic through the keyless inposteasy.com hub (24-digit, legacy `JJD`/`JD`, `8YDR`); `JJD` needs domain or explicit selection against DHL. Open cross-border vocabulary reports unknown rather than guessing; event times carry explicit offsets. |
 | Pos Malaysia | Automatic through the consumer track-and-trace API (`MYPM` barcodes and `MY` S10, no postcode). Unknown codes answer with null history (clean not-found); sender, recipient and proof-of-delivery data are discarded. |
 | Correos | Automatic through the keyless localizador traceability service (any Correos-issued code, no postcode). Unknown codes answer `Sin Trazabilidad` (clean not-found); customer, dimension and office data are discarded; no delivery estimate is exposed. |
+| Poste Italiane | Automatic through the keyless DoveQuando endpoint (`RA`/`1UW`/`3UW`/`5P`/`2IMA` families, no postcode). Open Italian wording reports unknown rather than guessing; epoch-millis times are UTC; customer, dimension and office data are discarded. |
 | FedEx | Automatic through universal lookup. 12/15-digit numbers stay ambiguous suggestions; full routing barcodes are not treated as shipment IDs. |
 | Amazon Shipping | Automatic public-recipient verification for eligible Shipping parcels; retail `FR…` deliveries stay account-only under Amazon France. |
 
-### Universal-fallback carriers (61, no dedicated scraper yet)
+### Universal-fallback carriers (60, no dedicated scraper yet)
 
 Added September 2026 from public shipment/label reports, official documentation
 examples, OSS fixtures and merchant integration samples. They are selectable in
@@ -76,7 +77,7 @@ per-number source URLs and evidence roles.
 | NACEX | `NNNN/NNNNNNNN` agency/shipment composite (slash preserved). |
 | CTT Portugal | Checksum-valid `PT` S10. |
 | CTT Express | `00` + 20 digits (22 total). |
-| Poste Italiane | `RA` + 11 digits, `1UW/3UW/5P` 13-char families and `2IMA` + 10 digits high; NL handoffs stay with PostNL. |
+| Poste Italiane | `RA` + 11 digits, `1UW/3UW/5P` 13-char families and `2IMA` + 10 digits high (dedicated adapter above; NL handoffs stay with PostNL). |
 | BRT | 14-digit low (shipment vs BRTcode roles preserved). |
 | Ecoscooting | 18-digit low; foreign postal handoffs stay with their issuer. |
 | TIPSA | 10-digit low. |
@@ -125,7 +126,7 @@ per-number source URLs and evidence roles.
 | The Courier Guy | No exclusive detector yet; 5-char short references are not tracking oracles. |
 | J&T Express | 12-digit numerics low. |
 
-Unknown carriers (`unknown` and `intl-post`) plus the 61 universal-fallback carriers above attempt automatic lookup through
+Unknown carriers (`unknown` and `intl-post`) plus the 60 universal-fallback carriers above attempt automatic lookup through
 ParcelsApp → 17TRACK → Ship24, with Postal Ninja opt-in. The first two use the existing
 private TRAWL service (`FLARESOLVERR_URL`); Postal Ninja and Ship24 use a dedicated
 fresh Chromium session (`TRACKING_CHROMIUM_PATH`). These services are **not

@@ -946,7 +946,12 @@ describe('carrier detection', () => {
     // Foreign-issued inbound NL S10 stays with PostNL.
     // Source: https://www.altroconsumo.it/reclamare/bacheca-dei-reclami/reso-ritornato-al-mittente-e-p/5341225f84324f54e4
     expect(detectCarrier('CH166307960NL')).toBe('spring-gds');
-    expectUniversalFallback('poste-italiane');
+    expect(CARRIERS['poste-italiane'].capabilities.selectable).toBe(true);
+    expect(CARRIERS['poste-italiane'].capabilities.tracking).toMatchObject({ mode: 'automatic', adapter: 'poste-italiane' });
+    expect(tracksAutomatically('poste-italiane')).toBe(true);
+    expect(CARRIERS['poste-italiane'].trackingUrl?.('RA00020974503')).toBe(
+      'https://www.poste.it/cerca/index.html#/risultati-spedizioni/RA00020974503',
+    );
   });
 
   it('postnord — PostNord', () => {
@@ -1670,6 +1675,7 @@ describe('parseTrackingInput', () => {
     ['packeta', 'Z1234567890'],
     ['pos-malaysia', 'MYPM00000000015'],
     ['correos-spain', 'PR110604670130400C'],
+    ['poste-italiane', 'RA00020974503'],
   ] as const)('round-trips a generated %s tracking link', (carrier, trackingNumber) => {
     const link = CARRIERS[carrier].trackingUrl?.(trackingNumber);
     expect(link).toBeDefined();
