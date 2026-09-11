@@ -62,6 +62,9 @@ function stageFor(event: JsonObject): string {
   const text = clean(event.description).toLowerCase();
   if (/return(?:ed|ing)? to (?:the )?sender/.test(text)) return 'returned';
   if (/not delivered|unable to deliver|delivery attempt|delivery failed/.test(text)) return 'failed_attempt';
+  // Sender-side drop-off scans (ha-dhl-nl#15) must never read as recipient
+  // pickup: the parcel is entering the network, not awaiting collection.
+  if (/picked.?up at (?:a )?parcel ?shop|drop(?:ped)? ?off at|handed in at/.test(text)) return 'accepted';
   if (/ready for (?:pickup|collection)|available for (?:pickup|collection)/.test(text)) return 'ready_for_pickup';
   if (/out for delivery/.test(text)) return 'out_for_delivery';
   if (/customs.*(?:cleared|released)|clearance completed/.test(text)) return 'in_transit';
@@ -114,6 +117,10 @@ export function parseDHLEcommerceResponse(payload: unknown): CarrierResult {
   const stage = shipment.returnFlag === true && shipment.status.statusCode === 'delivered'
     ? 'returned' : stageFor(shipment.status);
   const expected = clean(shipment.estimatedTimeOfDelivery, 64).slice(0, 10);
+  const sender = clean(
+    isRecord(shipment.sender) ? shipment.sender.name : shipment.senderName, 200,
+  ) || null;
+  const deliveredAt = stage === 'delivered' ? eventTime(shipment.status) : null;
   return {
     status: statusFor(stage), current_stage: stage,
     last_status_text: stage === 'delivered' ? 'Delivered' : clean(shipment.status.description),
@@ -121,6 +128,8 @@ export function parseDHLEcommerceResponse(payload: unknown): CarrierResult {
     expected_delivery: !['delivered', 'returned'].includes(stage) && /^\d{4}-\d{2}-\d{2}$/.test(expected)
       && DateTime.fromISO(expected).isValid ? expected : null,
     timezone: 'UTC', events,
+    ...(sender ? { sender_name: sender } : {}),
+    ...(deliveredAt ? { delivered_at: deliveredAt } : {}),
   };
 }
 

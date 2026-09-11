@@ -69,12 +69,12 @@ function clean(value: unknown, maxLength = 500): string {
     : '';
 }
 
-function stageForEventText(rawDescription: string): Stage {
+function stageForEventText(rawDescription: string): Stage | null {
   const value = rawDescription.toLocaleLowerCase('en-US');
   for (const [substring, stage] of EVENT_TEXT_STAGES) {
     if (value.includes(substring)) return stage;
   }
-  return 'in_transit';
+  return null;
 }
 
 function parsedTime(value: unknown): { iso: string; timestamp: number } | null {
@@ -127,7 +127,6 @@ export function parsePacketaTrackingResponse(payload: unknown, trackingNumber: s
   if (returned !== requested) throw new RangeError('Packeta returned a different shipment');
   const code = clean(item.packetStatusId, 16);
   const classified = PACKET_STATUS[code];
-  if (!classified) throw new TypeError('Packeta returned an unrecognized packet status');
   const rawDetails = item.trackingDetails;
   if (rawDetails !== undefined && !Array.isArray(rawDetails)) {
     throw new TypeError('Packeta returned invalid tracking history');
@@ -141,24 +140,46 @@ export function parsePacketaTrackingResponse(payload: unknown, trackingNumber: s
     const identity = `${time.iso}\u0000${description}`;
     if (seen.has(identity)) return;
     seen.add(identity);
+    const stage = stageForEventText(description);
     parsed.push({
-      event: { time: time.iso, location: '', description, stage: stageForEventText(description) },
+      // Unrecognized sentences keep no stage so schema drift surfaces as a
+      // data outcome instead of a wrong movement claim.
+      event: { time: time.iso, location: '', description, ...(stage ? { stage } : {}) },
       timestamp: time.timestamp,
       index,
     });
   });
   parsed.sort((left, right) => right.timestamp - left.timestamp || left.index - right.index);
   const events = parsed.slice(0, MAX_EVENTS_TO_RETURN).map(({ event }) => event);
+  // Sender (merchant) and branchAddress (Z-BOX/partner shop) carry no
+  // recipient PII and are the only pickup signal — Packeta exposes no ETA.
+  const sender = clean(item.sender, 200) || null;
+  const pickupPoint = clean(item.branchAddress, 300) || null;
+  const deliveredAt = classified?.status === 'delivered' ? events[0]?.time ?? null : null;
+  if (!classified) {
+    return {
+      status: 'unknown',
+      last_status_text: clean(item.packetStatus, 500) || events[0]?.description || 'Tracking information received',
+      last_update: events[0]?.time ?? null,
+      expected_delivery: null,
+      timezone: 'Europe/Prague',
+      ...(sender ? { sender_name: sender } : {}),
+      ...(pickupPoint ? { pickup_point: pickupPoint } : {}),
+      events,
+    };
+  }
   return {
     status: classified.status,
     current_stage: classified.stage,
     // packetStatus is the backend's fixed English wording for the requested
-    // locale. Sender/branch names travel alongside the item but are deliberately
-    // never retained: only normalized status and timeline fields are projected.
+    // locale.
     last_status_text: clean(item.packetStatus, 500) || events[0]?.description || 'Tracking information received',
     last_update: events[0]?.time ?? null,
     expected_delivery: null,
     timezone: 'Europe/Prague',
+    ...(sender ? { sender_name: sender } : {}),
+    ...(pickupPoint ? { pickup_point: pickupPoint } : {}),
+    ...(deliveredAt ? { delivered_at: deliveredAt } : {}),
     events,
   };
 }

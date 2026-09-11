@@ -83,10 +83,12 @@ describe('Packeta response parsing', () => {
       expect(result).toMatchObject({ status, current_stage: stage });
     }
     expect(() => parsePacketaTrackingResponse({ item: packet({ packetStatusId: '999' }) }, TRACKING_NUMBER))
-      .toThrow(TypeError);
+      .not.toThrow();
+    expect(parsePacketaTrackingResponse({ item: packet({ packetStatusId: '999' }) }, TRACKING_NUMBER))
+      .toMatchObject({ status: 'unknown' });
   });
 
-  it('classifies event sentences and keeps unrecognized wording in transit', () => {
+  it('classifies event sentences and leaves unrecognized wording unstaged', () => {
     const result = parsePacketaTrackingResponse({ item: packet({
       packetStatusId: '31',
       trackingDetails: [
@@ -94,7 +96,7 @@ describe('Packeta response parsing', () => {
         { text: 'Something completely new happened.', time: '2026-01-06 11:00:00' },
       ],
     }) }, TRACKING_NUMBER);
-    expect(result.events?.map((event) => event.stage)).toEqual(['in_transit', 'in_transit']);
+    expect(result.events?.map((event) => event.stage)).toEqual([undefined, 'in_transit']);
   });
 
   it('binds the returned barcode to the requested shipment', () => {
@@ -130,11 +132,14 @@ describe('Packeta response parsing', () => {
     expect(sparse.events).toHaveLength(1);
   });
 
-  it('never retains sender or pickup-point names', () => {
+  it('retains operational sender and pickup-point names', () => {
     const result = parsePacketaTrackingResponse({ item: packet() }, TRACKING_NUMBER);
+    expect(result).toMatchObject({
+      sender_name: 'Example Sender s.r.o.',
+      pickup_point: 'Example Pickup Point, Example Street 1',
+      delivered_at: '2026-07-07T13:00:00+02:00',
+    });
     const serialized = JSON.stringify(result);
-    expect(serialized).not.toContain('Example Sender');
-    expect(serialized).not.toContain('Example Street');
     expect(serialized).not.toContain('branchAddress');
   });
 });

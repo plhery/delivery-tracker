@@ -30,20 +30,31 @@ interface GLSStatusMetadata {
 
 const GLS_STATUSES = new Map<string, GLSStatusMetadata>([
   ['PREADVICE', { status: 'pending', stage: 'registered' }],
-  ['NOTPICKEDUP', { status: 'pending', stage: 'registered' }],
+  ['NOTPICKEDUP', { status: 'exception', stage: 'returned' }],
   ['PLANNEDPICKUP', { status: 'pending', stage: 'registered' }],
   ['INPICKUP', { status: 'in_transit', stage: 'accepted' }],
   ['INTRANSIT', { status: 'in_transit', stage: 'in_transit' }],
   ['INWAREHOUSE', { status: 'in_transit', stage: 'in_transit' }],
   ['INDELIVERY', { status: 'out_for_delivery', stage: 'out_for_delivery' }],
   ['DELIVERED', { status: 'delivered', stage: 'delivered' }],
-  ['DELIVEREDPS', { status: 'delivered', stage: 'delivered' }],
+  // ParcelShop/locker arrival — arrived, not recipient-delivered.
+  ['DELIVEREDPS', { status: 'out_for_delivery', stage: 'ready_for_pickup' }],
   ['NOTDELIVERED', { status: 'exception', stage: 'failed_attempt' }],
+  ['RETURNED', { status: 'exception', stage: 'returned' }],
   ['CANCELED', { status: 'exception', stage: 'returned' }],
   ['CANCELLED', { status: 'exception', stage: 'returned' }],
   ['FINAL', { status: 'exception', stage: 'returned' }],
   ['NORECORD', { status: 'unknown', stage: 'pending' }],
 ]);
+
+function isReturnParcel(parcel: JsonObject): boolean {
+  // retourFlag marks an uncollected/returning parcel regardless of heading.
+  for (const key of ['retourFlag', 'returnFlag', 'retour']) {
+    const value = parcel[key];
+    if (value === true || text(value, 8).toLocaleLowerCase('en-US') === 'true') return true;
+  }
+  return false;
+}
 
 interface ParsedEvent {
   event: CarrierEvent;
@@ -263,12 +274,36 @@ function parseEventTime(dateValue: unknown, timeValue: unknown): {
 
 function eventLocation(raw: JsonObject): string {
   if (!isRecord(raw.address)) return '';
-  // Intentionally retain only coarse provider scan locations. Street, block,
-  // postcode and recipient fields in the same object are never returned.
-  return [plainText(raw.address.countryName, 80), plainText(raw.address.city, 120)]
+  // Retain coarse operational scan locations (city/country) plus the
+  // ParcelShop/locker name when the provider supplies it. Street, postcode
+  // and recipient contact fields in the same object are still dropped.
+  const shop = text(raw.address.parcelShopName ?? raw.address.shopName ?? raw.parcelShop, 200);
+  return [shop, plainText(raw.address.countryName, 80), plainText(raw.address.city, 120)]
     .filter(Boolean)
     .join(' ')
     .slice(0, 200);
+}
+
+function parcelShopName(parcel: JsonObject): string | null {
+  for (const event of records(parcel.history)) {
+    const name = eventLocation(event);
+    if (/parcel.?shop|locker|point relais|paketshop/i.test(name) && name) return name.slice(0, 200);
+  }
+  return null;
+}
+
+function parcelWeight(parcel: JsonObject): number | null {
+  for (const info of records(parcel.infos)) {
+    const label = text(info.label ?? info.name, 32).toLocaleLowerCase('en-US');
+    const value = text(info.value ?? info.text, 32);
+    if (!/weight|poids|gewicht/.test(label)) continue;
+    const match = /([\d.,]+)\s*kg/i.exec(value);
+    if (match) {
+      const parsed = Number(match[1]!.replace(',', '.'));
+      if (Number.isFinite(parsed) && parsed > 0) return parsed;
+    }
+  }
+  return null;
 }
 
 function parseEvents(parcel: JsonObject): ParsedEvent[] {
@@ -337,19 +372,34 @@ export function parseGLSSwitzerlandTrackingResponse(
   const parsedEvents = parseEvents(parcel);
   const events = parsedEvents.map(({ event }) => event);
   const latestKnownEvent = parsedEvents.find((event) => event.status !== 'unknown');
-  const status = currentMetadata?.status ?? latestKnownEvent?.status ?? 'unknown';
+  // Newest history wording outranks a stale progress-bar heading (locker
+  // drops stick at "Delivered" upstream); the event description is the raw
+  // status. A returning parcel overrides any in-transit heading.
+  const newestDescription = events[0]?.description ?? currentText;
+  const status = isReturnParcel(parcel)
+    ? 'exception'
+    : currentMetadata?.status ?? latestKnownEvent?.status ?? 'unknown';
+  const stage = isReturnParcel(parcel)
+    ? 'returned'
+    : currentMetadata?.stage ?? latestKnownEvent?.event.stage ?? 'in_transit';
+  const shop = parcelShopName(parcel);
+  const weight = parcelWeight(parcel);
+  const pickup = stage === 'ready_for_pickup' && shop ? { pickup_point: shop } : {};
   return {
     status,
     canonical_tracking_number: normalizedResponseIdentifier(parcel.tuNo),
     ...(records(parcel.owners).some((owner) => statusCode(owner.type) === 'DELIVERY' && statusCode(owner.code) === 'CH01')
       ? { delivery_carrier: 'swiss-post' as const, delivery_tracking_number: normalizedResponseIdentifier(parcel.tuNo) } : {}),
-    current_stage: currentMetadata?.stage ?? latestKnownEvent?.event.stage ?? 'in_transit',
-    last_status_text: events[0]?.description ?? currentText,
+    current_stage: stage,
+    last_status_text: newestDescription,
     last_update: events[0]?.time ?? null,
     expected_delivery: ['delivered', 'exception'].includes(status)
       ? null
       : expectedDelivery(parcel),
     timezone: 'Europe/Zurich',
+    ...pickup,
+    ...(weight != null ? { weight_kg: weight } : {}),
+    ...(status === 'delivered' && events[0]?.time ? { delivered_at: events[0].time } : {}),
     events,
   };
 }

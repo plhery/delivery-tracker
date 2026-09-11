@@ -56,6 +56,73 @@ const CAINIAO_STATUS = new Map<string, CarrierStatus>([
   ['RETURNED', 'exception'],
 ]);
 
+// Primary signal, from ha-cainiao parcels.py _ACTION_MAP (41 codes, grouped by
+// leg). The parcel-level `status` token vocabulary is unestablished (real
+// parcels carry DELIVERED/CLEAR_CUSTOMS/transport/pickup/delivered), so the
+// newest latestTrace.actionCode wins and the token is only a fallback.
+const CAINIAO_ACTION_STATUS = new Map<string, CarrierStatus>([
+  ['GWMS_ACCEPT', 'pending'],
+  ['GWMS_PACKAGE', 'pending'],
+  ['PRE_READY_TO_SHIP', 'pending'],
+  ['CONSIGN', 'pending'],
+  ['CW_INBOUND', 'in_transit'],
+  ['CW_OUTBOUND', 'in_transit'],
+  ['CW_COMMON_PROCESSING1', 'in_transit'],
+  ['PU_PICKUP_SUCCESS', 'in_transit'],
+  ['GWMS_OUTBOUND', 'in_transit'],
+  ['SC_INBOUND_SUCCESS', 'in_transit'],
+  ['SC_OUTBOUND_SUCCESS', 'in_transit'],
+  ['SC_TRANS_INBOUND_SUCCESS', 'in_transit'],
+  ['SC_TRANS_OUTBOUND_SUCCESS', 'in_transit'],
+  ['CC_EX_START', 'in_transit'],
+  ['CC_EX_SUCCESS', 'in_transit'],
+  ['LH_HO_IN_SUCCESS', 'in_transit'],
+  ['LH_HO_AIRLINE', 'in_transit'],
+  ['LH_DEPART', 'in_transit'],
+  ['LH_ARRIVE', 'in_transit'],
+  ['LH_POST_COLLECTION', 'in_transit'],
+  ['COMMON_INTRANSIT', 'in_transit'],
+  ['TD_TRANS_DEPART', 'in_transit'],
+  ['TD_TRANS_ARRIVE', 'in_transit'],
+  ['TD_TRANS_DEPART_C', 'in_transit'],
+  ['TD_TRANS_ARRIVE_C', 'in_transit'],
+  ['CC_HO_IN_SUCCESS', 'in_transit'],
+  ['CC_IM_START', 'in_transit'],
+  ['CC_IM_SUCCESS', 'in_transit'],
+  ['CC_HO_OUT_SUCCESS', 'in_transit'],
+  ['CC_IM_FAILURE', 'exception'],
+  ['CC_IM_EXCEPTION', 'exception'],
+  ['GTMS_ACCEPT', 'in_transit'],
+  ['SC_ARRIVE', 'in_transit'],
+  ['SC_DEPART', 'in_transit'],
+  ['OE_DEPART', 'in_transit'],
+  ['LAST_MILE_ASN_NOTIFY', 'in_transit'],
+  ['GTMS_DO_DEPART', 'out_for_delivery'],
+  ['GSTA_INFORM_BUYER', 'out_for_delivery'],
+  ['GTMS_WAIT_SELF_PICK', 'out_for_delivery'],
+  // Station signed, not the recipient — must never read as delivered.
+  ['GTMS_STA_SIGNED', 'out_for_delivery'],
+  ['GTMS_SIGNED', 'delivered'],
+  ['GTMS_STA_SIGN_FAILURE', 'exception'],
+  ['EXCEPTION', 'exception'],
+]);
+
+const CAINIAO_PICKUP_ACTIONS = new Set(['GSTA_INFORM_BUYER', 'GTMS_WAIT_SELF_PICK', 'GTMS_STA_SIGNED']);
+
+function cainiaoActionCode(value: unknown): string {
+  return text(value).trim().toLocaleUpperCase('en-US').replace(/\s+/g, '_');
+}
+
+function cainiaoHandoffNumber(trackingModule: JsonObject): string {
+  const direct = text(trackingModule.copyRealMailNo).trim();
+  if (/^(?=.*\d)[A-Z0-9]{8,30}$/i.test(direct.replace(/[\s.-]/g, ''))) {
+    return direct.replace(/\s+/g, ' ').trim();
+  }
+  const display = text(trackingModule.realMailNo);
+  const match = /(?<![A-Z0-9])(?=[A-Z0-9]*\d)[A-Z0-9]{8,30}(?![A-Z0-9])/i.exec(display);
+  return match?.[0] ?? '';
+}
+
 export async function fetchCainiao(trackingNumber: string): Promise<CarrierResult> {
   const payload = record(await fetchJson(
     `https://global.cainiao.com/global/detail.json?${new URLSearchParams({
@@ -100,23 +167,51 @@ export async function fetchCainiao(trackingNumber: string): Promise<CarrierResul
       throw new UpstreamTrackingError('Cainiao');
     }
   }
-  const status = CAINIAO_STATUS.get(rawStatus)
-    ?? (rawStatus ? 'in_transit' : details.length === 0 ? 'pending' : 'unknown');
-  const events = details.slice(0, 20).map((event): CarrierEvent => ({
-    time: text(event.timeStr),
-    location: '',
-    description: text(event.standerdDesc) || text(event.desc),
-  }));
+  const status = cainiaoActionCode(latest.actionCode)
+    ? (CAINIAO_ACTION_STATUS.get(cainiaoActionCode(latest.actionCode)) ?? 'unknown')
+    : (CAINIAO_STATUS.get(rawStatus)
+      ?? (rawStatus ? 'in_transit' : details.length === 0 ? 'pending' : 'unknown'));
+  const latestAction = cainiaoActionCode(latest.actionCode);
+  const actionStage: Record<string, string> = {
+    pending: 'registered',
+    out_for_delivery: CAINIAO_PICKUP_ACTIONS.has(latestAction) ? 'ready_for_pickup' : 'out_for_delivery',
+    delivered: 'delivered',
+    exception: 'failed_attempt',
+  };
+  const events = details.slice(0, 20).map((event): CarrierEvent => {
+    const code = cainiaoActionCode(event.actionCode);
+    const mapped = code ? CAINIAO_ACTION_STATUS.get(code) : undefined;
+    return {
+      time: text(event.timeStr),
+      location: '',
+      description: text(event.standerdDesc) || text(event.desc),
+      ...(mapped ? { stage: actionStage[mapped] ?? 'in_transit' } : {}),
+    };
+  });
   const eta = record(trackingModule.globalEtaInfo);
-  const deliveryMaxTime = typeof eta.deliveryMaxTime === 'number' ? eta.deliveryMaxTime : NaN;
-  const expected = Number.isFinite(deliveryMaxTime)
-    ? new Date(deliveryMaxTime).toISOString().slice(0, 10)
-    : null;
+  const toMillis = (value: unknown): number | null => (
+    typeof value === 'number' && Number.isFinite(value) ? value : null
+  );
+  const deliveryMinTime = toMillis(eta.deliveryMinTime);
+  const deliveryMaxTime = toMillis(eta.deliveryMaxTime);
+  const toDate = (millis: number | null): string | null => (
+    millis == null ? null : new Date(millis).toISOString().slice(0, 10)
+  );
+  const expected = toDate(deliveryMaxTime);
+  const expectedFrom = toDate(deliveryMinTime);
+  const handoff = cainiaoHandoffNumber(trackingModule);
+  const deliveredAt = status === 'delivered' ? text(latest.timeStr) || null : null;
   return {
     status,
+    ...(actionStage[status] || status === 'in_transit' ? { current_stage: actionStage[status] ?? 'in_transit' } : {}),
     last_status_text: text(latest.standerdDesc) || text(latest.desc) || rawStatus,
     last_update: text(latest.timeStr) || null,
-    expected_delivery: expected,
+    expected_delivery: status === 'delivered' ? null : expected,
+    ...(status === 'delivered' || expectedFrom == null || expectedFrom === expected
+      ? {}
+      : { expected_delivery_from: expectedFrom }),
+    ...(deliveredAt ? { delivered_at: deliveredAt } : {}),
+    ...(handoff ? { delivery_tracking_number: handoff } : {}),
     events,
   };
 }
@@ -395,12 +490,16 @@ export async function fetchPostNL(trackingNumber: string): Promise<CarrierResult
   const latest = rawEvents[0] ?? {};
   const category = text(latest.category);
   const classified = postNLStatus(category);
+  const senderName = text(item.senderName ?? item.sender ?? item.title).replace(/\s+/g, ' ').trim().slice(0, 200) || null;
+  const deliveredAt = classified?.status === 'delivered' ? text(latest.datetime_local) || null : null;
   return {
     status: classified?.status ?? (category ? 'in_transit' : 'unknown'),
     ...(classified ? { current_stage: classified.stage } : {}),
     last_status_text: text(latest.status_description) || category,
     last_update: events[0]?.time || null,
     expected_delivery: null,
+    ...(senderName ? { sender_name: senderName } : {}),
+    ...(deliveredAt ? { delivered_at: deliveredAt } : {}),
     events,
   };
 }

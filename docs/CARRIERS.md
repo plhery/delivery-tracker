@@ -259,8 +259,11 @@ this recovery path. Rate limits and server errors remain errors rather than
 triggering a browser attempt. DHL's official business API credentials are not
 needed for this public flow.
 
-Only status, timestamps, broad event locations and the delivery estimate are
-retained. Recipient/address/signature fields are discarded. The adapter checks
+Only status, timestamps, operational event locations (city/country plus
+ParcelShop/locker names where the provider supplies them), sender webshop
+names, pickup points, weight/dimensions and the delivery estimate are
+retained. Recipient street addresses, contact details, signatures and access
+codes are still discarded. The adapter checks
 the shipment identifier, orders events newest first, distinguishes electronic
 announcements from transit, and removes delivery estimates after completion.
 It covers the German parcel/postal tracking service, including `LF…DE`; another
@@ -279,8 +282,9 @@ Rate limits and server errors go to routing without further browser work.
 Browser work shares the existing concurrency limit.
 The API may return a customer-confirmation ID instead of the queried alias,
 so the adapter accepts one eCommerce shipment only from its exact request URL.
-It retains status, broad locations, delivery estimate and dated scans, never
-recipient addresses or customer references. Local timestamps are converted
+It retains status, operational locations, sender webshop name where present,
+delivery estimate and dated scans; recipient street addresses, contacts and
+customer references are still discarded. Local timestamps are converted
 only for known countries or hubs; scans with unresolved timezones are omitted
 rather than assigned a fabricated UTC timestamp.
 
@@ -312,14 +316,17 @@ select a carrier automatically. Broad numeric formats remain suggestions and
 ask the user to confirm the carrier before saving.
 
 La Poste's unified response covers Colissimo, tracked mail and Chronopost. The
-adapter validates the returned shipment identifier and retains only normalized
-status, date, country and event-code fields. Chronopost therefore does not need
+adapter validates the returned shipment identifier and retains normalized
+status, date, operational location, sender and pickup-point names where the
+provider supplies them, and event-code fields. Chronopost therefore does not need
 the separate SOAP response, which exposes more consignment metadata and is not
 intended for automated extraction.
 
 GLS France and GEODIS responses can include recipient, sender, address, contact,
 delivery-instruction and document data. Their adapters build results from a
-small allowlist of status/timeline fields rather than copying upstream objects.
+small allowlist of status/timeline/operational-location/sender/pickup fields
+rather than copying upstream objects; recipient street addresses, contacts and
+delivery instructions are still discarded.
 GEODIS's anonymous request signature uses the public client key shipped in its
 recipient SPA; it is not an account secret, but it can rotate with a frontend
 deployment.
@@ -330,9 +337,10 @@ of logs and public issues.
 
 Colisweb, C Chez Vous, Heppner, Ciblex and Paack use their public recipient
 flows. Their adapters verify the returned shipment identifier when the provider
-supplies one and retain only normalized status, delivery estimate, scan time,
-event code and coarse operational-location fields. Recipient names, street
-addresses, contact details and delivery instructions are discarded. Heppner
+supplies one and retain normalized status, delivery estimate, scan time,
+event code, sender and pickup-point names where operational, and coarse
+operational-location fields. Recipient street
+addresses, contact details and delivery instructions are still discarded. Heppner
 and Paack require the delivery postcode; treat it as part of the tracking
 credential. C Chez Vous order references grant access to a public order page
 and should be handled the same way.
@@ -343,8 +351,8 @@ adapter reports an indeterminate upstream failure instead of converting it to a
 false not-found result.
 
 DPD France exposes a server-rendered timeline rather than a reusable JSON feed.
-Its adapter verifies the outbound or return parcel number before retaining only
-timeline status, time and operational location fields. Cloudflare normally
+Its adapter verifies the outbound or return parcel number before retaining
+timeline status, time, sender/pickup names where operational, and operational location fields. Cloudflare normally
 requires the same private TRAWL browser fallback used for UPS. DPD France's
 current [site terms](https://www.dpd.com/fr/fr/conditions-generales-utilisation/)
 broadly restrict unapproved automated access and extraction, so this integration
@@ -403,11 +411,13 @@ direct or universal trackers, including previously misclassified Amazon numbers.
 ## Swiss carrier handling and privacy
 
 Swiss Post Cargo uses the anonymous endpoint called by its official public
-tracker. The adapter validates the response shape and retains only normalized
-tracking history. GLS Switzerland first resolves the public parcel overview,
+tracker. The adapter validates the response shape and retains normalized
+tracking history with operational locations and sender names where present.
+GLS Switzerland first resolves the public parcel overview,
 then uses the recipient's four-digit postcode to request its detailed history.
-The GLS adapter keeps coarse scan city and country fields but drops street,
-postcode, recipient and contact data returned alongside them. Treat the GLS
+The GLS adapter keeps coarse scan city and country fields plus ParcelShop/locker
+names, sender names and parcel weight where the provider returns them, but still drops street,
+postcode, recipient contacts and signatures returned alongside them. Treat the GLS
 postcode as part of the tracking credential.
 
 ## AliExpress handoff to Swiss Post

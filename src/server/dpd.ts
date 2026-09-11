@@ -123,10 +123,47 @@ function apiStatus(description: unknown, statusText: string, hasEvents: boolean)
   if (['PARCEL_OUT_FOR_DELIVERY', 'AVAILABLE_FOR_COLLECTION'].includes(key)) {
     return 'out_for_delivery';
   }
-  if (['RETURN_TO_SENDER', 'UNSUCCESSFUL_DELIVERY_ATTEMPT'].includes(key)) return 'exception';
+  if (['RETURN_TO_SENDER', 'UNSUCCESSFUL_DELIVERY_ATTEMPT'].includes(key)) {
+    // A failed attempt is a retry, not terminal; a return is terminal but
+    // stays in the exception status with a returned stage (no returning status).
+    return key === 'RETURN_TO_SENDER' ? 'exception' : 'in_transit';
+  }
   if (key === 'ORDER_CREATED') return 'pending';
   if (['PARCEL_HANDED', 'IN_TRANSIT', 'AT_DELIVERY_CENTER'].includes(key)) return 'in_transit';
   return status(statusText, hasEvents);
+}
+
+function apiStage(description: unknown): string | null {
+  const key = String(description ?? '').toUpperCase();
+  if (key === 'AVAILABLE_FOR_COLLECTION') return 'ready_for_pickup';
+  if (key === 'PARCEL_OUT_FOR_DELIVERY') return 'out_for_delivery';
+  if (key === 'RETURN_TO_SENDER') return 'returned';
+  if (key === 'UNSUCCESSFUL_DELIVERY_ATTEMPT') return 'failed_attempt';
+  if (key === 'ORDER_CREATED') return 'registered';
+  if (key === 'DELIVERED') return 'delivered';
+  return null;
+}
+
+function apiSender(payload: JsonObject, current: JsonObject): string | null {
+  // Webshop sender only; recipient names stay out. ParcelShop collection
+  // points are operational locations, not private addresses.
+  for (const candidate of [payload.senderName, payload.sender, current.senderName]) {
+    const value = clean(candidate);
+    if (value) return value.slice(0, 200);
+  }
+  return null;
+}
+
+function apiPickupPoint(payload: JsonObject, current: JsonObject, stage: string | null): string | null {
+  if (stage !== 'ready_for_pickup') return null;
+  for (const candidate of [
+    current.pickupPoint, current.parcelShop, payload.pickupPoint,
+    payload.parcelShop, current.receiverName, payload.receiverName,
+  ]) {
+    const value = isRecord(candidate) ? clean(candidate.name ?? candidate.shopName) : clean(candidate);
+    if (value) return value.slice(0, 200);
+  }
+  return null;
 }
 
 function apiLocation(event: JsonObject): string {
@@ -210,8 +247,12 @@ export function parseDPDTrackingApi(
   const currentDescription = current.description;
   const statusText = events[0]?.description || apiDescription(currentDescription)
     || 'Tracking information received';
+  const stage = apiStage(currentDescription);
+  const sender = apiSender(payload, current);
+  const pickupPoint = apiPickupPoint(payload, current, stage);
   const result: CarrierResult = {
     status: apiStatus(currentDescription, statusText, events.length > 0),
+    ...(stage ? { current_stage: stage } : {}),
     last_status_text: statusText,
     last_update: events[0]?.time || apiEventTime(
       current.eventDateAndTime,
@@ -225,6 +266,8 @@ export function parseDPDTrackingApi(
     delivery_time_from: optionalText(payload.deliveryTimeFrom),
     delivery_time_to: optionalText(payload.deliveryTimeTo),
     is_predictive_date: Boolean(payload.isPredictiveDate),
+    ...(sender ? { sender_name: sender } : {}),
+    ...(pickupPoint ? { pickup_point: pickupPoint } : {}),
   };
   if (postcodeVerified !== undefined) result.dpd_postcode_verified = postcodeVerified;
   return result;

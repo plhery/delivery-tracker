@@ -23,7 +23,13 @@ export interface CarrierResult extends JsonObject {
   last_status_text?: string | null;
   last_update?: string | null;
   expected_delivery?: string | null;
+  expected_delivery_from?: string | null;
   sender_name?: string | null;
+  receiver_name?: string | null;
+  pickup_point?: string | null;
+  delivered_at?: string | null;
+  weight_kg?: number | null;
+  dimensions_text?: string | null;
   delivery_carrier?: 'swiss-post';
   delivery_tracking_number?: string;
   canonical_tracking_number?: string;
@@ -45,7 +51,12 @@ const OPTIONAL_TEXT_FIELDS = [
   'last_status_text',
   'last_update',
   'expected_delivery',
+  'expected_delivery_from',
   'sender_name',
+  'receiver_name',
+  'pickup_point',
+  'delivered_at',
+  'dimensions_text',
   'delivery_tracking_number',
   'canonical_tracking_number',
   'international_tracking_number',
@@ -71,6 +82,10 @@ export function normalizeCarrierResult(value: unknown): CarrierResult {
     if (fieldValue != null && typeof fieldValue !== 'string') {
       throw new TypeError(`The carrier adapter returned an invalid ${field.replaceAll('_', ' ')}`);
     }
+  }
+  const weight = normalized.weight_kg;
+  if (weight != null && (typeof weight !== 'number' || !Number.isFinite(weight) || weight < 0)) {
+    throw new TypeError('The carrier adapter returned an invalid parcel weight');
   }
 
   if (normalized.delivery_carrier !== undefined && normalized.delivery_carrier !== 'swiss-post') {

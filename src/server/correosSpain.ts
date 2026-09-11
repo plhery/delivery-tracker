@@ -138,9 +138,7 @@ export function parseCorreosSpainTrackingResponse(payload: unknown, trackingNumb
   const seen = new Set<string>();
   (Array.isArray(rawEvents) ? rawEvents : []).filter(isRecord).slice(0, 500).forEach((rawEvent, index) => {
     const code = clean(rawEvent.codEvento, 32).toLocaleUpperCase('en-US');
-    // desTextoResumen is the backend's fixed Spanish wording. Customer names,
-    // dimensions, delivery slots and office blocks travel on the envelope but
-    // are deliberately never retained.
+    // desTextoResumen is the backend's fixed Spanish wording.
     const description = clean(rawEvent.desTextoResumen, 500) || code;
     const time = parsedTime(rawEvent.fecEvento, rawEvent.horEvento);
     if (!time || !description) return;
@@ -164,12 +162,31 @@ export function parseCorreosSpainTrackingResponse(payload: unknown, trackingNumb
   parsed.sort((left, right) => right.timestamp - left.timestamp || left.index - right.index);
   const events = parsed.slice(0, MAX_EVENTS_TO_RETURN).map(({ event }) => event);
   const latest = parsed[0];
+  // Office name (nom_codired), weight (peso grams) and dimensions travel on
+  // the envelope. The office is only a pickup signal when the parcel is
+  // actually awaiting collection; weight/dims are operational parcel data.
+  const office = clean(envelope.nom_codired, 300) || null;
+  const grams = Number(envelope.peso);
+  const weightKg = Number.isFinite(grams) && grams > 0 ? Math.round((grams / 1000) * 1000) / 1000 : null;
+  const dims = [envelope.largo, envelope.ancho, envelope.alto].map((value) => Number(value));
+  const dimensionsText = dims.every((value) => Number.isFinite(value) && value > 0)
+    ? `${dims[0]} x ${dims[1]} x ${dims[2]} cm` : null;
+  const receiver = clean(envelope.nombre_cliente, 200) || null;
+  const extras = {
+    ...(receiver ? { receiver_name: receiver } : {}),
+    ...(weightKg != null ? { weight_kg: weightKg } : {}),
+    ...(dimensionsText ? { dimensions_text: dimensionsText } : {}),
+  };
+  const pickupExtras = (stage?: string): Record<string, string> => (
+    stage === 'ready_for_pickup' && office ? { pickup_point: office } : {}
+  );
   if (!latest) {
     return {
       status: 'unknown',
       last_status_text: clean(envelope.resumen_ultimo, 500) || 'Tracking information received',
       last_update: null,
       expected_delivery: null,
+      ...extras,
       events,
     };
   }
@@ -179,15 +196,21 @@ export function parseCorreosSpainTrackingResponse(payload: unknown, trackingNumb
       last_status_text: latest.event.description,
       last_update: latest.event.time ?? null,
       expected_delivery: null,
+      ...extras,
+      ...pickupExtras(latest.event.stage),
       events,
     };
   }
+  const deliveredAt = latest.classified.status === 'delivered' ? latest.event.time ?? null : null;
   return {
     status: latest.classified.status,
     current_stage: latest.classified.stage,
     last_status_text: latest.event.description,
     last_update: latest.event.time ?? null,
     expected_delivery: null,
+    ...extras,
+    ...pickupExtras(latest.classified.stage),
+    ...(deliveredAt ? { delivered_at: deliveredAt } : {}),
     events,
   };
 }

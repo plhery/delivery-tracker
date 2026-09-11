@@ -130,12 +130,27 @@ describe('Correos Spain response parsing', () => {
     expect(result.events?.map((item) => item.description)).toEqual(['Entregado', 'I01H210V']);
   });
 
-  it('never retains customer, dimension or office data', () => {
+  it('retains operational receiver, weight and office data, still hiding raw keys', () => {
     const result = parseCorreosSpainTrackingResponse([envelope()], TRACKING_NUMBER);
+    expect(result).toMatchObject({
+      receiver_name: 'Example Customer',
+      weight_kg: 1.5,
+      delivered_at: '2026-04-29T13:12:42+02:00',
+    });
     const serialized = JSON.stringify(result);
-    for (const secret of ['Example Customer', 'OFICINA EXAMPLE', 'nombre_cliente', 'nom_codired', 'peso']) {
+    for (const secret of ['nombre_cliente', 'nom_codired', 'peso']) {
       expect(serialized).not.toContain(secret);
     }
+  });
+
+  it('exposes the office name only while awaiting collection', () => {
+    const pickup = parseCorreosSpainTrackingResponse([envelope({
+      nom_codired: 'MADRID SUC 37. LA ELIPA',
+      eventos: [event('H01I350V', '29/04/2026', '13:12:42', 'En oficina')],
+    })], TRACKING_NUMBER);
+    expect(pickup).toMatchObject({ pickup_point: 'MADRID SUC 37. LA ELIPA' });
+    const delivered = parseCorreosSpainTrackingResponse([envelope()], TRACKING_NUMBER);
+    expect(delivered.pickup_point).toBeUndefined();
   });
 });
 
