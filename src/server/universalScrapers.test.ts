@@ -78,11 +78,26 @@ describe('Postal Ninja and Ship24 result parsing', () => {
     expect(parseShip24Response(ship([{ ...raw, dispatch_code_id: 7 }]), number).events?.[0].description).toBe('Delivered');
   });
 
-  it('rejects Ship24 mismatches, demos, errors, ambiguous timestamps and oversize histories', () => {
+  it('keeps offset-less carrier legs as local wall time instead of rejecting the shipment', () => {
+    // Ship24 mixes La Poste scans (with offset) and Chronopost scans (no offset) for one parcel.
+    const parsed = parseShip24Response(ship([
+      { datetime: '2026-09-11T19:32:00.000Z', timestamp: '2026-09-11T19:32:00', status: 'DEPOT CHRONOPOST, Shipment in transit', dispatch_code_id: 3 },
+      { datetime: '2026-09-11T19:32:00.000Z', timestamp: '2026-09-11T19:32:00+02:00', status: "Colis en cours d'acheminement" },
+      { datetime: '2026-09-11T10:00:00.000Z', timestamp: '2026-09-11T10:00:00', status: 'Web Services, Shipment in preparation to be shipped' },
+    ]), number);
+    // An undated newest scan never fabricates last_update (same rule as Postal Ninja).
+    expect(parsed).toMatchObject({ status: 'in_transit', current_stage: 'in_transit', last_update: null });
+    expect(parsed.events?.map((event) => event.time ?? event.local_time)).toEqual(['2026-09-11T19:32:00', '2026-09-11T17:32:00.000Z', '2026-09-11T10:00:00']);
+    expect(parsed.events?.[0]).toEqual({ local_time: '2026-09-11T19:32:00', description: 'DEPOT CHRONOPOST, Shipment in transit', stage: 'in_transit' });
+    expect(JSON.stringify(parsed)).not.toContain('datetime');
+  });
+
+  it('rejects Ship24 mismatches, demos, errors, malformed timestamps and oversize histories', () => {
     for (const payload of [
       { data: { ...ship().data, tracking_number: 'OTHER123' } }, { data: { ...ship().data, error: true } }, ship([]), ship([null]),
       ship([{ datetime: '2026-08-17T11:17:00Z', status: 'Delivered' }]),
-      ship([{ timestamp: '2026-08-17T11:17:00', status: 'Delivered' }]),
+      ship([{ timestamp: '2026-08-17 11:17', status: 'Delivered' }]),
+      ship([{ timestamp: '2026-02-31T11:17:00', status: 'Delivered' }]),
       ship([{ timestamp: '2026-02-31T11:17:00Z', status: 'Delivered' }]),
       ship(Array(1001).fill({ timestamp: '2026-08-17T11:17:00Z', status: 'Delivered' })),
     ]) expect(() => parseShip24Response(payload, number)).toThrow();

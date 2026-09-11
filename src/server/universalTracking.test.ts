@@ -96,6 +96,16 @@ describe('universal public tracking', () => {
     expect(parseParcelsAppHtml(html + '<p>Delivered 2026-09-01</p>', number)).toMatchObject({ current_stage: 'registered', last_update: '2026-08-18T03:04:00.000Z' });
   });
 
+  it('skips ParcelsApp notice rows that render a date without a time', () => {
+    // Observed live on 2026-09-11 for a not-yet-scanned Colissimo label.
+    const notice = `<li class="event"><div class="event-time"><strong>11 Sep 2026</strong><span></span></div><div class="event-content"><strong>No information about your package. We've checked all relevant couriers for «Suisse». If the country is not correct, please select the destination country below.</strong></div></li>`;
+    const scan = `<li class="event"><div class="event-time"><strong>10 Sep 2026</strong><span>08:30</span></div><div class="event-content"><strong>Electronic information submitted by shipper</strong></div></li>`;
+    const html = (rows: string) => identity().replace('</table>', `</table><ul class="events">${rows}</ul>`);
+    expect(parseParcelsAppHtml(html(notice + scan), number)).toMatchObject({ current_stage: 'registered', last_update: '2026-09-10T08:30:00.000Z' });
+    expect(() => parseParcelsAppHtml(html(notice), number)).toThrow('No usable tracking events');
+    expect(() => parseParcelsAppHtml(html(scan.replace('10 Sep 2026', 'today')), number)).toThrow('invalid event date');
+  });
+
   it('uses ParcelsApp after Ship24 fails and stops after success', async () => {
     const fetcher = vi.fn().mockResolvedValue(browserResponse('ParcelsApp', parcels));
     const result = await new UniversalTracker({ trawlUrl: 'http://browser.test/v1', fetcher, browserLookup: vi.fn().mockRejectedValue(new Error('Unavailable')) }).fetch(number);

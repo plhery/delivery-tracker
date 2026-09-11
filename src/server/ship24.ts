@@ -4,7 +4,7 @@ import { measureScrape, recoverScrape } from './scrapeMonitoring';
 import type { CarrierEvent, CarrierResult } from './carrierResult';
 import { isRecord } from './types';
 import { scrapeUniversalPage, type UniversalBrowserOptions } from './universalBrowser';
-import { event, numberOf, result } from './universalTrackingResult';
+import { localEvent, numberOf, result } from './universalTrackingResult';
 import { universalCarrierHints } from './universalCarrierHints';
 import { UpstreamHttpError } from './boundedFetch';
 import { ship24Http, type Ship24HttpClient } from './ship24Http';
@@ -19,8 +19,10 @@ export function parseShip24Response(payload: unknown, trackingNumber: string): C
   for (const raw of payload.data.events) {
     if (!isRecord(raw)) throw new TypeError('Ship24 returned an invalid event');
     // datetime can end in Z while still containing the carrier's local time.
-    // timestamp carries the real offset (verified against the public web app).
-    const parsed = event(raw.timestamp, raw.status, raw.dispatch_code_id === 7 ? 'Delivered' : undefined);
+    // timestamp carries the real offset (verified against the public web app),
+    // except for some carrier legs (Chronopost, observed 2026-09-11) that omit it
+    // entirely. Keep those scans as local wall time rather than losing the shipment.
+    const parsed = localEvent(raw.timestamp, raw.status, raw.dispatch_code_id === 7 ? 'Delivered' : undefined);
     if (parsed) events.push(parsed);
   }
   // The public frontend renders couriers[].translation.name. Keep names only;

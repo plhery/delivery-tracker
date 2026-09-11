@@ -283,7 +283,8 @@ export function reportRoutingEvent(code: string, context: {
         'direct_support_opportunity', 'carrier_input_required', 'fresher_provider_found',
         'health_store_unavailable', 'carrier_coverage_discovered'].includes(code);
       scope.setLevel(alert ? 'warning' : 'info');
-      if (alert || code === 'provider_recovered' || code === 'carrier_auto_swapped') {
+      // Recoveries stay in logs and breadcrumbs: a Sentry issue per recovery is noise.
+      if (alert || code === 'carrier_auto_swapped') {
         const message = `Tracking routing: ${code}`;
         if (context.error !== undefined) {
           // Keep stack, causes and custom error fields even if recovery succeeds.

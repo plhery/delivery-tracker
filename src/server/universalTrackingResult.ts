@@ -24,7 +24,7 @@ export function text(value: unknown): string {
 // Universal sites mix carrier events with UI notices. Notices must not manufacture a
 // shipment timestamp or make an electronic announcement look like movement.
 export function isNotice(description: string): boolean {
-  return /enter .*?(?:postal|post|zip|phone)|select (?:a |the )?carrier|tracking (?:is |temporarily )?unavailable|tracking number (?:not found|is incorrect)|no tracking (?:information|data)|delivery preference|captcha|verify (?:you|your)|enable javascript|try again later/i.test(description);
+  return /enter .*?(?:postal|post|zip|phone)|select (?:a |the )?(?:carrier|destination country)|no information about your (?:package|parcel|shipment)|tracking (?:is |temporarily )?unavailable|tracking number (?:not found|is incorrect)|no tracking (?:information|data)|delivery preference|captcha|verify (?:you|your)|enable javascript|try again later/i.test(description);
 }
 
 export function hasPrivateDeliveryDetails(description: string): boolean {
@@ -58,30 +58,56 @@ export function eventStage(description: string): Stage | undefined {
   return sourceEventStage(description, false) ?? trackingLanguageStage(description) ?? sourceEventStage(description);
 }
 
-export function event(time: unknown, description: unknown, stage?: unknown): CarrierEvent | null {
+const EXPLICIT_OFFSET = /(?:Z|[+-]\d{2}:\d{2})$/;
+const LOCAL_WALL_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/;
+
+function describe(description: unknown, stage?: unknown): { description: string; stage: Stage | 'pending' } | null {
   const label = text(description);
   if (!label || isNotice(label)) return null;
-  // Require an explicit offset: universal events can originate in any timezone.
-  if (typeof time !== 'string' || !/(?:Z|[+-]\d{2}:\d{2})$/.test(time)) {
-    throw new TypeError('Tracking event has no valid timezone');
-  }
-  const date = DateTime.fromISO(time, { setZone: true });
-  if (!date.isValid) throw new TypeError('Tracking event has an invalid timestamp');
   const declared = typeof stage === 'string' && Object.hasOwn(STAGES, stage) ? STAGES[stage] : undefined;
   // Established source semantics (e.g. handoff/negation) remain first. A real
   // provider stage outranks the new intuitive translation fallback.
   const resolved = sourceEventStage(label, false) ?? declared ?? trackingLanguageStage(label) ?? sourceEventStage(label);
   if (resolved !== 'delivered' && hasPrivateDeliveryDetails(label)) return null;
-  return {
-    // Delivery descriptions can include signatures, access codes or door numbers.
-    time: date.toUTC().toISO()!, description: resolved === 'delivered' ? 'Delivered' : label,
-    stage: resolved ?? 'pending',
-  };
+  // Delivery descriptions can include signatures, access codes or door numbers.
+  return { description: resolved === 'delivered' ? 'Delivered' : label, stage: resolved ?? 'pending' };
+}
+
+export function event(time: unknown, description: unknown, stage?: unknown): CarrierEvent | null {
+  const described = describe(description, stage);
+  if (!described) return null;
+  // Require an explicit offset: universal events can originate in any timezone.
+  if (typeof time !== 'string' || !EXPLICIT_OFFSET.test(time)) {
+    throw new TypeError('Tracking event has no valid timezone');
+  }
+  const date = DateTime.fromISO(time, { setZone: true });
+  if (!date.isValid) throw new TypeError('Tracking event has an invalid timestamp');
+  return { time: date.toUTC().toISO()!, ...described };
+}
+
+/**
+ * Like event(), but a scan without an offset keeps its wall time as local_time
+ * instead of failing the whole shipment. Never invents a UTC instant.
+ */
+export function localEvent(time: unknown, description: unknown, stage?: unknown): CarrierEvent | null {
+  if (typeof time === 'string' && EXPLICIT_OFFSET.test(time)) return event(time, description, stage);
+  const described = describe(description, stage);
+  if (!described) return null;
+  if (typeof time !== 'string' || !LOCAL_WALL_TIME.test(time) || !DateTime.fromISO(time, { zone: 'UTC' }).isValid) {
+    throw new TypeError('Tracking event has an invalid timestamp');
+  }
+  return { local_time: time, ...described };
+}
+
+function moment(value: CarrierEvent): string {
+  return value.time ?? (typeof value.local_time === 'string' ? value.local_time : '');
 }
 
 export function result(events: CarrierEvent[], source: UniversalSource, preserveOrder = false): CarrierResult {
-  const unique = [...new Map(events.map((e) => [`${e.time ?? e.local_time}|${e.description}`, e])).values()]
-    .sort((a, b) => preserveOrder ? 0 : (b.time ?? '').localeCompare(a.time ?? '')).slice(0, 100);
+  // Wall times sort alongside UTC instants only approximately; providers that
+  // omit offsets everywhere pass preserveOrder instead.
+  const unique = [...new Map(events.map((e) => [`${moment(e)}|${e.description}`, e])).values()]
+    .sort((a, b) => preserveOrder ? 0 : moment(b).localeCompare(moment(a))).slice(0, 100);
   if (!unique.length) throw new TypeError('No usable tracking events');
   const current = unique.find((e) => e.stage && e.stage !== 'pending')?.stage as Stage | undefined;
   // Unknown wording can be displayed, but must not imply movement.

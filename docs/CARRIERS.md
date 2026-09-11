@@ -176,6 +176,7 @@ change; HTTP failures are reported before browser recovery. See the
 
 Ship24's `timestamp` includes the carrier offset; its `datetime` field can contain
 local wall-clock time mislabeled with `Z`, so that field is deliberately ignored.
+Some Ship24 carrier legs (Chronopost, observed 2026-09-11) omit the offset, and
 Postal Ninja normally omits offsets entirely. Those values are retained as
 `local_time` in the adapter result, with no fabricated UTC `time` or `last_update`.
 The shipment status is usable, but those undated scans are excluded from the

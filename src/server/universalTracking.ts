@@ -5,7 +5,7 @@ import { DateTime } from 'luxon';
 import { fetchBounded, parseJsonBytes, UpstreamHttpError } from './boundedFetch';
 import type { CarrierEvent, CarrierResult } from './carrierResult';
 import { isRecord } from './types';
-import { event, isNotice, numberOf, result, type UniversalSource as Source } from './universalTrackingResult';
+import { event, isNotice, numberOf, result, text, type UniversalSource as Source } from './universalTrackingResult';
 import { PostalNinjaTracker } from './postalNinja';
 import { Ship24Tracker } from './ship24';
 import { universalCarrierHints } from './universalCarrierHints';
@@ -41,8 +41,9 @@ export class TrackingCaptureError extends TypeError {
 }
 
 export class SeventeenTrackLookupError extends TypeError {
-  constructor(readonly reason: 'verification_required' | 'lookup_unavailable' | 'lookup_pending', readonly providerCode: number) {
-    super(`17TRACK: ${reason} (code ${providerCode})`);
+  constructor(readonly reason: 'verification_required' | 'lookup_unavailable' | 'lookup_pending', readonly providerCode: number,
+    readonly providerMessage?: string) {
+    super(`17TRACK: ${reason} (code ${providerCode}${providerMessage ? `: ${providerMessage}` : ''})`);
     this.name = reason === 'verification_required' ? 'SeventeenTrackVerificationError' : 'SeventeenTrackLookupError';
   }
 }
@@ -54,7 +55,9 @@ export function parse17TrackResponse(payload: unknown, trackingNumber: string): 
   }
   if (payload.meta.code !== 200) {
     const code = Number(payload.meta.code);
-    throw new SeventeenTrackLookupError([-11, -13, -14].includes(code) ? 'verification_required' : 'lookup_unavailable', code);
+    // Keep the provider's short reason (e.g. for the intermittent code 400) visible in Sentry.
+    const message = typeof payload.meta.message === 'string' ? text(payload.meta.message).slice(0, 120) : undefined;
+    throw new SeventeenTrackLookupError([-11, -13, -14].includes(code) ? 'verification_required' : 'lookup_unavailable', code, message);
   }
   if (!Array.isArray(payload.shipments)) throw new TypeError('17TRACK lookup unavailable');
   const matches = payload.shipments.filter((s) => isRecord(s) && s.number === number);
@@ -118,6 +121,9 @@ export function parseParcelsAppHtml(html: string, trackingNumber: string): Carri
     if (isNotice(description)) return;
     const date = row.find('.event-time > strong').text().trim();
     const time = row.find('.event-time > span').text().trim();
+    // Notice rows ("No information about your package...") render a date with
+    // an empty time. Skip them instead of failing the whole history.
+    if (!time) return;
     // The English web app renders the UTC values of its API, verified against
     // the live JSON on 2026-09-08. Do not use the machine's local timezone.
     const stamp = DateTime.fromFormat(`${date} ${time}`, 'dd LLL yyyy HH:mm', { locale: 'en', zone: 'UTC' });
