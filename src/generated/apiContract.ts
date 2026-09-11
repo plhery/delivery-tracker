@@ -1614,9 +1614,9 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "ctt"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://www.ctt.pt/",
     "linkRules": [
       {
         "domains": [
@@ -1634,7 +1634,7 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "s10"
       }
     ],
-    "trackingUrlTemplate": "https://www.ctt.pt/feapl_2/app/open/objectSearch/objectSearch.jspx?objects={trackingNumber}&request_locale=en"
+    "trackingUrlTemplate": "https://www.ctt.pt/feapl_2/app/open/objectSearch/objectSearch.jspx?objects={trackingNumber}"
   },
   "ctt-express": {
     "displayName": "CTT Express",

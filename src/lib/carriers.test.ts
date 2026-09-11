@@ -350,7 +350,12 @@ describe('carrier detection', () => {
     // REPORTED REAL label (PT marks the issuing network, not necessarily the final operator).
     // Source: https://www.altroconsumo.it/reclamare/bacheca-dei-reclami/ritardo-consegna-raccomandata/f9bc9dea8c8224161d
     expect(detectCarrier('RL402552798PT')).toBe('ctt');
-    expectUniversalFallback('ctt');
+    expect(CARRIERS.ctt.capabilities.selectable).toBe(true);
+    expect(CARRIERS.ctt.capabilities.tracking).toMatchObject({ mode: 'automatic', adapter: 'ctt' });
+    expect(tracksAutomatically('ctt')).toBe(true);
+    expect(CARRIERS.ctt.trackingUrl?.('RL402552798PT')).toBe(
+      'https://www.ctt.pt/feapl_2/app/open/objectSearch/objectSearch.jspx?objects=RL402552798PT',
+    );
   });
 
   it('ctt-express — CTT Express', () => {
@@ -1685,6 +1690,7 @@ describe('parseTrackingInput', () => {
     ['pos-malaysia', 'MYPM00000000015'],
     ['correos-spain', 'PR110604670130400C'],
     ['poste-italiane', 'RA00020974503'],
+    ['ctt', 'RL402552798PT'],
   ] as const)('round-trips a generated %s tracking link', (carrier, trackingNumber) => {
     const link = CARRIERS[carrier].trackingUrl?.(trackingNumber);
     expect(link).toBeDefined();
