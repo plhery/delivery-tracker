@@ -119,6 +119,10 @@ export const adapter: AdapterFactory = (environment) => {
   return {
     id: SOURCE,
     steps: ['trawl'],
+    // input.postcode arrives here but is deliberately not submitted: the
+    // postcode prompt is an in-page form behind the bundle-guarded API, and
+    // the browser service offers loading plus capture but no form
+    // interaction. Postcode rows stay notices, never events.
     track: (input, context) => tracker.fetch(input.number, context?.budgetMs),
   };
 };

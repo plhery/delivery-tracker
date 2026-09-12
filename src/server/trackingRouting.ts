@@ -115,7 +115,9 @@ export class RoutingDeferred extends Error {
 export class TrackingRouter {
   constructor(readonly options: {
     direct: (parcel: JsonObject, carrier: string) => Promise<RoutedResult>;
-    universal: (source: UniversalSource, number: string, timeoutMs: number) => Promise<CarrierResult>;
+    // postcode is the parcel's stored delivery postcode, if the user supplied
+    // one; providers receive it in their track input but submit it nowhere yet.
+    universal: (source: UniversalSource, number: string, timeoutMs: number, postcode: string | null) => Promise<CarrierResult>;
     health: ProviderHealth;
     now?: () => Date;
     enablePostalNinja?: boolean;
@@ -268,7 +270,8 @@ export class TrackingRouter {
       let kind: RoutingFailureKind | null = null;
       let retryAfterMs = 0;
       try {
-        const result = normalizeCarrierResult(await this.options.universal(source, universalNumber, Math.min(30_000, remaining - 5_000)));
+        const postcode = typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null;
+        const result = normalizeCarrierResult(await this.options.universal(source, universalNumber, Math.min(30_000, remaining - 5_000), postcode));
         if (!usable(result)) throw new TypeError('No usable universal progress');
         const previousFailure = state.failures[source];
         if (previousFailure) report('provider_recovered', source);

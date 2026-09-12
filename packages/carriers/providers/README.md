@@ -24,6 +24,12 @@ with its own eligibility, affinity, cooldowns and budget. Keep that policy
 there rather than copying it into provider docs. Persisted provider names also
 drive displayed links and must remain compatible with saved parcel state.
 
+The host forwards the parcel's stored delivery postcode into every provider's
+track input, but no provider consumes it yet: Ship24 and 17TRACK have no
+postcode channel, and ParcelsApp renders postcode forms as notices (see its
+README). A postcode-gated shipment therefore stays without history until a
+provider learns to submit the form.
+
 ## Shared implementation
 
 - [shared/result.ts](shared/result.ts): input normalization, event construction,

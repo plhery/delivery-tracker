@@ -12,6 +12,7 @@ const track17 = {
   } }],
 };
 const parcels = { states: [{ date: '2026-08-18T03:04:00Z', status: 'Electronic information submitted by shipper' }] };
+const reply = (data: unknown) => new Response(JSON.stringify(data), { status: 201 });
 const browserResponse = (source: '17TRACK' | 'ParcelsApp', data: unknown, overrides = {}) => new Response(JSON.stringify({
   url: source === '17TRACK' ? `https://t.17track.net/en#nums=${number}` : `https://parcelsapp.com/en/tracking/${number}`,
   html: identity(), statusCode: 200, tier: 3,
@@ -101,5 +102,19 @@ describe('universal discovery chain', () => {
 
   it('reports an unconfigured browser service instead of reaching the network', async () => {
     await expect(new UniversalTracker({ trawlUrl: '' }).fetchSource('ParcelsApp', number)).rejects.toThrow('tracking browser service');
+  });
+
+  it('forwards a stored delivery postcode into the provider track input', async () => {
+    const ship24History = { data: { tracking_number: number,
+      events: [{ timestamp: '2026-09-10T10:00:00+02:00', status: 'Delivered', dispatch_code_id: 7 }] } };
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => reply(ship24History));
+    const tracker = new UniversalTracker({ fetcher });
+    await expect(tracker.fetchSource('Ship24', number, 20_000, '8004')).resolves.toMatchObject({
+      current_stage: 'delivered', tracking_provider: 'Ship24',
+    });
+    await expect(tracker.fetch(number, '8004')).resolves.toMatchObject({
+      current_stage: 'delivered', tracking_provider: 'Ship24',
+    });
+    expect(fetcher).toHaveBeenCalledTimes(2);
   });
 });

@@ -79,6 +79,12 @@ wording rules and the language classifier.
   carrier adapter is always preferred when one exists.
 - Ambiguous numbers make the page ask for a destination country. That prompt is
   a notice: it never becomes a shipment event and never invents progress.
+- A stored delivery postcode is received in the track input but never
+  submitted. The postcode prompt is an in-page form behind the bundle-guarded
+  API (verified 2026-09-13: it POSTs to the same `/api/v2/parcels` with the
+  `se` fingerprint), and the browser service offers loading plus capture but
+  no form interaction — so the prompt stays a notice even when the parcel
+  stores a postcode.
 - Delivery wording can contain an access code or a signature. Any event whose
   stage is not `delivered` and that carries such details is dropped, and a
   delivered event's description is replaced by `Delivered`.

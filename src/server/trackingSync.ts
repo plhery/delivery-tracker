@@ -74,7 +74,7 @@ function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
 }
 
 export interface TrackingAdapter {
-  fetchUniversal?(source: UniversalSource, trackingNumber: string, timeoutMs: number): Promise<CarrierResult>;
+  fetchUniversal?(source: UniversalSource, trackingNumber: string, timeoutMs: number, dpdPostcode?: string | null): Promise<CarrierResult>;
   fetch(
     carrierId: string,
     trackingNumber: string,
@@ -96,8 +96,8 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     readonly recorder: StepRecorder = hostStepRecorder(),
   ) {}
 
-  async fetchUniversal(source: UniversalSource, trackingNumber: string, timeoutMs: number): Promise<CarrierResult> {
-    return this.universal.fetchSource(source, trackingNumber, timeoutMs);
+  async fetchUniversal(source: UniversalSource, trackingNumber: string, timeoutMs: number, dpdPostcode?: string | null): Promise<CarrierResult> {
+    return this.universal.fetchSource(source, trackingNumber, timeoutMs, dpdPostcode ?? null);
   }
 
   async fetch(
@@ -120,7 +120,7 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
       return normalizeCarrierResult(result);
     }
     if (this.registry.adapterIdFor(carrierId) === 'universal') {
-      return normalizeCarrierResult(await this.universal.fetch(trackingNumber));
+      return normalizeCarrierResult(await this.universal.fetch(trackingNumber, input.postcode));
     }
     throw new RangeError(`No tracking adapter is registered for ${carrierId}`);
   }
@@ -710,7 +710,7 @@ export class TrackingSyncService {
         fetched = this.adapter.fetchUniversal && carrierId !== 'amazon-shipping'
           ? await new TrackingRouter({
             direct: (candidate, carrier) => this.fetchResult(candidate, carrier),
-            universal: (source, number, timeout) => this.adapter.fetchUniversal!(source, number, timeout),
+            universal: (source, number, timeout, postcode) => this.adapter.fetchUniversal!(source, number, timeout, postcode),
             health: this.client, now: this.now,
             enablePostalNinja: process.env.TRACKING_ENABLE_POSTAL_NINJA === 'true',
           }).fetch(parcel, context.trigger === 'scheduled', context.signal)

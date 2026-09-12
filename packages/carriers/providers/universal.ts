@@ -77,23 +77,31 @@ export class UniversalTracker {
     }
   }
 
-  async fetch(trackingNumber: string): Promise<CarrierResult> {
+  /**
+   * Look up one number through the whole chain. `postcode` is the parcel's
+   * stored delivery postcode, if the user supplied one: it is forwarded into
+   * every provider's track input, but no provider submits it anywhere yet
+   * (ParcelsApp renders postcode forms as notices, Ship24 and 17TRACK have no
+   * postcode channel, and the browser service offers loading plus capture but
+   * no form interaction).
+   */
+  async fetch(trackingNumber: string, postcode?: string | null): Promise<CarrierResult> {
     numberOf(trackingNumber);
     const failures: SourceFailure[] = [];
     const sources = universalSources(this.options.enablePostalNinja);
     for (const source of sources) {
-      try { return await this.fetchSource(source, trackingNumber); }
+      try { return await this.fetchSource(source, trackingNumber, undefined, postcode); }
       catch (error) { failures.push({ source, reason: 'history unavailable; try again later or open the tracking website', error }); }
     }
     throw new UniversalTrackingError(failures);
   }
 
-  async fetchSource(source: Source, trackingNumber: string, timeoutMs = this.options.timeoutMs ?? 30_000): Promise<CarrierResult> {
+  async fetchSource(source: Source, trackingNumber: string, timeoutMs = this.options.timeoutMs ?? 30_000, postcode?: string | null): Promise<CarrierResult> {
     const number = numberOf(trackingNumber);
     if (this.options.browserLookup && (source === 'Postal Ninja' || source === 'Ship24')) {
       return await this.options.browserLookup(source, number);
     }
-    return await this.provider(source).track({ number }, { budgetMs: timeoutMs });
+    return await this.provider(source).track({ number, postcode: postcode ?? null }, { budgetMs: timeoutMs });
   }
 
   /** One provider adapter, built from this tracker's environment. */

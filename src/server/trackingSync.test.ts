@@ -18,6 +18,9 @@ import { PaackTracker } from './paack';
 import { RelaisColisTracker } from './relaisColis';
 import { SwissPostCargoTracker } from './swissPostCargo';
 import type { SupabaseServiceClient } from './supabase';
+import { AdapterRegistry, type AdapterEnvironment } from '@carriers/core/adapter';
+import type { StepRecorder } from '@carriers/core/telemetry';
+import type { UniversalTracker } from './universalTracking';
 import {
   CarrierTrackingAdapter,
   buildEvents,
@@ -1141,6 +1144,18 @@ describe('TrackingSyncService', () => {
     await service.syncPackage({ id: 'shipping-parcel', carrier: 'amazon-shipping', tracking_number: 'FR0000000001' });
     expect(fetch).toHaveBeenCalledWith('FR0000000001');
     expect(universal).not.toHaveBeenCalled();
+  });
+
+  it('forwards the stored delivery postcode to universal providers', async () => {
+    const universal = { fetchSource: vi.fn().mockResolvedValue({ status: 'in_transit' }), fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) };
+    const recorder: StepRecorder = { step: () => undefined, lookup: () => undefined };
+    const registry = new AdapterRegistry({ factories: {}, carriers: { unknown: 'universal' } },
+      { trawl: null, browserExecutablePath: null, recorder, env: {} } satisfies AdapterEnvironment);
+    const adapter = new CarrierTrackingAdapter(universal as unknown as UniversalTracker, registry, recorder);
+    await expect(adapter.fetch('unknown', 'TEST1234', null, '8004')).resolves.toMatchObject({ status: 'in_transit' });
+    expect(universal.fetch).toHaveBeenCalledWith('TEST1234', '8004');
+    await adapter.fetchUniversal('Ship24', 'TEST1234', 1000, '8004');
+    expect(universal.fetchSource).toHaveBeenCalledWith('Ship24', 'TEST1234', 1000, '8004');
   });
 
   it('keeps expired Shipping history out of the timeline and Sentry', async () => {

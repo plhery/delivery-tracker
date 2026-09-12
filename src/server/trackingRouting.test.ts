@@ -265,7 +265,17 @@ describe('persistent tracking routing', () => {
     const { router, direct, universal } = setup(); direct.mockRejectedValue(new Error('delivery unavailable'));
     await router.fetch(parcel({ carrier: 'dhl', carrier_data: { original_carrier: 'dhl', active_tracking_carrier: 'swiss-post',
       active_tracking_number: 'LOCAL1234' } }), false);
-    expect(universal).toHaveBeenCalledWith('Ship24', 'LOCAL1234', expect.any(Number));
+    expect(universal).toHaveBeenCalledWith('Ship24', 'LOCAL1234', expect.any(Number), null);
+  });
+  it('forwards the stored delivery postcode to universal providers', async () => {
+    const { router, universal } = setup();
+    await router.fetch(parcel({ dpd_postcode: '8004' }), false);
+    expect(universal).toHaveBeenCalledWith('Ship24', 'TEST1234', expect.any(Number), '8004');
+  });
+  it('sends no postcode to universal providers when the parcel stores none', async () => {
+    const { router, universal } = setup();
+    await router.fetch(parcel(), false);
+    expect(universal).toHaveBeenCalledWith('Ship24', 'TEST1234', expect.any(Number), null);
   });
   it('fails closed when shared coordination is unavailable, with a persisted retry', async () => {
     const { router, health, universal } = setup(); health.acquireTrackingProvider.mockRejectedValue(new Error('db down'));
