@@ -248,52 +248,90 @@ extension Parcel {
     }
 }
 
-/// The approved Fleet palettes; catalog colors cover other and newly added carriers.
-///
-/// The palettes, the mix amounts and the two named colors below are declared in
-/// `packages/carriers/core/brand` and shipped as `Resources/Brand.json`;
-/// `BrandParityTests` fails when this table drifts from them.
+/// The same bundled identities and decorations the web reads from core/brand.
+/// Load once so a palette or family added to carrier.json also reaches iPhone.
+struct CarrierBrandAssets: Decodable {
+    struct Step: Decodable {
+        let property: String
+        let base: String
+        let amount: Double
+    }
+
+    struct DecalShape: Decodable {
+        enum Kind: String, Decodable { case line, polygon, circle }
+        let type: Kind
+        let points: [[Double]]?
+        let segments: [[[Double]]]?
+        let stroke: String?
+        let strokeWidth: Double?
+        let fill: String?
+        let cx: Double?
+        let cy: Double?
+        let r: Double?
+
+        var paint: String { type == .line ? stroke! : fill! }
+
+        var path: Path {
+            if type == .circle {
+                return Path(ellipseIn: CGRect(x: cx! - r!, y: cy! - r!, width: r! * 2, height: r! * 2))
+            }
+            return Path { path in
+                for line in type == .line ? segments! : [points!] {
+                    guard let first = line.first else { continue }
+                    path.move(to: CGPoint(x: first[0], y: first[1]))
+                    for point in line.dropFirst() { path.addLine(to: CGPoint(x: point[0], y: point[1])) }
+                    if type == .polygon { path.closeSubpath() }
+                }
+            }
+        }
+    }
+
+    struct Truck: Decodable { let decals: [String: [DecalShape]] }
+    let defaultColor: String
+    let fallbackColor: String
+    let properties: [String]
+    let derivation: [Step]
+    let families: [String: String]
+    let palettes: [String: [String: String]]
+    let decals: [String: String]
+    let truck: Truck
+
+    static let shared: CarrierBrandAssets = {
+        guard let url = Bundle.main.url(forResource: "Brand", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let assets = try? JSONDecoder().decode(CarrierBrandAssets.self, from: data) else {
+            preconditionFailure("Missing or invalid bundled carrier brand data")
+        }
+        return assets
+    }()
+}
+
 struct CarrierVisualIdentity {
-    /// What the catalog gives a carrier with no accent of its own.
-    static let defaultCarrierColor = "#8e8e93"
-    /// Stands in for a catalog color that is not a `#rrggbb` literal.
-    static let fallbackColor = "#657060"
+    static let defaultCarrierColor = CarrierBrandAssets.shared.defaultColor
+    static let fallbackColor = CarrierBrandAssets.shared.fallbackColor
 
     let family: String
     let name: String
     let fullName: String
     let colors: [String]
+    let decal: String
 
-    /// The livery `CarrierFleetMark` paints; mirrors `brand.decal` in the folders.
-    var decal: String {
-        switch family {
-        case "dhl": return "dhl"
-        case "ups": return "ups"
-        default: return "default"
+    init(id: String, carrier: CarrierDefinition) {
+        let assets = CarrierBrandAssets.shared
+        family = assets.families[id] ?? id
+        fullName = carrier.displayName
+        name = ["dhl": "DHL", "gls": "GLS", "ups": "ups"][family] ?? carrier.displayName
+        decal = assets.decals[id] ?? "default"
+        colors = assets.derivation.map { step in
+            assets.palettes[id]?[step.property] ?? Self.mix(carrier.color, step.base, step.amount)
         }
     }
 
-    init(id: String, carrier: CarrierDefinition) {
-        family = id.hasPrefix("gls-") ? "gls" : id
-        fullName = carrier.displayName
-        switch family {
-        case "dhl":
-            name = "DHL"
-            colors = ["#f7e8aa", "#514727", "#6c5419", "#ead695", "#d40511", "#ffe274", "#ffcc00", "#b88d16", "#d40511"]
-        case "gls":
-            name = "GLS"
-            colors = ["#dfebfa", "#293e57", "#355e8a", "#b7d1ee", "#1634a7", "#abc7ff", "#1634a7", "#1634a7", "#ffcf00"]
-        case "ups":
-            name = "ups"
-            colors = ["#ede3d5", "#463a2c", "#78573e", "#dbc2a4", "#573626", "#ebca99", "#573626", "#573626", "#f5c86b"]
-        default:
-            name = carrier.displayName
-            let color = carrier.color
-            colors = [Self.mix(color, "#ffffff", 0.86), Self.mix(color, "#20261f", 0.8),
-                      Self.mix(color, "#000000", 0.55), Self.mix(color, "#ffffff", 0.65),
-                      Self.mix(color, "#000000", 0.3), Self.mix(color, "#ffffff", 0.6),
-                      Self.mix(color, "#000000", 0), Self.mix(color, "#000000", 0.2), "#ffffff"]
+    func paint(_ value: String) -> Color {
+        guard let index = CarrierBrandAssets.shared.properties.firstIndex(of: value) else {
+            return Color(hex: value)
         }
+        return Color(hex: colors[index])
     }
 
     var surface: Color { Brand.color(light: colors[0], dark: colors[1]) }
@@ -319,8 +357,8 @@ struct CarrierVisualIdentity {
 /// against `Resources/Brand.json`, so neither drawing can drift.
 ///
 /// The canvas fills straight-line outlines where the SVG uses a path: the UPS
-/// shield approximates its curve with five points, and the default stripe is the
-/// rectangle covered by a `stripeWidth`-wide line along `defaultStripe`.
+/// shield approximates its curve with five points. Decorations are loaded from
+/// the bundled geometry rather than retyped as per-carrier constants.
 enum CarrierTruckGeometry {
     static let viewBox = CGSize(width: 32, height: 21)
     static let strokeWidth: CGFloat = 0.6
@@ -336,15 +374,7 @@ enum CarrierTruckGeometry {
     static let tireColor = "#42483d"
     static let hubRadius: CGFloat = 0.9
     static let hubColor = "#d2d4c7"
-    static let defaultStripe = [CGPoint(x: 5, y: 9), CGPoint(x: 13, y: 9)]
-    static let defaultStripeWidth: CGFloat = 2
-    static let defaultDotCenter = CGPoint(x: 15, y: 9)
-    static let defaultDotRadius: CGFloat = 1.1
-    static let dhlStripes = [[CGPoint(x: 4, y: 8), CGPoint(x: 16, y: 8)],
-                             [CGPoint(x: 3, y: 10), CGPoint(x: 15, y: 10)]]
-    static let dhlStripeWidth: CGFloat = 1.1
-    static let upsShield = [CGPoint(x: 8, y: 5), CGPoint(x: 13, y: 5), CGPoint(x: 13, y: 10),
-                            CGPoint(x: 10.5, y: 12), CGPoint(x: 8, y: 10)]
+
 }
 
 struct CarrierFleetMark: View {
@@ -362,14 +392,14 @@ struct CarrierFleetMark: View {
                 context.fill(cab, with: .color(identity.truck))
                 context.stroke(cab, with: .color(identity.edge), lineWidth: truck.strokeWidth)
                 context.fill(polygon(truck.windshield), with: .color(Color(hex: truck.windshieldColor)))
-                switch identity.decal {
-                case "dhl":
-                    context.stroke(segments(truck.dhlStripes), with: .color(identity.accent), lineWidth: truck.dhlStripeWidth)
-                case "ups":
-                    context.fill(polygon(truck.upsShield), with: .color(identity.accent))
-                default:
-                    context.fill(Path(stripe(truck.defaultStripe, width: truck.defaultStripeWidth)), with: .color(identity.accent))
-                    context.fill(disc(truck.defaultDotCenter, truck.defaultDotRadius), with: .color(identity.accent))
+                let decals = CarrierBrandAssets.shared.truck.decals
+                for shape in decals[identity.decal] ?? decals["default"]! {
+                    let paint = GraphicsContext.Shading.color(identity.paint(shape.paint))
+                    if shape.type == .line {
+                        context.stroke(shape.path, with: paint, lineWidth: shape.strokeWidth!)
+                    } else {
+                        context.fill(shape.path, with: paint)
+                    }
                 }
                 for center in truck.wheelCenters {
                     context.fill(disc(center, truck.tireRadius), with: .color(Color(hex: truck.tireColor)))
@@ -395,21 +425,6 @@ struct CarrierFleetMark: View {
             for point in points.dropFirst() { path.addLine(to: point) }
             path.closeSubpath()
         }
-    }
-
-    private func segments(_ lines: [[CGPoint]]) -> Path {
-        Path { path in
-            for line in lines {
-                guard let first = line.first else { continue }
-                path.move(to: first)
-                for point in line.dropFirst() { path.addLine(to: point) }
-            }
-        }
-    }
-
-    /// The rectangle a `width`-wide line along a horizontal segment covers.
-    private func stripe(_ segment: [CGPoint], width: CGFloat) -> CGRect {
-        CGRect(x: segment[0].x, y: segment[0].y - width / 2, width: segment[1].x - segment[0].x, height: width)
     }
 
     private func disc(_ center: CGPoint, _ radius: CGFloat) -> Path {

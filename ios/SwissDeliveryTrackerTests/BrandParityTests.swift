@@ -113,7 +113,7 @@ final class BrandParityTests: XCTestCase {
                 XCTAssertEqual(colors[index], declared, "\(id) \(property)")
             }
         }
-        for id in brand.palettes.keys {
+        for id in catalog.definitions.keys.map(\.rawValue) {
             XCTAssertEqual(try identity(id).decal, brand.decals[id] ?? "default", "\(id) livery")
         }
         for (id, family) in brand.families {
@@ -170,32 +170,33 @@ final class BrandParityTests: XCTestCase {
     }
 
     func testDecalGeometryMatchesTheSharedDefinition() throws {
-        let decals = try brand().truck.decals
-
-        let dhl = try XCTUnwrap(decals["dhl"]?.first)
-        XCTAssertEqual(dhl.type, "line")
-        XCTAssertEqual(CarrierTruckGeometry.dhlStripes, try XCTUnwrap(dhl.segments).map(points))
-        XCTAssertEqual(CarrierTruckGeometry.dhlStripeWidth, CGFloat(try XCTUnwrap(dhl.strokeWidth)))
-
-        let ups = try XCTUnwrap(decals["ups"]?.first)
-        XCTAssertEqual(ups.type, "polygon")
-        XCTAssertEqual(CarrierTruckGeometry.upsShield, points(try XCTUnwrap(ups.points)))
-
-        let fallback = try XCTUnwrap(decals["default"])
-        XCTAssertEqual(fallback.map(\.type), ["line", "circle"])
-        XCTAssertEqual(CarrierTruckGeometry.defaultStripe, points(try XCTUnwrap(fallback[0].segments).first ?? []))
-        XCTAssertEqual(CarrierTruckGeometry.defaultStripeWidth, CGFloat(try XCTUnwrap(fallback[0].strokeWidth)))
-        XCTAssertEqual(
-            CarrierTruckGeometry.defaultDotCenter,
-            CGPoint(x: try XCTUnwrap(fallback[1].cx), y: try XCTUnwrap(fallback[1].cy))
-        )
-        XCTAssertEqual(CarrierTruckGeometry.defaultDotRadius, CGFloat(try XCTUnwrap(fallback[1].r)))
-
-        // Every livery paints with the accent, whatever the carrier's palette says.
-        for shapes in decals.values {
-            for shape in shapes {
-                XCTAssertEqual(shape.type == "line" ? shape.stroke : shape.fill, "accent")
+        let expected = try brand().truck.decals
+        let actual = CarrierBrandAssets.shared.truck.decals
+        XCTAssertEqual(Set(actual.keys), Set(expected.keys))
+        for (name, shapes) in expected {
+            let rendered = try XCTUnwrap(actual[name])
+            XCTAssertEqual(rendered.count, shapes.count, name)
+            for (shape, drawing) in zip(shapes, rendered) {
+                XCTAssertEqual(drawing.type.rawValue, shape.type, name)
+                XCTAssertEqual(drawing.points, shape.points, name)
+                XCTAssertEqual(drawing.segments, shape.segments, name)
+                XCTAssertEqual(drawing.strokeWidth, shape.strokeWidth, name)
+                XCTAssertEqual(drawing.cx, shape.cx, name)
+                XCTAssertEqual(drawing.cy, shape.cy, name)
+                XCTAssertEqual(drawing.r, shape.r, name)
+                XCTAssertEqual(drawing.paint, shape.type == "line" ? shape.stroke : shape.fill, name)
+                XCTAssertFalse(drawing.path.isEmpty, name)
+                let bounds = drawing.path.boundingRect
+                XCTAssertGreaterThanOrEqual(bounds.minX, 2, name)
+                XCTAssertLessThanOrEqual(bounds.maxX, 20, name)
+                XCTAssertGreaterThanOrEqual(bounds.minY, 3, name)
+                XCTAssertLessThanOrEqual(bounds.maxY, 16, name)
             }
         }
+    }
+
+    func testOnlyUnknownKeepsTheNeutralColor() {
+        let neutral = catalog.definitions.filter { $0.value.color == CarrierVisualIdentity.defaultCarrierColor }
+        XCTAssertEqual(Set(neutral.keys), [.unknown])
     }
 }

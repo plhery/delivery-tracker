@@ -6,7 +6,8 @@
     "countries": []
   },
   "brand": {
-    "color": "#8e8e93"
+    "color": "#cc0000",
+    "decal": "japan-post"
   },
   "selectable": true,
   "timezone": "UTC",

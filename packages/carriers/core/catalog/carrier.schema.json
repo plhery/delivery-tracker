@@ -91,7 +91,7 @@
         },
         "decal": {
           "description": "Livery painted on the truck mark. Omitted means \"default\".",
-          "enum": ["default", "dhl", "ups"]
+          "enum": ["default", "dhl", "ups", "fedex", "dpd", "amazon", "japan-post"]
         }
       }
     },

@@ -12,7 +12,11 @@
     ]
   },
   "brand": {
-    "color": "#8e8e93"
+    "color": "#eedc00",
+    "palette": {
+      "accent": "#0047bb",
+      "brand-light": "#0047bb"
+    }
   },
   "selectable": true,
   "timezone": "UTC",

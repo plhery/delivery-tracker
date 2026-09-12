@@ -1310,7 +1310,7 @@ export const CARRIER_CATALOG = {
   },
   "royal-mail": {
     "displayName": "Royal Mail",
-    "color": "#8e8e93",
+    "color": "#da202a",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1339,7 +1339,7 @@ export const CARRIER_CATALOG = {
   },
   "parcelforce": {
     "displayName": "Parcelforce Worldwide",
-    "color": "#8e8e93",
+    "color": "#9d0f11",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1368,7 +1368,7 @@ export const CARRIER_CATALOG = {
   },
   "evri": {
     "displayName": "Evri",
-    "color": "#8e8e93",
+    "color": "#00014d",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1387,7 +1387,7 @@ export const CARRIER_CATALOG = {
   },
   "inpost": {
     "displayName": "InPost",
-    "color": "#8e8e93",
+    "color": "#ffcc05",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1418,7 +1418,7 @@ export const CARRIER_CATALOG = {
   },
   "an-post": {
     "displayName": "An Post",
-    "color": "#8e8e93",
+    "color": "#00a76a",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1438,7 +1438,7 @@ export const CARRIER_CATALOG = {
   },
   "bpost": {
     "displayName": "bpost",
-    "color": "#8e8e93",
+    "color": "#ef2637",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1466,7 +1466,7 @@ export const CARRIER_CATALOG = {
   },
   "austrian-post": {
     "displayName": "Austrian Post",
-    "color": "#8e8e93",
+    "color": "#ffdc00",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1485,7 +1485,7 @@ export const CARRIER_CATALOG = {
   },
   "postnord": {
     "displayName": "PostNord",
-    "color": "#8e8e93",
+    "color": "#00a0d6",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1504,7 +1504,7 @@ export const CARRIER_CATALOG = {
   },
   "posti": {
     "displayName": "Posti",
-    "color": "#8e8e93",
+    "color": "#ff8000",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1525,7 +1525,7 @@ export const CARRIER_CATALOG = {
   },
   "correos-express": {
     "displayName": "Correos Express",
-    "color": "#8e8e93",
+    "color": "#ffcd00",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1544,7 +1544,7 @@ export const CARRIER_CATALOG = {
   },
   "seur": {
     "displayName": "SEUR",
-    "color": "#8e8e93",
+    "color": "#0063b3",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1567,7 +1567,7 @@ export const CARRIER_CATALOG = {
   },
   "mrw": {
     "displayName": "MRW",
-    "color": "#8e8e93",
+    "color": "#19133b",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1590,7 +1590,7 @@ export const CARRIER_CATALOG = {
   },
   "nacex": {
     "displayName": "NACEX",
-    "color": "#8e8e93",
+    "color": "#fe5000",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1609,7 +1609,7 @@ export const CARRIER_CATALOG = {
   },
   "ctt": {
     "displayName": "CTT Portugal",
-    "color": "#8e8e93",
+    "color": "#df0024",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1638,7 +1638,7 @@ export const CARRIER_CATALOG = {
   },
   "ctt-express": {
     "displayName": "CTT Express",
-    "color": "#8e8e93",
+    "color": "#df0024",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1666,7 +1666,7 @@ export const CARRIER_CATALOG = {
   },
   "poste-italiane": {
     "displayName": "Poste Italiane",
-    "color": "#8e8e93",
+    "color": "#eedc00",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1700,7 +1700,7 @@ export const CARRIER_CATALOG = {
   },
   "brt": {
     "displayName": "BRT",
-    "color": "#8e8e93",
+    "color": "#dc0032",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1719,7 +1719,7 @@ export const CARRIER_CATALOG = {
   },
   "ecoscooting": {
     "displayName": "Ecoscooting",
-    "color": "#8e8e93",
+    "color": "#3fa7ff",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1745,7 +1745,7 @@ export const CARRIER_CATALOG = {
   },
   "tipsa": {
     "displayName": "TIPSA",
-    "color": "#8e8e93",
+    "color": "#001e62",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1764,7 +1764,7 @@ export const CARRIER_CATALOG = {
   },
   "ukrposhta": {
     "displayName": "Ukrposhta",
-    "color": "#8e8e93",
+    "color": "#ffbe0c",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1778,7 +1778,7 @@ export const CARRIER_CATALOG = {
   },
   "usps": {
     "displayName": "USPS",
-    "color": "#8e8e93",
+    "color": "#004b87",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1811,7 +1811,7 @@ export const CARRIER_CATALOG = {
   },
   "canada-post": {
     "displayName": "Canada Post",
-    "color": "#8e8e93",
+    "color": "#e4002b",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1840,7 +1840,7 @@ export const CARRIER_CATALOG = {
   },
   "purolator": {
     "displayName": "Purolator",
-    "color": "#8e8e93",
+    "color": "#da291c",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1872,7 +1872,7 @@ export const CARRIER_CATALOG = {
   },
   "canpar": {
     "displayName": "Canpar",
-    "color": "#8e8e93",
+    "color": "#003b70",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1900,7 +1900,7 @@ export const CARRIER_CATALOG = {
   },
   "ontrac": {
     "displayName": "OnTrac",
-    "color": "#8e8e93",
+    "color": "#cc2027",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1940,7 +1940,7 @@ export const CARRIER_CATALOG = {
   },
   "speedx": {
     "displayName": "SpeedX",
-    "color": "#8e8e93",
+    "color": "#1aa3ff",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1966,7 +1966,7 @@ export const CARRIER_CATALOG = {
   },
   "uniuni": {
     "displayName": "UniUni",
-    "color": "#8e8e93",
+    "color": "#f68841",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -1998,7 +1998,7 @@ export const CARRIER_CATALOG = {
   },
   "landmark-global": {
     "displayName": "Landmark Global",
-    "color": "#8e8e93",
+    "color": "#e62337",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2027,7 +2027,7 @@ export const CARRIER_CATALOG = {
   },
   "old-dominion": {
     "displayName": "Old Dominion",
-    "color": "#8e8e93",
+    "color": "#00693e",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2059,7 +2059,7 @@ export const CARRIER_CATALOG = {
   },
   "spee-dee": {
     "displayName": "Spee-Dee",
-    "color": "#8e8e93",
+    "color": "#ff4734",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2087,7 +2087,7 @@ export const CARRIER_CATALOG = {
   },
   "gofo": {
     "displayName": "GOFO Express",
-    "color": "#8e8e93",
+    "color": "#fc4c02",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2115,7 +2115,7 @@ export const CARRIER_CATALOG = {
   },
   "estafeta": {
     "displayName": "Estafeta",
-    "color": "#8e8e93",
+    "color": "#e30613",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2134,7 +2134,7 @@ export const CARRIER_CATALOG = {
   },
   "correios-br": {
     "displayName": "Correios Brazil",
-    "color": "#8e8e93",
+    "color": "#ffd500",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2163,7 +2163,7 @@ export const CARRIER_CATALOG = {
   },
   "correos-chile": {
     "displayName": "Correos de Chile",
-    "color": "#8e8e93",
+    "color": "#d9232d",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2182,7 +2182,7 @@ export const CARRIER_CATALOG = {
   },
   "yunexpress": {
     "displayName": "YunExpress",
-    "color": "#8e8e93",
+    "color": "#008284",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2201,7 +2201,7 @@ export const CARRIER_CATALOG = {
   },
   "four-px": {
     "displayName": "4PX",
-    "color": "#8e8e93",
+    "color": "#f58220",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2220,7 +2220,7 @@ export const CARRIER_CATALOG = {
   },
   "blue-dart": {
     "displayName": "Blue Dart",
-    "color": "#8e8e93",
+    "color": "#0059a9",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2248,7 +2248,7 @@ export const CARRIER_CATALOG = {
   },
   "delhivery": {
     "displayName": "Delhivery",
-    "color": "#8e8e93",
+    "color": "#ed4136",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2267,7 +2267,7 @@ export const CARRIER_CATALOG = {
   },
   "nz-post": {
     "displayName": "NZ Post",
-    "color": "#8e8e93",
+    "color": "#d8291c",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2287,7 +2287,7 @@ export const CARRIER_CATALOG = {
   },
   "singapore-post": {
     "displayName": "Singapore Post",
-    "color": "#8e8e93",
+    "color": "#2e5da8",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2307,7 +2307,7 @@ export const CARRIER_CATALOG = {
   },
   "japan-post": {
     "displayName": "Japan Post",
-    "color": "#8e8e93",
+    "color": "#cc0000",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2337,7 +2337,7 @@ export const CARRIER_CATALOG = {
   },
   "sf-express": {
     "displayName": "SF Express",
-    "color": "#8e8e93",
+    "color": "#dc1e32",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2367,7 +2367,7 @@ export const CARRIER_CATALOG = {
   },
   "sto": {
     "displayName": "STO Express",
-    "color": "#8e8e93",
+    "color": "#ff6700",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2386,7 +2386,7 @@ export const CARRIER_CATALOG = {
   },
   "yunda": {
     "displayName": "Yunda Express",
-    "color": "#8e8e93",
+    "color": "#ffce00",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2405,7 +2405,7 @@ export const CARRIER_CATALOG = {
   },
   "yto": {
     "displayName": "YTO Express",
-    "color": "#8e8e93",
+    "color": "#4d148c",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2424,7 +2424,7 @@ export const CARRIER_CATALOG = {
   },
   "zto": {
     "displayName": "ZTO Express",
-    "color": "#8e8e93",
+    "color": "#0279ff",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2443,7 +2443,7 @@ export const CARRIER_CATALOG = {
   },
   "jd-logistics": {
     "displayName": "JD Logistics",
-    "color": "#8e8e93",
+    "color": "#e1251b",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2462,7 +2462,7 @@ export const CARRIER_CATALOG = {
   },
   "yamato": {
     "displayName": "Yamato Transport",
-    "color": "#8e8e93",
+    "color": "#fccf00",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2481,7 +2481,7 @@ export const CARRIER_CATALOG = {
   },
   "korea-post": {
     "displayName": "Korea Post",
-    "color": "#8e8e93",
+    "color": "#da291c",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2510,7 +2510,7 @@ export const CARRIER_CATALOG = {
   },
   "thailand-post": {
     "displayName": "Thailand Post",
-    "color": "#8e8e93",
+    "color": "#ef172f",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2530,7 +2530,7 @@ export const CARRIER_CATALOG = {
   },
   "dtdc": {
     "displayName": "DTDC",
-    "color": "#8e8e93",
+    "color": "#0d237d",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2558,7 +2558,7 @@ export const CARRIER_CATALOG = {
   },
   "australia-post": {
     "displayName": "Australia Post",
-    "color": "#8e8e93",
+    "color": "#dc1928",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2581,7 +2581,7 @@ export const CARRIER_CATALOG = {
   },
   "hongkong-post": {
     "displayName": "Hongkong Post",
-    "color": "#8e8e93",
+    "color": "#008965",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2601,7 +2601,7 @@ export const CARRIER_CATALOG = {
   },
   "pos-malaysia": {
     "displayName": "Pos Malaysia",
-    "color": "#8e8e93",
+    "color": "#ed1c24",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2632,7 +2632,7 @@ export const CARRIER_CATALOG = {
   },
   "ninja-van": {
     "displayName": "Ninja Van",
-    "color": "#8e8e93",
+    "color": "#ed2d26",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2646,7 +2646,7 @@ export const CARRIER_CATALOG = {
   },
   "china-post": {
     "displayName": "China Post",
-    "color": "#8e8e93",
+    "color": "#006d46",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2666,7 +2666,7 @@ export const CARRIER_CATALOG = {
   },
   "packeta": {
     "displayName": "Packeta",
-    "color": "#8e8e93",
+    "color": "#ba1b02",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2701,7 +2701,7 @@ export const CARRIER_CATALOG = {
   },
   "poczta-polska": {
     "displayName": "Poczta Polska",
-    "color": "#8e8e93",
+    "color": "#c43c2b",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2733,7 +2733,7 @@ export const CARRIER_CATALOG = {
   },
   "bring-posten": {
     "displayName": "Bring",
-    "color": "#8e8e93",
+    "color": "#56b529",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2753,7 +2753,7 @@ export const CARRIER_CATALOG = {
   },
   "aramex": {
     "displayName": "Aramex",
-    "color": "#8e8e93",
+    "color": "#dc291e",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2772,7 +2772,7 @@ export const CARRIER_CATALOG = {
   },
   "tnt": {
     "displayName": "TNT",
-    "color": "#8e8e93",
+    "color": "#ff6600",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2791,7 +2791,7 @@ export const CARRIER_CATALOG = {
   },
   "correos-spain": {
     "displayName": "Correos",
-    "color": "#8e8e93",
+    "color": "#ffcd00",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2819,7 +2819,7 @@ export const CARRIER_CATALOG = {
   },
   "yanwen": {
     "displayName": "Yanwen",
-    "color": "#8e8e93",
+    "color": "#8cbe1e",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2838,7 +2838,7 @@ export const CARRIER_CATALOG = {
   },
   "the-courier-guy": {
     "displayName": "The Courier Guy",
-    "color": "#8e8e93",
+    "color": "#264796",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {
@@ -2852,7 +2852,7 @@ export const CARRIER_CATALOG = {
   },
   "j-and-t": {
     "displayName": "J&T Express",
-    "color": "#8e8e93",
+    "color": "#ff0000",
     "selectable": true,
     "timezone": "UTC",
     "tracking": {

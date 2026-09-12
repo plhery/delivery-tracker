@@ -6,7 +6,11 @@
     "countries": []
   },
   "brand": {
-    "color": "#4d148c"
+    "color": "#4d148c",
+    "palette": {
+      "accent": "#ff6600"
+    },
+    "decal": "fedex"
   },
   "selectable": true,
   "timezone": "UTC",

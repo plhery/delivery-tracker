@@ -36,13 +36,14 @@ import { DEFAULT_CARRIER_COLOR } from './carrierBrand';
  */
 
 /** The 65 universal-fallback carriers share one profile: selectable, automatic
- * tracking through the universal adapter, and the default carrier color. */
+ * tracking through the universal adapter, with independent brand colors. */
 function expectUniversalFallback(id: keyof typeof CARRIERS) {
   const carrier = CARRIERS[id];
   expect(carrier.capabilities.selectable).toBe(true);
   expect(carrier.capabilities.tracking.mode).toBe('automatic');
   expect(carrier.capabilities.tracking.adapter).toBe('universal');
-  expect(carrier.color).toBe(DEFAULT_CARRIER_COLOR);
+  expect(carrier.color).toMatch(/^#[\da-f]{6}$/);
+  expect(carrier.color).not.toBe(DEFAULT_CARRIER_COLOR);
   expect(tracksAutomatically(id)).toBe(true);
 }
 

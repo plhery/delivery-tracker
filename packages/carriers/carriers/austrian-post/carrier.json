@@ -6,7 +6,11 @@
     "countries": []
   },
   "brand": {
-    "color": "#8e8e93"
+    "color": "#ffdc00",
+    "palette": {
+      "accent": "#1a1a1a",
+      "brand-light": "#1a1a1a"
+    }
   },
   "selectable": true,
   "timezone": "UTC",

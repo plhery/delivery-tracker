@@ -44,7 +44,13 @@
     ]
   },
   "brand": {
-    "color": "#ff9900"
+    "color": "#ff9900",
+    "decal": "amazon",
+    "palette": {
+      "truck": "#232f3e",
+      "edge": "#131a22",
+      "accent": "#ff9900"
+    }
   },
   "selectable": true,
   "timezone": "UTC",

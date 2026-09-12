@@ -1309,7 +1309,7 @@
     },
     "royal-mail": {
       "displayName": "Royal Mail",
-      "color": "#8e8e93",
+      "color": "#da202a",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1338,7 +1338,7 @@
     },
     "parcelforce": {
       "displayName": "Parcelforce Worldwide",
-      "color": "#8e8e93",
+      "color": "#9d0f11",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1367,7 +1367,7 @@
     },
     "evri": {
       "displayName": "Evri",
-      "color": "#8e8e93",
+      "color": "#00014d",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1386,7 +1386,7 @@
     },
     "inpost": {
       "displayName": "InPost",
-      "color": "#8e8e93",
+      "color": "#ffcc05",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1417,7 +1417,7 @@
     },
     "an-post": {
       "displayName": "An Post",
-      "color": "#8e8e93",
+      "color": "#00a76a",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1437,7 +1437,7 @@
     },
     "bpost": {
       "displayName": "bpost",
-      "color": "#8e8e93",
+      "color": "#ef2637",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1465,7 +1465,7 @@
     },
     "austrian-post": {
       "displayName": "Austrian Post",
-      "color": "#8e8e93",
+      "color": "#ffdc00",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1484,7 +1484,7 @@
     },
     "postnord": {
       "displayName": "PostNord",
-      "color": "#8e8e93",
+      "color": "#00a0d6",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1503,7 +1503,7 @@
     },
     "posti": {
       "displayName": "Posti",
-      "color": "#8e8e93",
+      "color": "#ff8000",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1524,7 +1524,7 @@
     },
     "correos-express": {
       "displayName": "Correos Express",
-      "color": "#8e8e93",
+      "color": "#ffcd00",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1543,7 +1543,7 @@
     },
     "seur": {
       "displayName": "SEUR",
-      "color": "#8e8e93",
+      "color": "#0063b3",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1566,7 +1566,7 @@
     },
     "mrw": {
       "displayName": "MRW",
-      "color": "#8e8e93",
+      "color": "#19133b",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1589,7 +1589,7 @@
     },
     "nacex": {
       "displayName": "NACEX",
-      "color": "#8e8e93",
+      "color": "#fe5000",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1608,7 +1608,7 @@
     },
     "ctt": {
       "displayName": "CTT Portugal",
-      "color": "#8e8e93",
+      "color": "#df0024",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1637,7 +1637,7 @@
     },
     "ctt-express": {
       "displayName": "CTT Express",
-      "color": "#8e8e93",
+      "color": "#df0024",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1665,7 +1665,7 @@
     },
     "poste-italiane": {
       "displayName": "Poste Italiane",
-      "color": "#8e8e93",
+      "color": "#eedc00",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1699,7 +1699,7 @@
     },
     "brt": {
       "displayName": "BRT",
-      "color": "#8e8e93",
+      "color": "#dc0032",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1718,7 +1718,7 @@
     },
     "ecoscooting": {
       "displayName": "Ecoscooting",
-      "color": "#8e8e93",
+      "color": "#3fa7ff",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1744,7 +1744,7 @@
     },
     "tipsa": {
       "displayName": "TIPSA",
-      "color": "#8e8e93",
+      "color": "#001e62",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1763,7 +1763,7 @@
     },
     "ukrposhta": {
       "displayName": "Ukrposhta",
-      "color": "#8e8e93",
+      "color": "#ffbe0c",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1777,7 +1777,7 @@
     },
     "usps": {
       "displayName": "USPS",
-      "color": "#8e8e93",
+      "color": "#004b87",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1810,7 +1810,7 @@
     },
     "canada-post": {
       "displayName": "Canada Post",
-      "color": "#8e8e93",
+      "color": "#e4002b",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1839,7 +1839,7 @@
     },
     "purolator": {
       "displayName": "Purolator",
-      "color": "#8e8e93",
+      "color": "#da291c",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1871,7 +1871,7 @@
     },
     "canpar": {
       "displayName": "Canpar",
-      "color": "#8e8e93",
+      "color": "#003b70",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1899,7 +1899,7 @@
     },
     "ontrac": {
       "displayName": "OnTrac",
-      "color": "#8e8e93",
+      "color": "#cc2027",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1939,7 +1939,7 @@
     },
     "speedx": {
       "displayName": "SpeedX",
-      "color": "#8e8e93",
+      "color": "#1aa3ff",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1965,7 +1965,7 @@
     },
     "uniuni": {
       "displayName": "UniUni",
-      "color": "#8e8e93",
+      "color": "#f68841",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -1997,7 +1997,7 @@
     },
     "landmark-global": {
       "displayName": "Landmark Global",
-      "color": "#8e8e93",
+      "color": "#e62337",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2026,7 +2026,7 @@
     },
     "old-dominion": {
       "displayName": "Old Dominion",
-      "color": "#8e8e93",
+      "color": "#00693e",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2058,7 +2058,7 @@
     },
     "spee-dee": {
       "displayName": "Spee-Dee",
-      "color": "#8e8e93",
+      "color": "#ff4734",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2086,7 +2086,7 @@
     },
     "gofo": {
       "displayName": "GOFO Express",
-      "color": "#8e8e93",
+      "color": "#fc4c02",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2114,7 +2114,7 @@
     },
     "estafeta": {
       "displayName": "Estafeta",
-      "color": "#8e8e93",
+      "color": "#e30613",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2133,7 +2133,7 @@
     },
     "correios-br": {
       "displayName": "Correios Brazil",
-      "color": "#8e8e93",
+      "color": "#ffd500",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2162,7 +2162,7 @@
     },
     "correos-chile": {
       "displayName": "Correos de Chile",
-      "color": "#8e8e93",
+      "color": "#d9232d",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2181,7 +2181,7 @@
     },
     "yunexpress": {
       "displayName": "YunExpress",
-      "color": "#8e8e93",
+      "color": "#008284",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2200,7 +2200,7 @@
     },
     "four-px": {
       "displayName": "4PX",
-      "color": "#8e8e93",
+      "color": "#f58220",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2219,7 +2219,7 @@
     },
     "blue-dart": {
       "displayName": "Blue Dart",
-      "color": "#8e8e93",
+      "color": "#0059a9",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2247,7 +2247,7 @@
     },
     "delhivery": {
       "displayName": "Delhivery",
-      "color": "#8e8e93",
+      "color": "#ed4136",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2266,7 +2266,7 @@
     },
     "nz-post": {
       "displayName": "NZ Post",
-      "color": "#8e8e93",
+      "color": "#d8291c",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2286,7 +2286,7 @@
     },
     "singapore-post": {
       "displayName": "Singapore Post",
-      "color": "#8e8e93",
+      "color": "#2e5da8",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2306,7 +2306,7 @@
     },
     "japan-post": {
       "displayName": "Japan Post",
-      "color": "#8e8e93",
+      "color": "#cc0000",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2336,7 +2336,7 @@
     },
     "sf-express": {
       "displayName": "SF Express",
-      "color": "#8e8e93",
+      "color": "#dc1e32",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2366,7 +2366,7 @@
     },
     "sto": {
       "displayName": "STO Express",
-      "color": "#8e8e93",
+      "color": "#ff6700",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2385,7 +2385,7 @@
     },
     "yunda": {
       "displayName": "Yunda Express",
-      "color": "#8e8e93",
+      "color": "#ffce00",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2404,7 +2404,7 @@
     },
     "yto": {
       "displayName": "YTO Express",
-      "color": "#8e8e93",
+      "color": "#4d148c",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2423,7 +2423,7 @@
     },
     "zto": {
       "displayName": "ZTO Express",
-      "color": "#8e8e93",
+      "color": "#0279ff",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2442,7 +2442,7 @@
     },
     "jd-logistics": {
       "displayName": "JD Logistics",
-      "color": "#8e8e93",
+      "color": "#e1251b",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2461,7 +2461,7 @@
     },
     "yamato": {
       "displayName": "Yamato Transport",
-      "color": "#8e8e93",
+      "color": "#fccf00",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2480,7 +2480,7 @@
     },
     "korea-post": {
       "displayName": "Korea Post",
-      "color": "#8e8e93",
+      "color": "#da291c",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2509,7 +2509,7 @@
     },
     "thailand-post": {
       "displayName": "Thailand Post",
-      "color": "#8e8e93",
+      "color": "#ef172f",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2529,7 +2529,7 @@
     },
     "dtdc": {
       "displayName": "DTDC",
-      "color": "#8e8e93",
+      "color": "#0d237d",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2557,7 +2557,7 @@
     },
     "australia-post": {
       "displayName": "Australia Post",
-      "color": "#8e8e93",
+      "color": "#dc1928",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2580,7 +2580,7 @@
     },
     "hongkong-post": {
       "displayName": "Hongkong Post",
-      "color": "#8e8e93",
+      "color": "#008965",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2600,7 +2600,7 @@
     },
     "pos-malaysia": {
       "displayName": "Pos Malaysia",
-      "color": "#8e8e93",
+      "color": "#ed1c24",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2631,7 +2631,7 @@
     },
     "ninja-van": {
       "displayName": "Ninja Van",
-      "color": "#8e8e93",
+      "color": "#ed2d26",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2645,7 +2645,7 @@
     },
     "china-post": {
       "displayName": "China Post",
-      "color": "#8e8e93",
+      "color": "#006d46",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2665,7 +2665,7 @@
     },
     "packeta": {
       "displayName": "Packeta",
-      "color": "#8e8e93",
+      "color": "#ba1b02",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2700,7 +2700,7 @@
     },
     "poczta-polska": {
       "displayName": "Poczta Polska",
-      "color": "#8e8e93",
+      "color": "#c43c2b",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2732,7 +2732,7 @@
     },
     "bring-posten": {
       "displayName": "Bring",
-      "color": "#8e8e93",
+      "color": "#56b529",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2752,7 +2752,7 @@
     },
     "aramex": {
       "displayName": "Aramex",
-      "color": "#8e8e93",
+      "color": "#dc291e",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2771,7 +2771,7 @@
     },
     "tnt": {
       "displayName": "TNT",
-      "color": "#8e8e93",
+      "color": "#ff6600",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2790,7 +2790,7 @@
     },
     "correos-spain": {
       "displayName": "Correos",
-      "color": "#8e8e93",
+      "color": "#ffcd00",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2818,7 +2818,7 @@
     },
     "yanwen": {
       "displayName": "Yanwen",
-      "color": "#8e8e93",
+      "color": "#8cbe1e",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2837,7 +2837,7 @@
     },
     "the-courier-guy": {
       "displayName": "The Courier Guy",
-      "color": "#8e8e93",
+      "color": "#264796",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {
@@ -2851,7 +2851,7 @@
     },
     "j-and-t": {
       "displayName": "J&T Express",
-      "color": "#8e8e93",
+      "color": "#ff0000",
       "selectable": true,
       "timezone": "UTC",
       "tracking": {

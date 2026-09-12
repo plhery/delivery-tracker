@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { carrierInfo } from '../lib/carriers';
 import { CarrierMark } from './CarrierMark';
 import markup from './carrierMark.fixture.json';
+import { CARRIER_TRUCK, carrierDecal } from '@carriers/core/brand';
 
 /**
  * The truck is data now (`packages/carriers/core/brand/truck.json`). The
@@ -14,6 +15,17 @@ describe('carrier mark', () => {
     const { container } = render(<CarrierMark carrier={carrierInfo(id)} />);
     expect(container.innerHTML).toBe(markup[id]);
   });
+
+  it.each(['fedex', 'dpd', 'dpd-fr', 'amazon-logistics', 'amazon-shipping', 'japan-post', 'dhl-ecommerce'] as const)(
+    'renders the declared decoration for %s', (id) => {
+      const { container } = render(<CarrierMark carrier={carrierInfo(id)} />);
+      const paths = [...container.querySelectorAll('svg > path')].map(path => path.getAttribute('d'));
+      for (const shape of CARRIER_TRUCK.decals[carrierDecal(id)]) {
+        if (shape.type !== 'circle') expect(paths).toContain(shape.d);
+      }
+      expect(container.firstChild).toHaveAttribute('aria-label', carrierInfo(id).name);
+    },
+  );
 
   it('covers the three liveries and a carrier that has none', () => {
     expect(Object.keys(markup)).toEqual(['dhl', 'ups', 'gls-ch', 'swiss-post']);

@@ -31,7 +31,7 @@ import type {
 
 export * from './types';
 
-/** The color 66 carrier folders declare when the carrier has no approved accent. */
+/** The neutral color for unknown carriers and newly scaffolded entries. */
 export const DEFAULT_CARRIER_COLOR: string = paletteData.defaultColor;
 
 /** Stands in for a catalog color that is not a `#rrggbb` literal. */

@@ -43,6 +43,31 @@ describe('carrier brand', () => {
     expect(gls.map(carrierDecal)).toEqual(['default', 'default', 'default']);
   });
 
+  it.each([
+    ['dhl-ecommerce', 'dhl'], ['dpd-fr', 'dpd'], ['amazon-shipping', 'amazon-logistics'],
+  ])('shares %s branding with %s', (id, owner) => {
+    expect(carrierBrandFamily(id)).toBe(owner);
+    expect(carrierDecal(id)).toBe(carrierDecal(owner));
+    expect(CARRIER_PALETTES[id]).toEqual(CARRIER_PALETTES[owner]);
+  });
+
+  it('keeps the new SVG paths identical to their native outlines', () => {
+    for (const name of ['fedex', 'dpd', 'amazon', 'japan-post'] as const) {
+      for (const shape of CARRIER_TRUCK.decals[name]) {
+        if (shape.type === 'circle') continue;
+        const segments = shape.type === 'polygon' ? [shape.points] : shape.segments;
+        const path = segments.map(points => 'M' + points.map(([x, y]) => `${x} ${y}`).join('L')).join('');
+        expect(shape.d).toBe(path + (shape.type === 'polygon' ? 'Z' : ''));
+        for (const [x, y] of segments.flat()) {
+          expect(x).toBeGreaterThanOrEqual(CARRIER_TRUCK.body.x);
+          expect(x).toBeLessThanOrEqual(CARRIER_TRUCK.body.x + CARRIER_TRUCK.body.width);
+          expect(y).toBeGreaterThanOrEqual(CARRIER_TRUCK.body.y);
+          expect(y).toBeLessThanOrEqual(CARRIER_TRUCK.body.y + CARRIER_TRUCK.body.height);
+        }
+      }
+    }
+  });
+
   it('keeps a carrier that declares nothing on its own identity', () => {
     expect(carrierBrandFamily('swiss-post')).toBe('swiss-post');
     expect(CARRIER_PALETTES['swiss-post']).toBeUndefined();
@@ -60,9 +85,12 @@ describe('carrier brand', () => {
     }
   });
 
-  it('names the color the catalog gives carriers without an accent', () => {
-    const colors = Object.values(CARRIER_DEFINITIONS).map((definition) => definition.color);
-    expect(colors.filter((color) => color === DEFAULT_CARRIER_COLOR).length).toBeGreaterThan(1);
+  it('reserves neutral gray for unknown carriers', () => {
+    const neutral = Object.entries(CARRIER_DEFINITIONS)
+      .filter(([, definition]) => definition.color === DEFAULT_CARRIER_COLOR)
+      .map(([id]) => id);
+    expect(neutral).toEqual(['unknown']);
+    expect(Object.values(CARRIER_DEFINITIONS).every(({ color }) => HEX.test(color))).toBe(true);
   });
 
   it('paints the truck with brand properties and literals only', () => {
