@@ -1,0 +1,130 @@
+{
+  "carrier": "mondial-relay",
+  "records": [
+    {
+      "number": "12123456780101006623123454",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "mondial-relay",
+        "confidence": "high"
+      },
+      "note": "Made-up number that follows the published format."
+    },
+    {
+      "number": "4744000791",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://suivi-colis.org/mondial-relay/"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl",
+          "mondial-relay",
+          "relais-colis",
+          "tipsa",
+          "estafeta"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Mondial Relay, which stays one candidate among several."
+    },
+    {
+      "number": "87778793",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://suivi-colis.org/mondial-relay/"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "mondial-relay",
+          "heppner"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Mondial Relay, which stays one candidate among several."
+    },
+    {
+      "number": "98911884",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://suivi-colis.org/mondial-relay/"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "mondial-relay",
+          "heppner"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Mondial Relay, which stays one candidate among several."
+    },
+    {
+      "number": "73800244620101503002000732",
+      "role": "full_barcode",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://forum.quechoisir.org/probleme-colis-mondial-relay-gls-t286523-40.html",
+        "date": "2022-04-25"
+      },
+      "expect": {
+        "carrier": "mondial-relay",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Full label barcode rather than the number a user types."
+    },
+    {
+      "number": "00000000000000000000000000",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none",
+        "not": [
+          "mondial-relay"
+        ]
+      },
+      "note": "All-zero 26-digit string; the checksum gate rejects it. Filed under Mondial Relay; no rule matches this shape."
+    },
+    {
+      "number": "12123456780101006623123455",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none",
+        "not": [
+          "mondial-relay"
+        ]
+      },
+      "note": "Valid barcode with the final check digit changed. Filed under Mondial Relay; no rule matches this shape."
+    },
+    {
+      "number": "12123456780101106623123454",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none",
+        "not": [
+          "mondial-relay"
+        ]
+      },
+      "note": "Valid barcode with the first check digit changed. Filed under Mondial Relay; no rule matches this shape."
+    }
+  ]
+}

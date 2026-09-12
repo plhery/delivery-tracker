@@ -1,0 +1,50 @@
+{
+  "carrier": "relais-colis",
+  "records": [
+    {
+      "number": "338 0000 318",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://forum.quechoisir.org/attitude-inadmissible-de-relais-colis-fuyez-t216835.html",
+        "date": "2019-05-03"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl",
+          "mondial-relay",
+          "relais-colis",
+          "tipsa",
+          "estafeta"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Relais Colis, which stays one candidate among several."
+    },
+    {
+      "number": "CC200000000401",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "relais-colis",
+        "confidence": "high"
+      },
+      "note": "Made-up number that follows the published format."
+    },
+    {
+      "number": "CC999999999901",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "relais-colis",
+        "confidence": "high"
+      },
+      "note": "Invented number following the published Relais Colis format."
+    }
+  ]
+}

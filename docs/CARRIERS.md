@@ -298,9 +298,13 @@ Apply `20260912140000_add_dhl_ecommerce.sql` before deployment
 to enable the carrier in the owner-only create/change RPCs.
 
 Carrier names, adapter modes, tracking links, required inputs, timezones and
-detection rules are defined once in `contracts/openapi.json` under
-`x-carriers`. They are generated into the Next.js app and the iPhone's offline
-fallback, and are also published at `/api/carriers` for dynamic native refreshes.
+detection rules are defined once per carrier in
+`packages/carriers/carriers/<id>/carrier.json`. `npm run contract:generate`
+merges those folders into `contracts/openapi.json` under `x-carriers`, so that
+section is generated and editing it by hand is undone by the next run. From
+there they are generated into the Next.js app, the carrier package catalog and
+the iPhone's offline fallback, and are also published at `/api/carriers` for
+dynamic native refreshes.
 The iPhone caches validated responses and accepts future string carrier IDs, so
 backend additions using the existing input fields become visible without
 another native release. Broad numeric formats are treated as suggestions and

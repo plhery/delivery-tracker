@@ -1,0 +1,17 @@
+{
+  "carrier": "delivengo",
+  "records": [
+    {
+      "number": "LD156008025FR",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-10",
+      "expect": {
+        "carrier": "la-poste",
+        "confidence": "high"
+      },
+      "note": "Made-up number that follows the published format. Filed under Delivengo; detection selects La Poste / Colissimo."
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "id": "ctt",
+  "displayName": "CTT Portugal",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "ctt",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.ctt.pt/feapl_2/app/open/objectSearch/objectSearch.jspx?objects={trackingNumber}",
+    "canaryUrl": "https://www.ctt.pt/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "ctt.pt"
+      ],
+      "params": [
+        "objects"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "ctt-1",
+      "pattern": "^[A-Z]{2}\\d{9}PT$",
+      "confidence": "high",
+      "checksum": "s10"
+    }
+  ]
+}

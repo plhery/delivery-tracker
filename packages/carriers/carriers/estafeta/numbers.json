@@ -1,0 +1,25 @@
+{
+  "carrier": "estafeta",
+  "records": [
+    {
+      "number": "2806075762",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/dmoralesm/estafeta-api"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl",
+          "mondial-relay",
+          "relais-colis",
+          "tipsa",
+          "estafeta"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to Estafeta, which stays one candidate among several."
+    }
+  ]
+}

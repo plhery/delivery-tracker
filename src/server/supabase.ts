@@ -693,6 +693,17 @@ export class SupabaseServiceClient extends SupabaseClient {
     }) === true;
   }
 
+  // Carrier wording whose stage the sync had to classify or fall back to. The
+  // package and provider event ids resolve one sample event inside the
+  // function; the stored row keeps only that opaque event id.
+  async recordTrackingStatusObservations(observations: JsonObject[]): Promise<void> {
+    if (observations.length === 0) return;
+    await this.request('/rest/v1/rpc/record_tracking_status_observations', {
+      method: 'POST',
+      body: { p_observations: observations },
+    });
+  }
+
   async maintainSyncAudit(): Promise<{ abandoned: number; purged: number }> {
     const result = rows(await this.request('/rest/v1/rpc/maintain_tracking_sync_audit', {
       method: 'POST',

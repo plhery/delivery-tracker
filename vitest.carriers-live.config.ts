@@ -3,10 +3,13 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   resolve: {
-    alias: { 'server-only': fileURLToPath(new URL('./src/test/serverOnly.ts', import.meta.url)) },
+    alias: {
+      'server-only': fileURLToPath(new URL('./src/test/serverOnly.ts', import.meta.url)),
+      '@carriers': fileURLToPath(new URL('./packages/carriers', import.meta.url)),
+    },
   },
   test: {
-    include: ['src/server/**/*.live.test.ts'],
+    include: ['src/server/**/*.live.test.ts', 'packages/carriers/**/*.live.test.ts'],
     environment: 'node',
     fileParallelism: false,
     maxConcurrency: 1,

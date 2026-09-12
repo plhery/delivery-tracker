@@ -1,0 +1,33 @@
+{
+  "carrier": "nacex",
+  "records": [
+    {
+      "number": "2103/11207088",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/no-entrega-de-envio-a-tiempo/dca1c166a05005867c",
+        "date": "2025-03-07"
+      },
+      "expect": {
+        "carrier": "nacex",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
+      "number": "2850/11247170",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/reclamaci-C3-B3n-por-da-C3-B1o-a-mercanc/7bf1f90f3a5fe7d8cb",
+        "date": "2025-07-25"
+      },
+      "expect": {
+        "carrier": "nacex",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "carrier": "parcelforce",
+  "records": [
+    {
+      "number": "EC080250821GB",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://www.royalmail.com/royal-mail-you/intellectual-property-rights/linking-our-website"
+      },
+      "expect": {
+        "carrier": "parcelforce",
+        "confidence": "high"
+      },
+      "note": "Official documentation example, not a real shipment."
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": "tipsa",
+  "displayName": "TIPSA",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.tip-sa.com/es/localizacion-envios",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": [
+    {
+      "id": "tipsa-1",
+      "pattern": "^\\d{10}$",
+      "confidence": "low"
+    }
+  ]
+}

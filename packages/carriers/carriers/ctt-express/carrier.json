@@ -1,0 +1,44 @@
+{
+  "id": "ctt-express",
+  "displayName": "CTT Express",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://shipping-tracking.production.cloud2.cttexpress.com/?sc={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "shipping-tracking.production.cloud2.cttexpress.com"
+      ],
+      "params": [
+        "sc"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "ctt-express-1",
+      "pattern": "^00\\d{20}$",
+      "confidence": "high"
+    }
+  ]
+}

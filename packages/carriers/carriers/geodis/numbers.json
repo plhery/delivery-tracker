@@ -1,0 +1,31 @@
+{
+  "carrier": "geodis",
+  "records": [
+    {
+      "number": "1G123GEODIS0",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "geodis",
+        "confidence": "high"
+      },
+      "note": "Made-up number that follows the published format."
+    },
+    {
+      "number": "1GWSKFLSKX4Y",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://suivi-colis.org/espacedestinataire-livraison-geodis/",
+        "date": "2023-08-30"
+      },
+      "expect": {
+        "carrier": "geodis",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    }
+  ]
+}

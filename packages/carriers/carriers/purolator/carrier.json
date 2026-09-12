@@ -1,0 +1,49 @@
+{
+  "id": "purolator",
+  "displayName": "Purolator",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.purolator.com/en/shipping/tracker?searchValue={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "purolator.com"
+      ],
+      "params": [
+        "searchValue"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "purolator-1",
+      "pattern": "^[0-5]\\d{11}$",
+      "confidence": "low"
+    },
+    {
+      "id": "purolator-2",
+      "pattern": "^(?!BYS)[A-Z]{3}\\d{9}$",
+      "confidence": "high"
+    }
+  ]
+}

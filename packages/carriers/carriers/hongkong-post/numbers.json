@@ -1,0 +1,18 @@
+{
+  "carrier": "hongkong-post",
+  "records": [
+    {
+      "number": "RE113184005HK",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/marcoesposito1988/trackingmore-python"
+      },
+      "expect": {
+        "carrier": "hongkong-post",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment."
+    }
+  ]
+}

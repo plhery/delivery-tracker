@@ -1,0 +1,31 @@
+{
+  "carrier": "c-chez-vous",
+  "records": [
+    {
+      "number": "4TZKO156790--59600",
+      "role": "composite",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://www.cchezvous.fr/suivi-colis"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Official documentation example, not a real shipment. Agency and shipment numbers as printed on the label. The source attributes it to C Chez Vous; no rule matches this shape."
+    },
+    {
+      "number": "FGRC45BKLM",
+      "role": "composite",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://www.cchezvous.fr/suivi-colis"
+      },
+      "expect": {
+        "carrier": "c-chez-vous",
+        "confidence": "high"
+      },
+      "note": "Official documentation example, not a real shipment. Agency and shipment numbers as printed on the label."
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "id": "australia-post",
+  "displayName": "Australia Post",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://auspost.com.au/mypost/track/search?id={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "auspost.com.au"
+      ],
+      "params": [
+        "id"
+      ]
+    }
+  ],
+  "detection": []
+}

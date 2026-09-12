@@ -1,0 +1,20 @@
+{
+  "carrier": "shipup",
+  "records": [
+    {
+      "number": "SHIPUP123456",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "colis-prive"
+        ]
+      },
+      "note": "Invented placeholder used as a shape check. Filed under ShipUp, which no rule claims."
+    }
+  ]
+}

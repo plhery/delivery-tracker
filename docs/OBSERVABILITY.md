@@ -58,6 +58,77 @@ When progress disappears, the refresh is marked as an error and the last known
 stage, status text, estimated delivery and carrier data are retained. The empty
 provider response remains visible in the audit and Sentry anomaly.
 
+## Status observations
+
+`public.tracking_status_observations` collects the carrier wording whose stage
+did not come from a carrier status map, so it can be mapped later instead of
+guessed forever. There is one row per distinct carrier, provider code and
+normalized description: a repeated sighting increments `count` and moves
+`last_seen`, keeping the original `first_seen`. A row holds the carrier, the
+provider code when the carrier sends one, the lowercased and whitespace-collapsed
+description (500 characters at most), the chosen stage, the stage source, an
+optional language note and an optional `sample_event_id` pointing at one
+tracking event to inspect. It holds no tracking number, package or account
+reference, and it is service-role only like the rest of the ledger.
+
+Every persisted event records where its stage came from in
+`tracking_events.raw_data.stage_source`:
+
+- `carrier_map`: the adapter supplied an explicit, valid stage for that event;
+- `wording:<rule>`: the wording classifier matched, where `<rule>` is the rule
+  that decided it (`language` for the multilingual rules, then `delivered`,
+  `out_for_delivery`, `ready_for_pickup`, `customs`, `accepted`, `registered`,
+  `in_transit` and the other keyword rules);
+- `none`: nothing matched and the fallback stage was used.
+
+Each refresh records at most 32 observations, deduplicated by observation key,
+after its events are persisted. A failed observation write is logged as
+`tracking_status_observation_write_failed` and reported to Sentry once per
+worker process; it never fails the refresh.
+
+Start a review with the carriers that produce the most unmapped sightings:
+
+```sql
+select carrier,
+       count(*) as wordings,
+       sum(count) as sightings,
+       max(last_seen) as last_seen
+from public.tracking_status_observations
+where reviewed_at is null
+group by carrier
+order by sightings desc, wordings desc;
+```
+
+Then read one carrier's wording, most frequent first:
+
+```sql
+select provider_code, description_normalized, chosen_stage, stage_source,
+       count, first_seen, last_seen, sample_event_id
+from public.tracking_status_observations
+where reviewed_at is null and carrier = 'CARRIER_ID'
+order by count desc, last_seen desc;
+```
+
+The review workflow, for an operator or an agent:
+
+1. read the wording, its provider code and its sample event;
+2. map the code or wording in that carrier's status map, or add a classifier
+   wording rule when the wording is generic across carriers;
+3. add a fixture covering it and run that carrier's tests;
+4. mark the row:
+
+```sql
+update public.tracking_status_observations
+set reviewed_at = now(), resolution = 'mapped'
+where observation_key = 'OBSERVATION_KEY';
+```
+
+`resolution` is `mapped` for a carrier status map entry, `wording_rule` for a
+classifier rule, and `ignored` for wording that deliberately stays unmapped. A
+wording that appears again after a review inserts no new row: its count keeps
+growing, so re-checking reviewed rows shows whether a mapping actually took
+effect.
+
 ## Carrier check frequency
 
 GLS Germany, Switzerland and France are checked at most once an
@@ -146,8 +217,9 @@ Important JSON events are:
 
 - `tracking_sync_started`, `tracking_sync_step`, and
   `tracking_sync_completed`, correlated by `attempt_id`;
-- `tracking_sync_audit_write_failed` and
-  `tracking_sync_audit_maintenance_failed`;
+- `tracking_sync_audit_write_failed`,
+  `tracking_sync_audit_maintenance_failed` and
+  `tracking_status_observation_write_failed`;
 - `sync_claim_failed`, `sync_job_failed`, and `sync_job_finish_failed`,
   correlated by `job_id`; and
 - `http_request`, correlated with Sentry by `request_id` for server errors.

@@ -1,0 +1,127 @@
+{
+  "carrier": "dhl-ecommerce",
+  "records": [
+    {
+      "number": "33870000000000001",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl-ecommerce"
+        ]
+      },
+      "note": "Invented placeholder used as a shape check. Filed under DHL eCommerce, which stays one candidate among several."
+    },
+    {
+      "number": "3387191106122423",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.dhl.com/api-reference/references-dhl-ecommerce-americas"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl-ecommerce",
+          "correos-express",
+          "canada-post"
+        ]
+      },
+      "note": "Official documentation example, not a real shipment. The source attributes it to DHL eCommerce, which stays one candidate among several."
+    },
+    {
+      "number": "GM1234567890123456",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "dhl-ecommerce",
+        "confidence": "high"
+      },
+      "note": "Made-up number that follows the published format."
+    },
+    {
+      "number": "GM60511234500000001",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.dhl.com/api-reference/references-dhl-ecommerce-americas"
+      },
+      "expect": {
+        "carrier": "dhl-ecommerce",
+        "confidence": "high"
+      },
+      "note": "Official documentation example, not a real shipment."
+    },
+    {
+      "number": "0031043534391627906195625053434",
+      "role": "full_barcode",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.dhl.com/api-reference/references-dhl-ecommerce-americas"
+      },
+      "quarantine": true,
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Official documentation example, not a real shipment. Full label barcode rather than the number a user types. The source attributes it to DHL eCommerce; no rule matches this shape."
+    },
+    {
+      "number": "0031043534391640211895625057522",
+      "role": "full_barcode",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.dhl.com/api-reference/references-dhl-ecommerce-americas"
+      },
+      "quarantine": true,
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Official documentation example, not a real shipment. Full label barcode rather than the number a user types. The source attributes it to DHL eCommerce; no rule matches this shape."
+    },
+    {
+      "number": "9261269903500013618305",
+      "role": "quarantined",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.dhl.com/api-reference/references-dhl-ecommerce-americas"
+      },
+      "quarantine": true,
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "austrian-post",
+          "usps"
+        ]
+      },
+      "note": "Official documentation example, not a real shipment. The source attributes it to DHL eCommerce, which no rule claims."
+    },
+    {
+      "number": "9361269903500011492028",
+      "role": "quarantined",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.dhl.com/api-reference/references-dhl-ecommerce-americas"
+      },
+      "quarantine": true,
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "austrian-post",
+          "usps"
+        ]
+      },
+      "note": "Official documentation example, not a real shipment. The source attributes it to DHL eCommerce, which no rule claims."
+    }
+  ]
+}

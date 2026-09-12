@@ -1,0 +1,57 @@
+{
+  "carrier": "packeta",
+  "records": [
+    {
+      "number": "Z1234567890",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://docs.packeta.com/docs/packet-tracking/tracking"
+      },
+      "expect": {
+        "carrier": "packeta",
+        "confidence": "high"
+      },
+      "note": "Official documentation example, not a real shipment."
+    },
+    {
+      "number": "Z8328162946",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://help.orrs.de/6622/z%C3%A1silkovna-tracking-not-working"
+      },
+      "expect": {
+        "carrier": "packeta",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
+      "number": "Z8328162951",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://help.orrs.de/6622/z%C3%A1silkovna-tracking-not-working"
+      },
+      "expect": {
+        "carrier": "packeta",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
+      "number": "Z8360329994",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://help.orrs.de/6622/z%C3%A1silkovna-tracking-not-working"
+      },
+      "expect": {
+        "carrier": "packeta",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "carrier": "sunyou",
+  "records": [
+    {
+      "number": "SY12345678901",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "sunyou",
+        "confidence": "high"
+      },
+      "note": "Made-up number that follows the published format."
+    },
+    {
+      "number": "SYAE006809461",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://github.com/ha-parcel-integrations/ha-sunyou/blob/main/tests/payloads.py",
+        "date": "2021-07-20"
+      },
+      "expect": {
+        "carrier": "sunyou",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
+      "number": "SYAE100000001",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/ha-parcel-integrations/ha-sunyou/blob/main/tests/payloads.py"
+      },
+      "expect": {
+        "carrier": "sunyou",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment."
+    }
+  ]
+}

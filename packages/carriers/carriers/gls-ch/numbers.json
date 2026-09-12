@@ -1,0 +1,31 @@
+{
+  "carrier": "gls-ch",
+  "records": [
+    {
+      "number": "993990103198",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-10",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "fedex",
+          "gls-ch",
+          "mondial-relay",
+          "gls-fr",
+          "colis-prive",
+          "gls-de",
+          "mrw",
+          "sf-express",
+          "sto",
+          "zto",
+          "yamato",
+          "j-and-t"
+        ]
+      },
+      "note": "Made-up number that follows the published format. Filed under GLS Switzerland, which stays one candidate among several."
+    }
+  ]
+}

@@ -18,3 +18,4 @@ ios/DerivedData/
 *.xcuserstate
 xcuserdata/
 supabase/.temp/
+packages/carriers/carriers/*/private.numbers.json

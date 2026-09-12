@@ -1,0 +1,87 @@
+{
+  "carrier": "paack",
+  "records": [
+    {
+      "number": "00100909086360120251130131718",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/mucho-retraso-en-entrega/3e6c4a88d9208bdbc4",
+        "date": "2025-12-23"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Paack; no rule matches this shape."
+    },
+    {
+      "number": "437650784",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/falso-intento-de-entrega/373a062914965f9e1b",
+        "date": "2025-01-23"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "tnt"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Paack, which no rule claims."
+    },
+    {
+      "number": "534000021250958171",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/incumplimient-reiterado-y-bloq/23dcce3eced56549b3",
+        "date": "2025-12-08"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Paack, which no rule claims."
+    },
+    {
+      "number": "9451162004086887",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/no-me-llega-el-pedido/4032cceef0a358e05d",
+        "date": "2025-12-11"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl-ecommerce",
+          "correos-express",
+          "canada-post"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Paack, which no rule claims."
+    },
+    {
+      "number": "C25062001456003",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/entrega-no-recibida/4d61e00924bdfeea75",
+        "date": "2025-07-10"
+      },
+      "expect": {
+        "carrier": "ontrac",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Paack; detection selects OnTrac."
+    }
+  ]
+}

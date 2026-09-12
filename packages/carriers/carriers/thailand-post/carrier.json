@@ -1,0 +1,36 @@
+{
+  "id": "thailand-post",
+  "displayName": "Thailand Post",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://international.thailandpost.com/track-status?lang=en",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": [
+    {
+      "id": "thailand-post-1",
+      "pattern": "^[A-Z]{2}\\d{9}TH$",
+      "confidence": "high",
+      "checksum": "s10"
+    }
+  ]
+}

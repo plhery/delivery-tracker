@@ -1,0 +1,35 @@
+{
+  "id": "evri",
+  "displayName": "Evri",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.evri.com/track-a-parcel",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": [
+    {
+      "id": "evri-1",
+      "pattern": "^H[A-Z0-9]{15}$",
+      "confidence": "high"
+    }
+  ]
+}

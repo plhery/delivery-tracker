@@ -1,0 +1,224 @@
+{
+  "carrier": "spring-gds",
+  "records": [
+    {
+      "number": "3SA5210528875",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.postnl.nl/integration-with-postnl/api-overview/send-and-track/barcode-webservice/"
+      },
+      "expect": {
+        "carrier": "spring-gds",
+        "confidence": "high"
+      },
+      "note": "Official documentation example, not a real shipment."
+    },
+    {
+      "number": "3SAB83691658823",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.postnl.nl/integration-with-postnl/api-overview/send-and-track/barcode-webservice/"
+      },
+      "expect": {
+        "carrier": "spring-gds",
+        "confidence": "high"
+      },
+      "note": "Official documentation example, not a real shipment."
+    },
+    {
+      "number": "3SABC19149187",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.postnl.nl/integration-with-postnl/api-overview/send-and-track/barcode-webservice/"
+      },
+      "expect": {
+        "carrier": "spring-gds",
+        "confidence": "high"
+      },
+      "note": "Official documentation example, not a real shipment."
+    },
+    {
+      "number": "3SABCD1175003",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.postnl.nl/integration-with-postnl/api-overview/send-and-track/barcode-webservice/"
+      },
+      "expect": {
+        "carrier": "spring-gds",
+        "confidence": "high"
+      },
+      "note": "Official documentation example, not a real shipment."
+    },
+    {
+      "number": "3SABCD3427702",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.postnl.nl/integration-with-postnl/api-overview/send-and-track/barcode-webservice/"
+      },
+      "expect": {
+        "carrier": "spring-gds",
+        "confidence": "high"
+      },
+      "note": "Official documentation example, not a real shipment."
+    },
+    {
+      "number": "3SABCD987446630",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.postnl.nl/integration-with-postnl/api-overview/send-and-track/barcode-webservice/"
+      },
+      "expect": {
+        "carrier": "spring-gds",
+        "confidence": "high"
+      },
+      "note": "Official documentation example, not a real shipment."
+    },
+    {
+      "number": "CC123442066NL",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.postnl.nl/integration-with-postnl/api-overview/send-and-track/barcode-webservice/"
+      },
+      "expect": {
+        "carrier": "spring-gds",
+        "confidence": "high"
+      },
+      "note": "Official documentation example, not a real shipment."
+    },
+    {
+      "number": "CD111208171NL",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.postnl.nl/integration-with-postnl/api-overview/send-and-track/barcode-webservice/"
+      },
+      "expect": {
+        "carrier": "spring-gds",
+        "confidence": "high"
+      },
+      "note": "Official documentation example, not a real shipment."
+    },
+    {
+      "number": "CK089862199NL",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.paketda.de/fragen-antworten.php",
+        "date": "2026-04-15"
+      },
+      "expect": {
+        "carrier": "spring-gds",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
+      "number": "CP112251335NL",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.postnl.nl/integration-with-postnl/api-overview/send-and-track/barcode-webservice/"
+      },
+      "expect": {
+        "carrier": "spring-gds",
+        "confidence": "high"
+      },
+      "note": "Official documentation example, not a real shipment."
+    },
+    {
+      "number": "LA599196732NL",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.postnl.nl/integration-with-postnl/api-overview/send-and-track/barcode-webservice/"
+      },
+      "expect": {
+        "carrier": "spring-gds",
+        "confidence": "high"
+      },
+      "note": "Official documentation example, not a real shipment."
+    },
+    {
+      "number": "LA681049820NL",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.paketda.de/fragen-antworten.php",
+        "date": "2026-04-15"
+      },
+      "expect": {
+        "carrier": "spring-gds",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
+      "number": "LX123456785NL",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "spring-gds",
+        "confidence": "high"
+      },
+      "note": "Made-up number that follows the published format."
+    },
+    {
+      "number": "LX123456789NL",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "chronopost"
+        ]
+      },
+      "note": "Invented placeholder used as a shape check. Filed under PostNL, which no rule claims."
+    },
+    {
+      "number": "RI543495045NL",
+      "role": "quarantined",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.postnl.nl/integration-with-postnl/api-overview/send-and-track/barcode-webservice/"
+      },
+      "quarantine": true,
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "chronopost"
+        ]
+      },
+      "note": "Official documentation example, not a real shipment. The S10 check digit does not validate. The source attributes it to PostNL, which no rule claims."
+    },
+    {
+      "number": "UE597256100NL",
+      "role": "quarantined",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer.postnl.nl/integration-with-postnl/api-overview/send-and-track/barcode-webservice/"
+      },
+      "quarantine": true,
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "chronopost"
+        ]
+      },
+      "note": "Official documentation example, not a real shipment. The S10 check digit does not validate. The source attributes it to PostNL, which no rule claims."
+    }
+  ]
+}

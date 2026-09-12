@@ -161,11 +161,13 @@ export function parsePosteItalianeTrackingResponse(payload: unknown, trackingNum
       // luogo fields are dropped: nothing distinguishes a depot from a
       // recipient address without evidence. Sender, dimensions, flags and
       // pickup-office blocks on the envelope are never retained either.
+      // Unmapped wording keeps no stage: the sync classifies it and records
+      // where the stage came from instead of assuming movement here.
       event: {
         time: time.iso,
         location: '',
         description: wording,
-        stage: classified ? classified.stage : 'in_transit',
+        ...(classified ? { stage: classified.stage } : {}),
       },
       classified: classified ?? undefined,
       timestamp: time.timestamp,

@@ -1,0 +1,69 @@
+{
+  "carrier": "bpost",
+  "records": [
+    {
+      "number": "323211216300000593107030",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.test-achats.be/plainte/plaintes-publiques/facteur-qui-a-renvoyer-un-coli/d5dc57a15ab2b157c6",
+        "date": "2025-03-17"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "inpost",
+          "bpost"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to bpost, which stays one candidate among several."
+    },
+    {
+      "number": "323245067847491492",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.test-achats.be/plainte/plaintes-publiques/absence-de-possibilit-C3-A9-de-gara/b9311a48ffb765e0aa",
+        "date": "2024-10-02"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to bpost, which stays one candidate among several."
+    },
+    {
+      "number": "CE500137339BE",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.test-achats.be/plainte/plaintes-publiques/site-de-plainte-et-suivi-colis/CPTBE01224677-52",
+        "date": "2021-03-15"
+      },
+      "expect": {
+        "carrier": "bpost",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
+      "number": "UI539489067BE",
+      "role": "negative",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.test-achats.be/plainte/plaintes-publiques/colis-perdu-%28voire-vol-C3-A9-en-int/925248238424196550",
+        "date": "2026-03-23"
+      },
+      "expect": {
+        "carrier": "bpost",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    }
+  ]
+}

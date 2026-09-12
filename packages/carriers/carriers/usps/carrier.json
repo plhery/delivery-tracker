@@ -1,0 +1,50 @@
+{
+  "id": "usps",
+  "displayName": "USPS",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://tools.usps.com/go/TrackConfirmAction?tLabels={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "tools.usps.com",
+        "usps.com"
+      ],
+      "params": [
+        "tLabels"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "usps-1",
+      "pattern": "^\\d{20}$",
+      "confidence": "low"
+    },
+    {
+      "id": "usps-2",
+      "pattern": "^\\d{22}$",
+      "confidence": "low"
+    }
+  ]
+}

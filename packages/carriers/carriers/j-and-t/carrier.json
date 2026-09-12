@@ -1,0 +1,44 @@
+{
+  "id": "j-and-t",
+  "displayName": "J&T Express",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.jtexpress.ph/track-and-trace?flag=1&waybillNo={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "jtexpress.ph"
+      ],
+      "params": [
+        "waybillNo"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "j-and-t-1",
+      "pattern": "^\\d{12}$",
+      "confidence": "low"
+    }
+  ]
+}

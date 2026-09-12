@@ -1,0 +1,170 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Carrier number corpus",
+  "description": "One carriers/<id>/numbers.json: evidence-tagged sample numbers and the answer the detection engine gives today.",
+  "type": "object",
+  "required": ["carrier", "records"],
+  "additionalProperties": false,
+  "properties": {
+    "carrier": {
+      "$ref": "#/definitions/carrierId",
+      "description": "Must equal the folder name."
+    },
+    "gap": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Why this carrier still has no sample number."
+    },
+    "records": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/record" }
+    }
+  },
+  "definitions": {
+    "carrierId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "record": {
+      "type": "object",
+      "required": ["number", "role", "evidence", "expect"],
+      "additionalProperties": false,
+      "properties": {
+        "number": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Exactly as a user would type it; punctuation is kept where it carries meaning."
+        },
+        "role": {
+          "enum": [
+            "shipment",
+            "full_barcode",
+            "order_reference",
+            "composite",
+            "negative",
+            "quarantined"
+          ]
+        },
+        "evidence": {
+          "enum": [
+            "public_shipment_report",
+            "official_documentation_example",
+            "open_source_example",
+            "merchant_published_example",
+            "synthetic"
+          ]
+        },
+        "source": {
+          "type": "object",
+          "required": ["url"],
+          "additionalProperties": false,
+          "properties": {
+            "url": { "type": "string", "pattern": "^https?://" },
+            "date": { "$ref": "#/definitions/date" }
+          }
+        },
+        "derivedFrom": {
+          "enum": ["donated_real", "observed_request", "official_shape", "invented"],
+          "description": "How a synthetic number was made."
+        },
+        "shapeConfirmed": {
+          "$ref": "#/definitions/date",
+          "description": "When the format this number imitates was last checked."
+        },
+        "quarantine": {
+          "const": true,
+          "description": "Never use this record as a positive oracle; its expectation only records what the engine does today."
+        },
+        "expect": { "$ref": "#/definitions/expectation" },
+        "note": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "evidence": { "const": "synthetic" } },
+            "required": ["evidence"]
+          },
+          "then": {
+            "required": ["derivedFrom"],
+            "not": { "required": ["source"] }
+          },
+          "else": {
+            "required": ["source"],
+            "not": { "required": ["derivedFrom"] }
+          }
+        },
+        {
+          "if": {
+            "properties": { "role": { "const": "quarantined" } },
+            "required": ["role"]
+          },
+          "then": { "required": ["quarantine"] }
+        },
+        {
+          "if": {
+            "properties": { "expect": { "type": "object", "required": ["not"] } },
+            "required": ["expect"]
+          },
+          "then": { "properties": { "role": { "const": "negative" } } }
+        }
+      ]
+    },
+    "expectation": {
+      "description": "What detectCarrierMatch() returns for this number today, not what it ought to return.",
+      "type": "object",
+      "required": ["carrier", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "carrier": { "$ref": "#/definitions/carrierId" },
+        "confidence": { "enum": ["high", "low", "none"] },
+        "candidates": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/carrierId" }
+        },
+        "not": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/carrierId" },
+          "description": "Carriers this number must never be attributed to."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "confidence": { "const": "high" } },
+            "required": ["confidence"]
+          },
+          "then": {
+            "properties": { "carrier": { "not": { "const": "unknown" } } },
+            "not": { "required": ["candidates"] }
+          }
+        },
+        {
+          "if": {
+            "properties": { "confidence": { "const": "low" } },
+            "required": ["confidence"]
+          },
+          "then": {
+            "required": ["candidates"],
+            "properties": { "carrier": { "const": "unknown" } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "confidence": { "const": "none" } },
+            "required": ["confidence"]
+          },
+          "then": {
+            "properties": { "carrier": { "const": "unknown" } },
+            "not": { "required": ["candidates"] }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "carrier": "colis-prive",
+  "records": [
+    {
+      "number": "HS0000329755",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://fr-be.trustpilot.com/review/boutikplus.fr",
+        "date": "2026-01-19"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "colis-prive"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Colis Privé, which stays one candidate among several."
+    },
+    {
+      "number": "R99600071550",
+      "role": "shipment",
+      "evidence": "merchant_published_example",
+      "source": {
+        "url": "https://marketplace.fnacdarty.com/s/article/Dois-je-obligatoirement-renseigner-un-num%C3%A9ro-de-suivi-tracking-pour-ma-commande?language=fr_BE"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "colis-prive"
+        ]
+      },
+      "note": "Published integration example, not a real shipment. The source attributes it to Colis Privé, which stays one candidate among several."
+    },
+    {
+      "number": "ZE0000294369",
+      "role": "shipment",
+      "evidence": "merchant_published_example",
+      "source": {
+        "url": "https://marketplace.fnacdarty.com/s/article/Dois-je-obligatoirement-renseigner-un-num%C3%A9ro-de-suivi-tracking-pour-ma-commande?language=fr_BE"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "colis-prive"
+        ]
+      },
+      "note": "Published integration example, not a real shipment. The source attributes it to Colis Privé, which stays one candidate among several."
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "id": "ups",
+  "displayName": "UPS",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#351c15"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "ups",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.ups.com/track?tracknum={trackingNumber}",
+    "canaryUrl": "https://www.ups.com/assets/resources/webcontent/en_US/terms_service.pdf",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "ups.com"
+      ],
+      "params": [
+        "tracknum",
+        "trackNums"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "ups-1",
+      "pattern": "^1Z[A-Z0-9]{16}$",
+      "confidence": "high"
+    },
+    {
+      "id": "ups-2",
+      "pattern": "^[KJV]\\d{10}$",
+      "confidence": "low"
+    }
+  ]
+}

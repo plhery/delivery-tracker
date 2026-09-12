@@ -1,0 +1,45 @@
+{
+  "id": "canada-post",
+  "displayName": "Canada Post",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.canadapost-postescanada.ca/track-reperage/en#/search?searchFor={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "canadapost-postescanada.ca",
+        "canadapost.ca"
+      ],
+      "params": [
+        "searchFor"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "canada-post-1",
+      "pattern": "^\\d{16}$",
+      "confidence": "low"
+    }
+  ]
+}

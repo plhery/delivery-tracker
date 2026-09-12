@@ -1,0 +1,66 @@
+{
+  "id": "gls-ch",
+  "displayName": "GLS Switzerland",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#ffdd00"
+  },
+  "selectable": true,
+  "timezone": "Europe/Zurich",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "gls-switzerland",
+    "requirements": [
+      {
+        "field": "dpdPostcode",
+        "validator": "swissPostcode",
+        "label": "Delivery postcode",
+        "type": "text",
+        "placeholder": "8000",
+        "help": "GLS uses the recipient postcode to unlock the detailed event history.",
+        "pattern": "^[0-9]{4}$",
+        "maxLength": 4,
+        "inputMode": "numeric",
+        "autoComplete": "postal-code"
+      }
+    ],
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://gls-group.eu/EU/en/parcel-tracking?match={trackingNumber}",
+    "canaryUrl": "https://gls-group.eu/EU/en/parcel-tracking",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "gls-group.eu"
+      ],
+      "params": [
+        "match",
+        "parcelNumber",
+        "matchParcelNumber"
+      ],
+      "pathPattern": "^/(?:EU|CH)/"
+    }
+  ],
+  "detection": [
+    {
+      "id": "gls-ch-1",
+      "pattern": "^(?=[A-Z0-9]{8}$)(?=.*[A-Z])(?=.*\\d)[A-Z0-9]{8}$",
+      "confidence": "low"
+    },
+    {
+      "id": "gls-ch-2",
+      "pattern": "^\\d{11,14}$",
+      "confidence": "low"
+    }
+  ]
+}

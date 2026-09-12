@@ -1,0 +1,69 @@
+{
+  "id": "dhl",
+  "displayName": "DHL",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#ffcc00"
+  },
+  "selectable": true,
+  "timezone": "Europe/Berlin",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "dhl",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.dhl.de/en/privatkunden/dhl-sendungsverfolgung.html?piececode={trackingNumber}",
+    "canaryUrl": "https://www.dhl.de/en/privatkunden/dhl-sendungsverfolgung.html",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "dhl.com",
+        "dhl.de",
+        "deutschepost.de"
+      ],
+      "params": [
+        "tracking-id",
+        "trackingId",
+        "piececode"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "dhl-1",
+      "pattern": "^[CL][A-Z]\\d{9}DE$",
+      "confidence": "high",
+      "checksum": "s10"
+    },
+    {
+      "id": "dhl-2",
+      "pattern": "^(JJD|JVGL)[A-Z0-9]{8,}$",
+      "confidence": "high"
+    },
+    {
+      "id": "dhl-3",
+      "pattern": "^\\d{10}$",
+      "confidence": "low"
+    },
+    {
+      "id": "dhl-4",
+      "pattern": "^JD\\d{18}$",
+      "confidence": "high"
+    },
+    {
+      "id": "dhl-5",
+      "pattern": "^00340434\\d{12}$",
+      "confidence": "high"
+    }
+  ]
+}

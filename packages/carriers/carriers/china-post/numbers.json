@@ -1,0 +1,31 @@
+{
+  "carrier": "china-post",
+  "records": [
+    {
+      "number": "LZ448865302CN",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/trackingmore100/tracking-sdk-php/blob/master/README.md"
+      },
+      "expect": {
+        "carrier": "china-post",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "RP325552475CN",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/trackingmore100/tracking-sdk-php/blob/master/README.md"
+      },
+      "expect": {
+        "carrier": "china-post",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment."
+    }
+  ]
+}

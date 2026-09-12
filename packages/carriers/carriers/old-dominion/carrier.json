@@ -1,0 +1,49 @@
+{
+  "id": "old-dominion",
+  "displayName": "Old Dominion",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.odfl.com/us/en/tools/trace-track-ltl-freight/trace.html?proNumbers={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "odfl.com"
+      ],
+      "params": [
+        "proNumbers"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "old-dominion-1",
+      "pattern": "^(?:072|777|778|780)\\d{8}$",
+      "confidence": "high"
+    },
+    {
+      "id": "old-dominion-2",
+      "pattern": "^80\\d{9}$",
+      "confidence": "high"
+    }
+  ]
+}

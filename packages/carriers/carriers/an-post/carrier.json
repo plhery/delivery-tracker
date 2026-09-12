@@ -1,0 +1,36 @@
+{
+  "id": "an-post",
+  "displayName": "An Post",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://track.anpost.ie/",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": [
+    {
+      "id": "an-post-1",
+      "pattern": "^[A-Z]{2}\\d{9}IE$",
+      "confidence": "high",
+      "checksum": "s10"
+    }
+  ]
+}

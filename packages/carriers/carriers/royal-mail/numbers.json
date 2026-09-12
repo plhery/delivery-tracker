@@ -1,0 +1,31 @@
+{
+  "carrier": "royal-mail",
+  "records": [
+    {
+      "number": "SG577041359GB",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://www.royalmail.com/royal-mail-you/intellectual-property-rights/linking-our-website"
+      },
+      "expect": {
+        "carrier": "royal-mail",
+        "confidence": "high"
+      },
+      "note": "Official documentation example, not a real shipment."
+    },
+    {
+      "number": "ZW924750388GB",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://www.royalmail.com/royal-mail-you/intellectual-property-rights/linking-our-website"
+      },
+      "expect": {
+        "carrier": "royal-mail",
+        "confidence": "high"
+      },
+      "note": "Official documentation example, not a real shipment."
+    }
+  ]
+}

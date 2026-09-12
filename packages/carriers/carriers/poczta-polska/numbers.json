@@ -1,0 +1,102 @@
+{
+  "carrier": "poczta-polska",
+  "records": [
+    {
+      "number": "0015900773312345678",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://www.poczta-polska.pl/en/sledzenie-przesylek/"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "poczta-polska"
+        ]
+      },
+      "note": "Official documentation example, not a real shipment. The source attributes it to Poczta Polska, which stays one candidate among several."
+    },
+    {
+      "number": "PX0000000013",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://www.poczta-polska.pl/en/sledzenie-przesylek/"
+      },
+      "expect": {
+        "carrier": "poczta-polska",
+        "confidence": "high"
+      },
+      "note": "Official documentation example, not a real shipment."
+    },
+    {
+      "number": "CP123456789PL",
+      "role": "quarantined",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://www.poczta-polska.pl/en/sledzenie-przesylek/"
+      },
+      "quarantine": true,
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "chronopost"
+        ]
+      },
+      "note": "Official documentation example, not a real shipment. The S10 check digit does not validate. The source attributes it to Poczta Polska, which no rule claims."
+    },
+    {
+      "number": "EE123456789PL",
+      "role": "quarantined",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://www.poczta-polska.pl/en/sledzenie-przesylek/"
+      },
+      "quarantine": true,
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "chronopost"
+        ]
+      },
+      "note": "Official documentation example, not a real shipment. The S10 check digit does not validate. The source attributes it to Poczta Polska, which no rule claims."
+    },
+    {
+      "number": "RR123456789PL",
+      "role": "quarantined",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://www.poczta-polska.pl/en/sledzenie-przesylek/"
+      },
+      "quarantine": true,
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "chronopost"
+        ]
+      },
+      "note": "Official documentation example, not a real shipment. The S10 check digit does not validate. The source attributes it to Poczta Polska, which no rule claims."
+    },
+    {
+      "number": "VV123456789PL",
+      "role": "quarantined",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://www.poczta-polska.pl/en/sledzenie-przesylek/"
+      },
+      "quarantine": true,
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "chronopost"
+        ]
+      },
+      "note": "Official documentation example, not a real shipment. The S10 check digit does not validate. The source attributes it to Poczta Polska, which no rule claims."
+    }
+  ]
+}

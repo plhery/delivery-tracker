@@ -1,0 +1,60 @@
+{
+  "id": "dpd",
+  "displayName": "DPD",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#dc0032"
+  },
+  "selectable": true,
+  "timezone": "Europe/Zurich",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "dpd",
+    "requirements": [
+      {
+        "field": "dpdPostcode",
+        "validator": "swissPostcode",
+        "label": "Delivery postcode",
+        "type": "text",
+        "placeholder": "8004",
+        "help": "DPD uses this to unlock verified scans and delivery windows.",
+        "pattern": "^[0-9]{4}$",
+        "maxLength": 4,
+        "inputMode": "numeric",
+        "autoComplete": "postal-code"
+      }
+    ],
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.dpdgroup.com/ch/mydpd/my-parcels/incoming?parcelNumber={trackingNumber}",
+    "canaryUrl": "https://www.dpdgroup.com/ch/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "dpdgroup.com",
+        "dpd.com"
+      ],
+      "params": [
+        "parcelNumber",
+        "parcelnumber"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "dpd-1",
+      "pattern": "^\\d{14}$",
+      "confidence": "low"
+    }
+  ]
+}

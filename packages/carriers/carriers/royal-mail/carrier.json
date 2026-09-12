@@ -1,0 +1,45 @@
+{
+  "id": "royal-mail",
+  "displayName": "Royal Mail",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.royalmail.com/portal/rm/track?trackNumber={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "royalmail.com"
+      ],
+      "params": [
+        "trackNumber"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "royal-mail-1",
+      "pattern": "^(?!(?:EA|EB|EC|ED|EE|CP))[A-Z]{2}\\d{9}GB$",
+      "confidence": "high",
+      "checksum": "s10"
+    }
+  ]
+}

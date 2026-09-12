@@ -112,6 +112,11 @@ For a local database test, run `scripts/test-migrations.sh` with
 `TEST_DATABASE_URL` pointing at a disposable database; it includes generation,
 transaction rollback, ownership, and privilege assertions.
 
+Before deploying the worker that records unmapped carrier wording, apply
+`20260913100000_tracking_status_observations.sql`. It adds the service-only
+review table and its upsert function. Older workers never call it, and no
+tracking history is rewritten.
+
 Before deploying Spanish, Portuguese and Polish support, apply
 `20260912090000_add_es_pt_pl_locales.sql`. It expands the locale constraints
 for browser push, APNs and both Live Activity tables without changing existing

@@ -1,0 +1,51 @@
+{
+  "id": "packeta",
+  "displayName": "Packeta",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "packeta",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://tracking.packeta.com/en/{trackingNumber}",
+    "canaryUrl": "https://tracking.packeta.com/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "tracking.packeta.com",
+        "packeta.com"
+      ],
+      "params": [
+        "id"
+      ]
+    },
+    {
+      "domains": [
+        "tracking.packeta.com"
+      ],
+      "path": "^/[a-z]{2}/([^/?#]+)/?$"
+    }
+  ],
+  "detection": [
+    {
+      "id": "packeta-1",
+      "pattern": "^Z\\d{10}$",
+      "confidence": "high"
+    }
+  ]
+}

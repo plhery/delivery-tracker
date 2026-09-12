@@ -1,0 +1,18 @@
+{
+  "carrier": "yunexpress",
+  "records": [
+    {
+      "number": "YT2621200705470145",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.reddit.com/r/AirReps/comments/1vfhh53/please_help_yunexpress_alibaba_tracking_stuck_on/"
+      },
+      "expect": {
+        "carrier": "yunexpress",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    }
+  ]
+}

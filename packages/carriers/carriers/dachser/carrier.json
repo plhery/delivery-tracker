@@ -1,0 +1,48 @@
+{
+  "id": "dachser",
+  "displayName": "Dachser",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#005ca9"
+  },
+  "selectable": true,
+  "timezone": "Europe/Madrid",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "dachser",
+    "requirements": [
+      {
+        "field": "trackingUrl",
+        "validator": "dachserCapabilityUrl",
+        "label": "Dachser tracking URL",
+        "type": "url",
+        "placeholder": "https://customeriberia.dachser.com/customerarea/…",
+        "help": "Paste the complete public detail link, including its access parameters."
+      }
+    ],
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "canaryUrl": "https://customeriberia.dachser.com/customerarea/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "customeriberia.dachser.com"
+      ],
+      "params": [
+        "numeroUnico"
+      ],
+      "keepsCapabilityUrl": true
+    }
+  ],
+  "detection": []
+}

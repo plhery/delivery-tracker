@@ -1,0 +1,30 @@
+{
+  "id": "postlogistics",
+  "displayName": "PostLogistics",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#ffcc00"
+  },
+  "selectable": true,
+  "timezone": "Europe/Zurich",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "upstream",
+    "upstreamName": "PostLogistics",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.swisspost.ch/swisspost-tracking?formattedParcelCodes={trackingNumber}",
+    "canaryUrl": "https://service.post.ch/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": []
+}

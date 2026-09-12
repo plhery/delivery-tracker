@@ -1,0 +1,44 @@
+{
+  "id": "canpar",
+  "displayName": "Canpar",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.canpar.com/en/track/tracking.jsp?reference={trackingNumber}&locale=en",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "canpar.com"
+      ],
+      "params": [
+        "reference"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "canpar-1",
+      "pattern": "^[CDKLSUXZ]\\d{21}$",
+      "confidence": "high"
+    }
+  ]
+}

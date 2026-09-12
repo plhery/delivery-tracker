@@ -1,0 +1,45 @@
+{
+  "id": "correios-br",
+  "displayName": "Correios Brazil",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://rastreamento.correios.com.br/app/index.php?objetos={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "correios.com.br"
+      ],
+      "params": [
+        "objetos"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "correios-br-1",
+      "pattern": "^[A-Z]{2}\\d{9}BR$",
+      "confidence": "high",
+      "checksum": "s10"
+    }
+  ]
+}

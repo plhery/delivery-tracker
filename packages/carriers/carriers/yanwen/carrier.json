@@ -1,0 +1,35 @@
+{
+  "id": "yanwen",
+  "displayName": "Yanwen",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://track.yanwenlogistics.com/tracking.php",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": [
+    {
+      "id": "yanwen-1",
+      "pattern": "^BYS\\d{9}$",
+      "confidence": "high"
+    }
+  ]
+}

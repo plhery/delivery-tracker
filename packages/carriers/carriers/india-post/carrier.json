@@ -1,0 +1,46 @@
+{
+  "id": "india-post",
+  "displayName": "India Post",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#b82025"
+  },
+  "selectable": true,
+  "timezone": "Asia/Kolkata",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "india-post",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://myspeedpost.com/track?n={trackingNumber}&sync=true",
+    "canaryUrl": "https://myspeedpost.com/track",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "myspeedpost.com"
+      ],
+      "params": [
+        "n"
+      ],
+      "path": "^/s/([^/?#]+)/?$"
+    }
+  ],
+  "detection": [
+    {
+      "id": "india-post-1",
+      "pattern": "^[A-Z]{2}\\d{9}IN$",
+      "confidence": "high",
+      "checksum": "s10"
+    }
+  ]
+}

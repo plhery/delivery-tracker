@@ -1,0 +1,45 @@
+{
+  "id": "landmark-global",
+  "displayName": "Landmark Global",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://track.landmarkglobal.com/?search={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "track.landmarkglobal.com",
+        "landmarkglobal.com"
+      ],
+      "params": [
+        "search"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "landmark-global-1",
+      "pattern": "^LTN\\d{8}N1$",
+      "confidence": "high"
+    }
+  ]
+}

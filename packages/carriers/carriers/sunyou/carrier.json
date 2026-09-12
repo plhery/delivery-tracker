@@ -1,0 +1,50 @@
+{
+  "id": "sunyou",
+  "displayName": "SunYou",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#f39800"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "upstream",
+    "upstreamName": "SunYou",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://sypost.net/search?trackNumber={trackingNumber}",
+    "canaryUrl": "https://sypost.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "sypost.net"
+      ],
+      "params": [
+        "trackNumber"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "sunyou-1",
+      "pattern": "^SY\\d{11}$",
+      "confidence": "high"
+    },
+    {
+      "id": "sunyou-2",
+      "pattern": "^SYAE\\d{9}$",
+      "confidence": "high"
+    }
+  ]
+}

@@ -1,0 +1,220 @@
+{
+  "carrier": "usps",
+  "records": [
+    {
+      "number": "03071790000523483741",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "usps"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
+    },
+    {
+      "number": "71123456789123456787",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "usps"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
+    },
+    {
+      "number": "71969010756003077385",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "usps"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
+    },
+    {
+      "number": "9101123456789000000013",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "austrian-post",
+          "usps"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
+    },
+    {
+      "number": "9261290336128704042634",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "austrian-post",
+          "usps"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
+    },
+    {
+      "number": "9400111201080805483016",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "austrian-post",
+          "usps"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
+    },
+    {
+      "number": "9400111206206406260787",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "austrian-post",
+          "usps"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
+    },
+    {
+      "number": "9405803699300124287899",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "austrian-post",
+          "usps"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
+    },
+    {
+      "number": "9434611206206406227577",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "austrian-post",
+          "usps"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
+    },
+    {
+      "number": "4201002334249200190132607600833457",
+      "role": "full_barcode",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Open-source project example, not a real shipment. Full label barcode rather than the number a user types. The source attributes it to USPS; no rule matches this shape."
+    },
+    {
+      "number": "4201028200009261290113185417468510",
+      "role": "full_barcode",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Open-source project example, not a real shipment. Full label barcode rather than the number a user types. The source attributes it to USPS; no rule matches this shape."
+    },
+    {
+      "number": "420221539101026837331000039521",
+      "role": "full_barcode",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Open-source project example, not a real shipment. Full label barcode rather than the number a user types. The source attributes it to USPS; no rule matches this shape."
+    },
+    {
+      "number": "420787459400111206206406260787",
+      "role": "full_barcode",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Open-source project example, not a real shipment. Full label barcode rather than the number a user types. The source attributes it to USPS; no rule matches this shape."
+    },
+    {
+      "number": "420902459261290336128704042634",
+      "role": "full_barcode",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Open-source project example, not a real shipment. Full label barcode rather than the number a user types. The source attributes it to USPS; no rule matches this shape."
+    }
+  ]
+}

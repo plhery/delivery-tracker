@@ -1,0 +1,4 @@
+{
+  "note": "Detection rules in carriers/<id>/carrier.json that no record in the number corpus matches. The sweep prints the list and fails when the count grows past this number: add a sample to the carrier's numbers.json instead of raising it, and say why in the pull request when you cannot.",
+  "maxUncoveredRules": 0
+}

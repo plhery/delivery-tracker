@@ -1,0 +1,141 @@
+{
+  "carrier": "purolator",
+  "records": [
+    {
+      "number": "287809468872",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/purolator.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "fedex",
+          "gls-ch",
+          "mondial-relay",
+          "gls-fr",
+          "colis-prive",
+          "gls-de",
+          "mrw",
+          "purolator",
+          "sf-express",
+          "sto",
+          "zto",
+          "yamato",
+          "j-and-t"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to Purolator, which stays one candidate among several."
+    },
+    {
+      "number": "320595463938",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/purolator.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "fedex",
+          "gls-ch",
+          "mondial-relay",
+          "gls-fr",
+          "colis-prive",
+          "gls-de",
+          "mrw",
+          "purolator",
+          "sf-express",
+          "sto",
+          "zto",
+          "yamato",
+          "j-and-t"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to Purolator, which stays one candidate among several."
+    },
+    {
+      "number": "331426749957",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/purolator.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "fedex",
+          "gls-ch",
+          "mondial-relay",
+          "gls-fr",
+          "colis-prive",
+          "gls-de",
+          "mrw",
+          "purolator",
+          "sf-express",
+          "sto",
+          "zto",
+          "yamato",
+          "j-and-t"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to Purolator, which stays one candidate among several."
+    },
+    {
+      "number": "CGK002986959",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/purolator.json"
+      },
+      "expect": {
+        "carrier": "purolator",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "JFV247545960",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/purolator.json"
+      },
+      "expect": {
+        "carrier": "purolator",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "KYV009956937",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/purolator.json"
+      },
+      "expect": {
+        "carrier": "purolator",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "TLR000083964",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/purolator.json"
+      },
+      "expect": {
+        "carrier": "purolator",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment."
+    }
+  ]
+}

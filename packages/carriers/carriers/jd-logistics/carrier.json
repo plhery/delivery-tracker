@@ -1,0 +1,35 @@
+{
+  "id": "jd-logistics",
+  "displayName": "JD Logistics",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.jingdonglogistics.com/Tracking",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": [
+    {
+      "id": "jd-logistics-1",
+      "pattern": "^VG\\d{11}$",
+      "confidence": "high"
+    }
+  ]
+}

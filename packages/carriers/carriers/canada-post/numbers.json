@@ -1,0 +1,77 @@
+{
+  "carrier": "canada-post",
+  "records": [
+    {
+      "number": "0073938000549297",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/canadapost.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl-ecommerce",
+          "correos-express",
+          "canada-post"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to Canada Post, which stays one candidate among several."
+    },
+    {
+      "number": "4002847016405018",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/canadapost.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl-ecommerce",
+          "correos-express",
+          "canada-post"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to Canada Post, which stays one candidate among several."
+    },
+    {
+      "number": "7023210039414604",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/karrioapi/karrio/blob/deea10f8568b2d48c71bbcc11ec11c62cdaf2a6a/modules/connectors/canadapost/tests/canadapost/test_tracking.py"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl-ecommerce",
+          "correos-express",
+          "canada-post"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to Canada Post, which stays one candidate among several."
+    },
+    {
+      "number": "7035114477138472",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/canadapost.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl-ecommerce",
+          "correos-express",
+          "canada-post"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to Canada Post, which stays one candidate among several."
+    }
+  ]
+}

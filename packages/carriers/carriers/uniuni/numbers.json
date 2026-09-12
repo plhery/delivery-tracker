@@ -1,0 +1,32 @@
+{
+  "carrier": "uniuni",
+  "records": [
+    {
+      "number": "4C003925742US",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.bbb.org/scamtracker/lookupscam/1107364",
+        "date": "2025-11-03"
+      },
+      "expect": {
+        "carrier": "uniuni",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
+      "number": "UUS5B60564241706199",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.bbb.org/scamtracker/lookupscam/1111994"
+      },
+      "expect": {
+        "carrier": "uniuni",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "carrier": "spee-dee",
+  "records": [
+    {
+      "number": "SP029692450001607639",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/speedee.json"
+      },
+      "expect": {
+        "carrier": "spee-dee",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "SP029692510000901479",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/speedee.json"
+      },
+      "expect": {
+        "carrier": "spee-dee",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "SP029692510000920746",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/speedee.json"
+      },
+      "expect": {
+        "carrier": "spee-dee",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment."
+    }
+  ]
+}

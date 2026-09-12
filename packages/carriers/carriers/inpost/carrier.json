@@ -1,0 +1,50 @@
+{
+  "id": "inpost",
+  "displayName": "InPost",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "inpost",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://inpost.pl/sledzenie-przesylek",
+    "canaryUrl": "https://inposteasy.com/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": [
+    {
+      "id": "inpost-1",
+      "pattern": "^\\d{24}$",
+      "confidence": "low"
+    },
+    {
+      "id": "inpost-2",
+      "pattern": "^JJD\\d{16}$",
+      "confidence": "low"
+    },
+    {
+      "id": "inpost-3",
+      "pattern": "^JD\\d{16}$",
+      "confidence": "low"
+    },
+    {
+      "id": "inpost-4",
+      "pattern": "^8YDR\\d{9}$",
+      "confidence": "high"
+    }
+  ]
+}

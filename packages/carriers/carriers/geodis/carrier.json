@@ -1,0 +1,46 @@
+{
+  "id": "geodis",
+  "displayName": "GEODIS",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#00549f"
+  },
+  "selectable": true,
+  "timezone": "Europe/Paris",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "geodis",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://espace-client.geodis.com/services/destinataires/#/fr/suivi/{trackingNumber}",
+    "canaryUrl": "https://espace-client.geodis.com/services/destinataires/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "espace-client.geodis.com",
+        "geodis.com"
+      ],
+      "params": [
+        "noSuivi",
+        "trackingNumber"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "geodis-1",
+      "pattern": "^1G[A-Z0-9]{10}$",
+      "confidence": "high"
+    }
+  ]
+}

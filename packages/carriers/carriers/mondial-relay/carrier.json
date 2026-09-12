@@ -1,0 +1,68 @@
+{
+  "id": "mondial-relay",
+  "displayName": "Mondial Relay",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#ef3026"
+  },
+  "selectable": true,
+  "timezone": "Europe/Paris",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "mondial-relay",
+    "requirements": [
+      {
+        "field": "dpdPostcode",
+        "whenTrackingNumber": "^(?![0-9]{26}$).*$",
+        "validator": "francePostcode",
+        "label": "Delivery postcode",
+        "type": "text",
+        "placeholder": "75001",
+        "help": "Short Mondial Relay shipment numbers require the recipient postcode; validated 26-digit label barcodes do not.",
+        "pattern": "^[0-9]{5}$",
+        "maxLength": 5,
+        "inputMode": "numeric",
+        "autoComplete": "postal-code"
+      }
+    ],
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.mondialrelay.fr/suivi-de-colis/?numeroExpedition={trackingNumber}",
+    "canaryUrl": "https://www.mondialrelay.fr/suivi-de-colis/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "mondialrelay.fr"
+      ],
+      "params": [
+        "shipment",
+        "numeroExpedition",
+        "numero",
+        "trackingNumber"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "mondial-relay-1",
+      "pattern": "^[0-9]{26}$",
+      "confidence": "high",
+      "checksum": "mondial-relay"
+    },
+    {
+      "id": "mondial-relay-2",
+      "pattern": "^(?:\\d{8}|\\d{10}|\\d{12})$",
+      "confidence": "low"
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "carrier": "inpost",
+  "records": [
+    {
+      "number": "0980982.1",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/issues/91"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "mondial-relay",
+          "heppner"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to InPost, which no rule claims."
+    },
+    {
+      "number": "640000000000000000000001",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "inpost",
+          "bpost"
+        ]
+      },
+      "note": "Invented number following the 24-digit InPost format. Filed under InPost, which stays one candidate among several."
+    },
+    {
+      "number": "642600027844200234823732",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/alufers/inpost-cli"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "inpost",
+          "bpost"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to InPost, which stays one candidate among several."
+    },
+    {
+      "number": "8YDR098765432",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/issues/91"
+      },
+      "expect": {
+        "carrier": "inpost",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "JD0002123456789012",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/issues/91"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "inpost"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to InPost, which stays one candidate among several."
+    },
+    {
+      "number": "JJD0002123456789012",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/issues/91"
+      },
+      "expect": {
+        "carrier": "dhl",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to InPost; detection selects DHL."
+    },
+    {
+      "number": "JJD0002233564270287",
+      "role": "shipment",
+      "evidence": "merchant_published_example",
+      "source": {
+        "url": "https://wobaaa.com/aliexpress-uk-tracking-numbers/"
+      },
+      "expect": {
+        "carrier": "dhl",
+        "confidence": "high"
+      },
+      "note": "Published integration example, not a real shipment. The source attributes it to InPost; detection selects DHL."
+    }
+  ]
+}

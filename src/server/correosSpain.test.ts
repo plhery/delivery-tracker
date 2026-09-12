@@ -6,6 +6,7 @@ import {
   CorreosSpainTracker,
   CorreosSpainTrackingError,
 } from './correosSpain';
+import { buildEvents } from './trackingSync';
 
 // All identifiers and timestamps below are synthetic. Event codes and Spanish
 // wordings reuse the vendor's fixed texts confirmed against a real parcel by
@@ -93,7 +94,13 @@ describe('Correos Spain response parsing', () => {
       eventos: [event('Z999999Z', '29/04/2026', '13:12:42', 'Algo nuevo')],
     })], TRACKING_NUMBER);
     expect(unknown).toMatchObject({ status: 'unknown', last_status_text: 'Algo nuevo' });
-    expect(unknown.events?.[0]).toMatchObject({ stage: 'in_transit' });
+    expect(unknown.events?.[0]).toMatchObject({ description: 'Algo nuevo' });
+    expect(unknown.events?.[0]?.stage).toBeUndefined();
+    // The sync classifies the unmapped wording and records where the stage came from.
+    expect(buildEvents({ id: 'parcel', carrier: 'correos-es' }, unknown)[0]).toMatchObject({
+      stage: 'in_transit',
+      raw_data: expect.objectContaining({ stage_source: 'none' }),
+    });
   });
 
   it('binds the envelope codEnvio and honors the codError result', () => {

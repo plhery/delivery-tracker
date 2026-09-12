@@ -1,0 +1,35 @@
+{
+  "carrier": "japan-post",
+  "records": [
+    {
+      "number": "CI076369983JP",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://gist.github.com/zxp/e83a4a1b7294a5ed6207",
+        "date": "2015-08-29"
+      },
+      "expect": {
+        "carrier": "japan-post",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "UL123456789JP",
+      "role": "negative",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://www.post.japanpost.jp/service/send/oversea/information/ems_search_en.html"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "chronopost"
+        ]
+      },
+      "note": "Official documentation example, not a real shipment. The S10 check digit does not validate. The source attributes it to Japan Post, which no rule claims."
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "carrier": "ninja-van",
+  "records": [
+    {
+      "number": "DX149431",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://api-docs.ninjavan.co/"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "gls-fr",
+          "gls-de"
+        ]
+      },
+      "note": "Official documentation example, not a real shipment. The source attributes it to Ninja Van, which no rule claims."
+    },
+    {
+      "number": "NVSGBEDBP03784ADPL",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://api-docs.ninjavan.co/"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Official documentation example, not a real shipment. The source attributes it to Ninja Van; no rule matches this shape."
+    }
+  ]
+}

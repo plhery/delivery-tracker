@@ -1,0 +1,264 @@
+{
+  "carrier": "unknown",
+  "records": [
+    {
+      "number": "00123456",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "mondial-relay",
+          "heppner"
+        ]
+      },
+      "note": "Eight-digit string that must not resolve to a carrier."
+    },
+    {
+      "number": "01234567890123",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "dpd",
+          "dpd-fr",
+          "ciblex",
+          "hermes-de",
+          "gls-de",
+          "seur",
+          "brt",
+          "delhivery"
+        ]
+      },
+      "note": "Shared numeric shape that must stay a suggestion rather than a carrier."
+    },
+    {
+      "number": "10594002378611",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "dpd",
+          "dpd-fr",
+          "ciblex",
+          "hermes-de",
+          "gls-de",
+          "seur",
+          "brt",
+          "delhivery"
+        ]
+      },
+      "note": "Shared numeric shape that must stay a suggestion rather than a carrier."
+    },
+    {
+      "number": "123",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Too short to be a tracking number."
+    },
+    {
+      "number": "1234567890",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl",
+          "mondial-relay",
+          "relais-colis",
+          "tipsa",
+          "estafeta"
+        ]
+      },
+      "note": "Shared numeric shape that must stay a suggestion rather than a carrier."
+    },
+    {
+      "number": "123456789012",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "fedex",
+          "gls-ch",
+          "dpd-fr",
+          "mondial-relay",
+          "gls-fr",
+          "colis-prive",
+          "gls-de",
+          "mrw",
+          "purolator",
+          "sf-express",
+          "sto",
+          "zto",
+          "yamato",
+          "j-and-t"
+        ]
+      },
+      "note": "Shared numeric shape that must stay a suggestion rather than a carrier."
+    },
+    {
+      "number": "123456789012345",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "fedex",
+          "dpd-fr"
+        ]
+      },
+      "note": "Shared numeric shape that must stay a suggestion rather than a carrier."
+    },
+    {
+      "number": "36631000001",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "gls-fr",
+          "gls-de",
+          "blue-dart",
+          "aramex"
+        ]
+      },
+      "note": "Shared numeric shape that must stay a suggestion rather than a carrier."
+    },
+    {
+      "number": "76434219",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "mondial-relay",
+          "heppner"
+        ]
+      },
+      "note": "Shared numeric shape that must stay a suggestion rather than a carrier."
+    },
+    {
+      "number": "99112233445500000",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl-ecommerce"
+        ]
+      },
+      "note": "Shared numeric shape that must stay a suggestion rather than a carrier."
+    },
+    {
+      "number": "99112233445575012",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl-ecommerce",
+          "colis-prive"
+        ]
+      },
+      "note": "Shared numeric shape that must stay a suggestion rather than a carrier."
+    },
+    {
+      "number": "AB12CD34",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "gls-fr",
+          "gls-de"
+        ]
+      },
+      "note": "Shared numeric shape that must stay a suggestion rather than a carrier."
+    },
+    {
+      "number": "DELIVERY",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Plain word that must never look like a tracking number."
+    },
+    {
+      "number": "RA123456789CH",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "chronopost"
+        ]
+      },
+      "note": "S10 shape with a broken check digit, so the Swiss Post rule rejects it."
+    },
+    {
+      "number": "hello",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Plain word that must never look like a tracking number."
+    }
+  ]
+}

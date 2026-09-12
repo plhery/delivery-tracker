@@ -1,0 +1,41 @@
+{
+  "carrier": "amazon-shipping",
+  "records": [
+    {
+      "number": "FR0000000001",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "amazon-logistics",
+        "confidence": "high"
+      },
+      "note": "Invented placeholder used by the Amazon Shipping tests. Filed under Amazon Shipping; detection selects Amazon Logistics."
+    },
+    {
+      "number": "TBA000000000001",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "amazon-logistics",
+        "confidence": "high"
+      },
+      "note": "Made-up number that follows the published format. Filed under Amazon Shipping; detection selects Amazon Logistics."
+    },
+    {
+      "number": "UK3000000001",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "amazon-logistics",
+        "confidence": "high"
+      },
+      "note": "Invented placeholder used by the Amazon Shipping tests. Filed under Amazon Shipping; detection selects Amazon Logistics."
+    }
+  ]
+}

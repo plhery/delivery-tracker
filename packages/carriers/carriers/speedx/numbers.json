@@ -1,0 +1,57 @@
+{
+  "carrier": "speedx",
+  "records": [
+    {
+      "number": "SPXMIA056745759994",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://es.trustpilot.com/review/speedx.io"
+      },
+      "expect": {
+        "carrier": "speedx",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
+      "number": "SPXMIA056746165383",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://es.trustpilot.com/review/speedx.io"
+      },
+      "expect": {
+        "carrier": "speedx",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
+      "number": "SPXMIA056746185528",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://es.trustpilot.com/review/speedx.io"
+      },
+      "expect": {
+        "carrier": "speedx",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
+      "number": "SPXMIA056759629631",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://es.trustpilot.com/review/speedx.io"
+      },
+      "expect": {
+        "carrier": "speedx",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    }
+  ]
+}

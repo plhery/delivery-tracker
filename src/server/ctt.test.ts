@@ -6,6 +6,7 @@ import {
   CttTracker,
   CttMaintenanceError,
 } from './ctt';
+import { buildEvents } from './trackingSync';
 
 // All identifiers and timestamps below are synthetic. Portuguese status labels
 // reuse the vendor's fixed texts observed live on a real delivered parcel, so
@@ -146,7 +147,13 @@ describe('CTT response parsing', () => {
       Events: { List: [{ DateTime: '2026-01-04T14:46:00+00:00', State: 'X', StateId: 99, Event: 'New wording', EventCode: 'EXX', Local: '' }] },
     }) } }, TRACKING_NUMBER);
     expect(unknown).toMatchObject({ status: 'unknown', last_status_text: 'New wording' });
-    expect(unknown.events?.[0]).toMatchObject({ stage: 'in_transit', provider_code: '99' });
+    expect(unknown.events?.[0]).toMatchObject({ description: 'New wording', provider_code: '99' });
+    expect(unknown.events?.[0]?.stage).toBeUndefined();
+    // The sync classifies the unmapped wording and records where the stage came from.
+    expect(buildEvents({ id: 'parcel', carrier: 'ctt' }, unknown)[0]).toMatchObject({
+      stage: 'in_transit',
+      raw_data: expect.objectContaining({ stage_source: 'none' }),
+    });
   });
 
   it('binds the ObjectCode echo and rejects malformed envelopes', () => {

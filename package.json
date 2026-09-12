@@ -21,6 +21,7 @@
     "browserslist": "4.28.8"
   },
   "scripts": {
+    "carrier:new": "node packages/carriers/scripts/new-carrier.mjs",
     "contract:generate": "node scripts/generate-api-contract.mjs",
     "dev": "next dev --webpack",
     "build": "next build --webpack && node scripts/prepare-standalone.mjs",

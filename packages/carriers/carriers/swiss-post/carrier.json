@@ -1,0 +1,49 @@
+{
+  "id": "swiss-post",
+  "displayName": "Swiss Post",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#ffcc00"
+  },
+  "selectable": true,
+  "timezone": "Europe/Zurich",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "upstream",
+    "upstreamName": "Swiss Post",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://service.post.ch/ekp-web/ui/entry/search/{trackingNumber}",
+    "canaryUrl": "https://service.post.ch/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "service.post.ch"
+      ],
+      "path": "/entry/search/([^/?#]+)"
+    }
+  ],
+  "detection": [
+    {
+      "id": "swiss-post-1",
+      "pattern": "^[A-Z]{2}\\d{9}CH$",
+      "confidence": "high",
+      "checksum": "s10"
+    },
+    {
+      "id": "swiss-post-2",
+      "pattern": "^9[89]\\d{16}$",
+      "confidence": "high"
+    }
+  ]
+}

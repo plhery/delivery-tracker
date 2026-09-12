@@ -1,0 +1,150 @@
+{
+  "carrier": "fedex",
+  "records": [
+    {
+      "number": "041441760228964",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/fedex.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "fedex",
+          "dpd-fr"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to FedEx, which stays one candidate among several."
+    },
+    {
+      "number": "477179081230",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/fedex.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "fedex",
+          "gls-ch",
+          "mondial-relay",
+          "gls-fr",
+          "colis-prive",
+          "gls-de",
+          "mrw",
+          "purolator",
+          "sf-express",
+          "sto",
+          "zto",
+          "yamato",
+          "j-and-t"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to FedEx, which stays one candidate among several."
+    },
+    {
+      "number": "986578788855",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/fedex.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "fedex",
+          "gls-ch",
+          "mondial-relay",
+          "gls-fr",
+          "colis-prive",
+          "gls-de",
+          "mrw",
+          "sf-express",
+          "sto",
+          "zto",
+          "yamato",
+          "j-and-t"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to FedEx, which stays one candidate among several."
+    },
+    {
+      "number": "000123450000000027",
+      "role": "full_barcode",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/fedex.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. Full label barcode rather than the number a user types. The source attributes it to FedEx, which no rule claims."
+    },
+    {
+      "number": "1001921334250001000300779017972697",
+      "role": "full_barcode",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/fedex.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Open-source project example, not a real shipment. Full label barcode rather than the number a user types. The source attributes it to FedEx; no rule matches this shape."
+    },
+    {
+      "number": "32971514560102447849175802862014",
+      "role": "full_barcode",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/fedex.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Open-source project example, not a real shipment. Full label barcode rather than the number a user types. The source attributes it to FedEx; no rule matches this shape."
+    },
+    {
+      "number": "9611020987654312345672",
+      "role": "full_barcode",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/fedex.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "austrian-post",
+          "usps"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. Full label barcode rather than the number a user types. The source attributes it to FedEx, which no rule claims."
+    },
+    {
+      "number": "9622001900000000000000776632517510",
+      "role": "full_barcode",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/fedex.json"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Open-source project example, not a real shipment. Full label barcode rather than the number a user types. The source attributes it to FedEx; no rule matches this shape."
+    }
+  ]
+}

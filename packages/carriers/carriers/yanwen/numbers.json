@@ -1,0 +1,31 @@
+{
+  "carrier": "yanwen",
+  "records": [
+    {
+      "number": "BYS006086077",
+      "role": "shipment",
+      "evidence": "merchant_published_example",
+      "source": {
+        "url": "https://www.tracktry.com/api-nodejs.html"
+      },
+      "expect": {
+        "carrier": "yanwen",
+        "confidence": "high"
+      },
+      "note": "Published integration example, not a real shipment."
+    },
+    {
+      "number": "BYS006086088",
+      "role": "shipment",
+      "evidence": "merchant_published_example",
+      "source": {
+        "url": "https://www.tracktry.com/api-nodejs.html"
+      },
+      "expect": {
+        "carrier": "yanwen",
+        "confidence": "high"
+      },
+      "note": "Published integration example, not a real shipment."
+    }
+  ]
+}

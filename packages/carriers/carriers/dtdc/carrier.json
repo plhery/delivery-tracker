@@ -1,0 +1,44 @@
+{
+  "id": "dtdc",
+  "displayName": "DTDC",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.dtdc.com/track-your-shipment?trackingId={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "dtdc.com"
+      ],
+      "params": [
+        "trackingId"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "dtdc-1",
+      "pattern": "^N\\d{8}$",
+      "confidence": "high"
+    }
+  ]
+}

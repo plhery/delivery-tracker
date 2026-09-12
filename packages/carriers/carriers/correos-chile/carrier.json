@@ -1,0 +1,35 @@
+{
+  "id": "correos-chile",
+  "displayName": "Correos de Chile",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.correos.cl/seguimiento-en-linea",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": [
+    {
+      "id": "correos-chile-1",
+      "pattern": "^\\d{13}$",
+      "confidence": "low"
+    }
+  ]
+}

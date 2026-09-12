@@ -1,0 +1,31 @@
+{
+  "carrier": "gofo",
+  "records": [
+    {
+      "number": "GFUS01011884214272",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/gofo.json"
+      },
+      "expect": {
+        "carrier": "gofo",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "GFUS01011884214464",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/jkeen/tracking_number_data/blob/main/couriers/gofo.json"
+      },
+      "expect": {
+        "carrier": "gofo",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment."
+    }
+  ]
+}

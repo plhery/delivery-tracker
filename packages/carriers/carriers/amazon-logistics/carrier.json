@@ -1,0 +1,46 @@
+{
+  "id": "amazon-logistics",
+  "displayName": "Amazon Logistics",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#ff9900"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "link-only",
+    "adapter": null,
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.amazon.com/gp/your-account/order-history",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "track.amazon.fr",
+        "track.amazon.it",
+        "track.amazon.es",
+        "track.amazon.co.uk",
+        "track.amazon.com"
+      ],
+      "path": "^/tracking/([^/?#]+)/?$",
+      "detectFromNumber": true
+    }
+  ],
+  "detection": [
+    {
+      "id": "amazon-logistics-1",
+      "pattern": "^(?:(?:FR|DE|BE|UK|GB|IT|ES|NL|AT|IE|PL|SE|PT|LU|DK|FI|CZ|SK|HU|RO|BG|HR|SI|EE|LV|LT|GR|CY|MT|CH|NO|IS|LI|TR)[0-9]{10}|TBA[0-9]{12})$",
+      "confidence": "high"
+    }
+  ]
+}

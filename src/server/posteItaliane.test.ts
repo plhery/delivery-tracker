@@ -6,6 +6,7 @@ import {
   PosteItalianeTracker,
   PosteItalianeTrackingError,
 } from './posteItaliane';
+import { buildEvents } from './trackingSync';
 
 // All identifiers and timestamps below are synthetic. Italian status wordings
 // reuse the vendor's fixed texts confirmed against a real parcel by the
@@ -108,7 +109,13 @@ describe('Poste Italiane response parsing', () => {
       listaMovimenti: [movement('qualcosa di completamente nuovo', 1767484800000)],
     }), TRACKING_NUMBER);
     expect(unknown).toMatchObject({ status: 'unknown', last_status_text: 'qualcosa di completamente nuovo' });
-    expect(unknown.events?.[0]).toMatchObject({ stage: 'in_transit' });
+    expect(unknown.events?.[0]).toMatchObject({ description: 'qualcosa di completamente nuovo' });
+    expect(unknown.events?.[0]?.stage).toBeUndefined();
+    // The sync classifies the unmapped wording and records where the stage came from.
+    expect(buildEvents({ id: 'parcel', carrier: 'poste-italiane' }, unknown)[0]).toMatchObject({
+      stage: 'in_transit',
+      raw_data: expect.objectContaining({ stage_source: 'none' }),
+    });
   });
 
   it('binds the idTracciatura echo and honors the esito envelope', () => {

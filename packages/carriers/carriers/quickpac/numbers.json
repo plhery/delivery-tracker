@@ -1,0 +1,17 @@
+{
+  "carrier": "quickpac",
+  "records": [
+    {
+      "number": "440012345612345678",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-10",
+      "expect": {
+        "carrier": "quickpac",
+        "confidence": "high"
+      },
+      "note": "Made-up number that follows the published format."
+    }
+  ]
+}

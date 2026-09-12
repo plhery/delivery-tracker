@@ -1,0 +1,63 @@
+{
+  "carrier": "dpd-fr",
+  "records": [
+    {
+      "number": "10764000276716",
+      "role": "shipment",
+      "evidence": "merchant_published_example",
+      "source": {
+        "url": "https://marketplace.fnacdarty.com/s/article/Dois-je-obligatoirement-renseigner-un-num%C3%A9ro-de-suivi-tracking-pour-ma-commande?language=fr_BE"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "dpd",
+          "dpd-fr",
+          "ciblex",
+          "hermes-de",
+          "gls-de",
+          "seur",
+          "brt",
+          "delhivery"
+        ]
+      },
+      "note": "Published integration example, not a real shipment. The source attributes it to DPD France, which stays one candidate among several."
+    },
+    {
+      "number": "1595193512495",
+      "role": "shipment",
+      "evidence": "merchant_published_example",
+      "source": {
+        "url": "https://marketplace.fnacdarty.com/s/article/Dois-je-obligatoirement-renseigner-un-num%C3%A9ro-de-suivi-tracking-pour-ma-commande?language=fr_BE"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "dpd-fr",
+          "la-poste",
+          "gls-de",
+          "correos-chile",
+          "delhivery",
+          "yunda"
+        ]
+      },
+      "note": "Published integration example, not a real shipment. The source attributes it to DPD France, which stays one candidate among several."
+    },
+    {
+      "number": "250123456789012",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "dpd-fr",
+        "confidence": "high"
+      },
+      "note": "Made-up number that follows the published format."
+    }
+  ]
+}

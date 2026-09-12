@@ -1,0 +1,50 @@
+{
+  "id": "fedex",
+  "displayName": "FedEx",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#4d148c"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.fedex.com/fedextrack/?trknbr={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "fedex.com"
+      ],
+      "params": [
+        "trknbr",
+        "tracknumbers"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "fedex-1",
+      "pattern": "^\\d{12}$",
+      "confidence": "low"
+    },
+    {
+      "id": "fedex-2",
+      "pattern": "^\\d{15}$",
+      "confidence": "low"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "carrier": "seur",
+  "records": [
+    {
+      "number": "01475194188635",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/empresas/seur/500000075"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "dpd",
+          "dpd-fr",
+          "ciblex",
+          "hermes-de",
+          "gls-de",
+          "seur",
+          "brt",
+          "delhivery"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to SEUR, which stays one candidate among several."
+    },
+    {
+      "number": "046999610972820260807",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/empresas/seur/500000075"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "seur"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to SEUR, which stays one candidate among several."
+    },
+    {
+      "number": "1796295",
+      "role": "order_reference",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/empresas/seur/500000075"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Short reference from the source; standalone tracking is unconfirmed. The source attributes it to SEUR; no rule matches this shape."
+    }
+  ]
+}

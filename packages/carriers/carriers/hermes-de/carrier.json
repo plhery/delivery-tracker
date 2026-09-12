@@ -1,0 +1,52 @@
+{
+  "id": "hermes-de",
+  "displayName": "Hermes Germany",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#0091cd"
+  },
+  "selectable": true,
+  "timezone": "Europe/Berlin",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "hermes-germany",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.myhermes.de/empfangen/sendungsverfolgung/sendungsinformation#{trackingNumber}",
+    "canaryUrl": "https://www.myhermes.de/empfangen/sendungsverfolgung/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "myhermes.de"
+      ],
+      "params": [
+        "TrackID",
+        "trackingNumber",
+        "sendungsId"
+      ],
+      "fragment": "^([A-Z0-9]{8,20})(?:$|[?&])"
+    }
+  ],
+  "detection": [
+    {
+      "id": "hermes-de-1",
+      "pattern": "^H\\d{15,19}$",
+      "confidence": "high"
+    },
+    {
+      "id": "hermes-de-2",
+      "pattern": "^\\d{14}$",
+      "confidence": "low"
+    }
+  ]
+}

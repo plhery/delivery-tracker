@@ -1,0 +1,49 @@
+{
+  "id": "uniuni",
+  "displayName": "UniUni",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.uniuni.com/tracking?no={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "uniuni.com"
+      ],
+      "params": [
+        "no"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "uniuni-1",
+      "pattern": "^UUS[A-Z0-9]{16}$",
+      "confidence": "high"
+    },
+    {
+      "id": "uniuni-2",
+      "pattern": "^4C\\d{9}US$",
+      "confidence": "high"
+    }
+  ]
+}

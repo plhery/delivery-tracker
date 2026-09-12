@@ -1,0 +1,29 @@
+{
+  "id": "delivengo",
+  "displayName": "Delivengo",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#ffcf00"
+  },
+  "selectable": true,
+  "timezone": "Europe/Paris",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "la-poste",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.laposte.fr/outils/suivre-vos-envois?code={trackingNumber}",
+    "canaryUrl": "https://www.laposte.fr/outils/suivre-vos-envois",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": []
+}

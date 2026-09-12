@@ -1,0 +1,46 @@
+{
+  "carrier": "dpd",
+  "records": [
+    {
+      "number": "06086216767970",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.paketda.de/fragen-antworten.php"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "dpd",
+          "dpd-fr",
+          "ciblex",
+          "hermes-de",
+          "gls-de",
+          "seur",
+          "brt",
+          "delhivery"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to DPD, which stays one candidate among several."
+    },
+    {
+      "number": "01196812014637L",
+      "role": "quarantined",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.paketda.de/fragen-antworten.php"
+      },
+      "quarantine": true,
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "chronopost"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to DPD, which no rule claims."
+    }
+  ]
+}

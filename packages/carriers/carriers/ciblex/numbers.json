@@ -1,0 +1,64 @@
+{
+  "carrier": "ciblex",
+  "records": [
+    {
+      "number": "12345678901234",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "dpd",
+          "dpd-fr",
+          "ciblex",
+          "hermes-de",
+          "gls-de",
+          "seur",
+          "brt",
+          "delhivery"
+        ]
+      },
+      "note": "Invented placeholder used as a shape check. Filed under Ciblex, which stays one candidate among several."
+    },
+    {
+      "number": "560815852502035603344150",
+      "role": "full_barcode",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://fr.trustpilot.com/review/www.ciblex.fr",
+        "date": "2026-07-17"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "inpost",
+          "bpost"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Full label barcode rather than the number a user types. The source attributes it to Ciblex, which no rule claims."
+    },
+    {
+      "number": "560815852502035613344150",
+      "role": "full_barcode",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://fr.trustpilot.com/review/www.ciblex.fr",
+        "date": "2026-07-17"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "inpost",
+          "bpost"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Full label barcode rather than the number a user types. The source attributes it to Ciblex, which no rule claims."
+    }
+  ]
+}

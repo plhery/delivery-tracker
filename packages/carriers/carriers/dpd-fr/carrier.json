@@ -1,0 +1,47 @@
+{
+  "id": "dpd-fr",
+  "displayName": "DPD France",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#dc0032"
+  },
+  "selectable": true,
+  "timezone": "Europe/Paris",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "dpd-france",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://trace.dpd.fr/fr/trace/{trackingNumber}",
+    "canaryUrl": "https://trace.dpd.fr/fr/trace",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "trace.dpd.fr"
+      ],
+      "path": "^/(?:fr/trace|trace-particuliers)/([^/?#]+)/?$"
+    }
+  ],
+  "detection": [
+    {
+      "id": "dpd-fr-1",
+      "pattern": "^250\\d{12}$",
+      "confidence": "high"
+    },
+    {
+      "id": "dpd-fr-2",
+      "pattern": "^(?:[01]\\d{11,14}|250\\d{9,11})$",
+      "confidence": "low"
+    }
+  ]
+}

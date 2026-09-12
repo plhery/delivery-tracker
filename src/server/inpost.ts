@@ -125,11 +125,13 @@ export function parseInpostTrackingResponse(payload: unknown, trackingNumber: st
     if (seen.has(identity)) return;
     seen.add(identity);
     parsed.push({
+      // An unmapped code keeps no stage: the sync classifies the wording and
+      // records where the stage came from instead of assuming movement here.
       event: {
         time: time.iso,
         location: '',
         description,
-        stage: eventClassified ? eventClassified.stage : 'in_transit',
+        ...(eventClassified ? { stage: eventClassified.stage } : {}),
       },
       timestamp: time.timestamp,
       index,

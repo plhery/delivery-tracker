@@ -1,0 +1,49 @@
+{
+  "id": "poczta-polska",
+  "displayName": "Poczta Polska",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://emonitoring.poczta-polska.pl/?lang=en&numer={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "emonitoring.poczta-polska.pl"
+      ],
+      "params": [
+        "numer"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "poczta-polska-1",
+      "pattern": "^\\d{19}$",
+      "confidence": "low"
+    },
+    {
+      "id": "poczta-polska-2",
+      "pattern": "^PX\\d{10}$",
+      "confidence": "high"
+    }
+  ]
+}

@@ -1,0 +1,533 @@
+[
+  {
+    "shape": "AA9{10}",
+    "carriers": [
+      "amazon-logistics",
+      "colis-prive"
+    ],
+    "reason": "Amazon marketplace numbers are 12 characters, which Colis Privé also accepts; the Amazon rule is the only high-confidence one."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "an-post",
+      "chronopost"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps An Post IE numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "9{22}",
+    "carriers": [
+      "austrian-post",
+      "usps"
+    ],
+    "reason": "22-digit numbers are shared by Austrian Post and USPS; the number stays a low-confidence suggestion."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "bpost",
+      "chronopost"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps bpost BE numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "9{18}",
+    "carriers": [
+      "bpost",
+      "ecoscooting"
+    ],
+    "reason": "18-digit numbers are shared by bpost and Ecoscooting; the number stays a low-confidence suggestion."
+  },
+  {
+    "shape": "9{24}",
+    "carriers": [
+      "bpost",
+      "inpost"
+    ],
+    "reason": "24-digit numbers are shared by bpost and InPost; the number stays a low-confidence suggestion."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "bring-posten",
+      "chronopost"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps Bring NO numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "china-post",
+      "chronopost"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps China Post CN numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
+      "correios-br"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps Correios BR numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
+      "ctt"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps CTT PT numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
+      "dhl"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps DHL DE numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
+      "hongkong-post"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps Hongkong Post HK numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
+      "india-post"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps India Post IN numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
+      "intl-post"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps the postal fallback for suffixes no carrier owns; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
+      "japan-post"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps Japan Post JP numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
+      "korea-post"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps Korea Post KR numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
+      "la-poste"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps La Poste FR numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
+      "nz-post"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps NZ Post NZ numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
+      "parcelforce"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps Parcelforce GB numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
+      "pos-malaysia"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps Pos Malaysia MY numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
+      "royal-mail"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps Royal Mail GB numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
+      "singapore-post"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps Singapore Post SG numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
+      "spring-gds"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps PostNL NL numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
+      "swiss-post"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps Swiss Post CH numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
+      "thailand-post"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps Thailand Post TH numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "9{17}",
+    "carriers": [
+      "colis-prive",
+      "dhl-ecommerce"
+    ],
+    "reason": "17-digit numbers are claimed by both the DHL eCommerce and Colis Privé low-confidence rules; the pair stays a suggestion."
+  },
+  {
+    "shape": "12 characters mixing letters and digits",
+    "carriers": [
+      "colis-prive",
+      "geodis"
+    ],
+    "reason": "Colis Privé accepts any 12-character alphanumeric, so it overlaps GEODIS letter-and-digit references; the specific high-confidence rule decides."
+  },
+  {
+    "shape": "9{5}A9{6}",
+    "carriers": [
+      "colis-prive",
+      "mrw"
+    ],
+    "reason": "Colis Privé accepts any 12-character alphanumeric, so it overlaps MRW numbers with an embedded letter; the specific high-confidence rule decides."
+  },
+  {
+    "shape": "9AA9{14}",
+    "carriers": [
+      "colis-prive",
+      "ontrac"
+    ],
+    "reason": "Colis Privé accepts any 12-character alphanumeric, so it overlaps OnTrac 1LS waybills once punctuation is stripped; the specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{10}",
+    "carriers": [
+      "colis-prive",
+      "poczta-polska"
+    ],
+    "reason": "Colis Privé accepts any 12-character alphanumeric, so it overlaps Poczta Polska PX numbers; the specific high-confidence rule decides."
+  },
+  {
+    "shape": "A{3}9{9}",
+    "carriers": [
+      "colis-prive",
+      "purolator"
+    ],
+    "reason": "Colis Privé accepts any 12-character alphanumeric, so it overlaps Purolator three-letter numbers; the specific high-confidence rule decides."
+  },
+  {
+    "shape": "A{3}9{9}",
+    "carriers": [
+      "colis-prive",
+      "yanwen"
+    ],
+    "reason": "Colis Privé accepts any 12-character alphanumeric, so it overlaps Yanwen three-letter numbers; the specific high-confidence rule decides."
+  },
+  {
+    "shape": "A9{11}",
+    "carriers": [
+      "colis-prive",
+      "yto"
+    ],
+    "reason": "Colis Privé accepts any 12-character alphanumeric, so it overlaps YTO letter-prefixed numbers; the specific high-confidence rule decides."
+  },
+  {
+    "shape": "A{3}9{16}",
+    "carriers": [
+      "dhl",
+      "inpost"
+    ],
+    "reason": "InPost tracks DHL JJD air waybills, so both claim the JJD family; the DHL rule is the high-confidence one."
+  },
+  {
+    "shape": "9{20}",
+    "carriers": [
+      "dhl",
+      "usps"
+    ],
+    "reason": "The DHL 00340434 range sits inside the 20-digit space USPS matches broadly; the DHL rule decides."
+  },
+  {
+    "shape": "9{15}",
+    "carriers": [
+      "dpd-fr",
+      "fedex"
+    ],
+    "reason": "15-digit numbers are shared by DPD France and FedEx; the number stays a low-confidence suggestion."
+  },
+  {
+    "shape": "9{8}",
+    "carriers": [
+      "heppner",
+      "mondial-relay"
+    ],
+    "reason": "8-digit numbers are shared by Heppner and Mondial Relay; the number stays a low-confidence suggestion."
+  },
+  {
+    "shape": "AA9{11}",
+    "carriers": [
+      "jd-logistics",
+      "la-poste"
+    ],
+    "reason": "La Poste accepts any two characters followed by 11 digits, which also covers JD Logistics VG numbers; the JD rule decides."
+  },
+  {
+    "shape": "AA9{11}",
+    "carriers": [
+      "la-poste",
+      "poste-italiane"
+    ],
+    "reason": "La Poste accepts any two characters followed by 11 digits, which also covers Poste Italiane numbers; the Poste Italiane rule decides."
+  },
+  {
+    "shape": "AA9{11}",
+    "carriers": [
+      "la-poste",
+      "sunyou"
+    ],
+    "reason": "La Poste accepts any two characters followed by 11 digits, which also covers SunYou SY numbers; the SunYou rule decides."
+  },
+  {
+    "shape": "9{20}",
+    "carriers": [
+      "planzer",
+      "usps"
+    ],
+    "reason": "The Planzer 91346097 range sits inside the 20-digit space USPS matches broadly; the Planzer rule decides."
+  },
+  {
+    "shape": "9{22}",
+    "carriers": [
+      "austrian-post",
+      "ctt-express",
+      "usps"
+    ],
+    "reason": "CTT Express claims 22-digit numbers starting with 00, a range Austrian Post and USPS also match; the CTT Express rule decides."
+  },
+  {
+    "shape": "9{18}",
+    "carriers": [
+      "bpost",
+      "ecoscooting",
+      "quickpac"
+    ],
+    "reason": "Quickpac claims the 44-prefixed 18-digit range that bpost and Ecoscooting match broadly; the Quickpac rule decides."
+  },
+  {
+    "shape": "9{18}",
+    "carriers": [
+      "bpost",
+      "ecoscooting",
+      "swiss-post"
+    ],
+    "reason": "Swiss Post claims the 98/99-prefixed 18-digit range that bpost and Ecoscooting match broadly; the Swiss Post rule decides."
+  },
+  {
+    "shape": "9{16}",
+    "carriers": [
+      "canada-post",
+      "correos-express",
+      "dhl-ecommerce"
+    ],
+    "reason": "16-digit numbers are shared by three carriers; the number stays a low-confidence suggestion."
+  },
+  {
+    "shape": "eight characters mixing letters and digits",
+    "carriers": [
+      "gls-ch",
+      "gls-de",
+      "gls-fr"
+    ],
+    "reason": "The three GLS countries share one 8-character format; the number stays a low-confidence suggestion."
+  },
+  {
+    "shape": "9{11}",
+    "carriers": [
+      "aramex",
+      "blue-dart",
+      "gls-ch",
+      "gls-de",
+      "gls-fr"
+    ],
+    "reason": "11-digit numbers are shared by five carriers; the number stays a low-confidence suggestion."
+  },
+  {
+    "shape": "9{10}",
+    "carriers": [
+      "dhl",
+      "estafeta",
+      "mondial-relay",
+      "relais-colis",
+      "tipsa"
+    ],
+    "reason": "10-digit numbers are shared by five carriers; the number stays a low-confidence suggestion."
+  },
+  {
+    "shape": "9{11}",
+    "carriers": [
+      "aramex",
+      "blue-dart",
+      "gls-ch",
+      "gls-de",
+      "gls-fr",
+      "old-dominion"
+    ],
+    "reason": "Old Dominion claims specific 11-digit prefixes inside the range five other carriers match broadly; the Old Dominion rule decides."
+  },
+  {
+    "shape": "9{13}",
+    "carriers": [
+      "correos-chile",
+      "delhivery",
+      "gls-ch",
+      "gls-de",
+      "la-poste",
+      "yunda"
+    ],
+    "reason": "13-digit numbers are shared by six carriers; the number stays a low-confidence suggestion."
+  },
+  {
+    "shape": "9{13}",
+    "carriers": [
+      "correos-chile",
+      "delhivery",
+      "dpd-fr",
+      "gls-ch",
+      "gls-de",
+      "la-poste",
+      "yunda"
+    ],
+    "reason": "13-digit numbers starting with 0 or 1 add DPD France to the six carriers already sharing that length; the number stays a suggestion."
+  },
+  {
+    "shape": "9{13}",
+    "carriers": [
+      "correos-chile",
+      "delhivery",
+      "gls-ch",
+      "gls-de",
+      "la-poste",
+      "planzer",
+      "yunda"
+    ],
+    "reason": "The Planzer 99990 range sits inside the 13-digit space six carriers match broadly; the Planzer rule decides."
+  },
+  {
+    "shape": "9{14}",
+    "carriers": [
+      "brt",
+      "ciblex",
+      "delhivery",
+      "dpd",
+      "gls-ch",
+      "gls-de",
+      "hermes-de",
+      "seur"
+    ],
+    "reason": "14-digit numbers are shared by eight carriers; the number stays a low-confidence suggestion."
+  },
+  {
+    "shape": "9{14}",
+    "carriers": [
+      "brt",
+      "ciblex",
+      "delhivery",
+      "dpd",
+      "dpd-fr",
+      "gls-ch",
+      "gls-de",
+      "hermes-de",
+      "seur"
+    ],
+    "reason": "14-digit numbers starting with 0 or 1 add DPD France to the eight carriers already sharing that length; the number stays a suggestion."
+  },
+  {
+    "shape": "9{12}",
+    "carriers": [
+      "colis-prive",
+      "fedex",
+      "gls-ch",
+      "gls-de",
+      "gls-fr",
+      "j-and-t",
+      "mondial-relay",
+      "mrw",
+      "sf-express",
+      "sto",
+      "yamato",
+      "zto"
+    ],
+    "reason": "12-digit numbers are shared by twelve carriers; the number stays a low-confidence suggestion."
+  },
+  {
+    "shape": "9{12}",
+    "carriers": [
+      "colis-prive",
+      "fedex",
+      "gls-ch",
+      "gls-de",
+      "gls-fr",
+      "j-and-t",
+      "mondial-relay",
+      "mrw",
+      "purolator",
+      "sf-express",
+      "sto",
+      "yamato",
+      "zto"
+    ],
+    "reason": "12-digit numbers in the Purolator range are shared by thirteen carriers; the number stays a low-confidence suggestion."
+  },
+  {
+    "shape": "9{12}",
+    "carriers": [
+      "colis-prive",
+      "dpd-fr",
+      "fedex",
+      "gls-ch",
+      "gls-de",
+      "gls-fr",
+      "j-and-t",
+      "mondial-relay",
+      "mrw",
+      "purolator",
+      "sf-express",
+      "sto",
+      "yamato",
+      "zto"
+    ],
+    "reason": "12-digit numbers starting with 0 or 1 add DPD France to the thirteen carriers already sharing that length; the number stays a suggestion."
+  }
+]

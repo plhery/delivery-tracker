@@ -111,6 +111,31 @@ describe('tracking audit PostgREST client', () => {
     });
   });
 
+  it('records status observations through the service-only function', async () => {
+    const client = new SupabaseServiceClient('https://database.example', 'service-key');
+    const request = vi.spyOn(client, 'request').mockResolvedValue(null);
+    const observations = [{
+      observation_key: 'a'.repeat(64),
+      carrier: 'ctt',
+      provider_code: '99',
+      description_normalized: 'estado interno 99',
+      language_guess: null,
+      stage_source: 'none',
+      chosen_stage: 'in_transit',
+      package_id: 'package-1',
+      provider_event_id: 'ctt:abc',
+    }];
+
+    await client.recordTrackingStatusObservations([]);
+    expect(request).not.toHaveBeenCalled();
+    await client.recordTrackingStatusObservations(observations);
+
+    expect(request).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/record_tracking_status_observations', {
+      method: 'POST',
+      body: { p_observations: observations },
+    });
+  });
+
   it('returns audit maintenance counts', async () => {
     const client = new SupabaseServiceClient('https://database.example', 'service-key');
     vi.spyOn(client, 'request').mockResolvedValue([{ abandoned: 2, purged: 7 }]);

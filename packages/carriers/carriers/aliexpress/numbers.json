@@ -1,0 +1,36 @@
+{
+  "carrier": "aliexpress",
+  "records": [
+    {
+      "number": "CNG00798678939847",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.paketda.de/fragen-antworten.php",
+        "date": "2026-04-13"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "colis-prive"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to AliExpress / Cainiao, which no rule claims."
+    },
+    {
+      "number": "UB209300714LV",
+      "role": "quarantined",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/trackingmore100/tracking-sdk-php/blob/master/README.md"
+      },
+      "quarantine": true,
+      "expect": {
+        "carrier": "intl-post",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to AliExpress / Cainiao; detection falls back to the generic postal rule."
+    }
+  ]
+}

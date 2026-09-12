@@ -1,0 +1,18 @@
+{
+  "carrier": "postnord",
+  "records": [
+    {
+      "number": "84971563697SE",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/apoex/postnord"
+      },
+      "expect": {
+        "carrier": "postnord",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment."
+    }
+  ]
+}

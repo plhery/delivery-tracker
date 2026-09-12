@@ -1,0 +1,68 @@
+{
+  "id": "planzer",
+  "displayName": "Planzer",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#e30613"
+  },
+  "selectable": true,
+  "timezone": "Europe/Zurich",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "planzer",
+    "upstreamName": "Planzer",
+    "requirements": [
+      {
+        "field": "trackingUrl",
+        "validator": "planzerSharedUrl",
+        "whenTrackingNumber": "^99990\\d{8}$",
+        "label": "Planzer tracking URL",
+        "type": "url",
+        "placeholder": "https://trackandtrace.planzergroup.com/shared/…",
+        "help": "Paste the complete shared link, including its accessKey."
+      }
+    ],
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://tracking.app.planzer.ch/delivery/info?deliveryNumber={trackingNumber}",
+    "canaryUrl": "https://tracking.app.planzer.ch/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "trackandtrace.planzergroup.com"
+      ],
+      "path": "/shared/sendungen/([^/?#]+)",
+      "keepsCapabilityUrl": true
+    },
+    {
+      "domains": [
+        "tracking.app.planzer.ch"
+      ],
+      "params": [
+        "deliveryNumber"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "planzer-1",
+      "pattern": "^99990\\d{8}$",
+      "confidence": "high"
+    },
+    {
+      "id": "planzer-2",
+      "pattern": "^91346097\\d{12}$",
+      "confidence": "high"
+    }
+  ]
+}

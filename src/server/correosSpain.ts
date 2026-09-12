@@ -147,11 +147,13 @@ export function parseCorreosSpainTrackingResponse(payload: unknown, trackingNumb
     seen.add(identity);
     const classified = EVENT_STATUS[code];
     parsed.push({
+      // An unmapped code keeps no stage: the sync classifies the wording and
+      // records where the stage came from instead of assuming movement here.
       event: {
         time: time.iso,
         location: '',
         description,
-        stage: classified ? classified.stage : 'in_transit',
+        ...(classified ? { stage: classified.stage } : {}),
       },
       classified,
       timestamp: time.timestamp,

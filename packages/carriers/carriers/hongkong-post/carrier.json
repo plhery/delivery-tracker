@@ -1,0 +1,36 @@
+{
+  "id": "hongkong-post",
+  "displayName": "Hongkong Post",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://webapp.hongkongpost.hk/en/mail_tracking2/index.html",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": [
+    {
+      "id": "hongkong-post-1",
+      "pattern": "^[A-Z]{2}\\d{9}HK$",
+      "confidence": "high",
+      "checksum": "s10"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "id": "pos-malaysia",
+  "displayName": "Pos Malaysia",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "pos-malaysia",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://tracking.pos.com.my/tracking/{trackingNumber}",
+    "canaryUrl": "https://tracking.pos.com.my/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "tracking.pos.com.my"
+      ],
+      "path": "^/tracking/([^/?#]+)/?$"
+    }
+  ],
+  "detection": [
+    {
+      "id": "pos-malaysia-1",
+      "pattern": "^MYPM\\d{11}$",
+      "confidence": "high"
+    },
+    {
+      "id": "pos-malaysia-2",
+      "pattern": "^[A-Z]{2}\\d{9}MY$",
+      "confidence": "high",
+      "checksum": "s10"
+    }
+  ]
+}

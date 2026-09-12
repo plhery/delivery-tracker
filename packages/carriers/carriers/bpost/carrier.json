@@ -1,0 +1,46 @@
+{
+  "id": "bpost",
+  "displayName": "bpost",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://track.bpost.cloud/",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": [
+    {
+      "id": "bpost-1",
+      "pattern": "^\\d{18}$",
+      "confidence": "low"
+    },
+    {
+      "id": "bpost-2",
+      "pattern": "^\\d{24}$",
+      "confidence": "low"
+    },
+    {
+      "id": "bpost-3",
+      "pattern": "^[A-Z]{2}\\d{9}BE$",
+      "confidence": "high",
+      "checksum": "s10"
+    }
+  ]
+}

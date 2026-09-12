@@ -1,0 +1,67 @@
+{
+  "id": "spring-gds",
+  "displayName": "PostNL",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#ef7d00"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "upstream",
+    "upstreamName": "PostNL",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://postnl.post/track?barcodes={trackingNumber}",
+    "canaryUrl": "https://postnl.post/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "postnl.post"
+      ],
+      "pathPattern": "^/track/?$",
+      "params": [
+        "barcodes"
+      ]
+    },
+    {
+      "domains": [
+        "mailingtechnology.com"
+      ],
+      "pathPattern": "^/tracking/?$",
+      "params": [
+        "tn"
+      ]
+    },
+    {
+      "domains": [
+        "postnl.post"
+      ],
+      "path": "/details/([^/?#]+)"
+    }
+  ],
+  "detection": [
+    {
+      "id": "spring-gds-1",
+      "pattern": "^(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}NL$",
+      "confidence": "high",
+      "checksum": "s10"
+    },
+    {
+      "id": "spring-gds-2",
+      "pattern": "^(?=.{13}$|.{15}$)3S[A-Z]{1,4}\\d+$",
+      "confidence": "high"
+    }
+  ]
+}

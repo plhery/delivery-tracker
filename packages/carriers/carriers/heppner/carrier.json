@@ -1,0 +1,49 @@
+{
+  "id": "heppner",
+  "displayName": "Heppner",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#005baa"
+  },
+  "selectable": true,
+  "timezone": "Europe/Paris",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "heppner",
+    "requirements": [
+      {
+        "field": "dpdPostcode",
+        "validator": "swissOrFrancePostcode",
+        "label": "Delivery postcode",
+        "type": "text",
+        "placeholder": "75001",
+        "help": "Heppner uses the recipient postcode to verify the shipment in France or Switzerland.",
+        "pattern": "^[0-9]{4,5}$",
+        "maxLength": 5,
+        "inputMode": "numeric",
+        "autoComplete": "postal-code"
+      }
+    ],
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.heppner-group.com/destinataire-suivez-votre-marchandise/",
+    "canaryUrl": "https://myportal.heppner-group.com/tracking",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": [
+    {
+      "id": "heppner-1",
+      "pattern": "^\\d{8}$",
+      "confidence": "low"
+    }
+  ]
+}

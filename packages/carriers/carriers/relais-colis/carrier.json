@@ -1,0 +1,52 @@
+{
+  "id": "relais-colis",
+  "displayName": "Relais Colis",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#7bb928"
+  },
+  "selectable": true,
+  "timezone": "Europe/Paris",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "relais-colis",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.relaiscolis.com/colis/suivre?tracking_number={trackingNumber}",
+    "canaryUrl": "https://www.relaiscolis.com/colis/suivre",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "relaiscolis.com"
+      ],
+      "params": [
+        "tracking_number",
+        "trackingNumber",
+        "numeroColis",
+        "numColis"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "relais-colis-1",
+      "pattern": "^CC\\d{10,14}$",
+      "confidence": "high"
+    },
+    {
+      "id": "relais-colis-2",
+      "pattern": "^\\d{10}$",
+      "confidence": "low"
+    }
+  ]
+}

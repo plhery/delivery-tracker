@@ -1,0 +1,39 @@
+{
+  "carrier": "austrian-post",
+  "records": [
+    {
+      "number": "1011236513864670170531",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://www.post.at/"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "austrian-post",
+          "usps"
+        ]
+      },
+      "note": "Official documentation example, not a real shipment. The source attributes it to Austrian Post, which stays one candidate among several."
+    },
+    {
+      "number": "CA482156827DE",
+      "role": "quarantined",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://www.post.at/"
+      },
+      "quarantine": true,
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "chronopost"
+        ]
+      },
+      "note": "Official documentation example, not a real shipment. The S10 check digit does not validate. The source attributes it to Austrian Post, which no rule claims."
+    }
+  ]
+}

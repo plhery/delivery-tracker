@@ -1,0 +1,21 @@
+{
+  "carrier": "heppner",
+  "records": [
+    {
+      "number": "23456789",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-10",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "mondial-relay",
+          "heppner"
+        ]
+      },
+      "note": "Invented placeholder used as a shape check. Filed under Heppner, which stays one candidate among several."
+    }
+  ]
+}

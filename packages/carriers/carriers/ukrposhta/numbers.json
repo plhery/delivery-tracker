@@ -1,0 +1,18 @@
+{
+  "carrier": "ukrposhta",
+  "records": [
+    {
+      "number": "RF426331371SG",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/kolyabres/ukrposhta-api"
+      },
+      "expect": {
+        "carrier": "singapore-post",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to Ukrposhta; detection selects Singapore Post."
+    }
+  ]
+}

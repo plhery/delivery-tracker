@@ -1,0 +1,36 @@
+{
+  "id": "singapore-post",
+  "displayName": "Singapore Post",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.singpost.com/track-items",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": [
+    {
+      "id": "singapore-post-1",
+      "pattern": "^[A-Z]{2}\\d{9}SG$",
+      "confidence": "high",
+      "checksum": "s10"
+    }
+  ]
+}

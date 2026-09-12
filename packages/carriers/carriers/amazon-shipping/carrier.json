@@ -1,0 +1,29 @@
+{
+  "id": "amazon-shipping",
+  "displayName": "Amazon Shipping",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#ff9900"
+  },
+  "selectable": false,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "amazon-shipping",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://track.amazon.fr/tracking/{trackingNumber}",
+    "canaryUrl": "https://track.amazon.fr/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": []
+}

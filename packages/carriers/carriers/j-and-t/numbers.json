@@ -1,0 +1,33 @@
+{
+  "carrier": "j-and-t",
+  "records": [
+    {
+      "number": "888 058 657 515",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://news.detik.com/suara-pembaca/d-3988487/paket-dinyatakan-hilang-j-t-menolak-mengganti-penuh",
+        "date": "2018-04-26"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "fedex",
+          "gls-ch",
+          "mondial-relay",
+          "gls-fr",
+          "colis-prive",
+          "gls-de",
+          "mrw",
+          "sf-express",
+          "sto",
+          "zto",
+          "yamato",
+          "j-and-t"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to J&T Express, which stays one candidate among several."
+    }
+  ]
+}

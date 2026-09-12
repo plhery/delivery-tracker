@@ -1,0 +1,45 @@
+{
+  "id": "korea-post",
+  "displayName": "Korea Post",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://trace.epost.go.kr/xtts/tt/epost/ems/ems_eng.jsp",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "service.epost.go.kr"
+      ],
+      "params": [
+        "sid1"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "korea-post-1",
+      "pattern": "^[A-Z]{2}\\d{9}KR$",
+      "confidence": "high",
+      "checksum": "s10"
+    }
+  ]
+}

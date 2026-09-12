@@ -1,0 +1,59 @@
+{
+  "id": "ontrac",
+  "displayName": "OnTrac",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.ontrac.com/tracking/?number={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "ontrac.com"
+      ],
+      "params": [
+        "number"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "ontrac-1",
+      "pattern": "^[CD]\\d{14}$",
+      "confidence": "high"
+    },
+    {
+      "id": "ontrac-2",
+      "pattern": "^L[AIEHNX]\\d{8}$",
+      "confidence": "high"
+    },
+    {
+      "id": "ontrac-3",
+      "pattern": "^1LS\\d{12,14}$",
+      "confidence": "high"
+    },
+    {
+      "id": "ontrac-4",
+      "pattern": "^1LSCX[A-Z0-9]{10}$",
+      "confidence": "high"
+    }
+  ]
+}

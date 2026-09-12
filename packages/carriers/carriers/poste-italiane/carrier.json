@@ -1,0 +1,52 @@
+{
+  "id": "poste-italiane",
+  "displayName": "Poste Italiane",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "poste-italiane",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.poste.it/cerca/index.html#/risultati-spedizioni/{trackingNumber}",
+    "canaryUrl": "https://www.poste.it/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "poste.it"
+      ],
+      "fragment": "risultati-spedizioni/([^/?#]+)"
+    }
+  ],
+  "detection": [
+    {
+      "id": "poste-italiane-1",
+      "pattern": "^RA\\d{11}$",
+      "confidence": "high"
+    },
+    {
+      "id": "poste-italiane-2",
+      "pattern": "^(?:[13]UW[A-Z0-9]{10}|5P[A-Z0-9]{11})$",
+      "confidence": "high"
+    },
+    {
+      "id": "poste-italiane-3",
+      "pattern": "^2IMA\\d{10}$",
+      "confidence": "high"
+    }
+  ]
+}

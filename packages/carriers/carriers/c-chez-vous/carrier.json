@@ -1,0 +1,42 @@
+{
+  "id": "c-chez-vous",
+  "displayName": "C Chez Vous",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#e50046"
+  },
+  "selectable": true,
+  "timezone": "Europe/Paris",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "c-chez-vous",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.cchezvous.fr/suivi-colis/{trackingNumber}",
+    "canaryUrl": "https://www.cchezvous.fr/suivi-colis",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "cchezvous.fr"
+      ],
+      "path": "^/suivi-colis/([^/?#]+)/?$"
+    }
+  ],
+  "detection": [
+    {
+      "id": "c-chez-vous-1",
+      "pattern": "^[A-Z]{4}\\d{2}[A-Z0-9]{4}$",
+      "confidence": "high"
+    }
+  ]
+}

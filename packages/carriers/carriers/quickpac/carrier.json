@@ -1,0 +1,53 @@
+{
+  "id": "quickpac",
+  "displayName": "Quickpac",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#ed1c24"
+  },
+  "selectable": true,
+  "timezone": "Europe/Zurich",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "planzer",
+    "upstreamName": "Planzer",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://tracking.app.planzer.ch/delivery/info?deliveryNumber={trackingNumber}",
+    "canaryUrl": "https://tracking.app.planzer.ch/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "quickpac.ch"
+      ],
+      "params": [
+        "parcel"
+      ]
+    },
+    {
+      "domains": [
+        "tracking.app.planzer.ch"
+      ],
+      "params": [
+        "deliveryNumber"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "quickpac-1",
+      "pattern": "^44\\d{16}$",
+      "confidence": "high"
+    }
+  ]
+}

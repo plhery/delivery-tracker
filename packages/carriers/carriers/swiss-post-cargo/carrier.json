@@ -1,0 +1,36 @@
+{
+  "id": "swiss-post-cargo",
+  "displayName": "Swiss Post Cargo",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#ffcc00"
+  },
+  "selectable": true,
+  "timezone": "Europe/Zurich",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "swiss-post-cargo",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://apv.swisspost-cargo.com/public/trackandtrace/{trackingNumber}",
+    "canaryUrl": "https://apv.swisspost-cargo.com/public/trackandtrace",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "apv.swisspost-cargo.com"
+      ],
+      "path": "^/public/trackandtrace/([^/?#]+)/?$"
+    }
+  ],
+  "detection": []
+}

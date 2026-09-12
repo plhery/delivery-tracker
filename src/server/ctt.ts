@@ -168,11 +168,13 @@ export function parseCttTrackingResponse(payload: unknown, trackingNumber: strin
       // Local mixes depot codes and point names (operational locations, kept
       // coarse). Sender/recipient identity, contact and address blocks travel
       // on the record but are deliberately never retained.
+      // An unmapped state keeps no stage: the sync classifies the wording and
+      // records where the stage came from instead of assuming movement here.
       event: {
         time: time.iso,
         location: clean(rawEvent.Local, 160),
         description,
-        stage: classified ? classified.stage : 'in_transit',
+        ...(classified ? { stage: classified.stage } : {}),
         ...(Number.isSafeInteger(stateId) ? { provider_code: String(stateId) } : {}),
       },
       classified: classified ?? undefined,

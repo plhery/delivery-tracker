@@ -1,0 +1,45 @@
+{
+  "id": "parcelforce",
+  "displayName": "Parcelforce Worldwide",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.parcelforce.com/portal/pw/track?trackNumber={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "parcelforce.com"
+      ],
+      "params": [
+        "trackNumber"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "parcelforce-1",
+      "pattern": "^(?:EA|EB|EC|ED|EE|CP)\\d{9}GB$",
+      "confidence": "high",
+      "checksum": "s10"
+    }
+  ]
+}

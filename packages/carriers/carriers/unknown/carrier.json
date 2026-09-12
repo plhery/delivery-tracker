@@ -1,0 +1,57 @@
+{
+  "id": "unknown",
+  "displayName": "Unknown carrier",
+  "displayNames": {
+    "en": "Unknown carrier",
+    "de": "Paketdienst unbekannt",
+    "fr": "Transporteur inconnu",
+    "it": "Corriere sconosciuto",
+    "es": "Transportista desconocido",
+    "pt": "Transportadora desconhecida",
+    "pl": "Nieznany przewoźnik"
+  },
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": false,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://t.17track.net/en#nums={trackingNumber}",
+    "siteName": "17TRACK",
+    "canaryUrl": "https://parcelsapp.com/en",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "17track.net"
+      ],
+      "params": [
+        "nums"
+      ],
+      "fragment": "(?:^|&)nums=([^&]+)",
+      "detectFromNumber": true
+    },
+    {
+      "domains": [
+        "parcelsapp.com"
+      ],
+      "path": "^/(?:[a-z]{2}/)?tracking/([^/?#]+)",
+      "detectFromNumber": true
+    }
+  ],
+  "detection": []
+}

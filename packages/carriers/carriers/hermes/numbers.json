@@ -1,0 +1,20 @@
+{
+  "carrier": "hermes",
+  "records": [
+    {
+      "number": "62162057330000611",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-10",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl-ecommerce"
+        ]
+      },
+      "note": "Made-up number that follows the published format. Filed under Hermes Einrichtungs-Service, which no rule claims."
+    }
+  ]
+}

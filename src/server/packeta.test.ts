@@ -6,6 +6,7 @@ import {
   PacketaTracker,
   PacketaTrackingError,
 } from './packeta';
+import { buildEvents } from './trackingSync';
 
 // All identifiers, timestamps and names below are synthetic. Event sentences use
 // the real canned English wording confirmed live by the prior-art client
@@ -97,6 +98,12 @@ describe('Packeta response parsing', () => {
       ],
     }) }, TRACKING_NUMBER);
     expect(result.events?.map((event) => event.stage)).toEqual([undefined, 'in_transit']);
+    // The sync classifies the unmapped wording and records where the stage came from.
+    expect(buildEvents({ id: 'parcel', carrier: 'packeta' }, result)[0]).toMatchObject({
+      stage: 'in_transit',
+      description: 'Something completely new happened.',
+      raw_data: expect.objectContaining({ stage_source: 'none' }),
+    });
   });
 
   it('binds the returned barcode to the requested shipment', () => {

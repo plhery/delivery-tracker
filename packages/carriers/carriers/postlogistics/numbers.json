@@ -1,0 +1,21 @@
+{
+  "carrier": "postlogistics",
+  "records": [
+    {
+      "number": "000000000000000000",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-10",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "Invented placeholder used as a shape check. Filed under PostLogistics, which no rule claims."
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "id": "colisweb",
+  "displayName": "Colisweb",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#ff8a00"
+  },
+  "selectable": true,
+  "timezone": "Europe/Paris",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "colisweb",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.colisweb.com/suivi-livraison?value={trackingNumber}",
+    "canaryUrl": "https://www.colisweb.com/suivi-livraison",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "colisweb.com"
+      ],
+      "params": [
+        "value",
+        "trackingNumber"
+      ]
+    }
+  ],
+  "detection": []
+}

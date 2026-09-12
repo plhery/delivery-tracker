@@ -4,6 +4,7 @@ import {
   parseInpostTrackingResponse,
   InpostTracker,
 } from './inpost';
+import { buildEvents } from './trackingSync';
 
 // All identifiers and timestamps below are synthetic. Status codes and the
 // response shape follow the keyless inposteasy.com hub as documented by the
@@ -95,7 +96,13 @@ describe('InPost response parsing', () => {
       trackingDetails: [{ status: 'NEW.9999', statusTitle: 'Something new', datetime: '2026-05-04T10:00:00+02:00' }],
     }), TRACKING_NUMBER);
     expect(result).toMatchObject({ status: 'unknown', last_status_text: 'Something new' });
-    expect(result.events?.[0]).toMatchObject({ stage: 'in_transit', description: 'Something new' });
+    expect(result.events?.[0]).toMatchObject({ description: 'Something new' });
+    expect(result.events?.[0]?.stage).toBeUndefined();
+    // The sync classifies the unmapped wording and records where the stage came from.
+    expect(buildEvents({ id: 'parcel', carrier: 'inpost' }, result)[0]).toMatchObject({
+      stage: 'in_transit',
+      raw_data: expect.objectContaining({ stage_source: 'none' }),
+    });
   });
 
   it('binds the returned tracking number to the requested shipment', () => {

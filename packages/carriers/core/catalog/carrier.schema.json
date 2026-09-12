@@ -1,0 +1,236 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://swiss-delivery-tracker/packages/carriers/core/catalog/carrier.schema.json",
+  "title": "Carrier",
+  "description": "One carrier folder's carrier.json: the single source of truth for that carrier. scripts/generate-api-contract.mjs merges every carriers/*/carrier.json into contracts/openapi.json under x-carriers and regenerates the TypeScript, Swift and package catalogs from it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "displayName",
+    "aliases",
+    "region",
+    "brand",
+    "selectable",
+    "timezone",
+    "tracking",
+    "capabilities",
+    "portal",
+    "links",
+    "detection"
+  ],
+  "properties": {
+    "id": {
+      "description": "Carrier id; must equal the folder name and appears in CarrierId.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "displayName": {
+      "description": "Default (English) carrier name.",
+      "type": "string",
+      "minLength": 1
+    },
+    "displayNames": {
+      "description": "Localized names, keyed by locale. Only carriers whose name is translated define this.",
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "pattern": "^[a-z]{2}(?:-[A-Za-z0-9]+)*$" },
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "aliases": {
+      "description": "Other names the carrier is known by. Reserved for a later enrichment phase.",
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "region": {
+      "description": "Where the carrier operates. Reserved for a later enrichment phase.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["countries"],
+      "properties": {
+        "countries": {
+          "description": "ISO 3166-1 alpha-2 country codes.",
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[A-Z]{2}$" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "brand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["color"],
+      "properties": {
+        "color": {
+          "description": "Accent color used by the web and native clients.",
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        }
+      }
+    },
+    "selectable": {
+      "description": "Whether the carrier appears in the manual carrier picker.",
+      "type": "boolean"
+    },
+    "timezone": {
+      "description": "IANA timezone used when the carrier reports local timestamps without an offset.",
+      "type": "string",
+      "minLength": 1
+    },
+    "tracking": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "adapter", "steps"],
+      "properties": {
+        "mode": {
+          "description": "automatic: we fetch tracking ourselves. link-only: we can only link to the portal.",
+          "enum": ["automatic", "link-only"]
+        },
+        "adapter": {
+          "description": "Adapter id, \"universal\", \"upstream\", or null for link-only carriers.",
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "upstreamName": {
+          "description": "Carrier name as the upstream service spells it. Required when adapter is \"upstream\".",
+          "type": "string",
+          "minLength": 1
+        },
+        "requirements": {
+          "description": "Extra inputs the user must supply besides the tracking number.",
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/requirement" }
+        },
+        "steps": {
+          "description": "Ordered runner steps. Reserved for the runner phase; empty means the adapter still owns its own flow.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "capabilities": {
+      "description": "Declared capability flags. Reserved for a later phase.",
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "portal": {
+      "description": "Facts about the carrier's public tracking portal.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["shows", "scraped", "discarded", "unavailable"],
+      "properties": {
+        "url": {
+          "description": "Public tracking URL template containing {trackingNumber}.",
+          "type": "string"
+        },
+        "siteName": {
+          "description": "Name of the site the portal URL points at, when it is not the carrier itself.",
+          "type": "string",
+          "minLength": 1
+        },
+        "canaryUrl": {
+          "description": "Public, credential-free HTTPS URL the daily canary probes. Required for automatic carriers.",
+          "type": "string"
+        },
+        "shows": {
+          "description": "Fields the portal displays. Reserved for a later documentation phase.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "scraped": {
+          "description": "Fields we retain. Reserved for a later documentation phase.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "discarded": {
+          "description": "Fields the portal shows that we deliberately drop. Reserved for a later documentation phase.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "unavailable": {
+          "description": "Fields the portal does not expose. Reserved for a later documentation phase.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "links": {
+      "description": "Rules that recognize a carrier tracking link pasted by the user.",
+      "type": "array",
+      "items": { "$ref": "#/definitions/linkRule" }
+    },
+    "detection": {
+      "description": "Rules that recognize a tracking number. Exactly one high-confidence match selects the carrier.",
+      "type": "array",
+      "items": { "$ref": "#/definitions/detectionRule" }
+    }
+  },
+  "definitions": {
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "validator", "label", "type"],
+      "properties": {
+        "field": {
+          "description": "Input name; the generator checks it against the validators it accepts.",
+          "type": "string",
+          "minLength": 1
+        },
+        "validator": { "type": "string", "minLength": 1 },
+        "whenTrackingNumber": {
+          "description": "Regular expression: the input is only required for matching tracking numbers.",
+          "type": "string",
+          "minLength": 1
+        },
+        "label": { "type": "string", "minLength": 1 },
+        "type": { "enum": ["text", "url"] },
+        "placeholder": { "type": "string" },
+        "help": { "type": "string" },
+        "pattern": { "type": "string", "minLength": 1 },
+        "maxLength": { "type": "integer", "minimum": 1 },
+        "inputMode": { "enum": ["text", "numeric"] },
+        "autoComplete": { "type": "string", "minLength": 1 }
+      }
+    },
+    "linkRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domains"],
+      "properties": {
+        "domains": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "path": { "type": "string", "minLength": 1 },
+        "pathPattern": { "type": "string", "minLength": 1 },
+        "params": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "fragment": { "type": "string", "minLength": 1 },
+        "keepsCapabilityUrl": { "type": "boolean" },
+        "detectFromNumber": { "type": "boolean" }
+      }
+    },
+    "detectionRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "pattern", "confidence"],
+      "properties": {
+        "id": {
+          "description": "Stable rule id, unique across the catalog; the sweep and the collision file refer to it.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "pattern": { "type": "string", "minLength": 1 },
+        "confidence": { "enum": ["high", "low"] },
+        "checksum": { "enum": ["s10", "mondial-relay"] }
+      }
+    }
+  }
+}

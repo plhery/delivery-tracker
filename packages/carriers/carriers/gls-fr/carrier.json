@@ -1,0 +1,65 @@
+{
+  "id": "gls-fr",
+  "displayName": "GLS France",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#ffdd00"
+  },
+  "selectable": true,
+  "timezone": "Europe/Paris",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "gls-france",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://moncolis.gls-france.com/fr/{trackingNumber}",
+    "canaryUrl": "https://moncolis.gls-france.com/fr/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "moncolis.gls-france.com",
+        "gls-france.com"
+      ],
+      "path": "^/fr/([^/?#]+)/?$"
+    },
+    {
+      "domains": [
+        "gls-group.com",
+        "gls-group.eu"
+      ],
+      "params": [
+        "match",
+        "parcelNumber",
+        "matchParcelNumber"
+      ],
+      "pathPattern": "^/FR/"
+    }
+  ],
+  "detection": [
+    {
+      "id": "gls-fr-1",
+      "pattern": "^00(?=[A-Z0-9]{6}$)(?=.*[A-Z])(?=.*\\d)[A-Z0-9]{6}$",
+      "confidence": "high"
+    },
+    {
+      "id": "gls-fr-2",
+      "pattern": "^(?=[A-Z0-9]{8}$)(?=.*[A-Z])(?=.*\\d)[A-Z0-9]{8}$",
+      "confidence": "low"
+    },
+    {
+      "id": "gls-fr-3",
+      "pattern": "^\\d{11,12}$",
+      "confidence": "low"
+    }
+  ]
+}

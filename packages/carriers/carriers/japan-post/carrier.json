@@ -1,0 +1,46 @@
+{
+  "id": "japan-post",
+  "displayName": "Japan Post",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://trackings.post.japanpost.jp/services/srv/search/direct?reqCodeNo1={trackingNumber}&locale=en",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "trackings.post.japanpost.jp"
+      ],
+      "params": [
+        "reqCodeNo1",
+        "requestNo1"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "japan-post-1",
+      "pattern": "^[A-Z]{2}\\d{9}JP$",
+      "confidence": "high",
+      "checksum": "s10"
+    }
+  ]
+}

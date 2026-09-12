@@ -1,0 +1,52 @@
+{
+  "id": "paack",
+  "displayName": "Paack",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#5b2dee"
+  },
+  "selectable": true,
+  "timezone": "Europe/Paris",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "paack",
+    "requirements": [
+      {
+        "field": "dpdPostcode",
+        "validator": "paackPostcode",
+        "label": "Delivery postcode",
+        "type": "text",
+        "placeholder": "75001",
+        "help": "Paack requires the recipient postcode together with the order number.",
+        "pattern": "^(?=.{3,10}$)(?=.*[0-9])[A-Za-z0-9]+(?:[ -][A-Za-z0-9]+)*$",
+        "maxLength": 10,
+        "inputMode": "text",
+        "autoComplete": "postal-code"
+      }
+    ],
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://mydeliveries.paack.app/tracking?tracking_number={trackingNumber}",
+    "canaryUrl": "https://mydeliveries.paack.app/tracking",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "mydeliveries.paack.app"
+      ],
+      "params": [
+        "tracking_number"
+      ]
+    }
+  ],
+  "detection": []
+}

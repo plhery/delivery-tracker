@@ -1,0 +1,42 @@
+{
+  "id": "speedx",
+  "displayName": "SpeedX",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://tracking.speedx.io/{trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "tracking.speedx.io"
+      ],
+      "path": "^/([^/?#]+)/?$"
+    }
+  ],
+  "detection": [
+    {
+      "id": "speedx-1",
+      "pattern": "^SPX[A-Z]{3}\\d{12}$",
+      "confidence": "high"
+    }
+  ]
+}

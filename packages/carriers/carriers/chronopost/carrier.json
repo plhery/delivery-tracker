@@ -1,0 +1,59 @@
+{
+  "id": "chronopost",
+  "displayName": "Chronopost",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#0056a7"
+  },
+  "selectable": true,
+  "timezone": "Europe/Paris",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "la-poste",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.chronopost.fr/tracking-no-cms/suivi-page?langue=fr&listeNumerosLT={trackingNumber}",
+    "canaryUrl": "https://www.chronopost.fr/tracking-no-cms/suivi-page",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "chronopost.fr",
+        "chronotrace.chronopost.fr",
+        "chronoshop2shop.fr"
+      ],
+      "params": [
+        "listeNumerosLT",
+        "listeNumeros",
+        "numeroLT"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "chronopost-1",
+      "pattern": "^(?:PZ|XU|XW|XY)\\d{9}[A-Z]{2}$",
+      "confidence": "high",
+      "checksum": "s10"
+    },
+    {
+      "id": "chronopost-2",
+      "pattern": "^\\d{14}[A-Z]$",
+      "confidence": "low"
+    },
+    {
+      "id": "chronopost-3",
+      "pattern": "^[A-Z]{2}\\d{9}[A-Z]{2}$",
+      "confidence": "low"
+    }
+  ]
+}

@@ -40,6 +40,13 @@ own and update the OpenAPI contract before changing generated API types.
 
 ## Carrier integrations
 
+Every carrier is described by `packages/carriers/carriers/<id>/carrier.json`,
+the single source of truth for its name, brand, timezone, portal, tracking
+links and detection rules; `npm run carrier:new` scaffolds a folder and
+`npm run contract:generate` merges them into `contracts/openapi.json` and the
+generated TypeScript, Swift and package catalogs. Change the folder, not the
+generated contract.
+
 Carrier sites and undocumented APIs can change without notice. New adapters
 must use bounded timeouts and response sizes, avoid personal-data logging, and
 degrade to a carrier link when reliable automatic tracking is unavailable.

@@ -37,7 +37,12 @@ import { IndiaPostTracker } from './indiaPost';
 import { InpostTracker } from './inpost';
 import { LaPosteTracker } from './laPoste';
 import { MondialRelayTracker } from './mondialRelay';
-import { captureOperationalError, errorType, reportRoutingEvent } from './observability';
+import {
+  captureOperationalError,
+  errorType,
+  logOperationalEvent,
+  reportRoutingEvent,
+} from './observability';
 import { PaackTracker } from './paack';
 import { PacketaTracker } from './packeta';
 import { PlanzerSharedTracker } from './planzerShared';
@@ -259,43 +264,72 @@ export function emptySyncSummary(): SyncSummary {
   };
 }
 
-export function inferStage(text: string, fallback = 'in_transit'): string {
+export interface ClassifiedStage {
+  stage: string;
+  /**
+   * How the stage was decided: `wording:<rule>` names the rule that matched,
+   * `none` means no rule matched and the caller's fallback was used.
+   */
+  source: string;
+}
+
+/**
+ * The wording classifier. Rule ids are stable: they are persisted per event as
+ * `raw_data.stage_source` and grouped in `tracking_status_observations`.
+ */
+export function classifyStage(text: string, fallback = 'in_transit'): ClassifiedStage {
+  const matched = (stage: string, rule: string): ClassifiedStage => (
+    { stage, source: `wording:${rule}` }
+  );
   const translated = trackingLanguageStage(text);
-  if (translated) return translated;
+  if (translated) return matched(translated, 'language');
   const value = text.toLocaleLowerCase('en-US').replaceAll('_', ' ').trim().split(/\s+/).join(' ');
-  if (value.includes('to be delivered')) return 'in_transit';
-  if (value === 'reported') return 'registered';
+  if (value.includes('to be delivered')) return matched('in_transit', 'to_be_delivered');
+  if (value === 'reported') return matched('registered', 'reported');
   if (['will shortly be handed over', 'shipment information received', 'electronic shipment information']
-    .some((term) => value.includes(term))) return 'registered';
+    .some((term) => value.includes(term))) return matched('registered', 'pre_advice');
   if (['return to sender', 'returned', 'retour'].some((term) => value.includes(term))) {
-    return 'returned';
+    return matched('returned', 'returned');
   }
   if (['not delivered', 'could not be delivered', 'unable to deliver', 'delivery attempt',
     'failed', 'unsuccessful', 'missed delivery', 'nicht zugestellt',
     'zustellung nicht möglich', 'non livré', 'livraison impossible',
     'échec de livraison', 'mancata consegna'].some((term) => value.includes(term))) {
-    return 'failed_attempt';
+    return matched('failed_attempt', 'failed_attempt');
   }
   if (['ready for pickup', 'ready for collection', 'abholbereit', 'deposited in the mypost24 machine']
-    .some((term) => value.includes(term))) return 'ready_for_pickup';
+    .some((term) => value.includes(term))) return matched('ready_for_pickup', 'ready_for_pickup');
   if (['delivered', 'deposited', 'zugestellt', 'confirmation of receipt']
-    .some((term) => value.includes(term))) return 'delivered';
+    .some((term) => value.includes(term))) return matched('delivered', 'delivered');
   if (['out for delivery', 'in delivery', 'loading into delivery vehicle',
     'loaded into delivery vehicle', 'zustellung'].some((term) => value.includes(term))) {
-    return 'out_for_delivery';
+    return matched('out_for_delivery', 'out_for_delivery');
   }
   if (['was released by customs', 'has been released by customs', 'has been released by a government agency']
-    .some((term) => value.includes(term))) return 'in_transit';
+    .some((term) => value.includes(term))) return matched('in_transit', 'customs_released');
   if (['customs', 'custom clearance', 'zoll', 'pending release from a government agency']
-    .some((term) => value.includes(term))) return 'customs';
+    .some((term) => value.includes(term))) return matched('customs', 'customs');
   if (['accepted', 'received at', 'handed over', 'handed to dpd', 'parcel handed', 'posted']
-    .some((term) => value.includes(term))) return 'accepted';
+    .some((term) => value.includes(term))) return matched('accepted', 'accepted');
   if (['announced', 'registered', 'label created', 'created a label', 'information received', 'elektronisch angekündigt']
-    .some((term) => value.includes(term))) return 'registered';
+    .some((term) => value.includes(term))) return matched('registered', 'registered');
   if (['transit', 'sorted', 'sorting', 'departed', 'arrived', 'transport', 'delivery centre', 'depot',
     'on the way', 'import scan', 'delivery will be delayed']
-    .some((term) => value.includes(term))) return 'in_transit';
-  return fallback;
+    .some((term) => value.includes(term))) return matched('in_transit', 'in_transit');
+  return { stage: fallback, source: 'none' };
+}
+
+export function inferStage(text: string, fallback = 'in_transit'): string {
+  return classifyStage(text, fallback).stage;
+}
+
+/**
+ * Records where a persisted event's stage came from: an explicit carrier or
+ * provider stage, the wording rule that matched, or the untraceable fallback.
+ */
+export function stageSource(declaredStage: string, description: string): string {
+  if (VALID_STAGES.has(declaredStage)) return 'carrier_map';
+  return classifyStage(description).source;
 }
 
 export function resultStage(result: CarrierResult): string | null {
@@ -438,7 +472,7 @@ export function buildEvents(
       location: location || null,
       occurred_at: occurredAt,
       provider_event_id: providerEventId(carrierId, raw.time, location, description),
-      raw_data: raw,
+      raw_data: { ...raw, stage_source: stageSource(declaredStage, description) },
     });
   }
   if (rows.length === 0 && current && result.last_status_text) {
@@ -452,7 +486,10 @@ export function buildEvents(
         location: null,
         occurred_at: occurredAt,
         provider_event_id: providerEventId(carrierId, result.last_update, '', description),
-        raw_data: { time: result.last_update },
+        raw_data: {
+          time: result.last_update,
+          stage_source: stageSource(String(result.current_stage ?? ''), description),
+        },
       });
     }
   }
@@ -478,6 +515,7 @@ export function buildEvents(
     ).trim() || 'Tracking update';
     const location = String(matchingEvent?.location ?? '').trim();
     const occurredAt = observedAt.toISOString();
+    const declaredCurrent = String(result.current_stage ?? '');
     rows.push({
       package_id: parcel.id,
       stage: current,
@@ -490,10 +528,81 @@ export function buildEvents(
         location,
         description,
       ),
-      raw_data: { observed_without_provider_timestamp: true },
+      raw_data: {
+        observed_without_provider_timestamp: true,
+        stage_source: stageSource(
+          VALID_STAGES.has(declaredCurrent) ? declaredCurrent : String(matchingEvent?.stage ?? ''),
+          description,
+        ),
+      },
     });
   }
   return rows;
+}
+
+// One sync reports a bounded sample: repeated wording is already deduplicated
+// by observation key, and the row's count grows on the next sync instead.
+export const MAX_STATUS_OBSERVATIONS_PER_SYNC = 32;
+
+export interface StatusObservation extends JsonObject {
+  observation_key: string;
+  carrier: string;
+  provider_code: string | null;
+  description_normalized: string;
+  language_guess: string | null;
+  stage_source: string;
+  chosen_stage: string;
+  package_id: string;
+  provider_event_id: string;
+}
+
+export function normalizeObservedDescription(description: string): string {
+  return description.toLocaleLowerCase('en-US').trim().split(/\s+/).join(' ').slice(0, 500);
+}
+
+/**
+ * Collects the carrier wording whose stage did not come from a carrier map, so
+ * an operator can map it later. The package and event identifiers travel with
+ * the observation only to resolve one sample event row; they are not stored.
+ */
+export function collectStatusObservations(
+  events: readonly JsonObject[],
+  fallbackCarrierId: string,
+): StatusObservation[] {
+  const observations = new Map<string, StatusObservation>();
+  for (const event of events) {
+    const raw = isRecord(event.raw_data) ? event.raw_data : {};
+    const source = typeof raw.stage_source === 'string' ? raw.stage_source : '';
+    if (!source || source === 'carrier_map') continue;
+    const description = normalizeObservedDescription(String(event.description ?? ''));
+    const chosenStage = String(event.stage ?? '');
+    if (!description || !chosenStage) continue;
+    const eventId = String(event.provider_event_id ?? '');
+    // Every provider event id is prefixed with the carrier that served it, so a
+    // timeline merged from two carriers keeps each wording with its own.
+    const carrier = (eventId.split(':')[0] || fallbackCarrierId).slice(0, 100);
+    if (!carrier) continue;
+    const providerCode = typeof raw.provider_code === 'string' && raw.provider_code
+      ? raw.provider_code.slice(0, 100)
+      : null;
+    const key = createHash('sha256')
+      .update(JSON.stringify([carrier, providerCode ?? '', description]))
+      .digest('hex');
+    if (observations.has(key)) continue;
+    observations.set(key, {
+      observation_key: key,
+      carrier,
+      provider_code: providerCode,
+      description_normalized: description,
+      language_guess: null,
+      stage_source: source.slice(0, 100),
+      chosen_stage: chosenStage,
+      package_id: String(event.package_id ?? ''),
+      provider_event_id: eventId,
+    });
+    if (observations.size >= MAX_STATUS_OBSERVATIONS_PER_SYNC) break;
+  }
+  return [...observations.values()];
 }
 
 export function detectSyncAnomalies(
@@ -549,6 +658,7 @@ class SupersededTrackingSync extends Error {}
 
 export class TrackingSyncService {
   #tail: Promise<void> = Promise.resolve();
+  #reportedObservationFailure = false;
 
   constructor(
     readonly client: SupabaseServiceClient,
@@ -631,6 +741,36 @@ export class TrackingSyncService {
       signal?.throwIfAborted();
       summary.notification_errors += 1;
       captureOperationalError(error, { component: 'push', operation: 'dispatch' });
+    }
+  }
+
+  // Unmapped carrier wording is review material, never a reason to fail a
+  // refresh: a failed write is logged each time and reported to Sentry once.
+  private async recordStatusObservations(
+    events: JsonObject[],
+    carrierId: string,
+    context: SyncRunContext,
+  ): Promise<void> {
+    const observations = collectStatusObservations(events, carrierId);
+    if (observations.length === 0) return;
+    try {
+      await this.client.recordTrackingStatusObservations(observations);
+    } catch (error) {
+      if (context.signal?.aborted) return;
+      logOperationalEvent('tracking_status_observation_write_failed', {
+        carrier: carrierId,
+        trigger: context.trigger,
+        job_id: context.jobId ?? null,
+        observations: observations.length,
+        error_type: errorType(error),
+      }, 'error');
+      if (this.#reportedObservationFailure) return;
+      this.#reportedObservationFailure = true;
+      captureOperationalError(error, {
+        component: 'tracking-status-observations',
+        operation: 'record',
+        carrier: carrierId,
+      });
     }
   }
 
@@ -893,6 +1033,7 @@ export class TrackingSyncService {
         events_persisted: eventsToPersist.length,
         atomic_with_package: true,
       });
+      await this.recordStatusObservations(eventsToPersist, sourceCarrierId, context);
       const completion = {
         outcome,
         sourceCarrier: sourceCarrierId,

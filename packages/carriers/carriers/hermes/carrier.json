@@ -1,0 +1,29 @@
+{
+  "id": "hermes",
+  "displayName": "Hermes Einrichtungs-Service",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#0091cd"
+  },
+  "selectable": true,
+  "timezone": "Europe/Zurich",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "hermes",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://myhes.de/",
+    "canaryUrl": "https://myhes.de/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": []
+}

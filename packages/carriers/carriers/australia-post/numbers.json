@@ -1,0 +1,51 @@
+{
+  "carrier": "australia-post",
+  "records": [
+    {
+      "number": "0301006785462006320995",
+      "role": "quarantined",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/clooney/australia-post-tracking-api/blob/master/australia-post-tracking-api-python.md"
+      },
+      "quarantine": true,
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "austrian-post",
+          "usps"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to Australia Post, which no rule claims."
+    },
+    {
+      "number": "LH290032509AU",
+      "role": "quarantined",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/clooney/australia-post-tracking-api/blob/master/australia-post-tracking-api-python.md"
+      },
+      "quarantine": true,
+      "expect": {
+        "carrier": "intl-post",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to Australia Post; detection falls back to the generic postal rule."
+    },
+    {
+      "number": "LK201223662AU",
+      "role": "quarantined",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/clooney/australia-post-tracking-api/blob/master/australia-post-tracking-api-python.md"
+      },
+      "quarantine": true,
+      "expect": {
+        "carrier": "intl-post",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to Australia Post; detection falls back to the generic postal rule."
+    }
+  ]
+}

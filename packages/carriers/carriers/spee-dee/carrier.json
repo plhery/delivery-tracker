@@ -1,0 +1,44 @@
+{
+  "id": "spee-dee",
+  "displayName": "Spee-Dee",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.speedeedelivery.com/track/?tracking={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "speedeedelivery.com"
+      ],
+      "params": [
+        "tracking"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "spee-dee-1",
+      "pattern": "^SP\\d{18}$",
+      "confidence": "high"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": "postnord",
+  "displayName": "PostNord",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.postnord.se/en/our-tools/track-and-trace",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": [
+    {
+      "id": "postnord-1",
+      "pattern": "^\\d{11}SE$",
+      "confidence": "high"
+    }
+  ]
+}

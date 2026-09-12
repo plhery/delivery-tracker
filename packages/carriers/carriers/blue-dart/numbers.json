@@ -1,0 +1,66 @@
+{
+  "carrier": "blue-dart",
+  "records": [
+    {
+      "number": "79034111041",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://www.bluedart.com/write-to-us"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "gls-fr",
+          "gls-de",
+          "blue-dart",
+          "aramex"
+        ]
+      },
+      "note": "Official documentation example, not a real shipment. The source attributes it to Blue Dart, which stays one candidate among several."
+    },
+    {
+      "number": "79034111122",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://www.bluedart.com/write-to-us"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "gls-fr",
+          "gls-de",
+          "blue-dart",
+          "aramex"
+        ]
+      },
+      "note": "Official documentation example, not a real shipment. The source attributes it to Blue Dart, which stays one candidate among several."
+    },
+    {
+      "number": "90617363115",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.consumercomplaints.in/blue-dart-express-b100070",
+        "date": "2026-08-10"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "gls-fr",
+          "gls-de",
+          "blue-dart",
+          "aramex"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Blue Dart, which stays one candidate among several."
+    }
+  ]
+}

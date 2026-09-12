@@ -1,20 +1,318 @@
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+/*
+ * The carrier folders are the source of truth. Everything else is generated
+ * from them, and the merge only ever flows in this direction:
+ *
+ *   packages/carriers/carriers/<id>/carrier.json   (hand-edited)
+ *     -> contracts/openapi.json    x-carriers, components.schemas.CarrierId.enum
+ *          -> src/generated/apiContract.ts
+ *          -> ios/SwissDeliveryTracker/GeneratedAPIContract.swift
+ *          -> packages/carriers/generated/catalog.ts
+ *
+ * Editing x-carriers in contracts/openapi.json by hand is pointless: the next
+ * run overwrites it from the folders. Everything else in the OpenAPI document
+ * (paths, schemas, examples) is still hand-written, so the merge splices the
+ * two generated members into the existing text instead of re-serializing the
+ * whole document.
+ *
+ * `--check` regenerates in memory and fails when any of the four artifacts is
+ * out of date, or when the folders and the contract disagree about which
+ * carriers exist.
+ */
+
+import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import Ajv from 'ajv';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const contractPath = path.join(root, 'contracts', 'openapi.json');
+const carriersPath = path.join(root, 'packages', 'carriers', 'carriers');
+const carrierSchemaPath = path.join(root, 'packages', 'carriers', 'core', 'catalog', 'carrier.schema.json');
 const typesPath = path.join(root, 'src', 'generated', 'apiContract.ts');
 const swiftPath = path.join(root, 'ios', 'SwissDeliveryTracker', 'GeneratedAPIContract.swift');
-const contract = JSON.parse(await readFile(contractPath, 'utf8'));
-const schemas = contract.components?.schemas;
-const carrierCapabilities = contract['x-carriers'];
+const catalogPath = path.join(root, 'packages', 'carriers', 'generated', 'catalog.ts');
 
-if (contract.openapi !== '3.1.0' || !schemas || !carrierCapabilities) {
+const contractSource = await readFile(contractPath, 'utf8');
+const contract = JSON.parse(contractSource);
+const schemas = contract.components?.schemas;
+
+if (contract.openapi !== '3.1.0' || !schemas || !contract['x-carriers']) {
   throw new Error(
     'contracts/openapi.json must be an OpenAPI 3.1 document with schemas and x-carriers',
   );
 }
+if (!Array.isArray(schemas.CarrierId?.enum)) throw new Error('CarrierId must define an enum');
+
+// What the contract says today. The merge below only uses it to keep the
+// existing carrier and key order, so the diff stays about real changes.
+const publishedCarriers = contract['x-carriers'];
+const publishedCarrierIds = schemas.CarrierId.enum;
+
+// ---------------------------------------------------------------------------
+// Carrier folders
+// ---------------------------------------------------------------------------
+
+/** Reads every packages/carriers/carriers/<id>/carrier.json, in folder order. */
+async function readCarrierDocuments() {
+  const entries = await readdir(carriersPath, { withFileTypes: true });
+  const folders = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+  const documents = [];
+  for (const folder of folders) {
+    const file = path.join(carriersPath, folder, 'carrier.json');
+    const source = await readFile(file, 'utf8').catch(() => null);
+    if (source === null) {
+      throw new Error(
+        `packages/carriers/carriers/${folder} has no carrier.json. `
+        + 'Every carrier folder must define one; use npm run carrier:new to scaffold it.',
+      );
+    }
+    let document;
+    try {
+      document = JSON.parse(source);
+    } catch (cause) {
+      throw new Error(`packages/carriers/carriers/${folder}/carrier.json is not valid JSON: ${cause.message}`);
+    }
+    if (document.id !== folder) {
+      throw new Error(
+        `packages/carriers/carriers/${folder}/carrier.json declares id ${JSON.stringify(document.id)}; `
+        + 'the id must equal the folder name.',
+      );
+    }
+    documents.push(document);
+  }
+  return documents;
+}
+
+const carrierInputValidators = {
+  trackingUrl: new Set(['planzerSharedUrl', 'dachserCapabilityUrl']),
+  dpdPostcode: new Set([
+    'swissPostcode',
+    'francePostcode',
+    'swissOrFrancePostcode',
+    'paackPostcode',
+  ]),
+};
+
+/** Structural validation: the shape is owned by core/catalog/carrier.schema.json. */
+async function validateCarrierSchema(documents) {
+  const schema = JSON.parse(await readFile(carrierSchemaPath, 'utf8'));
+  const ajv = new Ajv({ allErrors: true, allowUnionTypes: true });
+  const validate = ajv.compile(schema);
+  for (const carrier of documents) {
+    if (!validate(carrier)) {
+      const details = validate.errors
+        .map((error) => `${error.instancePath || '/'} ${error.message}`)
+        .join('; ');
+      throw new Error(`packages/carriers/carriers/${carrier.id}/carrier.json is invalid: ${details}`);
+    }
+  }
+}
+
+/** Checks the schema cannot express: adapter/mode agreement, canary URLs, regexes. */
+function validateCarrierSemantics(carrier) {
+  const where = `packages/carriers/carriers/${carrier.id}/carrier.json`;
+  const { tracking, portal } = carrier;
+  if (
+    (tracking.mode === 'automatic' && typeof tracking.adapter !== 'string')
+    || (tracking.mode === 'link-only' && tracking.adapter !== null)
+    || (tracking.adapter === 'upstream' && typeof tracking.upstreamName !== 'string')
+  ) {
+    throw new Error(`${where} has an invalid tracking adapter`);
+  }
+  if (tracking.mode === 'automatic') {
+    let canaryUrl;
+    try {
+      canaryUrl = new URL(portal.canaryUrl);
+    } catch {
+      throw new Error(`${where} must define a valid portal.canaryUrl`);
+    }
+    if (
+      canaryUrl.protocol !== 'https:'
+      || canaryUrl.username
+      || canaryUrl.password
+      || canaryUrl.search
+      || canaryUrl.hash
+    ) {
+      throw new Error(`${where} must define a public HTTPS portal.canaryUrl`);
+    }
+  }
+  const fields = new Set();
+  for (const requirement of tracking.requirements ?? []) {
+    const validators = carrierInputValidators[requirement.field];
+    if (!validators || fields.has(requirement.field) || !validators.has(requirement.validator)) {
+      throw new Error(`${where} has an invalid input requirement`);
+    }
+    fields.add(requirement.field);
+    if (requirement.whenTrackingNumber) new RegExp(requirement.whenTrackingNumber);
+    if (requirement.pattern) new RegExp(requirement.pattern);
+  }
+  for (const rule of carrier.detection) {
+    new RegExp(rule.pattern);
+  }
+  for (const rule of carrier.links) {
+    for (const field of ['path', 'pathPattern', 'fragment']) {
+      if (rule[field] !== undefined) new RegExp(rule[field], 'i');
+    }
+  }
+}
+
+/** Detection rule ids are referenced by the sweep and the collision file. */
+function validateDetectionRuleIds(documents) {
+  const owners = new Map();
+  for (const carrier of documents) {
+    for (const rule of carrier.detection) {
+      const owner = owners.get(rule.id);
+      if (owner) {
+        throw new Error(`Detection rule id ${rule.id} is used by both ${owner} and ${carrier.id}`);
+      }
+      owners.set(rule.id, carrier.id);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Folders -> x-carriers
+// ---------------------------------------------------------------------------
+
+// Key order used for carriers the contract does not describe yet. Existing
+// entries keep the order contracts/openapi.json already uses (see
+// orderedContractEntry), so adopting the folders as the source of truth does
+// not reshuffle a hundred entries in the diff.
+const contractKeyOrder = [
+  'displayName',
+  'displayNames',
+  'color',
+  'selectable',
+  'timezone',
+  'tracking',
+  'canaryUrl',
+  'trackingUrlTemplate',
+  'trackingSiteName',
+  'linkRules',
+  'detectionRules',
+];
+
+function contractDetectionRule(rule) {
+  // `id` stays a folder-side concept: the published contract keeps the old shape.
+  const contractRule = { pattern: rule.pattern, confidence: rule.confidence };
+  if (rule.checksum !== undefined) contractRule.checksum = rule.checksum;
+  return contractRule;
+}
+
+function contractTracking(tracking) {
+  const contractValue = { mode: tracking.mode, adapter: tracking.adapter };
+  if (tracking.upstreamName !== undefined) contractValue.upstreamName = tracking.upstreamName;
+  if (tracking.requirements !== undefined) contractValue.requirements = tracking.requirements;
+  return contractValue;
+}
+
+/** Projects one carrier.json onto the published x-carriers entry shape. */
+function contractEntry(carrier) {
+  const entry = { displayName: carrier.displayName };
+  if (carrier.displayNames !== undefined) entry.displayNames = carrier.displayNames;
+  entry.color = carrier.brand.color;
+  entry.selectable = carrier.selectable;
+  entry.timezone = carrier.timezone;
+  entry.tracking = contractTracking(carrier.tracking);
+  if (carrier.portal.canaryUrl !== undefined) entry.canaryUrl = carrier.portal.canaryUrl;
+  if (carrier.portal.url !== undefined) entry.trackingUrlTemplate = carrier.portal.url;
+  if (carrier.portal.siteName !== undefined) entry.trackingSiteName = carrier.portal.siteName;
+  entry.linkRules = carrier.links;
+  entry.detectionRules = carrier.detection.map(contractDetectionRule);
+  return entry;
+}
+
+function orderedContractEntry(entry, current) {
+  const order = [...Object.keys(current ?? {}), ...contractKeyOrder, ...Object.keys(entry)];
+  const ordered = {};
+  for (const key of order) {
+    if (key in entry && !(key in ordered)) ordered[key] = entry[key];
+  }
+  return ordered;
+}
+
+/** Keeps the order the contract already uses; new carriers are appended. */
+function orderedCarrierIds(ids, current) {
+  const known = new Set(ids);
+  const kept = current.filter((id) => known.has(id));
+  const seen = new Set(kept);
+  return [...kept, ...ids.filter((id) => !seen.has(id))];
+}
+
+function mergeContractCarriers(documents) {
+  const entries = new Map(documents.map((carrier) => [carrier.id, contractEntry(carrier)]));
+  const merged = {};
+  for (const id of orderedCarrierIds([...entries.keys()], Object.keys(publishedCarriers))) {
+    merged[id] = orderedContractEntry(entries.get(id), publishedCarriers[id]);
+  }
+  return merged;
+}
+
+// ---------------------------------------------------------------------------
+// x-carriers -> contracts/openapi.json (textual splice, see the header comment)
+// ---------------------------------------------------------------------------
+
+/** End index of the JSON object or array starting at `start`. */
+function endOfJsonValue(source, start) {
+  const opening = source[start];
+  const closing = opening === '{' ? '}' : opening === '[' ? ']' : null;
+  if (!closing) throw new Error('Only object and array members can be spliced into the contract');
+  let depth = 0;
+  let inString = false;
+  for (let index = start; index < source.length; index += 1) {
+    const character = source[index];
+    if (inString) {
+      if (character === '\\') index += 1;
+      else if (character === '"') inString = false;
+      continue;
+    }
+    if (character === '"') inString = true;
+    else if (character === opening) depth += 1;
+    else if (character === closing) {
+      depth -= 1;
+      if (depth === 0) return index + 1;
+    }
+  }
+  throw new Error('contracts/openapi.json ends inside a value');
+}
+
+/** Start index of the value of `"<key>": ` written at exactly `indent` spaces. */
+function memberValueStart(source, indent, key, from = 0, to = source.length) {
+  const marker = `\n${' '.repeat(indent)}${JSON.stringify(key)}: `;
+  const region = source.slice(from, to);
+  const found = region.indexOf(marker);
+  if (found === -1) {
+    throw new Error(`contracts/openapi.json has no ${key} member indented by ${indent} spaces`);
+  }
+  if (region.indexOf(marker, found + 1) !== -1) {
+    throw new Error(`contracts/openapi.json has several ${key} members indented by ${indent} spaces`);
+  }
+  return from + found + marker.length;
+}
+
+function renderContractMember(value, indent) {
+  return JSON.stringify(value, null, 2).split('\n').join(`\n${' '.repeat(indent)}`);
+}
+
+function replaceContractMember(source, start, value, indent) {
+  return source.slice(0, start) + renderContractMember(value, indent) + source.slice(endOfJsonValue(source, start));
+}
+
+/**
+ * Rewrites only x-carriers and components.schemas.CarrierId.enum. Splicing text
+ * keeps the rest of the hand-written document (and its formatting) untouched.
+ */
+function generatedContract(source, carriers, carrierIds) {
+  const withCarriers = replaceContractMember(source, memberValueStart(source, 2, 'x-carriers'), carriers, 2);
+  const carrierIdStart = memberValueStart(withCarriers, 6, 'CarrierId');
+  const carrierIdEnd = endOfJsonValue(withCarriers, carrierIdStart);
+  const enumStart = memberValueStart(withCarriers, 8, 'enum', carrierIdStart, carrierIdEnd);
+  return replaceContractMember(withCarriers, enumStart, carrierIds, 8);
+}
+
+// ---------------------------------------------------------------------------
+// Contract-wide checks (unchanged)
+// ---------------------------------------------------------------------------
 
 function resolvePointer(reference) {
   if (!reference.startsWith('#/')) throw new Error(`Only local references are supported: ${reference}`);
@@ -55,95 +353,37 @@ function validateOperations() {
   }
 }
 
-validateReferences(contract);
-validateOperations();
+// ---------------------------------------------------------------------------
+// Merge
+// ---------------------------------------------------------------------------
 
-const carrierIds = schemas.CarrierId?.enum;
-if (!Array.isArray(carrierIds)) throw new Error('CarrierId must define an enum');
-const configuredCarrierIds = Object.keys(carrierCapabilities);
+const carrierDocuments = await readCarrierDocuments();
+await validateCarrierSchema(carrierDocuments);
+carrierDocuments.forEach(validateCarrierSemantics);
+validateDetectionRuleIds(carrierDocuments);
+
+const carrierCapabilities = mergeContractCarriers(carrierDocuments);
+const carrierIds = orderedCarrierIds(
+  carrierDocuments.map((carrier) => carrier.id),
+  publishedCarrierIds,
+);
 if (
-  carrierIds.length !== configuredCarrierIds.length
+  carrierIds.length !== Object.keys(carrierCapabilities).length
   || carrierIds.some((carrierId) => !Object.hasOwn(carrierCapabilities, carrierId))
 ) {
   throw new Error('x-carriers must define every CarrierId exactly once');
 }
 
-const carrierInputValidators = {
-  trackingUrl: new Set(['planzerSharedUrl', 'dachserCapabilityUrl']),
-  dpdPostcode: new Set([
-    'swissPostcode',
-    'francePostcode',
-    'swissOrFrancePostcode',
-    'paackPostcode',
-  ]),
-};
-for (const [carrierId, definition] of Object.entries(carrierCapabilities)) {
-  const tracking = definition?.tracking;
-  if (
-    typeof definition?.displayName !== 'string'
-    || typeof definition?.color !== 'string'
-    || typeof definition?.selectable !== 'boolean'
-    || typeof definition?.timezone !== 'string'
-    || !tracking
-    || !['automatic', 'link-only'].includes(tracking.mode)
-  ) {
-    throw new Error(`x-carriers.${carrierId} has invalid capability metadata`);
-  }
-  if (
-    (tracking.mode === 'automatic' && typeof tracking.adapter !== 'string')
-    || (tracking.mode === 'link-only' && tracking.adapter !== null)
-    || (tracking.adapter === 'upstream' && typeof tracking.upstreamName !== 'string')
-  ) {
-    throw new Error(`x-carriers.${carrierId} has an invalid tracking adapter`);
-  }
-  if (tracking.mode === 'automatic') {
-    let canaryUrl;
-    try {
-      canaryUrl = new URL(definition.canaryUrl);
-    } catch {
-      throw new Error(`x-carriers.${carrierId} must define a valid canaryUrl`);
-    }
-    if (
-      canaryUrl.protocol !== 'https:'
-      || canaryUrl.username
-      || canaryUrl.password
-      || canaryUrl.search
-      || canaryUrl.hash
-    ) {
-      throw new Error(`x-carriers.${carrierId} must define a public HTTPS canaryUrl`);
-    }
-  }
-  const fields = new Set();
-  for (const requirement of tracking.requirements ?? []) {
-    const validators = carrierInputValidators[requirement.field];
-    if (
-      !validators
-      || fields.has(requirement.field)
-      || !validators.has(requirement.validator)
-      || !['text', 'url'].includes(requirement.type)
-      || typeof requirement.label !== 'string'
-    ) {
-      throw new Error(`x-carriers.${carrierId} has an invalid input requirement`);
-    }
-    fields.add(requirement.field);
-    if (requirement.whenTrackingNumber) new RegExp(requirement.whenTrackingNumber);
-    if (requirement.pattern) new RegExp(requirement.pattern);
-  }
-  for (const rule of definition.detectionRules ?? []) {
-    new RegExp(rule.pattern);
-    if (!['high', 'low'].includes(rule.confidence) || ![undefined, 's10', 'mondial-relay'].includes(rule.checksum)) {
-      throw new Error(`x-carriers.${carrierId} has an invalid detection rule`);
-    }
-  }
-  for (const rule of definition.linkRules ?? []) {
-    for (const field of ['path', 'pathPattern', 'fragment']) {
-      if (rule[field] !== undefined) new RegExp(rule[field], 'i');
-    }
-    if (rule.detectFromNumber !== undefined && typeof rule.detectFromNumber !== 'boolean') {
-      throw new Error(`x-carriers.${carrierId} has an invalid universal tracking rule`);
-    }
-  }
-}
+// Everything downstream reads the merged document, not the file on disk.
+contract['x-carriers'] = carrierCapabilities;
+schemas.CarrierId.enum = carrierIds;
+
+validateReferences(contract);
+validateOperations();
+
+// ---------------------------------------------------------------------------
+// TypeScript
+// ---------------------------------------------------------------------------
 
 const enumConstants = {
   CarrierId: 'CARRIER_IDS',
@@ -244,6 +484,30 @@ function generatedTypeScript() {
   }
   return `${lines.join('\n').trim()}\n`;
 }
+
+/**
+ * The carrier package consumes the merged catalog directly, without importing
+ * application code: same data, package-local names.
+ */
+function generatedCarrierCatalog() {
+  const stages = schemas.Stage?.enum;
+  if (!Array.isArray(stages)) throw new Error('Stage must define an enum');
+  return `${[
+    '/* This file is generated by scripts/generate-api-contract.mjs. Do not edit. */',
+    '',
+    `export const CARRIER_CATALOG = ${JSON.stringify(carrierCapabilities, null, 2)} as const;`,
+    '',
+    `export const CARRIER_IDS = ${JSON.stringify(carrierIds, null, 2)} as const;`,
+    'export type CarrierId = (typeof CARRIER_IDS)[number];',
+    '',
+    `export const STAGES = ${JSON.stringify(stages, null, 2)} as const;`,
+    'export type Stage = (typeof STAGES)[number];',
+  ].join('\n')}\n`;
+}
+
+// ---------------------------------------------------------------------------
+// Swift
+// ---------------------------------------------------------------------------
 
 function upperFirst(value) {
   return value ? `${value[0].toUpperCase()}${value.slice(1)}` : value;
@@ -491,12 +755,40 @@ function generatedSwift() {
   return `${lines.join('\n').trim()}\n`;
 }
 
+// ---------------------------------------------------------------------------
+// Write or check
+// ---------------------------------------------------------------------------
+
 const outputs = [
+  [contractPath, generatedContract(contractSource, carrierCapabilities, carrierIds)],
   [typesPath, generatedTypeScript()],
   [swiftPath, generatedSwift()],
+  [catalogPath, generatedCarrierCatalog()],
 ];
 
+/** Reports folder/contract disagreements before the generic staleness message. */
+function describeCarrierDrift() {
+  const folderIds = new Set(carrierDocuments.map((carrier) => carrier.id));
+  const contractIds = publishedCarrierIds;
+  const added = [...folderIds].filter((id) => !contractIds.includes(id));
+  const removed = contractIds.filter((id) => !folderIds.has(id));
+  const problems = [];
+  if (added.length > 0) {
+    problems.push(`carrier folders missing from contracts/openapi.json: ${added.sort().join(', ')}`);
+  }
+  if (removed.length > 0) {
+    problems.push(
+      `contracts/openapi.json lists carriers with no packages/carriers/carriers/<id>/carrier.json: ${removed.sort().join(', ')}`,
+    );
+  }
+  return problems;
+}
+
 if (process.argv.includes('--check')) {
+  const drift = describeCarrierDrift();
+  if (drift.length > 0) {
+    throw new Error(`${drift.join('; ')}. Run npm run contract:generate.`);
+  }
   const stale = [];
   for (const [target, expected] of outputs) {
     const current = await readFile(target, 'utf8').catch(() => '');
@@ -507,7 +799,7 @@ if (process.argv.includes('--check')) {
       `Generated API contract files are stale: ${stale.join(', ')}. Run npm run contract:generate.`,
     );
   }
-  console.log('Generated API contract files are current.');
+  console.log(`Generated API contract files are current for ${carrierIds.length} carriers.`);
 } else {
   for (const [target, contents] of outputs) {
     await mkdir(path.dirname(target), { recursive: true });

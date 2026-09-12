@@ -1,0 +1,18 @@
+{
+  "carrier": "posti",
+  "records": [
+    {
+      "number": "LR288565359NL",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/hatlabs/posti-cli"
+      },
+      "expect": {
+        "carrier": "spring-gds",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to Posti; detection selects PostNL."
+    }
+  ]
+}

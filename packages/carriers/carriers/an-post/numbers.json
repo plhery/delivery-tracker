@@ -1,0 +1,19 @@
+{
+  "carrier": "an-post",
+  "records": [
+    {
+      "number": "CP476340265IE",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/review/www.anpost.com",
+        "date": "2026-08-31"
+      },
+      "expect": {
+        "carrier": "an-post",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    }
+  ]
+}

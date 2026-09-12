@@ -1,0 +1,44 @@
+{
+  "carrier": "correios-br",
+  "records": [
+    {
+      "number": "ES446391025BR",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/guilhermechapiewski/correios-api-py"
+      },
+      "expect": {
+        "carrier": "correios-br",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "LB571181225HK",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/FelipeMorandini/rastreador_correios"
+      },
+      "expect": {
+        "carrier": "hongkong-post",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to Correios Brazil; detection selects Hongkong Post."
+    },
+    {
+      "number": "RA222491899CN",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/leandrotoledo/python-correios"
+      },
+      "expect": {
+        "carrier": "china-post",
+        "confidence": "high"
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to Correios Brazil; detection selects China Post."
+    }
+  ]
+}

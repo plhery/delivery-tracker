@@ -1,0 +1,47 @@
+{
+  "id": "sf-express",
+  "displayName": "SF Express",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.sf-express.com/chn/en/waybill/waybill-detail/{trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "sf-express.com"
+      ],
+      "path": "^/.+/waybill-detail/([^/?#]+)/?$"
+    }
+  ],
+  "detection": [
+    {
+      "id": "sf-express-1",
+      "pattern": "^\\d{12}$",
+      "confidence": "low"
+    },
+    {
+      "id": "sf-express-2",
+      "pattern": "^SF\\d{13}$",
+      "confidence": "low"
+    }
+  ]
+}

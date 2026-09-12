@@ -1,0 +1,39 @@
+{
+  "id": "aliexpress",
+  "displayName": "AliExpress / Cainiao",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#ff4747"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "upstream",
+    "upstreamName": "AliExpress",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://global.cainiao.com/detail.htm?mailNoList={trackingNumber}",
+    "canaryUrl": "https://global.cainiao.com/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "global.cainiao.com"
+      ],
+      "params": [
+        "mailNoList"
+      ]
+    }
+  ],
+  "detection": []
+}

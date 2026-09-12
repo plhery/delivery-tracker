@@ -1,0 +1,44 @@
+{
+  "id": "gofo",
+  "displayName": "GOFO Express",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.gofoexpress.com/tracking.html?searchID={trackingNumber}",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "gofoexpress.com"
+      ],
+      "params": [
+        "searchID"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "gofo-1",
+      "pattern": "^GFUS\\d{14}$",
+      "confidence": "high"
+    }
+  ]
+}

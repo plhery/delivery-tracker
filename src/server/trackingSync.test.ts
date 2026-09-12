@@ -21,10 +21,13 @@ import type { SupabaseServiceClient } from './supabase';
 import {
   CarrierTrackingAdapter,
   buildEvents,
+  classifyStage,
+  collectStatusObservations,
   detectSyncAnomalies,
   eventTimestamp,
   fairSyncPackages,
   inferStage,
+  MAX_STATUS_OBSERVATIONS_PER_SYNC,
   isTrackingSyncDue,
   isUnannouncedTrackingError,
   providerEventId,
@@ -116,7 +119,7 @@ describe('tracking event normalization', () => {
       status: 'delivered', last_status_text: 'Delivered', last_update: time,
     });
     expect(events).toHaveLength(1);
-    expect(events[0]?.raw_data).toEqual({ time });
+    expect(events[0]?.raw_data).toEqual({ time, stage_source: 'wording:language' });
   });
 
   it('prioritizes exception and final-stage phrases before broad delivery words', () => {
@@ -124,6 +127,38 @@ describe('tracking event normalization', () => {
     expect(inferStage('Return to sender')).toBe('returned');
     expect(inferStage('Parcel handed to DPD')).toBe('accepted');
     expect(inferStage('To be delivered')).toBe('in_transit');
+  });
+
+  it('records where every event stage came from', () => {
+    const rows = buildEvents({ id: 'package-1', carrier: 'ctt' }, {
+      status: 'unknown',
+      events: [
+        { time: '2026-09-10T09:00:00Z', description: 'Objeto entregue', stage: 'delivered' },
+        { time: '2026-09-10T08:00:00Z', description: 'Return to sender' },
+        { time: '2026-09-10T07:00:00Z', description: 'Confirmation of receipt' },
+        { time: '2026-09-10T06:00:00Z', description: 'Estado interno 99' },
+      ],
+    });
+    expect(rows.map((row) => [row.stage, (row.raw_data as JsonObject).stage_source])).toEqual([
+      ['delivered', 'carrier_map'],
+      ['returned', 'wording:language'],
+      ['delivered', 'wording:delivered'],
+      ['in_transit', 'none'],
+    ]);
+    // The raw provider event is still stored next to the recorded source.
+    expect(rows[3]?.raw_data).toEqual({
+      time: '2026-09-10T06:00:00Z', description: 'Estado interno 99', stage_source: 'none',
+    });
+  });
+
+  it('keeps the classifier stage and its rule id in step', () => {
+    expect(classifyStage('Delivery attempt failed'))
+      .toEqual({ stage: 'failed_attempt', source: 'wording:language' });
+    expect(classifyStage('Confirmation of receipt'))
+      .toEqual({ stage: 'delivered', source: 'wording:delivered' });
+    expect(classifyStage('Estado interno 99', 'pending'))
+      .toEqual({ stage: 'pending', source: 'none' });
+    expect(inferStage('Estado interno 99', 'pending')).toBe('pending');
   });
 
   it('normalizes zoneless carrier timestamps into UTC', () => {
@@ -212,7 +247,7 @@ describe('tracking event normalization', () => {
         stage: 'out_for_delivery',
         description: 'En cours de livraison',
         occurred_at: '2026-08-30T13:00:00.000Z',
-        raw_data: { observed_without_provider_timestamp: true },
+        raw_data: { observed_without_provider_timestamp: true, stage_source: 'carrier_map' },
       }),
     ]);
 
@@ -300,6 +335,103 @@ describe('fair scheduling', () => {
   });
 });
 
+describe('status observation collection', () => {
+  it('keeps wording no carrier map resolved, deduplicated per carrier and code', () => {
+    const rows = buildEvents({ id: 'package-1', carrier: 'ctt' }, {
+      status: 'unknown',
+      events: [
+        { time: '2026-09-10T09:00:00Z', description: 'Objeto entregue', stage: 'delivered', provider_code: '5' },
+        { time: '2026-09-10T08:00:00Z', description: '  Estado   INTERNO 99 ', provider_code: '99' },
+        { time: '2026-09-10T07:00:00Z', description: 'Estado interno 99', provider_code: '99' },
+      ],
+    });
+    const observations = collectStatusObservations(rows, 'ctt');
+    expect(observations).toHaveLength(1);
+    expect(observations[0]).toMatchObject({
+      carrier: 'ctt',
+      provider_code: '99',
+      description_normalized: 'estado interno 99',
+      language_guess: null,
+      stage_source: 'none',
+      chosen_stage: 'in_transit',
+      package_id: 'package-1',
+    });
+    expect(observations[0]?.observation_key).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('attributes each wording to the carrier that served it and bounds one sync', () => {
+    const merged = collectStatusObservations([
+      {
+        package_id: 'package-1', stage: 'in_transit', description: 'Unknown German wording',
+        provider_event_id: 'gls-de:abc', raw_data: { stage_source: 'none' },
+      },
+      {
+        package_id: 'package-1', stage: 'in_transit', description: 'Unknown Swiss wording',
+        provider_event_id: '', raw_data: { stage_source: 'wording:in_transit' },
+      },
+    ], 'swiss-post');
+    expect(merged.map((observation) => observation.carrier)).toEqual(['gls-de', 'swiss-post']);
+
+    const many = Array.from({ length: MAX_STATUS_OBSERVATIONS_PER_SYNC + 8 }, (_, index) => ({
+      package_id: 'package-1', stage: 'in_transit', description: `Unknown wording ${index}`,
+      provider_event_id: `ctt:${index}`, raw_data: { stage_source: 'none' },
+    }));
+    expect(collectStatusObservations(many, 'ctt')).toHaveLength(MAX_STATUS_OBSERVATIONS_PER_SYNC);
+  });
+
+  it('skips events whose stage came from the carrier map', () => {
+    expect(collectStatusObservations([{
+      package_id: 'package-1', stage: 'delivered', description: 'Objeto entregue',
+      provider_event_id: 'ctt:abc', raw_data: { stage_source: 'carrier_map' },
+    }], 'ctt')).toEqual([]);
+  });
+
+  it('records unresolved wording after the events are persisted', async () => {
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn().mockResolvedValue({
+      status: 'in_transit',
+      last_status_text: 'Estado interno 99',
+      last_update: '2026-09-10T11:00:00Z',
+      events: [{ time: '2026-09-10T11:00:00Z', description: 'Estado interno 99', provider_code: '99' }],
+    }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null);
+    await expect(service.syncPackage({ id: 'observed', carrier: 'ctt', tracking_number: 'TEST1234' }))
+      .resolves.toMatchObject({ updated: 1 });
+    expect(client.recordTrackingStatusObservations).toHaveBeenCalledOnce();
+    expect(client.recordTrackingStatusObservations.mock.calls[0][0]).toEqual([
+      expect.objectContaining({
+        carrier: 'ctt', provider_code: '99', description_normalized: 'estado interno 99',
+        stage_source: 'none', chosen_stage: 'in_transit',
+      }),
+    ]);
+    expect(client.recordTrackingStatusObservations.mock.invocationCallOrder[0])
+      .toBeGreaterThan(client.insertEvents.mock.invocationCallOrder[0]);
+  });
+
+  it('swallows an observation write failure and reports it once', async () => {
+    const captured = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
+    const logged = vi.spyOn(observability, 'logOperationalEvent').mockImplementation(() => undefined);
+    const client = {
+      ...fakeClient(),
+      recordTrackingStatusObservations: vi.fn().mockRejectedValue(new Error('observations unavailable')),
+    };
+    const adapter = { fetch: vi.fn().mockResolvedValue({
+      status: 'in_transit',
+      last_status_text: 'Estado interno 99',
+      last_update: '2026-09-10T11:00:00Z',
+      events: [{ time: '2026-09-10T11:00:00Z', description: 'Estado interno 99' }],
+    }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null);
+    const parcel = { id: 'observed', carrier: 'ctt', tracking_number: 'TEST1234' };
+    await expect(service.syncPackage(parcel)).resolves.toMatchObject({ updated: 1, errors: 0 });
+    await expect(service.syncPackage(parcel)).resolves.toMatchObject({ updated: 1, errors: 0 });
+    expect(client.recordTrackingStatusObservations).toHaveBeenCalledTimes(2);
+    expect(logged.mock.calls.filter(([event]) => event === 'tracking_status_observation_write_failed'))
+      .toHaveLength(2);
+    expect(captured).toHaveBeenCalledOnce();
+  });
+});
+
 function fakeClient(packages: JsonObject[] = []) {
   const client = {
     listActivePackages: vi.fn().mockResolvedValue(packages),
@@ -309,6 +441,7 @@ function fakeClient(packages: JsonObject[] = []) {
     deleteEventsByDescriptions: vi.fn().mockResolvedValue(undefined),
     startSyncAttempt: vi.fn().mockResolvedValue(undefined),
     completeSyncAttempt: vi.fn().mockResolvedValue(true),
+    recordTrackingStatusObservations: vi.fn().mockResolvedValue(undefined),
   };
   return {
     ...client,

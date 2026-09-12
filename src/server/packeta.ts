@@ -48,8 +48,9 @@ const PACKET_STATUS: Record<string, ClassifiedStatus> = {
 
 // No per-event status code exists; real parcels confirmed these English sentences
 // are canned templates (locale is pinned to English in the request), so fixed
-// substring matching is safe. Unrecognized sentences keep unknown/in_transit and
-// surface through sync-error monitoring via the strict overall-code mapping.
+// substring matching is safe. Unrecognized sentences keep no stage: the sync
+// classifies the wording and records where the stage came from, while the
+// strict overall-code mapping still reports the parcel as unknown.
 const EVENT_TEXT_STAGES: Array<[substring: string, stage: Stage]> = [
   ['aware of your parcel and are waiting for the sender', 'registered'],
   ['assigned a tracking number', 'registered'],

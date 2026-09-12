@@ -1,0 +1,36 @@
+{
+  "id": "china-post",
+  "displayName": "China Post",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "universal",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.ems.com.cn/mailtracking/you_jian_cha_xun.html",
+    "canaryUrl": "https://t.17track.net/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [],
+  "detection": [
+    {
+      "id": "china-post-1",
+      "pattern": "^[A-Z]{2}\\d{9}CN$",
+      "confidence": "high",
+      "checksum": "s10"
+    }
+  ]
+}

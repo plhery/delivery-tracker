@@ -49,7 +49,9 @@ describe('Quickpac / Planzer historical event stages', () => {
     expect(rows.map((row) => row.provider_event_id)).toEqual(POSITION_EVENTS.map((event) => (
       providerEventId(carrier, event.createdAt, '', event.text.english)
     )));
-    expect(rows.map((row) => row.raw_data)).toEqual([...result.events!].reverse());
+    // The provider payload is preserved verbatim next to the recorded stage source.
+    expect(rows.map((row) => row.raw_data)).toEqual([...result.events!].reverse()
+      .map((event) => ({ ...event, stage_source: 'carrier_map' })));
   });
 
   it('keeps historical stages and identities stable as the shipment progresses', async () => {

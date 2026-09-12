@@ -1,0 +1,91 @@
+{
+  "carrier": "ecoscooting",
+  "records": [
+    {
+      "number": "081730000038942441",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/cuidado-con-ecoscooting/eec55dfee3121ef28c",
+        "date": "2025-09-09"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ecoscooting, which stays one candidate among several."
+    },
+    {
+      "number": "083030000063547779",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/pedido-nunca-llega/571d0533088b8ba848",
+        "date": "2025-12-30"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ecoscooting, which stays one candidate among several."
+    },
+    {
+      "number": "380030000066362966",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/las-entregas-no-llegan-/a9ac02ca080289f896",
+        "date": "2026-03-22"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ecoscooting, which stays one candidate among several."
+    },
+    {
+      "number": "380030000066782505",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/las-entregas-no-llegan-/a9ac02ca080289f896",
+        "date": "2026-03-22"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ecoscooting, which stays one candidate among several."
+    },
+    {
+      "number": "CQ343770772DE",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/paquete-extraviado-cq34377077/a9305cbaea4cb4fa5a",
+        "date": "2025-01-09"
+      },
+      "expect": {
+        "carrier": "dhl",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ecoscooting; detection selects DHL."
+    }
+  ]
+}

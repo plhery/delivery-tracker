@@ -1,0 +1,44 @@
+{
+  "id": "ciblex",
+  "displayName": "Ciblex",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#e30613"
+  },
+  "selectable": true,
+  "timezone": "Europe/Paris",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "ciblex",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://secure.extranet.ciblex.fr/extranet/client/corps.php?module=colis&colis={trackingNumber}",
+    "canaryUrl": "https://secure.extranet.ciblex.fr/extranet/client/corps.php",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "secure.extranet.ciblex.fr"
+      ],
+      "params": [
+        "colis"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "ciblex-1",
+      "pattern": "^\\d{14}$",
+      "confidence": "low"
+    }
+  ]
+}

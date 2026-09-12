@@ -1,0 +1,37 @@
+{
+  "carrier": "correos-spain",
+  "records": [
+    {
+      "number": "PR110604670130400C",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.htcmania.com/archive/index.php/t-964137.html",
+        "date": "2015-06-02"
+      },
+      "expect": {
+        "carrier": "correos-spain",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
+      "number": "CV000562646ES",
+      "role": "quarantined",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://gist.github.com/zxp/e83a4a1b7294a5ed6207",
+        "date": "2015-08-29"
+      },
+      "quarantine": true,
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "chronopost"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The S10 check digit does not validate. The source attributes it to Correos, which no rule claims."
+    }
+  ]
+}

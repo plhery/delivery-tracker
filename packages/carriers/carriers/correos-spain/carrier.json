@@ -1,0 +1,44 @@
+{
+  "id": "correos-spain",
+  "displayName": "Correos",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#8e8e93"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "correos-spain",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.correos.es/es/es/herramientas/localizador/envios/detalle?tracking-number={trackingNumber}",
+    "canaryUrl": "https://www.correos.es/",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "correos.es"
+      ],
+      "params": [
+        "tracking-number"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "correos-spain-1",
+      "pattern": "^PR\\d{15}C$",
+      "confidence": "high"
+    }
+  ]
+}

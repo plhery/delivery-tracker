@@ -1,0 +1,21 @@
+{
+  "carrier": "colisweb",
+  "records": [
+    {
+      "number": "87654321",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-10",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "mondial-relay",
+          "heppner"
+        ]
+      },
+      "note": "Invented placeholder used as a shape check. Filed under Colisweb, which no rule claims."
+    }
+  ]
+}

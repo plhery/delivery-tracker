@@ -1,0 +1,63 @@
+{
+  "id": "dhl-ecommerce",
+  "displayName": "DHL eCommerce",
+  "aliases": [],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#ffcc00"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "dhl-ecommerce",
+    "steps": []
+  },
+  "capabilities": [],
+  "portal": {
+    "url": "https://www.dhl.com/ch-en/home/tracking.html?tracking-id={trackingNumber}&submit=1",
+    "canaryUrl": "https://www.dhl.com/ch-en/home/tracking.html",
+    "shows": [],
+    "scraped": [],
+    "discarded": [],
+    "unavailable": []
+  },
+  "links": [
+    {
+      "domains": [
+        "ecommerceportal.dhl.com",
+        "webtrack.dhlglobalmail.com"
+      ],
+      "params": [
+        "tracking-id",
+        "trackingNumber",
+        "tracking",
+        "ID"
+      ]
+    },
+    {
+      "domains": [
+        "dhl.com"
+      ],
+      "pathPattern": "/home/tracking[.]html$",
+      "params": [
+        "tracking-id",
+        "trackingId"
+      ]
+    }
+  ],
+  "detection": [
+    {
+      "id": "dhl-ecommerce-1",
+      "pattern": "^GM[0-9]{16,18}$",
+      "confidence": "high"
+    },
+    {
+      "id": "dhl-ecommerce-2",
+      "pattern": "^[0-9]{16,17}$",
+      "confidence": "low"
+    }
+  ]
+}

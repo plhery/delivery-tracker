@@ -1,0 +1,62 @@
+{
+  "carrier": "planzer",
+  "records": [
+    {
+      "number": "12345678",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/ha-parcel-integrations/ha-planzer/blob/main/README.md"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "mondial-relay",
+          "heppner"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to Planzer, which no rule claims."
+    },
+    {
+      "number": "91346097123456789012",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "planzer",
+        "confidence": "high"
+      },
+      "note": "Made-up number that follows the published format."
+    },
+    {
+      "number": "98765.0012345678",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/ha-parcel-integrations/ha-planzer/blob/main/README.md"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "fedex"
+        ]
+      },
+      "note": "Open-source project example, not a real shipment. The source attributes it to Planzer, which no rule claims."
+    },
+    {
+      "number": "999.90.03316119",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-12",
+      "expect": {
+        "carrier": "planzer",
+        "confidence": "high"
+      },
+      "note": "Made-up number that follows the published format."
+    }
+  ]
+}

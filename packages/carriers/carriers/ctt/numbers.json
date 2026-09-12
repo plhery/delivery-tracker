@@ -1,0 +1,19 @@
+{
+  "carrier": "ctt",
+  "records": [
+    {
+      "number": "RL402552798PT",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.altroconsumo.it/reclamare/bacheca-dei-reclami/ritardo-consegna-raccomandata/f9bc9dea8c8224161d",
+        "date": "2025-11-03"
+      },
+      "expect": {
+        "carrier": "ctt",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    }
+  ]
+}

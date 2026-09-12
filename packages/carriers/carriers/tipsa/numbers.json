@@ -1,0 +1,26 @@
+{
+  "carrier": "tipsa",
+  "records": [
+    {
+      "number": "8104405448",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/no-recibido-pedido/ca39ecd30bb517b380",
+        "date": "2025-08-07"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl",
+          "mondial-relay",
+          "relais-colis",
+          "tipsa",
+          "estafeta"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to TIPSA, which stays one candidate among several."
+    }
+  ]
+}
