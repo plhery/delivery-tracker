@@ -104,5 +104,11 @@ use the same data on web and iPhone. References reviewed 2026-09-12:
 | Mondial Relay | A nearly square burgundy badge containing the white person and pink parcel, traced from the [red badge and pink visual identity](https://storage.mondialrelay.fr/Mondial%20Relay%20transforme%20sa%20marque%20avec%20Dragon%20Rouge.pdf). Colors are sampled UI approximations. |
 | PostNL (`spring-gds`) | A white crown on the existing orange truck, inspired by the [official PostNL media kit](https://newsroom.postnl.nl/en-NL/assets/237879/). The historical carrier ID remains `spring-gds`, but the catalog identifies this service as PostNL. |
 
-These three silhouettes preserve their reference aspect ratios. Curves are flattened
+The La Poste, Chronopost and Mondial Relay silhouettes preserve their reference aspect ratios. Curves are flattened
 to short polygon edges so the web SVG and native Canvas share the same outline.
+
+The remaining compact marks also get optical adjustments: a larger, centered UPS
+shield with a gold rim, a smoother tapered Amazon smile and India Post flight
+lines, and lighter FedEx, Quickpac and PostNL details. These remain simplified
+brand-inspired decorations rather than miniature wordmarks. UPS now shares the
+same polygon outline on web and iPhone, including its curved shoulders and tip.

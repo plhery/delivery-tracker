@@ -5,18 +5,14 @@ import { CarrierMark } from './CarrierMark';
 import markup from './carrierMark.fixture.json';
 import { CARRIER_TRUCK, carrierDecal } from '@carriers/core/brand';
 
-/**
- * The truck is data now (`packages/carriers/core/brand/truck.json`). The
- * fixture is the markup the hand-written SVG produced before that move, so a
- * change to the geometry that would move a pixel has to be deliberate.
- */
+/** Recorded SVG markup anchors the shared truck and selected liveries. */
 describe('carrier mark', () => {
-  it.each(Object.keys(markup) as (keyof typeof markup)[])('draws %s exactly as before', (id) => {
+  it.each(Object.keys(markup) as (keyof typeof markup)[])('draws %s exactly as recorded', (id) => {
     const { container } = render(<CarrierMark carrier={carrierInfo(id)} />);
     expect(container.innerHTML).toBe(markup[id]);
   });
 
-  it.each(['fedex', 'dpd', 'dpd-fr', 'amazon-logistics', 'amazon-shipping', 'japan-post', 'dhl-ecommerce', 'swiss-post', 'quickpac', 'la-poste', 'chronopost', 'india-post', 'mondial-relay', 'spring-gds', 'swiss-post-cargo', 'postlogistics'] as const)(
+  it.each(['ups', 'fedex', 'dpd', 'dpd-fr', 'amazon-logistics', 'amazon-shipping', 'japan-post', 'dhl-ecommerce', 'swiss-post', 'quickpac', 'la-poste', 'chronopost', 'india-post', 'mondial-relay', 'spring-gds', 'swiss-post-cargo', 'postlogistics'] as const)(
     'renders the declared decoration for %s', (id) => {
       const { container } = render(<CarrierMark carrier={carrierInfo(id)} />);
       const paths = [...container.querySelectorAll('svg > path')].map(path => path.getAttribute('d'));

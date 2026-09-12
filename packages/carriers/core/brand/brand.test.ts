@@ -53,7 +53,7 @@ describe('carrier brand', () => {
   });
 
   it('keeps the new SVG paths identical to their native outlines', () => {
-    for (const name of ['fedex', 'dpd', 'amazon', 'japan-post', 'swiss-post', 'quickpac', 'la-poste', 'chronopost', 'india-post', 'mondial-relay', 'postnl'] as const) {
+    for (const name of ['ups', 'fedex', 'dpd', 'amazon', 'japan-post', 'swiss-post', 'quickpac', 'la-poste', 'chronopost', 'india-post', 'mondial-relay', 'postnl'] as const) {
       for (const shape of CARRIER_TRUCK.decals[name]) {
         if (shape.type === 'circle') {
           expect(shape.cx - shape.r).toBeGreaterThanOrEqual(CARRIER_TRUCK.body.x);
