@@ -177,3 +177,6 @@ this provider is a provider failure, not proof of a wrong carrier (see
   this environment and the public page will not replay `#nums=` unattended.
   Carrier READMEs record Ship24/ParcelsApp real-number results; this
   provider's column there reads "not verified in this pass".
+- 2026-09-13: still deferred — this machine has no container runtime, so the
+  pinned TRAWL build cannot run here; offline suites pass
+  (`seventeentrack/adapter`, `universal`, `universalScrapers`: 34 tests).
