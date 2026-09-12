@@ -1,0 +1,52 @@
+{
+  "status": [
+    { "state": "success", "message": "Suivi disponible" }
+  ],
+  "Expedition": {
+    "Numero": "17185966",
+    "SuiviContextuel": "Votre colis est disponible dans votre Point Relais®",
+    "EstimatedDeliveryDate": "2026-08-31T00:00:00",
+    "Evenements": [
+      {
+        "Date": "2026-08-30T10:30:00",
+        "Libelle": "Votre colis est disponible dans votre Point Relais®",
+        "DetailPointRelais": {
+          "Adresse": {
+            "AdresseLigne1": "10 PRIVATE STREET",
+            "Ville": "PRIVATE CITY",
+            "CodePostal": "PRIVATE POSTCODE"
+          },
+          "Telephone": "PRIVATE PHONE",
+          "Email": "private@example.test",
+          "Latitude": "PRIVATE LATITUDE",
+          "Longitude": "PRIVATE LONGITUDE"
+        },
+        "Destinataire": "PRIVATE RECIPIENT"
+      },
+      {
+        "Date": "2026-08-29T14:00:00",
+        "Libelle": "Votre colis est en cours d'acheminement",
+        "Localisation": "PRIVATE DEPOT ADDRESS"
+      }
+    ],
+    "SuiviParEtapes": {
+      "Etape1": {
+        "Numero": 1,
+        "Libelle": "Colis enregistré",
+        "Evenement": { "Date": "2026-08-28T08:00:00" }
+      },
+      "Etape4": {
+        "Numero": 4,
+        "Libelle": "Disponible au Point Relais",
+        "Evenement": { "Date": "2026-08-30T10:30:00" }
+      }
+    },
+    "DestinataireCodePostal": "PRIVATE RECIPIENT POSTCODE",
+    "Replace": {
+      "parcelshop": {
+        "address": "PRIVATE REPLACEMENT ADDRESS",
+        "email": "private-replacement@example.test"
+      }
+    }
+  }
+}

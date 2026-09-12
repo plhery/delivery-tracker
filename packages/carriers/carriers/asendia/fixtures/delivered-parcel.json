@@ -1,0 +1,46 @@
+{
+  "summary": "Parcel found.",
+  "context_code": 1000,
+  "data": [
+    {
+      "tracking_id": "LF092919653FR",
+      "upper_tracking_id": "LF092919653FR",
+      "status": "Delivered",
+      "origin_country_name": "France",
+      "destination_country_name": "Switzerland",
+      "shipment_date": "2026-08-25",
+      "delivery_date": "2026-08-29",
+      "order_id": "private-order-reference",
+      "recipient_name": "Private Recipient",
+      "recipient_address": "10 Private Street, 8000 Private City",
+      "recipient_email": "private@example.test",
+      "events": [
+        {
+          "eventDateTime": "29/08/2026 11:42",
+          "eventRate": 6,
+          "harmonizedCode": "DELIVERED",
+          "harmonizedEvent": "Delivered",
+          "eventDesc": "Delivered to Private Recipient",
+          "scanningLocation": "Zurich, CH",
+          "recipient_name": "Private Recipient"
+        },
+        {
+          "eventDateTime": "28/08/2026 07:18",
+          "eventRate": 4,
+          "harmonizedCode": "ARRIVED_DESTINATION",
+          "harmonizedEvent": "Arrived at destination",
+          "eventDesc": "Arrived at destination",
+          "scanningLocation": "Zurich, CH"
+        },
+        {
+          "eventDateTime": "25/08/2026 16:03",
+          "eventRate": 1,
+          "harmonizedCode": "INFO_RECEIVED",
+          "harmonizedEvent": "Information received",
+          "eventDesc": "Shipment information received",
+          "scanningLocation": "Paris, FR"
+        }
+      ]
+    }
+  ]
+}

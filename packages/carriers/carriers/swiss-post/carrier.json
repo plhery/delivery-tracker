@@ -1,9 +1,17 @@
 {
   "id": "swiss-post",
   "displayName": "Swiss Post",
-  "aliases": [],
+  "aliases": [
+    "Die Post",
+    "La Poste Suisse",
+    "La Posta Svizzera",
+    "Swiss Post Ltd"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "CH",
+      "LI"
+    ]
   },
   "brand": {
     "color": "#ffcc00"
@@ -14,15 +22,43 @@
     "mode": "automatic",
     "adapter": "upstream",
     "upstreamName": "Swiss Post",
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "eta",
+    "provider_code"
+  ],
   "portal": {
     "url": "https://service.post.ch/ekp-web/ui/entry/search/{trackingNumber}",
     "canaryUrl": "https://service.post.ch/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "eta",
+      "eta_window",
+      "recipient_name",
+      "recipient_address",
+      "signature",
+      "delivery_instructions"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "eta",
+      "provider_code"
+    ],
+    "discarded": [
+      "recipient_name",
+      "recipient_address",
+      "signature",
+      "delivery_instructions"
+    ],
     "unavailable": []
   },
   "links": [

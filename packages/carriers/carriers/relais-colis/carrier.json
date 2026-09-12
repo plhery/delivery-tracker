@@ -1,9 +1,13 @@
 {
   "id": "relais-colis",
   "displayName": "Relais Colis",
-  "aliases": [],
+  "aliases": [
+    "Relais Colis (Groupe Ducros)"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "FR"
+    ]
   },
   "brand": {
     "color": "#7bb928"
@@ -13,15 +17,32 @@
   "tracking": {
     "mode": "automatic",
     "adapter": "relais-colis",
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history"
+  ],
   "portal": {
     "url": "https://www.relaiscolis.com/colis/suivre?tracking_number={trackingNumber}",
     "canaryUrl": "https://www.relaiscolis.com/colis/suivre",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "recipient_name",
+      "recipient_address",
+      "pickup_point"
+    ],
+    "scraped": [
+      "status",
+      "history"
+    ],
+    "discarded": [
+      "recipient_name",
+      "recipient_address",
+      "pickup_point"
+    ],
     "unavailable": []
   },
   "links": [

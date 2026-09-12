@@ -1,0 +1,133 @@
+{
+  "carrier": "spring-gds",
+  "entries": [
+    {
+      "wording": "pre-advised",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Event category; matched case-insensitively after trimming."
+    },
+    {
+      "wording": "preparing",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Event category; matched case-insensitively after trimming."
+    },
+    {
+      "wording": "processing",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Event category; matched case-insensitively after trimming."
+    },
+    {
+      "wording": "departed",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Event category; matched case-insensitively after trimming."
+    },
+    {
+      "wording": "arrived",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Event category; matched case-insensitively after trimming."
+    },
+    {
+      "wording": "in transit",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Event category; matched case-insensitively after trimming."
+    },
+    {
+      "wording": "transit",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Event category; matched case-insensitively after trimming."
+    },
+    {
+      "wording": "customs",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Event category; matched case-insensitively after trimming."
+    },
+    {
+      "wording": "out for delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Event category; matched case-insensitively after trimming."
+    },
+    {
+      "wording": "pick-up point",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Event category; matched case-insensitively after trimming."
+    },
+    {
+      "wording": "delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Event category; matched case-insensitively after trimming."
+    },
+    {
+      "wording": "unsuccesfull",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "PostNL's own spelling."
+    },
+    {
+      "wording": "unsuccessful",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "The corrected spelling, mapped so an upstream fix loses nothing."
+    },
+    {
+      "wording": "undelivered",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Event category; matched case-insensitively after trimming."
+    },
+    {
+      "wording": "returned",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Event category; matched case-insensitively after trimming."
+    },
+    {
+      "wording": "exception",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Event category; matched case-insensitively after trimming."
+    }
+  ]
+}

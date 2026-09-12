@@ -1,9 +1,15 @@
 {
   "id": "correos-spain",
   "displayName": "Correos",
-  "aliases": [],
+  "aliases": [
+    "Correos España",
+    "Correos y Telégrafos",
+    "Sociedad Estatal Correos y Telégrafos"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "ES"
+    ]
   },
   "brand": {
     "color": "#8e8e93"
@@ -13,16 +19,47 @@
   "tracking": {
     "mode": "automatic",
     "adapter": "correos-spain",
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "pickup_point",
+    "weight",
+    "dimensions",
+    "delivered_at"
+  ],
   "portal": {
     "url": "https://www.correos.es/es/es/herramientas/localizador/envios/detalle?tracking-number={trackingNumber}",
     "canaryUrl": "https://www.correos.es/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "shows": [
+      "status",
+      "history",
+      "recipient_name",
+      "recipient_address",
+      "signature",
+      "weight",
+      "dimensions",
+      "pickup_point"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "recipient_name",
+      "weight",
+      "dimensions",
+      "pickup_point",
+      "delivered_at"
+    ],
+    "discarded": [
+      "recipient_address",
+      "signature"
+    ],
+    "unavailable": [
+      "eta",
+      "location"
+    ]
   },
   "links": [
     {

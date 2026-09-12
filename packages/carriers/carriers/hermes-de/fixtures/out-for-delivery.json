@@ -1,0 +1,19 @@
+[
+  {
+    "barcode": "H1234567890123456789",
+    "address": {
+      "name": "PRIVATE RECIPIENT",
+      "street": "PRIVATE STREET"
+    },
+    "atg": {
+      "companyName": "Example Webshop GmbH"
+    },
+    "eta": "2026-09-03T18:00:00+02:00",
+    "parcelProgress": [
+      { "parcelStatus": "ANNOUNCED", "timestamp": "2026-09-01T12:00:00Z" },
+      { "parcelStatus": "HANDED_OVER", "timestamp": "2026-09-02T08:30:00Z" },
+      { "parcelStatus": "EDL_BOOKED_DROPOFF", "timestamp": "2026-09-02T09:00:00Z" },
+      { "parcelStatus": "DELIVERY_TOUR_STARTED", "timestamp": "2026-09-03T07:00:00Z" }
+    ]
+  }
+]

@@ -1,0 +1,27 @@
+{
+  "carrier": "dhl",
+  "entries": [
+    { "wording": "The instruction data for this shipment have been provided by the sender to DHL electronically", "language": "en", "stage": "registered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Pre-advice; matched on \"electronically\"." },
+    { "wording": "Die Sendung wurde vom Absender elektronisch angekündigt.", "language": "de", "stage": "registered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "German pre-advice; matched on \"elektronisch\"." },
+    { "wording": "The shipment was handed over to DHL.", "language": "en", "stage": "accepted", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "Die Sendung wurde im Briefzentrum bearbeitet.", "language": "de", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Mail-centre processing scan." },
+    { "wording": "The shipment has been processed in the parcel center", "language": "en", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "The shipment will be transported to the destination country/destination area and, from there, handed over to the delivery organization.", "language": "en", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Explicitly transit, never the handover it announces." },
+    { "wording": "The shipment has arrived in the destination country/destination area.", "language": "en", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Carries the destination operator's link; an exact post.ch host marks a Swiss Post last mile." },
+    { "wording": "The shipment is being processed by customs", "language": "en", "stage": "customs", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "The customs clearance process for import into the destination country/region has been completed.", "language": "en", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Completion leaves customs; the started variant stays in customs." },
+    { "wording": "The shipment has been loaded into the delivery vehicle", "language": "en", "stage": "out_for_delivery", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "Die Sendung wurde in das Zustellfahrzeug geladen.", "language": "de", "stage": "out_for_delivery", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "The shipment is ready for collection", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "Die Sendung liegt zur Abholung bereit.", "language": "de", "stage": "ready_for_pickup", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "The shipment has been delivered", "language": "en", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "Die Sendung wurde erfolgreich zugestellt.", "language": "de", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "The negated form maps to failed_attempt, not delivery." },
+    { "wording": "The shipment could not be delivered", "language": "en", "stage": "failed_attempt", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "Die Sendung konnte nicht zugestellt werden.", "language": "de", "stage": "failed_attempt", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "Die Sendung wurde nicht erfolgreich zugestellt.", "language": "de", "stage": "failed_attempt", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Negation is matched before the delivery wording." },
+    { "wording": "The shipment is returning to sender", "language": "en", "stage": "returned", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "The shipment will be delivered tomorrow", "language": "en", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Forecast: deliberately unmapped. It keeps the structured progress fallback rather than announcing delivery or pre-advice." },
+    { "code": "istZugestellt=true", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Structured completion flag; outranks the wording." },
+    { "code": "istZugestellt=true,ruecksendung=true", "stage": "returned", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "A completed return, not a delivery." }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "carrier": "postlogistics",
+  "entries": [
+    {
+      "code": "DEL",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Delivery confirmed."
+    },
+    {
+      "code": "DLV",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Delivery confirmed."
+    },
+    {
+      "code": "POD",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Proof of delivery recorded; the proof itself is never retained."
+    },
+    {
+      "code": "SIG",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Signed for; the signature itself is never retained."
+    },
+    {
+      "code": "NTF",
+      "stage": "registered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Shipment announced. The adapter reports the shipment as pending and stamps no event stage."
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "scenario": "parcel returned to the seller after a spell waiting in the pickup point",
+  "steps": [
+    ["29/08/2026 à 14:20", "VOTRE COLIS A ÉTÉ RETOURNÉ À VOTRE VENDEUR"],
+    ["28/08/2026 à 09:15", "Votre colis est disponible dans votre Relais Colis"],
+    ["27/08/2026 à 18:05", "Votre colis est en cours d'acheminement dans notre réseau"],
+    ["26/08/2026 à 08:30", "Votre colis a été pris en charge"],
+    ["25/08/2026 à 16:00", "Votre colis a été annoncé"]
+  ]
+}

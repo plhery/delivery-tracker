@@ -1,0 +1,31 @@
+{
+  "carrier": "ups",
+  "entries": [
+    { "code": "ManifestUpload", "language": "en", "stage": "pending", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "progressBarType; the shipper announced the parcel electronically." },
+    { "code": "FirstUPSPossession", "language": "en", "stage": "accepted", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "progressBarType; the adapter reports the result status in_transit." },
+    { "code": "InTransit", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "progressBarType." },
+    { "code": "OutForDelivery", "language": "en", "stage": "out_for_delivery", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "progressBarType; exercised by fixtures/out-for-delivery.json." },
+    { "code": "Delivered", "language": "en", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "progressBarType." },
+    { "code": "Exception", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "progressBarType; UPS's generic exception token. The adapter reports the result status exception without deciding between a failed attempt and a return." },
+    { "wording": "Return to Sender", "language": "en", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "Adapter result status: exception." },
+    { "wording": "Returned", "language": "en", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "Adapter result status: exception." },
+    { "wording": "Delivery Attempted", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "Adapter result status: exception." },
+    { "wording": "We Missed You", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "Adapter result status: exception." },
+    { "wording": "Not Delivered", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "Adapter result status: exception." },
+    { "wording": "Exception", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "Adapter result status: exception." },
+    { "wording": "Action Required", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "Adapter result status: exception." },
+    { "wording": "Delivered", "language": "en", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "Left at", "language": "en", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "Prefix of UPS's \"Left at: Front Door\" wording; the location detail itself is never retained." },
+    { "wording": "Out For Delivery", "language": "en", "stage": "out_for_delivery", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Seen as \"Out For Delivery Today\" in fixtures/out-for-delivery.json." },
+    { "wording": "On the Way", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "In Transit", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "We Have Your Package", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "First UPS Possession", "language": "en", "stage": "accepted", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "Adapter result status: in_transit." },
+    { "wording": "Departed", "language": "en", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Seen as \"Departed from Facility\"." },
+    { "wording": "Arrived", "language": "en", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Seen as \"Arrived at Facility\"." },
+    { "wording": "Processing at UPS Facility", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "Label Created", "language": "en", "stage": "pending", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "Manifest Upload", "language": "en", "stage": "pending", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "Shipment Ready for UPS", "language": "en", "stage": "pending", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "" }
+  ]
+}

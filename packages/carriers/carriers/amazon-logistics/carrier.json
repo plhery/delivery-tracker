@@ -1,9 +1,47 @@
 {
   "id": "amazon-logistics",
   "displayName": "Amazon Logistics",
-  "aliases": [],
+  "aliases": [
+    "AMZL",
+    "Amazon Logistik"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "FR",
+      "DE",
+      "BE",
+      "GB",
+      "IT",
+      "ES",
+      "NL",
+      "AT",
+      "IE",
+      "PL",
+      "SE",
+      "PT",
+      "LU",
+      "DK",
+      "FI",
+      "CZ",
+      "SK",
+      "HU",
+      "RO",
+      "BG",
+      "HR",
+      "SI",
+      "EE",
+      "LV",
+      "LT",
+      "GR",
+      "CY",
+      "MT",
+      "CH",
+      "NO",
+      "IS",
+      "LI",
+      "TR",
+      "US"
+    ]
   },
   "brand": {
     "color": "#ff9900"
@@ -18,10 +56,20 @@
   "capabilities": [],
   "portal": {
     "url": "https://www.amazon.com/gp/your-account/order-history",
-    "shows": [],
+    "shows": [
+      "status",
+      "history",
+      "eta",
+      "recipient_address",
+      "delivery_photo"
+    ],
     "scraped": [],
     "discarded": [],
-    "unavailable": []
+    "unavailable": [
+      "status",
+      "history",
+      "eta"
+    ]
   },
   "links": [
     {

@@ -8,6 +8,7 @@ import { isRecord, type JsonObject } from './types';
 import { universalSources } from './universalTracking';
 import type { UniversalSource } from './universalTrackingResult';
 import { errorType, reportRoutingEvent } from './observability';
+import { carrierErrorKind, retryAfterMsOf } from '@carriers/core/errors';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -70,6 +71,18 @@ export function freshnessWindow(now: Date): number {
 const millis = (value: unknown): number => typeof value === 'string' && Number.isFinite(Date.parse(value)) ? Date.parse(value) : 0;
 const iso = (value: number): string => new Date(value).toISOString();
 export function routingFailure(error: unknown): { kind: RoutingFailureKind; retryAfterMs: number } {
+  // Errors from the carrier package carry their kind; classify those first so
+  // a wrong shipment or malformed payload keeps its hourly retry, and only fall
+  // back to status sniffing for errors raised outside the taxonomy.
+  const kind = carrierErrorKind(error);
+  if (kind !== null) {
+    const retryAfterMs = Math.max(0, Math.min(7 * DAY, retryAfterMsOf(error) ?? 0));
+    if (kind === 'rate_limited') return { kind: 'rate_limited', retryAfterMs };
+    if (kind === 'not_found') return { kind: 'not_found', retryAfterMs: 0 };
+    if (kind === 'challenge') return { kind: 'verification', retryAfterMs: 0 };
+    if (kind === 'schema' || kind === 'input_required') return { kind: 'schema', retryAfterMs: 0 };
+    return { kind: 'transport', retryAfterMs };
+  }
   let current = error;
   for (let i = 0; i < 8 && current instanceof Error; i++, current = current.cause) {
     const details = current as Error & { status?: number; retryAfterMs?: number };

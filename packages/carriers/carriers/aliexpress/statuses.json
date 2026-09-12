@@ -1,0 +1,355 @@
+{
+  "carrier": "aliexpress",
+  "entries": [
+    {
+      "code": "WAIT_SELLER_SEND_GOODS",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Parcel-level order token; only consulted when the newest trace carries no action code."
+    },
+    {
+      "code": "SELLER_SEND_GOODS",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Parcel-level order token; only consulted when the newest trace carries no action code."
+    },
+    {
+      "code": "WAIT_BUYER_ACCEPT_GOODS",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Parcel-level order token; only consulted when the newest trace carries no action code."
+    },
+    {
+      "code": "DELIVERING",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Parcel-level order token; only consulted when the newest trace carries no action code."
+    },
+    {
+      "code": "SIGN",
+      "stage": "delivered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Parcel-level order token; only consulted when the newest trace carries no action code."
+    },
+    {
+      "code": "FAILED",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Parcel-level order token; only consulted when the newest trace carries no action code."
+    },
+    {
+      "code": "RETURNED",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Parcel-level order token; only consulted when the newest trace carries no action code."
+    },
+    {
+      "code": "GWMS_ACCEPT",
+      "stage": "registered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "GWMS_PACKAGE",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "PRE_READY_TO_SHIP",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "CONSIGN",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "CW_INBOUND",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "CW_OUTBOUND",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "CW_COMMON_PROCESSING1",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "PU_PICKUP_SUCCESS",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "GWMS_OUTBOUND",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "SC_INBOUND_SUCCESS",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "SC_OUTBOUND_SUCCESS",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "SC_TRANS_INBOUND_SUCCESS",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "SC_TRANS_OUTBOUND_SUCCESS",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "CC_EX_START",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "CC_EX_SUCCESS",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "LH_HO_IN_SUCCESS",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "LH_HO_AIRLINE",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "LH_DEPART",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "LH_ARRIVE",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "LH_POST_COLLECTION",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "COMMON_INTRANSIT",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "TD_TRANS_DEPART",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "TD_TRANS_ARRIVE",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "TD_TRANS_DEPART_C",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "TD_TRANS_ARRIVE_C",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "CC_HO_IN_SUCCESS",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "CC_IM_START",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "CC_IM_SUCCESS",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "CC_HO_OUT_SUCCESS",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "CC_IM_FAILURE",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "CC_IM_EXCEPTION",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "GTMS_ACCEPT",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "SC_ARRIVE",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "SC_DEPART",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "OE_DEPART",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "LAST_MILE_ASN_NOTIFY",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "GTMS_DO_DEPART",
+      "stage": "out_for_delivery",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "GSTA_INFORM_BUYER",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "The buyer is told the parcel waits at a pickup point."
+    },
+    {
+      "code": "GTMS_WAIT_SELF_PICK",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Waiting for self-collection at a pickup point."
+    },
+    {
+      "code": "GTMS_STA_SIGNED",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Signed for by the pickup station, not by the recipient: never read as delivered."
+    },
+    {
+      "code": "GTMS_SIGNED",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "The only code that means the recipient has the parcel."
+    },
+    {
+      "code": "GTMS_STA_SIGN_FAILURE",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "EXCEPTION",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    }
+  ]
+}

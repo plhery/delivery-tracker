@@ -1,4 +1,6 @@
 import { startBackgroundServices } from './src/server/background';
+// Registers the Prometheus sink for carrier telemetry alongside the Sentry one.
+import './src/server/metrics';
 import { installShutdownHandlers } from './src/server/shutdown';
 
 // Invalid server-side credentials are a deployment failure. Let initialization

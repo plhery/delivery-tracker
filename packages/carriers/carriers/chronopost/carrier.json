@@ -1,9 +1,13 @@
 {
   "id": "chronopost",
   "displayName": "Chronopost",
-  "aliases": [],
+  "aliases": [
+    "Chrono Shop2Shop"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "FR"
+    ]
   },
   "brand": {
     "color": "#0056a7"
@@ -13,14 +17,32 @@
   "tracking": {
     "mode": "automatic",
     "adapter": "la-poste",
-    "steps": []
+    "steps": [
+      "direct",
+      "retry"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "eta",
+    "provider_code"
+  ],
   "portal": {
     "url": "https://www.chronopost.fr/tracking-no-cms/suivi-page?langue=fr&listeNumerosLT={trackingNumber}",
     "canaryUrl": "https://www.chronopost.fr/tracking-no-cms/suivi-page",
-    "shows": [],
-    "scraped": [],
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "eta"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "eta"
+    ],
     "discarded": [],
     "unavailable": []
   },

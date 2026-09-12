@@ -1,0 +1,36 @@
+{
+  "body": {
+    "auftragsdaten": {
+      "auftragId": 66508126,
+      "auftragsart": "Lieferung",
+      "lieferdatum": "2026-08-05",
+      "lieferscheinnummer": "62162057330000611",
+      "statusjourneyDto": {
+        "auftragstatusdaten": [
+          {
+            "sendungsstatusId": 700,
+            "sendungsstatus": "Deine Sendung wurde erfolgreich zugestellt.",
+            "sendungsstatusBuchungszeitpunkt": "2026-08-05 12:50"
+          },
+          {
+            "sendungsstatusId": 790,
+            "sendungsstatus": null,
+            "sendungsstatusBuchungszeitpunkt": "2026-08-06 11:36"
+          }
+        ],
+        "statusdaten": [
+          {
+            "sendungsstatusId": 10864,
+            "sendungsstatus": "Ware geliefert.",
+            "sendungsstatusBuchungszeitpunkt": "2026-08-05 12:50"
+          },
+          {
+            "sendungsstatusId": 10900,
+            "sendungsstatus": "Ihre Sendung wurde bei der angegebenen Adresse zugestellt.",
+            "sendungsstatusBuchungszeitpunkt": "2026-08-05 19:21"
+          }
+        ]
+      }
+    }
+  }
+}

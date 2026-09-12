@@ -1,0 +1,53 @@
+{
+  "shipments": [
+    {
+      "id": "customer-confirmation-alias",
+      "service": "ecommerce",
+      "status": {
+        "description": "DELIVERED - Signed by PRIVATE NAME",
+        "statusCode": "delivered",
+        "timestamp": "2026-09-13T10:05:00",
+        "location": {
+          "address": {
+            "addressLocality": "Zurich",
+            "countryCode": "CH"
+          }
+        }
+      },
+      "estimatedTimeOfDelivery": "2026-09-14",
+      "returnFlag": false,
+      "sender": {
+        "name": "Nordwind Webshop AG"
+      },
+      "destination": {
+        "address": {
+          "streetAddress": "PRIVATE ADDRESS"
+        }
+      },
+      "events": [
+        {
+          "description": "DELIVERED - Signed by PRIVATE NAME",
+          "statusCode": "delivered",
+          "timestamp": "2026-09-13T10:05:00",
+          "location": {
+            "address": {
+              "addressLocality": "Zurich",
+              "countryCode": "CH"
+            }
+          }
+        },
+        {
+          "description": "OUT FOR DELIVERY",
+          "statusCode": "transit",
+          "timestamp": "2026-09-13T07:20:00",
+          "location": {
+            "address": {
+              "addressLocality": "Zurich",
+              "countryCode": "CH"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

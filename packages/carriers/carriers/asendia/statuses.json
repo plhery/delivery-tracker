@@ -1,0 +1,285 @@
+{
+  "carrier": "asendia",
+  "entries": [
+    {
+      "wording": "return to sender",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "returned to sender",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "return initiated",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "shipment returned",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "delivery failed",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "failed attempt",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "delivery exception",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "unable to deliver",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "not delivered",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Exercised by the offline not-delivered scenario; tested before the delivered rule so it can never match the 'delivered' substring."
+    },
+    {
+      "wording": "undelivered",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "non livre",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "French wording some partner posts still emit unharmonized; inherited from the pre-package module."
+    },
+    {
+      "wording": "delivery delayed",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "damaged",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "refused",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "lost",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Matched on the fixture scan \"Delivered\" (harmonizedCode DELIVERED)."
+    },
+    {
+      "wording": "collected by recipient",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "handed to recipient",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "ready for pickup",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "ready for collection",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "available for pickup",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "out for delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "in delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "with delivery courier",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "information received",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Matched on the fixture scan \"Information received\" (harmonizedCode INFO_RECEIVED)."
+    },
+    {
+      "wording": "shipment created",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "label created",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "pre advised",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "pre advice",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "handed to asendia",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "departed from asendia",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "arrived at destination",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Matched on the fixture scan \"Arrived at destination\" (harmonizedCode ARRIVED_DESTINATION)."
+    },
+    {
+      "wording": "in transit",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "processed at",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+    },
+    {
+      "wording": "customs",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Wording containing 'customs' takes the customs stage rather than plain transit; inherited from the pre-package module."
+    }
+  ]
+}

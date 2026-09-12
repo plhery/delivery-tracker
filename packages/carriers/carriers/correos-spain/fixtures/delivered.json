@@ -1,0 +1,20 @@
+{
+  "codEnvio": "PR123456789012345C",
+  "nombre_cliente": "Example Customer",
+  "direccion_cliente": "Calle Ejemplo 1, 28001 Madrid",
+  "telefono_cliente": "+340000000000",
+  "firma_receptor": "Example Signature",
+  "peso": "1500",
+  "largo": "30",
+  "ancho": "20",
+  "alto": "10",
+  "nom_codired": "OFICINA EXAMPLE CENTRAL",
+  "resumen_ultimo": "Entregado",
+  "error": { "codError": "0", "desError": "OK" },
+  "eventos": [
+    { "codEvento": "A090000V", "fecEvento": "27/04/2026", "horEvento": "23:03:58", "desTextoResumen": "Admitido", "desTextoAmpliado": "Admitido" },
+    { "codEvento": "P040000V", "fecEvento": "28/04/2026", "horEvento": "15:52:17", "desTextoResumen": "Clasificado", "desTextoAmpliado": "Clasificado" },
+    { "codEvento": "H020000V", "fecEvento": "29/04/2026", "horEvento": "08:46:00", "desTextoResumen": "En reparto", "desTextoAmpliado": "En reparto" },
+    { "codEvento": "I01H210V", "fecEvento": "29/04/2026", "horEvento": "13:12:42", "desTextoResumen": "Entregado", "desTextoAmpliado": "Entregado" }
+  ]
+}

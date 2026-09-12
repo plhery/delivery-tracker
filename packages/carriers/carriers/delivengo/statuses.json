@@ -1,0 +1,5 @@
+{
+  "carrier": "delivengo",
+  "entries": [],
+  "gap": "No Delivengo status vocabulary has been observed. The public endpoint answered the one published sample with an access error rather than usable history (docs/CARRIERS.md, 2026-09-08), so routing and parsing rely on the shared La Poste map in carriers/la-poste/statuses.json."
+}

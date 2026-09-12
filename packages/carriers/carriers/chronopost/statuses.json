@@ -1,0 +1,47 @@
+{
+  "carrier": "chronopost",
+  "entries": [
+    {
+      "code": "DR1",
+      "stage": "registered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Chronopost events arrive on the shared La Poste unified feed with an empty group, so the code is the only key. See carriers/la-poste/statuses.json."
+    },
+    {
+      "code": "PC1",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "See carriers/la-poste/statuses.json for the shared map."
+    },
+    {
+      "code": "ET1",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "See carriers/la-poste/statuses.json for the shared map."
+    },
+    {
+      "code": "EP1",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "See carriers/la-poste/statuses.json for the shared map."
+    },
+    {
+      "code": "MD1",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "See carriers/la-poste/statuses.json for the shared map."
+    },
+    {
+      "code": "DI1",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Observed on a Chronopost shipment with an empty group and the label 'Livraison effectuée'."
+    }
+  ]
+}

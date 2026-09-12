@@ -1,0 +1,29 @@
+{
+  "Type": 1,
+  "Data": [
+    {
+      "Identifier": "1234ABC789",
+      "Consignee": {
+        "Name": "Private recipient",
+        "Address": "Secret street"
+      },
+      "History": [
+        {
+          "Id": 2,
+          "TimeStamp": "2026-08-30T12:30:00+02:00",
+          "City": "Zürich",
+          "Status": "DLV",
+          "Description": "Delivered",
+          "FullDescription": "Private operational detail"
+        },
+        {
+          "Id": 1,
+          "TimeStamp": "2026-08-29T07:15:00+02:00",
+          "City": "Dintikon",
+          "Status": "RFS",
+          "Description": "Shipment accepted"
+        }
+      ]
+    }
+  ]
+}

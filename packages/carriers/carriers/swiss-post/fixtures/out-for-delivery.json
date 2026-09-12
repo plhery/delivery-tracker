@@ -1,0 +1,40 @@
+{
+  "shipment": {
+    "identity": "private-summary-id",
+    "shipmentNumber": "99.34.123456.12345678",
+    "internationalBarcode": "RA123456785CH",
+    "globalStatus": "IN_DELIVERY",
+    "calculatedDeliveryDate": "2026-09-12",
+    "deliveryTimeInterval": { "start": "2026-09-12T09:00:00+02:00", "end": "2026-09-12T12:00:00+02:00" },
+    "deliveryRange": { "start": "2026-09-12", "end": "2026-09-12" },
+    "lastEventDateTime": "2026-09-12T08:00:00+02:00",
+    "recipientName": "PRIVATE RECIPIENT",
+    "deliveryAddress": { "street": "PRIVATE STREET 7", "zip": "8000", "city": "Zurich" },
+    "signature": "PRIVATE SIGNATURE",
+    "recipientEmail": "private@example.test"
+  },
+  "events": [
+    {
+      "eventCode": "PARCEL.*.1.1003",
+      "timestamp": "2026-09-12T08:00:00+02:00",
+      "city": "Zurich",
+      "zip": "8000",
+      "recipient": "PRIVATE RECIPIENT"
+    },
+    {
+      "eventCode": "PARCEL.*.2.820",
+      "timestamp": "2026-09-11T21:30:00+02:00",
+      "city": "Härkingen",
+      "zip": "4622"
+    },
+    {
+      "eventCode": "PARCEL.*.1.600",
+      "timestamp": "2026-09-10T17:05:00+02:00"
+    }
+  ],
+  "translations": {
+    "PARCEL.*.1.1003.INLAND": "Loading into delivery vehicle",
+    "PARCEL.*.2.820.INLAND": "Shipment is being forwarded",
+    "PARCEL.*.1.600.INLAND": "Your shipment will shortly be handed over to Swiss Post"
+  }
+}

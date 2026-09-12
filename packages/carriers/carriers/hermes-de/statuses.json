@@ -1,0 +1,277 @@
+{
+  "carrier": "hermes-de",
+  "entries": [
+    {
+      "code": "ANNOUNCED",
+      "stage": "registered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-08",
+      "note": "Shipment announced to Hermes"
+    },
+    {
+      "code": "ORDER_INFO_RECEIVED",
+      "stage": "registered",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Shipment announced to Hermes"
+    },
+    {
+      "code": "PREANNOUNCED",
+      "stage": "registered",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Shipment announced to Hermes"
+    },
+    {
+      "code": "PARCELSHOP_DROP_OFF",
+      "stage": "registered",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Dropped off at a ParcelShop"
+    },
+    {
+      "code": "ATG_OUT_OF_WAREHOUSE",
+      "stage": "registered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-08",
+      "note": "Sender preparing handover to Hermes"
+    },
+    {
+      "code": "HANDED_OVER",
+      "stage": "accepted",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-08",
+      "note": "Shipment handed to Hermes"
+    },
+    {
+      "code": "HANDED_OVER_TO_HERMES",
+      "stage": "accepted",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Shipment handed to Hermes"
+    },
+    {
+      "code": "TAKEN_OVER_BY_HERMES",
+      "stage": "accepted",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Shipment collected by Hermes"
+    },
+    {
+      "code": "PICKED_UP",
+      "stage": "accepted",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Shipment collected by Hermes"
+    },
+    {
+      "code": "SHIPMENT_PICKED_UP",
+      "stage": "accepted",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Shipment collected by Hermes"
+    },
+    {
+      "code": "PARCELSHOP_COLLECTED_BY_DRIVER",
+      "stage": "accepted",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Shipment collected by Hermes"
+    },
+    {
+      "code": "ARRIVED_IN_DESTINATION_REGION",
+      "stage": "in_transit",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Shipment arrived in the destination region"
+    },
+    {
+      "code": "ARRIVED_AT_DEPOT",
+      "stage": "in_transit",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Shipment arrived at the depot"
+    },
+    {
+      "code": "ARRIVED_AT_DELIVERY_DEPOT",
+      "stage": "in_transit",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Shipment arrived at the delivery depot"
+    },
+    {
+      "code": "IN_TRANSIT",
+      "stage": "in_transit",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Shipment in transit"
+    },
+    {
+      "code": "SORTED",
+      "stage": "in_transit",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Shipment sorted at the hub"
+    },
+    {
+      "code": "DELIVERY_TOUR_STARTED",
+      "stage": "out_for_delivery",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-08",
+      "note": "Out for delivery"
+    },
+    {
+      "code": "OUT_FOR_DELIVERY",
+      "stage": "out_for_delivery",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Out for delivery"
+    },
+    {
+      "code": "NEXT_STOP",
+      "stage": "out_for_delivery",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Courier is at the next stop"
+    },
+    {
+      "code": "DELIVERED",
+      "stage": "delivered",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Delivered"
+    },
+    {
+      "code": "DELIVERED_HOMEDELIVERY",
+      "stage": "delivered",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Delivered"
+    },
+    {
+      "code": "DELIVERED_NEIGHBOUR",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-08",
+      "note": "Delivered to a neighbour"
+    },
+    {
+      "code": "DELIVERED_DROPOFF",
+      "stage": "delivered",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Delivered to the agreed safe place"
+    },
+    {
+      "code": "DELIVERED_MAILBOX",
+      "stage": "delivered",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Delivered to the mailbox"
+    },
+    {
+      "code": "DELIVERED_PARCELSHOP",
+      "stage": "delivered",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Collected at the ParcelShop"
+    },
+    {
+      "code": "DELIVERED_PARCELBOX",
+      "stage": "delivered",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Delivered to the parcel box"
+    },
+    {
+      "code": "PICKED_UP_BY_RECIPIENT",
+      "stage": "delivered",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Collected by the recipient"
+    },
+    {
+      "code": "COLLECTED",
+      "stage": "delivered",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Collected by the recipient"
+    },
+    {
+      "code": "READY_FOR_PICKUP",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-08",
+      "note": "Ready for collection"
+    },
+    {
+      "code": "PARCELSHOP_ITEMS_FOR_COLLECTION",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Ready for collection at the ParcelShop"
+    },
+    {
+      "code": "READY_FOR_COLLECTION",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Ready for collection"
+    },
+    {
+      "code": "DELIVERY_FAILED",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-08",
+      "note": "Delivery attempt unsuccessful"
+    },
+    {
+      "code": "NOT_DELIVERABLE",
+      "stage": "failed_attempt",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Shipment not deliverable"
+    },
+    {
+      "code": "UNKNOWN_WHEREABOUTS",
+      "stage": "failed_attempt",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Shipment whereabouts unknown"
+    },
+    {
+      "code": "RETURN_TO_SENDER",
+      "stage": "returned",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-08",
+      "note": "Returning to sender"
+    },
+    {
+      "code": "RETURN_DELIVERED_TO_SENDER",
+      "stage": "returned",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-08",
+      "note": "Returned to sender"
+    },
+    {
+      "code": "RETURN",
+      "stage": "returned",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Returning to sender"
+    },
+    {
+      "code": "RETOURE_DELIVERED",
+      "stage": "returned",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-08",
+      "note": "Returned to sender"
+    },
+    {
+      "code": "EDL_BOOKED_DROPOFF",
+      "confirmedBy": "official-doc",
+      "firstSeen": "2026-09-08",
+      "note": "Pre-announcement preference booking; deliberately not mapped and dropped from the history so it cannot move the parcel backwards."
+    }
+  ]
+}

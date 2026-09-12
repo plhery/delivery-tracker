@@ -1,0 +1,18 @@
+[
+  {
+    "barcode": "H1234567890123456789",
+    "address": {
+      "name": "PRIVATE RECIPIENT",
+      "street": "PRIVATE STREET"
+    },
+    "atg": {
+      "companyName": "Example Webshop GmbH"
+    },
+    "parcelProgress": [
+      { "parcelStatus": "ANNOUNCED", "timestamp": "2026-09-01T12:00:00Z" },
+      { "parcelStatus": "DELIVERED_NEIGHBOUR", "timestamp": "2026-09-03T09:00:00Z", "historyText": "An Nachbarn zugestellt" },
+      { "parcelStatus": "DELIVERY_TOUR_STARTED", "timestamp": "2026-09-03T07:00:00Z" },
+      { "parcelStatus": "DELIVERED_NEIGHBOUR", "timestamp": "2026-09-03T09:00:00Z" }
+    ]
+  }
+]

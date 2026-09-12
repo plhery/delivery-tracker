@@ -1,9 +1,20 @@
 {
   "id": "packeta",
   "displayName": "Packeta",
-  "aliases": [],
+  "aliases": [
+    "Zásilkovna",
+    "Zasilkovna",
+    "Packeta Slovakia",
+    "Z-BOX"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "CZ",
+      "SK",
+      "HU",
+      "RO",
+      "PL"
+    ]
   },
   "brand": {
     "color": "#8e8e93"
@@ -13,16 +24,44 @@
   "tracking": {
     "mode": "automatic",
     "adapter": "packeta",
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "sender_name",
+    "pickup_point",
+    "delivered_at"
+  ],
   "portal": {
     "url": "https://tracking.packeta.com/en/{trackingNumber}",
     "canaryUrl": "https://tracking.packeta.com/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "shows": [
+      "status",
+      "history",
+      "sender_name",
+      "pickup_point",
+      "recipient_name",
+      "recipient_address",
+      "signature"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "sender_name",
+      "pickup_point",
+      "delivered_at"
+    ],
+    "discarded": [
+      "recipient_name",
+      "recipient_address",
+      "signature"
+    ],
+    "unavailable": [
+      "eta",
+      "location"
+    ]
   },
   "links": [
     {

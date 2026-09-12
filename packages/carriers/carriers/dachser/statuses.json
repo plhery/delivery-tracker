@@ -1,0 +1,17 @@
+{
+  "carrier": "dachser",
+  "entries": [
+    { "wording": "no entreg… / entrega fallida / failed delivery / unsuccessful", "language": "mul", "stage": "failed_attempt", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "Checked before every delivery word, because 'no entregado' contains 'entregado'." },
+    { "wording": "devol… / retorn… / return / retour", "language": "mul", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },
+    { "wording": "fecha de entrega / cita / appointment / avis de livraison", "language": "mul", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "A rescheduled delivery appointment is a future date, never a delivery." },
+    { "wording": "entregado / entregada / delivered / zugestellt / consegnat…", "language": "mul", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "" },
+    { "wording": "reparto / proceso de entrega / out for delivery / in Zustellung", "language": "mul", "stage": "out_for_delivery", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },
+    { "wording": "recogida / ready for pickup / ready for collection / abholbereit", "language": "mul", "stage": "ready_for_pickup", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },
+    { "wording": "aduana / customs / clearance / Zoll", "language": "mul", "stage": "customs", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },
+    { "wording": "salida / departed / outbound", "language": "mul", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "Reported as 'Shipment departed a Dachser facility'." },
+    { "wording": "llegada / arrived / inbound", "language": "mul", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "Reported as 'Shipment arrived at a Dachser facility'." },
+    { "wording": "recogido / aceptado / picked up / accepted", "language": "mul", "stage": "accepted", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "" },
+    { "wording": "registrado / creado / announced / registered / information received", "language": "mul", "stage": "registered", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "" },
+    { "wording": "any other event wording", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Reported as 'Dachser tracking update'; the raw Spanish wording is not retained." }
+  ]
+}

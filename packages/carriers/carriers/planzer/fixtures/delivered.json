@@ -1,0 +1,67 @@
+{
+  "deliveryDay": {
+    "date": "2026-09-01"
+  },
+  "overallStatus": {
+    "text": {
+      "english": "Shipment delivered",
+      "german": "Sendung zugestellt"
+    }
+  },
+  "consignee": {
+    "name": "Made Up Recipient",
+    "street": "Example Street 1",
+    "city": "8000 Example City"
+  },
+  "signature": {
+    "name": "Made Up Recipient",
+    "imageUrl": "https://example.invalid/proof-of-delivery/1.png"
+  },
+  "transportPositions": [
+    {
+      "positionNumber": "440000000000000001",
+      "positionEvents": [
+        {
+          "createdAt": "2026-08-31T04:07:09.0303905",
+          "text": {
+            "english": "Recorded",
+            "german": "Erfasst"
+          }
+        },
+        {
+          "createdAt": "2026-08-31T18:22:27.8650442",
+          "text": {
+            "english": "Transferred",
+            "german": "Weitergeleitet"
+          }
+        },
+        {
+          "createdAt": "2026-09-01T06:05:03.8117395",
+          "text": {
+            "english": "In delivery",
+            "german": "In Zustellung"
+          }
+        },
+        {
+          "createdAt": "2026-09-01T14:07:10.258",
+          "text": {
+            "english": "Shipped",
+            "french": "Livré",
+            "german": "Zugestellt"
+          }
+        }
+      ]
+    },
+    {
+      "positionNumber": "999999",
+      "positionEvents": [
+        {
+          "createdAt": "2026-09-02T08:00:00",
+          "text": {
+            "english": "Private event from a different shipment"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "Type": 1,
+  "Data": [
+    {
+      "Identifier": "998811223344556677",
+      "Recipient": {
+        "Name": "Made Up Recipient",
+        "Street": "Example Street 1",
+        "City": "8000 Example City"
+      },
+      "Signature": {
+        "Name": "Made Up Recipient",
+        "ImageUrl": "https://example.invalid/proof-of-delivery/1.png"
+      },
+      "DriveAndArrive": {
+        "PlannedDeliveryDate": "2026-09-02T00:00:00",
+        "EstimatedArrival": "2026-09-02T09:30:00"
+      },
+      "History": [
+        {
+          "TimeStamp": "2026-09-01T07:10:00+02:00",
+          "Status": "NTF",
+          "Description": "Shipment announced",
+          "City": "Haerkingen"
+        },
+        {
+          "TimeStamp": "2026-09-02T06:20:00+02:00",
+          "Status": "TRN",
+          "Description": "Shipment in transit",
+          "City": "Zurich"
+        },
+        {
+          "TimeStamp": "2026-09-02T09:41:00+02:00",
+          "Status": "DLV",
+          "Description": "Shipment delivered",
+          "City": "Zurich"
+        }
+      ]
+    }
+  ]
+}

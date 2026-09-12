@@ -1,0 +1,69 @@
+{
+  "carrier": "heppner",
+  "entries": [
+    {
+      "code": "MARCHANDISE_RETOURNEE",
+      "language": "fr",
+      "stage": "returned",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Milestone (step). Event codes prefixed SOL_ or RET_ map here too."
+    },
+    {
+      "code": "LIVREE",
+      "language": "fr",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Milestone (step). Event codes prefixed LIV_ or POD_ map here too."
+    },
+    {
+      "code": "EN_ATTENTE_INSTRUCTIONS",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Milestone (step); shown as \"Delivery instructions required\"."
+    },
+    {
+      "code": "ANOMALIE",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Shipment-level state rather than a milestone; shown as \"Shipment exception\"."
+    },
+    {
+      "code": "LIVRAISON",
+      "language": "fr",
+      "stage": "out_for_delivery",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Milestone (step). Event codes prefixed MLV_ map here too."
+    },
+    {
+      "code": "PRISE_EN_CHARGE",
+      "language": "fr",
+      "stage": "accepted",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Milestone (step). Event codes prefixed PCH_ map here too."
+    },
+    {
+      "code": "MARCHANDISE_REEXPEDIEE",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Milestone (step); shown as \"Shipment forwarded\"."
+    },
+    {
+      "code": "ACHEMINEMENT",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Milestone (step); shown as \"In transit\"."
+    }
+  ]
+}

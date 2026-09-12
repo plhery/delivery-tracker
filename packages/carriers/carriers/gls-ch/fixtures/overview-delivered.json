@@ -1,0 +1,31 @@
+{
+  "tuStatus": [
+    {
+      "postalCode": "",
+      "emailNotificationCard": false,
+      "tuNo": "993990103198",
+      "progressBar": {
+        "level": 100,
+        "statusBar": [
+          { "statusText": "", "status": "PREADVICE", "imageStatus": "COMPLETE", "imageText": "Preadvice" },
+          { "statusText": "", "status": "INTRANSIT", "imageStatus": "COMPLETE", "imageText": "In transit" },
+          { "statusText": "", "status": "INWAREHOUSE", "imageStatus": "COMPLETE", "imageText": "Final parcel center" },
+          { "statusText": "", "status": "INDELIVERY", "imageStatus": "COMPLETE", "imageText": "In delivery" },
+          {
+            "statusText": "The parcel has been delivered.\nFor more information, please see the detailed shipment tracking below.",
+            "status": "DELIVERED",
+            "imageStatus": "CURRENT",
+            "imageText": "Delivered"
+          }
+        ],
+        "statusText": "Delivered",
+        "retourFlag": false,
+        "evtNos": ["3.0", "11.0", "2.0", "2.0", "2.0", "0.0", "0.100"],
+        "colourIndex": 4,
+        "statusInfo": "DELIVERED"
+      },
+      "owners": [],
+      "arrivalTime": { "name": "Delivered on:", "value": "19-Jun-2026 at 10:59 o`clock" }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "carrier": "colisweb",
+  "entries": [
+    { "code": "delivered", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Compared with case and separators removed, so delivered and DELIVERED are the same step." },
+    { "code": "delivery_pb_ok", "stage": "delivered", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "package_returned", "stage": "returned", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "delivery_returned", "stage": "returned", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "package_return_failed", "stage": "returned", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "A failed return is still a return leg, not a delivery attempt." },
+    { "code": "delivery_return_failed", "stage": "returned", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "canceled", "stage": "returned", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "Both spellings, canceled and cancelled, are accepted." },
+    { "code": "delivery_canceled", "stage": "returned", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "Both spellings are accepted." },
+    { "code": "non_deliverable", "stage": "failed_attempt", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "pickup_failed", "stage": "failed_attempt", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "package_withdrawal_failed", "stage": "failed_attempt", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "delivery_failed", "stage": "failed_attempt", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "out_for_delivery", "stage": "out_for_delivery", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "delivery_in_progress", "stage": "out_for_delivery", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "picked_up", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Also emitted as a milestone event from pickedUpDate." },
+    { "code": "package_withdrawn", "stage": "in_transit", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "package_withdrawal_pb_ok", "stage": "in_transit", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "idle", "stage": "registered", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "The slot is booked and nothing has moved yet." },
+    { "code": "confirmed", "stage": "registered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Also emitted as a milestone event from deliveryConfirmationDate." },
+    { "code": "course_accepted", "stage": "registered", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "" }
+  ]
+}

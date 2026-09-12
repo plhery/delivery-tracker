@@ -1,0 +1,49 @@
+{
+  "tuNo": "993990103198",
+  "progressBar": {
+    "statusInfo": "DELIVEREDPS",
+    "statusText": "Delivered to ParcelShop",
+    "statusBar": [
+      {
+        "status": "DELIVEREDPS",
+        "imageStatus": "CURRENT",
+        "imageText": "At the ParcelShop",
+        "statusText": "The parcel is ready for collection at the ParcelShop."
+      }
+    ]
+  },
+  "arrivalTime": { "name": "Ready for collection since:", "value": "20-Jun-2026 at 09:12 o`clock" },
+  "infos": [
+    { "type": "WEIGHT", "label": "Weight", "value": "2,40 kg" },
+    { "type": "PHONE", "name": "Phone", "value": "+41000000000" }
+  ],
+  "addresses": [
+    {
+      "type": "DELIVERY",
+      "value": { "name1": "Private Recipient", "street1": "Private Street" }
+    }
+  ],
+  "history": [
+    {
+      "date": "20-Jun-2026",
+      "time": "09:12",
+      "evtDscr": "The parcel is ready for collection at the ParcelShop.",
+      "evtNo": "0.200",
+      "status": "DELIVEREDPS",
+      "address": {
+        "countryName": "Switzerland",
+        "city": "Zurich",
+        "parcelShopName": "GLS ParcelShop Zurich Altstetten",
+        "street1": "Private Street"
+      }
+    },
+    {
+      "date": "19-Jun-2026",
+      "time": "07:40",
+      "evtDscr": "The parcel has reached the final parcel center.",
+      "evtNo": "2.0",
+      "status": "INWAREHOUSE",
+      "address": { "countryName": "Switzerland", "city": "Zurich" }
+    }
+  ]
+}

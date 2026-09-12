@@ -19,7 +19,7 @@ describe('browser-protected carriers live wrong-number handling', () => {
       });
     } catch (error) {
       expect(error).toMatchObject({
-        name: 'RangeError',
+        name: 'ChallengeError',
         message: 'UPS challenged direct tracking; configure FLARESOLVERR_URL for browser fallback',
       });
     }
@@ -42,7 +42,7 @@ describe('browser-protected carriers live wrong-number handling', () => {
         });
       } else {
         expect(error).toMatchObject({
-          name: 'RangeError',
+          name: 'ChallengeError',
           message: 'DPD France requires a browser challenge solver; configure FLARESOLVERR_URL',
         });
       }
@@ -59,14 +59,14 @@ describe('browser-protected carriers live wrong-number handling', () => {
       await tracker.fetch('00000000', '75001');
       throw new Error('Expected Mondial Relay to reject the wrong number');
     } catch (error) {
-      if (error instanceof Error && error.name === 'MondialRelayTrackingError') {
+      if (error instanceof Error && error.name === 'NotFoundError') {
         expect(error).toMatchObject({
           status: 404,
           message: 'Mondial Relay could not locate the shipment',
         });
       } else {
         expect(error).toMatchObject({
-          name: 'RangeError',
+          name: 'ChallengeError',
           message: 'Mondial Relay challenged direct tracking; configure FLARESOLVERR_URL for browser fallback',
         });
       }

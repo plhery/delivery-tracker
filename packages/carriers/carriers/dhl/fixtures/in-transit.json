@@ -1,0 +1,45 @@
+{
+  "sendungen": [
+    {
+      "id": "LF123456785DE",
+      "hasCompleteDetails": true,
+      "sendungsinfo": {
+        "gesuchteSendungsnummer": "LF123456785DE",
+        "empfaenger": "Private recipient"
+      },
+      "sendungsdetails": {
+        "sendungsnummern": {
+          "sendungsnummer": "LF123456785DE"
+        },
+        "sendungsverlauf": {
+          "status": "Sortierung im Briefzentrum",
+          "datumAktuellerStatus": "2026-08-10T18:30:00+02:00",
+          "fortschritt": 3,
+          "maximalFortschritt": 5,
+          "events": [
+            {
+              "datum": "2026-08-09T20:00:00+02:00",
+              "status": "The instruction data for this shipment have been provided by the sender to DHL electronically"
+            },
+            {
+              "datum": "2026-08-10T18:30:00+02:00",
+              "ort": "Germany",
+              "status": "Die Sendung wurde im Briefzentrum bearbeitet.",
+              "secret": "Private event detail"
+            }
+          ]
+        },
+        "istZugestellt": false,
+        "zustellung": {
+          "empfaenger": "Private recipient",
+          "unterschrift": "Private signature",
+          "zustellzeitfensterVon": "2026-08-12T09:00:00+02:00"
+        },
+        "services": {
+          "address": "Private street address"
+        }
+      }
+    }
+  ],
+  "rateLimited": false
+}

@@ -3,7 +3,9 @@
   "displayName": "PostLogistics",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "CH"
+    ]
   },
   "brand": {
     "color": "#ffcc00"
@@ -14,14 +16,28 @@
     "mode": "automatic",
     "adapter": "upstream",
     "upstreamName": "PostLogistics",
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "eta"
+  ],
   "portal": {
     "url": "https://www.swisspost.ch/swisspost-tracking?formattedParcelCodes={trackingNumber}",
     "canaryUrl": "https://service.post.ch/",
-    "shows": [],
-    "scraped": [],
+    "shows": [
+      "status",
+      "history",
+      "eta"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "eta"
+    ],
     "discarded": [],
     "unavailable": []
   },

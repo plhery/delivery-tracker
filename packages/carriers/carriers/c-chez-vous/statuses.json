@@ -1,0 +1,10 @@
+{
+  "carrier": "c-chez-vous",
+  "entries": [
+    { "code": "1", "wording": "Commande enregistrée", "language": "fr", "stage": "registered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "First step of the page's progress bar." },
+    { "code": "2", "wording": "Prise de rendez-vous", "language": "fr", "stage": "registered", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "The appointment is being booked; nothing has shipped yet." },
+    { "code": "3", "wording": "Commande en préparation", "language": "fr", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "4", "wording": "Commande en livraison", "language": "fr", "stage": "out_for_delivery", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "5", "wording": "Commande livrée", "language": "fr", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Last step; the delivery estimate is dropped once it is reached." }
+  ]
+}

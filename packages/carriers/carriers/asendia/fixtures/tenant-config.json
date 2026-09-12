@@ -1,0 +1,22 @@
+{
+  "summary": "Branded url found.",
+  "data": {
+    "id": 1,
+    "cname_url": "track.asendia.com",
+    "brand_id": [
+      {
+        "brand_name": "All",
+        "customer_id": "*"
+      }
+    ],
+    "subsidiary": 1,
+    "subsidiary_name": "Asendia HQ",
+    "verification_methods": {
+      "postal_code": true,
+      "last_name_match": true,
+      "first_name_match": true
+    },
+    "is_enabled": true
+  },
+  "context_code": 1000
+}

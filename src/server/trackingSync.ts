@@ -1,7 +1,6 @@
 import 'server-only';
-import { AmazonShippingHistoryExpiredError, AmazonShippingTracker } from './amazonShipping';
+import { AmazonShippingHistoryExpiredError } from './amazonShipping';
 import { AMAZON_ACCOUNT_MESSAGE, AMAZON_HISTORY_EXPIRED, requiresAmazonAccount } from '../lib/amazon';
-import { trackingLanguageStage } from './trackingLanguage';
 
 import { createHash } from 'node:crypto';
 import { DateTime, IANAZone } from 'luxon';
@@ -11,60 +10,32 @@ import { normalizeCarrierResult } from './carrierResult';
 import { swissPostHandoffNumber } from './carrierHandoff';
 import {
   AUTOMATIC_CARRIER_IDS,
-  carrierAdapter,
   carrierTimezone,
   supportsSwissPostHandoff,
 } from './carriers';
-import { ColisPriveTracker } from './colisPrive';
-import { ColiswebTracker } from './colisweb';
-import { CChezVousTracker } from './cChezVous';
-import { CiblexTracker } from './ciblex';
-import { CorreosSpainTracker } from './correosSpain';
-import { CttTracker } from './ctt';
-import { DachserTracker } from './dachser';
-import { DHLTracker } from './dhl';
-import { DHLEcommerceTracker } from './dhlEcommerce';
-import { DPDFranceTracker } from './dpdFrance';
-import { DPDTracker } from './dpd';
-import { GeodisTracker } from './geodis';
-import { GLSFranceTracker } from './glsFrance';
-import { GLSSwitzerlandTracker } from './glsSwitzerland';
-import { GLSGermanyTracker } from './glsGermany';
-import { HeppnerTracker } from './heppner';
-import { HermesTracker } from './hermes';
-import { HermesGermanyTracker } from './hermesGermany';
 import type { AdapterRegistry } from '@carriers/core/adapter';
-import { createAdapterRegistry } from './adapterRegistry';
-import { IndiaPostTracker } from './indiaPost';
-import { InpostTracker } from './inpost';
-import { LaPosteTracker } from './laPoste';
-import { MondialRelayTracker } from './mondialRelay';
+import { runSteps } from '@carriers/core/runner';
+import type { StepRecorder } from '@carriers/core/telemetry';
+import { createAdapterRegistry, hostAdapterEnvironment } from './adapterRegistry';
+import { hostStepRecorder } from './stepRecorder';
+import { recordStatusMapping } from './metrics';
+import { classifyWording, type ClassifiedWording } from '@carriers/core/status';
+import type { Stage } from '@carriers/core/status';
 import {
   captureOperationalError,
   errorType,
   logOperationalEvent,
   reportRoutingEvent,
 } from './observability';
-import { PaackTracker } from './paack';
-import { PacketaTracker } from './packeta';
-import { PlanzerSharedTracker } from './planzerShared';
-import { PosMalaysiaTracker } from './posMalaysia';
-import { PosteItalianeTracker } from './posteItaliane';
 import type { CompositePushNotificationService } from './push';
-import { RelaisColisTracker } from './relaisColis';
 import type { SupabaseServiceClient } from './supabase';
-import { SwissPostTracker } from './swissPost';
-import { SwissPostCargoTracker } from './swissPostCargo';
 import {
   TrackingSyncAudit,
   type SyncAnomalyCode,
   type SyncRunContext,
 } from './trackingAudit';
 import { isRecord, type JsonObject } from './types';
-import { fetchUpstreamCarrier } from './upstreamAdapters';
-import { UPSTracker } from './ups';
 import { UniversalTracker } from './universalTracking';
-import { measureScrape } from './scrapeMonitoring';
 import type { UniversalSource } from './universalTrackingResult';
 import { RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
 
@@ -112,46 +83,22 @@ export interface TrackingAdapter {
   ): Promise<CarrierResult>;
 }
 
+/**
+ * Lookups outrun any single provider timeout by a wide margin; the budget only
+ * guards against an adapter that never settles.
+ */
+const SINGLE_STEP_BUDGET_MS = 120_000;
+
 export class CarrierTrackingAdapter implements TrackingAdapter {
+  constructor(
+    readonly universal = new UniversalTracker({ environment: hostAdapterEnvironment() }),
+    readonly registry: AdapterRegistry = createAdapterRegistry(),
+    readonly recorder: StepRecorder = hostStepRecorder(),
+  ) {}
+
   async fetchUniversal(source: UniversalSource, trackingNumber: string, timeoutMs: number): Promise<CarrierResult> {
     return this.universal.fetchSource(source, trackingNumber, timeoutMs);
   }
-  constructor(
-    readonly dpd = new DPDTracker(),
-    readonly dachser = new DachserTracker(),
-    readonly hermes = new HermesTracker(),
-    readonly planzerShared = new PlanzerSharedTracker(),
-    readonly swissPost = new SwissPostTracker(),
-    readonly ups = new UPSTracker(),
-    readonly laPoste = new LaPosteTracker(),
-    readonly glsFrance = new GLSFranceTracker(),
-    readonly colisPrive = new ColisPriveTracker(),
-    readonly geodis = new GeodisTracker(),
-    readonly dpdFrance = new DPDFranceTracker(),
-    readonly mondialRelay = new MondialRelayTracker(),
-    readonly relaisColis = new RelaisColisTracker(),
-    readonly swissPostCargo = new SwissPostCargoTracker(),
-    readonly glsSwitzerland = new GLSSwitzerlandTracker(),
-    readonly colisweb = new ColiswebTracker(),
-    readonly cChezVous = new CChezVousTracker(),
-    readonly correosSpain = new CorreosSpainTracker(),
-    readonly ctt = new CttTracker(),
-    readonly heppner = new HeppnerTracker(),
-    readonly ciblex = new CiblexTracker(),
-    readonly paack = new PaackTracker(),
-    readonly packeta = new PacketaTracker(),
-    readonly posMalaysia = new PosMalaysiaTracker(),
-    readonly posteItaliane = new PosteItalianeTracker(),
-    readonly amazonShipping = new AmazonShippingTracker(),
-    readonly indiaPost = new IndiaPostTracker(),
-    readonly inpost = new InpostTracker(),
-    readonly dhl = new DHLTracker(),
-    readonly hermesGermany = new HermesGermanyTracker(),
-    readonly glsGermany = new GLSGermanyTracker(),
-    readonly universal = new UniversalTracker(),
-    readonly dhlEcommerce = new DHLEcommerceTracker(),
-    readonly registry: AdapterRegistry = createAdapterRegistry(),
-  ) {}
 
   async fetch(
     carrierId: string,
@@ -159,91 +106,23 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     trackingUrl: string | null,
     dpdPostcode?: string | null,
   ): Promise<CarrierResult> {
-    return measureScrape(carrierId, 'total', () => this.fetchCarrier(carrierId, trackingNumber, trackingUrl, dpdPostcode));
-  }
-
-  private async fetchCarrier(
-    carrierId: string, trackingNumber: string, trackingUrl: string | null, dpdPostcode?: string | null,
-  ): Promise<CarrierResult> {
-    const adapter = carrierAdapter(carrierId);
-    let result: CarrierResult;
-    // Carriers whose adapter lives in its package folder are served through
-    // the generated registry; the chain below remains for adapters not yet
-    // moved and is deleted once the registry covers every automatic carrier.
+    const input = { number: trackingNumber, trackingUrl, postcode: dpdPostcode ?? null };
     const registered = this.registry.for(carrierId);
     if (registered) {
-      result = await registered.track({ number: trackingNumber, trackingUrl, postcode: dpdPostcode ?? null });
-    } else if (carrierId === 'swiss-post') {
-      result = await this.swissPost.fetch(trackingNumber);
-    } else if (adapter === 'swiss-post-cargo') {
-      result = await this.swissPostCargo.fetch(trackingNumber);
-    } else if (adapter === 'dpd') {
-      result = await this.dpd.fetch(trackingNumber, dpdPostcode ?? '');
-    } else if (adapter === 'dachser') {
-      if (!trackingUrl) throw new TypeError('Dachser tracking requires its complete tracking URL');
-      result = await this.dachser.fetch(trackingNumber, trackingUrl);
-    } else if (adapter === 'hermes') {
-      result = await this.hermes.fetch(trackingNumber);
-    } else if (adapter === 'hermes-germany') {
-      result = await this.hermesGermany.fetch(trackingNumber);
-    } else if (adapter === 'gls-germany') {
-      result = await this.glsGermany.fetch(trackingNumber, dpdPostcode ?? '');
-    } else if (adapter === 'universal') {
-      result = await this.universal.fetch(trackingNumber);
-    } else if (adapter === 'ups') {
-      result = await this.ups.fetch(trackingNumber);
-    } else if (adapter === 'dhl-ecommerce') {
-      result = await this.dhlEcommerce.fetch(trackingNumber);
-    } else if (adapter === 'dhl') {
-      result = await this.dhl.fetch(trackingNumber);
-    } else if (adapter === 'la-poste') {
-      result = await this.laPoste.fetch(trackingNumber);
-    } else if (adapter === 'gls-france') {
-      result = await this.glsFrance.fetch(trackingNumber);
-    } else if (adapter === 'gls-switzerland') {
-      result = await this.glsSwitzerland.fetch(trackingNumber, dpdPostcode ?? '');
-    } else if (adapter === 'colis-prive') {
-      result = await this.colisPrive.fetch(trackingNumber);
-    } else if (adapter === 'geodis') {
-      result = await this.geodis.fetch(trackingNumber);
-    } else if (adapter === 'dpd-france') {
-      result = await this.dpdFrance.fetch(trackingNumber);
-    } else if (adapter === 'mondial-relay') {
-      result = await this.mondialRelay.fetch(trackingNumber, dpdPostcode ?? '');
-    } else if (adapter === 'relais-colis') {
-      result = await this.relaisColis.fetch(trackingNumber);
-    } else if (adapter === 'colisweb') {
-      result = await this.colisweb.fetch(trackingNumber);
-    } else if (adapter === 'c-chez-vous') {
-      result = await this.cChezVous.fetch(trackingNumber);
-    } else if (adapter === 'correos-spain') {
-      result = await this.correosSpain.fetch(trackingNumber);
-    } else if (adapter === 'ctt') {
-      result = await this.ctt.fetch(trackingNumber);
-    } else if (adapter === 'heppner') {
-      result = await this.heppner.fetch(trackingNumber, dpdPostcode ?? '');
-    } else if (adapter === 'ciblex') {
-      result = await this.ciblex.fetch(trackingNumber);
-    } else if (adapter === 'paack') {
-      result = await this.paack.fetch(trackingNumber, dpdPostcode ?? '');
-    } else if (adapter === 'packeta') {
-      result = await this.packeta.fetch(trackingNumber);
-    } else if (adapter === 'pos-malaysia') {
-      result = await this.posMalaysia.fetch(trackingNumber);
-    } else if (adapter === 'poste-italiane') {
-      result = await this.posteItaliane.fetch(trackingNumber);
-    } else if (adapter === 'amazon-shipping') {
-      result = await this.amazonShipping.fetch(trackingNumber);
-    } else if (adapter === 'india-post') {
-      result = await this.indiaPost.fetch(trackingNumber);
-    } else if (adapter === 'inpost') {
-      result = await this.inpost.fetch(trackingNumber);
-    } else if (adapter === 'planzer' && trackingUrl) {
-      result = await this.planzerShared.fetch(trackingNumber, trackingUrl);
-    } else {
-      result = await fetchUpstreamCarrier(carrierId, trackingNumber);
+      // Adapters with several tiers run and report their own steps; a
+      // single-step adapter is timed here so every lookup produces exactly one
+      // step record and one lookup record.
+      const result = registered.steps.length > 1
+        ? await registered.track(input)
+        : await runSteps({ carrier: carrierId, budgetMs: SINGLE_STEP_BUDGET_MS, recorder: this.recorder }, [
+          { id: registered.steps[0] ?? 'direct', run: () => registered.track(input) },
+        ]);
+      return normalizeCarrierResult(result);
     }
-    return normalizeCarrierResult(result);
+    if (this.registry.adapterIdFor(carrierId) === 'universal') {
+      return normalizeCarrierResult(await this.universal.fetch(trackingNumber));
+    }
+    throw new RangeError(`No tracking adapter is registered for ${carrierId}`);
   }
 }
 
@@ -273,59 +152,11 @@ export function emptySyncSummary(): SyncSummary {
   };
 }
 
-export interface ClassifiedStage {
-  stage: string;
-  /**
-   * How the stage was decided: `wording:<rule>` names the rule that matched,
-   * `none` means no rule matched and the caller's fallback was used.
-   */
-  source: string;
-}
+export type ClassifiedStage = ClassifiedWording;
 
-/**
- * The wording classifier. Rule ids are stable: they are persisted per event as
- * `raw_data.stage_source` and grouped in `tracking_status_observations`.
- */
+/** The generic wording classifier, kept under its historical host name. */
 export function classifyStage(text: string, fallback = 'in_transit'): ClassifiedStage {
-  const matched = (stage: string, rule: string): ClassifiedStage => (
-    { stage, source: `wording:${rule}` }
-  );
-  const translated = trackingLanguageStage(text);
-  if (translated) return matched(translated, 'language');
-  const value = text.toLocaleLowerCase('en-US').replaceAll('_', ' ').trim().split(/\s+/).join(' ');
-  if (value.includes('to be delivered')) return matched('in_transit', 'to_be_delivered');
-  if (value === 'reported') return matched('registered', 'reported');
-  if (['will shortly be handed over', 'shipment information received', 'electronic shipment information']
-    .some((term) => value.includes(term))) return matched('registered', 'pre_advice');
-  if (['return to sender', 'returned', 'retour'].some((term) => value.includes(term))) {
-    return matched('returned', 'returned');
-  }
-  if (['not delivered', 'could not be delivered', 'unable to deliver', 'delivery attempt',
-    'failed', 'unsuccessful', 'missed delivery', 'nicht zugestellt',
-    'zustellung nicht möglich', 'non livré', 'livraison impossible',
-    'échec de livraison', 'mancata consegna'].some((term) => value.includes(term))) {
-    return matched('failed_attempt', 'failed_attempt');
-  }
-  if (['ready for pickup', 'ready for collection', 'abholbereit', 'deposited in the mypost24 machine']
-    .some((term) => value.includes(term))) return matched('ready_for_pickup', 'ready_for_pickup');
-  if (['delivered', 'deposited', 'zugestellt', 'confirmation of receipt']
-    .some((term) => value.includes(term))) return matched('delivered', 'delivered');
-  if (['out for delivery', 'in delivery', 'loading into delivery vehicle',
-    'loaded into delivery vehicle', 'zustellung'].some((term) => value.includes(term))) {
-    return matched('out_for_delivery', 'out_for_delivery');
-  }
-  if (['was released by customs', 'has been released by customs', 'has been released by a government agency']
-    .some((term) => value.includes(term))) return matched('in_transit', 'customs_released');
-  if (['customs', 'custom clearance', 'zoll', 'pending release from a government agency']
-    .some((term) => value.includes(term))) return matched('customs', 'customs');
-  if (['accepted', 'received at', 'handed over', 'handed to dpd', 'parcel handed', 'posted']
-    .some((term) => value.includes(term))) return matched('accepted', 'accepted');
-  if (['announced', 'registered', 'label created', 'created a label', 'information received', 'elektronisch angekündigt']
-    .some((term) => value.includes(term))) return matched('registered', 'registered');
-  if (['transit', 'sorted', 'sorting', 'departed', 'arrived', 'transport', 'delivery centre', 'depot',
-    'on the way', 'import scan', 'delivery will be delayed']
-    .some((term) => value.includes(term))) return matched('in_transit', 'in_transit');
-  return { stage: fallback, source: 'none' };
+  return classifyWording(text, fallback as Stage);
 }
 
 export function inferStage(text: string, fallback = 'in_transit'): string {
@@ -760,6 +591,10 @@ export class TrackingSyncService {
     carrierId: string,
     context: SyncRunContext,
   ): Promise<void> {
+    for (const event of events) {
+      const raw = isRecord(event.raw_data) ? event.raw_data : {};
+      if (typeof raw.stage_source === 'string') recordStatusMapping(carrierId, raw.stage_source);
+    }
     const observations = collectStatusObservations(events, carrierId);
     if (observations.length === 0) return;
     try {

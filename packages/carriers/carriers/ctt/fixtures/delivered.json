@@ -1,0 +1,31 @@
+{
+  "ObjectCode": "RL000000005PT",
+  "Found": true,
+  "IsTracked": true,
+  "ShipmentProduct": "Test Product",
+  "Sender": "Secret Sender",
+  "SenderEmail": "sender@example.invalid",
+  "Recipient": "Secret Recipient",
+  "RecipientAddress": "1 Example Street, 1000-001 Lisboa",
+  "ReceptorName": "Secret Receptor",
+  "Events": {
+    "List": [
+      {
+        "DateTime": "2026-01-01T08:00:00+00:00",
+        "State": "Aceite",
+        "StateId": 2,
+        "Event": "Shipment accepted",
+        "EventCode": "EMA",
+        "Local": "Test Depot"
+      },
+      {
+        "DateTime": "2026-01-04T14:46:00+00:00",
+        "State": "Entregue",
+        "StateId": 12,
+        "Event": "Delivered parcel",
+        "EventCode": "EMI",
+        "Local": "Test Depot"
+      }
+    ]
+  }
+}

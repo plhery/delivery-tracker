@@ -1,7 +1,9 @@
 {
   "id": "sunyou",
   "displayName": "SunYou",
-  "aliases": [],
+  "aliases": [
+    "SYPost"
+  ],
   "region": {
     "countries": []
   },
@@ -14,14 +16,24 @@
     "mode": "automatic",
     "adapter": "upstream",
     "upstreamName": "SunYou",
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history"
+  ],
   "portal": {
     "url": "https://sypost.net/search?trackNumber={trackingNumber}",
     "canaryUrl": "https://sypost.net/",
-    "shows": [],
-    "scraped": [],
+    "shows": [
+      "status",
+      "history"
+    ],
+    "scraped": [
+      "status",
+      "history"
+    ],
     "discarded": [],
     "unavailable": []
   },

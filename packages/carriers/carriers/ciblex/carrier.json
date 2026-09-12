@@ -1,9 +1,13 @@
 {
   "id": "ciblex",
   "displayName": "Ciblex",
-  "aliases": [],
+  "aliases": [
+    "Ciblex Express"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "FR"
+    ]
   },
   "brand": {
     "color": "#e30613"
@@ -13,15 +17,29 @@
   "tracking": {
     "mode": "automatic",
     "adapter": "ciblex",
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location"
+  ],
   "portal": {
     "url": "https://secure.extranet.ciblex.fr/extranet/client/corps.php?module=colis&colis={trackingNumber}",
     "canaryUrl": "https://secure.extranet.ciblex.fr/extranet/client/corps.php",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "recipient_address"
+    ],
+    "scraped": [
+      "status",
+      "history"
+    ],
+    "discarded": [
+      "recipient_address"
+    ],
     "unavailable": []
   },
   "links": [

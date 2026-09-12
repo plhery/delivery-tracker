@@ -1,0 +1,45 @@
+[
+  {
+    "lang": "fr",
+    "returnCode": 0,
+    "returnMessage": "OK",
+    "shipment": {
+      "idShip": "AB12345678901",
+      "product": "colissimo",
+      "isFinal": true,
+      "deliveryDate": "2026-01-08T11:14:50+01:00",
+      "estimDate": "2026-01-09T18:00:00+01:00",
+      "timeline": [
+        {
+          "id": 2,
+          "shortLabel": "Distribué",
+          "date": "2026-01-08T11:14:50+01:00",
+          "status": true,
+          "code": "DELIV"
+        }
+      ],
+      "event": [
+        {
+          "group": "ACHNAT",
+          "code": "TR1",
+          "label": "Votre colis est en transit",
+          "date": "2026-01-07T10:42:00+01:00",
+          "country": "FR",
+          "order": 4
+        },
+        {
+          "group": "DESBAL",
+          "code": "DI1",
+          "label": "Colis livré au destinataire",
+          "date": "2026-01-08T11:14:50+01:00",
+          "country": "FR",
+          "order": 5,
+          "recipientAddress": "must never survive normalization"
+        }
+      ],
+      "recipient": {
+        "address": "must never survive normalization"
+      }
+    }
+  }
+]

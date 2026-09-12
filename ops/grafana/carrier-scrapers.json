@@ -1,0 +1,82 @@
+{
+  "title": "Delivery Tracker — Carrier scrapers",
+  "uid": "delivery-tracker-carriers",
+  "schemaVersion": 39,
+  "editable": true,
+  "time": { "from": "now-24h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "carrier",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "query": "label_values(carrier_lookup_total, carrier)",
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Lookups by serving step",
+      "description": "Which tier produced the result. A tier that never serves a result can be removed; a direct tier that never serves means the direct path is dead.",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "sum by (final_step) (rate(carrier_lookup_total{carrier=~\"$carrier\", outcome=\"ok\"}[1h]))", "legendFormat": "{{final_step}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Lookup outcomes",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "sum by (outcome) (rate(carrier_lookup_total{carrier=~\"$carrier\"}[1h]))", "legendFormat": "{{outcome}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Step p95 duration (s)",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum by (le, carrier, step) (rate(carrier_step_duration_seconds_bucket{carrier=~\"$carrier\"}[1h])))", "legendFormat": "{{carrier}} {{step}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Fallbacks per hour",
+      "description": "Recovery steps run after an earlier step failed, by reason. A rising count with successful lookups means a hidden regression of the direct path.",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "sum by (carrier, from_step, to_step, reason) (increase(carrier_fallback_total{carrier=~\"$carrier\"}[1h]))", "legendFormat": "{{carrier}} {{from_step}}→{{to_step}} ({{reason}})" }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Direct-path success rate (24h) by carrier",
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 9 },
+      "targets": [
+        { "expr": "sum by (carrier) (increase(carrier_step_total{step=\"direct\", outcome=\"ok\"}[24h])) / sum by (carrier) (increase(carrier_step_total{step=\"direct\"}[24h]))", "format": "table", "instant": true }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Status mapping source",
+      "description": "Share of persisted events whose stage came from an explicit carrier map, from the wording classifier, or from the fallback. A growing 'none' share for a carrier means new wording to review in tracking_status_observations.",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 9 },
+      "targets": [
+        { "expr": "sum by (carrier, stage_source) (increase(carrier_status_mapping_total{carrier=~\"$carrier\"}[24h]))", "legendFormat": "{{carrier}} {{stage_source}}" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Carriers silent for 48h (had lookups before, none now)",
+      "description": "Silence is not success: an automatic carrier with active parcels and no lookups is worth a look.",
+      "gridPos": { "x": 0, "y": 25, "w": 24, "h": 5 },
+      "targets": [
+        { "expr": "count(sum by (carrier) (increase(carrier_lookup_total[7d])) > 0 unless sum by (carrier) (increase(carrier_lookup_total[48h])) > 0)" }
+      ]
+    }
+  ]
+}

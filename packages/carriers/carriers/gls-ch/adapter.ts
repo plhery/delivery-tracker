@@ -1,0 +1,430 @@
+import 'server-only';
+
+import { load } from 'cheerio';
+import { DateTime } from 'luxon';
+import type { AdapterFactory } from '../../core/adapter';
+import { InputRequiredError, NotFoundError, SchemaError, UpstreamHttpError } from '../../core/errors';
+import type { CarrierEvent, CarrierResult, CarrierStatus } from '../../core/result';
+import { cleanScalar, fetchBounded, parseJsonBytes } from '../../core/transport';
+import { isRecord, type JsonObject } from '../../core/types';
+import { classifyDescription, GLS_STATUSES, statusCode } from './status';
+
+// Protocol provenance (inspected 2026-08-30):
+// https://gls-group.eu/EU/en/parcel-tracking
+// https://gls-group.eu/media/gls_group_resources/gls_group_witt002_js.js
+// The current official frontend uses rstt029 for an anonymous overview, then
+// rstt028/<parcel> with the recipient postcode for the detailed event history.
+const TRACKING_PAGE = 'https://gls-group.eu/EU/en/parcel-tracking';
+const TRACKING_API = 'https://gls-group.eu/app/service/open/rest/GROUP/en';
+const PROVIDER = 'GLS Switzerland';
+const DEFAULT_TIMEOUT_MS = 15_000;
+const MAX_RESPONSE_BYTES = 1_000_000;
+const MAX_EVENTS_TO_INSPECT = 500;
+const MAX_EVENTS_TO_RETURN = 100;
+
+export { glsSwitzerlandStatus } from './status';
+
+interface ParsedEvent {
+  event: CarrierEvent;
+  status: CarrierStatus;
+  timestamp: number;
+  sourceIndex: number;
+}
+
+export interface GLSSwitzerlandOptions {
+  timeoutMs?: number;
+  now?: () => number;
+  /** Test seam; production uses the global fetch. */
+  fetcher?: typeof fetch;
+}
+
+/** Kept as a named class: the German folder narrows on it with `instanceof`. */
+export class GLSSwitzerlandTrackingError extends NotFoundError {
+  constructor() {
+    super(PROVIDER);
+    this.name = 'GLSSwitzerlandTrackingError';
+  }
+}
+
+function text(value: unknown, maxLength = 500): string {
+  return cleanScalar(value, maxLength);
+}
+
+/** Provider strings can carry markup; render them to text before they are shown. */
+function plainText(value: unknown, maxLength = 500): string {
+  const raw = text(value, Math.max(maxLength * 10, 5_000));
+  return raw ? text(load(raw).text(), maxLength) : '';
+}
+
+function isReturnParcel(parcel: JsonObject): boolean {
+  // retourFlag marks an uncollected/returning parcel regardless of heading.
+  for (const key of ['retourFlag', 'returnFlag', 'retour']) {
+    const value = parcel[key];
+    if (value === true || text(value, 8).toLocaleLowerCase('en-US') === 'true') return true;
+  }
+  return false;
+}
+
+export function normalizeGLSSwitzerlandTrackingNumber(raw: string): string {
+  const value = raw.toLocaleUpperCase('en-US').replace(/[\s.-]/g, '');
+  if (!/^(?:(?=[A-Z0-9]{8}$)(?=.*[A-Z])(?=.*\d)[A-Z0-9]{8}|\d{11,14})$/.test(value)) {
+    throw new InputRequiredError('GLS', 'an 8-character Track ID or an 11-to-14-digit parcel number',
+      'GLS tracking requires an 8-character Track ID or an 11-to-14-digit parcel number');
+  }
+  return value;
+}
+
+export function normalizeGLSSwitzerlandPostcode(raw: string, digits: 4 | 5 | '4,5' = 4): string {
+  const value = raw.trim();
+  if (!new RegExp(`^\\d{${digits}}$`).test(value)) {
+    const shape = `${digits === '4,5' ? '4- or 5' : digits}-digit recipient postcode`;
+    throw new InputRequiredError('GLS', `the ${shape}`, `GLS detailed tracking requires the ${shape}`);
+  }
+  return value;
+}
+
+export function glsSwitzerlandTrackingUrl(rawTrackingNumber: string): string {
+  const url = new URL(TRACKING_PAGE);
+  url.searchParams.set('match', normalizeGLSSwitzerlandTrackingNumber(rawTrackingNumber));
+  return url.toString();
+}
+
+export function glsSwitzerlandOverviewApiUrl(
+  rawTrackingNumber: string,
+  millis = Date.now(),
+): string {
+  const url = new URL(`${TRACKING_API}/rstt029`);
+  url.searchParams.set('match', normalizeGLSSwitzerlandTrackingNumber(rawTrackingNumber));
+  url.searchParams.set('type', '');
+  url.searchParams.set('caller', 'witt002');
+  url.searchParams.set('millis', String(millis));
+  return url.toString();
+}
+
+export function glsSwitzerlandDetailApiUrl(
+  rawParcelNumber: string,
+  rawPostcode: string,
+  millis = Date.now(),
+  ownerCode = '',
+  postcodeDigits: 4 | 5 | '4,5' = 4,
+): string {
+  const parcelNumber = normalizeGLSSwitzerlandTrackingNumber(rawParcelNumber);
+  if (!/^\d{11,14}$/.test(parcelNumber)) {
+    throw new InputRequiredError('GLS', 'the numeric parcel number', 'GLS details require the numeric parcel number');
+  }
+  const url = new URL(`${TRACKING_API}/rstt028/${encodeURIComponent(parcelNumber)}`);
+  url.searchParams.set('caller', 'witt002');
+  url.searchParams.set('millis', String(millis));
+  url.searchParams.set('postalCode', normalizeGLSSwitzerlandPostcode(rawPostcode, postcodeDigits));
+  const owner = text(ownerCode, 32);
+  if (owner && /^[A-Z0-9_-]+$/i.test(owner)) url.searchParams.set('tuOwnerCode', owner);
+  return url.toString();
+}
+
+function records(value: unknown): JsonObject[] {
+  return Array.isArray(value) ? value.filter(isRecord) : [];
+}
+
+function normalizedResponseIdentifier(value: unknown): string {
+  try {
+    return normalizeGLSSwitzerlandTrackingNumber(text(value, 32));
+  } catch {
+    return '';
+  }
+}
+
+function referenceIdentifiers(parcel: JsonObject): string[] {
+  return records(parcel.references)
+    .filter((reference) => ['TRACKID', 'TRACK ID', 'PARCELNUMBER', 'TU'].includes(
+      `${text(reference.type, 32)} ${text(reference.name, 32)}`.trim().toLocaleUpperCase('en-US'),
+    ) || /track|parcel|paket/i.test(`${text(reference.type)} ${text(reference.name)}`))
+    .map((reference) => normalizedResponseIdentifier(reference.value))
+    .filter(Boolean);
+}
+
+function responseIdentifiers(parcel: JsonObject): string[] {
+  return [
+    normalizedResponseIdentifier(parcel.tuNo),
+    normalizedResponseIdentifier(parcel.trackId),
+    normalizedResponseIdentifier(parcel.trackingId),
+    ...referenceIdentifiers(parcel),
+  ].filter(Boolean);
+}
+
+function parcelRows(payload: unknown): JsonObject[] {
+  if (!isRecord(payload)) throw new SchemaError(PROVIDER, 'GLS returned an invalid tracking response');
+  if (Array.isArray(payload.tuStatus)) return records(payload.tuStatus);
+  if (payload.tuNo) return [payload];
+  throw new SchemaError(PROVIDER, 'GLS did not return tracking details');
+}
+
+export function selectGLSParcel(payload: unknown, rawTrackingNumber: string): JsonObject {
+  const trackingNumber = normalizeGLSSwitzerlandTrackingNumber(rawTrackingNumber);
+  const parcels = parcelRows(payload);
+  if (parcels.length === 0) throw new GLSSwitzerlandTrackingError();
+  // GLS accepts an 11-digit parcel ID or its 12-digit printed form. Its
+  // recipient API can return the first 11 digits for the latter (ShipIT docs:
+  // https://gls-shipit.gls-group.eu/webservices/5_0_15/doxygen/WS-REST-API/rest_tracking.html).
+  // Bind that alias to the exact prefix; never accept an unrelated numeric ID.
+  const matching = parcels.filter((parcel) => responseIdentifiers(parcel).some((identifier) => (
+    identifier === trackingNumber
+    || (/^\d{12}$/.test(trackingNumber) && /^\d{11}$/.test(identifier)
+      && trackingNumber.slice(0, 11) === identifier)
+  )));
+  if (matching.length === 1) return matching[0]!;
+  // An eight-character Track ID is translated by the overview endpoint to its
+  // numeric parcel number and is not echoed. A single result is unambiguous.
+  if (/^[A-Z0-9]{8}$/.test(trackingNumber) && parcels.length === 1) return parcels[0]!;
+  if (matching.length > 1) throw new SchemaError(PROVIDER, 'GLS returned an ambiguous shipment');
+  throw new SchemaError(PROVIDER, 'GLS returned a different shipment');
+}
+
+/**
+ * Local time policy: the service splits a scan into a `date` and a `time`
+ * field, neither carrying an offset, in a list of formats that includes
+ * `dd-MMM-yyyy`. They are wall-clock values at the scan facility and are read
+ * in Europe/Zurich; the German folder relabels the result's timezone only.
+ */
+function parseEventTime(dateValue: unknown, timeValue: unknown): {
+  iso: string;
+  timestamp: number;
+} | null {
+  const date = text(dateValue, 64);
+  const time = text(timeValue, 32);
+  const joined = `${date} ${time}`.trim();
+  if (!joined) return null;
+  let parsed = DateTime.fromISO(joined, { zone: 'Europe/Zurich' });
+  if (!parsed.isValid) {
+    for (const format of [
+      'yyyy-MM-dd HH:mm:ss',
+      'yyyy-MM-dd HH:mm',
+      'dd-MMM-yyyy HH:mm:ss',
+      'dd-MMM-yyyy HH:mm',
+      'dd/MM/yyyy HH:mm',
+      'dd.MM.yyyy HH:mm',
+      'dd/MM/yyyy',
+      'dd.MM.yyyy',
+    ]) {
+      parsed = DateTime.fromFormat(joined, format, { zone: 'Europe/Zurich', locale: 'en' });
+      if (parsed.isValid) break;
+    }
+  }
+  const iso = parsed.toISO({ suppressMilliseconds: true });
+  return parsed.isValid && iso ? { iso, timestamp: parsed.toMillis() } : null;
+}
+
+function eventLocation(raw: JsonObject): string {
+  if (!isRecord(raw.address)) return '';
+  // Retain coarse operational scan locations (city/country) plus the
+  // ParcelShop/locker name when the provider supplies it. Street, postcode
+  // and recipient contact fields in the same object are still dropped.
+  const shop = text(raw.address.parcelShopName ?? raw.address.shopName ?? raw.parcelShop, 200);
+  return [shop, plainText(raw.address.countryName, 80), plainText(raw.address.city, 120)]
+    .filter(Boolean)
+    .join(' ')
+    .slice(0, 200);
+}
+
+function parcelShopName(parcel: JsonObject): string | null {
+  for (const event of records(parcel.history)) {
+    const name = eventLocation(event);
+    if (/parcel.?shop|locker|point relais|paketshop/i.test(name) && name) return name.slice(0, 200);
+  }
+  return null;
+}
+
+function parcelWeight(parcel: JsonObject): number | null {
+  for (const info of records(parcel.infos)) {
+    const label = text(info.label ?? info.name, 32).toLocaleLowerCase('en-US');
+    const value = text(info.value ?? info.text, 32);
+    if (!/weight|poids|gewicht/.test(label)) continue;
+    const match = /([\d.,]+)\s*kg/i.exec(value);
+    if (match) {
+      const parsed = Number(match[1]!.replace(',', '.'));
+      if (Number.isFinite(parsed) && parsed > 0) return parsed;
+    }
+  }
+  return null;
+}
+
+function parseEvents(parcel: JsonObject): ParsedEvent[] {
+  const parsed: ParsedEvent[] = [];
+  const seen = new Set<string>();
+  records(parcel.history).slice(0, MAX_EVENTS_TO_INSPECT).forEach((raw, sourceIndex) => {
+    const description = plainText(raw.evtDscr) || plainText(raw.description);
+    const time = parseEventTime(raw.date, raw.time);
+    if (!description || !time) return;
+    const location = eventLocation(raw);
+    const code = text(raw.evtNo ?? raw.code, 32);
+    const identity = JSON.stringify([time.iso, location, description, code]);
+    if (seen.has(identity)) return;
+    seen.add(identity);
+    const classified = GLS_STATUSES.get(statusCode(raw.status)) ?? classifyDescription(description);
+    parsed.push({
+      sourceIndex,
+      timestamp: time.timestamp,
+      status: classified.status,
+      event: {
+        time: time.iso,
+        location,
+        description,
+        stage: classified.stage,
+        ...(/^[A-Z0-9._-]{1,32}$/i.test(code) ? { provider_code: code } : {}),
+      },
+    });
+  });
+  parsed.sort((left, right) => (
+    right.timestamp - left.timestamp || left.sourceIndex - right.sourceIndex
+  ));
+  return parsed.slice(0, MAX_EVENTS_TO_RETURN);
+}
+
+function expectedDelivery(parcel: JsonObject): string | null {
+  if (!isRecord(parcel.arrivalTime)) return null;
+  const value = plainText(parcel.arrivalTime.value, 128);
+  const match = value.match(/\b(\d{1,2}[-/.][A-Za-z]{3}|\d{1,2}[-/.]\d{1,2})[-/.](\d{4})\b/);
+  if (!match) return null;
+  const raw = match[0];
+  for (const format of ['d-MMM-yyyy', 'd/MM/yyyy', 'd.MM.yyyy']) {
+    const parsed = DateTime.fromFormat(raw, format, { zone: 'Europe/Zurich', locale: 'en' });
+    if (parsed.isValid) return parsed.toISODate();
+  }
+  return null;
+}
+
+export function parseGLSSwitzerlandTrackingResponse(
+  payload: unknown,
+  rawTrackingNumber: string,
+): CarrierResult {
+  const parcel = selectGLSParcel(payload, rawTrackingNumber);
+  if (!isRecord(parcel.progressBar)) {
+    throw new SchemaError(PROVIDER, 'GLS did not return a shipment status');
+  }
+  const progress = parcel.progressBar;
+  const current = records(progress.statusBar).find((entry) => (
+    statusCode(entry.imageStatus) === 'CURRENT'
+  ));
+  const currentCode = statusCode(progress.statusInfo) || statusCode(current?.status);
+  const currentMetadata = GLS_STATUSES.get(currentCode);
+  const currentText = plainText(current?.statusText)
+    || plainText(progress.statusText)
+    || plainText(current?.imageText)
+    || 'Tracking information received';
+  const parsedEvents = parseEvents(parcel);
+  const events = parsedEvents.map(({ event }) => event);
+  const latestKnownEvent = parsedEvents.find((event) => event.status !== 'unknown');
+  // Newest history wording outranks a stale progress-bar heading (locker
+  // drops stick at "Delivered" upstream); the event description is the raw
+  // status. A returning parcel overrides any in-transit heading.
+  const newestDescription = events[0]?.description ?? currentText;
+  const status = isReturnParcel(parcel)
+    ? 'exception'
+    : currentMetadata?.status ?? latestKnownEvent?.status ?? 'unknown';
+  const stage = isReturnParcel(parcel)
+    ? 'returned'
+    : currentMetadata?.stage ?? latestKnownEvent?.event.stage ?? 'in_transit';
+  const shop = parcelShopName(parcel);
+  const weight = parcelWeight(parcel);
+  const pickup = stage === 'ready_for_pickup' && shop ? { pickup_point: shop } : {};
+  return {
+    status,
+    canonical_tracking_number: normalizedResponseIdentifier(parcel.tuNo),
+    ...(records(parcel.owners).some((owner) => statusCode(owner.type) === 'DELIVERY' && statusCode(owner.code) === 'CH01')
+      ? { delivery_carrier: 'swiss-post' as const, delivery_tracking_number: normalizedResponseIdentifier(parcel.tuNo) } : {}),
+    current_stage: stage,
+    last_status_text: newestDescription,
+    last_update: events[0]?.time ?? null,
+    expected_delivery: ['delivered', 'exception'].includes(status)
+      ? null
+      : expectedDelivery(parcel),
+    timezone: 'Europe/Zurich',
+    ...pickup,
+    ...(weight != null ? { weight_kg: weight } : {}),
+    ...(status === 'delivered' && events[0]?.time ? { delivered_at: events[0].time } : {}),
+    events,
+  };
+}
+
+function ownerCode(parcel: JsonObject): string {
+  return records(parcel.owners).reduce((found, owner) => (
+    found || (statusCode(owner.type) === 'REQUEST' ? text(owner.code, 32) : '')
+  ), '');
+}
+
+function pageHeaders(): Record<string, string> {
+  return {
+    Accept: 'application/json',
+    'Accept-Language': 'en-CH,en;q=0.9',
+    Origin: 'https://gls-group.eu',
+    Referer: `${TRACKING_PAGE}/`,
+    'User-Agent': 'Mozilla/5.0 (compatible; DeliveryTracker/1.0)',
+  };
+}
+
+export class GLSSwitzerlandTracker {
+  readonly timeoutMs: number;
+  readonly now: () => number;
+  readonly #fetcher: typeof fetch | undefined;
+
+  constructor(options: number | GLSSwitzerlandOptions = {}) {
+    const { timeoutMs = DEFAULT_TIMEOUT_MS, now = Date.now, fetcher } = typeof options === 'number'
+      ? { timeoutMs: options, now: Date.now, fetcher: undefined }
+      : options;
+    if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+      throw new TypeError('GLS Switzerland timeout must be positive');
+    }
+    this.timeoutMs = timeoutMs;
+    this.now = now;
+    this.#fetcher = fetcher;
+  }
+
+  async fetch(rawTrackingNumber: string, rawPostcode = ''): Promise<CarrierResult> {
+    const trackingNumber = normalizeGLSSwitzerlandTrackingNumber(rawTrackingNumber);
+    const overview = await this.request(glsSwitzerlandOverviewApiUrl(trackingNumber, this.now()));
+    const parcel = selectGLSParcel(overview, trackingNumber);
+    if (!rawPostcode.trim()) return parseGLSSwitzerlandTrackingResponse(overview, trackingNumber);
+
+    const parcelNumber = normalizedResponseIdentifier(parcel.tuNo);
+    if (!/^\d{11,14}$/.test(parcelNumber)) {
+      throw new SchemaError(PROVIDER, 'GLS did not return a numeric parcel number');
+    }
+    const detail = await this.request(glsSwitzerlandDetailApiUrl(
+      parcelNumber,
+      rawPostcode,
+      this.now(),
+      ownerCode(parcel),
+    ));
+    const result = parseGLSSwitzerlandTrackingResponse(detail, parcelNumber);
+    const overviewResult = parseGLSSwitzerlandTrackingResponse(overview, trackingNumber);
+    return { ...result, ...glsDeliveryReference(overviewResult) };
+  }
+
+  private async request(url: string): Promise<unknown> {
+    const { response, bytes } = await fetchBounded(url, {
+      headers: pageHeaders(),
+    }, {
+      provider: 'GLS Switzerland tracking',
+      timeoutMs: this.timeoutMs,
+      maxBytes: MAX_RESPONSE_BYTES,
+      allowHttpError: true,
+      ...(this.#fetcher ? { fetcher: this.#fetcher } : {}),
+    });
+    if ([400, 403, 404].includes(response.status)) throw new GLSSwitzerlandTrackingError();
+    if (!response.ok) throw new UpstreamHttpError('GLS Switzerland tracking', response.status);
+    return parseJsonBytes(bytes, PROVIDER);
+  }
+}
+
+/** Keep the verified overview's delivery owner when the postcode detail omits it. */
+export function glsDeliveryReference(result: CarrierResult): Partial<CarrierResult> {
+  return result.delivery_carrier ? { delivery_carrier: result.delivery_carrier, delivery_tracking_number: result.delivery_tracking_number } : {};
+}
+
+export const adapter: AdapterFactory = (environment) => {
+  const tracker = new GLSSwitzerlandTracker({ fetcher: environment.fetcher });
+  return {
+    id: 'gls-ch',
+    steps: ['direct'],
+    track: (input) => tracker.fetch(input.number, input.postcode ?? ''),
+  };
+};

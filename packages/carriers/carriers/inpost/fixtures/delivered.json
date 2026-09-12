@@ -1,0 +1,19 @@
+{
+  "trackingNumber": "640000000000000000000001",
+  "updatedAt": "2026-05-04T10:00:00+02:00",
+  "status": "EOL.1001",
+  "statusTitle": "Delivered",
+  "statusDescription": "Parcel collected",
+  "origin": { "countryCode": "PL" },
+  "destination": { "countryCode": "DE" },
+  "receiverName": "Example Recipient",
+  "receiverAddress": "Musterstrasse 1, 10115 Berlin",
+  "receiverPhone": "+490000000000",
+  "signature": "Example Signature",
+  "trackingDetails": [
+    { "status": "CRE.1001", "statusTitle": "Registered", "datetime": "2026-05-01T08:00:00+02:00" },
+    { "status": "MMD.1001", "statusTitle": "Moving", "datetime": "2026-05-02T12:00:00+02:00" },
+    { "status": "LMD.1004", "statusTitle": "Ready for pickup", "datetime": "2026-05-03T09:00:00+02:00" },
+    { "status": "EOL.1001", "statusTitle": "Delivered", "datetime": "2026-05-04T10:00:00+02:00" }
+  ]
+}

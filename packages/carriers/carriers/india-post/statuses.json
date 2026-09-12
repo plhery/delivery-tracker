@@ -1,0 +1,17 @@
+{
+  "carrier": "india-post",
+  "entries": [
+    { "code": "ItemBooked", "wording": "Item Booked", "language": "en", "stage": "accepted", "confirmedBy": "fixture", "firstSeen": "2026-09-01", "note": "Substring key `itembooked`; `articlebooked` and `bookingconfirmed` map the same way." },
+    { "code": "ItemDispatched", "wording": "Item Dispatched", "language": "en", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-01", "note": "Substring key `itemdispatched`." },
+    { "wording": "Item Bagged", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-01", "note": "Substring key `itembagged`." },
+    { "wording": "Item Received", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-01", "note": "Substring keys `itemreceived`, `receivedat`." },
+    { "wording": "Departed / Arrived / Forwarded / In Transit / Handed Over", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-01", "note": "Substring keys `departed`, `arrived`, `forwarded`, `intransit`, `handedover`." },
+    { "wording": "Shipment Information Received / Label Created / Article Created / Consignment Created", "language": "en", "stage": "registered", "confirmedBy": "prior-art", "firstSeen": "2026-09-01", "note": "Substring keys `shipmentinformationreceived`, `labelcreated`, `articlecreated`, `consignmentcreated`." },
+    { "wording": "Customs / Custom Clearance", "language": "en", "stage": "customs", "confirmedBy": "prior-art", "firstSeen": "2026-09-01", "note": "Substring keys `customs`, `customclearance`." },
+    { "code": "OutForDelivery", "wording": "Out For Delivery", "language": "en", "stage": "out_for_delivery", "confirmedBy": "prior-art", "firstSeen": "2026-09-01", "note": "Substring keys `outfordelivery`, `itemoutfordelivery`, `sentfordelivery`." },
+    { "wording": "Ready For Pickup / Ready For Collection / Awaiting Collection", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "prior-art", "firstSeen": "2026-09-01", "note": "Substring keys `readyforpickup`, `readyforcollection`, `awaitingcollection`." },
+    { "code": "ItemDelivered", "wording": "Item Delivered", "language": "en", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-09-01", "note": "Substring keys `itemdelivered`, `deliveredtorecipient`, `delivereddelivery`." },
+    { "code": "DeliveryAttempted", "wording": "Delivery Attempted", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-01", "note": "Substring keys `deliveryattempted`, `deliveryfailed`, `notdelivered`, `undelivered`, `insufficientaddress`, `addresseecannotbelocated`, `damaged`, `refused`, `lost`." },
+    { "code": "ReturnToSender", "wording": "Return To Sender", "language": "en", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-09-01", "note": "Substring keys `returntosender`, `returnedtocustomer`, `returnedtobookingoffice`, `returnitem`." }
+  ]
+}

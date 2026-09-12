@@ -87,8 +87,6 @@ describe('Quickpac / Planzer historical event stages', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(response(payload('Shipment delivered', [{
       createdAt: '2026-09-01T12:00:00Z', text: { english: 'New status with private details' },
     }])));
-    await expect(fetchPlanzer(TRACKING_NUMBER)).rejects.toThrow(
-      new TypeError('Planzer returned an unrecognized tracking event status'),
-    );
+    await expect(fetchPlanzer(TRACKING_NUMBER)).rejects.toThrow('Planzer returned an unrecognized tracking event status');
   });
 });

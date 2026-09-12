@@ -1,0 +1,35 @@
+{
+  "colis": {
+    "trackid": "00AB12CD",
+    "numeroalphaColis": 1234567890,
+    "numeroGp": 0,
+    "statutColis": "LIV",
+    "dateTheoriqueLivraison": "2026-08-29 00:00:00.0",
+    "nomSignataireColis": "Private Recipient",
+    "commentairesLivraison": "Private delivery instruction"
+  },
+  "adresse": {
+    "raisonSociale": "Private Company",
+    "libelle1Adresse": "10 Private Street",
+    "email": "private@example.test",
+    "telephone": "+33000000000"
+  },
+  "evenements": [
+    {
+      "datereference": "2026-08-28 08:10:00.0",
+      "statutEvenement": "CON",
+      "typeEvenement": "CON",
+      "codelieuEvenement": "FR9900",
+      "nomSignataire": "Private Recipient",
+      "referenceDestinataire": "private reference"
+    },
+    {
+      "datereference": "2026-08-29 11:42:00.0",
+      "statutEvenement": "LIV",
+      "typeEvenement": "INF",
+      "codelieuEvenement": "FR0012",
+      "nomSignataire": "Private Recipient",
+      "codeadresseEvenement": "private address code"
+    }
+  ]
+}

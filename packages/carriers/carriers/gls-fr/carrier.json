@@ -1,9 +1,13 @@
 {
   "id": "gls-fr",
   "displayName": "GLS France",
-  "aliases": [],
+  "aliases": [
+    "General Logistics Systems France"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "FR"
+    ]
   },
   "brand": {
     "color": "#ffdd00"
@@ -13,15 +17,43 @@
   "tracking": {
     "mode": "automatic",
     "adapter": "gls-france",
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "eta",
+    "provider_code"
+  ],
   "portal": {
     "url": "https://moncolis.gls-france.com/fr/{trackingNumber}",
     "canaryUrl": "https://moncolis.gls-france.com/fr/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "eta",
+      "recipient_name",
+      "recipient_address",
+      "recipient_contact",
+      "signature",
+      "delivery_instructions"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "eta"
+    ],
+    "discarded": [
+      "recipient_name",
+      "recipient_address",
+      "recipient_contact",
+      "signature",
+      "delivery_instructions"
+    ],
     "unavailable": []
   },
   "links": [

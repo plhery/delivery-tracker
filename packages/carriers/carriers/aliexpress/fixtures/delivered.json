@@ -1,0 +1,47 @@
+{
+  "module": [
+    {
+      "mailNo": "LP00000000000001",
+      "mailNoSource": "EXTERNAL",
+      "status": "SIGN",
+      "copyRealMailNo": "RA123456785CH",
+      "realMailNo": "Handed over as RA123456785CH",
+      "receiverName": "Made Up Recipient",
+      "receiverAddress": "Example Street 1, 8000 Example City",
+      "signPictureUrl": "https://example.invalid/proof-of-delivery/1.jpg",
+      "latestTrace": {
+        "actionCode": "GTMS_SIGNED",
+        "standerdDesc": "Delivered",
+        "desc": "Parcel delivered",
+        "timeStr": "2026-03-04 10:15:00"
+      },
+      "detailList": [
+        {
+          "actionCode": "GTMS_SIGNED",
+          "standerdDesc": "Delivered",
+          "timeStr": "2026-03-04 10:15:00"
+        },
+        {
+          "actionCode": "GTMS_DO_DEPART",
+          "standerdDesc": "Out for delivery",
+          "timeStr": "2026-03-04 07:02:00"
+        },
+        {
+          "actionCode": "CC_IM_SUCCESS",
+          "standerdDesc": "Import customs clearance success",
+          "timeStr": "2026-03-02 19:40:00"
+        },
+        {
+          "actionCode": "GWMS_ACCEPT",
+          "standerdDesc": "Shipment accepted by the warehouse",
+          "timeStr": "2026-02-25 09:00:00"
+        }
+      ],
+      "globalEtaInfo": {
+        "deliveryMinTime": 1773100800000,
+        "deliveryMaxTime": 1773273600000
+      }
+    }
+  ],
+  "success": true
+}

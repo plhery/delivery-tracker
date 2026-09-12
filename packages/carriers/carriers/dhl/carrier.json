@@ -1,9 +1,14 @@
 {
   "id": "dhl",
   "displayName": "DHL",
-  "aliases": [],
+  "aliases": [
+    "DHL Paket",
+    "Deutsche Post DHL"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "DE"
+    ]
   },
   "brand": {
     "color": "#ffcc00"
@@ -13,15 +18,39 @@
   "tracking": {
     "mode": "automatic",
     "adapter": "dhl",
-    "steps": []
+    "steps": [
+      "direct",
+      "trawl"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "eta"
+  ],
   "portal": {
     "url": "https://www.dhl.de/en/privatkunden/dhl-sendungsverfolgung.html?piececode={trackingNumber}",
     "canaryUrl": "https://www.dhl.de/en/privatkunden/dhl-sendungsverfolgung.html",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "eta",
+      "recipient_name",
+      "recipient_address",
+      "signature"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "eta"
+    ],
+    "discarded": [
+      "recipient_name",
+      "recipient_address",
+      "signature"
+    ],
     "unavailable": []
   },
   "links": [

@@ -1,9 +1,14 @@
 {
   "id": "gls-de",
   "displayName": "GLS Germany",
-  "aliases": [],
+  "aliases": [
+    "General Logistics Systems",
+    "GLS Group"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "DE"
+    ]
   },
   "brand": {
     "color": "#ffdd00"
@@ -27,15 +32,52 @@
         "autoComplete": "postal-code"
       }
     ],
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "eta",
+    "pickup_point",
+    "weight",
+    "delivered_at",
+    "provider_code"
+  ],
   "portal": {
     "url": "https://gls-group.eu/DE/de/paketverfolgung?match={trackingNumber}",
     "canaryUrl": "https://gls-group.eu/EU/en/parcel-tracking",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "eta",
+      "pickup_point",
+      "weight",
+      "recipient_name",
+      "recipient_address",
+      "recipient_contact",
+      "signature",
+      "customer_reference"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "eta",
+      "pickup_point",
+      "weight",
+      "delivered_at",
+      "provider_code"
+    ],
+    "discarded": [
+      "recipient_name",
+      "recipient_address",
+      "recipient_contact",
+      "signature",
+      "customer_reference"
+    ],
     "unavailable": []
   },
   "links": [

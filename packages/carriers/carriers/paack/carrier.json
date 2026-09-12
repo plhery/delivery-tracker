@@ -1,9 +1,16 @@
 {
   "id": "paack",
   "displayName": "Paack",
-  "aliases": [],
+  "aliases": [
+    "Paack Logistics"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "ES",
+      "PT",
+      "FR",
+      "GB"
+    ]
   },
   "brand": {
     "color": "#5b2dee"
@@ -27,15 +34,35 @@
         "autoComplete": "postal-code"
       }
     ],
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "eta"
+  ],
   "portal": {
     "url": "https://mydeliveries.paack.app/tracking?tracking_number={trackingNumber}",
     "canaryUrl": "https://mydeliveries.paack.app/tracking",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "eta",
+      "sender_name",
+      "recipient_name",
+      "recipient_address"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "eta"
+    ],
+    "discarded": [
+      "sender_name",
+      "recipient_name",
+      "recipient_address"
+    ],
     "unavailable": []
   },
   "links": [

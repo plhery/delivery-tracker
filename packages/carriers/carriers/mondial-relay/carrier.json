@@ -3,7 +3,13 @@
   "displayName": "Mondial Relay",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "BE",
+      "ES",
+      "FR",
+      "LU",
+      "PT"
+    ]
   },
   "brand": {
     "color": "#ef3026"
@@ -28,15 +34,35 @@
         "autoComplete": "postal-code"
       }
     ],
-    "steps": []
+    "steps": [
+      "trawl"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "eta"
+  ],
   "portal": {
     "url": "https://www.mondialrelay.fr/suivi-de-colis/?numeroExpedition={trackingNumber}",
     "canaryUrl": "https://www.mondialrelay.fr/suivi-de-colis/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "eta",
+      "pickup_point",
+      "recipient_name",
+      "recipient_address"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "eta"
+    ],
+    "discarded": [
+      "pickup_point",
+      "recipient_name",
+      "recipient_address"
+    ],
     "unavailable": []
   },
   "links": [

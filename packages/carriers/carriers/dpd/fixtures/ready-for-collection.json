@@ -1,0 +1,44 @@
+{
+  "parcelNumber": "06080000000001",
+  "status": {
+    "description": "AVAILABLE_FOR_COLLECTION",
+    "eventDateAndTime": "2026-07-16T08:12:00",
+    "eventDateAndTimeZoneId": "Europe/Zurich"
+  },
+  "senderName": "Example Webshop AG",
+  "pickupPoint": {
+    "name": "Pickup parcelshop Zürich Wiedikon"
+  },
+  "receiverName": "Private Recipient",
+  "receiverAddress": "Private Street 7, 8004 Zürich",
+  "receiverPhone": "+41000000000",
+  "signature": "Private Recipient signature image",
+  "deliveryDate": "2026-07-16T00:00:00",
+  "deliveryTimeFrom": "09:00:00",
+  "deliveryTimeTo": "12:00:00",
+  "isPredictiveDate": true,
+  "parcelEvents": [
+    {
+      "date": "2026-07-16",
+      "time": "08:12:00",
+      "city": "Zürich",
+      "countryCode": "CH",
+      "eventType": "AVAILABLE_FOR_COLLECTION",
+      "translation": "Ready for collection at the Pickup parcelshop"
+    },
+    {
+      "date": "2026-07-15",
+      "time": "19:04:00",
+      "city": "Buchs",
+      "countryCode": "CH",
+      "eventType": "IN_TRANSIT"
+    },
+    {
+      "date": "2026-07-14",
+      "time": "17:31:00",
+      "city": "Urdorf",
+      "countryCode": "CH",
+      "eventType": "PARCEL_HANDED"
+    }
+  ]
+}

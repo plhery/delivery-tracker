@@ -1,0 +1,41 @@
+{
+  "noSuivi": "1G123GEODIS0",
+  "etatLivre": false,
+  "etatRetire": false,
+  "finDeVie": false,
+  "timeline": {
+    "positionCourante": 3,
+    "listTimesteps": [
+      { "actif": false, "position": 1, "libelle": "Enregistré" },
+      { "actif": true, "position": 3, "libelle": "En cours de livraison" }
+    ]
+  },
+  "listJoursSuivis": [
+    {
+      "dateSuivi": "29/08/2026",
+      "suivis": [
+        {
+          "heureSuivi": "09:30:00",
+          "libelleCentre": "AGENCE PARIS",
+          "libelleSuivi": "En cours de livraison",
+          "listInformationsComplementaires": ["PRIVATE DELIVERY INSTRUCTION"],
+          "adresse": "10 PRIVATE STREET"
+        }
+      ]
+    },
+    {
+      "dateSuivi": "28/08/2026",
+      "suivis": [
+        {
+          "heureSuivi": "14:05:00",
+          "libelleCentre": "CENTRE DE TRI",
+          "libelleSuivi": "Envoi pris en charge"
+        }
+      ]
+    }
+  ],
+  "expediteur": { "nom": "PRIVATE SENDER", "adresse1": "PRIVATE ORIGIN" },
+  "destinataire": { "nom": "PRIVATE RECIPIENT", "adresse1": "PRIVATE DESTINATION" },
+  "listImagesBordereauxLivr": [{ "url": "https://private.example/document" }],
+  "dateLivraisonPrevue": "30/08/2026"
+}

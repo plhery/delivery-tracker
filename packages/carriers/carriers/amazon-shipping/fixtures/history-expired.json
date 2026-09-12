@@ -1,0 +1,4 @@
+{
+  "progressTracker": "{\"errors\":[{\"errorCode\":\"SHIPMENT_OLDER_THAN_SUPPORTED_AGE\",\"errorMessage\":\"SHIPMENT_OLDER_THAN_45_DAYS\"}],\"trackerSource\":\"MCF\",\"summary\":{\"status\":\"IN_TRANSIT\",\"metadata\":{}}}",
+  "eventHistory": null
+}

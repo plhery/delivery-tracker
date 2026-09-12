@@ -1,0 +1,9 @@
+{
+  "status": "transit",
+  "sender": "PRIVATE sender",
+  "destination": "PRIVATE street 4, PRIVATE city",
+  "states": [
+    { "date": "2026-08-18T06:49:00Z", "status": "Delivery preference - Front door" },
+    { "date": "2026-08-18T03:04:00Z", "status": "Electronic information submitted by shipper" }
+  ]
+}

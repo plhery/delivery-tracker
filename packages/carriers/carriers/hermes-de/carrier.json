@@ -1,9 +1,14 @@
 {
   "id": "hermes-de",
   "displayName": "Hermes Germany",
-  "aliases": [],
+  "aliases": [
+    "myHermes",
+    "Hermes Germany GmbH"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "DE"
+    ]
   },
   "brand": {
     "color": "#0091cd"
@@ -13,16 +18,45 @@
   "tracking": {
     "mode": "automatic",
     "adapter": "hermes-germany",
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "eta",
+    "sender_name",
+    "delivered_at",
+    "provider_code"
+  ],
   "portal": {
     "url": "https://www.myhermes.de/empfangen/sendungsverfolgung/sendungsinformation#{trackingNumber}",
     "canaryUrl": "https://www.myhermes.de/empfangen/sendungsverfolgung/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "shows": [
+      "status",
+      "history",
+      "eta",
+      "sender_name",
+      "recipient_name",
+      "recipient_address",
+      "delivery_instructions"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "eta",
+      "sender_name",
+      "delivered_at",
+      "provider_code"
+    ],
+    "discarded": [
+      "recipient_name",
+      "recipient_address",
+      "delivery_instructions"
+    ],
+    "unavailable": [
+      "location"
+    ]
   },
   "links": [
     {

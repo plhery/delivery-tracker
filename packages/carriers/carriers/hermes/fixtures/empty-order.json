@@ -1,0 +1,17 @@
+{
+  "body": {
+    "abstellgenehmigung": null,
+    "anzeigeSteuerung": null,
+    "artikeldaten": [],
+    "auftragsdaten": {
+      "auftragId": null,
+      "auftragsart": null,
+      "lieferdatum": null,
+      "lieferscheinnummer": "12345678",
+      "statusjourneyDto": null
+    },
+    "depotdaten": null,
+    "versenderdaten": null
+  },
+  "statusCode": "200 OK"
+}

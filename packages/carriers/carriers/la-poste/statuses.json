@@ -1,0 +1,110 @@
+{
+  "carrier": "la-poste",
+  "entries": [
+    {
+      "code": "EXPANN",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Progress-bar group: the shipment is announced."
+    },
+    {
+      "code": "ACHNAT",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Progress-bar group: national routing."
+    },
+    {
+      "code": "DISARR",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Progress-bar group: arrived at the delivery office."
+    },
+    {
+      "code": "DISTOU",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Progress-bar group: on the delivery round."
+    },
+    {
+      "code": "DISMAD",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Progress-bar group: waiting at a pickup point; the stage is set from the group directly."
+    },
+    {
+      "code": "DESBAL",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Progress-bar group: delivered to the letterbox."
+    },
+    {
+      "code": "DESTIN",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Progress-bar group: delivered to the addressee."
+    },
+    {
+      "code": "DESLIVD",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Progress-bar group: delivery completed."
+    },
+    {
+      "code": "RETOUR",
+      "stage": "returned",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Progress-bar group: returning to the sender; the stage is set from the group directly."
+    },
+    {
+      "code": "DR1",
+      "stage": "registered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Event code; outranks the group. Incident wording still overrides it."
+    },
+    {
+      "code": "PC1",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Event code: taken in charge. The only code with its own accepted stage."
+    },
+    {
+      "code": "ET1",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Event code: in transit."
+    },
+    {
+      "code": "EP1",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Event code: in transit."
+    },
+    {
+      "code": "MD1",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Event code: out for delivery."
+    },
+    {
+      "code": "DI1",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Event code: delivered."
+    }
+  ]
+}

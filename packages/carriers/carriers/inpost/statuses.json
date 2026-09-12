@@ -1,0 +1,26 @@
+{
+  "carrier": "inpost",
+  "entries": [
+    { "code": "CRE.1001", "language": "en", "stage": "registered", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "Shipment created." },
+    { "code": "FMD.1001", "language": "en", "stage": "registered", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "First mile: awaiting handover." },
+    { "code": "FMD.1002", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "First mile: collected." },
+    { "code": "MMD.1001", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "Middle mile." },
+    { "code": "MMD.1002", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "Middle mile." },
+    { "code": "MMD.1003", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "Middle mile." },
+    { "code": "MMD.1004", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "Middle mile." },
+    { "code": "LMD.1001", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "Last mile." },
+    { "code": "LMD.1002", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "Last mile." },
+    { "code": "LMD.3006", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "Last mile redirect." },
+    { "code": "LMD.3014", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "Last mile redirect." },
+    { "code": "LMD.1004", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "In the locker or pickup point." },
+    { "code": "LMD.1005", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "In the locker or pickup point." },
+    { "code": "LMD.9001", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "Awaiting collection." },
+    { "code": "LMD.9002", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "" },
+    { "code": "LMD.9014", "language": "en", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "" },
+    { "code": "EOL.1001", "language": "en", "wording": "Delivered", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "" },
+    { "code": "EOL.1003", "language": "en", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "" },
+    { "code": "EOL.9001", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "" },
+    { "code": "RTS.1001", "language": "en", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "Return to sender." },
+    { "code": "RTS.1002", "language": "en", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-08-31", "note": "Return to sender." }
+  ]
+}

@@ -1,0 +1,301 @@
+{
+  "carrier": "dpd-fr",
+  "entries": [
+    {
+      "wording": "retour a l expediteur",
+      "language": "fr",
+      "stage": "returned",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes exception."
+    },
+    {
+      "wording": "retourne a l expediteur",
+      "language": "fr",
+      "stage": "returned",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes exception."
+    },
+    {
+      "wording": "sera retourne a l expediteur",
+      "language": "fr",
+      "stage": "returned",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "A future return is already reported as returned; checked before the delivery wording."
+    },
+    {
+      "wording": "reclamation",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes exception."
+    },
+    {
+      "wording": "enquete est ouverte",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes exception."
+    },
+    {
+      "wording": "echec de livraison",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes exception."
+    },
+    {
+      "wording": "livraison impossible",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes exception."
+    },
+    {
+      "wording": "n a pas pu etre livre",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes exception."
+    },
+    {
+      "wording": "tentative de livraison",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes exception."
+    },
+    {
+      "wording": "incident",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes exception."
+    },
+    {
+      "wording": "anomalie",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes exception."
+    },
+    {
+      "wording": "endommage",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes exception."
+    },
+    {
+      "wording": "refuse",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes exception."
+    },
+    {
+      "wording": "perdu",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes exception."
+    },
+    {
+      "wording": "retard",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes exception."
+    },
+    {
+      "wording": "votre colis est livre",
+      "language": "fr",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes delivered."
+    },
+    {
+      "wording": "votre colis a ete livre",
+      "language": "fr",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes delivered."
+    },
+    {
+      "wording": "remis au destinataire",
+      "language": "fr",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes delivered."
+    },
+    {
+      "wording": "livraison effectuee",
+      "language": "fr",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes delivered."
+    },
+    {
+      "wording": "disponible en relais",
+      "language": "fr",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes out_for_delivery."
+    },
+    {
+      "wording": "disponible au relais",
+      "language": "fr",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes out_for_delivery."
+    },
+    {
+      "wording": "disponible en agence",
+      "language": "fr",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes out_for_delivery."
+    },
+    {
+      "wording": "disponible en consigne",
+      "language": "fr",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes out_for_delivery."
+    },
+    {
+      "wording": "attend en relais",
+      "language": "fr",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes out_for_delivery."
+    },
+    {
+      "wording": "en cours de livraison",
+      "language": "fr",
+      "stage": "out_for_delivery",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes out_for_delivery."
+    },
+    {
+      "wording": "en tournee de livraison",
+      "language": "fr",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes out_for_delivery."
+    },
+    {
+      "wording": "chauffeur a pris en charge",
+      "language": "fr",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes out_for_delivery."
+    },
+    {
+      "wording": "en preparation chez l expediteur",
+      "language": "fr",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes pending."
+    },
+    {
+      "wording": "informations concernant votre colis ont ete transmises",
+      "language": "fr",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes pending."
+    },
+    {
+      "wording": "donnees du colis transmises",
+      "language": "fr",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes pending."
+    },
+    {
+      "wording": "remis a dpd",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes in_transit."
+    },
+    {
+      "wording": "pris en charge par dpd",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes in_transit."
+    },
+    {
+      "wording": "en transit",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes in_transit."
+    },
+    {
+      "wording": "arrive en france",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes in_transit."
+    },
+    {
+      "wording": "arrive dans notre agence",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes in_transit."
+    },
+    {
+      "wording": "prochaine agence",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes in_transit."
+    },
+    {
+      "wording": "centre de tri",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Substring match on the accent-free wording; the result status becomes in_transit."
+    }
+  ]
+}

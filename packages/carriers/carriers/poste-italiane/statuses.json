@@ -1,0 +1,22 @@
+{
+  "carrier": "poste-italiane",
+  "entries": [
+    { "wording": "la spedizione è stata presa in carico…", "language": "it", "stage": "registered", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Prefix match." },
+    { "wording": "da un nostro operatore presso l’ufficio postale…", "language": "it", "stage": "registered", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Prefix match; both the typographic and the ASCII apostrophe are accepted." },
+    { "wording": "a seguito di acquisto da poste.it", "language": "it", "stage": "registered", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Exact match." },
+    { "wording": "la spedizione è in transito…", "language": "it", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Prefix match." },
+    { "wording": "completata la fase di verifica per lo svincolo…", "language": "it", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Customs release; prefix match." },
+    { "wording": "all’estero", "language": "it", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Exact match; the ASCII apostrophe variant is accepted too." },
+    { "wording": "presso il paese estero in data", "language": "it", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Exact match." },
+    { "wording": "in data", "language": "it", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Exact match on a truncated movement line." },
+    { "wording": "la spedizione è in consegna", "language": "it", "stage": "out_for_delivery", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Exact match." },
+    { "wording": "disponibile per il ritiro dal giorno lavorativo successivo alla data indicata", "language": "it", "stage": "ready_for_pickup", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Exact match." },
+    { "wording": "la spedizione è stata consegnata", "language": "it", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Exact match." },
+    { "wording": "la spedizione e' stata consegnata", "language": "it", "stage": "delivered", "confirmedBy": "live", "firstSeen": "2026-09-11", "note": "ASCII-apostrophe variant observed live on a delivered parcel." },
+    { "wording": "con successo in data", "language": "it", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Exact match on a truncated delivery line." },
+    { "wording": "consegna non andata a buon fine…", "language": "it", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Prefix match." },
+    { "wording": "sono in corso delle verifiche sulla spedizione. contatta assistenza", "language": "it", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Exact match." },
+    { "wording": "in restituzione al mittente…", "language": "it", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Prefix match." },
+    { "code": "5", "language": "it", "stage": "delivered", "confirmedBy": "live", "firstSeen": "2026-09-10", "note": "Envelope-level `stato`, not an event code: it forces delivered regardless of the movement wording." }
+  ]
+}

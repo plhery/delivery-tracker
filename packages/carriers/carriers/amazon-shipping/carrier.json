@@ -1,9 +1,47 @@
 {
   "id": "amazon-shipping",
   "displayName": "Amazon Shipping",
-  "aliases": [],
+  "aliases": [
+    "Shipping with Amazon",
+    "SWA"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "FR",
+      "DE",
+      "BE",
+      "GB",
+      "IT",
+      "ES",
+      "NL",
+      "AT",
+      "IE",
+      "PL",
+      "SE",
+      "PT",
+      "LU",
+      "DK",
+      "FI",
+      "CZ",
+      "SK",
+      "HU",
+      "RO",
+      "BG",
+      "HR",
+      "SI",
+      "EE",
+      "LV",
+      "LT",
+      "GR",
+      "CY",
+      "MT",
+      "CH",
+      "NO",
+      "IS",
+      "LI",
+      "TR",
+      "US"
+    ]
   },
   "brand": {
     "color": "#ff9900"
@@ -13,15 +51,44 @@
   "tracking": {
     "mode": "automatic",
     "adapter": "amazon-shipping",
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "eta",
+    "provider_code"
+  ],
   "portal": {
     "url": "https://track.amazon.fr/tracking/{trackingNumber}",
     "canaryUrl": "https://track.amazon.fr/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "eta",
+      "sender_name",
+      "recipient_name",
+      "recipient_address",
+      "signature",
+      "delivery_photo"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "eta",
+      "provider_code"
+    ],
+    "discarded": [
+      "sender_name",
+      "recipient_name",
+      "recipient_address",
+      "signature",
+      "delivery_photo"
+    ],
     "unavailable": []
   },
   "links": [],

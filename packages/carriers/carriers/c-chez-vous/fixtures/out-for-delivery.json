@@ -1,0 +1,19 @@
+{
+  "package_number": "FGRC45BKLM",
+  "shop_name": "PRIVATE SHOP",
+  "parcels": [
+    {
+      "parcelStep": 4,
+      "date": "2024-01-02T07:00:00.000000Z",
+      "dateMessage": "Entre 08h00 et 13h00",
+      "parcel_number": "PRIVATE INTERNAL PARCEL",
+      "mail": "private@example.test",
+      "mobile": "+33 PRIVATE PHONE",
+      "pickupName": "PRIVATE RECIPIENT",
+      "address": "10 PRIVATE STREET",
+      "reference": "PRIVATE ARTICLE",
+      "articles": [{ "name": "PRIVATE ARTICLE" }]
+    }
+  ],
+  "eDealer": { "address": "PRIVATE DEALER ADDRESS" }
+}

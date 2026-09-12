@@ -1,0 +1,19 @@
+{
+  "tuNo": "12345678901",
+  "progressBar": { "statusInfo": "DELIVERED", "statusText": "Delivered" },
+  "owners": [{ "type": "REQUEST", "code": "DE01" }],
+  "addresses": [{ "name": "PRIVATE RECIPIENT", "street": "PRIVATE STREET" }],
+  "history": [
+    {
+      "date": "08-Sep-2026",
+      "time": "09:00",
+      "evtDscr": "The parcel has been delivered.",
+      "address": { "countryName": "Germany", "city": "Berlin", "street": "PRIVATE STREET" }
+    },
+    {
+      "date": "07-Sep-2026",
+      "time": "10:00",
+      "evtDscr": "The parcel has reached the final parcel center."
+    }
+  ]
+}

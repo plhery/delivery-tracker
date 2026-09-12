@@ -1,9 +1,14 @@
 {
   "id": "pos-malaysia",
   "displayName": "Pos Malaysia",
-  "aliases": [],
+  "aliases": [
+    "Pos Laju",
+    "Pos Malaysia Berhad"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "MY"
+    ]
   },
   "brand": {
     "color": "#8e8e93"
@@ -13,15 +18,39 @@
   "tracking": {
     "mode": "automatic",
     "adapter": "pos-malaysia",
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "provider_code"
+  ],
   "portal": {
     "url": "https://tracking.pos.com.my/tracking/{trackingNumber}",
     "canaryUrl": "https://tracking.pos.com.my/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "eta",
+      "sender_name",
+      "recipient_name",
+      "signature"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "provider_code"
+    ],
+    "discarded": [
+      "eta",
+      "sender_name",
+      "recipient_name",
+      "signature"
+    ],
     "unavailable": []
   },
   "links": [

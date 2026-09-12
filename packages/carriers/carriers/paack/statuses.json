@@ -1,0 +1,357 @@
+{
+  "carrier": "paack",
+  "entries": [
+    {
+      "code": "returnedsender",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "returnedtosender",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Exercised by the offline test's returnedToSender scenario."
+    },
+    {
+      "code": "returnedtoretailer",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "returntosenderscheduled",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Return scheduled, not yet returned: kept non-final so the parcel stays active."
+    },
+    {
+      "code": "returnabsent",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Return scheduled after an absence: kept non-final."
+    },
+    {
+      "code": "returnother",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Return scheduled for another reason: kept non-final."
+    },
+    {
+      "code": "incorrectaddress",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Exercised by the delivered-order fixture's earlier attempt row."
+    },
+    {
+      "code": "absent",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Exercised by the offline test's absent scenario."
+    },
+    {
+      "code": "attempted",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "deliveryfailed",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "failedattempt",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "notdelivered",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Tested before the delivered rule so it can never match the 'delivered' substring."
+    },
+    {
+      "code": "undelivered",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "notaccepted",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "rejected",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "damaged",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "lost",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "nondeliverable",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "integrationerror",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Exercised by the offline active-label table."
+    },
+    {
+      "code": "cancelled",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "canceled",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Exercised by the delivered-order fixture."
+    },
+    {
+      "code": "deliverycompleted",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "readyforpickup",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "atpickuppoint",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "outfordelivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "driverassigned",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Exercised by the delivered-order fixture's inProgress row."
+    },
+    {
+      "code": "inprogress",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Exercised by the delivered-order fixture's inProgress row."
+    },
+    {
+      "code": "manifested",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "created",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "notreceivedfromretailer",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "additionaldeliveryattemptscheduled",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "orderreactivated",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Exercised by the offline active-label table."
+    },
+    {
+      "code": "appointmentbroughtforward",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Exercised by the offline active-label table."
+    },
+    {
+      "code": "appointmentrescheduled",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Exercised by the offline active-label table."
+    },
+    {
+      "code": "appointmentscheduled",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "scannedatorigin",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Exercised by the offline active-label table via scannedAtOriginHeader."
+    },
+    {
+      "code": "received",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Exercised by the offline receivedAtHub scenario."
+    },
+    {
+      "code": "collected",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "transit",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "hub",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Exercised by the offline receivedAtHub scenario."
+    },
+    {
+      "code": "warehouse",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "sorted",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "code": "pudoassigned",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Exercised by the offline active-label table via pudoAssignedHeader."
+    }
+  ]
+}

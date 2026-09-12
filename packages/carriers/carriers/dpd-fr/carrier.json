@@ -1,9 +1,13 @@
 {
   "id": "dpd-fr",
   "displayName": "DPD France",
-  "aliases": [],
+  "aliases": [
+    "Exapaq"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "FR"
+    ]
   },
   "brand": {
     "color": "#dc0032"
@@ -13,15 +17,41 @@
   "tracking": {
     "mode": "automatic",
     "adapter": "dpd-france",
-    "steps": []
+    "steps": [
+      "direct",
+      "trawl"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "eta"
+  ],
   "portal": {
     "url": "https://trace.dpd.fr/fr/trace/{trackingNumber}",
     "canaryUrl": "https://trace.dpd.fr/fr/trace",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "eta",
+      "recipient_name",
+      "recipient_address",
+      "signature",
+      "customer_reference"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "eta"
+    ],
+    "discarded": [
+      "recipient_name",
+      "recipient_address",
+      "signature",
+      "customer_reference"
+    ],
     "unavailable": []
   },
   "links": [

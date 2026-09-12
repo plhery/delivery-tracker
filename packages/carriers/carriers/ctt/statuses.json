@@ -1,0 +1,15 @@
+{
+  "carrier": "ctt",
+  "entries": [
+    { "code": "1", "language": "pt", "stage": "registered", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Shipment announced, not yet accepted." },
+    { "code": "2", "language": "pt", "wording": "Aceite", "stage": "in_transit", "confirmedBy": "live", "firstSeen": "2026-09-10", "note": "Accepted; seen on the delivered parcel checked live." },
+    { "code": "5", "language": "pt", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },
+    { "code": "7", "language": "pt", "stage": "out_for_delivery", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },
+    { "code": "8", "language": "pt", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },
+    { "code": "10", "language": "pt", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },
+    { "code": "11", "language": "pt", "wording": "Em trânsito", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },
+    { "code": "12", "language": "pt", "wording": "Entregue", "stage": "delivered", "confirmedBy": "live", "firstSeen": "2026-09-10", "note": "Delivered; seen on the delivered parcel checked live." },
+    { "code": "13", "language": "pt", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },
+    { "code": "14", "language": "pt", "stage": "ready_for_pickup", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" }
+  ]
+}

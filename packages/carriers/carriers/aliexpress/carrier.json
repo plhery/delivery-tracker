@@ -1,7 +1,10 @@
 {
   "id": "aliexpress",
   "displayName": "AliExpress / Cainiao",
-  "aliases": [],
+  "aliases": [
+    "Cainiao",
+    "AliExpress"
+  ],
   "region": {
     "countries": []
   },
@@ -14,14 +17,29 @@
     "mode": "automatic",
     "adapter": "upstream",
     "upstreamName": "AliExpress",
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "eta",
+    "eta_window",
+    "delivered_at"
+  ],
   "portal": {
     "url": "https://global.cainiao.com/detail.htm?mailNoList={trackingNumber}",
     "canaryUrl": "https://global.cainiao.com/",
-    "shows": [],
-    "scraped": [],
+    "shows": [
+      "status",
+      "history",
+      "eta"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "eta"
+    ],
     "discarded": [],
     "unavailable": []
   },

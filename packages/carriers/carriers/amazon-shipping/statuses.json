@@ -1,0 +1,18 @@
+{
+  "carrier": "amazon-shipping",
+  "entries": [
+    { "code": "RETURNED_TO_SENDER / RETURNED_TO_RETAILER / RETURNED_TO_MERCHANT / RETURNED_TO_SHOPPER / RETURNED_TO_SHIPPER / RETURNING_TO_SENDER / RETURN_TO_SENDER / LOST_ON_RETURN", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Checked before the broad 'delivered' substring." },
+    { "code": "DELIVERY_ATTEMPTED / FAILED_ATTEMPT / UNABLE_TO_DELIVER / UNDELIVERABLE… / INFORMATION_NEEDED / ADDRESS_PROBLEM / DAMAGED / DESTROYED / REJECTED / CANCELLED / LOST", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Reported as 'Delivery issue'." },
+    { "code": "DELAYED… / LATE…", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Reported as 'Delivery delayed'; a delay is not an exception." },
+    { "code": "DELIVERED", "wording": "swa_rex_detail_delivered", "language": "en", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "" },
+    { "code": "READY_FOR_PICKUP / READY_FOR_COLLECTION / HOLD_FOR_PICKUP / AWAITING_CUSTOMER_PICKUP", "stage": "ready_for_pickup", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },
+    { "code": "OUT_FOR_DELIVERY / swa_rex_ofd", "stage": "out_for_delivery", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },
+    { "code": "CUSTOMS… / CLEARANCE…", "stage": "customs", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },
+    { "code": "PICKUP_DONE / PICKED_UP / RECEIVED_FROM_SELLER / RECEIVED_FROM_SHIPPER / ACCEPTED_BY_CARRIER", "stage": "accepted", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Reported as 'Shipment picked up'." },
+    { "code": "CREATION_CONFIRMED / LABEL_CREATED / SHIPPING_LABEL_CREATED / SHIPMENT_CREATED / INFORMATION_RECEIVED / REGISTERED", "wording": "swa_rex_detail_creation_confirmed", "language": "en", "stage": "registered", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "Reported as 'Shipment information received'." },
+    { "code": "IN_TRANSIT / swa_rex_in_transit / RECEIVED / DEPARTED / ARRIVED / SORT_CENTER / DELIVERY_CENTER / TRANSPORT", "wording": "swa_rex_detail_departed", "language": "en", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "Event descriptions are refined to 'Departed facility', 'Arrived at sorting center' or 'Arrived at delivery center' where the code says so." },
+    { "code": "TRACKING_ID_NOT_FOUND / INVALID_TRACKING_ID", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "Error code, not a stage: HTTP 200 body meaning the id is unknown. Reported as not found." },
+    { "code": "SHIPMENT_OLDER_THAN_SUPPORTED_AGE", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "Error code, not a stage: the shipment exists but its history is past the retention limit. The accompanying IN_TRANSIT summary is a placeholder and is deliberately not mapped." },
+    { "code": "any other status", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Left unmapped: the shipment falls back to the newest event that does classify, and is reported as unknown if none does." }
+  ]
+}

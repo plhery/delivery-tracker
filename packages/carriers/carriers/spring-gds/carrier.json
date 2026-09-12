@@ -1,9 +1,14 @@
 {
   "id": "spring-gds",
   "displayName": "PostNL",
-  "aliases": [],
+  "aliases": [
+    "Spring GDS",
+    "Mailing Technology"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "NL"
+    ]
   },
   "brand": {
     "color": "#ef7d00"
@@ -14,14 +19,29 @@
     "mode": "automatic",
     "adapter": "upstream",
     "upstreamName": "PostNL",
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "sender_name",
+    "delivered_at"
+  ],
   "portal": {
     "url": "https://postnl.post/track?barcodes={trackingNumber}",
     "canaryUrl": "https://postnl.post/",
-    "shows": [],
-    "scraped": [],
+    "shows": [
+      "status",
+      "history",
+      "sender_name"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "sender_name"
+    ],
     "discarded": [],
     "unavailable": []
   },

@@ -1,9 +1,15 @@
 {
   "id": "poste-italiane",
   "displayName": "Poste Italiane",
-  "aliases": [],
+  "aliases": [
+    "Poste",
+    "PosteDelivery",
+    "Crono"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "IT"
+    ]
   },
   "brand": {
     "color": "#8e8e93"
@@ -13,15 +19,43 @@
   "tracking": {
     "mode": "automatic",
     "adapter": "poste-italiane",
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "eta"
+  ],
   "portal": {
     "url": "https://www.poste.it/cerca/index.html#/risultati-spedizioni/{trackingNumber}",
     "canaryUrl": "https://www.poste.it/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "eta",
+      "location",
+      "sender_name",
+      "recipient_name",
+      "recipient_address",
+      "signature",
+      "weight",
+      "pickup_point"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "eta"
+    ],
+    "discarded": [
+      "location",
+      "sender_name",
+      "recipient_name",
+      "recipient_address",
+      "signature",
+      "weight",
+      "pickup_point"
+    ],
     "unavailable": []
   },
   "links": [

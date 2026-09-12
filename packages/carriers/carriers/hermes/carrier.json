@@ -1,9 +1,14 @@
 {
   "id": "hermes",
   "displayName": "Hermes Einrichtungs-Service",
-  "aliases": [],
+  "aliases": [
+    "HES",
+    "Hermes Einrichtungsservice"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "DE"
+    ]
   },
   "brand": {
     "color": "#0091cd"
@@ -13,16 +18,40 @@
   "tracking": {
     "mode": "automatic",
     "adapter": "hermes",
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "eta"
+  ],
   "portal": {
     "url": "https://myhes.de/",
     "canaryUrl": "https://myhes.de/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "shows": [
+      "status",
+      "history",
+      "eta",
+      "sender_name",
+      "recipient_name",
+      "recipient_address",
+      "delivery_instructions"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "eta"
+    ],
+    "discarded": [
+      "sender_name",
+      "recipient_name",
+      "recipient_address",
+      "delivery_instructions"
+    ],
+    "unavailable": [
+      "location"
+    ]
   },
   "links": [],
   "detection": []

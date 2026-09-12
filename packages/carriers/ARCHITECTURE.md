@@ -105,12 +105,14 @@ file.
 ## Status model
 
 Adapters emit the product `Stage` vocabulary at both result and event level.
-An event's stage may be `null`, meaning "no explicit mapping": the sync then
-runs the wording classifier and records where the final stage came from in
-`stage_source` (`carrier_map`, `provider_declared`, `wording:<rule-id>`,
-`none`). Events without an explicit mapping are also recorded in the
-`tracking_status_observations` table so new wording can be reviewed and mapped
-later.
+An event may carry no `stage`, meaning "no explicit mapping": the sync then
+runs the wording classifier (`core/status/wording.ts`) and records where the
+final stage came from in `raw_data.stage_source`: `carrier_map` when the
+adapter or provider supplied a valid stage, `wording:<rule-id>` when a
+classifier rule decided, `none` when the fallback was used. Events whose
+source is not `carrier_map` are also recorded in the service-only
+`tracking_status_observations` table so new wording can be reviewed and
+mapped later (see docs/OBSERVABILITY.md).
 
 Mapping precedence: explicit carrier map → provider-declared stage → wording
 classifier → fallback (previous stage or `in_transit`), flagged. Wording rules
@@ -170,6 +172,16 @@ generated overview table and the add-a-carrier checklist.
 | Metrics | `prom-client` behind a `StepRecorder` interface | Sentry metrics only | retention and per-label queries; the interface keeps alternatives open |
 | Errors | one taxonomy, `instanceof` | per-adapter classes and name sniffing | routing correctness |
 | Docs | generated tables plus hand-written sections per carrier | one large markdown file | drift and mixed audiences |
+
+## Migration status
+
+Phase 0 to 2 are in place: the corpus and detection core, per-carrier
+`carrier.json` as the source of truth, the error taxonomy, transport, runner
+and telemetry in `core/`, adapters and providers in their folders served
+through the generated registry, and Prometheus plus Sentry sinks. Still open:
+brand assets generated from one truck geometry, a generated status reference in
+each README, the lookup canary that replays a synthetic number through every
+registered adapter, and the optional `exception` stage.
 
 ## Prior art
 

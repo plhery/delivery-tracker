@@ -293,3 +293,20 @@ describe('persistent tracking routing', () => {
     expect(universalCarrierHints(['https://private/token'])).toEqual({ reported_carriers: [] });
   });
 });
+
+describe('routingFailure with carrier package errors', () => {
+  it('classifies by error kind before falling back to status sniffing', async () => {
+    const { routingFailure } = await import('./trackingRouting');
+    const errors = await import('@carriers/core/errors');
+    expect(routingFailure(new errors.NotFoundError('CTT'))).toEqual({ kind: 'not_found', retryAfterMs: 0 });
+    expect(routingFailure(new errors.RateLimitedError('Ship24', 30_000))).toEqual({ kind: 'rate_limited', retryAfterMs: 30_000 });
+    expect(routingFailure(new errors.ChallengeError('UPS'))).toEqual({ kind: 'verification', retryAfterMs: 0 });
+    expect(routingFailure(new errors.SchemaError('DHL'))).toEqual({ kind: 'schema', retryAfterMs: 0 });
+    expect(routingFailure(new errors.InputRequiredError('Heppner', 'the delivery postcode'))).toEqual({ kind: 'schema', retryAfterMs: 0 });
+    expect(routingFailure(new errors.IndeterminateError('Colisweb'))).toEqual({ kind: 'transport', retryAfterMs: 0 });
+    expect(routingFailure(new Error('wrapped', { cause: new errors.NotFoundError('CTT') }))).toEqual({ kind: 'not_found', retryAfterMs: 0 });
+    // Errors outside the taxonomy keep the historical status-based classification.
+    expect(routingFailure(Object.assign(new Error('legacy'), { status: 429, retryAfterMs: 1_000 }))).toEqual({ kind: 'rate_limited', retryAfterMs: 1_000 });
+    expect(routingFailure(new TypeError('bad payload'))).toEqual({ kind: 'schema', retryAfterMs: 0 });
+  });
+});

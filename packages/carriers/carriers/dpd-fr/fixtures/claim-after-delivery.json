@@ -1,0 +1,27 @@
+{
+  "scenario": "outbound parcel delivered on 23 January and then subject to a claim, alongside the return leg the same page describes",
+  "outboundNumber": "250123456789012",
+  "returnNumber": "10612345678901",
+  "outboundDetails": [
+    ["N° colis", "250123456789012"],
+    ["Numéro de référence interne", "private-order-reference"],
+    ["Livraison prévue", "24/01/2026"],
+    ["Livré le", "23/01/2026"]
+  ],
+  "returnDetails": [
+    ["N° colis", "10612345678901"]
+  ],
+  "outboundRows": [
+    ["12/02/2026", "09:50", "Nous avons reçu une réclamation : une enquête est ouverte", "Agence DPD de La Crau (283)"],
+    ["23/01/2026", "12:45", "Votre colis est livré", "Livré au destinataire"],
+    ["23/01/2026", "08:31", "Votre colis est en cours de livraison", "Agence DPD de La Crau (283)"],
+    ["22/01/2026", "16:16", "Votre colis est arrivé en France", "Centre de tri DPD de Le Coudray (175)"]
+  ],
+  "returnRows": [
+    ["24/01/2026", "08:00", "Private return event", ""]
+  ],
+  "privateSections": {
+    "agence": "19 Private Street",
+    "preuveliv": "Signed by Private Recipient, private@example.test"
+  }
+}

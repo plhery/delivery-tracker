@@ -32,6 +32,8 @@ const outputs = new Map([
   ['DeliveryDemo.json', fs.readFileSync(path.join(root, 'shared', 'delivery-demo.json'), 'utf8')],
   ['FriendsDemo.json', fs.readFileSync(path.join(root, 'shared', 'friends-demo.json'), 'utf8')],
   ['ContractFixtures.json', `${JSON.stringify(apiFixture, null, 2)}\n`],
+  // Replayed by the native detection test so the Swift port cannot drift from the shared engine.
+  ['DetectionGolden.json', fs.readFileSync(path.join(root, 'contracts', 'fixtures', 'detection-golden.json'), 'utf8')],
 ]);
 
 if (process.argv.includes('--check')) {

@@ -1,7 +1,9 @@
 {
   "id": "ups",
   "displayName": "UPS",
-  "aliases": [],
+  "aliases": [
+    "United Parcel Service"
+  ],
   "region": {
     "countries": []
   },
@@ -13,14 +15,31 @@
   "tracking": {
     "mode": "automatic",
     "adapter": "ups",
-    "steps": []
+    "steps": [
+      "direct",
+      "trawl"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "eta"
+  ],
   "portal": {
     "url": "https://www.ups.com/track?tracknum={trackingNumber}",
     "canaryUrl": "https://www.ups.com/assets/resources/webcontent/en_US/terms_service.pdf",
-    "shows": [],
-    "scraped": [],
+    "shows": [
+      "status",
+      "history",
+      "eta",
+      "location"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "eta",
+      "location"
+    ],
     "discarded": [],
     "unavailable": []
   },

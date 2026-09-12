@@ -1,0 +1,52 @@
+{
+  "orderTrackData": {
+    "external_id": "EXCHANGE000001D",
+    "order_id": "PRIVATE INTERNAL ORDER",
+    "expected_delivery_ts": {
+      "start": "2024-07-28T08:00:00+02:00",
+      "end": "2024-07-28T20:00:00+02:00"
+    },
+    "retailer_name": "PRIVATE RETAILER",
+    "full_name": "PRIVATE RECIPIENT",
+    "email": "private@example.test",
+    "phone_number": "+34 PRIVATE PHONE",
+    "address": "10 PRIVATE STREET"
+  },
+  "eventList": [
+    {
+      "id": "delivered",
+      "label": "delivered",
+      "event_type": "direct",
+      "timestamp": "2024-07-28T15:02:00+02:00",
+      "uniq_id": "event-3",
+      "timeline": true,
+      "status": "success",
+      "variables": { "Status": { "recipient": "PRIVATE RECIPIENT" } }
+    },
+    {
+      "id": "driver-assigned",
+      "label": "inProgress",
+      "event_type": "direct",
+      "timestamp": "2024-07-28T12:05:00+02:00",
+      "uniq_id": "event-2",
+      "timeline": true,
+      "status": "success",
+      "variables": { "Status": { "address": "PRIVATE STREET" } }
+    },
+    {
+      "id": "address-error",
+      "label": "incorrectAddress",
+      "event_type": "direct",
+      "timestamp": "2024-07-27T18:30:00+02:00",
+      "uniq_id": "event-1",
+      "timeline": true,
+      "status": "error",
+      "variables": { "Header": { "phone": "+34 PRIVATE PHONE" } }
+    }
+  ],
+  "activeEvent": {
+    "id": "delivered",
+    "label": "delivered",
+    "time": "2024-07-28T15:02:00+02:00"
+  }
+}

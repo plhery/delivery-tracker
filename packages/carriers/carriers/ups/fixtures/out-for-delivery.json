@@ -1,0 +1,59 @@
+{
+  "statusCode": "200",
+  "statusText": "Successful",
+  "trackDetails": [
+    {
+      "trackingNumber": "1Z999AA10123456784",
+      "requestedTrackingNumber": "1Z999AA10123456784",
+      "packageStatus": "Out For Delivery Today",
+      "simplifiedText": "Out for Delivery",
+      "progressBarType": "OutForDelivery",
+      "currentMilestone": { "name": "Out for Delivery" },
+      "scheduledDeliveryDateDetail": {
+        "monthCMSKey": "cms.stapp.aug",
+        "dayNum": "4"
+      },
+      "receivedBy": "PRIVATE RECIPIENT",
+      "shipToAddress": {
+        "address": {
+          "addressLine1": "10 PRIVATE STREET",
+          "city": "PRIVATE CITY",
+          "postalCode": "PRIVATE POSTCODE"
+        }
+      },
+      "signatureLink": "https://www.ups.com/PRIVATE-SIGNATURE-LINK",
+      "deliveryPhotoLink": "https://www.ups.com/PRIVATE-PHOTO-LINK",
+      "shipmentProgressActivities": [
+        {
+          "date": "08/04/2026",
+          "time": "9:12 A.M.",
+          "location": "ZUERICH, CH",
+          "activityScan": "Out For Delivery Today",
+          "milestoneName": { "name": "Out for Delivery" },
+          "gmtDate": "20260804",
+          "gmtTime": "07:12:04",
+          "gmtOffset": "+02:00"
+        },
+        {
+          "date": "08/04/2026",
+          "time": "5:03 A.M.",
+          "location": "ZUERICH, CH",
+          "activityScan": "Arrived at Facility",
+          "gmtDate": "20260804",
+          "gmtTime": "03:03:51",
+          "gmtOffset": "+02:00"
+        },
+        {
+          "date": "08/03/2026",
+          "time": "11:41 P.M.",
+          "location": "KOELN, DE",
+          "activityScan": "Departed from Facility",
+          "activityAdditionalDescription": "Your package is on the way",
+          "gmtDate": "20260803",
+          "gmtTime": "21:41:10",
+          "gmtOffset": "+02:00"
+        }
+      ]
+    }
+  ]
+}

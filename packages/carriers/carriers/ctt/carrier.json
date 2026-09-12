@@ -1,9 +1,14 @@
 {
   "id": "ctt",
   "displayName": "CTT Portugal",
-  "aliases": [],
+  "aliases": [
+    "CTT Correios de Portugal",
+    "Correios de Portugal"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "PT"
+    ]
   },
   "brand": {
     "color": "#8e8e93"
@@ -13,15 +18,37 @@
   "tracking": {
     "mode": "automatic",
     "adapter": "ctt",
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "provider_code"
+  ],
   "portal": {
     "url": "https://www.ctt.pt/feapl_2/app/open/objectSearch/objectSearch.jspx?objects={trackingNumber}",
     "canaryUrl": "https://www.ctt.pt/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "sender_name",
+      "recipient_name",
+      "recipient_address"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "provider_code"
+    ],
+    "discarded": [
+      "sender_name",
+      "recipient_name",
+      "recipient_address"
+    ],
     "unavailable": []
   },
   "links": [

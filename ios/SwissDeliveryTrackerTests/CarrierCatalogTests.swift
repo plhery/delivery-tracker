@@ -600,3 +600,35 @@ private actor CatalogRequestRecorder {
 
     var lastRequest: URLRequest? { requests.last }
 }
+
+extension CarrierCatalogTests {
+    /// The shared corpus (`contracts/fixtures/detection-golden.json`) records what the
+    /// TypeScript engine answers for every sample number; the Swift port must agree.
+    func testDetectionMatchesTheSharedGoldenFile() throws {
+        struct Entry: Decodable {
+            let input: String
+            let carrier: String
+            let confidence: String
+            let candidates: [String]
+        }
+        let url = try XCTUnwrap(Bundle.main.url(forResource: "DetectionGolden", withExtension: "json"))
+        let entries = try JSONDecoder().decode([Entry].self, from: Data(contentsOf: url))
+        XCTAssertGreaterThan(entries.count, 100)
+        var mismatches: [String] = []
+        for entry in entries {
+            let match = catalog.detect(entry.input)
+            let confidence: String
+            switch match.confidence {
+            case .high: confidence = "high"
+            case .low: confidence = "low"
+            case .none: confidence = "none"
+            }
+            let candidates = match.candidates.map(\.rawValue).sorted()
+            if match.carrier.rawValue != entry.carrier || confidence != entry.confidence
+                || candidates != entry.candidates.sorted() {
+                mismatches.append("\(entry.input): expected \(entry.carrier)/\(entry.confidence) \(entry.candidates), got \(match.carrier.rawValue)/\(confidence) \(candidates)")
+            }
+        }
+        XCTAssertEqual(mismatches, [], mismatches.prefix(10).joined(separator: "\n"))
+    }
+}

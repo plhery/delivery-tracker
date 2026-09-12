@@ -1,0 +1,221 @@
+{
+  "carrier": "ciblex",
+  "entries": [
+    {
+      "wording": "retour expediteur",
+      "language": "fr",
+      "stage": "returned",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Matched on the fixture row \"Retour expéditeur\"."
+    },
+    {
+      "wording": "retourne a l expediteur",
+      "language": "fr",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Spelling variant inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "retour a l expediteur",
+      "language": "fr",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Spelling variant inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "colis livre",
+      "language": "fr",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Matched on the fixture row \"Colis Livré\"; the portal alternates accented and unaccented spellings."
+    },
+    {
+      "wording": "livraison effectuee",
+      "language": "fr",
+      "stage": "delivered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "remis au destinataire",
+      "language": "fr",
+      "stage": "delivered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "mis en livraison",
+      "language": "fr",
+      "stage": "out_for_delivery",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Matched on the fixture row \"Mis en livraison\"."
+    },
+    {
+      "wording": "mise en livraison",
+      "language": "fr",
+      "stage": "out_for_delivery",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Spelling variant inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "en cours de livraison",
+      "language": "fr",
+      "stage": "out_for_delivery",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "disponible au relais",
+      "language": "fr",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Matched on the fixture row \"Disponible au relais\"."
+    },
+    {
+      "wording": "disponible en relais",
+      "language": "fr",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Spelling variant inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "mis a disposition",
+      "language": "fr",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "complement adresse",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Matched on the fixture row \"COMPLEMENT ADRESSE\"; such rows carry the recipient address, so their place cell is dropped."
+    },
+    {
+      "wording": "adresse incorrecte",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "destinataire absent",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "incident",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "anomalie",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "non livre",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "refuse",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "colis controle",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Matched on the fixture row \"Colis Contrôle\"."
+    },
+    {
+      "wording": "colis en transit",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "arrive agence",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "depart agence",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "colis pris en charge",
+      "language": "fr",
+      "stage": "accepted",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Matched on the fixture row \"Colis pris en charge\"."
+    },
+    {
+      "wording": "prise en charge",
+      "language": "fr",
+      "stage": "accepted",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Broader variant inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "annonce",
+      "language": "fr",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "information recue",
+      "language": "fr",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Inherited from the pre-package adapter; source not recorded."
+    }
+  ]
+}

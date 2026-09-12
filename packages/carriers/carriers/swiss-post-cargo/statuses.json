@@ -1,0 +1,18 @@
+{
+  "carrier": "swiss-post-cargo",
+  "entries": [
+    { "code": "DLV", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "Delivery scan; appears with the wording 'Delivered'." },
+    { "code": "POD", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Proof-of-delivery family carried over from the adapter's original map; not re-confirmed against a capture." },
+    { "code": "P40", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Proof-of-delivery family carried over from the adapter's original map; not re-confirmed against a capture." },
+    { "code": "IMG", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Proof-of-delivery family carried over from the adapter's original map; not re-confirmed against a capture." },
+    { "code": "SIG", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Proof-of-delivery family carried over from the adapter's original map; not re-confirmed against a capture." },
+    { "code": "SCA", "stage": "out_for_delivery", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Delivery-round scan." },
+    { "code": "NTF", "stage": "registered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Shipment announced." },
+    { "code": "RFS", "stage": "accepted", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "Accompanies the wording 'Shipment accepted'." },
+    { "wording": "retour / return / zurück", "language": "mul", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Wording rule; wins over any delivery word in the same row." },
+    { "wording": "incident / échec / failed / not delivered / non livré / nicht zugestellt / refusé / damage / verzögert", "language": "mul", "stage": "failed_attempt", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "Wording rule; 'Not delivered' is covered by the offline test." },
+    { "wording": "delivered / livré / zugestellt / consegnato", "language": "mul", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "Wording rule, consulted after the negative rules above." },
+    { "wording": "out for delivery / en livraison / in Zustellung / in consegna", "language": "mul", "stage": "out_for_delivery", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Wording rule." },
+    { "wording": "annoncé / registered / angemeldet / information received", "language": "mul", "stage": "registered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Wording rule." }
+  ]
+}

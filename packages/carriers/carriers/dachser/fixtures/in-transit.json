@@ -1,0 +1,32 @@
+{
+  "numUnico": "9010000001234",
+  "estadoExpedicion": "EN TRANSITO",
+  "fechaEstado": "12/09/2026 07:45:00",
+  "fCompromiso": "15/09/2026",
+  "fechaPrimeraEntrega": "14/09/2026",
+  "nombreRemitente": "PRIVATE SENDER SL",
+  "nombreDestinatario": "PRIVATE RECIPIENT",
+  "direccionDestinatario": "PRIVATE STREET 12",
+  "telefonoDestinatario": "+34000000000",
+  "emailDestinatario": "private@example.test",
+  "firmaEntrega": "PRIVATE SIGNATURE",
+  "incidenciaExpedicionData": [
+    {
+      "fechaIncidencia": "12/09/2026 07:45:00",
+      "descripcionIncidencia": "SALIDA DE PLATAFORMA",
+      "observacionesInternas": "PRIVATE INTERNAL NOTE"
+    },
+    {
+      "fechaIncidencia": "11/09/2026 18:20:00",
+      "descripcionIncidencia": "LLEGADA A PLATAFORMA"
+    },
+    {
+      "fechaIncidencia": "11/09/2026 09:05:00",
+      "descripcionIncidencia": "ENVIO ACEPTADO EN ORIGEN"
+    },
+    {
+      "fechaIncidencia": "10/09/2026 16:00:00",
+      "descripcionIncidencia": "ENVIO REGISTRADO"
+    }
+  ]
+}

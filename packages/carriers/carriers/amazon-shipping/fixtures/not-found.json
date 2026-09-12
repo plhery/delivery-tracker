@@ -1,0 +1,4 @@
+{
+  "progressTracker": "{\"progressMeter\":null,\"errors\":[{\"errorCode\":\"TRACKING_ID_NOT_FOUND\",\"errorMessage\":\"INVALID TRACKING_ID\"}],\"summary\":{\"status\":null,\"metadata\":{}},\"expectedDeliveryDate\":null,\"trackerSource\":\"UNKNOWN\"}",
+  "eventHistory": null
+}

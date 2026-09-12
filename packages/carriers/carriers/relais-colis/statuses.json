@@ -1,0 +1,341 @@
+{
+  "carrier": "relais-colis",
+  "entries": [
+    {
+      "wording": "retour a l expediteur",
+      "language": "fr",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "retourne a l expediteur",
+      "language": "fr",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "retourne a votre vendeur",
+      "language": "fr",
+      "stage": "returned",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Matched on the fixture step \"VOTRE COLIS A ÉTÉ RETOURNÉ À VOTRE VENDEUR\"."
+    },
+    {
+      "wording": "retour a votre vendeur",
+      "language": "fr",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "retour vendeur",
+      "language": "fr",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "livraison impossible",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "echec de livraison",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "incident de livraison",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "adresse incorrecte",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "colis endommage",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "colis refuse",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "colis perdu",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "destinataire absent",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "n a pas pu etre livre",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "disponible dans votre relais",
+      "language": "fr",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Matched on the fixture step \"Votre colis est disponible dans votre Relais Colis\"."
+    },
+    {
+      "wording": "disponible au relais",
+      "language": "fr",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "disponible en relais",
+      "language": "fr",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "mis a disposition dans votre relais",
+      "language": "fr",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "vous attend dans votre relais",
+      "language": "fr",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "a retirer dans votre relais",
+      "language": "fr",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "en cours de livraison",
+      "language": "fr",
+      "stage": "out_for_delivery",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Exercised by the offline out-for-delivery scenario; tested before the delivery rules so \"livraison dans votre relais\" cannot read as delivered."
+    },
+    {
+      "wording": "en cours de distribution",
+      "language": "fr",
+      "stage": "out_for_delivery",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "livraison dans votre relais",
+      "language": "fr",
+      "stage": "out_for_delivery",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "retire par le destinataire",
+      "language": "fr",
+      "stage": "delivered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "remis au destinataire",
+      "language": "fr",
+      "stage": "delivered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "remis a son destinataire",
+      "language": "fr",
+      "stage": "delivered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "livraison effectuee",
+      "language": "fr",
+      "stage": "delivered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "colis|commande a ete|est livre",
+      "language": "fr",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Regular expression rather than a fragment; exercised by the offline \"Votre colis a été livré au destinataire\" scenario."
+    },
+    {
+      "wording": "commande enregistree",
+      "language": "fr",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "colis annonce",
+      "language": "fr",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "colis a ete annonce",
+      "language": "fr",
+      "stage": "registered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Matched on the fixture step \"Votre colis a été annoncé\"."
+    },
+    {
+      "wording": "information transmise",
+      "language": "fr",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "en attente de prise en charge",
+      "language": "fr",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "sera prochainement confie",
+      "language": "fr",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "pris en charge",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Matched on the fixture step \"Votre colis a été pris en charge\"."
+    },
+    {
+      "wording": "en cours d acheminement",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Matched on the fixture step \"Votre colis est en cours d'acheminement dans notre réseau\"."
+    },
+    {
+      "wording": "en transit",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "arrive dans notre agence",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "arrive sur notre agence",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "a quitte notre agence",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "achemine vers",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    },
+    {
+      "wording": "expedie vers",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-12",
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+    }
+  ]
+}

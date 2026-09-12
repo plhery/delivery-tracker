@@ -1,0 +1,109 @@
+# DPD
+
+## Identity and scope
+
+DPD Switzerland — DPD (Schweiz) AG, the Swiss member of the DPDgroup network,
+whose consignee portal is branded myDPD. This folder covers Swiss last-mile
+parcels only (`region.countries: ["CH"]`). DPD France has its own folder
+(`dpd-fr`) with a different protocol, and other DPDgroup countries are not
+served by this adapter.
+
+## Portals
+
+- Consignee portal: `https://www.dpdgroup.com/ch/mydpd/my-parcels/incoming?parcelNumber={trackingNumber}`
+  — the page a recipient opens, and the link the app shows.
+- Rendered timeline used by the page fallback:
+  `https://www.dpdgroup.com/ch/mydpd/my-parcels/track`.
+- The portal shows status, scan history, operational locations, a delivery date
+  and a delivery window, the sender, and the pickup point. It also shows
+  recipient identity once the postcode has been entered; that is dropped.
+
+## What we retrieve
+
+Declared capabilities: `history`, `location`, `eta`, `sender_name`,
+`pickup_point`.
+
+Status and current stage, the scan history with its operational city and
+country, the delivery date (with the delivery window folded into the same
+`expected_delivery` string), the webshop sender name, and the pickup-point name
+while the parcel is waiting for collection. The guest API's own delivery-date
+fields and the "was the postcode accepted" flag travel with the result so the
+app can explain a partial lookup.
+
+## Tracking numbers
+
+14 digits, no letters. The format is shared with several other carriers, so
+`carrier.json` declares it low confidence: a bare 14-digit number stays a
+suggestion and the user confirms the carrier. `numbers.json` holds one publicly
+reported sample whose attribution was not independently verified, plus a
+quarantined record no rule claims.
+
+The delivery postcode is an optional second input (four digits). It is part of
+the tracking credential: stored with the parcel, sent only to DPD, never
+logged.
+
+## How the adapter works
+
+Two tiers, declared as `tracking.steps: ["direct", "page"]`.
+
+1. `direct` — the myDPD guest JSON protocol. A Firebase installation identifies
+   the application, Remote Config returns the guest Basic credential, that
+   credential buys a client-credentials access token, and the token reads
+   `/v10/parcels/details/<number>`. Tokens are cached in the adapter instance
+   and refreshed one at a time. A postcode DPD rejects (HTTP 400) is retried
+   once without verification and the result says the postcode was not verified.
+2. `page` — the rendered consignee page, used when the guest protocol answers
+   inconclusively. Cloudflare normally challenges anonymous requests, so the
+   page goes through the private browser service's legacy command API when one
+   is configured (`FLARESOLVERR_URL`) and directly otherwise.
+
+A positive "unknown parcel" (HTTP 404 on the details call) ends the lookup; it
+never falls through to the page.
+
+## Status reference
+
+The guest API's `status.description` / `eventType` enumeration is the key; the
+rendered page has no codes and is classified by wording in the four portal
+languages.
+
+| Stage | Wording or code (raw) | Confirmed by |
+|---|---|---|
+| `registered` | `ORDER_CREATED` | live |
+| `out_for_delivery` | `PARCEL_OUT_FOR_DELIVERY` | live |
+| `ready_for_pickup` | `AVAILABLE_FOR_COLLECTION` | fixture |
+| `failed_attempt` | `UNSUCCESSFUL_DELIVERY_ATTEMPT` | live |
+| `returned` | `RETURN_TO_SENDER` | live |
+| `delivered` | `DELIVERED` | live |
+| — | `PARCEL_HANDED`, `IN_TRANSIT`, `AT_DELIVERY_CENTER`, `OTHER` | fixture / live |
+| `pending` | not observed; reported as unmapped | — |
+| `accepted` | not observed; reported as unmapped | — |
+| `in_transit` | not observed; reported as unmapped | — |
+| `customs` | not observed; reported as unmapped | — |
+
+`PARCEL_HANDED`, `IN_TRANSIT` and `AT_DELIVERY_CENTER` move the result status
+to `in_transit` but deliberately carry no stage, so the sync classifies the
+wording and records it for review. Individual events from this adapter never
+carry a stage: only the parcel's current stage is mapped.
+
+## Limitations and privacy
+
+- Recipient names, addresses, phone numbers and signatures are present in the
+  guest payload and are never projected. One exception is deliberate: while a
+  parcel is `ready_for_pickup`, `receiverName` is the last fallback for the
+  pickup-point name, because DPD puts the parcelshop there. When the payload
+  carries a real `pickupPoint` or `parcelShop`, that wins.
+- The delivery window is part of `expected_delivery` ("2026-07-16 09:00–12:00")
+  rather than the `expected_delivery_from` field, which is why the `eta_window`
+  capability is not declared.
+- Without the postcode the lookup still works but DPD withholds verified scans
+  and the delivery window.
+- The page fallback without a browser service will normally be challenged by
+  Cloudflare; the resulting error names `FLARESOLVERR_URL`.
+
+## Verification log
+
+- 2026-09-10: the tracking-link audit confirmed the consignee page and that a
+  synthetic number returns a guest "not assigned" result (docs/CARRIERS.md).
+- 2026-09-12: moved into this folder; the guest protocol, the status map and
+  the page fallback are unchanged. The recovery tier is now labelled `page` in
+  telemetry whether or not a browser service is configured (see NOTES.md).

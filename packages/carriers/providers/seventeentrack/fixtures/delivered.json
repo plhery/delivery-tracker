@@ -1,0 +1,40 @@
+{
+  "meta": { "code": 200 },
+  "shipments": [
+    {
+      "number": "ZZ12345678900",
+      "code": 200,
+      "shipment": {
+        "shipping_info": {
+          "recipient_address": { "street": "PRIVATE street 4", "phone": "PRIVATE" }
+        },
+        "tracking": {
+          "providers": [
+            {
+              "provider": { "name": "Swiss Post", "tel": "PRIVATE", "homepage": "https://private.example" },
+              "events": [
+                {
+                  "time_utc": "2026-08-31T18:50:50Z",
+                  "time_iso": "2026-08-31T20:50:50+02:00",
+                  "description": "Delivered, signed by PRIVATE",
+                  "stage": "Delivered",
+                  "address": "PRIVATE street 4"
+                },
+                {
+                  "time_iso": "2026-08-31T11:12:44-06:00",
+                  "description": "Item out for delivery",
+                  "stage": "OutForDelivery"
+                },
+                {
+                  "time_utc": "2026-08-28T09:03:00Z",
+                  "description": "Electronic information submitted by shipper",
+                  "stage": "InfoReceived"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

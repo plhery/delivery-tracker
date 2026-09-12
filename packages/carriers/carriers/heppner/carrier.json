@@ -1,9 +1,14 @@
 {
   "id": "heppner",
   "displayName": "Heppner",
-  "aliases": [],
+  "aliases": [
+    "Heppner Group"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "FR",
+      "CH"
+    ]
   },
   "brand": {
     "color": "#005baa"
@@ -27,15 +32,35 @@
         "autoComplete": "postal-code"
       }
     ],
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "provider_code"
+  ],
   "portal": {
     "url": "https://www.heppner-group.com/destinataire-suivez-votre-marchandise/",
     "canaryUrl": "https://myportal.heppner-group.com/tracking",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "sender_name",
+      "recipient_name",
+      "recipient_address",
+      "delivery_instructions"
+    ],
+    "scraped": [
+      "status",
+      "history"
+    ],
+    "discarded": [
+      "sender_name",
+      "recipient_name",
+      "recipient_address",
+      "delivery_instructions"
+    ],
     "unavailable": []
   },
   "links": [],

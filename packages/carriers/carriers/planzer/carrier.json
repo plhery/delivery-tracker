@@ -1,9 +1,13 @@
 {
   "id": "planzer",
   "displayName": "Planzer",
-  "aliases": [],
+  "aliases": [
+    "Planzer Group"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "CH"
+    ]
   },
   "brand": {
     "color": "#e30613"
@@ -25,14 +29,27 @@
         "help": "Paste the complete shared link, including its accessKey."
       }
     ],
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "eta"
+  ],
   "portal": {
     "url": "https://tracking.app.planzer.ch/delivery/info?deliveryNumber={trackingNumber}",
     "canaryUrl": "https://tracking.app.planzer.ch/",
-    "shows": [],
-    "scraped": [],
+    "shows": [
+      "status",
+      "history",
+      "eta"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "eta"
+    ],
     "discarded": [],
     "unavailable": []
   },

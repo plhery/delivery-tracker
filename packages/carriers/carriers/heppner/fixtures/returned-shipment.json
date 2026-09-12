@@ -1,0 +1,54 @@
+[
+  {
+    "receipt": "23456789",
+    "sender_name": "PRIVATE SENDER",
+    "customer_name": "PRIVATE RECIPIENT",
+    "reference_one": "PRIVATE ORDER REFERENCE",
+    "contents": [
+      {
+        "description": "PRIVATE MERCHANDISE"
+      }
+    ],
+    "pickup_code": "PRIVATE PICKUP CODE",
+    "events": [
+      {
+        "event": "SOL_REI",
+        "code": "SOL_REI",
+        "step": "MARCHANDISE_RETOURNEE",
+        "state": "EXPE_EN_COURS",
+        "event_date": "2026-07-01T13:21:00.000+00:00",
+        "agency_location": "PRIVATE ADDRESS",
+        "appointment_key": "PRIVATE APPOINTMENT TOKEN"
+      },
+      {
+        "event": "RST_PRE",
+        "code": "RST_PRE",
+        "step": "EN_ATTENTE_INSTRUCTIONS",
+        "state": "EN_ATTENTE_INSTRUCTIONS",
+        "event_date": "2026-07-01T10:55:00.000+00:00",
+        "appointment_key": "PRIVATE APPOINTMENT TOKEN"
+      },
+      {
+        "event": "MLV_RCA",
+        "code": "MLV_RCA",
+        "step": "LIVRAISON",
+        "state": "EXPE_EN_COURS",
+        "event_date": "2026-06-30T06:03:00.000+00:00"
+      },
+      {
+        "event": "PCH_CFM",
+        "code": "PCH_CFM",
+        "step": "PRISE_EN_CHARGE",
+        "state": "EXPE_EN_COURS",
+        "event_date": "2026-06-26T11:18:00.000+00:00"
+      },
+      {
+        "event": "EXP_CFM",
+        "code": "EXP_CFM",
+        "step": "ACHEMINEMENT",
+        "state": "EXPE_EN_COURS",
+        "event_date": "2026-06-26T00:06:00.000+00:00"
+      }
+    ]
+  }
+]

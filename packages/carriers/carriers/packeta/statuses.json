@@ -1,0 +1,21 @@
+{
+  "carrier": "packeta",
+  "entries": [
+    { "code": "997", "language": "en", "stage": "registered", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "TO_BE_PROCESSED; reconstructed, not re-observed." },
+    { "code": "1", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "WAITING_FOR_DELIVERY (in warehouse); reconstructed." },
+    { "code": "31", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "ON_THE_WAY; reconstructed." },
+    { "code": "2", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "READY_FOR_PICKUP; reconstructed." },
+    { "code": "3", "wording": "The package has been delivered", "language": "en", "stage": "delivered", "confirmedBy": "live", "firstSeen": "2026-08-19", "note": "ISSUED_AND_ACCOUNTED; the only packetStatusId confirmed against real delivered parcels." },
+    { "code": "21", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "LOST_OR_UNKNOWN; reconstructed." },
+    { "wording": "We are aware of your parcel and are waiting for the sender…", "language": "en", "stage": "registered", "confirmedBy": "live", "firstSeen": "2026-08-19", "note": "Event sentence; substring match." },
+    { "wording": "…assigned a tracking number…", "language": "en", "stage": "registered", "confirmedBy": "live", "firstSeen": "2026-08-19", "note": "Event sentence; substring match." },
+    { "wording": "…successfully received the parcel for transport…", "language": "en", "stage": "in_transit", "confirmedBy": "live", "firstSeen": "2026-08-19", "note": "Event sentence; substring match." },
+    { "wording": "The parcel is currently on its way to the depot.", "language": "en", "stage": "in_transit", "confirmedBy": "live", "firstSeen": "2026-08-19", "note": "Event sentence; substring match." },
+    { "wording": "…arrived at the depot…", "language": "en", "stage": "in_transit", "confirmedBy": "live", "firstSeen": "2026-08-19", "note": "Event sentence; substring match." },
+    { "wording": "The parcel has been handed over to the carrier…", "language": "en", "stage": "in_transit", "confirmedBy": "live", "firstSeen": "2026-08-19", "note": "Event sentence; substring match." },
+    { "wording": "…on its way to you…", "language": "en", "stage": "out_for_delivery", "confirmedBy": "live", "firstSeen": "2026-08-19", "note": "Event sentence; substring match." },
+    { "wording": "The parcel is ready for pickup…", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "live", "firstSeen": "2026-08-19", "note": "Event sentence; substring match." },
+    { "wording": "The parcel is with you…", "language": "en", "stage": "delivered", "confirmedBy": "live", "firstSeen": "2026-08-19", "note": "Event sentence; substring match." },
+    { "wording": "…investigating the status of the parcel…", "language": "en", "stage": "failed_attempt", "confirmedBy": "live", "firstSeen": "2026-08-19", "note": "Event sentence; substring match." }
+  ]
+}

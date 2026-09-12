@@ -1,0 +1,213 @@
+{
+  "carrier": "planzer",
+  "entries": [
+    {
+      "wording": "Recorded",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-06",
+      "note": ""
+    },
+    {
+      "wording": "Transferred",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-06",
+      "note": ""
+    },
+    {
+      "wording": "In delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-06",
+      "note": ""
+    },
+    {
+      "wording": "Shipped",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-06",
+      "note": "Planzer's English label for delivered (Zugestellt / Livré), never dispatched."
+    },
+    {
+      "wording": "Shipment on the way",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "wording": "Shipment out for delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "wording": "Delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "wording": "Shipment delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "wording": "Not delivered",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "wording": "enregistré",
+      "language": "fr",
+      "stage": "registered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Generated localization alias, not an observed API label; an observed label that contradicts it wins."
+    },
+    {
+      "wording": "erfasst",
+      "language": "de",
+      "stage": "registered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Generated localization alias, not an observed API label; an observed label that contradicts it wins."
+    },
+    {
+      "wording": "registrato",
+      "language": "it",
+      "stage": "registered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Generated localization alias, not an observed API label; an observed label that contradicts it wins."
+    },
+    {
+      "wording": "transféré",
+      "language": "fr",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Generated localization alias, not an observed API label; an observed label that contradicts it wins."
+    },
+    {
+      "wording": "weitergeleitet",
+      "language": "de",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Generated localization alias, not an observed API label; an observed label that contradicts it wins."
+    },
+    {
+      "wording": "inoltrato",
+      "language": "it",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Generated localization alias, not an observed API label; an observed label that contradicts it wins."
+    },
+    {
+      "wording": "en cours de livraison",
+      "language": "fr",
+      "stage": "out_for_delivery",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Generated localization alias, not an observed API label; an observed label that contradicts it wins."
+    },
+    {
+      "wording": "in zustellung",
+      "language": "de",
+      "stage": "out_for_delivery",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Generated localization alias, not an observed API label; an observed label that contradicts it wins."
+    },
+    {
+      "wording": "in consegna",
+      "language": "it",
+      "stage": "out_for_delivery",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Generated localization alias, not an observed API label; an observed label that contradicts it wins."
+    },
+    {
+      "wording": "livré",
+      "language": "fr",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Generated localization alias, not an observed API label; an observed label that contradicts it wins."
+    },
+    {
+      "wording": "zugestellt",
+      "language": "de",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Generated localization alias, not an observed API label; an observed label that contradicts it wins."
+    },
+    {
+      "wording": "consegnato",
+      "language": "it",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Generated localization alias, not an observed API label; an observed label that contradicts it wins."
+    },
+    {
+      "wording": "Erfasst",
+      "language": "de",
+      "stage": "registered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Shared capability page route step, matched by substring; also recognizes \"recorded\", \"enregistr\" and \"registrat\"."
+    },
+    {
+      "wording": "Abholung",
+      "language": "de",
+      "stage": "accepted",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Shared capability page route step, matched by substring; also recognizes \"collection\", \"collecte\" and \"ritiro\"."
+    },
+    {
+      "wording": "Umschlaglager",
+      "language": "de",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Shared capability page route step, matched by substring; also recognizes \"transfer depot\", \"transshipment\", \"plateforme\" and \"trasbordo\"."
+    },
+    {
+      "wording": "In Auslieferung",
+      "language": "de",
+      "stage": "out_for_delivery",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Shared capability page route step, matched by substring; also recognizes \"out for delivery\", \"en livraison\" and \"in consegna\"."
+    },
+    {
+      "wording": "Ausgeliefert",
+      "language": "de",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Shared capability page route step, matched by substring; also recognizes \"delivered\", \"livré\", \"livrée\" and \"consegnat\"."
+    }
+  ]
+}

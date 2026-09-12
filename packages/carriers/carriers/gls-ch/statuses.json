@@ -1,0 +1,31 @@
+{
+  "carrier": "gls-ch",
+  "entries": [
+    { "code": "PREADVICE", "stage": "registered", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "Data entered, parcel not yet with GLS." },
+    { "code": "PLANNEDPICKUP", "stage": "registered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "NOTPICKEDUP", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Uncollected; reported as status 'exception'." },
+    { "code": "INPICKUP", "stage": "accepted", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "INTRANSIT", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "INWAREHOUSE", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "Final parcel center." },
+    { "code": "INDELIVERY", "stage": "out_for_delivery", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "DELIVERED", "wording": "The parcel has been delivered.", "language": "en", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "DELIVEREDPS", "wording": "The parcel is ready for collection at the ParcelShop.", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "ParcelShop/locker arrival. GLS labels it 'delivered'; the recipient does not have it yet, so it is reported as status 'out_for_delivery'." },
+    { "code": "NOTDELIVERED", "stage": "failed_attempt", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "RETURNED", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "CANCELED", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Both spellings appear." },
+    { "code": "CANCELLED", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Both spellings appear." },
+    { "code": "FINAL", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "NORECORD", "stage": "pending", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Reported as status 'unknown'." },
+    { "wording": "The parcel has not been handed over to GLS.", "language": "en", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "Deliberately unmapped: a negative handoff does not prove GLS possession. Reported as status 'unknown' with stage in_transit." },
+    { "wording": "The parcel was handed over to GLS.", "language": "en", "stage": "accepted", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "Wording rule for rows with no status code." },
+    { "wording": "The parcel data was entered into the GLS IT system…", "language": "en", "stage": "registered", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "Wording rule; contains 'not yet handed over to GLS' and must not read as a handoff." },
+    { "wording": "The parcel was released by customs.", "language": "en", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "Release is completion, not active clearance." },
+    { "wording": "The parcel has not been released by customs.", "language": "en", "stage": "customs", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "Negated release stays in customs." },
+    { "wording": "Customs Consignment via Customs Portal", "language": "en", "stage": "customs", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "" },
+    { "wording": "The parcel has reached / left the parcel center; depot", "language": "en", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "Wording rule." },
+    { "wording": "The parcel is in delivery.", "language": "en", "stage": "out_for_delivery", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "Wording rule." },
+    { "wording": "ready for pickup / parcelshop / locker", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Wording rule." },
+    { "wording": "returned to sender / cancelled / delivery failed / not delivered", "language": "en", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Returns take 'returned'; the other phrases take 'failed_attempt'. Checked before the broad 'delivered' word." },
+    { "wording": "any other wording", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Falls through to the package's shared multilingual classifier (core/status); if that also declines, the row is reported as status 'unknown' with stage in_transit and recorded for review." }
+  ]
+}

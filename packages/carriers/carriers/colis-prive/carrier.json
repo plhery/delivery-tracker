@@ -1,9 +1,13 @@
 {
   "id": "colis-prive",
   "displayName": "Colis Privé",
-  "aliases": [],
+  "aliases": [
+    "Colis Prive"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "FR"
+    ]
   },
   "brand": {
     "color": "#e30613"
@@ -13,15 +17,30 @@
   "tracking": {
     "mode": "automatic",
     "adapter": "colis-prive",
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history"
+  ],
   "portal": {
     "url": "https://colisprive.com/moncolis/pages/DetailColis.aspx?numColis={trackingNumber}&lang=fr",
     "canaryUrl": "https://colisprive.com/moncolis/pages/DetailColis.aspx",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "recipient_name",
+      "recipient_address"
+    ],
+    "scraped": [
+      "status",
+      "history"
+    ],
+    "discarded": [
+      "recipient_name",
+      "recipient_address"
+    ],
     "unavailable": []
   },
   "links": [

@@ -1,9 +1,15 @@
 {
   "id": "dpd",
   "displayName": "DPD",
-  "aliases": [],
+  "aliases": [
+    "DPD Switzerland",
+    "DPD (Schweiz) AG",
+    "myDPD"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "CH"
+    ]
   },
   "brand": {
     "color": "#dc0032"
@@ -27,15 +33,43 @@
         "autoComplete": "postal-code"
       }
     ],
-    "steps": []
+    "steps": [
+      "direct",
+      "page"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "eta",
+    "sender_name",
+    "pickup_point"
+  ],
   "portal": {
     "url": "https://www.dpdgroup.com/ch/mydpd/my-parcels/incoming?parcelNumber={trackingNumber}",
     "canaryUrl": "https://www.dpdgroup.com/ch/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "eta",
+      "eta_window",
+      "sender_name",
+      "pickup_point"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "eta",
+      "eta_window",
+      "sender_name",
+      "pickup_point"
+    ],
+    "discarded": [
+      "recipient_name",
+      "recipient_address"
+    ],
     "unavailable": []
   },
   "links": [

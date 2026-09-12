@@ -1,0 +1,53 @@
+{
+  "carrier": "sunyou",
+  "entries": [
+    {
+      "code": "0",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Explicit \"no such shipment\"; reported as a clean 404 and never classified."
+    },
+    {
+      "code": "1",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Shipment-level display status; only the newest scan inherits it."
+    },
+    {
+      "code": "2",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Waiting at a pickup point."
+    },
+    {
+      "code": "3",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Shipment-level display status; only the newest scan inherits it."
+    },
+    {
+      "code": "4",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Shipment-level display status; only the newest scan inherits it."
+    },
+    {
+      "code": "5",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Shipment-level display status; only the newest scan inherits it."
+    },
+    {
+      "code": "6",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Shipment-level display status; only the newest scan inherits it."
+    }
+  ]
+}

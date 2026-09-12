@@ -1,0 +1,108 @@
+# 17TRACK
+
+## Identity and scope
+
+17TRACK (t.17track.net) is a universal tracking aggregator, not a carrier: it
+has no last mile of its own and cannot be selected for a parcel. It is the last
+provider of the discovery chain (`providers/README.md`), and it stays last even
+when Postal Ninja is enabled. The provider name persisted in routing state is
+`17TRACK`; the folder is named `seventeentrack` because a directory cannot start
+with a digit in an import path.
+
+## Portals
+
+| Portal | URL | Shown to a human |
+| --- | --- | --- |
+| Public tracking page | `https://t.17track.net/en#nums={number}` | status, aggregated history per carrier leg, the carriers it recognized, an interactive verification when it suspects automation |
+
+The page is also the link the app shows for a parcel whose history came from
+17TRACK, and it follows the app language.
+
+## What we retrieve
+
+From the page's own API (`track/restapi`):
+
+| Field | Source |
+| --- | --- |
+| `events[].time` | `shipment.tracking.providers[].events[].time_utc`, else `time_iso`; both must carry an offset |
+| `events[].description`, `events[].stage` | `events[].description` and the provider-declared `events[].stage` |
+| `status`, `current_stage`, `last_status_text`, `last_update` | derived from the projected events |
+| `reported_carriers`, `discovered_carrier` | `providers[].provider.name`, mapped to a catalog id only when one unambiguous name is reported |
+
+`shipping_info` (recipient address, phone) and the per-event `address` field are
+never read. At most 20 carrier legs and 1000 events are accepted.
+
+## Tracking numbers
+
+Any number the chain is given: uppercased with spaces, dots and dashes removed,
+it must match `^(?=.*\d)[A-Z0-9]{4,40}$`. Exactly one shipment in the reply must
+echo the requested number; demo numbers and ambiguous replies are rejected.
+
+## How the adapter works
+
+One tier, `trawl`, run by `runSteps` with the per-provider budget (30 s inside
+the chain):
+
+1. The private browser service (`FLARESOLVERR_URL`) loads the tracking page with
+   `skipHttp`, up to tier 3, and captures responses for
+   `https://t.17track.net/track/restapi` with a 15 s settle window.
+2. Captured bodies are parsed newest first. A reply whose shipment code is 100
+   is the provider still polling; the loop continues and keeps the last
+   structured failure in case no final history follows.
+3. If nothing parsed, the failure says what happened: `capture_missing` (the
+   service captured nothing), `capture_unreadable` (a body it could not read) or
+   `history_missing` (replies without history).
+
+This provider requires the pinned compatibility build of the browser service
+(see `ops/trawl`): 1.3.1 ignores capture requests, and stock 1.5.0 refuses
+compressed bodies and can finish before polling completes.
+
+## Status reference
+
+| Stage | Wording or code (raw) | Confirmed by |
+| --- | --- | --- |
+| registered | declared `InfoReceived`; `Electronic information submitted by shipper` | live 2026-09-10 |
+| in_transit | declared `InTransit`; `Arrived`, `Departed`, `Processed` | live 2026-09-10 |
+| ready_for_pickup | declared `AvailableForPickup` | prior-art |
+| out_for_delivery | declared `OutForDelivery`; `Item out for delivery` | live 2026-09-10 |
+| failed_attempt | declared `DeliveryFailure` | prior-art |
+| delivered | declared `Delivered` | live 2026-09-10 |
+| accepted, customs, returned | wording only (`Picked up`, `Customs`, `Returned to sender`) | prior-art |
+| pending | anything else | — |
+
+A declared stage is used only when the shared wording rules did not already
+decide (a handoff or a negation outranks it). Unmapped wording stays `pending`
+and is recorded by the sync for review.
+
+| Provider code | Meaning | Error |
+| --- | --- | --- |
+| -11, -13, -14 | interactive verification required | `SeventeenTrackVerificationError` (challenge) |
+| 100 (shipment) | lookup still polling | `SeventeenTrackLookupError`, reason `lookup_pending` |
+| any other non-200 | lookup unavailable | `SeventeenTrackLookupError`, reason `lookup_unavailable` |
+
+The provider's short `meta.message` is kept (truncated to 120 characters) so the
+intermittent code 400 stays diagnosable in Sentry.
+
+## Limitations and privacy
+
+- An aggregator reports what the underlying carriers give it; a dedicated
+  carrier adapter is always preferred when one exists.
+- A provider code 400 with no history is an explicit lookup failure: never an
+  invented delivery and never an automatic carrier correction.
+- Demo numbers, polling replies, carrier-selection prompts and empty responses
+  cannot manufacture progress.
+- Delivery wording can contain an access code or a signature. Any event whose
+  stage is not `delivered` and that carries such details is dropped, and a
+  delivered event's description is replaced by `Delivered`.
+
+## Verification log
+
+- 2026-09-10: unsigned direct POST probes answered HTTP 200 with rejection codes
+  `-14` (current endpoint) and `-10` (legacy endpoint) instead of history. These
+  probes do not prove that every possible direct request is impossible.
+- 2026-09-10: live verification returned seven events for a public example
+  through the captured page, with the pinned compatibility build.
+- 2026-09-12: moved into `packages/carriers/providers/seventeentrack`. The
+  lookup errors keep their names and their `reason` / `providerCode` fields, and
+  now extend the shared taxonomy (verification is a challenge, a failed lookup
+  is transport, a missing capture is indeterminate).

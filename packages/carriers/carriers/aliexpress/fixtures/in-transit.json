@@ -1,0 +1,36 @@
+{
+  "module": [
+    {
+      "mailNo": "LP00000000000002",
+      "mailNoSource": "EXTERNAL",
+      "status": "WAIT_BUYER_ACCEPT_GOODS",
+      "latestTrace": {
+        "actionCode": "LH_ARRIVE",
+        "standerdDesc": "Arrived at the destination country",
+        "timeStr": "2026-03-01 04:20:00"
+      },
+      "detailList": [
+        {
+          "actionCode": "LH_ARRIVE",
+          "standerdDesc": "Arrived at the destination country",
+          "timeStr": "2026-03-01 04:20:00"
+        },
+        {
+          "actionCode": "LH_DEPART",
+          "standerdDesc": "Departed from the origin country",
+          "timeStr": "2026-02-27 22:05:00"
+        },
+        {
+          "actionCode": "GWMS_ACCEPT",
+          "standerdDesc": "Shipment accepted by the warehouse",
+          "timeStr": "2026-02-25 09:00:00"
+        }
+      ],
+      "globalEtaInfo": {
+        "deliveryMinTime": 1773100800000,
+        "deliveryMaxTime": 1773273600000
+      }
+    }
+  ],
+  "success": true
+}

@@ -1,9 +1,19 @@
 {
   "id": "asendia",
   "displayName": "Asendia",
-  "aliases": [],
+  "aliases": [
+    "Asendia Management",
+    "Asendia UK",
+    "asendia.com"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "FR",
+      "CH",
+      "GB",
+      "DE",
+      "US"
+    ]
   },
   "brand": {
     "color": "#ef7d00"
@@ -15,13 +25,31 @@
     "adapter": "universal",
     "steps": []
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "eta",
+    "provider_code"
+  ],
   "portal": {
     "url": "https://track.asendia.com/track/{trackingNumber}",
     "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "eta",
+      "recipient_name",
+      "recipient_address"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "eta"
+    ],
+    "discarded": [
+      "recipient_name",
+      "recipient_address"
+    ],
     "unavailable": []
   },
   "links": [

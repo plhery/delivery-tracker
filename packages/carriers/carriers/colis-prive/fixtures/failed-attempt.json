@@ -1,0 +1,16 @@
+{
+  "shipment": "991 122 334 455",
+  "status": "Nous avons tenté de livrer votre colis.",
+  "rows": [
+    ["28/08/2026", "Nous avons tenté de livrer votre colis."],
+    ["28/08/2026", "Votre colis est en cours de distribution par le livreur"],
+    ["26/08/2026", "Votre colis est arrivé sur notre agence régionale de distribution."],
+    ["25/08/2026", "Votre colis est en cours de préparation par l'expéditeur."]
+  ],
+  "recipientBlock": [
+    "PRIVATE RECIPIENT",
+    "10 PRIVATE STREET",
+    "75012 PRIVATE CITY"
+  ],
+  "recipientContact": "private@example.test"
+}

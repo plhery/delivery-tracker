@@ -1,0 +1,91 @@
+{
+  "carrier": "dpd",
+  "entries": [
+    {
+      "code": "ORDER_CREATED",
+      "wording": "Order created",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "PARCEL_HANDED",
+      "wording": "Parcel handed to DPD",
+      "language": "en",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Moves the result to in_transit; no milestone of its own, so the event stays unmapped for the sync to classify."
+    },
+    {
+      "code": "IN_TRANSIT",
+      "wording": "Your parcel is on its way",
+      "language": "en",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Moves the result to in_transit; no milestone of its own, so the event stays unmapped for the sync to classify."
+    },
+    {
+      "code": "AT_DELIVERY_CENTER",
+      "wording": "At delivery center",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Moves the result to in_transit; no milestone of its own, so the event stays unmapped for the sync to classify."
+    },
+    {
+      "code": "PARCEL_OUT_FOR_DELIVERY",
+      "wording": "Parcel out for delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "AVAILABLE_FOR_COLLECTION",
+      "wording": "Ready for collection",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "The only value that unlocks the pickup-point name."
+    },
+    {
+      "code": "UNSUCCESSFUL_DELIVERY_ATTEMPT",
+      "wording": "Unsuccessful delivery attempt",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "A retry, not a terminal state: the result status stays in_transit."
+    },
+    {
+      "code": "RETURN_TO_SENDER",
+      "wording": "Return to sender",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "Terminal, reported with the exception status."
+    },
+    {
+      "code": "DELIVERED",
+      "wording": "Delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": ""
+    },
+    {
+      "code": "OTHER",
+      "wording": "Other tracking update",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-12",
+      "note": "The guest API's catch-all; neither a status nor a stage is derived from it."
+    }
+  ]
+}

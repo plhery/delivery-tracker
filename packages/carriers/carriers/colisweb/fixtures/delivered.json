@@ -1,0 +1,12 @@
+{
+  "searchValue": "10000000",
+  "step": "delivered",
+  "haveReschedule": false,
+  "deliveryConfirmationDate": "2026-08-27T08:00:00+02:00",
+  "pickedUpDate": "2026-08-28T11:30:00+02:00",
+  "deliveredDate": "2026-08-29T14:15:00+02:00",
+  "startsAt": "2026-08-29T13:00:00+02:00",
+  "endsAt": "2026-08-29T15:00:00+02:00",
+  "clientName": "PRIVATE RETAILER",
+  "recipient": { "name": "PRIVATE RECIPIENT", "address": "10 PRIVATE STREET" }
+}

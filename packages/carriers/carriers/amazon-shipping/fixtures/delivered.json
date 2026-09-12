@@ -1,0 +1,8 @@
+{
+  "shipmentProfileType": "OUTBOUND_PROFILE",
+  "progressTracker": "{\"progressMeter\":{\"milestoneList\":[]},\"errors\":[],\"summary\":{\"status\":\"Delivered\",\"metadata\":{\"trackingStatus\":{\"stringValue\":\"DELIVERED\"},\"expectedDeliveryDate\":{\"date\":\"Aug 11, 2026, 6:00:00 PM\"},\"deliveryDate\":{\"date\":\"Aug 11, 2026, 4:31:56 PM\"},\"shipperName\":{\"stringValue\":\"PRIVATE MERCHANT\"}},\"containerStatusTags\":[\"DELIVERED\"]},\"expectedDeliveryDate\":\"Aug 11, 2026, 6:00:00 PM\",\"trackerSource\":\"SWA\"}",
+  "eventHistory": "{\"trackerSource\":\"SWA\",\"eventHistory\":[{\"eventCode\":\"CreationConfirmed\",\"statusSummary\":{\"localisedStringId\":\"swa_rex_detail_creation_confirmed\"},\"eventTime\":\"Aug 7, 2026, 11:51:15 PM\",\"location\":{}},{\"eventCode\":\"Departed\",\"statusSummary\":{\"localisedStringId\":\"swa_rex_detail_departed\"},\"eventTime\":\"Aug 10, 2026, 10:10:16 PM\",\"location\":{\"city\":\"Paris\",\"stateProvince\":\"Île-de-France\",\"countryCode\":\"FR\",\"postalCode\":\"PRIVATE POSTCODE\",\"addressLine1\":\"PRIVATE STREET\"}},{\"eventCode\":\"Delivered\",\"statusSummary\":{\"localisedStringId\":\"swa_rex_detail_delivered\"},\"eventTime\":\"Aug 11, 2026, 4:31:56 PM\",\"location\":{},\"recipientName\":\"PRIVATE RECIPIENT\"},{\"eventCode\":\"Delivered\",\"statusSummary\":{\"localisedStringId\":\"swa_rex_detail_delivered\"},\"eventTime\":\"Aug 11, 2026, 4:31:56 PM\",\"location\":{}}]}",
+  "addresses": "{\"destination\":{\"recipientName\":\"PRIVATE RECIPIENT\",\"addressLine1\":\"PRIVATE STREET\",\"postalCode\":\"PRIVATE POSTCODE\"}}",
+  "recipientDetails": "{\"email\":\"private@example.test\"}",
+  "proofOfDeliveryImage": "PRIVATE DELIVERY IMAGE"
+}

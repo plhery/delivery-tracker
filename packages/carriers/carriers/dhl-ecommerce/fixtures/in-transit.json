@@ -1,0 +1,57 @@
+{
+  "shipments": [
+    {
+      "id": "customer-confirmation-alias",
+      "service": "ecommerce",
+      "status": {
+        "description": "EN ROUTE",
+        "statusCode": "transit",
+        "timestamp": "2026-09-09T05:40:17",
+        "location": {
+          "address": {
+            "addressLocality": "FR"
+          }
+        }
+      },
+      "estimatedTimeOfDelivery": "2026-09-14",
+      "returnFlag": false,
+      "sender": {
+        "name": "Nordwind Webshop AG"
+      },
+      "destination": {
+        "address": {
+          "streetAddress": "PRIVATE ADDRESS"
+        }
+      },
+      "details": {
+        "references": [
+          {
+            "number": "PRIVATE REFERENCE"
+          }
+        ]
+      },
+      "events": [
+        {
+          "description": "EN ROUTE",
+          "statusCode": "transit",
+          "timestamp": "2026-09-09T05:40:17",
+          "location": {
+            "address": {
+              "addressLocality": "FR"
+            }
+          }
+        },
+        {
+          "description": "LABEL CREATED",
+          "statusCode": "pre-transit",
+          "timestamp": "2026-08-31T03:11:58",
+          "location": {
+            "address": {
+              "addressLocality": "Hebron, KY, US"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

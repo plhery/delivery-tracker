@@ -1,0 +1,37 @@
+{
+  "esitoRicerca": "3",
+  "idTracciatura": "RA00000000001",
+  "tipoProdotto": "POSTEDELIVERY EUROPE",
+  "tipoSpedizione": "P",
+  "stato": "5",
+  "flagRitorno": false,
+  "dataPrevistaConsegna": "Consegna prevista entro Venerdì 2 Gennaio 2026",
+  "mittente": "Example Sender S.p.A.",
+  "destinatario": "Example Recipient",
+  "indirizzoDestinatario": "Via Esempio 1, 00100 Roma",
+  "firmaDestinatario": "Example Signature",
+  "ufficioGiacenza": "UFFICIO ESEMPIO CENTRALE",
+  "peso": "1,500",
+  "listaMovimenti": [
+    {
+      "statoLavorazione": "la spedizione è stata presa in carico da un nostro operatore",
+      "dataOra": 1767225600000,
+      "luogo": "Test Depot"
+    },
+    {
+      "statoLavorazione": "la spedizione è in transito presso il Centro di lavorazione Internazionale",
+      "dataOra": 1767312000000,
+      "luogo": "Test Depot"
+    },
+    {
+      "statoLavorazione": "la spedizione è in consegna",
+      "dataOra": 1767398400000,
+      "luogo": "Test Depot"
+    },
+    {
+      "statoLavorazione": "la spedizione è stata consegnata",
+      "dataOra": 1767484800000,
+      "luogo": "Test Depot"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "carrier": "pos-malaysia",
+  "entries": [
+    { "wording": "Collected", "language": "en", "stage": "accepted", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "process_summary on the vendor's own shipped demo parcel." },
+    { "wording": "On the way", "language": "en", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "process_summary on the vendor's own shipped demo parcel." },
+    { "wording": "Sorting completed", "language": "en", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "process_summary on the vendor's own shipped demo parcel." },
+    { "wording": "Preparing for delivery", "language": "en", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "process_summary on the vendor's own shipped demo parcel." },
+    { "wording": "Out for delivery", "language": "en", "stage": "out_for_delivery", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "process_summary on the vendor's own shipped demo parcel." },
+    { "wording": "Delivery completed", "language": "en", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "process_summary on the vendor's own shipped demo parcel." },
+    { "code": "DELIVERED", "language": "en", "stage": "delivered", "confirmedBy": "live", "firstSeen": "2026-09-10", "note": "Parcel-level process_status, not an event summary: the only closed overall value; it wins even with no event rows." }
+  ]
+}

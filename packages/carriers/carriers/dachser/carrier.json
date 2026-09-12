@@ -1,9 +1,15 @@
 {
   "id": "dachser",
   "displayName": "Dachser",
-  "aliases": [],
+  "aliases": [
+    "Dachser SE",
+    "Dachser Customer Iberia"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "ES",
+      "PT"
+    ]
   },
   "brand": {
     "color": "#005ca9"
@@ -23,15 +29,41 @@
         "help": "Paste the complete public detail link, including its access parameters."
       }
     ],
-    "steps": []
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "eta"
+  ],
   "portal": {
     "canaryUrl": "https://customeriberia.dachser.com/customerarea/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "shows": [
+      "status",
+      "history",
+      "eta",
+      "sender_name",
+      "recipient_name",
+      "recipient_address",
+      "recipient_contact",
+      "signature"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "eta"
+    ],
+    "discarded": [
+      "sender_name",
+      "recipient_name",
+      "recipient_address",
+      "recipient_contact",
+      "signature"
+    ],
+    "unavailable": [
+      "location"
+    ]
   },
   "links": [
     {

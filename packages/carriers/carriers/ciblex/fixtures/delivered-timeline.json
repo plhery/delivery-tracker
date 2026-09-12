@@ -1,0 +1,15 @@
+{
+  "scenario": "delivered parcel whose history also carries an address-complement failure row",
+  "rows": [
+    ["30/12/2021", "05:29", "Colis Livré", ""],
+    ["30/12/2021", "05:24", "Mis en livraison", "Sausheim 68 (68)"],
+    ["30/12/2021", "05:24", "Colis Contrôle", "Sausheim 68 (68)"],
+    ["28/12/2021", "09:27", "COMPLEMENT ADRESSE", "10 PRIVATE STREET (75)"]
+  ],
+  "pickupRows": [
+    ["03/05/2022", "09:00", "Retour expéditeur", "VITROLLES 13 (13)"],
+    ["02/05/2022", "09:00", "Disponible au relais", "VITROLLES 13 (13)"],
+    ["01/05/2022", "09:00", "Colis pris en charge", "VITROLLES 13 (13)"],
+    ["30/04/2022", "09:00", "Statut provider nouveau", "VITROLLES 13 (13)"]
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "carrier": "hermes",
+  "entries": [
+    { "code": "40", "stage": "registered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Order announced; the only id that stays pending." },
+    { "code": "100", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "190", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "300", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "307", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "314", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "315", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "318", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Exception family 318-321." },
+    { "code": "319", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "320", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "321", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "430", "stage": "out_for_delivery", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Delivery tour started." },
+    { "code": "500", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "700", "wording": "Deine Sendung wurde erfolgreich zugestellt.", "language": "de", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-08-30", "note": "The carrier's own published delivered sample." },
+    { "code": "701", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "702", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "720", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "721", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "722", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "728", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "731", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "740", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "code": "742", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "" },
+    { "wording": "nicht zugestellt / fehlgeschlagen / storniert / retour / zurück", "language": "de", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Fallback for ids the numeric map does not know." },
+    { "wording": "erfolgreich zugestellt / Ware geliefert / wurde … zugestellt / delivered", "language": "de", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Fallback for ids the numeric map does not know." },
+    { "wording": "befindet sich auf Tour / Fahrzeugbeladung / Ankunft bei Kundenadresse / out for delivery", "language": "de", "stage": "out_for_delivery", "confirmedBy": "prior-art", "firstSeen": "2026-08-30", "note": "Fallback for ids the numeric map does not know." }
+  ]
+}

@@ -5,6 +5,7 @@ import { captureOperationalError, flushObservability, initObservability, reportR
 import { UniversalTrackingError } from './universalTracking';
 import { UpstreamHttpError } from './boundedFetch';
 import { LaPosteTracker } from './laPoste';
+import { hostStepRecorder } from './stepRecorder';
 
 const captured = vi.hoisted(() => ({ events: [] as Event[] }));
 
@@ -139,7 +140,10 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
     status: 403, headers: { 'content-type': 'text/html', 'x-request-id': 'example-request-id',
       'set-cookie': 'session=DO_NOT_CAPTURE', authorization: 'Bearer DO_NOT_CAPTURE', 'retry-after': '120' },
   }));
-  const refused = await new LaPosteTracker().fetch('8U00000000000').catch((error: unknown) => error);
+  // The tracker reports through the package's StepRecorder now, so the host's
+  // sinks have to be wired in for its retries to reach Sentry.
+  const refused = await new LaPosteTracker({ recorder: hostStepRecorder() })
+    .fetch('8U00000000000').catch((error: unknown) => error);
   expect(fetcher).toHaveBeenCalledTimes(3);
   fetcher.mockRestore();
   expect(refused).toBeInstanceOf(UpstreamHttpError);

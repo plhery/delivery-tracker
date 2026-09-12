@@ -1,0 +1,51 @@
+{
+  "tuNo": "993990103198",
+  "progressBar": {
+    "statusInfo": "DELIVERED",
+    "statusText": "Delivered",
+    "statusBar": [
+      {
+        "status": "DELIVERED",
+        "imageStatus": "CURRENT",
+        "imageText": "Delivered",
+        "statusText": "The parcel has been delivered."
+      }
+    ]
+  },
+  "arrivalTime": { "name": "Delivered on:", "value": "19-Jun-2026 at 10:59 o`clock" },
+  "signature": { "name": "Signature", "value": "Private Recipient" },
+  "addresses": [
+    {
+      "type": "DELIVERY",
+      "value": {
+        "name1": "Private Recipient",
+        "street1": "Private Street",
+        "postalArea": { "postalCodeDisplay": "8000", "city": "Private City" }
+      }
+    }
+  ],
+  "references": [{ "type": "ORDER", "name": "Order", "value": "private-order-reference" }],
+  "infos": [{ "type": "PHONE", "name": "Phone", "value": "+41000000000" }],
+  "history": [
+    {
+      "date": "19-Jun-2026",
+      "time": "10:59",
+      "evtDscr": "The parcel has been delivered.",
+      "evtNo": "0.100",
+      "address": {
+        "countryName": "Switzerland",
+        "city": "Zurich",
+        "street1": "Private Street",
+        "postalArea": { "postalCodeDisplay": "8000" }
+      },
+      "recipient": "Private Recipient"
+    },
+    {
+      "date": "18-Jun-2026",
+      "time": "08:14",
+      "evtDscr": "The parcel has reached the final parcel center.",
+      "evtNo": "2.0",
+      "address": { "countryName": "Switzerland", "city": "Zurich" }
+    }
+  ]
+}

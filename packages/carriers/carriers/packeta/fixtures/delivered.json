@@ -1,0 +1,17 @@
+{
+  "barcode": "Z1234567890",
+  "packetStatusId": "3",
+  "packetStatus": "The package has been delivered",
+  "sender": "Example Sender s.r.o.",
+  "branchAddress": "Example Pickup Point, Example Street 1",
+  "recipientName": "Example Recipient",
+  "recipientAddress": "Priklad 2, 110 00 Praha",
+  "recipientPhone": "+420000000000",
+  "signature": "Example Signature",
+  "trackingDetails": [
+    { "text": "We are aware of your parcel and are waiting for the sender to hand it over to us.", "time": "2026-01-05 08:00:00" },
+    { "text": "The parcel is currently on its way to the depot.", "time": "2026-01-06 15:30:00" },
+    { "text": "The parcel is ready for pickup. Z-BOX Central 5", "time": "2026-07-07 09:00:00" },
+    { "text": "The parcel is with you. Thank you, and we look forward to next time.", "time": "2026-07-07 13:00:00" }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "carrier": "dhl-ecommerce",
+  "entries": [
+    { "code": "pre-transit", "language": "en", "stage": "registered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "UTAPI status code, read only when no wording rule matches." },
+    { "code": "transit", "language": "en", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "failure", "language": "en", "stage": "failed_attempt", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "delivered", "language": "en", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Terminal: this code outranks an intuitive translation of the wording." },
+    { "code": "pre-transit", "wording": "LABEL CREATED", "language": "en", "stage": "registered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "MANIFEST DATA RECEIVED", "language": "en", "stage": "registered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Seen without a usable status code." },
+    { "code": "transit", "wording": "EN ROUTE TO DHL ECOMMERCE OR AWAITING PROCESSING", "language": "en", "stage": "registered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Announced by the sender; the transit code would overstate progress." },
+    { "code": "transit", "wording": "PACKAGE RECEIVED AT DHL ECOMMERCE DISTRIBUTION CENTER", "language": "en", "stage": "accepted", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "Picked up at parcelshop", "language": "en", "stage": "accepted", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "Sender-side drop-off (ha-dhl-nl#15): the parcel enters the network, it does not await collection." },
+    { "code": "transit", "wording": "CLOSE BAG", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "Also SCANNED INTO SACK/CONTAINER." },
+    { "code": "transit", "wording": "CUSTOMS CLEARANCE", "language": "en", "stage": "customs", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "transit", "wording": "CUSTOMS CLEARED", "language": "en", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Clearance completed leaves customs." },
+    { "code": "transit", "wording": "OUT FOR DELIVERY", "language": "en", "stage": "out_for_delivery", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "transit", "wording": "READY FOR COLLECTION", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "failure", "wording": "DELIVERY ATTEMPT FAILED", "language": "en", "stage": "failed_attempt", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "delivered", "wording": "RETURNED TO SENDER", "language": "en", "stage": "returned", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Also reached through returnFlag with the delivered code." },
+    { "code": "delivered", "wording": "DELIVERED - Signed by …", "language": "en", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "The signatory is never retained: a delivered event's description is replaced by \"Delivered\"." }
+  ]
+}
