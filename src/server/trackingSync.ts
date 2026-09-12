@@ -33,6 +33,8 @@ import { GLSGermanyTracker } from './glsGermany';
 import { HeppnerTracker } from './heppner';
 import { HermesTracker } from './hermes';
 import { HermesGermanyTracker } from './hermesGermany';
+import type { AdapterRegistry } from '@carriers/core/adapter';
+import { createAdapterRegistry } from './adapterRegistry';
 import { IndiaPostTracker } from './indiaPost';
 import { InpostTracker } from './inpost';
 import { LaPosteTracker } from './laPoste';
@@ -148,6 +150,7 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     readonly glsGermany = new GLSGermanyTracker(),
     readonly universal = new UniversalTracker(),
     readonly dhlEcommerce = new DHLEcommerceTracker(),
+    readonly registry: AdapterRegistry = createAdapterRegistry(),
   ) {}
 
   async fetch(
@@ -164,7 +167,13 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
   ): Promise<CarrierResult> {
     const adapter = carrierAdapter(carrierId);
     let result: CarrierResult;
-    if (carrierId === 'swiss-post') {
+    // Carriers whose adapter lives in its package folder are served through
+    // the generated registry; the chain below remains for adapters not yet
+    // moved and is deleted once the registry covers every automatic carrier.
+    const registered = this.registry.for(carrierId);
+    if (registered) {
+      result = await registered.track({ number: trackingNumber, trackingUrl, postcode: dpdPostcode ?? null });
+    } else if (carrierId === 'swiss-post') {
       result = await this.swissPost.fetch(trackingNumber);
     } else if (adapter === 'swiss-post-cargo') {
       result = await this.swissPostCargo.fetch(trackingNumber);

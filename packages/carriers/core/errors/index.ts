@@ -148,6 +148,9 @@ function kindForStatus(status: number): CarrierErrorKind {
 
 /** A rejected HTTP response from a provider. Kind is derived from the status. */
 export class UpstreamHttpError extends CarrierError {
+  /** Always present for HTTP errors; narrowed from the optional base field. */
+  declare readonly status: number;
+
   constructor(
     provider: string,
     status: number,
