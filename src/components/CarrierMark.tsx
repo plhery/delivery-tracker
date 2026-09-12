@@ -1,17 +1,39 @@
+import { CARRIER_TRUCK } from '@carriers/core/brand';
+import type { TruckDecalShape } from '@carriers/core/brand';
 import type { CarrierInfo } from '../lib/carriers';
 import { carrierBrand } from '../lib/carrierBrand';
 
+/** SVG numbers in the compact spelling the markup uses: `0.6` is written `.6`. */
+function n(value: number): string {
+  return String(value).replace(/^(-?)0\./, '$1.');
+}
+
+/** A paint is a hex literal, or the name of one of the nine brand properties. */
+function paint(value: string): string {
+  return value.startsWith('#') ? value : `var(--carrier-${value})`;
+}
+
+function Decal({ shape }: { shape: TruckDecalShape }) {
+  if (shape.type === 'circle') {
+    return <circle cx={n(shape.cx)} cy={n(shape.cy)} r={n(shape.r)} fill={paint(shape.fill)} />;
+  }
+  if (shape.type === 'polygon') return <path d={shape.d} fill={paint(shape.fill)} />;
+  return <path d={shape.d} stroke={paint(shape.stroke)} strokeWidth={n(shape.strokeWidth)} />;
+}
+
 export function CarrierMark({ carrier }: { carrier: CarrierInfo }) {
-  const { family, name } = carrierBrand(carrier);
+  const { family, name, decal } = carrierBrand(carrier);
+  const { viewBox, strokeWidth, body, cab, windshield, wheels, decals } = CARRIER_TRUCK;
   return <span className="carrier-mark" data-family={family} title={carrier.name} aria-label={carrier.name}>
-    <svg className="carrier-mark__truck" viewBox="0 0 32 21" fill="none" aria-hidden="true">
-      <rect x="2" y="3" width="18" height="13" rx="1.3" fill="var(--carrier-truck)" stroke="var(--carrier-edge)" strokeWidth=".6" />
-      <path d="M20 8h5l5 5v3H20Z" fill="var(--carrier-truck)" stroke="var(--carrier-edge)" strokeWidth=".6" />
-      <path d="M22 9.5h2.5l3 3H22Z" fill="#edf1ee" />
-      {family === 'dhl' ? <path d="M4 8h12M3 10h12" stroke="var(--carrier-accent)" strokeWidth="1.1" />
-        : family === 'ups' ? <path d="M8 5h5v4c0 2-2.5 3-2.5 3S8 11 8 9Z" fill="var(--carrier-accent)" />
-          : <><path d="M5 9h8" stroke="var(--carrier-accent)" strokeWidth="2" /><circle cx="15" cy="9" r="1.1" fill="var(--carrier-accent)" /></>}
-      {[8, 25].map(x => <g key={x}><circle cx={x} cy="16.5" r="2.4" fill="#42483d" /><circle cx={x} cy="16.5" r=".9" fill="#d2d4c7" /></g>)}
+    <svg className="carrier-mark__truck" viewBox={`0 0 ${n(viewBox.width)} ${n(viewBox.height)}`} fill="none" aria-hidden="true">
+      <rect x={n(body.x)} y={n(body.y)} width={n(body.width)} height={n(body.height)} rx={n(body.rx)} fill={paint(body.fill)} stroke={paint(body.stroke)} strokeWidth={n(strokeWidth)} />
+      <path d={cab.d} fill={paint(cab.fill)} stroke={paint(cab.stroke)} strokeWidth={n(strokeWidth)} />
+      <path d={windshield.d} fill={paint(windshield.fill)} />
+      {decals[decal].map(shape => <Decal key={shape.type + ('d' in shape ? shape.d : shape.cx)} shape={shape} />)}
+      {wheels.centers.map(([x, y]) => <g key={x}>
+        <circle cx={n(x)} cy={n(y)} r={n(wheels.tire.r)} fill={paint(wheels.tire.fill)} />
+        <circle cx={n(x)} cy={n(y)} r={n(wheels.hub.r)} fill={paint(wheels.hub.fill)} />
+      </g>)}
     </svg>
     <span className="carrier-mark__name" aria-hidden="true">{name}{family === 'gls' && <span className="carrier-mark__dot">.</span>}</span>
   </span>;

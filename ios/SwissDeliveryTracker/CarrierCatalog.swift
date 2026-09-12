@@ -718,7 +718,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             displayNames: ["en": "Unknown carrier", "de": "Paketdienst unbekannt",
                            "fr": "Transporteur inconnu", "it": "Corriere sconosciuto"],
             trackingSiteName: nil,
-            color: "#8e8e93",
+            color: CarrierVisualIdentity.defaultCarrierColor,
             selectable: false,
             timezone: "UTC",
             tracking: .init(mode: "link-only", adapter: nil, requirements: nil),

@@ -1,0 +1,26 @@
+{
+  "defaultColor": "#8e8e93",
+  "fallbackColor": "#657060",
+  "properties": [
+    "surface-light",
+    "surface-dark",
+    "ink-light",
+    "ink-dark",
+    "brand-light",
+    "brand-dark",
+    "truck",
+    "edge",
+    "accent"
+  ],
+  "derivation": [
+    { "property": "surface-light", "base": "#ffffff", "amount": 0.86 },
+    { "property": "surface-dark", "base": "#20261f", "amount": 0.8 },
+    { "property": "ink-light", "base": "#000000", "amount": 0.55 },
+    { "property": "ink-dark", "base": "#ffffff", "amount": 0.65 },
+    { "property": "brand-light", "base": "#000000", "amount": 0.3 },
+    { "property": "brand-dark", "base": "#ffffff", "amount": 0.6 },
+    { "property": "truck", "base": "#000000", "amount": 0 },
+    { "property": "edge", "base": "#000000", "amount": 0.2 },
+    { "property": "accent", "base": "#ffffff", "amount": 1 }
+  ]
+}

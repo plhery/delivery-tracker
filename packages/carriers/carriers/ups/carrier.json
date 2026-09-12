@@ -8,7 +8,19 @@
     "countries": []
   },
   "brand": {
-    "color": "#351c15"
+    "color": "#351c15",
+    "palette": {
+      "surface-light": "#ede3d5",
+      "surface-dark": "#463a2c",
+      "ink-light": "#78573e",
+      "ink-dark": "#dbc2a4",
+      "brand-light": "#573626",
+      "brand-dark": "#ebca99",
+      "truck": "#573626",
+      "edge": "#573626",
+      "accent": "#f5c86b"
+    },
+    "decal": "ups"
   },
   "selectable": true,
   "timezone": "UTC",

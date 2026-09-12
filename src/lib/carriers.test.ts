@@ -18,6 +18,7 @@ import {
   supportsSwissPostHandoff,
   tracksAutomatically,
 } from './carriers';
+import { DEFAULT_CARRIER_COLOR } from './carrierBrand';
 
 /**
  * Organization: number detection has exactly one `it` per carrier ID below
@@ -41,7 +42,7 @@ function expectUniversalFallback(id: keyof typeof CARRIERS) {
   expect(carrier.capabilities.selectable).toBe(true);
   expect(carrier.capabilities.tracking.mode).toBe('automatic');
   expect(carrier.capabilities.tracking.adapter).toBe('universal');
-  expect(carrier.color).toBe('#8e8e93');
+  expect(carrier.color).toBe(DEFAULT_CARRIER_COLOR);
   expect(tracksAutomatically(id)).toBe(true);
 }
 

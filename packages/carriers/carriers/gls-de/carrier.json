@@ -11,7 +11,8 @@
     ]
   },
   "brand": {
-    "color": "#ffdd00"
+    "color": "#ffdd00",
+    "family": "gls"
   },
   "selectable": true,
   "timezone": "Europe/Berlin",

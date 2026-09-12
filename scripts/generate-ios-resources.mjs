@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { readBrandData, renderBrandJson } from '../packages/carriers/scripts/generate-brand.mjs';
 import { nativeLocalizationReferences } from './native-localization.mjs';
 import { readLocalizationCatalogs } from './localization-catalog.mjs';
 
@@ -34,6 +35,9 @@ const outputs = new Map([
   ['ContractFixtures.json', `${JSON.stringify(apiFixture, null, 2)}\n`],
   // Replayed by the native detection test so the Swift port cannot drift from the shared engine.
   ['DetectionGolden.json', fs.readFileSync(path.join(root, 'contracts', 'fixtures', 'detection-golden.json'), 'utf8')],
+  // Read by BrandParityTests so the SwiftUI livery and truck cannot drift from
+  // packages/carriers/core/brand, which the web renders.
+  ['Brand.json', renderBrandJson(readBrandData())],
 ]);
 
 if (process.argv.includes('--check')) {

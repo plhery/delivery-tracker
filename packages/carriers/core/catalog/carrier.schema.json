@@ -58,14 +58,40 @@
       }
     },
     "brand": {
+      "description": "The carrier's visual identity. Only brand.color reaches the published contract; packages/carriers/core/brand renders the rest.",
       "type": "object",
       "additionalProperties": false,
       "required": ["color"],
       "properties": {
         "color": {
           "description": "Accent color used by the web and native clients.",
+          "$ref": "#/definitions/brandColor"
+        },
+        "family": {
+          "description": "The identity this carrier belongs to, when several carrier ids share one (the GLS country folders all declare \"gls\"). Defaults to the carrier id. Exactly one member of a family declares the brand.palette and brand.decal the whole family wears; the others only declare the family.",
           "type": "string",
-          "pattern": "^#[0-9a-fA-F]{6}$"
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "palette": {
+          "description": "Explicit values for an approved wordmark, overriding what brand.color would derive. Every property is optional: declare only the ones the wordmark requires and let the rest follow from brand.color.",
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "surface-light": { "$ref": "#/definitions/brandColor" },
+            "surface-dark": { "$ref": "#/definitions/brandColor" },
+            "ink-light": { "$ref": "#/definitions/brandColor" },
+            "ink-dark": { "$ref": "#/definitions/brandColor" },
+            "brand-light": { "$ref": "#/definitions/brandColor" },
+            "brand-dark": { "$ref": "#/definitions/brandColor" },
+            "truck": { "$ref": "#/definitions/brandColor" },
+            "edge": { "$ref": "#/definitions/brandColor" },
+            "accent": { "$ref": "#/definitions/brandColor" }
+          }
+        },
+        "decal": {
+          "description": "Livery painted on the truck mark. Omitted means \"default\".",
+          "enum": ["default", "dhl", "ups"]
         }
       }
     },
@@ -169,6 +195,10 @@
     }
   },
   "definitions": {
+    "brandColor": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$"
+    },
     "requirement": {
       "type": "object",
       "additionalProperties": false,

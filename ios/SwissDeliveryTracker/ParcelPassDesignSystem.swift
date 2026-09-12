@@ -249,11 +249,29 @@ extension Parcel {
 }
 
 /// The approved Fleet palettes; catalog colors cover other and newly added carriers.
+///
+/// The palettes, the mix amounts and the two named colors below are declared in
+/// `packages/carriers/core/brand` and shipped as `Resources/Brand.json`;
+/// `BrandParityTests` fails when this table drifts from them.
 struct CarrierVisualIdentity {
+    /// What the catalog gives a carrier with no accent of its own.
+    static let defaultCarrierColor = "#8e8e93"
+    /// Stands in for a catalog color that is not a `#rrggbb` literal.
+    static let fallbackColor = "#657060"
+
     let family: String
     let name: String
     let fullName: String
-    private let colors: [String]
+    let colors: [String]
+
+    /// The livery `CarrierFleetMark` paints; mirrors `brand.decal` in the folders.
+    var decal: String {
+        switch family {
+        case "dhl": return "dhl"
+        case "ups": return "ups"
+        default: return "default"
+        }
+    }
 
     init(id: String, carrier: CarrierDefinition) {
         family = id.hasPrefix("gls-") ? "gls" : id
@@ -285,8 +303,9 @@ struct CarrierVisualIdentity {
     var edge: Color { Color(hex: colors[7]) }
     var accent: Color { Color(hex: colors[8]) }
 
-    private static func mix(_ color: String, _ base: String, _ amount: Double) -> String {
-        let value = color.count == 7 ? UInt32(color.dropFirst(), radix: 16) ?? 0x657060 : 0x657060
+    static func mix(_ color: String, _ base: String, _ amount: Double) -> String {
+        let fallback = UInt32(fallbackColor.dropFirst(), radix: 16) ?? 0
+        let value = color.count == 7 ? UInt32(color.dropFirst(), radix: 16) ?? fallback : fallback
         let background = UInt32(base.dropFirst(), radix: 16) ?? 0
         let channels = [16, 8, 0].map { shift in
             Int((Double((value >> shift) & 255) * (1 - amount) + Double((background >> shift) & 255) * amount).rounded())
@@ -295,34 +314,66 @@ struct CarrierVisualIdentity {
     }
 }
 
+/// The one truck, as `packages/carriers/core/brand/truck.json` states it. The web
+/// draws the same numbers as an SVG; `BrandParityTests` asserts every value here
+/// against `Resources/Brand.json`, so neither drawing can drift.
+///
+/// The canvas fills straight-line outlines where the SVG uses a path: the UPS
+/// shield approximates its curve with five points, and the default stripe is the
+/// rectangle covered by a `stripeWidth`-wide line along `defaultStripe`.
+enum CarrierTruckGeometry {
+    static let viewBox = CGSize(width: 32, height: 21)
+    static let strokeWidth: CGFloat = 0.6
+    static let body = CGRect(x: 2, y: 3, width: 18, height: 13)
+    static let bodyCornerRadius: CGFloat = 1.3
+    static let cab = [CGPoint(x: 20, y: 8), CGPoint(x: 25, y: 8), CGPoint(x: 30, y: 13),
+                      CGPoint(x: 30, y: 16), CGPoint(x: 20, y: 16)]
+    static let windshield = [CGPoint(x: 22, y: 9.5), CGPoint(x: 24.5, y: 9.5),
+                             CGPoint(x: 27.5, y: 12.5), CGPoint(x: 22, y: 12.5)]
+    static let windshieldColor = "#edf1ee"
+    static let wheelCenters = [CGPoint(x: 8, y: 16.5), CGPoint(x: 25, y: 16.5)]
+    static let tireRadius: CGFloat = 2.4
+    static let tireColor = "#42483d"
+    static let hubRadius: CGFloat = 0.9
+    static let hubColor = "#d2d4c7"
+    static let defaultStripe = [CGPoint(x: 5, y: 9), CGPoint(x: 13, y: 9)]
+    static let defaultStripeWidth: CGFloat = 2
+    static let defaultDotCenter = CGPoint(x: 15, y: 9)
+    static let defaultDotRadius: CGFloat = 1.1
+    static let dhlStripes = [[CGPoint(x: 4, y: 8), CGPoint(x: 16, y: 8)],
+                             [CGPoint(x: 3, y: 10), CGPoint(x: 15, y: 10)]]
+    static let dhlStripeWidth: CGFloat = 1.1
+    static let upsShield = [CGPoint(x: 8, y: 5), CGPoint(x: 13, y: 5), CGPoint(x: 13, y: 10),
+                            CGPoint(x: 10.5, y: 12), CGPoint(x: 8, y: 10)]
+}
+
 struct CarrierFleetMark: View {
     let identity: CarrierVisualIdentity
 
     var body: some View {
         HStack(spacing: 7) {
             Canvas { context, size in
-                context.scaleBy(x: size.width / 32, y: size.height / 21)
-                let body = Path(roundedRect: CGRect(x: 2, y: 3, width: 18, height: 13), cornerRadius: 1.3)
+                let truck = CarrierTruckGeometry.self
+                context.scaleBy(x: size.width / truck.viewBox.width, y: size.height / truck.viewBox.height)
+                let body = Path(roundedRect: truck.body, cornerRadius: truck.bodyCornerRadius)
                 context.fill(body, with: .color(identity.truck))
-                context.stroke(body, with: .color(identity.edge), lineWidth: 0.6)
-                let cab = polygon([CGPoint(x: 20, y: 8), CGPoint(x: 25, y: 8), CGPoint(x: 30, y: 13), CGPoint(x: 30, y: 16), CGPoint(x: 20, y: 16)])
+                context.stroke(body, with: .color(identity.edge), lineWidth: truck.strokeWidth)
+                let cab = polygon(truck.cab)
                 context.fill(cab, with: .color(identity.truck))
-                context.stroke(cab, with: .color(identity.edge), lineWidth: 0.6)
-                context.fill(polygon([CGPoint(x: 22, y: 9.5), CGPoint(x: 24.5, y: 9.5), CGPoint(x: 27.5, y: 12.5), CGPoint(x: 22, y: 12.5)]), with: .color(Color(hex: "#edf1ee")))
-                if identity.family == "dhl" {
-                    var stripes = Path()
-                    stripes.move(to: CGPoint(x: 4, y: 8)); stripes.addLine(to: CGPoint(x: 16, y: 8))
-                    stripes.move(to: CGPoint(x: 3, y: 10)); stripes.addLine(to: CGPoint(x: 15, y: 10))
-                    context.stroke(stripes, with: .color(identity.accent), lineWidth: 1.1)
-                } else if identity.family == "ups" {
-                    context.fill(polygon([CGPoint(x: 8, y: 5), CGPoint(x: 13, y: 5), CGPoint(x: 13, y: 10), CGPoint(x: 10.5, y: 12), CGPoint(x: 8, y: 10)]), with: .color(identity.accent))
-                } else {
-                    context.fill(Path(CGRect(x: 5, y: 8, width: 8, height: 2)), with: .color(identity.accent))
-                    context.fill(Path(ellipseIn: CGRect(x: 13.9, y: 7.9, width: 2.2, height: 2.2)), with: .color(identity.accent))
+                context.stroke(cab, with: .color(identity.edge), lineWidth: truck.strokeWidth)
+                context.fill(polygon(truck.windshield), with: .color(Color(hex: truck.windshieldColor)))
+                switch identity.decal {
+                case "dhl":
+                    context.stroke(segments(truck.dhlStripes), with: .color(identity.accent), lineWidth: truck.dhlStripeWidth)
+                case "ups":
+                    context.fill(polygon(truck.upsShield), with: .color(identity.accent))
+                default:
+                    context.fill(Path(stripe(truck.defaultStripe, width: truck.defaultStripeWidth)), with: .color(identity.accent))
+                    context.fill(disc(truck.defaultDotCenter, truck.defaultDotRadius), with: .color(identity.accent))
                 }
-                for x in [8.0, 25.0] {
-                    context.fill(Path(ellipseIn: CGRect(x: x - 2.4, y: 14.1, width: 4.8, height: 4.8)), with: .color(Color(hex: "#42483d")))
-                    context.fill(Path(ellipseIn: CGRect(x: x - 0.9, y: 15.6, width: 1.8, height: 1.8)), with: .color(Color(hex: "#d2d4c7")))
+                for center in truck.wheelCenters {
+                    context.fill(disc(center, truck.tireRadius), with: .color(Color(hex: truck.tireColor)))
+                    context.fill(disc(center, truck.hubRadius), with: .color(Color(hex: truck.hubColor)))
                 }
             }
             .frame(width: 27, height: 18)
@@ -344,5 +395,24 @@ struct CarrierFleetMark: View {
             for point in points.dropFirst() { path.addLine(to: point) }
             path.closeSubpath()
         }
+    }
+
+    private func segments(_ lines: [[CGPoint]]) -> Path {
+        Path { path in
+            for line in lines {
+                guard let first = line.first else { continue }
+                path.move(to: first)
+                for point in line.dropFirst() { path.addLine(to: point) }
+            }
+        }
+    }
+
+    /// The rectangle a `width`-wide line along a horizontal segment covers.
+    private func stripe(_ segment: [CGPoint], width: CGFloat) -> CGRect {
+        CGRect(x: segment[0].x, y: segment[0].y - width / 2, width: segment[1].x - segment[0].x, height: width)
+    }
+
+    private func disc(_ center: CGPoint, _ radius: CGFloat) -> Path {
+        Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
     }
 }

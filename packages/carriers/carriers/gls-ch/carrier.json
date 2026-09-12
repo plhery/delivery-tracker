@@ -12,7 +12,19 @@
     ]
   },
   "brand": {
-    "color": "#ffdd00"
+    "color": "#ffdd00",
+    "family": "gls",
+    "palette": {
+      "surface-light": "#dfebfa",
+      "surface-dark": "#293e57",
+      "ink-light": "#355e8a",
+      "ink-dark": "#b7d1ee",
+      "brand-light": "#1634a7",
+      "brand-dark": "#abc7ff",
+      "truck": "#1634a7",
+      "edge": "#1634a7",
+      "accent": "#ffcf00"
+    }
   },
   "selectable": true,
   "timezone": "Europe/Zurich",

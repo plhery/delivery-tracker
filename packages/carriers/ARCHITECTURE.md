@@ -28,6 +28,7 @@ packages/carriers/
   PRIVACY.md             the projection policy, stated once and enforced in core
   core/
     catalog/             carrier.json schema, loader, typed access to the merged catalog
+    brand/               palette derivation, truck geometry, the data both clients render
     detection/           number detection engine, checksums, input parsing, link rules
     status/              Stage vocabulary, status maps, wording classifier, observation hooks
     result/              CarrierResult / CarrierEvent and their normalization
@@ -57,7 +58,7 @@ carriers/<id>/
   adapter.test.ts        offline tests over fixtures
   adapter.live.test.ts   opt-in tests against the real endpoint, gated by environment variables
   fixtures/              scrubbed payloads, one JSON per scenario, provenance header inside each
-  brand/                 optional logo.svg or decal override
+  brand/                 optional logo.svg; palette and decal are carrier.json keys
 ```
 
 Carriers without a dedicated adapter (tracked through the universal providers)
@@ -172,15 +173,17 @@ generated overview table and the add-a-carrier checklist.
 | Metrics | `prom-client` behind a `StepRecorder` interface | Sentry metrics only | retention and per-label queries; the interface keeps alternatives open |
 | Errors | one taxonomy, `instanceof` | per-adapter classes and name sniffing | routing correctness |
 | Docs | generated tables plus hand-written sections per carrier | one large markdown file | drift and mixed audiences |
+| Brand assets | one palette derivation and one truck geometry, as data | a palette and a truck re-typed per platform | the SVG and the SwiftUI canvas drifted; a parity test on each side now replays the same file |
 
 ## Migration status
 
 Phase 0 to 2 are in place: the corpus and detection core, per-carrier
 `carrier.json` as the source of truth, the error taxonomy, transport, runner
 and telemetry in `core/`, adapters and providers in their folders served
-through the generated registry, and Prometheus plus Sentry sinks. Still open:
-brand assets generated from one truck geometry, a generated status reference in
-each README, the lookup canary that replays a synthetic number through every
+through the generated registry, Prometheus plus Sentry sinks, and the brand
+assets generated from one truck geometry and one palette derivation
+(`core/brand`, see its README). Still open: a generated status reference in each
+README, the lookup canary that replays a synthetic number through every
 registered adapter, and the optional `exception` stage.
 
 ## Prior art

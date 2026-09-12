@@ -11,7 +11,19 @@
     ]
   },
   "brand": {
-    "color": "#ffcc00"
+    "color": "#ffcc00",
+    "palette": {
+      "surface-light": "#f7e8aa",
+      "surface-dark": "#514727",
+      "ink-light": "#6c5419",
+      "ink-dark": "#ead695",
+      "brand-light": "#d40511",
+      "brand-dark": "#ffe274",
+      "truck": "#ffcc00",
+      "edge": "#b88d16",
+      "accent": "#d40511"
+    },
+    "decal": "dhl"
   },
   "selectable": true,
   "timezone": "Europe/Berlin",
