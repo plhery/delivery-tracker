@@ -1104,7 +1104,7 @@ describe('TrackingSyncService', () => {
     expect(client.updatePackage).toHaveBeenLastCalledWith('package-progressed', {
       last_synced_at: '2026-08-04T13:00:00.000Z',
       sync_status: 'error',
-      sync_error: 'Colis Privé could not locate the shipment',
+      sync_error: 'carrier:not_found',
     });
     expect(client.completeSyncAttempt).toHaveBeenCalledWith(
       expect.any(String),

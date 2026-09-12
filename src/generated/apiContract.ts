@@ -3068,6 +3068,11 @@ export interface ApiPackageRow {
   "auto_changed_at"?: string | null;
   "sender_name"?: string | null;
   "swiss_post_ready"?: boolean | null;
+  "expected_delivery_from"?: string | null;
+  "pickup_point"?: string | null;
+  "receiver_name"?: string | null;
+  "dimensions_text"?: string | null;
+  "weight_kg"?: number | null;
 };
   "archived_at": string | null;
   "notifications_muted": boolean;

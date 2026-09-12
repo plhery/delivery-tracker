@@ -4403,7 +4403,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "User-facing tracking failure code (carrier:<kind>) when available; legacy diagnostic text otherwise. Clients must not display raw diagnostic text."
           },
           "tracking_url": {
             "type": [
@@ -4516,6 +4517,37 @@
                   "boolean",
                   "null"
                 ]
+              },
+              "expected_delivery_from": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "pickup_point": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "receiver_name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "dimensions_text": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "weight_kg": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
               }
             }
           },

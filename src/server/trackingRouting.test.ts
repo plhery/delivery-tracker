@@ -5,6 +5,7 @@ import type { JsonObject } from './types';
 import type { CarrierResult } from './carrierResult';
 import * as monitoring from './observability';
 import { universalCarrierHints } from './universalCarrierHints';
+import { InputRequiredError } from '@carriers/core/errors';
 
 const time = new Date('2026-09-10T12:00:00Z');
 const history = (stamp = '2026-09-10T11:00:00Z'): CarrierResult => ({ status: 'in_transit', current_stage: 'in_transit',
@@ -25,6 +26,15 @@ beforeEach(() => vi.spyOn(monitoring, 'reportRoutingEvent').mockImplementation((
 afterEach(() => vi.restoreAllMocks());
 
 describe('persistent tracking routing', () => {
+  it('retains actionable input failures through a deferred lookup', async () => {
+    const { router, direct, universal } = setup();
+    direct.mockRejectedValue(new InputRequiredError('Heppner', 'postcode'));
+    universal.mockRejectedValue(new Error('unavailable'));
+    await expect(router.fetch(parcel({ carrier: 'heppner' }), false)).rejects.toMatchObject({
+      stale: true,
+      routing: { failures: { heppner: { kind: 'schema', user_error: 'carrier:input_required' } } },
+    });
+  });
   it('uses a direct carrier without contacting a universal provider', async () => {
     const { router, universal } = setup();
     const result = await router.fetch(parcel({ carrier: 'ups' }), false);

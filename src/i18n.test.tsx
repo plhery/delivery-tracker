@@ -1,7 +1,9 @@
 import en from '../shared/locales/en.json';
+import { StrictMode } from 'react';
 import de from '../shared/locales/de.json';
 import fr from '../shared/locales/fr.json';
 import itMessages from '../shared/locales/it.json';
+import trackingMessages from '../shared/tracking-messages.json';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
@@ -17,6 +19,11 @@ import {
   type Translate,
   useI18n,
   translate,
+  localizedEventDescription,
+  localizedDeliveryWindow,
+  trackingFailureMessage,
+  SUPPORTED_LOCALES,
+  type MessageKey,
 } from './i18n';
 
 function TranslationProbe() {
@@ -30,6 +37,36 @@ function TranslationProbe() {
 }
 
 describe('localization', () => {
+  it('restores the saved language before persisting during StrictMode effect replay', async () => {
+    window.localStorage.setItem('deliveryTrackerLocale', 'fr');
+    render(<StrictMode><I18nProvider><TranslationProbe /></I18nProvider></StrictMode>);
+    await screen.findByText('Suivi de colis');
+    expect(window.localStorage.getItem('deliveryTrackerLocale')).toBe('fr');
+  });
+  it('translates every shared tracking message in every locale and preserves original scan notes', () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const t: Translate = (key, variables) => translate(locale, key, variables);
+      for (const [description, message] of Object.entries(trackingMessages.events)) {
+        expect(localizedEventDescription(description, t)).toBe(t(message.key as MessageKey, message.variables));
+        expect(localizedEventDescription(description, t)).not.toMatch(/\{\{/);
+      }
+      for (const kind of Object.keys(trackingMessages.failures)) expect(trackingFailureMessage(`carrier:${kind}`, t)).toBeTruthy();
+      expect(localizedEventDescription('Scanned by Sophie at dock 12', t)).toBe('Scanned by Sophie at dock 12');
+      expect(localizedEventDescription('toString', t)).toBe('toString');
+      expect(trackingFailureMessage('HTTP 403 internal diagnostic', t)).toBe(t('detail.trackingUnavailable'));
+      expect(trackingFailureMessage('carrier:new_kind', t)).toBe(t('detail.trackingUnavailable'));
+    }
+    expect(localizedEventDescription('Shipment exception', key => translate('fr', key))).toBe('Problème avec le colis');
+  });
+
+  it('shows delivery windows and ignores missing, reversed or invalid starts', () => {
+    const now = new Date(2026, 8, 9, 12).getTime();
+    const t: Translate = (key, variables) => translate('en', key, variables);
+    expect(localizedDeliveryWindow('2026-09-10', '2026-09-11', t, 'en-CH', now)).toBe('tomorrow – Fri 11 sep');
+    for (const from of [undefined, 'invalid', '2026-09-12', '2026-09-11']) {
+      expect(localizedDeliveryWindow(from, '2026-09-11', t, 'en-CH', now)).toBe('Fri 11 sep');
+    }
+  });
   it('detects all supported Swiss languages and falls back to English', () => {
     expect(detectLocale(['de-CH'])).toBe('de');
     expect(detectLocale(['rm-CH', 'it-CH'])).toBe('it');

@@ -8,6 +8,7 @@ import {
   activeTrackingCarrierId,
   displayedCarrierId,
   carrierInfo,
+  carrierRequirements,
   carrierTrackingHintKey,
   formatTrackingNumber,
   parcelTrackingLinks,
@@ -15,7 +16,8 @@ import {
   tracksAutomatically,
 } from '../lib/carriers';
 import {
-  localizedExpectedDelivery,
+  localizedDeliveryWindow,
+  trackingFailureMessage,
   localizedDatePhrase,
   localizedRelativeTime,
   useI18n,
@@ -415,12 +417,20 @@ export function ParcelDetail({
           <p className="detail__arrival">
             {completionDate
               ? localizedDatePhrase(completionDate, t)
-              : localizedExpectedDelivery(estimate!, t, languageTag)}
+              : localizedDeliveryWindow(parcel.expectedDeliveryFrom, estimate!, t, languageTag)}
           </p>
         )}
         <div className="detail__progress"><ProgressTrack stage={current?.stage ?? null} /></div>
       </section>
       <section className="detail__information">
+        {(parcel.pickupPoint || parcel.receiverName || parcel.dimensionsText || (Number.isFinite(parcel.weightKg) && parcel.weightKg! > 0)) && (
+          <dl className="detail__shipment-facts">
+            {parcel.pickupPoint && <div><dt>{t('detail.pickupPoint')}</dt><dd>{parcel.pickupPoint}</dd></div>}
+            {parcel.receiverName && <div><dt>{t('detail.recipient')}</dt><dd>{parcel.receiverName}</dd></div>}
+            {Number.isFinite(parcel.weightKg) && parcel.weightKg! > 0 && <div><dt>{t('detail.weight')}</dt><dd>{new Intl.NumberFormat(languageTag, { style: 'unit', unit: 'kilogram', maximumFractionDigits: 3 }).format(parcel.weightKg!)}</dd></div>}
+            {parcel.dimensionsText && <div><dt>{t('detail.dimensions')}</dt><dd>{parcel.dimensionsText}</dd></div>}
+          </dl>
+        )}
         <div className="detail__shipment">
           {trackingNumbers.map(({ carrier: numberCarrier, number }) => <div className="detail__tracking-ticket" key={number}>
             <span className="detail__tracking-label">{trackingNumbers.length > 1 ? carrierInfo(numberCarrier, locale).name : t('detail.trackingNumber')}</span>
@@ -457,7 +467,12 @@ export function ParcelDetail({
           </div>
         )}
         {automaticTracking && parcel.syncError && (
-          <p className="detail__sync-error" role="status">{t('detail.trackingUnavailable')}</p>
+          <div className="detail__sync-error" role="status">
+            <p>{trackingFailureMessage(parcel.syncError, t)}</p>
+            {parcel.syncError === 'carrier:input_required' && carrier.id === parcel.carrier && carrierRequirements(parcel.carrier, parcel.trackingNumber).length > 0 && (
+              <button type="button" className="button button--secondary" onClick={() => setEditingCarrier(true)}>{t('detail.updateTrackingDetails')}</button>
+            )}
+          </div>
         )}
 
         {checkError && <p className="detail__check-error" role="alert">{checkError}</p>}

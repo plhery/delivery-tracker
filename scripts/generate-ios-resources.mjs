@@ -6,6 +6,19 @@ import { readLocalizationCatalogs } from './localization-catalog.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const languages = readLocalizationCatalogs(path.join(root, 'shared', 'locales'));
+const trackingMessagesSource = fs.readFileSync(path.join(root, 'shared', 'tracking-messages.json'), 'utf8');
+const trackingMessages = JSON.parse(trackingMessagesSource);
+for (const message of Object.values(trackingMessages.events)) {
+  const text = languages.en[message.key];
+  if (!text) throw new Error(`Missing tracking message translation: ${message.key}`);
+  const variables = [...text.matchAll(/\{\{([^}]+)\}\}/g)].map(match => match[1]).sort();
+  if (JSON.stringify(variables) !== JSON.stringify(Object.keys(message.variables).sort())) {
+    throw new Error(`Invalid tracking message variables: ${message.key}`);
+  }
+}
+for (const key of Object.values(trackingMessages.failures)) {
+  if (!languages.en[key]) throw new Error(`Missing tracking failure translation: ${key}`);
+}
 
 const swiftSources = ['SwissDeliveryTracker', 'DeliveryWidgetExtension']
   .flatMap((directory) => fs.readdirSync(path.join(root, 'ios', directory))
@@ -27,6 +40,7 @@ const apiFixture = JSON.parse(fs.readFileSync(
   'utf8',
 ));
 const outputs = new Map([
+  ['TrackingMessages.json', trackingMessagesSource],
   ['Analytics.json', fs.readFileSync(path.join(root, 'shared', 'analytics.json'), 'utf8')],
   ['Localization.json', `${JSON.stringify(languages, null, 2)}\n`],
   ['CarrierCatalog.json', `${JSON.stringify({ 'x-carriers': contract['x-carriers'] }, null, 2)}\n`],

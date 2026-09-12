@@ -193,6 +193,22 @@ struct ParcelDetailView: View {
             .background(branding.surface, in: RoundedRectangle(cornerRadius: 18))
 
             shipmentIdentity(parcel, links: trackingLinks, tint: branding.ink)
+            if let details = parcel.carrierData {
+                VStack(alignment: .leading, spacing: 10) {
+                    if let value = details.pickupPoint?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty {
+                        shipmentFact("detail.pickupPoint", value: value)
+                    }
+                    if let value = details.receiverName?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty {
+                        shipmentFact("detail.recipient", value: value)
+                    }
+                    if let weight = details.weightKg, weight.isFinite, weight > 0 {
+                        shipmentFact("detail.weight", value: weight.formatted(.number.locale(localizer.language.locale).precision(.fractionLength(0...3))) + " kg")
+                    }
+                    if let value = details.dimensionsText?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty {
+                        shipmentFact("detail.dimensions", value: value)
+                    }
+                }
+            }
             if !catalog.tracksAutomatically(parcel.activeTrackingCarrier) || parcel.amazonShippingHistoryExpired {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(localizer.text(parcel.amazonShippingHistoryExpired ? "add.amazonHistoryExpired" : catalog.trackingHintKey(for: parcel.activeTrackingCarrier), ["carrier": carrier.displayName]))
@@ -202,13 +218,25 @@ struct ParcelDetailView: View {
                             .font(.footnote).foregroundStyle(branding.ink)
                     }
                 }
-            } else if parcel.syncError != nil {
-                Text(localizer.text("detail.trackingUnavailable"))
+            } else if let error = parcel.syncError {
+                Text(localizer.trackingFailureMessage(error))
                     .font(.footnote).foregroundStyle(Brand.warning)
+                if error == "carrier:input_required", parcel.activeTrackingCarrier == parcel.carrier,
+                   !catalog.requirements(for: parcel.carrier, trackingNumber: parcel.trackingNumber).isEmpty {
+                    Button(localizer.text("detail.updateTrackingDetails")) { showingCarrierEditor = true }
+                        .font(.footnote).foregroundStyle(branding.ink)
+                }
             }
             Divider()
         }
         .accessibilityElement(children: .contain)
+    }
+
+    private func shipmentFact(_ key: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(localizer.text(key)).font(.caption2).foregroundStyle(.secondary)
+            Text(value).font(.footnote).fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private func shipmentIdentity(_ parcel: Parcel, links: [ParcelTrackingLink], tint: Color) -> some View {

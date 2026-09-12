@@ -82,8 +82,21 @@ final class Localizer: ObservableObject {
 
     private static let storageKey = "deliveryTrackerLocale"
     private let dictionaries: [String: [String: String]]
+    private struct TrackingMessages: Decodable {
+        struct Event: Decodable { let key: String; let variables: [String: String] }
+        let events: [String: Event]
+        let failures: [String: String]
+    }
+    private let trackingMessages: TrackingMessages
 
     init(bundle: Bundle = .main) {
+        if let url = bundle.url(forResource: "TrackingMessages", withExtension: "json"),
+           let data = try? Data(contentsOf: url),
+           let decoded = try? JSONDecoder().decode(TrackingMessages.self, from: data) {
+            trackingMessages = decoded
+        } else {
+            trackingMessages = TrackingMessages(events: [:], failures: [:])
+        }
         let saved = UserDefaults.standard.string(forKey: Self.storageKey)
         let preferred = Locale.preferredLanguages.compactMap {
             AppLanguage(rawValue: $0.split(separator: "-").first.map(String.init)?.lowercased() ?? "")
@@ -207,12 +220,20 @@ final class Localizer: ObservableObject {
     }
 
     func eventDescription(_ description: String) -> String {
-        let keys = [
-            "Tracking added": "event.added",
-            "Tracking added; the carrier has not announced it yet": "event.waiting",
-            "Carrier changed; waiting for tracking": "event.carrierChanged",
-        ]
-        return keys[description].map { text($0) } ?? description
+        guard let event = trackingMessages.events[description] else { return description }
+        return text(event.key, event.variables)
+    }
+
+    func trackingFailureMessage(_ error: String) -> String {
+        let kind = error.hasPrefix("carrier:") ? String(error.dropFirst("carrier:".count)) : ""
+        return text(trackingMessages.failures[kind] ?? "detail.trackingUnavailable")
+    }
+
+    func deliveryWindow(from: String?, to: String, now: Date = Date()) -> String {
+        let end = expectedDelivery(to, now: now)
+        guard let from, let startDate = DateParser.deliveryDate(from),
+              let endDate = DateParser.deliveryDate(to), startDate < endDate else { return end }
+        return "\(expectedDelivery(from, now: now)) – \(end)"
     }
 
     func relativeTime(from value: String, now: Date = Date()) -> String {
@@ -309,7 +330,7 @@ final class Localizer: ObservableObject {
               let date = DateParser.deliveryDate(value) else { return nil }
         let calendar = Calendar.current
         guard calendar.startOfDay(for: date) >= calendar.startOfDay(for: now) else { return nil }
-        return expectedDelivery(value, now: now)
+        return deliveryWindow(from: parcel.carrierData?.expectedDeliveryFrom, to: value, now: now)
     }
 
     func parcelCompletionDate(_ parcel: Parcel, now: Date = Date()) -> String? {

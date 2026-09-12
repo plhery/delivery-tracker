@@ -19,6 +19,11 @@
 .detail--postcard .detail__title-row .postage-stamp { flex-shrink: 0; width: 45px; height: 56px; padding: 7px; }
 .detail--postcard .detail__title-row .postage-stamp svg { width: 22px; height: 22px; stroke-width: 1.1; }
 .detail--postcard .detail__sender { margin-top: 8px; color: var(--ink-soft); font-size: 12px; overflow-wrap: anywhere; }
+.detail__shipment-facts { display: grid; gap: 12px; margin: 0 0 20px; }
+.detail__shipment-facts div { display: grid; grid-template-columns: minmax(90px, 1fr) minmax(0, 2fr); gap: 16px; }
+.detail__shipment-facts dt { color: var(--ink-soft); font-size: 12px; }
+.detail__shipment-facts dd { margin: 0; font-size: 13px; overflow-wrap: anywhere; white-space: pre-line; }
+.detail__sync-error .button { margin-top: 8px; }
 .detail--postcard .detail__state { margin: 18px 0 0; text-align: left; color: var(--tone); font-size: 14px; font-weight: 400; }
 .detail--postcard .detail__arrival { margin-top: 6px; color: var(--tone); font-size: 12px; font-weight: 400; }
 .detail--postcard .detail__progress { padding: 0; margin-top: 18px; }

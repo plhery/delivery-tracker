@@ -1,0 +1,291 @@
+{
+  "events": {
+    "Tracking added": {
+      "key": "event.added",
+      "variables": {}
+    },
+    "Tracking added; the carrier has not announced it yet": {
+      "key": "event.waiting",
+      "variables": {}
+    },
+    "Carrier changed; waiting for tracking": {
+      "key": "event.carrierChanged",
+      "variables": {}
+    },
+    "Tracking update": {
+      "key": "event.carrier.update",
+      "variables": {}
+    },
+    "Shipment update": {
+      "key": "event.carrier.update",
+      "variables": {}
+    },
+    "Amazon Shipping update": {
+      "key": "event.carrier.update",
+      "variables": {}
+    },
+    "Dachser tracking update": {
+      "key": "event.carrier.update",
+      "variables": {}
+    },
+    "Ciblex tracking update": {
+      "key": "event.carrier.update",
+      "variables": {}
+    },
+    "Heppner tracking update": {
+      "key": "event.carrier.update",
+      "variables": {}
+    },
+    "Mise à jour Colisweb": {
+      "key": "event.carrier.update",
+      "variables": {}
+    },
+    "Shipment exception": {
+      "key": "event.carrier.exception",
+      "variables": {}
+    },
+    "Incident de livraison": {
+      "key": "event.carrier.issue",
+      "variables": {}
+    },
+    "Delivery issue": {
+      "key": "event.carrier.issue",
+      "variables": {}
+    },
+    "Delivery attempt was unsuccessful": {
+      "key": "event.carrier.attempt",
+      "variables": {}
+    },
+    "Returning to sender": {
+      "key": "event.carrier.returning",
+      "variables": {}
+    },
+    "Returned to sender": {
+      "key": "stage.returned",
+      "variables": {}
+    },
+    "Shipment returned": {
+      "key": "stage.returned",
+      "variables": {}
+    },
+    "Colis retourné": {
+      "key": "stage.returned",
+      "variables": {}
+    },
+    "Delivered": {
+      "key": "stage.delivered",
+      "variables": {}
+    },
+    "Livraison effectuée": {
+      "key": "stage.delivered",
+      "variables": {}
+    },
+    "Out for delivery": {
+      "key": "stage.out_for_delivery",
+      "variables": {}
+    },
+    "Livraison en cours": {
+      "key": "stage.out_for_delivery",
+      "variables": {}
+    },
+    "Ready for pickup": {
+      "key": "stage.ready_for_pickup",
+      "variables": {}
+    },
+    "Customs processing": {
+      "key": "stage.customs",
+      "variables": {}
+    },
+    "In customs clearance": {
+      "key": "stage.customs",
+      "variables": {}
+    },
+    "In transit": {
+      "key": "stage.in_transit",
+      "variables": {}
+    },
+    "Delivery appointment updated": {
+      "key": "event.carrier.appointment",
+      "variables": {}
+    },
+    "Delivery delayed": {
+      "key": "event.carrier.delayed",
+      "variables": {}
+    },
+    "Shipment collected": {
+      "key": "event.carrier.accepted",
+      "variables": {}
+    },
+    "Shipment picked up": {
+      "key": "event.carrier.accepted",
+      "variables": {}
+    },
+    "Shipment accepted": {
+      "key": "event.carrier.accepted",
+      "variables": {}
+    },
+    "Shipment accepted from the sender": {
+      "key": "event.carrier.accepted",
+      "variables": {}
+    },
+    "Shipment accepted by Dachser": {
+      "key": "event.carrier.accepted",
+      "variables": {}
+    },
+    "Colis pris en charge": {
+      "key": "event.carrier.accepted",
+      "variables": {}
+    },
+    "Shipment information received": {
+      "key": "event.carrier.registered",
+      "variables": {}
+    },
+    "Tracking information received": {
+      "key": "event.carrier.registered",
+      "variables": {}
+    },
+    "Shipment registered": {
+      "key": "event.carrier.registered",
+      "variables": {}
+    },
+    "Shipment registered by Dachser": {
+      "key": "event.carrier.registered",
+      "variables": {}
+    },
+    "Shipment registered by Planzer": {
+      "key": "event.carrier.registered",
+      "variables": {}
+    },
+    "Shipment at the transfer depot": {
+      "key": "event.carrier.depot",
+      "variables": {}
+    },
+    "Shipment forwarded": {
+      "key": "event.carrier.forwarded",
+      "variables": {}
+    },
+    "Awaiting delivery instructions": {
+      "key": "event.carrier.instructions",
+      "variables": {}
+    },
+    "Livraison annulée": {
+      "key": "event.carrier.cancelled",
+      "variables": {}
+    },
+    "Livraison confirmée": {
+      "key": "event.carrier.confirmed",
+      "variables": {}
+    },
+    "Shipment arrived at a Dachser facility": {
+      "key": "event.carrier.facilityArrival",
+      "variables": {
+        "carrier": "Dachser"
+      }
+    },
+    "Shipment departed a Dachser facility": {
+      "key": "event.carrier.facilityDeparture",
+      "variables": {
+        "carrier": "Dachser"
+      }
+    },
+    "Parcel processed at Ciblex facility": {
+      "key": "event.carrier.facilityProcessed",
+      "variables": {
+        "carrier": "Ciblex"
+      }
+    },
+    "Parcel received at GLS depot": {
+      "key": "event.carrier.facilityArrival",
+      "variables": {
+        "carrier": "GLS"
+      }
+    },
+    "Parcel in transit": {
+      "key": "stage.in_transit",
+      "variables": {}
+    },
+    "Parcel in customs clearance": {
+      "key": "stage.customs",
+      "variables": {}
+    },
+    "Incomplete delivery information": {
+      "key": "event.carrier.incomplete",
+      "variables": {}
+    },
+    "Parcel delivery issue": {
+      "key": "event.carrier.issue",
+      "variables": {}
+    },
+    "Delivery attempt unsuccessful": {
+      "key": "event.carrier.attempt",
+      "variables": {}
+    },
+    "Shipment incident": {
+      "key": "event.carrier.exception",
+      "variables": {}
+    },
+    "Locker delivery unsuccessful": {
+      "key": "event.carrier.lockerFailed",
+      "variables": {}
+    },
+    "ParcelShop delivery unsuccessful": {
+      "key": "event.carrier.shopFailed",
+      "variables": {}
+    },
+    "Ready for pickup at GLS ParcelShop": {
+      "key": "event.carrier.pickupShop",
+      "variables": {}
+    },
+    "Ready for pickup at GLS Locker": {
+      "key": "event.carrier.pickupLocker",
+      "variables": {}
+    },
+    "Ready for pickup at GLS depot": {
+      "key": "event.carrier.pickupDepot",
+      "variables": {}
+    },
+    "ParcelShop delivery planned": {
+      "key": "event.carrier.shopPlanned",
+      "variables": {}
+    },
+    "Locker delivery planned": {
+      "key": "event.carrier.lockerPlanned",
+      "variables": {}
+    },
+    "Commande enregistrée": {
+      "key": "event.carrier.orderRegistered",
+      "variables": {}
+    },
+    "Prise de rendez-vous": {
+      "key": "event.carrier.appointmentBooking",
+      "variables": {}
+    },
+    "Commande en préparation": {
+      "key": "event.carrier.preparing",
+      "variables": {}
+    },
+    "Commande en livraison": {
+      "key": "stage.out_for_delivery",
+      "variables": {}
+    },
+    "Commande livrée": {
+      "key": "stage.delivered",
+      "variables": {}
+    },
+    "Delivery instructions required": {
+      "key": "event.carrier.instructions",
+      "variables": {}
+    }
+  },
+  "failures": {
+    "input_required": "tracking.failure.input",
+    "maintenance": "tracking.failure.maintenance",
+    "rate_limited": "tracking.failure.rateLimited",
+    "challenge": "tracking.failure.challenge",
+    "transport": "tracking.failure.connection",
+    "budget": "tracking.failure.connection",
+    "not_found": "tracking.failure.notFound",
+    "schema": "detail.trackingUnavailable",
+    "indeterminate": "detail.trackingUnavailable"
+  }
+}

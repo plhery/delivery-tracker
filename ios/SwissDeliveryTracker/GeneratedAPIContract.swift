@@ -777,6 +777,11 @@ struct CarrierData: Codable, Equatable, Hashable, Sendable {
     var autoChangedAt: String? = nil
     var senderName: String? = nil
     var swissPostReady: Bool? = nil
+    var expectedDeliveryFrom: String? = nil
+    var pickupPoint: String? = nil
+    var receiverName: String? = nil
+    var dimensionsText: String? = nil
+    var weightKg: Double? = nil
 
     private enum CodingKeys: String, CodingKey {
         case activeTrackingCarrier
@@ -791,6 +796,11 @@ struct CarrierData: Codable, Equatable, Hashable, Sendable {
         case autoChangedAt
         case senderName
         case swissPostReady
+        case expectedDeliveryFrom
+        case pickupPoint
+        case receiverName
+        case dimensionsText
+        case weightKg
     }
 }
 

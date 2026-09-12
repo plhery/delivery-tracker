@@ -1,4 +1,5 @@
 import 'server-only';
+import { deferredTrackingFailure, trackingFailureCode } from './trackingFailure';
 import { AmazonShippingHistoryExpiredError } from './amazonShipping';
 import { AMAZON_ACCOUNT_MESSAGE, AMAZON_HISTORY_EXPIRED, requiresAmazonAccount } from '../lib/amazon';
 
@@ -902,7 +903,7 @@ export class TrackingSyncService {
         try {
           await persist({ last_synced_at: this.now().toISOString(),
             sync_status: error.stale ? 'error' : previousStage === 'pending' ? 'waiting' : 'ok',
-            sync_error: error.stale ? error.message : null,
+            sync_error: error.stale ? deferredTrackingFailure(error.routing.failures, carrierId) ?? error.message : null,
             carrier_data: { ...(isRecord(parcel.carrier_data) ? parcel.carrier_data : {}), routing: error.routing },
           });
         } catch (persistenceError) {
@@ -922,7 +923,7 @@ export class TrackingSyncService {
           await persist({
             last_synced_at: this.now().toISOString(),
             sync_status: 'error',
-            sync_error: message.slice(0, 500),
+            sync_error: trackingFailureCode(error) ?? message.slice(0, 500),
           });
         }, () => ({ purpose: 'record_error' }));
       } catch (persistenceError) {

@@ -3,6 +3,29 @@ import XCTest
 
 @MainActor
 final class LocalizationTests: XCTestCase {
+    func testSharedTrackingMessagesPreserveOriginalNotesAndHideDiagnostics() {
+        let localizer = Localizer()
+        for language in AppLanguage.allCases {
+            localizer.language = language
+            XCTAssertEqual(localizer.eventDescription("Shipment exception"), localizer.text("event.carrier.exception"))
+            XCTAssertEqual(localizer.eventDescription("Shipment arrived at a Dachser facility"), localizer.text("event.carrier.facilityArrival", ["carrier": "Dachser"]))
+            XCTAssertEqual(localizer.eventDescription("Scanned by Sophie at dock 12"), "Scanned by Sophie at dock 12")
+            XCTAssertEqual(localizer.trackingFailureMessage("carrier:input_required"), localizer.text("tracking.failure.input"))
+            XCTAssertEqual(localizer.trackingFailureMessage("HTTP 403 private diagnostic"), localizer.text("detail.trackingUnavailable"))
+            XCTAssertEqual(localizer.trackingFailureMessage("carrier:new_kind"), localizer.text("detail.trackingUnavailable"))
+        }
+    }
+
+    func testDeliveryWindowRejectsInvalidOrReversedStarts() throws {
+        let localizer = Localizer()
+        localizer.language = .en
+        let now = try XCTUnwrap(DateParser.deliveryDate("2026-09-09"))
+        XCTAssertEqual(localizer.deliveryWindow(from: "2026-09-10", to: "2026-09-11", now: now), "tomorrow – Fri 11 sep")
+        for from in [nil, "invalid", "2026-09-12", "2026-09-11"] as [String?] {
+            XCTAssertEqual(localizer.deliveryWindow(from: from, to: "2026-09-11", now: now), "Fri 11 sep")
+        }
+    }
+
     func testEveryLanguageHasTheSameKeysAsEnglish() throws {
         let dictionaries = try localizationDictionaries()
         let englishKeys = Set(try XCTUnwrap(dictionaries["en"]).keys)

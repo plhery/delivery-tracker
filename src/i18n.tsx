@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { Stage } from './types';
+import trackingMessages from '../shared/tracking-messages.json';
 
 export const SUPPORTED_LOCALES = ['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
@@ -91,16 +92,17 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const hydrated = useRef(false);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => setLocale(browserLocale()), 0);
+    const timeout = window.setTimeout(() => {
+      const restoredLocale = browserLocale();
+      hydrated.current = true;
+      setLocale(restoredLocale);
+    }, 0);
     return () => window.clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
     document.documentElement.lang = locale;
-    if (!hydrated.current) {
-      hydrated.current = true;
-      return;
-    }
+    if (!hydrated.current) return;
     try {
       window.localStorage.setItem(STORAGE_KEY, locale);
     } catch {
@@ -210,11 +212,21 @@ export function localizedDatePhrase(date: string, t: Translate): string {
 
 /** Translate messages created by this app; preserve the carrier’s original scan notes. */
 export function localizedEventDescription(description: string, t: Translate): string {
-  const messages: Record<string, MessageKey> = {
-    'Tracking added': 'event.added',
-    'Tracking added; the carrier has not announced it yet': 'event.waiting',
-    'Carrier changed; waiting for tracking': 'event.carrierChanged',
-  };
-  const key = messages[description];
-  return key ? t(key) : description;
+  const messages: Record<string, { key: string; variables: Record<string, string> }> = trackingMessages.events;
+  const message = Object.hasOwn(messages, description) ? messages[description] : undefined;
+  return message ? t(message.key as MessageKey, message.variables) : description;
+}
+
+/** Only stable service codes select specific copy; diagnostics never reach the UI. */
+export function trackingFailureMessage(error: string | undefined, t: Translate): string {
+  const kind = error?.startsWith('carrier:') ? error.slice('carrier:'.length) : '';
+  const messages: Record<string, string> = trackingMessages.failures;
+  return t((Object.hasOwn(messages, kind) ? messages[kind] : 'detail.trackingUnavailable') as MessageKey);
+}
+
+export function localizedDeliveryWindow(from: string | undefined, to: string, t: Translate, languageTag: string, now = Date.now()): string {
+  const end = localizedExpectedDelivery(to, t, languageTag, now);
+  if (!from || !Number.isFinite(Date.parse(from)) || !Number.isFinite(Date.parse(to)) || Date.parse(from) >= Date.parse(to)) return end;
+  const start = localizedExpectedDelivery(from, t, languageTag, now);
+  return `${start} – ${end}`;
 }

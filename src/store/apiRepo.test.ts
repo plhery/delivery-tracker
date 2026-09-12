@@ -38,7 +38,7 @@ describe('createApiRepo', () => {
   });
 
   it('loads and maps the account package collection', async () => {
-    const fetch = vi.fn().mockResolvedValue(response({ packages: [{ ...packageRow, carrier_data: { ...packageRow.carrier_data, sender_name: 'Example sender', tracking_provider: 'Ship24', original_carrier: 'gls-de', original_tracking_number: '12345678901' } }] }));
+    const fetch = vi.fn().mockResolvedValue(response({ packages: [{ ...packageRow, carrier_data: { ...packageRow.carrier_data, sender_name: 'Example sender', pickup_point: ' Shop ', receiver_name: ' Alex ', weight_kg: 1.25, dimensions_text: '20 × 30 × 10 cm', expected_delivery_from: '2026-07-15', tracking_provider: 'Ship24', original_carrier: 'gls-de', original_tracking_number: '12345678901' } }] }));
     vi.stubGlobal('fetch', fetch);
 
     const parcels = await createApiRepo().list();
@@ -53,6 +53,7 @@ describe('createApiRepo', () => {
       trackingNumber: '993412345612345678',
       label: 'Coffee beans',
       senderName: 'Example sender',
+      pickupPoint: 'Shop', receiverName: 'Alex', weightKg: 1.25, dimensionsText: '20 × 30 × 10 cm', expectedDeliveryFrom: '2026-07-15',
       trackingProvider: 'Ship24',
       originalCarrier: 'gls-de',
       originalTrackingNumber: '12345678901',

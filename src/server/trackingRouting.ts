@@ -1,4 +1,5 @@
 import 'server-only';
+import { trackingFailureCode } from './trackingFailure';
 
 import { DateTime } from 'luxon';
 import { detectCarrierMatch } from '../lib/carriers';
@@ -26,7 +27,7 @@ export interface RoutedResult {
   earlierResult?: CarrierResult;
   earlierCarrierId?: string;
 }
-interface Failure { count: number; retry_at: string; kind: RoutingFailureKind }
+interface Failure { count: number; retry_at: string; kind: RoutingFailureKind; user_error?: string }
 export interface RoutingState extends JsonObject {
   version: 1;
   configured_carrier: string;
@@ -142,7 +143,8 @@ export class TrackingRouter {
       const { kind, retryAfterMs } = routingFailure(error);
       const count = Math.min(20, (state.failures[provider]?.count ?? 0) + 1);
       const base = kind === 'not_found' ? DAY : kind === 'verification' || kind === 'schema' ? HOUR : 15 * 60_000;
-      const failure = { count, kind, retry_at: iso(now().getTime() + Math.max(retryAfterMs, Math.min(kind === 'not_found' ? DAY : 6 * HOUR, base * 2 ** (count - 1)))) };
+      const userError = trackingFailureCode(error);
+      const failure = { count, kind, ...(userError ? { user_error: userError } : {}), retry_at: iso(now().getTime() + Math.max(retryAfterMs, Math.min(kind === 'not_found' ? DAY : 6 * HOUR, base * 2 ** (count - 1)))) };
       state.failures[provider] = failure;
       // Called before another provider is attempted, including recovered failures.
       report('provider_failed', provider, kind, error);

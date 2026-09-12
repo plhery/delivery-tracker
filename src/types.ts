@@ -22,6 +22,11 @@ export interface Parcel {
   createdAt: string; // ISO timestamp
   expectedDelivery?: string;
   senderName?: string;
+  expectedDeliveryFrom?: string;
+  pickupPoint?: string;
+  receiverName?: string;
+  weightKg?: number;
+  dimensionsText?: string;
   autoChangedFrom?: CarrierId;
   autoChangedTo?: CarrierId;
   autoChangedAt?: string;
