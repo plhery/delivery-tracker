@@ -153,7 +153,7 @@ Probed 2026-09-12 with the corpus number `20189360332` (shipment, `public_shipme
 | Provider | Result |
 | --- | --- |
 | Ship24 | ❌ No usable history — HTTP 404 |
-| ParcelsApp | ✅ Compatible — delivered via GLS |
+| ParcelsApp | ✅ Compatible — delivered via GLS (direct tier rejects its offset-less timestamps; served through trawl recovery) |
 | 17TRACK | ❌ No usable history — captured replies without history (2026-09-13) |
 
 Also tried `00E7V8YY` and `ZBH2FY7Q` on Ship24: both 404.
@@ -167,3 +167,4 @@ Also tried `00E7V8YY` and `ZBH2FY7Q` on Ship24: both 404.
   plain-text body; the opt-in live test asserts that.
 - 2026-09-12: universal-provider probe with corpus number `20189360332`: Ship24: no usable history; ParcelsApp: compatible; 17TRACK: not verified in this pass.
 - 2026-09-13: 17TRACK probe with corpus number `20189360332` via prod TRAWL: no usable history (history_missing).
+- 2026-09-13: ParcelsApp direct-tier re-probe fails on offset-less timestamps; the page parse (trawl recovery) still serves this history.

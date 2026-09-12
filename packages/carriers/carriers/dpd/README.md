@@ -160,7 +160,7 @@ Probed 2026-09-12 with the corpus number `06086216767970` (shipment, `public_shi
 | Provider | Result |
 | --- | --- |
 | Ship24 | ❌ No usable history — HTTP 404 |
-| ParcelsApp | ❌ No usable history — empty result page |
+| ParcelsApp | ✅ Compatible — 5 events, accepted via the direct tier (2026-09-13; page showed empty 2026-09-12) |
 | 17TRACK | ❌ No usable history — provider reports lookup unavailable, code 400 (2026-09-13) |
 
 ## Verification log
@@ -171,4 +171,6 @@ Probed 2026-09-12 with the corpus number `06086216767970` (shipment, `public_shi
   the page fallback are unchanged. The recovery tier is now labelled `page` in
   telemetry whether or not a browser service is configured.
 - 2026-09-12: universal-provider probe with corpus number `06086216767970`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `06086216767970` via prod TRAWL: no usable history (lookup_unavailable).
+- 2026-09-13: ParcelsApp direct-tier re-probe: compatible (5 events, accepted).
 - 2026-09-13: 17TRACK probe with corpus number `06086216767970` via prod TRAWL: no usable history (lookup_unavailable).

@@ -194,7 +194,7 @@ carrier is compatible.
 | `ctt` | `RL402552798PT` | ✅ delivered via Portugal CTT / Italy Post (Ship24 has no history here) |
 | `delhivery` | `32076610152736` | ❌ recipient-postcode notice (GLS/DPD) |
 | `dhl` | `CG738165082DE` | ✅ DHL / La Poste history |
-| `dpd` | `06086216767970` | ❌ empty result |
+| `dpd` | `06086216767970` | ✅ 5 events, accepted (direct tier 2026-09-13; page showed empty 2026-09-12) |
 | `ecoscooting` | `380030000066362966` | ❌ destination-country prompt |
 | `geodis` | `1GWSKFLSKX4Y` | ❌ recipient-postcode notice (GEODIS E-space recognized) |
 | `gls-de` | `10272483975` | ❌ recipient-postcode notice (GLS) |
@@ -217,11 +217,11 @@ carrier is compatible.
 | `uniuni` | `4C003925742US` | ✅ delivered via UNI Express (Ship24 has no history here) |
 | `yunexpress` | `YT2621200705470145` | ✅ delivered via Yun Express / GOFO |
 
-Compatible here: 7 carriers (`ctt-express`, `ctt`, `dhl`, `gls-fr`,
-`sunyou`, `uniuni`, `yunexpress`). Four of them (`ctt`, `gls-fr`, `sunyou`,
-`uniuni`) have no Ship24 history for the same numbers, so the two providers
-complement each other. Every carrier row above is also recorded in that
-carrier's own README.
+Compatible here: 8 carriers (`ctt-express`, `ctt`, `dhl`, `dpd`, `gls-fr`,
+`sunyou`, `uniuni`, `yunexpress`). Five of them (`ctt`, `dpd`, `gls-fr`,
+`sunyou`, `uniuni`) have no Ship24 history for the same numbers, so the two
+providers complement each other. Every carrier row above is also recorded in
+that carrier's own README.
 
 
 ## Verification log
@@ -252,6 +252,13 @@ carrier's own README.
   The reconstructed HTTP request also returned all 19 DHL states from the
   production application container in about 0.2 s; this was a protocol
   check, not a deployed-adapter verification.
+
+- 2026-09-13: direct-tier parity re-probe of the same 36 corpus numbers (no
+  postcode, no TRAWL): the 7 browser-verified carriers confirm (ctt-express
+  15, dhl 18, ctt 8, sunyou 8, yunexpress 32, uniuni 27 events), and `dpd`
+  flips to compatible (5 accepted events the page had shown empty). `gls-fr`
+  fails only the direct tier (offset-less timestamps); trawl recovery still
+  serves it. `aliexpress` times out on both paths. No other row changes.
 
 Live reference values stay outside the repository. To run a reference lookup,
 set `PARCELSAPP_LIVE_NUMBER` and optionally `PARCELSAPP_LIVE_POSTCODE`,
