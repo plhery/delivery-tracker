@@ -68,7 +68,7 @@ code's prefix.
 |---|---|---|
 | `returned` | `MARCHANDISE_RETOURNEE`, codes `SOL_*` / `RET_*` | fixture |
 | `delivered` | `LIVREE`, codes `LIV_*` / `POD_*` | fixture |
-| `failed_attempt` | `EN_ATTENTE_INSTRUCTIONS`, state `ANOMALIE` | fixture |
+| `exception` | `EN_ATTENTE_INSTRUCTIONS`, state `ANOMALIE` | fixture |
 | `out_for_delivery` | `LIVRAISON`, codes `MLV_*` | fixture |
 | `accepted` | `PRISE_EN_CHARGE`, codes `PCH_*` | fixture |
 | `in_transit` | `ACHEMINEMENT`, `MARCHANDISE_REEXPEDIEE` | fixture |

@@ -85,8 +85,18 @@ describe('friendly parcel notifications', () => {
     ['ready_for_pickup', "Your parcel is ready to collect. Open tracking for pickup details."],
     ['failed_attempt', "The carrier couldn’t deliver your parcel. Open tracking for the next steps."],
     ['returned', "Your parcel is being returned to the sender. Contact the sender for the next steps."],
+    ['exception', "The carrier reported a problem with your parcel. Open tracking for the next steps."],
   ])('does not repeat an obsolete estimate for %s', (stage, body) => {
     expect(web.payload({ ...delivered, stage }).body).toBe(body);
+  });
+
+  it('ends a Live Activity on a reported problem, with the missed-attempt grace period', () => {
+    const row = { ...delivered, stage: 'exception', update_token: 'a'.repeat(64) };
+    expect(live.deliveryKind(row)).toBe('end');
+    const aps = live.payload(row, 'end').aps as JsonObject;
+    expect(((aps['content-state'] as JsonObject).parcel as JsonObject).phase).toBe('exception');
+    expect(aps['dismissal-date'])
+      .toBe((live.payload({ ...row, stage: 'failed_attempt' }, 'end').aps as JsonObject)['dismissal-date']);
   });
 
   it('omits a redundant today estimate from out-for-delivery alerts', () => {
@@ -104,12 +114,12 @@ describe('friendly parcel notifications', () => {
 
 describe('useful, localized tracking updates', () => {
   it.each(['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'])('uses the same %s copy on web, iOS and Live Activities', (locale) => {
-    for (const stage of ['pending', 'registered', 'accepted', 'in_transit', 'customs', 'out_for_delivery', 'ready_for_pickup', 'delivered', 'failed_attempt', 'returned']) {
+    for (const stage of ['pending', 'registered', 'accepted', 'in_transit', 'customs', 'exception', 'out_for_delivery', 'ready_for_pickup', 'delivered', 'failed_attempt', 'returned']) {
       const row = { ...delivered, locale, stage };
       const browser = web.payload(row);
       expect(browser.lang).toBe(locale);
       expect(browser.body).toBe(alert(native.eventPayload(row)).body);
-      if (['out_for_delivery', 'delivered', 'ready_for_pickup', 'failed_attempt', 'returned'].includes(stage)) {
+      if (['out_for_delivery', 'delivered', 'ready_for_pickup', 'failed_attempt', 'returned', 'exception'].includes(stage)) {
         expect(browser.body).toBe(alert(live.payload(row, stage === 'out_for_delivery' ? 'start' : 'end')).body);
       }
       expect(String(browser.body)).not.toMatch(/\{\{|undefined|ETA/);

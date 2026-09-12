@@ -69,7 +69,8 @@ those, never on the localized text.
 | Stage | Code (raw) | Confirmed by |
 |---|---|---|
 | `returned` | `returnedToSender`, `returnedToRetailer` | fixture |
-| `failed_attempt` | `incorrectAddress`, `absent`, `notDelivered`, `integrationError`, `returnToSenderScheduled`, `returnAbsent`, `returnOther` | fixture |
+| `failed_attempt` | `absent`, `notDelivered`, `returnToSenderScheduled`, `returnAbsent`, `returnOther` | fixture |
+| `exception` | `incorrectAddress`, `integrationError`, `notAccepted`, `rejected`, `damaged`, `lost`, `nonDeliverable`, `cancelled` | fixture |
 | `delivered` | `delivered` | fixture |
 | `out_for_delivery` | `driverAssigned`, `inProgress` | fixture |
 | `ready_for_pickup` | `readyForPickup`, `atPickupPoint` | prior-art |

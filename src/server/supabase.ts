@@ -936,6 +936,7 @@ export class SupabaseUserClient extends SupabaseClient {
         'accepted',
         'in_transit',
         'customs',
+        'exception',
         'out_for_delivery',
         'failed_attempt',
         'ready_for_pickup',

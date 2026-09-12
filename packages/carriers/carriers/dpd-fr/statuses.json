@@ -28,18 +28,18 @@
     {
       "wording": "reclamation",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "fixture",
       "firstSeen": "2026-09-12",
-      "note": "Substring match on the accent-free wording; the result status becomes exception."
+      "note": "Substring match on the accent-free wording; the result status becomes exception. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "enquete est ouverte",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "fixture",
       "firstSeen": "2026-09-12",
-      "note": "Substring match on the accent-free wording; the result status becomes exception."
+      "note": "Substring match on the accent-free wording; the result status becomes exception. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "echec de livraison",
@@ -76,42 +76,42 @@
     {
       "wording": "incident",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "live",
       "firstSeen": "2026-09-12",
-      "note": "Substring match on the accent-free wording; the result status becomes exception."
+      "note": "Substring match on the accent-free wording; the result status becomes exception. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "anomalie",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "live",
       "firstSeen": "2026-09-12",
-      "note": "Substring match on the accent-free wording; the result status becomes exception."
+      "note": "Substring match on the accent-free wording; the result status becomes exception. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "endommage",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "live",
       "firstSeen": "2026-09-12",
-      "note": "Substring match on the accent-free wording; the result status becomes exception."
+      "note": "Substring match on the accent-free wording; the result status becomes exception. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "refuse",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "live",
       "firstSeen": "2026-09-12",
-      "note": "Substring match on the accent-free wording; the result status becomes exception."
+      "note": "Substring match on the accent-free wording; the result status becomes exception. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "perdu",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "live",
       "firstSeen": "2026-09-12",
-      "note": "Substring match on the accent-free wording; the result status becomes exception."
+      "note": "Substring match on the accent-free wording; the result status becomes exception. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "retard",

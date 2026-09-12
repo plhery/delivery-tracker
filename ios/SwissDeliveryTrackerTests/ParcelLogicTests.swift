@@ -216,6 +216,7 @@ final class ParcelLogicTests: XCTestCase {
             (TrackingStage.readyForPickup, ParcelAttention.readyForPickup),
             (.failedAttempt, .failedAttempt),
             (.customs, .customs),
+            (.exception, .exception),
         ] {
             var parcel = makeParcel(id: id, events: [event(id, stage, "2026-09-06T10:00:00Z")])
             parcel.syncStatus = .error
@@ -503,6 +504,8 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertEqual(TrackingStage.failedAttempt.deliveryActivityPhase, .failedAttempt)
         XCTAssertEqual(TrackingStage.readyForPickup.deliveryActivityPhase, .readyForPickup)
         XCTAssertEqual(TrackingStage.returned.deliveryActivityPhase, .returned)
+        // A reported problem ends a running activity, like a failed attempt.
+        XCTAssertEqual(TrackingStage.exception.deliveryActivityPhase, .exception)
     }
 
     func testLiveActivityPayloadUsesParcelAsStableIdentity() throws {
@@ -699,7 +702,7 @@ final class ParcelLogicTests: XCTestCase {
         let now = DateParser.date("2026-09-07T12:00:00Z")!
         let localizer = Localizer()
         localizer.language = .fr
-        for stage in [TrackingStage.delivered, .returned, .failedAttempt, .readyForPickup] {
+        for stage in [TrackingStage.delivered, .returned, .failedAttempt, .readyForPickup, .exception] {
             var parcel = makeParcel(id: id, events: [event(id, stage, "2026-09-07T10:00:00Z")])
             parcel.expectedDelivery = "2026-09-07"
             XCTAssertNil(localizer.parcelDeliveryEstimate(parcel, now: now))

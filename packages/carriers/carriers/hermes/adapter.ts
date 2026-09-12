@@ -81,7 +81,7 @@ export function parseHermesTrackingResponse(
       : typeof order.hesBasicLieferterminZeit === 'string'
         ? order.hesBasicLieferterminZeit
         : null,
-    timezone: 'Europe/Zurich',
+    timezone: 'Europe/Berlin',
     events,
   };
 }

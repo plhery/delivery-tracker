@@ -21,6 +21,8 @@ export function stageFor(event: JsonObject): string {
   const text = clean(event.description).toLowerCase();
   if (/return(?:ed|ing)? to (?:the )?sender/.test(text)) return 'returned';
   if (/not delivered|unable to deliver|delivery attempt|delivery failed/.test(text)) return 'failed_attempt';
+  // A carrier-reported problem that is neither a missed attempt nor a return.
+  if (/carrier exception|shipment exception|delivery exception|damaged|refused|address (?:incorrect|incomplete|unknown)|(?:incorrect|incomplete) address|lost in transit/.test(text)) return 'exception';
   // Sender-side drop-off scans (ha-dhl-nl#15) must never read as recipient
   // pickup: the parcel is entering the network, not awaiting collection.
   if (/picked.?up at (?:a )?parcel ?shop|drop(?:ped)? ?off at|handed in at/.test(text)) return 'accepted';

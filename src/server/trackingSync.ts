@@ -480,6 +480,9 @@ export function detectSyncAnomalies(
     (previousStage === 'delivered' || previousStage === 'returned')
     && selectedStage !== null
     && selectedStage !== previousStage
+    // A carrier may report a problem after delivery (damage, wrong address,
+    // refusal). That is new information, not a rewritten history.
+    && selectedStage !== 'exception'
   ) {
     anomalies.add('terminal_stage_regression');
   }

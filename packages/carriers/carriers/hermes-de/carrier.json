@@ -17,7 +17,7 @@
   "timezone": "Europe/Berlin",
   "tracking": {
     "mode": "automatic",
-    "adapter": "hermes-germany",
+    "adapter": "hermes-de",
     "steps": [
       "direct"
     ]

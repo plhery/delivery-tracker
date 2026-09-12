@@ -72,7 +72,8 @@ all three, because La Poste keeps a failed delivery inside its original group.
 | `ready_for_pickup` | `DISMAD`, `disponible au point de retrait`, `disponible en point relais`, `attend au relais` | fixture / live |
 | `delivered` | `DESBAL`, `DESTIN`, `DESLIVD`, `DI1` | fixture / live |
 | `returned` | `RETOUR`, any wording containing `retour` | live |
-| `failed_attempt` | `incident`, `échec`, `impossible`, `refusé`, `non livré`, `n'a pas pu vous être remis` | fixture |
+| `failed_attempt` | `échec`, `impossible`, `non livré`, `n'a pas pu vous être remis` | fixture |
+| `exception` | `incident`, `anomalie`, `avarie`, `endommagé`, `refusé`, `adresse incorrecte` | fixture |
 | `pending` | not observed; reported as unmapped | — |
 | `customs` | not observed; reported as unmapped | — |
 

@@ -77,6 +77,7 @@ Events are deduplicated on (time, stage, description) and sorted newest first.
 | delivered | "entregado", "entregada", "delivered", "zugestellt", "consegnato" | fixture |
 | customs | "aduana", "customs", "clearance", "Zoll" | prior-art |
 | failed_attempt | "no entregado", "entrega fallida", "failed delivery", "unsuccessful" | fixture |
+| exception | "incidencia", "avería", "dañado", "rechazado", "dirección incorrecta" | prior-art |
 | returned | "devolución", "retorno", "return", "retour" | prior-art |
 | pending | reached at shipment level only ("registrado"); never an event stage | fixture |
 

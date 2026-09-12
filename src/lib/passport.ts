@@ -4,7 +4,7 @@ import type { ParcelWithEvents, Stage } from '../types';
 import { trackingLocationCountry } from './trackingLocation';
 export { trackingLocationCountry as firstScanCountry } from './trackingLocation';
 
-const stageOrder: Stage[] = ['registered', 'accepted', 'in_transit', 'customs', 'out_for_delivery', 'failed_attempt', 'ready_for_pickup', 'delivered', 'returned'];
+const stageOrder: Stage[] = ['registered', 'accepted', 'in_transit', 'customs', 'exception', 'out_for_delivery', 'failed_attempt', 'ready_for_pickup', 'delivered', 'returned'];
 
 export interface DeliveryRecord { parcelId: string; label: string; duration: number; deliveredAt: number }
 

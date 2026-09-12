@@ -117,7 +117,7 @@ describe('DPD France rendered tracking', () => {
         time: '2026-02-12T09:50:00+01:00',
         location: 'Agence DPD de La Crau (283)',
         description: 'Nous avons reçu une réclamation : une enquête est ouverte',
-        stage: 'failed_attempt',
+        stage: 'exception',
       },
       {
         time: '2026-01-23T12:45:00+01:00',
@@ -159,6 +159,37 @@ describe('DPD France rendered tracking', () => {
     expect(result.events?.length).toBeGreaterThan(0);
     expect(result.events?.some((event) => event.location)).toBe(true);
     expect(result.expected_delivery).toBe('2026-01-24');
+  });
+
+  it('leaves unrecognized wording without a stage and falls back to the newest mapped row', () => {
+    const result = parseDPDFranceTrackingHtml(trackingFixture({
+      outboundRows: [
+        ['13/02/2026', '07:05', 'Votre colis fait l’objet d’un traitement particulier', 'Agence DPD de La Crau (283)'],
+        ...FIXTURE.outboundRows.slice(1),
+      ],
+    }), TEST_TRACKING_NUMBER);
+
+    const [newest] = result.events ?? [];
+    expect(newest?.description).toBe('Votre colis fait l’objet d’un traitement particulier');
+    expect(newest && 'stage' in newest).toBe(false);
+    // The unmapped row decides nothing: the newest recognized row still does.
+    expect(result.status).toBe('delivered');
+    expect(result.last_status_text).toBe('Votre colis fait l’objet d’un traitement particulier');
+  });
+
+  it('reports status unknown when no event wording is recognized', () => {
+    const result = parseDPDFranceTrackingHtml(trackingFixture({
+      outboundRows: [
+        ['13/02/2026', '07:05', 'Votre colis fait l’objet d’un traitement particulier', 'Agence DPD de La Crau (283)'],
+      ],
+    }), TEST_TRACKING_NUMBER);
+
+    expect(result.status).toBe('unknown');
+    expect(result.events).toEqual([{
+      time: '2026-02-13T07:05:00+01:00',
+      location: 'Agence DPD de La Crau (283)',
+      description: 'Votre colis fait l’objet d’un traitement particulier',
+    }]);
   });
 
   it('rejects browser challenges, unknown shipments, and mismatched responses', () => {

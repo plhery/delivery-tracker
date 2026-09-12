@@ -16,6 +16,7 @@ const STAGE_LABELS: Record<string, string> = {
   accepted: 'Parcel accepted',
   in_transit: 'Parcel in transit',
   customs: 'At customs',
+  exception: 'Parcel needs attention',
   out_for_delivery: 'Out for delivery',
   ready_for_pickup: 'Ready for pickup',
   delivered: 'Delivered',
@@ -37,6 +38,7 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     body_accepted: "The carrier has received your parcel.",
     body_in_transit: "Your parcel is on its way.",
     body_customs: "Your parcel is going through customs. We’ll update you when it moves again.",
+    body_exception: "The carrier reported a problem with your parcel. Open tracking for the next steps.",
     body_out_for_delivery: "Your parcel is out for delivery.",
     body_ready_for_pickup: "Your parcel is ready to collect. Open tracking for pickup details.",
     body_delivered: "Your parcel has been delivered.",
@@ -58,6 +60,7 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     accepted: 'Paket angenommen',
     in_transit: 'Paket unterwegs',
     customs: 'Beim Zoll',
+    exception: "Paket braucht Aufmerksamkeit",
     out_for_delivery: 'In Zustellung',
     ready_for_pickup: 'Abholbereit',
     delivered: 'Zugestellt',
@@ -69,6 +72,7 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     body_accepted: "Der Paketdienst hat dein Paket erhalten.",
     body_in_transit: "Dein Paket ist unterwegs.",
     body_customs: "Dein Paket wird beim Zoll bearbeitet. Wir melden uns, wenn es weitergeht.",
+    body_exception: "Der Paketdienst meldet ein Problem mit deinem Paket. Öffne das Tracking für die nächsten Schritte.",
     body_out_for_delivery: "Dein Paket ist auf Zustelltour.",
     body_ready_for_pickup: "Dein Paket ist abholbereit. Öffne das Tracking für die Abholinformationen.",
     body_delivered: "Dein Paket wurde zugestellt.",
@@ -90,6 +94,7 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     accepted: 'Colis pris en charge',
     in_transit: 'Colis en transit',
     customs: 'À la douane',
+    exception: "Colis à vérifier",
     out_for_delivery: 'En cours de livraison',
     ready_for_pickup: 'Prêt à être retiré',
     delivered: 'Livré',
@@ -101,6 +106,7 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     body_accepted: "Le transporteur a pris en charge ton colis.",
     body_in_transit: "Ton colis est en route.",
     body_customs: "Ton colis passe la douane. Nous te préviendrons lorsqu’il repartira.",
+    body_exception: "Le transporteur signale un problème avec ton colis. Consulte le suivi pour connaître la suite.",
     body_out_for_delivery: "Ton colis est en livraison.",
     body_ready_for_pickup: "Ton colis est prêt à être retiré. Consulte le suivi pour savoir où le récupérer.",
     body_delivered: "Ton colis a été livré.",
@@ -122,6 +128,7 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     accepted: 'Pacco accettato',
     in_transit: 'Pacco in transito',
     customs: 'Alla dogana',
+    exception: "Il pacco richiede attenzione",
     out_for_delivery: 'In consegna',
     ready_for_pickup: 'Pronto per il ritiro',
     delivered: 'Consegnato',
@@ -133,6 +140,7 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     body_accepted: "Il corriere ha preso in carico il tuo pacco.",
     body_in_transit: "Il tuo pacco è in viaggio.",
     body_customs: "Il tuo pacco è in fase di sdoganamento. Ti avviseremo quando ripartirà.",
+    body_exception: "Il corriere segnala un problema con il tuo pacco. Apri il tracciamento per sapere come procedere.",
     body_out_for_delivery: "Il tuo pacco è in consegna.",
     body_ready_for_pickup: "Il pacco è pronto per il ritiro. Apri il tracciamento per i dettagli.",
     body_delivered: "Il tuo pacco è stato consegnato.",
@@ -154,6 +162,7 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     "accepted": "Paquete recibido",
     "in_transit": "Paquete en tránsito",
     "customs": "En aduanas",
+    "exception": "El paquete necesita atención",
     "out_for_delivery": "En reparto",
     "ready_for_pickup": "Listo para recoger",
     "delivered": "Entregado",
@@ -165,6 +174,7 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     "body_accepted": "El transportista ha recibido tu paquete.",
     "body_in_transit": "Tu paquete está en camino.",
     "body_customs": "Tu paquete está pasando por aduanas. Te avisaremos cuando siga su camino.",
+    "body_exception": "El transportista informa de un problema con tu paquete. Consulta el seguimiento para saber qué hacer.",
     "body_out_for_delivery": "Tu paquete está en reparto.",
     "body_ready_for_pickup": "Tu paquete está listo para recoger. Consulta el seguimiento para saber dónde.",
     "body_delivered": "Tu paquete se ha entregado.",
@@ -186,6 +196,7 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     "accepted": "Envio aceite",
     "in_transit": "Envio em trânsito",
     "customs": "Na alfândega",
+    "exception": "O envio precisa de atenção",
     "out_for_delivery": "Em distribuição",
     "ready_for_pickup": "Pronto para levantamento",
     "delivered": "Entregue",
@@ -197,6 +208,7 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     "body_accepted": "A transportadora recebeu o teu envio.",
     "body_in_transit": "O teu envio está a caminho.",
     "body_customs": "O teu envio está na alfândega. Avisamos-te quando voltar a seguir caminho.",
+    "body_exception": "A transportadora reportou um problema com o teu envio. Consulta o seguimento para saber o que fazer.",
     "body_out_for_delivery": "O teu envio está em distribuição.",
     "body_ready_for_pickup": "O teu envio está pronto para levantamento. Consulta o seguimento para saber onde.",
     "body_delivered": "O teu envio foi entregue.",
@@ -218,6 +230,7 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     "accepted": "Przesyłka przyjęta",
     "in_transit": "Przesyłka w transporcie",
     "customs": "W urzędzie celnym",
+    "exception": "Przesyłka wymaga uwagi",
     "out_for_delivery": "W doręczeniu",
     "ready_for_pickup": "Gotowa do odbioru",
     "delivered": "Dostarczona",
@@ -229,6 +242,7 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     "body_accepted": "Przewoźnik przyjął Twoją przesyłkę.",
     "body_in_transit": "Twoja przesyłka jest w drodze.",
     "body_customs": "Twoja przesyłka przechodzi odprawę celną. Powiadomimy Cię, gdy ruszy dalej.",
+    "body_exception": "Przewoźnik zgłosił problem z Twoją przesyłką. Sprawdź dalsze kroki w śledzeniu.",
     "body_out_for_delivery": "Twoja przesyłka jest w doręczeniu.",
     "body_ready_for_pickup": "Twoja przesyłka jest gotowa do odbioru. Sprawdź miejsce odbioru w śledzeniu.",
     "body_delivered": "Twoja przesyłka została dostarczona.",
@@ -738,6 +752,7 @@ type LiveActivityDeliveryKind = 'start' | 'update' | 'end';
 
 const LIVE_ACTIVITY_PHASES = new Set([
   'out_for_delivery',
+  'exception',
   'delivered',
   'failed_attempt',
   'ready_for_pickup',
@@ -897,7 +912,7 @@ export class DeliveryLiveActivityNotificationService {
     } else if (kind === 'update') {
       aps['stale-date'] = timestamp + 30 * 60;
     } else {
-      const graceSeconds = stage === 'failed_attempt' || stage === 'ready_for_pickup'
+      const graceSeconds = stage === 'failed_attempt' || stage === 'ready_for_pickup' || stage === 'exception'
         ? 60 * 60
         : LIVE_ACTIVITY_PHASES.has(stage) ? 30 * 60 : -1;
       aps['dismissal-date'] = timestamp + graceSeconds;

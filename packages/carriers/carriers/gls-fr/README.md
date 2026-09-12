@@ -91,7 +91,8 @@ GLS France sends codes, never wording, so the map is the only status source.
 | delivered | LIV | fixture |
 | delivered | LTV, LTL, LIL, LIT, LTT | official-doc |
 | failed_attempt | DEL with typeEvenement LIV | fixture |
-| failed_attempt | INC, PBP, NLI, NLK, NLP, PBA, SIN | official-doc |
+| failed_attempt | PBP, NLI, NLK, NLP, PBA | official-doc |
+| exception | INC, SIN | official-doc |
 | returned | RET, LIR | official-doc |
 | pending | not observed; reported as unmapped |  |
 

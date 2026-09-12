@@ -51,13 +51,16 @@ export function classifyRelaisColisStatus(description: string): ClassifiedRelais
   ])) return { status: 'exception', stage: 'returned' };
 
   if (includesAny(value, [
-    'livraison impossible',
-    'echec de livraison',
-    'incident de livraison',
     'adresse incorrecte',
     'colis endommage',
     'colis refuse',
     'colis perdu',
+  ])) return { status: 'exception', stage: 'exception' };
+
+  if (includesAny(value, [
+    'livraison impossible',
+    'echec de livraison',
+    'incident de livraison',
     'destinataire absent',
     'n a pas pu etre livre',
   ])) return { status: 'exception', stage: 'failed_attempt' };

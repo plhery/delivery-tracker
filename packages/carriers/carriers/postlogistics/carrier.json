@@ -14,8 +14,7 @@
   "timezone": "Europe/Zurich",
   "tracking": {
     "mode": "automatic",
-    "adapter": "upstream",
-    "upstreamName": "PostLogistics",
+    "adapter": "postlogistics",
     "steps": [
       "direct"
     ]

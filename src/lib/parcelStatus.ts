@@ -14,7 +14,7 @@ export interface ParcelDisplayStatus {
 export function parcelDeliveryEstimate(parcel: ParcelWithEvents, now = Date.now()): string | null {
   const value = parcel.expectedDelivery;
   const stage = currentEvent(parcel.events)?.stage;
-  if (!value || (stage && ['delivered', 'returned', 'ready_for_pickup', 'failed_attempt'].includes(stage))) return null;
+  if (!value || (stage && ['delivered', 'returned', 'ready_for_pickup', 'failed_attempt', 'exception'].includes(stage))) return null;
   const match = /^(\d{4}-\d{2}-\d{2})/.exec(value);
   if (!match) return null;
   const day = /T\d{2}:\d{2}/.test(value) && !Number.isNaN(Date.parse(value))

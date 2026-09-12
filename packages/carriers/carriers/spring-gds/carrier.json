@@ -17,8 +17,7 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "upstream",
-    "upstreamName": "PostNL",
+    "adapter": "spring-gds",
     "steps": [
       "direct"
     ]

@@ -352,6 +352,7 @@ private extension DeliveryActivityPhase {
         case .outForDelivery: "bicycle"
         case .delivered: "checkmark.circle.fill"
         case .failedAttempt: "exclamationmark.triangle.fill"
+        case .exception: "exclamationmark.circle.fill"
         case .readyForPickup: "storefront.fill"
         case .returned: "arrow.uturn.backward.circle.fill"
         case .ended: "shippingbox.fill"
@@ -361,7 +362,7 @@ private extension DeliveryActivityPhase {
     var tint: Color {
         switch self {
         case .delivered: .green
-        case .failedAttempt, .readyForPickup, .returned: .orange
+        case .failedAttempt, .exception, .readyForPickup, .returned: .orange
         case .outForDelivery, .ended: WidgetPalette.accentBright
         }
     }

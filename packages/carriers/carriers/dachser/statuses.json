@@ -2,6 +2,7 @@
   "carrier": "dachser",
   "entries": [
     { "wording": "no entreg… / entrega fallida / failed delivery / unsuccessful", "language": "mul", "stage": "failed_attempt", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "Checked before every delivery word, because 'no entregado' contains 'entregado'." },
+    { "wording": "incidencia / averia / dañad… / rechazad… / dirección incorrecta", "language": "mul", "stage": "exception", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "Checked before the failed-attempt rule. Reclassified to exception 2026-09-12." },
     { "wording": "devol… / retorn… / return / retour", "language": "mul", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },
     { "wording": "fecha de entrega / cita / appointment / avis de livraison", "language": "mul", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "A rescheduled delivery appointment is a future date, never a delivery." },
     { "wording": "entregado / entregada / delivered / zugestellt / consegnat…", "language": "mul", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "" },

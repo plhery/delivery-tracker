@@ -15,7 +15,7 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "upstream",
+    "adapter": "aliexpress",
     "upstreamName": "AliExpress",
     "steps": [
       "direct"

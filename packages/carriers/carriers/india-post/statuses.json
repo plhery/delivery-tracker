@@ -11,7 +11,8 @@
     { "code": "OutForDelivery", "wording": "Out For Delivery", "language": "en", "stage": "out_for_delivery", "confirmedBy": "prior-art", "firstSeen": "2026-09-01", "note": "Substring keys `outfordelivery`, `itemoutfordelivery`, `sentfordelivery`." },
     { "wording": "Ready For Pickup / Ready For Collection / Awaiting Collection", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "prior-art", "firstSeen": "2026-09-01", "note": "Substring keys `readyforpickup`, `readyforcollection`, `awaitingcollection`." },
     { "code": "ItemDelivered", "wording": "Item Delivered", "language": "en", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-09-01", "note": "Substring keys `itemdelivered`, `deliveredtorecipient`, `delivereddelivery`." },
-    { "code": "DeliveryAttempted", "wording": "Delivery Attempted", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-01", "note": "Substring keys `deliveryattempted`, `deliveryfailed`, `notdelivered`, `undelivered`, `insufficientaddress`, `addresseecannotbelocated`, `damaged`, `refused`, `lost`." },
+    { "code": "DeliveryAttempted", "wording": "Delivery Attempted", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-01", "note": "Substring keys `deliveryattempted`, `deliveryfailed`, `notdelivered`, `undelivered`." },
+    { "code": "InsufficientAddress", "wording": "Insufficient Address", "language": "en", "stage": "exception", "confirmedBy": "prior-art", "firstSeen": "2026-09-01", "note": "Substring keys `insufficientaddress`, `addresseecannotbelocated`, `damaged`, `refused`, `lost`. Reclassified to exception 2026-09-12." },
     { "code": "ReturnToSender", "wording": "Return To Sender", "language": "en", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-09-01", "note": "Substring keys `returntosender`, `returnedtocustomer`, `returnedtobookingoffice`, `returnitem`." }
   ]
 }

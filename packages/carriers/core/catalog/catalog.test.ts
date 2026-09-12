@@ -28,7 +28,7 @@ describe('the derived CARRIERS record', () => {
     expect(CARRIERS['swiss-post']).toMatchObject({
       id: 'swiss-post',
       name: 'Swiss Post',
-      capabilities: { selectable: true, timezone: 'Europe/Zurich', tracking: { mode: 'automatic', adapter: 'upstream' } },
+      capabilities: { selectable: true, timezone: 'Europe/Zurich', tracking: { mode: 'automatic', adapter: 'swiss-post' } },
     });
     expect(CARRIERS['swiss-post'].trackingUrl?.('RA123456785CH'))
       .toBe('https://service.post.ch/ekp-web/ui/entry/search/RA123456785CH');
@@ -52,7 +52,7 @@ describe('the derived CARRIERS record', () => {
 describe('the catalog lookups the server reads', () => {
   it('answers timezone, adapter and automatic-carrier questions', () => {
     expect(carrierTimezone('swiss-post')).toBe('Europe/Zurich');
-    expect(carrierAdapter('swiss-post')).toBe('upstream');
+    expect(carrierAdapter('swiss-post')).toBe('swiss-post');
     expect(carrierAdapter('amazon-logistics')).toBeNull();
     expect(AUTOMATIC_CARRIER_IDS.has('swiss-post')).toBe(true);
     expect(AUTOMATIC_CARRIER_IDS.has('amazon-logistics')).toBe(false);

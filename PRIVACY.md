@@ -11,7 +11,10 @@ deployment and must publish its own notice.
 - Your email address, Supabase user ID, session metadata, authentication
   security events, and basic Google profile data when you choose Google sign-in.
 - Parcel labels, tracking numbers, carrier selection, tracking history, status,
-  timestamps, optional Planzer shared and Dachser Customer Iberia capability
+  timestamps, the operational location a carrier attaches to each scan — the
+  city, region, country, and the postcode or name of the depot, parcel shop or
+  locker that performed the scan; never the recipient's street or postcode —
+  optional Planzer shared and Dachser Customer Iberia capability
   URLs, the delivery postcode supplied for a DPD Switzerland or Mondial Relay
   parcel, and a Colis Privé combined tracking credential that can contain the
   parcel's delivery postcode.

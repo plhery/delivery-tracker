@@ -97,6 +97,6 @@ export function cainiaoStageByStatus(latestActionCode: string): Partial<Record<C
     pending: 'registered',
     out_for_delivery: CAINIAO_PICKUP_ACTIONS.has(latestActionCode) ? 'ready_for_pickup' : 'out_for_delivery',
     delivered: 'delivered',
-    exception: 'failed_attempt',
+    exception: 'exception',
   };
 }

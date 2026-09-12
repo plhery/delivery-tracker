@@ -8,8 +8,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Europe/Zurich",
     "tracking": {
       "mode": "automatic",
-      "adapter": "upstream",
-      "upstreamName": "Swiss Post"
+      "adapter": "swiss-post"
     },
     "canaryUrl": "https://service.post.ch/",
     "trackingUrlTemplate": "https://service.post.ch/ekp-web/ui/entry/search/{trackingNumber}",
@@ -149,7 +148,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "upstream",
+      "adapter": "aliexpress",
       "upstreamName": "AliExpress"
     },
     "canaryUrl": "https://global.cainiao.com/",
@@ -173,8 +172,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "upstream",
-      "upstreamName": "SunYou"
+      "adapter": "sunyou"
     },
     "canaryUrl": "https://sypost.net/",
     "trackingUrlTemplate": "https://sypost.net/search?trackNumber={trackingNumber}",
@@ -203,7 +201,7 @@ export const CARRIER_CAPABILITIES = {
     "displayName": "Hermes Einrichtungs-Service",
     "color": "#0091cd",
     "selectable": true,
-    "timezone": "Europe/Zurich",
+    "timezone": "Europe/Berlin",
     "tracking": {
       "mode": "automatic",
       "adapter": "hermes"
@@ -220,8 +218,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "upstream",
-      "upstreamName": "PostNL"
+      "adapter": "spring-gds"
     },
     "canaryUrl": "https://postnl.post/",
     "trackingUrlTemplate": "https://postnl.post/track?barcodes={trackingNumber}",
@@ -270,8 +267,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Europe/Zurich",
     "tracking": {
       "mode": "automatic",
-      "adapter": "upstream",
-      "upstreamName": "PostLogistics"
+      "adapter": "postlogistics"
     },
     "canaryUrl": "https://service.post.ch/",
     "linkRules": [],
@@ -523,7 +519,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Europe/Zurich",
     "tracking": {
       "mode": "automatic",
-      "adapter": "gls-switzerland",
+      "adapter": "gls-ch",
       "requirements": [
         {
           "field": "dpdPostcode",
@@ -616,7 +612,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Europe/Paris",
     "tracking": {
       "mode": "automatic",
-      "adapter": "dpd-france"
+      "adapter": "dpd-fr"
     },
     "canaryUrl": "https://trace.dpd.fr/fr/trace",
     "trackingUrlTemplate": "https://trace.dpd.fr/fr/trace/{trackingNumber}",
@@ -812,7 +808,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Europe/Paris",
     "tracking": {
       "mode": "automatic",
-      "adapter": "gls-france"
+      "adapter": "gls-fr"
     },
     "canaryUrl": "https://moncolis.gls-france.com/fr/",
     "trackingUrlTemplate": "https://moncolis.gls-france.com/fr/{trackingNumber}",
@@ -1139,7 +1135,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Europe/Berlin",
     "tracking": {
       "mode": "automatic",
-      "adapter": "hermes-germany"
+      "adapter": "hermes-de"
     },
     "trackingUrlTemplate": "https://www.myhermes.de/empfangen/sendungsverfolgung/sendungsinformation#{trackingNumber}",
     "linkRules": [
@@ -1174,7 +1170,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Europe/Berlin",
     "tracking": {
       "mode": "automatic",
-      "adapter": "gls-germany",
+      "adapter": "gls-de",
       "requirements": [
         {
           "field": "dpdPostcode",
@@ -3022,7 +3018,8 @@ export const STAGES = [
   "customs",
   "failed_attempt",
   "ready_for_pickup",
-  "returned"
+  "returned",
+  "exception"
 ] as const;
 export type ApiStage = (typeof STAGES)[number];
 
@@ -3133,7 +3130,7 @@ export interface ApiPushConfigResponse {
   "publicKey": string | null;
 }
 
-export type ApiNotificationStage = "registered" | "accepted" | "in_transit" | "customs" | "out_for_delivery" | "failed_attempt" | "ready_for_pickup" | "delivered" | "returned";
+export type ApiNotificationStage = "registered" | "accepted" | "in_transit" | "customs" | "exception" | "out_for_delivery" | "failed_attempt" | "ready_for_pickup" | "delivered" | "returned";
 
 export interface ApiNotificationPreferences {
   "enabledStages": Array<ApiNotificationStage>;

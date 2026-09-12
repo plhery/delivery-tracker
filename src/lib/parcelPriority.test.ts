@@ -21,7 +21,7 @@ function parcel(
 }
 
 describe('parcel priority', () => {
-  it.each(['ready_for_pickup', 'failed_attempt', 'customs'] as const)(
+  it.each(['ready_for_pickup', 'failed_attempt', 'customs', 'exception'] as const)(
     'keeps %s actionable even when the latest check failed', (stage) => {
       expect(parcelAttention({ ...parcel('action', stage), syncStatus: 'error' }, NOW)).toBe(stage);
     },
@@ -53,6 +53,7 @@ describe('parcel priority', () => {
 
   it('identifies actionable and stale parcels', () => {
     expect(parcelAttention(parcel('failed', 'failed_attempt'), NOW)).toBe('failed_attempt');
+    expect(parcelAttention(parcel('problem', 'exception'), NOW)).toBe('exception');
     expect(parcelAttention(parcel('pickup', 'ready_for_pickup'), NOW)).toBe('ready_for_pickup');
     expect(parcelAttention(parcel('customs', 'customs'), NOW)).toBe('customs');
     expect(

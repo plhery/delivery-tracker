@@ -100,18 +100,18 @@
     {
       "wording": "complement adresse",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "fixture",
       "firstSeen": "2026-09-12",
-      "note": "Matched on the fixture row \"COMPLEMENT ADRESSE\"; such rows carry the recipient address, so their place cell is dropped."
+      "note": "Matched on the fixture row \"COMPLEMENT ADRESSE\"; such rows carry the recipient address, so their place cell is dropped. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "adresse incorrecte",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Inherited from the pre-package adapter; source not recorded."
+      "note": "Inherited from the pre-package adapter; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "destinataire absent",
@@ -124,18 +124,18 @@
     {
       "wording": "incident",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Inherited from the pre-package adapter; source not recorded."
+      "note": "Inherited from the pre-package adapter; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "anomalie",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Inherited from the pre-package adapter; source not recorded."
+      "note": "Inherited from the pre-package adapter; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "non livre",
@@ -148,10 +148,10 @@
     {
       "wording": "refuse",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Inherited from the pre-package adapter; source not recorded."
+      "note": "Inherited from the pre-package adapter; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "colis controle",

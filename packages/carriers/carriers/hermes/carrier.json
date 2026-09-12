@@ -14,7 +14,7 @@
     "color": "#0091cd"
   },
   "selectable": true,
-  "timezone": "Europe/Zurich",
+  "timezone": "Europe/Berlin",
   "tracking": {
     "mode": "automatic",
     "adapter": "hermes",

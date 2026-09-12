@@ -43,6 +43,12 @@ export const STAGE_META: Record<Stage, StageMeta> = {
     tone: 'warn',
     progress: 4,
   },
+  exception: {
+    label: 'Needs attention',
+    emoji: '⚠️',
+    tone: 'warn',
+    progress: 3,
+  },
   delivered: { label: 'Delivered', emoji: '✅', tone: 'done', progress: 5 },
   returned: { label: 'Returned to sender', emoji: '↩️', tone: 'warn', progress: 5 },
 };
@@ -53,7 +59,7 @@ export function stageMeta(stage: Stage): StageMeta {
 
 /** Shared with notification ordering; coarse carrier times resolve by delivery progress. */
 export const EVENT_STAGE_ORDER: readonly string[] = ['pending', 'registered', 'accepted', 'in_transit', 'customs',
-  'out_for_delivery', 'failed_attempt', 'ready_for_pickup', 'delivered', 'returned'];
+  'exception', 'out_for_delivery', 'failed_attempt', 'ready_for_pickup', 'delivered', 'returned'];
 
 /** Newest first, then delivery progress, then stable event identity. */
 export function sortEventsDesc(events: TrackingEvent[]): TrackingEvent[] {

@@ -305,6 +305,7 @@ final class Localizer: ObservableObject {
         guard let value = parcel.expectedDelivery,
               parcel.currentStage?.isFinal != true,
               parcel.currentStage != .readyForPickup, parcel.currentStage != .failedAttempt,
+              parcel.currentStage != .exception,
               let date = DateParser.deliveryDate(value) else { return nil }
         let calendar = Calendar.current
         guard calendar.startOfDay(for: date) >= calendar.startOfDay(for: now) else { return nil }

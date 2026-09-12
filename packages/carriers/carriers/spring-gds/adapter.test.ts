@@ -137,7 +137,7 @@ describe('official PostNL status categories', () => {
     ['Unsuccessful', 'exception', 'failed_attempt'],
     ['Undelivered', 'exception', 'failed_attempt'],
     ['Returned', 'exception', 'returned'],
-    ['Exception', 'exception', 'failed_attempt'],
+    ['Exception', 'exception', 'exception'],
   ] as const)('maps %s to %s / %s', async (category, status, stage) => {
     expect(postNLStatus(category)).toEqual({ status, stage });
     vi.spyOn(globalThis, 'fetch')

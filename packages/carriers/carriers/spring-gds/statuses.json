@@ -124,10 +124,10 @@
     {
       "wording": "exception",
       "language": "en",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "fixture",
       "firstSeen": "2026-09-12",
-      "note": "Event category; matched case-insensitively after trimming."
+      "note": "Event category; matched case-insensitively after trimming. Reclassified to exception 2026-09-12."
     }
   ]
 }

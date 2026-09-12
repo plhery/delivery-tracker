@@ -227,17 +227,17 @@
     },
     {
       "code": "NOT_DELIVERABLE",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "official-doc",
       "firstSeen": "2026-09-08",
-      "note": "Shipment not deliverable"
+      "note": "Shipment not deliverable Reclassified to exception 2026-09-12."
     },
     {
       "code": "UNKNOWN_WHEREABOUTS",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "official-doc",
       "firstSeen": "2026-09-08",
-      "note": "Shipment whereabouts unknown"
+      "note": "Shipment whereabouts unknown Reclassified to exception 2026-09-12."
     },
     {
       "code": "RETURN_TO_SENDER",

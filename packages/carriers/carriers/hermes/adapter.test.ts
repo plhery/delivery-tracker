@@ -12,9 +12,10 @@ const fixture = (name: string): Record<string, unknown> => JSON.parse(
 ) as Record<string, unknown>;
 const emptyOrder = () => fixture('empty-order');
 const delivered = () => fixture('delivered');
-const capabilities = (JSON.parse(
+const carrier = JSON.parse(
   readFileSync(new URL('./carrier.json', import.meta.url), 'utf8'),
-) as { capabilities: string[] }).capabilities;
+) as { capabilities: string[]; timezone: string };
+const capabilities = carrier.capabilities;
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -86,6 +87,11 @@ describe('Hermes no-data response', () => {
       last_update: '2026-08-05 12:50',
       last_status_text: 'Deine Sendung wurde erfolgreich zugestellt.',
     });
+    // German service, offset-less local timestamps: the declared zone is
+    // Europe/Berlin and the raw wall-clock strings are untouched by it.
+    expect(result.timezone).toBe('Europe/Berlin');
+    expect(carrier.timezone).toBe('Europe/Berlin');
+    expect(result.events?.[0]?.time).toBe('2026-08-05 12:50');
     expect(result.events).toHaveLength(1);
     expect(result.events?.[0]).toMatchObject({ stage: 'delivered' });
     expect(result.events?.some((event) => event.description === 'Tracking update')).toBe(false);

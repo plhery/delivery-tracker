@@ -39,15 +39,17 @@ export function classifyIndiaPostEvent(...values: unknown[]): ClassifiedStatus {
     'returnitem',
   ])) return { status: 'exception', stage: 'returned' };
   if (includesAny(key, [
-    'deliveryattempted',
-    'deliveryfailed',
-    'notdelivered',
-    'undelivered',
     'insufficientaddress',
     'addresseecannotbelocated',
     'damaged',
     'refused',
     'lost',
+  ])) return { status: 'exception', stage: 'exception' };
+  if (includesAny(key, [
+    'deliveryattempted',
+    'deliveryfailed',
+    'notdelivered',
+    'undelivered',
   ])) return { status: 'exception', stage: 'failed_attempt' };
   if (includesAny(key, [
     'itemdelivered',

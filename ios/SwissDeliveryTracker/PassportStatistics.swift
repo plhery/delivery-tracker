@@ -145,7 +145,7 @@ struct PassportStatistics {
         // Carrier timestamps sometimes have minute precision. Put later stages
         // after earlier stages at the same instant, with return taking precedence.
         let stages: [TrackingStage] = [
-            .registered, .accepted, .inTransit, .customs, .outForDelivery,
+            .registered, .accepted, .inTransit, .customs, .exception, .outForDelivery,
             .failedAttempt, .readyForPickup, .delivered, .returned,
         ]
         let leftRank = stages.firstIndex(of: left.event.stage) ?? 0

@@ -66,7 +66,8 @@ phrase-based and compared without case or diacritics.
 | `delivered` | "Colis Livré" | fixture |
 | `out_for_delivery` | "Mis en livraison" | fixture |
 | `ready_for_pickup` | "Disponible au relais" | fixture |
-| `failed_attempt` | "COMPLEMENT ADRESSE" | fixture |
+| `exception` | "COMPLEMENT ADRESSE", "adresse incorrecte", "incident", "anomalie", "refusé" | fixture |
+| `failed_attempt` | "destinataire absent", "non livré" | prior-art |
 | `in_transit` | "Colis Contrôle" | fixture |
 | `accepted` | "Colis pris en charge" | fixture |
 | `registered` | "annonce", "information reçue" | prior-art |

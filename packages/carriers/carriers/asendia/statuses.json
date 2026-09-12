@@ -52,10 +52,10 @@
     {
       "wording": "delivery exception",
       "language": "en",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "unable to deliver",
@@ -100,26 +100,26 @@
     {
       "wording": "damaged",
       "language": "en",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "refused",
       "language": "en",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "lost",
       "language": "en",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Harmonized wording inherited from the pre-package module; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "delivered",

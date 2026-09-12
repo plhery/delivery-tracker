@@ -29,7 +29,7 @@ const CATEGORY_STATUS = new Map<string, ClassifiedStatus>([
   ['unsuccessful', { status: 'exception', stage: 'failed_attempt' }],
   ['undelivered', { status: 'exception', stage: 'failed_attempt' }],
   ['returned', { status: 'exception', stage: 'returned' }],
-  ['exception', { status: 'exception', stage: 'failed_attempt' }],
+  ['exception', { status: 'exception', stage: 'exception' }],
 ]);
 
 export { CATEGORY_STATUS as POSTNL_STATUS };

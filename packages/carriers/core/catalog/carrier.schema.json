@@ -114,12 +114,12 @@
           "enum": ["automatic", "link-only"]
         },
         "adapter": {
-          "description": "Adapter id, \"universal\", \"upstream\", or null for link-only carriers.",
+          "description": "\"universal\", the id of a carrier folder that has adapter.ts (its own, or the folder whose adapter serves it), or null for link-only carriers.",
           "type": ["string", "null"],
           "minLength": 1
         },
         "upstreamName": {
-          "description": "Carrier name as the upstream service spells it. Required when adapter is \"upstream\".",
+          "description": "Carrier name as the serving adapter's upstream service spells it, when it differs from displayName.",
           "type": "string",
           "minLength": 1
         },

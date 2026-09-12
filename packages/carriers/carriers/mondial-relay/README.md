@@ -86,7 +86,8 @@ without a usable recipient postcode, except for validated 26-digit barcodes.
 | out_for_delivery | En cours de livraison, En cours de distribution, En cours de mise à disposition | prior-art |
 | ready_for_pickup | Disponible dans votre Point Relais, Disponible en consigne, Prêt à être retiré; milestone `4` | fixture, prior-art |
 | delivered | Remis au destinataire, Retiré par le destinataire, Retrait effectué; milestone `5` | fixture, prior-art |
-| failed_attempt | Anomalie, Incident, Échec de livraison, Livraison impossible, Colis refusé, Colis perdu | prior-art |
+| failed_attempt | Échec de livraison, Livraison impossible | prior-art |
+| exception | Anomalie, Incident, Adresse incorrecte, Colis endommagé, Colis refusé, Colis perdu | prior-art |
 | returned | Retour à l'expéditeur, Retour en cours | fixture |
 | pending | not observed; reported as unmapped | — |
 | customs | not observed; reported as unmapped | — |

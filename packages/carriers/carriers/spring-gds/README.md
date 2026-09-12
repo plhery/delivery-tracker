@@ -77,7 +77,8 @@ support manual refreshes.
 | `out_for_delivery` | `out for delivery` | fixture |
 | `ready_for_pickup` | `pick-up point` | fixture |
 | `delivered` | `delivered` | fixture |
-| `failed_attempt` | `unsuccesfull`, `unsuccessful`, `undelivered`, `exception` | fixture |
+| `failed_attempt` | `unsuccesfull`, `unsuccessful`, `undelivered` | fixture |
+| `exception` | `exception` | fixture |
 | `returned` | `returned` | fixture |
 | `pending` | — | not observed; reported as unmapped |
 

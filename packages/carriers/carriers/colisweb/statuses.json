@@ -9,7 +9,7 @@
     { "code": "delivery_return_failed", "stage": "returned", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "" },
     { "code": "canceled", "stage": "returned", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "Both spellings, canceled and cancelled, are accepted." },
     { "code": "delivery_canceled", "stage": "returned", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "Both spellings are accepted." },
-    { "code": "non_deliverable", "stage": "failed_attempt", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "code": "non_deliverable", "stage": "exception", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Reclassified to exception 2026-09-12." },
     { "code": "pickup_failed", "stage": "failed_attempt", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "" },
     { "code": "package_withdrawal_failed", "stage": "failed_attempt", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "" },
     { "code": "delivery_failed", "stage": "failed_attempt", "confirmedBy": "official-doc", "firstSeen": "2026-09-12", "note": "" },

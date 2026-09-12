@@ -45,17 +45,19 @@ export function classifyAsendiaStatus(description: string): ClassifiedAsendiaSta
     'shipment returned',
   ])) return { status: 'exception', stage: 'returned' };
   if (includesAny(value, [
+    'delivery exception',
+    'damaged',
+    'refused',
+    'lost',
+  ])) return { status: 'exception', stage: 'exception' };
+  if (includesAny(value, [
     'delivery failed',
     'failed attempt',
-    'delivery exception',
     'unable to deliver',
     'not delivered',
     'undelivered',
     'non livre',
     'delivery delayed',
-    'damaged',
-    'refused',
-    'lost',
   ])) return { status: 'exception', stage: 'failed_attempt' };
   if (includesAny(value, [
     'delivered',

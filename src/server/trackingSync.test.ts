@@ -289,6 +289,13 @@ describe('tracking event normalization', () => {
       current_stage: 'accepted',
       last_status_text: 'Shipment collected',
     })).toBe('accepted');
+    // A carrier problem that is neither a missed attempt nor a return keeps
+    // its own stage instead of promising a delivery round.
+    expect(resultStage({
+      status: 'exception',
+      current_stage: 'exception',
+      last_status_text: 'Parcel damaged in transit',
+    })).toBe('exception');
     expect(() => normalizeCarrierResult({
       status: 'in_transit',
       current_stage: 'private_internal_state',
@@ -985,14 +992,14 @@ describe('TrackingSyncService', () => {
     expect(client.insertEvents).toHaveBeenCalledWith(expect.arrayContaining([
       expect.objectContaining({ stage: 'in_transit' }),
       expect.objectContaining({
-        stage: 'failed_attempt',
+        stage: 'exception',
         occurred_at: '2026-08-30T13:00:00.000Z',
       }),
     ]));
     expect(client.updatePackage).toHaveBeenLastCalledWith(
       'package-current-failure',
       expect.objectContaining({
-        current_stage: 'failed_attempt',
+        current_stage: 'exception',
         last_status_text: 'Incident de livraison',
         sync_status: 'ok',
       }),
@@ -1243,6 +1250,36 @@ describe('tracking anomaly detection', () => {
       'terminal_stage_regression',
       'delivered_status_conflict',
     ]));
+  });
+
+  it('accepts a problem reported after delivery without calling it a regression', () => {
+    expect(detectSyncAnomalies(
+      { current_stage: 'delivered' },
+      {
+        status: 'exception',
+        last_status_text: 'Parcel damaged in transit',
+        events: [{ time: '2026-08-31T09:00:00Z', description: 'Parcel damaged in transit' }],
+      },
+      [{ occurred_at: '2026-08-31T09:00:00Z' }],
+      'dpd',
+      'exception',
+      new Date('2026-08-31T12:00:00Z'),
+    )).not.toContain('terminal_stage_regression');
+  });
+
+  it('still flags other movement away from a terminal stage', () => {
+    expect(detectSyncAnomalies(
+      { current_stage: 'delivered' },
+      {
+        status: 'in_transit',
+        last_status_text: 'In transit',
+        events: [{ time: '2026-08-31T09:00:00Z', description: 'In transit' }],
+      },
+      [{ occurred_at: '2026-08-31T09:00:00Z' }],
+      'dpd',
+      'in_transit',
+      new Date('2026-08-31T12:00:00Z'),
+    )).toContain('terminal_stage_regression');
   });
 
   it('flags a progressed parcel when a provider suddenly returns no evidence', () => {

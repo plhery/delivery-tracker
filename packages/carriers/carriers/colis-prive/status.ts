@@ -46,6 +46,10 @@ export const FAILED_ATTEMPT_PHRASES = [
   'echec de livraison',
   'n a pas pu etre livre',
   'subi un retard',
+] as const;
+
+/** Carrier-reported problems that are neither a missed attempt nor a return. */
+export const EXCEPTION_PHRASES = [
   'adresse incorrecte',
   'incident',
   'anomalie',
@@ -92,6 +96,7 @@ export const IN_TRANSIT_PHRASES = [
 export function classifyStatus(description: string): ClassifiedStatus {
   const value = comparableText(description);
   if (includesAny(value, RETURNED_PHRASES)) return { status: 'exception', stage: 'returned' };
+  if (includesAny(value, EXCEPTION_PHRASES)) return { status: 'exception', stage: 'exception' };
   if (includesAny(value, FAILED_ATTEMPT_PHRASES)) return { status: 'exception', stage: 'failed_attempt' };
   if (includesAny(value, DELIVERED_PHRASES)) return { status: 'delivered', stage: 'delivered' };
   if (includesAny(value, READY_FOR_PICKUP_PHRASES)) return { status: 'out_for_delivery', stage: 'ready_for_pickup' };

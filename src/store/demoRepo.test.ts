@@ -21,6 +21,7 @@ describe('nextStage', () => {
 
   it('resolves exceptions back towards delivery', () => {
     expect(nextStage('customs')).toBe('in_transit');
+    expect(nextStage('exception')).toBe('in_transit');
     expect(nextStage('failed_attempt')).toBe('ready_for_pickup');
     expect(nextStage('ready_for_pickup')).toBe('delivered');
   });

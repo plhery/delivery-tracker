@@ -17,7 +17,7 @@
   "timezone": "Europe/Paris",
   "tracking": {
     "mode": "automatic",
-    "adapter": "dpd-france",
+    "adapter": "dpd-fr",
     "steps": [
       "direct",
       "trawl"

@@ -53,10 +53,6 @@ export function classifyStatus(...values: unknown[]): ClassifiedStatus {
     return { status: 'exception', stage: 'returned', description: 'Returning to sender' };
   }
   if (includesAny(key, [
-    'deliveryattempted',
-    'failedattempt',
-    'unabletodeliver',
-    'undeliverable',
     'informationneeded',
     'addressproblem',
     'damaged',
@@ -65,6 +61,14 @@ export function classifyStatus(...values: unknown[]): ClassifiedStatus {
     'cancelled',
     'canceled',
     'lost',
+  ])) {
+    return { status: 'exception', stage: 'exception', description: 'Shipment exception' };
+  }
+  if (includesAny(key, [
+    'deliveryattempted',
+    'failedattempt',
+    'unabletodeliver',
+    'undeliverable',
   ])) {
     return { status: 'exception', stage: 'failed_attempt', description: 'Delivery issue' };
   }

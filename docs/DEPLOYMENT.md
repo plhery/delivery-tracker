@@ -117,6 +117,12 @@ Before deploying the worker that records unmapped carrier wording, apply
 review table and its upsert function. Older workers never call it, and no
 tracking history is rewritten.
 
+Before deploying the `exception` tracking stage, apply
+`20260913110000_exception_tracking_stage.sql`. It widens the tracking event and
+package stage constraints, adds the stage to the notification preference
+constraint, default and save function, and extends the inline queue defaults so
+subscribers who never chose stages still receive problem alerts.
+
 Before deploying Spanish, Portuguese and Polish support, apply
 `20260912090000_add_es_pt_pl_locales.sql`. It expands the locale constraints
 for browser push, APNs and both Live Activity tables without changing existing

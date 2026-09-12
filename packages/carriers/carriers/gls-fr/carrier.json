@@ -17,7 +17,7 @@
   "timezone": "Europe/Paris",
   "tracking": {
     "mode": "automatic",
-    "adapter": "gls-france",
+    "adapter": "gls-fr",
     "steps": [
       "direct"
     ]

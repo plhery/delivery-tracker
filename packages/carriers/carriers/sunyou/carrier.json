@@ -14,8 +14,7 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "upstream",
-    "upstreamName": "SunYou",
+    "adapter": "sunyou",
     "steps": [
       "direct"
     ]

@@ -29,6 +29,7 @@ enum DeliveryActivityPhase: String, Codable, Hashable, Sendable {
     case failedAttempt = "failed_attempt"
     case readyForPickup = "ready_for_pickup"
     case returned
+    case exception
     case ended
 }
 

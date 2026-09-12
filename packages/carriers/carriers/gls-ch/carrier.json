@@ -30,7 +30,7 @@
   "timezone": "Europe/Zurich",
   "tracking": {
     "mode": "automatic",
-    "adapter": "gls-switzerland",
+    "adapter": "gls-ch",
     "requirements": [
       {
         "field": "dpdPostcode",

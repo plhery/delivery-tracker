@@ -31,6 +31,7 @@ extension TrackingStage {
         case .accepted: StageMetadata(symbol: "shippingbox", tone: .normal, progress: 2)
         case .inTransit: StageMetadata(symbol: "truck.box", tone: .normal, progress: 3)
         case .customs: StageMetadata(symbol: "building.columns", tone: .warning, progress: 3)
+        case .exception: StageMetadata(symbol: "exclamationmark.circle", tone: .warning, progress: 3)
         case .outForDelivery: StageMetadata(symbol: "bicycle", tone: .normal, progress: 4)
         case .failedAttempt: StageMetadata(symbol: "exclamationmark.triangle", tone: .warning, progress: 4)
         case .readyForPickup: StageMetadata(symbol: "storefront", tone: .warning, progress: 4)
@@ -46,11 +47,12 @@ extension TrackingStage {
         case .accepted: 2
         case .inTransit: 3
         case .customs: 4
-        case .outForDelivery: 5
-        case .failedAttempt: 6
-        case .readyForPickup: 7
-        case .delivered: 8
-        case .returned: 9
+        case .exception: 5
+        case .outForDelivery: 6
+        case .failedAttempt: 7
+        case .readyForPickup: 8
+        case .delivered: 9
+        case .returned: 10
         }
     }
 
@@ -64,6 +66,7 @@ extension TrackingStage {
         case .failedAttempt: .failedAttempt
         case .readyForPickup: .readyForPickup
         case .returned: .returned
+        case .exception: .exception
         default: nil
         }
     }
@@ -154,6 +157,7 @@ extension Parcel {
         switch currentStage {
         case .failedAttempt: return .failedAttempt
         case .readyForPickup: return .readyForPickup
+        case .exception: return .exception
         case .customs: return .customs
         default: break
         }
@@ -199,7 +203,7 @@ enum ParcelAttention: String, Sendable {
     case syncError = "sync_error"
     case failedAttempt = "failed_attempt"
     case readyForPickup = "ready_for_pickup"
-    case customs, stalled
+    case customs, exception, stalled
     case notAnnounced = "not_announced"
 
     var localizationKey: String { "attention.\(rawValue)" }

@@ -19,7 +19,7 @@
  * carriers exist.
  */
 
-import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir, access } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import Ajv from 'ajv';
@@ -83,6 +83,25 @@ async function readCarrierDocuments() {
   return documents;
 }
 
+/**
+ * Folders that ship their own `adapter.ts`. An automatic carrier either runs a
+ * universal provider or names one of these folders — its own, or the folder
+ * whose adapter serves it (chronopost -> la-poste, quickpac -> planzer). There
+ * is no free-text adapter name any more: a typo must fail the generator rather
+ * than reach the registry.
+ */
+async function readAdapterFolders() {
+  const entries = await readdir(carriersPath, { withFileTypes: true });
+  const folders = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
+  const withAdapter = new Set();
+  for (const folder of folders) {
+    const found = await access(path.join(carriersPath, folder, 'adapter.ts'))
+      .then(() => true, () => false);
+    if (found) withAdapter.add(folder);
+  }
+  return withAdapter;
+}
+
 const carrierInputValidators = {
   trackingUrl: new Set(['planzerSharedUrl', 'dachserCapabilityUrl']),
   dpdPostcode: new Set([
@@ -109,15 +128,24 @@ async function validateCarrierSchema(documents) {
 }
 
 /** Checks the schema cannot express: adapter/mode agreement, canary URLs, regexes. */
-function validateCarrierSemantics(carrier) {
+function validateCarrierSemantics(carrier, adapterFolders) {
   const where = `packages/carriers/carriers/${carrier.id}/carrier.json`;
   const { tracking, portal } = carrier;
   if (
     (tracking.mode === 'automatic' && typeof tracking.adapter !== 'string')
     || (tracking.mode === 'link-only' && tracking.adapter !== null)
-    || (tracking.adapter === 'upstream' && typeof tracking.upstreamName !== 'string')
   ) {
     throw new Error(`${where} has an invalid tracking adapter`);
+  }
+  if (
+    tracking.mode === 'automatic'
+    && tracking.adapter !== 'universal'
+    && !adapterFolders.has(tracking.adapter)
+  ) {
+    throw new Error(
+      `${where} names tracking.adapter ${JSON.stringify(tracking.adapter)}, which is neither `
+      + '"universal" nor a carrier folder containing adapter.ts.',
+    );
   }
   if (tracking.mode === 'automatic') {
     let canaryUrl;
@@ -359,7 +387,8 @@ function validateOperations() {
 
 const carrierDocuments = await readCarrierDocuments();
 await validateCarrierSchema(carrierDocuments);
-carrierDocuments.forEach(validateCarrierSemantics);
+const adapterFolders = await readAdapterFolders();
+carrierDocuments.forEach((carrier) => validateCarrierSemantics(carrier, adapterFolders));
 validateDetectionRuleIds(carrierDocuments);
 
 const carrierCapabilities = mergeContractCarriers(carrierDocuments);

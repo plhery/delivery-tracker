@@ -43,6 +43,35 @@ export function classifyWording(text: string, fallback: Stage = 'in_transit'): C
     'échec de livraison', 'mancata consegna'].some((term) => value.includes(term))) {
     return matched('failed_attempt', 'failed_attempt');
   }
+  // Carrier-reported problems that are not a missed attempt and not a return.
+  if (['damaged', 'endommagé', 'avarie', 'avarié', 'beschädigt', 'danneggiato', 'dañado', 'danificado', 'uszkodzon']
+    .some((term) => value.includes(term))) return matched('exception', 'exception_damaged');
+  if (['lost in transit', 'package lost', 'parcel lost', 'colis perdu', 'envoi perdu', 'égaré',
+    'verloren', 'smarrito', 'extraviado', 'zagubiona'].some((term) => value.includes(term))) {
+    return matched('exception', 'exception_lost');
+  }
+  if (['refused', 'rejected by recipient', 'refusé par le destinataire', 'colis refusé',
+    'annahme verweigert', 'rifiutato', 'rechazado', 'recusado', 'odmowa przyjęcia']
+    .some((term) => value.includes(term))) return matched('exception', 'exception_refused');
+  if (['incorrect address', 'incomplete address', 'insufficient address', 'address unknown',
+    'addressee cannot be located', 'adresse incorrecte', 'adresse incomplète', 'adresse falsch',
+    'empfänger unbekannt', 'indirizzo errato', 'dirección incorrecta', 'endereço incorreto',
+    'nieprawidłowy adres'].some((term) => value.includes(term))) {
+    return matched('exception', 'exception_address');
+  }
+  if (['held by customs', 'customs issue', 'customs problem', 'retenu en douane', 'fermo in dogana',
+    'retenido en aduana', 'retido na alfândega'].some((term) => value.includes(term))) {
+    return matched('exception', 'exception_customs_problem');
+  }
+  // "en souffrance" and "in giacenza" are deliberately absent: in postal
+  // wording they usually mean a parcel waiting for collection, not a problem.
+  if (['action required', 'awaiting instructions', 'shipment held', 'on hold',
+    'en attente d\'instructions', 'zurückgehalten', 'retenido', 'retida']
+    .some((term) => value.includes(term))) return matched('exception', 'exception_held');
+  if (['incident', 'anomalie', 'anomaly', 'delivery exception', 'shipment exception', 'carrier exception',
+    'incidencia', 'irregularität'].some((term) => value.includes(term))) {
+    return matched('exception', 'exception_incident');
+  }
   if (['ready for pickup', 'ready for collection', 'abholbereit', 'deposited in the mypost24 machine']
     .some((term) => value.includes(term))) return matched('ready_for_pickup', 'ready_for_pickup');
   if (['delivered', 'deposited', 'zugestellt', 'confirmation of receipt']

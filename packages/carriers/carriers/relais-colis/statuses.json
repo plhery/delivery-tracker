@@ -68,34 +68,34 @@
     {
       "wording": "adresse incorrecte",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "colis endommage",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "colis refuse",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "colis perdu",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "destinataire absent",

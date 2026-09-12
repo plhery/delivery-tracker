@@ -74,6 +74,7 @@ and compared without case or diacritics.
 | `in_transit` | "Votre colis est en cours d'acheminement dans notre réseau", "Votre colis a été pris en charge" | fixture |
 | `registered` | "Votre colis a été annoncé" | fixture |
 | `failed_attempt` | "livraison impossible", "destinataire absent", … | prior-art |
+| `exception` | "adresse incorrecte", "colis endommagé", "colis refusé", "colis perdu" | prior-art |
 | `accepted` | not observed; reported as unmapped | — |
 | `pending` | reached through `registered` wording only | fixture |
 | `customs` | not observed; reported as unmapped | — |

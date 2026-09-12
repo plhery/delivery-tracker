@@ -18,7 +18,7 @@
   "timezone": "Europe/Berlin",
   "tracking": {
     "mode": "automatic",
-    "adapter": "gls-germany",
+    "adapter": "gls-de",
     "requirements": [
       {
         "field": "dpdPostcode",

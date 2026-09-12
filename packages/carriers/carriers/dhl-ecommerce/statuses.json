@@ -16,6 +16,7 @@
     { "code": "transit", "wording": "OUT FOR DELIVERY", "language": "en", "stage": "out_for_delivery", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
     { "code": "transit", "wording": "READY FOR COLLECTION", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
     { "code": "failure", "wording": "DELIVERY ATTEMPT FAILED", "language": "en", "stage": "failed_attempt", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "Carrier exception", "language": "en", "stage": "exception", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Wording rule, checked after the failed-attempt rule. Reclassified to exception 2026-09-12." },
     { "code": "delivered", "wording": "RETURNED TO SENDER", "language": "en", "stage": "returned", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "Also reached through returnFlag with the delivered code." },
     { "code": "delivered", "wording": "DELIVERED - Signed by …", "language": "en", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "The signatory is never retained: a delivered event's description is replaced by \"Delivered\"." }
   ]

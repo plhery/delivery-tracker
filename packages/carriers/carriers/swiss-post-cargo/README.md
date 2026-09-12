@@ -66,7 +66,8 @@ read in `Europe/Zurich`.
 | in_transit | any code and wording no other rule claims | prior-art |
 | out_for_delivery | `SCA`; "out for delivery", "en livraison", "in Zustellung", "in consegna" | prior-art |
 | delivered | `DLV`, `POD`, `P40`, `IMG`, `SIG`; "Delivered", "livré", "zugestellt", "consegnato" | fixture (`DLV`) |
-| failed_attempt | "incident", "échec", "failed", "not delivered", "non livré", "nicht zugestellt", "refusé", "damage", "verzögert" | fixture |
+| failed_attempt | "échec", "failed", "not delivered", "non livré", "nicht zugestellt", "verzögert" | fixture |
+| exception | "incident", "refusé", "damage" | prior-art |
 | returned | "retour", "return", "zurück" | prior-art |
 | pending | not observed; reported as unmapped | — |
 | customs | not observed; reported as unmapped | — |

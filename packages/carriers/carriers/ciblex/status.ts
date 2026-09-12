@@ -54,12 +54,13 @@ export function classifyCiblexStatus(rawDescription: string): ClassifiedCiblexSt
   if (includesAny(value, [
     'complement adresse',
     'adresse incorrecte',
-    'destinataire absent',
     'incident',
     'anomalie',
-    'non livre',
     'refuse',
   ])) {
+    return { status: 'exception', stage: 'exception', description: 'Shipment exception' };
+  }
+  if (includesAny(value, ['destinataire absent', 'non livre'])) {
     return { status: 'exception', stage: 'failed_attempt', description: 'Delivery issue' };
   }
   if (includesAny(value, ['colis controle', 'colis en transit', 'arrive agence', 'depart agence'])) {

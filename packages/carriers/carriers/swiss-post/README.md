@@ -86,11 +86,14 @@ Event timestamps are kept exactly as the carrier sends them, and are parsed only
 to sort — an offset-less value is read as UTC for that comparison alone, never
 rewritten. The declared timezone is `Europe/Zurich`.
 
-Scan locations keep the facility's city **and postcode**. On a final delivery
-scan that postcode is the delivery area's, so it is coarser than a street but
-not nothing; it is retained because it is what distinguishes two same-named
-towns in the history. No recipient name, street, signature or delivery
-instruction is ever projected.
+Scan locations keep the facility's city **and postcode**. That postcode belongs
+to the sorting or delivery centre that performed the scan, not to the recipient,
+so it is an operational location under the notice's retained-data bullet:
+"city, region, country, and the postcode or name of the depot, parcel shop or
+locker that performed the scan; never the recipient's street or postcode"
+([PRIVACY.md](../../../../PRIVACY.md)). It is retained because it is what
+distinguishes two same-named Swiss towns in the history. No recipient name,
+street, signature or delivery instruction is ever projected.
 
 The lookup needs no credential: the anonymous user, CSRF token and search hash
 are created per call and discarded with the cookie jar.
@@ -133,8 +136,9 @@ are created per call and discarded with the cookie jar.
   translation table returns for the requested language, so it is not a stable
   key. Codes are.
 - Dropping the scan postcode from locations: it is what separates two same-named
-  Swiss towns in the history, and it is a facility/area postcode rather than a
-  street address.
+  Swiss towns in the history, and it is the scanning depot's postcode rather
+  than the recipient's. Settled 2026-09-12 by stating that boundary explicitly
+  in [PRIVACY.md](../../../../PRIVACY.md) instead of re-deciding it per carrier.
 
 
 ## Verification log
@@ -145,6 +149,8 @@ are created per call and discarded with the cookie jar.
 - 2026-09-12: adapter moved into this folder; the status tables moved to
   `status.ts` and the shipment payload to `fixtures/out-for-delivery.json`.
   `SwissPostTrackingError` became `NotFoundError('Swiss Post')` — same message,
-  same 404 status. The catalog still records `tracking.adapter: "upstream"`;
-  the generated registry now resolves this carrier to its own folder because
-  `adapter.ts` exists, which is the intended outcome.
+  same 404 status. `tracking.adapter` is now `"swiss-post"`; the placeholder
+  `"upstream"` and the redundant `upstreamName` are gone, and the generated
+  registry resolves this carrier to its own folder.
+- 2026-09-12: the scan-postcode question closed against the privacy notice's
+  operational-location wording; no parser or projection change.

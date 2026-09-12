@@ -44,15 +44,18 @@ export function classifyStatus(description: string): ClassifiedStatus {
   if (includesAny(value, [
     'reclamation',
     'enquete est ouverte',
-    'echec de livraison',
-    'livraison impossible',
-    'n a pas pu etre livre',
-    'tentative de livraison',
     'incident',
     'anomalie',
     'endommage',
     'refuse',
     'perdu',
+  ])) return { status: 'exception', stage: 'exception' };
+
+  if (includesAny(value, [
+    'echec de livraison',
+    'livraison impossible',
+    'n a pas pu etre livre',
+    'tentative de livraison',
     'retard',
   ])) return { status: 'exception', stage: 'failed_attempt' };
 

@@ -25,9 +25,9 @@ import { DEFAULT_CARRIER_COLOR } from './carrierBrand';
  * (104 total, alphabetical), each covering every known number for that
  * carrier. One carrier may assert many numbers inside its `it`.
  *
- * Research numbers come from delivery-tracker-100-carriers/global-carrier-corpus.json
- * (research date 2026-09-10); each keeps its source URL and evidence role in a
- * comment. "REPORTED REAL" means publicly reported, not independently
+ * Numbers mirror the per-carrier `numbers.json` corpus under
+ * `packages/carriers/carriers/` (see `packages/carriers/CORPUS.md`); each keeps
+ * its source URL and evidence role in a comment. "REPORTED REAL" means publicly reported, not independently
  * live-verified. OSS/official/merchant examples are fixtures, never asserted-real
  * shipments. Quarantined and full-barcode records must NOT become positive oracles.
  *

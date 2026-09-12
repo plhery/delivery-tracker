@@ -18,7 +18,7 @@ enum ExperimentalPalette {
     static func surface(for parcel: Parcel) -> Color {
         switch parcel.currentStage {
         case .delivered: deliveredSurface
-        case .customs, .failedAttempt, .readyForPickup, .returned: pickupSurface
+        case .customs, .exception, .failedAttempt, .readyForPickup, .returned: pickupSurface
         case .outForDelivery: ochreSurface
         case .pending, .registered, .none: lilacSurface
         default: transitSurface
@@ -29,7 +29,7 @@ enum ExperimentalPalette {
         switch parcel.currentStage {
         case .delivered:
             delivered
-        case .customs, .failedAttempt, .readyForPickup, .returned:
+        case .customs, .exception, .failedAttempt, .readyForPickup, .returned:
             pickup
         case .inTransit:
             transit

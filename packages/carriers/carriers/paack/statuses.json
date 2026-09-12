@@ -52,10 +52,10 @@
     {
       "code": "incorrectaddress",
       "language": "en",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "fixture",
       "firstSeen": "2026-09-12",
-      "note": "Exercised by the delivered-order fixture's earlier attempt row."
+      "note": "Exercised by the delivered-order fixture's earlier attempt row. Reclassified to exception 2026-09-12."
     },
     {
       "code": "absent",
@@ -108,66 +108,66 @@
     {
       "code": "notaccepted",
       "language": "en",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "code": "rejected",
       "language": "en",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "code": "damaged",
       "language": "en",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "code": "lost",
       "language": "en",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "code": "nondeliverable",
       "language": "en",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "code": "integrationerror",
       "language": "en",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "fixture",
       "firstSeen": "2026-09-12",
-      "note": "Exercised by the offline active-label table."
+      "note": "Exercised by the offline active-label table. Reclassified to exception 2026-09-12."
     },
     {
       "code": "cancelled",
       "language": "en",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "code": "canceled",
       "language": "en",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Identifier substring inherited from the pre-package adapter; source not recorded."
+      "note": "Identifier substring inherited from the pre-package adapter; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "code": "delivered",

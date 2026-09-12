@@ -9,10 +9,11 @@ enum NotificationPreset: String, CaseIterable, Identifiable {
     var stages: [NotificationStage] {
         switch self {
         case .all:
-            [.registered, .accepted, .inTransit, .customs, .outForDelivery,
+            [.registered, .accepted, .inTransit, .customs, .exception, .outForDelivery,
              .failedAttempt, .readyForPickup, .delivered, .returned]
         case .important:
-            [.customs, .outForDelivery, .failedAttempt, .readyForPickup, .delivered, .returned]
+            [.customs, .exception, .outForDelivery, .failedAttempt, .readyForPickup, .delivered,
+             .returned]
         case .deliveryDay:
             [.outForDelivery, .delivered]
         }

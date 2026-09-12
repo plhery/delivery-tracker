@@ -135,7 +135,7 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
           {deliveryLabel && <span className="parcel-card__sender">{deliveryLabel}</span>}
           <AutoCarrierNotice parcel={parcel} className="parcel-card__sender" />
           <span className="parcel-card__state">{current?.stage === 'delivered' && <Icon name="check" />}{statusLabel}</span>
-          {parcel.syncStatus === 'error' ? <span className="parcel-card__notice">{t('parcel.syncAttention')}</span> : notice && !['customs', 'ready_for_pickup', 'failed_attempt'].includes(current?.stage ?? '') && <span className="parcel-card__notice">{notice}</span>}
+          {parcel.syncStatus === 'error' ? <span className="parcel-card__notice">{t('parcel.syncAttention')}</span> : notice && !['customs', 'ready_for_pickup', 'failed_attempt', 'exception'].includes(current?.stage ?? '') && <span className="parcel-card__notice">{notice}</span>}
         </>}
       </button>
     </div>

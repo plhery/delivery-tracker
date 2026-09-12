@@ -266,6 +266,7 @@ enum TrackingStage: String, Codable, CaseIterable, Hashable, Sendable, Identifia
     case failedAttempt = "failed_attempt"
     case readyForPickup = "ready_for_pickup"
     case returned
+    case exception
 
     var id: String { rawValue }
 }
@@ -433,6 +434,7 @@ enum NotificationStage: String, Codable, CaseIterable, Hashable, Sendable, Ident
     case accepted
     case inTransit = "in_transit"
     case customs
+    case exception
     case outForDelivery = "out_for_delivery"
     case failedAttempt = "failed_attempt"
     case readyForPickup = "ready_for_pickup"

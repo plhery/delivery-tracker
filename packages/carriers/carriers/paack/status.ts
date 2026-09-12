@@ -44,16 +44,7 @@ export function classifyPaackEvent(value: JsonObject): ClassifiedPaackStatus {
     return { status: 'exception', stage: 'returned', description: 'Shipment returned' };
   }
   if (includesAny(key, [
-    'returntosenderscheduled',
-    'returnabsent',
-    'returnother',
     'incorrectaddress',
-    'absent',
-    'attempted',
-    'deliveryfailed',
-    'failedattempt',
-    'notdelivered',
-    'undelivered',
     'notaccepted',
     'rejected',
     'damaged',
@@ -62,6 +53,17 @@ export function classifyPaackEvent(value: JsonObject): ClassifiedPaackStatus {
     'integrationerror',
     'cancelled',
     'canceled',
+  ])) return { status: 'exception', stage: 'exception', description: 'Shipment exception' };
+  if (includesAny(key, [
+    'returntosenderscheduled',
+    'returnabsent',
+    'returnother',
+    'absent',
+    'attempted',
+    'deliveryfailed',
+    'failedattempt',
+    'notdelivered',
+    'undelivered',
   ])) return { status: 'exception', stage: 'failed_attempt', description: 'Delivery issue' };
   if (includesAny(key, ['delivered', 'deliverycompleted'])) {
     return { status: 'delivered', stage: 'delivered', description: 'Delivered' };

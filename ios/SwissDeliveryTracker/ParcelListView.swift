@@ -818,7 +818,8 @@ private struct ExperimentalParcelPassCard: View {
                 Text(localizer.text("parcel.syncAttention"))
                     .font(.caption).foregroundStyle(Brand.warning)
             } else if let notice, parcel.currentStage != .customs,
-                      parcel.currentStage != .readyForPickup, parcel.currentStage != .failedAttempt {
+                      parcel.currentStage != .readyForPickup, parcel.currentStage != .failedAttempt,
+                      parcel.currentStage != .exception {
                 Text(notice).font(.caption).foregroundStyle(Brand.warning)
             }
         }

@@ -30,8 +30,10 @@ export function statusFor(code: string, description: string): { status: CarrierS
   if (['retour', 'return', 'zuruck'].some((term) => text.includes(term))) {
     return { status: 'exception', stage: 'returned' };
   }
-  if (['incident', 'echec', 'failed', 'not delivered', 'non livre', 'nicht zugestellt',
-    'refuse', 'damage', 'verzoger']
+  if (['incident', 'refuse', 'damage'].some((term) => text.includes(term))) {
+    return { status: 'exception', stage: 'exception' };
+  }
+  if (['echec', 'failed', 'not delivered', 'non livre', 'nicht zugestellt', 'verzoger']
     .some((term) => text.includes(term))) {
     return { status: 'exception', stage: 'failed_attempt' };
   }

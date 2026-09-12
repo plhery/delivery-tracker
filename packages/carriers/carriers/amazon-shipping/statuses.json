@@ -2,7 +2,8 @@
   "carrier": "amazon-shipping",
   "entries": [
     { "code": "RETURNED_TO_SENDER / RETURNED_TO_RETAILER / RETURNED_TO_MERCHANT / RETURNED_TO_SHOPPER / RETURNED_TO_SHIPPER / RETURNING_TO_SENDER / RETURN_TO_SENDER / LOST_ON_RETURN", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Checked before the broad 'delivered' substring." },
-    { "code": "DELIVERY_ATTEMPTED / FAILED_ATTEMPT / UNABLE_TO_DELIVER / UNDELIVERABLE… / INFORMATION_NEEDED / ADDRESS_PROBLEM / DAMAGED / DESTROYED / REJECTED / CANCELLED / LOST", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Reported as 'Delivery issue'." },
+    { "code": "DELIVERY_ATTEMPTED / FAILED_ATTEMPT / UNABLE_TO_DELIVER / UNDELIVERABLE…", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Reported as 'Delivery issue'." },
+    { "code": "INFORMATION_NEEDED / ADDRESS_PROBLEM / DAMAGED / DESTROYED / REJECTED / CANCELLED / CANCELED / LOST", "stage": "exception", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Reported as 'Shipment exception'. Reclassified to exception 2026-09-12." },
     { "code": "DELAYED… / LATE…", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Reported as 'Delivery delayed'; a delay is not an exception." },
     { "code": "DELIVERED", "wording": "swa_rex_detail_delivered", "language": "en", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "" },
     { "code": "READY_FOR_PICKUP / READY_FOR_COLLECTION / HOLD_FOR_PICKUP / AWAITING_CUSTOMER_PICKUP", "stage": "ready_for_pickup", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },

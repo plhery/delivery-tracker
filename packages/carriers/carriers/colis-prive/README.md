@@ -75,7 +75,8 @@ case and punctuation removed, and the first matching group wins.
 |---|---|---|
 | returned | retour / retourné à l'expéditeur, retour expéditeur | official-doc |
 | failed_attempt | nous avons tenté de livrer | fixture |
-| failed_attempt | n'avons pas pu livrer, échec de livraison, n'a pas pu être livré, subi un retard, adresse incorrecte, incident, anomalie, endommagé, refusé, perdu | official-doc |
+| failed_attempt | n'avons pas pu livrer, échec de livraison, n'a pas pu être livré, subi un retard | official-doc |
+| exception | adresse incorrecte, incident, anomalie, endommagé, refusé, perdu | official-doc |
 | delivered | a été livré | fixture |
 | delivered | vous a été remis au relais, remis au destinataire, livraison effectuée | official-doc |
 | ready_for_pickup | vous attend au relais | fixture |

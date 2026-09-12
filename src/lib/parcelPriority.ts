@@ -8,6 +8,7 @@ export type ParcelAttention =
   | 'sync_error'
   | 'failed_attempt'
   | 'ready_for_pickup'
+  | 'exception'
   | 'customs'
   | 'stalled'
   | 'not_announced';
@@ -36,6 +37,7 @@ export function parcelAttention(
   switch (current?.stage) {
     case 'failed_attempt': return 'failed_attempt';
     case 'ready_for_pickup': return 'ready_for_pickup';
+    case 'exception': return 'exception';
     case 'customs': return 'customs';
   }
   if (parcel.syncStatus === 'error') return 'sync_error';

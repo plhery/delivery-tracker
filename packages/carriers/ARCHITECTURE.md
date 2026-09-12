@@ -25,8 +25,9 @@ methods belong in the reusable scraper skill, not a repo-specific casebook.
 
 The [registry generator](scripts/generate-registry.mjs) resolves link-only
 carriers to `null`, folders with `adapter.ts` to their own factory, universal
-carriers to `universal`, and shared adapters to the referenced folder. This
-also handles legacy catalog adapter names when a dedicated file exists.
+carriers to `universal`, and shared adapters to the referenced folder.
+`tracking.adapter` names a folder or `universal`; the API contract generator
+rejects any other value for an automatic carrier.
 `--check --strict` verifies the output and rejects unresolved automatic carriers.
 
 An adapter exports an `AdapterFactory`. Its instance exposes `id`, `steps`

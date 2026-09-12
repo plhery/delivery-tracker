@@ -120,8 +120,8 @@ and tracking audit rows. Completed audit rows otherwise expire after 90 days.
 
 Live Activities are intentionally narrower than Home Screen widgets. The
 delivery-day queue starts one only for an `out_for_delivery` event, updates the
-same parcel identity, and ends it on delivery, failed attempt, pickup readiness,
-return, archive, sign-out, or opt-out. The iPhone keeps at most two. Successful
+same parcel identity, and ends it on delivery, failed attempt, a reported
+problem, pickup readiness, return, archive, sign-out, or opt-out. The iPhone keeps at most two. Successful
 server deliveries are acknowledged durably before the ordinary APNs dispatcher
 decides whether its matching banner is redundant.
 
@@ -148,8 +148,11 @@ carrier delay when only the app’s tracking check failed.
 
 Browser and native push alerts share stage-specific sentences. Delivered alerts
 use a reliable carrier timestamp when available; other outcomes give relevant
-pickup, missed-delivery, or return guidance. Finished shipments, pickup and failed
-attempts omit delivery estimates. Out-for-delivery alerts omit a bare “today” but
+pickup, missed-delivery, problem, or return guidance. An `exception` update says
+the carrier reported a problem that is neither a missed attempt nor a return;
+the parcel keeps its place on the happy path and keeps refreshing. Finished
+shipments, pickup, reported problems and failed attempts omit delivery
+estimates. Out-for-delivery alerts omit a bare “today” but
 keep useful times and windows. Past estimates are hidden across cards, details,
 widgets and notifications. Live Activities avoid repeating the status as detail.
 

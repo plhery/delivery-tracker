@@ -48,7 +48,8 @@ Anomalies currently mean:
 - `observed_without_timestamp`: a stage-changing synthetic observation was
   needed (recorded in Postgres, intentionally not alerted by itself);
 - `terminal_stage_regression`: a delivered/returned parcel moved to another
-  stage;
+  stage, except to `exception`, which reports a problem discovered after the
+  fact rather than a rewritten history;
 - `delivered_status_conflict`: provider status says delivered while the chosen
   stage does not; and
 - `progress_disappeared`: a parcel with prior progress suddenly has no usable
@@ -77,7 +78,7 @@ Every persisted event records where its stage came from in
 - `carrier_map`: the adapter supplied an explicit, valid stage for that event;
 - `wording:<rule>`: the wording classifier matched, where `<rule>` is the rule
   that decided it (`language` for the multilingual rules, then `delivered`,
-  `out_for_delivery`, `ready_for_pickup`, `customs`, `accepted`, `registered`,
+  `out_for_delivery`, `ready_for_pickup`, `customs`, `exception`, `accepted`, `registered`,
   `in_transit` and the other keyword rules);
 - `none`: nothing matched and the fallback stage was used.
 

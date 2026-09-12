@@ -38,17 +38,17 @@
     },
     {
       "code": "FAILED",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Parcel-level order token; only consulted when the newest trace carries no action code."
+      "note": "Parcel-level order token; only consulted when the newest trace carries no action code. Reclassified to exception 2026-09-12."
     },
     {
       "code": "RETURNED",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Parcel-level order token; only consulted when the newest trace carries no action code."
+      "note": "Parcel-level order token; only consulted when the newest trace carries no action code. Reclassified to exception 2026-09-12."
     },
     {
       "code": "GWMS_ACCEPT",
@@ -255,17 +255,17 @@
     },
     {
       "code": "CC_IM_FAILURE",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": ""
+      "note": "Reclassified to exception 2026-09-12."
     },
     {
       "code": "CC_IM_EXCEPTION",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": ""
+      "note": "Reclassified to exception 2026-09-12."
     },
     {
       "code": "GTMS_ACCEPT",
@@ -339,17 +339,17 @@
     },
     {
       "code": "GTMS_STA_SIGN_FAILURE",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": ""
+      "note": "Reclassified to exception 2026-09-12."
     },
     {
       "code": "EXCEPTION",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": ""
+      "note": "Reclassified to exception 2026-09-12."
     }
   ]
 }

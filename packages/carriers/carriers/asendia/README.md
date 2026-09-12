@@ -78,6 +78,7 @@ which is what the map keys on.
 |---|---|---|
 | `delivered` | "Delivered" | fixture |
 | `failed_attempt` | "Not delivered" | fixture |
+| `exception` | "Delivery exception", "Damaged", "Refused", "Lost" | prior-art |
 | `in_transit` | "Arrived at destination" | fixture |
 | `registered` | "Information received" | fixture |
 | `returned` | "Return to sender", "Shipment returned" | prior-art |

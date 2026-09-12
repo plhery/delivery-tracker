@@ -140,12 +140,15 @@ export function parseDPDFranceTrackingHtml(html: string, rawTrackingNumber: stri
     if (seen.has(identity)) return;
     seen.add(identity);
     const classified = classifyStatus(description);
+    // Wording the map does not recognize carries no stage: the sync's
+    // classifier decides, and the row still stays visible in the history.
+    const mapped = classified.status !== 'unknown';
     parsedEvents.push({
       event: {
         time: time.iso,
         location,
         description,
-        stage: classified.stage,
+        ...(mapped ? { stage: classified.stage } : {}),
       },
       status: classified.status,
       timestamp: time.timestamp,

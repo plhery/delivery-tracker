@@ -71,7 +71,7 @@ so `pickedUp`, `picked_up` and `PICKED_UP` are the same entry.
 | delivered | delivery_pb_ok | official-doc |
 | returned | delivery_returned | fixture |
 | returned | package_returned, package_return_failed, delivery_return_failed, canceled, delivery_canceled | official-doc |
-| failed_attempt | non_deliverable | fixture |
+| exception | non_deliverable | fixture |
 | failed_attempt | pickup_failed, package_withdrawal_failed, delivery_failed | official-doc |
 | out_for_delivery | out_for_delivery, delivery_in_progress | official-doc |
 | in_transit | picked_up | fixture |

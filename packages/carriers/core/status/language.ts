@@ -2,19 +2,28 @@ import type { Stage } from '../../generated/catalog';
 import type { CarrierStatus } from '../result';
 
 /**
- * INFERRED language rules, not captured carrier codes. EN/FR/DE/IT equivalents
+ * INFERRED language rules, not captured carrier codes. EN/FR/DE/IT/ES/PT/PL equivalents
  * are intuitive and overridable: an adapter must resolve verified codes and
  * carrier-specific semantics before consulting this fallback. No fixture import.
  */
 export function trackingLanguageStage(description: string): Stage | undefined {
   const text = description.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '')
-    .replace(/[’‘]/g, "'").replace(/[_–—-]/g, ' ').replace(/\s+/g, ' ').trim().replace(/[.!]+$/, '');
+    .replace(/[’‘]/g, "'").replace(/ł/g, 'l').replace(/[_–—-]/g, ' ').replace(/\s+/g, ' ').trim().replace(/[.!]+$/, '');
 
   if (/^wird zugestellt$/.test(text)) return 'out_for_delivery';
 
   // Specific negatives, future steps and handoffs precede broad delivery words.
   if (/return(?:ed|ing)? to (?:the )?sender|retour(?:ne)? a l'expediteur|zuruck an (?:den )?absender|an (?:den )?absender zuruck|retour a l'expediteur|reso al mittente|restituit[oa] al mittente/.test(text)) return 'returned';
   if (/not (?:yet )?delivered|could not.*deliver|unable to deliver|delivery (?:attempt|failed)|non livre|n'a pas pu.*remis|livraison (?:impossible|echouee)|tentative de livraison|nicht zugestellt|nicht zugestellt werden|zustellung.*(?:fehlgeschlagen|nicht moglich)|zustellversuch|non consegnat[oa]|non e stato possibile consegnare|consegna (?:fallita|non riuscita)|tentativo di consegna/.test(text)) return 'failed_attempt';
+
+  // Carrier-reported problems that are neither a missed attempt nor a return.
+  if (/\b(?:damaged|broken in transit)\b|endommag|avarie|deterior|beschadigt|danneggiat|danad[oa]|danificad|uszkodzon/.test(text)) return 'exception';
+  if (/\blost (?:in transit|package|parcel|shipment)?\b|colis perdu|envoi perdu|egare|verloren|verlust der sendung|smarrit|(?:paquete|envio) perdid|extraviad|zagubion|zaginion/.test(text)) return 'exception';
+  if (/refused by (?:the )?(?:recipient|consignee)|\brefused\b|rejected by (?:the )?recipient|refus(?:e|ee)? par le destinataire|refus du destinataire|(?:colis|envoi|pli) refuse|annahme verweigert|verweigert|rifiutat|rechazad|recusad|odmowa przyjecia|odmowiono przyjecia/.test(text)) return 'exception';
+  if (/address (?:incomplete|incorrect|invalid|insufficient|unknown)|(?:incorrect|incomplete|insufficient|wrong|invalid) address|address(?:ee)? (?:unknown|cannot be located)|recipient unknown|adresse (?:incorrecte|incomplete|erronee|invalide|inconnue)|destinataire inconnu|(?:adresse|anschrift) (?:unvollstandig|falsch|unbekannt)|empfanger unbekannt|indirizzo (?:errato|incompleto|insufficiente|sconosciuto)|destinatario sconosciuto|direccion (?:incorrecta|incompleta|erronea|desconocida)|destinatario desconocido|endereco (?:incorreto|incompleto|errado|desconhecido)|destinatario desconhecido|adres (?:niepelny|nieprawidlowy|bledny)|nieznany adresat/.test(text)) return 'exception';
+  if (/customs (?:issue|problem|hold)|held (?:by|in|at) customs|detained by customs|probleme de douane|retenu en douane|zollproblem|vom zoll zuruckgehalten|problema doganale|fermo in dogana|problema de aduana|retenido en aduana|problema (?:alfandegario|na alfandega)|retido na alfandega|problem celny|zatrzyman[ay] przez (?:urzad celny|cel)/.test(text)) return 'exception';
+  if (/(?:shipment|parcel|package) (?:is )?(?:held|blocked|on hold)|held pending|awaiting (?:your )?instructions|action required|(?:colis|envoi|pli) (?:bloque|retenu)|en attente d'instructions|action requise|sendung (?:blockiert|zuruckgehalten|angehalten)|wartet auf anweisungen|handlung erforderlich|spedizione (?:bloccata|trattenuta)|in attesa di istruzioni|envio (?:bloqueado|retenido)|en espera de instrucciones|accion requerida|encomenda (?:bloqueada|retida)|aguarda instrucoes|acao necessaria|przesylka (?:zatrzymana|wstrzymana)|oczekuje na instrukcje/.test(text)) return 'exception';
+  if (/\bincident\b|\banomal(?:y|ie|ia)\b|delivery exception|shipment exception|irregularit|unregelmassigkeit|storung|vorfall|inconveniente|incidencia|nieprawidlowosc/.test(text)) return 'exception';
 
   if (/delivered to (?:the )?(?:local carrier|delivery partner)|livre au transporteur|remis au transporteur local|an den lokalen zusteller ubergeben|consegnat[oa] al corriere locale/.test(text)) return 'in_transit';
   if (/will (?:shortly |soon )?be handed|bientot.*(?:confie|remis)|prochainement.*remis|wird.*(?:kurze|bald).*ubergeben|sara.*(?:breve|presto).*affidat/.test(text)) return 'registered';
@@ -50,6 +59,6 @@ export function languageStageStatus(stage: Stage): CarrierStatus {
   if (stage === 'registered' || stage === 'pending') return 'pending';
   if (stage === 'delivered') return 'delivered';
   if (stage === 'out_for_delivery' || stage === 'ready_for_pickup') return 'out_for_delivery';
-  if (stage === 'returned' || stage === 'failed_attempt') return 'exception';
+  if (stage === 'returned' || stage === 'failed_attempt' || stage === 'exception') return 'exception';
   return 'in_transit';
 }

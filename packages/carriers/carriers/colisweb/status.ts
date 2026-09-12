@@ -40,8 +40,9 @@ export const CANCELED_STEPS: readonly string[] = [
   'deliverycanceled',
   'deliverycancelled',
 ];
+/** A carrier-reported problem that is neither a missed attempt nor a return. */
+export const EXCEPTION_STEPS: readonly string[] = ['nondeliverable'];
 export const FAILED_STEPS: readonly string[] = [
-  'nondeliverable',
   'pickupfailed',
   'packagewithdrawalfailed',
   'deliveryfailed',
@@ -60,6 +61,9 @@ export function classifyStatus(value: unknown): ClassifiedStatus {
   }
   if (CANCELED_STEPS.includes(key)) {
     return { status: 'exception', stage: 'returned', description: 'Livraison annulée' };
+  }
+  if (EXCEPTION_STEPS.includes(key)) {
+    return { status: 'exception', stage: 'exception', description: 'Incident de livraison' };
   }
   if (FAILED_STEPS.includes(key)) {
     return { status: 'exception', stage: 'failed_attempt', description: 'Incident de livraison' };

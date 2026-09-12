@@ -81,7 +81,8 @@ Wording only — the endpoint sends no status code.
 | Stage | Wording (raw) | Confirmed by |
 |---|---|---|
 | returned | retour / retourné à l'expéditeur, retour expéditeur | official-doc |
-| failed_attempt | non livré, impossible de livrer, échec de livraison, livraison échouée, incident, anomalie, avarie, endommagé, refusé, destinataire absent | official-doc |
+| failed_attempt | non livré, impossible de livrer, échec de livraison, livraison échouée, destinataire absent | official-doc |
+| exception | incident, anomalie, avarie, endommagé, refusé | official-doc |
 | ready_for_pickup | disponible pour retrait | fixture |
 | ready_for_pickup | prêt à être retiré, mis à disposition, à retirer en agence, retrait disponible | official-doc |
 | out_for_delivery | en cours de livraison | fixture |

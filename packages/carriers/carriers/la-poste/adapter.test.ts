@@ -280,7 +280,7 @@ describe('La Poste response normalization', () => {
     }];
     expect(parseLaPosteTrackingResponse(fixture, TRACKING_NUMBER)).toMatchObject({
       status: 'exception',
-      events: [{ stage: 'failed_attempt' }],
+      events: [{ stage: 'exception' }],
     });
 
     fixture[0]!.shipment.event = [{

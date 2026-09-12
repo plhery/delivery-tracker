@@ -16,6 +16,7 @@ export const ALL_NOTIFICATION_STAGES: NotificationStage[] = [
   'accepted',
   'in_transit',
   'customs',
+  'exception',
   'out_for_delivery',
   'failed_attempt',
   'ready_for_pickup',
@@ -25,6 +26,7 @@ export const ALL_NOTIFICATION_STAGES: NotificationStage[] = [
 
 export const IMPORTANT_NOTIFICATION_STAGES: NotificationStage[] = [
   'customs',
+  'exception',
   'out_for_delivery',
   'failed_attempt',
   'ready_for_pickup',

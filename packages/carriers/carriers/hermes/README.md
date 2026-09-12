@@ -78,9 +78,8 @@ Full entries, with dates, are in `statuses.json`.
 ## Limitations and privacy
 
 Event timestamps are kept exactly as the API sends them (`YYYY-MM-DD HH:mm`,
-without an offset) and the declared timezone is `Europe/Zurich`, inherited from
-the app's default rather than measured against the carrier's backend — it should
-be `Europe/Berlin` and is recorded under Open questions below.
+without an offset) and the declared timezone is `Europe/Berlin`, the zone of the
+German service that prints them.
 
 The endpoint needs no credential, and the consignment number alone unlocks the
 order, so it is treated as part of the tracking credential: never logged, never
@@ -104,6 +103,12 @@ published sample.
 - 2026-09-12: `HermesTrackingError` became `NotFoundError('Hermes')` — identical
   message and 404 status, so the host's unannounced-parcel path is unchanged.
   The remaining `TypeError`s became `SchemaError` with their original messages.
+- 2026-09-12: the declared timezone changed from `Europe/Zurich` to
+  `Europe/Berlin`. Hermes Einrichtungs-Service is a German service and the
+  timestamps carry no offset, so the Swiss value was only an inherited default.
+  Germany and Switzerland share the same UTC offsets year-round, so no event
+  time changes — the offline suite asserts both the raw wall-clock string and
+  the declared zone.
 
 ## Rejected alternatives
 
@@ -117,13 +122,6 @@ published sample.
   stream runs ahead of the customer timeline and would announce delivery before
   the customer is told.
 
-## Open questions
-
-- The adapter reports `timezone: 'Europe/Zurich'` while the service is German
-  and its timestamps are offset-less local times. `Europe/Berlin` is almost
-  certainly right, but the backend zone has not been measured, so the value was
-  carried over unchanged by the 2026-09-12 move rather than corrected blind.
-
 
 ## Verification log
 
@@ -134,3 +132,7 @@ published sample.
   wrong-number placeholder.
 - 2026-09-12: adapter moved into this folder; the numeric status map moved to
   `status.ts` and both payloads to `fixtures/`.
+- 2026-09-12: timezone corrected to `Europe/Berlin`. The two zones have shared
+  offsets since 1981, so the delivered fixture's `2026-08-05 12:50` resolves
+  identically before and after; this is a correctness fix to the declared zone,
+  not a shift in any reported time.

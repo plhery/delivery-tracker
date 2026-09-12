@@ -71,7 +71,7 @@ simply not handed the parcel over yet and the shipment stays pending.
 | `out_for_delivery` | `GTMS_DO_DEPART` | fixture |
 | `ready_for_pickup` | `GSTA_INFORM_BUYER`, `GTMS_WAIT_SELF_PICK`, `GTMS_STA_SIGNED` | fixture / prior art |
 | `delivered` | `GTMS_SIGNED`, `SIGN` | fixture / prior art |
-| `failed_attempt` | `CC_IM_FAILURE`, `CC_IM_EXCEPTION`, `GTMS_STA_SIGN_FAILURE`, `EXCEPTION`, `FAILED`, `RETURNED` | prior art |
+| `exception` | `CC_IM_FAILURE`, `CC_IM_EXCEPTION`, `GTMS_STA_SIGN_FAILURE`, `EXCEPTION`, `FAILED`, `RETURNED` | prior art |
 | `pending`, `accepted`, `customs`, `returned` | — | not observed; reported as unmapped |
 
 The full list with provenance is in `statuses.json`. An action code that is not

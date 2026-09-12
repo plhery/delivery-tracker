@@ -82,6 +82,10 @@ const SIMULATED_UPDATES: Record<Stage, { description: string; location?: string 
     description: 'Held for customs clearance',
     location: 'Basel',
   },
+  exception: {
+    description: 'A problem is holding up the parcel',
+    location: 'Härkingen',
+  },
   out_for_delivery: {
     description: 'With the courier for delivery today',
     location: 'Your neighbourhood',
@@ -112,6 +116,7 @@ export function nextStage(stage: Stage): Stage | null {
     case 'accepted':
       return 'in_transit';
     case 'customs':
+    case 'exception':
       return 'in_transit';
     case 'in_transit':
       return 'out_for_delivery';

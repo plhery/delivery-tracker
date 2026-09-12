@@ -85,7 +85,7 @@ describe('parcelDisplayStatus', () => {
 
 describe('useful delivery estimates', () => {
   const now = new Date(2026, 8, 7, 12).getTime();
-  it.each(['delivered', 'returned', 'failed_attempt', 'ready_for_pickup'] as const)('hides estimates after %s', (stage) => {
+  it.each(['delivered', 'returned', 'failed_attempt', 'ready_for_pickup', 'exception'] as const)('hides estimates after %s', (stage) => {
     const saved = parcel('ok');
     saved.events[0].stage = stage;
     saved.expectedDelivery = '2026-09-07';

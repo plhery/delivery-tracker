@@ -70,7 +70,8 @@ records the code for review, rather than the adapter inventing a stage.
 | out_for_delivery | `DELIVERY_TOUR_STARTED`, `OUT_FOR_DELIVERY`, `NEXT_STOP` | fixture |
 | delivered | `DELIVERED`, `DELIVERED_HOMEDELIVERY`, `DELIVERED_NEIGHBOUR`, `DELIVERED_DROPOFF`, `DELIVERED_MAILBOX`, `DELIVERED_PARCELSHOP`, `DELIVERED_PARCELBOX`, `PICKED_UP_BY_RECIPIENT`, `COLLECTED` | live (`DELIVERED_NEIGHBOUR`) |
 | ready_for_pickup | `READY_FOR_PICKUP`, `PARCELSHOP_ITEMS_FOR_COLLECTION`, `READY_FOR_COLLECTION` | fixture |
-| failed_attempt | `DELIVERY_FAILED`, `NOT_DELIVERABLE`, `UNKNOWN_WHEREABOUTS` | fixture |
+| failed_attempt | `DELIVERY_FAILED` | fixture |
+| exception | `NOT_DELIVERABLE`, `UNKNOWN_WHEREABOUTS` | fixture |
 | returned | `RETURN`, `RETURN_TO_SENDER`, `RETURN_DELIVERED_TO_SENDER`, `RETOURE_DELIVERED` | fixture |
 | pending | not observed as an event stage; announcements are reported as `registered` | — |
 | customs | not observed; reported as unmapped | — |

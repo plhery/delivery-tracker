@@ -72,6 +72,7 @@ terminal and outranks an intuitive translation.
 | `ready_for_pickup` | "READY FOR COLLECTION" | fixture |
 | `delivered` | `delivered`; "DELIVERED - Signed by …" | fixture |
 | `failed_attempt` | `failure`; "DELIVERY ATTEMPT FAILED" | fixture |
+| `exception` | "Carrier exception" | fixture |
 | `returned` | "RETURNED TO SENDER"; `returnFlag` with the `delivered` code | fixture |
 
 `statuses.json` holds the full list.

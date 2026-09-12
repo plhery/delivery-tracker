@@ -79,7 +79,8 @@ is read as `Asia/Kolkata`.
 | out_for_delivery | `OutForDelivery`, Item Out For Delivery, Sent For Delivery | prior-art |
 | ready_for_pickup | Ready For Pickup, Ready For Collection, Awaiting Collection | prior-art |
 | delivered | `ItemDelivered`, Delivered To Recipient | fixture |
-| failed_attempt | `DeliveryAttempted`, Delivery Failed, Not Delivered, Undelivered, Insufficient Address, Addressee Cannot Be Located, Damaged, Refused, Lost | prior-art |
+| failed_attempt | `DeliveryAttempted`, Delivery Failed, Not Delivered, Undelivered | prior-art |
+| exception | Insufficient Address, Addressee Cannot Be Located, Damaged, Refused, Lost | prior-art |
 | returned | `ReturnToSender`, Returned To Customer, Returned To Booking Office, Return Item | prior-art |
 | pending | — | not observed; reported as unmapped |
 

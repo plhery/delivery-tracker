@@ -65,6 +65,14 @@
       "note": "Progress-bar group: returning to the sender; the stage is set from the group directly."
     },
     {
+      "wording": "incident / anomalie / avarie / endommagé / refusé / adresse incorrecte",
+      "language": "fr",
+      "stage": "exception",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-12",
+      "note": "Wording rule in eventStage, checked before the status collapse. Reclassified to exception 2026-09-12."
+    },
+    {
       "code": "DR1",
       "stage": "registered",
       "confirmedBy": "fixture",

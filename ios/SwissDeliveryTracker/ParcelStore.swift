@@ -772,6 +772,7 @@ final class ParcelStore: ObservableObject {
                     relevanceScore: 1
                 )
                 let grace: TimeInterval = phase == .failedAttempt || phase == .readyForPickup
+                    || phase == .exception
                     ? 60 * 60
                     : 30 * 60
                 await activity.end(
@@ -1340,6 +1341,7 @@ final class DemoRepository {
             .outForDelivery: ("With the courier for delivery today", "Your neighbourhood"),
             .delivered: ("Delivered to your mailbox", "Home"),
             .readyForPickup: ("Ready for pickup at your branch", "Post branch"),
+            .exception: ("A problem is holding up the parcel", "Härkingen"),
         ]
         let update = updates[next] ?? ("Tracking updated", nil)
         let timestamp = DateParser.isoString(Date())
@@ -1360,7 +1362,7 @@ final class DemoRepository {
         switch stage {
         case .pending: .registered
         case .registered: .accepted
-        case .accepted, .customs: .inTransit
+        case .accepted, .customs, .exception: .inTransit
         case .inTransit: .outForDelivery
         case .outForDelivery, .readyForPickup: .delivered
         case .failedAttempt: .readyForPickup
@@ -1369,7 +1371,7 @@ final class DemoRepository {
     }
 
     private static let defaultPreferences = NotificationPreferences(
-        enabledStages: [.registered, .accepted, .inTransit, .customs, .outForDelivery,
+        enabledStages: [.registered, .accepted, .inTransit, .customs, .exception, .outForDelivery,
                         .failedAttempt, .readyForPickup, .delivered, .returned],
         quietHoursStart: nil,
         quietHoursEnd: nil,

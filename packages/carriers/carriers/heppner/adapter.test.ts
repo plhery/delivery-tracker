@@ -97,7 +97,7 @@ describe('Heppner status vocabulary', () => {
   it('maps milestones first and code prefixes second, and ignores junk identifiers', () => {
     expect(classifyHeppnerEvent('LIVREE', 'EXPE_EN_COURS', '')).toMatchObject({ stage: 'delivered' });
     expect(classifyHeppnerEvent('', 'EXPE_EN_COURS', 'POD_XYZ')).toMatchObject({ stage: 'delivered' });
-    expect(classifyHeppnerEvent('', 'ANOMALIE', '')).toMatchObject({ stage: 'failed_attempt' });
+    expect(classifyHeppnerEvent('', 'ANOMALIE', '')).toMatchObject({ stage: 'exception' });
     expect(classifyHeppnerEvent('UNKNOWN_STEP', '', '')).toMatchObject({
       status: 'unknown',
       stage: 'in_transit',
@@ -129,7 +129,7 @@ describe('Heppner response normalization', () => {
       time: '2026-07-01T10:55:00Z',
       location: '',
       description: 'Delivery instructions required',
-      stage: 'failed_attempt',
+      stage: 'exception',
       provider_code: 'RST_PRE',
     }, {
       time: '2026-06-30T06:03:00Z',

@@ -146,8 +146,8 @@ describe('Paack response normalization', () => {
       },
       {
         time: '2024-07-27T16:30:00.000Z',
-        description: 'Delivery issue',
-        stage: 'failed_attempt',
+        description: 'Shipment exception',
+        stage: 'exception',
       },
     ]);
     const serialized = JSON.stringify(result);
@@ -302,7 +302,7 @@ describe('Paack response normalization', () => {
     ['appointmentBroughtForward', 'pending', 'registered'],
     ['appointmentRescheduled', 'pending', 'registered'],
     ['pudoAssignedHeader', 'in_transit', 'in_transit'],
-    ['integrationError', 'exception', 'failed_attempt'],
+    ['integrationError', 'exception', 'exception'],
   ] as const)('maps the official active label %s', (label, status, stage) => {
     const result = parsePaackTrackingResponse(successRoute({
       eventList: [{

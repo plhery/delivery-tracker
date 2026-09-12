@@ -62,7 +62,8 @@ l'expéditeur" contains neither an incident noun nor a negative verb.
 | Stage | Wording or code (raw) | Confirmed by |
 |---|---|---|
 | `returned` | `retour à l'expéditeur`, `retourné à l'expéditeur`, `sera retourné à l'expéditeur` | live |
-| `failed_attempt` | `réclamation`, `enquête est ouverte`, `échec de livraison`, `livraison impossible`, `tentative de livraison`, `incident`, `anomalie`, `endommagé`, `refusé`, `perdu`, `retard` | fixture / live |
+| `failed_attempt` | `échec de livraison`, `livraison impossible`, `tentative de livraison`, `retard` | fixture / live |
+| `exception` | `réclamation`, `enquête est ouverte`, `incident`, `anomalie`, `endommagé`, `refusé`, `perdu` | fixture / live |
 | `delivered` | `votre colis est livré`, `votre colis a été livré`, `remis au destinataire`, `livraison effectuée` | fixture / live |
 | `ready_for_pickup` | `disponible en relais`, `disponible au relais`, `disponible en agence`, `disponible en consigne`, `attend en relais` | live |
 | `out_for_delivery` | `en cours de livraison`, `en tournée de livraison`, `chauffeur a pris en charge` | fixture / live |
@@ -73,8 +74,9 @@ l'expéditeur" contains neither an incident noun nor a negative verb.
 | `customs` | not observed; reported as unmapped | — |
 
 `statuses.json` lists each fragment separately. Wording the map does not
-recognize keeps the row in the history and leaves the result status `unknown`,
-so the newest recognized row decides the parcel's status.
+recognize keeps the row in the history with no `stage` at all, and leaves the
+result status `unknown`, so the newest recognized row decides the parcel's
+status.
 
 ## Limitations and privacy
 
@@ -113,6 +115,13 @@ so the newest recognized row decides the parcel's status.
   thrown by `direct` carries the message
   "DPD France requires a browser challenge solver; configure FLARESOLVERR_URL",
   so telemetry shows one attempted step and the operator still gets the hint.
+- **Assigning `in_transit` to unrecognized wording.** Resolved 2026-09-12:
+  the adapter now omits `stage` entirely for wording `status.ts` does not
+  recognize, like every other adapter, and the host sync's classifier records
+  the wording instead. The result status for an unmapped latest row stays
+  `unknown`, so the newest recognized row still decides the parcel's status.
+  `status.ts` keeps its fallback tuple (owned elsewhere); the adapter is the
+  caller that drops the stage.
 - **Timestamps use `core/time`'s `zonedTime`.** Rows print naive
   `dd/MM/yyyy HH:mm` wall clock; Europe/Paris is applied explicitly rather than
   guessing UTC.
@@ -123,12 +132,6 @@ so the newest recognized row decides the parcel's status.
   and exposes no reusable JSON endpoint; the timeline only exists as markup.
 - **Keeping the proof-of-delivery and address blocks "for diagnostics".**
   The parser does not read those nodes or include them in the tracking result.
-- **Assigning `in_transit` to unrecognized wording as a considered mapping.**
-  The classifier still returns that stage today, which predates the package's
-  rule that unmapped wording must carry no stage. It is kept for now so the
-  move stays behaviour-preserving; the honest fix is to return no stage and let
-  the sync's classifier record the wording. Tracked here rather than silently
-  changed.
 
 
 ## Verification log
@@ -137,3 +140,5 @@ so the newest recognized row decides the parcel's status.
   networks; the private browser service is normally required (docs/CARRIERS.md).
 - 2026-09-12: moved into this folder. The parser, the wording map and the two
   tiers are unchanged; only the error classes changed.
+- 2026-09-12: unmapped wording no longer carries an `in_transit` stage; the
+  offline suite asserts the missing key and the `unknown` result status.

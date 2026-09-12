@@ -32,6 +32,7 @@ interface EventRule {
  * as a delivery.
  */
 export const EVENT_RULES: readonly EventRule[] = [
+  { stage: 'exception', description: 'Shipment exception', needles: ['incidencia', 'averia', 'danad', 'rechazad', 'direccion incorrecta'] },
   { stage: 'failed_attempt', description: 'Delivery attempt was unsuccessful', needles: ['no entreg', 'entrega fallida', 'failed delivery', 'unsuccessful'] },
   { stage: 'returned', description: 'Shipment returned', needles: ['devol', 'retorn', 'return', 'retour'] },
   { stage: 'in_transit', description: 'Delivery appointment updated', needles: ['fecha de entrega', 'cita', 'appointment', 'avis de livraison'] },

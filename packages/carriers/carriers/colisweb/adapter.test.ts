@@ -125,7 +125,7 @@ describe('Colisweb response normalization', () => {
       last_status_text: 'Incident de livraison',
       expected_delivery: null,
     });
-    expect(failure.events?.[0]).toMatchObject({ stage: 'failed_attempt' });
+    expect(failure.events?.[0]).toMatchObject({ stage: 'exception' });
     expect(parseColiswebTrackingResponse(successPayload({
       step: 'deliveryReturned',
       deliveredDate: null,

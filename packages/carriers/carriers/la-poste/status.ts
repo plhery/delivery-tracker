@@ -101,6 +101,9 @@ export function eventStage(group: string, code: string, label: string): Stage {
     || ['disponible au point de retrait', 'disponible en point relais', 'attend au relais']
       .some((term) => value.includes(term))
   ) return 'ready_for_pickup';
+  // A carrier-reported problem that is neither a missed attempt nor a return.
+  if (['incident', 'anomalie', 'avarie', 'endommage', 'refuse', 'adresse incorrecte']
+    .some((term) => value.includes(term))) return 'exception';
   const status = eventStatus(normalizedGroup, normalizedCode, label, true);
   if (status === 'pending') return 'registered';
   if (status === 'out_for_delivery') return 'out_for_delivery';

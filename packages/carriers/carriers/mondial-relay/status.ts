@@ -33,11 +33,15 @@ export const MONDIAL_RELAY_WORDING: readonly { phrases: readonly string[]; class
     classified: { status: 'exception', stage: 'returned' },
   },
   {
+    // Carrier-reported problems that are neither a missed attempt nor a return.
     phrases: [
-      'anomalie', 'incident', 'echec de livraison', 'livraison impossible',
-      'n a pas pu etre livre', 'adresse incorrecte', 'colis endommage',
+      'anomalie', 'incident', 'adresse incorrecte', 'colis endommage',
       'colis refuse', 'colis perdu',
     ],
+    classified: { status: 'exception', stage: 'exception' },
+  },
+  {
+    phrases: ['echec de livraison', 'livraison impossible', 'n a pas pu etre livre'],
     classified: { status: 'exception', stage: 'failed_attempt' },
   },
   {

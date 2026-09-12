@@ -85,7 +85,8 @@ classifies, otherwise from the newest event that does.
 | ready_for_pickup | `READY_FOR_PICKUP`, `READY_FOR_COLLECTION`, `HOLD_FOR_PICKUP`, `AWAITING_CUSTOMER_PICKUP` | prior-art |
 | delivered | `DELIVERED` | fixture |
 | customs | `CUSTOMS…`, `CLEARANCE…` | prior-art |
-| failed_attempt | `DELIVERY_ATTEMPTED`, `UNABLE_TO_DELIVER`, `UNDELIVERABLE…`, `DAMAGED`, `DESTROYED`, `REJECTED`, `CANCELLED`, `LOST`, `ADDRESS_PROBLEM`, `INFORMATION_NEEDED` | prior-art |
+| failed_attempt | `DELIVERY_ATTEMPTED`, `FAILED_ATTEMPT`, `UNABLE_TO_DELIVER`, `UNDELIVERABLE…` | prior-art |
+| exception | `DAMAGED`, `DESTROYED`, `REJECTED`, `CANCELLED`, `LOST`, `ADDRESS_PROBLEM`, `INFORMATION_NEEDED` | prior-art |
 | returned | `RETURNED_TO_SENDER` and the rest of the return family | prior-art |
 | pending | reached at shipment level only (`CREATION_CONFIRMED`); the event stage is `registered` | fixture |
 

@@ -10,6 +10,7 @@ const NOTIFICATION_STAGES = new Set([
   'accepted',
   'in_transit',
   'customs',
+  'exception',
   'out_for_delivery',
   'failed_attempt',
   'ready_for_pickup',

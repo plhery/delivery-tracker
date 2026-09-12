@@ -49,6 +49,10 @@ describe('CORE_STAGES', () => {
     expect(STAGE_META.ready_for_pickup.progress).toBe(
       STAGE_META.out_for_delivery.progress,
     );
+    // A reported problem does not move the parcel; it only needs attention.
+    expect(STAGE_META.exception.progress).toBe(STAGE_META.in_transit.progress);
+    expect(STAGE_META.exception.tone).toBe('warn');
+    expect(isFinal('exception')).toBe(false);
   });
 });
 

@@ -20,8 +20,7 @@
   "timezone": "Europe/Zurich",
   "tracking": {
     "mode": "automatic",
-    "adapter": "upstream",
-    "upstreamName": "Swiss Post",
+    "adapter": "swiss-post",
     "steps": [
       "direct"
     ]

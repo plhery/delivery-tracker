@@ -50,7 +50,7 @@ export function classifyHeppnerEvent(
   if (state === 'ANOMALIE' || step === 'EN_ATTENTE_INSTRUCTIONS') {
     return {
       status: 'exception',
-      stage: 'failed_attempt',
+      stage: 'exception',
       description: step === 'EN_ATTENTE_INSTRUCTIONS'
         ? 'Delivery instructions required'
         : 'Shipment exception',

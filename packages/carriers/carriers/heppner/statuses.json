@@ -20,18 +20,18 @@
     {
       "code": "EN_ATTENTE_INSTRUCTIONS",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "fixture",
       "firstSeen": "2026-09-12",
-      "note": "Milestone (step); shown as \"Delivery instructions required\"."
+      "note": "Milestone (step); shown as \"Delivery instructions required\". Reclassified to exception 2026-09-12."
     },
     {
       "code": "ANOMALIE",
       "language": "fr",
-      "stage": "failed_attempt",
+      "stage": "exception",
       "confirmedBy": "fixture",
       "firstSeen": "2026-09-12",
-      "note": "Shipment-level state rather than a milestone; shown as \"Shipment exception\"."
+      "note": "Shipment-level state rather than a milestone; shown as \"Shipment exception\". Reclassified to exception 2026-09-12."
     },
     {
       "code": "LIVRAISON",

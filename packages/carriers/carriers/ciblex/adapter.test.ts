@@ -118,8 +118,8 @@ describe('Ciblex response normalization', () => {
     }, {
       time: '2021-12-28T09:27:00+01:00',
       location: '',
-      description: 'Delivery issue',
-      stage: 'failed_attempt',
+      description: 'Shipment exception',
+      stage: 'exception',
     }]);
     const serialized = JSON.stringify(result);
     expect(serialized).not.toContain('PRIVATE CUSTOMER AND ORDER');
