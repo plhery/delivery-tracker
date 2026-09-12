@@ -12,7 +12,11 @@
     ]
   },
   "brand": {
-    "color": "#b82025"
+    "color": "#b82025",
+    "decal": "india-post",
+    "palette": {
+      "accent": "#fedb01"
+    }
   },
   "selectable": true,
   "timezone": "Asia/Kolkata",

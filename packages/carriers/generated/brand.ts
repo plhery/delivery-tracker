@@ -10,7 +10,9 @@ export const CARRIER_FAMILIES: Record<string, string> = {
   "dpd-fr": "dpd",
   "gls-ch": "gls",
   "gls-de": "gls",
-  "gls-fr": "gls"
+  "gls-fr": "gls",
+  "postlogistics": "swiss-post",
+  "swiss-post-cargo": "swiss-post"
 };
 
 export const CARRIER_PALETTES: Record<string, Partial<CarrierPalette>> = {
@@ -27,6 +29,9 @@ export const CARRIER_PALETTES: Record<string, Partial<CarrierPalette>> = {
   "austrian-post": {
     "accent": "#1a1a1a",
     "brand-light": "#1a1a1a"
+  },
+  "chronopost": {
+    "accent": "#5bc5e8"
   },
   "correios-br": {
     "accent": "#06416a",
@@ -101,13 +106,39 @@ export const CARRIER_PALETTES: Record<string, Partial<CarrierPalette>> = {
     "edge": "#1634a7",
     "accent": "#ffcf00"
   },
+  "india-post": {
+    "accent": "#fedb01"
+  },
   "inpost": {
     "accent": "#1d1d1d",
     "brand-light": "#1d1d1d"
   },
+  "la-poste": {
+    "accent": "#003da5",
+    "brand-light": "#003da5"
+  },
+  "mondial-relay": {
+    "truck": "#f6cbd9",
+    "edge": "#bd174a",
+    "accent": "#bd174a",
+    "brand-light": "#bd174a",
+    "brand-dark": "#f6cbd9"
+  },
   "poste-italiane": {
     "accent": "#0047bb",
     "brand-light": "#0047bb"
+  },
+  "postlogistics": {
+    "accent": "#141414",
+    "brand-light": "#141414"
+  },
+  "swiss-post": {
+    "accent": "#141414",
+    "brand-light": "#141414"
+  },
+  "swiss-post-cargo": {
+    "accent": "#141414",
+    "brand-light": "#141414"
   },
   "tipsa": {
     "accent": "#ff4f00"
@@ -140,12 +171,21 @@ export const CARRIER_PALETTES: Record<string, Partial<CarrierPalette>> = {
 export const CARRIER_DECALS: Record<string, CarrierDecal> = {
   "amazon-logistics": "amazon",
   "amazon-shipping": "amazon",
+  "chronopost": "chronopost",
   "dhl": "dhl",
   "dhl-ecommerce": "dhl",
   "dpd": "dpd",
   "dpd-fr": "dpd",
   "fedex": "fedex",
+  "india-post": "india-post",
   "japan-post": "japan-post",
+  "la-poste": "la-poste",
+  "mondial-relay": "mondial-relay",
+  "postlogistics": "swiss-post",
+  "quickpac": "quickpac",
+  "spring-gds": "postnl",
+  "swiss-post": "swiss-post",
+  "swiss-post-cargo": "swiss-post",
   "ups": "ups"
 };
 
@@ -272,6 +312,173 @@ export const CARRIER_TRUCK: TruckGeometry = {
         "segments": [[[6, 6], [16, 6]], [[6, 9], [16, 9]], [[11, 9], [11, 14]]],
         "stroke": "accent",
         "strokeWidth": 1.5
+      }
+    ],
+    "swiss-post": [
+      {
+        "type": "polygon",
+        "d": "M6 6L8 6L8 8L10 8L10 10L8 10L8 12L6 12L6 10L4 10L4 8L6 8Z",
+        "points": [
+          [6, 6],
+          [8, 6],
+          [8, 8],
+          [10, 8],
+          [10, 10],
+          [8, 10],
+          [8, 12],
+          [6, 12],
+          [6, 10],
+          [4, 10],
+          [4, 8],
+          [6, 8]
+        ],
+        "fill": "#e30613"
+      },
+      {
+        "type": "polygon",
+        "d": "M11.5 5.5L16 5.5L18 7L18 9L16 10.5L13.5 10.5L13.5 13L11.5 13Z",
+        "points": [
+          [11.5, 5.5],
+          [16, 5.5],
+          [18, 7],
+          [18, 9],
+          [16, 10.5],
+          [13.5, 10.5],
+          [13.5, 13],
+          [11.5, 13]
+        ],
+        "fill": "accent"
+      },
+      {
+        "type": "polygon",
+        "d": "M13.5 7.2L15.5 7.2L16 7.7L16 8.3L15.5 8.8L13.5 8.8Z",
+        "points": [[13.5, 7.2], [15.5, 7.2], [16, 7.7], [16, 8.3], [15.5, 8.8], [13.5, 8.8]],
+        "fill": "truck"
+      }
+    ],
+    "quickpac": [
+      {
+        "type": "circle",
+        "cx": 10.5,
+        "cy": 9,
+        "r": 3.6,
+        "fill": "accent"
+      },
+      {
+        "type": "circle",
+        "cx": 10.5,
+        "cy": 9,
+        "r": 2.1,
+        "fill": "truck"
+      },
+      {
+        "type": "polygon",
+        "d": "M11 10.5L12.2 9.7L15.7 13.2L14.5 14Z",
+        "points": [[11, 10.5], [12.2, 9.7], [15.7, 13.2], [14.5, 14]],
+        "fill": "accent"
+      },
+      {
+        "type": "line",
+        "d": "M3.5 7.5L5.8 7.5M3.5 10.5L5.8 10.5",
+        "segments": [[[3.5, 7.5], [5.8, 7.5]], [[3.5, 10.5], [5.8, 10.5]]],
+        "stroke": "accent",
+        "strokeWidth": 1
+      }
+    ],
+    "la-poste": [
+      {
+        "type": "polygon",
+        "d": "M7.2 5L17 5L16 7L10.5 7Z",
+        "points": [[7.2, 5], [17, 5], [16, 7], [10.5, 7]],
+        "fill": "accent"
+      },
+      {
+        "type": "polygon",
+        "d": "M10.5 8L18 8L4 13.2Z",
+        "points": [[10.5, 8], [18, 8], [4, 13.2]],
+        "fill": "accent"
+      },
+      {
+        "type": "polygon",
+        "d": "M5.5 14L14 11.3L13 14Z",
+        "points": [[5.5, 14], [14, 11.3], [13, 14]],
+        "fill": "accent"
+      }
+    ],
+    "chronopost": [
+      {
+        "type": "polygon",
+        "d": "M11 5L16 7.6L11 10.2L6 7.6Z",
+        "points": [[11, 5], [16, 7.6], [11, 10.2], [6, 7.6]],
+        "fill": "#b6e3fa"
+      },
+      {
+        "type": "polygon",
+        "d": "M5.5 8.4L10.4 11L10.4 14L5.5 11.4Z",
+        "points": [[5.5, 8.4], [10.4, 11], [10.4, 14], [5.5, 11.4]],
+        "fill": "accent"
+      },
+      {
+        "type": "polygon",
+        "d": "M11.6 11L16.5 8.4L16.5 11.4L11.6 14Z",
+        "points": [[11.6, 11], [16.5, 8.4], [16.5, 11.4], [11.6, 14]],
+        "fill": "#ffffff"
+      }
+    ],
+    "india-post": [
+      {
+        "type": "line",
+        "d": "M4 7.5L7 8.3L10 11L12 10.8L17.5 6M4 10L6.5 10.4L9.5 13L12 12.8L18 8",
+        "segments": [
+          [[4, 7.5], [7, 8.3], [10, 11], [12, 10.8], [17.5, 6]],
+          [[4, 10], [6.5, 10.4], [9.5, 13], [12, 12.8], [18, 8]]
+        ],
+        "stroke": "accent",
+        "strokeWidth": 1.1
+      }
+    ],
+    "mondial-relay": [
+      {
+        "type": "polygon",
+        "d": "M5 5L16 5L17 6L17 12L16 13L5 13L4 12L4 6Z",
+        "points": [[5, 5], [16, 5], [17, 6], [17, 12], [16, 13], [5, 13], [4, 12], [4, 6]],
+        "fill": "accent"
+      },
+      {
+        "type": "line",
+        "d": "M6.5 11L6.5 7L10.5 9.7L14.5 7L14.5 11",
+        "segments": [[[6.5, 11], [6.5, 7], [10.5, 9.7], [14.5, 7], [14.5, 11]]],
+        "stroke": "#ffffff",
+        "strokeWidth": 1.3
+      }
+    ],
+    "postnl": [
+      {
+        "type": "polygon",
+        "d": "M5 8L8 10L11 6L14 10L17 8L15 13L7 13Z",
+        "points": [[5, 8], [8, 10], [11, 6], [14, 10], [17, 8], [15, 13], [7, 13]],
+        "fill": "accent"
+      },
+      {
+        "type": "circle",
+        "cx": 5,
+        "cy": 6,
+        "r": 0.9,
+        "fill": "accent"
+      },
+      {
+        "type": "circle",
+        "cx": 11,
+        "cy": 4.5,
+        "r": 0.9,
+        "fill": "accent"
+      },
+      {
+        "type": "circle",
+        "cx": 17,
+        "cy": 6,
+        "r": 0.9,
+        "fill": "accent"
       }
     ]
   }

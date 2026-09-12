@@ -16,18 +16,20 @@ describe('carrier mark', () => {
     expect(container.innerHTML).toBe(markup[id]);
   });
 
-  it.each(['fedex', 'dpd', 'dpd-fr', 'amazon-logistics', 'amazon-shipping', 'japan-post', 'dhl-ecommerce'] as const)(
+  it.each(['fedex', 'dpd', 'dpd-fr', 'amazon-logistics', 'amazon-shipping', 'japan-post', 'dhl-ecommerce', 'swiss-post', 'quickpac', 'la-poste', 'chronopost', 'india-post', 'mondial-relay', 'spring-gds', 'swiss-post-cargo', 'postlogistics'] as const)(
     'renders the declared decoration for %s', (id) => {
       const { container } = render(<CarrierMark carrier={carrierInfo(id)} />);
       const paths = [...container.querySelectorAll('svg > path')].map(path => path.getAttribute('d'));
       for (const shape of CARRIER_TRUCK.decals[carrierDecal(id)]) {
-        if (shape.type !== 'circle') expect(paths).toContain(shape.d);
+        if (shape.type === 'circle') {
+          expect(container.querySelector(`svg > circle[cx="${shape.cx}"][cy="${shape.cy}"][r="${String(shape.r).replace(/^0\./, '.')}"]`)).not.toBeNull();
+        } else expect(paths).toContain(shape.d);
       }
       expect(container.firstChild).toHaveAttribute('aria-label', carrierInfo(id).name);
     },
   );
 
   it('covers the three liveries and a carrier that has none', () => {
-    expect(Object.keys(markup)).toEqual(['dhl', 'ups', 'gls-ch', 'swiss-post']);
+    expect(Object.keys(markup)).toEqual(['dhl', 'ups', 'gls-ch', 'unknown']);
   });
 });

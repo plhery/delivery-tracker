@@ -10,7 +10,12 @@
     ]
   },
   "brand": {
-    "color": "#ffcf00"
+    "color": "#ffcf00",
+    "decal": "la-poste",
+    "palette": {
+      "accent": "#003da5",
+      "brand-light": "#003da5"
+    }
   },
   "selectable": true,
   "timezone": "Europe/Paris",

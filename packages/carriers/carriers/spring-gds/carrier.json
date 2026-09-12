@@ -11,7 +11,8 @@
     ]
   },
   "brand": {
-    "color": "#ef7d00"
+    "color": "#ef7d00",
+    "decal": "postnl"
   },
   "selectable": true,
   "timezone": "UTC",

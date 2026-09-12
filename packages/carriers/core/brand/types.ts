@@ -24,7 +24,8 @@ export type BrandProperty =
 export type CarrierPalette = Record<BrandProperty, string>;
 
 /** Which livery the truck wears. Carriers without a custom decoration use `default`. */
-export type CarrierDecal = 'default' | 'dhl' | 'ups' | 'fedex' | 'dpd' | 'amazon' | 'japan-post';
+export type CarrierDecal = 'default' | 'dhl' | 'ups' | 'fedex' | 'dpd' | 'amazon' | 'japan-post'
+  | 'swiss-post' | 'quickpac' | 'la-poste' | 'chronopost' | 'india-post' | 'mondial-relay' | 'postnl';
 
 /** How one property is mixed out of the carrier's catalog color. */
 export interface BrandDerivationStep {

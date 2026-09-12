@@ -87,3 +87,19 @@ arrow on purple, [DPD](https://www.dpd.com/) a white parcel cube on red,
 [Japan Post](https://www.post.japanpost.jp/) the white postal mark on red.
 DHL eCommerce shares DHL's existing stripes; DPD France and Amazon Shipping
 share their respective families' decorations. The geometry lives in `truck.json`.
+
+## Additional carrier decorations
+
+These marks simplify recognizable brand elements to work in a 27 × 18 pixel
+truck. They are drawn locally from polygons, line segments and circles, and
+use the same data on web and iPhone. References reviewed 2026-09-12:
+
+| Carrier | Decoration and palette reference |
+| --- | --- |
+| Swiss Post | Red Swiss cross and black P on yellow, based on the [current Swiss Post identity](https://site.post.ch/en/about-us/company/the-brand-swiss-post). Shared with Swiss Post Cargo and PostLogistics. |
+| Quickpac | A white Q with a forward tail and speed lines. Keeps the distinct Quickpac name for historical parcels, using the existing red palette; [Quickpac's site](https://quickpac.ch/) now presents Quickmail/Planzer branding. |
+| La Poste | A blue bird in three angular pieces on yellow; blue `#003da5` from the [website SVG](https://www.laposte.fr/ecom/_nuxt/logo-part-horizontal.BtezbiGr.svg). |
+| Chronopost | Three faces of a blue parcel cube, inspired by the [official Chronopost guide cover](https://static.chronopost.fr/pdf/chronopost/guide_utilisateur_Shopify.pdf). |
+| India Post | Two gold flight lines on red, inspired by the [official logo](https://www.indiapost.gov.in/images/home/logo/indiapostlogo.svg); gold `#fedb01` comes from that SVG. |
+| Mondial Relay | A red badge with a white M on a pink truck, inspired by the [red badge and pink visual identity](https://storage.mondialrelay.fr/Mondial%20Relay%20transforme%20sa%20marque%20avec%20Dragon%20Rouge.pdf). Colors are simplified UI approximations. |
+| PostNL (`spring-gds`) | A white crown on the existing orange truck, inspired by the [official PostNL media kit](https://newsroom.postnl.nl/en-NL/assets/237879/). The historical carrier ID remains `spring-gds`, but the catalog identifies this service as PostNL. |

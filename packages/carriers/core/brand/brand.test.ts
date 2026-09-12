@@ -45,6 +45,7 @@ describe('carrier brand', () => {
 
   it.each([
     ['dhl-ecommerce', 'dhl'], ['dpd-fr', 'dpd'], ['amazon-shipping', 'amazon-logistics'],
+    ['swiss-post-cargo', 'swiss-post'], ['postlogistics', 'swiss-post'],
   ])('shares %s branding with %s', (id, owner) => {
     expect(carrierBrandFamily(id)).toBe(owner);
     expect(carrierDecal(id)).toBe(carrierDecal(owner));
@@ -52,9 +53,15 @@ describe('carrier brand', () => {
   });
 
   it('keeps the new SVG paths identical to their native outlines', () => {
-    for (const name of ['fedex', 'dpd', 'amazon', 'japan-post'] as const) {
+    for (const name of ['fedex', 'dpd', 'amazon', 'japan-post', 'swiss-post', 'quickpac', 'la-poste', 'chronopost', 'india-post', 'mondial-relay', 'postnl'] as const) {
       for (const shape of CARRIER_TRUCK.decals[name]) {
-        if (shape.type === 'circle') continue;
+        if (shape.type === 'circle') {
+          expect(shape.cx - shape.r).toBeGreaterThanOrEqual(CARRIER_TRUCK.body.x);
+          expect(shape.cx + shape.r).toBeLessThanOrEqual(CARRIER_TRUCK.body.x + CARRIER_TRUCK.body.width);
+          expect(shape.cy - shape.r).toBeGreaterThanOrEqual(CARRIER_TRUCK.body.y);
+          expect(shape.cy + shape.r).toBeLessThanOrEqual(CARRIER_TRUCK.body.y + CARRIER_TRUCK.body.height);
+          continue;
+        }
         const segments = shape.type === 'polygon' ? [shape.points] : shape.segments;
         const path = segments.map(points => 'M' + points.map(([x, y]) => `${x} ${y}`).join('L')).join('');
         expect(shape.d).toBe(path + (shape.type === 'polygon' ? 'Z' : ''));
@@ -69,9 +76,9 @@ describe('carrier brand', () => {
   });
 
   it('keeps a carrier that declares nothing on its own identity', () => {
-    expect(carrierBrandFamily('swiss-post')).toBe('swiss-post');
-    expect(CARRIER_PALETTES['swiss-post']).toBeUndefined();
-    expect(carrierDecal('swiss-post')).toBe('default');
+    expect(carrierBrandFamily('unknown')).toBe('unknown');
+    expect(CARRIER_PALETTES['unknown']).toBeUndefined();
+    expect(carrierDecal('unknown')).toBe('default');
   });
 
   it('declares palettes and liveries only for carriers the catalog knows', () => {
