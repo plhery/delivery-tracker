@@ -13,7 +13,9 @@
     "color": "#0056a7",
     "decal": "chronopost",
     "palette": {
-      "accent": "#5bc5e8"
+      "accent": "#0094cf",
+      "truck": "#ffffff",
+      "edge": "#0056a7"
     }
   },
   "selectable": true,
