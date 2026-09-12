@@ -230,7 +230,7 @@
     },
     {
       "title": "Recovery failures",
-      "description": "Failed recoveries; see transport_fallback Sentry issues for the original direct failure.",
+      "description": "Failed recoveries; inspect carrier logs for individual direct failures and tracking-health Sentry incidents for sustained degradation.",
       "displayType": "categorical_bar",
       "widgetType": "tracemetrics",
       "interval": "5m",

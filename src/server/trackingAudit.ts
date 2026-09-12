@@ -3,10 +3,13 @@ import 'server-only';
 import { randomUUID } from 'node:crypto';
 import {
   captureOperationalError,
+  captureTrackingHealth,
+  flushObservability,
   captureSyncAnomaly,
   errorType,
   logOperationalEvent,
 } from './observability';
+import { observeTrackingHealth, type HealthSample } from './trackingHealth';
 import type { SupabaseServiceClient } from './supabase';
 import type { JsonObject } from './types';
 
@@ -84,6 +87,7 @@ export class TrackingSyncAudit {
   readonly #startedAtIso: string;
   readonly #steps: StoredStep[] = [];
   #reportedWriteFailure = false;
+  readonly #healthSamples = new Map<string, HealthSample>();
 
   constructor(
     readonly client: SupabaseServiceClient,
@@ -95,6 +99,10 @@ export class TrackingSyncAudit {
     now = new Date(),
   ) {
     this.#startedAtIso = now.toISOString();
+  }
+
+  observeFetch<T>(operation: () => Promise<T>): Promise<T> {
+    return observeTrackingHealth(this.#healthSamples, operation);
   }
 
   async start(): Promise<void> {
@@ -159,6 +167,8 @@ export class TrackingSyncAudit {
   }
 
   reportError(error: unknown, operation: SyncStep | string): void {
+    // Fetch/normalization failures are counted at completion, after all fallbacks.
+    if (operation === 'fetch' || operation === 'normalize') return;
     captureOperationalError(error, {
       component: 'tracking-sync',
       operation,
@@ -224,6 +234,21 @@ export class TrackingSyncAudit {
       );
       if (!completed) throw new Error('The tracking sync attempt was not running');
     });
+    if (this.context.trigger === 'scheduled' && !this.context.signal?.aborted
+      && ['updated', 'waiting', 'error'].includes(completion.outcome)) {
+      const failedFetch = this.#steps.some(step => step.step === 'fetch' && step.status === 'failed');
+      const samples: JsonObject[] = [...this.#healthSamples.values(), {
+        kind: 'refresh', subject: this.configuredCarrier,
+        healthy: completion.outcome !== 'error' && !failedFetch,
+        details: { ...[...this.#healthSamples.values()].reverse().find(sample => !sample.healthy)?.details,
+          ...(values.error_type ? { error_type: values.error_type } : {}) },
+      }];
+      await this.writeAudit('evaluate_health', async () => {
+        const incidents = await this.client.recordTrackingHealth(this.attemptId, this.packageId, samples);
+        const ids = incidents.filter(incident => captureTrackingHealth(incident)).map(incident => String(incident.id));
+        if (ids.length && await flushObservability()) await this.client.ackTrackingHealth(ids);
+      });
+    }
     logOperationalEvent('tracking_sync_completed', {
       ...this.logContext(),
       outcome: completion.outcome,

@@ -215,3 +215,21 @@ describe('DPD adapter factory', () => {
     expect(String(fetcher.mock.calls[3]?.[0])).toContain('dataForVerification=8004');
   });
 });
+
+describe('DPD transient read retry', () => {
+  it('retries a parcel-details 503 once without repeating authentication', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const fetcher = mockGuestApi(new Response('', { status: 503 }))
+      .mockResolvedValueOnce(Response.json(READY_FOR_COLLECTION));
+    await expect(new DPDTracker({ timeoutMs: 5_000, trawl: null }).fetch(TRACKING_NUMBER))
+      .resolves.toMatchObject({ status: 'out_for_delivery' });
+    expect(fetcher).toHaveBeenCalledTimes(5);
+    expect(String(fetcher.mock.calls[3]![0])).toEqual(String(fetcher.mock.calls[4]![0]));
+  });
+  it('does not spend the retry delay when the request budget is nearly exhausted', async () => {
+    const fetcher = mockGuestApi(new Response('', { status: 503 }))
+      .mockResolvedValueOnce(new Response(`<div>${TRACKING_NUMBER}</div>`));
+    await new DPDTracker({ timeoutMs: 1_000, trawl: null }).fetch(TRACKING_NUMBER).catch(() => undefined);
+    expect(String(fetcher.mock.calls[4]![0])).not.toEqual(String(fetcher.mock.calls[3]![0]));
+  });
+});

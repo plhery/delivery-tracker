@@ -185,3 +185,19 @@ describe('UPS rendered page', () => {
       .toThrow('UPS did not return the requested parcel');
   });
 });
+
+it('temporarily prefers the working browser after two direct failures, then probes direct access', async () => {
+  let now = Date.now();
+  vi.spyOn(Date, 'now').mockImplementation(() => now);
+  const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async url => String(url).includes('/scrape')
+    ? Response.json({ tier: 3, statusCode: 200, html: RENDERED_PAGE, cookies: [] })
+    : new Response('challenge', { status: 403 }));
+  const tracker = new UPSTracker({ trawlUrl: 'http://trawl.internal:8191' });
+  await tracker.fetch(TRACKING_NUMBER);
+  await tracker.fetch(TRACKING_NUMBER);
+  await tracker.fetch(TRACKING_NUMBER);
+  expect(fetcher.mock.calls.filter(([url]) => String(url).includes('ups.com/track'))).toHaveLength(2);
+  now += 16 * 60_000;
+  await tracker.fetch(TRACKING_NUMBER);
+  expect(fetcher.mock.calls.filter(([url]) => String(url).includes('ups.com/track'))).toHaveLength(3);
+});

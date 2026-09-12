@@ -3,6 +3,7 @@ import 'server-only';
 import * as Sentry from '@sentry/node';
 import type { LookupRecord, StepRecord, StepRecorder } from '@carriers/core/telemetry';
 import { combineRecorders } from '@carriers/core/telemetry';
+import { healthStepRecorder } from './trackingHealth';
 import { initObservability, logOperationalEvent, reportRoutingEvent } from './observability';
 
 /**
@@ -11,7 +12,7 @@ import { initObservability, logOperationalEvent, reportRoutingEvent } from './ob
  * Metric and log names stay identical to the previous `measureScrape` helper
  * so the Sentry "Scraper Health" dashboard keeps working: a step is a
  * `phase`, a lookup is `phase:total`, and a recovery step also counts a
- * fallback and emits the `transport_fallback` routing warning before the
+ * fallback and records a `transport_fallback` breadcrumb before the
  * result is known.
  */
 
@@ -75,5 +76,5 @@ export function addStepRecorder(recorder: StepRecorder): void {
 
 /** The recorder handed to every adapter: Sentry plus any registered sinks, each failure-isolated. */
 export function hostStepRecorder(): StepRecorder {
-  return combineRecorders(sentryStepRecorder, ...extraRecorders);
+  return combineRecorders(healthStepRecorder, sentryStepRecorder, ...extraRecorders);
 }

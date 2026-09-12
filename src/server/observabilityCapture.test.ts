@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import * as Sentry from '@sentry/node';
 import type { Event } from '@sentry/node';
-import { captureOperationalError, flushObservability, initObservability, reportRoutingEvent } from './observability';
+import { captureOperationalError, captureTrackingHealth, flushObservability, initObservability, reportRoutingEvent } from './observability';
 import { UniversalTrackingError } from './universalTracking';
 import { UpstreamHttpError } from './boundedFetch';
 import { LaPosteTracker } from './laPoste';
@@ -130,8 +130,7 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   const swap = captured.events.find((event) => event.message === 'Tracking routing: carrier_auto_swapped')!;
   expect(swap.level).toBe('info');
   expect(swap.tags).toMatchObject({ carrier: 'dhl', provider: 'ups', tracking_number: 'TEST-first' });
-  expect(rateLimit.tags).toMatchObject({ component: 'tracking-routing', provider: '17TRACK', failure_category: 'rate_limited', error_type: 'UpstreamHttpError', upstream_status: 429 });
-  expect(rateLimit.fingerprint).toEqual(['delivery-tracker', 'tracking-routing', 'provider_failed', '17TRACK', 'rate_limited']);
+  expect(rateLimit).toBeUndefined();
   expect(captured.events.some((event) => event.message === 'Tracking routing: provider_recovered')).toBe(false);
   expect(captured.events.some((event) => event.message === 'Tracking routing: direct_support_opportunity')).toBe(true);
 
@@ -156,21 +155,18 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   reportRoutingEvent('direct_support_opportunity', { carrier: 'la-poste', provider: 'la-poste' });
   await flushObservability();
   const retries = captured.events.filter((event) => event.message === 'Tracking routing: transport_fallback' && event.tags?.provider === 'la-poste');
-  expect(retries).toHaveLength(2);
-  for (const retry of retries) {
-    expect(retry.tags?.failure_category).toBe('retry');
-    expect(retry.contexts?.upstream_http).toMatchObject({ body_excerpt: refusedBody, body_read: 'complete' });
-  }
-  const refusal = captured.events.find((event) => event.message === 'Tracking routing: provider_failed' && event.tags?.provider === 'la-poste')!;
-  expect(refusal.contexts?.upstream_http).toMatchObject({ body_excerpt: refusedBody, body_read: 'complete',
-    content_type: 'text/html', request_ids: { 'x-request-id': 'example-request-id' }, retry_after_ms: 120_000,
-    body_signals: ['access_denied'] });
-  expect(refusal.tags).toMatchObject({ upstream_status: 403, upstream_content_type: 'text/html', upstream_body_read: 'complete' });
-  expect(refusal.fingerprint).toEqual(['delivery-tracker', 'tracking-routing', 'provider_failed', 'la-poste', 'verification']);
-  expect(captured.events.find((event) => event.event_id === wrappedId)?.contexts?.upstream_http).toEqual(refusal.contexts?.upstream_http);
-  expect(refusal.contexts?.upstream_http?.headers).toMatchObject({ 'set-cookie': 'session=DO_NOT_CAPTURE', authorization: 'Bearer DO_NOT_CAPTURE' });
-  expect(refusal.exception?.values?.at(-1)).toMatchObject({ type: 'UpstreamHttpError', value: 'La Poste tracking returned HTTP 403' });
-  expect(refusal.contexts?.UpstreamHttpError).toHaveProperty('request');
+  expect(retries).toHaveLength(0);
+  expect(captured.events.some(event => event.message === 'Tracking routing: provider_failed')).toBe(false);
+  const wrapped = captured.events.find(event => event.event_id === wrappedId)!;
+  expect(wrapped.contexts?.upstream_http).toMatchObject({ body_excerpt: refusedBody, body_read: 'complete' });
+  const incidentId = captureTrackingHealth({ id: 'test-incident', kind: 'direct', subject: 'la-poste', state: 'open',
+    attempts: 12, failures: 8, window_hours: 24, evidence: { http_status: 403, category: 'challenge' } });
+  await flushObservability();
+  const incident = captured.events.find(event => event.event_id === incidentId)!;
+  expect(incident.message).toBe('Direct tracking repeatedly failing: la-poste (8/12 in 24h)');
+  expect(incident.tags).toMatchObject({ component: 'tracking-health', incident_state: 'open' });
+  expect(incident.contexts?.tracking_health?.next_steps).toContain('maintenance');
+  expect(incident.fingerprint).toEqual(['delivery-tracker', 'tracking-health', 'direct', 'la-poste']);
   // A later error-free routing event must not inherit the refusal's HTTP context,
   // and the recovery itself is only a breadcrumb on it rather than its own issue.
   const opportunity = captured.events.find((event) => event.message === 'Tracking routing: direct_support_opportunity' && event.tags?.provider === 'la-poste')!;

@@ -1,4 +1,5 @@
 import 'server-only';
+import { setTimeout as delay } from 'node:timers/promises';
 
 import { randomBytes } from 'node:crypto';
 import { load } from 'cheerio';
@@ -449,7 +450,7 @@ export class DPDTracker {
         Accept: 'application/json',
         'Content-Type': 'application/json',
         'User-Agent': `myDPD/${CLIENT_VERSION} (Android)`,
-      });
+      }, true);
     } catch (error) {
       if (error instanceof DPDAPIHttpError && error.status === 404) {
         throw new DPDTrackingError();
@@ -568,20 +569,30 @@ export class DPDTracker {
     url: string | URL,
     data: JsonObject | string,
     headers: Record<string, string>,
+    retryRead = false,
   ): Promise<JsonObject> {
+    const deadline = performance.now() + this.timeoutMs;
     let result;
     try {
-      result = await fetchBounded(url, {
-        method: 'POST',
-        headers,
-        body: typeof data === 'string' ? data : JSON.stringify(data),
-      }, {
-        provider: 'DPD guest API',
-        timeoutMs: this.timeoutMs,
-        maxBytes: MAX_BYTES,
-        allowHttpError: true,
-        fetcher: this.fetcher,
-      });
+      for (let attempt = 0; ; attempt++) {
+        result = await fetchBounded(url, {
+          method: 'POST',
+          headers,
+          body: typeof data === 'string' ? data : JSON.stringify(data),
+        }, {
+          provider: 'DPD guest API',
+          timeoutMs: Math.max(1, Math.floor(deadline - performance.now())),
+          maxBytes: MAX_BYTES,
+          allowHttpError: true,
+          fetcher: this.fetcher,
+        });
+        // Only the read-only parcel-details POST is replayed; auth requests are not.
+        const pause = 1_000 + Math.floor(Math.random() * 2_000);
+        const retryAfter = result.response.headers.get('retry-after');
+        if (!retryRead || attempt > 0 || ![502, 503, 504].includes(result.response.status)
+          || retryAfter !== null || deadline - performance.now() < pause + 1_000) break;
+        await delay(pause);
+      }
     } catch (error) {
       throw new DPDAPIError('DPD guest API is unreachable', { cause: error });
     }

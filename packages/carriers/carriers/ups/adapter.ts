@@ -4,7 +4,7 @@ import { load } from 'cheerio';
 import makeFetchCookie from 'fetch-cookie';
 import { Cookie, CookieJar } from 'tough-cookie';
 import type { AdapterFactory } from '../../core/adapter';
-import { ChallengeError, IndeterminateError, SchemaError, TransportError } from '../../core/errors';
+import { carrierErrorKind, ChallengeError, IndeterminateError, SchemaError, TransportError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import { runSteps, singleFlight } from '../../core/runner';
 import { NOOP_RECORDER, type StepRecorder } from '../../core/telemetry';
@@ -359,6 +359,8 @@ export class UPSTracker {
   readonly #recorder: StepRecorder;
   readonly #serialize = singleFlight();
   #session: UPSHttpSession | null = null;
+  #directFailures = 0;
+  #directRetryAt = 0;
 
   constructor(options: UPSTrackerOptions = {}) {
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -400,11 +402,22 @@ export class UPSTracker {
     }, [
       {
         id: 'direct',
+        enabled: !trawl || Date.now() >= this.#directRetryAt,
         run: async () => {
           try {
-            return await this.#directResult(number, page);
+            const value = await this.#directResult(number, page);
+            this.#directFailures = 0;
+            this.#directRetryAt = 0;
+            return value;
           } catch (error) {
-            if (trawl) throw error;
+            if (trawl) {
+              if (['transport', 'challenge'].includes(carrierErrorKind(error) ?? '')) {
+                this.#directFailures++;
+                if (this.#directFailures >= 2) this.#directRetryAt = Date.now()
+                  + Math.min(3_600_000, 900_000 * 2 ** Math.min(2, this.#directFailures - 2));
+              }
+              throw error;
+            }
             if (page.html !== null) {
               try {
                 return this.#renderedResult(page.html, number);
@@ -423,7 +436,14 @@ export class UPSTracker {
       {
         id: 'trawl',
         enabled: trawl !== null,
-        run: () => this.#trawlResult(trawl!, number),
+        run: async () => {
+          try { return await this.#trawlResult(trawl!, number); }
+          catch (error) {
+            // A failing fallback must not lock out a potentially recovered direct path.
+            this.#directRetryAt = 0;
+            throw error;
+          }
+        },
       },
     ]);
   }

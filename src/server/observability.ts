@@ -1,6 +1,7 @@
 import 'server-only';
 
 import * as Sentry from '@sentry/node';
+import { healthMessage } from './trackingHealth';
 import type { JsonObject } from './types';
 import { UpstreamHttpError } from './boundedFetch';
 import type { UpstreamHttpDiagnostics } from './upstreamHttpDiagnostics';
@@ -208,6 +209,11 @@ export function captureOperationalError(
   let eventId: string | null = null;
   Sentry.withScope((scope) => {
     applyContext(scope, context, capturedErrorType, errorMetadata);
+    if (errorMetadata.databaseStatus) scope.setContext('next_steps', {
+      action: errorMetadata.databaseCode === 'PGRST202'
+        ? 'Verify the deployed database migrations and RPC signature, then reload the PostgREST schema cache. Check whether observation logging or shipment persistence failed.'
+        : 'Check database availability, permissions and migrations; inspect the operation tag to distinguish shipment persistence from diagnostics.',
+    });
     scope.setFingerprint([
       'delivery-tracker',
       context.component,
@@ -279,7 +285,7 @@ export function reportRoutingEvent(code: string, context: {
       if (metadata.providerCode !== undefined) scope.setTag('provider_code', metadata.providerCode);
       scope.setFingerprint(['delivery-tracker', 'tracking-routing', code,
         context.provider, context.category ?? 'none']);
-      const alert = ['provider_failed', 'transport_fallback', 'all_providers_unavailable', 'carrier_mismatch_confirmed',
+      const alert = ['carrier_mismatch_confirmed',
         'direct_support_opportunity', 'carrier_input_required', 'fresher_provider_found',
         'health_store_unavailable', 'carrier_coverage_discovered'].includes(code);
       scope.setLevel(alert ? 'warning' : 'info');
@@ -297,6 +303,28 @@ export function reportRoutingEvent(code: string, context: {
   } catch {
     // Monitoring must never prevent fallback or turn valid data into an error.
   }
+}
+
+/** Only durable threshold transitions reach Sentry; the event title states the impact. */
+export function captureTrackingHealth(incident: JsonObject): string | null {
+  if (!initObservability()) return null;
+  const message = healthMessage(incident);
+  const recovered = incident.state === 'recovered';
+  let id: string | null = null;
+  Sentry.withScope(scope => {
+    scope.setTag('component', 'tracking-health');
+    scope.setTag('incident_kind', String(incident.kind));
+    scope.setTag('incident_state', String(incident.state));
+    scope.setTag('provider', String(incident.subject));
+    scope.setContext('tracking_health', { ...incident, impact: message.impact, next_steps: message.nextSteps,
+      suppression: 'Repeated incident notifications are limited to one per six hours.',
+      runbook: 'https://github.com/plhery/delivery-tracker/blob/main/ops/sentry/README.md' });
+    // Opening, reminders and recovery belong to one incident history.
+    scope.setFingerprint(['delivery-tracker', 'tracking-health', String(incident.kind), String(incident.subject)]);
+    scope.setLevel(recovered ? 'info' : incident.kind === 'refresh' ? 'error' : 'warning');
+    id = Sentry.captureMessage(message.title);
+  });
+  return id;
 }
 
 function boundedLogValue(value: unknown): string | number | boolean | null | undefined {

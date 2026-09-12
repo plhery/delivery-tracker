@@ -693,6 +693,19 @@ export class SupabaseServiceClient extends SupabaseClient {
     }) === true;
   }
 
+  async recordTrackingHealth(attemptId: string, packageId: string, samples: JsonObject[]): Promise<JsonObject[]> {
+    return rows(await this.request('/rest/v1/rpc/record_tracking_health', {
+      method: 'POST', timeoutMs: 3_000,
+      body: { p_attempt_id: attemptId, p_package_id: packageId, p_samples: samples },
+    }));
+  }
+
+  async ackTrackingHealth(ids: string[]): Promise<void> {
+    await this.request('/rest/v1/rpc/ack_tracking_health', {
+      method: 'POST', timeoutMs: 3_000, body: { p_ids: ids },
+    });
+  }
+
   // Carrier wording whose stage the sync had to classify or fall back to. The
   // package and provider event ids resolve one sample event inside the
   // function; the stored row keeps only that opaque event id.

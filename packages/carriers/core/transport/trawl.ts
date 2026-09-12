@@ -153,6 +153,30 @@ export class TrawlClient {
 
   /** Native API: load a page in a browser tier, optionally capturing in-page API responses. */
   async scrape(request: TrawlScrapeRequest, options: TrawlCallOptions): Promise<TrawlScrapeResponse> {
+    const deadline = performance.now() + options.timeoutMs + TRANSPORT_ALLOWANCE_MS;
+    try { return await this.scrapeOnce(request, options); }
+    catch (error) {
+      // Retry only an identified dead browser, never maintenance, challenges or arbitrary 500s.
+      if (!(error instanceof UpstreamHttpError) || error.status < 500
+        || !/Target page, context or browser has been closed/.test(error.diagnostics?.body_excerpt ?? '')
+        || deadline - performance.now() < TRANSPORT_ALLOWANCE_MS + 3_000) throw error;
+      try {
+        const { bytes } = await fetchBounded(this.withPath('health'), {}, {
+          provider: 'TRAWL readiness', timeoutMs: 2_000, maxBytes: 16_384,
+          fetcher: options.fetcher ?? this.fetcher,
+        });
+        const health = parseJsonBytes(bytes, 'TRAWL readiness');
+        if (!isRecord(health) || health.status !== 'ok' || !isRecord(health.pool)
+          || Number(health.pool.live) < 1 || Number(health.pool.available) < 1) throw error;
+      } catch { throw error; }
+      const remaining = Math.floor(deadline - performance.now() - TRANSPORT_ALLOWANCE_MS);
+      if (remaining < 1_000) throw error;
+      return this.scrapeOnce({ ...request, maxTimeout: Math.min(request.maxTimeout ?? options.timeoutMs, remaining) },
+        { ...options, timeoutMs: remaining });
+    }
+  }
+
+  private async scrapeOnce(request: TrawlScrapeRequest, options: TrawlCallOptions): Promise<TrawlScrapeResponse> {
     const { bytes } = await fetchBounded(this.scrapeUrl(), {
       method: 'POST',
       headers: { Accept: 'application/json', 'Content-Type': 'application/json' },

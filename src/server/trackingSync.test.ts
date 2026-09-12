@@ -451,6 +451,8 @@ function fakeClient(packages: JsonObject[] = []) {
     deleteEventsByDescriptions: vi.fn().mockResolvedValue(undefined),
     startSyncAttempt: vi.fn().mockResolvedValue(undefined),
     completeSyncAttempt: vi.fn().mockResolvedValue(true),
+    recordTrackingHealth: vi.fn().mockResolvedValue([]),
+    ackTrackingHealth: vi.fn().mockResolvedValue(undefined),
     recordTrackingStatusObservations: vi.fn().mockResolvedValue(undefined),
   };
   return {
@@ -1188,7 +1190,7 @@ describe('TrackingSyncService', () => {
     }));
   });
 
-  it('retains an unknown parcel number in console and Sentry diagnostics when lookup fails', async () => {
+  it('keeps failed lookup diagnostics in logs without creating an immediate Sentry issue', async () => {
     const parcel = { id: 'unknown-package', carrier: 'unknown', tracking_number: 'TEST1234' };
     const client = fakeClient();
     const error = new UniversalTrackingError([
@@ -1203,9 +1205,7 @@ describe('TrackingSyncService', () => {
     });
 
     await expect(service.syncPackage(parcel)).resolves.toMatchObject({ errors: 1 });
-    expect(capture).toHaveBeenCalledWith(error, expect.objectContaining({
-      operation: 'fetch', carrier: 'unknown', trackingNumber: 'TEST1234',
-    }));
+    expect(capture).not.toHaveBeenCalled();
     const logs = [...output.mock.calls, ...errors.mock.calls].map(([line]) => JSON.parse(String(line)));
     expect(logs).toEqual(expect.arrayContaining([
       expect.objectContaining({ event: 'tracking_sync_started', tracking_number: 'TEST1234' }),

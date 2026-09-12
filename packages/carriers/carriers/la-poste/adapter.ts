@@ -220,14 +220,14 @@ export class LaPosteTracker {
       });
       return parseLaPosteTrackingResponse(parseJsonBytes(bytes, 'La Poste'), normalized);
     };
-    // Production 403s contained La Poste's "Site indisponible - Incident en
-    // cours" page and subsequent checks succeeded. Give this transient
-    // rejection two immediate retries before universal fallback, sharing the
+    // Explicit maintenance pages go directly to provider fallback and cooldown.
+    // Other transient 403 rejections retain bounded session retries, sharing the
     // original deadline; do not retry other HTTP or parsing failures. Once the
     // deadline is spent the retry is refused, so the caller still sees the
     // provider's own rejection rather than a budget error.
     const retriable = (error: unknown): boolean => error instanceof UpstreamHttpError
       && error.status === 403
+      && !/Site indisponible|Incident en cours/i.test(error.diagnostics?.body_excerpt ?? '')
       && deadline - performance.now() >= 1;
     const retry: StepSpec<CarrierResult> = {
       id: 'retry',

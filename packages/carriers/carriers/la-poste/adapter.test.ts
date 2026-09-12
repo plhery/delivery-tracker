@@ -81,8 +81,16 @@ describe('La Poste tracking input', () => {
 });
 
 describe('La Poste transient 403 recovery', () => {
-  const rejection = () => new Response('<title>Site indisponible - Incident en cours - La Poste</title>', {
+  const rejection = () => new Response('<title>Temporary access refusal</title>', {
     status: 403, headers: { 'Content-Type': 'text/html' },
+  });
+
+  it('does not retry an explicit carrier maintenance page', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(
+      '<title>Site indisponible - Incident en cours - La Poste</title>', { status: 403 },
+    ));
+    await expect(new LaPosteTracker().fetch(TRACKING_NUMBER)).rejects.toMatchObject({ status: 403 });
+    expect(fetcher).toHaveBeenCalledOnce();
   });
 
   it.each([1, 2])('recovers after %i immediate retries recorded as the retry step', async (failures) => {
@@ -103,7 +111,7 @@ describe('La Poste transient 403 recovery', () => {
       expect(step).toMatchObject({ fallbackReason: 'challenge' });
       expect(step.fallbackError).toMatchObject({
         status: 403,
-        diagnostics: expect.objectContaining({ body_excerpt: expect.stringContaining('Incident en cours') }),
+        diagnostics: expect.objectContaining({ body_excerpt: expect.stringContaining('Temporary access refusal') }),
       });
     }
   });
@@ -114,7 +122,7 @@ describe('La Poste transient 403 recovery', () => {
 
     await expect(new LaPosteTracker({ recorder }).fetch(TRACKING_NUMBER)).rejects.toMatchObject({
       name: 'UpstreamHttpError', status: 403,
-      diagnostics: expect.objectContaining({ body_excerpt: expect.stringContaining('Incident en cours') }),
+      diagnostics: expect.objectContaining({ body_excerpt: expect.stringContaining('Temporary access refusal') }),
     });
     expect(fetcher).toHaveBeenCalledTimes(3);
     expect(steps.map((step) => [step.step, step.outcome]))

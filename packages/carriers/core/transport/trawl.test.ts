@@ -71,3 +71,34 @@ describe('trawlBody', () => {
     expect(trawlBody({})).toBe('');
   });
 });
+
+describe('dead browser recovery', () => {
+  const closed = () => Response.json({ error: 'Max tier reached without success', timings: [
+    { reason: 'newPage: Target page, context or browser has been closed' },
+  ] }, { status: 500 });
+  const options = { provider: 'TRAWL', timeoutMs: 30_000 };
+  it('retries once only after readiness confirms spare live browser capacity', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(closed())
+      .mockResolvedValueOnce(Response.json({ status: 'ok', pool: { live: 1, available: 1 } }))
+      .mockResolvedValueOnce(Response.json({ tier: 3, statusCode: 200, html: '<html/>', cookies: [] }));
+    await expect(new TrawlClient('http://trawl:8191', fetcher).scrape({ url: 'https://example.test' }, options))
+      .resolves.toMatchObject({ statusCode: 200 });
+    expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual([
+      'http://trawl:8191/scrape', 'http://trawl:8191/health', 'http://trawl:8191/scrape',
+    ]);
+    expect(JSON.parse(String(fetcher.mock.calls[2]![1]!.body)).maxTimeout).toBeLessThan(30_000);
+  });
+  it('does not retry a saturated or still-restarting pool', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(closed())
+      .mockResolvedValueOnce(Response.json({ status: 'ok', pool: { live: 1, available: 0 } }));
+    await expect(new TrawlClient('http://trawl:8191', fetcher).scrape({ url: 'https://example.test' }, options)).rejects.toMatchObject({ status: 500 });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+  it('does not loop when the replacement browser also fails', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(closed())
+      .mockResolvedValueOnce(Response.json({ status: 'ok', pool: { live: 1, available: 1 } }))
+      .mockResolvedValueOnce(closed());
+    await expect(new TrawlClient('http://trawl:8191', fetcher).scrape({ url: 'https://example.test' }, options)).rejects.toMatchObject({ status: 500 });
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+});

@@ -708,14 +708,14 @@ export class TrackingSyncService {
       };
       const fetchStartedAt = performance.now();
       try {
-        fetched = this.adapter.fetchUniversal && carrierId !== 'amazon-shipping'
+        fetched = await audit.observeFetch(async () => this.adapter.fetchUniversal && carrierId !== 'amazon-shipping'
           ? await new TrackingRouter({
             direct: (candidate, carrier) => this.fetchResult(candidate, carrier),
             universal: (source, number, timeout, postcode) => this.adapter.fetchUniversal!(source, number, timeout, postcode),
             health: this.client, now: this.now,
             enablePostalNinja: process.env.TRACKING_ENABLE_POSTAL_NINJA === 'true',
           }).fetch(parcel, context.trigger === 'scheduled', context.signal)
-          : await this.fetchResult(parcel, carrierId);
+          : await this.fetchResult(parcel, carrierId));
       } catch (error) {
         if (carrierId === 'amazon-shipping' && error instanceof AmazonShippingHistoryExpiredError) {
           audit.skip('normalize', 'history_expired');
