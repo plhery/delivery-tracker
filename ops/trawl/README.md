@@ -55,9 +55,8 @@ REDIS_RETRY_DELAY_MS=5000
 ```
 
 Use a dedicated, password-protected Coolify Redis database on the same private
-Docker network, with no published host port. The production database is
-`trawl-session-cache` (`ilo4e3n318kbhnb93n5vhv8r`), attached to `coolify` beside
-TRAWL (`dqbhf3qfeer5b5nii1dimqna`). It runs Redis 7.4.10, pinned to
+Docker network as TRAWL, with no published host port. A compatible configuration
+uses Redis 7.4.10, pinned to
 `redis:7.4.10-alpine@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2`,
 with a 128 MiB container memory/swap limit and this custom configuration:
 

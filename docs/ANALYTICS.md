@@ -2,7 +2,8 @@
 
 The official deployment uses Umami 3.2 at `https://u.plhery.com`. The web and PWA
 share the **Delivery Tracker** property; native uses **Delivery Tracker iOS**.
-The dashboard is at `https://umami.plhery.com`. Web event data distinguishes
+Use your Umami administration dashboard to inspect these properties. Web event
+data distinguishes
 `platform=web` and `platform=pwa`; native sends `platform=ios`. `mode` distinguishes
 anonymous, demo and account screens. Umami's visitor counts are estimates from
 its rotating IP/user-agent session hashing, not registered accounts or installs.

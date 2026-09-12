@@ -11,3 +11,13 @@ test-results
 .env
 .env.*
 !.env.example
+**/.private
+**/private.numbers.json
+**/*.local
+**/*.p8
+**/*.p12
+**/*.pfx
+**/*.pem
+**/*.key
+**/*.mobileprovision
+**/*.har

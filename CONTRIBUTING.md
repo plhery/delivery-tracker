@@ -1,8 +1,15 @@
 # Contributing to Delivery Tracker
 
 Thanks for helping improve Delivery Tracker. Keep changes focused,
-explain the user problem they solve, and avoid including real shipment data in
-code, tests, screenshots, logs, or issues.
+explain the user problem they solve, and keep private shipment data out of
+code, tests, screenshots, logs attached to issues, and commit descriptions.
+
+The [tracking-number corpus](packages/carriers/CORPUS.md) permits cited examples
+already published by carriers, open-source projects, merchants or public shipment
+reports. Keep their provenance; use synthetic values for ordinary fixtures.
+Private live-test inputs belong outside the repository or in an ignored
+`private.numbers.json` or `.private/` directory. Sanitize raw captures and
+diagnostic exports before sharing them, even when the test itself passed.
 
 ## Local setup
 
@@ -48,7 +55,8 @@ generated TypeScript, Swift and package catalogs. Change the folder, not the
 generated contract.
 
 Carrier sites and undocumented APIs can change without notice. New adapters
-must use bounded timeouts and response sizes, avoid personal-data logging, and
+must use bounded timeouts and response sizes, keep diagnostics in the protected
+sinks described in [Observability](docs/OBSERVABILITY.md), and
 degrade to a carrier link when reliable automatic tracking is unavailable.
 Every automatic carrier also needs a public, credential-free `canaryUrl` in the
 carrier contract. The daily canary reports carrier IDs, hostnames, HTTP statuses,

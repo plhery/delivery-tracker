@@ -12,9 +12,8 @@ Cloudflare service tokens, push endpoints, or other users' data.
 
 ## Supported versions
 
-Security fixes are made against the latest revision of `main`. This project is
-currently pre-1.0 and does not maintain security backports for older commits or
-self-hosted forks.
+Security fixes are made against the latest revision of `main`. This project
+does not maintain security backports for older commits or self-hosted forks.
 
 ## Deployment boundary
 

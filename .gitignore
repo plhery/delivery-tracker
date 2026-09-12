@@ -4,8 +4,18 @@ out/
 dist/
 *.tsbuildinfo
 .env
-.env.local
+.env.*
+!.env.example
 *.local
+.private/
+# Local credentials and browser captures never belong in a public commit.
+*.p8
+*.p12
+*.pfx
+*.pem
+*.key
+*.mobileprovision
+*.har
 .DS_Store
 coverage/
 playwright-report/
@@ -18,5 +28,5 @@ ios/DerivedData/
 *.xcuserstate
 xcuserdata/
 supabase/.temp/
-packages/carriers/carriers/*/private.numbers.json
+private.numbers.json
 .impeccable/

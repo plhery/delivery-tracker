@@ -209,8 +209,10 @@ repository secrets when they are no longer used.
   and an immutable release. Keep new-issue, regression, and Cron monitor
   notifications enabled. See [OBSERVABILITY.md](OBSERVABILITY.md).
 - Monitor `401`, `429`, database gateway failures, carrier failures, suspicious
-  classifications, missed scheduled checks, SMTP bounces, and push disablement
-  without logging tracking numbers or tokens.
+  classifications, missed scheduled checks, SMTP bounces, and push disablement.
+  Tracking logs include tracking numbers, and Sentry retains original diagnostic
+  context. Restrict access and retention; sanitize exports before sharing them
+  in public issues. See [OBSERVABILITY.md](OBSERVABILITY.md).
 - Application logs are one-line JSON. Alert on `sync_claim_failed`,
   `sync_job_failed`, and `sync_job_finish_failed`; use `request_id` and `job_id`
   for correlation without adding user or parcel data to logs.

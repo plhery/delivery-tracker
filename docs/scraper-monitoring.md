@@ -1,8 +1,11 @@
 # Scraper monitoring
 
-[Scraper Health](https://paul-louis-hery.sentry.io/dashboard/10017590/) compares
-provider latency, attempts, errors and recovery over the selected time range.
-The saved definition is [scraper-health-dashboard.json](../ops/sentry/scraper-health-dashboard.json).
+The Scraper Health dashboard compares provider latency, attempts, errors and
+recovery over the selected time range. Import
+[scraper-health-dashboard.json](../ops/sentry/scraper-health-dashboard.json)
+into your Sentry organization and select your tracking project's ID in the
+`projects` filter. The template intentionally contains no deployment-specific
+project ID or private dashboard URL.
 
 ## Measurements
 

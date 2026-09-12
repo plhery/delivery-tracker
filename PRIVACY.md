@@ -1,10 +1,10 @@
 # Delivery Tracker privacy notice
 
-Effective: 10 September 2026
+Effective: 12 September 2026
 
-This notice describes the official Delivery Tracker service for French
-and Swiss parcel tracking. A third party running a fork controls its own
-deployment and must publish its own notice.
+This notice describes the official Delivery Tracker parcel-tracking service.
+A third party running a fork controls its own deployment and must publish its
+own notice.
 
 ## Data the service processes
 
@@ -13,11 +13,11 @@ deployment and must publish its own notice.
 - Parcel labels, tracking numbers, carrier selection, tracking history, status,
   timestamps, the operational location a carrier attaches to each scan — the
   city, region, country, and the postcode or name of the depot, parcel shop or
-  locker that performed the scan; never the recipient's street or postcode —
-  optional Planzer shared and Dachser Customer Iberia capability
-  URLs, the delivery postcode supplied for a DPD Switzerland or Mondial Relay
-  parcel, and a Colis Privé combined tracking credential that can contain the
-  parcel's delivery postcode.
+  locker that performed the scan — plus sender or business names, pickup-point
+  details, parcel weight and dimensions where the carrier provides them.
+- Optional Planzer shared and Dachser Customer Iberia capability URLs,
+  supplied delivery postcodes for carriers that require
+  them, and combined tracking credentials that can contain a delivery postcode.
 - Web Push subscription endpoints, encryption keys, browser user agent, native
   iPhone APNs device token, optional device name and locale, a random local
   installation identifier, ActivityKit push-to-start and per-activity update
@@ -25,9 +25,18 @@ deployment and must publish its own notice.
   corresponding notification or Live Activity setting.
 - Technical request data processed by the hosting, reverse-proxy, Auth, and mail
   infrastructure, such as IP address, timestamp, and user agent.
+- Your chosen nickname, sharing preferences, invitations, connections and
+  selected delivery statistics when you enable Friends. Current invitation keys
+  are stored in an access-restricted table, expire after seven days, and are
+  removed when accepted or revoked. A link holder can preview your nickname and
+  choose to accept after signing in. Friends do not receive private parcel
+  details or tracking numbers.
 - Server diagnostic logs and Sentry error reports include parcel tracking
   numbers, carrier, synchronization outcomes, and error details to diagnose
-  tracking failures.
+  tracking failures. Sentry may retain original request/response headers, URLs
+  and bounded body excerpts, including personal data and session or
+  authentication information present in those diagnostics. The application does
+  not apply field-based redaction to these error reports.
 
 ## Why and where data is processed
 
@@ -39,7 +48,10 @@ Supabase processes authentication and database requests. Google provides social
 sign-in, and the configured SMTP provider delivers sign-in codes when email OTP
 is enabled. Cloudflare and the container host may process network metadata. A
 selected carrier necessarily receives its tracking number or carrier-specific
-tracking credential. DPD Switzerland may also receive the parcel's supplied
+tracking credential. Fallback tracking providers (Ship24, ParcelsApp and
+17TRACK, plus Postal Ninja when enabled) also receive the tracking number when
+used. ParcelsApp additionally receives the stored delivery postcode when one is
+supplied. DPD Switzerland may also receive the parcel's supplied
 postcode for recipient verification. Mondial Relay requires the five-digit
 recipient postcode to retrieve shipment events. Colis Privé receives a combined
 credential made from its 12-character shipment number and the five-digit
@@ -98,9 +110,9 @@ stores its session in Keychain and a protected account-scoped parcel snapshot;
 it requests a current APNs token from Apple instead of persisting that token
 locally. It stores a random installation identifier and the independent Home
 Screen widget and Live Activity preferences on the device. Either snapshot can
-include tracking history, a carrier capability URL, a DPD Switzerland or
-Mondial Relay postcode, and a Colis Privé combined credential that can contain
-the delivery postcode. Signing out clears account-scoped local state and ends
+include tracking history, a carrier capability URL, a supplied delivery
+postcode, and a combined tracking credential that can contain the delivery
+postcode. Signing out clears account-scoped local state and ends
 Live Activities. Browser or operating-system controls can clear app data, Live
 Activities, and notification permissions.
 
