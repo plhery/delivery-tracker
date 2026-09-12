@@ -2,6 +2,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { TrawlClient } from '../../core/transport';
+import { carrierErrorKind } from '../../core/errors';
+import type { LookupRecord, StepRecord, StepRecorder } from '../../core/telemetry';
 import { ParcelsAppTracker, parseParcelsAppHtml, parseParcelsAppResponse } from './adapter';
 
 const number = 'ZZ12345678900';
@@ -21,7 +23,7 @@ const captured = (data: unknown, overrides: Record<string, unknown> = {}) => new
 }));
 
 function tracker(fetcher: typeof fetch, trawlUrl = 'http://browser.test') {
-  return new ParcelsAppTracker({ trawl: new TrawlClient(trawlUrl, fetcher) });
+  return new ParcelsAppTracker({ httpClient: null, trawl: new TrawlClient(trawlUrl, fetcher) });
 }
 
 describe('ParcelsApp result parsing', () => {
@@ -112,8 +114,88 @@ describe('ParcelsApp browser capture', () => {
 
   it('needs the browser service and never requests an arbitrary user URL', async () => {
     const fetcher = vi.fn<typeof fetch>();
-    await expect(new ParcelsAppTracker().fetch(number)).rejects.toThrow('tracking browser service');
+    await expect(new ParcelsAppTracker({ httpClient: null }).fetch(number)).rejects.toThrow('tracking browser service');
     await expect(tracker(fetcher).fetch('http://localhost')).rejects.toThrow('Invalid tracking number');
     expect(fetcher).not.toHaveBeenCalled();
+  });
+});
+
+describe('ParcelsApp direct lookup', () => {
+  const reply = (data: unknown) => new Response(JSON.stringify(data));
+  const prompt = { states: [{ date: '2026-01-01T00:00:00', status: 'Enter recipient details',
+    require_fields: [{ name: 'zipcode', type: 'text' }] }] };
+
+  it('retrieves history without a browser and sends the stored postcode only in the form body', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(reply(announced));
+    const result = await new ParcelsAppTracker({ fetcher }).fetch(number, 10_000, ' 01234 ');
+    expect(result).toMatchObject({ current_stage: 'registered', tracking_source: 'structured-web-response' });
+    expect(fetcher).toHaveBeenCalledOnce();
+    const [url, init] = fetcher.mock.calls[0];
+    expect(String(url)).toBe(API);
+    expect(new URLSearchParams(String(init!.body)).get('extra[zipcode]')).toBe('01234');
+    expect(JSON.stringify(result)).not.toContain('01234');
+  });
+
+  it('keeps interleaved numberless responses bound to their own requests', async () => {
+    let finishFirst!: (response: Response) => void;
+    const fetcher = vi.fn<typeof fetch>().mockImplementationOnce(() => new Promise((resolve) => { finishFirst = resolve; }))
+      .mockResolvedValueOnce(reply({ states: [{ date: '2026-01-02T12:00:00Z', status: 'Delivered' }] }));
+    const tracker = new ParcelsAppTracker({ fetcher });
+    const first = tracker.fetch(number);
+    const second = await tracker.fetch('ZZ98765432100');
+    finishFirst(reply(announced));
+    expect(second.current_stage).toBe('delivered');
+    expect((await first).current_stage).toBe('registered');
+    expect(String(fetcher.mock.calls[0][1]!.body)).not.toBe(String(fetcher.mock.calls[1][1]!.body));
+  });
+
+  it('reports a postcode gate without treating it as a scan or retrying in a browser', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => reply(prompt));
+    const tracker = new ParcelsAppTracker({ fetcher, trawl: new TrawlClient('http://browser.test', fetcher) });
+    for (const postcode of [undefined, '99999']) {
+      const error = await tracker.fetch(number, 10_000, postcode).catch((error: unknown) => error);
+      expect(error).toMatchObject({ kind: 'input_required', field: 'postcode' });
+    }
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it('retains actual scans alongside a postcode gate', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(reply({ states: [...prompt.states, ...announced.states] }));
+    const result = await new ParcelsAppTracker({ fetcher }).fetch(number);
+    expect(result.events).toHaveLength(1);
+    expect(result.current_stage).toBe('registered');
+  });
+
+  it('records challenge recovery and retains the browser identity check', async () => {
+    const steps: StepRecord[] = [];
+    const lookups: LookupRecord[] = [];
+    const recorder: StepRecorder = { step: (record) => { steps.push(record); }, lookup: (record) => { lookups.push(record); } };
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(reply({ error: 'RELOAD' })).mockResolvedValueOnce(captured(announced));
+    const result = await new ParcelsAppTracker({ fetcher, recorder, trawl: new TrawlClient('http://browser.test', fetcher) }).fetch(number);
+    expect(result.current_stage).toBe('registered');
+    expect(steps).toMatchObject([{ step: 'direct', outcome: 'challenge' }, { step: 'trawl', outcome: 'ok', fallbackFrom: 'direct' }]);
+    expect(lookups).toMatchObject([{ finalStep: 'trawl', attempts: 2, outcome: 'ok' }]);
+
+    fetcher.mockResolvedValueOnce(reply({ error: 'RELOAD' })).mockResolvedValueOnce(captured(announced, { html: identity('OTHER123') }));
+    await expect(new ParcelsAppTracker({ fetcher, trawl: new TrawlClient('http://browser.test', fetcher) }).fetch(number)).rejects.toThrow('identity missing');
+  });
+
+  it.each([429, 500, 503])('does not amplify HTTP %i with a browser retry', async (status) => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response('', { status, headers: { 'Retry-After': '120' } }));
+    await expect(new ParcelsAppTracker({ fetcher, trawl: new TrawlClient('http://browser.test', fetcher) }).fetch(number))
+      .rejects.toMatchObject({ status, retryAfterMs: 120_000 });
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
+  it.each([{ error: 'NO_DATA' }, { error: 'NO_TRACKER' }, { states: [] }])('leaves no-history replies inconclusive without browser retries: %j', async (payload) => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(reply(payload));
+    const error = await new ParcelsAppTracker({ fetcher, trawl: new TrawlClient('http://browser.test', fetcher) }).fetch(number).catch((error: unknown) => error);
+    expect(carrierErrorKind(error)).toBe('indeterminate');
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
+  it.each([{ correctId: 'OTHER123', ...announced }, { states: [{}] }, { states: [null] }, { states: Array(1001).fill({}) }, { uuid: 'unfinished' }])('rejects aliases, malformed and intermediate replies', async (payload) => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(reply(payload));
+    await expect(new ParcelsAppTracker({ fetcher }).fetch(number)).rejects.toThrow();
   });
 });

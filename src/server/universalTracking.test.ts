@@ -17,7 +17,9 @@ describe('universal tracking dispatch', () => {
       expect(await adapter.fetch(carrier, number, 'https://untrusted.test')).toMatchObject({ current_stage: 'delivered' });
     }
     expect(spy).toHaveBeenCalledTimes(2);
-    expect(spy).toHaveBeenCalledWith(number);
+    expect(spy).toHaveBeenCalledWith(number, null);
+    await adapter.fetch('bpost', number, null, '01234');
+    expect(spy).toHaveBeenLastCalledWith(number, '01234');
   });
 
   it('dispatches the added regional carriers without falling back to a generic adapter', async () => {

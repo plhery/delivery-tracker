@@ -80,10 +80,8 @@ export class UniversalTracker {
   /**
    * Look up one number through the whole chain. `postcode` is the parcel's
    * stored delivery postcode, if the user supplied one: it is forwarded into
-   * every provider's track input, but no provider submits it anywhere yet
-   * (ParcelsApp renders postcode forms as notices, Ship24 and 17TRACK have no
-   * postcode channel, and the browser service offers loading plus capture but
-   * no form interaction).
+   * every provider's track input. ParcelsApp submits it as extra[zipcode] on
+   * its direct API request; the other providers currently do not consume it.
    */
   async fetch(trackingNumber: string, postcode?: string | null): Promise<CarrierResult> {
     numberOf(trackingNumber);

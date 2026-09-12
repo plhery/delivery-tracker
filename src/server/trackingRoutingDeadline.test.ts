@@ -33,6 +33,9 @@ it.each(['direct', 'universal'])('reaches a real fallback after a slow %s failur
       elapsed += 35_000.5;
       return new Response('', { status: 503 });
     }
+    // Exercise HTTP-to-browser recovery as well as the router's budget. The
+    // direct ParcelsApp tier now runs before the existing browser capture.
+    if (slow === 'direct' && fetcher.mock.calls.length === 1) return Response.json({ error: 'RELOAD' });
     return browserReply(slow === 'direct' ? 'ParcelsApp' : '17TRACK');
   });
   const tracker = new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher,
@@ -50,7 +53,7 @@ it.each(['direct', 'universal'])('reaches a real fallback after a slow %s failur
     ...(slow === 'universal' ? { carrier_data: { routing: { version: 1, configured_carrier: 'unknown', preferred_provider: 'Ship24' } } } : {}),
   }, false);
   expect(result.result.tracking_provider).toBe(slow === 'direct' ? 'ParcelsApp' : '17TRACK');
-  expect(fetcher).toHaveBeenCalledTimes(slow === 'direct' ? 1 : 2);
+  expect(fetcher).toHaveBeenCalledTimes(2);
   const sent = JSON.parse(String(fetcher.mock.calls.at(-1)![1]?.body));
   expect(Number.isInteger(sent.maxTimeout)).toBe(true);
   expect(sent.maxTimeout).toBeLessThanOrEqual(slow === 'direct' ? 30_000 : 29_999.25);

@@ -1,5 +1,6 @@
 # Project instructions
 
+- This is an open-source project. Repository files, code comments, commit messages, and pull request descriptions are publicly readable. Keep secrets, private tracking numbers, postcodes, and internal database-testing details out of them; use synthetic fixtures and supply private live-test inputs outside the repository.
 - After completing a requested change in this repository, stage the files for that change, commit them, and push the commit directly to `main` without asking for separate permission.
 - Do not create a feature branch or pull request unless the user explicitly asks for one.
 - Before pushing, run validation appropriate to the changed areas and confirm that no secrets or unrelated generated artifacts are included.

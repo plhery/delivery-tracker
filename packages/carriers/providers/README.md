@@ -7,7 +7,7 @@ persisted names. Protocol details live in each provider README.
 | Provider | Implementation | Steps |
 | --- | --- | --- |
 | [Ship24](ship24/README.md) | Signed anonymous JSON POST, local Chromium recovery | `direct`, `browser` |
-| [ParcelsApp](parcelsapp/README.md) | TRAWL API capture or identity-bound rendered result | `trawl` |
+| [ParcelsApp](parcelsapp/README.md) | Anonymous form POST with postcode; TRAWL capture recovery | `direct`, `trawl` |
 | [17TRACK](seventeentrack/README.md) | TRAWL capture with the compatibility build | `trawl` |
 | [Postal Ninja](postal-ninja/README.md) | Local Chromium widget submission; opt-in | `browser` |
 
@@ -25,10 +25,10 @@ there rather than copying it into provider docs. Persisted provider names also
 drive displayed links and must remain compatible with saved parcel state.
 
 The host forwards the parcel's stored delivery postcode into every provider's
-track input, but no provider consumes it yet: Ship24 and 17TRACK have no
-postcode channel, and ParcelsApp renders postcode forms as notices (see its
-README). A postcode-gated shipment therefore stays without history until a
-provider learns to submit the form.
+track input. ParcelsApp submits it as `extra[zipcode]` in its direct request;
+the other providers do not consume it. Input prompts remain notices, never
+shipment scans. See the ParcelsApp README for the observed limits of postcode
+validation and the remaining need for a known valid gated pair.
 
 ## Shared implementation
 

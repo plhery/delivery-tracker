@@ -29,22 +29,23 @@ describe('universal discovery chain', () => {
   });
 
   it('uses ParcelsApp after Ship24 fails and stops after success', async () => {
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(browserResponse('ParcelsApp', parcels));
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(reply(parcels));
     const result = await new UniversalTracker({ trawlUrl: 'http://browser.test/v1', fetcher, browserLookup: vi.fn().mockRejectedValue(new Error('Unavailable')) }).fetch(number);
     expect(result.current_stage).toBe('registered');
     expect(result.tracking_provider).toBe('ParcelsApp');
     expect(fetcher).toHaveBeenCalledOnce();
     const [url, options] = fetcher.mock.calls[0];
-    expect(String(url)).toBe('http://browser.test/scrape');
-    expect(JSON.parse(String(options!.body))).toMatchObject({ skipHttp: true, captureResponses: ['https://parcelsapp.com/api/v2/parcels'] });
+    expect(String(url)).toBe('https://parcelsapp.com/api/v2/parcels');
+    expect(new URLSearchParams(String(options!.body)).get('carrier')).toBe('Auto-Detect');
   });
 
   it('falls through an unrelated ParcelsApp result to 17TRACK', async () => {
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(browserResponse('ParcelsApp', parcels, { html: identity('OTHER123') }))
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(reply({ error: 'RELOAD' }))
+      .mockResolvedValueOnce(browserResponse('ParcelsApp', parcels, { html: identity('OTHER123') }))
       .mockResolvedValueOnce(browserResponse('17TRACK', track17));
     const result = await new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher, browserLookup: vi.fn().mockRejectedValue(new Error('Unavailable')) }).fetch(number);
     expect(result.tracking_provider).toBe('17TRACK');
-    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher).toHaveBeenCalledTimes(3);
   });
 
   it('retains provider failures for Sentry while keeping the lookup summary readable', async () => {
@@ -59,7 +60,7 @@ describe('universal discovery chain', () => {
     for (const providerError of (error as AggregateError).errors.slice(1)) {
       expect(providerError.cause).toBe(originalError);
     }
-    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher).toHaveBeenCalledTimes(3);
   });
 
   it('tries Postal Ninja before 17TRACK when Ship24 and ParcelsApp fail', async () => {
@@ -69,7 +70,7 @@ describe('universal discovery chain', () => {
     const result = await new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher, browserLookup, enablePostalNinja: true }).fetch(number);
     expect(result.tracking_provider).toBe('Postal Ninja');
     expect(browserLookup.mock.calls).toEqual([['Ship24', number], ['Postal Ninja', number]]);
-    expect(fetcher).toHaveBeenCalledOnce();
+    expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
   it('can use the form scrapers without TRAWL and stops on Ship24 success', async () => {
@@ -100,8 +101,16 @@ describe('universal discovery chain', () => {
     expect(maxTimeout).toBeLessThanOrEqual(20_000);
   });
 
-  it('reports an unconfigured browser service instead of reaching the network', async () => {
-    await expect(new UniversalTracker({ trawlUrl: '' }).fetchSource('ParcelsApp', number)).rejects.toThrow('tracking browser service');
+  it('submits a stored postcode to ParcelsApp without a browser service', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => reply(parcels));
+    const tracker = new UniversalTracker({ trawlUrl: '', fetcher,
+      browserLookup: vi.fn().mockRejectedValue(new Error('Ship24 unavailable')) });
+    await expect(tracker.fetchSource('ParcelsApp', number, 20_000, '01234')).resolves.toMatchObject({ tracking_provider: 'ParcelsApp' });
+    await expect(tracker.fetch(number, '01234')).resolves.toMatchObject({ tracking_provider: 'ParcelsApp' });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    for (const [, init] of fetcher.mock.calls) {
+      expect(new URLSearchParams(String(init!.body)).get('extra[zipcode]')).toBe('01234');
+    }
   });
 
   it('forwards a stored delivery postcode into the provider track input', async () => {

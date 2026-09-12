@@ -18,8 +18,8 @@ ParcelsApp.
 
 ## What we retrieve
 
-From the page's own API (`/api/v2/parcels`), or from the rendered page when no
-API body could be read:
+From a direct POST to the public website API (`/api/v2/parcels`), with browser
+capture/rendered history as recovery when the direct protocol fails:
 
 | Field | Source |
 | --- | --- |
@@ -36,26 +36,65 @@ estimate fields are not retained.
 
 Any number the chain is given: uppercased with spaces, dots and dashes removed,
 it must match `^(?=.*\d)[A-Z0-9]{4,40}$`. The API reply does not repeat the
-number, so a result is accepted only when the page's own result table shows
-exactly one `Tracking number` row and it equals the requested number.
+number. A direct result is scoped to the single synchronous POST that supplied
+the encoded number and its checksum; there is no shared session or polling
+handle. A different `correctId` is rejected as an unverified alias. For browser
+captures, the result table must still show exactly one matching `Tracking number`
+row. Captured replies never use the direct request's identity exemption.
 
 ## How the adapter works
 
-One tier, `trawl`, run by `runSteps` with the per-provider budget (30 s inside
-the chain):
+Two tiers, `direct` then `trawl`, run by `runSteps` within the per-provider
+budget (30 s inside the chain):
 
-1. The private browser service (`FLARESOLVERR_URL`) loads the tracking page with
+1. [http.ts](http.ts) sends one form-encoded anonymous POST, capped at 10 s and
+   2 MB, with no cookies, bootstrap page, cache or redirects. A stored postcode
+   is submitted as `extra[zipcode]`. Whitespace is trimmed; leading zeros,
+   internal spaces and letters are preserved.
+2. On a challenge, transport failure or schema drift, the configured private
+   browser service (`FLARESOLVERR_URL`) loads the tracking page with
    `skipHttp`, up to tier 3, and captures responses for
    `https://parcelsapp.com/api/v2/parcels` with a 15 s settle window.
-2. Captured bodies are parsed newest first; polling replies and unrelated
+3. Captured bodies are parsed newest first; polling replies and unrelated
    shipments are skipped.
-3. When no body was readable, the rendered history in the returned HTML is
+4. When no body was readable, the rendered history in the returned HTML is
    parsed instead.
 
-A captured API response with status 429 or any other error status is reported
-with its status and `Retry-After`. Without a configured browser service the
-lookup fails immediately; it never falls back to a plain HTTP request, which
-returns the application shell rather than established history.
+HTTP 429 and server outages retain their status and `Retry-After` without a
+browser retry. `NO_DATA`, `NO_TRACKER` and empty histories are inconclusive;
+they do not prove a shipment was never announced. A result containing only
+recipient-input prompts including a postcode raises
+`input_required`; prompts alongside real scans are skipped. An absent browser
+service no longer prevents direct lookups. Browser recovery cannot submit a
+postcode, and never retries a known input gate.
+
+## Public request construction
+
+Verified against the site's [tracking bundle](https://dvow0vltefbxy.cloudfront.net/packs/js/application-aa19cda6a00923f7e330.js)
+and fresh HTTP lookups on 2026-09-12. The other `assets/application-…js` bundle
+contains jQuery and UI libraries; the protocol lives in `packs/js/application-…js`.
+
+- `trackingId`: shift each normalized ASCII character by 76 modulo 126
+  (`2 * sum([1,2,8,4,5,6,7,5])`), URI-encode, then form-encode again.
+- `carrier=Auto-Detect`, `language=en`, `country=Unknown`,
+  `platform=web-desktop`, `wd=false`, `c=true`, `p=5`, `l=3`.
+- `se`: comma-joined viewport/screen/document sizes, visibility, navigator
+  properties, plugin/native-function checks, WebGL vendor/renderer/checks,
+  base64 host and base64 stack (the bundle supports `undefined`). Append the
+  telemetry string length, original number length, and unsigned MurmurHash2
+  of `encodeURIComponent(number) + telemetry`, seeded with **978**. The hash
+  excludes those three appended values. A checksum from a real browser
+  request matched the reconstruction exactly.
+- Form fields are nested under `extra`, so jQuery sends `extra[zipcode]` and
+  `extra[email]`. The adapter only sends the supplied postcode. The frontend
+  also supports optional `slug`, `gResponse`, and `extra[manualCountry]`,
+  `extra[manualSlugs]`, `extra[detectedSlugs]`; none is needed for the verified
+  anonymous lookups.
+
+The tested fixed telemetry profile and `undefined` stack work without a browser
+or session token. A request missing the final checksum/length tuple returned
+`RELOAD`; adding it returned the expected 32-event YunExpress history. This
+establishes acceptance of the implemented profile, not every possible profile.
 
 ## Status reference
 
@@ -79,12 +118,13 @@ wording rules and the language classifier.
   carrier adapter is always preferred when one exists.
 - Ambiguous numbers make the page ask for a destination country. That prompt is
   a notice: it never becomes a shipment event and never invents progress.
-- A stored delivery postcode is received in the track input but never
-  submitted. The postcode prompt is an in-page form behind the bundle-guarded
-  API (verified 2026-09-13: it POSTs to the same `/api/v2/parcels` with the
-  `se` fingerprint), and the browser service offers loading plus capture but
-  no form interaction — so the prompt stays a notice even when the parcel
-  stores a postcode.
+- Postcodes are submitted by the direct tier. **A gated history unlock is not
+  yet verified.** Both a real SEUR form submission and the reconstructed
+  request repeat `require_fields` for an intentionally invalid postcode,
+  rather than returning an explicit postcode error. Bpost behaved the same
+  through HTTP. Do not interpret this as successful postcode validation.
+- Email, phone, house number, account sign-in and destination-country forms
+  remain outside this adapter's scope.
 - Delivery wording can contain an access code or a signature. Any event whose
   stage is not `delivered` and that carries such details is dropped, and a
   delivered event's description is replaced by `Delivered`.
@@ -93,16 +133,14 @@ wording rules and the language classifier.
 
 ## Implementation decisions
 
-- **Keep the browser capture (2026-09-10).** The current bundle constructs
-  protected request fields (including `se`) for its own API call. Both inspected
-  anonymous crawlers drive Chromium and capture `/api/v2/parcels`; the PHP
-  client found in the same review requires an API key. A raw HTML GET loads the
-  application rather than established shipment history, so no browser-free
-  replacement was verified.
-- **Bind the result to the rendered number.** The API reply omits the tracking
-  number. Identity is taken from the page's own result table (exactly one
-  `Tracking number` row, equal to the requested number), never from the input
-  field or from the URL that was requested.
+- **Direct POST first (2026-09-12).** Supersedes the September 10 browser-only
+  decision: `se` contains a public checksum, not an issued credential. Known
+  histories were retrieved with Node alone. Keep browser capture as bounded
+  recovery for future protocol changes.
+- **Bind identity to the transport.** Direct replies belong to one scoped
+  POST. Browser captures still require the matching rendered result table,
+  never merely the input field or requested URL. The frontend itself supplies
+  the table's tracking-number label; the backend does not echo it.
 - **Rendered history is a real fallback.** When the capture yields no readable
   body, the page's event list carries the same history and is parsed instead;
   the surrounding marketing copy is excluded by the `.tracking-info .parcel
@@ -124,7 +162,7 @@ These are protocol leads, not current availability evidence.
 - **A plain HTTP GET of the tracking page.** Returns the application shell.
 - **The API-key client** (`locky42/parcels-app-provider`, revision `708726c`):
   requires a provisioned key; this adapter stays on the anonymous public path.
-- **Trusting the requested URL as identity.** A page can render another
+- **Trusting a browser's requested URL as identity.** A page can render another
   shipment or an empty result for the same URL, so only the rendered result
   table is accepted.
 
@@ -202,3 +240,21 @@ carrier's own README.
   browser: 7 carriers with usable history (see Carrier compatibility above);
   postcode/country/sign-in prompts are notices, never events, and are recorded
   as no usable history with their reason.
+- 2026-09-12: reconstructed direct POST returns 32 states for a YunExpress
+  reference (about 0.4 s) and 19 for a DHL reference (about 1.9 s),
+  including the known first/last events. No TRAWL, cookies or page bootstrap.
+  Bpost and SEUR repeated the prompt for invalid test postcodes; the real SEUR
+  browser form behaved identically. A known valid gated pair is still needed
+  for unlock verification.
+- 2026-09-12: both controls also pass through the actual adapter's opt-in live
+  tests. DHL's 19 upstream states become 18 projected events because the shared
+  parser normalizes and deduplicates two delivery messages at the same instant.
+  The reconstructed HTTP request also returned all 19 DHL states from the
+  production application container in about 0.2 s; this was a protocol
+  check, not a deployed-adapter verification.
+
+Live reference values stay outside the repository. To run a reference lookup,
+set `PARCELSAPP_LIVE_NUMBER` and optionally `PARCELSAPP_LIVE_POSTCODE`,
+`PARCELSAPP_LIVE_EXPECTED_STATES` and `PARCELSAPP_LIVE_EXPECTED_EVENTS`, then run
+`adapter.live.test.ts` with `vitest.carriers-live.config.ts`. Default unit tests
+use synthetic identifiers and never contact the upstream service.
