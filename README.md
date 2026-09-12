@@ -73,8 +73,10 @@ text are parsed into consistent delivery stages and timelines. Tracking history
 and available delivery estimates refresh automatically in the background.
 
 Ship24, ParcelsApp, and 17TRACK provide fallback tracking and carrier discovery
-when a direct integration is unavailable. See [carrier support](docs/CARRIERS.md)
-for the full list and setup details.
+when a direct integration is unavailable. Every carrier lives in its own folder
+under [`packages/carriers`](packages/carriers/README.md) with its catalog entry,
+sample numbers, status vocabulary, adapter, tests and documentation; see
+[carrier support](docs/CARRIERS.md) for the overview.
 
 ## iPhone
 

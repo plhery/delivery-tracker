@@ -29,7 +29,13 @@ Next.js route handlers -- user token -----> PostgREST + Postgres RLS
 - `src/server/auth.ts` validates bearer tokens with Supabase Auth and creates a
   PostgREST client carrying that user's JWT. `src/server/api.ts` applies
   privacy-safe logging and account-scoped rate limits to route handlers.
-- `src/server/trackingSync.ts` performs carrier checks and
+- `packages/carriers/` holds every carrier: catalog entries, tracking-number
+  detection, adapters and universal providers, status vocabulary, sample
+  corpus and per-carrier documentation. It imports nothing from the app; the
+  host wires HTTP, sessions and telemetry through its interfaces (see
+  [packages/carriers/ARCHITECTURE.md](../packages/carriers/ARCHITECTURE.md)).
+- `src/server/trackingSync.ts` performs carrier checks through the generated
+  adapter registry and
   `src/server/background.ts` runs the scheduler. `public.sync_jobs` is the
   durable, deduplicated queue; the Node.js worker claims jobs with database
   leases so deploys, crashes, and multiple replicas do not lose or double-run
