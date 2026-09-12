@@ -123,6 +123,63 @@ These are protocol leads, not current availability evidence.
   table is accepted.
 
 
+## Carrier compatibility
+
+Probed 2026-09-12 in a real browser on `parcelsapp.com/en/tracking/{number}`
+with one real `public_shipment_report` corpus number per carrier (36
+carriers). ✅ means the page's own result table echoed the requested number
+and rendered shipment events; ❌ means no usable history — an empty result, a
+destination-country prompt, or a notice row asking for a postcode, sign-in or
+contact details (those rows are notices, never events). Wrong-carrier history
+is called out explicitly: it proves the number exists, not that the filed
+carrier is compatible.
+
+| Carrier | Tested corpus number | Result 2026-09-12 |
+| --- | --- | --- |
+| `aliexpress` | `CNG00798678939847` | ❌ empty result (Ship24 has this shipment) |
+| `amazon-logistics` | `TBA333656997000` | ❌ sign-in notice only; account-only by design |
+| `an-post` | `CP476340265IE` | ❌ empty result (Ship24 has this shipment) |
+| `blue-dart` | `90617363115` | ❌ recipient-postcode notice (GLS) |
+| `bpost` | `323211216300000593107030` | ❌ recipient-postcode notice (Bpost) |
+| `brt` | `08454077486990` | ❌ destination-country prompt (BRT Bartolini recognized) |
+| `ciblex` | `560815852502035603344150` | ❌ postcode + house-number notice (trans-o-flex) |
+| `colis-prive` | `HS0000329755` | ❌ destination-country prompt |
+| `correos-express` | `7983000739053141` | ❌ destination-country prompt |
+| `correos-spain` | `PR110604670130400C` | ❌ destination-country prompt (2015 number) |
+| `ctt-express` | `0082800082809771393048` | ✅ CTT EXPRESS history |
+| `ctt` | `RL402552798PT` | ✅ delivered via Portugal CTT / Italy Post (Ship24 has no history here) |
+| `delhivery` | `32076610152736` | ❌ recipient-postcode notice (GLS/DPD) |
+| `dhl` | `CG738165082DE` | ✅ DHL / La Poste history |
+| `dpd` | `06086216767970` | ❌ empty result |
+| `ecoscooting` | `380030000066362966` | ❌ destination-country prompt |
+| `geodis` | `1GWSKFLSKX4Y` | ❌ recipient-postcode notice (GEODIS E-space recognized) |
+| `gls-de` | `10272483975` | ❌ recipient-postcode notice (GLS) |
+| `gls-fr` | `20189360332` | ✅ delivered via GLS (Ship24 has no history here) |
+| `hermes-de` | `02180171003654` | ❌ destination-country prompt |
+| `j-and-t` | `888058657515` | ❌ recipient-postcode notice (GLS) |
+| `la-poste` | `8G45061126689` | ❌ destination-country prompt (2014 number) |
+| `mondial-relay` | `73800244620101503002000732` | ❌ destination-country prompt (Mondial Relay recognized, no history) |
+| `mrw` | `02680I390427` | ❌ destination-country prompt (MRW recognized) |
+| `nacex` | `2850/11247170` | ❌ destination-country prompt (Nacex recognized) |
+| `paack` | `00100909086360120251130131718` | ❌ destination-country prompt (MRW, not Paack) |
+| `packeta` | `Z8328162946` | ❌ destination-country prompt (Packeta recognized) |
+| `poste-italiane` | `CH166307960NL` | ❌ destination-country prompt (PostNL/UPU, not Poste Italiane) |
+| `relais-colis` | `3380000318` | ❌ destination-country prompt (DHL Express) |
+| `seur` | `01475194188635` | ❌ no SEUR history: DPD history (corpus attribution unverified); `046999610972820260807` asks for SEUR postcode/phone/email |
+| `speedx` | `SPXMIA056745759994` | ❌ destination-country prompt (SpeedX recognized) |
+| `spring-gds` | `CK089862199NL` | ❌ destination-country prompt (PostNL recognized, no history; Ship24 has this shipment) |
+| `sunyou` | `SYAE006809461` | ✅ delivered 2021 via SunYou (Ship24 has no history here) |
+| `tipsa` | `8104405448` | ❌ destination-country prompt (DHL Express) |
+| `uniuni` | `4C003925742US` | ✅ delivered via UNI Express (Ship24 has no history here) |
+| `yunexpress` | `YT2621200705470145` | ✅ delivered via Yun Express / GOFO |
+
+Compatible here: 7 carriers (`ctt-express`, `ctt`, `dhl`, `gls-fr`,
+`sunyou`, `uniuni`, `yunexpress`). Four of them (`ctt`, `gls-fr`, `sunyou`,
+`uniuni`) have no Ship24 history for the same numbers, so the two providers
+complement each other. Every carrier row above is also recorded in that
+carrier's own README.
+
+
 ## Verification log
 
 - 2026-09-08: the English web app renders the UTC values of its own API, so the
@@ -135,3 +192,7 @@ These are protocol leads, not current availability evidence.
   date and an empty time; those rows are skipped.
 - 2026-09-12: moved into `packages/carriers/providers/parcelsapp` unchanged, now
   reporting one `trawl` step per lookup.
+- 2026-09-12: compatibility sweep over 36 real corpus numbers in a real
+  browser: 7 carriers with usable history (see Carrier compatibility above);
+  postcode/country/sign-in prompts are notices, never events, and are recorded
+  as no usable history with their reason.

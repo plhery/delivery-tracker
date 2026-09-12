@@ -139,6 +139,29 @@ required account sign-in. Neither established a working anonymous replacement.
   sub-second direct lookups lead the order.
 
 
+## Carrier compatibility
+
+Per-carrier live verification with a real corpus number is pending for
+17TRACK: it needs the pinned TRAWL compatibility build (`ops/trawl`), which
+was unavailable in the 2026-09-12 sweep environment, and the public tracking
+page does not replay a `#nums=` URL unattended (it renders demo data instead
+of the requested shipment, and the landing form submit stays on the landing
+page in an automation browser). The rows below therefore record design-level
+evidence plus the pre-existing live verifications, not fresh per-carrier
+probes. They will be replaced by real-number results once the TRAWL-backed
+probe runs.
+
+| Carrier | Evidence |
+| --- | --- |
+| `amazon-logistics` | ❌ incompatible by design: retail tracking lives behind the customer's Amazon account; the aggregators need the same access (`../amazon-logistics/README.md`) |
+| prior art | ✅ 2026-09-08: `7321315927723857` reported delivered August 31 (`docs/CARRIERS.md`); ✅ 2026-09-10: seven events for a public example through the captured page with the pinned build |
+| all other corpus carriers (35) | ⏳ not verified in this pass — requires the pinned TRAWL build; Ship24/ParcelsApp columns in the carrier READMEs hold the 2026-09-12 real-number results |
+
+Do not read the ⏳ rows as incompatibility: an empty-history code 400 from
+this provider is a provider failure, not proof of a wrong carrier (see
+`ops/trawl/README.md`).
+
+
 ## Verification log
 
 - 2026-09-10: unsigned direct POST probes answered HTTP 200 with rejection codes
@@ -150,3 +173,7 @@ required account sign-in. Neither established a working anonymous replacement.
   lookup errors keep their names and their `reason` / `providerCode` fields, and
   now extend the shared taxonomy (verification is a challenge, a failed lookup
   is transport, a missing capture is indeterminate).
+- 2026-09-12: per-carrier corpus-number sweep explicitly deferred: no TRAWL in
+  this environment and the public page will not replay `#nums=` unattended.
+  Carrier READMEs record Ship24/ParcelsApp real-number results; this
+  provider's column there reads "not verified in this pass".

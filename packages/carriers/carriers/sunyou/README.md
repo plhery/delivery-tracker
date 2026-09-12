@@ -118,6 +118,16 @@ carries the full list with provenance.
   records what it could not map.
 
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `SYAE006809461` (shipment, `public_shipment_report`, [source](https://github.com/ha-parcel-integrations/ha-sunyou/blob/main/tests/payloads.py)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ❌ No usable history — HTTP 201 without history |
+| ParcelsApp | ✅ Compatible — delivered 2021 via SunYou |
+| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+
 ## Verification log
 
 - 2026-09-12: per-leg offsets replayed from the public prior-art payloads at
@@ -127,3 +137,4 @@ carries the full list with provenance.
   `src/server/upstreamAdapters.ts`; behaviour unchanged apart from the error
   taxonomy (`NotFoundError` / `SchemaError` replace the previous ad-hoc
   classes).
+- 2026-09-12: universal-provider probe with corpus number `SYAE006809461`: Ship24: no usable history; ParcelsApp: compatible; 17TRACK: not verified in this pass.

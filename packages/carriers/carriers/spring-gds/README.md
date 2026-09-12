@@ -135,6 +135,18 @@ category leaves the event without a stage and the shipment in transit.
   `/track?barcodes=`.
 
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `CK089862199NL` (shipment, `public_shipment_report`, [source](https://www.paketda.de/fragen-antworten.php)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ✅ Compatible — 18 events via PostNL |
+| ParcelsApp | ❌ No usable history — destination-country prompt (PostNL recognized) |
+| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+
+Also tried `LA681049820NL` on Ship24: ✅ 16 events via PostNL.
+
 ## Verification log
 
 - 2026-09-12: sixteen status categories recorded in `statuses.json`, each
@@ -143,3 +155,4 @@ category leaves the event without a stage and the shipment in transit.
   `src/server/upstreamAdapters.ts`; behaviour unchanged apart from the error
   taxonomy (`NotFoundError` / `SchemaError` replace the previous ad-hoc
   classes).
+- 2026-09-12: universal-provider probe with corpus number `CK089862199NL`: Ship24: compatible; ParcelsApp: no usable history; 17TRACK: not verified in this pass.

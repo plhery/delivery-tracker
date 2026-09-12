@@ -131,6 +131,18 @@ with `lastError: E000` and is shown as not found.
   anonymous overview, so the probe never handles a credential.
 
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `10272483975` (shipment, `public_shipment_report`, [source](https://www.paketda.de/fragen-antworten.php?suche_carrier=gls)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ❌ No GLS history — 12 events but CDEK Russia (corpus attribution unverified) |
+| ParcelsApp | ❌ No usable history — recipient-postcode notice (GLS) |
+| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+
+Also tried `Z6E5E29R` on Ship24: 404.
+
 ## Verification log
 
 - 2026-09-08: a publicly reported GLS Germany number from the Paketda forum
@@ -143,3 +155,4 @@ with `lastError: E000` and is shown as not found.
   `expandedCarriers.live.test.ts` asserts them. The constructor still accepts a
   positional timeout, because `app/api/carriers/detect/route.ts` constructs it
   as `new GLSGermanyTracker(5_000)`.
+- 2026-09-12: universal-provider probe with corpus number `10272483975`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.

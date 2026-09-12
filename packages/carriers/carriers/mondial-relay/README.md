@@ -163,6 +163,18 @@ classifies the raw wording and records it for review.
   offsets in the output would have been wrong by an hour for half the year.
 
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `73800244620101503002000732` (full_barcode, `public_shipment_report`, [source](https://forum.quechoisir.org/probleme-colis-mondial-relay-gls-t286523-40.html)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ❌ No usable history — HTTP 404 |
+| ParcelsApp | ❌ No usable history — destination-country prompt (Mondial Relay recognized) |
+| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+
+Also tried `4744000791` on Ship24: 5 events but DPD UK (corpus attribution unverified); `87778793`, `98911884`: 404.
+
 ## Verification log
 
 - 2026-08-30: protocol inspected in the official tracking bundle; the page
@@ -174,3 +186,4 @@ classifies the raw wording and records it for review.
 - 2026-09-12: adapter moved into this folder; the wording classifier moved to
   `status.ts`, the flow moved onto `runSteps` and the shared TRAWL client, and
   the error classes moved onto the shared taxonomy.
+- 2026-09-12: universal-provider probe with corpus number `73800244620101503002000732`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.

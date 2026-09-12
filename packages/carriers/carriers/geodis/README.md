@@ -156,6 +156,16 @@ sync classifies it and records it for review.
   the honest stage.
 
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `1GWSKFLSKX4Y` (shipment, `public_shipment_report`, [source](https://suivi-colis.org/espacedestinataire-livraison-geodis/)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ❌ No usable history — HTTP 404 |
+| ParcelsApp | ❌ No usable history — recipient-postcode notice (GEODIS E-space recognized) |
+| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+
 ## Verification log
 
 - 2026-09-12: adapter, tests and wording rules moved into this folder. Behaviour
@@ -164,3 +174,4 @@ sync classifies it and records it for review.
   `IndeterminateError` instead of a bare `Error`.
 - 2026-09-12: the grouped opt-in live suite asserts that a validly shaped unknown
   `1G…` number produces the structured not-found response.
+- 2026-09-12: universal-provider probe with corpus number `1GWSKFLSKX4Y`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.

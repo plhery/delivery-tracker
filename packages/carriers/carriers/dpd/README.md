@@ -153,6 +153,16 @@ carry a stage: only the parcel's current stage is mapped.
   pickup point for payloads that only fill that field.
 
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `06086216767970` (shipment, `public_shipment_report`, [source](https://www.paketda.de/fragen-antworten.php)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ❌ No usable history — HTTP 404 |
+| ParcelsApp | ❌ No usable history — empty result page |
+| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+
 ## Verification log
 
 - 2026-09-10: the tracking-link audit confirmed the consignee page and that a
@@ -160,3 +170,4 @@ carry a stage: only the parcel's current stage is mapped.
 - 2026-09-12: moved into this folder; the guest protocol, the status map and
   the page fallback are unchanged. The recovery tier is now labelled `page` in
   telemetry whether or not a browser service is configured.
+- 2026-09-12: universal-provider probe with corpus number `06086216767970`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.

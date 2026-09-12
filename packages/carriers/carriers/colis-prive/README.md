@@ -140,6 +140,16 @@ the sync classifies it and records it for review.
   migration, not an adapter change.
 
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `HS0000329755` (shipment, `public_shipment_report`, [source](https://fr-be.trustpilot.com/review/boutikplus.fr)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ❌ No usable history — HTTP 404 |
+| ParcelsApp | ❌ No usable history — destination-country prompt |
+| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+
 ## Verification log
 
 - 2026-09-12: adapter, tests and wording rules moved into this folder. Behaviour
@@ -148,3 +158,4 @@ the sync classifies it and records it for review.
 - 2026-09-12: an unknown shipment is answered with a redirect to the search page,
   not an HTTP 404; the grouped opt-in live suite asserts the resulting
   not-found error.
+- 2026-09-12: universal-provider probe with corpus number `HS0000329755`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.

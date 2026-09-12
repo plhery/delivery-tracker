@@ -136,9 +136,22 @@ Unrecognized identifiers keep the neutral description "Shipment update".
   local helper stays, with a comment saying why.
 
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `00100909086360120251130131718` (shipment, `public_shipment_report`, [source](https://www.ocu.org/reclamar/lista-reclamaciones-publicas/mucho-retraso-en-entrega/3e6c4a88d9208bdbc4)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ❌ No usable history — HTTP 404 |
+| ParcelsApp | ❌ No usable history — destination-country prompt (MRW, not Paack) |
+| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+
+Also tried the other 4 public numbers on Ship24: all 404.
+
 ## Verification log
 
 - 2026-09-12: moved into this folder; the Remix-context extraction, the
   identifier check and the status map are unchanged.
 - 2026-09-12: `PaackTrackingError` → `NotFoundError` (same 404 and message);
   payload rejections → `SchemaError`; the empty body → `IndeterminateError`.
+- 2026-09-12: universal-provider probe with corpus number `00100909086360120251130131718`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.

@@ -137,6 +137,16 @@ review.
   so an offset-less value is dropped instead.
 
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `RL402552798PT` (shipment, `public_shipment_report`, [source](https://www.altroconsumo.it/reclamare/bacheca-dei-reclami/ritardo-consegna-raccomandata/f9bc9dea8c8224161d)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ❌ No usable history — HTTP 201 without history |
+| ParcelsApp | ✅ Compatible — delivered via Portugal CTT / Italy Post |
+| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+
 ## Verification log
 
 - 2026-09-10: live check. The cookie-less POST answers `403` while setting
@@ -149,3 +159,4 @@ review.
   as a clean not-found.
 - 2026-09-12: adapter moved into this folder; the status map moved to
   `status.ts` and the error classes moved onto the shared taxonomy.
+- 2026-09-12: universal-provider probe with corpus number `RL402552798PT`: Ship24: no usable history; ParcelsApp: compatible; 17TRACK: not verified in this pass.

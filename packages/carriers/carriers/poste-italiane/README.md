@@ -127,6 +127,18 @@ the sync classifies and records it for review.
   milliseconds, so there is nothing to stamp.
 
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `CH166307960NL` (shipment, `public_shipment_report`, [source](https://www.altroconsumo.it/reclamare/bacheca-dei-reclami/reso-ritornato-al-mittente-e-p/5341225f84324f54e4)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ❌ No usable history — HTTP 404 |
+| ParcelsApp | ❌ No usable history — destination-country prompt (PostNL/UPU, not Poste Italiane) |
+| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+
+Also tried the other 7 public numbers on Ship24: 7× 404, `2IMA0051035900` 201 without history.
+
 ## Verification log
 
 - 2026-09-10: live check. Unknown codes answer HTTP 200 with `esitoRicerca` "1";
@@ -139,3 +151,4 @@ the sync classifies and records it for review.
 - 2026-09-11: ASCII-apostrophe delivered wording observed live and added.
 - 2026-09-12: adapter moved into this folder; the classifier moved to
   `status.ts` and the error classes moved onto the shared taxonomy.
+- 2026-09-12: universal-provider probe with corpus number `CH166307960NL`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.

@@ -134,6 +134,16 @@ own text as the description and are left for the sync's classifier.
   way to your relais", which recipients rely on.
 
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `338 0000 318` (shipment, `public_shipment_report`, [source](https://forum.quechoisir.org/attitude-inadmissible-de-relais-colis-fuyez-t216835.html)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ❌ No usable history — HTTP 404 (2019 number, likely expired) |
+| ParcelsApp | ❌ No usable history — destination-country prompt (DHL Express) |
+| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+
 ## Verification log
 
 - 2026-09-12: moved into this folder; the CSRF flow, the identifier check, the
@@ -142,3 +152,4 @@ own text as the description and are left for the sync's classifier.
   and keeps its name, so the grouped live canary still matches; identifier,
   history and CSRF failures → `SchemaError`; the empty body →
   `IndeterminateError`.
+- 2026-09-12: universal-provider probe with corpus number `338 0000 318`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.

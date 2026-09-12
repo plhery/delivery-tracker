@@ -138,6 +138,18 @@ delivery. `statuses.json` holds the full list.
   unmapped summary (`fortschritt <= 1` means the parcel is still announced).
 
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `CG738165082DE` (shipment, `public_shipment_report`, [source](https://fr.trustpilot.com/review/www.dhl.fr)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ✅ Compatible — 11 events via DHL |
+| ParcelsApp | ✅ Compatible — DHL / La Poste history |
+| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+
+Also tried `00340434633751428115` on Ship24: 404.
+
 ## Verification log
 
 - 2026-09-07: public config plus search session automated, with a browser
@@ -149,3 +161,4 @@ delivery. `statuses.json` holds the full list.
 - 2026-09-12: moved into this folder; errors now use the package taxonomy
   (`ChallengeError`, `SchemaError`, `RateLimitedError`) and the two steps are
   run and reported by `core/runner`.
+- 2026-09-12: universal-provider probe with corpus number `CG738165082DE`: Ship24: compatible; ParcelsApp: compatible; 17TRACK: not verified in this pass.

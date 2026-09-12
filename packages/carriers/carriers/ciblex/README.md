@@ -120,6 +120,18 @@ description "Ciblex tracking update" and is left for the sync's classifier.
   wording keeps the timeline readable and the classifier deterministic.
 
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `560815852502035603344150` (full_barcode, `public_shipment_report`, [source](https://fr.trustpilot.com/review/www.ciblex.fr)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ❌ No usable history — HTTP 404 |
+| ParcelsApp | ❌ No usable history — postcode + house-number notice (trans-o-flex) |
+| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+
+Also tried `560815852502035613344150` on Ship24: 404.
+
 ## Verification log
 
 - 2026-09-12: moved into this folder; the page shape, the identifier check and
@@ -127,3 +139,4 @@ description "Ciblex tracking update" and is left for the sync's classifier.
 - 2026-09-12: `CiblexTrackingError` → `NotFoundError` (same 404 and message);
   the bare empty 200 → `IndeterminateError`; identifier and mismatch rejections
   → `SchemaError`.
+- 2026-09-12: universal-provider probe with corpus number `560815852502035603344150`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.

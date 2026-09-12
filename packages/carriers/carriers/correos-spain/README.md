@@ -131,6 +131,16 @@ classifies and records the raw wording.
   reported as `unknown`, so a wrong reconstruction shows up as a mismatch rather
   than as silence.
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `PR110604670130400C` (shipment, `public_shipment_report`, [source](https://www.htcmania.com/archive/index.php/t-964137.html)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ❌ No usable history — HTTP 404 (2015 number, likely expired) |
+| ParcelsApp | ❌ No usable history — destination-country prompt |
+| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+
 ## Verification log
 
 - 2026-09-10: live check. Unknown codes answer HTTP 200 with
@@ -142,3 +152,4 @@ classifies and records the raw wording.
 - 2026-09-11: sender, pickup, weight and dimension retention added.
 - 2026-09-12: adapter moved into this folder; the status map moved to
   `status.ts` and the error classes moved onto the shared taxonomy.
+- 2026-09-12: universal-provider probe with corpus number `PR110604670130400C`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.

@@ -143,6 +143,18 @@ if that leaves it unresolved.
   missing parcels during a provider outage.
 
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `8G45061126689` (shipment, `public_shipment_report`, [source](https://forum.quechoisir.org/arnaque-par-rue-du-commerce-je-demande-justice-t22371.html)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ❌ No usable history — HTTP 404 (2013/2014 numbers, likely expired) |
+| ParcelsApp | ❌ No usable history — destination-country prompt |
+| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+
+Also tried `8U01130342039` on Ship24: 404.
+
 ## Verification log
 
 - 2026-09-10: the tracking-link audit confirmed the public tracker page
@@ -152,3 +164,4 @@ if that leaves it unresolved.
   the two immediate retries.
 - 2026-09-12: moved into this folder. The feed, the status map and the retry
   budget are unchanged; the retries are now expressed as runner steps.
+- 2026-09-12: universal-provider probe with corpus number `8G45061126689`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.

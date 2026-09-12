@@ -127,8 +127,19 @@ wording and records it for review.
   an empty location is honest, a parsed one would not be.
 
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `CNG00798678939847` (shipment, `public_shipment_report`, [source](https://www.paketda.de/fragen-antworten.php)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ✅ Compatible — 25 events via Cainiao |
+| ParcelsApp | ❌ No usable history — empty result page |
+| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+
 ## Verification log
 
 - 2026-09-12: adapter moved into this folder from `src/server/upstreamAdapters.ts`;
   behaviour unchanged apart from the error taxonomy (`NotFoundError` /
   `SchemaError` replace the previous ad-hoc classes).
+- 2026-09-12: universal-provider probe with corpus number `CNG00798678939847`: Ship24: compatible; ParcelsApp: no usable history; 17TRACK: not verified in this pass.

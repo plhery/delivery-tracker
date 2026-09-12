@@ -74,6 +74,16 @@ link and to run the Amazon Shipping check.
   Amazon Shipping, and two copies would drift.
 
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `TBA333656997000` (shipment, `public_shipment_report`, [source](https://github.com/jkeen/tracking_number_data/issues/2)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ❌ No usable history — HTTP 404; account-only by design |
+| ParcelsApp | ❌ No usable history — sign-in notice only |
+| 17TRACK | ❌ Incompatible by design — account-only; the aggregators need the same login |
+
 ## Verification log
 
 - 2026-09-10: confirmed that the shared format resolves here first and that a
@@ -81,3 +91,4 @@ link and to run the Amazon Shipping check.
   structured `SWA` or `MCF` response, verified independently by the create and
   carrier-change APIs.
 - 2026-09-12: folder documented alongside the `amazon-shipping` adapter move.
+- 2026-09-12: universal-provider probe with corpus number `TBA333656997000`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: incompatible by design.

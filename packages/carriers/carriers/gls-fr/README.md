@@ -145,6 +145,18 @@ sync classifies it and records it for review.
   capability guard.
 
 
+## Universal provider compatibility
+
+Probed 2026-09-12 with the corpus number `20189360332` (shipment, `public_shipment_report`, [source](https://forum.quechoisir.org/non-livraison-usage-sciemment-reitere-de-faux-bons-de-livraison-t375192.html)).
+
+| Provider | Result |
+| --- | --- |
+| Ship24 | ❌ No usable history — HTTP 404 |
+| ParcelsApp | ✅ Compatible — delivered via GLS |
+| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+
+Also tried `00E7V8YY` and `ZBH2FY7Q` on Ship24: both 404.
+
 ## Verification log
 
 - 2026-09-12: adapter, tests and status map moved into this folder unchanged in
@@ -152,3 +164,4 @@ sync classifies it and records it for review.
   stage.
 - 2026-09-12: a validly shaped wrong number (`00ZZ00Z0`) answers HTTP 404 with a
   plain-text body; the opt-in live test asserts that.
+- 2026-09-12: universal-provider probe with corpus number `20189360332`: Ship24: no usable history; ParcelsApp: compatible; 17TRACK: not verified in this pass.

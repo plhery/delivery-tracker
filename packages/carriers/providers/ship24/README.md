@@ -132,6 +132,62 @@ shared by the four universal providers and lives in `../shared/result.ts`.
   needed and none were added.
 
 
+## Carrier compatibility
+
+Probed 2026-09-12 through the `direct` signed POST with one real
+`public_shipment_report` corpus number per carrier (81 numbers across 36
+carriers; every public shipment/full-barcode record was tried, not just the
+representative below). ✅ means the payload echoed the requested number and
+carried events from the expected carrier; ❌ means no usable history for the
+tested numbers (HTTP 404 or 201 without history). A 404 on an old corpus
+number usually means the shipment expired from the aggregator, not proof the
+carrier is unsupported — but only the ✅ rows prove compatibility.
+
+| Carrier | Tested corpus number | Result 2026-09-12 |
+| --- | --- | --- |
+| `aliexpress` | `CNG00798678939847` | ✅ 25 events, Cainiao |
+| `amazon-logistics` | `TBA333656997000` | ❌ 404; account-only by design, aggregators need the same login |
+| `an-post` | `CP476340265IE` | ✅ 13 events, An Post |
+| `blue-dart` | `90617363115` | ❌ 404 |
+| `bpost` | `323211216300000593107030` (+2 more, all 404) | ❌ no history |
+| `brt` | `08454077486990` (+1 more, both 404) | ❌ no history |
+| `ciblex` | `560815852502035603344150` (+1 more, both 404) | ❌ no history |
+| `colis-prive` | `HS0000329755` | ❌ 404 |
+| `correos-express` | `7983000739053141` (404; `3230002125829719` 201 without history) | ❌ no history |
+| `correos-spain` | `PR110604670130400C` | ❌ 404 (2015 number, likely expired) |
+| `ctt-express` | `0082800082809771393048` | ✅ 14 events, CTT Express (`…1598159` ✅ 11 events; `…8638008391` 201 without history) |
+| `ctt` | `RL402552798PT` | ❌ 201 without history (ParcelsApp has this shipment) |
+| `delhivery` | `32076610152736` | ❌ 404 |
+| `dhl` | `CG738165082DE` | ✅ 11 events, DHL (`00340434633751428115` 404) |
+| `dpd` | `06086216767970` | ❌ 404 |
+| `ecoscooting` | `380030000066362966` (+4 more, all 404) | ❌ no history |
+| `geodis` | `1GWSKFLSKX4Y` | ❌ 404 |
+| `gls-de` | `10272483975` | ❌ no GLS history: 12 events but CDEK Russia (corpus attribution unverified); `Z6E5E29R` 404 |
+| `gls-fr` | `20189360332` (+2 more, all 404) | ❌ no history (ParcelsApp has `20189360332`) |
+| `hermes-de` | `02180171003654` (+2 more, all 404) | ❌ no history |
+| `j-and-t` | `888058657515` | ⏳ lookup timed out twice at 8–10 s; indeterminate, not proven incompatible |
+| `la-poste` | `8G45061126689` (+1 more, both 404) | ❌ no history (2013/2014 numbers, likely expired) |
+| `mondial-relay` | `73800244620101503002000732` | ❌ 404 (`4744000791` returns 5 events but DPD UK, wrong carrier; `87778793`, `98911884` 404) |
+| `mrw` | `02680I390427` (+4 more, all 404) | ❌ no history |
+| `nacex` | `2850/11247170` (+1 more, both 404) | ❌ no history |
+| `paack` | `00100909086360120251130131718` (+4 more, all 404) | ❌ no history |
+| `packeta` | `Z8328162946` (+2 more, all 404) | ❌ no history |
+| `poste-italiane` | `CH166307960NL` (7× 404; `2IMA0051035900` 201 without history) | ❌ no history |
+| `relais-colis` | `3380000318` | ❌ 404 |
+| `seur` | `01475194188635` | ❌ no SEUR history: 9 events but DPD Germany (corpus attribution unverified); `046999610972820260807` 404 |
+| `speedx` | `SPXMIA056745759994` (+3 more, all 404) | ❌ no history |
+| `spring-gds` | `CK089862199NL` | ✅ 18 events, PostNL (`LA681049820NL` ✅ 16 events) |
+| `sunyou` | `SYAE006809461` | ❌ 201 without history (ParcelsApp has this shipment) |
+| `tipsa` | `8104405448` | ❌ 404 |
+| `uniuni` | `4C003925742US` (404; `UUS5B60564241706199` 201 without history) | ❌ no history (ParcelsApp has `4C003925742US`) |
+| `yunexpress` | `YT2621200705470145` | ✅ 33 events, Yun Express + GOFO |
+
+Compatible here: 6 carriers (`aliexpress`, `an-post`, `ctt-express`, `dhl`,
+`spring-gds`, `yunexpress`). Every carrier row above is also recorded in that
+carrier's own README; see `docs/CARRIERS.md` for the dated public-sample
+checks this table extends.
+
+
 ## Verification log
 
 - 2026-09-10: GET on the parcel API answers 404 and an unsigned POST answers
@@ -143,3 +199,8 @@ shared by the four universal providers and lives in `../shared/result.ts`.
   instead of dropping the shipment.
 - 2026-09-12: moved into `packages/carriers/providers/ship24` unchanged; the
   step ids (`direct`, `browser`) and the provider name are preserved.
+- 2026-09-12: compatibility sweep over 81 real corpus numbers (36 carriers)
+  through the direct signed POST: 6 carriers with correct-carrier history
+  (see Carrier compatibility above); `gls-de`, `mondial-relay` and `seur`
+  corpus numbers returned other carriers' history and prove nothing for those
+  carriers; `j-and-t` timed out twice and stays indeterminate.
