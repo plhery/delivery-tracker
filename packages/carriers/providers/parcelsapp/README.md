@@ -110,6 +110,11 @@ wording rules and the language classifier.
 
 ## Rejected alternatives
 
+Prior browser implementations inspected during the September 10 review:
+[thefuga/parcelsapp-crawler](https://github.com/thefuga/parcelsapp-crawler/blob/e3085dc9a3144829d0689a4f12705f61a87258ec/main.go)
+and [dustindog101/parcelsapp-cli](https://github.com/dustindog101/parcelsapp-cli/blob/b0c57c2/parcels.py).
+These are protocol leads, not current availability evidence.
+
 - **A plain HTTP GET of the tracking page.** Returns the application shell.
 - **The API-key client** (`locky42/parcels-app-provider`, revision `708726c`):
   requires a provisioned key; this adapter stays on the anonymous public path.

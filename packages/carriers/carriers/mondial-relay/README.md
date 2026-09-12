@@ -4,8 +4,9 @@
 
 `mondial-relay` — the French parcel-shop network, with last mile in `FR`, `BE`,
 `ES`, `LU` and `PT`. This adapter reads the French recipient flow and validates
-French recipient postcodes, so shipments addressed outside France are not
-reachable through it today.
+French recipient postcodes for short numbers. Validated 26-digit label
+barcodes use a public alias without a postcode; this does not establish
+coverage for every destination country.
 
 ## Portals
 
@@ -49,8 +50,9 @@ negatives that prove the checksum gate.
 ## How the adapter works
 
 One step, `trawl`: the browser service, with no direct attempt at all.
-Cloudflare answers every non-browser client with an HTTP 403 WAF block, so a
-direct request only burns time and reports a fallback on every sync.
+Direct requests were blocked by Cloudflare in the September 10 investigation,
+so the current implementation starts with TRAWL. This records the chosen
+transport, not a claim that HTTP-only retrieval can never work.
 
 1. Load `/suivi-de-colis/` in a real browser and read the `token` attribute out
    of the captured response body. The Vue app replaces the `#tracking` root as
@@ -72,7 +74,7 @@ Errors: `NotFoundError` for the endpoint's warning response, `ChallengeError`
 when no token is issued, `SchemaError` for a malformed credential, a reply that
 does not bind to the requested shipment, or a browser answer that is not
 tracking data, and `InputRequiredError` when a well-shaped number arrives
-without a usable recipient postcode.
+without a usable recipient postcode, except for validated 26-digit barcodes.
 
 ## Status reference
 

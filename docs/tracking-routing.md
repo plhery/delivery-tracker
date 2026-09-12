@@ -64,7 +64,7 @@ Useful issue searches:
 - `component:tracking-routing operation:fresher_provider_found` — evidence to reconsider default ordering.
 - `component:tracking-routing operation:provider_recovered` — recovery signal (informational; does not auto-resolve an issue).
 
-Existing sync attempt/step audits remain in place. Provider failures are reported before recovery, so a successful fallback does not conceal them. Shadow checks and provider cooldowns limit issue volume. Coverage names are reported once per parcel's retained name set. The reporter uses the existing `SENTRY_DSN`; this change does not create organization-level alert recipients or notification rules.
+Existing sync attempt/step audits remain in place. Cross-provider failures are reported before recovery, so a successful fallback does not conceal them. Internal tier warning timing is documented in [scraper monitoring](scraper-monitoring.md). Shadow checks and provider cooldowns limit issue volume. Coverage names are reported once per parcel's retained name set. The reporter uses the existing `SENTRY_DSN`; this change does not create organization-level alert recipients or notification rules.
 
 See [scraper monitoring](scraper-monitoring.md) for per-provider average/p95 timings, direct-path failures and recovery usage.
 

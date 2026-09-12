@@ -46,10 +46,10 @@ Samples and their expectations live in `numbers.json`.
 One step, `browser`: a local Chromium loads the public tracking page, the site
 solves its own challenge and calls `utapi` in that session, and the response
 to the exact requested API URL is parsed. There is no direct HTTP step — the
-endpoint answers every direct server request with an Akamai crypto
-proof-of-work challenge (HTTP 428), and browser clearance cannot be copied
-back to Node. One lookup at a time per instance, and the browser helper keeps
-its own concurrency limit, so a batch never spawns a Chromium per parcel.
+September 10 direct-request tests returned an Akamai challenge (HTTP 428),
+and cookie replay did not establish a working Node data fetch. Lookups are
+serialized per instance, and the browser helper allows only one active local
+browser lookup per process.
 
 DHL may answer with a customer-confirmation id instead of the queried alias,
 so exactly one `ecommerce` shipment from that exact request URL is accepted,
@@ -78,6 +78,10 @@ terminal and outranks an intuitive translation.
 
 ## Limitations and privacy
 
+- The shared [browser helper](../../core/transport/browser.ts) accepts matching
+  API responses with status 200/201 and handles 429 explicitly. It currently
+  ignores API 404/5xx and parser failures while waiting, so those outcomes can
+  become a generic timeout. Navigation errors are handled separately.
 - Scans whose timezone cannot be resolved from the event's country code or a
   known hub are omitted rather than stamped with a fabricated UTC time, so a
   history can be shorter than the portal's.
@@ -94,11 +98,9 @@ terminal and outranks an intuitive translation.
   customer-confirmation id that matches none of the queried aliases, so an
   identity check on the echoed id would reject good data and a looser check
   would accept somebody else's parcel.
-- 2026-09-11: no direct HTTP step at all. The endpoint answers every direct
-  server request with an Akamai crypto proof-of-work challenge (HTTP 428);
-  cookie replay and visiting the page first were both verified to still
-  return 428 on 2026-09-10, and browser clearance is not transferable back to
-  Node. A direct attempt would only add latency before the browser.
+- 2026-09-11: removed the direct step after the recorded HTTP and cookie-replay
+  attempts remained blocked. Keep browser execution until a simpler data fetch
+  is verified in the intended runtime.
 - Event timestamps are local wall-clock strings, sometimes without a country
   code. The zone comes from the event's country code, a locality that is
   itself a country code, or a known hub; anything else is omitted. A
@@ -120,8 +122,9 @@ terminal and outranks an intuitive translation.
 
 ## Rejected alternatives
 
-- Solving the Akamai challenge in Node (cookie replay, page visit first):
-  verified not to work on 2026-09-10.
+- A September 11 experiment reproduced the proof-of-work calculation in Node,
+  but the subsequent data request remained blocked while browser retrieval
+  worked. Solving the challenge alone did not establish an HTTP-only adapter.
 - Sending the browser through the shared TRAWL service like `dhl`: the site
   has to call its own API inside the session that solved the challenge, which
   is what the local Chromium helper captures.

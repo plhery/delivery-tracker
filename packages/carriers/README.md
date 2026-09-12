@@ -35,9 +35,9 @@ scripts/      new-carrier, generate-registry, generate-readme, detection-golden
    `adapter` factory, `status.ts` with the code or wording map and its
    provenance, scrubbed `fixtures/`, `adapter.test.ts` with the capability guard
    and privacy assertions, and an env-gated `adapter.live.test.ts`.
-5. Keep setup, limitations, non-obvious decisions and dated verification
-   evidence in one README.md. Keep catalog facts and status observations in
-   `carrier.json` and `statuses.json` instead of maintaining duplicate lists.
+5. Keep integration-specific decisions and verification in one README.md;
+   update the [maintained sources](ARCHITECTURE.md#sources-of-truth) rather than
+   copying catalog facts or general scraper instructions into it.
 6. `npm run contract:generate` (merges the catalog, regenerates the registry),
    `node packages/carriers/scripts/generate-readme.mjs`, then
    `npm run test:contract`, `npm run lint`, `npm run typecheck` and the test

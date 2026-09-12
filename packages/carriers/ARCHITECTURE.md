@@ -1,195 +1,72 @@
 # Carrier package architecture
 
-`packages/carriers` holds everything the app knows about parcel carriers: the
-catalog, tracking-number detection, the scrapers ("adapters"), status
-normalization, sample data and per-carrier documentation. It is written so it
-can become its own repository later: nothing inside it imports Next.js,
-Supabase, Sentry or application code. The host provides HTTP, sessions and a
-telemetry sink through interfaces.
+The package contains the catalog, number detection, adapters, universal
+providers and result normalization. It does not import the web application,
+Supabase or Sentry. The host supplies configuration and telemetry through
+[AdapterEnvironment](core/adapter/index.ts).
 
-Goals, in the order they win when they conflict:
+## Sources of truth
 
-1. **Human-readable.** Everything about one carrier lives in one folder. A
-   stranger can read that folder and understand what we retrieve, from where,
-   why, and how sure we are.
-2. **Updatable.** Adding a carrier, a number format or a newly observed status
-   wording is a data change with a checklist, not archaeology across the repo.
-3. **Monitorable.** Every lookup records which step served it, how long each
-   step took, and whether the status mapping was explicit, inferred or missing.
-4. **Maintainable.** One implementation of each cross-cutting concern.
-5. **Extractable.** The package boundary is enforced by lint.
+| Concern | Maintained source |
+| --- | --- |
+| Identity, links, inputs, capabilities and declared steps | `carriers/<id>/carrier.json` |
+| Number examples and their provenance | `carriers/<id>/numbers.json`; [corpus rules](CORPUS.md) |
+| Status observations and evidence | `carriers/<id>/statuses.json` |
+| Actual status mapping | Carrier `status.ts`, or [provider result helpers](providers/shared/result.ts) |
+| Runtime interface and result validation | [core/adapter](core/adapter/index.ts), [core/result](core/result/index.ts) |
+| Protocol choices, limitations and verification | One README per carrier/provider; provenance beside fixtures |
+| Generated catalog, registry and brand assets | `generated/`; regenerate through `npm run contract:generate` |
 
-## Layout
+READMEs explain non-obvious behavior; they should not duplicate changing
+contracts or become a second status database. General reverse-engineering
+methods belong in the reusable scraper skill, not a repo-specific casebook.
 
-```
-packages/carriers/
-  ARCHITECTURE.md        this file: design and decisions
-  README.md              overview table (generated) and the add-a-carrier checklist
-  core/
-    catalog/             carrier.json schema, loader, typed access to the merged catalog
-    brand/               palette derivation, truck geometry, the data both clients render
-    detection/           number detection engine, checksums, input parsing, link rules
-    status/              Stage vocabulary, status maps, wording classifier, observation hooks
-    result/              CarrierResult / CarrierEvent and their normalization
-    errors/              the single error taxonomy used by adapters, routing and telemetry
-    transport/           bounded fetch, cookie sessions, TRAWL client, browser session, single flight
-    time/                timestamp parsing with an explicit timezone policy
-    runner/              runSteps(): tiered execution with per-step telemetry and budgets
-    telemetry/           StepRecorder interface, metric names and label sets
-    testing/             corpus loader, detection sweep, fixture harness, live-test helpers
-  carriers/<id>/         one folder per carrier (see "Carrier folder")
-  providers/<id>/        universal providers (Ship24, ParcelsApp, 17TRACK, Postal Ninja), same skeleton
-  generated/             registry and merged catalog, produced by scripts; never edited by hand
-  scripts/               generators and checks
-```
+## Registration and execution
 
-## Carrier folder
+The [registry generator](scripts/generate-registry.mjs) resolves link-only
+carriers to `null`, folders with `adapter.ts` to their own factory, universal
+carriers to `universal`, and shared adapters to the referenced folder. This
+also handles legacy catalog adapter names when a dedicated file exists.
+`--check --strict` verifies the output and rejects unresolved automatic carriers.
 
-```
-carriers/<id>/
-  carrier.json           identity, brand, timezone, portal facts, links, detection rules, inputs, capabilities
-  numbers.json           evidence-tagged sample numbers used by the detection sweep
-  statuses.json          observed status vocabulary: raw wording or code, stage, first seen, how confirmed
-  README.md              setup, limitations, implementation decisions and verification
-  adapter.ts             dedicated carriers only: implements CarrierAdapter, exports a pure parse()
-  status.ts              dedicated carriers only: code or wording → Stage map with provenance comments
-  adapter.test.ts        offline tests over fixtures
-  adapter.live.test.ts   opt-in tests against the real endpoint, gated by environment variables
-  fixtures/              scrubbed payloads, one JSON per scenario, provenance header inside each
-  brand/                 optional logo.svg; palette and decal are carrier.json keys
-```
+An adapter exports an `AdapterFactory`. Its instance exposes `id`, `steps`
+and `track(input, context?)`; input carries the stored number, optional
+capability URL and postcode. The context can provide cancellation and a budget.
+[AdapterRegistry](core/adapter/index.ts) creates and caches instances by adapter
+id. Modules are statically imported; only instance creation is lazy.
 
-Carriers without a dedicated adapter (tracked through the universal providers)
-have the data files and README only. Adding an adapter later adds files; it
-never moves anything.
+[runSteps](core/runner/index.ts) attempts enabled steps in order, supplies the
+remaining budget and signal, and records completed steps and lookup outcomes.
+Adapters must pass these controls into their actual I/O. Default recovery
+allows challenge, transport, indeterminate and unclassified errors; adapters
+can supply explicit recovery predicates. `singleFlight()` serializes operations
+on an instance. The error taxonomy is in [core/errors](core/errors/index.ts);
+the host's [routingFailure](../../src/server/trackingRouting.ts) consumes it
+before applying compatibility handling for other errors.
 
-`carrier.json` is the single source of truth per carrier. The generator merges
-every `carriers/*/carrier.json` into `contracts/openapi.json` under
-`x-carriers`, so the TypeScript contract, the Swift contract, the iPhone's
-offline catalog and `/api/carriers` are all produced from the folders.
-`npm run test:contract` fails when any generated artifact is stale.
+The host constructs the registry in [adapterRegistry.ts](../../src/server/adapterRegistry.ts).
+Cross-provider ordering, affinity, cooldowns and shared leases belong to
+[tracking routing](../../docs/tracking-routing.md), not individual scrapers.
 
-## Detection
+## Results and telemetry
 
-One engine in `core/detection`, imported by the web client, the server and the
-tests. Rules are data in `carrier.json` (`detection[]`, each with an `id`, a
-`pattern`, a `confidence`, an optional `checksum` and a `source`). Exactly one
-high-confidence match selects a carrier; zero or several high matches keep the
-number as a low-confidence suggestion with candidates. The Swift port stays in
-sync through a golden file produced by the corpus sweep and replayed by the
-native tests.
+`normalizeCarrierResult()` validates known fields but preserves extra result
+and event properties. Each parser selects the fields it returns; normalization
+is not a field allowlist. The host sync classifies events without an explicit
+stage and records the classification source. Time helpers live in `core/time`;
+provider-specific offset or wall-time interpretation remains with each parser.
 
-Intended collisions between rules are declared in
-`core/detection/collisions.json` with a reason each. The sweep fails on any
-collision that is not declared.
+The host [StepRecorder](../../src/server/stepRecorder.ts) emits Sentry metrics
+and logs; registered sinks add Prometheus. The sync's database attempt ledger
+is separate from these per-adapter step records. Operational diagnostic policy
+is maintained in [Observability](../../docs/OBSERVABILITY.md), with phase timing
+and emission behavior in [scraper monitoring](../../docs/scraper-monitoring.md).
+Do not add a second package-level privacy or logging policy.
 
-## Number corpus
+## Checks
 
-`numbers.json` records every sample number with its evidence family:
-
-- `public_shipment_report`: a real number found on a public page, with the URL.
-- `official_documentation_example`, `open_source_example`,
-  `merchant_published_example`: published examples that are not real shipments.
-- `synthetic`: made by us, shaped after a real number we saw (`derivedFrom`
-  says how: `donated_real`, `observed_request`, `official_shape`, `invented`).
-
-Real numbers given to us privately are never committed. They get a synthetic
-sibling with the same shape and a valid checksum; the real value may live in a
-git-ignored `private.numbers.json` next to it for live tests.
-
-The sweep asserts every expectation, flags any second carrier claiming high
-confidence, reports detection rules with no example, and writes the Swift golden
-file.
-
-## Status model
-
-Adapters emit the product `Stage` vocabulary at both result and event level.
-An event may carry no `stage`, meaning "no explicit mapping": the sync then
-runs the wording classifier (`core/status/wording.ts`) and records where the
-final stage came from in `raw_data.stage_source`: `carrier_map` when the
-adapter or provider supplied a valid stage, `wording:<rule-id>` when a
-classifier rule decided, `none` when the fallback was used. Events whose
-source is not `carrier_map` are also recorded in the service-only
-`tracking_status_observations` table so new wording can be reviewed and
-mapped later (see docs/OBSERVABILITY.md).
-
-Mapping precedence: explicit carrier map → provider-declared stage → wording
-classifier → fallback (previous stage or `in_transit`), flagged. Wording rules
-never produce a terminal stage unless the rule is marked terminal and has a
-fixture. Map too little rather than wrongly.
-
-## Adapters, steps, errors
-
-Each dedicated adapter implements:
-
-```ts
-interface CarrierAdapter {
-  readonly id: CarrierId;
-  readonly steps: readonly StepId[];
-  normalizeNumber(raw: string): string;
-  track(input: TrackingInput, ctx: TrackingContext): Promise<CarrierResult>;
-}
-```
-
-and exports a pure `parse(payload, number)` that the offline tests target.
-`runSteps()` in `core/runner` executes declared tiers (for example `direct`
-then `trawl`), enforces the budget, and records per-step outcome, duration and
-fallback reason through the `StepRecorder`.
-
-One error taxonomy in `core/errors`: `NotFound`, `Indeterminate`, `Challenge`,
-`RateLimited`, `Maintenance`, `SchemaError`, `InputRequired`, `Transport`.
-Routing, sync and observability classify with `instanceof`.
-
-## Telemetry
-
-The host wires the `StepRecorder` to three sinks: Sentry metrics and structured
-logs (existing names), the Postgres sync ledger (one row per step), and
-Prometheus counters and histograms. `carrier_lookup_total{final_step}` answers
-whether a fallback tier is worth keeping.
-
-## Documentation
-
-Each carrier or provider has one README for setup, limitations, non-obvious
-implementation decisions and dated verification evidence. Use only the sections
-that help explain that integration. Catalog facts belong in `carrier.json`,
-examples in `numbers.json`, and status observations in `statuses.json`; link to
-those files instead of maintaining another copy. Fixture provenance stays next
-to the fixtures. The package README contains the generated overview table and
-the add-a-carrier checklist.
-
-## Decisions and alternatives
-
-| Decision | Chosen | Rejected | Why |
-|---|---|---|---|
-| Layout | one folder per carrier, generated registry | flat files and an if/else dispatch chain | more than a hundred carriers |
-| Catalog | `carrier.json` per folder, merged into `openapi.json` | editing `openapi.json` by hand | readability; downstream consumers unchanged |
-| Shared code | one `core/` | vendored copies per carrier | vendoring drifts |
-| Separate repository | later, once the boundary lint passes | now | the split is mechanical once nothing imports the app |
-| Sample numbers | data files and generated tests | literals in tests | provenance, uniqueness sweep, Swift golden |
-| Private numbers | never in git | committing them | privacy; they expire anyway |
-| Status vocabulary | keep the product stages, nullable event stage | a second adapter-level status enum | one vocabulary, less mapping code |
-| Mapping | explicit map → declared → wording → flagged fallback, with `stage_source` | maps only, or wording only | day-one coverage with a guard rail, and the source becomes a metric |
-| Unmapped wording | observation table plus a review script | an issue per wording | volume and review workflow |
-| Metrics | `prom-client` behind a `StepRecorder` interface | Sentry metrics only | retention and per-label queries; the interface keeps alternatives open |
-| Errors | one taxonomy, `instanceof` | per-adapter classes and name sniffing | routing correctness |
-| Docs | generated tables plus hand-written sections per carrier | one large markdown file | drift and mixed audiences |
-| Brand assets | one palette derivation and one truck geometry, as data | a palette and a truck re-typed per platform | the SVG and the SwiftUI canvas drifted; a parity test on each side now replays the same file |
-
-## Migration status
-
-Phase 0 to 2 are in place: the corpus and detection core, per-carrier
-`carrier.json` as the source of truth, the error taxonomy, transport, runner
-and telemetry in `core/`, adapters and providers in their folders served
-through the generated registry, Prometheus plus Sentry sinks, and the brand
-assets generated from one truck geometry and one palette derivation
-(`core/brand`, see its README). Still open: a generated status reference in each
-README, the lookup canary that replays a synthetic number through every
-registered adapter, and the optional `exception` stage.
-
-## Prior art
-
-The structure borrows from the ha-parcel-integrations organisation on GitHub
-(MIT): one folder per carrier from a tested template, README status tables that
-show raw wording next to each stage, capabilities declared as data and guarded
-by tests, status maps with dated provenance, and "map too little over mapping
-wrongly". Their vendored core was not copied: this is one TypeScript workspace.
+See the [package README](README.md#running-the-checks) for commands. Offline
+fixtures exercise parsing and recovery; opt-in live tests check current
+transport compatibility. A generated catalog or passing fixture does not
+establish live coverage. Preserve dated evidence and unresolved limitations
+in the affected integration's README.

@@ -123,6 +123,12 @@ intermittent code 400 stays diagnosable in Sentry.
 
 ## Rejected alternatives
 
+Prior clients inspected during the September 10 review:
+[kamushadenes/tracker17](https://github.com/kamushadenes/tracker17/blob/6d87ce44b7d9db95085c70759633d95e9fd5547c/tracker17/__init__.py)
+used a historical endpoint;
+[mderazon/seventeen-track-js](https://github.com/mderazon/seventeen-track-js/blob/b8000c9/src/profile.ts)
+required account sign-in. Neither established a working anonymous replacement.
+
 - **The 2019 anonymous endpoint** (`kamushadenes/tracker17`, revision
   `6d87ce4`): historical, superseded by the current rejection codes.
 - **The account-based client** (`mderazon/seventeen-track-js`, revision

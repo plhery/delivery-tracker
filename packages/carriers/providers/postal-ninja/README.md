@@ -73,8 +73,9 @@ and the language classifier.
 
 ## Limitations and privacy
 
-- Experimental: do not count it as working coverage without a fresh deployed
-  test. Unattended verification has not been demonstrated.
+- Experimental: fresh Chromium widget retrieval was recorded on September 10.
+  Direct signed HTTP retrieval remains unverified; broad deployed coverage has
+  not been established.
 - The main tracking page can require an interactive challenge; only the embedded
   widget has worked unattended so far.
 - Delivery wording can contain an access code or a signature. Any event whose

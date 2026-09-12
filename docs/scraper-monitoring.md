@@ -1,33 +1,44 @@
 # Scraper monitoring
 
-[Delivery Tracker — Scraper Health](https://paul-louis-hery.sentry.io/dashboard/10017590/) shows the last 24 hours by default:
-
-- Average and p95 full provider latency, including failed attempts.
-- Attempt counts to distinguish a useful comparison from a small sample.
-- Average direct HTTP/session latency and direct-path failure counts.
-- Browser/TRAWL/page recovery and immediate HTTP retry counts, latency and failures.
-
-The saved definition is [ops/sentry/scraper-health-dashboard.json](../ops/sentry/scraper-health-dashboard.json). The dashboard is scoped to `delivery-tracker`; its time range can be changed in Sentry. Metrics start with this release, so earlier scraping timings cannot appear retroactively.
+[Scraper Health](https://paul-louis-hery.sentry.io/dashboard/10017590/) compares
+provider latency, attempts, errors and recovery over the selected time range.
+The saved definition is [scraper-health-dashboard.json](../ops/sentry/scraper-health-dashboard.json).
 
 ## Measurements
 
-`tracking.scrape.duration` is a distribution in milliseconds. `carrier` identifies the adapter actually called (carrier catalog ID, or `Ship24`, `ParcelsApp`, `17TRACK`, `Postal Ninja`), with `phase`, `outcome` and `error_type` attributes. `tracking.scrape.attempts` counts those same attempts. `tracking.scrape.fallbacks` counts each internal recovery handoff with `carrier`, `from_phase`, `to_phase`, and `error_type`.
+The host [step recorder](../src/server/stepRecorder.ts) emits
+`tracking.scrape.duration` in milliseconds and `tracking.scrape.attempts`, with
+`carrier`, `phase`, `outcome` and `error_type`. `tracking.scrape.fallbacks` adds
+`from_phase` and `to_phase`. Each completed runner step produces a phase record;
+`phase:total` covers that runner invocation, not the whole router or time spent
+waiting outside it. Sessions or HTTP retries inside a step are not separately
+counted unless implemented as runner steps.
 
-`phase:total` measures the entire provider call through `CarrierTrackingAdapter` or `UniversalTracker`. Adapters with several tiers additionally record each tier as its own phase: DHL (`direct`, `trawl`), UPS (`direct`, `trawl`), DPD (`direct`, `page`), DPD France (`direct`, `trawl`), La Poste (`direct`, `retry`), Ship24 (`direct`, `browser`); Mondial Relay and DHL eCommerce go straight to their browser tier (`trawl` and `browser`). Single-tier adapters record one `direct` phase per lookup. Each carrier folder's `carrier.json` lists its `tracking.steps`. A provider's total includes session waiting, retries and internal recovery; it does not include other providers tried by the router. Existing Postgres `tracking_sync_steps` fetch durations cover the whole package lookup, including provider changes.
+See the generated [carrier overview](../packages/carriers/README.md#carriers)
+and [provider table](../packages/carriers/providers/README.md) for declared
+steps. La Poste executes `direct` followed by up to two `retry` attempts for
+HTTP 403 within its original deadline. A browser-only lookup is not a fallback.
+Select a phase when counting attempts; adding phases double-counts lookups.
 
-A direct failure followed by successful browser recovery produces an error direct sample, a recovery-handoff count, a successful browser sample and a successful total sample. Select one phase when counting attempts; summing phases double-counts a lookup. Session refreshes can produce multiple direct samples. La Poste records its first request as `direct` and up to two immediate HTTP 403 retries as `retry`, all within its original 15-second deadline. Each retried rejection is reported before the next request, including its bounded response diagnostics. Other HTTP statuses and parsing errors propagate without these retries; after exhaustion, the router reports the final failure and can use universal fallback. Native browser-only providers have total timings; a browser call there is not an API fallback.
+## Failure timing and diagnostics
 
-Metrics are emitted on success and failure with monotonic elapsed time. They work with `SENTRY_TRACES_SAMPLE_RATE=0`; trace sampling does not disable metrics in the installed SDK. Structured `tracking_scrape` JSON logs carry the same timings even if Sentry is unavailable. Telemetry sink failures preserve the original tracking result/error.
+Cross-provider failures are reported before the router tries another provider.
+Internal recovery differs: `runSteps` records the failed step immediately, but
+the Sentry `transport_fallback` warning and handoff counter are emitted from
+the subsequent recovery step's completion record. Successful recovery retains
+the original exception; an interrupted recovery may never emit that warning.
+This is a current limitation relative to reporting every error before recovery.
 
-## Investigating regressions
+Search `component:tracking-routing operation:transport_fallback`, optionally
+with `provider:Ship24` or a carrier id. Compare direct errors, recovery usage
+and total latency with sample counts; a fast rejection is not a fast success.
+The [observability policy](OBSERVABILITY.md) owns diagnostic retention and
+Sentry context; [HTTP diagnostics](upstream-http-diagnostics.md) describes
+request/response fields. Do not infer a challenge vendor from a 403 alone.
 
-Search Sentry issues for `component:tracking-routing operation:transport_fallback`, optionally adding `provider:Ship24` or a carrier ID. These warning events are emitted before recovery and retain the original exception, stack, cause chain and custom properties. HTTP errors include request and response diagnostics. A successful recovery does not suppress the warning. Existing provider-failure events cover errors that bypass internal recovery, including 429 and service outages.
-
-Compare direct latency/failure counts with recovery usage. A rising recovery count alongside successful total calls identifies a hidden API regression. Average/p95 totals show its user-visible cost. Check attempts and error outcomes before comparing providers; a quick rejection is not a quick successful scrape.
-
-Sentry retains supplied diagnostic context, including user/tracking fields and session headers, without application-level redaction, as requested for this project. Metric calls preserve inherited SDK context too. Metric dimensions explicitly set by this code remain provider/phase/outcome/error class. Byte/time bounds on body reads and Sentry normalization/tag limits protect runtime and ingestion capacity; they do not remove fields by sensitivity. Client-facing tracking data continues to use its normal product schema.
-
-The dashboard uses existing Sentry access and retention. This change adds warning issues and metrics, without changing notification recipients or organization-level alert rules.
+Metrics work with `SENTRY_TRACES_SAMPLE_RATE=0` in the installed SDK and retain
+inherited context. Structured `tracking_scrape` logs remain available without
+Sentry. Telemetry failures are isolated from tracking results.
 
 ## Prometheus
 
@@ -46,9 +57,9 @@ names only, so the endpoint never exposes tracking data.
 | `carrier_detection_total` | result | detection confidence served to clients |
 
 "Is the fallback useful" is `carrier_lookup_total{final_step="trawl"}` over all
-successful lookups for that carrier: near zero for a month means the tier can
-go; near one means the direct path is dead and the adapter should start with
-the browser. A rising `stage_source="none"` share for a carrier means new
+successful lookups for that carrier. A low share can mean a healthy direct
+path; a high share warrants investigating direct failures before changing the
+transport order. A rising `stage_source="none"` share for a carrier means new
 wording is waiting in `tracking_status_observations` (see OBSERVABILITY.md).
 
 [ops/grafana/carrier-scrapers.json](../ops/grafana/carrier-scrapers.json) is
