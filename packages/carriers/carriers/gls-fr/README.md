@@ -154,7 +154,7 @@ Probed 2026-09-12 with the corpus number `20189360332` (shipment, `public_shipme
 | --- | --- |
 | Ship24 | ❌ No usable history — HTTP 404 |
 | ParcelsApp | ✅ Compatible — delivered via GLS |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ❌ No usable history — captured replies without history (2026-09-13) |
 
 Also tried `00E7V8YY` and `ZBH2FY7Q` on Ship24: both 404.
 
@@ -166,3 +166,4 @@ Also tried `00E7V8YY` and `ZBH2FY7Q` on Ship24: both 404.
 - 2026-09-12: a validly shaped wrong number (`00ZZ00Z0`) answers HTTP 404 with a
   plain-text body; the opt-in live test asserts that.
 - 2026-09-12: universal-provider probe with corpus number `20189360332`: Ship24: no usable history; ParcelsApp: compatible; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `20189360332` via prod TRAWL: no usable history (history_missing).

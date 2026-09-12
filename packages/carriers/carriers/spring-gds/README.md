@@ -144,7 +144,7 @@ Probed 2026-09-12 with the corpus number `CK089862199NL` (shipment, `public_ship
 | --- | --- |
 | Ship24 | ✅ Compatible — 18 events via PostNL |
 | ParcelsApp | ❌ No usable history — destination-country prompt (PostNL recognized) |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ❌ No usable history — provider reports lookup unavailable, code 400 (2026-09-13) |
 
 Also tried `LA681049820NL` on Ship24: ✅ 16 events via PostNL.
 
@@ -157,3 +157,4 @@ Also tried `LA681049820NL` on Ship24: ✅ 16 events via PostNL.
   taxonomy (`NotFoundError` / `SchemaError` replace the previous ad-hoc
   classes).
 - 2026-09-12: universal-provider probe with corpus number `CK089862199NL`: Ship24: compatible; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `CK089862199NL` via prod TRAWL: no usable history (lookup_unavailable).

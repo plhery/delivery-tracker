@@ -135,7 +135,7 @@ Probed 2026-09-12 with the corpus number `CH166307960NL` (shipment, `public_ship
 | --- | --- |
 | Ship24 | ❌ No usable history — HTTP 404 |
 | ParcelsApp | ❌ No usable history — destination-country prompt (PostNL/UPU, not Poste Italiane) |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ❌ No usable history — provider reports lookup unavailable, code 400 (2026-09-13) |
 
 Also tried the other 7 public numbers on Ship24: 7× 404, `2IMA0051035900` 201 without history.
 
@@ -152,3 +152,4 @@ Also tried the other 7 public numbers on Ship24: 7× 404, `2IMA0051035900` 201 w
 - 2026-09-12: adapter moved into this folder; the classifier moved to
   `status.ts` and the error classes moved onto the shared taxonomy.
 - 2026-09-12: universal-provider probe with corpus number `CH166307960NL`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `CH166307960NL` via prod TRAWL: no usable history (lookup_unavailable).

@@ -60,9 +60,21 @@ export async function loadCapture(trawl: TrawlClient | null, spec: CaptureSpec):
   }, {
     provider: `${spec.source} tracking browser`, timeoutMs: budgetMs,
     maxBytes: MAX_PAGE_BYTES, fetcher: spec.fetcher,
+    // A 304 page still carries a fresh captured API reply (observed on
+    // 17TRACK 2026-09-13), so the solved-page gate below allows it: the caller
+    // validates through the captured bodies (identity, demo and polling
+    // rejection) instead of the page status. Without a usable capture the
+    // caller still fails closed with a typed capture error.
+    requireSolved: false,
   });
   // A solved page for another URL is an interstitial or a redirect, never this shipment.
   if (page.url !== spec.url) throw new SchemaError(spec.source, 'Tracking browser returned an incomplete page');
+  // Preserve the solved-tier requirement for capture flows: only a browser
+  // tier (2/3) with a fresh (200) or not-modified (304) page may carry a
+  // usable capture. Anything else stays an unsolved page, as before.
+  if (![2, 3].includes(page.tier) || (page.statusCode !== 200 && page.statusCode !== 304)) {
+    throw new TransportError(spec.source, 'Tracking browser: page unsolved');
+  }
   return page;
 }
 

@@ -149,7 +149,7 @@ Probed 2026-09-12 with the corpus number `HS0000329755` (shipment, `public_shipm
 | --- | --- |
 | Ship24 | ❌ No usable history — HTTP 404 |
 | ParcelsApp | ❌ No usable history — destination-country prompt |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ❌ No usable history — provider reports lookup unavailable, code 400 (2026-09-13) |
 
 ## Verification log
 
@@ -160,3 +160,4 @@ Probed 2026-09-12 with the corpus number `HS0000329755` (shipment, `public_shipm
   not an HTTP 404; the grouped opt-in live suite asserts the resulting
   not-found error.
 - 2026-09-12: universal-provider probe with corpus number `HS0000329755`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `HS0000329755` via prod TRAWL: no usable history (lookup_unavailable; API 500 on first try).

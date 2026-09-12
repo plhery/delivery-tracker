@@ -145,7 +145,7 @@ Probed 2026-09-12 with the corpus number `00100909086360120251130131718` (shipme
 | --- | --- |
 | Ship24 | ❌ No usable history — HTTP 404 |
 | ParcelsApp | ❌ No usable history — destination-country prompt (MRW, not Paack) |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ❌ No usable history — provider reports lookup unavailable, code 400 (2026-09-13) |
 
 Also tried the other 4 public numbers on Ship24: all 404.
 
@@ -156,3 +156,4 @@ Also tried the other 4 public numbers on Ship24: all 404.
 - 2026-09-12: `PaackTrackingError` → `NotFoundError` (same 404 and message);
   payload rejections → `SchemaError`; the empty body → `IndeterminateError`.
 - 2026-09-12: universal-provider probe with corpus number `00100909086360120251130131718`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `00100909086360120251130131718` via prod TRAWL: no usable history (lookup_unavailable).

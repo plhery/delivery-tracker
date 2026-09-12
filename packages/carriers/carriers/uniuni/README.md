@@ -21,10 +21,11 @@ Probed 2026-09-12 with the corpus number `4C003925742US` (shipment, `public_ship
 | --- | --- |
 | Ship24 | ❌ No usable history — HTTP 404 |
 | ParcelsApp | ✅ Compatible — delivered via UNI Express |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ❌ No usable history — provider reports lookup unavailable, code 400 (2026-09-13) |
 
 Also tried `UUS5B60564241706199` on Ship24: 201 without history.
 
 ## Verification log
 
 - 2026-09-12: universal-provider probe with corpus number `4C003925742US`: Ship24: no usable history; ParcelsApp: compatible; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `4C003925742US` via prod TRAWL: no usable history (lookup_unavailable).

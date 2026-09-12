@@ -82,7 +82,7 @@ Probed 2026-09-12 with the corpus number `TBA333656997000` (shipment, `public_sh
 | --- | --- |
 | Ship24 | ❌ No usable history — HTTP 404; account-only by design |
 | ParcelsApp | ❌ No usable history — sign-in notice only |
-| 17TRACK | ❌ Incompatible by design — account-only; the aggregators need the same login |
+| 17TRACK | ❌ No usable history — lookup still polling at budget end (code 100); account-only by design (2026-09-13) |
 
 ## Verification log
 
@@ -92,3 +92,4 @@ Probed 2026-09-12 with the corpus number `TBA333656997000` (shipment, `public_sh
   carrier-change APIs.
 - 2026-09-12: folder documented alongside the `amazon-shipping` adapter move.
 - 2026-09-12: universal-provider probe with corpus number `TBA333656997000`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: incompatible by design.
+- 2026-09-13: 17TRACK probe with corpus number `TBA333656997000` via prod TRAWL: no usable history (lookup still polling; account-only).

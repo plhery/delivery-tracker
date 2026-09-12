@@ -21,10 +21,11 @@ Probed 2026-09-12 with the corpus number `08454077486990` (shipment, `public_shi
 | --- | --- |
 | Ship24 | ❌ No usable history — HTTP 404 |
 | ParcelsApp | ❌ No usable history — destination-country prompt (BRT Bartolini recognized) |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ❌ No usable history — provider reports lookup unavailable, code 400 (2026-09-13) |
 
 Also tried `25003180070704` on Ship24: 404.
 
 ## Verification log
 
 - 2026-09-12: universal-provider probe with corpus number `08454077486990`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `08454077486990` via prod TRAWL: no usable history (lookup_unavailable; API 500 on first try).

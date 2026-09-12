@@ -145,7 +145,7 @@ Probed 2026-09-12 with the corpus number `RL402552798PT` (shipment, `public_ship
 | --- | --- |
 | Ship24 | ❌ No usable history — HTTP 201 without history |
 | ParcelsApp | ✅ Compatible — delivered via Portugal CTT / Italy Post |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ✅ Compatible — 4 events, delivered (2026-09-13) |
 
 ## Verification log
 
@@ -160,3 +160,4 @@ Probed 2026-09-12 with the corpus number `RL402552798PT` (shipment, `public_ship
 - 2026-09-12: adapter moved into this folder; the status map moved to
   `status.ts` and the error classes moved onto the shared taxonomy.
 - 2026-09-12: universal-provider probe with corpus number `RL402552798PT`: Ship24: no usable history; ParcelsApp: compatible; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `RL402552798PT` via prod TRAWL: compatible (4 events, delivered).

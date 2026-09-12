@@ -120,6 +120,13 @@ intermittent code 400 stays diagnosable in Sentry.
   capture at all, could not read what it captured, or captured replies without
   history. They prove nothing about the shipment and are classified as
   indeterminate.
+- **Capture flows accept a 304 page (2026-09-13).** A cached page still carries
+  a fresh captured API reply, so `shared/capture.ts` skips the solved-page gate
+  and validates through the captured bodies instead. Tier and non-200/304
+  statuses are still rejected before parsing, and without a usable capture the
+  lookup still fails closed with a typed capture error. Found because every
+  lookup after the first two of the corpus sweep failed on 304 pages that held
+  complete histories.
 
 ## Rejected alternatives
 
@@ -141,25 +148,63 @@ required account sign-in. Neither established a working anonymous replacement.
 
 ## Carrier compatibility
 
-Per-carrier live verification with a real corpus number is pending for
-17TRACK: it needs the pinned TRAWL compatibility build (`ops/trawl`), which
-was unavailable in the 2026-09-12 sweep environment, and the public tracking
-page does not replay a `#nums=` URL unattended (it renders demo data instead
-of the requested shipment, and the landing form submit stays on the landing
-page in an automation browser). The rows below therefore record design-level
-evidence plus the pre-existing live verifications, not fresh per-carrier
-probes. They will be replaced by real-number results once the TRAWL-backed
-probe runs.
+Probed 2026-09-13 through the pinned TRAWL build (tunneled to production)
+with one real `public_shipment_report` corpus number per carrier (36
+carriers). ✅ means the reply echoed the requested number and carried events;
+❌ rows name the exact failure. A code 400 (`lookup_unavailable`) or an empty
+capture (`history_missing`) is a provider failure, not proof of a wrong
+carrier; `lookup_pending` means the lookup was still polling at budget end.
+Every carrier row below is also recorded in that carrier's own README.
 
-| Carrier | Evidence |
-| --- | --- |
-| `amazon-logistics` | ❌ incompatible by design: retail tracking lives behind the customer's Amazon account; the aggregators need the same access (`../amazon-logistics/README.md`) |
-| prior art | ✅ 2026-09-08: `7321315927723857` reported delivered August 31 (`docs/CARRIERS.md`); ✅ 2026-09-10: seven events for a public example through the captured page with the pinned build |
-| all other corpus carriers (35) | ⏳ not verified in this pass — requires the pinned TRAWL build; Ship24/ParcelsApp columns in the carrier READMEs hold the 2026-09-12 real-number results |
+Compatible (8): `aliexpress` (25 events, delivered, Cainiao),
+`an-post` (13 events, An Post), `ctt-express` (4 events, CTT Express),
+`ctt` (4 events, delivered), `dhl` (17 events, delivered),
+`mrw` (1 event, in_transit), `sunyou` (8 events, delivered),
+`yunexpress` (24 events, delivered). 17TRACK is the only aggregator that
+reported `discovered_carrier` values (`aliexpress`, `an-post`).
 
-Do not read the ⏳ rows as incompatibility: an empty-history code 400 from
-this provider is a provider failure, not proof of a wrong carrier (see
-`ops/trawl/README.md`).
+| Carrier | Tested corpus number | Result 2026-09-13 |
+| --- | --- | --- |
+| `aliexpress` | `CNG00798678939847` | ✅ 25 events, delivered |
+| `amazon-logistics` | `TBA333656997000` | ❌ polling only (code 100); account-only by design |
+| `an-post` | `CP476340265IE` | ✅ 13 events |
+| `blue-dart` | `90617363115` | ❌ lookup unavailable (code 400) |
+| `bpost` | `323211216300000593107030` | ❌ lookup unavailable (code 400) |
+| `brt` | `08454077486990` | ❌ lookup unavailable (code 400; API 500 on first try) |
+| `ciblex` | `560815852502035603344150` | ❌ polling only (code 100) |
+| `colis-prive` | `HS0000329755` | ❌ lookup unavailable (code 400; API 500 on first try) |
+| `correos-express` | `7983000739053141` | ❌ lookup unavailable (code 400) |
+| `correos-spain` | `PR110604670130400C` | ❌ lookup unavailable (code 400) |
+| `ctt-express` | `0082800082809771393048` | ✅ 4 events |
+| `ctt` | `RL402552798PT` | ✅ 4 events, delivered |
+| `delhivery` | `32076610152736` | ❌ lookup unavailable (code 400) |
+| `dhl` | `CG738165082DE` | ✅ 17 events, delivered |
+| `dpd` | `06086216767970` | ❌ lookup unavailable (code 400) |
+| `ecoscooting` | `380030000066362966` | ❌ polling only (code 100) |
+| `geodis` | `1GWSKFLSKX4Y` | ❌ lookup unavailable (code 400) |
+| `gls-de` | `10272483975` | ❌ lookup unavailable (code 400) |
+| `gls-fr` | `20189360332` | ❌ captured replies without history |
+| `hermes-de` | `02180171003654` | ❌ lookup unavailable (code 400) |
+| `j-and-t` | `888058657515` | ❌ lookup unavailable (code 400) |
+| `la-poste` | `8G45061126689` | ❌ captured replies without history |
+| `mondial-relay` | `73800244620101503002000732` | ❌ lookup unavailable (code 400) |
+| `mrw` | `02680I390427` | ✅ 1 event, in_transit |
+| `nacex` | `2850/11247170` | ❌ provider rejects the slash composite (Invalid tracking number) |
+| `paack` | `00100909086360120251130131718` | ❌ lookup unavailable (code 400) |
+| `packeta` | `Z8328162946` | ❌ lookup unavailable (code 400) |
+| `poste-italiane` | `CH166307960NL` | ❌ lookup unavailable (code 400) |
+| `relais-colis` | `3380000318` | ❌ lookup unavailable (code 400) |
+| `seur` | `01475194188635` | ❌ lookup unavailable (code 400) |
+| `speedx` | `SPXMIA056745759994` | ❌ captured replies without history |
+| `spring-gds` | `CK089862199NL` | ❌ lookup unavailable (code 400) |
+| `sunyou` | `SYAE006809461` | ✅ 8 events, delivered |
+| `tipsa` | `8104405448` | ❌ lookup unavailable (code 400) |
+| `uniuni` | `4C003925742US` | ❌ lookup unavailable (code 400) |
+| `yunexpress` | `YT2621200705470145` | ✅ 24 events, delivered |
+
+Prior art, still valid: 2026-09-08 `7321315927723857` reported delivered
+August 31 (`docs/CARRIERS.md`); 2026-09-10 seven events for a public example
+through the captured page with the pinned build.
 
 
 ## Verification log
@@ -177,6 +222,10 @@ this provider is a provider failure, not proof of a wrong carrier (see
   this environment and the public page will not replay `#nums=` unattended.
   Carrier READMEs record Ship24/ParcelsApp real-number results; this
   provider's column there reads "not verified in this pass".
-- 2026-09-13: still deferred — this machine has no container runtime, so the
-  pinned TRAWL build cannot run here; offline suites pass
-  (`seventeentrack/adapter`, `universal`, `universalScrapers`: 34 tests).
+- 2026-09-13: corpus sweep completed through prod TRAWL over an SSH tunnel
+  (no container runtime on this machine): 36 real numbers, 8 carriers with
+  history (see Carrier compatibility above); offline suites pass
+  (`seventeentrack/adapter`, `universal`, `universalScrapers`). Mid-sweep
+  Coolify redeployed TRAWL (same pinned build, verified
+  `tracking-capture.mjs` present); the tunnel was re-pointed at the new
+  container. `shared/capture.ts` now accepts 304 pages with a fresh capture.

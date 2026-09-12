@@ -21,10 +21,11 @@ Probed 2026-09-12 with the corpus number `02680I390427` (shipment, `public_shipm
 | --- | --- |
 | Ship24 | ❌ No usable history — HTTP 404 |
 | ParcelsApp | ❌ No usable history — destination-country prompt (MRW recognized) |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ✅ Compatible — 1 event, in_transit (2026-09-13) |
 
 Also tried the other 4 public numbers on Ship24: all 404.
 
 ## Verification log
 
 - 2026-09-12: universal-provider probe with corpus number `02680I390427`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `02680I390427` via prod TRAWL: compatible (1 event, in_transit).

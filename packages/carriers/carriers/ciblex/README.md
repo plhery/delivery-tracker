@@ -129,7 +129,7 @@ Probed 2026-09-12 with the corpus number `560815852502035603344150` (full_barcod
 | --- | --- |
 | Ship24 | ❌ No usable history — HTTP 404 |
 | ParcelsApp | ❌ No usable history — postcode + house-number notice (trans-o-flex) |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ❌ No usable history — lookup still polling at budget end (code 100; 2026-09-13) |
 
 Also tried `560815852502035613344150` on Ship24: 404.
 
@@ -141,3 +141,4 @@ Also tried `560815852502035613344150` on Ship24: 404.
   the bare empty 200 → `IndeterminateError`; identifier and mismatch rejections
   → `SchemaError`.
 - 2026-09-12: universal-provider probe with corpus number `560815852502035603344150`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `560815852502035603344150` via prod TRAWL: no usable history (lookup still polling).

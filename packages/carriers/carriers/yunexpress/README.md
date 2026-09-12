@@ -21,8 +21,9 @@ Probed 2026-09-12 with the corpus number `YT2621200705470145` (shipment, `public
 | --- | --- |
 | Ship24 | ✅ Compatible — 33 events via Yun Express + GOFO |
 | ParcelsApp | ✅ Compatible — delivered via Yun Express / GOFO |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ✅ Compatible — 24 events, delivered (2026-09-13) |
 
 ## Verification log
 
 - 2026-09-12: universal-provider probe with corpus number `YT2621200705470145`: Ship24: compatible; ParcelsApp: compatible; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `YT2621200705470145` via prod TRAWL: compatible (24 events, delivered).

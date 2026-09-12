@@ -146,7 +146,7 @@ Probed 2026-09-12 with the corpus number `CG738165082DE` (shipment, `public_ship
 | --- | --- |
 | Ship24 | ✅ Compatible — 11 events via DHL |
 | ParcelsApp | ✅ Compatible — DHL / La Poste history |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ✅ Compatible — 17 events, delivered (2026-09-13) |
 
 Also tried `00340434633751428115` on Ship24: 404.
 
@@ -162,3 +162,4 @@ Also tried `00340434633751428115` on Ship24: 404.
   (`ChallengeError`, `SchemaError`, `RateLimitedError`) and the two steps are
   run and reported by `core/runner`.
 - 2026-09-12: universal-provider probe with corpus number `CG738165082DE`: Ship24: compatible; ParcelsApp: compatible; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `CG738165082DE` via prod TRAWL: compatible (17 events, delivered).

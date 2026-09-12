@@ -139,7 +139,7 @@ Probed 2026-09-12 with the corpus number `10272483975` (shipment, `public_shipme
 | --- | --- |
 | Ship24 | ❌ No GLS history — 12 events but CDEK Russia (corpus attribution unverified) |
 | ParcelsApp | ❌ No usable history — recipient-postcode notice (GLS) |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ❌ No usable history — provider reports lookup unavailable, code 400 (2026-09-13) |
 
 Also tried `Z6E5E29R` on Ship24: 404.
 
@@ -156,3 +156,4 @@ Also tried `Z6E5E29R` on Ship24: 404.
   positional timeout, because `app/api/carriers/detect/route.ts` constructs it
   as `new GLSGermanyTracker(5_000)`.
 - 2026-09-12: universal-provider probe with corpus number `10272483975`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `10272483975` via prod TRAWL: no usable history (lookup_unavailable).

@@ -21,10 +21,11 @@ Probed 2026-09-12 with the corpus number `2850/11247170` (shipment, `public_ship
 | --- | --- |
 | Ship24 | ❌ No usable history — HTTP 404 |
 | ParcelsApp | ❌ No usable history — destination-country prompt (Nacex recognized) |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ❌ Provider rejects the slash composite format (Invalid tracking number); the dedicated adapter serves it (2026-09-13) |
 
 Also tried `2103/11207088` on Ship24: 404.
 
 ## Verification log
 
 - 2026-09-12: universal-provider probe with corpus number `2850/11247170`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `2850/11247170` via prod TRAWL: format rejected by provider guard.

@@ -135,7 +135,7 @@ Probed 2026-09-12 with the corpus number `CNG00798678939847` (shipment, `public_
 | --- | --- |
 | Ship24 | ✅ Compatible — 25 events via Cainiao |
 | ParcelsApp | ❌ No usable history — empty result page |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ✅ Compatible — 25 events, delivered via Cainiao; discovered `aliexpress` (2026-09-13) |
 
 ## Verification log
 
@@ -143,3 +143,4 @@ Probed 2026-09-12 with the corpus number `CNG00798678939847` (shipment, `public_
   behaviour unchanged apart from the error taxonomy (`NotFoundError` /
   `SchemaError` replace the previous ad-hoc classes).
 - 2026-09-12: universal-provider probe with corpus number `CNG00798678939847`: Ship24: compatible; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `CNG00798678939847` via prod TRAWL: compatible (25 events, delivered).

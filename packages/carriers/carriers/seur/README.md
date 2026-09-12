@@ -21,10 +21,11 @@ Probed 2026-09-12 with the corpus number `01475194188635` (shipment, `public_shi
 | --- | --- |
 | Ship24 | ❌ No SEUR history — 9 events but DPD Germany (corpus attribution unverified) |
 | ParcelsApp | ❌ No SEUR history — DPD history; `046999610972820260807` asks for SEUR postcode/phone/email |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ❌ No usable history — provider reports lookup unavailable, code 400 (2026-09-13) |
 
 Also tried `046999610972820260807` on Ship24: 404.
 
 ## Verification log
 
 - 2026-09-12: universal-provider probe with corpus number `01475194188635`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `01475194188635` via prod TRAWL: no usable history (lookup_unavailable).

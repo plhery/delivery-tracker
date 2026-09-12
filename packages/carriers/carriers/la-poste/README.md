@@ -152,7 +152,7 @@ Probed 2026-09-12 with the corpus number `8G45061126689` (shipment, `public_ship
 | --- | --- |
 | Ship24 | ❌ No usable history — HTTP 404 (2013/2014 numbers, likely expired) |
 | ParcelsApp | ❌ No usable history — destination-country prompt |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ❌ No usable history — captured replies without history (2026-09-13) |
 
 Also tried `8U01130342039` on Ship24: 404.
 
@@ -166,3 +166,4 @@ Also tried `8U01130342039` on Ship24: 404.
 - 2026-09-12: moved into this folder. The feed, the status map and the retry
   budget are unchanged; the retries are now expressed as runner steps.
 - 2026-09-12: universal-provider probe with corpus number `8G45061126689`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `8G45061126689` via prod TRAWL: no usable history (history_missing; 2014 number).

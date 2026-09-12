@@ -165,7 +165,7 @@ Probed 2026-09-12 with the corpus number `1GWSKFLSKX4Y` (shipment, `public_shipm
 | --- | --- |
 | Ship24 | ❌ No usable history — HTTP 404 |
 | ParcelsApp | ❌ No usable history — recipient-postcode notice (GEODIS E-space recognized) |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ❌ No usable history — provider reports lookup unavailable, code 400 (2026-09-13) |
 
 ## Verification log
 
@@ -176,3 +176,4 @@ Probed 2026-09-12 with the corpus number `1GWSKFLSKX4Y` (shipment, `public_shipm
 - 2026-09-12: the grouped opt-in live suite asserts that a validly shaped unknown
   `1G…` number produces the structured not-found response.
 - 2026-09-12: universal-provider probe with corpus number `1GWSKFLSKX4Y`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `1GWSKFLSKX4Y` via prod TRAWL: no usable history (lookup_unavailable).

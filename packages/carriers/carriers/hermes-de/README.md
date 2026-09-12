@@ -131,7 +131,7 @@ Probed 2026-09-12 with the corpus number `02180171003654` (shipment, `public_shi
 | --- | --- |
 | Ship24 | ❌ No usable history — HTTP 404 |
 | ParcelsApp | ❌ No usable history — destination-country prompt |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ❌ No usable history — provider reports lookup unavailable, code 400 (2026-09-13) |
 
 Also tried `02310181006981` and `11204181008466` on Ship24: both 404.
 
@@ -147,3 +147,4 @@ Also tried `02310181006981` and `11204181008466` on Ship24: both 404.
   grouped `expandedCarriers.live.test.ts`, so `HermesGermanyTrackingError` keeps
   its name and 404 status.
 - 2026-09-12: universal-provider probe with corpus number `02180171003654`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `02180171003654` via prod TRAWL: no usable history (lookup_unavailable).

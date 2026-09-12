@@ -21,8 +21,9 @@ Probed 2026-09-12 with the corpus number `CP476340265IE` (shipment, `public_ship
 | --- | --- |
 | Ship24 | ✅ Compatible — 13 events via An Post |
 | ParcelsApp | ❌ No usable history — empty result page |
-| 17TRACK | ⏳ Not verified in this pass — requires the pinned TRAWL build (see `../../providers/seventeentrack/README.md`) |
+| 17TRACK | ✅ Compatible — 13 events, ready_for_pickup via An Post; discovered `an-post` (2026-09-13) |
 
 ## Verification log
 
 - 2026-09-12: universal-provider probe with corpus number `CP476340265IE`: Ship24: compatible; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
+- 2026-09-13: 17TRACK probe with corpus number `CP476340265IE` via prod TRAWL: compatible (13 events).
