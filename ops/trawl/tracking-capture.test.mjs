@@ -4,12 +4,17 @@ import { attachTrackingCapture } from './tracking-capture.mjs';
 const api = 'https://t.17track.net/track/restapi';
 const number = 'ZZ12345678900';
 const reply = code => JSON.stringify({ meta: { code: 200 }, shipments: [{ number, code }] });
-async function fixture() {
+const upsApi = 'https://webapis.ups.com/track/api/Track/GetStatus?loc=en_US';
+// A made-up number in UPS's published format, the same one the adapter's tests use.
+const upsNumber = '1Z999AA10123456784';
+const upsUrl = `https://www.ups.com/track?loc=en_US&tracknum=${upsNumber}&requester=ST%2Ftrackdetails`;
+const upsReply = (trackingNumber = upsNumber, statusCode = '200') => JSON.stringify({ statusCode, trackDetails: [{ trackingNumber }] });
+async function fixture(url = `https://t.17track.net/en#nums=${number}`, endpoint = api) {
   let handler;
   let detached = false;
   const page = { on: (_, fn) => { handler = fn; }, off: () => { detached = true; } };
-  const capture = await attachTrackingCapture(page, `https://t.17track.net/en#nums=${number}`, { captureResponses: [api] });
-  const respond = (body, { url = api, headers = {}, status = 200, read } = {}) => handler({
+  const capture = await attachTrackingCapture(page, url, { captureResponses: [endpoint] });
+  const respond = (body, { url = endpoint, headers = {}, status = 200, read } = {}) => handler({
     url: () => url, status: () => status,
     headers: () => ({ 'content-type': 'application/json', 'content-length': String(body.length), 'content-encoding': 'gzip', ...headers }),
     body: read ?? (async () => Buffer.from(body)),
@@ -63,5 +68,31 @@ test('does not finish on a demo or alter other providers and multi-number lookup
   await capture.settle(1);
   for (const url of ['https://parcelsapp.com/en/tracking/ZZ12345678900', 'https://t.17track.net/en#nums=ZZ12345,ZZ54321']) {
     assert.equal(await attachTrackingCapture({}, url, { captureResponses: [api] }), undefined);
+  }
+});
+
+test('reads the decoded UPS status reply and finishes on the requested shipment', async () => {
+  const { capture, respond } = await fixture(upsUrl, upsApi);
+  let settled = false;
+  const waiting = capture.settle(1000).then(() => { settled = true; });
+  await respond(upsReply('1Z000AA10000000000')); await new Promise(resolve => setTimeout(resolve, 10));
+  assert.equal(settled, false);
+  await respond(upsReply()); await waiting;
+  const rows = (await capture.drain()).capturedResponses;
+  assert.deepEqual(rows.map(row => JSON.parse(row.body).trackDetails[0].trackingNumber), ['1Z000AA10000000000', upsNumber]);
+});
+
+test('finishes on a rejected UPS status envelope and only serves one valid number per page', async () => {
+  const { capture, respond } = await fixture(upsUrl, upsApi);
+  await respond(upsReply(upsNumber, '500'));
+  await capture.settle(1000);
+  assert.equal((await capture.drain()).capturedResponses.length, 1);
+  for (const [url, endpoint] of [
+    ['https://www.ups.com/track?loc=en_US&tracknum=not-a-ups-number', upsApi],
+    ['https://www.ups.com/track/details?tracknum=' + upsNumber, upsApi],
+    [upsUrl, api],
+    [`https://t.17track.net/en#nums=${number}`, upsApi],
+  ]) {
+    assert.equal(await attachTrackingCapture({}, url, { captureResponses: [endpoint] }), undefined);
   }
 });

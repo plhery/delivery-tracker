@@ -45,10 +45,11 @@ second copy of the same carrier alert.
 - DPD parcel-details reads retry one 502/503/504 after 1–3 seconds of jitter,
   within the original HTTP request budget. Authentication, parsing, 404 and 429
   are not retried by this policy. An explicit Retry-After suppresses this immediate retry.
-- UPS uses its working browser after two consecutive transport/challenge failures
-  on direct access. Direct probes resume after 15 minutes, with increasing cooldown
-  up to an hour. A failed browser lookup clears the direct cooldown. This adapter
-  optimization resets on restart; incident thresholds remain in Postgres.
+- UPS reads the status reply the browser made from the tracking page (the
+  `ops/trawl` compatibility build captures it). Plain HTTP runs only without a
+  browser service: since 2026-09-10 Akamai holds that status call open until the
+  timeout for any session a browser did not establish, so no direct probe runs and
+  no `direct` sample is recorded while a browser service is configured.
 - La Poste's explicit maintenance page goes to provider fallback and cooldown.
 - TRAWL retries a confirmed closed-browser response once, only if `/health` reports
   a live, available browser and time remains in the original scrape budget. Other

@@ -2,9 +2,9 @@ import 'server-only';
 
 import { load } from 'cheerio';
 import makeFetchCookie from 'fetch-cookie';
-import { Cookie, CookieJar } from 'tough-cookie';
+import { CookieJar } from 'tough-cookie';
 import type { AdapterFactory } from '../../core/adapter';
-import { carrierErrorKind, ChallengeError, IndeterminateError, SchemaError, TransportError } from '../../core/errors';
+import { ChallengeError, IndeterminateError, SchemaError, TransportError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import { runSteps, singleFlight } from '../../core/runner';
 import { NOOP_RECORDER, type StepRecorder } from '../../core/telemetry';
@@ -19,6 +19,10 @@ const MAX_BYTES = 10_000_000;
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:147.0) Gecko/20100101 Firefox/147.0';
 const DEFAULT_TIMEOUT_MS = 90_000;
 const DEFAULT_DIRECT_TIMEOUT_MS = 20_000;
+// How long the browser may wait for the page's own status call after the page settles.
+const SETTLE_TIMEOUT_MS = 15_000;
+// Captured replies beyond this many are noise, never the answer.
+const MAX_CAPTURED = 20;
 // Provider strings are short; the rendered page's whole text is not, and the
 // identity check reads all of it, so it passes its own limit to `clean`.
 const PAGE_TEXT_LIMIT = 2_000_000;
@@ -107,34 +111,6 @@ class UPSHttpSession {
     return payload;
   }
 
-  async seedBrowserCookies(cookies: unknown[], userAgent: unknown): Promise<void> {
-    const browserUserAgent = clean(userAgent, 1_024);
-    if (browserUserAgent) this.#userAgent = browserUserAgent;
-    await this.jar.removeAllCookies();
-    for (const value of cookies) {
-      if (!isRecord(value)) continue;
-      const name = clean(value.name);
-      const cookieValue = String(value.value ?? '');
-      const domain = clean(value.domain).toLocaleLowerCase('en-US');
-      if (!name || !validCookieDomain(domain)) continue;
-      const path = clean(value.path).startsWith('/') ? clean(value.path) : '/';
-      const rawExpires = Number(value.expires);
-      const expires = Number.isFinite(rawExpires) && rawExpires > 0
-        ? new Date(rawExpires * 1_000)
-        : 'Infinity';
-      const cookie = new Cookie({
-        key: name,
-        value: cookieValue,
-        domain,
-        path,
-        secure: Boolean(value.secure),
-        httpOnly: Boolean(value.httpOnly),
-        expires,
-      });
-      await this.jar.setCookie(cookie, `https://${domain.replace(/^\./, '')}${path}`);
-    }
-  }
-
   async xsrfToken(): Promise<string> {
     const cookies = await this.jar.getCookies(STATUS_API);
     const value = cookies.find((cookie) => cookie.key === 'X-XSRF-TOKEN-ST')?.value ?? '';
@@ -168,11 +144,6 @@ class UPSHttpSession {
     }
     return result.bytes;
   }
-}
-
-function validCookieDomain(domain: string): boolean {
-  const bare = domain.replace(/^\./, '');
-  return bare === 'ups.com' || bare.endsWith('.ups.com');
 }
 
 function withoutIcons(value: string): string {
@@ -209,7 +180,10 @@ export function parseUPSTrackingHtml(page: string, trackingNumber: string): Carr
   }
   if (/could not locate|invalid tracking|not valid tracking/i.test(visible)) return notLocated();
   let statusText = withoutIcons(clean($('#stApp_nameKey').last().text()));
-  const progress = withoutIcons(clean($('#stApp_shpmtProgress').last().text()));
+  // Only the active milestone: the bar also lists every milestone still ahead,
+  // and "Out for Delivery" among those is not the status.
+  $('#stApp_shpmtProgress .sr-only').remove();
+  const progress = withoutIcons(clean($('#stApp_shpmtProgress .progress-step.active').text()));
   const currentStatus = upsStatus(`${statusText} ${progress}`);
   if (!statusText) statusText = progress || 'Tracking information received';
   let location = clean($('#stApp_deliveredToAddress').last().text());
@@ -359,8 +333,6 @@ export class UPSTracker {
   readonly #recorder: StepRecorder;
   readonly #serialize = singleFlight();
   #session: UPSHttpSession | null = null;
-  #directFailures = 0;
-  #directRetryAt = 0;
 
   constructor(options: UPSTrackerOptions = {}) {
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -402,22 +374,15 @@ export class UPSTracker {
     }, [
       {
         id: 'direct',
-        enabled: !trawl || Date.now() >= this.#directRetryAt,
+        // Plain HTTP serves only deployments without a browser service. Since
+        // 2026-09-10 Akamai holds the status API open until the timeout for
+        // every session a browser did not establish, so with a browser the
+        // structured answer is read from the page's own call instead.
+        enabled: trawl === null,
         run: async () => {
           try {
-            const value = await this.#directResult(number, page);
-            this.#directFailures = 0;
-            this.#directRetryAt = 0;
-            return value;
+            return await this.#directResult(number, page);
           } catch (error) {
-            if (trawl) {
-              if (['transport', 'challenge'].includes(carrierErrorKind(error) ?? '')) {
-                this.#directFailures++;
-                if (this.#directFailures >= 2) this.#directRetryAt = Date.now()
-                  + Math.min(3_600_000, 900_000 * 2 ** Math.min(2, this.#directFailures - 2));
-              }
-              throw error;
-            }
             if (page.html !== null) {
               try {
                 return this.#renderedResult(page.html, number);
@@ -436,14 +401,7 @@ export class UPSTracker {
       {
         id: 'trawl',
         enabled: trawl !== null,
-        run: async () => {
-          try { return await this.#trawlResult(trawl!, number); }
-          catch (error) {
-            // A failing fallback must not lock out a potentially recovered direct path.
-            this.#directRetryAt = 0;
-            throw error;
-          }
-        },
+        run: () => this.#trawlResult(trawl!, number),
       },
     ]);
   }
@@ -474,48 +432,50 @@ export class UPSTracker {
   }
 
   /**
-   * A real browser establishes the session; the structured API is then called
-   * on its cookies. The page the browser rendered is the last resort.
+   * A real browser loads the page and makes the status call itself; the
+   * service hands that reply back. The browser's cookies are never replayed
+   * over plain HTTP: Akamai accepts the call only from the session it
+   * validated in the page. The page the browser rendered is the last resort.
    */
   async #trawlResult(trawl: TrawlClient, number: string): Promise<CarrierResult> {
-    const bootstrap = await trawl.scrape({
+    const page = await trawl.scrape({
       url: upsTrackingUrl(number),
       skipHttp: true,
       maxTier: 3,
       maxTimeout: this.timeoutMs,
+      captureResponses: [STATUS_API],
+      settleTimeout: SETTLE_TIMEOUT_MS,
     }, {
       provider: 'TRAWL while fetching UPS',
       timeoutMs: this.timeoutMs,
       maxBytes: MAX_BYTES,
       fetcher: this.#fetcher,
     });
-    const browser = new UPSHttpSession(this.directTimeoutMs, this.#fetcher);
-    await browser.seedBrowserCookies(bootstrap.cookies, bootstrap.userAgent);
-    let browserError: unknown;
-    if (await browser.xsrfToken()) {
+    let captureError: unknown;
+    // Newest first: a later reply is the page's final answer.
+    for (const entry of page.capturedResponses.slice(0, MAX_CAPTURED).reverse()) {
+      if (entry.url !== STATUS_API || entry.status !== 200 || entry.truncated || entry.body === null) continue;
       try {
-        const result = await this.#apiResult(number, browser);
-        this.#session = browser;
-        return result;
+        return this.#structuredResult(number, JSON.parse(entry.body));
       } catch (error) {
-        browserError = error;
-        // A rejected session is not worth keeping; anything else means the
-        // session works and the payload was the problem.
-        if (!(error instanceof UPSSessionRejected)) this.#session = browser;
+        // An unreadable or unrelated reply; the rendered page may still answer.
+        captureError = error;
       }
     }
     try {
-      return this.#renderedResult(bootstrap.html, number);
+      return this.#renderedResult(page.html, number);
     } catch (error) {
-      if (browserError) {
-        throw new ChallengeError('UPS', 'UPS rejected the browser-established session', { cause: browserError });
-      }
-      throw new TransportError('UPS', 'TRAWL did not establish a usable UPS session', { cause: error });
+      if (captureError) throw captureError;
+      throw new TransportError('UPS', 'TRAWL did not capture the UPS status response', { cause: error });
     }
   }
 
   async #apiResult(number: string, session: UPSHttpSession): Promise<CarrierResult> {
-    const result = parseUPSTrackingResponse(await session.fetchStatus(number), number);
+    return this.#structuredResult(number, await session.fetchStatus(number));
+  }
+
+  #structuredResult(number: string, payload: unknown): CarrierResult {
+    const result = parseUPSTrackingResponse(payload, number);
     result.tracking_url = upsTrackingUrl(number);
     result.tracking_source = 'structured-web-response';
     return result;
@@ -537,8 +497,8 @@ export const adapter: AdapterFactory = (environment) => {
   });
   return {
     id: 'ups',
-    // `direct` covers the cached session, its one refresh and a fresh session:
-    // all of them are the same plain-HTTP transport. `trawl` is the browser.
+    // `direct` is plain HTTP and runs only without a browser service. `trawl`
+    // is the browser, which also reads the page's own status call.
     steps: ['direct', 'trawl'],
     track: (input) => tracker.fetch(input.number),
   };

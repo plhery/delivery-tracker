@@ -44,9 +44,19 @@ each of them against the fixture.
 
 ## How the adapter works
 
-Two steps.
+Two steps, and which one runs depends on whether a browser service is
+configured.
 
-`direct` is plain HTTP with a cookie jar held in memory for the process:
+`trawl` runs whenever a browser service is configured. It loads the tracking
+page in a real browser with `captureResponses: [GetStatus]`, and the pinned
+compatibility build of the service (`ops/trawl`) hands back the JSON the page
+itself received. That reply is parsed like the direct one. If no reply was
+captured or none was readable, the page the browser rendered is parsed instead:
+status and delivery location only, no history. The browser's cookies are never
+replayed over plain HTTP.
+
+`direct` runs only without a browser service. It is plain HTTP with a cookie
+jar held in memory for the process:
 
 1. A cached session, if one exists, calls `GetStatus` straight away. If UPS
    rejects it, the tracking page is fetched once to refresh the cookies and the
@@ -54,22 +64,19 @@ Two steps.
 2. Otherwise a fresh session fetches the tracking page, checks that it received
    an `X-XSRF-TOKEN-ST` cookie, calls `GetStatus`, and is then cached.
 
-`trawl` runs when the direct step is challenged and a browser service is
-configured. It loads the tracking page in a real browser, seeds a new HTTP
-session with the browser's cookies and user agent, and calls `GetStatus` on
-them. If that session is still refused, the page the browser rendered is parsed
-instead — status and delivery location only, no history.
-
-With no browser service configured, a challenged lookup still tries to parse
-whatever direct page it managed to fetch, and otherwise fails with
-`ChallengeError('UPS challenged direct tracking; configure FLARESOLVERR_URL for
-browser fallback')`. Lookups are serialized per adapter instance so two of them
-can never refresh the shared session at once.
+A challenged direct lookup still tries to parse whatever direct page it managed
+to fetch, and otherwise fails with `ChallengeError('UPS challenged direct
+tracking; configure FLARESOLVERR_URL for browser fallback')`. Since 2026-09-10
+Akamai holds `GetStatus` open until the request timeout for every session a
+browser did not establish, so a deployment without a browser service gets the
+rendered status only, after the direct timeout. Lookups are serialized per
+adapter instance so two of them can never refresh the shared session at once.
 
 Errors: `UPSSessionRejected` (a `ChallengeError`) for HTTP 401/403/419/429 and
 for a page with no token, `IndeterminateError` for any other rejected status or
 a non-200 API envelope, `SchemaError` when the reply is not about the requested
-parcel, `TransportError` when the browser service cannot produce a usable page.
+parcel, `TransportError` when the browser service captured no reply and its
+page could not be parsed either.
 
 ## Status reference
 
@@ -132,6 +139,13 @@ which, so nothing here decides it.
   HTTP transport, not separate tiers.
 - 2026-09-12: the rendered-page parse stays inside the `trawl` step, as before,
   plus the no-browser-service case where the direct page is all there is.
+- 2026-09-12: the browser step reads the captured `GetStatus` reply and no
+  longer seeds a plain HTTP session from the browser's cookies. `direct` is
+  disabled whenever a browser service exists, and with it the direct-failure
+  cooldown: a probe cost the full direct timeout, kept a `direct` health
+  incident open and could never succeed. The rendered page now reads only the
+  active milestone of the progress bar; reading the whole bar classified a
+  label-created parcel as out for delivery.
 
 ## Rejected alternatives
 
@@ -142,8 +156,12 @@ which, so nothing here decides it.
   a browser can still answer. They stay indeterminate.
 - Parsing the rendered page as the primary path: it has no history, so every
   sync would see one event and never a timeline.
-- Pinning a browser user agent: the browser step seeds the session with the user
-  agent the service actually used, because the cookies were issued to it.
+- Replaying the browser's cookies over plain HTTP (the approach until
+  2026-09-12): Akamai holds `GetStatus` open until the timeout for that replay
+  too, from the production host and from a residential connection alike, so
+  every browser lookup ended on the rendered page after a 20-second wait.
+- Probing direct access on a cooldown while a browser service exists: each
+  probe costs the direct timeout, and the same block applies to all of them.
 
 
 ## Verification log
@@ -156,3 +174,9 @@ which, so nothing here decides it.
 - 2026-09-12: adapter moved into this folder; the status map moved to
   `status.ts`, the tiers moved onto `runSteps`, and the error classes moved onto
   the shared taxonomy.
+- 2026-09-12: production had returned no UPS history since 2026-09-10 22:30
+  UTC. `GetStatus` answered a cookie-less POST at once but held every session
+  with the page's cookies open for the full timeout, from the production
+  container and from a residential connection alike, with the browser's own
+  cookies replayed too. The browser's own call captured through the
+  compatibility build returned HTTP 200 JSON, so that is what the adapter reads.

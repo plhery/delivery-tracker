@@ -1,10 +1,12 @@
 # Tracking response compatibility
 
 Stock TRAWL 1.3.1 ignores `captureResponses`. Version 1.5.0 adds it but refuses
-compressed responses, including 17TRACK's gzip JSON, and can stop on polling
-code 100. This small compatibility build retains the normal TRAWL API and
-changes only tier 2/3 capture for the exact 17TRACK endpoint and one valid number.
-ParcelsApp remains first in the application's discovery order.
+compressed responses, including 17TRACK's and UPS's gzip JSON, and can stop on
+polling code 100. This small compatibility build retains the normal TRAWL API and
+changes only tier 2/3 capture for two exact endpoints, each on its own public
+page with one valid number: 17TRACK's `track/restapi` and UPS's `GetStatus`.
+Every other capture request keeps stock behaviour. ParcelsApp remains first in
+the application's discovery order.
 
 The adapter observes the existing browser response; it neither copies cookies
 nor makes additional tracking requests. It accepts at most 20 replies, limits
@@ -32,7 +34,10 @@ point changes. Preserve the previous application configuration for rollback.
 Re-render and redeploy after changing this directory.
 
 Verified on the production host on 2026-09-10: a public shipment produced seven
-17TRACK events. See the public example in `docs/CARRIERS.md`. Empty-history code
+17TRACK events. See the public example in `docs/CARRIERS.md`. UPS was added on
+2026-09-12 after Akamai began holding `GetStatus` open until the timeout for
+every plain HTTP session, including one seeded with the browser's cookies; the
+browser's own reply is the only structured answer left. Empty-history code
 400 responses on other lookups are provider failures, not proof of a wrong
 carrier. Sentry distinguishes capture_missing, capture_unreadable,
 lookup_pending, lookup_unavailable and verification_required, plus numeric

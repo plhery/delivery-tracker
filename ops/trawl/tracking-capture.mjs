@@ -1,12 +1,43 @@
 // TRAWL 1.5.0 skips compressed bodies and settles on the first polling reply.
-// Restrict this compatibility adapter to the observed 17TRACK JSON endpoint.
+// This compatibility adapter observes the browser's own reply for a few exact
+// tracking endpoints, each on its public page with one valid number. Every
+// other capture request keeps TRAWL's stock behaviour.
+const SITES = [
+  {
+    // 17TRACK polls: keep reading until a completed reply names the number.
+    api: 'https://t.17track.net/track/restapi',
+    number(page) {
+      if (page.origin !== 'https://t.17track.net' || page.pathname !== '/en') return null;
+      const number = new URLSearchParams(page.hash.slice(1)).get('nums');
+      return number && /^[A-Z0-9]{5,40}$/.test(number) ? number : null;
+    },
+    settled(data, number) {
+      return data.meta?.code !== 200 || data.shipments?.some(s => s.number === number && s.code !== 100);
+    },
+  },
+  {
+    // UPS answers once. Akamai accepts this call only from the session the
+    // page established, which is why the reply is read here and never replayed.
+    api: 'https://webapis.ups.com/track/api/Track/GetStatus?loc=en_US',
+    number(page) {
+      if (page.origin !== 'https://www.ups.com' || page.pathname !== '/track') return null;
+      const number = (page.searchParams.get('tracknum') ?? '').toUpperCase();
+      return /^1Z[A-Z0-9]{16}$/.test(number) ? number : null;
+    },
+    settled(data, number) {
+      const details = Array.isArray(data.trackDetails) ? data.trackDetails : [];
+      return String(data.statusCode) !== '200' || details.length === 0
+        || details.some(d => String(d?.trackingNumber ?? d?.requestedTrackingNumber ?? '').toUpperCase() === number);
+    },
+  },
+];
+
 export async function attachTrackingCapture(page, url, options) {
-  const api = 'https://t.17track.net/track/restapi';
   const target = new URL(url);
-  if (target.origin !== 'https://t.17track.net' || target.pathname !== '/en'
-    || !options.captureResponses?.includes(api)) return undefined;
-  const number = new URLSearchParams(target.hash.slice(1)).get('nums');
-  if (!number || !/^[A-Z0-9]{5,40}$/.test(number)) return undefined;
+  const site = SITES.find(candidate => options.captureResponses?.includes(candidate.api) && candidate.number(target));
+  if (!site) return undefined;
+  const api = site.api;
+  const number = site.number(target);
   const entries = [];
   let accepting = true;
   let count = 0;
@@ -38,9 +69,9 @@ export async function attachTrackingCapture(page, url, options) {
       }
       entry.body = body.toString('utf8');
       const data = JSON.parse(entry.body);
-      // Preserve intermediate replies for diagnosis, but let the website poll
-      // until it returns a completed result for exactly the requested number.
-      if (data.meta?.code !== 200 || data.shipments?.some(s => s.number === number && s.code !== 100)) finish();
+      // Preserve intermediate replies for diagnosis, but let the website carry
+      // on until it holds a final reply for exactly the requested number.
+      if (site.settled(data, number)) finish();
     } catch { entry.error = 'tracking response could not be read'; }
   };
   page.on('response', onResponse);

@@ -8,6 +8,8 @@ import { UPS_PROGRESS_STATUS, upsStatus } from './status';
 // same value numbers.json records as synthetic. No real shipment, recipient or
 // session cookie appears in this file.
 const TRACKING_NUMBER = '1Z999AA10123456784';
+const STATUS_API = 'https://webapis.ups.com/track/api/Track/GetStatus?loc=en_US';
+const TRAWL_URL = 'http://trawl.internal:8191';
 const OUT_FOR_DELIVERY = JSON.parse(
   readFileSync(new URL('./fixtures/out-for-delivery.json', import.meta.url), 'utf8'),
 ) as Record<string, unknown>;
@@ -127,17 +129,53 @@ describe('UPS lookup steps', () => {
     expect(records).toEqual(['direct:challenge', 'lookup:direct:challenge']);
   });
 
-  it('falls back to the page the browser rendered when the session stays unusable', async () => {
+  it('reads the status reply the browser captured instead of replaying its cookies', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(Response.json({
+      tier: 2,
+      statusCode: 200,
+      url: upsTrackingUrl(TRACKING_NUMBER),
+      html: RENDERED_PAGE,
+      cookies: [{ name: 'X-XSRF-TOKEN-ST', value: 'token', domain: '.ups.com', path: '/' }],
+      userAgent: 'Mozilla/5.0 (test browser)',
+      capturedResponses: [
+        { url: STATUS_API, status: 200, headers: {}, body: null, truncated: false, base64Encoded: false, error: 'unreadable' },
+        { url: STATUS_API, status: 200, headers: {}, body: JSON.stringify(fixture()), truncated: false, base64Encoded: false, error: null },
+      ],
+    }));
+    const { recorder, records } = stepRecorder();
+
+    const result = await new UPSTracker({ timeoutMs: 2_000, trawlUrl: TRAWL_URL, recorder }).fetch(TRACKING_NUMBER);
+
+    expect(result).toMatchObject({
+      status: 'out_for_delivery',
+      tracking_source: 'structured-web-response',
+      tracking_url: upsTrackingUrl(TRACKING_NUMBER),
+    });
+    expect(result.events?.length ?? 0).toBeGreaterThan(1);
+    // One browser call and nothing else: no direct session, no cookie replay.
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(String(fetcher.mock.calls[0]?.[0])).toBe(`${TRAWL_URL}/scrape`);
+    expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toMatchObject({
+      url: upsTrackingUrl(TRACKING_NUMBER),
+      skipHttp: true,
+      maxTier: 3,
+      captureResponses: [STATUS_API],
+    });
+    expect(records).toEqual(['trawl:ok', 'lookup:trawl:ok']);
+  });
+
+  it('falls back to the page the browser rendered when no status reply was captured', async () => {
     const fetcher = vi.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce(new Response('<html>challenge</html>', { status: 403 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({
         tier: 3,
         statusCode: 200,
         url: upsTrackingUrl(TRACKING_NUMBER),
         html: RENDERED_PAGE,
-        // No usable cookie, so the structured call is skipped entirely.
         cookies: [],
         userAgent: 'Mozilla/5.0 (test browser)',
+        capturedResponses: [
+          { url: STATUS_API, status: 200, headers: {}, body: 'not json', truncated: false, base64Encoded: false, error: null },
+        ],
       }), { headers: { 'Content-Type': 'application/json' } }));
     const { recorder, records } = stepRecorder();
 
@@ -155,14 +193,9 @@ describe('UPS lookup steps', () => {
       tracking_url: upsTrackingUrl(TRACKING_NUMBER),
       events: [{ location: 'ZUERICH CH' }],
     });
-    expect(fetcher).toHaveBeenCalledTimes(2);
-    expect(String(fetcher.mock.calls[1]?.[0])).toBe('http://trawl.internal:8191/scrape');
-    expect(JSON.parse(String(fetcher.mock.calls[1]?.[1]?.body))).toMatchObject({
-      url: upsTrackingUrl(TRACKING_NUMBER),
-      skipHttp: true,
-      maxTier: 3,
-    });
-    expect(records).toEqual(['direct:challenge', 'trawl:ok', 'lookup:trawl:ok']);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(String(fetcher.mock.calls[0]?.[0])).toBe('http://trawl.internal:8191/scrape');
+    expect(records).toEqual(['trawl:ok', 'lookup:trawl:ok']);
   });
 
   it('rejects a number that is not a UPS number before any request', async () => {
@@ -186,18 +219,40 @@ describe('UPS rendered page', () => {
   });
 });
 
-it('temporarily prefers the working browser after two direct failures, then probes direct access', async () => {
-  let now = Date.now();
-  vi.spyOn(Date, 'now').mockImplementation(() => now);
+it('never opens a plain HTTP session while a browser service is configured', async () => {
   const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async url => String(url).includes('/scrape')
     ? Response.json({ tier: 3, statusCode: 200, html: RENDERED_PAGE, cookies: [] })
     : new Response('challenge', { status: 403 }));
-  const tracker = new UPSTracker({ trawlUrl: 'http://trawl.internal:8191' });
+  const tracker = new UPSTracker({ trawlUrl: TRAWL_URL });
   await tracker.fetch(TRACKING_NUMBER);
   await tracker.fetch(TRACKING_NUMBER);
-  await tracker.fetch(TRACKING_NUMBER);
-  expect(fetcher.mock.calls.filter(([url]) => String(url).includes('ups.com/track'))).toHaveLength(2);
-  now += 16 * 60_000;
-  await tracker.fetch(TRACKING_NUMBER);
-  expect(fetcher.mock.calls.filter(([url]) => String(url).includes('ups.com/track'))).toHaveLength(3);
+  expect(fetcher.mock.calls.filter(([url]) => String(url).includes('ups.com'))).toHaveLength(0);
+  expect(fetcher.mock.calls.filter(([url]) => String(url).includes('/scrape'))).toHaveLength(2);
+});
+
+describe('UPS rendered progress bar', () => {
+  const page = (nameKey: string) => `
+    <html><head><meta name="stapp-tracknum" content="${TRACKING_NUMBER}"></head>
+    <body>
+      <span id="stApp_nameKey">${nameKey}</span>
+      <ups-ac-progress-bar id="stApp_shpmtProgress">
+        <ol><li class="progress-step active" aria-current="true"></li><li class="progress-step inactive"></li></ol>
+        <ol>
+          <li class="progress-step active" aria-current="true"><button class="step-label"><span>Label Created </span></button><span class="sr-only">active</span></li>
+          <li class="progress-step inactive"><button class="step-label"><span>On the Way </span></button><span class="sr-only">inactive</span></li>
+          <li class="progress-step inactive"><button class="step-label"><span>Out for Delivery </span></button><span class="sr-only">inactive</span></li>
+        </ol>
+      </ups-ac-progress-bar>
+    </body></html>`;
+
+  it('reads only the active milestone, not every milestone still ahead', () => {
+    expect(parseUPSTrackingHtml(page('Label Created'), TRACKING_NUMBER)).toMatchObject({
+      status: 'pending',
+      last_status_text: 'Label Created',
+    });
+    expect(parseUPSTrackingHtml(page(''), TRACKING_NUMBER)).toMatchObject({
+      status: 'pending',
+      last_status_text: 'Label Created',
+    });
+  });
 });
