@@ -1,7 +1,7 @@
 /*
  * Scaffolds one carrier folder: the data files the catalog generator and the
- * detection sweep expect, plus the two documents whose headings are fixed by
- * ARCHITECTURE.md. carrier.json is validated against
+ * detection sweep expect, plus one README for integration details.
+ * carrier.json is validated against
  * core/catalog/carrier.schema.json before anything is written, so a fresh
  * folder is never the reason `npm run contract:generate` fails.
  *
@@ -98,61 +98,21 @@ function validateCarrier(carrier) {
   throw new Error(`The generated carrier.json would be invalid: ${details}`);
 }
 
-// Headings are fixed by ARCHITECTURE.md so every carrier reads the same way.
 function readmeSkeleton(options) {
   return `# ${options.name}
 
-## Identity and scope
+Catalog, portals and detection rules: [carrier.json](carrier.json).
+Sample numbers: [numbers.json](numbers.json).
+Status observations: [statuses.json](statuses.json).
 
-TODO: who this carrier is, which countries and services it covers, and which
-shipments end up tracked here rather than through a universal provider.
+## Integration
 
-## Portals
+${options.mode === 'link-only' ? 'This carrier is link-only: we only recognize and rebuild its tracking link.' : 'TODO: describe the request flow, required inputs and recovery behavior.'}
 
-TODO: the public tracking pages, what each one shows, and which one the
-adapter or the tracking link uses.
+## Limitations and decisions
 
-## What we retrieve
-
-TODO: the fields we keep, the fields the portal shows that we deliberately
-discard, and the fields the portal does not expose. Mirror this in
-\`carrier.json\` under \`portal\`.
-
-## Tracking numbers
-
-TODO: the number formats, their checksums, and how they are told apart from
-look-alike formats. Samples live in \`numbers.json\`.
-
-## How the adapter works
-
-TODO: the request flow, the steps, the budgets and the recovery behaviour.
-${options.mode === 'link-only' ? 'This carrier is link-only: we only recognize and rebuild its tracking link.\n' : ''}
-## Status reference
-
-TODO: raw wording or codes next to the stage they map to. Observations live in
-\`statuses.json\`.
-
-## Limitations and privacy
-
-TODO: what this integration cannot do, and the personal data it never stores.
-
-## Verification log
-
-| Date | What was checked | Result |
-| --- | --- | --- |
-`;
-}
-
-function notesSkeleton(options) {
-  return `# ${options.name} — notes
-
-## Decisions
-
-TODO: dated decisions, with the reason each was taken.
-
-## Rejected alternatives
-
-TODO: what was tried or considered and why it was not kept.
+TODO: record limitations and non-obvious choices that help maintain this
+integration. Omit sections that add no useful context.
 
 ## Verification log
 
@@ -172,7 +132,7 @@ function checklist(options) {
     `  2. Add detection rules and tracking-link rules to ${folder}/carrier.json.`,
     `  3. Add evidence-tagged sample numbers to ${folder}/numbers.json, drop its "gap" line, and run the detection sweep.`,
     `  4. Record observed status wordings in ${folder}/statuses.json.`,
-    `  5. Fill in ${folder}/README.md and ${folder}/NOTES.md.`,
+    `  5. Describe setup, limitations and verification in ${folder}/README.md.`,
     '  6. Run npm run contract:generate, then npm run ios:resources.',
     '  7. Run npm run test:contract and the carrier tests.',
     '',
@@ -196,7 +156,6 @@ async function main() {
     ['numbers.json', `${JSON.stringify({ carrier: options.id, gap: emptyCorpusGap, records: [] }, null, 2)}\n`],
     ['statuses.json', `${JSON.stringify({ carrier: options.id, entries: [] }, null, 2)}\n`],
     ['README.md', readmeSkeleton(options)],
-    ['NOTES.md', notesSkeleton(options)],
   ];
   for (const [name, contents] of files) {
     await writeFile(path.join(folder, name), contents);

@@ -100,10 +100,63 @@ carry a stage: only the parcel's current stage is mapped.
 - The page fallback without a browser service will normally be challenged by
   Cloudflare; the resulting error names `FLARESOLVERR_URL`.
 
+## Implementation decisions
+
+- **The guest JSON protocol is the primary tier, not the page.** It returns
+  codes, a delivery window, the sender and the pickup point; the rendered page
+  returns prose only. Everything the app shows beyond a status line comes from
+  the API tier.
+- **Firebase values are shipped in the application, so they live in the code.**
+  The project number, application id, package name, signing certificate hash and
+  API key are public, app-restricted identifiers taken from the myDPD Android
+  build. `DPD_FIREBASE_API_KEY` can override the key without a release.
+- **The postcode is optional, and a rejection is not a failure.** DPD answers
+  HTTP 400 when the supplied postcode does not match. The lookup retries once
+  with `continueWithoutVerification=true` and reports
+  `dpd_postcode_verified: false` instead of failing, so a parcel with a wrong
+  postcode still shows progress.
+- **A 404 on the details call is a positive not-found.** It ends the lookup and
+  never falls through to the page; 404s raised earlier in the token chain are
+  ordinary guest-API failures and do fall through. That distinction is what the
+  "does not misclassify an authentication-stage 404" test protects.
+- **Step ids are `direct` and `page`.** Before the move the recovery phase was
+  reported as `trawl` when `FLARESOLVERR_URL` was set and `page` when it was
+  not, for the same tier doing the same work. It is now always `page`; the
+  Sentry "Scraper Health" dashboard sees one label for one tier.
+- **`DPDAPIError` is an `IndeterminateError`, including its HTTP subclass.**
+  Every guest-API failure — unreachable, malformed JSON, an unexpected status —
+  is inconclusive about the parcel, and the page tier is allowed to recover from
+  it. This deliberately keeps a guest-API HTTP 429 inconclusive rather than
+  rate-limited, because the page tier answered those before the move and still
+  should.
+- **The token refresh uses `singleFlight()`** instead of the hand-rolled
+  promise handle, so two concurrent lookups through one adapter instance cannot
+  both refresh the guest credential.
+- **Local `clean()` is kept.** The guest API mixes strings and numbers in the
+  fields we project, so `core/transport`'s string-only `clean` would silently
+  turn a numeric city or code into an empty string.
+
+## Rejected alternatives
+
+- **Making the rendered page the only tier.** It has no codes, no delivery
+  window, no sender and no pickup point, and it is behind Cloudflare, so it
+  would cost more and return less.
+- **Requiring the postcode.** Most parcels resolve without it; making it
+  mandatory would block lookups for a marginal gain in detail.
+- **Mapping `IN_TRANSIT` and friends to an `in_transit` stage.** They say the
+  parcel moved, not which milestone it reached. Leaving them unmapped lets the
+  sync's classifier record the wording for review rather than inventing a
+  milestone (ARCHITECTURE.md, "map too little rather than wrongly").
+- **Dropping `receiverName` from the pickup-point fallback.** It is the
+  parcelshop name in the collection case, and it is only read while the stage is
+  `ready_for_pickup`, after two operational fields. Removing it would lose the
+  pickup point for payloads that only fill that field.
+
+
 ## Verification log
 
 - 2026-09-10: the tracking-link audit confirmed the consignee page and that a
   synthetic number returns a guest "not assigned" result (docs/CARRIERS.md).
 - 2026-09-12: moved into this folder; the guest protocol, the status map and
   the page fallback are unchanged. The recovery tier is now labelled `page` in
-  telemetry whether or not a browser service is configured (see NOTES.md).
+  telemetry whether or not a browser service is configured.

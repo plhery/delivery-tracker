@@ -41,7 +41,7 @@ Next.js route handlers -- user token -----> PostgREST + Postgres RLS
   leases so deploys, crashes, and multiple replicas do not lose or double-run
   active work. This is the only workflow that needs cross-account access.
 - `src/server/observability.ts` and `src/server/trackingAudit.ts` connect
-  privacy-scrubbed Sentry issues and structured logs to the service-role-only
+  Sentry issues and structured logs to the service-role-only
   `tracking_sync_attempts` and `tracking_sync_steps` decision ledger. See
   [OBSERVABILITY.md](OBSERVABILITY.md) for the operator queries and runbook.
 - `src/server/push.ts` delivers Web Push, ordinary APNs alerts, and ActivityKit
@@ -100,11 +100,12 @@ Next.js route handlers -- user token -----> PostgREST + Postgres RLS
   the pre-authentication fallback bucket is deliberately global. A one-way
   token hash adds a credential-specific bucket, and authenticated limits remain
   account-scoped.
-- HTTP and worker logs contain request/job/attempt identifiers, normalized
-  routes, status, timing, carrier id, normalized stage names, counts, and
-  exception class only. Query strings, tokens, tracking data, carrier payloads,
-  status text, locations, and user or package identifiers are excluded. Sentry
-  applies the same boundary and links to the private ledger only by opaque ids.
+- HTTP and worker logs record request/job/attempt identifiers, routes, status,
+  timing and carrier details. Tracking sync logs also include tracking numbers.
+  Sentry retains original errors and diagnostic context, including tracking
+  numbers and upstream request/response details, without application-level
+  sanitization. See [Observability](OBSERVABILITY.md) and
+  [upstream HTTP diagnostics](upstream-http-diagnostics.md) for the recorded fields.
 
 ## Data lifecycle
 

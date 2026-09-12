@@ -108,7 +108,7 @@ Postgres row-level security, account-scoped rate limits, and server-only secret
 keys. No internet service can promise absolute security.
 
 For a privacy or security concern, use GitHub's
-[private vulnerability report](https://github.com/plhery/swiss-delivery-tracker/security/advisories/new).
+[private vulnerability report](https://github.com/plhery/delivery-tracker/security/advisories/new).
 Do not include a real tracking number or combined tracking credential, delivery
 postcode, sign-in code, access token, Planzer shared link, or Dachser detail
 link in a public issue.

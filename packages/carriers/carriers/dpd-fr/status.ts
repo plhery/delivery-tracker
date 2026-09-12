@@ -95,7 +95,7 @@ export function classifyStatus(description: string): ClassifiedStatus {
 
   // Wording this map does not recognize keeps the row visible without claiming
   // a milestone: the result status stays `unknown` so the lookup falls back to
-  // the newest recognized row. See NOTES.md — the `in_transit` stage kept here
+  // the newest recognized row. See README.md — the `in_transit` stage kept here
   // predates the package's "omit the stage when it is not mapped" rule.
   return { status: 'unknown', stage: 'in_transit' };
 }

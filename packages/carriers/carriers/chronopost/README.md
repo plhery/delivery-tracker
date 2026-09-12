@@ -8,8 +8,7 @@ Chrono Shop2Shop relay service. Last mile in France
 
 Chronopost has no adapter of its own: `tracking.adapter` points at `la-poste`,
 because the same unified feed answers Chronopost numbers. Read
-[`../la-poste/README.md`](../la-poste/README.md) and
-[`../la-poste/NOTES.md`](../la-poste/NOTES.md) for the protocol, the tiers and
+[`../la-poste/README.md`](../la-poste/README.md) for the protocol, the tiers and
 the projection rules; this folder carries Chronopost's identity, numbers and
 portal facts.
 
@@ -72,6 +71,34 @@ arrive without one.
 - The Chronopost SOAP service is deliberately not used: it exposes more
   consignment metadata than tracking needs and is not intended for automated
   extraction.
+
+## Implementation decisions
+
+- **No adapter of its own.** `tracking.adapter: "la-poste"`. The La Poste
+  unified feed answers Chronopost numbers with the same shape, so a second
+  implementation would only add a second thing to keep working. The mechanics
+  live in [`../la-poste/README.md`](../la-poste/README.md).
+- **The event `code` is the only status key here.** Chronopost shipments come
+  back from the feed with an empty `group`, so `statuses.json` in this folder
+  lists codes only and defers to the shared map for everything else.
+- **Detection is split from La Poste by prefix.** `PZ`, `XU`, `XW` and `XY` S10
+  prefixes select Chronopost; the La Poste S10 rule explicitly excludes them.
+  Everything else numeric stays a suggestion the user confirms.
+- **`carrier.json` keeps the Chronopost portal URL** even though tracking data
+  comes from La Poste's feed: the link the app shows a user should be the one
+  that brand prints on its label.
+
+## Rejected alternatives
+
+- **The Chronopost SOAP tracking service.** It exposes more consignment
+  metadata than tracking needs and is not intended for automated extraction;
+  the unified feed answers the same numbers with less.
+- **Scraping `chronopost.fr` directly.** Same objection, plus a second portal to
+  maintain for no additional field the app displays.
+- **Claiming the Chronopost portal shows fields the feed hides.** Plausible —
+  express shipments usually have a proof of delivery — but unverified, so
+  `portal.unavailable` stays empty rather than guessing.
+
 
 ## Verification log
 

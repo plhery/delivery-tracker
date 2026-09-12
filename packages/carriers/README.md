@@ -8,7 +8,6 @@ application, so it can move to its own repository later.
 
 - [ARCHITECTURE.md](ARCHITECTURE.md): the design, the decisions and their
   alternatives.
-- [PRIVACY.md](PRIVACY.md): what an adapter may retain from a carrier response.
 - [CORPUS.md](CORPUS.md): the tracking-number corpus and the detection sweep.
 - [providers/README.md](providers/README.md): the universal provider chain.
 
@@ -16,7 +15,7 @@ application, so it can move to its own repository later.
 
 ```
 core/         detection, catalog, status vocabulary, result contract, errors, transport, runner, telemetry
-carriers/<id> one folder per carrier: carrier.json, numbers.json, statuses.json, README, NOTES, adapter, tests, fixtures
+carriers/<id> one folder per carrier: carrier.json, numbers.json, statuses.json, README, adapter, tests, fixtures
 providers/    Ship24, ParcelsApp, 17TRACK, Postal Ninja and the discovery chain
 generated/    catalog and adapter registry, produced by the scripts below
 scripts/      new-carrier, generate-registry, generate-readme, detection-golden
@@ -26,7 +25,7 @@ scripts/      new-carrier, generate-registry, generate-readme, detection-golden
 
 1. `npm run carrier:new -- --id <id> --name "<Name>" --canary-url <https url>`
    scaffolds the folder with a valid `carrier.json`, empty `numbers.json` and
-   `statuses.json`, and README / NOTES skeletons.
+   `statuses.json`, and a README skeleton.
 2. Fill `carrier.json`: detection rules (each with an `id` and a `source`),
    links, portal facts, inputs, `capabilities`, `tracking.steps`.
 3. Add sample numbers to `numbers.json` with their evidence family and source
@@ -36,8 +35,9 @@ scripts/      new-carrier, generate-registry, generate-readme, detection-golden
    `adapter` factory, `status.ts` with the code or wording map and its
    provenance, scrubbed `fixtures/`, `adapter.test.ts` with the capability guard
    and privacy assertions, and an env-gated `adapter.live.test.ts`.
-5. Write README.md (fixed headings) and NOTES.md (decisions, rejected
-   alternatives, dated verification log); fill `statuses.json`.
+5. Keep setup, limitations, non-obvious decisions and dated verification
+   evidence in one README.md. Keep catalog facts and status observations in
+   `carrier.json` and `statuses.json` instead of maintaining duplicate lists.
 6. `npm run contract:generate` (merges the catalog, regenerates the registry),
    `node packages/carriers/scripts/generate-readme.mjs`, then
    `npm run test:contract`, `npm run lint`, `npm run typecheck` and the test
@@ -53,8 +53,6 @@ npx vitest run --config vitest.server.config.ts packages/carriers   # offline te
 npm run test:carriers:live                                          # opt-in live probes
 npm run test:contract                                               # generated artifacts current
 ```
-
-## Carriers
 
 ## Carriers
 

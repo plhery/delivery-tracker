@@ -7,12 +7,12 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/plhery/swiss-delivery-tracker.git"
+    "url": "git+https://github.com/plhery/delivery-tracker.git"
   },
   "bugs": {
-    "url": "https://github.com/plhery/swiss-delivery-tracker/issues"
+    "url": "https://github.com/plhery/delivery-tracker/issues"
   },
-  "homepage": "https://github.com/plhery/swiss-delivery-tracker#readme",
+  "homepage": "https://github.com/plhery/delivery-tracker#readme",
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0",
     "npm": ">=10"

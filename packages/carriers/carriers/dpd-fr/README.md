@@ -89,9 +89,51 @@ so the newest recognized row decides the parcel's status.
   integration is experimental and should be replaced by a contracted API before
   being relied on as a long-term production integration.
 
+## Implementation decisions
+
+- **The direct request is kept even though Cloudflare usually blocks it.**
+  It succeeds often enough — and costs one bounded GET — that going straight to
+  the browser service would spend a browser on every sync. Mondial Relay made
+  the opposite call because its direct path was blocked from every network
+  tested; DPD France's is not.
+- **The requested number selects the leg.** A trace page can carry an outbound
+  parcel and its return. Reading `#infos1`/`tabTraceColisAller` for the outbound
+  number and `#infos2`/`tabTraceColisRetour` for the return keeps one recipient
+  from seeing the other leg's history, and makes a page for a different shipment
+  a hard `SchemaError` rather than a silent mismatch.
+- **Wording is matched on a normalized form.** DPD France varies accents,
+  apostrophes and trailing punctuation between rows, so every comparison runs on
+  the lowercase, diacritic-free, punctuation-free text.
+- **Order of the wording rules is load-bearing.** Returns, then incidents, then
+  delivery: "votre colis sera retourné à l'expéditeur" would otherwise fall
+  through to a delivery rule, and "nous avons reçu une réclamation" would
+  otherwise look like ordinary movement.
+- **The missing browser tier is a disabled step, not a failed one.** When
+  `FLARESOLVERR_URL` is unset the `trawl` step is skipped and the challenge
+  thrown by `direct` carries the message
+  "DPD France requires a browser challenge solver; configure FLARESOLVERR_URL",
+  so telemetry shows one attempted step and the operator still gets the hint.
+- **Timestamps use `core/time`'s `zonedTime`.** Rows print naive
+  `dd/MM/yyyy HH:mm` wall clock; Europe/Paris is applied explicitly rather than
+  guessing UTC.
+
+## Rejected alternatives
+
+- **Looking for a JSON feed behind the page.** The trace page is server-rendered
+  and exposes no reusable JSON endpoint; the timeline only exists as markup.
+- **Keeping the proof-of-delivery and address blocks "for diagnostics".**
+  The parser does not read those nodes or include them in the tracking result.
+- **Assigning `in_transit` to unrecognized wording as a considered mapping.**
+  The classifier still returns that stage today, which predates the package's
+  rule that unmapped wording must carry no stage. It is kept for now so the
+  move stays behaviour-preserving; the honest fix is to return no stage and let
+  the sync's classifier record the wording. Tracked here rather than silently
+  changed.
+
+
 ## Verification log
 
 - 2026-09-10: Cloudflare challenges anonymous direct requests from several
   networks; the private browser service is normally required (docs/CARRIERS.md).
 - 2026-09-12: moved into this folder. The parser, the wording map and the two
-  tiers are unchanged; only the error classes changed (see NOTES.md).
+  tiers are unchanged; only the error classes changed.

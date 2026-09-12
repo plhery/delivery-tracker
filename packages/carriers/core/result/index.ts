@@ -5,7 +5,7 @@
  * (status, stage, estimate, sender/pickup names, weight, and the projected
  * events). What it is not: it does not classify wording or touch the
  * database; the host's sync does that after `normalizeCarrierResult`.
- * An event with no `stage` means "no explicit mapping" (see PRIVACY.md and
+ * An event with no `stage` means "no explicit mapping" (see
  * ARCHITECTURE.md § Status model).
  */
 import { isRecord, type JsonObject } from '../types';

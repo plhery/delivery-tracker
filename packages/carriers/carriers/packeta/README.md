@@ -88,6 +88,47 @@ the sync classifies and records it.
   are never retained — the offline test feeds a fixture carrying them and
   asserts the result JSON contains none of their values.
 
+## Implementation decisions
+
+- 2026-09-11: use the keyless consumer endpoint that backs the tracking page.
+  One POST, no session, about 0.2 s.
+- 2026-09-11: pin the request locale to English. The event text is the only
+  per-event signal there is, and a fixed locale turns it into a stable
+  vocabulary that substring matching can classify.
+- 2026-09-11: treat both unknown signals — HTTP 404 and a 200 carrying `error`
+  instead of `item` — as the same clean not-found.
+- 2026-09-11: keep two independent maps. `packetStatusId` is a closed numeric
+  vocabulary for the parcel; the event sentences are separate and neither is
+  derived from the other.
+- 2026-09-11: read the naive times as `Europe/Prague` rather than inventing UTC.
+  The backend stamps Prague time; ordering within a parcel is what matters and
+  it is preserved.
+- 2026-09-11: link to the canonical `/en/{code}` path form after verifying that
+  the legacy `?id=` form 301-redirects to it.
+- 2026-09-11: keep `sender` and `branchAddress`. They are a merchant name and a
+  pickup-point name — no recipient data, and the only pickup signal Packeta
+  gives.
+- 2026-09-12: `normalizePacketaTrackingNumber` keeps throwing `TypeError`; it
+  validates an argument, not a provider response.
+
+## Rejected alternatives
+
+- Deriving the overall stage from the newest event sentence: `packetStatusId` is
+  authoritative and the sentences are advisory, so an unmapped id must report
+  `unknown` rather than borrow a stage from prose.
+- Guessing a stage for an unmapped `packetStatusId`: only "3" is live-confirmed,
+  so an unknown id is more likely schema drift than a new state.
+- Stamping UTC on the naive times: it would shift every event by one or two
+  hours and look authoritative while doing it.
+
+## Open questions
+
+- Romanian depot scans (EET) can be one hour off, because the backend stamps
+  Prague time and the payload carries no per-event locality.
+- The other `packetStatusId` values are reconstructions; re-observing them on
+  real parcels would let `statuses.json` move them from `prior-art` to `live`.
+
+
 ## Verification log
 
 - 2026-09-10: `POST .../getPacketById/Z0000000000/en` answers HTTP 404

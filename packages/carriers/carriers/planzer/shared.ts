@@ -6,9 +6,7 @@ import 'server-only';
  * A `999.90.########` shipment is not in the tracking API. Planzer publishes
  * it as a capability link — `trackandtrace.planzergroup.com/shared/sendungen/
  * {number}?accessKey=…` — which renders the five-step route page. The access
- * key is part of the tracking credential: it is validated, used for that one
- * lookup and never logged, stored in a fixture or written into documentation
- * (PRIVACY.md).
+ * key is part of the tracking credential and is validated before the lookup.
  *
  * The page carries no status code, so the route steps are read from the
  * markup: their tooltip labels name the stage, `text-primary` marks the ones

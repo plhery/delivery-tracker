@@ -7,7 +7,7 @@ import 'server-only';
  * MurmurHash3 checksum bound to the tracking number and an HMAC over the
  * three. The constants below are public frontend configuration read from the
  * site's own script, not a provisioned API credential: no account, cookie,
- * browser fingerprint or issued token is involved. See NOTES.md.
+ * browser fingerprint or issued token is involved. See README.md.
  */
 import { createHash, createHmac } from 'node:crypto';
 import { fetchBounded, parseJsonBytes } from '../../core/transport';

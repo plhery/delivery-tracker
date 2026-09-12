@@ -93,6 +93,56 @@ if that leaves it unresolved.
 - La Poste's edge can reject an anonymous lookup with an HTTP 403 "Site
   indisponible" page before it can answer; that is what the `retry` tier is for.
 
+## Implementation decisions
+
+- **One adapter for four brands.** `suivi-unifie` answers for Colissimo,
+  tracked mail, Chronopost and Delivengo, so `chronopost` and `delivengo` set
+  `tracking.adapter: "la-poste"` instead of getting adapters of their own. It
+  also means Chronopost never needs its SOAP response, which exposes more
+  consignment metadata than tracking requires.
+- **The shipment identifier is verified before anything is projected.** The
+  feed takes an array of numbers and can answer for more than one; the entry
+  whose `shipment.idShip` equals the requested number is the only one read.
+- **`returnCode` 104 is the only positive not-found.** Every other non-zero code
+  means the feed could not answer, and is reported as inconclusive so the router
+  can try a universal provider instead of telling the user the parcel does not
+  exist.
+- **The retries are two extra runner steps with the id `retry`, not a loop.**
+  `runSteps` is given `direct`, `retry`, `retry`; step ids do not have to be
+  unique, and the runner distinguishes the specs by identity. This reproduces
+  exactly what docs/scraper-monitoring.md documents — "La Poste records its
+  first request as `direct` and up to two immediate HTTP 403 retries as
+  `retry`" — and keeps each retried rejection reported with its own diagnostics.
+  Collapsing the two retries into a single `retry` step would have halved the
+  fallback records; folding them into `direct` would have hidden them.
+  `adapter.steps` and `carrier.json` list the two distinct tiers,
+  `["direct", "retry"]`, because they name tiers rather than attempts.
+- **The deadline lives in the `recovers` predicate.** A retry is refused once
+  the original 15-second deadline is spent, so an exhausted lookup still throws
+  the provider's own `UpstreamHttpError` (403, with its bounded body
+  diagnostics) rather than a `BudgetExceededError`. The router's behaviour and
+  the Sentry issue stay what they were.
+- **Only HTTP 403 is retried.** Other statuses and every parsing failure
+  propagate immediately: a 429 or a malformed payload is not going to be fixed
+  by an instant repeat.
+- **Timestamps are passed through, not re-rendered.** The feed already sends an
+  offset; `core/time`'s `isoTime` is used to *validate* the value, and the
+  provider's own string is what reaches the result.
+
+## Rejected alternatives
+
+- **Scraping the public tracker page.** The page calls this feed itself; the
+  feed is keyless, stable and carries the codes the page renders.
+- **Using Chronopost's SOAP service for Chronopost numbers.** It exposes more
+  consignment metadata than tracking needs and is not intended for automated
+  extraction. The unified feed answers the same numbers.
+- **Retrying a 403 with a backoff.** The observed outage was a few hundred
+  milliseconds of edge trouble; a backoff would spend the user's deadline
+  waiting rather than asking again.
+- **Treating every non-zero `returnCode` as not-found.** That would report
+  missing parcels during a provider outage.
+
+
 ## Verification log
 
 - 2026-09-10: the tracking-link audit confirmed the public tracker page
@@ -101,5 +151,4 @@ if that leaves it unresolved.
   cours" page, and immediately following checks succeeded — the evidence behind
   the two immediate retries.
 - 2026-09-12: moved into this folder. The feed, the status map and the retry
-  budget are unchanged; the retries are now expressed as runner steps (see
-  NOTES.md).
+  budget are unchanged; the retries are now expressed as runner steps.

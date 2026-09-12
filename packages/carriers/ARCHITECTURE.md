@@ -25,7 +25,6 @@ Goals, in the order they win when they conflict:
 packages/carriers/
   ARCHITECTURE.md        this file: design and decisions
   README.md              overview table (generated) and the add-a-carrier checklist
-  PRIVACY.md             the projection policy, stated once and enforced in core
   core/
     catalog/             carrier.json schema, loader, typed access to the merged catalog
     brand/               palette derivation, truck geometry, the data both clients render
@@ -51,8 +50,7 @@ carriers/<id>/
   carrier.json           identity, brand, timezone, portal facts, links, detection rules, inputs, capabilities
   numbers.json           evidence-tagged sample numbers used by the detection sweep
   statuses.json          observed status vocabulary: raw wording or code, stage, first seen, how confirmed
-  README.md              human documentation with a fixed table of contents
-  NOTES.md               dated decisions, rejected alternatives, verification log
+  README.md              setup, limitations, implementation decisions and verification
   adapter.ts             dedicated carriers only: implements CarrierAdapter, exports a pure parse()
   status.ts              dedicated carriers only: code or wording → Stage map with provenance comments
   adapter.test.ts        offline tests over fixtures
@@ -151,11 +149,13 @@ whether a fallback tier is worth keeping.
 
 ## Documentation
 
-Per-carrier READMEs follow a fixed table of contents: identity and scope,
-portals, what we retrieve, tracking numbers, how the adapter works, status
-reference, limitations and privacy, verification log. Tables are generated from
-the JSON files; prose sections are hand-written. The package README carries the
-generated overview table and the add-a-carrier checklist.
+Each carrier or provider has one README for setup, limitations, non-obvious
+implementation decisions and dated verification evidence. Use only the sections
+that help explain that integration. Catalog facts belong in `carrier.json`,
+examples in `numbers.json`, and status observations in `statuses.json`; link to
+those files instead of maintaining another copy. Fixture provenance stays next
+to the fixtures. The package README contains the generated overview table and
+the add-a-carrier checklist.
 
 ## Decisions and alternatives
 

@@ -5,7 +5,7 @@ last mile, it is never selectable for a parcel, and it exists so that a parcel
 whose carrier has no dedicated adapter — or whose carrier is unknown — still
 shows real progress. Each provider has its own folder here, built like a carrier
 folder: `adapter.ts` with a pure `parse…()` and an `adapter` factory,
-`adapter.test.ts`, `fixtures/`, `README.md` and `NOTES.md`. Providers are not
+`adapter.test.ts`, `fixtures/` and `README.md`. Providers are not
 part of the generated carrier registry; the chain in `universal.ts` calls them.
 
 | Folder | Provider name (persisted) | Transport | Steps |
@@ -54,7 +54,7 @@ Reported carrier names are hints. One unambiguous name becomes
 `discovered_carrier`, which lets routing try that carrier's dedicated adapter;
 only that adapter confirming the shipment adopts the carrier.
 
-Privacy follows `../PRIVACY.md`: events carry a time, a description and a stage.
+Events carry a time, a description and a stage.
 Recipient names and addresses, signatures, access and door codes, courier
 contact details and provider payloads are not retained, and a delivery
 description that contains such details is replaced by `Delivered`.
@@ -88,9 +88,9 @@ carry extra fields the host's observability reads by name:
 ## Adding or changing a provider
 
 1. Create the folder with `adapter.ts`, `adapter.test.ts`, `fixtures/`,
-   `README.md` and `NOTES.md`; export an `adapter` factory.
+   `README.md`; export an `adapter` factory.
 2. Register it in `universal.ts` (`FACTORIES` and, if it belongs in the default
    order, `UNIVERSAL_SOURCES`). A new name becomes persisted state: adding one
    is a data migration for parcels that already prefer another provider.
 3. Verify live before changing the order, and record the date and what was
-   observed in `NOTES.md`.
+   observed in `README.md`.

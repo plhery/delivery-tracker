@@ -6,8 +6,7 @@ import {
 } from './shared';
 
 const WRONG_SHARED_NUMBER = '9999000000000';
-// A made-up access key of the right shape; a real one is a tracking credential
-// and is never committed (PRIVACY.md).
+// A made-up access key of the right shape for the tracking credential.
 const WRONG_SHARED_URL = 'https://trackandtrace.planzergroup.com/shared/sendungen/'
   + `${WRONG_SHARED_NUMBER}?accessKey=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA`;
 const SHARED_NUMBER = '999.90.00000001';

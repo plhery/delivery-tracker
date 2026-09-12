@@ -116,7 +116,7 @@ export function parseCorreosSpainTrackingResponse(payload: unknown, trackingNumb
   const dimensionsText = dims.every((value) => Number.isFinite(value) && value > 0)
     ? `${dims[0]} x ${dims[1]} x ${dims[2]} cm` : null;
   // nombre_cliente names a person in the doorstep case, so it is never
-  // projected (PRIVACY.md); weight and dimensions are operational parcel data.
+  // projected; weight and dimensions are operational parcel data.
   const extras = {
     ...(weightKg != null ? { weight_kg: weightKg } : {}),
     ...(dimensionsText ? { dimensions_text: dimensionsText } : {}),

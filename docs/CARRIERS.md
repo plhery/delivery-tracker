@@ -6,7 +6,6 @@ vocabulary, adapter, fixtures, tests and documentation. Start there:
 
 - [Overview table and the add-a-carrier checklist](../packages/carriers/README.md)
 - [Architecture and decisions](../packages/carriers/ARCHITECTURE.md)
-- [What an adapter may retain](../packages/carriers/PRIVACY.md)
 - [The tracking-number corpus](../packages/carriers/CORPUS.md)
 - [Universal providers: Ship24 → ParcelsApp → 17TRACK, Postal Ninja opt-in](../packages/carriers/providers/README.md)
 - [Routing policy between direct adapters and providers](tracking-routing.md)
@@ -14,7 +13,7 @@ vocabulary, adapter, fixtures, tests and documentation. Start there:
 
 Each carrier's README documents its portals, what is retrieved, its number
 formats, how the adapter works, the observed status vocabulary, limitations,
-and a dated verification log; its NOTES.md records the decisions taken.
+implementation decisions, and a dated verification log in one place.
 
 ## Catalog
 
@@ -75,11 +74,3 @@ cite them:
 | 2026-09-08 | Universal ambiguity | Reddit tracking discussion, `7321315927723857` | 17TRACK reported delivery August 31; ParcelsApp varied. |
 | 2026-09-10 | Ship24 | Two public examples from the production container | 32 and 6 normalized events in 409 and 121 ms, one request each. |
 | 2026-09-10 | Tracking links | All 11 stored carriers plus GLS, Cainiao and ParcelsApp | Seven routes passed headless checks; seven unverified by bot protection; interactive checks confirmed the rest. |
-
-## Privacy
-
-Recipient names, street addresses, contact details, signatures, access codes
-and delivery instructions are never retained; postcodes and capability URLs
-that unlock a shipment are part of the tracking credential and never logged.
-The full policy and its enforcement are in
-[`packages/carriers/PRIVACY.md`](../packages/carriers/PRIVACY.md).

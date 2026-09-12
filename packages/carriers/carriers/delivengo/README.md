@@ -9,8 +9,7 @@ postal operator, so it is never the last-mile carrier itself.
 
 Delivengo has no adapter of its own: `tracking.adapter` points at `la-poste`,
 because the same unified feed answers Delivengo numbers. Read
-[`../la-poste/README.md`](../la-poste/README.md) and
-[`../la-poste/NOTES.md`](../la-poste/NOTES.md) for the protocol, the tiers and
+[`../la-poste/README.md`](../la-poste/README.md) for the protocol, the tiers and
 the projection rules; this folder carries Delivengo's identity, numbers and
 portal facts.
 
@@ -62,6 +61,35 @@ La Poste map in [`../la-poste/statuses.json`](../la-poste/statuses.json).
   been parsed end to end. Routing and parsing rely on the La Poste tests.
 - Because the destination post performs the last mile, a Delivengo lookup can
   go quiet after export even when the parcel is still moving.
+
+## Implementation decisions
+
+- **No adapter of its own.** `tracking.adapter: "la-poste"`. Delivengo numbers
+  are answered by the same La Poste unified feed. The mechanics live in
+  [`../la-poste/README.md`](../la-poste/README.md).
+- **No detection rules.** Delivengo's number ranges overlap other La Poste
+  services, so adding a rule would either steal numbers from Colissimo or
+  produce another ambiguous suggestion. The carrier stays selectable in the
+  manual picker and `numbers.json` records that the engine resolves its sample
+  to La Poste / Colissimo.
+- **`region.countries` is empty on purpose.** Delivengo is an export service
+  from France: the last mile belongs to the destination post, and the field
+  records last-mile coverage.
+- **`statuses.json` records a gap instead of copying the La Poste entries.**
+  Nothing has been observed on a Delivengo shipment, and inventing entries would
+  claim evidence this folder does not have.
+
+## Rejected alternatives
+
+- **Adding a Delivengo detection rule anyway.** It would collide with La Poste
+  and Chronopost without giving the user a better answer than the manual picker.
+- **Linking to `mydelivengo.laposte.fr`.** That portal is the sender's account
+  area and its FAQ, not a recipient tracker; the La Poste page is where a
+  recipient can follow the parcel.
+- **Copying the La Poste status table into this README.** It would read as
+  Delivengo evidence. The table says "not observed" and points at the shared
+  map instead.
+
 
 ## Verification log
 
