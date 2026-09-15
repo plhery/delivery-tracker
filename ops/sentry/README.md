@@ -19,8 +19,17 @@ HTTP statuses and opaque internal identifiers, not tracking payloads.
 One sample per provider and scheduled refresh prevents retries from inflating the
 rate. Direct transport and provider totals are distinct: a direct failure followed
 by a successful browser result is a failed direct sample and a successful provider
-sample. Missing input and positive not-found results are excluded from provider
-outage rates. A skipped direct probe during UPS cooldown is not a success.
+sample. A carrier whose only tier is direct records the provider sample alone, so
+one outage opens one incident. Missing input and positive not-found results are
+healthy samples that count toward recovery but never toward the outage rate, so a
+provider whose only traffic is a probe for an unknown parcel can still recover. A
+skipped direct probe during UPS cooldown is not a success. A scheduled check that
+contacted no provider because every tier was cooling down records no sample at all.
+
+A parcel with no progress whose own carrier answers not-found stays `waiting`
+even when every fallback provider fails on the same number: the fallback chain
+cannot know a parcel the carrier has not announced, so that is not a refresh
+failure. The routing state (cooldowns, next check) is still persisted.
 
 Postgres serializes incident transitions. Repeated incidents notify at most once
 per six hours; a recovery is emitted once without that delay. A pending event has

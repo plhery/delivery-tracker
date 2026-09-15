@@ -6,6 +6,11 @@ returns jsonb language sql as $$
   select public.record_tracking_health(attempt_id,package_id,jsonb_build_array(jsonb_build_object(
     'kind',kind,'subject',subject,'healthy',healthy,'details',jsonb_build_object('error_type','TransportError'))));
 $$;
+create function pg_temp.answered_sample(subject text)
+returns jsonb language sql as $$
+  select public.record_tracking_health(gen_random_uuid(),null,jsonb_build_array(jsonb_build_object(
+    'kind','provider','subject',subject,'healthy',true,'details',jsonb_build_object('error_type','NotFoundError','category','not_found'))));
+$$;
 do $$
 declare result jsonb; sample_id uuid := gen_random_uuid(); notice_id uuid;
 begin
@@ -50,6 +55,18 @@ begin
 
   for i in 1..5 loop result := pg_temp.health_sample('rate-carrier',false,'refresh',gen_random_uuid()); end loop;
   assert result->0->>'state'='open' and result->0->>'consecutive_failures'='false', 'Five failures across parcels must trigger the rate condition';
+
+  -- A healthy not-found answer recovers an incident but never dilutes the outage rate.
+  for i in 1..10 loop result := pg_temp.answered_sample('probe-carrier'); end loop;
+  for i in 1..9 loop result := pg_temp.health_sample('probe-carrier',false); end loop;
+  assert result='[]', 'Answered probes must not count toward the ten-lookup minimum';
+  result := pg_temp.health_sample('probe-carrier',false);
+  assert result->0->>'state'='open' and (result->0->>'attempts')::int=10, 'Ten real failures must alert despite healthy not-found answers';
+  perform public.ack_tracking_health(array[(result->0->>'id')::uuid]);
+  assert pg_temp.answered_sample('probe-carrier')='[]';
+  assert pg_temp.answered_sample('probe-carrier')='[]';
+  result := pg_temp.answered_sample('probe-carrier');
+  assert result->0->>'state'='recovered', 'Three answered probes must recover an incident';
   assert not has_function_privilege('authenticated','public.record_tracking_health(uuid,uuid,jsonb)','execute');
   assert not has_table_privilege('anon','public.tracking_health_samples','select');
 end;

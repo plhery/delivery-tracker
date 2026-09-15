@@ -48,6 +48,8 @@ export interface SyncAuditCompletion {
   eventsNormalized?: number;
   anomalyCodes?: SyncAnomalyCode[];
   error?: unknown;
+  /** False when no provider was contacted, so the check is not evidence of provider health. */
+  evaluateHealth?: boolean;
 }
 
 type StepStatus = 'succeeded' | 'failed' | 'skipped';
@@ -234,7 +236,7 @@ export class TrackingSyncAudit {
       );
       if (!completed) throw new Error('The tracking sync attempt was not running');
     });
-    if (this.context.trigger === 'scheduled' && !this.context.signal?.aborted
+    if (this.context.trigger === 'scheduled' && !this.context.signal?.aborted && completion.evaluateHealth !== false
       && ['updated', 'waiting', 'error'].includes(completion.outcome)) {
       const failedFetch = this.#steps.some(step => step.step === 'fetch' && step.status === 'failed');
       const samples: JsonObject[] = [...this.#healthSamples.values(), {

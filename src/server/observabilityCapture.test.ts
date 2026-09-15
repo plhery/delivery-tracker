@@ -120,8 +120,13 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   expect(repeats[1].fingerprint).toEqual(repeats[0].fingerprint);
   expect(repeats.map((event) => event.tags?.attempt_id).sort()).toEqual(['first', 'second']);
   expect(repeats.map((event) => event.tags?.tracking_number).sort()).toEqual(['TEST-first', 'TEST-second']);
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   reportRoutingEvent('provider_failed', { carrier: 'dhl', provider: '17TRACK',
     category: 'rate_limited', trackingNumber: 'TEST-first', errorClass: 'UpstreamHttpError', error: new UpstreamHttpError('17TRACK', 429) });
+  // The log line is the only per-attempt record now that failures no longer reach Sentry.
+  expect(JSON.parse(String(warn.mock.calls.at(-1)?.[0]))).toMatchObject({ event: 'tracking_routing', decision: 'provider_failed',
+    provider: '17TRACK', error_type: 'UpstreamHttpError', error_message: expect.stringContaining('429'), upstream_status: 429 });
+  warn.mockRestore();
   reportRoutingEvent('carrier_auto_swapped', { carrier: 'dhl', provider: 'ups', trackingNumber: 'TEST-first' });
   reportRoutingEvent('provider_recovered', { carrier: 'dhl', provider: '17TRACK' });
   reportRoutingEvent('direct_support_opportunity', { carrier: 'fedex', provider: 'fedex' });

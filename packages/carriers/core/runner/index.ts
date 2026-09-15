@@ -66,7 +66,8 @@ export async function runSteps<T>(options: RunOptions, steps: readonly StepSpec<
   const finish = (outcome: StepOutcome, error?: unknown): void => {
     recorder.lookup({
       carrier: options.carrier, finalStep: lastStep, outcome, errorType: error === undefined ? null : errorTypeOf(error),
-      durationMs: Math.max(0, now() - started), attempts: attempt, ...(error === undefined ? {} : { error }),
+      durationMs: Math.max(0, now() - started), attempts: attempt, stepsAvailable: enabled.length,
+      ...(error === undefined ? {} : { error }),
     });
   };
 

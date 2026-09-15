@@ -28,13 +28,26 @@ describe('tracking health evidence', () => {
     expect([...b.values()]).toMatchObject([{ subject: 'dpd', healthy: true }]);
   });
 
-  it('does not turn missing input or not-found responses into provider outages', async () => {
+  it('records missing input and not-found answers as healthy transports, not outages', async () => {
     const samples = new Map<string, HealthSample>();
     await observeTrackingHealth(samples, async () => {
       healthStepRecorder.step({ ...step, outcome: 'input_required' });
       healthStepRecorder.lookup({ carrier: 'ups', finalStep: 'direct', outcome: 'not_found', errorType: 'NotFoundError', durationMs: 1, attempts: 1 });
     });
-    expect(samples.size).toBe(0);
+    expect([...samples.values()]).toEqual([
+      expect.objectContaining({ kind: 'direct', healthy: true, details: expect.objectContaining({ category: 'input_required' }) }),
+      expect.objectContaining({ kind: 'provider', healthy: true, details: expect.objectContaining({ category: 'not_found' }) }),
+    ]);
+  });
+
+  it('keeps one sample when direct is the only tier a carrier has', async () => {
+    const samples = new Map<string, HealthSample>();
+    await observeTrackingHealth(samples, async () => {
+      healthStepRecorder.step({ ...step, carrier: 'swiss-post' });
+      healthStepRecorder.lookup({ carrier: 'swiss-post', finalStep: 'direct', outcome: 'transport',
+        errorType: 'UpstreamHttpError', durationMs: 200, attempts: 1, stepsAvailable: 1 });
+    });
+    expect([...samples.values()]).toEqual([expect.objectContaining({ kind: 'provider', subject: 'swiss-post', healthy: false })]);
   });
 
   it('explains user impact, maintenance and rate-limit next steps', () => {

@@ -201,6 +201,19 @@ describe('persistent tracking routing', () => {
         ['Ship24', 'ParcelsApp', ...(enablePostalNinja ? ['Postal Ninja'] : []), '17TRACK']);
     }
   });
+  it('counts contacted providers so a check that reached nobody is not health evidence', async () => {
+    const { router, direct, universal } = setup();
+    direct.mockRejectedValue(new Error('carrier down'));
+    universal.mockRejectedValue(new Error('down'));
+    await expect(router.fetch(parcel({ carrier: 'ups' }), false)).rejects.toMatchObject({ attempted: 4 });
+    const cooling = Object.fromEntries(['ups', 'Ship24', 'ParcelsApp', '17TRACK']
+      .map((provider) => [provider, { count: 1, kind: 'transport', retry_at: '2026-09-10T13:00:00.000Z' }]));
+    direct.mockClear(); universal.mockClear();
+    await expect(router.fetch(parcel({ carrier: 'ups', carrier_data: { routing: state({ configured_carrier: 'ups', failures: cooling }) } }), false))
+      .rejects.toMatchObject({ attempted: 0, stale: true });
+    expect(direct).not.toHaveBeenCalled();
+    expect(universal).not.toHaveBeenCalled();
+  });
   it('gives 17TRACK a usable budget even after slow direct and universal failures', async () => {
     let elapsed = 0;
     vi.spyOn(performance, 'now').mockImplementation(() => elapsed);

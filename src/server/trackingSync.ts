@@ -725,7 +725,11 @@ export class TrackingSyncService {
           return 'unsupported';
         }
         const hasProgress = previousStage !== 'pending';
-        if (!hasProgress && isUnannouncedTrackingError(error)) {
+        // The parcel's own carrier does not know it yet: fallback providers failing on the
+        // same unannounced number is not an outage, and the routing state keeps their cooldowns.
+        const routingUnannounced = error instanceof RoutingDeferred
+          && error.routing.failures[carrierId]?.kind === 'not_found';
+        if (!hasProgress && (isUnannouncedTrackingError(error) || routingUnannounced)) {
           audit.record('fetch', 'succeeded', performance.now() - fetchStartedAt, {
             disposition: 'unannounced',
           });
@@ -737,6 +741,9 @@ export class TrackingSyncService {
               last_synced_at: this.now().toISOString(),
               sync_status: 'waiting',
               sync_error: null,
+              ...(error instanceof RoutingDeferred ? { carrier_data: {
+                ...(isRecord(parcel.carrier_data) ? parcel.carrier_data : {}), routing: error.routing,
+              } } : {}),
             });
           });
           await audit.finish({
@@ -911,7 +918,9 @@ export class TrackingSyncService {
           audit.reportError(persistenceError, 'persist_routing_state');
           throw persistenceError;
         }
-        await audit.finish({ outcome: error.stale ? 'error' : 'waiting', sourceCarrier: carrierId });
+        // A check that contacted nobody says nothing about provider health.
+        await audit.finish({ outcome: error.stale ? 'error' : 'waiting', sourceCarrier: carrierId,
+          evaluateHealth: error.attempted > 0 });
         return error.stale ? 'errors' : 'waiting';
       }
       let message = error instanceof Error ? error.message.trim() || error.name : String(error);

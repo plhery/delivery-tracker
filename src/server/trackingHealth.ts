@@ -10,7 +10,12 @@ export interface HealthSample extends JsonObject {
   details: JsonObject;
 }
 const observations = new AsyncLocalStorage<Map<string, HealthSample>>();
-const excluded = new Set(['not_found', 'input_required']);
+/**
+ * A clean not-found or a missing input is a working transport that answered,
+ * so it is recorded healthy and lets an incident recover. Postgres leaves
+ * these categories out of the outage rate so they cannot mask a real outage.
+ */
+const answered = new Set(['ok', 'not_found', 'input_required']);
 
 function details(record: StepRecord | LookupRecord): JsonObject {
   let status: number | null = null;
@@ -24,16 +29,20 @@ function details(record: StepRecord | LookupRecord): JsonObject {
 }
 function save(kind: 'provider' | 'direct', record: StepRecord | LookupRecord): void {
   const store = observations.getStore();
-  if (!store || excluded.has(record.outcome)) return;
+  if (!store) return;
   const key = `${kind}:${record.carrier}`;
   const previous = store.get(key);
   // A retry cannot count as another lookup or erase the original failed direct attempt.
   if (previous && !previous.healthy) return;
-  store.set(key, { kind, subject: record.carrier.slice(0, 100), healthy: record.outcome === 'ok', details: details(record) });
+  store.set(key, { kind, subject: record.carrier.slice(0, 100), healthy: answered.has(record.outcome), details: details(record) });
 }
 export const healthStepRecorder = {
   step(record: StepRecord) { if (record.step === 'direct') save('direct', record); },
-  lookup(record: LookupRecord) { save('provider', record); },
+  lookup(record: LookupRecord) {
+    // With direct as the only tier, the direct sample would duplicate the provider sample.
+    if (record.stepsAvailable === 1) observations.getStore()?.delete(`direct:${record.carrier}`);
+    save('provider', record);
+  },
 };
 export function observeTrackingHealth<T>(samples: Map<string, HealthSample>, operation: () => Promise<T>): Promise<T> {
   return observations.run(samples, operation);

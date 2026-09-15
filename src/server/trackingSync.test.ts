@@ -1083,6 +1083,38 @@ describe('TrackingSyncService', () => {
     );
   });
 
+  it('keeps an unannounced parcel waiting when every fallback provider fails on it too', async () => {
+    const client = { ...fakeClient(),
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T12:01:30Z' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
+    };
+    const adapter = { fetch: vi.fn().mockRejectedValue(Object.assign(new Error('not live'), { status: 404 })),
+      fetchUniversal: vi.fn().mockRejectedValue(new Error('provider down')) };
+    const parcel = { id: 'fresh', carrier: 'dhl', tracking_number: 'TEST1234', current_stage: 'pending' };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => new Date('2026-09-10T12:00:00Z'));
+    await expect(service.syncPackage(parcel, { trigger: 'scheduled' })).resolves.toMatchObject({ waiting: 1, errors: 0 });
+    expect(adapter.fetchUniversal).toHaveBeenCalled();
+    expect(client.updatePackage.mock.calls.at(-1)![1]).toMatchObject({ sync_status: 'waiting', sync_error: null,
+      carrier_data: { routing: { failures: { dhl: { kind: 'not_found' }, Ship24: { kind: expect.any(String) } } } } });
+    expect(client.recordTrackingHealth).toHaveBeenLastCalledWith(expect.any(String), 'fresh',
+      expect.arrayContaining([expect.objectContaining({ kind: 'refresh', healthy: true })]));
+  });
+
+  it('records no health sample for a scheduled check that contacted no provider', async () => {
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn(), fetchUniversal: vi.fn() };
+    const cooling = Object.fromEntries(['dhl', 'Ship24', 'ParcelsApp', '17TRACK']
+      .map((provider) => [provider, { count: 1, kind: 'transport', retry_at: '2026-09-10T13:00:00.000Z' }]));
+    const parcel = { id: 'cooling', carrier: 'dhl', tracking_number: 'TEST1234', current_stage: 'pending',
+      carrier_data: { routing: { version: 1, configured_carrier: 'dhl', failures: cooling, probe_cursor: 0, discovery_cursor: 0 } } };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => new Date('2026-09-10T12:00:00Z'));
+    await expect(service.syncPackage(parcel, { trigger: 'scheduled' })).resolves.toMatchObject({ errors: 1 });
+    expect(adapter.fetch).not.toHaveBeenCalled();
+    expect(adapter.fetchUniversal).not.toHaveBeenCalled();
+    expect(client.completeSyncAttempt).toHaveBeenCalled();
+    expect(client.recordTrackingHealth).not.toHaveBeenCalled();
+  });
+
   it('preserves progressed shipment data when a carrier later reports not found', async () => {
     const parcel = {
       id: 'package-progressed',

@@ -267,6 +267,9 @@ export function reportRoutingEvent(code: string, context: {
     logOperationalEvent('tracking_routing', {
       decision: code, carrier: context.carrier, provider: context.provider,
       category: context.category ?? null, tracking_number: context.trackingNumber ?? null,
+      error_type: context.errorClass ?? null,
+      // Per-attempt failures no longer reach Sentry, so the log line carries the provider's wording.
+      error_message: context.error instanceof Error ? context.error.message.slice(0, 200) : undefined,
       upstream_status: metadata.upstreamStatus,
       upstream_content_type: metadata.upstreamHttp?.content_type,
       upstream_body_read: metadata.upstreamHttp?.body_read,

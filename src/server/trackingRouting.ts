@@ -105,7 +105,8 @@ function directCarrier(carrier: string): boolean {
 }
 
 export class RoutingDeferred extends Error {
-  constructor(readonly routing: RoutingState, readonly stale: boolean) {
+  /** `attempted` counts providers actually contacted; zero means every tier was still cooling down. */
+  constructor(readonly routing: RoutingState, readonly stale: boolean, readonly attempted = 0) {
     super(stale ? 'Tracking providers are temporarily unavailable. Previous progress has been kept; another check is scheduled.'
       : 'Recent tracking has been kept while the provider cools down.');
     this.name = 'RoutingDeferred';
@@ -173,6 +174,8 @@ export class TrackingRouter {
       } };
     };
     const attemptedDirect = new Set<string>();
+    let attempts = 0;
+    const attempted = () => attemptedDirect.size + attempts;
     const tryDirect = async (carrier: string, candidate = false, terminalStage?: string): Promise<RoutedResult | null> => {
       signal?.throwIfAborted();
       if (!directCarrier(carrier) || attemptedDirect.has(carrier)) return null;
@@ -214,7 +217,7 @@ export class TrackingRouter {
         if (failure.kind === 'rate_limited' && recent()) {
           state.next_check_at = iso(Math.min(millis(failure.retry_at), millis(state.last_success_at) + freshnessWindow(now())));
           report('fallback_deferred_fresh', carrier, failure.kind);
-          throw new RoutingDeferred(state, false);
+          throw new RoutingDeferred(state, false, attempted());
         }
         return null;
       }
@@ -249,7 +252,6 @@ export class TrackingRouter {
     // Start after direct attempts so a slow carrier cannot starve discovery.
     const universalDeadline = performance.now() + sources.length * 35_000;
     const attemptedUniversal = new Set<UniversalSource>();
-    let attempts = 0;
     const universal = async (source: UniversalSource): Promise<RoutedResult | null> => {
       signal?.throwIfAborted();
       // Node's AbortSignal.timeout requires integer milliseconds.
@@ -285,7 +287,7 @@ export class TrackingRouter {
         retryAfterMs = millis(failure.retry_at) - now().getTime();
         if (kind === 'rate_limited' && recent()) {
           state.next_check_at = iso(Math.min(millis(failure.retry_at), millis(state.last_success_at) + freshnessWindow(now())));
-          throw new RoutingDeferred(state, false);
+          throw new RoutingDeferred(state, false, attempted());
         }
         return null;
       } finally {
@@ -355,6 +357,6 @@ export class TrackingRouter {
     const deadlines = Object.values(state.failures).map((failure) => millis(failure.retry_at)).filter((time) => time > now().getTime());
     state.next_check_at = iso(Math.max(now().getTime() + 15 * 60_000, Math.min(...deadlines, now().getTime() + HOUR)));
     report('all_providers_unavailable', preferred ?? 'none');
-    throw new RoutingDeferred(state, !recent());
+    throw new RoutingDeferred(state, !recent(), attempted());
   }
 }
