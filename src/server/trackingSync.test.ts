@@ -1115,6 +1115,30 @@ describe('TrackingSyncService', () => {
     expect(client.recordTrackingHealth).not.toHaveBeenCalled();
   });
 
+  it('records why a lookup was deferred when every provider failed', async () => {
+    const client = { ...fakeClient(),
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T12:01:30Z' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
+    };
+    const adapter = { fetch: vi.fn().mockRejectedValue(new UpstreamHttpError('DHL', 502)),
+      fetchUniversal: vi.fn().mockRejectedValue(new Error('provider down')) };
+    const parcel = { id: 'stale', carrier: 'dhl', tracking_number: 'TEST1234', current_stage: 'in_transit' };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => new Date('2026-09-10T12:00:00Z'));
+    await expect(service.syncPackage(parcel, { trigger: 'scheduled' })).resolves.toMatchObject({ errors: 1 });
+    expect(client.completeSyncAttempt).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ outcome: 'error', error_type: 'RoutingDeferredError' }),
+      expect.arrayContaining([expect.objectContaining({
+        step: 'fetch', status: 'failed', error_type: 'RoutingDeferredError',
+        details: expect.objectContaining({ providers_attempted: expect.any(Number), provider_failures: expect.stringContaining('dhl:transport') }),
+      })]),
+    );
+    // No tier produced a sample here, so the attempt's own type is the refresh evidence.
+    expect(client.recordTrackingHealth).toHaveBeenLastCalledWith(expect.any(String), 'stale',
+      expect.arrayContaining([expect.objectContaining({ kind: 'refresh', healthy: false,
+        details: { error_type: 'RoutingDeferredError' } })]));
+  });
+
   it('preserves progressed shipment data when a carrier later reports not found', async () => {
     const parcel = {
       id: 'package-progressed',

@@ -242,8 +242,9 @@ export class TrackingSyncAudit {
       const samples: JsonObject[] = [...this.#healthSamples.values(), {
         kind: 'refresh', subject: this.configuredCarrier,
         healthy: completion.outcome !== 'error' && !failedFetch,
-        details: { ...[...this.#healthSamples.values()].reverse().find(sample => !sample.healthy)?.details,
-          ...(values.error_type ? { error_type: values.error_type } : {}) },
+        // The failing tier's own error class is better evidence than the attempt's summary.
+        details: { ...(values.error_type ? { error_type: values.error_type } : {}),
+          ...[...this.#healthSamples.values()].reverse().find(sample => !sample.healthy)?.details },
       }];
       await this.writeAudit('evaluate_health', async () => {
         const incidents = await this.client.recordTrackingHealth(this.attemptId, this.packageId, samples);

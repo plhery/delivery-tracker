@@ -46,6 +46,15 @@ const SLOW_POLL_CARRIERS = new Set(['gls-de', 'gls-ch', 'gls-fr']);
 const SLOW_POLL_INTERVAL_MS = 60 * 60 * 1_000;
 const FAILED_SLOW_POLL_INTERVAL_MS = 4 * SLOW_POLL_INTERVAL_MS;
 
+/** Which tiers a deferred lookup gave up on, as provider ids and failure kinds only. */
+function deferredFetchDetails(error: RoutingDeferred): JsonObject {
+  return {
+    providers_attempted: error.attempted,
+    provider_failures: Object.entries(error.routing.failures)
+      .map(([provider, failure]) => `${provider}:${failure.kind}`).join(',').slice(0, 300),
+  };
+}
+
 export function isTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
   if (parcel.sync_status === 'unsupported' && parcel.carrier === 'amazon-shipping' && parcel.sync_error === AMAZON_HISTORY_EXPIRED) return false;
   if (parcel.sync_status === 'unsupported' && requiresAmazonAccount(String(parcel.carrier), String(parcel.tracking_number ?? ''))) return false;
@@ -754,7 +763,8 @@ export class TrackingSyncService {
           });
           return 'waiting';
         }
-        audit.record('fetch', 'failed', performance.now() - fetchStartedAt, {}, error);
+        audit.record('fetch', 'failed', performance.now() - fetchStartedAt,
+          error instanceof RoutingDeferred ? deferredFetchDetails(error) : {}, error);
         throw error;
       }
 
@@ -919,8 +929,9 @@ export class TrackingSyncService {
           throw persistenceError;
         }
         // A check that contacted nobody says nothing about provider health.
+        // A stale deferral is an error outcome: record why, or the ledger cannot explain it.
         await audit.finish({ outcome: error.stale ? 'error' : 'waiting', sourceCarrier: carrierId,
-          evaluateHealth: error.attempted > 0 });
+          evaluateHealth: error.attempted > 0, ...(error.stale ? { error } : {}) });
         return error.stale ? 'errors' : 'waiting';
       }
       let message = error instanceof Error ? error.message.trim() || error.name : String(error);

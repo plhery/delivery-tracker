@@ -109,7 +109,8 @@ export class RoutingDeferred extends Error {
   constructor(readonly routing: RoutingState, readonly stale: boolean, readonly attempted = 0) {
     super(stale ? 'Tracking providers are temporarily unavailable. Previous progress has been kept; another check is scheduled.'
       : 'Recent tracking has been kept while the provider cools down.');
-    this.name = 'RoutingDeferred';
+    // Ends in "Error" so the audit trail records it instead of a bare "Error".
+    this.name = 'RoutingDeferredError';
   }
 }
 

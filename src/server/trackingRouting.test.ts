@@ -156,7 +156,7 @@ describe('persistent tracking routing', () => {
     direct.mockRejectedValue(new UpstreamHttpError('UPS', 429, 2 * 3_600_000));
     const task = router.fetch(parcel({ carrier: 'ups', carrier_data: { routing: state({ configured_carrier: 'ups', last_success_at: success }) } }), false);
     if (fresh) {
-      await expect(task).rejects.toMatchObject({ name: 'RoutingDeferred', stale: false });
+      await expect(task).rejects.toMatchObject({ name: 'RoutingDeferredError', stale: false });
       expect(universal).not.toHaveBeenCalled();
     } else await expect(task).resolves.toMatchObject({ result: { tracking_provider: 'Ship24' } });
   });

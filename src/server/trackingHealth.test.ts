@@ -58,6 +58,25 @@ describe('tracking health evidence', () => {
   });
 });
 
+it('keeps the failing tier as refresh evidence when the attempt only reports a deferral', async () => {
+  const client = { completeSyncAttempt: vi.fn().mockResolvedValue(true),
+    recordTrackingHealth: vi.fn().mockResolvedValue([]), ackTrackingHealth: vi.fn() };
+  const audit = new TrackingSyncAudit(client as unknown as SupabaseServiceClient,
+    'synthetic-package', 'TEST1234', 'ups', 'in_transit', { trigger: 'scheduled' });
+  await audit.observeFetch(async () => {
+    healthStepRecorder.step(step);
+    healthStepRecorder.lookup({ carrier: 'ups', finalStep: 'direct', outcome: 'transport',
+      errorType: 'UpstreamNetworkError', durationMs: 200, attempts: 1 });
+  });
+  const deferred = Object.assign(new Error('every provider failed'), { name: 'RoutingDeferredError' });
+  await audit.finish({ outcome: 'error', error: deferred });
+  expect(client.completeSyncAttempt).toHaveBeenCalledWith(expect.any(String),
+    expect.objectContaining({ error_type: 'RoutingDeferredError' }), expect.any(Array));
+  expect(client.recordTrackingHealth).toHaveBeenLastCalledWith(expect.any(String), 'synthetic-package',
+    expect.arrayContaining([expect.objectContaining({ kind: 'refresh', healthy: false,
+      details: expect.objectContaining({ error_type: 'UpstreamNetworkError' }) })]));
+});
+
 it('evaluates only scheduled outcomes and acknowledges only flushed incident events', async () => {
   const capture = vi.spyOn(observability, 'captureTrackingHealth').mockReturnValue('event-id');
   const flush = vi.spyOn(observability, 'flushObservability').mockResolvedValue(false);
