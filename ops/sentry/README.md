@@ -26,6 +26,13 @@ provider whose only traffic is a probe for an unknown parcel can still recover. 
 skipped direct probe during UPS cooldown is not a success. A scheduled check that
 contacted no provider because every tier was cooling down records no sample at all.
 
+An incident recovers only on healthy samples of its own kind and subject. When
+that tier is no longer probed (the carrier has no parcel left, or a code change
+stopped recording the sample) the incident closes once its last sample has aged
+out of the 24-hour window. No recovery event is sent, because no recovery was
+observed; resolve the Sentry issue by hand. A tier that is still failing when
+traffic resumes opens a new incident.
+
 A parcel with no progress whose own carrier answers not-found stays `waiting`
 even when every fallback provider fails on the same number: the fallback chain
 cannot know a parcel the carrier has not announced, so that is not a refresh
@@ -66,3 +73,5 @@ second copy of the same carrier alert.
 
 Deploy the health migration before deploying the application. Missing RPCs report
 an audit/health evaluation failure instead of breaking shipment persistence.
+`20260920100000_tracking_health_expired_incidents.sql` only replaces the
+function body, so it can be applied before or after the application.
