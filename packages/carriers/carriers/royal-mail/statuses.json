@@ -1,0 +1,16 @@
+{
+  "carrier": "royal-mail",
+  "entries": [
+    { "wording": "Delivered", "language": "en", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "A delivered line may name who signed; the adapter replaces the description with this word." },
+    { "wording": "Out for delivery", "language": "en", "stage": "out_for_delivery", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "" },
+    { "wording": "Arrived at delivery office", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Arrival at a delivery office does not establish collection availability." },
+    { "wording": "In transit", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "" },
+    { "wording": "Despatched to delivery office", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "" },
+    { "wording": "Item received", "language": "en", "stage": "accepted", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: in_transit." },
+    { "wording": "Sender preparing item", "language": "en", "stage": "registered", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: pending." },
+    { "wording": "Customs charges raised", "language": "en", "stage": "customs", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: in_transit." },
+    { "wording": "Delivery attempted", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: exception." },
+    { "wording": "Redirected", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: exception." },
+    { "wording": "Returned to sender", "language": "en", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: exception." }
+  ]
+}

@@ -19,8 +19,8 @@ async function fixture(url = `https://t.17track.net/en#nums=${number}`, endpoint
   let detached = false;
   const page = { on: (_, fn) => { handler = fn; }, off: () => { detached = true; } };
   const capture = await attachTrackingCapture(page, url, { captureResponses: [endpoint] });
-  const respond = (body, { url = endpoint, headers = {}, status = 200, read } = {}) => handler({
-    url: () => url, status: () => status,
+  const respond = (body, { url = endpoint, headers = {}, status = 200, method = 'GET', read } = {}) => handler({
+    url: () => url, status: () => status, request: () => ({method: () => method}),
     headers: () => ({ 'content-type': 'application/json', 'content-length': String(body.length), 'content-encoding': 'gzip', ...headers }),
     body: read ?? (async () => Buffer.from(body)),
   });
@@ -128,4 +128,82 @@ test('serves the FedEx endpoint from either tracking page path and only for vali
   ]) {
     assert.equal(await attachTrackingCapture({}, url, { captureResponses: [endpoint] }), undefined);
   }
+});
+
+const royalMailApiPrefix = 'https://api-web.royalmail.com/mailpieces/microsummary/v1/summary/';
+// A made-up number in Royal Mail's published S10 format, the same one the adapter's tests use.
+const royalMailNumber = 'SG999999999GB';
+const royalMailUrl = `https://www.royalmail.com/track-your-item#/tracking-results/${royalMailNumber}`;
+const royalMailApi = `${royalMailApiPrefix}${royalMailNumber}`;
+const royalMailReply = (mailPieceId = royalMailNumber) => JSON.stringify({ mailPieceId });
+
+test('reads the decoded Royal Mail summary reply and finishes on its envelope', async () => {
+  const { capture, respond } = await fixture(royalMailUrl, royalMailApi);
+  assert.ok(capture);
+  let settled = false;
+  const waiting = capture.settle(1000).then(() => { settled = true; });
+  await respond(royalMailReply());
+  await waiting;
+  assert.equal(settled, true);
+  const rows = (await capture.drain()).capturedResponses;
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].url, royalMailApi);
+  assert.deepEqual(JSON.parse(rows[0].body).mailPieceId, royalMailNumber);
+});
+
+test('serves the Royal Mail endpoint only from its hash route with a valid number', async () => {
+  for (const [url, endpoint] of [
+    ['https://www.royalmail.com/track-your-item#/tracking-results/not-a-number', `${royalMailApiPrefix}NOT-A-NUMBER`],
+    ['https://www.royalmail.com/track-your-item', royalMailApi],
+    ['https://www.royalmail.com/track-your-item#/tracking-results/SG999999999GB', upsApi],
+    [`https://t.17track.net/en#nums=${number}`, royalMailApi],
+  ]) {
+    assert.equal(await attachTrackingCapture({}, url, { captureResponses: [endpoint] }), undefined);
+  }
+});
+
+
+test('Royal Mail captures only the exact number and rejects unrelated page paths', async () => {
+  const { capture, respond } = await fixture(royalMailUrl, royalMailApi);
+  await respond(royalMailReply('SG999999998GB'), {url: royalMailApiPrefix + 'SG999999998GB'});
+  await respond(royalMailReply(), {url: royalMailApi + '/extra'});
+  assert.equal((await capture.drain()).capturedResponses.length, 0);
+  for (const [url, endpoint] of [
+    [royalMailUrl.replace('/track-your-item', '/other-page'), royalMailApi],
+    [royalMailUrl, royalMailApiPrefix + 'SG999999998GB'],
+    [royalMailUrl, royalMailApi + '.evil.example'],
+  ]) assert.equal(await attachTrackingCapture({}, url, {captureResponses: [endpoint]}), undefined);
+});
+
+test('Royal Mail prepares the form after capture attaches and before solving', async () => {
+  const calls = [];
+  let consentVisible = true;
+  const page = {
+    on: () => calls.push('observe'),
+    getByText: () => ({waitFor: async () => {}, isVisible: async () => consentVisible, evaluate: async () => { consentVisible = false; calls.push('decline'); }}),
+    locator: selector => ({
+      waitFor: async () => {},
+      inputValue: async () => royalMailNumber,
+      press: async value => calls.push([selector, value]),
+      pressSequentially: async value => calls.push(['type', value]),
+      click: async () => calls.push(selector),
+    }),
+  };
+  const capture = await attachTrackingCapture(page, royalMailUrl, {captureResponses: [royalMailApi]});
+  await capture.prepare(1000);
+  assert.deepEqual(calls, ['observe', 'decline', ['#barcode-input', 'ControlOrMeta+A'], ['#barcode-input', 'Backspace'], ['type', royalMailNumber], '#submit']);
+  await assert.rejects(capture.prepare(0), /timed out/);
+});
+
+
+test('Royal Mail ignores preflight and captures the carrier error body without flattening it to not-found', async () => {
+  const {capture, respond} = await fixture(royalMailUrl, royalMailApi);
+  await respond('', {method: 'OPTIONS', status: 401});
+  const body = JSON.stringify({httpCode: 404, errors: [{errorCode: 'E1142'}]});
+  await respond(body, {status: 404});
+  await capture.settle(100);
+  assert.equal(capture.hasResponse(), true);
+  const rows = (await capture.drain()).capturedResponses;
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].body, body);
 });

@@ -57,7 +57,7 @@ npm run test:contract                                               # generated 
 ## Carriers
 
 <!-- GENERATED:carriers -->
-104 carriers: 39 with a dedicated adapter, 61 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
+104 carriers: 40 with a dedicated adapter, 60 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
 
 | Id | Name | Route | Steps | Capabilities | Sample numbers | Known statuses | Docs |
 | --- | --- | --- | --- | ---: | ---: | ---: | --- |
@@ -138,7 +138,7 @@ npm run test:contract                                               # generated 
 | `purolator` | Purolator | universal providers |  | 0 | 7 | 0 |  |
 | `quickpac` | Quickpac | via planzer | direct | 2 | 1 | 26 | [README](carriers/quickpac/README.md) |
 | `relais-colis` | Relais Colis | dedicated | direct | 1 | 3 | 42 | [README](carriers/relais-colis/README.md) |
-| `royal-mail` | Royal Mail | universal providers |  | 0 | 2 | 0 |  |
+| `royal-mail` | Royal Mail | dedicated | trawl | 3 | 2 | 11 | [README](carriers/royal-mail/README.md) |
 | `seur` | SEUR | universal providers |  | 0 | 3 | 0 | [README](carriers/seur/README.md) |
 | `sf-express` | SF Express | universal providers |  | 0 | 2 | 0 |  |
 | `shipup` | ShipUp | universal providers |  | 0 | 1 | 0 |  |

@@ -1,15 +1,20 @@
 # Tracking response compatibility
 
 Stock TRAWL 1.3.1 ignores `captureResponses`. Version 1.5.0 adds it but refuses
-compressed responses, including 17TRACK's, UPS's and FedEx's gzip JSON, and can stop on
+compressed responses, including 17TRACK's, UPS's, FedEx's and Royal Mail's gzip JSON, and can stop on
 polling code 100. This small compatibility build retains the normal TRAWL API and
-changes only tier 2/3 capture for three exact endpoints, each on its own public
-page with one valid number: 17TRACK's `track/restapi`, UPS's `GetStatus` and
-FedEx's `track/v2/shipments`. Every other capture request keeps stock behaviour. ParcelsApp remains first in
+changes only tier 2/3 capture for four exact endpoints, each on its own public
+page with one valid number: 17TRACK's `track/restapi`, UPS's `GetStatus`,
+FedEx's `track/v2/shipments` and Royal Mail's per-number `microsummary`
+(exact per-number capture and form submission). Every other capture request keeps
+stock behaviour. ParcelsApp remains first in
 the application's discovery order.
 
-The adapter observes the existing browser response; it neither copies cookies
-nor makes additional tracking requests. It accepts at most 20 replies, limits
+The adapter observes the browser's response. For Royal Mail it also dismisses
+optional cookies, enters the number and submits the public tracking form before
+TRAWL runs captcha solving. It does this for both fresh and cached sessions.
+A completed API reply skips the solver because Royal Mail resets its invisible
+widget after auto-pass. Other providers retain their navigation-only flow. It accepts at most 20 replies, limits
 stored decoded bodies to 2 MB each / 4 MB total, checks declared size when
 available, and waits at most the remaining scrape budget (30 seconds maximum).
 `response.body()` reads data already decoded by the browser; run the browser
@@ -44,9 +49,12 @@ lookup_pending, lookup_unavailable and verification_required, plus numeric
 provider status and HTTP status. No response body is attached to these tags.
 FedEx was added on 2026-09-20 with the same single-reply semantics
 (`output` present ends the wait; the adapter binds `packages` to the
-requested `trknbr` itself). Re-render and redeploy the service before
-expecting FedEx captures in production; live verification with a real
-shipment is still open (see `packages/carriers/carriers/fedex/README.md`).
+requested `trknbr` itself). Royal Mail's cold hash route only prefills
+its input; the compatibility build must submit the form to trigger hCaptcha
+and then the summary API. A fresh browser on the production host reached the
+API through invisible hCaptcha auto-pass on 2026-09-20; the public reference
+returned `E1142` (status unavailable). Current-shipment success verification is
+separate. Re-render and redeploy the service after changing this directory.
 
 ## Redis session cache
 

@@ -35,7 +35,7 @@ describe('persistent tracking routing', () => {
       routing: { failures: { heppner: { kind: 'schema', user_error: 'carrier:input_required' } } },
     });
   });
-  it.each(['ups', 'fedex', 'usps', 'canada-post'])('uses a direct carrier without contacting a universal provider', async (carrier) => {
+  it.each(['ups', 'fedex', 'usps', 'canada-post', 'royal-mail'])('uses a direct carrier without contacting a universal provider', async (carrier) => {
     const { router, direct, universal } = setup();
     const result = await router.fetch(parcel({ carrier }), false);
     expect(result.result.routing).toMatchObject({ confirmed_carrier: carrier, last_success_at: time.toISOString() });

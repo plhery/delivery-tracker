@@ -12,16 +12,36 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "royal-mail",
+    "steps": [
+      "trawl"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "eta"
+  ],
   "portal": {
     "url": "https://www.royalmail.com/portal/rm/track?trackNumber={trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "canaryUrl": "https://www.royalmail.com/track-your-item",
+    "shows": [
+      "status",
+      "history",
+      "eta",
+      "location"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "eta",
+      "location"
+    ],
+    "discarded": [
+      "signatory",
+      "proof of delivery extras",
+      "recipient details"
+    ],
     "unavailable": []
   },
   "links": [

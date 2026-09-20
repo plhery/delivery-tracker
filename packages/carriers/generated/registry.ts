@@ -34,6 +34,7 @@ import { adapter as posMalaysia } from '../carriers/pos-malaysia/adapter';
 import { adapter as posteItaliane } from '../carriers/poste-italiane/adapter';
 import { adapter as postlogistics } from '../carriers/postlogistics/adapter';
 import { adapter as relaisColis } from '../carriers/relais-colis/adapter';
+import { adapter as royalMail } from '../carriers/royal-mail/adapter';
 import { adapter as springGds } from '../carriers/spring-gds/adapter';
 import { adapter as sunyou } from '../carriers/sunyou/adapter';
 import { adapter as swissPost } from '../carriers/swiss-post/adapter';
@@ -76,6 +77,7 @@ export const REGISTRY: RegistryDefinition = {
     "poste-italiane": posteItaliane,
     "postlogistics": postlogistics,
     "relais-colis": relaisColis,
+    "royal-mail": royalMail,
     "spring-gds": springGds,
     "sunyou": sunyou,
     "swiss-post": swissPost,
@@ -161,7 +163,7 @@ export const REGISTRY: RegistryDefinition = {
     "purolator": "universal",
     "quickpac": "planzer",
     "relais-colis": "relais-colis",
-    "royal-mail": "universal",
+    "royal-mail": "royal-mail",
     "seur": "universal",
     "sf-express": "universal",
     "shipup": "universal",

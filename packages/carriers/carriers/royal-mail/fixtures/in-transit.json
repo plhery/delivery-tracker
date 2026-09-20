@@ -1,0 +1,26 @@
+{
+  "mailPieces": {
+    "mailPieceId": "SG999999998GB",
+    "summary": {
+      "statusDescription": "In transit",
+      "lastEventDateTime": "2026-03-15T22:41:00+00:00"
+    },
+    "estimatedDelivery": {
+      "date": "2026-03-20"
+    },
+    "events": [
+      {
+        "eventCode": "IT",
+        "eventDateTime": "2026-03-15T22:41:00+00:00",
+        "eventName": "In transit",
+        "locationName": "NORTHAMPTON"
+      },
+      {
+        "eventCode": "AC",
+        "eventDateTime": "2026-03-12T09:30:00+00:00",
+        "eventName": "Item received",
+        "locationName": "SWINDON"
+      }
+    ]
+  }
+}

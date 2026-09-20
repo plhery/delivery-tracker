@@ -1311,9 +1311,9 @@ export const CARRIER_CATALOG = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "royal-mail"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://www.royalmail.com/track-your-item",
     "linkRules": [
       {
         "domains": [

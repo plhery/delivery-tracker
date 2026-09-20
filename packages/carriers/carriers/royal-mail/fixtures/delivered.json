@@ -1,0 +1,38 @@
+{
+  "mailPieces": {
+    "mailPieceId": "SG999999999GB",
+    "summary": {
+      "statusDescription": "Delivered",
+      "lastEventDateTime": "2026-03-14T08:00:00+00:00"
+    },
+    "estimatedDelivery": {
+      "date": "2026-03-14"
+    },
+    "events": [
+      {
+        "eventCode": "DL",
+        "eventDateTime": "2026-03-14T08:00:00+00:00",
+        "eventName": "Delivered. Signed for by PRIVATE RECIPIENT",
+        "locationName": "LONDON"
+      },
+      {
+        "eventCode": "OD",
+        "eventDateTime": "2026-03-14T07:00:00+00:00",
+        "eventName": "Out for delivery",
+        "locationName": "LONDON"
+      },
+      {
+        "eventCode": "AR",
+        "eventDateTime": "2026-03-13T18:15:00+00:00",
+        "eventName": "Arrived at delivery office",
+        "locationName": "LONDON"
+      },
+      {
+        "eventCode": "AC",
+        "eventDateTime": "2026-03-12T09:30:00+00:00",
+        "eventName": "Item received",
+        "locationName": "SWINDON"
+      }
+    ]
+  }
+}

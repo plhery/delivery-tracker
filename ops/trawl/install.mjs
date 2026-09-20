@@ -5,6 +5,12 @@ for (const tier of [2, 3]) {
   const source = readFileSync(path, 'utf8');
   const needle = 'const pageCapture = attachPageCapture(page, capture)';
   if (source.split(needle).length !== 2) throw new Error('TRAWL source changed: review the tracking capture integration');
+  const solverGuard = 'if (solveRemaining > 5000)';
+  if (source.split(solverGuard).length !== 2) throw new Error('TRAWL solver guard changed');
+  const beforeSolve = 'const solveRemaining = maxTimeout - (Date.now() - start)';
+  if (source.split(beforeSolve).length !== 2) throw new Error('TRAWL solver integration changed');
   writeFileSync(path, 'import { attachTrackingCapture } from "../utils/tracking-capture.mjs"\n'
-    + source.replace(needle, 'const pageCapture = await attachTrackingCapture(page, url, capture) ?? attachPageCapture(page, capture)'));
+    + source.replace(needle, 'const pageCapture = await attachTrackingCapture(page, url, capture) ?? attachPageCapture(page, capture)')
+      .replace(solverGuard, 'if (solveRemaining > 5000 && !pageCapture.hasResponse?.())')
+      .replace(beforeSolve, 'await pageCapture.prepare?.(maxTimeout - (Date.now() - start))\n    ' + beforeSolve));
 }
