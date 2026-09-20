@@ -71,6 +71,8 @@ describe('classifyWording', () => {
     // Recipient-side pickup wording must not be read as the carrier accepting the parcel.
     expect(wordingStage('Ready for pickup')).toBe('ready_for_pickup');
     expect(wordingStage('Drop-off point closed, delivery attempt failed')).toBe('failed_attempt');
+    // Only the bare scan label is the sender's hand-in; a parcel left at the recipient's pickup shop is not.
+    expect(wordingStage('Your parcel has been dropped off at your chosen pickup shop')).not.toBe('accepted');
   });
 
   it('maps facility scans, handovers and notices that carry no milestone of their own', () => {
