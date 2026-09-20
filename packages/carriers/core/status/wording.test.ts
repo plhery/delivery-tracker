@@ -47,6 +47,9 @@ describe('classifyWording', () => {
     expect(wordingStage('Le destinataire est informé par SMS de la livraison de son colis ce jour')).toBe('out_for_delivery');
     expect(wordingStage('Le destinataire est informé par e-mail de la livraison de son colis ce jour')).toBe('out_for_delivery');
     expect(wordingStage('Votre envoi a été distribué dans la boîte à lettres.')).toBe('delivered');
+    // An announced distribution is not a delivery.
+    expect(wordingStage('Votre envoi sera distribué dans la journée.')).toBe('in_transit');
+    expect(wordingStage('Votre colis va être distribué à votre adresse.')).toBe('in_transit');
     expect(wordingStage('Instruction de livraison reçue')).toBe('in_transit');
     expect(wordingStage('Colis expédié depuis le site logistique')).toBe('in_transit');
   });

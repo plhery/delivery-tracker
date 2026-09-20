@@ -29,7 +29,7 @@ export function trackingLanguageStage(description: string): Stage | undefined {
   if (/will (?:shortly |soon )?be handed|bientot.*(?:confie|remis)|prochainement.*remis|wird.*(?:kurze|bald).*ubergeben|sara.*(?:breve|presto).*affidat/.test(text)) return 'registered';
   if (/or awaiting processing|ou en attente de traitement|oder wartet auf.*bearbeitung|o in attesa di elaborazione/.test(text)) return 'registered';
   if (/will be transported|sera (?:transporte|achemine)|wird.*transportiert|sara trasportat/.test(text)) return 'in_transit';
-  if (/will be available|sera disponible|wird.*verfugbar|sara disponibile|to be delivered|a livrer|noch zuzustellen|da consegnare/.test(text)) return 'in_transit';
+  if (/will be available|sera disponible|(?:sera|va etre|doit etre) (?:distribue|remis)|wird.*verfugbar|sara disponibile|to be delivered|a livrer|noch zuzustellen|da consegnare/.test(text)) return 'in_transit';
 
   if (/will be delivered|sera livre|wird.*zugestellt|sara consegnat/.test(text)) return 'registered';
 
@@ -47,7 +47,7 @@ export function trackingLanguageStage(description: string): Stage | undefined {
   if (/customs|clearance|douan|formalites (?:d')?(?:import|export)|zoll|dogan|government agency|autorite gouvernementale|staatliche behorde|autorita governativa/.test(text)) return 'customs';
 
   if (/out for delivery|being delivered|in delivery|(?:loading|loaded).*delivery vehicle|on (?:\w+ )?vehicle for delivery|en cours de livraison|en livraison|de la livraison de (?:son|votre) colis ce jour|charg(?:e|ement).*vehicule de livraison|in zustellung|zustellfahrzeug.*(?:geladen|verladen)|(?:beladen|verladung).*zustellfahrzeug|in consegna|caric(?:at|amento).*veicolo.*consegna/.test(text)) return 'out_for_delivery';
-  if (/\bdelivered\b|delivery completed|delivery (?:was )?successful|(?:a ete|est) distribue|distribue (?:dans|au|a)\b|^(?:livre|livree)(?:$|[ ,])|(?:colis|envoi|est|a ete) livre|zugestellt|\bconsegnat[oa]\b|livraison effectuee|consegna completata/.test(text)) return 'delivered';
+  if (/\bdelivered\b|delivery completed|delivery (?:was )?successful|(?:a ete|est) distribue|^(?:livre|livree)(?:$|[ ,])|(?:colis|envoi|est|a ete) livre|zugestellt|\bconsegnat[oa]\b|livraison effectuee|consegna completata/.test(text)) return 'delivered';
 
   // Posting/collection by the carrier, not recipient pickup or data submission.
   if (/accepted|picked up|pick up was successful|^drop off$|dropped off|pick ?up scan|prepared the package for return to ups or pickup by ups|handed (?:over )?to (?:dpd|gls)|package received at dhl|item booked|consignment was mailed|posted at a postal point|pris en charge|prise en charge|collecte.*(?:reussi|effectue)|recupere.*boite aux lettres|depose.*point postal|remis a (?:dpd|gls)|envoi.*depose|abholung.*erfolgreich|eingeliefert|an (?:dpd|gls) ubergeben|paket.*(?:angenommen|ubernommen)|ritiro.*(?:riuscito|effettuato)|pres[oa] in carico|affidat[oa] a (?:dpd|gls)|depositat.*punto postale|spedizione.*impostata/.test(text)) return 'accepted';
