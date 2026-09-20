@@ -97,6 +97,15 @@ describe('Ship24 anonymous HTTP tracking', () => {
     expect(fetcher).toHaveBeenCalledOnce();
   });
 
+  it.each([404, 410])('reports HTTP %i as not found without waiting for the browser', async (status) => {
+    const { tracker, fetcher, steps } = fixture();
+    fetcher.mockResolvedValueOnce(new Response('', { status }));
+    await expect(tracker.fetch(number)).rejects.toMatchObject({ status, kind: 'not_found' });
+    expect(scrapeUniversalPage).not.toHaveBeenCalled();
+    expect(steps).toHaveLength(1);
+    expect(steps[0]).toMatchObject({ step: 'direct', outcome: 'not_found' });
+  });
+
   it('rejects unrelated history before falling back and does not leak it into the result', async () => {
     const { tracker, fetcher, steps } = fixture();
     fetcher.mockResolvedValueOnce(reply({ data: { ...history.data, tracking_number: 'OTHER123' } }));

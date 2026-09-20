@@ -55,7 +55,9 @@ inside the chain):
 
 The browser tier runs only when the direct tier failed for a reason a browser
 can repair. HTTP 429 and 5xx are reported as they are, with their `Retry-After`,
-so the router backs off instead of asking twice. The adapter is created by the
+so the router backs off instead of asking twice. HTTP 404 and 410 are final too:
+the page asks the same API, and in production every browser attempt after a 404
+waited out the rest of the budget without a reply. The adapter is created by the
 chain with an HTTP client; constructed without one, it runs the browser tier
 alone.
 

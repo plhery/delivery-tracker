@@ -9,7 +9,8 @@ import 'server-only';
  * session and reads the same API response from it. The browser tier only runs
  * when the direct tier failed for a reason a browser can repair: a rate limit
  * or a server outage is reported as it is, so the router's backoff is not
- * amplified into a second request.
+ * amplified into a second request, and a number the aggregator does not know
+ * stays unknown to the page that asks the same API.
  */
 import type { AdapterFactory } from '../../core/adapter';
 import { SchemaError, UpstreamHttpError } from '../../core/errors';
@@ -54,9 +55,12 @@ export function parseShip24Response(payload: unknown, trackingNumber: string): C
 /**
  * A browser cannot repair a rate limit or a server outage: keep the original
  * status and Retry-After for the router's backoff instead of asking twice.
+ * Nor can it find a parcel the API answered 404 for: the page waits for the
+ * same reply, so every such fallback only burned the rest of the budget.
  */
 function browserCanRecover(error: unknown): boolean {
-  return !(error instanceof UpstreamHttpError && (error.status === 429 || error.status >= 500));
+  return !(error instanceof UpstreamHttpError
+    && (error.status === 404 || error.status === 410 || error.status === 429 || error.status >= 500));
 }
 
 export interface Ship24Options extends UniversalBrowserOptions {
