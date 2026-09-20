@@ -12,16 +12,37 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "canada-post",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "eta",
+    "delivered_at"
+  ],
   "portal": {
     "url": "https://www.canadapost-postescanada.ca/track-reperage/en#/search?searchFor={trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "canaryUrl": "https://www.canadapost-postescanada.ca/track-reperage/en/home",
+    "shows": [
+      "status",
+      "history",
+      "eta",
+      "location"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "eta",
+      "location"
+    ],
+    "discarded": [
+      "service type",
+      "delivery options",
+      "recipient details"
+    ],
     "unavailable": []
   },
   "links": [

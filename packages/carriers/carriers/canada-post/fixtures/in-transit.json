@@ -1,0 +1,24 @@
+{
+  "items": [
+    {
+      "pin": "0073938000888888",
+      "status": "5",
+      "expectedDlvryDateTime": { "dlvryDate": "2026-03-20", "revisedDate": null },
+      "productNmEn": "PRIVATE SERVICE",
+      "events": [
+        {
+          "cd": "T1",
+          "datetime": { "date": "2026-03-15", "time": "22:41" },
+          "descEn": "In transit",
+          "locationEn": "MONTREAL, QC"
+        },
+        {
+          "cd": "A1",
+          "datetime": { "date": "2026-03-12", "time": "09:30" },
+          "descEn": "Accepted at the post office",
+          "locationEn": "TORONTO, ON"
+        }
+      ]
+    }
+  ]
+}

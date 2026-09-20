@@ -1,0 +1,31 @@
+{
+  "items": [
+    {
+      "pin": "0073938000999999",
+      "status": "8",
+      "actualDlvryDate": "2026-03-14",
+      "productNmEn": "PRIVATE SERVICE",
+      "deliveryOptions": [{ "descEn": "PRIVATE OPTION" }],
+      "events": [
+        {
+          "cd": "D1",
+          "datetime": { "date": "2026-03-14", "time": "08:00" },
+          "descEn": "Delivered. Signed for by PRIVATE RECIPIENT",
+          "locationEn": "OTTAWA, ON"
+        },
+        {
+          "cd": "O1",
+          "datetime": { "date": "2026-03-14", "time": "07:00" },
+          "descEn": "Out for delivery",
+          "locationEn": "OTTAWA, ON"
+        },
+        {
+          "cd": "A1",
+          "datetime": { "date": "2026-03-12", "time": "09:30" },
+          "descEn": "Accepted at the post office",
+          "locationEn": "TORONTO, ON"
+        }
+      ]
+    }
+  ]
+}

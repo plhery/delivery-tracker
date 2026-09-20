@@ -4,6 +4,7 @@ import type { RegistryDefinition } from '../core/adapter';
 import { adapter as aliexpress } from '../carriers/aliexpress/adapter';
 import { adapter as amazonShipping } from '../carriers/amazon-shipping/adapter';
 import { adapter as cChezVous } from '../carriers/c-chez-vous/adapter';
+import { adapter as canadaPost } from '../carriers/canada-post/adapter';
 import { adapter as ciblex } from '../carriers/ciblex/adapter';
 import { adapter as colisPrive } from '../carriers/colis-prive/adapter';
 import { adapter as colisweb } from '../carriers/colisweb/adapter';
@@ -38,12 +39,14 @@ import { adapter as sunyou } from '../carriers/sunyou/adapter';
 import { adapter as swissPost } from '../carriers/swiss-post/adapter';
 import { adapter as swissPostCargo } from '../carriers/swiss-post-cargo/adapter';
 import { adapter as ups } from '../carriers/ups/adapter';
+import { adapter as usps } from '../carriers/usps/adapter';
 
 export const REGISTRY: RegistryDefinition = {
   factories: {
     "aliexpress": aliexpress,
     "amazon-shipping": amazonShipping,
     "c-chez-vous": cChezVous,
+    "canada-post": canadaPost,
     "ciblex": ciblex,
     "colis-prive": colisPrive,
     "colisweb": colisweb,
@@ -78,6 +81,7 @@ export const REGISTRY: RegistryDefinition = {
     "swiss-post": swissPost,
     "swiss-post-cargo": swissPostCargo,
     "ups": ups,
+    "usps": usps,
   },
   carriers: {
     "aliexpress": "aliexpress",
@@ -93,7 +97,7 @@ export const REGISTRY: RegistryDefinition = {
     "bring-posten": "universal",
     "brt": "universal",
     "c-chez-vous": "c-chez-vous",
-    "canada-post": "universal",
+    "canada-post": "canada-post",
     "canpar": "universal",
     "china-post": "universal",
     "chronopost": "la-poste",
@@ -177,7 +181,7 @@ export const REGISTRY: RegistryDefinition = {
     "uniuni": "universal",
     "unknown": "universal",
     "ups": "ups",
-    "usps": "universal",
+    "usps": "usps",
     "yamato": "universal",
     "yanwen": "universal",
     "yto": "universal",

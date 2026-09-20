@@ -57,7 +57,7 @@ npm run test:contract                                               # generated 
 ## Carriers
 
 <!-- GENERATED:carriers -->
-104 carriers: 37 with a dedicated adapter, 63 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
+104 carriers: 39 with a dedicated adapter, 61 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
 
 | Id | Name | Route | Steps | Capabilities | Sample numbers | Known statuses | Docs |
 | --- | --- | --- | --- | ---: | ---: | ---: | --- |
@@ -74,7 +74,7 @@ npm run test:contract                                               # generated 
 | `bring-posten` | Bring | universal providers |  | 0 | 1 | 0 |  |
 | `brt` | BRT | universal providers |  | 0 | 3 | 0 | [README](carriers/brt/README.md) |
 | `c-chez-vous` | C Chez Vous | dedicated | direct | 1 | 2 | 5 | [README](carriers/c-chez-vous/README.md) |
-| `canada-post` | Canada Post | universal providers |  | 0 | 4 | 0 |  |
+| `canada-post` | Canada Post | dedicated | direct | 4 | 4 | 15 | [README](carriers/canada-post/README.md) |
 | `canpar` | Canpar | universal providers |  | 0 | 4 | 0 |  |
 | `china-post` | China Post | universal providers |  | 0 | 2 | 0 |  |
 | `chronopost` | Chronopost | via la-poste | direct → retry | 4 | 6 | 6 | [README](carriers/chronopost/README.md) |
@@ -158,7 +158,7 @@ npm run test:contract                                               # generated 
 | `uniuni` | UniUni | universal providers |  | 0 | 2 | 0 | [README](carriers/uniuni/README.md) |
 | `unknown` | Unknown carrier | universal providers |  | 0 | 15 | 0 |  |
 | `ups` | UPS | dedicated | direct → trawl | 3 | 6 | 30 | [README](carriers/ups/README.md) |
-| `usps` | USPS | universal providers |  | 0 | 14 | 0 |  |
+| `usps` | USPS | dedicated | trawl | 3 | 14 | 19 | [README](carriers/usps/README.md) |
 | `yamato` | Yamato Transport | universal providers |  | 0 | 1 | 0 |  |
 | `yanwen` | Yanwen | universal providers |  | 0 | 2 | 0 |  |
 | `yto` | YTO Express | universal providers |  | 0 | 1 | 0 |  |

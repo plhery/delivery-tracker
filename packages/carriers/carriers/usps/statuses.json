@@ -1,0 +1,24 @@
+{
+  "carrier": "usps",
+  "entries": [
+    { "wording": "Delivered", "language": "en", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Official Tracking API vocabulary. A delivered line may name who signed; the adapter replaces the description with this word." },
+    { "wording": "Delivered, Front Door/Porch", "language": "en", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Sandbox example from the official API examples repository." },
+    { "wording": "Delivered, In/At Mailbox", "language": "en", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Sandbox example from the official API examples repository." },
+    { "wording": "Out for Delivery", "language": "en", "stage": "out_for_delivery", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Official Tracking API vocabulary." },
+    { "wording": "Available for Pickup", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: out_for_delivery." },
+    { "wording": "Arrived at Post Office", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Sandbox example; held for collection. Adapter result status: out_for_delivery." },
+    { "wording": "In Transit", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Official Tracking API vocabulary." },
+    { "wording": "Arrived at USPS Regional Facility", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "" },
+    { "wording": "Departed USPS Regional Facility", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "" },
+    { "wording": "Accepted at USPS Origin Facility", "language": "en", "stage": "accepted", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: in_transit." },
+    { "wording": "Picked Up by Shipping Partner", "language": "en", "stage": "accepted", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Sandbox example; the partner holds the item. Adapter result status: in_transit." },
+    { "wording": "Pre-Shipment", "language": "en", "stage": "registered", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Label created, item not yet with USPS. Adapter result status: pending." },
+    { "wording": "Shipping Label Created", "language": "en", "stage": "registered", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: pending." },
+    { "wording": "USPS Awaiting Item", "language": "en", "stage": "registered", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: pending." },
+    { "wording": "Notice Left", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Sandbox example. Adapter result status: exception." },
+    { "wording": "Delivery Attempted - No Access to Delivery Location", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Sandbox example. Adapter result status: exception." },
+    { "wording": "Alert", "language": "en", "stage": "exception", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Official Tracking API vocabulary." },
+    { "wording": "Return to Sender", "language": "en", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: exception." },
+    { "wording": "Tracking Not Available", "language": "en", "stage": "pending", "confirmedBy": "live", "firstSeen": "2026-09-20", "note": "Rendered verdict banner for unknown or expired numbers; the adapter reports the unlocated unknown result, never a stage." }
+  ]
+}

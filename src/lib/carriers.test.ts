@@ -207,7 +207,8 @@ describe('carrier detection', () => {
       expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
       expect(match.candidates).toContain('canada-post');
     }
-    expectUniversalFallback('canada-post');
+    expect(CARRIERS['canada-post'].capabilities.tracking.adapter).toBe('canada-post');
+    expect(tracksAutomatically('canada-post')).toBe(true);
   });
 
   it('canpar — Canpar', () => {
@@ -1282,7 +1283,8 @@ describe('carrier detection', () => {
     ]) {
       expect(detectCarrier(number)).toBe('unknown');
     }
-    expectUniversalFallback('usps');
+    expect(CARRIERS['usps'].capabilities.tracking.adapter).toBe('usps');
+    expect(tracksAutomatically('usps')).toBe(true);
   });
 
   it('yamato — Yamato Transport', () => {

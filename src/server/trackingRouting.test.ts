@@ -35,7 +35,7 @@ describe('persistent tracking routing', () => {
       routing: { failures: { heppner: { kind: 'schema', user_error: 'carrier:input_required' } } },
     });
   });
-  it.each(['ups', 'fedex'])('uses a direct carrier without contacting a universal provider', async (carrier) => {
+  it.each(['ups', 'fedex', 'usps', 'canada-post'])('uses a direct carrier without contacting a universal provider', async (carrier) => {
     const { router, direct, universal } = setup();
     const result = await router.fetch(parcel({ carrier }), false);
     expect(result.result.routing).toMatchObject({ confirmed_carrier: carrier, last_success_at: time.toISOString() });
@@ -276,7 +276,7 @@ describe('persistent tracking routing', () => {
   });
   it('keeps a prior confirmed route when the new choice has no direct support', async () => {
     const { router, direct, universal } = setup();
-    await router.fetch(parcel({ carrier: 'usps', carrier_data: { routing: state({ configured_carrier: 'ups', confirmed_carrier: 'ups', confirmed_number: 'TEST1234' }) } }), false);
+    await router.fetch(parcel({ carrier: 'tnt', carrier_data: { routing: state({ configured_carrier: 'ups', confirmed_carrier: 'ups', confirmed_number: 'TEST1234' }) } }), false);
     expect(direct.mock.calls.map(([, carrier]) => carrier)).toEqual(['ups']);
     expect(universal).not.toHaveBeenCalled();
   });

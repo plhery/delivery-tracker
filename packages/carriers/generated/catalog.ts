@@ -1779,9 +1779,9 @@ export const CARRIER_CATALOG = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "usps"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://www.usps.com/",
     "linkRules": [
       {
         "domains": [
@@ -1812,9 +1812,9 @@ export const CARRIER_CATALOG = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "canada-post"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://www.canadapost-postescanada.ca/track-reperage/en/home",
     "linkRules": [
       {
         "domains": [

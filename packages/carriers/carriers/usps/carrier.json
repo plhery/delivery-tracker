@@ -12,16 +12,36 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "usps",
+    "steps": [
+      "trawl"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "eta"
+  ],
   "portal": {
     "url": "https://tools.usps.com/go/TrackConfirmAction?tLabels={trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "canaryUrl": "https://www.usps.com/",
+    "shows": [
+      "status",
+      "history",
+      "eta",
+      "location"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "eta",
+      "location"
+    ],
+    "discarded": [
+      "signatory",
+      "delivery instructions",
+      "tracking plus upsells"
+    ],
     "unavailable": []
   },
   "links": [
