@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('./stepRecorder', () => ({ addStepRecorder: vi.fn() }));
-
 const metrics = await import('./metrics');
 
 describe('prometheus carrier metrics', () => {
@@ -26,6 +24,23 @@ describe('prometheus carrier metrics', () => {
     expect(text).toContain('carrier_status_mapping_total{carrier="ups",stage_source="carrier_map"} 1');
     expect(text).toContain('carrier_detection_total{result="high"} 1');
     expect(text).toContain('carrier_step_duration_seconds_bucket{le="0.25",carrier="ups",step="direct",outcome="challenge"} 1');
+  });
+
+  it('serves what another bundled copy of the module recorded', async () => {
+    // Next evaluates this module once per bundle: the scheduled sync records in
+    // the instrumentation copy while the scrape endpoint reads its own copy.
+    vi.resetModules();
+    const recording = await import('./metrics');
+    vi.resetModules();
+    const scraping = await import('./metrics');
+    expect(scraping.prometheusStepRecorder).not.toBe(recording.prometheusStepRecorder);
+
+    recording.prometheusStepRecorder.lookup({ carrier: 'dpd', finalStep: 'direct', outcome: 'ok', errorType: null, durationMs: 400, attempts: 1 });
+    recording.recordStatusMapping('dpd', 'none');
+    const text = await scraping.metricsText();
+    expect(text).toContain('carrier_lookup_total{carrier="dpd",final_step="direct",outcome="ok"} 1');
+    expect(text).toContain('carrier_status_mapping_total{carrier="dpd",stage_source="none"} 1');
+    expect(scraping.registry).toBe(recording.registry);
   });
 
   it('only exposes the endpoint with a reasonably long token', () => {

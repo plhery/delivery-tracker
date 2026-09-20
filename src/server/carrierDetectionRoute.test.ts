@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { POST } from '../../app/api/carriers/detect/route';
+import { detectCarrierMatch } from '../lib/carriers';
 import { SupabaseAuthenticator } from './auth';
 import { GLSGermanyTracker } from './glsGermany';
 
@@ -36,6 +37,20 @@ it('does not query GLS for other formats or unauthenticated callers', async () =
   expect(await (await request('1Z999AA10123456784')).json()).toMatchObject({ carrier: 'ups' });
   expect(await (await request('12345678901234')).json()).toMatchObject({ carrier: 'unknown' });
   expect(lookup).not.toHaveBeenCalled();
+});
+
+it('counts served detections by confidence, including a verified GLS promotion', async () => {
+  const { metricsText } = await import('./metrics');
+  const served = async (result: string) => Number(new RegExp(`carrier_detection_total\\{result="${result}"\\} (\\d+)`).exec(await metricsText())?.[1] ?? 0);
+  const unverified = detectCarrierMatch('12345678901234').confidence;
+  expect(unverified).not.toBe('high');
+  const [high, other] = [await served('high'), await served(unverified)];
+  vi.spyOn(GLSGermanyTracker.prototype, 'recognizes').mockResolvedValueOnce(true);
+  await request('1Z999AA10123456784');
+  await request('123456789018');
+  await request('12345678901234');
+  expect(await served('high')).toBe(high + 2);
+  expect(await served(unverified)).toBe(other + 1);
 });
 
 it('keeps provider failures distinct from an unrecognized number', async () => {

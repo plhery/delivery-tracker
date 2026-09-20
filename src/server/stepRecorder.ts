@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/node';
 import type { LookupRecord, StepRecord, StepRecorder } from '@carriers/core/telemetry';
 import { combineRecorders } from '@carriers/core/telemetry';
 import { healthStepRecorder } from './trackingHealth';
+import { prometheusStepRecorder } from './metrics';
 import { initObservability, logOperationalEvent, reportRoutingEvent } from './observability';
 
 /**
@@ -69,12 +70,17 @@ export const sentryStepRecorder: StepRecorder = {
 
 const extraRecorders: StepRecorder[] = [];
 
-/** Register another sink (for example Prometheus) once at startup. */
+/** Register another sink once at startup. */
 export function addStepRecorder(recorder: StepRecorder): void {
   extraRecorders.push(recorder);
 }
 
-/** The recorder handed to every adapter: Sentry plus any registered sinks, each failure-isolated. */
+/**
+ * The recorder handed to every adapter: health, Sentry and Prometheus plus any
+ * registered sinks, each failure-isolated. Prometheus is wired here rather than
+ * registered from a side-effect import, because every bundle that records a
+ * lookup evaluates its own copy of this module and must reach the sink.
+ */
 export function hostStepRecorder(): StepRecorder {
-  return combineRecorders(healthStepRecorder, sentryStepRecorder, ...extraRecorders);
+  return combineRecorders(healthStepRecorder, sentryStepRecorder, prometheusStepRecorder, ...extraRecorders);
 }

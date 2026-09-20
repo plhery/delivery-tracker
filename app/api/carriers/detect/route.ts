@@ -2,6 +2,7 @@ import { isAmazonTrackingNumber } from '../../../../src/lib/amazon';
 import { checkAmazonShipping } from '../../../../src/server/amazonShippingEligibility';
 import { apiRoute, HttpError, json, readJsonObject } from '../../../../src/server/api';
 import { GLSGermanyTracker } from '../../../../src/server/glsGermany';
+import { recordDetection } from '../../../../src/server/metrics';
 import { detectCarrierMatch, normalizeTrackingNumber } from '../../../../src/lib/carriers';
 import type { ApiCarrierDetectionResponse } from '../../../../src/generated/apiContract';
 
@@ -19,17 +20,19 @@ export const POST = apiRoute(async ({ request }) => {
   }
   if (isAmazonTrackingNumber(trackingNumber)) {
     const amazonShippingStatus = await checkAmazonShipping(trackingNumber);
+    recordDetection('high');
     return json({ trackingNumber, carrier: ['available', 'expired'].includes(amazonShippingStatus) ? 'amazon-shipping' : 'amazon-logistics', amazonShippingStatus } satisfies ApiCarrierDetectionResponse);
   }
-  let carrier = detectCarrierMatch(trackingNumber).carrier;
+  let { carrier, confidence } = detectCarrierMatch(trackingNumber);
   // Numeric shapes overlap between carriers. Only promote GLS after its own
   // service returns a matching shipment; do not guess from a numeric prefix.
   if (carrier === 'unknown' && /^\d{11,12}$/.test(trackingNumber)) {
     try {
-      if (await new GLSGermanyTracker(5_000).recognizes(trackingNumber)) carrier = 'gls-de';
+      if (await new GLSGermanyTracker(5_000).recognizes(trackingNumber)) { carrier = 'gls-de'; confidence = 'high'; }
     } catch {
       throw new HttpError(502, 'Carrier lookup is temporarily unavailable');
     }
   }
+  recordDetection(confidence);
   return json({ trackingNumber, carrier } satisfies ApiCarrierDetectionResponse);
 }, { loadService: false });
