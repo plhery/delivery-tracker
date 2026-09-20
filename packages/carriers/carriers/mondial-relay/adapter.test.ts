@@ -272,6 +272,19 @@ describe('Mondial Relay response normalization', () => {
     expect(classifyStatus('Mise à jour de votre suivi'))
       .toEqual({ status: 'unknown', stage: 'in_transit' });
   });
+
+  it('reads the locker countdown as ready for pickup and the site scans as movement', () => {
+    expect(classifyStatus('5 jours restants pour retirer le colis en Locker'))
+      .toEqual({ status: 'out_for_delivery', stage: 'ready_for_pickup' });
+    expect(classifyStatus('1 jour restant pour retirer le colis en Locker'))
+      .toEqual({ status: 'out_for_delivery', stage: 'ready_for_pickup' });
+    for (const wording of [
+      'Colis expédié depuis le site logistique', 'Colis en cours de traitement sur le site logistique',
+      'Colis en route vers le point de livraison',
+    ]) expect(classifyStatus(wording)).toEqual({ status: 'in_transit', stage: 'in_transit' });
+    expect(classifyStatus("Colis en préparation chez l'expéditeur"))
+      .toEqual({ status: 'pending', stage: 'registered' });
+  });
 });
 
 describe('Mondial Relay web session', () => {

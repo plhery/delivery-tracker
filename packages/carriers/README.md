@@ -93,7 +93,7 @@ npm run test:contract                                               # generated 
 | `dhl` | DHL | dedicated | direct → trawl | 3 | 11 | 22 | [README](carriers/dhl/README.md) |
 | `dhl-ecommerce` | DHL eCommerce | dedicated | browser | 5 | 8 | 18 | [README](carriers/dhl-ecommerce/README.md) |
 | `dpd` | DPD | dedicated | direct → page | 5 | 2 | 10 | [README](carriers/dpd/README.md) |
-| `dpd-fr` | DPD France | dedicated | direct → trawl | 3 | 3 | 37 | [README](carriers/dpd-fr/README.md) |
+| `dpd-fr` | DPD France | dedicated | direct → trawl | 3 | 3 | 40 | [README](carriers/dpd-fr/README.md) |
 | `dtdc` | DTDC | universal providers |  | 0 | 1 | 0 |  |
 | `ecoscooting` | Ecoscooting | universal providers |  | 0 | 5 | 0 | [README](carriers/ecoscooting/README.md) |
 | `estafeta` | Estafeta | universal providers |  | 0 | 1 | 0 |  |
@@ -116,9 +116,9 @@ npm run test:contract                                               # generated 
 | `japan-post` | Japan Post | universal providers |  | 0 | 2 | 0 |  |
 | `jd-logistics` | JD Logistics | universal providers |  | 0 | 1 | 0 |  |
 | `korea-post` | Korea Post | universal providers |  | 0 | 1 | 0 |  |
-| `la-poste` | La Poste / Colissimo | dedicated | direct → retry | 4 | 9 | 16 | [README](carriers/la-poste/README.md) |
+| `la-poste` | La Poste / Colissimo | dedicated | direct → retry | 4 | 9 | 22 | [README](carriers/la-poste/README.md) |
 | `landmark-global` | Landmark Global | universal providers |  | 0 | 3 | 0 |  |
-| `mondial-relay` | Mondial Relay | dedicated | trawl | 2 | 8 | 40 | [README](carriers/mondial-relay/README.md) |
+| `mondial-relay` | Mondial Relay | dedicated | trawl | 2 | 8 | 45 | [README](carriers/mondial-relay/README.md) |
 | `mrw` | MRW | universal providers |  | 0 | 5 | 0 | [README](carriers/mrw/README.md) |
 | `nacex` | NACEX | universal providers |  | 0 | 2 | 0 | [README](carriers/nacex/README.md) |
 | `ninja-van` | Ninja Van | universal providers |  | 0 | 2 | 0 |  |
@@ -157,7 +157,7 @@ npm run test:contract                                               # generated 
 | `ukrposhta` | Ukrposhta | universal providers |  | 0 | 1 | 0 |  |
 | `uniuni` | UniUni | universal providers |  | 0 | 2 | 0 | [README](carriers/uniuni/README.md) |
 | `unknown` | Unknown carrier | universal providers |  | 0 | 15 | 0 |  |
-| `ups` | UPS | dedicated | direct → trawl | 3 | 6 | 26 | [README](carriers/ups/README.md) |
+| `ups` | UPS | dedicated | direct → trawl | 3 | 6 | 30 | [README](carriers/ups/README.md) |
 | `usps` | USPS | universal providers |  | 0 | 14 | 0 |  |
 | `yamato` | Yamato Transport | universal providers |  | 0 | 1 | 0 |  |
 | `yanwen` | Yanwen | universal providers |  | 0 | 2 | 0 |  |

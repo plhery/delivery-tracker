@@ -74,10 +74,14 @@ export function classifyStatus(description: string): ClassifiedStatus {
     'attend en relais',
   ])) return { status: 'out_for_delivery', stage: 'ready_for_pickup' };
 
+  // The same-day notices ("le destinataire est informé par SMS de la livraison
+  // de son colis ce jour") follow the delivery-round scan; read as plain
+  // movement they would pull the parcel back to "in transit" on delivery day.
   if (includesAny(value, [
     'en cours de livraison',
     'en tournee de livraison',
     'chauffeur a pris en charge',
+    'de la livraison de son colis ce jour',
   ])) return { status: 'out_for_delivery', stage: 'out_for_delivery' };
 
   if (includesAny(value, [
@@ -85,6 +89,12 @@ export function classifyStatus(description: string): ClassifiedStatus {
     'informations concernant votre colis ont ete transmises',
     'donnees du colis transmises',
   ])) return { status: 'pending', stage: 'registered' };
+
+  // Acceptance into the network, and the notices that report it to the recipient.
+  if (includesAny(value, [
+    'pris en charge dans notre reseau',
+    'de la prise en charge de son colis',
+  ])) return { status: 'in_transit', stage: 'accepted' };
 
   if (includesAny(value, [
     'remis a dpd',

@@ -173,6 +173,9 @@ export function parseLaPosteTrackingResponse(
   const latestCode = clean(latestRaw.code, 40);
   return {
     status: eventStatus(latestGroup, latestCode, latestLabel, events.length > 0),
+    // The status vocabulary has no pickup or customs value; without the stage
+    // the sync would re-read the sentence and fall back to "out for delivery".
+    ...(latest?.stage ? { current_stage: latest.stage } : {}),
     last_status_text: latestLabel || 'Tracking information received',
     last_update: latest?.time || safeDate(timeline[0]?.date) || null,
     expected_delivery: shipment.isFinal === true ? null : expectedDate(shipment.estimDate),

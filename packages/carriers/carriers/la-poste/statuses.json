@@ -113,6 +113,51 @@
       "confirmedBy": "fixture",
       "firstSeen": "2026-09-12",
       "note": "Event code: delivered."
+    },
+    {
+      "code": "AG1",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-11",
+      "note": "Event code: the parcel waits at its pickup point. Seen under the groups DISMAD, DISINS and DISTOU and without a group for Chronopost, with three different sentences, so the code outranks the group."
+    },
+    {
+      "code": "DO1",
+      "stage": "customs",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-20",
+      "note": "Event code: entry into customs (group AARIDOU). The result status stays in_transit; DO2 (group AARENDDOU) is the release and stays in_transit."
+    },
+    {
+      "code": "DISIECHEC",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-17",
+      "note": "Group: delivery failed; the result status becomes exception. Seen with code MD3."
+    },
+    {
+      "wording": "vous attend dans votre point de retrait",
+      "language": "fr",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-16",
+      "note": "Resolved by the shared classifier. The sentence also arrives under the delivery-round group, which used to make the parcel out for delivery."
+    },
+    {
+      "wording": "nous n'avons pu vous remettre votre colis",
+      "language": "fr",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-17",
+      "note": "Resolved by the shared classifier before the pickup wording: the sentence goes on to name the pickup point the parcel is sent to."
+    },
+    {
+      "wording": "les formalites import/export sont en cours",
+      "language": "fr",
+      "stage": "customs",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-20",
+      "note": "Resolved by the shared classifier; \"sont terminees\" is the release and stays in_transit."
     }
   ]
 }

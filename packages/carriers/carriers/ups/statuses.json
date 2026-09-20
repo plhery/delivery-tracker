@@ -26,6 +26,10 @@
     { "wording": "Processing at UPS Facility", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "" },
     { "wording": "Label Created", "language": "en", "stage": "pending", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "" },
     { "wording": "Manifest Upload", "language": "en", "stage": "pending", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "" },
-    { "wording": "Shipment Ready for UPS", "language": "en", "stage": "pending", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "" }
+    { "wording": "Shipment Ready for UPS", "language": "en", "stage": "pending", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "" },
+    { "wording": "Drop-Off", "language": "en", "stage": "accepted", "confirmedBy": "live", "firstSeen": "2026-09-15", "note": "Activity scan: the sender handed the parcel in at an access point. Resolved by the shared classifier because UPS activities carry no stage." },
+    { "wording": "The UPS Access Point™ location has prepared the package for return to UPS or pickup by UPS.", "language": "en", "stage": "accepted", "confirmedBy": "live", "firstSeen": "2026-09-15", "note": "Seen right after Drop-Off, while the progress bar still reads FirstUPSPossession. UPS uses the same sentence when an uncollected parcel goes back, where the later return scans decide the stage." },
+    { "wording": "Pickup Scan", "language": "en", "stage": "accepted", "confirmedBy": "live", "firstSeen": "2026-09-16", "note": "Activity scan: UPS collected the parcel. Resolved by the shared classifier." },
+    { "wording": "Delivered to UPS Access Point™ location and awaiting customer pickup.", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Checked before the delivered wording, which the sentence also contains." }
   ]
 }

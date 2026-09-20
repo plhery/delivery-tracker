@@ -40,6 +40,11 @@
     { "code": "5", "language": "fr", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "SuiviParEtapes milestone number, used only when no wording on the shipment classified. Read as \"at least this far\", so any number above 5 is delivered too." },
     { "code": "4", "language": "fr", "stage": "ready_for_pickup", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "SuiviParEtapes milestone number; adapter result status out_for_delivery." },
     { "code": "2", "language": "fr", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-12", "note": "SuiviParEtapes milestone number, 2 or 3." },
-    { "code": "1", "language": "fr", "stage": "registered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "SuiviParEtapes milestone number; adapter result status pending." }
+    { "code": "1", "language": "fr", "stage": "registered", "confirmedBy": "fixture", "firstSeen": "2026-09-12", "note": "SuiviParEtapes milestone number; adapter result status pending." },
+    { "wording": "jours restants pour retirer le colis", "language": "fr", "stage": "ready_for_pickup", "confirmedBy": "live", "firstSeen": "2026-09-20", "note": "Locker countdown; matched as \"restant(s) pour retirer\". Adapter result status: out_for_delivery." },
+    { "wording": "Colis en préparation chez l'expéditeur", "language": "fr", "stage": "registered", "confirmedBy": "live", "firstSeen": "2026-09-20", "note": "Adapter result status: pending." },
+    { "wording": "Colis expédié depuis le site", "language": "fr", "stage": "in_transit", "confirmedBy": "live", "firstSeen": "2026-09-20", "note": "Followed by the name of the logistics site." },
+    { "wording": "Colis en cours de traitement sur le site", "language": "fr", "stage": "in_transit", "confirmedBy": "live", "firstSeen": "2026-09-20", "note": "Followed by the name of the logistics site." },
+    { "wording": "Colis en route vers le point de livraison", "language": "fr", "stage": "in_transit", "confirmedBy": "live", "firstSeen": "2026-09-20", "note": "" }
   ]
 }

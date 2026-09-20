@@ -306,6 +306,49 @@ describe('La Poste response normalization', () => {
     });
   });
 
+  it('declares the parcel stage so a pickup point is never read as out for delivery', () => {
+    const fixture = deliveredFixture();
+    fixture[0]!.shipment.isFinal = false;
+    // The same sentence arrives under the delivery-round group; the code and the wording both say pickup.
+    const waiting = 'Votre Colissimo vous attend dans votre point de retrait. Le délai de retrait est de 5 jours.';
+    fixture[0]!.shipment.event = [{
+      group: 'DISTOU', code: 'AG1', label: waiting,
+      date: '2026-08-14T11:00:00+02:00', country: 'FR', order: 102, recipientAddress: '',
+    }];
+    expect(parseLaPosteTrackingResponse(fixture, TRACKING_NUMBER)).toMatchObject({
+      status: 'out_for_delivery',
+      current_stage: 'ready_for_pickup',
+      events: [{ stage: 'ready_for_pickup', provider_code: 'DISTOU/AG1' }],
+    });
+    expect(eventStage('DISTOU', '', waiting)).toBe('ready_for_pickup');
+    expect(eventStage('', 'AG1', 'Colis mis à disposition au point de retrait')).toBe('ready_for_pickup');
+    expect(eventStage('DISINS', 'AG1', 'Votre colis est disponible dans votre point de retrait pendant un délai de 15 jours calendaires.')).toBe('ready_for_pickup');
+  });
+
+  it('reads a missed delivery that announces the pickup point as a failed attempt', () => {
+    const fixture = deliveredFixture();
+    fixture[0]!.shipment.isFinal = false;
+    fixture[0]!.shipment.event = [{
+      group: 'DISIECHEC', code: 'MD3',
+      label: 'Nous sommes passés mais nous n\'avons pu vous remettre votre colis. Il va être acheminé vers votre point de retrait.',
+      date: '2026-08-14T08:00:00+02:00', country: 'FR', order: 101, recipientAddress: '',
+    }];
+    expect(parseLaPosteTrackingResponse(fixture, TRACKING_NUMBER)).toMatchObject({
+      status: 'exception',
+      current_stage: 'failed_attempt',
+      events: [{ stage: 'failed_attempt' }],
+    });
+    // The group alone is enough when La Poste rewords the sentence.
+    expect(eventStage('DISIECHEC', 'MD3', 'Passage du facteur')).toBe('failed_attempt');
+  });
+
+  it('separates the entry into customs from the release', () => {
+    expect(eventStage('AARIDOU', 'DO1', 'Les formalités import/export sont en cours sur votre colis.')).toBe('customs');
+    expect(eventStage('', 'DO1', 'Votre colis est arrivé dans le pays de destination')).toBe('customs');
+    expect(eventStage('AARENDDOU', 'DO2', 'Les formalités import/export de votre colis sont terminées et il poursuit son acheminement.')).toBe('in_transit');
+    expect(eventStatus('AARIDOU', 'DO1', 'Les formalités import/export sont en cours sur votre colis.', true)).toBe('in_transit');
+  });
+
   it('does not confuse a delivery driver or a future delivery with delivery', () => {
     const fixture = deliveredFixture();
     fixture[0]!.shipment.isFinal = false;

@@ -296,6 +296,30 @@
       "confirmedBy": "live",
       "firstSeen": "2026-09-12",
       "note": "Substring match on the accent-free wording; the result status becomes in_transit."
+    },
+    {
+      "wording": "de la livraison de son colis ce jour",
+      "language": "fr",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-18",
+      "note": "Same-day delivery notice sent to the recipient by SMS and by e-mail. It follows the delivery-round scan, so it must not move the parcel back to in_transit."
+    },
+    {
+      "wording": "pris en charge dans notre reseau",
+      "language": "fr",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-17",
+      "note": "Acceptance into the network; the result status becomes in_transit."
+    },
+    {
+      "wording": "de la prise en charge de son colis",
+      "language": "fr",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-17",
+      "note": "Acceptance notice sent to the recipient by SMS and by e-mail; the result status becomes in_transit."
     }
   ]
 }

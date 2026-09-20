@@ -26,6 +26,7 @@ export const GROUP_STATUSES = new Map<string, CarrierStatus>([
   ['DISARR', 'in_transit'],
   ['DISTOU', 'out_for_delivery'],
   ['DISMAD', 'out_for_delivery'],
+  ['DISIECHEC', 'exception'],
   ['DESBAL', 'delivered'],
   ['DESTIN', 'delivered'],
   ['DESLIVD', 'delivered'],
@@ -41,6 +42,14 @@ export const CODE_STATUSES = new Map<string, CarrierStatus>([
   ['MD1', 'out_for_delivery'],
   ['DI1', 'delivered'],
 ]);
+
+/**
+ * `AG1` arrives under several groups (`DISMAD`, `DISINS`, none for Chronopost)
+ * and with several sentences, and always means the parcel waits at its pickup
+ * point; `DO1` is the entry into customs (`DO2` is the release).
+ */
+const PICKUP_CODE = 'AG1';
+const CUSTOMS_ENTRY_CODE = 'DO1';
 
 /** Lowercase, accent-free form used for every wording comparison. */
 export function comparable(value: unknown): string {
@@ -96,14 +105,19 @@ export function eventStage(group: string, code: string, label: string): Stage {
   if (normalizedGroup === 'RETOUR' || value.includes('retour')) {
     return 'returned';
   }
-  if (
+  const worded = trackingLanguageStage(label);
+  // A missed delivery announces the pickup point the parcel is sent to next.
+  if (worded !== 'failed_attempt' && (
     normalizedGroup === 'DISMAD'
+    || normalizedCode === PICKUP_CODE
+    || worded === 'ready_for_pickup'
     || ['disponible au point de retrait', 'disponible en point relais', 'attend au relais']
       .some((term) => value.includes(term))
-  ) return 'ready_for_pickup';
+  )) return 'ready_for_pickup';
   // A carrier-reported problem that is neither a missed attempt nor a return.
   if (['incident', 'anomalie', 'avarie', 'endommage', 'refuse', 'adresse incorrecte']
     .some((term) => value.includes(term))) return 'exception';
+  if (normalizedCode === CUSTOMS_ENTRY_CODE || worded === 'customs') return 'customs';
   const status = eventStatus(normalizedGroup, normalizedCode, label, true);
   if (status === 'pending') return 'registered';
   if (status === 'out_for_delivery') return 'out_for_delivery';

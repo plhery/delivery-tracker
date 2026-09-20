@@ -56,6 +56,8 @@ export const MONDIAL_RELAY_WORDING: readonly { phrases: readonly string[]; class
       'disponible dans votre point relais', 'disponible au point relais',
       'disponible dans votre locker', 'disponible en consigne',
       'vous attend au point relais', 'vous attend dans le locker', 'pret a etre retire',
+      // The locker countdown: "5 jours restants pour retirer le colis en Locker".
+      'restants pour retirer', 'restant pour retirer',
     ],
     classified: { status: 'out_for_delivery', stage: 'ready_for_pickup' },
   },
@@ -69,7 +71,7 @@ export const MONDIAL_RELAY_WORDING: readonly { phrases: readonly string[]; class
   {
     phrases: [
       'information transmise par l expediteur', 'en cours de preparation par l expediteur',
-      'etiquette creee', 'colis enregistre',
+      'en preparation chez l expediteur', 'etiquette creee', 'colis enregistre',
     ],
     classified: { status: 'pending', stage: 'registered' },
   },
@@ -83,6 +85,7 @@ export const MONDIAL_RELAY_WORDING: readonly { phrases: readonly string[]; class
     phrases: [
       'en cours d acheminement', 'en transit', 'arrive sur l agence', 'arrive a l agence',
       'arrive au centre', 'depart de l agence', 'expedie vers', 'achemine vers',
+      'expedie depuis', 'en cours de traitement sur le site', 'en route vers le point de livraison',
     ],
     classified: { status: 'in_transit', stage: 'in_transit' },
   },

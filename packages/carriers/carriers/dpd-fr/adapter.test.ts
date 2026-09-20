@@ -237,6 +237,20 @@ describe('DPD France status vocabulary', () => {
     expect(classifyStatus('Votre colis est disponible en relais'))
       .toEqual({ status: 'out_for_delivery', stage: 'ready_for_pickup' });
   });
+
+  it('keeps the same-day delivery notices on the delivery round and reads acceptance notices as accepted', () => {
+    for (const channel of ['SMS', 'e-mail']) {
+      expect(classifyStatus(`Le destinataire est informé par ${channel} de la livraison de son colis ce jour`))
+        .toEqual({ status: 'out_for_delivery', stage: 'out_for_delivery' });
+      expect(classifyStatus(`Le destinataire est informé par ${channel} de la prise en charge de son colis dans notre réseau`))
+        .toEqual({ status: 'in_transit', stage: 'accepted' });
+    }
+    expect(classifyStatus('Votre colis a été pris en charge dans notre réseau'))
+      .toEqual({ status: 'in_transit', stage: 'accepted' });
+    // The driver taking the parcel over is still the delivery round.
+    expect(classifyStatus('Le chauffeur a pris en charge votre colis'))
+      .toEqual({ status: 'out_for_delivery', stage: 'out_for_delivery' });
+  });
 });
 
 describe('DPD France transport tiers', () => {
