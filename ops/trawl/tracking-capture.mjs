@@ -30,6 +30,24 @@ const SITES = [
         || details.some(d => String(d?.trackingNumber ?? d?.requestedTrackingNumber ?? '').toUpperCase() === number);
     },
   },
+  {
+    // FedEx answers once. The edge accepts this call only from the session
+    // the page established, which is why the reply is read here and never
+    // replayed. The page redirects its canonical /fedextrack/ URL to the
+    // /wtrk/track/ application, so both pathnames serve the same lookup.
+    api: 'https://api.fedex.com/track/v2/shipments',
+    number(page) {
+      if (page.origin !== 'https://www.fedex.com') return null;
+      if (page.pathname !== '/wtrk/track/' && page.pathname !== '/fedextrack/') return null;
+      const number = (page.searchParams.get('trknbr') ?? '').toUpperCase();
+      return /^(\d{12}|\d{15})$/.test(number) ? number : null;
+    },
+    settled(data) {
+      // One POST, one final reply: any decoded envelope ends the wait. The
+      // adapter binds the packages to the requested number itself.
+      return !!data?.output;
+    },
+  },
 ];
 
 export async function attachTrackingCapture(page, url, options) {

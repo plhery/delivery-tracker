@@ -1,0 +1,64 @@
+{
+  "output": {
+    "packages": [
+      {
+        "trackingNbr": "999999999998",
+        "trackingQualifier": "",
+        "trackingCarrierCd": "FDXG",
+        "displayTrackingNbr": "999999999998",
+        "keyStatus": "On FedEx vehicle for delivery",
+        "keyStatusCD": "OD",
+        "statusBarCD": "OD",
+        "statusWithDetails": "On FedEx vehicle for delivery: 9/25/2026 9:04 am; LAUSANNE, CH",
+        "shipDt": "2026-09-20T10:00:00+02:00",
+        "estDeliveryDt": "2026-09-25T18:00:00+02:00",
+        "displayEstDeliveryDt": "9/25/2026",
+        "displayEstDeliveryTm": "6:00 pm",
+        "serviceCD": "FEDEX_GROUND",
+        "serviceDesc": "FedEx Ground",
+        "shipperCity": "LYON",
+        "shipperCntryCD": "FR",
+        "recipientCity": "LAUSANNE",
+        "recipientCntryCD": "CH",
+        "scanEventList": [
+          {
+            "date": "2026-09-25",
+            "time": "09:04:00",
+            "gmtOffset": "+02:00",
+            "scanLocation": "LAUSANNE, CH",
+            "status": "On FedEx vehicle for delivery",
+            "statusCD": "OD",
+            "scanDetails": ""
+          },
+          {
+            "date": "2026-09-24",
+            "time": "22:41:00",
+            "gmtOffset": "+02:00",
+            "scanLocation": "GENEVA, CH",
+            "status": "Arrived at FedEx location",
+            "statusCD": "AR",
+            "scanDetails": ""
+          },
+          {
+            "date": "2026-09-22",
+            "time": "06:15:00",
+            "gmtOffset": "+02:00",
+            "scanLocation": "LYON, FR",
+            "status": "Departed FedEx location",
+            "statusCD": "DP",
+            "scanDetails": ""
+          },
+          {
+            "date": "2026-09-20",
+            "time": "10:00:00",
+            "gmtOffset": "+02:00",
+            "scanLocation": "LYON, FR",
+            "status": "Picked up",
+            "statusCD": "PU",
+            "scanDetails": ""
+          }
+        ]
+      }
+    ]
+  }
+}

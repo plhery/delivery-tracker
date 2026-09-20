@@ -1,11 +1,11 @@
 # Tracking response compatibility
 
 Stock TRAWL 1.3.1 ignores `captureResponses`. Version 1.5.0 adds it but refuses
-compressed responses, including 17TRACK's and UPS's gzip JSON, and can stop on
+compressed responses, including 17TRACK's, UPS's and FedEx's gzip JSON, and can stop on
 polling code 100. This small compatibility build retains the normal TRAWL API and
-changes only tier 2/3 capture for two exact endpoints, each on its own public
-page with one valid number: 17TRACK's `track/restapi` and UPS's `GetStatus`.
-Every other capture request keeps stock behaviour. ParcelsApp remains first in
+changes only tier 2/3 capture for three exact endpoints, each on its own public
+page with one valid number: 17TRACK's `track/restapi`, UPS's `GetStatus` and
+FedEx's `track/v2/shipments`. Every other capture request keeps stock behaviour. ParcelsApp remains first in
 the application's discovery order.
 
 The adapter observes the existing browser response; it neither copies cookies
@@ -42,6 +42,11 @@ browser's own reply is the only structured answer left. Empty-history code
 carrier. Sentry distinguishes capture_missing, capture_unreadable,
 lookup_pending, lookup_unavailable and verification_required, plus numeric
 provider status and HTTP status. No response body is attached to these tags.
+FedEx was added on 2026-09-20 with the same single-reply semantics
+(`output` present ends the wait; the adapter binds `packages` to the
+requested `trknbr` itself). Re-render and redeploy the service before
+expecting FedEx captures in production; live verification with a real
+shipment is still open (see `packages/carriers/carriers/fedex/README.md`).
 
 ## Redis session cache
 

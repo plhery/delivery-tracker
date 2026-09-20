@@ -9,6 +9,11 @@ const upsApi = 'https://webapis.ups.com/track/api/Track/GetStatus?loc=en_US';
 const upsNumber = '1Z999AA10123456784';
 const upsUrl = `https://www.ups.com/track?loc=en_US&tracknum=${upsNumber}&requester=ST%2Ftrackdetails`;
 const upsReply = (trackingNumber = upsNumber, statusCode = '200') => JSON.stringify({ statusCode, trackDetails: [{ trackingNumber }] });
+const fedexApi = 'https://api.fedex.com/track/v2/shipments';
+// A made-up number in FedEx's published format, the same one the adapter's tests use.
+const fedexNumber = '999999999999';
+const fedexUrl = `https://www.fedex.com/wtrk/track/?trknbr=${fedexNumber}`;
+const fedexReply = (trackingNbr = fedexNumber) => JSON.stringify({ output: { packages: [{ trackingNbr }] } });
 async function fixture(url = `https://t.17track.net/en#nums=${number}`, endpoint = api) {
   let handler;
   let detached = false;
@@ -92,6 +97,34 @@ test('finishes on a rejected UPS status envelope and only serves one valid numbe
     ['https://www.ups.com/track/details?tracknum=' + upsNumber, upsApi],
     [upsUrl, api],
     [`https://t.17track.net/en#nums=${number}`, upsApi],
+  ]) {
+    assert.equal(await attachTrackingCapture({}, url, { captureResponses: [endpoint] }), undefined);
+  }
+});
+
+test('reads the decoded FedEx tracking reply and finishes on its envelope', async () => {
+  const { capture, respond } = await fixture(fedexUrl, fedexApi);
+  let settled = false;
+  const waiting = capture.settle(1000).then(() => { settled = true; });
+  await respond(JSON.stringify({ output: { packages: [] } }));
+  await waiting;
+  assert.equal(settled, true);
+  const rows = (await capture.drain()).capturedResponses;
+  assert.deepEqual(rows.map(row => JSON.parse(row.body).output.packages.length), [0]);
+});
+
+test('serves the FedEx endpoint from either tracking page path and only for valid numbers', async () => {
+  const { capture, respond } = await fixture(`https://www.fedex.com/fedextrack/?trknbr=${fedexNumber}`, fedexApi);
+  assert.ok(capture);
+  await respond(fedexReply());
+  await capture.settle(1000);
+  assert.deepEqual((await capture.drain()).capturedResponses.map(row => JSON.parse(row.body).output.packages[0].trackingNbr), [fedexNumber]);
+  for (const [url, endpoint] of [
+    ['https://www.fedex.com/wtrk/track/?trknbr=not-a-fedex-number', fedexApi],
+    ['https://www.fedex.com/wtrk/track/', fedexApi],
+    ['https://www.fedex.com/fedextrack/system-error?trknbr=' + fedexNumber, fedexApi],
+    [fedexUrl, upsApi],
+    [`https://t.17track.net/en#nums=${number}`, fedexApi],
   ]) {
     assert.equal(await attachTrackingCapture({}, url, { captureResponses: [endpoint] }), undefined);
   }

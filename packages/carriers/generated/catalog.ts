@@ -486,9 +486,9 @@ export const CARRIER_CATALOG = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "fedex"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://www.fedex.com/fedextrack/",
     "trackingUrlTemplate": "https://www.fedex.com/fedextrack/?trknbr={trackingNumber}",
     "linkRules": [
       {

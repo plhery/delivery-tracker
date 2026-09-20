@@ -16,16 +16,40 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "fedex",
+    "steps": [
+      "trawl"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "eta",
+    "delivered_at"
+  ],
   "portal": {
     "url": "https://www.fedex.com/fedextrack/?trknbr={trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "canaryUrl": "https://www.fedex.com/fedextrack/",
+    "shows": [
+      "status",
+      "history",
+      "eta",
+      "location"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "eta",
+      "location"
+    ],
+    "discarded": [
+      "recipient name and address",
+      "shipper details",
+      "signature",
+      "weight",
+      "dimensions",
+      "service options"
+    ],
     "unavailable": []
   },
   "links": [

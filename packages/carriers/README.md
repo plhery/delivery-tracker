@@ -57,7 +57,7 @@ npm run test:contract                                               # generated 
 ## Carriers
 
 <!-- GENERATED:carriers -->
-104 carriers: 36 with a dedicated adapter, 64 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
+104 carriers: 37 with a dedicated adapter, 63 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
 
 | Id | Name | Route | Steps | Capabilities | Sample numbers | Known statuses | Docs |
 | --- | --- | --- | --- | ---: | ---: | ---: | --- |
@@ -98,7 +98,7 @@ npm run test:contract                                               # generated 
 | `ecoscooting` | Ecoscooting | universal providers |  | 0 | 5 | 0 | [README](carriers/ecoscooting/README.md) |
 | `estafeta` | Estafeta | universal providers |  | 0 | 1 | 0 |  |
 | `evri` | Evri | universal providers |  | 0 | 1 | 0 |  |
-| `fedex` | FedEx | universal providers |  | 0 | 8 | 0 |  |
+| `fedex` | FedEx | dedicated | trawl | 4 | 8 | 29 | [README](carriers/fedex/README.md) |
 | `four-px` | 4PX | universal providers |  | 0 | 1 | 0 |  |
 | `geodis` | GEODIS | dedicated | direct | 3 | 2 | 46 | [README](carriers/geodis/README.md) |
 | `gls-ch` | GLS Switzerland | dedicated | direct | 7 | 1 | 26 | [README](carriers/gls-ch/README.md) |

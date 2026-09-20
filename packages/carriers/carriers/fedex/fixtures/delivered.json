@@ -1,0 +1,72 @@
+{
+  "output": {
+    "packages": [
+      {
+        "trackingNbr": "999999999999",
+        "trackingQualifier": "",
+        "trackingCarrierCd": "FDXE",
+        "displayTrackingNbr": "999999999999",
+        "keyStatus": "Delivered",
+        "keyStatusCD": "DL",
+        "statusBarCD": "DL",
+        "statusWithDetails": "Delivered: 9/02/2026 11:58 am Signed for by: PRIVATE RECIPIENT; ZUERICH, CH",
+        "receivedByNm": "PRIVATE RECIPIENT",
+        "shipDt": "2026-08-31T15:00:00+09:00",
+        "displayShipDt": "8/31/2026",
+        "actDeliveryDt": "2026-09-02T11:58:00+02:00",
+        "displayActDeliveryDt": "9/02/2026",
+        "displayActDeliveryTm": "11:58 am",
+        "estDeliveryDt": "2026-09-02T18:00:00+02:00",
+        "serviceCD": "INTERNATIONAL_PRIORITY",
+        "serviceDesc": "FedEx International Priority",
+        "shipperCmpnyName": "PRIVATE SHIPPER",
+        "shipperCity": "SEOUL",
+        "shipperCntryCD": "KR",
+        "recipientCity": "ZUERICH",
+        "recipientCntryCD": "CH",
+        "recipientPhoneNbr": "PRIVATE PHONE",
+        "totalKgsWgt": "3.5",
+        "dimensions": "20x14x14 in.",
+        "signatureProofOfDeliveryAvailable": true,
+        "scanEventList": [
+          {
+            "date": "2026-09-02",
+            "time": "11:58:00",
+            "gmtOffset": "+02:00",
+            "scanLocation": "ZUERICH, CH",
+            "status": "Delivered",
+            "statusCD": "DL",
+            "scanDetails": "Signed for by: PRIVATE RECIPIENT"
+          },
+          {
+            "date": "2026-09-01",
+            "time": "08:12:00",
+            "gmtOffset": "+02:00",
+            "scanLocation": "KOELN, DE",
+            "status": "Departed FedEx location",
+            "statusCD": "DP",
+            "scanDetails": ""
+          },
+          {
+            "date": "2026-08-31",
+            "time": "15:00:00",
+            "gmtOffset": "+09:00",
+            "scanLocation": "SEOUL, KR",
+            "status": "Picked up",
+            "statusCD": "PU",
+            "scanDetails": ""
+          },
+          {
+            "date": "2026-08-30",
+            "time": "09:05:00",
+            "gmtOffset": "+09:00",
+            "scanLocation": "SEOUL, KR",
+            "status": "Shipment information sent to FedEx",
+            "statusCD": "OC",
+            "scanDetails": ""
+          }
+        ]
+      }
+    ]
+  }
+}
