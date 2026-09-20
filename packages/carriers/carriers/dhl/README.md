@@ -122,6 +122,11 @@ delivery. `statuses.json` holds the full list.
 - 2026-09-12 (move): `DHLSessionError` now extends `ChallengeError`, so
   routing and telemetry classify it through `carrierErrorKind` instead of the
   class name. It keeps its name and message.
+- 2026-09-20: a session is replaced once it is 100 minutes old. Production
+  showed the direct step taking the full 15-second timeout plus one fast renewal
+  about every two hours, and every third hour on the hourly overnight cadence:
+  DHL's edge stops answering a two-hour-old session instead of rejecting it, so
+  the reactive renewal above only ran after the timeout.
 
 ## Rejected alternatives
 

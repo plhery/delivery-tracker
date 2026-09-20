@@ -157,6 +157,14 @@ export class DHLSessionError extends ChallengeError {
 }
 
 /** A rejected session or an interrupted read may be retried; anything else is an answer. */
+/**
+ * DHL's edge stops answering a session about two hours after it was opened. It
+ * does not reject it: the request hangs until the timeout, and only then does
+ * the renewal below succeed in well under a second. Replace the session before
+ * that age so the refresh that crosses it does not wait out the timeout first.
+ */
+const SESSION_MAX_AGE_MS = 100 * 60_000;
+
 function renewable(error: unknown): boolean {
   return error instanceof DHLSessionError || error instanceof UpstreamNetworkError;
 }
@@ -234,6 +242,8 @@ export interface DHLTrackerOptions {
   trawlUrl?: string;
   fetcher?: typeof fetch;
   recorder?: StepRecorder;
+  /** Clock used for the session age; injectable for tests. */
+  now?: () => number;
 }
 
 export class DHLTracker {
@@ -245,7 +255,9 @@ export class DHLTracker {
   private readonly fetcher?: typeof fetch;
   private readonly recorder: StepRecorder;
   private readonly serialize = singleFlight();
+  private readonly now: () => number;
   private session: DHLSession | null = null;
+  private sessionOpenedAt = 0;
 
   constructor(options: DHLTrackerOptions = {}) {
     this.timeoutMs = options.timeoutMs ?? 60_000;
@@ -257,6 +269,13 @@ export class DHLTracker {
     this.trawlUrl = (options.trawlUrl ?? process.env.FLARESOLVERR_URL ?? '').trim();
     this.fetcher = options.fetcher;
     this.recorder = options.recorder ?? NOOP_RECORDER;
+    this.now = options.now ?? Date.now;
+  }
+
+  private open(session: DHLSession): DHLSession {
+    this.session = session;
+    this.sessionOpenedAt = this.now();
+    return session;
   }
 
   /** Lookups share one session, so two parcels never renew it at the same time. */
@@ -280,16 +299,16 @@ export class DHLTracker {
 
   /** The direct session, renewing a stale one or an interrupted read once. */
   private async direct(number: string): Promise<CarrierResult> {
+    if (this.session !== null && this.now() - this.sessionOpenedAt >= SESSION_MAX_AGE_MS) this.session = null;
     const cached = this.session !== null;
-    this.session ??= new DHLSession(this.directTimeoutMs, this.fetcher);
+    const session = this.session ?? this.open(new DHLSession(this.directTimeoutMs, this.fetcher));
     try {
-      return await this.session.fetch(number);
+      return await session.fetch(number);
     } catch (error) {
       // A fresh session that was rejected outright needs a browser, not a
       // second identical attempt; a cached one may simply have expired.
       if (!renewable(error) || (!cached && !(error instanceof UpstreamNetworkError))) throw error;
-      this.session = new DHLSession(this.directTimeoutMs, this.fetcher);
-      return await this.session.fetch(number);
+      return await this.open(new DHLSession(this.directTimeoutMs, this.fetcher)).fetch(number);
     }
   }
 
@@ -304,7 +323,7 @@ export class DHLTracker {
     const session = new DHLSession(this.directTimeoutMs, this.fetcher);
     await session.seed(solved.cookies, solved.userAgent);
     const result = await session.fetch(number);
-    this.session = session;
+    this.open(session);
     return result;
   }
 }

@@ -186,6 +186,25 @@ describe('DHL sessions and browser fallback', () => {
     expect(headers.get('cookie')).not.toContain('private-other-site');
   });
 
+  it('opens a fresh session before the age at which DHL stops answering the old one', async () => {
+    let now = Date.parse('2026-09-17T08:10:00Z');
+    const fetcher = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(config()).mockResolvedValueOnce(Response.json(shipment()))
+      .mockResolvedValueOnce(Response.json(shipment()))
+      .mockResolvedValueOnce(config('renewed')).mockResolvedValueOnce(Response.json(shipment()));
+    const tracker = new DHLTracker({ trawlUrl: '', now: () => now });
+    await tracker.fetch(NUMBER);
+    now += 90 * 60_000;
+    await tracker.fetch(NUMBER);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    // The stale session is never asked: that request hung for the whole timeout in production.
+    now += 10 * 60_000;
+    await tracker.fetch(NUMBER);
+    expect(fetcher).toHaveBeenCalledTimes(5);
+    expect(String(fetcher.mock.calls[3][0])).toBe(CONFIG);
+    expect(new Headers(fetcher.mock.calls[4][1]?.headers).get('verfolgen-CSRF-token')).toBe('renewed');
+  });
+
   it('renews an expired session with HTTP before attempting a browser', async () => {
     const fetcher = vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(config()).mockResolvedValueOnce(Response.json(shipment()))
