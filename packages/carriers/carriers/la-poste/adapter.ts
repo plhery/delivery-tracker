@@ -223,14 +223,16 @@ export class LaPosteTracker {
       });
       return parseLaPosteTrackingResponse(parseJsonBytes(bytes, 'La Poste'), normalized);
     };
-    // Explicit maintenance pages go directly to provider fallback and cooldown.
-    // Other transient 403 rejections retain bounded session retries, sharing the
-    // original deadline; do not retry other HTTP or parsing failures. Once the
-    // deadline is spent the retry is refused, so the caller still sees the
-    // provider's own rejection rather than a budget error.
+    // La Poste's edge answers single lookups with an HTTP 403 "Site indisponible
+    // - Incident en cours" page while another parcel, or the same one a moment
+    // later, is answered normally. It is a hiccup of that one request, not
+    // maintenance, so the page is retried like any other 403: three immediate
+    // retries sharing the original deadline. A real incident still fails every
+    // attempt within seconds and reaches the router. Do not retry other HTTP or
+    // parsing failures. Once the deadline is spent the retry is refused, so the
+    // caller still sees the provider's own rejection rather than a budget error.
     const retriable = (error: unknown): boolean => error instanceof UpstreamHttpError
       && error.status === 403
-      && !/Site indisponible|Incident en cours/i.test(error.diagnostics?.body_excerpt ?? '')
       && deadline - performance.now() >= 1;
     const retry: StepSpec<CarrierResult> = {
       id: 'retry',
@@ -243,6 +245,7 @@ export class LaPosteTracker {
       { id: 'direct', run: ({ remainingMs }) => request(remainingMs) },
       retry,
       { ...retry },
+      { ...retry },
     ]);
   }
 }
@@ -254,7 +257,7 @@ export const adapter: AdapterFactory = (environment) => {
   });
   return {
     id: 'la-poste',
-    // One keyless request, then up to two immediate retries of the same
+    // One keyless request, then up to three immediate retries of the same
     // request after a transient HTTP 403, inside the original deadline.
     steps: ['direct', 'retry'],
     track: (input) => tracker.fetch(input.number),

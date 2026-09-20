@@ -88,4 +88,5 @@ export const METRICS = {
   fallbackTotal: 'carrier_fallback_total',
   statusMappingTotal: 'carrier_status_mapping_total',
   detectionTotal: 'carrier_detection_total',
+  refreshTotal: 'carrier_refresh_total',
 } as const;

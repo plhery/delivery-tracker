@@ -85,15 +85,32 @@ describe('La Poste transient 403 recovery', () => {
     status: 403, headers: { 'Content-Type': 'text/html' },
   });
 
-  it('does not retry an explicit carrier maintenance page', async () => {
-    const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(
-      '<title>Site indisponible - Incident en cours - La Poste</title>', { status: 403 },
+  const incidentPage = () => new Response(
+    '<title>Site indisponible - Incident en cours - La Poste</title>', { status: 403, headers: { 'Content-Type': 'text/html' } },
+  );
+
+  it('retries the incident page, which La Poste serves for single requests while the next one succeeds', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => (
+      fetcher.mock.calls.length <= 1 ? incidentPage() : Response.json(deliveredFixture())
     ));
-    await expect(new LaPosteTracker().fetch(TRACKING_NUMBER)).rejects.toMatchObject({ status: 403 });
-    expect(fetcher).toHaveBeenCalledOnce();
+    const { recorder, steps } = recordingRecorder();
+
+    await expect(new LaPosteTracker({ recorder }).fetch(TRACKING_NUMBER))
+      .resolves.toMatchObject({ status: 'delivered' });
+
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(steps.map((step) => [step.step, step.outcome])).toEqual([['direct', 'challenge'], ['retry', 'ok']]);
   });
 
-  it.each([1, 2])('recovers after %i immediate retries recorded as the retry step', async (failures) => {
+  it('still hands a lasting incident to the router after the bounded retries', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => incidentPage());
+    await expect(new LaPosteTracker().fetch(TRACKING_NUMBER)).rejects.toMatchObject({
+      status: 403, diagnostics: expect.objectContaining({ body_excerpt: expect.stringContaining('Incident en cours') }),
+    });
+    expect(fetcher).toHaveBeenCalledTimes(4);
+  });
+
+  it.each([1, 2, 3])('recovers after %i immediate retries recorded as the retry step', async (failures) => {
     const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => (
       fetcher.mock.calls.length <= failures ? rejection() : Response.json(deliveredFixture())
     ));
@@ -116,7 +133,7 @@ describe('La Poste transient 403 recovery', () => {
     }
   });
 
-  it('stops after three 403 responses and preserves the last response for router fallback', async () => {
+  it('stops after four 403 responses and preserves the last response for router fallback', async () => {
     const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => rejection());
     const { recorder, steps } = recordingRecorder();
 
@@ -124,9 +141,9 @@ describe('La Poste transient 403 recovery', () => {
       name: 'UpstreamHttpError', status: 403,
       diagnostics: expect.objectContaining({ body_excerpt: expect.stringContaining('Temporary access refusal') }),
     });
-    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(fetcher).toHaveBeenCalledTimes(4);
     expect(steps.map((step) => [step.step, step.outcome]))
-      .toEqual([['direct', 'challenge'], ['retry', 'challenge'], ['retry', 'challenge']]);
+      .toEqual([['direct', 'challenge'], ['retry', 'challenge'], ['retry', 'challenge'], ['retry', 'challenge']]);
   });
 
   it.each([401, 404, 429, 500, 503])('does not retry HTTP %i', async (status) => {

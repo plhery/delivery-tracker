@@ -9,6 +9,7 @@ import {
   errorType,
   logOperationalEvent,
 } from './observability';
+import { recordRefresh } from './metrics';
 import { observeTrackingHealth, type HealthSample } from './trackingHealth';
 import type { SupabaseServiceClient } from './supabase';
 import type { JsonObject } from './types';
@@ -228,6 +229,8 @@ export class TrackingSyncAudit {
       completed_at: completedAt.toISOString(),
       duration_ms: Math.round(elapsedMilliseconds(this.#startedAt)),
     };
+    // Telemetry must never change a tracking result.
+    try { recordRefresh(this.configuredCarrier, completion.sourceCarrier, completion.outcome); } catch { /* metrics only */ }
     await this.writeAudit('complete_attempt', async () => {
       const completed = await this.client.completeSyncAttempt(
         this.attemptId,

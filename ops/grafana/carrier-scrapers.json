@@ -77,6 +77,33 @@
       "targets": [
         { "expr": "count(sum by (carrier) (increase(carrier_lookup_total[7d])) > 0 unless sum by (carrier) (increase(carrier_lookup_total[48h])) > 0)" }
       ]
+    },
+    {
+      "type": "table",
+      "title": "Refreshes served by a universal provider (24h share)",
+      "description": "Per configured carrier. A carrier with its own adapter should stay near zero: every point above it is a direct failure followed by the router's cooldown. Universal-only carriers read 1.",
+      "gridPos": { "x": 0, "y": 30, "w": 12, "h": 9 },
+      "targets": [
+        { "expr": "sum by (carrier) (increase(carrier_refresh_total{served_by=\"provider\", outcome=\"updated\"}[24h])) / sum by (carrier) (increase(carrier_refresh_total{outcome=\"updated\"}[24h]))", "format": "table", "instant": true }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Lookups saved by a later step, by attempts",
+      "description": "Successful lookups that needed more than one step attempt. For La Poste, final_step=retry with attempts 2, 3 or 4 is a 403 incident page recovered by the first, second or third retry; an attempts value that never appears is a retry that never helps.",
+      "gridPos": { "x": 12, "y": 30, "w": 12, "h": 9 },
+      "targets": [
+        { "expr": "sum by (carrier, final_step, attempts) (increase(carrier_lookup_total{carrier=~\"$carrier\", outcome=\"ok\", attempts!=\"1\"}[1h]))", "legendFormat": "{{carrier}} {{final_step}} after {{attempts}} attempts" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Lookups lost after every step",
+      "description": "Lookups that failed once all steps were used, excluding clean not-found and missing-input answers. Each one benches that adapter for the router's cooldown and sends the parcel to a universal provider.",
+      "gridPos": { "x": 0, "y": 39, "w": 24, "h": 8 },
+      "targets": [
+        { "expr": "sum by (carrier, outcome) (increase(carrier_lookup_total{carrier=~\"$carrier\", outcome!~\"ok|not_found|input_required\"}[1h]))", "legendFormat": "{{carrier}} {{outcome}}" }
+      ]
     }
   ]
 }

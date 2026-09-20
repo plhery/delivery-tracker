@@ -77,6 +77,21 @@ it('keeps the failing tier as refresh evidence when the attempt only reports a d
       details: expect.objectContaining({ error_type: 'UpstreamNetworkError' }) })]));
 });
 
+it('counts every finished attempt by who served it', async () => {
+  const { metricsText } = await import('./metrics');
+  const client = { completeSyncAttempt: vi.fn().mockResolvedValue(true), recordTrackingHealth: vi.fn().mockResolvedValue([]), ackTrackingHealth: vi.fn() };
+  const finish = (completion: Parameters<TrackingSyncAudit['finish']>[0]) => new TrackingSyncAudit(
+    client as unknown as SupabaseServiceClient, 'synthetic-package', 'TEST1234', 'chronopost', 'in_transit', { trigger: 'package' },
+  ).finish(completion);
+  await finish({ outcome: 'updated', sourceCarrier: 'chronopost' });
+  await finish({ outcome: 'updated', sourceCarrier: 'unknown' });
+  await finish({ outcome: 'error' });
+  const text = await metricsText();
+  expect(text).toContain('carrier_refresh_total{carrier="chronopost",served_by="adapter",outcome="updated"} 1');
+  expect(text).toContain('carrier_refresh_total{carrier="chronopost",served_by="provider",outcome="updated"} 1');
+  expect(text).toContain('carrier_refresh_total{carrier="chronopost",served_by="none",outcome="error"} 1');
+});
+
 it('evaluates only scheduled outcomes and acknowledges only flushed incident events', async () => {
   const capture = vi.spyOn(observability, 'captureTrackingHealth').mockReturnValue('event-id');
   const flush = vi.spyOn(observability, 'flushObservability').mockResolvedValue(false);

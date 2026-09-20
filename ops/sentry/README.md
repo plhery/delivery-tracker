@@ -66,7 +66,10 @@ second copy of the same carrier alert.
   browser service: since 2026-09-10 Akamai holds that status call open until the
   timeout for any session a browser did not establish, so no direct probe runs and
   no `direct` sample is recorded while a browser service is configured.
-- La Poste's explicit maintenance page goes to provider fallback and cooldown.
+- La Poste retries an HTTP 403 three times immediately, within the original
+  deadline, its "Site indisponible - Incident en cours" page included: the page
+  is served for single requests while the next one succeeds. A lasting incident
+  fails every attempt and then goes to provider fallback and cooldown.
 - TRAWL retries a confirmed closed-browser response once, only if `/health` reports
   a live, available browser and time remains in the original scrape budget. Other
   HTTP 500s and a still-busy/unhealthy pool are not retried by this policy.

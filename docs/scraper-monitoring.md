@@ -19,7 +19,7 @@ counted unless implemented as runner steps.
 
 See the generated [carrier overview](../packages/carriers/README.md#carriers)
 and [provider table](../packages/carriers/providers/README.md) for declared
-steps. La Poste executes `direct` followed by up to two `retry` attempts for
+steps. La Poste executes `direct` followed by up to three `retry` attempts for
 HTTP 403 within its original deadline. A browser-only lookup is not a fallback.
 Select a phase when counting attempts; adding phases double-counts lookups.
 
@@ -54,10 +54,11 @@ names only, so the endpoint never exposes tracking data.
 | --- | --- | --- |
 | `carrier_step_duration_seconds` (histogram) | carrier, step, outcome | how long each tier takes |
 | `carrier_step_total` | carrier, step, outcome, error_type | which tier fails how |
-| `carrier_lookup_total` | carrier, final_step, outcome | which tier actually served the result |
+| `carrier_lookup_total` | carrier, final_step, outcome, attempts | which tier actually served the result, and after how many step attempts |
 | `carrier_fallback_total` | carrier, from_step, to_step, reason | how often recovery is needed |
 | `carrier_status_mapping_total` | carrier, stage_source | share of events mapped explicitly, by wording, or not at all |
 | `carrier_detection_total` | result | detection confidence served to clients |
+| `carrier_refresh_total` | carrier, served_by, outcome | who served each parcel refresh: the carrier's `adapter`, an `other_adapter` (a handoff or a corrected carrier), a universal `provider`, or `none` |
 
 "Is the fallback useful" is `carrier_lookup_total{final_step="trawl"}` over all
 successful lookups for that carrier. A low share can mean a healthy direct
@@ -65,7 +66,17 @@ path; a high share warrants investigating direct failures before changing the
 transport order. A rising `stage_source="none"` share for a carrier means new
 wording is waiting in `tracking_status_observations` (see OBSERVABILITY.md).
 
+"Are the universal providers only a fallback" is
+`carrier_refresh_total{served_by="provider",outcome="updated"}` over
+`carrier_refresh_total{outcome="updated"}` per carrier. After one direct failure
+the router benches that adapter for its cooldown, so a small failure rate
+becomes a larger provider share; a carrier with its own adapter should stay
+near zero. "Is an in-adapter retry earning its requests" is
+`carrier_lookup_total{final_step="retry",outcome="ok"}` by `attempts`: an
+attempts value that never appears is a retry that never serves.
+
 [ops/grafana/carrier-scrapers.json](../ops/grafana/carrier-scrapers.json) is
-an importable Grafana dashboard with those panels plus a "silent carriers"
+an importable Grafana dashboard with those panels, the provider share per
+carrier, the lookups a later step saved or lost, plus a "silent carriers"
 stat: an automatic carrier that had lookups in the last week but none in the
 last two days is worth a look, because silence is not success.

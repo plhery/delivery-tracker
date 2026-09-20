@@ -148,7 +148,8 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   // sinks have to be wired in for its retries to reach Sentry.
   const refused = await new LaPosteTracker({ recorder: hostStepRecorder() })
     .fetch('8U00000000000').catch((error: unknown) => error);
-  expect(fetcher).toHaveBeenCalledTimes(3);
+  // One direct request and the three immediate 403 retries.
+  expect(fetcher).toHaveBeenCalledTimes(4);
   fetcher.mockRestore();
   expect(refused).toBeInstanceOf(UpstreamHttpError);
   reportRoutingEvent('provider_failed', { carrier: 'la-poste', provider: 'la-poste',

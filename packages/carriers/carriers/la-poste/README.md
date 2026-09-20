@@ -48,8 +48,8 @@ One request with two tiers of the same request, declared as
 
 1. `direct` — one bounded GET of the unified feed with the public tracker as
    `Referer`.
-2. `retry` — the same request again, run at most twice, only after an HTTP 403,
-   and only while the original 15-second deadline still has time left. Each
+2. `retry` — the same request again, run at most three times, only after an
+   HTTP 403, and only while the original 15-second deadline still has time left. Each
    attempt is bounded by the time remaining on that one deadline, so the
    retries never extend the lookup.
 
@@ -92,7 +92,12 @@ if that leaves it unresolved.
 - Timestamps are kept exactly as the feed sends them, offset included. Values
   that are not a real calendar date are dropped rather than repaired.
 - La Poste's edge can reject an anonymous lookup with an HTTP 403 "Site
-  indisponible" page before it can answer; that is what the `retry` tier is for.
+  indisponible - Incident en cours" page before it can answer; that is what the
+  `retry` tier is for. Despite its wording the page is a hiccup of one request,
+  not maintenance: it arrives after about 1.5 seconds instead of the usual 0.3,
+  a lookup for another parcel seconds later is answered, and it is several times
+  more likely on the first request after a quiet quarter of an hour than on a
+  parcel polled every two minutes.
 
 ## Implementation decisions
 
@@ -108,14 +113,14 @@ if that leaves it unresolved.
   means the feed could not answer, and is reported as inconclusive so the router
   can try a universal provider instead of telling the user the parcel does not
   exist.
-- **The retries are two extra runner steps with the id `retry`, not a loop.**
-  `runSteps` is given `direct`, `retry`, `retry`; step ids do not have to be
-  unique, and the runner distinguishes the specs by identity. This reproduces
-  exactly what docs/scraper-monitoring.md documents — "La Poste records its
-  first request as `direct` and up to two immediate HTTP 403 retries as
-  `retry`" — and keeps each retried rejection reported with its own diagnostics.
-  Collapsing the two retries into a single `retry` step would have halved the
-  fallback records; folding them into `direct` would have hidden them.
+- **The retries are three extra runner steps with the id `retry`, not a loop.**
+  `runSteps` is given `direct`, `retry`, `retry`, `retry`; step ids do not have
+  to be unique, and the runner distinguishes the specs by identity. This keeps
+  each retried rejection reported with its own diagnostics, and
+  `carrier_lookup_total{final_step="retry"}` says through its `attempts` label
+  which retry served the lookup. Collapsing the retries into a single `retry`
+  step would have hidden that; folding them into `direct` would have hidden
+  them altogether.
   `adapter.steps` and `carrier.json` list the two distinct tiers,
   `["direct", "retry"]`, because they name tiers rather than attempts.
 - **The deadline lives in the `recovers` predicate.** A retry is refused once
@@ -123,9 +128,13 @@ if that leaves it unresolved.
   the provider's own `UpstreamHttpError` (403, with its bounded body
   diagnostics) rather than a `BudgetExceededError`. The router's behaviour and
   the Sentry issue stay what they were.
-- **Only HTTP 403 is retried.** Other statuses and every parsing failure
-  propagate immediately: a 429 or a malformed payload is not going to be fixed
-  by an instant repeat.
+- **Only HTTP 403 is retried, the incident page included.** Other statuses and
+  every parsing failure propagate immediately: a 429 or a malformed payload is
+  not going to be fixed by an instant repeat. From 2026-09-12 to 2026-09-20 the
+  incident page was treated as explicit maintenance and skipped the retries;
+  lookups lost to the router went from 0.16% to 1.86%, and each one benched the
+  adapter for an hour of universal-provider refreshes. A lasting incident still
+  fails all four attempts within a few seconds and reaches the router.
 - **Timestamps are passed through, not re-rendered.** The feed already sends an
   offset; `core/time`'s `isoTime` is used to *validate* the value, and the
   provider's own string is what reaches the result.
@@ -165,5 +174,14 @@ Also tried `8U01130342039` on Ship24: 404.
   the two immediate retries.
 - 2026-09-12: moved into this folder. The feed, the status map and the retry
   budget are unchanged; the retries are now expressed as runner steps.
+- 2026-09-20: the incident page is retried again, now three times. To check
+  that it works, compare over a few days of La Poste traffic:
+  `sum by (attempts) (increase(carrier_lookup_total{carrier="la-poste",final_step="retry",outcome="ok"}[7d]))`
+  (lookups a retry saved, by the attempt that served them) with
+  `sum(increase(carrier_lookup_total{carrier="la-poste",outcome="challenge"}[7d]))`
+  (lookups lost after every retry), and watch the La Poste row of the
+  "Refreshes served by a universal provider" panel fall from about 6% towards
+  zero. An `attempts="4"` series that never appears means the third retry is
+  not needed.
 - 2026-09-12: universal-provider probe with corpus number `8G45061126689`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
 - 2026-09-13: 17TRACK probe with corpus number `8G45061126689` via prod TRAWL: no usable history (history_missing; 2014 number).

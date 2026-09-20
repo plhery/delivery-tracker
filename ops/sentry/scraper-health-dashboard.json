@@ -216,7 +216,7 @@
           "aggregates": [
             "avg(value,tracking.scrape.duration,distribution,millisecond)"
           ],
-          "conditions": "phase:[trawl,browser,page]",
+          "conditions": "phase:[trawl,browser,page,retry]",
           "orderby": "-avg(value,tracking.scrape.duration,distribution,millisecond)"
         }
       ],
@@ -248,7 +248,7 @@
           "aggregates": [
             "count(value,tracking.scrape.duration,distribution,millisecond)"
           ],
-          "conditions": "phase:[trawl,browser,page] outcome:error",
+          "conditions": "phase:[trawl,browser,page,retry] outcome:error",
           "orderby": "-count(value,tracking.scrape.duration,distribution,millisecond)"
         }
       ],
@@ -256,6 +256,38 @@
         "x": 3,
         "y": 9,
         "w": 3,
+        "h": 3,
+        "minH": 2
+      }
+    },
+    {
+      "title": "Successful recoveries",
+      "description": "Lookups a later step saved after the first one failed, including in-adapter retries such as La Poste's. Compare with recovery failures: a retry tier that mostly fails is not earning its requests.",
+      "displayType": "categorical_bar",
+      "widgetType": "tracemetrics",
+      "interval": "5m",
+      "limit": 25,
+      "queries": [
+        {
+          "name": "",
+          "fields": [
+            "carrier",
+            "count(value,tracking.scrape.duration,distribution,millisecond)"
+          ],
+          "columns": [
+            "carrier"
+          ],
+          "aggregates": [
+            "count(value,tracking.scrape.duration,distribution,millisecond)"
+          ],
+          "conditions": "phase:[trawl,browser,page,retry] outcome:success",
+          "orderby": "-count(value,tracking.scrape.duration,distribution,millisecond)"
+        }
+      ],
+      "layout": {
+        "x": 0,
+        "y": 12,
+        "w": 6,
         "h": 3,
         "minH": 2
       }

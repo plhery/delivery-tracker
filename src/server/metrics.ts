@@ -10,16 +10,26 @@ import { METRICS, type LookupRecord, type StepRecord, type StepRecorder } from '
  *
  * `carrier_lookup_total{final_step}` is the one series that answers whether a
  * fallback tier is worth keeping: a tier that never serves a result can go.
+ * Its `attempts` label says how many step attempts that took, so an in-adapter
+ * retry that never serves on its last attempt can go too.
+ * `carrier_refresh_total{served_by}` answers the question one level up: how
+ * often a parcel of a carrier with its own adapter ended up on a universal
+ * provider instead.
  */
 
+/** Bump when the series or their labels change, so a hot-reloaded copy does not reuse an older shape. */
+const RUNTIME_VERSION = 2;
+
 interface PrometheusRuntime {
+  version: number;
   registry: Registry;
   stepDuration: Histogram<'carrier' | 'step' | 'outcome'>;
   stepTotal: Counter<'carrier' | 'step' | 'outcome' | 'error_type'>;
-  lookupTotal: Counter<'carrier' | 'final_step' | 'outcome'>;
+  lookupTotal: Counter<'carrier' | 'final_step' | 'outcome' | 'attempts'>;
   fallbackTotal: Counter<'carrier' | 'from_step' | 'to_step' | 'reason'>;
   statusMappingTotal: Counter<'carrier' | 'stage_source'>;
   detectionTotal: Counter<'result'>;
+  refreshTotal: Counter<'carrier' | 'served_by' | 'outcome'>;
 }
 
 // Next compiles instrumentation, the route handlers and the scrape endpoint
@@ -34,6 +44,7 @@ function createRuntime(): PrometheusRuntime {
   const registry = new Registry();
   collectDefaultMetrics({ register: registry });
   return {
+    version: RUNTIME_VERSION,
     registry,
     stepDuration: new Histogram({
       name: METRICS.stepDuration,
@@ -50,8 +61,8 @@ function createRuntime(): PrometheusRuntime {
     }),
     lookupTotal: new Counter({
       name: METRICS.lookupTotal,
-      help: 'Carrier lookups by the step that produced the result.',
-      labelNames: ['carrier', 'final_step', 'outcome'] as const,
+      help: 'Carrier lookups by the step that produced the result and the step attempts it took.',
+      labelNames: ['carrier', 'final_step', 'outcome', 'attempts'] as const,
       registers: [registry],
     }),
     fallbackTotal: new Counter({
@@ -72,10 +83,18 @@ function createRuntime(): PrometheusRuntime {
       labelNames: ['result'] as const,
       registers: [registry],
     }),
+    refreshTotal: new Counter({
+      name: METRICS.refreshTotal,
+      help: 'Parcel refreshes by configured carrier, who served them (adapter, other_adapter, provider, none) and outcome.',
+      labelNames: ['carrier', 'served_by', 'outcome'] as const,
+      registers: [registry],
+    }),
   };
 }
 
-const runtime = globalMetrics.__deliveryPrometheus ??= createRuntime();
+const runtime = globalMetrics.__deliveryPrometheus?.version === RUNTIME_VERSION
+  ? globalMetrics.__deliveryPrometheus
+  : globalMetrics.__deliveryPrometheus = createRuntime();
 
 export const registry = runtime.registry;
 
@@ -90,9 +109,26 @@ export const prometheusStepRecorder: StepRecorder = {
     }
   },
   lookup(record: LookupRecord) {
-    runtime.lookupTotal.inc({ carrier: record.carrier, final_step: record.finalStep ?? 'none', outcome: record.outcome });
+    runtime.lookupTotal.inc({
+      carrier: record.carrier, final_step: record.finalStep ?? 'none', outcome: record.outcome,
+      attempts: String(Math.min(Math.max(Math.trunc(record.attempts) || 0, 0), 9)),
+    });
   },
 };
+
+export type RefreshSource = 'adapter' | 'other_adapter' | 'provider' | 'none';
+
+/** Who produced a refresh: the router reports every universal provider as the source `unknown`. */
+export function refreshSource(carrier: string, source: string | null | undefined): RefreshSource {
+  if (!source) return 'none';
+  if (source === 'unknown') return 'provider';
+  return source === carrier ? 'adapter' : 'other_adapter';
+}
+
+/** Called once per finished sync attempt; carrier ids and outcome names only. */
+export function recordRefresh(carrier: string, source: string | null | undefined, outcome: string): void {
+  runtime.refreshTotal.inc({ carrier, served_by: refreshSource(carrier, source), outcome });
+}
 
 /** Called by the sync for every persisted event; the source family keeps cardinality small. */
 export function recordStatusMapping(carrier: string, stageSource: string): void {

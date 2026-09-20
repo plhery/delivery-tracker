@@ -62,7 +62,7 @@ describe('sentryStepRecorder', () => {
   it('feeds the Prometheus sink without a registration step', async () => {
     const { metricsText } = await import('./metrics');
     hostStepRecorder().lookup({ carrier: 'gls-de', finalStep: 'direct', outcome: 'ok', errorType: null, durationMs: 1, attempts: 1 });
-    expect(await metricsText()).toContain('carrier_lookup_total{carrier="gls-de",final_step="direct",outcome="ok"} 1');
+    expect(await metricsText()).toContain('carrier_lookup_total{carrier="gls-de",final_step="direct",outcome="ok",attempts="1"} 1');
   });
 
   it('fans out to registered sinks', () => {
