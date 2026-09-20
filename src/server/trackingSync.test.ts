@@ -701,6 +701,81 @@ describe('TrackingSyncService', () => {
     });
   });
 
+  it('asks Swiss Post about a postal number again only when the origin moves or the gap has passed', async () => {
+    const client = fakeClient();
+    let now = new Date('2026-09-10T10:00:00Z');
+    let originUpdate = '2026-09-09T10:00:00+02:00';
+    const adapter = { fetch: vi.fn(async (carrier: string): Promise<CarrierResult> => {
+      if (carrier === 'swiss-post') throw Object.assign(new Error('Shipment not found'), { status: 404 });
+      return { status: 'in_transit', last_update: originUpdate, timezone: 'Europe/Paris',
+        events: [{ time: originUpdate, description: 'In transit', stage: 'in_transit' }] };
+    }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => now);
+    let parcel: JsonObject = { id: 'postal', carrier: 'la-poste', tracking_number: 'LX123456785FR' };
+    const refresh = async () => {
+      adapter.fetch.mockClear();
+      await service.syncPackage(parcel);
+      parcel = { ...parcel, ...client.updatePackage.mock.calls.at(-1)![1] };
+      return adapter.fetch.mock.calls.map((call) => call[0]);
+    };
+
+    expect(await refresh()).toEqual(['la-poste', 'swiss-post']);
+    expect(parcel.carrier_data).toMatchObject({ swiss_post_probe: { at: '2026-09-10T10:00:00.000Z', origin_update: originUpdate } });
+    // Nothing moved: the two-minute and ten-minute cadences no longer repeat the probe.
+    now = new Date('2026-09-10T10:10:00Z');
+    expect(await refresh()).toEqual(['la-poste']);
+    now = new Date('2026-09-10T10:50:00Z');
+    expect(await refresh()).toEqual(['la-poste']);
+    expect(parcel.carrier_data).toMatchObject({ swiss_post_probe: { at: '2026-09-10T10:00:00.000Z' } });
+    // The hourly overnight cadence still asks every time.
+    now = new Date('2026-09-10T11:00:00Z');
+    expect(await refresh()).toEqual(['la-poste', 'swiss-post']);
+    // A new origin event is the usual sign of a handover, so it asks at once.
+    now = new Date('2026-09-10T11:10:00Z');
+    originUpdate = '2026-09-10T12:30:00+02:00';
+    expect(await refresh()).toEqual(['la-poste', 'swiss-post']);
+    expect(parcel.carrier_data).toMatchObject({ swiss_post_probe: { at: '2026-09-10T11:10:00.000Z', origin_update: originUpdate } });
+  });
+
+  it('keeps asking Swiss Post on every refresh once the origin carrier names it', async () => {
+    const client = fakeClient();
+    let now = new Date('2026-09-10T10:00:00Z');
+    const adapter = { fetch: vi.fn(async (carrier: string): Promise<CarrierResult> => {
+      if (carrier === 'swiss-post') throw Object.assign(new Error('Shipment not found'), { status: 404 });
+      return { status: 'in_transit', delivery_carrier: 'swiss-post', last_update: '2026-09-09T10:00:00+02:00',
+        events: [{ time: '2026-09-09T10:00:00+02:00', description: 'Arrived in destination country', stage: 'in_transit' }] };
+    }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => now);
+    let parcel: JsonObject = { id: 'named', carrier: 'dhl', tracking_number: 'LF123456785DE' };
+    for (const minute of ['00', '10']) {
+      now = new Date(`2026-09-10T10:${minute}:00Z`);
+      adapter.fetch.mockClear();
+      await service.syncPackage(parcel);
+      parcel = { ...parcel, ...client.updatePackage.mock.calls.at(-1)![1] };
+      expect(adapter.fetch.mock.calls.map((call) => call[0])).toEqual(['dhl', 'swiss-post']);
+    }
+  });
+
+  it('reports an origin failure once: here only when the local delivery hides it from the router', async () => {
+    const report = vi.spyOn(observability, 'reportRoutingEvent').mockImplementation(() => undefined);
+    try {
+      const outage = new UpstreamHttpError('La Poste', 403);
+      // Swiss Post knows nothing either: the origin error is rethrown for the caller to report.
+      const silent = { fetch: vi.fn().mockRejectedValueOnce(outage)
+        .mockRejectedValueOnce(Object.assign(new Error('Shipment not found'), { status: 404 })) };
+      await new TrackingSyncService(fakeClient() as unknown as SupabaseServiceClient, silent, null)
+        .syncPackage({ id: 'blocked', carrier: 'la-poste', tracking_number: 'LX123456785FR', current_stage: 'in_transit' });
+      expect(report).not.toHaveBeenCalledWith('provider_failed', expect.anything());
+
+      const hidden = { fetch: vi.fn().mockRejectedValueOnce(outage).mockResolvedValueOnce({ status: 'out_for_delivery' }) };
+      await new TrackingSyncService(fakeClient() as unknown as SupabaseServiceClient, hidden, null)
+        .syncPackage({ id: 'hidden', carrier: 'la-poste', tracking_number: 'LX123456785FR', current_stage: 'in_transit' });
+      expect(report).toHaveBeenCalledExactlyOnceWith('provider_failed', expect.objectContaining({
+        carrier: 'la-poste', provider: 'la-poste', errorClass: 'UpstreamHttpError', error: outage,
+      }));
+    } finally { report.mockRestore(); }
+  });
+
   it('can confirm local delivery while the international postal tracker is unavailable', async () => {
     const client = fakeClient();
     const adapter = { fetch: vi.fn().mockRejectedValueOnce(new Error('Cainiao unavailable'))

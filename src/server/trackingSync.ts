@@ -8,7 +8,7 @@ import { DateTime, IANAZone } from 'luxon';
 import { STAGES } from '../generated/apiContract';
 import type { CarrierResult } from './carrierResult';
 import { normalizeCarrierResult } from './carrierResult';
-import { swissPostHandoffNumber } from './carrierHandoff';
+import { namesSwissPost, swissPostHandoffNumber } from './carrierHandoff';
 import {
   AUTOMATIC_CARRIER_IDS,
   carrierTimezone,
@@ -45,6 +45,21 @@ const VALID_STAGES = new Set<string>(STAGES);
 const SLOW_POLL_CARRIERS = new Set(['gls-de', 'gls-ch', 'gls-fr']);
 const SLOW_POLL_INTERVAL_MS = 60 * 60 * 1_000;
 const FAILED_SLOW_POLL_INTERVAL_MS = 4 * SLOW_POLL_INTERVAL_MS;
+
+/**
+ * An S10 number only makes a Swiss delivery possible. Until the origin carrier
+ * names Swiss Post, the speculative probe runs when the origin history moves or
+ * once this gap has passed; it sits just under the hourly overnight cadence.
+ */
+const SWISS_POST_PROBE_INTERVAL_MS = 55 * 60 * 1_000;
+
+interface SwissPostProbe extends JsonObject { at: string; origin_update: string | null }
+
+function previousSwissPostProbe(parcel: JsonObject): SwissPostProbe | null {
+  const stored = isRecord(parcel.carrier_data) ? parcel.carrier_data.swiss_post_probe : null;
+  if (!isRecord(stored) || typeof stored.at !== 'string' || !Number.isFinite(Date.parse(stored.at))) return null;
+  return { at: stored.at, origin_update: typeof stored.origin_update === 'string' ? stored.origin_update : null };
+}
 
 /** Which tiers a deferred lookup gave up on, as provider ids and failure kinds only. */
 function deferredFetchDetails(error: RoutingDeferred): JsonObject {
@@ -1012,19 +1027,30 @@ export class TrackingSyncService {
       } catch (error) {
         // An international operator outage must not hide a confirmed local delivery.
         if (!swissPostHandoffNumber(carrierId, trackingNumber, {})) throw error;
-        if (!isUnannouncedTrackingError(error)) reportRoutingEvent('provider_failed', {
-          carrier: carrierId, provider: carrierId, trackingNumber, category: routingFailure(error).kind,
-        });
         originError = error;
         origin = {};
       }
       let fallbackError: string | null = null;
       const deliveryNumber = swissPostHandoffNumber(carrierId, trackingNumber, origin);
-      if (deliveryNumber
+      const previousProbe = previousSwissPostProbe(parcel);
+      const originUpdate = typeof origin.last_update === 'string' ? origin.last_update : previousProbe?.origin_update ?? null;
+      const sinceProbe = previousProbe ? this.now().getTime() - Date.parse(previousProbe.at) : Number.NaN;
+      const askedRecently = previousProbe !== null && originUpdate === previousProbe.origin_update
+        && sinceProbe >= 0 && sinceProbe < SWISS_POST_PROBE_INTERVAL_MS && !namesSwissPost(origin);
+      if (deliveryNumber && askedRecently) {
+        // carrier_data is rebuilt from the result on every refresh: carry the marker forward.
+        origin.swiss_post_probe = previousProbe;
+      } else if (deliveryNumber
         && !['delivered', 'returned'].includes(resultStage(origin) ?? '')) {
+        origin.swiss_post_probe = { at: this.now().toISOString(), origin_update: originUpdate };
         try {
           const delivery = normalizeCarrierResult(await this.adapter.fetch('swiss-post', deliveryNumber, null, null));
           if (delivery.status !== 'pending' && !['pending', 'registered'].includes(resultStage(delivery) ?? 'pending') && resultHasUpdate(delivery)) {
+            // The local delivery hides the origin failure from the router, which reports every other one.
+            if (originError && !isUnannouncedTrackingError(originError)) reportRoutingEvent('provider_failed', {
+              carrier: carrierId, provider: carrierId, trackingNumber, category: routingFailure(originError).kind,
+              errorClass: errorType(originError), error: originError,
+            });
             return {
               result: {
                 ...delivery, active_tracking_carrier: 'swiss-post',
@@ -1042,6 +1068,7 @@ export class TrackingSyncService {
           fallbackError = errorType(error);
           if (!isUnannouncedTrackingError(error)) reportRoutingEvent('provider_failed', {
             carrier: carrierId, provider: 'swiss-post', trackingNumber, category: routingFailure(error).kind,
+            errorClass: fallbackError, error,
           });
         }
       }
