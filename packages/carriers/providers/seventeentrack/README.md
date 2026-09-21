@@ -3,9 +3,9 @@
 ## Identity and scope
 
 17TRACK (t.17track.net) is a universal tracking aggregator, not a carrier: it
-has no last mile of its own and cannot be selected for a parcel. It is the last
-provider of the discovery chain (`providers/README.md`), and it stays last even
-when Postal Ninja is enabled. The provider name persisted in routing state is
+has no last mile of its own and cannot be selected for a parcel. It follows the
+other general aggregators in the discovery chain (`providers/README.md`), before
+the final S10-only UPU fallback. The provider name persisted in routing state is
 `17TRACK`; the folder is named `seventeentrack` because a directory cannot start
 with a digit in an import path.
 
@@ -142,8 +142,38 @@ required account sign-in. Neither established a working anonymous replacement.
   `b8000c9`): requires sign-in and the buyer API.
 - **An API key integration** (`TA2k/ioBroker.parcel`, revision `3c4fb0e`): a
   useful reference, but its 17TRACK route needs a provisioned key.
-- **Making this provider first in the chain.** It stays last; Ship24's verified
+- **Making this provider first in the chain.** Ship24's verified
   sub-second direct lookups lead the order.
+
+## China Post widget investigation
+
+On 2026-09-21, ChinaPostalTracking's live result was traced to 17TRACK's public
+widget, not a separate China Post API. The widget uses the same `track/restapi`
+endpoint as this adapter. Browser capture returned richer origin/destination
+histories for all three public non-EMS references; the
+[comparison](../COMPARISON.md#17track-widget-follow-up) owns the counts and
+negative control. An unsigned embed-style direct request still returned `-14`.
+This is a candidate browser entry point, not a verified unattended replacement
+for the current `t.17track.net/en#nums=` route.
+
+The investigation exposed work needed before depending on the richer data:
+
+- Preserve and map verified per-event `sub_status` codes when `stage` is null.
+  The current parser ignores them, so Chinese transit/customs descriptions in
+  the Venezuela control become pending. Do not classify shipment-level
+  `Expired` as a historical scan or assume translated prose is authoritative.
+- Preserve each event's operator provenance. The US destination leg reports
+  its delivery at `-07:00`, while the China Post leg attaches `+08:00` to the
+  same wall clock. The [API documentation](https://api.17track.net/en/doc)
+  explains that an absent raw timezone can mean 17TRACK added the ISO offset.
+- The widget's English interface does not imply English event descriptions.
+  A separate translation toggle worked, using a machine-translation service;
+  the [localization investigation](../../../../docs/tracking-localization.md)
+  distinguishes native labels, UI language and translated free text.
+
+These are documented findings and proposed changes; runtime behavior was not
+changed by this investigation. No browser signatures, translator credentials,
+raw responses or live identifiers were committed for these checks.
 
 
 ## Carrier compatibility

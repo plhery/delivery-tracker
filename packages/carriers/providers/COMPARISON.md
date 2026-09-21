@@ -153,17 +153,54 @@ the latest detailed milestones do not all agree. The Venezuela gap matters
 while a parcel is active, and both delivered examples omit the delivery-round
 event that could have been useful before completion.
 
+### 17TRACK widget follow-up
+
+A subsequent Chrome check on 2026-09-21 followed ChinaPostalTracking's
+[embedded 17TRACK flow](../carriers/china-post/README.md#chinapostaltracking-embeds-17track).
+The same three public references returned matching identities and completed
+JSON histories from `t.17track.net/track/restapi`:
+
+| Reference | Origin leg | Destination leg | Additional evidence versus UPU |
+| --- | --- | --- | --- |
+| China → Venezuela | China Post: 15 rows | None; destination shown as unknown | Airline receipt and flight arrival on July 5, matching the meanings in the user's two-event China Post preview. UPU has four export/posting scans. |
+| China → Brazil | China Post: 23 rows | Correios Brazil: 16 rows | Both legs include out-for-delivery and delivery, plus earlier history; UPU has delivery only. |
+| China → USA | China Post: 43 rows | USPS: 17 rows | Both legs include out-for-delivery and delivery; UPU has eight scans and omits out-for-delivery. |
+
+These are raw per-leg counts, not deduplicated events. The two operators can
+describe the same milestone. All three `misc_info.local_number` values were
+null; no replacement identifier was needed for the displayed destination legs.
+The synthetic checksum-valid `LZ000000005CN` first returned shipment code 100
+(polling), then code 200 with `NotFound` and no events. This control distinguishes
+completed negative results from intermediate replies.
+
+There are integration limits. The Venezuela history has Chinese descriptions,
+null `stage` values and populated `sub_status` codes; our current adapter ignores
+those sub-statuses. A synthetic replay of four such descriptions/codes through
+the actual parser produced four pending stages and a pending summary. The
+widget's overall `Expired` label is not evidence of a delivered/lost parcel.
+For the USA sample, China Post and USPS report the same delivery wall time but
+attach `+08:00` and `-07:00` respectively. The provider's inferred origin offset
+must not be treated as independent proof of a destination scan's UTC time.
+The [17TRACK notes](seventeentrack/README.md#china-post-widget-investigation)
+and [localization proposal](../../../docs/tracking-localization.md) track these
+limitations. Manual browser retrieval succeeded; unattended retrieval through
+the app's browser service and deployment were not verified in this follow-up.
+
 ### China Post-specific recommendation
 
 The combined evidence supports **UPU as a fast primary status source for the
 tested non-EMS China Post services**, with the existing providers available for
-failure/empty-result fallback and periodic enrichment of active shipments.
+failure/empty-result fallback and scheduled enrichment of active shipments.
 UPU matched Ship24's available histories for two references and supplied a
 usable history for the third where Ship24 returned metadata only. Keeping
 Ship24 ahead merely because UPU lacks scans is not supported by those samples:
 Ship24 had the same omissions on the two matching histories. This is a narrow
-cost/availability recommendation, not proof that UPU has complete carrier history
-or that a different provider can fill the observed gaps.
+cost/availability recommendation, not proof that UPU has complete carrier history.
+The later widget check now establishes 17TRACK as a concrete richer-history
+source for these samples. Successful UPU retrieval must still schedule a bounded
+17TRACK enrichment attempt; waiting only for UPU to fail would miss these scans.
+Verify unattended capture, sub-status parsing and per-leg timestamp handling
+before relying on that enrichment in the app.
 
 For implementation, initially scope a fast path to the tested checksum-valid
 `L…CN`/`C…CN` service families. Retain ordinary discovery for untested formats

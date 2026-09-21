@@ -116,6 +116,39 @@ The two records in `numbers.json` are SDK examples, explicitly not known live
 shipments; they were not positive availability controls. Raw responses,
 challenge tokens and live identifiers were not added as fixtures.
 
+## ChinaPostalTracking embeds 17TRACK
+
+On 2026-09-21, a fresh HTTP lookup and Chrome inspection traced
+[ChinaPostalTracking](https://www.chinapostaltracking.com/) through:
+
+1. Form POST `trackingno={number}` to `/package-tracking/`.
+2. Its [tracking bundle](https://www.chinapostaltracking.com/bundles/track)
+   creates an iframe at
+   `https://www.yourzodiacsign.com/Content/iframe/track.aspx?trackno={number}`.
+3. That wrapper loads [17TRACK's externalcall.js](https://www.17track.net/externalcall.js)
+   and calls the [documented widget](https://www.17track.net/en/widget)
+   with `YQ_Fc: "0"` and `YQ_Lang: "en"`.
+4. The widget runs at `extcall.17track.net/en/track` and sends signed browser
+   requests to `https://t.17track.net/track/restapi`, the endpoint already used
+   by our 17TRACK adapter. The outer page explicitly labels its source 17Track.
+
+The outer POST returns an HTML shell, not shipment history. The comment form's
+image CAPTCHA is unrelated to this tracking submission. No interactive CAPTCHA
+was needed for the three public references in the browser check, but an unsigned
+JSON request with the observed data shape and embed Origin/Referer returned
+HTTP 200 with `meta.code: -14`, not tracking data. A simpler server-side route
+was not demonstrated. Searches did not identify a useful independent GitHub
+client for this exact website; its shipped widget code established provenance.
+
+The embed did return substantially richer history than UPU; see the
+[three-reference comparison](../../providers/COMPARISON.md#17track-widget-follow-up).
+This supports improving the existing 17TRACK integration, not adding this
+wrapper as another independent provider. The Q&A answers remain third-party
+reports; the widget trace does not establish how staff prepared those answers.
+English widget chrome did not translate Chinese scans automatically. The
+[language investigation](../../../../docs/tracking-localization.md) records the
+separate translation toggle, native UPU labels and application design constraints.
+
 ## GitHub prior art
 
 | Project and inspected revision | Implementation | Relevance today |

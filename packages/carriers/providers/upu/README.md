@@ -36,6 +36,11 @@ curl --fail-with-body --max-time 15 \
 `ItemTTWithTrans` variant returned English labels. The documentation also lists
 anonymous `POST /ListTT` and token-based `*Ext` methods; those were not tested.
 
+The [language follow-up](../../../../docs/tracking-localization.md#verified-upstream-behavior)
+verified French and Spanish event labels for one reference; German, Italian,
+Portuguese and Polish requests returned English labels. The adapter still uses
+`EN`. UI language changes should not alter stored scan identity or routing.
+
 ## Observed coverage and parsing boundaries
 
 | Control | Result |
