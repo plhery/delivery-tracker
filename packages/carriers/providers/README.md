@@ -17,6 +17,12 @@ Its browser widget has dated success evidence; its direct signed protocol
 remains unverified. Ship24's initial preference comes from the September 10
 production samples, not a comprehensive reliability benchmark.
 
+[UPU Global Track & Trace](upu/README.md) is an investigated candidate, not an
+enabled provider. Its documented anonymous JSON API returned matching EMS and
+ordinary postal history without the public form's CAPTCHA on September 21.
+The investigation records incomplete histories, prediction rows and wire-format
+differences that an adapter must handle before integration.
+
 `UniversalTracker.fetch()` calls providers until one returns successfully and
 aggregates failures in `UniversalTrackingError` if none do. Production
 [tracking routing](../../../docs/tracking-routing.md) calls `fetchSource()`
