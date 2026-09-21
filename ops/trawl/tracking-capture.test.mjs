@@ -180,19 +180,73 @@ test('Royal Mail prepares the form after capture attaches and before solving', a
   let consentVisible = true;
   const page = {
     on: () => calls.push('observe'),
+    waitForEvent: async event => { calls.push(['wait', event]); },
     getByText: () => ({waitFor: async () => {}, isVisible: async () => consentVisible, evaluate: async () => { consentVisible = false; calls.push('decline'); }}),
     locator: selector => ({
       waitFor: async () => {},
       inputValue: async () => royalMailNumber,
       press: async value => calls.push([selector, value]),
       pressSequentially: async value => calls.push(['type', value]),
-      evaluate: async () => calls.push(selector),
+      evaluate: async () => { calls.push(selector); return true; },
     }),
   };
   const capture = await attachTrackingCapture(page, royalMailUrl, {captureResponses: [royalMailApi]});
   await capture.prepare(1000);
-  assert.deepEqual(calls, ['observe', 'decline', ['#barcode-input', 'ControlOrMeta+A'], ['#barcode-input', 'Backspace'], ['type', royalMailNumber], '#submit:not(:disabled)']);
+  assert.deepEqual(calls, ['observe', ['wait', 'domcontentloaded'], 'decline', ['#barcode-input', 'ControlOrMeta+A'], ['#barcode-input', 'Backspace'], ['type', royalMailNumber], '#submit:not(:disabled)']);
   await assert.rejects(capture.prepare(0), /timed out/);
+});
+
+test('Royal Mail waits for consent reload before typing into the replacement form', async () => {
+  let finishReload;
+  let loaded = false;
+  let value = '';
+  let responseHandler;
+  let submitted = false;
+  const page = {
+    on: (_, fn) => { responseHandler = fn; },
+    waitForEvent: () => new Promise(resolve => { finishReload = resolve; }),
+    getByText: () => ({
+      waitFor: async () => {}, isVisible: async () => true,
+      evaluate: async () => { setTimeout(() => { value = ''; loaded = true; finishReload?.(); }, 10); },
+    }),
+    locator: selector => ({
+      waitFor: async () => {}, press: async () => {}, inputValue: async () => value,
+      pressSequentially: async text => { assert.equal(loaded, true); value = text; },
+      evaluate: async (fn, expected) => fn({
+        ownerDocument: { querySelector: () => ({ value }) },
+        click() {
+          assert.equal(selector, '#submit:not(:disabled)');
+          submitted = true;
+          responseHandler({url: () => royalMailApi, status: () => 200,
+            request: () => ({method: () => 'GET'}), headers: () => ({'content-type': 'application/json'}),
+            body: async () => Buffer.from(royalMailReply())});
+        },
+      }, expected),
+    }),
+  };
+  const capture = await attachTrackingCapture(page, royalMailUrl, {captureResponses: [royalMailApi]});
+  await capture.prepare(1000);
+  assert.equal(submitted, true);
+  assert.equal(capture.hasResponse(), true);
+});
+
+test('Royal Mail refuses an empty replacement form when navigation races the final click', async () => {
+  let value = royalMailNumber;
+  let submitted = false;
+  const page = {
+    on: () => {},
+    getByText: () => ({waitFor: async () => {}, isVisible: async () => false}),
+    locator: selector => ({
+      waitFor: async () => { if (selector === '#submit:not(:disabled)') value = ''; },
+      press: async () => {}, pressSequentially: async () => {}, inputValue: async () => value,
+      evaluate: async (fn, expected) => fn({
+        ownerDocument: {querySelector: () => ({value})}, click() { submitted = true; },
+      }, expected),
+    }),
+  };
+  const capture = await attachTrackingCapture(page, royalMailUrl, {captureResponses: [royalMailApi]});
+  await assert.rejects(capture.prepare(1000), /input was reset/);
+  assert.equal(submitted, false);
 });
 
 

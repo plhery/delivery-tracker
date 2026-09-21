@@ -38,7 +38,7 @@
         "carrier": "royal-mail",
         "confidence": "high"
       },
-      "note": "Public customer report with a later comment reporting delivery. Live lookup on 2026-09-21 failed before a tracking reply because the browser challenge was unresolved; not a verified live-status oracle."
+      "note": "Public customer report with a later comment reporting delivery. An identity-matched direct summary was verified on 2026-09-21 after diagnosing a consent reload race. Status can change; not a permanent live-status oracle."
     },
     {
       "number": "GV883319471GB",
@@ -51,7 +51,7 @@
         "carrier": "royal-mail",
         "confidence": "high"
       },
-      "note": "Public customer report of an inbound shipment intended for Royal Mail. Live lookup on 2026-09-21 failed before a tracking reply because the browser challenge was unresolved; not a verified live-status oracle."
+      "note": "Public customer report of an inbound shipment intended for Royal Mail. An identity-matched direct summary was verified on 2026-09-21. Status can change; not a permanent live-status oracle."
     }
   ]
 }

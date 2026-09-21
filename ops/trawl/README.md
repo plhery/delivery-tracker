@@ -11,8 +11,9 @@ stock behaviour. ParcelsApp remains first in
 the application's discovery order.
 
 The adapter observes the browser's response. For Royal Mail it also dismisses
-optional cookies, enters the number and submits the public tracking form before
-TRAWL runs captcha solving. It does this for both fresh and cached sessions.
+optional cookies, waits for a consent-triggered reload, enters the number and
+checks it in the submitting document before clicking the public tracking form's
+button. This runs before TRAWL's captcha solver, in both fresh and cached sessions.
 A completed API reply skips the solver because Royal Mail resets its invisible
 widget after auto-pass. A page without a tracking reply fails its browser tier,
 so an ineffective cached session is invalidated rather than saved as success.
@@ -58,8 +59,14 @@ requested `trknbr` itself). Royal Mail's cold hash route only prefills
 its input; the compatibility build must submit the form to trigger hCaptcha
 and then the summary API. A fresh browser on the production host reached the
 API through invisible hCaptcha auto-pass on 2026-09-20; the public reference
-returned `E1142` (status unavailable). Current-shipment success verification is
-separate. Re-render and redeploy the service after changing this directory.
+returned `E1142` (status unavailable). On 2026-09-21, instrumentation of a later
+failure found an empty form after the consent reload, before hCaptcha execution.
+Re-entering the reference in the same session returned an identity-matched
+HTTP 200 delivered summary without a visible challenge. Fresh-browser verification
+of the reload wait also returned that summary in about 10 seconds. See the
+[Royal Mail verification notes](../../packages/carriers/carriers/royal-mail/README.md)
+for the remaining challenge and history limitations. Re-render and redeploy the
+service after changing this directory.
 
 ## Redis session cache
 

@@ -8,8 +8,10 @@ private TRAWL service with this repository's `ops/trawl` compatibility build.
 
 1. Attach capture for the exact requested `GET` URL under
    `https://api-web.royalmail.com/mailpieces/microsummary/v1/summary/`.
-2. Load the public page, dismiss optional cookies, enter the number using native
-   keyboard events and submit. The hash route alone only prefills the field.
+2. Load the public page, dismiss optional cookies, wait for the consent-triggered
+   reload, enter the number using native keyboard events and submit. Verify the
+   number in the same document as the click. The hash route alone only prefills
+   the field.
 3. Allow invisible hCaptcha to auto-pass and invoke the site's own callback.
    If no response arrives, TRAWL's native solver gets the remaining budget.
    Skip that solver once the API has answered: the callback resets the widget,
@@ -63,8 +65,10 @@ inconclusive. `E0015` is a challenge failure.
 
 The parser fixtures are synthetic reconstructions of the current public page
 bundle, with its nested summary and event vocabulary. They are not live success
-captures. Offline tests cover identity, status semantics, ordering, privacy,
-error classification, exact capture matching and form preparation.
+captures. Live summary replies have since confirmed the single `mailPieces`
+object, identity field and summary vocabulary; live event history remains
+unverified. Offline tests cover identity, status semantics, ordering, privacy,
+error classification, exact capture matching and consent reload races.
 
 A fresh browser on the production host submitted the public form, auto-passed
 invisible hCaptcha and received an actual summary API response on 2026-09-20.
@@ -77,28 +81,49 @@ submission invokes the normal button handler directly to avoid a Camoufox
 mouse-action stall.
 
 Later checks on 2026-09-21 used two recent, publicly posted shipment references.
-Neither produced a summary reply: the built-in solver timed out looking for
-`#checkbox` in the invisible widget, and TRAWL returned HTTP 500. The earlier
-documentation reference then failed the same way. Current test inputs are now
-available, but a successful shipment payload and reliable challenge recovery
-remain unverified. The earlier timings establish auto-pass under those sessions,
-not consistent availability.
+Neither produced a summary reply, and TRAWL's subsequent solver timed out looking
+for `#checkbox`. Instrumentation then reproduced the failure without invoking
+the solver: cookie consent reloaded the document, discarding the typed number.
+The click reached a replacement form with an empty input, which displayed
+"Please enter a reference number." No `hcaptcha.execute` or `getcaptcha` request
+followed. The missing-checkbox timeout was secondary, not evidence of an
+interactive challenge or a rejected CAPTCHA token.
+
+Re-entering the number in that same session invoked `execute`, received the
+success callback with a token, and returned an identity-matched HTTP 200 summary
+with category `Delivered`. The other public reference returned an identity-matched
+summary with category `We're expecting it`. Neither reply contained event history.
+Waiting for the consent reload before typing and checking the input at the click
+fixes the reproduced race. A fresh browser with that change returned the delivered
+summary in about 10 seconds, without invoking a solver or showing a challenge.
+A separate fixed-flow attempt received the hCaptcha success callback but its
+subsequent tracking request failed with `NS_ERROR_NET_RESET`. This was a transport
+failure after verification, not an interactive CAPTCHA. Browser/network failures
+can still require normal provider recovery.
+After deploying the reload fix, both complete adapter checks still returned
+TRAWL HTTP 500. An instrumented run of TRAWL's full Tier 3 path reproduced a
+successful hCaptcha callback followed by the same tracking connection reset.
+The subsequent native solver again timed out on the absent checkbox. Successful
+summary retrieval is demonstrated in isolated browser sessions; reliable
+retrieval through the deployed service remains unverified.
 
 TRAWL's native hCaptcha solver attempts checkbox auto-pass and an audio fallback.
 The audio path is unverified; hCaptcha's current [accessibility documentation](https://www.hcaptcha.com/accessibility)
 describes optional text challenges instead. Royal Mail's invisible widget has no checkbox.
-Auto-pass depends on the browser session and upstream risk assessment, and is
-not guaranteed for every request. No paid solver key is required for the
-observed auto-pass path.
+Invisible mode removes the checkbox; it does not establish that a site's
+challenge difficulty is passive. These observations do not establish Royal
+Mail's difficulty setting or verify recovery from an interactive challenge.
+No paid solver key is required for the observed auto-pass path.
 
 An upstream review on 2026-09-21 found the hCaptcha solver identical in TRAWL
 1.5.0, [1.6.2](https://github.com/germondai/trawl/blob/v1.6.2/packages/tiers/src/solvers/hcaptcha.ts)
 and the development branch. Upgrading alone does not remove its unconditional
 checkbox click or add visual challenge solving. Newer browser fingerprint fixes
 may affect auto-pass, but do not establish reliable challenge recovery. An
-isolated 1.6.2 build with the same capture patch reproduced the checkbox timeout
-for both public references (about 38 seconds each, HTTP 500, no summary reply).
-The production image remains on 1.5.0; the upgrade did not fix this failure.
+isolated 1.6.2 build with the original capture patch reproduced the checkbox
+timeout for both public references. It still had the consent reload race;
+that result did not establish a CAPTCHA-solving failure. The image remains on
+1.5.0 with the form preparation fix.
 
 The two recent public references and their original forum URLs are recorded in
 [numbers.json](numbers.json) as `public_shipment_report`. Their detection

@@ -129,7 +129,17 @@ export async function attachTrackingCapture(page, url, options) {
       // before clicking, and handle a banner that appears during that click.
       const decline = page.getByText('Decline all', { exact: true });
       await decline.waitFor({ state: 'visible', timeout: Math.min(timeout(), 3_000) }).catch(() => {});
-      if (await decline.isVisible()) await decline.evaluate(element => element.click());
+      if (await decline.isVisible()) {
+        // TrustArc can reload the document after consent changes. Typing
+        // before that reload finishes fills the outgoing form, while submit
+        // resolves against a new, empty form and never triggers hCaptcha.
+        const reloaded = page.waitForEvent('domcontentloaded', {
+          timeout: Math.min(timeout(), 3_000),
+        }).catch(() => {});
+        await decline.evaluate(element => element.click());
+        await reloaded;
+        await input.waitFor({ state: 'visible', timeout: timeout() });
+      }
       // Native key events update React's controlled state even after the
       // hash route prefilled it. A DOM-only fill can leave stale form state.
       await input.press('ControlOrMeta+A', { timeout: timeout() });
@@ -141,7 +151,14 @@ export async function attachTrackingCapture(page, url, options) {
       // and hCaptcha callback before making any tracking request.
       const submit = page.locator('#submit:not(:disabled)');
       await submit.waitFor({ state: 'visible', timeout: timeout() });
-      await submit.evaluate(element => element.click());
+      const submitted = await submit.evaluate((element, expected) => {
+        // Check and click in one document: a late reload must not turn a
+        // locally validated number into an empty submission.
+        if (element.ownerDocument.querySelector('#barcode-input')?.value !== expected) return false;
+        element.click();
+        return true;
+      }, number);
+      if (!submitted) throw new Error('Royal Mail input was reset before submission');
       // Invisible hCaptcha commonly auto-passes after submit. Its callback
       // sends the API request and resets the widget; do not click it again.
       let timer;
