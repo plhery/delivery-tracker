@@ -130,22 +130,65 @@ Timezone uncertainty remains for these non-EMS results as well. Registered
 `R` mail, untracked `U` mail and other China Post formats were not covered by
 this follow-up; three examples are not a coverage benchmark.
 
-This is evidence for considering a **China Post-specific UPU-first status
-lookup with periodic richer-provider enrichment**, not for replacing the
-current chain with first-success-and-stop. An initial UPU success under today's
-router would prevent enrichment, and its conservative persistence policy
-cannot prove freshness over a saved richer summary. Those policies must be
-addressed together before promotion. Restrict any future exception by service
-class as well as carrier: selecting EMS is separate, but bare `E…CN` detection
-still retains China Post. Runtime routing remains unchanged by this follow-up.
+### Manual China Post website baseline
+
+In a follow-up to these API checks, the user inspected the same three references
+on the [official China Post tracker](https://www.ems.com.cn/queryList). Each
+unauthenticated result displayed exactly the two latest events and asked for
+login to see more. This is user-observed website evidence, not an automated
+capture. No authenticated history was inspected, and the total history count
+is unknown. A two-row public preview must not be treated as a complete history
+or compared directly with the API's total row count as a completeness score.
+
+| Reference | Latest two events visible on China Post, as reported by the user | Comparison with the captured UPU history |
+| --- | --- | --- |
+| `LZ…CN`, USA | Out for delivery; delivered | UPU's eight scans include final delivery on September 17, but not out for delivery. Its additional rows are earlier milestones, not evidence of a more complete history. |
+| `CY…CN`, Venezuela | Received by airline; flight arrival | Neither event is in UPU's four scans. Its latest scan remains export-office departure on June 30. The broad in-transit state agrees, but UPU omits the latest transport progress. |
+| `LZ…CN`, Brazil | Out for delivery; delivered | UPU's one scan is final delivery on August 25 (`EMI`). The missing preview event is out for delivery. |
+
+The user did not supply the website events' timestamps. Do not infer exact
+timestamp agreement, a time lag, or authenticated-history completeness from
+these observations. The latest broad states agree for all three references;
+the latest detailed milestones do not all agree. The Venezuela gap matters
+while a parcel is active, and both delivered examples omit the delivery-round
+event that could have been useful before completion.
+
+### China Post-specific recommendation
+
+The combined evidence supports **UPU as a fast primary status source for the
+tested non-EMS China Post services**, with the existing providers available for
+failure/empty-result fallback and periodic enrichment of active shipments.
+UPU matched Ship24's available histories for two references and supplied a
+usable history for the third where Ship24 returned metadata only. Keeping
+Ship24 ahead merely because UPU lacks scans is not supported by those samples:
+Ship24 had the same omissions on the two matching histories. This is a narrow
+cost/availability recommendation, not proof that UPU has complete carrier history
+or that a different provider can fill the observed gaps.
+
+For implementation, initially scope a fast path to the tested checksum-valid
+`L…CN`/`C…CN` service families. Retain ordinary discovery for untested formats
+and the dedicated EMS route when selected. Carrier id alone is insufficient:
+bare `E…CN` detection still retains China Post. A successful UPU first lookup
+must not permanently suppress enrichment. The current persistence guard also
+keeps a saved richer summary when UPU cannot establish UTC freshness; promoting
+UPU without addressing that guard could leave an existing parcel's status
+unchanged indefinitely despite successful lookups. Keep observed status,
+uncertain local scan times and verified cross-provider freshness distinct.
+
+The question of whether UPU is a useful primary source can now be answered for
+these samples without obtaining login-only history. A complete-history claim
+would still need broader service coverage, authenticated/operator evidence and
+longitudinal active-shipment checks. Runtime routing remains unchanged by this
+documentation update; the scoped fast path and enrichment policy are proposals.
 
 ## Why UPU stays last
 
 UPU's fast success can hide newer or fuller data under first-success-wins
 routing. Four UPU successes in this small comparison added no coverage over
 Ship24, but offer independent recovery when another provider fails. There is
-not enough evidence for UPU-first plus background enrichment. Never promote it
-ahead of richer sources because it answered during their outage.
+not enough evidence to make UPU first for every postal operator. The narrower
+China Post proposal above does not change that conclusion. Never promote UPU
+globally ahead of richer sources merely because it answered during their outage.
 
 Existing timestamped events are upserted, not replaced by a shorter history.
 UPU local-time scans are additionally accumulated in a bounded archive; the

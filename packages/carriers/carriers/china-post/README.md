@@ -145,5 +145,14 @@ The [non-EMS follow-up](../../providers/COMPARISON.md#china-post-non-ems-follow-
 compares three live public `LZ`/`CY` references. UPU matched Ship24 on two and
 returned history where Ship24 returned metadata only on the third. This improves
 the case for a targeted fast path, but does not establish full history, UTC
-accuracy or coverage of all non-EMS services. Keep enrichment and saved-summary
-handling in the design of any future default change.
+accuracy or coverage of all non-EMS services.
+
+The user's subsequent official-site checks showed a two-event public preview
+and a login prompt for more history. UPU includes final delivery for both
+delivered references, omits their out-for-delivery events, and lacks the
+Venezuela reference's latest airline-receipt/flight-arrival milestones. The
+central comparison distinguishes this manual evidence from automated API
+results. It now recommends a scoped UPU-first status path for the tested
+`L…CN`/`C…CN` families, with failure fallback and active-shipment enrichment.
+That is a proposal, not the current routing policy. Preserve the saved-summary
+and timestamp safeguards when implementing it.
