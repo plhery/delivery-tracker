@@ -165,7 +165,7 @@ TRAWL's existing fresh-browser tier returned the expected controlled local test
 page successfully. This establishes interface compatibility, not carrier access.
 
 Google Chrome 153.0.8010.52 and nodriver 0.50.3 were installed in an isolated
-diagnostic image on the production host. The following probes used fresh
+diagnostic image on the production host. The initial probes below used fresh
 profiles, a headed browser under Xvfb, the normal tracking form, and the same
 four consent preferences. No existing user's cookies, custom user-agent or
 proxy were used.
@@ -181,9 +181,46 @@ The Patchright setup follows its documented
 [nodriver](https://github.com/ultrafunkamsterdam/nodriver) is a separate Python/CDP
 controller, not a replacement object for TRAWL's Playwright interface. Using it
 would require another integration. The application already installs Chromium
-for its existing Playwright transport; these probes do not justify adding
-another production browser dependency or switching Royal Mail to that transport.
-No Chrome backend was enabled in production by this investigation.
+for its existing Playwright transport. No Chrome backend was enabled in
+production by this investigation; live integration remains unsuccessful in the
+follow-up below.
+
+### Loading time and intermittent success
+
+Further headed Google Chrome/Patchright probes on 2026-09-22 separated an extra
+loading delay from waiting for a failed request:
+
+- After the page's load event and CAPTCHA API readiness, waiting another 30
+  seconds before typing and submitting still failed. The preflight returned
+  HTTP 200. Chrome NetLog recorded `HTTP2_SESSION_RECV_RST_STREAM` for the
+  tracking GET 184 ms after sending its headers, before any response headers.
+  The remote peer ended that stream; the browser did not exhaust its timeout.
+- In a separate fresh persistent profile, the first lookup failed with
+  `net::ERR_FAILED`. A resubmission five seconds later sent a different CAPTCHA
+  token and returned an identity-matched HTTP 200 summary in about 9.9 seconds
+  overall. Recovery from the HTTP/2 reset itself was not demonstrated.
+- Two more fresh persistent profiles, one for each public reference, returned
+  matching HTTP 200 summaries on their first submissions in about 4.3–4.6 seconds.
+  Categories were `Delivered` and `We've got it`. Neither used disk cache or a
+  service worker. These successes required no extra loading delay or visible
+  CAPTCHA solving.
+- A live lookup through TRAWL Tier 3, with Chrome injected into `BrowserPool`
+  and the current consent/capture fixes, still failed with the HTTP/2 error in
+  about 5.7 seconds. The tier used its normal fresh context and tracking hash
+  route. It did not enter the redundant missing-checkbox fallback.
+
+The sample establishes intermittent automated Chrome access, not a reliable
+delay or retry remedy. It does not isolate session/form differences from an
+upstream service or policy decision. Raw NetLogs and response bodies were not
+retained; only allowlisted timing, protocol and response-shape metadata was read.
+
+A [Mozilla Royal Mail report](https://bugzilla.mozilla.org/show_bug.cgi?id=1944309#c2)
+records a first-attempt HTTP 401 with `E0015`, a successful second attempt, and
+separately interrupted tracking connections with tracking protection disabled.
+It was later closed as working in Android Firefox without an identified root
+cause. A [Playwright report](https://github.com/microsoft/playwright/issues/36001)
+documents `ERR_HTTP2_PROTOCOL_ERROR` changing with browser mode and environment
+on another site. These are related symptoms, not proof of the same cause here.
 
 The two recent public references and their original forum URLs are recorded in
 [numbers.json](numbers.json) as `public_shipment_report`. Their detection
