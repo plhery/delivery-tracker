@@ -57,7 +57,7 @@ npm run test:contract                                               # generated 
 ## Carriers
 
 <!-- GENERATED:carriers -->
-104 carriers: 41 with a dedicated adapter, 59 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
+105 carriers: 42 with a dedicated adapter, 59 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
 
 | Id | Name | Route | Steps | Capabilities | Sample numbers | Known statuses | Docs |
 | --- | --- | --- | --- | ---: | ---: | ---: | --- |
@@ -96,6 +96,7 @@ npm run test:contract                                               # generated 
 | `dpd-fr` | DPD France | dedicated | direct → trawl | 3 | 3 | 40 | [README](carriers/dpd-fr/README.md) |
 | `dtdc` | DTDC | universal providers |  | 0 | 1 | 0 |  |
 | `ecoscooting` | Ecoscooting | universal providers |  | 0 | 5 | 0 | [README](carriers/ecoscooting/README.md) |
+| `ems` | EMS | dedicated | direct | 2 | 2 | 16 | [README](carriers/ems/README.md) |
 | `estafeta` | Estafeta | universal providers |  | 0 | 1 | 0 |  |
 | `evri` | Evri | universal providers |  | 0 | 1 | 0 |  |
 | `fedex` | FedEx | dedicated | trawl | 4 | 8 | 29 | [README](carriers/fedex/README.md) |

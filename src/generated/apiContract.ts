@@ -2873,6 +2873,30 @@ export const CARRIER_CAPABILITIES = {
       }
     ],
     "trackingUrlTemplate": "https://www.jtexpress.ph/track-and-trace?flag=1&waybillNo={trackingNumber}"
+  },
+  "ems": {
+    "displayName": "EMS",
+    "color": "#003b7a",
+    "selectable": true,
+    "timezone": "UTC",
+    "tracking": {
+      "mode": "automatic",
+      "adapter": "ems"
+    },
+    "canaryUrl": "https://items.ems.post/",
+    "trackingUrlTemplate": "https://items.ems.post/api/publicTracking/track?language=EN&itemId={trackingNumber}",
+    "linkRules": [
+      {
+        "domains": [
+          "items.ems.post"
+        ],
+        "pathPattern": "^/api/publicTracking/track/?$",
+        "params": [
+          "itemId"
+        ]
+      }
+    ],
+    "detectionRules": []
   }
 } as const;
 
@@ -3004,7 +3028,8 @@ export const CARRIER_IDS = [
   "yunexpress",
   "zto",
   "intl-post",
-  "unknown"
+  "unknown",
+  "ems"
 ] as const;
 export type ApiCarrierId = (typeof CARRIER_IDS)[number];
 

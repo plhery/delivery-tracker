@@ -31,6 +31,10 @@ Before deploying the Amazon Shipping distinction, apply
 carrier constraint and both ownership-enforcing package RPCs. It is compatible
 with the previous app version and does not reclassify existing parcels.
 
+Before deploying selectable EMS tracking, apply
+`20260921160000_add_ems.sql`. It adds `ems` to the package carrier constraint and
+both ownership-enforcing package RPCs without changing existing selections.
+
 For an existing private/shared deployment, the migrations preserve old parcels
 with `user_id IS NULL`. Those rows are invisible to every signed-in user. Do not
 assign them until the intended owner has successfully signed in once and has an

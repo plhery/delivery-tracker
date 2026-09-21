@@ -2173,6 +2173,14 @@
     ]
   },
   {
+    "input": "EB000000005CN",
+    "carrier": "china-post",
+    "confidence": "high",
+    "candidates": [
+      "china-post"
+    ]
+  },
+  {
     "input": "EC080250821GB",
     "carrier": "parcelforce",
     "confidence": "high",
@@ -2234,6 +2242,14 @@
     "confidence": "high",
     "candidates": [
       "correios-br"
+    ]
+  },
+  {
+    "input": "EW000000005FR",
+    "carrier": "la-poste",
+    "confidence": "high",
+    "candidates": [
+      "la-poste"
     ]
   },
   {

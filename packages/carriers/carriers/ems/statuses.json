@@ -1,0 +1,121 @@
+{
+  "carrier": "ems",
+  "entries": [
+    {
+      "wording": "Posted",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-21"
+    },
+    {
+      "wording": "Arrived at export office",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-21"
+    },
+    {
+      "wording": "Presented to export customs and security",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-21"
+    },
+    {
+      "wording": "Released from export customs and security",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-21"
+    },
+    {
+      "wording": "Departed from export office",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-21"
+    },
+    {
+      "wording": "Held for export customs inspection",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-21"
+    },
+    {
+      "wording": "Arrived at destination import office",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-21"
+    },
+    {
+      "wording": "Held at destination import office",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-21"
+    },
+    {
+      "wording": "Presented to import customs",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-21"
+    },
+    {
+      "wording": "Released from import customs",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-21"
+    },
+    {
+      "wording": "Departed from destination import office",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-21"
+    },
+    {
+      "wording": "Arrived at post office",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-21"
+    },
+    {
+      "wording": "Out for delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-21",
+      "note": "Conservative exact-wording case; synthetic fixture only, not observed in the live references."
+    },
+    {
+      "wording": "Delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-21",
+      "note": "Conservative exact-wording case; synthetic fixture only, not observed in the live references."
+    },
+    {
+      "wording": "Delivery attempted",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-21",
+      "note": "Conservative exact-wording case; synthetic fixture only, not observed in the live references."
+    },
+    {
+      "wording": "Returned to sender",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-21",
+      "note": "Conservative exact-wording case; synthetic fixture only, not observed in the live references."
+    }
+  ]
+}

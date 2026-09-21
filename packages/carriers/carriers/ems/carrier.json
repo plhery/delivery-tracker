@@ -1,0 +1,60 @@
+{
+  "id": "ems",
+  "displayName": "EMS",
+  "aliases": [
+    "Express Mail Service",
+    "EMS Post"
+  ],
+  "region": {
+    "countries": []
+  },
+  "brand": {
+    "color": "#003b7a"
+  },
+  "selectable": true,
+  "timezone": "UTC",
+  "tracking": {
+    "mode": "automatic",
+    "adapter": "ems",
+    "steps": [
+      "direct"
+    ]
+  },
+  "capabilities": [
+    "history",
+    "location"
+  ],
+  "portal": {
+    "url": "https://items.ems.post/api/publicTracking/track?language=EN&itemId={trackingNumber}",
+    "canaryUrl": "https://items.ems.post/",
+    "shows": [
+      "status",
+      "history",
+      "location"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location"
+    ],
+    "discarded": [],
+    "unavailable": [
+      "eta",
+      "weight",
+      "sender_name",
+      "pickup_point"
+    ]
+  },
+  "links": [
+    {
+      "domains": [
+        "items.ems.post"
+      ],
+      "pathPattern": "^/api/publicTracking/track/?$",
+      "params": [
+        "itemId"
+      ]
+    }
+  ],
+  "detection": []
+}

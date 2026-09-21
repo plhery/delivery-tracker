@@ -32,6 +32,7 @@ surface colors use the shared light/dark palette derivation.
 | `delhivery` | `#ed4136` | [Reference](https://www.delhivery.com/) | Logo or carrier website palette. |
 | `dtdc` | `#0d237d` | [Reference](https://www.dtdc.com/) | Blue selected from the carrier identity; approximate UI accent. |
 | `ecoscooting` | `#3fa7ff` | [Reference](https://www.ecoscooting.com/) | Logo or carrier website palette. |
+| `ems` | `#003b7a` | [Reference](https://www.ems.post/) | Approximate blue UI accent for the EMS identity. |
 | `estafeta` | `#e30613` | [Reference](https://www.estafeta.com/) | Logo or carrier website palette. |
 | `evri` | `#00014d` | [Reference](https://www.evri.com/) | Logo or carrier website palette. |
 | `four-px` | `#f58220` | [Reference](https://www.4px.com/) | Orange selected from the carrier identity; approximate UI accent. |

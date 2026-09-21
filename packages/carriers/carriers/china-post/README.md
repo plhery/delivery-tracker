@@ -90,11 +90,12 @@ Two controls define important limits:
   with “There were no results found.” Its table still contains a header and a
   message row; neither is a tracking event.
 
-This route is a candidate for EMS-specific retrieval ahead of universal
-fallback. It cannot replace fallback for all `CN` numbers. International EMS
-milestones also do not establish parity with every domestic China Post scan.
-Production network compatibility, status mapping, timestamps and routing
-integration remain unverified.
+This route is now implemented as the selectable [EMS carrier](../ems/README.md),
+with dedicated retrieval ahead of the host's universal fallback. Choose EMS or
+paste its official tracking link to use it; bare China Post numbers retain
+their existing routing. It cannot replace fallback for all `CN` numbers.
+International EMS milestones do not establish parity with every domestic scan;
+the EMS README records timestamp and production-network limitations.
 
 ## Other routes checked
 

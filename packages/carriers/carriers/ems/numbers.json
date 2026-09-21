@@ -1,0 +1,29 @@
+{
+  "carrier": "ems",
+  "records": [
+    {
+      "number": "EB000000005CN",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "observed_request",
+      "shapeConfirmed": "2026-09-21",
+      "expect": {
+        "carrier": "china-post",
+        "confidence": "high"
+      },
+      "note": "Synthetic EMS S10 identifier; bare numbers retain their national postal operator, while an EMS link or manual selection chooses EMS."
+    },
+    {
+      "number": "EW000000005FR",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "observed_request",
+      "shapeConfirmed": "2026-09-21",
+      "expect": {
+        "carrier": "la-poste",
+        "confidence": "high"
+      },
+      "note": "Synthetic second EMS origin; selecting EMS does not reassign French postal number detection."
+    }
+  ]
+}

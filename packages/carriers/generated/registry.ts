@@ -15,6 +15,7 @@ import { adapter as dhl } from '../carriers/dhl/adapter';
 import { adapter as dhlEcommerce } from '../carriers/dhl-ecommerce/adapter';
 import { adapter as dpd } from '../carriers/dpd/adapter';
 import { adapter as dpdFr } from '../carriers/dpd-fr/adapter';
+import { adapter as ems } from '../carriers/ems/adapter';
 import { adapter as fedex } from '../carriers/fedex/adapter';
 import { adapter as geodis } from '../carriers/geodis/adapter';
 import { adapter as glsCh } from '../carriers/gls-ch/adapter';
@@ -59,6 +60,7 @@ export const REGISTRY: RegistryDefinition = {
     "dhl-ecommerce": dhlEcommerce,
     "dpd": dpd,
     "dpd-fr": dpdFr,
+    "ems": ems,
     "fedex": fedex,
     "geodis": geodis,
     "gls-ch": glsCh,
@@ -123,6 +125,7 @@ export const REGISTRY: RegistryDefinition = {
     "dpd-fr": "dpd-fr",
     "dtdc": "universal",
     "ecoscooting": "universal",
+    "ems": "ems",
     "estafeta": "universal",
     "evri": "universal",
     "fedex": "fedex",
