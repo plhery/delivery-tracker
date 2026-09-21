@@ -107,7 +107,7 @@ DEVICE_DETAILS="$(xcrun devicectl device info details --device "$DEVICE_NAME" 2>
   exit 1
 }
 
-DEVICE_UDID="$(print -r -- "$DEVICE_DETAILS" | awk '/udid:/ { print $NF; exit }')"
+DEVICE_UDID="$(print -r -- "$DEVICE_DETAILS" | awk 'tolower($0) ~ /udid:/ { print $NF; exit }')"
 if [[ -z "$DEVICE_UDID" ]]; then
   print -u2 "Could not determine the iPhone UDID."
   exit 1
