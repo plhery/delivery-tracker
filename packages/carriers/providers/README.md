@@ -21,7 +21,10 @@ production samples, not a comprehensive reliability benchmark.
 enabled provider. Its documented anonymous JSON API returned matching EMS and
 ordinary postal history without the public form's CAPTCHA on September 21.
 The investigation records incomplete histories, prediction rows and wire-format
-differences that an adapter must handle before integration.
+differences that an adapter must handle before integration. A subsequent
+eight-reference comparison found UPU faster but sometimes less complete or
+older than Ship24. Keep Ship24 ahead of UPU under first-success-wins routing;
+UPU-first would require continuing to other providers for enrichment.
 
 `UniversalTracker.fetch()` calls providers until one returns successfully and
 aggregates failures in `UniversalTrackingError` if none do. Production
