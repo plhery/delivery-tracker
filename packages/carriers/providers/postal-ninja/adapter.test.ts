@@ -26,6 +26,32 @@ describe('Postal Ninja result parsing', () => {
     expect(JSON.stringify(parsed)).not.toContain('PRIVATE');
   });
 
+  it('accepts the widget compact response without inventing missing history', () => {
+    const track = { ...found.track, events: undefined };
+    const parsed = parsePostalNinjaResponse({ ...found, track: {
+      ...track,
+      firstEv: { dt: '2026-08-01T10:00:00', dsc: 'Shipment information received' },
+      lastEv: { dt: '2026-08-17T11:17:00', dsc: 'Delivered by Mailbox, PIN: PRIVATE' },
+      toAddress: 'PRIVATE RECIPIENT',
+    } }, number);
+    expect(parsed).toMatchObject({ current_stage: 'delivered', last_update: null });
+    expect(parsed.events).toEqual([
+      { local_time: '2026-08-17T11:17:00', description: 'Delivered', stage: 'delivered' },
+      { local_time: '2026-08-01T10:00:00', description: 'Shipment information received', stage: 'registered' },
+    ]);
+    expect(JSON.stringify(parsed)).not.toContain('PRIVATE');
+  });
+
+  it('deduplicates a compact single scan and rejects malformed compact data', () => {
+    const track = { ...found.track, events: undefined };
+    const scan = { dt: '2026-08-17T11:17:00', dsc: 'In transit' };
+    expect(parsePostalNinjaResponse({ ...found, track: { ...track, firstEv: scan, lastEv: scan } }, number).events).toHaveLength(1);
+    for (const fields of [
+      {}, { lastEv: 'invalid' }, { firstEv: scan, lastEv: { dt: 'invalid', dsc: 'Delivered' } },
+      { events: null, firstEv: scan }, { events: [], lastEv: scan },
+    ]) expect(() => parsePostalNinjaResponse({ ...found, track: { ...track, ...fields } }, number)).toThrow();
+  });
+
   it('rejects challenges, wrong identities, empty history and malformed dates', () => {
     for (const payload of [
       { ...found, status: 'CHLNG_REQ' }, { ...found, hid: 'different' },

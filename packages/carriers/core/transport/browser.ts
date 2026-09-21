@@ -15,7 +15,14 @@ let busy = false;
 
 export async function scrapeUniversalPage(
   options: UniversalBrowserOptions,
-  spec: { name: string; url: string; responseUrl: string; submit?: (page: Page) => Promise<void> },
+  spec: {
+    name: string;
+    url: string;
+    responseUrl: string;
+    submit?: (page: Page) => Promise<void>;
+    /** Explicit terminal replies from the lookup flow, including its submission endpoint. */
+    responseErrors?: Readonly<Record<string, (payload: unknown) => Error | undefined>>;
+  },
   parse: (payload: unknown) => CarrierResult,
 ): Promise<CarrierResult> {
   const executablePath = options.executablePath ?? process.env.TRACKING_CHROMIUM_PATH;
@@ -60,19 +67,25 @@ export async function scrapeUniversalPage(
       const page = await context.newPage();
       page.setDefaultTimeout(remaining);
       page.on('response', async (response: Response) => {
-        if (!expired && response.url() === spec.responseUrl && response.status() === 429) {
+        const url = response.url();
+        const inspect = Object.hasOwn(spec.responseErrors ?? {}, url) ? spec.responseErrors![url] : undefined;
+        if (expired || (url !== spec.responseUrl && !inspect)) return;
+        if (response.status() === 429) {
           const raw = response.headers()['retry-after'];
           const delay = raw && /^\d+$/.test(raw) ? Number(raw) * 1000 : raw ? Date.parse(raw) - Date.now() : undefined;
           rejectHistory(new UpstreamHttpError(spec.name, 429, delay));
           return;
         }
-        if (expired || response.url() !== spec.responseUrl || ![200, 201].includes(response.status())) return;
+        if (![200, 201].includes(response.status())) return;
         if (++received > 20) { rejectHistory(new Error(`${spec.name} returned too many polling responses`)); return; }
         try {
           if (Number(response.headers()['content-length'] ?? 0) > 2_000_000) return;
           const body = await response.body();
           if (expired || body.length > 2_000_000) return;
-          resolveHistory(parse(JSON.parse(body.toString('utf8'))));
+          const payload: unknown = JSON.parse(body.toString('utf8'));
+          const error = inspect?.(payload);
+          if (error) { rejectHistory(error); return; }
+          if (url === spec.responseUrl) resolveHistory(parse(payload));
         } catch {
           // Initial polling, challenges and unrelated shipments are not history.
         }

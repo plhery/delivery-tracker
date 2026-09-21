@@ -116,7 +116,7 @@ function browserFixture(payload: unknown, responseUrl: string) {
   let respond: ((response: unknown) => Promise<void>) | undefined;
   const locator = { locator: vi.fn(), fill: vi.fn(), count: vi.fn().mockResolvedValue(1), uncheck: vi.fn(), click: vi.fn() };
   locator.locator.mockReturnValue(locator);
-  const emit = (status = 201, url = responseUrl) => respond?.({ url: () => url, status: () => status, headers: () => ({}), body: async () => Buffer.from(JSON.stringify(payload)) });
+  const emit = (status = 201, url = responseUrl, message = payload) => respond?.({ url: () => url, status: () => status, headers: () => ({}), body: async () => Buffer.from(JSON.stringify(message)) });
   const page = { setDefaultTimeout: vi.fn(), on: vi.fn((_: string, callback: typeof respond) => { respond = callback; }),
     goto: vi.fn(async () => { await emit(); return { headers: () => ({}), status: () => 200 as number }; }), locator: vi.fn().mockReturnValue(locator), frameLocator: vi.fn().mockReturnValue(locator) };
   const context = { route: vi.fn(), newPage: vi.fn().mockResolvedValue(page) };
@@ -154,6 +154,51 @@ describe('bounded browser scraper lifecycle', () => {
     expect(f.browser.close).toHaveBeenCalledOnce();
     expect(f.browser.newContext).toHaveBeenCalledWith(expect.objectContaining({ acceptDownloads: false, serviceWorkers: 'block' }));
     expect(Object.keys(vi.mocked(chromium.launch).mock.calls.at(-1)![0]!.env!)).toEqual(['PATH', 'HOME', 'LANG']);
+  });
+
+  it('reports Postal Ninja submission challenges immediately and releases the browser', async () => {
+    const f = browserFixture({ status: 'CHLNG_REQ', tc: number }, 'https://postal.ninja/track/check');
+    await expect(new PostalNinjaTracker({ executablePath: '/test/chromium' }).fetch(number))
+      .rejects.toMatchObject({ kind: 'challenge', provider: 'Postal Ninja' });
+    expect(f.browser.close).toHaveBeenCalledOnce();
+  });
+
+  it('binds a Postal Ninja retrieval challenge to the submitted handle', async () => {
+    const f = browserFixture(ninja(), 'https://postal.ninja/track/get');
+    f.page.goto.mockImplementationOnce(async () => {
+      await f.emit(200, 'https://postal.ninja/track/check', { status: 'PROCESSING', tc: number, hid: 'synthetic-handle' });
+      await f.emit(200, 'https://postal.ninja/track/get', { status: 'CHLNG_REQ', hid: 'synthetic-handle' });
+      return { headers: () => ({}), status: () => 200 };
+    });
+    await expect(new PostalNinjaTracker({ executablePath: '/test/chromium' }).fetch(number))
+      .rejects.toMatchObject({ kind: 'challenge' });
+    expect(f.browser.close).toHaveBeenCalledOnce();
+  });
+
+  it('allows Postal Ninja polling but reports a completed empty lookup as inconclusive', async () => {
+    const empty = { ...ninja(), track: { ...ninja().track, state: 'NO_INFO', events: undefined } };
+    const f = browserFixture(empty, 'https://postal.ninja/track/get');
+    f.page.goto.mockImplementationOnce(async () => {
+      await f.emit(200, undefined, { ...empty, inProgress: true });
+      await f.emit(200);
+      return { headers: () => ({}), status: () => 200 };
+    });
+    await expect(new PostalNinjaTracker({ executablePath: '/test/chromium' }).fetch(number))
+      .rejects.toMatchObject({ kind: 'indeterminate' });
+    expect(f.browser.close).toHaveBeenCalledOnce();
+  });
+
+  it('ignores unrelated Postal Ninja challenges and intermediate empty results', async () => {
+    const f = browserFixture(ninja(), 'https://postal.ninja/track/get');
+    f.page.goto.mockImplementationOnce(async () => {
+      await f.emit(200, 'https://postal.ninja/track/check', { status: 'CHLNG_REQ', tc: 'OTHER123' });
+      await f.emit(200, undefined, { status: 'CHLNG_REQ', hid: 'unrelated-handle' });
+      await f.emit(200, undefined, { ...ninja(), track: { ...ninja().track, state: 'NO_INFO' }, inProgress: true });
+      await f.emit(200);
+      return { headers: () => ({}), status: () => 200 };
+    });
+    await expect(new PostalNinjaTracker({ executablePath: '/test/chromium' }).fetch(number))
+      .resolves.toMatchObject({ tracking_provider: 'Postal Ninja', current_stage: 'delivered' });
   });
 
   it('loads Ship24 by number and closes the browser after success', async () => {

@@ -12,7 +12,7 @@ import 'server-only';
  */
 import { DateTime } from 'luxon';
 import type { AdapterFactory } from '../../core/adapter';
-import { SchemaError } from '../../core/errors';
+import { ChallengeError, IndeterminateError, SchemaError } from '../../core/errors';
 import { runSteps } from '../../core/runner';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import type { StepRecorder } from '../../core/telemetry';
@@ -33,7 +33,11 @@ export function parsePostalNinjaResponse(payload: unknown, trackingNumber: strin
     || !TRACKED_STATES.includes(String(payload.track.state))) {
     throw new SchemaError(SOURCE, 'Postal Ninja has no matching shipment history');
   }
-  const rawEvents = payload.track.events;
+  // The embedded widget requests compact:true, which supplies only the first
+  // and latest scan. Full /track/get responses instead carry events[].
+  const rawEvents = payload.track.events === undefined
+    ? [payload.track.firstEv, payload.track.lastEv].filter((value) => value != null)
+    : payload.track.events;
   if (!Array.isArray(rawEvents) || rawEvents.length > MAX_EVENTS) throw new SchemaError(SOURCE, 'Postal Ninja returned invalid events');
   const events: CarrierEvent[] = [];
   // Postal Ninja supplies events oldest first. Its dt values are local wall
@@ -69,10 +73,29 @@ export class PostalNinjaTracker {
     const number = numberOf(trackingNumber);
     const timeoutMs = budgetMs ?? this.options.timeoutMs ?? 45_000;
     if (!Number.isFinite(timeoutMs) || timeoutMs <= 0 || timeoutMs > 60_000) throw new TypeError('Postal Ninja timeout must be between 1 and 60000 ms');
+    let handle: string | undefined;
+    const responseError = (payload: unknown): Error | undefined => {
+      if (!isRecord(payload)) return;
+      if (payload.tc === number && payload.status === 'PROCESSING' && typeof payload.hid === 'string' && payload.hid) {
+        handle = payload.hid;
+      }
+      if (payload.status === 'CHLNG_REQ' && (payload.tc === number || (handle && payload.hid === handle))) {
+        return new ChallengeError(SOURCE, 'Postal Ninja browser verification did not complete');
+      }
+      if (payload.status === 'FOUND' && isRecord(payload.track) && payload.track.tc === number
+        && typeof payload.hid === 'string' && payload.hid && payload.track.hid === payload.hid
+        && payload.track.state === 'NO_INFO' && !payload.inProgress) {
+        return new IndeterminateError(SOURCE, 'Postal Ninja has no available tracking history');
+      }
+    };
     return runSteps({ carrier: SOURCE, budgetMs: timeoutMs, recorder: this.options.recorder }, [{
       id: 'browser',
       run: ({ remainingMs }) => scrapeUniversalPage({ executablePath: this.options.executablePath, timeoutMs: Math.max(1, Math.floor(remainingMs)) }, {
         name: SOURCE, url: 'https://postal.ninja/en/tools', responseUrl: 'https://postal.ninja/track/get',
+        responseErrors: {
+          'https://postal.ninja/track/check': responseError,
+          'https://postal.ninja/track/get': responseError,
+        },
         submit: async (page) => {
           // The official embedded widget uses an automatic browser check. The
           // main tracking page can instead require an interactive challenge.
