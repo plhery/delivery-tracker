@@ -93,6 +93,52 @@ EMS history. Its current projection includes that row in `events` and
 was made as part of this investigation.
 
 
+## China Post non-EMS follow-up
+
+A narrower local comparison on 2026-09-21 used three publicly reported,
+checksum-valid China-issued postal identifiers, excluding `E…CN` EMS items.
+The [UPU S10 service table, section 5.6](https://www.upu.int/UPU/media/upu/files/postalSolutions/programmesAndServices/standards/S10-12.pdf)
+distinguishes `L` tracked letter post and `C` parcel post from `E` EMS. Here,
+"non-EMS" does not mean the untracked ordinary small-packet service.
+
+| Reference | UPU actual scans | Ship24 direct result | ParcelsApp direct result |
+| --- | --- | --- | --- |
+| `LZ…CN`, China → Brazil, delivered | 1, final delivery August 25 | Same one scan; courier name `UPU` | Same final-delivery wording, but our parser incorrectly classifies it as pending |
+| `CY…CN`, China → Venezuela, in transit | 4; latest export-office departure June 30 | Same four scans; courier name `UPU` | 10-second transport timeout |
+| `LZ…CN`, China → USA, delivered | 8; latest final delivery September 17 | Matching shipment metadata but no `events` array, including one later bounded recheck; rejected by our parser | 10-second transport timeout |
+
+These are fresh direct lookups through the existing adapters/HTTP clients, not
+browser recovery or a 17TRACK comparison. Ship24's declared source and matching
+events support an inference that it is relaying UPU for the first two references;
+they do not prove all non-EMS China Post history comes from UPU.
+
+The [Brazil report](https://www.chinapostaltracking.com/qa/demora-160174/),
+[Venezuela report](https://www.chinapostaltracking.com/es/) and
+[USA report](https://www.chinapostaltracking.com/qa/wanted-an-update-on-my-package-160844/)
+provide the public reference provenance. They also contain earlier reported
+China Post movement beyond UPU's returned milestones. These are third-party
+reports, not independently verified operator histories. Raw lookups and live
+identifiers remain outside the repository. The two entries in China Post's
+`numbers.json` remain SDK examples, not positive live controls.
+
+UPU's verified codes give clean acceptance/customs/release/delivery meanings,
+and avoid the observed ParcelsApp `Final delivery` classification error. Clean
+structure does not establish completeness or reliable UTC times: the Brazil
+snapshot has only delivery, and the USA snapshot jumps from export/customs
+milestones to delivery without destination arrival or delivery-round scans.
+Timezone uncertainty remains for these non-EMS results as well. Registered
+`R` mail, untracked `U` mail and other China Post formats were not covered by
+this follow-up; three examples are not a coverage benchmark.
+
+This is evidence for considering a **China Post-specific UPU-first status
+lookup with periodic richer-provider enrichment**, not for replacing the
+current chain with first-success-and-stop. An initial UPU success under today's
+router would prevent enrichment, and its conservative persistence policy
+cannot prove freshness over a saved richer summary. Those policies must be
+addressed together before promotion. Restrict any future exception by service
+class as well as carrier: selecting EMS is separate, but bare `E…CN` detection
+still retains China Post. Runtime routing remains unchanged by this follow-up.
+
 ## Why UPU stays last
 
 UPU's fast success can hide newer or fuller data under first-success-wins

@@ -140,3 +140,10 @@ It is a provider, not a carrier relabeling or an EMS-only route. See the
 [provider tradeoffs](../../providers/COMPARISON.md) for CAPTCHA/API findings,
 coverage, sparse histories, uncertain timestamps and the ordering decision.
 Earlier dated investigation notes describe the state at the time of each probe.
+
+The [non-EMS follow-up](../../providers/COMPARISON.md#china-post-non-ems-follow-up)
+compares three live public `LZ`/`CY` references. UPU matched Ship24 on two and
+returned history where Ship24 returned metadata only on the third. This improves
+the case for a targeted fast path, but does not establish full history, UTC
+accuracy or coverage of all non-EMS services. Keep enrichment and saved-summary
+handling in the design of any future default change.
