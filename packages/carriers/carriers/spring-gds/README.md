@@ -28,7 +28,12 @@ short-lived visitor token, then posts the barcode to
 
 Retained: the shipment status and stage, the current stage, the newest status
 text, every event with its timestamp, description, stage and country, the
-sender name when it is a webshop or business name, and the delivered-at time.
+sender name when it is a webshop or business name, the delivered-at time, and
+the shipment's structured destination country code when supplied.
+
+The host can use that destination to propose one national-post confirmation
+for a checksum-valid S10 number. The destination is a lookup hint, not a
+declared delivery partner. See [routing policy](../../../../docs/tracking-routing.md).
 
 Discarded: everything else an item can carry, including the recipient name,
 the address and the signature link (exercised by `fixtures/delivered.json`).

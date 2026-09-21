@@ -193,6 +193,25 @@ describe('PostNL declared capabilities and privacy', () => {
     provider_code: (result) => (result.events ?? []).some((event) => Boolean(event.provider_code)),
   };
 
+  it.each([
+    ['CH', 'CH'], [' fi ', 'FI'], ['Switzerland', undefined], [123, undefined], [null, undefined],
+  ])('projects only a structured destination code: %s', (destination_code, expected) => {
+    const result = parsePostNLTrackingResponse({ data: { items: [{
+      item: 'LX123456785NL', destination_code,
+      events: [{ category: 'Processing', country_code: 'NL' }],
+    }] } }, 'LX123456785NL');
+    expect(result.destination_country).toBe(expected);
+    expect(result.delivery_carrier).toBeUndefined();
+    expect(result.status).toBe('in_transit');
+  });
+
+  it('never treats a transit scan country as the shipment destination', () => {
+    const result = parsePostNLTrackingResponse({ data: { items: [{ item: 'LX123456785NL',
+      events: [{ category: 'Arrived', country_code: 'CH', country_name: 'Switzerland' }],
+    }] } }, 'LX123456785NL');
+    expect(result.destination_country).toBeUndefined();
+  });
+
   it('keeps the journey, the country of each scan and the webshop name', () => {
     expect(delivered).toMatchObject({
       status: 'delivered',

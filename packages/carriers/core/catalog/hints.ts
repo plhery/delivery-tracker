@@ -1,7 +1,28 @@
 import { CARRIER_DEFINITIONS } from './definitions';
 import { matchesDomain } from './linkRules';
+import type { CarrierId } from '../../generated/catalog';
 
 const key = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+// Postal lookup candidates, not proof of which operator delivers a shipment.
+// Only operators with a dedicated adapter are useful here. The host also
+// checks adapter availability and required inputs before making a request.
+const NATIONAL_POSTS: ReadonlyMap<string, CarrierId> = new Map([
+  ['CA', 'canada-post'], ['CH', 'swiss-post'], ['DE', 'dhl'],
+  ['ES', 'correos-spain'], ['FI', 'posti'], ['FR', 'la-poste'],
+  ['GB', 'royal-mail'], ['IN', 'india-post'], ['IT', 'poste-italiane'],
+  ['MY', 'pos-malaysia'], ['NL', 'spring-gds'], ['PT', 'ctt'], ['US', 'usps'],
+]);
+const englishCountries = new Intl.DisplayNames(['en'], { type: 'region' });
+
+/** Accept ISO codes or exact English country names supplied by a provider. */
+export function nationalPostCandidate(country: unknown): CarrierId | undefined {
+  if (typeof country !== 'string') return undefined;
+  const value = country.trim().toUpperCase();
+  const direct = NATIONAL_POSTS.get(value);
+  if (direct) return direct;
+  return [...NATIONAL_POSTS].find(([code]) => englishCountries.of(code)?.toUpperCase() === value)?.[1];
+}
 
 /** A name is only a lookup hint; the destination adapter still has to verify the parcel. */
 export function carrierIdFromName(name: string): string | undefined {
@@ -38,11 +59,17 @@ export function carrierIdFromPartner(name: string, url = ''): string | undefined
   return linked.length === 1 ? linked[0] : undefined;
 }
 
-/** An unambiguous partner link in carrier wording may propose one confirmation lookup. */
-export function carrierIdFromPartnerLinks(descriptions: (string | null | undefined)[], origin: string): string | undefined {
+/** Retain ambiguity so weaker hints cannot override conflicting partner links. */
+export function carrierIdsFromPartnerLinks(descriptions: (string | null | undefined)[], origin: string): string[] {
   const candidates = new Set(descriptions.flatMap((description) =>
     [...String(description ?? '').matchAll(/https?:\/\/[^\s<>"')]+/gi)]
       .flatMap(([url]) => carriersFromUrl(url)).filter((carrier) => carrier !== origin),
   ));
-  return candidates.size === 1 ? [...candidates][0] : undefined;
+  return [...candidates];
+}
+
+/** An unambiguous partner link in carrier wording may propose one confirmation lookup. */
+export function carrierIdFromPartnerLinks(descriptions: (string | null | undefined)[], origin: string): string | undefined {
+  const candidates = carrierIdsFromPartnerLinks(descriptions, origin);
+  return candidates.length === 1 ? candidates[0] : undefined;
 }

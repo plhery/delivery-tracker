@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { carrierIdFromPartner, carrierIdFromPartnerLinks } from './hints';
+import { carrierIdFromPartner, carrierIdFromPartnerLinks, nationalPostCandidate } from './hints';
+
+describe('national postal lookup candidates', () => {
+  it.each([
+    ['CH', 'swiss-post'], [' Switzerland ', 'swiss-post'], ['FI', 'posti'], ['finland', 'posti'],
+    ['NL', 'spring-gds'], ['FR', 'la-poste'], ['GB', 'royal-mail'], ['US', 'usps'],
+    ['CA', 'canada-post'], ['DE', 'dhl'], ['ES', 'correos-spain'], ['IN', 'india-post'],
+    ['IT', 'poste-italiane'], ['MY', 'pos-malaysia'], ['PT', 'ctt'],
+  ])('suggests one operator for destination %s', (country, expected) => {
+    expect(nationalPostCandidate(country)).toBe(expected);
+  });
+  it.each(['XX', 'LI', 'unknown', 'Arrived in Switzerland', 'constructor', '', null, 123])(
+    'leaves unavailable or ambiguous destinations alone: %s', (country) => {
+      expect(nationalPostCandidate(country)).toBeUndefined();
+    },
+  );
+});
 
 describe('delivery partner evidence', () => {
   it.each([

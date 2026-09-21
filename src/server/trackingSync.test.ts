@@ -45,7 +45,9 @@ import { UniversalTrackingError } from './universalTracking';
 import { UpstreamHttpError } from './boundedFetch';
 import { readFileSync } from 'node:fs';
 import { adapter as cainiaoAdapter, parseCainiaoTrackingResponse } from '@carriers/carriers/aliexpress/adapter';
+import { adapter as postNLAdapter, parsePostNLTrackingResponse } from '@carriers/carriers/spring-gds/adapter';
 import { NOOP_RECORDER } from '@carriers/core/telemetry';
+import { SchemaError } from '@carriers/core/errors';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -754,9 +756,10 @@ describe('TrackingSyncService', () => {
     expect(client.updatePackage.mock.calls.at(-1)![1].carrier_data.active_tracking_carrier).toBe('posti');
   });
 
-  it('retains a confirmed same-day completion handoff without replacing a newer saved summary', async () => {
+  it.each(['partner', 'destination'])('retains a %s handoff with same-day completion without replacing a newer saved summary', async (basis) => {
     const client = fakeClient();
-    const adapter = { fetch: vi.fn().mockResolvedValueOnce({ status: 'delivered', delivery_carrier: 'posti', last_update: '2026-01-12T13:00:00Z' })
+    const hints = basis === 'partner' ? { delivery_carrier: 'posti' } : { destination_country: 'FI' };
+    const adapter = { fetch: vi.fn().mockResolvedValueOnce({ status: 'delivered', ...hints, last_update: '2026-01-12T13:00:00Z' })
       .mockResolvedValueOnce({ status: 'delivered', last_update: '2026-01-12T12:00:00Z' }) };
     await new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null)
       .syncPackage({ id: 'same-completion', carrier: 'la-poste', tracking_number: 'CW123456785FR', current_stage: 'delivered',
@@ -905,8 +908,9 @@ describe('TrackingSyncService', () => {
     const adapter = { fetch: vi.fn().mockResolvedValueOnce(origin).mockResolvedValueOnce({ status: 'unknown' }) };
     await new TrackingSyncService(fakeClient() as unknown as SupabaseServiceClient, adapter, null)
       .syncPackage({ id: 'cainiao-destination', carrier: 'aliexpress', tracking_number: number });
-    expect(adapter.fetch.mock.calls.map((call) => call[0])).toEqual(country === 'Switzerland'
-      ? ['aliexpress', 'swiss-post'] : ['aliexpress']);
+    expect(adapter.fetch.mock.calls.map((call) => call[0])).toEqual([
+      'aliexpress', country === 'Switzerland' ? 'swiss-post' : 'posti',
+    ]);
   });
 
   it('compares handoff freshness in each carrier’s declared timezone', async () => {
@@ -936,16 +940,113 @@ describe('TrackingSyncService', () => {
     });
   });
 
-  it.each(['la-poste', 'aliexpress', 'spring-gds', 'intl-post'])('keeps %s without partner evidence even for a Finnish destination or Swiss issuer', async (carrier) => {
+  it.each(['la-poste', 'aliexpress', 'spring-gds', 'intl-post'])('keeps %s when the national post has no dated progress', async (carrier) => {
     const client = fakeClient();
     const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit', destination_country: 'FI' }) };
     const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null);
     for (const tracking_number of ['CW123456785FR', 'LX123456785CH']) {
       adapter.fetch.mockClear();
       await service.syncPackage({ id: 'no-partner', carrier, tracking_number });
-      expect(adapter.fetch).toHaveBeenCalledExactlyOnceWith(carrier, tracking_number, null, null);
+      expect(adapter.fetch.mock.calls.map((call) => call.slice(0, 2))).toEqual([
+        [carrier, tracking_number], ['posti', tracking_number],
+      ]);
       expect(client.updatePackage.mock.calls.at(-1)![1]).toMatchObject({ sync_status: 'ok', current_stage: 'in_transit' });
+      expect(client.updatePackage.mock.calls.at(-1)![1].carrier_data.active_tracking_carrier).not.toBe('posti');
     }
+  });
+
+  it('confirms a PostNL destination lookup through the real adapter, normalization and router', async () => {
+    const number = 'LX123456785NL';
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async (url) => Response.json(
+      String(url).endsWith('/token') ? { access_token: 'visitor-token' } : { data: { items: [{
+        item: number, destination_code: 'CH', events: [{ category: 'Departed',
+          datetime_local: '2026-03-04T10:00:00Z', status_description: 'Departed', country_code: 'NL' }],
+      }] } },
+    ));
+    const swiss = vi.fn().mockResolvedValue({ status: 'out_for_delivery', last_update: '2026-03-05T09:00:00Z',
+      events: [{ time: '2026-03-05T09:00:00Z', description: 'Out for delivery', stage: 'out_for_delivery' }] });
+    const registry = new AdapterRegistry({ factories: {
+      'spring-gds': postNLAdapter,
+      'swiss-post': () => ({ id: 'swiss-post', steps: ['direct'], track: swiss }),
+    }, carriers: { 'spring-gds': 'spring-gds', 'swiss-post': 'swiss-post' } }, {
+      fetcher, trawl: null, browserExecutablePath: null, recorder: NOOP_RECORDER, env: {},
+    });
+    const direct = new CarrierTrackingAdapter(undefined, registry, NOOP_RECORDER);
+    const adapter = { fetch: vi.fn(direct.fetch.bind(direct)), fetchUniversal: vi.fn() };
+    const client = fakeClient();
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null);
+    const parcel = { id: 'postal-destination', carrier: 'spring-gds', tracking_number: number };
+    await expect(service.syncPackage(parcel)).resolves.toMatchObject({ updated: 1, errors: 0 });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(swiss).toHaveBeenCalledExactlyOnceWith({ number, trackingUrl: null, postcode: null });
+    expect(adapter.fetchUniversal).not.toHaveBeenCalled();
+    const values = client.updatePackage.mock.calls.at(-1)![1];
+    expect(values).toMatchObject({ current_stage: 'out_for_delivery', carrier_data: {
+      original_carrier: 'spring-gds', original_tracking_number: number,
+      active_tracking_carrier: 'swiss-post', active_tracking_number: number,
+    } });
+    expect(new Set(client.insertEvents.mock.calls[0][0].map((event: JsonObject) => String(event.provider_event_id).split(':')[0])))
+      .toEqual(new Set(['spring-gds', 'swiss-post']));
+    adapter.fetch.mockClear();
+    await service.syncPackage({ ...parcel, ...values });
+    expect(adapter.fetch).toHaveBeenCalledExactlyOnceWith('swiss-post', number, null, null);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(['unknown', 'registered', 'undated', 'stale', 'failed', 'wrong_identity', 'terminal_conflict'])(
+    'keeps PostNL when a national-post probe is %s', async (state) => {
+      const client = fakeClient();
+      const number = 'LX123456785NL';
+      const origin = parsePostNLTrackingResponse({ data: { items: [{ item: number, destination_code: 'CH',
+        events: [{ category: state === 'terminal_conflict' ? 'Delivered' : 'Departed',
+          datetime_local: '2026-03-04T10:00:00Z', status_description: 'Postal tracking update' }],
+      }] } }, number);
+      const delivery: CarrierResult = { status: 'out_for_delivery', last_update: '2026-03-05T10:00:00Z' };
+      if (state === 'unknown') delivery.status = 'unknown';
+      if (state === 'registered') { delivery.status = 'pending'; delivery.current_stage = 'registered'; }
+      if (state === 'undated') delivery.last_update = null;
+      if (state === 'stale') delivery.last_update = '2026-03-03T10:00:00Z';
+      const adapter = { fetch: vi.fn().mockResolvedValueOnce(origin) };
+      if (state === 'failed') adapter.fetch.mockRejectedValueOnce(new Error('Swiss Post unavailable'));
+      else if (state === 'wrong_identity') adapter.fetch.mockRejectedValueOnce(new SchemaError('Swiss Post', 'Different shipment'));
+      else adapter.fetch.mockResolvedValueOnce(delivery);
+      await new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null)
+        .syncPackage({ id: 'postal-probe', carrier: 'spring-gds', tracking_number: number });
+      expect(adapter.fetch.mock.calls.map((call) => call[0])).toEqual(['spring-gds', 'swiss-post']);
+      const values = client.updatePackage.mock.calls.at(-1)![1];
+      expect(values).toMatchObject({ sync_status: 'ok', current_stage: state === 'terminal_conflict' ? 'delivered' : 'in_transit' });
+      expect(values.carrier_data.active_tracking_carrier).not.toBe('swiss-post');
+    },
+  );
+
+  it('remembers unsuccessful national-post probes and retries a changed destination immediately', async () => {
+    const client = fakeClient();
+    let destination = 'CH';
+    let now = new Date('2026-03-04T12:00:00Z');
+    const adapter = { fetch: vi.fn(async (carrier: string): Promise<CarrierResult> => carrier === 'spring-gds'
+      ? { status: 'in_transit', destination_country: destination, last_update: '2026-03-04T10:00:00Z' }
+      : { status: 'unknown' }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => now);
+    let parcel: JsonObject = { id: 'postal-retry', carrier: 'spring-gds', tracking_number: 'LX123456785NL' };
+    for (const expected of [['spring-gds', 'swiss-post'], ['spring-gds'], ['spring-gds', 'posti']]) {
+      adapter.fetch.mockClear();
+      await service.syncPackage(parcel);
+      expect(adapter.fetch.mock.calls.map((call) => call[0])).toEqual(expected);
+      parcel = { ...parcel, ...client.updatePackage.mock.calls.at(-1)![1] };
+      now = new Date(now.getTime() + 10 * 60_000);
+      if (expected.length === 1) destination = 'FI';
+    }
+  });
+
+  it('does not upgrade a saved destination guess into partner evidence during an origin outage', async () => {
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn().mockRejectedValueOnce(new Error('PostNL unavailable'))
+      .mockResolvedValueOnce({ status: 'delivered' }) };
+    await expect(new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null)
+      .syncPackage({ id: 'postal-outage', carrier: 'spring-gds', tracking_number: 'LX123456785NL',
+        current_stage: 'in_transit', carrier_data: { destination_country: 'CH' } }))
+      .resolves.toMatchObject({ errors: 1 });
+    expect(client.updatePackage.mock.calls.at(-1)![1].current_stage).toBeUndefined();
   });
 
   it('ignores invalid optional partner hints without dropping a successful origin result', async () => {

@@ -30,7 +30,7 @@ Retry failed direct routes after the recorded cooldown; successful direct recove
 | 429 with stale/no successful data | Report before fallback; try another eligible provider within the attempt/time budget. Do not retry the throttled provider early. |
 | Unknown carrier | Try one strong direct candidate when available; otherwise discover and persist a universal provider. No carrier label is invented from a numeric shape or a generic brand. |
 | Universal fails | Record provider/category, update parcel cooldown and shared health, then try a healthy alternative if allowed. Retain affinity until a replacement succeeds. If none succeed, preserve progress and store the next check time. |
-| Border crossing/double carrier | Preserve origin history. A reported delivery partner can use any dedicated adapter that needs no additional inputs. Resolve structured names and official partner links through the carrier catalog, then confirm identity and real progress before selecting the delivery leg. Pin its local number for refresh and universal recovery. Neither a destination country nor a postal issuer suffix identifies the delivery partner. Multiple reported carrier names alone are insufficient to switch. |
+| Border crossing/double carrier | Preserve origin history. A reported delivery partner can use any dedicated adapter that needs no additional inputs. Resolve structured names and official partner links through the carrier catalog, then confirm identity and real progress before selecting the delivery leg. With no named partner, a checksum-valid postal number and reported destination can propose one national-post lookup. Country and issuer suffix alone never confirm the operator. Pin a confirmed local number for refresh and universal recovery. |
 | Manual good → unsupported/wrong selection | Check the new choice first. Preserve history and revalidate the prior confirmed route as recovery. If it still works on this number, automatically restore it and show the temporary notice. Carrier changes invalidate queued/in-flight work through the existing generation/lease fencing. |
 | Older fallback or terminal regression | Preserve the newer/terminal summary and prior event watermark. Provider success does not authorize a status regression. |
 
@@ -42,6 +42,16 @@ Other adapters can supply `delivery_carrier` and an optional
 `delivery_tracking_number`, or include an official partner link in their events.
 A standalone downstream reference is also retained: a unique high-confidence
 catalog match proposes a lookup, with named partners taking precedence.
+For a checksum-valid S10 reference with no named partner, the reported
+destination can instead propose one national-post lookup through the shared
+[catalog hints](../packages/carriers/core/catalog/hints.ts). PostNL retains its
+structured `destination_code`; Cainiao's exact English country labels are also
+accepted. A postal reference's issuer suffix does not override that destination.
+This bounded fallback applies across origin carriers and requires a dedicated
+destination adapter without additional credentials. It does not use transit
+scan locations, try multiple national operators, or apply to arbitrary parcel
+numbers. Destination-based candidates additionally require dated progress;
+the same freshness, terminal-state protection and probe cooldown apply.
 Unknown or conflicting partner evidence is ignored. Malformed optional hints
 do not invalidate usable origin tracking. A lookup failure, pre-advice, unknown,
 stale or conflicting delivery result keeps the origin active.

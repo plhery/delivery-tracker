@@ -105,6 +105,7 @@ export function parsePostNLTrackingResponse(value: unknown, trackingNumber: stri
   // Webshop or business name only; PostNL does not expose the recipient here.
   const senderName = text(item.senderName ?? item.sender ?? item.title).replace(/\s+/g, ' ').trim().slice(0, 200) || null;
   const deliveredAt = classified?.status === 'delivered' ? text(latest.datetime_local) || null : null;
+  const destination = text(item.destination_code).trim().toUpperCase();
   return {
     status: classified?.status ?? (category ? 'in_transit' : 'unknown'),
     ...(classified ? { current_stage: classified.stage } : {}),
@@ -113,6 +114,7 @@ export function parsePostNLTrackingResponse(value: unknown, trackingNumber: stri
     expected_delivery: null,
     ...(senderName ? { sender_name: senderName } : {}),
     ...(deliveredAt ? { delivered_at: deliveredAt } : {}),
+    ...(/^[A-Z]{2}$/.test(destination) ? { destination_country: destination } : {}),
     events,
   };
 }

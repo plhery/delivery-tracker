@@ -8,7 +8,7 @@ import { DateTime, IANAZone } from 'luxon';
 import { STAGES } from '../generated/apiContract';
 import type { CarrierResult } from './carrierResult';
 import { normalizeCarrierResult } from './carrierResult';
-import { deliveryHandoff, hasDirectHandoffAdapter } from './carrierHandoff';
+import { deliveryHandoff, hasDirectHandoffAdapter, type DeliveryHandoff } from './carrierHandoff';
 import {
   AUTOMATIC_CARRIER_IDS,
   carrierTimezone,
@@ -1075,6 +1075,7 @@ export class TrackingSyncService {
     if (!supportsSwissPostHandoff(trackingNumber) || carrierId !== 'swiss-post') {
       let origin: CarrierResult;
       let originError: unknown;
+      let savedPartner: DeliveryHandoff | null = null;
       try {
         origin = normalizeCarrierResult(await this.adapter.fetch(
           carrierId, trackingNumber,
@@ -1083,13 +1084,13 @@ export class TrackingSyncService {
         ));
       } catch (error) {
         // An international operator outage must not hide a confirmed local delivery.
-        const savedPartner = deliveryHandoff(carrierId, trackingNumber, metadata);
+        savedPartner = deliveryHandoff(carrierId, trackingNumber, metadata);
         if (!savedPartner) throw error;
         originError = error;
         origin = { delivery_carrier: savedPartner.carrier, delivery_tracking_number: savedPartner.number };
       }
       let fallbackError: string | null = null;
-      const candidate = deliveryHandoff(carrierId, trackingNumber, origin);
+      const candidate = savedPartner ?? deliveryHandoff(carrierId, trackingNumber, origin);
       const previousProbe = candidate ? previousDeliveryProbe(parcel, candidate.carrier, candidate.number) : null;
       const originUpdate = typeof origin.last_update === 'string' ? origin.last_update : previousProbe?.origin_update ?? null;
       const sinceProbe = previousProbe ? this.now().getTime() - Date.parse(previousProbe.at) : Number.NaN;
@@ -1115,6 +1116,7 @@ export class TrackingSyncService {
             && new Date(deliveryTime).toISOString().slice(0, 10) === new Date(originTime).toISOString().slice(0, 10)
             && new Date(watermark).toISOString().slice(0, 10) === new Date(originTime).toISOString().slice(0, 10);
           if (delivery.status !== 'pending' && !['pending', 'registered'].includes(resultStage(delivery) ?? 'pending')
+            && (candidate.basis !== 'destination' || deliveryTime > 0)
             && resultHasUpdate(delivery) && (deliveryTime >= watermark || sameCompletion)
             && (!terminal || resultStage(delivery) === terminal)) {
             // The local delivery hides the origin failure from the router, which reports every other one.
