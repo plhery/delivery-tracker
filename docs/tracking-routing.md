@@ -5,11 +5,11 @@ Implemented September 2026. Carrier selection and retrieval provider are separat
 ## Provider order and affinity
 
 1. Use the configured/confirmed direct adapter when available. Cainiao (`aliexpress`) is an aggregator too, but stays a targeted direct route for detected AliExpress/international formats and the existing Swiss Post handoff. It is not blindly queried for every parcel.
-2. For discovery: **Ship24 → ParcelsApp → 17TRACK**. Ship24 is first following verified sub-second direct JSON lookups in production. This is an operational preference based on those samples, not a broad reliability benchmark. Existing per-parcel success takes precedence, including a working 17TRACK affinity.
-3. Postal Ninja is excluded by default while unattended verification is unresolved. Set `TRACKING_ENABLE_POSTAL_NINJA=true` to include it experimentally before 17TRACK (which stays last); do not count it as working coverage without a fresh deployed test.
-4. Remember a successful provider and the lookup number in `carrier_data.routing`. A subsequent check starts there, even when it is third in the default list. Respect provider cooldowns before requesting it.
+2. For discovery: **Ship24 → ParcelsApp → 17TRACK → UPU for checksum-valid S10 numbers**. Ship24 is first following verified sub-second direct JSON lookups in production. This is an operational preference based on those samples, not a broad reliability benchmark. Existing per-parcel success takes precedence, including a working 17TRACK affinity.
+3. Postal Ninja is excluded by default while unattended verification is unresolved. Set `TRACKING_ENABLE_POSTAL_NINJA=true` to include it experimentally before 17TRACK; do not count it as working coverage without a fresh deployed test.
+4. Remember a successful richer provider and the lookup number in `carrier_data.routing`. A subsequent check starts there, even when it is third in the default list. Respect provider cooldowns before requesting it. UPU never becomes preferred, never moves ahead through discovery rotation, and is excluded from shadow comparisons; an existing richer affinity survives a UPU fallback.
 
-On failure, try **every eligible enabled universal once in the same check**, stopping at the first usable result: Ship24 → ParcelsApp → 17TRACK, or the saved successful provider first. A slow direct attempt does not consume the universal budget. Reserve 35 seconds per enabled provider: up to 30 seconds for lookup plus transport allowance, for a 105-second fallback budget by default (140 seconds with experimental Postal Ninja enabled). Timeouts use integer milliseconds. Cooldowns, a recent-success 429 deferral, cancellation, and an exhausted overall budget still prevent calls. If a budget overrun leaves providers untried, the persisted discovery cursor advances for the next check.
+On failure, try **every eligible enabled universal once in the same check**, stopping at the first usable result: Ship24 → ParcelsApp → 17TRACK → eligible UPU, or the saved richer provider first. A slow direct attempt does not consume the universal budget. Reserve 35 seconds per richer provider: up to 30 seconds for lookup plus transport allowance, for a 105-second fallback budget by default (140 seconds with experimental Postal Ninja enabled). Postal S10 lookups reserve an additional 13 seconds for UPU: at most eight seconds for its single HTTP request plus transport allowance. Non-postal lookups never acquire a UPU lease. Timeouts use integer milliseconds. Cooldowns, a recent-success 429 deferral, cancellation, and an exhausted overall budget still prevent calls. If a budget overrun leaves providers untried, the persisted discovery cursor advances for the next check.
 
 Universal-backed parcels refresh at most every **15 minutes during 08:00–22:00 Europe/Zurich**, hourly overnight. Manual refresh uses the same persisted cooldown. Direct adapters retain their existing schedules; GLS's longer limits also remain.
 
@@ -51,9 +51,24 @@ wait 55 minutes unless origin history advances or the partner/reference changes.
 An explicitly selected Swiss postal route retains its existing Cainiao fallback;
 other carriers do not trigger it just because a number was issued in Switzerland.
 
+## Sparse postal history
+
+Provider responses do not replace the saved timeline: event upserts retain
+previous rows. UPU’s uncertain wall times are archived separately (up to 1,000
+scans per lookup number), including when a shorter response omits past scans or
+a richer provider recovers. Newly observed current UPU milestones enter the
+visible timeline at observation time, explicitly flagged as lacking a provider
+instant. Its complete local-time archive is not rendered as a dated timeline.
+
+UPU can update its own summary but cannot demonstrate cross-provider freshness;
+keep an existing richer summary, the UTC event watermark and terminal progress.
+Delivery forecasts never enter UPU history or freshness. See
+[UPU’s contract](../packages/carriers/providers/upu/README.md#history-and-time)
+and the [provider comparison](../packages/carriers/providers/COMPARISON.md).
+
 ## Displayed tracking links
 
-The primary web/iPhone link follows `tracking_provider` on the displayed successful result: 17TRACK, ParcelsApp or Ship24 opens that provider with the matching lookup number. It does not follow a speculative preference or a failed attempt. Direct recovery clears this field and restores the confirmed carrier link. Linked journeys retain the origin link and use the local number for the active provider. Saved capability URLs are reused only for the same carrier and number. Unknown provider names cannot inject a URL. Postal Ninja uses its public tracking form until a stable public parcel deep link is verified.
+The primary web/iPhone link follows `tracking_provider` on the displayed successful result: 17TRACK, ParcelsApp or Ship24 opens that provider with the matching lookup number. It does not follow a speculative preference or a failed attempt. Direct recovery clears this field and restores the confirmed carrier link. Linked journeys retain the origin link and use the local number for the active provider. Saved capability URLs are reused only for the same carrier and number. Unknown provider names cannot inject a URL. Postal Ninja and UPU use their verified public tracking forms; no parcel deep link is guessed. UPU’s form may ask the user for a CAPTCHA even though its API does not.
 
 ## Shared provider protection
 
@@ -85,6 +100,6 @@ See [scraper monitoring](scraper-monitoring.md) for per-provider average/p95 tim
 
 ## Deployment and verification
 
-Apply `20260912150000_tracking_provider_health.sql` and `20260912160000_preserve_carrier_change_history.sql` and `20260912170000_automatic_carrier_correction.sql` before enabling this application build. The correction migration saves carrier/inputs, notice, and tracking evidence atomically, renews generation only on a correction, and rejects stale workers. Ordinary status writes do not change the generation. The former adds service-only coordination RPCs; the latter preserves ownership/input validation, cancellation, and generation fencing while removing destructive history resets. No separate scheduled job is needed: rotation runs through the existing scheduler.
+Apply `20260912150000_tracking_provider_health.sql` and `20260912160000_preserve_carrier_change_history.sql` and `20260912170000_automatic_carrier_correction.sql` before enabling this application build. The UPU addition also requires `20260921100000_add_upu_provider.sql` to extend the shared provider allowlist. The correction migration saves carrier/inputs, notice, and tracking evidence atomically, renews generation only on a correction, and rejects stale workers. Ordinary status writes do not change the generation. The former adds service-only coordination RPCs; the latter preserves ownership/input validation, cancellation, and generation fencing while removing destructive history resets. No separate scheduled job is needed: rotation runs through the existing scheduler.
 
 Tests cover routing, rollover/DST boundaries, failed and successful fallback, wrong-carrier confirmation, credential isolation, manual edits, polling persistence, summary preservation, real SDK event tags/grouping, and SQL admission/lease/cooldown/ownership behavior. Live availability is checked separately: on September 10, Ship24 returned matching delivered history from the production container with one HTTP POST each for two public examples (32 normalized events in 409 ms; 6 in 121 ms). Browser recovery remains available. This establishes those successful lookups, not universal coverage. Postal Ninja remains experimental.

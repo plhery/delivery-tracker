@@ -174,4 +174,5 @@ npm run test:contract                                               # generated 
 | `postal-ninja` | [README](providers/postal-ninja/README.md) |
 | `seventeentrack` | [README](providers/seventeentrack/README.md) |
 | `ship24` | [README](providers/ship24/README.md) |
+| `upu` | [README](providers/upu/README.md) |
 <!-- /GENERATED:carriers -->

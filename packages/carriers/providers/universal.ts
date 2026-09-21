@@ -4,10 +4,10 @@ import 'server-only';
  * The universal discovery chain: what runs when no dedicated carrier adapter
  * can answer for a parcel.
  *
- * Order is Ship24 -> ParcelsApp -> 17TRACK, with Postal Ninja inserted before
+ * Order is Ship24 -> ParcelsApp -> 17TRACK -> UPU, with Postal Ninja inserted before
  * 17TRACK only when the host enables it. Each provider is asked once per
  * lookup and the first usable history wins; the per-parcel router remembers
- * which provider answered, so this order is only the starting point. The
+ * which provider answered, except UPU stays last and requires a postal S10. The
  * source names are persisted in routing state and must not change.
  *
  * This module owns the order and the aggregate failure; every protocol detail
@@ -17,10 +17,12 @@ import type { AdapterEnvironment, CarrierAdapter } from '../core/adapter';
 import type { CarrierResult } from '../core/result';
 import { NOOP_RECORDER } from '../core/telemetry';
 import { TrawlClient } from '../core/transport';
+import { isValidS10TrackingNumber } from '../core/detection/s10';
 import { adapter as parcelsAppAdapter } from './parcelsapp/adapter';
 import { adapter as postalNinjaAdapter } from './postal-ninja/adapter';
 import { adapter as seventeenTrackAdapter } from './seventeentrack/adapter';
 import { adapter as ship24Adapter } from './ship24/adapter';
+import { adapter as upuAdapter } from './upu/adapter';
 import { numberOf, type UniversalSource as Source } from './shared/result';
 
 export { parse17TrackResponse, SeventeenTrackLookupError, SeventeenTrackVerificationError } from './seventeentrack/adapter';
@@ -30,9 +32,10 @@ export { parseShip24Response } from './ship24/adapter';
 export { TrackingCaptureError } from './shared/capture';
 export type { UniversalSource } from './shared/result';
 
-export const UNIVERSAL_SOURCES: Source[] = ['Ship24', 'ParcelsApp', '17TRACK'];
-export function universalSources(enablePostalNinja = false): Source[] {
-  return enablePostalNinja ? ['Ship24', 'ParcelsApp', 'Postal Ninja', '17TRACK'] : [...UNIVERSAL_SOURCES];
+export const UNIVERSAL_SOURCES: Source[] = ['Ship24', 'ParcelsApp', '17TRACK', 'UPU'];
+export function universalSources(enablePostalNinja = false, trackingNumber?: string): Source[] {
+  const sources: Source[] = enablePostalNinja ? ['Ship24', 'ParcelsApp', 'Postal Ninja', '17TRACK', 'UPU'] : [...UNIVERSAL_SOURCES];
+  return sources.filter((source) => source !== 'UPU' || trackingNumber === undefined || isValidS10TrackingNumber(trackingNumber));
 }
 
 const FACTORIES = {
@@ -40,6 +43,7 @@ const FACTORIES = {
   'ParcelsApp': parcelsAppAdapter,
   'Postal Ninja': postalNinjaAdapter,
   '17TRACK': seventeenTrackAdapter,
+  'UPU': upuAdapter,
 } as const satisfies Record<Source, unknown>;
 
 interface SourceFailure {
@@ -86,7 +90,7 @@ export class UniversalTracker {
   async fetch(trackingNumber: string, postcode?: string | null): Promise<CarrierResult> {
     numberOf(trackingNumber);
     const failures: SourceFailure[] = [];
-    const sources = universalSources(this.options.enablePostalNinja);
+    const sources = universalSources(this.options.enablePostalNinja, trackingNumber);
     for (const source of sources) {
       try { return await this.fetchSource(source, trackingNumber, undefined, postcode); }
       catch (error) { failures.push({ source, reason: 'history unavailable; try again later or open the tracking website', error }); }

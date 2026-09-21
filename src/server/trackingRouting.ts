@@ -10,6 +10,7 @@ import { universalSources } from './universalTracking';
 import type { UniversalSource } from './universalTrackingResult';
 import { errorType, reportRoutingEvent } from './observability';
 import { carrierErrorKind, retryAfterMsOf } from '@carriers/core/errors';
+import { UPU_BUDGET_MS } from '@carriers/providers/upu/adapter';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -135,7 +136,9 @@ export class TrackingRouter {
     const universalNumber = metadata.original_carrier && metadata.active_tracking_carrier
       && typeof metadata.active_tracking_number === 'string' ? metadata.active_tracking_number : number;
     if (state.preferred_number && state.preferred_number !== universalNumber) state.preferred_provider = undefined;
-    const sources = universalSources(this.options.enablePostalNinja);
+    const sources = universalSources(this.options.enablePostalNinja, universalNumber);
+    // Sparse postal fallback must never become sticky, including saved state.
+    if (state.preferred_provider === 'UPU') state.preferred_provider = undefined;
     const recent = () => millis(state.last_success_at) > 0 && now().getTime() - millis(state.last_success_at) < freshnessWindow(now());
     const report = (code: string, provider: string, kind?: string, error?: unknown) => reportRoutingEvent(code, {
       carrier: declared, provider, category: kind, trackingNumber: number,
@@ -247,12 +250,14 @@ export class TrackingRouter {
       if (value) return persistResult(value, candidate);
     }
 
-    const preferred = sources.includes(state.preferred_provider!) ? state.preferred_provider : undefined;
-    const offset = state.discovery_cursor % sources.length;
-    const ordered = [...new Set([...(preferred ? [preferred] : []), ...sources.slice(offset), ...sources.slice(0, offset)])];
-    // Reserve one 30s lookup plus transport allowance for every enabled source.
+    const richerSources = sources.filter((source) => source !== 'UPU');
+    const preferred = richerSources.includes(state.preferred_provider!) ? state.preferred_provider : undefined;
+    const offset = state.discovery_cursor % richerSources.length;
+    const ordered = [...new Set([...(preferred ? [preferred] : []), ...richerSources.slice(offset), ...richerSources.slice(0, offset),
+      ...sources.filter((source) => source === 'UPU')])];
+    // Reserve each source’s lookup budget plus transport allowance (UPU needs only 8s).
     // Start after direct attempts so a slow carrier cannot starve discovery.
-    const universalDeadline = performance.now() + sources.length * 35_000;
+    const universalDeadline = performance.now() + sources.reduce((sum, source) => sum + (source === 'UPU' ? UPU_BUDGET_MS + 5_000 : 35_000), 0);
     const attemptedUniversal = new Set<UniversalSource>();
     const universal = async (source: UniversalSource): Promise<RoutedResult | null> => {
       signal?.throwIfAborted();
@@ -277,7 +282,7 @@ export class TrackingRouter {
       let retryAfterMs = 0;
       try {
         const postcode = typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null;
-        const result = normalizeCarrierResult(await this.options.universal(source, universalNumber, Math.min(30_000, remaining - 5_000), postcode));
+        const result = normalizeCarrierResult(await this.options.universal(source, universalNumber, Math.min(source === 'UPU' ? UPU_BUDGET_MS : 30_000, remaining - 5_000), postcode));
         if (!usable(result)) throw new TypeError('No usable universal progress');
         const previousFailure = state.failures[source];
         if (previousFailure) report('provider_recovered', source);
@@ -305,7 +310,7 @@ export class TrackingRouter {
       // Scheduled-only shadow check. Keep affinity unless the alternative has
       // strictly newer progress; never merge contradictory provider summaries.
       if (scheduled && preferred === source && now().getTime() - millis(state.last_probe_at) >= DAY && attempts < 2) {
-        const alternatives = sources.filter((item) => item !== source);
+        const alternatives = richerSources.filter((item) => item !== source);
         const alternative = alternatives[state.probe_cursor % alternatives.length];
         state.probe_cursor++;
         state.last_probe_at = now().toISOString();
@@ -321,8 +326,8 @@ export class TrackingRouter {
       }
       if (preferred !== chosen) report('provider_selected', chosen);
       if (!directCarrier(declared) && declared !== 'unknown' && declared !== 'intl-post' && !preferred) report('direct_support_opportunity', declared);
-      state.preferred_provider = chosen;
-      state.preferred_number = universalNumber;
+      state.preferred_provider = chosen === 'UPU' ? preferred : chosen;
+      state.preferred_number = state.preferred_provider ? universalNumber : undefined;
       if (typeof value.result.discovered_carrier === 'string') {
         state.discovered_carrier = value.result.discovered_carrier;
         if (directCarrier(state.discovered_carrier) && state.discovered_carrier !== state.confirmed_carrier) {
@@ -355,7 +360,7 @@ export class TrackingRouter {
       state.discovery_cursor = 0;
       return persistResult(value, chosen);
     }
-    state.discovery_cursor = (offset + Math.max(1, attempts)) % sources.length;
+    state.discovery_cursor = (offset + Math.max(1, [...attemptedUniversal].filter((source) => source !== 'UPU').length)) % richerSources.length;
     const deadlines = Object.values(state.failures).map((failure) => millis(failure.retry_at)).filter((time) => time > now().getTime());
     state.next_check_at = iso(Math.max(now().getTime() + 15 * 60_000, Math.min(...deadlines, now().getTime() + HOUR)));
     report('all_providers_unavailable', preferred ?? 'none');

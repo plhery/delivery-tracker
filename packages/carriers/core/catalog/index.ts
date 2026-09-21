@@ -148,7 +148,8 @@ export function parcelTrackingLinks(
     : provider === 'ParcelsApp' ? `https://parcelsapp.com/en/tracking/${number}`
     : provider === 'Ship24' ? `https://www.ship24.com/tracking?p=${number}`
     // Postal Ninja's verified public entry point; no guessed session/private URL.
-    : provider === 'Postal Ninja' ? 'https://postal.ninja/en/track' : undefined;
+    : provider === 'Postal Ninja' ? 'https://postal.ninja/en/track'
+    : provider === 'UPU' ? 'https://globaltracktrace.ptc.post/gtt.web/Search.aspx' : undefined;
   if (!url || !provider) return links;
   const primary: ParcelTrackingLink = { carrier: carrierInfo('unknown', locale), name: provider,
     url: localizedCarrierUrl('unknown', url, locale), active: true, ready: true, role: 'active' };

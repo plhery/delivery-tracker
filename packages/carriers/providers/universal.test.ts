@@ -23,9 +23,11 @@ const browserResponse = (source: '17TRACK' | 'ParcelsApp', data: unknown, overri
 
 describe('universal discovery chain', () => {
   it('keeps the persisted provider names and the opt-in position of Postal Ninja', () => {
-    expect(UNIVERSAL_SOURCES).toEqual(['Ship24', 'ParcelsApp', '17TRACK']);
-    expect(universalSources()).toEqual(['Ship24', 'ParcelsApp', '17TRACK']);
-    expect(universalSources(true)).toEqual(['Ship24', 'ParcelsApp', 'Postal Ninja', '17TRACK']);
+    expect(UNIVERSAL_SOURCES).toEqual(['Ship24', 'ParcelsApp', '17TRACK', 'UPU']);
+    expect(universalSources()).toEqual(['Ship24', 'ParcelsApp', '17TRACK', 'UPU']);
+    expect(universalSources(true)).toEqual(['Ship24', 'ParcelsApp', 'Postal Ninja', '17TRACK', 'UPU']);
+    expect(universalSources(false, number)).toEqual(['Ship24', 'ParcelsApp', '17TRACK']);
+    expect(universalSources(false, 'EB000000005CN')).toEqual(['Ship24', 'ParcelsApp', '17TRACK', 'UPU']);
   });
 
   it('uses ParcelsApp after Ship24 fails and stops after success', async () => {
@@ -37,6 +39,18 @@ describe('universal discovery chain', () => {
     const [url, options] = fetcher.mock.calls[0];
     expect(String(url)).toBe('https://parcelsapp.com/api/v2/parcels');
     expect(new URLSearchParams(String(options!.body)).get('carrier')).toBe('Auto-Detect');
+  });
+
+  it('reaches the real UPU factory only after richer lookups fail for an eligible postal number', async () => {
+    const postalNumber = 'EB000000005CN';
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async (url) => String(url).includes('globaltracktrace.ptc.post')
+      ? Response.json([{ ID: postalNumber, Events: [{ EventCd: 'EMA', EventNm: 'Posting/Collection',
+        EventDT: '2026-09-20T10:00:00Z' }] }])
+      : new Response('', { status: 404 }));
+    const tracker = new UniversalTracker({ fetcher, trawlUrl: '' });
+    await expect(tracker.fetch(postalNumber)).resolves.toMatchObject({ tracking_provider: 'UPU', current_stage: 'accepted' });
+    expect(fetcher.mock.calls.map(([url]) => new URL(String(url)).hostname))
+      .toEqual(['api.ship24.com', 'parcelsapp.com', 'globaltracktrace.ptc.post']);
   });
 
   it('falls through an unrelated ParcelsApp result to 17TRACK', async () => {

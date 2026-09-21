@@ -413,6 +413,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         case "17TRACK": raw = "https://t.17track.net/en#nums=\(number)"
         case "ParcelsApp": raw = "https://parcelsapp.com/en/tracking/\(number)"
         case "Ship24": raw = "https://www.ship24.com/tracking?p=\(number)"
+        case "UPU": raw = "https://globaltracktrace.ptc.post/gtt.web/Search.aspx"
         // Public entry point, without guessing a private/session-specific URL.
         case "Postal Ninja": raw = "https://postal.ninja/en/track"
         default: return links

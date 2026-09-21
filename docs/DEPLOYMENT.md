@@ -26,6 +26,10 @@ Take a fresh database backup. Apply every `supabase/migrations/*.sql` file in
 filename order and stop on the first error. The migration CI job applies the
 complete history to a clean PostgreSQL 16 database and runs RLS assertions.
 
+Before deploying UPU postal fallback, apply
+`20260921100000_add_upu_provider.sql`. It extends the service-only provider
+health allowlist; existing leases, cooldowns and parcel history are unchanged.
+
 Before deploying the Amazon Shipping distinction, apply
 `20260912210000_add_amazon_shipping.sql`. It adds `amazon-shipping` to the package
 carrier constraint and both ownership-enforcing package RPCs. It is compatible

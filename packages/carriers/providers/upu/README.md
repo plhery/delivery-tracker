@@ -1,8 +1,11 @@
 # UPU Global Track & Trace
 
-Investigation verified locally on 2026-09-21. This is a candidate shared postal
-provider; it has no adapter or production routing integration yet. UPU is the
-data source, not the operator transporting a shipment.
+Implemented as the final shared postal fallback on 2026-09-21. UPU is the
+data source, not the operator transporting a shipment. The [adapter](adapter.ts)
+uses one anonymous GET with an eight-second total budget, a two-megabyte body
+limit, exact item identity and at most 1,000 input events. Eligibility requires
+a checksum-valid S10 number; that does not prove coverage or identify a carrier.
+No browser recovery, cookie cache, retry or CAPTCHA solver is involved.
 
 ## Working anonymous API
 
@@ -46,7 +49,7 @@ The references are the public
 and [ordinary postal report](https://www.chinapostaltracking.com/qa/demora-160174/).
 Live identifiers and raw responses remain outside the repository.
 
-Implementation must account for these observed details:
+The implementation handles these observed boundaries:
 
 - Bind the returned `ID` to the requested item. An array response alone is not
   an identity check.
@@ -54,9 +57,8 @@ Implementation must account for these observed details:
   `Estimated delivery`. Keep it out of scan history and delivered-state inference. The
   ordinary reference used `EMI` with `Final delivery` for actual delivery.
 - The wire format differs from the documentation examples: dates use WCF
-  `/Date(milliseconds+offset)/` strings and `State` is numeric. Verify timestamp
-  semantics and status mapping before normalizing; do not assume ISO dates or
-  copy the example enum strings.
+  `/Date(milliseconds+offset)/` strings and `State` is numeric. The adapter keeps
+  local wall time and maps verified event codes rather than copying example enums.
 - Treat the observed empty body as an empty lookup, not an upstream JSON parse
   success. Broader invalid-input and expired-history behavior is unverified.
 - Coverage can be incomplete. A comparison during the same investigation with the
@@ -65,92 +67,37 @@ Implementation must account for these observed details:
   from UPU's five actual events. The ordinary reference yielded only delivery.
 
 These successes establish broader service eligibility than the EMS-only route,
-not comprehensive national-post coverage. The wider comparison below covers
+not comprehensive national-post coverage. The [wider comparison](../COMPARISON.md) covers
 several European references. Retention, production-network behavior and rate
 limits remain unverified.
 
-## Comparison with existing providers
+## History and time
 
-On 2026-09-21, eight public references were queried through UPU, the existing
-Ship24 HTTP client/parser and the existing ParcelsApp HTTP client/parser.
-The synthetic control above was also queried through UPU and Ship24. No browser
-recovery or 17TRACK comparison was run. All requests ran locally; negative
-responses and timeouts are not evidence of permanent carrier-wide exclusion.
+The adapter retains each real scan's reported wall time as `local_time` and
+leaves `time`/`last_update` unset. The WCF offset is not a verified event zone:
+a Finnish delivery disagreed with Posti's own timestamp. ISO-shaped replies
+receive the same conservative treatment. `DLV` and explicitly named delivery
+forecasts are excluded entirely, including from ETA, status and freshness.
+Known event codes determine stages; numeric `State` does not prove delivery.
+Signature fields and recipient details are not projected.
 
-The counts below are history entries after the existing provider projection,
-with identified delivery estimates excluded. Aggregators can repeat the same
-milestone in different wording or languages, so entry counts are not counts
-of distinct physical scans.
+The host accumulates up to 1,000 distinct UPU scans in
+`carrier_data.upu_history`, scoped to the lookup number, with first-observation
+times. A shorter response or recovery to another provider preserves that
+archive and existing timestamped timeline rows. The visible timeline records
+new current milestones at the time the app observed them, flagged
+`observed_without_provider_timestamp`; it does not backfill uncertain historical
+wall times as UTC scans. Thus stored UPU history is richer than the currently
+rendered timeline. Repeated identical responses do not append another milestone.
 
-| Public reference | UPU | Ship24 | ParcelsApp |
-| --- | --- | --- | --- |
-| China Post EMS, China → India | 5 entries | 6 entries | 17 entries |
-| Ordinary China Post, China → Brazil | 1 delivery entry | 1 delivery entry | 10-second transport timeout |
-| PostNL-issued item delivered by Posti, Netherlands → Finland | 1 delivery entry | 21 entries | 52 entries |
-| French postal item, France → China | 7 entries; latest actual milestone August 5 | 19 entries; newer milestone August 6 | 10-second transport timeout |
-| DHL postal item, `CG…DE` | Empty body | 18 entries, delivered | 18 entries, delivered |
-| Royal Mail public reference, `VU…GB` | Empty body | HTTP 404 | 1 delivery entry |
-| Royal Mail public reference, `GV…GB` | Empty body | HTTP 404 | 10-second transport timeout |
-| DPD numeric reference | Empty body | HTTP 404 | 5 entries |
+UPU can establish initial progress and update its own local-time summary. It
+cannot prove that its summary is newer than another source, so it preserves
+saved richer progress; older UPU snapshots and terminal regressions are also
+rejected. No UPU wall time advances the router's UTC event watermark. Richer
+providers are retried after their normal cooldowns even after UPU succeeds.
 
-UPU returned usable history for four of eight references. Ship24 returned
-history for five, and ParcelsApp for five; all four UPU successes also succeeded
-on Ship24. The synthetic control returned an empty UPU body and Ship24 HTTP 404.
-This small purposive set is not a population coverage or reliability estimate.
-
-UPU took 20–84 ms (median 25 ms) across the eight references in one pass with
-connection reuse. Ship24 took 116–2,023 ms (median 276 ms); successful ParcelsApp
-requests took 187–9,133 ms, with three others reaching their 10-second transport
-deadline. Timings exclude module startup; the adapter lookups also include
-parsing. These figures include different amounts of upstream work and do not
-establish production p95.
-
-Sources beyond the two China Post reports above:
-
-- [Posti CLI's published example](https://github.com/hatlabs/posti-cli), also
-  recorded in the Posti corpus. A fresh call through the local Posti adapter
-  independently returned 18 entries and a delivered status in 619 ms.
-- [French postal report](https://www.chinapostaltracking.com/qa/delivery-ew176267205fr-from-france-160586/).
-- [DHL public report source](https://fr.trustpilot.com/review/www.dhl.fr), recorded
-  in the [DHL corpus](../../carriers/dhl/numbers.json).
-- Royal Mail reports [one](https://www.reddit.com/r/royalmail/comments/1w25nnx/if_you_experienced_this_please_reply/)
-  and [two](https://www.reddit.com/r/Sugargoo/comments/1we8q17/where_is_my_parcel/),
-  recorded in the [Royal Mail corpus](../../carriers/royal-mail/numbers.json).
-- [DPD public report source](https://www.paketda.de/fragen-antworten.php), recorded
-  in the [DPD corpus](../../carriers/dpd/numbers.json).
-
-Two comparisons materially affect integration:
-
-- **Freshness:** the French reference's final actual UPU entry was customs
-  release on August 5. Ship24 additionally showed departure from the import
-  office and arrival at a post office on August 6. Returning immediately after
-  UPU success would suppress newer progress, not only older history.
-- **Timezone:** the Finnish delivery's UPU WCF timestamp encodes 14:42 UTC with
-  a `+0200` suffix, while Posti's own event is 13:42:18 UTC on the same day.
-  Both correspond to a displayed 16:42 when using their respective offsets.
-  This suggests UPU encoded local wall time using a server offset; it does not
-  establish the rule for all UPU events. Preserve that uncertainty before
-  using its timestamps for cross-provider freshness. Ship24 also renders that
-  delivery at 16:42 UTC; provider agreement alone is not timezone verification.
-
-The comparison also exposed one `Estimated delivery` row in ParcelsApp's China
-EMS history. Its current projection includes that row in `events` and
-`last_update`. It was excluded from the count above; no runtime parser change
-was made as part of this investigation.
-
-### Ordering recommendation
-
-UPU is a useful candidate for fast postal fallback. Keep Ship24 ahead of it
-under the current first-success-wins policy: UPU's cheaper success can hide
-newer or fuller history. A candidate order is **Ship24 → UPU for eligible postal
-numbers → ParcelsApp → 17TRACK**, keeping dedicated carrier adapters and saved
-working-provider affinity ahead of discovery as the host already does.
-
-Putting UPU first would need an enrichment policy that can continue to a richer
-provider after UPU succeeds, plus rules for merging history and comparing time.
-The present evidence does not justify replacing that work with a global order
-change. UPU's empty body must continue discovery, and postal-shaped numbers
-alone must not be treated as proof of coverage. Runtime ordering is unchanged.
+See [provider tradeoffs and the dated eight-reference comparison](../COMPARISON.md)
+for completeness, freshness, latency and the observed ParcelsApp forecast issue.
 
 ## Is it free?
 
@@ -183,7 +130,18 @@ API makes solving this form unnecessary for the verified lookups.
 | [AlienZaki/PostAPI GlobalTrack](https://github.com/AlienZaki/PostAPI/blob/c431f90647e9e11778b5dc86fb93fca59c64236f/GlobalTrack/global_track_service.py) and [solver](https://github.com/AlienZaki/PostAPI/blob/c431f90647e9e11778b5dc86fb93fca59c64236f/GlobalTrack/CaptchaSolver.py), GlobalTrack last changed 2023-01-16 | Posts the ASP.NET form, first tries a cached answer/encoded-challenge pair, then uses the external AZCaptcha service. This is a historical reuse hypothesis plus a service integration, not a verified current free OCR solver. No repository license was found; the code was inspected, not executed or copied. |
 | [shikarkhane/postal-scanner](https://github.com/shikarkhane/postal-scanner/blob/fc738049afccacdcef14887850ae269bc7d22fcb/src/destination/fetcher.py), file last changed 2018-11-29 | Its Sri Lanka path automates the UPU form with Selenium but has no CAPTCHA solution. It does not establish a current workaround. No repository license was found. |
 
-The anonymous JSON route remains a candidate for postal fallback, with bounded
-requests, identity checks, explicit estimate handling and corrected timestamp
-semantics. Broader first-choice routing needs the enrichment behavior described
-above; local API success alone is insufficient.
+## Adapter verification
+
+Fresh calls through the implemented adapter on 2026-09-21 returned five actual
+EMS scans in 86 ms, one ordinary China Post delivery scan in 69 ms, and one
+PostNL-to-Posti delivery scan in 19 ms. The synthetic unknown returned the
+parcel-specific empty-lookup error in 33 ms. Every successful result retained
+local wall time and left UTC freshness unset. These were local low-volume
+checks, not deployment or update-cadence verification.
+
+The API route is implemented independently; no prior-art code or credentials
+were copied. Tests cover identity, sparse/forecast-only results, date semantics,
+HTTP failures, cancellation, resource bounds, ordering and history preservation.
+Local live checks are separate from deployment verification. Apply
+`20260921100000_add_upu_provider.sql` before deploying the application so the
+shared health store admits the new provider.

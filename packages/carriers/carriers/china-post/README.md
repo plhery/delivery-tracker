@@ -105,7 +105,7 @@ All observations below are from 2026-09-21 on the local machine.
 | --- | --- | --- |
 | Existing [Ship24 adapter](../../providers/ship24/README.md) | Signed HTTP returned six events for the EMS reference in 413 ms, reporting `EMS Post`. The ordinary postal reference returned one delivered event in 1,895 ms, reporting `UPU`. A synthetic control returned HTTP 404. | Already usable through current routing. The second result is limited history, not proof of complete China Post scan coverage. |
 | Existing [ParcelsApp adapter](../../providers/parcelsapp/README.md) | Direct calls for the EMS reference and a synthetic control each reached the 10-second transport deadline without a response. | Inconclusive for China Post coverage; no browser recovery was tested in this pass. |
-| [UPU Global Track & Trace](../../providers/upu/README.md) | Follow-up verified its documented anonymous JSON API without a CAPTCHA, key or prior session. The EMS reference returned five actual events plus an estimate; the ordinary reference returned one delivery event. | A working candidate for EMS and non-EMS mail. The website CAPTCHA does not gate this documented API. Its EMS history lacked one arrival shown by the EMS Cooperative route. |
+| [UPU Global Track & Trace](../../providers/upu/README.md) | Follow-up verified its documented anonymous JSON API without a CAPTCHA, key or prior session. The EMS reference returned five actual events plus an estimate; the ordinary reference returned one delivery event. | Now integrated as the final fallback for eligible postal numbers. The website CAPTCHA does not gate this documented API. Its EMS history lacked one arrival shown by the EMS Cooperative route. |
 | [track-chinapost.com](https://track-chinapost.com/startairmail.php) | Both the landing page and old `result_china.php` POST returned an HTTP 200 “Getting data” shell. It loads reCAPTCHA v3 and obtains an `_rtoken` cookie before reloading. | The old HTML scraper is not currently a verified shortcut. HTTP 200 alone is misleading. |
 | [17TRACK](../../providers/seventeentrack/README.md) | Already a universal provider; no new China Post-specific live probe in this pass. | Retain existing fallback; do not claim new verification. |
 
@@ -126,9 +126,17 @@ challenge tokens and live identifiers were not added as fixtures.
 | [bernalli/parcel-tracker-bot](https://github.com/bernalli/parcel-tracker-bot/blob/cc3656216346d07436cb9018393191abffd6b45a/src/parcel_tracker/trackers/china_post.py), inspected 2026-09-21, MIT | Recognizes China Post numbers and delegates to its Track17-backed base class. | Aggregator delegation, not a direct scraper. |
 | [clooney/china-post-tracking-api](https://github.com/clooney/china-post-tracking-api/tree/9333e321824a6090817bc265b1a1169ab7ca496e), last commit 2024-08-29 | TrackingMore API integration documentation. | Requires a provider API credential; the name does not indicate a free reverse-engineered endpoint. No repository license was reported. |
 
-The follow-up makes UPU's anonymous JSON route the strongest next shared postal
-provider candidate, with the EMS Cooperative route useful for EMS-specific
-history. Both need verified eligibility and existing fallback for incomplete
-coverage. Solving the China Post character CAPTCHA is a separate option if
+UPU's anonymous JSON route now supplies shared postal fallback, while the
+EMS Cooperative route supplies EMS-specific history. Both need constrained
+eligibility and existing fallback for incomplete coverage. Solving the China Post character CAPTCHA is a separate option if
 broader official-site history is needed and a reliable, bounded solver can be
 demonstrated.
+
+## Integrated postal fallback
+
+UPU now runs last in the shared universal chain for checksum-valid S10 numbers.
+It is a provider, not a carrier relabeling or an EMS-only route. See the
+[UPU adapter notes](../../providers/upu/README.md) and the central
+[provider tradeoffs](../../providers/COMPARISON.md) for CAPTCHA/API findings,
+coverage, sparse histories, uncertain timestamps and the ordering decision.
+Earlier dated investigation notes describe the state at the time of each probe.

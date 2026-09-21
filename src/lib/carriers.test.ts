@@ -1937,6 +1937,7 @@ describe('links follow successful tracking retrieval', () => {
     ['17TRACK', 'https://t.17track.net/fr#nums=TEST1234'],
     ['ParcelsApp', 'https://parcelsapp.com/fr/tracking/TEST1234'],
     ['Ship24', 'https://www.ship24.com/tracking?p=TEST1234'],
+    ['UPU', 'https://globaltracktrace.ptc.post/gtt.web/Search.aspx'],
     ['Postal Ninja', 'https://postal.ninja/en/track'],
   ])('uses %s instead of the failing carrier website', (trackingProvider, expected) => {
     const [link] = parcelTrackingLinks({ carrier: 'dhl', trackingNumber: 'TEST1234', trackingProvider }, 'fr');

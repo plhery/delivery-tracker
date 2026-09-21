@@ -10,21 +10,16 @@ persisted names. Protocol details live in each provider README.
 | [ParcelsApp](parcelsapp/README.md) | Anonymous form POST with postcode; TRAWL capture recovery | `direct`, `trawl` |
 | [17TRACK](seventeentrack/README.md) | TRAWL capture with the compatibility build | `trawl` |
 | [Postal Ninja](postal-ninja/README.md) | Local Chromium widget submission; opt-in | `browser` |
+| [UPU](upu/README.md) | Anonymous JSON GET; final postal fallback | `direct` |
 
-The initial order is **Ship24 → ParcelsApp → 17TRACK**.
+The initial order is **Ship24 → ParcelsApp → 17TRACK → UPU**.
 `TRACKING_ENABLE_POSTAL_NINJA=true` inserts Postal Ninja before 17TRACK.
-Its browser widget has dated success evidence; its direct signed protocol
-remains unverified. Ship24's initial preference comes from the September 10
-production samples, not a comprehensive reliability benchmark.
+UPU is eligible only for checksum-valid postal S10 numbers and always stays
+last: success never gives it affinity or a place in shadow comparisons.
 
-[UPU Global Track & Trace](upu/README.md) is an investigated candidate, not an
-enabled provider. Its documented anonymous JSON API returned matching EMS and
-ordinary postal history without the public form's CAPTCHA on September 21.
-The investigation records incomplete histories, prediction rows and wire-format
-differences that an adapter must handle before integration. A subsequent
-eight-reference comparison found UPU faster but sometimes less complete or
-older than Ship24. Keep Ship24 ahead of UPU under first-success-wins routing;
-UPU-first would require continuing to other providers for enrichment.
+[Provider tradeoffs and dated comparisons](COMPARISON.md) explain coverage,
+latency, history, timestamps, browser dependencies and the China Post/EMS/UPU
+alternatives. That evidence motivates the order; it is not a reliability SLA.
 
 `UniversalTracker.fetch()` calls providers until one returns successfully and
 aggregates failures in `UniversalTrackingError` if none do. Production

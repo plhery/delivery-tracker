@@ -39,6 +39,7 @@ import { isRecord, type JsonObject } from './types';
 import { UniversalTracker } from './universalTracking';
 import type { UniversalSource } from './universalTrackingResult';
 import { RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
+import { upuHistory } from './upuHistory';
 
 const MAX_PACKAGES_PER_OWNER_PER_SYNC = 5;
 const VALID_STAGES = new Set<string>(STAGES);
@@ -360,6 +361,11 @@ export function buildEvents(
     }
   }
   const previousStage = String(parcel.current_stage ?? 'pending');
+  const previousData = isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
+  const newUpuMilestone = result.tracking_provider === 'UPU'
+    && previousData.tracking_provider === 'UPU'
+    && typeof result.last_update_local === 'string'
+    && result.last_update_local > String(previousData.last_update_local ?? '');
   const currentAlreadyTimed = rows.some((row) => row.stage === current);
   if (
     observedAt
@@ -367,7 +373,7 @@ export function buildEvents(
     && reportedCurrent !== null
     && (result.status !== 'pending' || rows.length === 0)
     && current !== 'pending'
-    && current !== previousStage
+    && (current !== previousStage || newUpuMilestone)
     && !currentAlreadyTimed
   ) {
     const matchingEvent = (result.events ?? []).find((raw) => {
@@ -390,11 +396,14 @@ export function buildEvents(
       occurred_at: occurredAt,
       provider_event_id: providerEventId(
         carrierId,
-        `observed:${previousStage}->${current}`,
+        result.tracking_provider === 'UPU'
+          ? `UPU:observed:${String(matchingEvent?.local_time ?? '')}:${String(matchingEvent?.provider_code ?? '')}`
+          : `observed:${previousStage}->${current}`,
         location,
         description,
       ),
       raw_data: {
+        ...(result.tracking_provider === 'UPU' ? matchingEvent : {}),
         observed_without_provider_timestamp: true,
         stage_source: stageSource(
           VALID_STAGES.has(declaredCurrent) ? declaredCurrent : String(matchingEvent?.stage ?? ''),
@@ -851,11 +860,21 @@ export class TrackingSyncService {
       const returnedEventTime = Date.parse(String(result.last_update ?? ''));
       const olderSnapshot = Number.isFinite(previousEventTime) && Number.isFinite(returnedEventTime)
         && returnedEventTime < previousEventTime;
-      const preserveSummary = progressDisappeared || olderSnapshot
+      const previousData = isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
+      // UPU wall time cannot prove freshness against another source. It may
+      // establish initial progress, or update its own saved local-time summary.
+      const unprovenUpuSummary = result.tracking_provider === 'UPU' && (
+        (previousStage !== 'pending' && previousData.tracking_provider !== 'UPU')
+        || (previousData.tracking_provider === 'UPU' && typeof previousData.last_update_local === 'string'
+          && String(result.last_update_local ?? '') < previousData.last_update_local)
+      );
+      const preserveSummary = progressDisappeared || olderSnapshot || unprovenUpuSummary
         || (['delivered', 'returned'].includes(previousStage) && selectedStage !== previousStage);
       const carrierData: JsonObject = Object.fromEntries(
         Object.entries(result).filter(([key, value]) => key !== 'events' && value != null),
       );
+      const postalHistory = upuHistory(parcel, result, now);
+      if (postalHistory) carrierData.upu_history = postalHistory;
       // Linked journey identity belongs to the parcel, not an individual carrier response.
       if (isRecord(parcel.carrier_data)) {
         for (const key of ['original_carrier', 'original_tracking_number', 'original_tracking_url', 'original_package_id', 'active_tracking_carrier', 'active_tracking_number', 'original_canonical_tracking_number', 'auto_changed_from', 'auto_changed_to', 'auto_changed_at']) {
@@ -908,6 +927,11 @@ export class TrackingSyncService {
         values.carrier_data = carrierData;
         if (selectedStage && (hasUpdate || !swissPostReady)) values.current_stage = selectedStage;
       }
+      if (preserveSummary && postalHistory) {
+        values.carrier_data = {
+          ...(isRecord(values.carrier_data) ? values.carrier_data : previousData), upu_history: postalHistory,
+        };
+      }
       if (fetched.correction && !preserveSummary) {
         values.carrier = fetched.correction.carrier;
         values.tracking_url = fetched.correction.trackingUrl;
@@ -917,7 +941,7 @@ export class TrackingSyncService {
         values.carrier_data.routing.configured_carrier = carrierId;
       }
       const outcome = progressDisappeared ? 'error' : knownUpdate ? 'updated' : 'waiting';
-      const eventsToPersist = progressDisappeared ? [] : events;
+      const eventsToPersist = progressDisappeared || (preserveSummary && result.tracking_provider === 'UPU') ? [] : events;
       operation = 'persist_package';
       await audit.step('persist_package', async () => {
         await persist(values, eventsToPersist, progressDisappeared ? [] : deleteDescriptions);

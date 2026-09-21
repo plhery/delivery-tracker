@@ -14,7 +14,7 @@ import { trackingLanguageStage } from '../../core/status';
 import type { Stage } from '../../generated/catalog';
 import type { CarrierEvent, CarrierResult, CarrierStatus } from '../../core/result';
 
-export type UniversalSource = '17TRACK' | 'ParcelsApp' | 'Postal Ninja' | 'Ship24';
+export type UniversalSource = '17TRACK' | 'ParcelsApp' | 'Postal Ninja' | 'Ship24' | 'UPU';
 const STAGES: Record<string, Stage> = {
   InfoReceived: 'registered', InTransit: 'in_transit', AvailableForPickup: 'ready_for_pickup',
   OutForDelivery: 'out_for_delivery', DeliveryFailure: 'failed_attempt', Delivered: 'delivered',

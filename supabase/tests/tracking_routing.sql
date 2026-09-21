@@ -29,6 +29,13 @@ begin
   token := (public.acquire_tracking_provider('Ship24')->>'token')::uuid;
   perform public.finish_tracking_provider('Ship24', token, 'not_found', 86400000, 200);
   if (select next_allowed_at from public.tracking_provider_health where provider = 'Ship24') > now() + interval '10 seconds' then raise exception 'Parcel not-found disabled whole provider'; end if;
+  token := (public.acquire_tracking_provider('UPU')->>'token')::uuid;
+  if token is null then raise exception 'UPU request not admitted'; end if;
+  if public.acquire_tracking_provider('UPU')->>'token' is not null then raise exception 'Concurrent UPU request admitted'; end if;
+  perform public.finish_tracking_provider('UPU', token, 'not_found', 86400000, 25);
+  if (select next_allowed_at from public.tracking_provider_health where provider = 'UPU') > now() + interval '10 seconds' then
+    raise exception 'UPU empty lookup disabled the whole provider';
+  end if;
 end;
 $$;
 
