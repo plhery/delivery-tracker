@@ -76,7 +76,7 @@ npm run test:contract                                               # generated 
 | `c-chez-vous` | C Chez Vous | dedicated | direct | 1 | 2 | 5 | [README](carriers/c-chez-vous/README.md) |
 | `canada-post` | Canada Post | dedicated | direct | 4 | 4 | 15 | [README](carriers/canada-post/README.md) |
 | `canpar` | Canpar | universal providers |  | 0 | 4 | 0 |  |
-| `china-post` | China Post | universal providers |  | 0 | 2 | 0 |  |
+| `china-post` | China Post | universal providers |  | 0 | 2 | 0 | [README](carriers/china-post/README.md) |
 | `chronopost` | Chronopost | via la-poste | direct → retry | 4 | 6 | 6 | [README](carriers/chronopost/README.md) |
 | `ciblex` | Ciblex | dedicated | direct | 2 | 3 | 27 | [README](carriers/ciblex/README.md) |
 | `colis-prive` | Colis Privé | dedicated | direct | 1 | 3 | 34 | [README](carriers/colis-prive/README.md) |
