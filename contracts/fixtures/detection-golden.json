@@ -2309,6 +2309,14 @@
     ]
   },
   {
+    "input": "GV883319471GB",
+    "carrier": "royal-mail",
+    "confidence": "high",
+    "candidates": [
+      "royal-mail"
+    ]
+  },
+  {
     "input": "H06R4A1011299623",
     "carrier": "evri",
     "confidence": "high",
@@ -3136,6 +3144,14 @@
     "confidence": "high",
     "candidates": [
       "jd-logistics"
+    ]
+  },
+  {
+    "input": "VU493136052GB",
+    "carrier": "royal-mail",
+    "confidence": "high",
+    "candidates": [
+      "royal-mail"
     ]
   },
   {

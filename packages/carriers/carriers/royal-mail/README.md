@@ -84,11 +84,26 @@ available, but a successful shipment payload and reliable challenge recovery
 remain unverified. The earlier timings establish auto-pass under those sessions,
 not consistent availability.
 
-TRAWL's native hCaptcha solver supports checkbox auto-pass and audio. Its image
-challenge support is limited; Royal Mail's invisible widget has no checkbox.
+TRAWL's native hCaptcha solver attempts checkbox auto-pass and an audio fallback.
+The audio path is unverified; hCaptcha's current [accessibility documentation](https://www.hcaptcha.com/accessibility)
+describes optional text challenges instead. Royal Mail's invisible widget has no checkbox.
 Auto-pass depends on the browser session and upstream risk assessment, and is
 not guaranteed for every request. No paid solver key is required for the
 observed auto-pass path.
+
+An upstream review on 2026-09-21 found the hCaptcha solver identical in TRAWL
+1.5.0, [1.6.2](https://github.com/germondai/trawl/blob/v1.6.2/packages/tiers/src/solvers/hcaptcha.ts)
+and the development branch. Upgrading alone does not remove its unconditional
+checkbox click or add visual challenge solving. Newer browser fingerprint fixes
+may affect auto-pass, but do not establish reliable challenge recovery. An
+isolated 1.6.2 build with the same capture patch reproduced the checkbox timeout
+for both public references (about 38 seconds each, HTTP 500, no summary reply).
+The production image remains on 1.5.0; the upgrade did not fix this failure.
+
+The two recent public references and their original forum URLs are recorded in
+[numbers.json](numbers.json) as `public_shipment_report`. Their detection
+expectations do not assert a current shipment status. Parser fixtures remain
+synthetic; never copy recipient details or raw live responses into fixtures.
 
 Supply a current number outside the repository as
 `ROYAL_MAIL_LIVE_TRACKING_NUMBER`, configure `FLARESOLVERR_URL`, and run:

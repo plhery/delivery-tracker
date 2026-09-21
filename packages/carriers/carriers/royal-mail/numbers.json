@@ -26,6 +26,32 @@
         "confidence": "high"
       },
       "note": "Official documentation example, not a real shipment."
+    },
+    {
+      "number": "VU493136052GB",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.reddit.com/r/royalmail/comments/1w25nnx/if_you_experienced_this_please_reply/"
+      },
+      "expect": {
+        "carrier": "royal-mail",
+        "confidence": "high"
+      },
+      "note": "Public customer report with a later comment reporting delivery. Live lookup on 2026-09-21 failed before a tracking reply because the browser challenge was unresolved; not a verified live-status oracle."
+    },
+    {
+      "number": "GV883319471GB",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.reddit.com/r/Sugargoo/comments/1we8q17/where_is_my_parcel/"
+      },
+      "expect": {
+        "carrier": "royal-mail",
+        "confidence": "high"
+      },
+      "note": "Public customer report of an inbound shipment intended for Royal Mail. Live lookup on 2026-09-21 failed before a tracking reply because the browser challenge was unresolved; not a verified live-status oracle."
     }
   ]
 }

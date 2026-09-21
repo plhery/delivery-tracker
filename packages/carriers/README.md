@@ -138,7 +138,7 @@ npm run test:contract                                               # generated 
 | `purolator` | Purolator | universal providers |  | 0 | 7 | 0 |  |
 | `quickpac` | Quickpac | via planzer | direct | 2 | 1 | 26 | [README](carriers/quickpac/README.md) |
 | `relais-colis` | Relais Colis | dedicated | direct | 1 | 3 | 42 | [README](carriers/relais-colis/README.md) |
-| `royal-mail` | Royal Mail | dedicated | trawl | 3 | 2 | 11 | [README](carriers/royal-mail/README.md) |
+| `royal-mail` | Royal Mail | dedicated | trawl | 3 | 4 | 11 | [README](carriers/royal-mail/README.md) |
 | `seur` | SEUR | universal providers |  | 0 | 3 | 0 | [README](carriers/seur/README.md) |
 | `sf-express` | SF Express | universal providers |  | 0 | 2 | 0 |  |
 | `shipup` | ShipUp | universal providers |  | 0 | 1 | 0 |  |
