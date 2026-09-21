@@ -57,7 +57,7 @@
       "title": "Direct-path success rate (24h) by carrier",
       "gridPos": { "x": 0, "y": 16, "w": 12, "h": 9 },
       "targets": [
-        { "expr": "sum by (carrier) (increase(carrier_step_total{step=\"direct\", outcome=\"ok\"}[24h])) / sum by (carrier) (increase(carrier_step_total{step=\"direct\"}[24h]))", "format": "table", "instant": true }
+        { "expr": "(sum by (carrier) (increase(carrier_step_total{step=\"direct\", outcome=\"ok\"}[24h])) or sum by (carrier) (increase(carrier_step_total{step=\"direct\"}[24h])) * 0) / (sum by (carrier) (increase(carrier_step_total{step=\"direct\"}[24h])) > 0)", "format": "table", "instant": true }
       ]
     },
     {
@@ -84,7 +84,7 @@
       "description": "Per configured carrier. A carrier with its own adapter should stay near zero: every point above it is a direct failure followed by the router's cooldown. Universal-only carriers read 1; a carrier no provider served reads 0.",
       "gridPos": { "x": 0, "y": 30, "w": 12, "h": 9 },
       "targets": [
-        { "expr": "(sum by (carrier) (increase(carrier_refresh_total{served_by=\"provider\", outcome=\"updated\"}[24h])) or sum by (carrier) (increase(carrier_refresh_total{outcome=\"updated\"}[24h])) * 0) / sum by (carrier) (increase(carrier_refresh_total{outcome=\"updated\"}[24h]))", "format": "table", "instant": true }
+        { "expr": "(sum by (carrier) (increase(carrier_refresh_total{served_by=\"provider\", outcome=\"updated\"}[24h])) or sum by (carrier) (increase(carrier_refresh_total{outcome=\"updated\"}[24h])) * 0) / (sum by (carrier) (increase(carrier_refresh_total{outcome=\"updated\"}[24h])) > 0)", "format": "table", "instant": true }
       ]
     },
     {
@@ -93,7 +93,7 @@
       "description": "Successful lookups that needed more than one step attempt. For La Poste, final_step=retry with attempts 2, 3 or 4 is a 403 incident page recovered by the first, second or third retry; an attempts value that never appears is a retry that never helps.",
       "gridPos": { "x": 12, "y": 30, "w": 12, "h": 9 },
       "targets": [
-        { "expr": "sum by (carrier, final_step, attempts) (increase(carrier_lookup_total{carrier=~\"$carrier\", outcome=\"ok\", attempts!=\"1\"}[1h]))", "legendFormat": "{{carrier}} {{final_step}} after {{attempts}} attempts" }
+        { "expr": "sum by (carrier, final_step, attempts) (increase(carrier_lookup_total{carrier=~\"$carrier\", outcome=\"ok\", attempts=~\"[2-9]\"}[1h]))", "legendFormat": "{{carrier}} {{final_step}} after {{attempts}} attempts" }
       ]
     },
     {

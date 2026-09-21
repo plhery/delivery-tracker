@@ -70,12 +70,14 @@ wording is waiting in `tracking_status_observations` (see OBSERVABILITY.md).
 `carrier_refresh_total{served_by="provider",outcome="updated"}` over
 `carrier_refresh_total{outcome="updated"}` per carrier (the dashboard adds
 `or … * 0` to the numerator so a carrier no provider served reads 0 rather than
-nothing). After one direct failure
+nothing, and `> 0` to the denominator so a carrier with no refresh in the window
+is left out rather than shown as NaN). After one direct failure
 the router benches that adapter for its cooldown, so a small failure rate
 becomes a larger provider share; a carrier with its own adapter should stay
 near zero. "Is an in-adapter retry earning its requests" is
 `carrier_lookup_total{final_step="retry",outcome="ok"}` by `attempts`: an
-attempts value that never appears is a retry that never serves.
+attempts value that never appears is a retry that never serves. Select it with
+`attempts=~"[2-9]"`: a series without the label also satisfies `attempts!="1"`.
 
 [ops/grafana/carrier-scrapers.json](../ops/grafana/carrier-scrapers.json) is
 an importable Grafana dashboard with those panels, the provider share per
