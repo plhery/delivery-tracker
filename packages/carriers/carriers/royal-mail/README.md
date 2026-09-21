@@ -154,6 +154,37 @@ describes text challenges. Its solver is identical in TRAWL 1.5.0 and
 [1.6.2](https://github.com/germondai/trawl/blob/v1.6.2/packages/tiers/src/solvers/hcaptcha.ts).
 The service remains on 1.5.0 with the scoped consent and capture fixes.
 
+### Chrome alternatives
+
+TRAWL 1.5.0 and 1.6.2 do not expose a Chrome engine setting. Their normal and
+headed pools both launch Camoufox. The internal
+[`BrowserPool.browserFactory` hook](https://github.com/germondai/trawl/blob/v1.6.2/packages/browser/src/pool.ts)
+accepts Playwright-compatible browser/context objects, so a scoped code change
+can supply Chrome. On 2026-09-22, injecting Patchright with Google Chrome into
+TRAWL's existing fresh-browser tier returned the expected controlled local test
+page successfully. This establishes interface compatibility, not carrier access.
+
+Google Chrome 153.0.8010.52 and nodriver 0.50.3 were installed in an isolated
+diagnostic image on the production host. The following probes used fresh
+profiles, a headed browser under Xvfb, the normal tracking form, and the same
+four consent preferences. No existing user's cookies, custom user-agent or
+proxy were used.
+
+| Controller | Royal Mail result |
+|---|---|
+| Patchright 1.62.3 with Google Chrome, persistent context and no viewport override | Both public references reached a token-bearing GET; preflight returned HTTP 200, then GET failed with `net::ERR_HTTP2_PROTOCOL_ERROR` |
+| Stock Playwright Core 1.60.0 with the same Chrome | A visible hCaptcha frame appeared; no tracking GET started. TRAWL's built-in solver returned false after timing out on `#checkbox` |
+| nodriver 0.50.3 with the same Chrome, native keyboard/mouse events | The delivered public reference reached a token-bearing GET; preflight returned HTTP 200, then GET failed with `net::ERR_HTTP2_PROTOCOL_ERROR` |
+
+The Patchright setup follows its documented
+[Chrome recommendation](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-nodejs#best-practice---use-chrome-without-fingerprint-injection).
+[nodriver](https://github.com/ultrafunkamsterdam/nodriver) is a separate Python/CDP
+controller, not a replacement object for TRAWL's Playwright interface. Using it
+would require another integration. The application already installs Chromium
+for its existing Playwright transport; these probes do not justify adding
+another production browser dependency or switching Royal Mail to that transport.
+No Chrome backend was enabled in production by this investigation.
+
 The two recent public references and their original forum URLs are recorded in
 [numbers.json](numbers.json) as `public_shipment_report`. Their detection
 expectations do not assert a current shipment status. Parser fixtures remain
