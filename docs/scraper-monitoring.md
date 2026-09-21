@@ -68,7 +68,9 @@ wording is waiting in `tracking_status_observations` (see OBSERVABILITY.md).
 
 "Are the universal providers only a fallback" is
 `carrier_refresh_total{served_by="provider",outcome="updated"}` over
-`carrier_refresh_total{outcome="updated"}` per carrier. After one direct failure
+`carrier_refresh_total{outcome="updated"}` per carrier (the dashboard adds
+`or … * 0` to the numerator so a carrier no provider served reads 0 rather than
+nothing). After one direct failure
 the router benches that adapter for its cooldown, so a small failure rate
 becomes a larger provider share; a carrier with its own adapter should stay
 near zero. "Is an in-adapter retry earning its requests" is

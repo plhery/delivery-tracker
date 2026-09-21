@@ -81,10 +81,10 @@
     {
       "type": "table",
       "title": "Refreshes served by a universal provider (24h share)",
-      "description": "Per configured carrier. A carrier with its own adapter should stay near zero: every point above it is a direct failure followed by the router's cooldown. Universal-only carriers read 1.",
+      "description": "Per configured carrier. A carrier with its own adapter should stay near zero: every point above it is a direct failure followed by the router's cooldown. Universal-only carriers read 1; a carrier no provider served reads 0.",
       "gridPos": { "x": 0, "y": 30, "w": 12, "h": 9 },
       "targets": [
-        { "expr": "sum by (carrier) (increase(carrier_refresh_total{served_by=\"provider\", outcome=\"updated\"}[24h])) / sum by (carrier) (increase(carrier_refresh_total{outcome=\"updated\"}[24h]))", "format": "table", "instant": true }
+        { "expr": "(sum by (carrier) (increase(carrier_refresh_total{served_by=\"provider\", outcome=\"updated\"}[24h])) or sum by (carrier) (increase(carrier_refresh_total{outcome=\"updated\"}[24h])) * 0) / sum by (carrier) (increase(carrier_refresh_total{outcome=\"updated\"}[24h]))", "format": "table", "instant": true }
       ]
     },
     {
