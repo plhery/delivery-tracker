@@ -9,10 +9,17 @@ when it has one. Parcels reach this folder because the sender picked AliExpress
 or pasted a `global.cainiao.com` link — the catalog has no exclusive detection
 rule for Cainiao numbers (see `numbers.json`).
 
-Swiss inbound letter post is a special case: a checksum-valid `L…CH` S10
-identifier is checked against Swiss Post before every sync, and Cainiao
-supplies the history only until Swiss Post announces the shipment
-(docs/CARRIERS.md, "AliExpress handoff to Swiss Post").
+The host preserves Cainiao's handoff number even when the feed does not name
+the partner. An unambiguous carrier-catalog match proposes a direct lookup;
+the local adapter must confirm the parcel and sufficiently recent progress
+before taking over. An explicit partner name or link takes precedence.
+
+The historical checksum-valid `L…CH` route can still propose Swiss Post when
+neither a partner nor a separate reference is available, unless Cainiao names
+a different destination. Failed, pending and stale confirmations keep Cainiao
+active and wait for the shared probe cooldown. Confirmed routes, including
+older `swiss_post_ready` records, refresh Swiss Post directly. Both histories
+and any distinct local tracking number are preserved.
 
 ## Portals
 
@@ -30,7 +37,9 @@ involved.
 
 Retained: the shipment status and stage, the newest status text, up to twenty
 scans (timestamp and description), the estimated delivery window, the
-delivered-at time, and the partner number the parcel was handed over with.
+delivered-at time, the partner number the parcel was handed over with, and
+the destination-country label. Country labels restrict the historical Swiss
+probe; they never select a delivery operator.
 
 Discarded: everything else a module can carry, including the recipient
 identity block and proof-of-delivery links (exercised by `fixtures/`).
@@ -108,7 +117,8 @@ wording and records it for review.
   simply early.
 - **The handoff number is read from `copyRealMailNo` first.** `realMailNo` is
   display prose; the identifier is extracted from it only when the
-  machine-readable field is missing or malformed.
+  machine-readable field is missing or malformed. References are uppercased
+  and their printing separators removed before host normalization.
 - 2026-09-12: moved out of `src/server/upstreamAdapters.ts` into this folder.
   `UpstreamTrackingError` became `NotFoundError('Cainiao')` (same message, same
   404) and the payload-shape `TypeError`/`RangeError`s became `SchemaError`
@@ -139,6 +149,13 @@ Probed 2026-09-12 with the corpus number `CNG00798678939847` (shipment, `public_
 
 ## Verification log
 
+- 2026-09-21: fresh direct lookup of the existing public corpus example
+  returned 25 scans, a separate handoff reference and a destination label;
+  the synthetic unknown still returned an empty external module. Integration
+  tests run the real Cainiao adapter and host normalization before handoff,
+  including preserved local references, older confirmed Swiss routes, failed
+  probes, cooldowns and different destinations. These tests do not establish
+  live Swiss Post coverage for the public corpus example.
 - 2026-09-12: adapter moved into this folder from `src/server/upstreamAdapters.ts`;
   behaviour unchanged apart from the error taxonomy (`NotFoundError` /
   `SchemaError` replace the previous ad-hoc classes).

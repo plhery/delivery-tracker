@@ -15,6 +15,7 @@ import 'server-only';
  * for the seller and the parcel is simply pending.
  */
 import type { AdapterFactory } from '../../core/adapter';
+import { normalizeTrackingNumber } from '../../core/detection/normalize';
 import { NotFoundError, SchemaError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import { fetchBounded, parseJsonBytes } from '../../core/transport';
@@ -59,13 +60,13 @@ function comparableIdentifier(value: unknown): string {
  * prose that sometimes wraps the same identifier in a sentence.
  */
 function cainiaoHandoffNumber(trackingModule: JsonObject): string {
-  const direct = text(trackingModule.copyRealMailNo).trim();
-  if (/^(?=.*\d)[A-Z0-9]{8,30}$/i.test(direct.replace(/[\s.-]/g, ''))) {
-    return direct.replace(/\s+/g, ' ').trim();
+  const direct = normalizeTrackingNumber(text(trackingModule.copyRealMailNo));
+  if (/^(?=.*\d)[A-Z0-9]{8,30}$/.test(direct)) {
+    return direct;
   }
   const display = text(trackingModule.realMailNo);
   const match = /(?<![A-Z0-9])(?=[A-Z0-9]*\d)[A-Z0-9]{8,30}(?![A-Z0-9])/i.exec(display);
-  return match?.[0] ?? '';
+  return match?.[0].toUpperCase() ?? '';
 }
 
 /** Projects one `detail.json` payload. Pure: the offline tests target this. */
@@ -135,6 +136,7 @@ export function parseCainiaoTrackingResponse(value: unknown, trackingNumber: str
   const expected = toDate(deliveryMaxTime);
   const expectedFrom = toDate(deliveryMinTime);
   const handoff = cainiaoHandoffNumber(trackingModule);
+  const destination = text(trackingModule.destCountry).trim().slice(0, 80);
   const deliveredAt = status === 'delivered' ? text(latest.timeStr) || null : null;
   return {
     status,
@@ -147,6 +149,7 @@ export function parseCainiaoTrackingResponse(value: unknown, trackingNumber: str
       : { expected_delivery_from: expectedFrom }),
     ...(deliveredAt ? { delivered_at: deliveredAt } : {}),
     ...(handoff ? { delivery_tracking_number: handoff } : {}),
+    ...(destination ? { destination_country_name: destination } : {}),
     events,
   };
 }

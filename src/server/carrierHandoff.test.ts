@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { deliveryHandoff } from './carrierHandoff';
-import { normalizeCarrierResult } from './carrierResult';
+import { normalizeCarrierResult, type CarrierResult } from './carrierResult';
 
 describe('general delivery handoff candidates', () => {
   it('keeps tracking history when optional partner evidence is malformed', () => {
@@ -35,6 +35,35 @@ describe('general delivery handoff candidates', () => {
   it('uses the reported operator even when the destination also has another carrier', () => {
     expect(deliveryHandoff('la-poste', 'CW123456785FR', { destination_country: 'FI', delivery_carrier: 'ups' }))
       .toEqual({ carrier: 'ups', number: 'CW123456785FR' });
+  });
+  it.each([
+    ['RA123456785CH', 'swiss-post'], ['1Z1234567890123456', 'ups'], ['CW123456785FR', 'la-poste'],
+  ])('preserves an independently reported reference and proposes its catalog carrier: %s', (reference, carrier) => {
+    const result = normalizeCarrierResult({ status: 'in_transit', delivery_tracking_number: reference });
+    expect(result.delivery_tracking_number).toBe(reference);
+    expect(result.delivery_carrier).toBeUndefined();
+    expect(deliveryHandoff('aliexpress', 'LP00000000000001', result)).toEqual({ carrier, number: reference });
+  });
+  it.each(['LOCAL12345', '1234567890', 'RA123456789CH', 'bad?number'])('does not guess from an unrecognized, ambiguous or invalid reference: %s', (reference) => {
+    expect(deliveryHandoff('aliexpress', 'LP00000000000001', { delivery_tracking_number: reference })).toBeNull();
+  });
+  it('lets a reported partner take precedence over number detection', () => {
+    expect(deliveryHandoff('aliexpress', 'LX123456785CH', { delivery_tracking_number: 'RA123456785CH', delivery_carrier: 'posti' }))
+      .toEqual({ carrier: 'posti', number: 'RA123456785CH' });
+  });
+  it('limits the historical Swiss probe to its known route and respects a different destination', () => {
+    expect(deliveryHandoff('aliexpress', 'LX123456785CH', {})).toEqual({ carrier: 'swiss-post', number: 'LX123456785CH' });
+    for (const number of ['LX123456789CH', 'LX123456785NL', 'LP00000000000001']) {
+      expect(deliveryHandoff('aliexpress', number, {})).toBeNull();
+    }
+    expect(deliveryHandoff('aliexpress', 'LX123456785CH', { destination_country: 'FI' })).toBeNull();
+    expect(deliveryHandoff('aliexpress', 'LX123456785CH', { destination_country_name: 'Finland' })).toBeNull();
+    expect(deliveryHandoff('aliexpress', 'LX123456785CH', { delivery_carrier: 'postnord' })).toBeNull();
+  });
+  it('ignores malformed persisted hints without throwing during origin recovery', () => {
+    expect(deliveryHandoff('aliexpress', 'LX123456785CH', { delivery_tracking_number: 123 } as unknown as CarrierResult)).toBeNull();
+    expect(deliveryHandoff('aliexpress', 'LX123456785CH', { destination_country: 123 } as unknown as CarrierResult))
+      .toEqual({ carrier: 'swiss-post', number: 'LX123456785CH' });
   });
   it('requires a dedicated adapter and never borrows another carrier’s credentials', () => {
     for (const delivery_carrier of ['postnord', 'dpd', 'amazon-logistics', 'not-a-carrier', 'la-poste']) {

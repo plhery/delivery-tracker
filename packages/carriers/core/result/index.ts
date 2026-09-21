@@ -43,6 +43,8 @@ export interface CarrierResult extends JsonObject {
   /** A declared delivery partner, still subject to direct identity/progress confirmation. */
   delivery_carrier?: string;
   destination_country?: string;
+  /** Preserve provider country labels when no verified ISO mapping is available. */
+  destination_country_name?: string;
   delivery_tracking_number?: string;
   canonical_tracking_number?: string;
   international_tracking_number?: string;
@@ -100,7 +102,10 @@ export function normalizeCarrierResult(value: unknown): CarrierResult {
   }
 
   // Optional routing evidence must not discard otherwise valid tracking history.
-  if (typeof normalized.delivery_carrier !== 'string' || !Object.hasOwn(CARRIER_CATALOG, normalized.delivery_carrier)
+  // A carrier can report a verified downstream reference without naming the
+  // operator. Preserve that independent evidence for catalog-based discovery.
+  if ((normalized.delivery_carrier != null && (typeof normalized.delivery_carrier !== 'string'
+      || !Object.hasOwn(CARRIER_CATALOG, normalized.delivery_carrier)))
     || (normalized.delivery_tracking_number != null && (typeof normalized.delivery_tracking_number !== 'string'
       || !/^[A-Z0-9]{4,40}$/.test(normalized.delivery_tracking_number)))) {
     delete normalized.delivery_carrier;
@@ -108,6 +113,9 @@ export function normalizeCarrierResult(value: unknown): CarrierResult {
   }
   if (typeof normalized.destination_country !== 'string' || !/^[A-Z]{2}$/.test(normalized.destination_country)) {
     delete normalized.destination_country;
+  }
+  if (typeof normalized.destination_country_name !== 'string' || normalized.destination_country_name.length > 80) {
+    delete normalized.destination_country_name;
   }
 
   const rawEvents = normalized.events ?? [];

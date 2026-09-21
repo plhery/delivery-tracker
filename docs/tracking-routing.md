@@ -40,6 +40,8 @@ La Poste retains its structured destination and resolves the partner's name,
 official URL and reference; DHL arrival links use the same catalog resolver.
 Other adapters can supply `delivery_carrier` and an optional
 `delivery_tracking_number`, or include an official partner link in their events.
+A standalone downstream reference is also retained: a unique high-confidence
+catalog match proposes a lookup, with named partners taking precedence.
 Unknown or conflicting partner evidence is ignored. Malformed optional hints
 do not invalidate usable origin tracking. A lookup failure, pre-advice, unknown,
 stale or conflicting delivery result keeps the origin active.
@@ -48,8 +50,12 @@ UTC day may disagree on its timestamp; retain both provider timestamps and
 the newer saved summary/event watermark while adopting the verified route.
 An older completion on another day does not qualify. Unsuccessful confirmations
 wait 55 minutes unless origin history advances or the partner/reference changes.
-An explicitly selected Swiss postal route retains its existing Cainiao fallback;
-other carriers do not trigger it just because a number was issued in Switzerland.
+The established AliExpress/international `L…CH` route retains a Swiss Post
+confirmation probe when there is no partner or downstream reference and no
+contradicting destination. It uses the same progress checks and cooldown as
+other handoffs. Older confirmed `swiss_post_ready` routes continue directly
+with Swiss Post. An explicitly selected Swiss postal route retains its Cainiao
+fallback. These compatibility cases do not choose an operator from a country.
 
 ## Sparse postal history
 

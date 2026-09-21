@@ -43,6 +43,9 @@ import type { JsonObject } from './types';
 import * as observability from './observability';
 import { UniversalTrackingError } from './universalTracking';
 import { UpstreamHttpError } from './boundedFetch';
+import { readFileSync } from 'node:fs';
+import { adapter as cainiaoAdapter, parseCainiaoTrackingResponse } from '@carriers/carriers/aliexpress/adapter';
+import { NOOP_RECORDER } from '@carriers/core/telemetry';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -821,6 +824,99 @@ describe('TrackingSyncService', () => {
       .syncPackage({ id: 'named-postal', carrier: 'aliexpress', tracking_number: 'LX123456785CH' });
     expect(adapter.fetch.mock.calls.map((call) => call[0])).toEqual(['aliexpress', 'posti']);
     expect(client.updatePackage.mock.calls.at(-1)![1].carrier_data.active_tracking_carrier).toBe('posti');
+  });
+
+  it('hands a real Cainiao response shape to its reported local number through normalization', async () => {
+    const payload = JSON.parse(readFileSync(new URL('../../packages/carriers/carriers/aliexpress/fixtures/delivered.json', import.meta.url), 'utf8'));
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => Response.json(payload));
+    const swiss = vi.fn().mockResolvedValue({ status: 'delivered', current_stage: 'delivered',
+      last_update: '2026-03-04T12:00:00Z', events: [{ time: '2026-03-04T12:00:00Z', description: 'Delivered', stage: 'delivered' }] });
+    const registry = new AdapterRegistry({ factories: {
+      aliexpress: cainiaoAdapter,
+      'swiss-post': () => ({ id: 'swiss-post', steps: ['direct'], track: swiss }),
+    }, carriers: { aliexpress: 'aliexpress', 'swiss-post': 'swiss-post' } }, {
+      fetcher, trawl: null, browserExecutablePath: null, recorder: NOOP_RECORDER, env: {},
+    });
+    const direct = new CarrierTrackingAdapter(undefined, registry, NOOP_RECORDER);
+    const adapter = { fetch: vi.fn(direct.fetch.bind(direct)), fetchUniversal: vi.fn().mockRejectedValue(new Error('Unexpected universal lookup')) };
+    const client = fakeClient();
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null);
+    const parcel = { id: 'cainiao-reference', carrier: 'aliexpress', tracking_number: 'LP00000000000001' };
+    await service.syncPackage(parcel);
+    expect(adapter.fetch.mock.calls.map((call) => call.slice(0, 2))).toEqual([
+      ['aliexpress', 'LP00000000000001'], ['swiss-post', 'RA123456785CH'],
+    ]);
+    expect(swiss).toHaveBeenCalledWith({ number: 'RA123456785CH', trackingUrl: null, postcode: null });
+    const values = client.updatePackage.mock.calls.at(-1)![1];
+    expect(values.carrier_data).toMatchObject({ original_carrier: 'aliexpress',
+      original_tracking_number: 'LP00000000000001', active_tracking_carrier: 'swiss-post', active_tracking_number: 'RA123456785CH' });
+    const eventCarriers = new Set(client.insertEvents.mock.calls[0][0].map((event: JsonObject) => String(event.provider_event_id).split(':')[0]));
+    expect(eventCarriers).toEqual(new Set(['aliexpress', 'swiss-post']));
+    adapter.fetch.mockClear();
+    await service.syncPackage({ ...parcel, ...values });
+    expect(adapter.fetch).toHaveBeenCalledExactlyOnceWith('swiss-post', 'RA123456785CH', null, null);
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(adapter.fetchUniversal).not.toHaveBeenCalled();
+  });
+
+  it.each(['aliexpress', 'intl-post'])('retains the established %s Swiss postal probe and pins only confirmed progress', async (carrier) => {
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn().mockResolvedValueOnce({ status: 'in_transit', last_update: '2026-03-04T10:00:00Z' })
+      .mockResolvedValueOnce({ status: 'out_for_delivery', last_update: '2026-03-04T12:00:00Z' }) };
+    await new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null)
+      .syncPackage({ id: 'legacy-postal', carrier, tracking_number: 'LX123456785CH' });
+    expect(adapter.fetch.mock.calls.map((call) => call[0])).toEqual([carrier, 'swiss-post']);
+    expect(client.updatePackage.mock.calls.at(-1)![1].carrier_data.active_tracking_carrier).toBe('swiss-post');
+  });
+
+  it.each([['aliexpress', true], ['intl-post', true], ['aliexpress', false]] as const)('retains a previously confirmed %s Swiss route with stored carrier %s', async (carrier, storedCarrier) => {
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'out_for_delivery' }) };
+    await new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null)
+      .syncPackage({ id: 'legacy-confirmed', carrier, tracking_number: 'LX123456785CH', carrier_data: {
+        swiss_post_ready: true, ...(storedCarrier ? { active_tracking_carrier: 'swiss-post' } : {}),
+      } });
+    expect(adapter.fetch).toHaveBeenCalledExactlyOnceWith('swiss-post', 'LX123456785CH', null, null);
+  });
+
+  it('keeps Cainiao and respects the probe cooldown when Swiss Post does not know the historical postal number', async () => {
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn(async (carrier: string): Promise<CarrierResult> => {
+      if (carrier === 'swiss-post') throw Object.assign(new Error('Shipment not found'), { status: 404 });
+      return { status: 'in_transit', last_update: '2026-03-04T10:00:00Z' };
+    }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null,
+      () => new Date('2026-03-04T12:00:00Z'));
+    const parcel = { id: 'legacy-unannounced', carrier: 'aliexpress', tracking_number: 'LX123456785CH' };
+    await service.syncPackage(parcel);
+    expect(adapter.fetch.mock.calls.map((call) => call[0])).toEqual(['aliexpress', 'swiss-post']);
+    const values = client.updatePackage.mock.calls.at(-1)![1];
+    expect(values).toMatchObject({ sync_status: 'ok', current_stage: 'in_transit', carrier_data: { active_tracking_carrier: 'aliexpress' } });
+    adapter.fetch.mockClear();
+    await service.syncPackage({ ...parcel, ...values });
+    expect(adapter.fetch).toHaveBeenCalledExactlyOnceWith('aliexpress', 'LX123456785CH', null, null);
+  });
+
+  it.each(['Switzerland', 'Finland'])('respects Cainiao’s actual destination field before the historical probe: %s', async (country) => {
+    const number = 'LX123456785CH';
+    const origin = parseCainiaoTrackingResponse({ module: [{ mailNo: number, destCountry: country,
+      latestTrace: { actionCode: 'LH_ARRIVE', timeStr: '2026-03-04 10:00:00' }, detailList: [],
+    }] }, number);
+    const adapter = { fetch: vi.fn().mockResolvedValueOnce(origin).mockResolvedValueOnce({ status: 'unknown' }) };
+    await new TrackingSyncService(fakeClient() as unknown as SupabaseServiceClient, adapter, null)
+      .syncPackage({ id: 'cainiao-destination', carrier: 'aliexpress', tracking_number: number });
+    expect(adapter.fetch.mock.calls.map((call) => call[0])).toEqual(country === 'Switzerland'
+      ? ['aliexpress', 'swiss-post'] : ['aliexpress']);
+  });
+
+  it('compares handoff freshness in each carrier’s declared timezone', async () => {
+    const client = fakeClient();
+    const adapter = { fetch: vi.fn().mockResolvedValueOnce({ status: 'in_transit', delivery_tracking_number: 'RA123456785CH',
+      last_update: '2026-03-04 12:00:00', timezone: 'Asia/Shanghai' })
+      .mockResolvedValueOnce({ status: 'out_for_delivery', last_update: '2026-03-04 10:00:00', timezone: 'Europe/Zurich' }) };
+    await new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null)
+      .syncPackage({ id: 'carrier-timezones', carrier: 'aliexpress', tracking_number: 'LP00000000000001' });
+    expect(client.updatePackage.mock.calls.at(-1)![1].carrier_data.active_tracking_carrier).toBe('swiss-post');
   });
 
   it.each([

@@ -299,6 +299,13 @@ export function eventTimestamp(raw: unknown, assumedTimezone = 'UTC'): string | 
   return null;
 }
 
+/** Compare snapshots using the same carrier timezone policy as persisted events. */
+function latestResultTime(result: CarrierResult, carrier: string): number {
+  const timezone = resultTimezone(carrier, result);
+  return Math.max(0, ...[result.last_update, ...(result.events ?? []).map((event) => event.time)]
+    .map((time) => Date.parse(eventTimestamp(time, timezone) ?? '') || 0));
+}
+
 export function providerEventId(
   carrierId: string,
   rawTime: unknown,
@@ -1052,9 +1059,12 @@ export class TrackingSyncService {
   }> {
     const trackingNumber = String(parcel.tracking_number ?? '');
     const metadata = isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
-    const activeCarrier = typeof metadata.active_tracking_carrier === 'string' ? metadata.active_tracking_carrier : '';
+    const legacySwissReady = metadata.swiss_post_ready === true && supportsSwissPostHandoff(trackingNumber)
+      && ['swiss-post', 'aliexpress', 'intl-post'].includes(carrierId);
+    const activeCarrier = typeof metadata.active_tracking_carrier === 'string' ? metadata.active_tracking_carrier
+      : legacySwissReady ? 'swiss-post' : '';
     const activeNumber = typeof metadata.active_tracking_number === 'string' ? metadata.active_tracking_number : trackingNumber;
-    if (metadata.original_carrier && hasDirectHandoffAdapter(activeCarrier, activeNumber)) {
+    if ((metadata.original_carrier || legacySwissReady) && hasDirectHandoffAdapter(activeCarrier, activeNumber)) {
       return {
         result: normalizeCarrierResult(await this.adapter.fetch(activeCarrier, activeNumber, null, null)),
         sourceCarrierId: activeCarrier, swissPostReady: activeCarrier === 'swiss-post' ? true : null, handoffFallbackErrorType: null,
@@ -1092,13 +1102,11 @@ export class TrackingSyncService {
         origin.delivery_probe = { at: this.now().toISOString(), origin_update: originUpdate, carrier: candidate.carrier, number: candidate.number };
         try {
           const delivery = normalizeCarrierResult(await this.adapter.fetch(candidate.carrier, candidate.number, null, null));
-          const latest = (value: CarrierResult) => Math.max(Date.parse(value.last_update || '') || 0,
-            ...(value.events ?? []).map((event) => Date.parse(event.time || '') || 0));
-          const watermark = Math.max(latest(origin), Date.parse(String(metadata.last_update ?? '')) || 0,
+          const originTime = latestResultTime(origin, carrierId);
+          const watermark = Math.max(originTime, latestResultTime(metadata, carrierId),
             Date.parse(routingState(parcel).last_event_at || '') || 0);
           const terminal = ['delivered', 'returned'].find((stage) => stage === resultStage(origin) || stage === parcel.current_stage);
-          const deliveryTime = latest(delivery);
-          const originTime = latest(origin);
+          const deliveryTime = latestResultTime(delivery, candidate.carrier);
           // Origin feeds sometimes re-stamp the partner's local completion
           // time with another offset. Explicit, same-day terminal agreement
           // confirms the route without rewriting either provider's timestamps.

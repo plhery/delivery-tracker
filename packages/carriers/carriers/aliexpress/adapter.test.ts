@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { CarrierResult } from '../../core/result';
+import { normalizeCarrierResult, type CarrierResult } from '../../core/result';
 import { CainiaoTracker, fetchCainiao, parseCainiaoTrackingResponse } from './adapter';
 
 const folder = path.dirname(fileURLToPath(import.meta.url));
@@ -111,6 +111,21 @@ describe('Cainiao projection', () => {
       ['Import customs clearance success', 'in_transit'],
       ['Shipment accepted by the warehouse', 'registered'],
     ]);
+  });
+
+  it.each(['ra 123.456-785 ch', 'RA123456785CH'])('normalizes the machine-readable partner reference before host validation: %s', (reference) => {
+    const result = normalizeCarrierResult(parseCainiaoTrackingResponse({ module: [{ mailNo: 'LP00000000000001',
+      copyRealMailNo: reference, latestTrace: { actionCode: 'LH_ARRIVE' }, detailList: [],
+    }] }, 'LP00000000000001'));
+    expect(result.delivery_tracking_number).toBe('RA123456785CH');
+    expect(result.delivery_carrier).toBeUndefined();
+  });
+
+  it('uses display prose only when the machine-readable reference is invalid', () => {
+    const result = normalizeCarrierResult(parseCainiaoTrackingResponse({ module: [{ mailNo: 'LP00000000000001',
+      copyRealMailNo: 'bad?number', realMailNo: 'Handover reference: ra123456785ch', detailList: [],
+    }] }, 'LP00000000000001'));
+    expect(result.delivery_tracking_number).toBe('RA123456785CH');
   });
 
   it('reports the estimate as a window while the parcel is still moving', () => {
