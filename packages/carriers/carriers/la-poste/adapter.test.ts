@@ -81,6 +81,20 @@ describe('La Poste tracking input', () => {
     expect(api.searchParams.get('lang')).toBe('fr');
   });
 
+  it.each([
+    [{ name: 'UPS', reference: 'LOCAL12345' }, 'ups'],
+    [{ name: 'Unknown partner label', url: 'https://www.posti.fi/en/tracking#/lahetys/LOCAL12345' }, 'posti'],
+    [{ name: 'Posti', url: 'https://www.post.ch/' }, undefined],
+    [{ name: 'Unknown carrier', url: 'https://other-carrier.test/' }, undefined],
+    [{}, undefined],
+  ])('uses structured partner evidence independently of the destination: %j', (partner, expected) => {
+    const data = deliveredFixture();
+    Object.assign(data[0].shipment, { contextData: { arrivalCountry: 'FI', partner } });
+    const result = parseLaPosteTrackingResponse(data, TRACKING_NUMBER);
+    expect(result.delivery_carrier).toBe(expected);
+    expect(result.status).toBe('delivered');
+  });
+
   it('rejects unsupported and unsafe identifiers', () => {
     for (const value of [
       '123',

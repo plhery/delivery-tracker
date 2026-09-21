@@ -1,26 +1,40 @@
 import { describe, expect, it } from 'vitest';
-import { deliveryHandoff, swissPostHandoffNumber } from './carrierHandoff';
+import { deliveryHandoff } from './carrierHandoff';
 import { normalizeCarrierResult } from './carrierResult';
 
 describe('general delivery handoff candidates', () => {
-  it('validates generalized result hints against the catalog and country-code shape', () => {
+  it('keeps tracking history when optional partner evidence is malformed', () => {
     expect(normalizeCarrierResult({ delivery_carrier: 'posti', destination_country: 'FI' }))
       .toMatchObject({ delivery_carrier: 'posti', destination_country: 'FI' });
-    expect(() => normalizeCarrierResult({ delivery_carrier: 'unregistered-carrier' })).toThrow('unsupported delivery carrier');
-    expect(() => normalizeCarrierResult({ destination_country: 'Finland' })).toThrow('invalid destination country');
+    for (const hints of [
+      { delivery_carrier: 'unregistered-carrier', delivery_tracking_number: 'LOCAL12345' },
+      { delivery_carrier: 123 },
+      { delivery_carrier: 'posti', delivery_tracking_number: { invalid: true } },
+      { delivery_carrier: 'posti', delivery_tracking_number: 'bad?number' },
+      { destination_country: 'Finland' },
+      { destination_country: 123 },
+    ]) {
+      const result = normalizeCarrierResult({ status: 'delivered', events: [{ description: 'Delivered' }], ...hints });
+      expect(result).toMatchObject({ status: 'delivered', events: [{ description: 'Delivered' }] });
+      expect(result.delivery_carrier).toBeUndefined();
+      expect(result.delivery_tracking_number).toBeUndefined();
+      expect(result.destination_country).toBeUndefined();
+    }
   });
   it('chooses the declared delivery partner, including a distinct local number', () => {
     expect(deliveryHandoff('la-poste', 'CW123456785FR', {
       destination_country: 'FI', delivery_carrier: 'posti', delivery_tracking_number: 'LOCAL12345',
-    })).toEqual({ carrier: 'posti', number: 'LOCAL12345', explicit: true });
+    })).toEqual({ carrier: 'posti', number: 'LOCAL12345' });
     expect(deliveryHandoff('la-poste', 'CW123456785FR', { delivery_carrier: 'usps' })?.carrier).toBe('usps');
   });
-  it('uses destination evidence for postal numbers without reading the issuer suffix as a destination', () => {
-    expect(deliveryHandoff('la-poste', 'CW123456785FR', { destination_country: 'FI' }))
-      .toEqual({ carrier: 'posti', number: 'CW123456785FR', explicit: false });
-    expect(deliveryHandoff('la-poste', 'CW123456785FR', { destination_country: 'XX' })).toBeNull();
-    expect(deliveryHandoff('dhl', '1234567890', { destination_country: 'FI' })).toBeNull();
-    expect(swissPostHandoffNumber('la-poste', 'CW123456785FR', { destination_country: 'FI' })).toBeNull();
+  it.each(['FI', 'CH', 'XX', undefined])('does not infer a postal operator from destination %s or the issuer suffix', (destination_country) => {
+    for (const number of ['CW123456785FR', 'LX123456785CH', '1234567890']) {
+      expect(deliveryHandoff('la-poste', number, { destination_country })).toBeNull();
+    }
+  });
+  it('uses the reported operator even when the destination also has another carrier', () => {
+    expect(deliveryHandoff('la-poste', 'CW123456785FR', { destination_country: 'FI', delivery_carrier: 'ups' }))
+      .toEqual({ carrier: 'ups', number: 'CW123456785FR' });
   });
   it('requires a dedicated adapter and never borrows another carrier’s credentials', () => {
     for (const delivery_carrier of ['postnord', 'dpd', 'amazon-logistics', 'not-a-carrier', 'la-poste']) {
@@ -30,26 +44,26 @@ describe('general delivery handoff candidates', () => {
   });
 });
 
-describe('Swiss Post handoff candidates', () => {
-  it.each(['aliexpress', 'spring-gds', 'sunyou', 'dhl', 'intl-post'])('accepts valid foreign-issued postal identifiers from %s', (carrier) => {
-    expect(swissPostHandoffNumber(carrier, 'LX123456785NL', {})).toBe('LX123456785NL');
-    expect(swissPostHandoffNumber(carrier, 'LX123456789NL', {})).toBeNull();
-  });
+describe('partner link handoff candidates', () => {
   it('uses a provider-supplied delivery reference', () => {
-    expect(swissPostHandoffNumber('gls-de', '123456789011', {
+    expect(deliveryHandoff('gls-de', '123456789011', {
       delivery_carrier: 'swiss-post', delivery_tracking_number: '12345678901',
-    })).toBe('12345678901');
+    })).toEqual({ carrier: 'swiss-post', number: '12345678901' });
   });
-  it('recognizes an explicit official partner link from any adapter', () => {
-    expect(swissPostHandoffNumber('aliexpress', 'OTHER12345', {
-      events: [{ description: 'Delivery partner tracking: https://service.post.ch/ekp-web/ui/list' }],
-    })).toBe('OTHER12345');
+  it.each([
+    ['aliexpress', 'https://service.post.ch/ekp-web/ui/list', 'swiss-post'],
+    ['dhl', 'https://www.posti.fi/en/tracking', 'posti'],
+    ['la-poste', 'https://tools.usps.com/go/TrackConfirmAction', 'usps'],
+  ])('uses the catalog to resolve %s partner link %s', (carrier, url, target) => {
+    expect(deliveryHandoff(carrier, 'OTHER12345', {
+      events: [{ description: `Delivery partner tracking: ${url}` }],
+    })).toEqual({ carrier: target, number: 'OTHER12345' });
   });
   it.each(['https://post.ch.evil.test', 'https://post.ch@evil.test', 'https://evil.test/post.ch', 'Swiss Post maybe'])('does not trust ambiguous partner text: %s', (description) => {
-    expect(swissPostHandoffNumber('aliexpress', 'OTHER12345', { last_status_text: description })).toBeNull();
+    expect(deliveryHandoff('aliexpress', 'OTHER12345', { last_status_text: description })).toBeNull();
   });
-  it('does not probe arbitrary numeric parcels or the current Swiss carrier', () => {
-    expect(swissPostHandoffNumber('gls-de', '12345678901', {})).toBeNull();
-    expect(swissPostHandoffNumber('swiss-post', 'LX123456785NL', { delivery_carrier: 'swiss-post' })).toBeNull();
+  it('ignores self-links and conflicting partner links', () => {
+    expect(deliveryHandoff('posti', 'OTHER12345', { last_status_text: 'https://www.posti.fi/en/tracking' })).toBeNull();
+    expect(deliveryHandoff('la-poste', 'OTHER12345', { last_status_text: 'https://www.posti.fi/ and https://www.post.ch/' })).toBeNull();
   });
 });

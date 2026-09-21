@@ -69,8 +69,6 @@ const OPTIONAL_TEXT_FIELDS = [
   'pickup_point',
   'delivered_at',
   'dimensions_text',
-  'delivery_tracking_number',
-  'destination_country',
   'canonical_tracking_number',
   'international_tracking_number',
   'timezone',
@@ -101,12 +99,15 @@ export function normalizeCarrierResult(value: unknown): CarrierResult {
     throw new TypeError('The carrier adapter returned an invalid parcel weight');
   }
 
-  if (normalized.delivery_carrier !== undefined
-    && (typeof normalized.delivery_carrier !== 'string' || !Object.hasOwn(CARRIER_CATALOG, normalized.delivery_carrier))) {
-    throw new TypeError('The carrier adapter returned an unsupported delivery carrier');
+  // Optional routing evidence must not discard otherwise valid tracking history.
+  if (typeof normalized.delivery_carrier !== 'string' || !Object.hasOwn(CARRIER_CATALOG, normalized.delivery_carrier)
+    || (normalized.delivery_tracking_number != null && (typeof normalized.delivery_tracking_number !== 'string'
+      || !/^[A-Z0-9]{4,40}$/.test(normalized.delivery_tracking_number)))) {
+    delete normalized.delivery_carrier;
+    delete normalized.delivery_tracking_number;
   }
-  if (normalized.destination_country != null && !/^[A-Z]{2}$/.test(normalized.destination_country)) {
-    throw new TypeError('The carrier adapter returned an invalid destination country');
+  if (typeof normalized.destination_country !== 'string' || !/^[A-Z]{2}$/.test(normalized.destination_country)) {
+    delete normalized.destination_country;
   }
 
   const rawEvents = normalized.events ?? [];

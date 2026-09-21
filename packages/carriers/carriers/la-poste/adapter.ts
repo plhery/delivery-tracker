@@ -1,7 +1,7 @@
 import 'server-only';
 
 import type { AdapterFactory } from '../../core/adapter';
-import { carrierIdFromName } from '../../core/catalog/hints';
+import { carrierIdFromPartner } from '../../core/catalog/hints';
 import {
   CarrierError,
   SchemaError,
@@ -175,7 +175,7 @@ export function parseLaPosteTrackingResponse(
   const context = isRecord(shipment.contextData) ? shipment.contextData : {};
   const destination = clean(context.arrivalCountry, 80).toUpperCase();
   const partner = isRecord(context.partner) ? context.partner : {};
-  const deliveryCarrier = carrierIdFromName(clean(partner.name, 80));
+  const deliveryCarrier = carrierIdFromPartner(clean(partner.name, 80), clean(partner.url, 2048));
   const deliveryNumber = clean(partner.reference, 64).toUpperCase();
   return {
     status: eventStatus(latestGroup, latestCode, latestLabel, events.length > 0),

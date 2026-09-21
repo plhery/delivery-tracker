@@ -23,6 +23,7 @@ import {
   type CarrierErrorOptions,
 } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
+import { carrierIdFromPartnerLinks } from '../../core/catalog/hints';
 import { runSteps, singleFlight } from '../../core/runner';
 import { NOOP_RECORDER, type StepRecorder } from '../../core/telemetry';
 import { isoTime } from '../../core/time';
@@ -40,8 +41,6 @@ const CONFIG_URL = `${ORIGIN}${DATA_PATH}/config?domain=de&language=en`;
 const TRACKING_PAGE = `${ORIGIN}/en/privatkunden/dhl-sendungsverfolgung.html`;
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36';
 const MAX_BYTES = 2_000_000;
-/** The exact hosts DHL names when Swiss Post runs the last mile. */
-const SWISS_POST_HOSTS = ['post.ch', 'www.post.ch', 'service.post.ch'];
 
 /**
  * DHL status wording occasionally carries markup. Tags are dropped without a
@@ -114,14 +113,9 @@ export function parseDHLTrackingResponse(payload: unknown, trackingNumber: strin
     if (!description) return [];
     return [{ time: date(event.datum), location: clean(event.ort, 160), description, stage: stageForText(description) }];
   }).sort((left, right) => millis(right.time) - millis(left.time)).slice(0, 100);
-  // DHL includes the destination postal operator in the arrival event. Trust
-  // exact official hosts only; never follow an arbitrary URL from status text.
-  const swissPostHandoff = events.some(({ description }) =>
-    [...String(description).matchAll(/https?:\/\/[^\s<>"')]+/gi)].some(([raw]) => {
-      try { return SWISS_POST_HOSTS.includes(new URL(raw).hostname.toLowerCase()); }
-      catch { return false; }
-    }),
-  );
+  // Arrival notices link to the delivery operator. The catalog resolves its
+  // identity; the host still confirms progress through that operator's adapter.
+  const deliveryCarrier = carrierIdFromPartnerLinks(events.map((event) => event.description), 'dhl');
   const summary = clean(timeline.status);
   if (!events.length && !summary && details.istZugestellt !== true) {
     if (Object.values(missing).some((flag) => flag === true)) return noData();
@@ -140,7 +134,7 @@ export function parseDHLTrackingResponse(payload: unknown, trackingNumber: strin
     last_update: date(timeline.datumAktuellerStatus) || events[0]?.time || null,
     expected_delivery: ['delivered', 'returned'].includes(stage) ? null : expected.slice(0, 10) || null,
     timezone: TIMEZONE, events,
-    ...(swissPostHandoff ? { delivery_carrier: 'swiss-post' as const } : {}),
+    ...(deliveryCarrier ? { delivery_carrier: deliveryCarrier } : {}),
   };
 }
 

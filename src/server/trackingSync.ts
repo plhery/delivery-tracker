@@ -47,8 +47,8 @@ const SLOW_POLL_INTERVAL_MS = 60 * 60 * 1_000;
 const FAILED_SLOW_POLL_INTERVAL_MS = 4 * SLOW_POLL_INTERVAL_MS;
 
 /**
- * A country/number hint only proposes a delivery operator. Until the origin
- * names its partner, recheck when its history moves or this gap has passed.
+ * An unsuccessful partner confirmation must not double every refresh's cost.
+ * Recheck when origin history advances, the partner/reference changes, or this gap passes.
  */
 const DELIVERY_PROBE_INTERVAL_MS = 55 * 60 * 1_000;
 
@@ -56,9 +56,9 @@ interface DeliveryProbe extends JsonObject { at: string; origin_update: string |
 
 function previousDeliveryProbe(parcel: JsonObject, carrier: string, number: string): DeliveryProbe | null {
   const data = isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
-  const stored = carrier === 'swiss-post' ? data.swiss_post_probe : data.delivery_probe;
+  const stored = data.delivery_probe ?? (carrier === 'swiss-post' ? data.swiss_post_probe : undefined);
   if (!isRecord(stored) || typeof stored.at !== 'string' || !Number.isFinite(Date.parse(stored.at))) return null;
-  if (carrier !== 'swiss-post' && (stored.carrier !== carrier || stored.number !== number)) return null;
+  if ((stored.carrier != null && stored.carrier !== carrier) || (stored.number != null && stored.number !== number)) return null;
   return { at: stored.at, origin_update: typeof stored.origin_update === 'string' ? stored.origin_update : null };
 }
 
@@ -896,6 +896,12 @@ export class TrackingSyncService {
         }
         values.carrier_data = preservedData;
       }
+      if (preserveSummary && isRecord(result.delivery_probe)) {
+        values.carrier_data = {
+          ...(isRecord(values.carrier_data) ? values.carrier_data : isRecord(parcel.carrier_data) ? parcel.carrier_data : {}),
+          delivery_probe: result.delivery_probe,
+        };
+      }
       if (!preserveSummary) {
         values.last_status_text = result.last_status_text || null;
         values.expected_delivery = result.expected_delivery ? String(result.expected_delivery) : null;
@@ -1030,9 +1036,9 @@ export class TrackingSyncService {
         sourceCarrierId: activeCarrier, swissPostReady: activeCarrier === 'swiss-post' ? true : null, handoffFallbackErrorType: null,
       };
     }
-    // The historical Cainiao/Swiss route applies to those selections only;
-    // an issuer suffix must not bypass another explicitly selected adapter.
-    if (!supportsSwissPostHandoff(trackingNumber) || !['swiss-post', 'aliexpress', 'intl-post'].includes(carrierId)) {
+    // Cainiao remains a fallback for an explicitly selected Swiss postal route.
+    // An issuer suffix must not choose the delivery partner for other carriers.
+    if (!supportsSwissPostHandoff(trackingNumber) || carrierId !== 'swiss-post') {
       let origin: CarrierResult;
       let originError: unknown;
       try {
@@ -1043,13 +1049,10 @@ export class TrackingSyncService {
         ));
       } catch (error) {
         // An international operator outage must not hide a confirmed local delivery.
-        if (!deliveryHandoff(carrierId, trackingNumber, metadata)) throw error;
+        const savedPartner = deliveryHandoff(carrierId, trackingNumber, metadata);
+        if (!savedPartner) throw error;
         originError = error;
-        origin = {
-          ...(typeof metadata.delivery_carrier === 'string' ? { delivery_carrier: metadata.delivery_carrier } : {}),
-          ...(typeof metadata.delivery_tracking_number === 'string' ? { delivery_tracking_number: metadata.delivery_tracking_number } : {}),
-          ...(typeof metadata.destination_country === 'string' ? { destination_country: metadata.destination_country } : {}),
-        };
+        origin = { delivery_carrier: savedPartner.carrier, delivery_tracking_number: savedPartner.number };
       }
       let fallbackError: string | null = null;
       const candidate = deliveryHandoff(carrierId, trackingNumber, origin);
@@ -1057,14 +1060,12 @@ export class TrackingSyncService {
       const originUpdate = typeof origin.last_update === 'string' ? origin.last_update : previousProbe?.origin_update ?? null;
       const sinceProbe = previousProbe ? this.now().getTime() - Date.parse(previousProbe.at) : Number.NaN;
       const askedRecently = previousProbe !== null && originUpdate === previousProbe.origin_update
-        && sinceProbe >= 0 && sinceProbe < DELIVERY_PROBE_INTERVAL_MS && !candidate?.explicit;
-      const probeKey = candidate?.carrier === 'swiss-post' ? 'swiss_post_probe' : 'delivery_probe';
+        && sinceProbe >= 0 && sinceProbe < DELIVERY_PROBE_INTERVAL_MS;
       if (candidate && askedRecently) {
         // carrier_data is rebuilt from the result on every refresh: carry the marker forward.
-        origin[probeKey] = { ...previousProbe, carrier: candidate.carrier, number: candidate.number };
-      } else if (candidate
-        && (candidate.explicit || !['delivered', 'returned'].includes(resultStage(origin) ?? ''))) {
-        origin[probeKey] = { at: this.now().toISOString(), origin_update: originUpdate, carrier: candidate.carrier, number: candidate.number };
+        origin.delivery_probe = { ...previousProbe, carrier: candidate.carrier, number: candidate.number };
+      } else if (candidate) {
+        origin.delivery_probe = { at: this.now().toISOString(), origin_update: originUpdate, carrier: candidate.carrier, number: candidate.number };
         try {
           const delivery = normalizeCarrierResult(await this.adapter.fetch(candidate.carrier, candidate.number, null, null));
           const latest = (value: CarrierResult) => Math.max(Date.parse(value.last_update || '') || 0,
@@ -1077,7 +1078,7 @@ export class TrackingSyncService {
           // Origin feeds sometimes re-stamp the partner's local completion
           // time with another offset. Explicit, same-day terminal agreement
           // confirms the route without rewriting either provider's timestamps.
-          const sameCompletion = candidate.explicit && terminal && resultStage(origin) === terminal
+          const sameCompletion = terminal && resultStage(origin) === terminal
             && resultStage(delivery) === terminal && deliveryTime > 0 && originTime > 0
             && new Date(deliveryTime).toISOString().slice(0, 10) === new Date(originTime).toISOString().slice(0, 10)
             && new Date(watermark).toISOString().slice(0, 10) === new Date(originTime).toISOString().slice(0, 10);

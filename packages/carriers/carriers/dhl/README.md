@@ -28,7 +28,7 @@ shipment" is reported as such rather than treated as an unannounced parcel.
 | `last_update` | `sendungsverlauf.datumAktuellerStatus`, otherwise the newest event date |
 | `expected_delivery` | `zustellung.zustellzeitfensterVon` or `…Bis`, as a calendar day, dropped once delivered or returned |
 | `events[].time`, `.location`, `.description`, `.stage` | `sendungsverlauf.events[].datum`, `.ort`, `.status` |
-| `delivery_carrier` | set to `swiss-post` when an arrival event links to an exact `post.ch` host |
+| `delivery_carrier` | an unambiguous official partner link in arrival events, resolved through the carrier catalog; the host confirms the shipment through that partner before switching |
 
 Declared capabilities: `history`, `location`, `eta`. Recipient name, recipient
 address, signature and service details present in the payload are never read

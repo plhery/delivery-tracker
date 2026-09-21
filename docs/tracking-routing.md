@@ -30,21 +30,26 @@ Retry failed direct routes after the recorded cooldown; successful direct recove
 | 429 with stale/no successful data | Report before fallback; try another eligible provider within the attempt/time budget. Do not retry the throttled provider early. |
 | Unknown carrier | Try one strong direct candidate when available; otherwise discover and persist a universal provider. No carrier label is invented from a numeric shape or a generic brand. |
 | Universal fails | Record provider/category, update parcel cooldown and shared health, then try a healthy alternative if allowed. Retain affinity until a replacement succeeds. If none succeed, preserve progress and store the next check time. |
-| Border crossing/double carrier | Preserve origin history. A declared delivery partner can use any dedicated adapter that needs no additional inputs. Confirm identity and real progress before selecting its delivery leg, then pin its local number for refresh and universal recovery. Country-only postal hints currently cover Switzerland and Finland; a known different destination suppresses speculative Swiss Post lookup. Multiple reported carrier names alone are insufficient to switch. |
+| Border crossing/double carrier | Preserve origin history. A reported delivery partner can use any dedicated adapter that needs no additional inputs. Resolve structured names and official partner links through the carrier catalog, then confirm identity and real progress before selecting the delivery leg. Pin its local number for refresh and universal recovery. Neither a destination country nor a postal issuer suffix identifies the delivery partner. Multiple reported carrier names alone are insufficient to switch. |
 | Manual good → unsupported/wrong selection | Check the new choice first. Preserve history and revalidate the prior confirmed route as recovery. If it still works on this number, automatically restore it and show the temporary notice. Carrier changes invalidate queued/in-flight work through the existing generation/lease fencing. |
 | Older fallback or terminal regression | Preserve the newer/terminal summary and prior event watermark. Provider success does not authorize a status regression. |
 
 Asendia and ShipUp are marked automatic through universal lookup in the shared web/native catalog; this does not claim dedicated direct adapters for them. The universal-fallback carriers (see the overview in `packages/carriers/README.md`) use the same universal route. Packeta, InPost, Pos Malaysia, Correos, Poste Italiane, CTT, FedEx, USPS, Canada Post, Royal Mail and Posti have since graduated to dedicated adapters. Adding a dedicated adapter later changes the catalog and allows direct discovery/recovery to take over.
 
-La Poste retains its structured destination and delivery-partner reference for
-handoff confirmation. A destination is a lookup hint, never a switch by itself.
-Pre-advice, unknown, stale or conflicting delivery results keep the origin
-active. Explicit partners confirming the same terminal milestone on the same
+La Poste retains its structured destination and resolves the partner's name,
+official URL and reference; DHL arrival links use the same catalog resolver.
+Other adapters can supply `delivery_carrier` and an optional
+`delivery_tracking_number`, or include an official partner link in their events.
+Unknown or conflicting partner evidence is ignored. Malformed optional hints
+do not invalidate usable origin tracking. A lookup failure, pre-advice, unknown,
+stale or conflicting delivery result keeps the origin active.
+Partners confirming the same terminal milestone on the same
 UTC day may disagree on its timestamp; retain both provider timestamps and
 the newer saved summary/event watermark while adopting the verified route.
-An older completion on another day does not qualify. Country-only probes wait
-55 minutes unless origin history advances. The existing Swiss postal probe is
-retained when no destination evidence is available.
+An older completion on another day does not qualify. Unsuccessful confirmations
+wait 55 minutes unless origin history advances or the partner/reference changes.
+An explicitly selected Swiss postal route retains its existing Cainiao fallback;
+other carriers do not trigger it just because a number was issued in Switzerland.
 
 ## Displayed tracking links
 

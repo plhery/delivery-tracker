@@ -42,11 +42,13 @@ describe('DHL public tracking normalization', () => {
   it.each([
     ['http://www.post.ch', 'swiss-post'],
     ['https://service.post.ch/ekp-web/ui/entry/search/' + NUMBER, 'swiss-post'],
+    ['https://www.posti.fi/en/tracking', 'posti'],
+    ['https://tools.usps.com/go/TrackConfirmAction', 'usps'],
     ['https://www.post.ch.evil.example', undefined],
     ['https://www.post.ch@evil.example', undefined],
     ['https://example.test/?next=https://www.post.ch', undefined],
     ['https://other-carrier.example', undefined],
-  ])('recognizes an explicit Swiss Post partner link: %s', (url, expected) => {
+  ])('recognizes a catalog delivery-partner link: %s', (url, expected) => {
     const payload = shipment();
     payload.sendungen[0]!.sendungsdetails.sendungsverlauf.events.push({
       datum: '2026-08-11T10:00:00+02:00',
