@@ -15,8 +15,15 @@ const SITES = [
       if (data?.status === 'PROCESSING' && data.tc === number && typeof data.hid === 'string' && data.hid) state.handle = data.hid;
       if (data?.status === 'CHLNG_REQ') return data.tc === number || Boolean(state.handle && data.hid === state.handle);
       if (data?.status === 'UNTRACEABLE') return data.tc === number;
-      return data?.status === 'FOUND' && data.track?.tc === number
-        && typeof data.hid === 'string' && data.hid && data.track.hid === data.hid && !data.inProgress;
+      const found = data?.status === 'FOUND' && data.track?.tc === number
+        && typeof data.hid === 'string' && data.hid && data.track.hid === data.hid;
+      if (found && !data.inProgress && /^[A-Za-z0-9_-]{1,100}$/.test(data.hid)
+        && !Array.isArray(data.track.events) && (data.track.firstEv || data.track.lastEv)) {
+        // This is the normal results route emitted by Postal Ninja's own URL
+        // builder. Its page requests full history using the verified handle.
+        state.resultUrl = `https://postal.ninja/en/track#/${data.hid}`;
+      }
+      return found && !data.inProgress;
     },
     async prepare(page, number, budgetMs) {
       const deadline = Date.now() + Math.max(0, Math.min(budgetMs, 15_000));
@@ -140,7 +147,19 @@ export async function attachTrackingCapture(page, url, options) {
   let count = 0;
   let bytes = 0;
   let finish;
-  const ready = new Promise(resolve => { finish = () => { terminal = true; resolve(); }; });
+  const restart = () => {
+    terminal = false;
+    return new Promise(resolve => { finish = () => { terminal = true; resolve(); }; });
+  };
+  let ready = restart();
+  const settle = async budgetMs => {
+    let timer;
+    try {
+      await Promise.race([ready, new Promise(resolve => {
+        timer = setTimeout(resolve, Math.max(0, Math.min(budgetMs, options.settleTimeout ?? 15_000, 30_000)));
+      })]);
+    } finally { clearTimeout(timer); }
+  };
   const matchesRequest = request => accepting && request.url() === api && request.method() === 'GET';
   const onRequest = request => { if (matchesRequest(request)) trackingRequested = true; };
   const onRequestFailed = request => {
@@ -188,7 +207,20 @@ export async function attachTrackingCapture(page, url, options) {
   }
   return {
     // Called by both TRAWL browser tiers after navigation and before solving.
-    ...(site.prepare ? { prepare: budgetMs => site.prepare(page, number, budgetMs) } : {}),
+    ...(site.prepare ? { async prepare(budgetMs) {
+      const deadline = Date.now() + Math.max(0, budgetMs);
+      await site.prepare(page, number, Math.max(0, deadline - Date.now()));
+      await settle(deadline - Date.now());
+      if (!state.resultUrl || deadline - Date.now() < 1000) return;
+      // Reuse this browser context: the main form has a separate verification
+      // gate, but an established parcel's normal results page loads its full
+      // history directly. Reset settlement so the compact reply cannot end
+      // the new capture phase before that history arrives.
+      ready = restart();
+      await page.goto(state.resultUrl, {
+        waitUntil: 'domcontentloaded', timeout: Math.min(15_000, deadline - Date.now()),
+      });
+    } } : {}),
     ...(site.perNumber ? { async prepare(budgetMs) {
       const deadline = Date.now() + Math.max(0, Math.min(budgetMs, 15_000));
       const timeout = () => {
@@ -251,14 +283,7 @@ export async function attachTrackingCapture(page, url, options) {
     // Royal Mail sends this GET only after its hCaptcha success callback.
     // A later connection failure cannot be repaired by clicking a checkbox.
     hasTrackingRequest() { return Boolean((site.checkApi && state.handle) || (site.perNumber && trackingRequested)); },
-    async settle(budgetMs) {
-      let timer;
-      try {
-        await Promise.race([ready, new Promise(resolve => {
-          timer = setTimeout(resolve, Math.max(0, Math.min(budgetMs, options.settleTimeout ?? 15_000, 30_000)));
-        })]);
-      } finally { clearTimeout(timer); }
-    },
+    settle,
     async drain() {
       accepting = false;
       page.off('response', onResponse);

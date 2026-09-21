@@ -9,7 +9,7 @@ persisted names. Protocol details live in each provider README.
 | [Ship24](ship24/README.md) | Signed anonymous JSON POST, local Chromium recovery | `direct`, `browser` |
 | [ParcelsApp](parcelsapp/README.md) | Anonymous form POST with postcode; TRAWL capture recovery | `direct`, `trawl` |
 | [17TRACK](seventeentrack/README.md) | TRAWL capture with the compatibility build | `trawl` |
-| [Postal Ninja](postal-ninja/README.md) | TRAWL widget submission; local Chromium without the service; opt-in | `trawl` or `browser` |
+| [Postal Ninja](postal-ninja/README.md) | TRAWL widget verification then normal-page full history; local Chromium without the service; opt-in | `trawl` or `browser` |
 | [UPU](upu/README.md) | Anonymous JSON GET; final postal fallback | `direct` |
 
 The initial order is **Ship24 → ParcelsApp → 17TRACK → UPU**.

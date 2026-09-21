@@ -12,7 +12,9 @@ describe.runIf(Boolean(process.env.FLARESOLVERR_URL))('Postal Ninja through TRAW
     for (let attempt = 0; attempt < 2; attempt++) {
       const result = await tracker.fetch(number, 30_000);
       expect(result).toMatchObject({tracking_provider: 'Postal Ninja', current_stage: 'delivered'});
-      expect(result.events?.length).toBeGreaterThan(0);
+      // All 32 upstream scans project successfully; two delivery wordings at
+      // the same time normalize to the same milestone and are deduplicated.
+      expect(result.events).toHaveLength(31);
       expect(JSON.stringify(result)).not.toMatch(/PIN:|House Number:|Door NO:/);
     }
   }, 90_000);

@@ -120,12 +120,22 @@ describe('Postal Ninja TRAWL capture', () => {
     for (const response of [
       captured([entry({...found, track: {...found.track, tc: 'OTHER123'}})]),
       captured([entry(found)], {url: 'https://postal.ninja/en'}),
+      captured([entry(found)], {url: 'https://postal.ninja/en/track#/another-handle'}),
+      captured([entry(found)], {url: `https://other.test/en/track#/${found.hid}`}),
       captured([entry(found)], {tier: 1}),
       captured([], {capturedResponses: undefined}),
       captured([{...entry(found), body: null, error: 'unreadable'}]),
       captured([{...entry(found), truncated: true}]),
     ]) await expect(setup(response).tracker.fetch(number)).rejects.toThrow();
     expect(scrapeUniversalPage).not.toHaveBeenCalled();
+  });
+
+  it('accepts the bound normal results page and selects full history over the widget summary', async () => {
+    const compact = {...found, track: {...found.track, events: undefined, firstEv: found.track.events[0], lastEv: found.track.events.at(-1)}};
+    const {tracker} = setup(captured([entry(compact), entry(found)], {url: `https://postal.ninja/en/track#/${found.hid}`}));
+    const result = await tracker.fetch(number);
+    expect(result.events).toEqual(parsePostalNinjaResponse(found, number).events);
+    await expect(setup(captured([entry(compact)])).tracker.fetch(number)).rejects.toMatchObject({kind: 'indeterminate'});
   });
 });
 

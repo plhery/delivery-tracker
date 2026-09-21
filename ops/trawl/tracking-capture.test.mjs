@@ -24,7 +24,7 @@ async function fixture(url = `https://t.17track.net/en#nums=${number}`, endpoint
     headers: () => ({ 'content-type': 'application/json', 'content-length': String(body.length), 'content-encoding': 'gzip', ...headers }),
     body: read ?? (async () => Buffer.from(body)),
   });
-  return { capture, respond, handlers, detached: () => detached };
+  return { page, capture, respond, handlers, detached: () => detached };
 }
 
 const ninjaGet = 'https://postal.ninja/track/get';
@@ -71,6 +71,47 @@ test('Postal Ninja finishes matching challenges and completed empty replies prom
     await respond(final, {method: 'POST'});
     assert.equal(capture.hasResponse(), true);
     await capture.settle(1000); await capture.drain();
+  }
+});
+
+test('Postal Ninja opens only the verified result and waits for full history after compact capture', async () => {
+  const {page, capture, respond} = await fixture(ninjaUrl, ninjaGet, [ninjaCheck]);
+  let filled;
+  let saved = true;
+  let submitted = 0;
+  let navigated;
+  const post = body => respond(body, {method: 'POST'});
+  const compact = ninjaReply({track: {tc: number, hid: 'test-handle', state: 'FINISHED', firstEv: {dt: '2026-08-01T10:00:00', dsc: 'Accepted'}}});
+  const form = {locator: selector => {
+    if (selector === 'input[type="text"]') return {fill: async value => {filled = value;}};
+    if (selector === 'input[type="checkbox"]') return {count: async () => 1, uncheck: async () => {saved = false;}};
+    return {evaluate: async () => { submitted++; assert.equal(saved, false); await post(compact); return true; }};
+  }};
+  page.frameLocator = () => ({locator: () => form});
+  page.goto = async url => {navigated = url;};
+  await capture.prepare(2000);
+  assert.equal(filled, number);
+  assert.equal(submitted, 1);
+  assert.equal(navigated, 'https://postal.ninja/en/track#/test-handle');
+  let settled = false;
+  const waiting = capture.settle(1000).then(() => {settled = true;});
+  await new Promise(resolve => setTimeout(resolve, 10));
+  assert.equal(settled, false);
+  await post(ninjaReply({track: {tc: number, hid: 'test-handle', state: 'FINISHED', events: [{dt: '2026-08-01T10:00:00', dsc: 'Accepted'}]}}));
+  await waiting;
+  assert.equal((await capture.drain()).capturedResponses.length, 2);
+});
+
+test('Postal Ninja never follows an unsafe or unrelated result handle', async () => {
+  for (const [tc, hid] of [[number, '//other.test'], ['OTHER123', 'test-handle']]) {
+    const {page, capture, respond} = await fixture(ninjaUrl, ninjaGet, [ninjaCheck]);
+    page.frameLocator = () => ({locator: () => ({locator: selector => selector === 'input[type="text"]'
+      ? {fill: async () => {}}
+      : selector === 'input[type="checkbox"]' ? {count: async () => 0}
+        : {evaluate: async () => {await respond(ninjaReply({hid, track: {tc, hid, firstEv: {dt: '2026-08-01T10:00:00'}}}), {method: 'POST'}); return true;}}})});
+    page.goto = () => {throw new Error('Must not navigate');};
+    await capture.prepare(10);
+    await capture.drain();
   }
 });
 

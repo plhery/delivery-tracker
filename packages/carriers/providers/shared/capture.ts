@@ -26,6 +26,8 @@ export interface CaptureSpec {
   apiUrl: string;
   /** Related protocol replies needed to diagnose submission or polling. */
   additionalApiUrls?: readonly string[];
+  /** A provider may bind its observed results-page redirect to a captured identity. */
+  acceptResultPage?: (page: TrawlScrapeResponse) => boolean;
   budgetMs: number;
   fetcher?: typeof fetch;
 }
@@ -69,8 +71,9 @@ export async function loadCapture(trawl: TrawlClient | null, spec: CaptureSpec):
     // caller still fails closed with a typed capture error.
     requireSolved: false,
   });
-  // A solved page for another URL is an interstitial or a redirect, never this shipment.
-  if (page.url !== spec.url) throw new SchemaError(spec.source, 'Tracking browser returned an incomplete page');
+  // Results-page navigation must be bound to a captured identity. Arbitrary
+  // redirects and interstitials are never accepted as this shipment's page.
+  if (page.url !== spec.url && !spec.acceptResultPage?.(page)) throw new SchemaError(spec.source, 'Tracking browser returned an incomplete page');
   // Preserve the solved-tier requirement for capture flows: only a browser
   // tier (2/3) with a fresh (200) or not-modified (304) page may carry a
   // usable capture. Anything else stays an unsolved page, as before.

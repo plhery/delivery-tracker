@@ -3,11 +3,11 @@ import 'server-only';
 /**
  * Postal Ninja (postal.ninja), an opt-in universal aggregator.
  *
- * Transport: TRAWL (or local Chromium when unconfigured) submits the embedded tracking
- * widget on `/en/tools` and reads the `/track/get` response it produces.
- * Opening a URL that contains the number does not perform a lookup, and the
- * main tracking page can require an interactive challenge, so the widget is
- * the only unattended path found so far. The provider is disabled by default;
+ * Transport: TRAWL verifies through the embedded widget on `/en/tools`, then
+ * opens the normal results page for its verified handle and captures the full
+ * `/track/get` response. Local Chromium without TRAWL retains compact widget
+ * capture. The main entry form has a separate verification gate.
+ * The provider is disabled by default;
  * `TRACKING_ENABLE_POSTAL_NINJA=true` puts it in the chain before 17TRACK.
  */
 import { DateTime } from 'luxon';
@@ -16,7 +16,7 @@ import { ChallengeError, IndeterminateError, SchemaError } from '../../core/erro
 import { runSteps } from '../../core/runner';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import type { StepRecorder } from '../../core/telemetry';
-import type { TrawlClient } from '../../core/transport';
+import type { TrawlClient, TrawlScrapeResponse } from '../../core/transport';
 import { scrapeUniversalPage, type UniversalBrowserOptions } from '../../core/transport/browser';
 import { isRecord } from '../../core/types';
 import { capturedBodies, captureFailure, loadCapture, type CaptureSpec } from '../shared/capture';
@@ -28,6 +28,18 @@ const CHECK_API = 'https://postal.ninja/track/check';
 const MAX_EVENTS = 1000;
 /** The states whose history the provider considers established. */
 const TRACKED_STATES = ['TRACKING', 'FINISHED', 'STOPPED', 'ARCHIVED'];
+
+function isMatchingResultPage(page: TrawlScrapeResponse, number: string): boolean {
+  return page.capturedResponses.some((entry) => {
+    if (entry.url !== GET_API || entry.status !== 200 || !entry.body || entry.truncated || entry.base64Encoded) return false;
+    let payload: unknown;
+    try { payload = JSON.parse(entry.body); } catch { return false; }
+    return isRecord(payload) && payload.status === 'FOUND' && isRecord(payload.track)
+      && payload.track.tc === number && payload.track.hid === payload.hid
+      && typeof payload.hid === 'string' && /^[A-Za-z0-9_-]{1,100}$/.test(payload.hid)
+      && page.url === `https://postal.ninja/en/track#/${payload.hid}`;
+  });
+}
 
 export function parsePostalNinjaResponse(payload: unknown, trackingNumber: string): CarrierResult {
   const number = numberOf(trackingNumber);
@@ -103,6 +115,7 @@ export class PostalNinjaTracker {
         const spec: CaptureSpec = {
           source: SOURCE, url: `https://postal.ninja/en/tools#trawl-number=${number}`,
           apiUrl: GET_API, additionalApiUrls: [CHECK_API], budgetMs: remainingMs, fetcher: this.options.fetcher,
+          acceptResultPage: (page) => isMatchingResultPage(page, number),
         };
         const page = await loadCapture(this.options.trawl ?? null, spec);
         // Learn the submission's handle before interpreting a handle-only
@@ -119,6 +132,10 @@ export class PostalNinjaTracker {
           try { payload = JSON.parse(body); } catch { continue; }
           const error = responseError(payload);
           if (error) throw error;
+          // The compact widget response establishes the parcel's handle. A
+          // TRAWL success must include the normal page's full history; otherwise
+          // fallback providers should get a chance to return the missing scans.
+          if (isRecord(payload) && isRecord(payload.track) && !Array.isArray(payload.track.events)) continue;
           try { return parsePostalNinjaResponse(payload, number); }
           catch (error) { if (error instanceof SchemaError) pending ??= error; else throw error; }
         }

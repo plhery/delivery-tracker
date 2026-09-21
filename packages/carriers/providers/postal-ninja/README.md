@@ -12,17 +12,23 @@ chain before 17TRACK. The provider name persisted in routing state is
 
 | Portal | URL | Shown to a human |
 | --- | --- | --- |
-| Embedded tracking widget | `https://postal.ninja/en/tools` | status and aggregated history after the number is submitted in the widget |
+| Embedded tracking widget | `https://postal.ninja/en/tools` | first/latest scans; establishes the verified parcel handle |
+| Normal results page | `https://postal.ninja/en/track#/<handle>` | full history for the handle returned by the lookup |
 
-No stable public deep link to a parcel has been verified, so the app links to
-the tracking form rather than to a per-parcel URL.
+The results handle must come from a verified lookup; it is not derived from the
+tracking number. The app's general tracking link remains the public form.
 
 ## What we retrieve
 
-From the widget's own endpoint (`/track/get`). The widget requests
-`compact: true`, which returns `track.firstEv` and `track.lastEv`, not a full
-`events` array. The parser accepts both shapes; compact replies retain only the
-reported first/latest scans and do not claim a complete timeline.
+From the normal results page's own `/track/get` request. The widget first
+requests `compact: true`, supplying `track.firstEv` and `track.lastEv`. TRAWL
+then opens that parcel's normal results page in the same browser context. Its
+`mode: "EXISTS"` request omits `compact` and returns `track.events`.
+
+TRAWL lookups require this full-history array. A widget-only capture falls
+through to other universal providers instead of becoming a successful sparse
+source. The parser still accepts compact replies for the legacy local Chromium
+path, retaining only supplied scans and never inventing the missing timeline.
 
 | Field | Source |
 | --- | --- |
@@ -56,8 +62,12 @@ Both paths open `/en/tools`, fill the official embedded widget, untick its
 `/track/get`. The TRAWL [compatibility build](../../../../ops/trawl/README.md)
 uses `#trawl-number=<number>` as its own form-submission marker. This is not an
 upstream deep link: stock TRAWL only loading the URL does not trigger a lookup.
-The page itself obtains the Turnstile token and signs its requests. No token
-service or copied signing constant is needed for this browser path.
+The widget itself obtains the Turnstile token and signs its requests. Once a
+completed reply echoes the number and matches its own handle, TRAWL navigates
+to the normal results route in that same session. Capture restarts its wait
+for the full response within the original budget. The application accepts the
+changed page URL only when its handle is bound to an identity-matched capture.
+No token service or copied signing constant is needed for this browser path.
 
 The adapter also observes `/track/check`. A matching `CHLNG_REQ` ends the
 attempt with a challenge error instead of waiting for a `/track/get` response
@@ -99,8 +109,9 @@ and the language classifier.
   clearance cookies, were challenged by Cloudflare. Full history was retrieved
   through signed fetch inside a verified browser; this is not a working pure
   HTTP client.
-- The widget provides first/latest scans. The full-history mode described below
-  is manually verified but is not an additional adapter tier.
+- The normal results page supplies the history held by Postal Ninja; this does
+  not establish complete coverage of every carrier's scans. The local Chromium
+  path without TRAWL still returns only the widget's first/latest scans.
 - Delivery wording can contain an access code or a signature. Any event whose
   stage is not `delivered` and that carries such details is dropped, and a
   delivered event's description is replaced by `Delivered`.
@@ -112,10 +123,10 @@ and the language classifier.
 
 - **Explicit host switch.** `TRACKING_ENABLE_POSTAL_NINJA=true` inserts it before
   17TRACK; eligible UPU remains the final fallback.
-- **Submit the embedded widget, do not navigate to a number.** The official
-  widget on `/en/tools` passes an automatic browser check; the main tracking
-  page can instead require an interactive challenge, and opening a URL that
-  contains the number performs no lookup at all.
+- **Verify through the widget, then open the normal results page.** The widget
+  supplies a verified handle after its automatic browser check. Opening that
+  handle's results route retrieves full history without resubmitting the main
+  entry form, whose separate managed Turnstile check failed in the probe.
 - **Untick "save this parcel".** The lookup must not leave a stored parcel
   behind in the provider's own account-less storage.
 - **Local wall times are preserved, never converted.** `dt` values have no zone
@@ -161,6 +172,13 @@ Removing `compact` and signing the changed body returned a matching full
 32-event history for the public YunExpress control in the verified browser.
 The compact reply instead contained only `firstEv` and `lastEv`. The old
 parser rejected that valid compact reply; it now handles both shapes.
+
+The normal URL builder in the shared bundle emits `/en/track#/<hid>` for an
+established parcel and `/en/track#/tc/<number>` for the entry form. A fresh
+TRAWL session verified the widget lookup and then opened the established
+parcel's normal route. The page itself requested `mode: "EXISTS"`, without
+`compact`, and returned all 32 scans for the public control. This is the
+deployed full-history flow; the manual signed-fetch experiment is unnecessary.
 
 ## Other alternatives
 
@@ -216,3 +234,12 @@ parser rejected that valid compact reply; it now handles both shapes.
   returned matching delivered history in 4.4 seconds with `tier: 2` and
   `sessionCached: true`. The production host enables the provider with
   `TRACKING_ENABLE_POSTAL_NINJA=true`; new installations still opt in explicitly.
+- 2026-09-22: the normal entry form remained gated by its managed Turnstile
+  challenge in the fresh Camoufox probe. Following the normal results route
+  for the widget's verified handle returned a matching 32-event history in
+  7.1 seconds total. The adapter now requires full history on the TRAWL path;
+  capture tests cover the second response phase, unsafe handles and redirects.
+  The final implementation repeated this in 7.7 seconds. All 32 upstream scans
+  project successfully; two delivery wordings at the same time normalize to
+  one milestone, yielding 31 distinct app events. Cached Tier 2 retrieval also
+  returned the full history. No raw parcel details were committed as fixtures.

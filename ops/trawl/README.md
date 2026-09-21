@@ -31,6 +31,13 @@ through `inProgress` until a completed matching reply, challenge or
 `UNTRACEABLE` response. It does not turn an unrelated number/handle into a
 completed lookup. Stock TRAWL does not submit this form from a URL alone.
 
+After a completed compact reply establishes the requested number and a safe
+handle, capture opens the normal `/en/track#/<handle>` page in the same context.
+That page issues its own non-compact `track/get` request (`mode: "EXISTS"`).
+Capture resets its settlement promise before navigation, so the compact reply
+cannot end the wait for full history. Both phases share the original time and
+response-size budgets. Empty and untraceable widget replies do not navigate.
+
 The remaining providers retain their navigation-only flow. Capture accepts at most 20 replies, limits
 stored decoded bodies to 2 MB each / 4 MB total, checks declared size when
 available, and waits at most the remaining scrape budget (30 seconds maximum).
@@ -87,8 +94,10 @@ still occurred; this is a failure-path measurement, not a tracking success.
 On 2026-09-22, two fresh Camoufox contexts on the production host passed Postal
 Ninja's widget Turnstile automatically and captured a matching delivered
 YunExpress response in 7.0 seconds each. Earlier Chromium failures did not test
-this execution path. The widget returns first/latest scans; the application
-does not label them as a full timeline. See the
+this execution path. A follow-up captured all 32 scans from the normal results
+page using the verified handle, in 7.1 seconds total. TRAWL now follows that
+route; the application requires the full response instead of accepting just
+the widget's first/latest scans. See the
 [Postal Ninja verification notes](../../packages/carriers/providers/postal-ninja/README.md).
 
 ## Redis session cache
