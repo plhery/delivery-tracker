@@ -64,7 +64,11 @@ A fresh browser on the production host submitted the public form, auto-passed
 invisible hCaptcha and received an actual summary API response on 2026-09-20.
 The public reference returned HTTP 404 / `E1142`; this proves the request path,
 not successful tracking of a current shipment. The packaged Tier 3 and Tier 2
-flows both reached that endpoint in 10.9 s and 11.3 s respectively.
+flows both reached that endpoint in 10.9 s and 11.3 s respectively. Follow-up
+checks on 2026-09-21 exercised the complete adapter through the TRAWL API in
+10.3 s and 10.8 s, including a revalidated (304) browser document. Form
+submission invokes the normal button handler directly to avoid a Camoufox
+mouse-action stall.
 
 TRAWL's native hCaptcha solver supports checkbox auto-pass and audio. Its image
 challenge support is limited; Royal Mail's invisible widget has no checkbox.

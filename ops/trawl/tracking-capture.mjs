@@ -136,12 +136,12 @@ export async function attachTrackingCapture(page, url, options) {
       await input.press('Backspace', { timeout: timeout() });
       await input.pressSequentially(number, { timeout: timeout(), delay: 30 });
       if (await input.inputValue() !== number) throw new Error('Royal Mail input was reset before submission');
-      try { await page.locator('#submit').click({ timeout: Math.min(timeout(), 2_000) }); }
-      catch (error) {
-        if (!await decline.isVisible()) throw error;
-        await decline.evaluate(element => element.click());
-        await page.locator('#submit').click({ timeout: timeout() });
-      }
+      // Camoufox's humanized mouse action can stall after reaching the button.
+      // Invoke the page's normal click handler; it still runs its validation
+      // and hCaptcha callback before making any tracking request.
+      const submit = page.locator('#submit:not(:disabled)');
+      await submit.waitFor({ state: 'visible', timeout: timeout() });
+      await submit.evaluate(element => element.click());
       // Invisible hCaptcha commonly auto-passes after submit. Its callback
       // sends the API request and resets the widget; do not click it again.
       let timer;

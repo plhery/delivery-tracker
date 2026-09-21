@@ -186,12 +186,12 @@ test('Royal Mail prepares the form after capture attaches and before solving', a
       inputValue: async () => royalMailNumber,
       press: async value => calls.push([selector, value]),
       pressSequentially: async value => calls.push(['type', value]),
-      click: async () => calls.push(selector),
+      evaluate: async () => calls.push(selector),
     }),
   };
   const capture = await attachTrackingCapture(page, royalMailUrl, {captureResponses: [royalMailApi]});
   await capture.prepare(1000);
-  assert.deepEqual(calls, ['observe', 'decline', ['#barcode-input', 'ControlOrMeta+A'], ['#barcode-input', 'Backspace'], ['type', royalMailNumber], '#submit']);
+  assert.deepEqual(calls, ['observe', 'decline', ['#barcode-input', 'ControlOrMeta+A'], ['#barcode-input', 'Backspace'], ['type', royalMailNumber], '#submit:not(:disabled)']);
   await assert.rejects(capture.prepare(0), /timed out/);
 });
 
