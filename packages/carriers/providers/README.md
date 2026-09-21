@@ -16,6 +16,10 @@ The initial order is **Ship24 → ParcelsApp → 17TRACK → UPU**.
 `TRACKING_ENABLE_POSTAL_NINJA=true` inserts Postal Ninja before 17TRACK.
 UPU is eligible only for checksum-valid postal S10 numbers and always stays
 last: success never gives it affinity or a place in shadow comparisons.
+Checksum-valid China Post `C…CN` and `L…CN` references instead start with 17TRACK,
+whose richer history was verified through the existing unattended adapter.
+EMS and untested number families keep their existing routes. The router applies
+this priority before saved fallback affinity, while respecting cooldowns.
 
 [Provider tradeoffs and dated comparisons](COMPARISON.md) explain coverage,
 latency, history, timestamps, browser dependencies and the China Post/EMS/UPU

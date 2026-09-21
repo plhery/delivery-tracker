@@ -9,6 +9,16 @@ Implemented September 2026. Carrier selection and retrieval provider are separat
 3. Postal Ninja is excluded by default while unattended verification is unresolved. Set `TRACKING_ENABLE_POSTAL_NINJA=true` to include it experimentally before 17TRACK; do not count it as working coverage without a fresh deployed test.
 4. Remember a successful richer provider and the lookup number in `carrier_data.routing`. A subsequent check starts there, even when it is third in the default list. Respect provider cooldowns before requesting it. UPU never becomes preferred, never moves ahead through discovery rotation, and is excluded from shadow comparisons; an existing richer affinity survives a UPU fallback.
 
+**China Post exception (2026-09-22):** checksum-valid `C…CN` and `L…CN` lookup
+numbers try **17TRACK → Ship24 → ParcelsApp → UPU**, with opt-in Postal Ninja
+before UPU. The [live comparison](../packages/carriers/providers/COMPARISON.md#china-post-specific-recommendation)
+found substantially richer history through the existing unattended route.
+17TRACK precedes saved fallback affinity and discovery rotation; on failure or
+cooldown the normal preferred fallback is available. Retry 17TRACK first once
+its cooldown expires. Dedicated adapters still precede universals, including
+EMS and confirmed destination carriers; `E…CN`, untested formats and invalid
+checksums do not gain this priority. A confirmed handoff uses its active number.
+
 On failure, try **every eligible enabled universal once in the same check**, stopping at the first usable result: Ship24 → ParcelsApp → 17TRACK → eligible UPU, or the saved richer provider first. A slow direct attempt does not consume the universal budget. Reserve 35 seconds per richer provider: up to 30 seconds for lookup plus transport allowance, for a 105-second fallback budget by default (140 seconds with experimental Postal Ninja enabled). Postal S10 lookups reserve an additional 13 seconds for UPU: at most eight seconds for its single HTTP request plus transport allowance. Non-postal lookups never acquire a UPU lease. Timeouts use integer milliseconds. Cooldowns, a recent-success 429 deferral, cancellation, and an exhausted overall budget still prevent calls. If a budget overrun leaves providers untried, the persisted discovery cursor advances for the next check.
 
 Universal-backed parcels refresh at most every **15 minutes during 08:00–22:00 Europe/Zurich**, hourly overnight. Manual refresh uses the same persisted cooldown. Direct adapters retain their existing schedules; GLS's longer limits also remain.
@@ -16,6 +26,8 @@ Universal-backed parcels refresh at most every **15 minutes during 08:00–22:00
 ## Rotation and recovery checks
 
 Keep affinity rather than round-robin successful providers. Once per day per parcel, a **scheduled** successful universal check may compare one other provider. This remains at most one comparison, even though failed discovery can now try all providers. The comparison cursor rotates. Adopt it only when it has strictly newer timestamped history, is not older than saved history, and does not overturn a terminal result. A comparison failure never discards the successful primary result. A direct success does not cause unnecessary universal comparison calls.
+The scoped China Post 17TRACK success also skips shadow comparisons: do not
+replace the verified richer feed using another source's inferred timestamp.
 
 Retry failed direct routes after the recorded cooldown; successful direct recovery takes over from universal retrieval. Transport failures start at 15 minutes, verification/schema failures at one hour, and confirmed not-found at 24 hours. Repeated failures back off to six hours (24 hours for not-found). Respect a longer explicit Retry-After up to seven days.
 

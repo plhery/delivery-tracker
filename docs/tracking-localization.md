@@ -1,6 +1,8 @@
 # Tracking event languages
 
-Investigation dated 2026-09-21. The proposal below is not implemented. Choose
+Investigation dated 2026-09-21, updated 2026-09-22. 17TRACK now retains operator
+and timestamp provenance and maps known sub-status codes. The display/free-text
+translation proposal below is not implemented. Choose
 tracking sources for coverage, freshness and verified identity; choose display
 language separately. A carrier handoff can improve destination history but
 does not translate earlier origin scans.
@@ -75,9 +77,13 @@ tested here and is not equivalent to changing the public page's language.
 1. **Preserve semantics before translating.** Retain provider/operator, raw
    description, language when evidenced, stable event codes and time provenance.
    Map verified codes before language heuristics. In particular, 17TRACK's
-   nullable `stage` must not hide a useful `sub_status`; see its
+   nullable `stage` must not hide a useful `sub_status` (now implemented); see its
    [parser findings](../packages/carriers/providers/seventeentrack/README.md#china-post-widget-investigation).
    Translation must not determine terminal status, handoffs or UTC freshness.
+   The new status mapping feeds existing localized stage headings on both
+   clients; Chinese scan text itself is still preserved. 17TRACK's converted
+   timestamps remain in use with provenance, including provider-inferred
+   offsets; a complete time-confidence policy is still needed.
 2. **Extend shared display messages by stable codes.** Use provider-scoped
    codes and validated templates for common scans, retaining details such as
    customs release versus presentation. Prefer native translated labels or a

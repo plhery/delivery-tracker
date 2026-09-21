@@ -9,6 +9,16 @@ const API = 'https://t.17track.net/track/restapi';
 interface Payload { meta: { code: number }; shipments: Record<string, unknown>[] }
 const delivered = JSON.parse(readFileSync(new URL('./fixtures/delivered.json', import.meta.url), 'utf8')) as Payload;
 const history = (value = number): Payload => ({ ...delivered, shipments: [{ ...delivered.shipments[0], number: value }] });
+const postalHistory = (events: Record<string, unknown>[], status = 'Expired'): Payload => ({
+  meta: { code: 200 }, shipments: [{ number, code: 200, shipment: {
+    latest_status: { status, sub_status: `${status}_Other` },
+    tracking: { providers: [{ provider: { key: 3011, name: 'China Post' }, events }] },
+  } }],
+});
+const postalScan = (sub_status: string, description = '邮件运输中') => ({
+  time_iso: '2026-09-20T12:22:00+08:00', time_utc: '2026-09-20T04:22:00Z',
+  time_raw: { date: '2026-09-20', time: '12:22:00', timezone: null }, description, stage: null, sub_status,
+});
 const thrown = (run: () => unknown): unknown => {
   try { run(); } catch (error) { return error; }
   return null;
@@ -25,6 +35,56 @@ function tracker(fetcher: typeof fetch, trawlUrl = 'http://browser.test') {
 }
 
 describe('17TRACK result parsing', () => {
+  it.each([
+    ['InTransit_TransportArrived', '飞机进港', 'in_transit'],
+    ['InTransit_Other', '航空公司接收', 'in_transit'],
+    ['InTransit_PickedUp', '中国邮政已收取邮件', 'accepted'],
+    ['InTransit_CustomsProcessing', '送交出口海关', 'customs'],
+    ['InTransit_CustomsReleased', '出口海关/放行', 'in_transit'],
+    ['InTransit_CustomsRequiringInformation', '等待清关资料', 'customs'],
+    ['Exception_Delayed', '运输延误', 'exception'],
+    ['Exception_Returning', '退回中', 'exception'],
+    ['Exception_Returned', '已退回', 'returned'],
+    ['OutForDelivery_Other', '正在投递', 'out_for_delivery'],
+    ['Delivered_Other', '已妥投', 'delivered'],
+  ])('uses %s with a null stage independently of scan language', (code, description, stage) => {
+    const result = parse17TrackResponse(postalHistory([postalScan(code, description)]), number);
+    expect(result.current_stage).toBe(stage);
+    expect(result.events?.[0]).toMatchObject({ stage, provider_code: code,
+      reporting_carrier: 'China Post', reporting_carrier_key: 3011,
+      time_provenance: 'provider_inferred', provider_time_iso: '2026-09-20T12:22:00+08:00' });
+    expect(result.events?.[0]?.description).toBe(stage === 'delivered' ? 'Delivered' : description);
+  });
+
+  it('does not convert stale tracking or unknown codes into shipment progress', () => {
+    expect(parse17TrackResponse(postalHistory([postalScan('Future_Unknown')]), number).current_stage).toBe('pending');
+    expect(parse17TrackResponse(postalHistory([postalScan('InTransit_Other')]), number).status).toBe('in_transit');
+    expect(parse17TrackResponse(postalHistory([postalScan('Delivered_Other', 'Not delivered')]), number).current_stage).toBe('failed_attempt');
+    expect(parse17TrackResponse(postalHistory([postalScan('Delivered_Other', 'Delivered to local carrier')]), number).current_stage).toBe('in_transit');
+    expect(parse17TrackResponse(postalHistory([postalScan('InTransit_Other', 'Returned to sender')]), number).current_stage).toBe('returned');
+  });
+
+  it('keeps dated history when explanatory rows have no dates, without inventing timestamps', () => {
+    const result = parse17TrackResponse(postalHistory([
+      { ...postalScan('InTransit_Other'), time_iso: null, time_utc: null, time_raw: { date: null, time: null, timezone: null } },
+      { ...postalScan('Delivered_Other', 'Delivered'), time_raw: { timezone: '+08:00' } },
+    ]), number);
+    expect(result).toMatchObject({ current_stage: 'delivered', undated_event_count: 1 });
+    expect(result.events).toHaveLength(1);
+    expect(result.events?.[0]?.time_provenance).toBe('carrier_reported');
+    expect(() => parse17TrackResponse(postalHistory([{ ...postalScan('InTransit_Other'), time_utc: 'broken' }]), number))
+      .toThrow('invalid tracking event');
+  });
+
+  it('requires a completed identity-matched NotFound and an empty history for a negative answer', () => {
+    expect(thrown(() => parse17TrackResponse(postalHistory([], 'NotFound'), number)))
+      .toMatchObject({ name: 'NotFoundError', kind: 'not_found', status: 404 });
+    expect(thrown(() => parse17TrackResponse(postalHistory([]), number))).not.toMatchObject({ kind: 'not_found' });
+    expect(thrown(() => parse17TrackResponse(postalHistory([], 'NotFound'), 'OTHER123')))
+      .toMatchObject({ kind: 'schema' });
+    expect(parse17TrackResponse(postalHistory([postalScan('InTransit_Other')], 'NotFound'), number).current_stage).toBe('in_transit');
+  });
+
   it('uses matching history, keeps the reported carrier and strips recipient data', () => {
     const result = parse17TrackResponse(delivered, number);
     expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered', tracking_provider: '17TRACK',
@@ -48,6 +108,12 @@ describe('17TRACK result parsing', () => {
 });
 
 describe('17TRACK browser capture', () => {
+  it('preserves completed not-found and malformed matching history errors through capture', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(captured(postalHistory([], 'NotFound')));
+    await expect(tracker(fetcher).fetch(number)).rejects.toMatchObject({ kind: 'not_found' });
+    fetcher.mockResolvedValue(captured(postalHistory([{ ...postalScan('InTransit_Other'), time_utc: 'broken' }])));
+    await expect(tracker(fetcher).fetch(number)).rejects.toMatchObject({ kind: 'schema' });
+  });
   it('asks the browser service for the page and reads its captured API response', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(captured(delivered));
     await expect(tracker(fetcher, 'http://browser.test/v1').fetch(number)).resolves.toMatchObject({ tracking_provider: '17TRACK' });

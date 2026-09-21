@@ -1,8 +1,7 @@
 import 'server-only';
 
 /**
- * 17TRACK (t.17track.net), a universal aggregator used as the last discovery
- * provider.
+ * 17TRACK (t.17track.net), a universal aggregator with richer China Post history.
  *
  * Transport: the browser service loads the public tracking page and captures
  * the page's own `restapi` response; unsigned direct probes answer HTTP 200
@@ -12,7 +11,7 @@ import 'server-only';
  * verification wall from an outage.
  */
 import type { AdapterFactory } from '../../core/adapter';
-import { ChallengeError, SchemaError, TransportError } from '../../core/errors';
+import { ChallengeError, NotFoundError, SchemaError, TransportError } from '../../core/errors';
 import { runSteps } from '../../core/runner';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import type { StepRecorder } from '../../core/telemetry';
@@ -20,7 +19,8 @@ import type { TrawlClient } from '../../core/transport';
 import { isRecord } from '../../core/types';
 import { universalCarrierHints } from '../shared/hints';
 import { capturedBodies, captureFailure, loadCapture, type CaptureSpec } from '../shared/capture';
-import { event, numberOf, result, text, type UniversalSource } from '../shared/result';
+import { numberOf, result, text, type UniversalSource } from '../shared/result';
+import { seventeenTrackEvent } from './events';
 
 const SOURCE: UniversalSource = '17TRACK';
 const API_URL = 'https://t.17track.net/track/restapi';
@@ -94,15 +94,27 @@ export function parse17TrackResponse(payload: unknown, trackingNumber: string): 
   }
   const events: CarrierEvent[] = [];
   let count = 0;
+  let undated = 0;
   for (const provider of tracking.providers) {
-    if (!isRecord(provider) || !Array.isArray(provider.events)) continue;
+    if (!isRecord(provider) || !Array.isArray(provider.events)) throw new SchemaError(SOURCE, '17TRACK returned invalid provider history');
+    const reported = isRecord(provider.provider) ? provider.provider : {};
+    const name = universalCarrierHints([reported.name]).reported_carriers[0];
+    const operator = { ...(name ? { reporting_carrier: name } : {}),
+      ...(typeof reported.key === 'number' && Number.isSafeInteger(reported.key) ? { reporting_carrier_key: reported.key } : {}) };
     for (const raw of provider.events) {
       if (++count > MAX_EVENTS || !isRecord(raw)) throw new SchemaError(SOURCE, '17TRACK returned invalid events');
-      const parsed = event(raw.time_utc ?? raw.time_iso, raw.description, raw.stage);
+      if (raw.time_utc == null && raw.time_iso == null) undated++;
+      let parsed: CarrierEvent | null;
+      try { parsed = seventeenTrackEvent(raw, operator); }
+      catch (cause) { throw new SchemaError(SOURCE, '17TRACK returned an invalid tracking event', { cause }); }
       if (parsed) events.push(parsed);
     }
   }
-  return { ...result(events, SOURCE), ...universalCarrierHints(tracking.providers.map((provider) =>
+  if (count === 0 && isRecord(shipment.latest_status) && shipment.latest_status.status === 'NotFound') {
+    throw new NotFoundError(SOURCE);
+  }
+  return { ...result(events, SOURCE), ...(undated ? { undated_event_count: undated } : {}),
+    ...universalCarrierHints(tracking.providers.map((provider) =>
     isRecord(provider) && isRecord(provider.provider) ? provider.provider.name : undefined)) };
 }
 
@@ -134,7 +146,7 @@ export class SeventeenTrackTracker {
           } catch (error) {
             // Continue past polling replies and unrelated/demo numbers, but retain
             // the latest structured failure if no matching history follows.
-            if (isSeventeenTrackLookupError(error)) pending ??= error;
+            if (isSeventeenTrackLookupError(error) || error instanceof NotFoundError || error instanceof SchemaError) pending ??= error;
           }
         }
         throw pending ?? captureFailure(page, capture);

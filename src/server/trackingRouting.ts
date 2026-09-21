@@ -6,7 +6,7 @@ import { detectCarrierMatch } from '../lib/carriers';
 import { activeRequirements, AUTOMATIC_CARRIER_IDS, carrierAdapter } from './carriers';
 import { normalizeCarrierResult, type CarrierResult } from './carrierResult';
 import { isRecord, type JsonObject } from './types';
-import { universalSources } from './universalTracking';
+import { priorityUniversalSource, universalSources } from './universalTracking';
 import type { UniversalSource } from './universalTrackingResult';
 import { errorType, reportRoutingEvent } from './observability';
 import { carrierErrorKind, retryAfterMsOf } from '@carriers/core/errors';
@@ -252,8 +252,10 @@ export class TrackingRouter {
 
     const richerSources = sources.filter((source) => source !== 'UPU');
     const preferred = richerSources.includes(state.preferred_provider!) ? state.preferred_provider : undefined;
+    // A cheaper fallback must not stay pinned after the richer route recovers.
+    const priority = priorityUniversalSource(universalNumber);
     const offset = state.discovery_cursor % richerSources.length;
-    const ordered = [...new Set([...(preferred ? [preferred] : []), ...richerSources.slice(offset), ...richerSources.slice(0, offset),
+    const ordered = [...new Set<UniversalSource>([...(priority ? [priority] : []), ...(preferred ? [preferred] : []), ...richerSources.slice(offset), ...richerSources.slice(0, offset),
       ...sources.filter((source) => source === 'UPU')])];
     // Reserve each source’s lookup budget plus transport allowance (UPU needs only 8s).
     // Start after direct attempts so a slow carrier cannot starve discovery.
@@ -309,7 +311,7 @@ export class TrackingRouter {
       let chosen = source;
       // Scheduled-only shadow check. Keep affinity unless the alternative has
       // strictly newer progress; never merge contradictory provider summaries.
-      if (scheduled && preferred === source && now().getTime() - millis(state.last_probe_at) >= DAY && attempts < 2) {
+      if (scheduled && source !== priority && preferred === source && now().getTime() - millis(state.last_probe_at) >= DAY && attempts < 2) {
         const alternatives = richerSources.filter((item) => item !== source);
         const alternative = alternatives[state.probe_cursor % alternatives.length];
         state.probe_cursor++;

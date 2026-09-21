@@ -22,6 +22,16 @@ const browserResponse = (source: '17TRACK' | 'ParcelsApp', data: unknown, overri
 }));
 
 describe('universal discovery chain', () => {
+  it('prefers 17TRACK only for validated China Post C/L families', () => {
+    for (const postal of ['LZ000000005CN', 'CY000000005CN', 'lz 0000 0000 5 cn']) {
+      expect(universalSources(false, postal)).toEqual(['17TRACK', 'Ship24', 'ParcelsApp', 'UPU']);
+      expect(universalSources(true, postal)).toEqual(['17TRACK', 'Ship24', 'ParcelsApp', 'Postal Ninja', 'UPU']);
+    }
+    for (const other of ['EB000000005CN', 'RR000000005CN', 'LZ000000005NL', 'LZ000000006CN', '1234/12345678']) {
+      expect(universalSources(false, other)[0]).toBe('Ship24');
+    }
+  });
+
   it('keeps the persisted provider names and the opt-in position of Postal Ninja', () => {
     expect(UNIVERSAL_SOURCES).toEqual(['Ship24', 'ParcelsApp', '17TRACK', 'UPU']);
     expect(universalSources()).toEqual(['Ship24', 'ParcelsApp', '17TRACK', 'UPU']);

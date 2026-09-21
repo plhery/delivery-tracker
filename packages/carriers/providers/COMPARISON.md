@@ -5,14 +5,16 @@ Protocol details belong in each provider folder; this page records why the
 providers have different roles. The default is **dedicated carrier → Ship24 →
 ParcelsApp → 17TRACK → UPU for checksum-valid postal S10 numbers**. A working
 richer universal retains affinity. UPU always stays last, including later
-refreshes and discovery rotation. Postal Ninja is opt-in before 17TRACK.
+refreshes and discovery rotation. Postal Ninja is opt-in before 17TRACK. The
+validated China Post `C…CN`/`L…CN` families now try 17TRACK first; see the
+[scoped decision](#china-post-specific-recommendation).
 
 | Source | Why use it | Limits and cost | Role |
 | --- | --- | --- | --- |
 | Dedicated carrier | Direct identity and carrier-specific detail; can confirm the local delivery partner | Coverage and anti-bot protections differ by carrier; some require a postcode or capability URL | First when available |
 | [Ship24](ship24/README.md) | Fast signed anonymous HTTP path; broad coverage and useful carrier hints | Website protocol can change; browser recovery costs more; local/UTC timestamp semantics vary by carrier leg | First universal; retain successful affinity |
 | [ParcelsApp](parcelsapp/README.md) | Often fuller history; anonymous direct API accepts a supplied delivery postcode | Queued lookups/polling can be slow; TRAWL recovery; duplicate or translated scans; the forecast-row issue below remains open | Second universal; retain successful affinity |
-| [17TRACK](seventeentrack/README.md) | Broad aggregator coverage and structured captured history | Browser service/compatibility build and verification add latency and operational dependencies | After direct HTTP providers; retain successful affinity |
+| [17TRACK](seventeentrack/README.md) | Broad aggregator coverage and structured captured history | Browser service/compatibility build and verification add latency and operational dependencies | First for validated China Post C/L families; otherwise after direct HTTP providers |
 | [Postal Ninja](postal-ninja/README.md) | Alternative aggregator with dated successful browser evidence | Interactive verification, local Chromium; signed direct protocol remains unverified | Opt-in before 17TRACK |
 | [UPU](upu/README.md) | Official documented anonymous API; one cheap GET, no website CAPTCHA | Postal-only eligibility; sparse, sometimes stale histories; uncertain timezone semantics; no established quota/SLA | Final fallback; never sticky or a shadow replacement |
 | [EMS Cooperative](../carriers/ems/README.md) | Official express-post route; the checked EMS reference had a scan missing from UPU | Express postal services, not all ordinary China Post; its own website/session protections | Service-specific source, not a universal replacement |
@@ -173,50 +175,57 @@ The synthetic checksum-valid `LZ000000005CN` first returned shipment code 100
 (polling), then code 200 with `NotFound` and no events. This control distinguishes
 completed negative results from intermediate replies.
 
-There are integration limits. The Venezuela history has Chinese descriptions,
-null `stage` values and populated `sub_status` codes; our current adapter ignores
-those sub-statuses. A synthetic replay of four such descriptions/codes through
-the actual parser produced four pending stages and a pending summary. The
-widget's overall `Expired` label is not evidence of a delivered/lost parcel.
+The widget investigation exposed parser defects: null `stage` plus populated
+`sub_status` made the Venezuela scans pending, and four undated US rows caused
+the whole dated history to be rejected. Both were fixed in the 2026-09-22
+follow-up. The widget's overall `Expired` label is not evidence of a lost parcel.
 For the USA sample, China Post and USPS report the same delivery wall time but
-attach `+08:00` and `-07:00` respectively. The provider's inferred origin offset
-must not be treated as independent proof of a destination scan's UTC time.
-The [17TRACK notes](seventeentrack/README.md#china-post-widget-investigation)
-and [localization proposal](../../../docs/tracking-localization.md) track these
-limitations. Manual browser retrieval succeeded; unattended retrieval through
-the app's browser service and deployment were not verified in this follow-up.
+attach `+08:00` and `-07:00` respectively. The adapter now preserves the reporting
+operator, original offset timestamp and whether the offset was inferred.
+It still uses 17TRACK's converted UTC for the dated timeline: provenance alone
+does not fix timezone estimates or remove overlapping carrier scans. The
+[17TRACK notes](seventeentrack/README.md#china-post-widget-investigation) and
+[localization proposal](../../../docs/tracking-localization.md) record the
+remaining time-confidence and translation work.
 
 ### China Post-specific recommendation
 
-The combined evidence supports **UPU as a fast primary status source for the
-tested non-EMS China Post services**, with the existing providers available for
-failure/empty-result fallback and scheduled enrichment of active shipments.
-UPU matched Ship24's available histories for two references and supplied a
-usable history for the third where Ship24 returned metadata only. Keeping
-Ship24 ahead merely because UPU lacks scans is not supported by those samples:
-Ship24 had the same omissions on the two matching histories. This is a narrow
-cost/availability recommendation, not proof that UPU has complete carrier history.
-The later widget check now establishes 17TRACK as a concrete richer-history
-source for these samples. Successful UPU retrieval must still schedule a bounded
-17TRACK enrichment attempt; waiting only for UPU to fail would miss these scans.
-Verify unattended capture, sub-status parsing and per-leg timestamp handling
-before relying on that enrichment in the app.
+**Implemented 2026-09-22: prefer 17TRACK for checksum-valid non-EMS `L…CN` and
+`C…CN` references.** This supersedes the earlier UPU-first status/enrichment
+proposal. After repairing the parser, fresh calls through the actual adapter
+and existing deployed browser service returned:
 
-For implementation, initially scope a fast path to the tested checksum-valid
-`L…CN`/`C…CN` service families. Retain ordinary discovery for untested formats
-and the dedicated EMS route when selected. Carrier id alone is insufficient:
-bare `E…CN` detection still retains China Post. A successful UPU first lookup
-must not permanently suppress enrichment. The current persistence guard also
-keeps a saved richer summary when UPU cannot establish UTC freshness; promoting
-UPU without addressing that guard could leave an existing parcel's status
-unchanged indefinitely despite successful lookups. Keep observed status,
-uncertain local scan times and verified cross-provider freshness distinct.
+| Reference | Adapter result | Dated rows | Duration |
+| --- | --- | --- | --- |
+| China → Brazil | Delivered | 39 | 3.3 s |
+| China → Venezuela | In transit | 15 | 2.8 s |
+| China → USA | Delivered | 56; four undated rows omitted | 2.7 s |
+| Synthetic unknown | Typed not-found, no history | 0 | 2.0 s |
 
-The question of whether UPU is a useful primary source can now be answered for
-these samples without obtaining login-only history. A complete-history claim
-would still need broader service coverage, authenticated/operator evidence and
-longitudinal active-shipment checks. Runtime routing remains unchanged by this
-documentation update; the scoped fast path and enrichment policy are proposals.
+All positive replies echoed the requested number. These are individual samples,
+not latency percentiles or a reliability guarantee; counts include overlapping
+origin/destination reports. This was local application code using the deployed
+browser service, not verification of a deployed application sync. No new
+browser entry point, wrapper scraper or provisioned API account was needed.
+
+17TRACK provides the richer history and latest milestones at a modest observed
+browser cost. It now precedes saved fallback affinity and discovery rotation
+for these number families. A challenge, timeout, not-found or cooldown keeps
+the other providers available; after cooldown expires, a saved sparse fallback
+must not permanently suppress 17TRACK. A successful scoped 17TRACK lookup skips
+scheduled shadow comparisons. UPU stays last, with its independent low-cost
+postal recovery and existing history-preservation guards.
+
+Dedicated carriers still precede universals, including selected EMS and confirmed
+destination routes. Untested formats and `E…CN` numbers retain ordinary discovery;
+a China Post label alone is insufficient to enable this preference. English
+page settings do not translate arbitrary scan text: mapped stages use the app's
+existing localized headings, while the original descriptions remain available.
+
+The comparison supports choosing this feed now; it does not establish complete
+login-only China Post history, exact UTC accuracy, broader non-EMS coverage or
+longitudinal update cadence. Revisit the scoped preference if service access or
+comparative freshness changes.
 
 ## Why UPU stays last
 
@@ -224,7 +233,7 @@ UPU's fast success can hide newer or fuller data under first-success-wins
 routing. Four UPU successes in this small comparison added no coverage over
 Ship24, but offer independent recovery when another provider fails. There is
 not enough evidence to make UPU first for every postal operator. The narrower
-China Post proposal above does not change that conclusion. Never promote UPU
+China Post 17TRACK preference above does not change that conclusion. Never promote UPU
 globally ahead of richer sources merely because it answered during their outage.
 
 Existing timestamped events are upserted, not replaced by a shorter history.

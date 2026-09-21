@@ -185,7 +185,8 @@ and a login prompt for more history. UPU includes final delivery for both
 delivered references, omits their out-for-delivery events, and lacks the
 Venezuela reference's latest airline-receipt/flight-arrival milestones. The
 central comparison distinguishes this manual evidence from automated API
-results. It now recommends a scoped UPU-first status path for the tested
-`L…CN`/`C…CN` families, with failure fallback and active-shipment enrichment.
-That is a proposal, not the current routing policy. Preserve the saved-summary
-and timestamp safeguards when implementing it.
+results. The subsequent 17TRACK check superseded the initial UPU-first proposal:
+the existing unattended adapter now returns substantially richer dated history
+and handles its Chinese sub-status codes. Checksum-valid `L…CN`/`C…CN` references
+try 17TRACK first, with ordinary providers and UPU available on failure. EMS
+retains its dedicated route. See the [current decision and remaining limits](../../providers/COMPARISON.md#china-post-specific-recommendation).

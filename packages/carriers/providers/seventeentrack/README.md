@@ -5,7 +5,8 @@
 17TRACK (t.17track.net) is a universal tracking aggregator, not a carrier: it
 has no last mile of its own and cannot be selected for a parcel. It follows the
 other general aggregators in the discovery chain (`providers/README.md`), before
-the final S10-only UPU fallback. The provider name persisted in routing state is
+the final S10-only UPU fallback, except validated non-EMS China Post `C…CN` and
+`L…CN` references try it first. The provider name persisted in routing state is
 `17TRACK`; the folder is named `seventeentrack` because a directory cannot start
 with a digit in an import path.
 
@@ -25,12 +26,17 @@ From the page's own API (`track/restapi`):
 | Field | Source |
 | --- | --- |
 | `events[].time` | `shipment.tracking.providers[].events[].time_utc`, else `time_iso`; both must carry an offset |
-| `events[].description`, `events[].stage` | `events[].description` and the provider-declared `events[].stage` |
+| `events[].description`, `events[].stage` | original description with privacy filtering; verified `sub_status` codes, then declared stage/wording |
+| `events[].provider_code`, `reporting_carrier`, `reporting_carrier_key` | per-event sub-status and the reporting leg's name/key |
+| `events[].provider_time_iso`, `time_provenance` | original offset timestamp; `provider_inferred` when `time_raw.timezone` is null, `carrier_reported` when present, otherwise `unspecified` |
 | `status`, `current_stage`, `last_status_text`, `last_update` | derived from the projected events |
 | `reported_carriers`, `discovered_carrier` | `providers[].provider.name`, mapped to a catalog id only when one unambiguous name is reported |
 
 `shipping_info` (recipient address, phone) and the per-event `address` field are
 never read. At most 20 carrier legs and 1000 events are accepted.
+Rows with neither timestamp are omitted and counted in `undated_event_count`;
+malformed nonempty timestamps still fail with a schema error. No scan time is
+manufactured from retrieval time.
 
 ## Tracking numbers
 
@@ -49,7 +55,10 @@ the chain):
 2. Captured bodies are parsed newest first. A reply whose shipment code is 100
    is the provider still polling; the loop continues and keeps the last
    structured failure in case no final history follows.
-3. If nothing parsed, the failure says what happened: `capture_missing` (the
+3. A completed, identity-matched `NotFound` with no rows becomes `NotFoundError`.
+   It is neither a polling reply nor a browser outage. Matching schema failures
+   also survive the capture loop.
+4. If nothing parsed, the failure says what happened: `capture_missing` (the
    service captured nothing), `capture_unreadable` (a body it could not read) or
    `history_missing` (replies without history).
 
@@ -67,12 +76,17 @@ compressed bodies and can finish before polling completes.
 | out_for_delivery | declared `OutForDelivery`; `Item out for delivery` | live 2026-09-10 |
 | failed_attempt | declared `DeliveryFailure` | prior-art |
 | delivered | declared `Delivered` | live 2026-09-10 |
-| accepted, customs, returned | wording only (`Picked up`, `Customs`, `Returned to sender`) | prior-art |
+| accepted | `InTransit_PickedUp` | live China Post 2026-09-22 |
+| customs | `InTransit_CustomsProcessing`, `InTransit_CustomsRequiringInformation` | live China Post 2026-09-22 |
+| in_transit | `InTransit_CustomsReleased`, `InTransit_TransportArrived`, `InTransit_TransportDeparted`, other documented transit codes | live 2026-09-22 / official API vocabulary |
+| exception / returned | `Exception_Returning` / `Exception_Returned`; delay/loss/damage codes remain exception | official API vocabulary; delayed/other observed live |
 | pending | anything else | — |
 
-A declared stage is used only when the shared wording rules did not already
-decide (a handoff or a negation outranks it). Unmapped wording stays `pending`
-and is recorded by the sync for review.
+The exact sub-status map in [events.ts](events.ts) supplies semantics even when
+`stage` is null and the description is Chinese. Shared negation/handoff rules
+still prevent a conflicting delivered code from manufacturing delivery.
+`Exception_Returning` is not completed return. Shipment-level `Expired` is never
+projected as a scan or interpreted as loss. Unknown codes retain wording fallback.
 
 | Provider code | Meaning | Error |
 | --- | --- | --- |
@@ -142,8 +156,9 @@ required account sign-in. Neither established a working anonymous replacement.
   `b8000c9`): requires sign-in and the buyer API.
 - **An API key integration** (`TA2k/ioBroker.parcel`, revision `3c4fb0e`): a
   useful reference, but its 17TRACK route needs a provisioned key.
-- **Making this provider first in the chain.** Ship24's verified
-  sub-second direct lookups lead the order.
+- **Making this provider first globally.** Ship24's verified sub-second direct
+  lookups still lead ordinary discovery. The scoped China Post exception below
+  trades a browser call for substantially richer history.
 
 ## China Post widget investigation
 
@@ -153,27 +168,42 @@ endpoint as this adapter. Browser capture returned richer origin/destination
 histories for all three public non-EMS references; the
 [comparison](../COMPARISON.md#17track-widget-follow-up) owns the counts and
 negative control. An unsigned embed-style direct request still returned `-14`.
-This is a candidate browser entry point, not a verified unattended replacement
-for the current `t.17track.net/en#nums=` route.
+The existing `t.17track.net/en#nums=` route was subsequently verified through
+the actual adapter and deployed browser service; no widget entry-point change
+or extra provider is needed.
 
-The investigation exposed work needed before depending on the richer data:
+The follow-up implementation on 2026-09-22:
 
-- Preserve and map verified per-event `sub_status` codes when `stage` is null.
-  The current parser ignores them, so Chinese transit/customs descriptions in
-  the Venezuela control become pending. Do not classify shipment-level
-  `Expired` as a historical scan or assume translated prose is authoritative.
-- Preserve each event's operator provenance. The US destination leg reports
+- Maps verified sub-statuses, fixing the Venezuela history's all-pending result.
+- Omits only undated rows. Four such rows previously caused the entire US
+  history to fail; 56 dated rows now survive.
+- Classifies the completed synthetic negative as not-found, preserving polling,
+  verification and malformed-response distinctions.
+- Retains each event's operator and timestamp provenance. The US destination leg reports
   its delivery at `-07:00`, while the China Post leg attaches `+08:00` to the
   same wall clock. The [API documentation](https://api.17track.net/en/doc)
   explains that an absent raw timezone can mean 17TRACK added the ISO offset.
-- The widget's English interface does not imply English event descriptions.
+- Keeps original scan text. The widget's English interface does not imply English event descriptions.
   A separate translation toggle worked, using a machine-translation service;
   the [localization investigation](../../../../docs/tracking-localization.md)
   distinguishes native labels, UI language and translated free text.
 
-These are documented findings and proposed changes; runtime behavior was not
-changed by this investigation. No browser signatures, translator credentials,
-raw responses or live identifiers were committed for these checks.
+Fresh automated checks returned Brazil 39 dated rows (delivered), Venezuela 15
+(in transit) and USA 56 (delivered), in 2.7–3.3 seconds each. These are overlapping
+per-operator rows, not unique physical scans. The negative took 2.0 seconds and
+returned `NotFoundError`. This verifies local adapter code against the deployed
+browser service, not a post-deployment application sync or a reliability SLA.
+
+Timestamp limitation remains explicit: `time` still uses 17TRACK's converted
+UTC, including its inferred offsets. Provenance preserves that distinction but
+does not correct headquarters-based offsets or deduplicate mirrored scans.
+Do not treat these conversions as independent evidence of exact cross-provider
+freshness. Scoped China Post priority does not run timestamp-based shadow
+comparisons after 17TRACK succeeds. Native local-time display and comprehensive
+cross-provider time-confidence policy remain separate work.
+
+No browser signatures, translator credentials, raw responses or live identifiers
+were committed for these checks. Source URLs are in the central comparison.
 
 
 ## Carrier compatibility

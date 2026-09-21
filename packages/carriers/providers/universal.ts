@@ -4,8 +4,9 @@ import 'server-only';
  * The universal discovery chain: what runs when no dedicated carrier adapter
  * can answer for a parcel.
  *
- * Order is Ship24 -> ParcelsApp -> 17TRACK -> UPU, with Postal Ninja inserted before
- * 17TRACK only when the host enables it. Each provider is asked once per
+ * Default order is Ship24 -> ParcelsApp -> 17TRACK -> UPU, with Postal Ninja inserted before
+ * 17TRACK only when the host enables it. Validated China Post C/L numbers put
+ * 17TRACK first. Each provider is asked once per
  * lookup and the first usable history wins; the per-parcel router remembers
  * which provider answered, except UPU stays last and requires a postal S10. The
  * source names are persisted in routing state and must not change.
@@ -18,6 +19,7 @@ import type { CarrierResult } from '../core/result';
 import { NOOP_RECORDER } from '../core/telemetry';
 import { TrawlClient } from '../core/transport';
 import { isValidS10TrackingNumber } from '../core/detection/s10';
+import { normalizeTrackingNumber } from '../core/detection/normalize';
 import { adapter as parcelsAppAdapter } from './parcelsapp/adapter';
 import { adapter as postalNinjaAdapter } from './postal-ninja/adapter';
 import { adapter as seventeenTrackAdapter } from './seventeentrack/adapter';
@@ -33,9 +35,19 @@ export { TrackingCaptureError } from './shared/capture';
 export type { UniversalSource } from './shared/result';
 
 export const UNIVERSAL_SOURCES: Source[] = ['Ship24', 'ParcelsApp', '17TRACK', 'UPU'];
+
+/** Evidence-based exception to affinity/rotation, shared by discovery and routing. */
+export function priorityUniversalSource(trackingNumber?: string): Source | undefined {
+  // E-series and untested formats keep ordinary discovery.
+  return trackingNumber && /^[CL][A-Z]\d{9}CN$/.test(normalizeTrackingNumber(trackingNumber)) && isValidS10TrackingNumber(trackingNumber)
+    ? '17TRACK' : undefined;
+}
+
 export function universalSources(enablePostalNinja = false, trackingNumber?: string): Source[] {
   const sources: Source[] = enablePostalNinja ? ['Ship24', 'ParcelsApp', 'Postal Ninja', '17TRACK', 'UPU'] : [...UNIVERSAL_SOURCES];
-  return sources.filter((source) => source !== 'UPU' || trackingNumber === undefined || isValidS10TrackingNumber(trackingNumber));
+  const eligible = sources.filter((source) => source !== 'UPU' || trackingNumber === undefined || isValidS10TrackingNumber(trackingNumber));
+  const priority = priorityUniversalSource(trackingNumber);
+  return priority ? [priority, ...eligible.filter((source) => source !== priority)] : eligible;
 }
 
 const FACTORIES = {
