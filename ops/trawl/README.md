@@ -10,16 +10,20 @@ FedEx's `track/v2/shipments` and Royal Mail's per-number `microsummary`
 stock behaviour. ParcelsApp remains first in
 the application's discovery order.
 
-The adapter observes the browser's response. For Royal Mail it also dismisses
-optional cookies, waits for a consent-triggered reload, enters the number and
-checks it in the submitting document before clicking the public tracking form's
-button. This runs before TRAWL's captcha solver, in both fresh and cached sessions.
-A completed API reply skips the solver because Royal Mail resets its invisible
-widget after auto-pass. A page without a tracking reply fails its browser tier,
-so an ineffective cached session is invalidated rather than saved as success.
-The submit button's own handler is invoked directly because Camoufox's
-humanized mouse action can stall after reaching the button. Royal Mail still
-performs its validation and hCaptcha callback. Other providers retain their
+The adapter observes the browser's response. For Royal Mail it preloads four
+non-identifying "Decline all" preference cookies before navigation, avoiding the
+consent banner and reload. If consent still appears, it declines and waits for
+that reload before typing. It uses the page's own validation and hCaptcha
+callback, retaining direct handler invocation because Camoufox's humanized mouse
+click can stall on this page.
+
+The hash route can start tracking automatically with consent already recorded.
+Once the exact tracking GET starts, capture skips duplicate form submission and
+TRAWL skips its CAPTCHA solver. Tracking connection failures end capture promptly
+with an allowlisted network-error code; they must not become missing-checkbox
+errors. A page without a tracking reply still fails its tier so ineffective
+cached sessions are invalidated and normal provider recovery remains available.
+Other providers retain their
 navigation-only flow. It accepts at most 20 replies, limits
 stored decoded bodies to 2 MB each / 4 MB total, checks declared size when
 available, and waits at most the remaining scrape budget (30 seconds maximum).
@@ -55,9 +59,9 @@ lookup_pending, lookup_unavailable and verification_required, plus numeric
 provider status and HTTP status. No response body is attached to these tags.
 FedEx was added on 2026-09-20 with the same single-reply semantics
 (`output` present ends the wait; the adapter binds `packages` to the
-requested `trknbr` itself). Royal Mail's cold hash route only prefills
-its input; the compatibility build must submit the form to trigger hCaptcha
-and then the summary API. A fresh browser on the production host reached the
+requested `trknbr` itself). Royal Mail's hash route can start a lookup when
+consent is recorded; the compatibility build also supports submitting the form
+after a consent reload. A fresh browser on the production host reached the
 API through invisible hCaptcha auto-pass on 2026-09-20; the public reference
 returned `E1142` (status unavailable). On 2026-09-21, instrumentation of a later
 failure found an empty form after the consent reload, before hCaptcha execution.
@@ -67,6 +71,11 @@ of the reload wait also returned that summary in about 10 seconds. See the
 [Royal Mail verification notes](../../packages/carriers/carriers/royal-mail/README.md)
 for the remaining challenge and history limitations. Re-render and redeploy the
 service after changing this directory.
+
+The later consent/failure update on 2026-09-21 avoided the banner and duplicate
+lookup, and returned a diagnosed tracking connection reset in 6.6 seconds through
+the deployed service, without invoking the CAPTCHA solver. The upstream failure
+still occurred; this is a failure-path measurement, not a tracking success.
 
 ## Redis session cache
 

@@ -15,16 +15,16 @@ const fedexNumber = '999999999999';
 const fedexUrl = `https://www.fedex.com/wtrk/track/?trknbr=${fedexNumber}`;
 const fedexReply = (trackingNbr = fedexNumber) => JSON.stringify({ output: { packages: [{ trackingNbr }] } });
 async function fixture(url = `https://t.17track.net/en#nums=${number}`, endpoint = api) {
-  let handler;
+  const handlers = {};
   let detached = false;
-  const page = { on: (_, fn) => { handler = fn; }, off: () => { detached = true; } };
+  const page = { context: () => ({addCookies: async () => {}}), on: (event, fn) => { handlers[event] = fn; }, off: () => { detached = true; } };
   const capture = await attachTrackingCapture(page, url, { captureResponses: [endpoint] });
-  const respond = (body, { url = endpoint, headers = {}, status = 200, method = 'GET', read } = {}) => handler({
+  const respond = (body, { url = endpoint, headers = {}, status = 200, method = 'GET', read } = {}) => handlers.response({
     url: () => url, status: () => status, request: () => ({method: () => method}),
     headers: () => ({ 'content-type': 'application/json', 'content-length': String(body.length), 'content-encoding': 'gzip', ...headers }),
     body: read ?? (async () => Buffer.from(body)),
   });
-  return { capture, respond, detached: () => detached };
+  return { capture, respond, handlers, detached: () => detached };
 }
 
 test('reads decoded compressed history and waits through polling for a final matching reply', async () => {
@@ -179,7 +179,8 @@ test('Royal Mail prepares the form after capture attaches and before solving', a
   const calls = [];
   let consentVisible = true;
   const page = {
-    on: () => calls.push('observe'),
+    context: () => ({addCookies: async () => {}}),
+    on: event => { if (event === 'response') calls.push('observe'); },
     waitForEvent: async event => { calls.push(['wait', event]); },
     getByText: () => ({waitFor: async () => {}, isVisible: async () => consentVisible, evaluate: async () => { consentVisible = false; calls.push('decline'); }}),
     locator: selector => ({
@@ -203,7 +204,8 @@ test('Royal Mail waits for consent reload before typing into the replacement for
   let responseHandler;
   let submitted = false;
   const page = {
-    on: (_, fn) => { responseHandler = fn; },
+    context: () => ({addCookies: async () => {}}),
+    on: (event, fn) => { if (event === 'response') responseHandler = fn; },
     waitForEvent: () => new Promise(resolve => { finishReload = resolve; }),
     getByText: () => ({
       waitFor: async () => {}, isVisible: async () => true,
@@ -234,6 +236,7 @@ test('Royal Mail refuses an empty replacement form when navigation races the fin
   let value = royalMailNumber;
   let submitted = false;
   const page = {
+    context: () => ({addCookies: async () => {}}),
     on: () => {},
     getByText: () => ({waitFor: async () => {}, isVisible: async () => false}),
     locator: selector => ({
@@ -260,4 +263,53 @@ test('Royal Mail ignores preflight and captures the carrier error body without f
   const rows = (await capture.drain()).capturedResponses;
   assert.equal(rows.length, 1);
   assert.equal(rows[0].body, body);
+});
+
+test('Royal Mail opts out before navigation without adding identity cookies or altering other sites', async () => {
+  const cookies = [];
+  const page = {on() {}, context: () => ({addCookies: async values => cookies.push(...values)})};
+  await attachTrackingCapture(page, upsUrl, {captureResponses: [upsApi]});
+  assert.equal(cookies.length, 0);
+  await attachTrackingCapture(page, royalMailUrl, {captureResponses: [royalMailApi]});
+  assert.deepEqual(cookies.map(cookie => cookie.name).sort(), [
+    'cmapi_cookie_privacy', 'cmapi_gtm_bl', 'notice_gdpr_prefs', 'notice_preferences',
+  ]);
+  assert.equal(cookies.find(cookie => cookie.name === 'cmapi_cookie_privacy').value, 'permit 1 required');
+  assert.ok(cookies.every(cookie => cookie.domain === '.royalmail.com'
+    && cookie.secure && cookie.sameSite === 'Lax' && cookie.expires === undefined));
+});
+
+test('Royal Mail reports connection failure promptly and skips form resubmission after verification', {timeout: 1000}, async () => {
+  const {capture, handlers, detached} = await fixture(royalMailUrl, royalMailApi);
+  const request = {url: () => royalMailApi, method: () => 'GET', failure: () => ({errorText: 'NS_ERROR_NET_RESET'})};
+  handlers.request(request);
+  handlers.requestfailed(request);
+  assert.equal(capture.hasTrackingRequest(), true);
+  assert.equal(capture.hasResponse(), false);
+  // The fixture has no form methods: this must not try to submit again.
+  await capture.prepare(5000);
+  await capture.settle(5000);
+  await assert.rejects(capture.drain(), {message: 'Royal Mail tracking request failed: NS_ERROR_NET_RESET'});
+  assert.equal(detached(), true);
+});
+
+test('Royal Mail ignores unrelated failures and never includes arbitrary network error text', async () => {
+  const {capture, handlers} = await fixture(royalMailUrl, royalMailApi);
+  const request = (url, method = 'GET') => ({url: () => url, method: () => method,
+    failure: () => ({errorText: 'PRIVATE_COOKIE https://example.test/?token=PRIVATE_TOKEN'})});
+  for (const item of [request(royalMailApi, 'OPTIONS'), request(royalMailApiPrefix + 'SG999999998GB')]) {
+    handlers.request(item); handlers.requestfailed(item);
+  }
+  assert.equal(capture.hasTrackingRequest(), false);
+  handlers.request(request(royalMailApi)); handlers.requestfailed(request(royalMailApi));
+  await assert.rejects(capture.drain(), {message: 'Royal Mail tracking request failed: network failure'});
+});
+
+test('Royal Mail retains an automatic tracking reply without starting another lookup', async () => {
+  const {capture, handlers, respond} = await fixture(royalMailUrl, royalMailApi);
+  handlers.request({url: () => royalMailApi, method: () => 'GET'});
+  await respond(royalMailReply());
+  await capture.prepare(1000);
+  assert.equal(capture.hasTrackingRequest(), true);
+  assert.equal((await capture.drain()).capturedResponses.length, 1);
 });

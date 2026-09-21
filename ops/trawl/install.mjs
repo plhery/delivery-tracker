@@ -11,6 +11,6 @@ for (const tier of [2, 3]) {
   if (source.split(beforeSolve).length !== 2) throw new Error('TRAWL solver integration changed');
   writeFileSync(path, 'import { attachTrackingCapture } from "../utils/tracking-capture.mjs"\n'
     + source.replace(needle, 'const pageCapture = await attachTrackingCapture(page, url, capture) ?? attachPageCapture(page, capture)')
-      .replace(solverGuard, 'if (solveRemaining > 5000 && !pageCapture.hasResponse?.())')
+      .replace(solverGuard, 'if (solveRemaining > 5000 && !pageCapture.hasResponse?.() && !pageCapture.hasTrackingRequest?.())')
       .replace(beforeSolve, 'await pageCapture.prepare?.(maxTimeout - (Date.now() - start))\n    ' + beforeSolve));
 }

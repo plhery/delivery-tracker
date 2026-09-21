@@ -49,8 +49,8 @@ const SITES = [
     },
   },
   {
-    // The hash route supplies the number, but a cold page must submit its
-    // form before hCaptcha can trigger the per-number summary request.
+    // The hash route can start tracking with consent already recorded;
+    // otherwise submit the form after any consent-triggered reload.
     api: 'https://api-web.royalmail.com/mailpieces/microsummary/v1/summary/',
     perNumber: true,
     number(page) {
@@ -66,6 +66,19 @@ const SITES = [
   },
 ];
 
+// Royal Mail's TrustArc "Decline all" preferences. These contain no consent
+// identifier, browser identity or session token. Keep them as session cookies.
+const ROYAL_MAIL_OPT_OUT = {
+  notice_preferences: '0:',
+  notice_gdpr_prefs: '0::implied,eu',
+  cmapi_cookie_privacy: 'permit 1 required',
+  cmapi_gtm_bl: 'ga-ms-ua-ta-asp-bzi-sp-awct-cts-csm-img-flc-fls-mpm-mpr-m6d-tc-tdc',
+};
+const NETWORK_ERRORS = new Set([
+  'NS_ERROR_NET_RESET', 'NS_ERROR_NET_TIMEOUT', 'NS_ERROR_UNKNOWN_HOST',
+  'net::ERR_CONNECTION_RESET', 'net::ERR_HTTP2_PROTOCOL_ERROR', 'net::ERR_TIMED_OUT',
+]);
+
 export async function attachTrackingCapture(page, url, options) {
   const target = new URL(url);
   const requested = options.captureResponses ?? [];
@@ -76,12 +89,27 @@ export async function attachTrackingCapture(page, url, options) {
   if (!site) return undefined;
   const number = site.number(target);
   const api = site.api + (site.perNumber ? number : '');
+  if (site.perNumber) {
+    await page.context().addCookies(Object.entries(ROYAL_MAIL_OPT_OUT).map(([name, value]) => ({
+      name, value, domain: '.royalmail.com', path: '/', secure: true, sameSite: 'Lax',
+    })));
+  }
   const entries = [];
+  let trackingRequested = false;
+  let networkError;
   let accepting = true;
   let count = 0;
   let bytes = 0;
   let finish;
   const ready = new Promise(resolve => { finish = resolve; });
+  const matchesRequest = request => accepting && request.url() === api && request.method() === 'GET';
+  const onRequest = request => { if (matchesRequest(request)) trackingRequested = true; };
+  const onRequestFailed = request => {
+    if (!matchesRequest(request)) return;
+    const code = request.failure()?.errorText;
+    networkError = NETWORK_ERRORS.has(code) ? code : 'network failure';
+    finish();
+  };
   const onResponse = async response => {
     if (!accepting || response.url() !== api
       || (site.perNumber && response.request().method() !== 'GET') || ++count > 20) return;
@@ -114,6 +142,10 @@ export async function attachTrackingCapture(page, url, options) {
     } catch { entry.error = 'tracking response could not be read'; }
   };
   page.on('response', onResponse);
+  if (site.perNumber) {
+    page.on('request', onRequest);
+    page.on('requestfailed', onRequestFailed);
+  }
   return {
     // Called by both TRAWL browser tiers after navigation and before solving.
     ...(site.perNumber ? { async prepare(budgetMs) {
@@ -123,6 +155,15 @@ export async function attachTrackingCapture(page, url, options) {
         if (left <= 0) throw new Error('Royal Mail form preparation timed out');
         return left;
       };
+      const awaitReply = async () => {
+        let timer;
+        try { await Promise.race([ready, new Promise(resolve => {
+          timer = setTimeout(resolve, Math.min(timeout(), 5_000));
+        })]); } finally { clearTimeout(timer); }
+      };
+      // With opt-out preferences already present, the hash route can start
+      // the lookup itself. Avoid submitting a second challenge/request.
+      if (trackingRequested) { await awaitReply(); return; }
       const input = page.locator('#barcode-input');
       await input.waitFor({ state: 'visible', timeout: timeout() });
       // TrustArc can arrive after the app mounts. Dismiss optional cookies
@@ -140,6 +181,7 @@ export async function attachTrackingCapture(page, url, options) {
         await reloaded;
         await input.waitFor({ state: 'visible', timeout: timeout() });
       }
+      if (trackingRequested) { await awaitReply(); return; }
       // Native key events update React's controlled state even after the
       // hash route prefilled it. A DOM-only fill can leave stale form state.
       await input.press('ControlOrMeta+A', { timeout: timeout() });
@@ -151,6 +193,7 @@ export async function attachTrackingCapture(page, url, options) {
       // and hCaptcha callback before making any tracking request.
       const submit = page.locator('#submit:not(:disabled)');
       await submit.waitFor({ state: 'visible', timeout: timeout() });
+      if (trackingRequested) { await awaitReply(); return; }
       const submitted = await submit.evaluate((element, expected) => {
         // Check and click in one document: a late reload must not turn a
         // locally validated number into an empty submission.
@@ -161,12 +204,12 @@ export async function attachTrackingCapture(page, url, options) {
       if (!submitted) throw new Error('Royal Mail input was reset before submission');
       // Invisible hCaptcha commonly auto-passes after submit. Its callback
       // sends the API request and resets the widget; do not click it again.
-      let timer;
-      try { await Promise.race([ready, new Promise(resolve => {
-        timer = setTimeout(resolve, Math.min(timeout(), 5_000));
-      })]); } finally { clearTimeout(timer); }
+      await awaitReply();
     } } : {}),
     hasResponse() { return Boolean(site.perNumber && entries.some(entry => entry.body !== null || entry.status !== 200)); },
+    // Royal Mail sends this GET only after its hCaptcha success callback.
+    // A later connection failure cannot be repaired by clicking a checkbox.
+    hasTrackingRequest() { return Boolean(site.perNumber && trackingRequested); },
     async settle(budgetMs) {
       let timer;
       try {
@@ -178,9 +221,14 @@ export async function attachTrackingCapture(page, url, options) {
     async drain() {
       accepting = false;
       page.off('response', onResponse);
+      if (site.perNumber) {
+        page.off('request', onRequest);
+        page.off('requestfailed', onRequestFailed);
+      }
       // A loaded app shell is not a successful Royal Mail session. Let the
       // orchestrator invalidate cached cookies and try its fresh browser tier.
       if (site.perNumber && entries.length === 0) {
+        if (networkError) throw new Error(`Royal Mail tracking request failed: ${networkError}`);
         throw new Error('Royal Mail produced no tracking response after form submission');
       }
       return { capturedResponses: entries.map(entry => ({ ...entry })) };
