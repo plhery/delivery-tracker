@@ -35,6 +35,7 @@ The public application reads a single `mailPieces` object, not an array:
 |---|---|
 | `mailPieces.mailPieceId` | Exact identity check |
 | `summary.statusDescription` | Current status |
+| `summary.statusCategory` | Canonical summary stage; falls back to description when unrecognized |
 | `summary.lastEventDateTime` | Latest update, when present |
 | `estimatedDelivery.date` | Expected calendar day, discarded after delivery |
 | `events[].eventName` | Scan description |
@@ -46,6 +47,11 @@ Summary-only replies are supported. History is deduplicated and sorted before
 trimming to 100 events. Unknown wording stays unknown; arrival at a delivery
 office is not proof that collection is available. Offset-free times remain
 unresolved rather than assuming all scans happened in the UK.
+
+Summary categories use the public bundle's vocabulary. `Collected` is a
+completed delivery in that vocabulary, while a history scan saying only
+“Collected” can indicate carrier acceptance. `Released from Customs` establishes
+transit, and `Ready for Delivery` alone does not establish out-for-delivery.
 
 Recipient, signature, photo, address and GPS fields are not retained. Delivered
 prose is reduced to “Delivered”. Empty objects and generic gateway 404s never

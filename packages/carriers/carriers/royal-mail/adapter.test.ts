@@ -52,12 +52,39 @@ describe('Royal Mail status vocabulary', () => {
     expect(royalMailStatus('Delivered')).toBe('delivered');
     // Unknown wording does not establish movement.
     expect(royalMailStatus('Wording Royal Mail has not used before')).toBe('unknown');
-    expect(royalMailStatus('Wording Royal Mail has not used before')).toBe('unknown');
     expect(royalMailStage('Wording Royal Mail has not used before')).toBeNull();
   });
 });
 
 describe('Royal Mail structured response', () => {
+  it.each([
+    ["We're expecting it", 'New provider description', 'pending', 'registered'],
+    ["We've got it", 'New provider description', 'in_transit', 'accepted'],
+    ['Released from Customs', 'Released from Customs', 'in_transit', 'in_transit'],
+    ['Ready for Delivery', '', 'in_transit', 'in_transit'],
+    ['Duplicate Identified', 'New provider description', 'exception', 'exception'],
+    ['No Status', 'New provider description', 'unknown', undefined],
+  ])('uses summary category %s independently of scan wording', (category, description, status, stage) => {
+    const result = parseRoyalMailTrackingResponse({mailPieces: {
+      mailPieceId: DELIVERED_NUMBER,
+      summary: {statusCategory: category, statusDescription: description},
+    }}, DELIVERED_NUMBER);
+    expect(result.status).toBe(status);
+    expect(result.current_stage).toBe(stage);
+  });
+
+  it('distinguishes completed collection from an earlier carrier collection scan', () => {
+    const result = parseRoyalMailTrackingResponse({mailPieces: {
+      mailPieceId: DELIVERED_NUMBER,
+      summary: {statusCategory: 'Collected', statusDescription: 'Collected by PRIVATE RECIPIENT'},
+      estimatedDelivery: {date: '2026-03-20'},
+      events: [{eventName: 'Collected', eventDateTime: '2026-03-12T09:30:00Z'}],
+    }}, DELIVERED_NUMBER);
+    expect(result).toMatchObject({status: 'delivered', current_stage: 'delivered', last_status_text: 'Delivered', expected_delivery: null});
+    expect(result.events?.[0]?.stage).toBe('accepted');
+    expect(JSON.stringify(result)).not.toContain('PRIVATE RECIPIENT');
+  });
+
   it('projects the delivered summary with per-scan codes', () => {
     const result = parseRoyalMailTrackingResponse(structuredClone(DELIVERED), DELIVERED_NUMBER);
     expect(result).toMatchObject({

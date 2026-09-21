@@ -10,7 +10,7 @@
     { "wording": "Sender preparing item", "language": "en", "stage": "registered", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: pending." },
     { "wording": "Customs charges raised", "language": "en", "stage": "customs", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: in_transit." },
     { "wording": "Delivery attempted", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: exception." },
-    { "wording": "Redirected", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: exception." },
+    { "wording": "Redirected", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Redirection alone does not establish an exception." },
     { "wording": "Returned to sender", "language": "en", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: exception." }
   ]
 }

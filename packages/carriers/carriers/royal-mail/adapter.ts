@@ -10,7 +10,7 @@ import { NOOP_RECORDER, type StepRecorder } from '../../core/telemetry';
 import { clean, cleanScalar, TrawlClient } from '../../core/transport';
 import { explicitOffsetTime } from '../../core/time';
 import { isRecord } from '../../core/types';
-import { royalMailStage, royalMailStatus } from './status';
+import { royalMailStage, royalMailSummaryStage, statusForStage } from './status';
 
 /** Read the response produced by Royal Mail's form and hCaptcha callback. */
 const TRACKING_BASE = 'https://www.royalmail.com/track-your-item';
@@ -106,12 +106,13 @@ export function parseRoyalMailTrackingResponse(payload: unknown, trackingNumber:
     return Number.isFinite(left) && Number.isFinite(right) ? right - left : 0;
   });
   const trimmed = events.slice(0, MAX_EVENTS_TO_RETURN);
-  const statusText = summaryText || trimmed[0]?.description;
+  const summaryCategory = cleanScalar(summary.statusCategory);
+  const statusText = summaryText || summaryCategory || trimmed[0]?.description;
   if (!statusText) throw new SchemaError('Royal Mail', 'Royal Mail returned no usable tracking status');
-  const stage = royalMailStage(statusText) ?? undefined;
+  const stage = royalMailSummaryStage(summaryCategory, statusText) ?? undefined;
   const delivered = stage === 'delivered';
   return {
-    status: royalMailStatus(statusText),
+    status: stage ? statusForStage(stage) : 'unknown',
     ...(stage ? { current_stage: stage } : {}),
     last_status_text: delivered ? 'Delivered' : statusText,
     last_update: eventTime(summary.lastEventDateTime) || trimmed[0]?.time || null,

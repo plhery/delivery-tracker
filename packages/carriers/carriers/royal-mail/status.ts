@@ -1,12 +1,10 @@
 /**
  * Royal Mail status vocabulary.
  *
- * The summary reply carries a status plus scan wording; both are English
- * prose, matched on substrings. The map produces a result-level
- * `CarrierStatus` and, when the wording is recognized, the event `Stage`.
- *
- * Wording provenance: Royal Mail's public tracking states (prior art).
- * `statuses.json` holds the full list.
+ * Summary categories come from the public application's statusCategoryIcon
+ * vocabulary. Scan wording is matched separately: a collected scan may mean
+ * carrier acceptance, while the summary category Collected means delivery.
+ * `statuses.json` records the scan wording retained from prior art.
  */
 import type { CarrierStatus } from '../../core/result';
 import type { Stage } from '../../core/status';
@@ -24,6 +22,28 @@ const REGISTERED_TERMS = ['manifest', 'label created', 'information received', '
 const ACCEPTED_TERMS = ['accepted', 'received', 'item received', 'collected', 'posted', 'handed over'];
 const CUSTOMS_TERMS = ['customs', 'clearance'];
 const IN_TRANSIT_TERMS = ['despatched', 'dispatched', 'redirected', 'in transit', 'on its way', 'in-transit', 'arrived', 'departed', 'processing', 'distribution centre', 'distribution center', 'mail centre', 'delivery office'];
+
+const SUMMARY_STAGES = new Map<string, Stage>([
+  ["we're expecting it", 'registered'],
+  ["we've got it", 'accepted'],
+  ['left origin country', 'in_transit'],
+  ['in customs', 'customs'],
+  ['released from customs', 'in_transit'],
+  ['left the uk', 'in_transit'],
+  ['in transit', 'in_transit'],
+  ['ready for delivery', 'in_transit'],
+  ['delivery attempted', 'failed_attempt'],
+  ['pending', 'pending'],
+  ['returned to sender', 'returned'],
+  ['delivered', 'delivered'],
+  ['collected', 'delivered'],
+  ['duplicate identified', 'exception'],
+  ['restricted or prohibited contents', 'exception'],
+]);
+
+export function royalMailSummaryStage(category: string, description: string): Stage | null {
+  return SUMMARY_STAGES.get(category.trim().toLocaleLowerCase('en-US')) ?? royalMailStage(description);
+}
 
 /**
  * Classify Royal Mail status prose. Returns null when nothing matches, so
