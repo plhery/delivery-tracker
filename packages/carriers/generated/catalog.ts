@@ -1502,18 +1502,18 @@ export const CARRIER_CATALOG = {
     "displayName": "Posti",
     "color": "#ff8000",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Europe/Helsinki",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "posti"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://www.posti.fi/en/tracking",
     "linkRules": [
       {
         "domains": [
           "posti.fi"
         ],
-        "path": "^/(?:[a-z]{2}/)?tracking/([^/?#]+)/?$"
+        "path": "^/(?:[a-z]{2}/)?tracking/([^/?#]+)(?:/[0-9]+)?/?$"
       }
     ],
     "detectionRules": [],

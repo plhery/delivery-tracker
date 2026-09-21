@@ -8,7 +8,7 @@ import { DateTime, IANAZone } from 'luxon';
 import { STAGES } from '../generated/apiContract';
 import type { CarrierResult } from './carrierResult';
 import { normalizeCarrierResult } from './carrierResult';
-import { namesSwissPost, swissPostHandoffNumber } from './carrierHandoff';
+import { deliveryHandoff, hasDirectHandoffAdapter } from './carrierHandoff';
 import {
   AUTOMATIC_CARRIER_IDS,
   carrierTimezone,
@@ -47,17 +47,18 @@ const SLOW_POLL_INTERVAL_MS = 60 * 60 * 1_000;
 const FAILED_SLOW_POLL_INTERVAL_MS = 4 * SLOW_POLL_INTERVAL_MS;
 
 /**
- * An S10 number only makes a Swiss delivery possible. Until the origin carrier
- * names Swiss Post, the speculative probe runs when the origin history moves or
- * once this gap has passed; it sits just under the hourly overnight cadence.
+ * A country/number hint only proposes a delivery operator. Until the origin
+ * names its partner, recheck when its history moves or this gap has passed.
  */
-const SWISS_POST_PROBE_INTERVAL_MS = 55 * 60 * 1_000;
+const DELIVERY_PROBE_INTERVAL_MS = 55 * 60 * 1_000;
 
-interface SwissPostProbe extends JsonObject { at: string; origin_update: string | null }
+interface DeliveryProbe extends JsonObject { at: string; origin_update: string | null }
 
-function previousSwissPostProbe(parcel: JsonObject): SwissPostProbe | null {
-  const stored = isRecord(parcel.carrier_data) ? parcel.carrier_data.swiss_post_probe : null;
+function previousDeliveryProbe(parcel: JsonObject, carrier: string, number: string): DeliveryProbe | null {
+  const data = isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
+  const stored = carrier === 'swiss-post' ? data.swiss_post_probe : data.delivery_probe;
   if (!isRecord(stored) || typeof stored.at !== 'string' || !Number.isFinite(Date.parse(stored.at))) return null;
+  if (carrier !== 'swiss-post' && (stored.carrier !== carrier || stored.number !== number)) return null;
   return { at: stored.at, origin_update: typeof stored.origin_update === 'string' ? stored.origin_update : null };
 }
 
@@ -883,6 +884,18 @@ export class TrackingSyncService {
           ...(olderSnapshot ? { last_event_at: previousRouting.last_event_at } : {}),
         } };
       }
+      // A verified partner can confirm the same completed milestone with a
+      // different timestamp. Keep the saved summary/watermark, but retain the
+      // newly verified route and both event histories.
+      if (preserveSummary && fetched.earlierCarrierId && result.original_carrier) {
+        const data = isRecord(values.carrier_data) ? values.carrier_data : isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
+        const preservedData = { ...data };
+        for (const key of ['original_carrier', 'original_tracking_number', 'original_tracking_url',
+          'original_canonical_tracking_number', 'active_tracking_carrier', 'active_tracking_number']) {
+          if (carrierData[key] != null) preservedData[key] = carrierData[key];
+        }
+        values.carrier_data = preservedData;
+      }
       if (!preserveSummary) {
         values.last_status_text = result.last_status_text || null;
         values.expected_delivery = result.expected_delivery ? String(result.expected_delivery) : null;
@@ -1009,13 +1022,17 @@ export class TrackingSyncService {
   }> {
     const trackingNumber = String(parcel.tracking_number ?? '');
     const metadata = isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
-    if (metadata.original_carrier && metadata.active_tracking_carrier === 'swiss-post') {
+    const activeCarrier = typeof metadata.active_tracking_carrier === 'string' ? metadata.active_tracking_carrier : '';
+    const activeNumber = typeof metadata.active_tracking_number === 'string' ? metadata.active_tracking_number : trackingNumber;
+    if (metadata.original_carrier && hasDirectHandoffAdapter(activeCarrier, activeNumber)) {
       return {
-        result: normalizeCarrierResult(await this.adapter.fetch('swiss-post', typeof metadata.active_tracking_number === 'string' ? metadata.active_tracking_number : trackingNumber, null, null)),
-        sourceCarrierId: 'swiss-post', swissPostReady: true, handoffFallbackErrorType: null,
+        result: normalizeCarrierResult(await this.adapter.fetch(activeCarrier, activeNumber, null, null)),
+        sourceCarrierId: activeCarrier, swissPostReady: activeCarrier === 'swiss-post' ? true : null, handoffFallbackErrorType: null,
       };
     }
-    if (!supportsSwissPostHandoff(trackingNumber)) {
+    // The historical Cainiao/Swiss route applies to those selections only;
+    // an issuer suffix must not bypass another explicitly selected adapter.
+    if (!supportsSwissPostHandoff(trackingNumber) || !['swiss-post', 'aliexpress', 'intl-post'].includes(carrierId)) {
       let origin: CarrierResult;
       let originError: unknown;
       try {
@@ -1026,26 +1043,47 @@ export class TrackingSyncService {
         ));
       } catch (error) {
         // An international operator outage must not hide a confirmed local delivery.
-        if (!swissPostHandoffNumber(carrierId, trackingNumber, {})) throw error;
+        if (!deliveryHandoff(carrierId, trackingNumber, metadata)) throw error;
         originError = error;
-        origin = {};
+        origin = {
+          ...(typeof metadata.delivery_carrier === 'string' ? { delivery_carrier: metadata.delivery_carrier } : {}),
+          ...(typeof metadata.delivery_tracking_number === 'string' ? { delivery_tracking_number: metadata.delivery_tracking_number } : {}),
+          ...(typeof metadata.destination_country === 'string' ? { destination_country: metadata.destination_country } : {}),
+        };
       }
       let fallbackError: string | null = null;
-      const deliveryNumber = swissPostHandoffNumber(carrierId, trackingNumber, origin);
-      const previousProbe = previousSwissPostProbe(parcel);
+      const candidate = deliveryHandoff(carrierId, trackingNumber, origin);
+      const previousProbe = candidate ? previousDeliveryProbe(parcel, candidate.carrier, candidate.number) : null;
       const originUpdate = typeof origin.last_update === 'string' ? origin.last_update : previousProbe?.origin_update ?? null;
       const sinceProbe = previousProbe ? this.now().getTime() - Date.parse(previousProbe.at) : Number.NaN;
       const askedRecently = previousProbe !== null && originUpdate === previousProbe.origin_update
-        && sinceProbe >= 0 && sinceProbe < SWISS_POST_PROBE_INTERVAL_MS && !namesSwissPost(origin);
-      if (deliveryNumber && askedRecently) {
+        && sinceProbe >= 0 && sinceProbe < DELIVERY_PROBE_INTERVAL_MS && !candidate?.explicit;
+      const probeKey = candidate?.carrier === 'swiss-post' ? 'swiss_post_probe' : 'delivery_probe';
+      if (candidate && askedRecently) {
         // carrier_data is rebuilt from the result on every refresh: carry the marker forward.
-        origin.swiss_post_probe = previousProbe;
-      } else if (deliveryNumber
-        && !['delivered', 'returned'].includes(resultStage(origin) ?? '')) {
-        origin.swiss_post_probe = { at: this.now().toISOString(), origin_update: originUpdate };
+        origin[probeKey] = { ...previousProbe, carrier: candidate.carrier, number: candidate.number };
+      } else if (candidate
+        && (candidate.explicit || !['delivered', 'returned'].includes(resultStage(origin) ?? ''))) {
+        origin[probeKey] = { at: this.now().toISOString(), origin_update: originUpdate, carrier: candidate.carrier, number: candidate.number };
         try {
-          const delivery = normalizeCarrierResult(await this.adapter.fetch('swiss-post', deliveryNumber, null, null));
-          if (delivery.status !== 'pending' && !['pending', 'registered'].includes(resultStage(delivery) ?? 'pending') && resultHasUpdate(delivery)) {
+          const delivery = normalizeCarrierResult(await this.adapter.fetch(candidate.carrier, candidate.number, null, null));
+          const latest = (value: CarrierResult) => Math.max(Date.parse(value.last_update || '') || 0,
+            ...(value.events ?? []).map((event) => Date.parse(event.time || '') || 0));
+          const watermark = Math.max(latest(origin), Date.parse(String(metadata.last_update ?? '')) || 0,
+            Date.parse(routingState(parcel).last_event_at || '') || 0);
+          const terminal = ['delivered', 'returned'].find((stage) => stage === resultStage(origin) || stage === parcel.current_stage);
+          const deliveryTime = latest(delivery);
+          const originTime = latest(origin);
+          // Origin feeds sometimes re-stamp the partner's local completion
+          // time with another offset. Explicit, same-day terminal agreement
+          // confirms the route without rewriting either provider's timestamps.
+          const sameCompletion = candidate.explicit && terminal && resultStage(origin) === terminal
+            && resultStage(delivery) === terminal && deliveryTime > 0 && originTime > 0
+            && new Date(deliveryTime).toISOString().slice(0, 10) === new Date(originTime).toISOString().slice(0, 10)
+            && new Date(watermark).toISOString().slice(0, 10) === new Date(originTime).toISOString().slice(0, 10);
+          if (delivery.status !== 'pending' && !['pending', 'registered'].includes(resultStage(delivery) ?? 'pending')
+            && resultHasUpdate(delivery) && (deliveryTime >= watermark || sameCompletion)
+            && (!terminal || resultStage(delivery) === terminal)) {
             // The local delivery hides the origin failure from the router, which reports every other one.
             if (originError && !isUnannouncedTrackingError(originError)) reportRoutingEvent('provider_failed', {
               carrier: carrierId, provider: carrierId, trackingNumber, category: routingFailure(originError).kind,
@@ -1053,21 +1091,21 @@ export class TrackingSyncService {
             });
             return {
               result: {
-                ...delivery, active_tracking_carrier: 'swiss-post',
-                active_tracking_number: delivery.canonical_tracking_number || deliveryNumber,
+                ...delivery, active_tracking_carrier: candidate.carrier,
+                active_tracking_number: delivery.canonical_tracking_number || candidate.number,
                 ...(origin.canonical_tracking_number ? { original_canonical_tracking_number: origin.canonical_tracking_number } : {}),
                 original_carrier: carrierId, original_tracking_number: trackingNumber,
                 original_tracking_url: typeof parcel.tracking_url === 'string' ? parcel.tracking_url : null,
                 ...(delivery.sender_name === undefined && origin.sender_name ? { sender_name: origin.sender_name } : {}),
               },
-              sourceCarrierId: 'swiss-post', swissPostReady: true, handoffFallbackErrorType: null,
+              sourceCarrierId: candidate.carrier, swissPostReady: candidate.carrier === 'swiss-post' ? true : null, handoffFallbackErrorType: null,
               earlierResult: origin, earlierCarrierId: carrierId,
             };
           }
         } catch (error) {
           fallbackError = errorType(error);
           if (!isUnannouncedTrackingError(error)) reportRoutingEvent('provider_failed', {
-            carrier: carrierId, provider: 'swiss-post', trackingNumber, category: routingFailure(error).kind,
+            carrier: carrierId, provider: candidate.carrier, trackingNumber, category: routingFailure(error).kind,
             errorClass: fallbackError, error,
           });
         }

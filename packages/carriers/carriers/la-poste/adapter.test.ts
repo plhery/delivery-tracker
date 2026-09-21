@@ -53,6 +53,21 @@ function recordingRecorder(): { recorder: StepRecorder; steps: StepRecord[] } {
 afterEach(() => vi.restoreAllMocks());
 
 describe('La Poste tracking input', () => {
+  it('retains structured destination and delivery-partner evidence', () => {
+    const data = deliveredFixture();
+    Object.assign(data[0].shipment, { contextData: {
+      arrivalCountry: 'FI', partner: { name: 'Posti', reference: 'CW123456785FR', url: 'https://www.posti.fi/en/tracking/CW123456785FR' },
+      recipient: 'PRIVATE_RECIPIENT',
+    } });
+    expect(parseLaPosteTrackingResponse(data, TRACKING_NUMBER)).toMatchObject({
+      destination_country: 'FI', delivery_carrier: 'posti', delivery_tracking_number: 'CW123456785FR',
+    });
+    expect(JSON.stringify(parseLaPosteTrackingResponse(data, TRACKING_NUMBER))).not.toContain('PRIVATE_RECIPIENT');
+    Object.assign(data[0].shipment, { contextData: { arrivalCountry: 'FINLAND', partner: { name: 'GLS', reference: 'bad?reference' } } });
+    const result = parseLaPosteTrackingResponse(data, TRACKING_NUMBER);
+    expect(result.delivery_carrier).toBeUndefined();
+    expect(result.destination_country).toBeUndefined();
+  });
   it('normalizes domestic and UPU identifiers and builds official URLs', () => {
     expect(normalizeLaPosteTrackingNumber('ab 123.456-78901')).toBe(TRACKING_NUMBER);
     expect(normalizeLaPosteTrackingNumber('RA123456785FR')).toBe('RA123456785FR');

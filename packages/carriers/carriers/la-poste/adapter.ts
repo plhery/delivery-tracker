@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type { AdapterFactory } from '../../core/adapter';
+import { carrierIdFromName } from '../../core/catalog/hints';
 import {
   CarrierError,
   SchemaError,
@@ -171,6 +172,11 @@ export function parseLaPosteTrackingResponse(
   const latestLabel = latest?.description || fallbackLabel || clean(response.returnMessage);
   const latestGroup = clean(latestRaw.group, 40);
   const latestCode = clean(latestRaw.code, 40);
+  const context = isRecord(shipment.contextData) ? shipment.contextData : {};
+  const destination = clean(context.arrivalCountry, 80).toUpperCase();
+  const partner = isRecord(context.partner) ? context.partner : {};
+  const deliveryCarrier = carrierIdFromName(clean(partner.name, 80));
+  const deliveryNumber = clean(partner.reference, 64).toUpperCase();
   return {
     status: eventStatus(latestGroup, latestCode, latestLabel, events.length > 0),
     // The status vocabulary has no pickup or customs value; without the stage
@@ -180,6 +186,11 @@ export function parseLaPosteTrackingResponse(
     last_update: latest?.time || safeDate(timeline[0]?.date) || null,
     expected_delivery: shipment.isFinal === true ? null : expectedDate(shipment.estimDate),
     timezone: TIMEZONE,
+    ...(/^[A-Z]{2}$/.test(destination) ? { destination_country: destination } : {}),
+    ...(deliveryCarrier ? {
+      delivery_carrier: deliveryCarrier,
+      ...(/^[A-Z0-9]{4,40}$/.test(deliveryNumber) ? { delivery_tracking_number: deliveryNumber } : {}),
+    } : {}),
     events,
   };
 }

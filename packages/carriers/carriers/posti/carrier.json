@@ -3,33 +3,33 @@
   "displayName": "Posti",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": ["FI"]
   },
   "brand": {
     "color": "#ff8000"
   },
   "selectable": true,
-  "timezone": "UTC",
+  "timezone": "Europe/Helsinki",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "posti",
+    "steps": ["direct", "refresh"]
   },
-  "capabilities": [],
+  "capabilities": ["history", "location", "weight", "dimensions", "pickup_point"],
   "portal": {
     "url": "https://www.posti.fi/en/tracking/{trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "canaryUrl": "https://www.posti.fi/en/tracking",
+    "shows": ["status", "history", "location", "weight", "dimensions", "pickup_point", "pickup_code", "recipient_address"],
+    "scraped": ["status", "history", "location", "weight", "dimensions", "pickup_point"],
+    "discarded": ["pickup_code", "recipient_address"],
+    "unavailable": ["sender_name", "receiver_name"]
   },
   "links": [
     {
       "domains": [
         "posti.fi"
       ],
-      "path": "^/(?:[a-z]{2}/)?tracking/([^/?#]+)/?$"
+      "path": "^/(?:[a-z]{2}/)?tracking/([^/?#]+)(?:/[0-9]+)?/?$"
     }
   ],
   "detection": []

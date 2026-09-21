@@ -32,6 +32,7 @@ import { adapter as packeta } from '../carriers/packeta/adapter';
 import { adapter as planzer } from '../carriers/planzer/adapter';
 import { adapter as posMalaysia } from '../carriers/pos-malaysia/adapter';
 import { adapter as posteItaliane } from '../carriers/poste-italiane/adapter';
+import { adapter as posti } from '../carriers/posti/adapter';
 import { adapter as postlogistics } from '../carriers/postlogistics/adapter';
 import { adapter as relaisColis } from '../carriers/relais-colis/adapter';
 import { adapter as royalMail } from '../carriers/royal-mail/adapter';
@@ -75,6 +76,7 @@ export const REGISTRY: RegistryDefinition = {
     "planzer": planzer,
     "pos-malaysia": posMalaysia,
     "poste-italiane": posteItaliane,
+    "posti": posti,
     "postlogistics": postlogistics,
     "relais-colis": relaisColis,
     "royal-mail": royalMail,
@@ -157,7 +159,7 @@ export const REGISTRY: RegistryDefinition = {
     "poczta-polska": "universal",
     "pos-malaysia": "pos-malaysia",
     "poste-italiane": "poste-italiane",
-    "posti": "universal",
+    "posti": "posti",
     "postlogistics": "postlogistics",
     "postnord": "universal",
     "purolator": "universal",

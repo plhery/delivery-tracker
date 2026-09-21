@@ -9,7 +9,7 @@
  * ARCHITECTURE.md § Status model).
  */
 import { isRecord, type JsonObject } from '../types';
-import { STAGES } from '../../generated/catalog';
+import { CARRIER_CATALOG, STAGES } from '../../generated/catalog';
 
 export type CarrierStatus =
   | 'pending'
@@ -40,7 +40,9 @@ export interface CarrierResult extends JsonObject {
   delivered_at?: string | null;
   weight_kg?: number | null;
   dimensions_text?: string | null;
-  delivery_carrier?: 'swiss-post';
+  /** A declared delivery partner, still subject to direct identity/progress confirmation. */
+  delivery_carrier?: string;
+  destination_country?: string;
   delivery_tracking_number?: string;
   canonical_tracking_number?: string;
   international_tracking_number?: string;
@@ -68,6 +70,7 @@ const OPTIONAL_TEXT_FIELDS = [
   'delivered_at',
   'dimensions_text',
   'delivery_tracking_number',
+  'destination_country',
   'canonical_tracking_number',
   'international_tracking_number',
   'timezone',
@@ -98,8 +101,12 @@ export function normalizeCarrierResult(value: unknown): CarrierResult {
     throw new TypeError('The carrier adapter returned an invalid parcel weight');
   }
 
-  if (normalized.delivery_carrier !== undefined && normalized.delivery_carrier !== 'swiss-post') {
+  if (normalized.delivery_carrier !== undefined
+    && (typeof normalized.delivery_carrier !== 'string' || !Object.hasOwn(CARRIER_CATALOG, normalized.delivery_carrier))) {
     throw new TypeError('The carrier adapter returned an unsupported delivery carrier');
+  }
+  if (normalized.destination_country != null && !/^[A-Z]{2}$/.test(normalized.destination_country)) {
+    throw new TypeError('The carrier adapter returned an invalid destination country');
   }
 
   const rawEvents = normalized.events ?? [];

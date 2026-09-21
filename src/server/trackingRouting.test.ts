@@ -324,7 +324,22 @@ describe('persistent tracking routing', () => {
     expect(universalCarrierHints(['DHL']).discovered_carrier).toBeUndefined();
     expect(universalCarrierHints(['UPS', 'Swiss Post']).discovered_carrier).toBeUndefined();
     expect(universalCarrierHints(['UPS'])).toMatchObject({ discovered_carrier: 'ups' });
+    expect(universalCarrierHints(['Posti'])).toMatchObject({ discovered_carrier: 'posti' });
+    expect(universalCarrierHints(['La Poste', 'Posti']).discovered_carrier).toBeUndefined();
     expect(universalCarrierHints(['https://private/token'])).toEqual({ reported_carriers: [] });
+  });
+
+  it('keeps the origin watermark when a verified delivery partner confirms the same completion', async () => {
+    const { router, direct, universal } = setup();
+    direct.mockResolvedValue({ sourceCarrierId: 'posti', swissPostReady: null, handoffFallbackErrorType: null,
+      earlierCarrierId: 'la-poste', earlierResult: { status: 'delivered', last_update: '2026-09-10T11:00:00Z' },
+      result: { status: 'delivered', last_update: '2026-09-10T10:00:00Z',
+        original_carrier: 'la-poste', active_tracking_carrier: 'posti', active_tracking_number: 'CW123456785FR' } });
+    const result = await router.fetch(parcel({ carrier: 'la-poste', tracking_number: 'CW123456785FR' }), false);
+    expect(result.result.routing).toMatchObject({ last_event_at: '2026-09-10T11:00:00.000Z' });
+    expect(result.result.active_tracking_carrier).toBe('posti');
+    expect(result.correction).toBeUndefined();
+    expect(universal).not.toHaveBeenCalled();
   });
 });
 

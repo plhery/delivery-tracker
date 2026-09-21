@@ -1,0 +1,30 @@
+{
+  "data": {
+    "consumerSearchShipments": {
+      "totalHits": 1,
+      "hits": [{
+        "displayId": "CW123456785FR",
+        "status": {"main": "DELIVERED", "subStatus": []},
+        "measurements": {
+          "weight": {"unit": "kg", "value": "0.5"},
+          "length": {"unit": "cm", "value": "25"},
+          "width": {"unit": "cm", "value": "15"},
+          "height": {"unit": "cm", "value": "10"}
+        },
+        "pickupPoint": {
+          "address": {"publicName": "Example pickup point", "city": "Example city", "streetAddress": "PRIVATE_ADDRESS"},
+          "pickupDetails": {"pinCode": "PRIVATE_CODE"}
+        },
+        "delivery": {"destination": {"name": "PRIVATE_NAME"}},
+        "packages": [],
+        "events": [
+          {"eventDescription": "The item has been delivered", "reasonDescription": null, "city": "Example city", "timestamp": "2026-01-12T13:00:00.000Z"},
+          {"eventDescription": "We sent the recipient an email about the item.", "reasonDescription": null, "city": "", "timestamp": "2026-01-12T10:00:00.000Z"},
+          {"eventDescription": "Item is ready for a pick up ", "reasonDescription": "Pickup details are available in the arrival notice.", "city": "Example city", "timestamp": "2026-01-12T09:00:00.000Z"},
+          {"eventDescription": "Item accepted from transport", "reasonDescription": "This is a transportation marking indicating that item delivery is still in progress. The item has not yet been handed over to the recipient.", "city": "Example hub", "timestamp": "2026-01-11T15:00:00.000Z"},
+          {"eventDescription": "Item arrived in the destination country.", "reasonDescription": "The item has reached Finland and will continue on its way as a Posti delivery.", "city": "Example hub", "timestamp": "2026-01-11T12:00:00.000Z"}
+        ]
+      }]
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "carrier": "posti",
+  "entries": [
+    { "code": "ORDER_RECEIVED", "stage": "registered", "confirmedBy": "source", "firstSeen": "2026-09-21", "note": "Posti public ConsumerShipmentStatusMain enum; no physical acceptance." },
+    { "code": "RECEIVED", "stage": "accepted", "confirmedBy": "source", "firstSeen": "2026-09-21", "note": "Posti public ConsumerShipmentStatusMain enum." },
+    { "code": "IN_TRANSPORT", "stage": "in_transit", "confirmedBy": "source", "firstSeen": "2026-09-21", "note": "Posti public ConsumerShipmentStatusMain enum." },
+    { "code": "IN_DELIVERY", "stage": "out_for_delivery", "confirmedBy": "source", "firstSeen": "2026-09-21", "note": "Posti public ConsumerShipmentStatusMain enum." },
+    { "code": "READY_FOR_PICKUP", "stage": "ready_for_pickup", "confirmedBy": "source", "firstSeen": "2026-09-21", "note": "Posti public ConsumerShipmentStatusMain enum." },
+    { "code": "DELIVERED", "stage": "delivered", "confirmedBy": "live", "firstSeen": "2026-09-21", "note": "Public corpus example and the Posti consumer main enum." },
+    { "code": "RETURN_IN_TRANSPORT", "stage": "in_transit", "confirmedBy": "source", "firstSeen": "2026-09-21", "note": "Return movement is not terminal." },
+    { "code": "RETURN_DELIVERED", "stage": "returned", "confirmedBy": "source", "firstSeen": "2026-09-21", "note": "Posti public ConsumerShipmentStatusMain enum." },
+    { "wording": "The item has been delivered", "language": "en", "stage": "delivered", "confirmedBy": "live", "firstSeen": "2026-09-21" },
+    { "wording": "Item is ready for a pick up", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "live", "firstSeen": "2026-09-21" },
+    { "wording": "Item accepted from transport", "language": "en", "stage": "in_transit", "confirmedBy": "live", "firstSeen": "2026-09-21" },
+    { "wording": "Item has been released for delivery.", "language": "en", "stage": "in_transit", "confirmedBy": "live", "firstSeen": "2026-09-21" },
+    { "wording": "We sent the recipient an email about the item.", "language": "en", "stage": "pending", "confirmedBy": "live", "firstSeen": "2026-09-21", "note": "Notification alone proves no new movement." }
+  ]
+}

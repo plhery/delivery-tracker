@@ -12,7 +12,7 @@
         "carrier": "spring-gds",
         "confidence": "high"
       },
-      "note": "Open-source project example, not a real shipment. The source attributes it to Posti; detection selects PostNL."
+      "note": "Published open-source tracking example. Posti returned history in a local live check on 2026-09-21; issuer-based number detection still selects PostNL."
     }
   ]
 }

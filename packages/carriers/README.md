@@ -57,7 +57,7 @@ npm run test:contract                                               # generated 
 ## Carriers
 
 <!-- GENERATED:carriers -->
-104 carriers: 40 with a dedicated adapter, 60 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
+104 carriers: 41 with a dedicated adapter, 59 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
 
 | Id | Name | Route | Steps | Capabilities | Sample numbers | Known statuses | Docs |
 | --- | --- | --- | --- | ---: | ---: | ---: | --- |
@@ -132,7 +132,7 @@ npm run test:contract                                               # generated 
 | `poczta-polska` | Poczta Polska | universal providers |  | 0 | 6 | 0 |  |
 | `pos-malaysia` | Pos Malaysia | dedicated | direct | 3 | 4 | 7 | [README](carriers/pos-malaysia/README.md) |
 | `poste-italiane` | Poste Italiane | dedicated | direct | 2 | 8 | 17 | [README](carriers/poste-italiane/README.md) |
-| `posti` | Posti | universal providers |  | 0 | 1 | 0 |  |
+| `posti` | Posti | dedicated | direct → refresh | 5 | 1 | 13 | [README](carriers/posti/README.md) |
 | `postlogistics` | PostLogistics | dedicated | direct | 3 | 1 | 5 | [README](carriers/postlogistics/README.md) |
 | `postnord` | PostNord | universal providers |  | 0 | 1 | 0 |  |
 | `purolator` | Purolator | universal providers |  | 0 | 7 | 0 |  |

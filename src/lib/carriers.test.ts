@@ -984,7 +984,7 @@ describe('carrier detection', () => {
     // an automatic Posti detector (native JJFI specimens remain unsampled).
     // Source: https://github.com/hatlabs/posti-cli
     expect(detectCarrier('LR288565359NL')).toBe('spring-gds');
-    expectUniversalFallback('posti');
+    expect(CARRIERS.posti.capabilities.tracking.adapter).toBe('posti');
   });
 
   it('postlogistics — PostLogistics', () => {

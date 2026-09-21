@@ -156,7 +156,8 @@ export class TrackingRouter {
       if (state.failures[provider]) report('provider_recovered', provider);
       delete state.failures[provider];
       state.last_success_at = now().toISOString();
-      state.last_event_at = latest(value.result) ? iso(latest(value.result)) : state.last_event_at;
+      const eventTime = Math.max(latest(value.result), value.earlierResult ? latest(value.earlierResult) : 0);
+      state.last_event_at = eventTime ? iso(eventTime) : state.last_event_at;
       // Universal checks are deliberately less frequent than direct in-transit polls.
       state.next_check_at = sources.includes(provider as UniversalSource)
         ? iso(now().getTime() + (freshnessWindow(now()) === HOUR ? 15 * 60_000 : HOUR)) : undefined;
