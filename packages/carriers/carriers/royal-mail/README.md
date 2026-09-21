@@ -15,7 +15,8 @@ private TRAWL service with this repository's `ops/trawl` compatibility build.
    If a consent banner still appears, decline and wait for its reload first.
 3. Allow invisible hCaptcha to auto-pass and invoke the site's own callback.
    Once the exact tracking GET starts, skip further form submissions and TRAWL's
-   CAPTCHA solver: that request follows successful verification. A failed
+   CAPTCHA solver: that request follows the client token callback. This alone
+   does not prove that Royal Mail accepted the token or its risk assessment. A failed
    tracking connection ends capture promptly with a bounded network-error code.
    If no tracking request starts, the native solver still gets the remaining
    budget; interactive-challenge recovery is unverified.
@@ -69,8 +70,17 @@ inconclusive. `E0015` is a challenge failure.
 The fixtures are synthetic reconstructions of the public application bundle.
 Live HTTP 200 replies on 2026-09-21 confirmed a single `mailPieces` object with
 matching `mailPieceId` and summary categories `Delivered` and `We're expecting
-it`. Those replies contained no event history; event-history retrieval remains
-unverified. No visible puzzle or paid solver was needed for those samples.
+it`. Those microsummary replies contained no event history. No visible puzzle
+or paid solver was needed for those samples.
+
+In an existing ordinary Chrome profile, selecting **Get more details** made a
+separate `GET /mailpieces/v3/<reference>/events` call on `api-web.royalmail.com`,
+with a newly issued `x-rmg-recaptcha` token. Its HTTP 200 reply contained the same
+`mailPieces` object and four events with `eventCode`, `eventName`, `eventDateTime`
+and `locationName`. This verifies the live history vocabulary, but the adapter
+currently captures only microsummary: automated history retrieval is not
+implemented or deployed. The postcode-protected proof-of-delivery flow was not
+accessed. No live response body was saved as a fixture.
 
 Instrumentation identified two separate failure paths:
 
@@ -96,10 +106,33 @@ Further transport and consent probes on 2026-09-21:
 | Native DNT and GPC, including request headers | Consent banner and its reload still occurred |
 | Four opt-out preference cookies, without consent ID or browser/session tokens | Banner and consent reload avoided; API connection failure remained |
 
-These observations locate the remaining failure after CAPTCHA completion and
-at the tracking connection. They do not identify whether the upstream cause is
-an edge policy, browser/network fingerprint, or a service fault. Successful
-isolated summary retrieval is demonstrated; reliable deployed retrieval is not.
+Further IP, session and browser comparisons on the same date:
+
+| Probe | Result |
+|---|---|
+| Same Camoufox process, fresh contexts, server egress versus Mac egress over a temporary CONNECT proxy | Both issued a CAPTCHA token, then the tracking connection reset |
+| Visit the homepage, open the form without a tracking hash, wait 15 seconds, then submit | Same failure on both connections |
+| Isolated TRAWL 1.6.2 build with the current consent and capture fixes | Same reset; an upgrade alone did not fix this sample |
+| Camoufox with the API hostname pinned to the IPv4 peer used by successful ordinary Chrome | Same reset |
+| Existing ordinary Chrome profile on the Mac | Identity-matched summary and full history, both HTTP 200; neither response came from disk cache or a service worker |
+| Fresh headed Chromium 151 with a new persistent profile on the server | One identity-matched HTTP 200 summary in about 5.4 seconds; subsequent fresh-profile runs failed |
+| Headed Chromium, including a repeat pinned to the API peer from its successful run | CORS preflight returned HTTP 200, but the tracking GET failed before a response; peer pinning did not make success repeatable |
+
+The proxy changed the public IPv4 egress, without copying browser cookies or
+tokens. It allowed the observed tracking, CAPTCHA and consent hosts; some
+third-party homepage resources were refused, so it was not a perfect network-only
+control. The successful server Chromium lookup rules out a blanket ban on that
+server's access at that time. It does not rule out IP reputation as one input to
+per-session decisions. Neither a persistent profile nor a particular API peer
+was sufficient for reliable retrieval.
+
+These observations locate the failing phase after the client CAPTCHA token
+callback, and at the tracking connection. In the Chromium preflight probe, the
+OPTIONS request succeeded and the GET failed. The evidence does not distinguish
+edge policy, browser/session signals, backend token validation or an intermittent
+service fault. A different egress, a delay, a new browser profile, a newer TRAWL
+build and an API-peer override are not demonstrated fixes. Successful isolated
+summary retrieval is demonstrated; reliable deployed retrieval is not.
 The consent and failure-handling update was deployed and verified: one production
 attempt returned the diagnosed connection reset in 6.6 seconds, compared with
 about 35 seconds before the change, without a redundant CAPTCHA attempt. This
