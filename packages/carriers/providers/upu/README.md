@@ -71,6 +71,29 @@ not comprehensive national-post coverage. The [wider comparison](../COMPARISON.m
 several European references. Retention, production-network behavior and rate
 limits remain unverified.
 
+## Destination metadata and onward tracking
+
+A raw-response recheck on 2026-09-21 of the public Venezuela reference from the
+[non-EMS comparison](../COMPARISON.md#china-post-non-ems-follow-up) returned
+`DestinationCountryCd: "VE"`, destination name `VENEZUELA`, origin `CN`/`CHINA`,
+mail class `C`, the original `ID`, and four actual scans plus one excluded
+delivery forecast. It supplied no alternate tracking number or destination
+operator. Ship24's corresponding response also listed only the original number.
+The documented anonymous and token-based GTT response schemas have no explicit
+alternate-number or delivery-operator field; token-based access was not tested.
+Our adapter currently projects events/status, not these country/class fields.
+
+Destination country can suggest a direct operator lookup, but is not proof of
+a handoff or a new identifier. The [Ipostel homepage](https://www.ipostel.gob.ve/)
+links its [tracking application](http://pwa.ipostel.gob.ve/), whose shipped client
+calls `GET http://api.ipostel.gob.ve:5001/api/v1/rastreo-seguimiento/{number}`.
+A bounded lookup using the same public reference returned HTTP 404, which that
+client presents as no information for the supplied number. This did not confirm
+Ipostel coverage, receipt of the parcel, or any alternate number. The linked HTTP
+application worked; its HTTPS variant failed certificate validation during this
+check. No TLS validation was disabled. Live inputs and responses remain outside
+the repository.
+
 ## History and time
 
 The adapter retains each real scan's reported wall time as `local_time` and
