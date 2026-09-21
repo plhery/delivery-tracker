@@ -14,7 +14,9 @@ The adapter observes the browser's response. For Royal Mail it also dismisses
 optional cookies, enters the number and submits the public tracking form before
 TRAWL runs captcha solving. It does this for both fresh and cached sessions.
 A completed API reply skips the solver because Royal Mail resets its invisible
-widget after auto-pass. Other providers retain their navigation-only flow. It accepts at most 20 replies, limits
+widget after auto-pass. A page without a tracking reply fails its browser tier,
+so an ineffective cached session is invalidated rather than saved as success.
+Other providers retain their navigation-only flow. It accepts at most 20 replies, limits
 stored decoded bodies to 2 MB each / 4 MB total, checks declared size when
 available, and waits at most the remaining scrape budget (30 seconds maximum).
 `response.body()` reads data already decoded by the browser; run the browser

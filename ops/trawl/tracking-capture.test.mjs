@@ -167,7 +167,7 @@ test('Royal Mail captures only the exact number and rejects unrelated page paths
   const { capture, respond } = await fixture(royalMailUrl, royalMailApi);
   await respond(royalMailReply('SG999999998GB'), {url: royalMailApiPrefix + 'SG999999998GB'});
   await respond(royalMailReply(), {url: royalMailApi + '/extra'});
-  assert.equal((await capture.drain()).capturedResponses.length, 0);
+  await assert.rejects(capture.drain(), /no tracking response/);
   for (const [url, endpoint] of [
     [royalMailUrl.replace('/track-your-item', '/other-page'), royalMailApi],
     [royalMailUrl, royalMailApiPrefix + 'SG999999998GB'],

@@ -205,10 +205,16 @@ export class RoyalMailTracker {
       settleTimeout: SETTLE_TIMEOUT_MS,
     }, {
       provider: 'TRAWL while fetching Royal Mail',
+      // A browser may validate its cached main document with 304 while the
+      // freshly submitted tracking request still returns a normal JSON reply.
+      requireSolved: false,
       timeoutMs: this.timeoutMs,
       maxBytes: MAX_BYTES,
       fetcher: this.#fetcher,
     });
+    if (![2, 3].includes(page.tier) || ![200, 304].includes(page.statusCode)) {
+      throw new TransportError('Royal Mail', 'The browser service did not load the Royal Mail tracking page');
+    }
     let captureError: unknown;
     // Newest first: a later reply is the page's final answer. The entry URL
     // itself carries the number, so only the exact requested call is read.

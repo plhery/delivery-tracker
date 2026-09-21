@@ -180,6 +180,22 @@ describe('Royal Mail lookup steps', () => {
     expect(records).toEqual(['trawl:ok', 'lookup:trawl:ok']);
   });
 
+  it.each([200, 304])('accepts browser document HTTP %s only with a valid tracking capture', async (statusCode) => {
+    const fetcher = vi.fn().mockResolvedValue(Response.json({
+      tier: 3, statusCode, html: '<html>tracking app</html>',
+      capturedResponses: [{url: royalMailSummaryApiUrl(DELIVERED_NUMBER), status: 200,
+        body: JSON.stringify(DELIVERED), headers: {}}],
+    }));
+    await expect(new RoyalMailTracker({trawlUrl: TRAWL_URL, fetcher}).fetch(DELIVERED_NUMBER))
+      .resolves.toMatchObject({status: 'delivered'});
+  });
+
+  it.each([[1, 200], [3, 302], [3, 0]])('rejects unsolved browser tier %s / document %s', async (tier, statusCode) => {
+    const fetcher = vi.fn().mockResolvedValue(Response.json({tier, statusCode, html: '<html>app</html>'}));
+    await expect(new RoyalMailTracker({trawlUrl: TRAWL_URL, fetcher}).fetch(DELIVERED_NUMBER))
+      .rejects.toMatchObject({name: 'TransportError'});
+  });
+
   it.each([
     [404, {errors: [{errorCode: 'E1142'}]}, 'IndeterminateError'],
     [403, {}, 'ChallengeError'],

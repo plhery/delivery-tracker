@@ -18,7 +18,11 @@ private TRAWL service with this repository's `ops/trawl` compatibility build.
    the adapter does not replay the request through another HTTP client.
 
 Both fresh and cached TRAWL tiers run form preparation before captcha solving.
-Capture ignores preflight requests and unrelated tracking numbers. The adapter
+A missing tracking reply fails the tier so TRAWL can invalidate a stale cached
+session and try a fresh browser context within the remaining budget.
+Capture ignores preflight requests and unrelated tracking numbers. A browser
+main-document response of 304 is accepted only at Tier 2/3; tracking still
+requires its own captured JSON reply. The adapter
 allows 60 seconds of browser work, with the shared client's transport allowance.
 Upstream challenges, throttles, HTTP failures and schema errors remain failures
 so normal universal-provider recovery can run.

@@ -161,6 +161,11 @@ export async function attachTrackingCapture(page, url, options) {
     async drain() {
       accepting = false;
       page.off('response', onResponse);
+      // A loaded app shell is not a successful Royal Mail session. Let the
+      // orchestrator invalidate cached cookies and try its fresh browser tier.
+      if (site.perNumber && entries.length === 0) {
+        throw new Error('Royal Mail produced no tracking response after form submission');
+      }
       return { capturedResponses: entries.map(entry => ({ ...entry })) };
     },
   };
