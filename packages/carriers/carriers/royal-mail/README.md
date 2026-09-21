@@ -76,6 +76,14 @@ checks on 2026-09-21 exercised the complete adapter through the TRAWL API in
 submission invokes the normal button handler directly to avoid a Camoufox
 mouse-action stall.
 
+Later checks on 2026-09-21 used two recent, publicly posted shipment references.
+Neither produced a summary reply: the built-in solver timed out looking for
+`#checkbox` in the invisible widget, and TRAWL returned HTTP 500. The earlier
+documentation reference then failed the same way. Current test inputs are now
+available, but a successful shipment payload and reliable challenge recovery
+remain unverified. The earlier timings establish auto-pass under those sessions,
+not consistent availability.
+
 TRAWL's native hCaptcha solver supports checkbox auto-pass and audio. Its image
 challenge support is limited; Royal Mail's invisible widget has no checkbox.
 Auto-pass depends on the browser session and upstream risk assessment, and is
