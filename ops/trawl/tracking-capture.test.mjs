@@ -14,11 +14,11 @@ const fedexApi = 'https://api.fedex.com/track/v2/shipments';
 const fedexNumber = '999999999999';
 const fedexUrl = `https://www.fedex.com/wtrk/track/?trknbr=${fedexNumber}`;
 const fedexReply = (trackingNbr = fedexNumber) => JSON.stringify({ output: { packages: [{ trackingNbr }] } });
-async function fixture(url = `https://t.17track.net/en#nums=${number}`, endpoint = api) {
+async function fixture(url = `https://t.17track.net/en#nums=${number}`, endpoint = api, additional = []) {
   const handlers = {};
   let detached = false;
   const page = { context: () => ({addCookies: async () => {}}), on: (event, fn) => { handlers[event] = fn; }, off: () => { detached = true; } };
-  const capture = await attachTrackingCapture(page, url, { captureResponses: [endpoint] });
+  const capture = await attachTrackingCapture(page, url, { captureResponses: [endpoint, ...additional] });
   const respond = (body, { url = endpoint, headers = {}, status = 200, method = 'GET', read } = {}) => handlers.response({
     url: () => url, status: () => status, request: () => ({method: () => method}),
     headers: () => ({ 'content-type': 'application/json', 'content-length': String(body.length), 'content-encoding': 'gzip', ...headers }),
@@ -26,6 +26,53 @@ async function fixture(url = `https://t.17track.net/en#nums=${number}`, endpoint
   });
   return { capture, respond, handlers, detached: () => detached };
 }
+
+const ninjaGet = 'https://postal.ninja/track/get';
+const ninjaCheck = 'https://postal.ninja/track/check';
+const ninjaUrl = `https://postal.ninja/en/tools#trawl-number=${number}`;
+const ninjaReply = (fields = {}) => JSON.stringify({status: 'FOUND', hid: 'test-handle', track: {tc: number, hid: 'test-handle', state: 'FINISHED'}, ...fields});
+
+test('Postal Ninja requires an exact tools page, one number and both capture endpoints', async () => {
+  for (const url of [ninjaUrl.replace('postal.ninja', 'other.test'), ninjaUrl.replace('/en/tools', '/en'),
+    ninjaUrl.replace('#trawl-number=', '?trawl-number='), ninjaUrl + ',OTHER123', ninjaUrl.replace(number, 'LETTERS')]) {
+    assert.equal(await attachTrackingCapture({}, url, {captureResponses: [ninjaGet, ninjaCheck]}), undefined);
+  }
+  assert.equal(await attachTrackingCapture({}, ninjaUrl, {captureResponses: [ninjaGet]}), undefined);
+});
+
+test('Postal Ninja waits through processing and pending replies for the exact completed lookup', async () => {
+  const { capture, respond } = await fixture(ninjaUrl, ninjaGet, [ninjaCheck]);
+  const post = (body, url = ninjaGet) => respond(body, {url, method: 'POST'});
+  let settled = false;
+  const waiting = capture.settle(1000).then(() => { settled = true; });
+  await respond(ninjaReply()); // GET is not the widget protocol.
+  await post(JSON.stringify({status: 'PROCESSING', tc: number, hid: 'test-handle'}), ninjaCheck);
+  assert.equal(capture.hasTrackingRequest(), true);
+  await post(ninjaReply({inProgress: true}));
+  await post(ninjaReply({track: {tc: 'OTHER123', hid: 'test-handle'}}));
+  await post(ninjaReply({hid: 'mismatched'}));
+  await new Promise(resolve => setTimeout(resolve, 10));
+  assert.equal(settled, false);
+  await post(ninjaReply()); await waiting;
+  assert.equal(capture.hasResponse(), true);
+  const rows = (await capture.drain()).capturedResponses;
+  assert.equal(rows.length, 5);
+  assert.equal(rows[0].url, ninjaCheck);
+});
+
+test('Postal Ninja finishes matching challenges and completed empty replies promptly', async () => {
+  for (const final of [JSON.stringify({status: 'CHLNG_REQ', hid: 'test-handle'}), JSON.stringify({status: 'UNTRACEABLE', tc: number}), ninjaReply({track: {tc: number, hid: 'test-handle', state: 'NO_INFO'}})]) {
+    const { capture, respond } = await fixture(ninjaUrl, ninjaGet, [ninjaCheck]);
+    await respond(JSON.stringify({status: 'CHLNG_REQ', tc: 'OTHER123'}), {url: ninjaCheck, method: 'POST'});
+    assert.equal(capture.hasResponse(), false);
+    await respond(JSON.stringify({status: 'PROCESSING', tc: number, hid: 'test-handle'}), {url: ninjaCheck, method: 'POST'});
+    await respond(JSON.stringify({status: 'CHLNG_REQ', hid: 'unrelated'}), {method: 'POST'});
+    assert.equal(capture.hasResponse(), false);
+    await respond(final, {method: 'POST'});
+    assert.equal(capture.hasResponse(), true);
+    await capture.settle(1000); await capture.drain();
+  }
+});
 
 test('reads decoded compressed history and waits through polling for a final matching reply', async () => {
   const { capture, respond } = await fixture();

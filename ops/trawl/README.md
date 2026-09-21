@@ -3,12 +3,11 @@
 Stock TRAWL 1.3.1 ignores `captureResponses`. Version 1.5.0 adds it but refuses
 compressed responses, including 17TRACK's, UPS's, FedEx's and Royal Mail's gzip JSON, and can stop on
 polling code 100. This small compatibility build retains the normal TRAWL API and
-changes only tier 2/3 capture for four exact endpoints, each on its own public
+changes only tier 2/3 capture for five providers on their exact endpoints and public
 page with one valid number: 17TRACK's `track/restapi`, UPS's `GetStatus`,
 FedEx's `track/v2/shipments` and Royal Mail's per-number `microsummary`
-(exact per-number capture and form submission). Every other capture request keeps
-stock behaviour. ParcelsApp remains first in
-the application's discovery order.
+(exact per-number capture and form submission), plus Postal Ninja's
+`track/check` and `track/get`. Every other capture request keeps stock behaviour.
 
 The adapter observes the browser's response. For Royal Mail it preloads four
 non-identifying "Decline all" preference cookies before navigation, avoiding the
@@ -23,8 +22,16 @@ TRAWL skips its CAPTCHA solver. Tracking connection failures end capture promptl
 with an allowlisted network-error code; they must not become missing-checkbox
 errors. A page without a tracking reply still fails its tier so ineffective
 cached sessions are invalidated and normal provider recovery remains available.
-Other providers retain their
-navigation-only flow. It accepts at most 20 replies, limits
+Postal Ninja uses `https://postal.ninja/en/tools#trawl-number=<number>` as an
+integration marker and requires both exact capture URLs. It fills the official
+tracking iframe, unticks "save this parcel", and invokes the normal submit
+handler. The page obtains its own Turnstile token and signs the check/get
+requests. Matching `PROCESSING` replies establish a handle; capture waits
+through `inProgress` until a completed matching reply, challenge or
+`UNTRACEABLE` response. It does not turn an unrelated number/handle into a
+completed lookup. Stock TRAWL does not submit this form from a URL alone.
+
+The remaining providers retain their navigation-only flow. Capture accepts at most 20 replies, limits
 stored decoded bodies to 2 MB each / 4 MB total, checks declared size when
 available, and waits at most the remaining scrape budget (30 seconds maximum).
 `response.body()` reads data already decoded by the browser; run the browser
@@ -76,6 +83,13 @@ The later consent/failure update on 2026-09-21 avoided the banner and duplicate
 lookup, and returned a diagnosed tracking connection reset in 6.6 seconds through
 the deployed service, without invoking the CAPTCHA solver. The upstream failure
 still occurred; this is a failure-path measurement, not a tracking success.
+
+On 2026-09-22, two fresh Camoufox contexts on the production host passed Postal
+Ninja's widget Turnstile automatically and captured a matching delivered
+YunExpress response in 7.0 seconds each. Earlier Chromium failures did not test
+this execution path. The widget returns first/latest scans; the application
+does not label them as a full timeline. See the
+[Postal Ninja verification notes](../../packages/carriers/providers/postal-ninja/README.md).
 
 ## Redis session cache
 

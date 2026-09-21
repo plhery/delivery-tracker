@@ -3,7 +3,7 @@ import 'server-only';
 /**
  * Postal Ninja (postal.ninja), an opt-in universal aggregator.
  *
- * Transport: a local Chromium session submits the official embedded tracking
+ * Transport: TRAWL (or local Chromium when unconfigured) submits the embedded tracking
  * widget on `/en/tools` and reads the `/track/get` response it produces.
  * Opening a URL that contains the number does not perform a lookup, and the
  * main tracking page can require an interactive challenge, so the widget is
@@ -16,11 +16,15 @@ import { ChallengeError, IndeterminateError, SchemaError } from '../../core/erro
 import { runSteps } from '../../core/runner';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import type { StepRecorder } from '../../core/telemetry';
+import type { TrawlClient } from '../../core/transport';
 import { scrapeUniversalPage, type UniversalBrowserOptions } from '../../core/transport/browser';
 import { isRecord } from '../../core/types';
+import { capturedBodies, captureFailure, loadCapture, type CaptureSpec } from '../shared/capture';
 import { event, eventStage, hasPrivateDeliveryDetails, isNotice, numberOf, result, text, type UniversalSource } from '../shared/result';
 
 const SOURCE: UniversalSource = 'Postal Ninja';
+const GET_API = 'https://postal.ninja/track/get';
+const CHECK_API = 'https://postal.ninja/track/check';
 const MAX_EVENTS = 1000;
 /** The states whose history the provider considers established. */
 const TRACKED_STATES = ['TRACKING', 'FINISHED', 'STOPPED', 'ARCHIVED'];
@@ -63,6 +67,8 @@ export function parsePostalNinjaResponse(payload: unknown, trackingNumber: strin
 }
 
 export interface PostalNinjaOptions extends UniversalBrowserOptions {
+  trawl?: TrawlClient | null;
+  fetcher?: typeof fetch;
   recorder?: StepRecorder;
 }
 
@@ -82,6 +88,9 @@ export class PostalNinjaTracker {
       if (payload.status === 'CHLNG_REQ' && (payload.tc === number || (handle && payload.hid === handle))) {
         return new ChallengeError(SOURCE, 'Postal Ninja browser verification did not complete');
       }
+      if (payload.status === 'UNTRACEABLE' && payload.tc === number) {
+        return new IndeterminateError(SOURCE, 'Postal Ninja cannot track this number');
+      }
       if (payload.status === 'FOUND' && isRecord(payload.track) && payload.track.tc === number
         && typeof payload.hid === 'string' && payload.hid && payload.track.hid === payload.hid
         && payload.track.state === 'NO_INFO' && !payload.inProgress) {
@@ -89,7 +98,37 @@ export class PostalNinjaTracker {
       }
     };
     return runSteps({ carrier: SOURCE, budgetMs: timeoutMs, recorder: this.options.recorder }, [{
+      id: 'trawl', enabled: Boolean(this.options.trawl),
+      run: async ({ remainingMs }) => {
+        const spec: CaptureSpec = {
+          source: SOURCE, url: `https://postal.ninja/en/tools#trawl-number=${number}`,
+          apiUrl: GET_API, additionalApiUrls: [CHECK_API], budgetMs: remainingMs, fetcher: this.options.fetcher,
+        };
+        const page = await loadCapture(this.options.trawl ?? null, spec);
+        // Learn the submission's handle before interpreting a handle-only
+        // retrieval challenge. Read history newest first to skip polling.
+        let submissionError: Error | undefined;
+        for (const body of [...capturedBodies(page, { ...spec, apiUrl: CHECK_API })].reverse()) {
+          let payload: unknown;
+          try { payload = JSON.parse(body); } catch { continue; }
+          submissionError = responseError(payload) ?? submissionError;
+        }
+        let pending: Error | undefined;
+        for (const body of capturedBodies(page, spec)) {
+          let payload: unknown;
+          try { payload = JSON.parse(body); } catch { continue; }
+          const error = responseError(payload);
+          if (error) throw error;
+          try { return parsePostalNinjaResponse(payload, number); }
+          catch (error) { if (error instanceof SchemaError) pending ??= error; else throw error; }
+        }
+        throw submissionError ?? pending ?? captureFailure(page, spec);
+      },
+    }, {
       id: 'browser',
+      // A failed TRAWL attempt proceeds to the next universal provider. Do
+      // not spend another browser budget on the known-unreliable Chromium path.
+      enabled: !this.options.trawl,
       run: ({ remainingMs }) => scrapeUniversalPage({ executablePath: this.options.executablePath, timeoutMs: Math.max(1, Math.floor(remainingMs)) }, {
         name: SOURCE, url: 'https://postal.ninja/en/tools', responseUrl: 'https://postal.ninja/track/get',
         responseErrors: {
@@ -112,12 +151,13 @@ export class PostalNinjaTracker {
 
 export const adapter: AdapterFactory = (environment) => {
   const tracker = new PostalNinjaTracker({
+    trawl: environment.trawl, fetcher: environment.fetcher,
     executablePath: environment.browserExecutablePath ?? undefined,
     recorder: environment.recorder,
   });
   return {
     id: SOURCE,
-    steps: ['browser'],
+    steps: [environment.trawl ? 'trawl' : 'browser'],
     track: (input, context) => tracker.fetch(input.number, context?.budgetMs),
   };
 };

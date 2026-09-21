@@ -4,8 +4,7 @@
 
 Postal Ninja (postal.ninja) is a universal tracking aggregator, not a carrier:
 it has no last mile of its own and cannot be selected for a parcel. It is
-**disabled by default** and remains experimental while unattended verification
-is unreliable in the production browser; `TRACKING_ENABLE_POSTAL_NINJA=true` inserts it into the discovery
+**disabled by default** for new installations; `TRACKING_ENABLE_POSTAL_NINJA=true` inserts it into the discovery
 chain before 17TRACK. The provider name persisted in routing state is
 `Postal Ninja`.
 
@@ -45,18 +44,27 @@ echo the requested number in `track.tc`, match its own handle (`track.hid` equal
 
 ## How the adapter works
 
-One tier, `browser`, run by `runSteps` with the per-provider budget (45 s
-standalone, 30 s inside the chain): a fresh local Chromium session
-(`TRACKING_CHROMIUM_PATH`) opens `/en/tools`, fills the official embedded
-widget, unticks its "save this parcel" checkbox, submits it, and reads the
-`/track/get` response the widget produces. Opening a URL that contains the
-number does not perform a lookup.
+One selected transport, run by `runSteps` with the per-provider budget (45 s
+standalone, 30 s inside the chain): `trawl` when the shared service is configured,
+otherwise `browser` using local Chromium (`TRACKING_CHROMIUM_PATH`). TRAWL uses
+Camoufox, whose widget verification succeeded on the production host where the
+isolated Chromium path failed. A failed TRAWL attempt proceeds to the next
+universal provider without spending another budget on local Chromium.
+
+Both paths open `/en/tools`, fill the official embedded widget, untick its
+"save this parcel" checkbox, submit it, and capture `/track/check` and
+`/track/get`. The TRAWL [compatibility build](../../../../ops/trawl/README.md)
+uses `#trawl-number=<number>` as its own form-submission marker. This is not an
+upstream deep link: stock TRAWL only loading the URL does not trigger a lookup.
+The page itself obtains the Turnstile token and signs its requests. No token
+service or copied signing constant is needed for this browser path.
 
 The adapter also observes `/track/check`. A matching `CHLNG_REQ` ends the
 attempt with a challenge error instead of waiting for a `/track/get` response
 that will never arrive. An identity-matched `FOUND`/`NO_INFO` reply remains
 intermediate while `inProgress` is true; the completed empty lookup is
-inconclusive, not proof that the shipment does not exist. Unrelated numbers
+inconclusive, not proof that the shipment does not exist. A matching
+`UNTRACEABLE` submission also ends promptly with an inconclusive outcome. Unrelated numbers
 and handles cannot terminate the lookup.
 
 Because the provider gives local wall times for the whole journey, the projected
@@ -83,9 +91,10 @@ and the language classifier.
 
 ## Limitations and privacy
 
-- Experimental: the September 21 checks reproduced automatic widget success
-  in regular Chrome, but isolated automated Chromium sessions failed Turnstile
-  locally and using the production application image/network.
+- Browser-dependent: the September 21 automated Chromium failures do not apply
+  to every browser. Fresh TRAWL/Camoufox sessions on September 22 passed the
+  widget automatically on the production network. Other references and future
+  challenges can still fail; the normal universal fallback remains available.
 - Signed HTTP requests, including a local replay with freshly issued browser
   clearance cookies, were challenged by Cloudflare. Full history was retrieved
   through signed fetch inside a verified browser; this is not a working pure
@@ -95,13 +104,13 @@ and the language classifier.
 - Delivery wording can contain an access code or a signature. Any event whose
   stage is not `delivered` and that carries such details is dropped, and a
   delivered event's description is replaced by `Delivered`.
-- Only one local browser session runs per server process; an overlapping lookup
-  fails promptly and retries on the next sync.
+- TRAWL manages its own browser pool and session cache. Without TRAWL, only one
+  local browser session runs per server process; an overlapping lookup fails
+  promptly and retries on the next sync.
 
 ## Implementation decisions
 
-- **Opt-in only.** A working regular-browser session does not establish reliable
-  server operation. `TRACKING_ENABLE_POSTAL_NINJA=true` inserts it before
+- **Explicit host switch.** `TRACKING_ENABLE_POSTAL_NINJA=true` inserts it before
   17TRACK; eligible UPU remains the final fallback.
 - **Submit the embedded widget, do not navigate to a number.** The official
   widget on `/en/tools` passes an automatic browser check; the main tracking
@@ -193,3 +202,17 @@ parser rejected that valid compact reply; it now handles both shapes.
   instead of waiting for the 30-second provider budget. This verifies failure
   handling, not successful automated retrieval. Compact parsing, privacy,
   identity, polling and browser cleanup are covered by synthetic tests.
+- 2026-09-22: tested TRAWL 1.5.0's actual Camoufox tier on the production host,
+  adding the widget submission to its scoped capture integration. Two fresh
+  contexts returned matching compact delivered history for the public
+  YunExpress control in 7.0 seconds each. The check carried an automatically
+  issued Turnstile token; no paid solver or manual challenge was involved.
+  The synthetic `CODEX0000000000000000` control passed verification but returned
+  `UNTRACEABLE`, establishing a distinct provider outcome that now ends the
+  attempt immediately instead of consuming the entire polling budget.
+- 2026-09-22: deployed the compatibility build and ran the actual adapter's
+  live tests against the service: two successive matching delivered lookups
+  and the synthetic untraceable control passed. A separate cached request
+  returned matching delivered history in 4.4 seconds with `tier: 2` and
+  `sessionCached: true`. The production host enables the provider with
+  `TRACKING_ENABLE_POSTAL_NINJA=true`; new installations still opt in explicitly.

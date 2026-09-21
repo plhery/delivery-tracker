@@ -4,6 +4,42 @@
 // other capture request keeps TRAWL's stock behaviour.
 const SITES = [
   {
+    api: 'https://postal.ninja/track/get',
+    checkApi: 'https://postal.ninja/track/check',
+    number(page) {
+      if (page.origin !== 'https://postal.ninja' || page.pathname !== '/en/tools' || page.search) return null;
+      // Private integration marker, not an upstream tracking deep link.
+      return /^#trawl-number=((?=[A-Z0-9]*\d)[A-Z0-9]{4,40})$/.exec(page.hash)?.[1] ?? null;
+    },
+    settled(data, number, state) {
+      if (data?.status === 'PROCESSING' && data.tc === number && typeof data.hid === 'string' && data.hid) state.handle = data.hid;
+      if (data?.status === 'CHLNG_REQ') return data.tc === number || Boolean(state.handle && data.hid === state.handle);
+      if (data?.status === 'UNTRACEABLE') return data.tc === number;
+      return data?.status === 'FOUND' && data.track?.tc === number
+        && typeof data.hid === 'string' && data.hid && data.track.hid === data.hid && !data.inProgress;
+    },
+    async prepare(page, number, budgetMs) {
+      const deadline = Date.now() + Math.max(0, Math.min(budgetMs, 15_000));
+      const timeout = () => {
+        const left = deadline - Date.now();
+        if (left <= 0) throw new Error('Postal Ninja form preparation timed out');
+        return left;
+      };
+      const form = page.frameLocator('iframe[title="Package tracking widget"]').locator('form.tracker');
+      await form.locator('input[type="text"]').fill(number, { timeout: timeout() });
+      const save = form.locator('input[type="checkbox"]');
+      if (await save.count()) await save.uncheck({ timeout: timeout() });
+      // Run the normal form handler, including its Turnstile execution and
+      // request signing. Tokens stay inside this isolated browser context.
+      const submitted = await form.locator('button[type="submit"]').evaluate((element, expected) => {
+        if (element.form?.querySelector('input[type="text"]')?.value !== expected || element.disabled) return false;
+        element.click();
+        return true;
+      }, number, { timeout: timeout() });
+      if (!submitted) throw new Error('Postal Ninja form was not ready for submission');
+    },
+  },
+  {
     // 17TRACK polls: keep reading until a completed reply names the number.
     api: 'https://t.17track.net/track/restapi',
     number(page) {
@@ -83,6 +119,7 @@ export async function attachTrackingCapture(page, url, options) {
   const target = new URL(url);
   const requested = options.captureResponses ?? [];
   const site = SITES.find(candidate => candidate.number(target)
+    && (!candidate.checkApi || requested.includes(candidate.checkApi))
     && (candidate.perNumber
       ? requested.includes(candidate.api + candidate.number(target))
       : requested.includes(candidate.api)));
@@ -95,13 +132,15 @@ export async function attachTrackingCapture(page, url, options) {
     })));
   }
   const entries = [];
+  const state = {};
+  let terminal = false;
   let trackingRequested = false;
   let networkError;
   let accepting = true;
   let count = 0;
   let bytes = 0;
   let finish;
-  const ready = new Promise(resolve => { finish = resolve; });
+  const ready = new Promise(resolve => { finish = () => { terminal = true; resolve(); }; });
   const matchesRequest = request => accepting && request.url() === api && request.method() === 'GET';
   const onRequest = request => { if (matchesRequest(request)) trackingRequested = true; };
   const onRequestFailed = request => {
@@ -111,10 +150,11 @@ export async function attachTrackingCapture(page, url, options) {
     finish();
   };
   const onResponse = async response => {
-    if (!accepting || response.url() !== api
+    if (!accepting || (response.url() !== api && response.url() !== site.checkApi)
+      || (site.checkApi && response.request().method() !== 'POST')
       || (site.perNumber && response.request().method() !== 'GET') || ++count > 20) return;
     const headers = response.headers();
-    const entry = { url: api, status: response.status(), body: null,
+    const entry = { url: response.url(), status: response.status(), body: null,
       headers: headers['retry-after'] ? { 'retry-after': headers['retry-after'].slice(0, 100) } : {},
       truncated: false, base64Encoded: false };
     entries.push(entry);
@@ -138,7 +178,7 @@ export async function attachTrackingCapture(page, url, options) {
       const data = JSON.parse(entry.body);
       // Preserve intermediate replies for diagnosis, but let the website carry
       // on until it holds a final reply for exactly the requested number.
-      if (site.settled(data, number)) finish();
+      if (site.settled(data, number, state)) finish();
     } catch { entry.error = 'tracking response could not be read'; }
   };
   page.on('response', onResponse);
@@ -148,6 +188,7 @@ export async function attachTrackingCapture(page, url, options) {
   }
   return {
     // Called by both TRAWL browser tiers after navigation and before solving.
+    ...(site.prepare ? { prepare: budgetMs => site.prepare(page, number, budgetMs) } : {}),
     ...(site.perNumber ? { async prepare(budgetMs) {
       const deadline = Date.now() + Math.max(0, Math.min(budgetMs, 15_000));
       const timeout = () => {
@@ -206,10 +247,10 @@ export async function attachTrackingCapture(page, url, options) {
       // sends the API request and resets the widget; do not click it again.
       await awaitReply();
     } } : {}),
-    hasResponse() { return Boolean(site.perNumber && entries.some(entry => entry.body !== null || entry.status !== 200)); },
+    hasResponse() { return Boolean((site.checkApi && terminal) || (site.perNumber && entries.some(entry => entry.body !== null || entry.status !== 200))); },
     // Royal Mail sends this GET only after its hCaptcha success callback.
     // A later connection failure cannot be repaired by clicking a checkbox.
-    hasTrackingRequest() { return Boolean(site.perNumber && trackingRequested); },
+    hasTrackingRequest() { return Boolean((site.checkApi && state.handle) || (site.perNumber && trackingRequested)); },
     async settle(budgetMs) {
       let timer;
       try {

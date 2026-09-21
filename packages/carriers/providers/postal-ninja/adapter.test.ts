@@ -2,7 +2,9 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { scrapeUniversalPage } from '../../core/transport/browser';
-import { parsePostalNinjaResponse, PostalNinjaTracker } from './adapter';
+import { TrawlClient } from '../../core/transport';
+import { NOOP_RECORDER } from '../../core/telemetry';
+import { adapter, parsePostalNinjaResponse, PostalNinjaTracker } from './adapter';
 
 vi.mock('../../core/transport/browser', () => ({ scrapeUniversalPage: vi.fn() }));
 
@@ -70,6 +72,60 @@ describe('Postal Ninja result parsing', () => {
       ['En route to DHL eCommerce distribution center or awaiting processing', 'registered'],
       ['En route', 'in_transit'], ['Delivered to local carrier', 'in_transit'],
     ]) expect(parsePostalNinjaResponse(withEvents([{ dt: '2026-08-17T11:17:00', dsc: description }]), number).current_stage).toBe(stage);
+  });
+});
+
+describe('Postal Ninja TRAWL capture', () => {
+  const get = 'https://postal.ninja/track/get';
+  const check = 'https://postal.ninja/track/check';
+  const url = `https://postal.ninja/en/tools#trawl-number=${number}`;
+  const entry = (payload: unknown, endpoint = get, status = 200) => ({
+    url: endpoint, status, body: JSON.stringify(payload), headers: { 'retry-after': '60' },
+  });
+  const captured = (entries: unknown[], overrides = {}) => new Response(JSON.stringify({
+    url, html: '<html></html>', statusCode: 200, tier: 3, capturedResponses: entries, ...overrides,
+  }));
+  const setup = (response: Response) => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(response);
+    const trawl = new TrawlClient('http://browser.test', fetcher);
+    return {fetcher, trawl, tracker: new PostalNinjaTracker({trawl})};
+  };
+
+  it('wires the shared browser service through the factory and requests both protocol endpoints', async () => {
+    const {fetcher, trawl} = setup(captured([entry({status: 'PROCESSING', tc: number, hid: found.hid}, check), entry(found)]));
+    const provider = adapter({trawl, recorder: NOOP_RECORDER, env: {}, browserExecutablePath: null});
+    expect(provider.steps).toEqual(['trawl']);
+    await expect(provider.track({number, postcode: null}, {budgetMs: 30_000})).resolves.toMatchObject({tracking_provider: 'Postal Ninja', current_stage: 'delivered'});
+    expect(JSON.parse(String(fetcher.mock.calls[0][1]?.body))).toMatchObject({url, skipHttp: true, maxTier: 3, captureResponses: [get, check]});
+    expect(scrapeUniversalPage).not.toHaveBeenCalled();
+  });
+
+  it('skips unrelated and intermediate captures but preserves a matching challenge or no-info outcome', async () => {
+    const noInfo = { ...found, track: { ...found.track, state: 'NO_INFO', events: [] } };
+    for (const [entries, expected] of [
+      [[entry({status: 'CHLNG_REQ', tc: number}, check)], {kind: 'challenge'}],
+      [[entry({status: 'UNTRACEABLE', tc: number}, check)], {kind: 'indeterminate'}],
+      [[entry({status: 'PROCESSING', tc: number, hid: found.hid}, check), entry({status: 'CHLNG_REQ', hid: found.hid})], {kind: 'challenge'}],
+      [[entry({...noInfo, inProgress: true}), entry(noInfo)], {kind: 'indeterminate'}],
+      [[entry(null, check, 429)], {status: 429, retryAfterMs: 60_000}],
+    ] as const) {
+      await expect(setup(captured([...entries])).tracker.fetch(number)).rejects.toMatchObject(expected);
+    }
+    const {tracker} = setup(captured([entry({status: 'CHLNG_REQ', tc: 'OTHER123'}, check), entry({...noInfo, inProgress: true}), entry(found)]));
+    await expect(tracker.fetch(number)).resolves.toMatchObject({current_stage: 'delivered'});
+    expect(scrapeUniversalPage).not.toHaveBeenCalled();
+  });
+
+  it('rejects wrong identities, redirected pages and missing or unreadable captures', async () => {
+    for (const response of [
+      captured([entry({...found, track: {...found.track, tc: 'OTHER123'}})]),
+      captured([entry(found)], {url: 'https://postal.ninja/en'}),
+      captured([entry(found)], {tier: 1}),
+      captured([], {capturedResponses: undefined}),
+      captured([{...entry(found), body: null, error: 'unreadable'}]),
+      captured([{...entry(found), truncated: true}]),
+    ]) await expect(setup(response).tracker.fetch(number)).rejects.toThrow();
+    expect(scrapeUniversalPage).not.toHaveBeenCalled();
   });
 });
 

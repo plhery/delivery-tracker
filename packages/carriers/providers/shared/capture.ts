@@ -24,6 +24,8 @@ export interface CaptureSpec {
   url: string;
   /** The in-page API URL whose responses are captured. */
   apiUrl: string;
+  /** Related protocol replies needed to diagnose submission or polling. */
+  additionalApiUrls?: readonly string[];
   budgetMs: number;
   fetcher?: typeof fetch;
 }
@@ -56,7 +58,7 @@ export async function loadCapture(trawl: TrawlClient | null, spec: CaptureSpec):
   const budgetMs = Math.max(1, Math.floor(spec.budgetMs));
   const page = await trawl.scrape({
     url: spec.url, skipHttp: true, maxTier: 3, maxTimeout: budgetMs,
-    captureResponses: [spec.apiUrl], settleTimeout: SETTLE_TIMEOUT_MS,
+    captureResponses: [spec.apiUrl, ...spec.additionalApiUrls ?? []], settleTimeout: SETTLE_TIMEOUT_MS,
   }, {
     provider: `${spec.source} tracking browser`, timeoutMs: budgetMs,
     maxBytes: MAX_PAGE_BYTES, fetcher: spec.fetcher,
