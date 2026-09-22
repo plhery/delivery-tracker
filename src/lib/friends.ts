@@ -17,9 +17,9 @@ export const friendStamps: Record<ApiFriendStamp, { title: MessageKey; explanati
   theRegular: { title: 'passport.theRegular', explanation: 'passport.regularExplanation', icon: 'stamp', tone: 'lilac', numeral: '25' },
   rightNextDoor: { title: 'passport.rightNextDoor', explanation: 'passport.domesticExplanation', icon: 'houses', tone: 'green' },
   worthTheWait: { title: 'passport.worthTheWait', explanation: 'passport.waitExplanation', icon: 'hourglass', tone: 'ochre' },
-  busyDoorstep: { title: 'passport.busyDoorstep', explanation: 'friends.busyStampDetail', icon: 'parcels', tone: 'peach' },
+  busyDoorstep: { title: 'passport.busyDoorstep', explanation: 'passport.busyExplanation', icon: 'parcels', tone: 'peach' },
   pickedUp: { title: 'passport.pickedUp', explanation: 'passport.pickupExplanation', icon: 'storefront', tone: 'blue' },
-  homeForHolidays: { title: 'passport.homeForHolidays', explanation: 'friends.holidayStampDetail', icon: 'gift', tone: 'green' },
+  homeForHolidays: { title: 'passport.homeForHolidays', explanation: 'passport.holidayExplanation', icon: 'gift', tone: 'green' },
 };
 export const friendTone = (id: string) => ['blue', 'lilac', 'peach', 'green'][parseInt(id.replaceAll('-', '').slice(0, 2), 16) % 4 || 0];
 export function ownFriendCard(parcels: readonly ParcelWithEvents[], profile: ApiFriendProfile): ApiFriendCard {

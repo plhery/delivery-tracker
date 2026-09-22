@@ -187,7 +187,7 @@ test('opens Passport explanation bubbles without moving the journal and restores
   await stamp.focus();
   await page.keyboard.press('Enter');
   await expect(stamp).toHaveAttribute('aria-expanded', 'true');
-  await expect(explanation).toContainText('Your first delivered parcel earns this stamp.');
+  await expect(explanation).toContainText('Your first delivered parcel.');
   await expect(explanation).toBeVisible();
   // Transformed bounds can differ by floating-point rounding between frames.
   expect((await page.locator('.passport-stamps').boundingBox())!.height).toBeCloseTo(height, 2);
@@ -232,7 +232,7 @@ test('anchors every Passport bubble within a narrow screen and explains the coun
   await expect(heading).toHaveText('First scanned in');
   await expect(page.locator('.passport-help')).toHaveCount(0);
   await heading.click();
-  await expect(page.getByRole('dialog', { name: 'First scanned in' })).toContainText('first acceptance or transit scan');
+  await expect(page.getByRole('dialog', { name: 'First scanned in' })).toContainText('Where the carrier first scanned');
   await page.locator('.app__title').click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(heading).toHaveAttribute('aria-expanded', 'false');
