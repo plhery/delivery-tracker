@@ -11,8 +11,9 @@ import 'server-only';
  */
 import { load } from 'cheerio';
 import { DateTime } from 'luxon';
+import timers from 'node:timers/promises';
 import type { AdapterFactory } from '../../core/adapter';
-import { carrierErrorKind, ChallengeError, IndeterminateError, InputRequiredError, SchemaError, UpstreamHttpError } from '../../core/errors';
+import { carrierErrorKind, ChallengeError, IndeterminateError, InputRequiredError, SchemaError, UpstreamHttpError, UpstreamNetworkError } from '../../core/errors';
 import { runSteps } from '../../core/runner';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import type { StepRecorder } from '../../core/telemetry';
@@ -24,7 +25,9 @@ import { PARCELSAPP_API, ParcelsAppHttpClient } from './http';
 
 const SOURCE: UniversalSource = 'ParcelsApp';
 const MAX_EVENTS = 1000;
-const DIRECT_BUDGET_MS = 10_000;
+export const PARCELSAPP_BUDGET_MS = 45_000;
+const DIRECT_BUDGET_MS = 30_000;
+const RETRY_DELAY_MS = 2_000;
 
 // ParcelsApp's response omits the number. Bind it to the rendered result's
 // tracking-number row, never merely to the input field or the requested URL.
@@ -66,6 +69,9 @@ function parseHistory(payload: unknown): CarrierResult {
 }
 
 function browserCanRecover(error: unknown): boolean {
+  // A slow uncached lookup needs more time on the same API. It has already
+  // had one direct retry; a new browser lookup would repeat the work again.
+  if (error instanceof UpstreamNetworkError) return false;
   // A second lookup cannot repair missing input, rate limiting or an outage.
   if (error instanceof UpstreamHttpError && (error.status === 429 || error.status >= 500)) return false;
   const kind = carrierErrorKind(error);
@@ -114,21 +120,35 @@ export class ParcelsAppTracker {
     this.http = options.httpClient === undefined ? new ParcelsAppHttpClient(options.fetcher) : options.httpClient;
   }
 
-  async fetch(trackingNumber: string, budgetMs = this.options.timeoutMs ?? 30_000, postcode?: string | null): Promise<CarrierResult> {
+  async fetch(trackingNumber: string, budgetMs = this.options.timeoutMs ?? PARCELSAPP_BUDGET_MS, postcode?: string | null): Promise<CarrierResult> {
     const number = numberOf(trackingNumber);
     if (!Number.isFinite(budgetMs) || budgetMs < 1) throw new TypeError('ParcelsApp timeout must be positive');
+    const deadline = performance.now() + budgetMs;
+    const request = async (remainingMs: number): Promise<CarrierResult> => {
+      const payload = await this.http!.fetch(number, Math.max(1, Math.min(DIRECT_BUDGET_MS, Math.floor(remainingMs))), postcode);
+      // This endpoint returns one shipment per POST, synchronously, with no
+      // shared session or polling handle. Each retry keeps its own request
+      // binding. Numberless browser captures never get this exemption.
+      if (isRecord(payload) && payload.correctId && payload.correctId !== number) {
+        throw new SchemaError(SOURCE, 'ParcelsApp returned an unverified tracking alias');
+      }
+      return { ...parseHistory(payload), tracking_source: 'structured-web-response' };
+    };
     return runSteps({ carrier: SOURCE, budgetMs, recorder: this.options.recorder }, [{
       id: 'direct',
       enabled: this.http !== null,
-      run: async ({ remainingMs }) => {
-        const payload = await this.http!.fetch(number, Math.max(1, Math.min(DIRECT_BUDGET_MS, Math.floor(remainingMs))), postcode);
-        // This endpoint returns one shipment per POST, synchronously, with no
-        // shared session or polling handle. Bind only this response to that
-        // request. Never give numberless browser captures this exemption.
-        if (isRecord(payload) && payload.correctId && payload.correctId !== number) {
-          throw new SchemaError(SOURCE, 'ParcelsApp returned an unverified tracking alias');
-        }
-        return { ...parseHistory(payload), tracking_source: 'structured-web-response' };
+      run: ({ remainingMs }) => request(remainingMs),
+    }, {
+      id: 'retry',
+      enabled: this.http !== null,
+      // Uncached carrier aggregation can outlive a timed-out HTTP request.
+      // Retry that replayable read once; responses such as NO_DATA, input
+      // gates, aliases, challenges and HTTP errors do not qualify.
+      recovers: (error) => error instanceof UpstreamNetworkError && deadline - performance.now() > RETRY_DELAY_MS + 1,
+      run: async ({ signal }) => {
+        await timers.setTimeout(RETRY_DELAY_MS, undefined, { signal });
+        signal.throwIfAborted();
+        return request(deadline - performance.now());
       },
     }, {
       id: 'trawl',
@@ -160,7 +180,7 @@ export const adapter: AdapterFactory = (environment) => {
   });
   return {
     id: SOURCE,
-    steps: ['direct', 'trawl'],
+    steps: ['direct', 'retry', 'trawl'],
     track: (input, context) => tracker.fetch(input.number, context?.budgetMs, input.postcode),
   };
 };

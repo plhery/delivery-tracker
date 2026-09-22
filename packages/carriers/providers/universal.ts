@@ -20,11 +20,11 @@ import { NOOP_RECORDER } from '../core/telemetry';
 import { TrawlClient } from '../core/transport';
 import { isValidS10TrackingNumber } from '../core/detection/s10';
 import { normalizeTrackingNumber } from '../core/detection/normalize';
-import { adapter as parcelsAppAdapter } from './parcelsapp/adapter';
+import { adapter as parcelsAppAdapter, PARCELSAPP_BUDGET_MS } from './parcelsapp/adapter';
 import { adapter as postalNinjaAdapter } from './postal-ninja/adapter';
 import { adapter as seventeenTrackAdapter } from './seventeentrack/adapter';
 import { adapter as ship24Adapter } from './ship24/adapter';
-import { adapter as upuAdapter } from './upu/adapter';
+import { adapter as upuAdapter, UPU_BUDGET_MS } from './upu/adapter';
 import { numberOf, type UniversalSource as Source } from './shared/result';
 
 export { parse17TrackResponse, SeventeenTrackLookupError, SeventeenTrackNoHistoryError, SeventeenTrackVerificationError } from './seventeentrack/adapter';
@@ -35,6 +35,11 @@ export { TrackingCaptureError } from './shared/capture';
 export type { UniversalSource } from './shared/result';
 
 export const UNIVERSAL_SOURCES: Source[] = ['Ship24', 'ParcelsApp', '17TRACK', 'UPU'];
+
+/** Lookup time reserved by the chain and host router, before transport allowance. */
+export function universalSourceBudget(source: Source): number {
+  return source === 'ParcelsApp' ? PARCELSAPP_BUDGET_MS : source === 'UPU' ? UPU_BUDGET_MS : 30_000;
+}
 
 /** Evidence-based exception to affinity/rotation, shared by discovery and routing. */
 export function priorityUniversalSource(trackingNumber?: string): Source | undefined {
@@ -110,7 +115,7 @@ export class UniversalTracker {
     throw new UniversalTrackingError(failures);
   }
 
-  async fetchSource(source: Source, trackingNumber: string, timeoutMs = this.options.timeoutMs ?? 30_000, postcode?: string | null): Promise<CarrierResult> {
+  async fetchSource(source: Source, trackingNumber: string, timeoutMs = this.options.timeoutMs ?? universalSourceBudget(source), postcode?: string | null): Promise<CarrierResult> {
     const number = numberOf(trackingNumber);
     if (this.options.browserLookup && (source === 'Postal Ninja' || source === 'Ship24')) {
       return await this.options.browserLookup(source, number);

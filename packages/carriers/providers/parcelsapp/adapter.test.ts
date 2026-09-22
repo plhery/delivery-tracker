@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs';
-import { describe, expect, it, vi } from 'vitest';
+import timers from 'node:timers/promises';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TrawlClient } from '../../core/transport';
 import { carrierErrorKind } from '../../core/errors';
 import type { LookupRecord, StepRecord, StepRecorder } from '../../core/telemetry';
@@ -197,5 +198,108 @@ describe('ParcelsApp direct lookup', () => {
   it.each([{ correctId: 'OTHER123', ...announced }, { states: [{}] }, { states: [null] }, { states: Array(1001).fill({}) }, { uuid: 'unfinished' }])('rejects aliases, malformed and intermediate replies', async (payload) => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(reply(payload));
     await expect(new ParcelsAppTracker({ fetcher }).fetch(number)).rejects.toThrow();
+  });
+});
+
+describe('ParcelsApp slow lookup recovery', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+    // The ESM promise timer retains Node's clock in this Vitest environment.
+    vi.spyOn(timers, 'setTimeout').mockImplementation(<T>(ms = 1, value?: T) =>
+      new Promise<T>((resolve) => { setTimeout(() => resolve(value as T), ms); }));
+    // Node's native AbortSignal timer is not driven by fake timers. Keep its
+    // abort behavior while exercising the real bounded HTTP client below.
+    vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms) => {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(new DOMException('Timed out', 'TimeoutError')), ms);
+      return controller.signal;
+    });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  function timedFetch(replies: { afterMs: number; payload?: unknown; failure?: Error }[]) {
+    let attempt = 0;
+    return vi.fn<typeof fetch>().mockImplementation((_url, init) => new Promise((resolve, reject) => {
+      const reply = replies[attempt++];
+      const signal = init!.signal!;
+      const abort = () => { clearTimeout(timer); reject(signal.reason); };
+      const timer = setTimeout(() => {
+        signal.removeEventListener('abort', abort);
+        if (reply.failure) reject(reply.failure);
+        else resolve(Response.json(reply.payload));
+      }, reply.afterMs);
+      signal.addEventListener('abort', abort, { once: true });
+    }));
+  }
+
+  it('lets a cold lookup finish after the old ten-second cutoff without another request', async () => {
+    const fetcher = timedFetch([{ afterMs: 12_000, payload: announced }]);
+    const lookup = new ParcelsAppTracker({ fetcher }).fetch(number);
+    await vi.advanceTimersByTimeAsync(12_000);
+    await expect(lookup).resolves.toMatchObject({ current_stage: 'registered' });
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
+  it('retries a timed-out POST once after two seconds, preserving input and both attempt records', async () => {
+    const steps: StepRecord[] = [], lookups: LookupRecord[] = [];
+    const recorder: StepRecorder = { step: (r) => { steps.push(r); }, lookup: (r) => { lookups.push(r); } };
+    const fetcher = timedFetch([{ afterMs: 40_000, payload: announced }, { afterMs: 100, payload: announced }]);
+    const tracker = new ParcelsAppTracker({ fetcher, recorder, trawl: new TrawlClient('http://browser.test', fetcher) });
+    const lookup = tracker.fetch(number, undefined, ' 01234 ');
+    await vi.advanceTimersByTimeAsync(31_999);
+    expect(fetcher).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(101);
+    await expect(lookup).resolves.toMatchObject({ tracking_source: 'structured-web-response', current_stage: 'registered' });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls.map(([url]) => url)).toEqual([API, API]);
+    expect(String(fetcher.mock.calls[1][1]!.body)).toBe(String(fetcher.mock.calls[0][1]!.body));
+    expect(new URLSearchParams(String(fetcher.mock.calls[1][1]!.body)).get('extra[zipcode]')).toBe('01234');
+    expect(steps).toMatchObject([
+      { step: 'direct', outcome: 'transport' }, { step: 'retry', outcome: 'ok', fallbackFrom: 'direct' },
+    ]);
+    expect(lookups).toMatchObject([{ finalStep: 'retry', attempts: 2, outcome: 'ok', durationMs: 32_100 }]);
+  });
+
+  it('stops after two network failures without starting the same lookup again in a browser', async () => {
+    const fetcher = timedFetch([
+      { afterMs: 10, failure: new TypeError('connection reset') },
+      { afterMs: 10, failure: new TypeError('connection reset again') },
+    ]);
+    const failure = expect(new ParcelsAppTracker({ fetcher, trawl: new TrawlClient('http://browser.test', fetcher) }).fetch(number))
+      .rejects.toMatchObject({ kind: 'transport' });
+    await vi.advanceTimersByTimeAsync(2_020);
+    await failure;
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects an unverified alias returned by the retry', async () => {
+    const fetcher = timedFetch([
+      { afterMs: 10, failure: new TypeError('connection reset') },
+      { afterMs: 10, payload: { ...announced, correctId: 'OTHER123' } },
+    ]);
+    const failure = expect(new ParcelsAppTracker({ fetcher }).fetch(number)).rejects.toThrow('unverified tracking alias');
+    await vi.advanceTimersByTimeAsync(2_020);
+    await failure;
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry when a shorter caller deadline cannot accommodate the backoff', async () => {
+    const fetcher = timedFetch([{ afterMs: 40_000, payload: announced }]);
+    const failure = expect(new ParcelsAppTracker({ fetcher }).fetch(number, 31_000)).rejects.toMatchObject({ kind: 'transport' });
+    await vi.advanceTimersByTimeAsync(30_000);
+    await failure;
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
+  it('aborts the second request at the original deadline, including its backoff time', async () => {
+    const fetcher = timedFetch([{ afterMs: 40_000, payload: announced }, { afterMs: 40_000, payload: announced }]);
+    const failure = expect(new ParcelsAppTracker({ fetcher }).fetch(number)).rejects.toMatchObject({ kind: 'transport' });
+    await vi.advanceTimersByTimeAsync(45_000);
+    await failure;
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls.every(([, init]) => init!.signal!.aborted)).toBe(true);
   });
 });

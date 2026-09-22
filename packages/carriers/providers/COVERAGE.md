@@ -45,6 +45,11 @@ milestone more than once. Read the history notes before choosing the largest cou
 check. Other providers' repeated failures remained inconclusive. A check mark confirms
 retrieved history, not correct status mapping; the notes identify mapping issues.
 
+The retry-only ParcelsApp results prompted a [timeout and recovery fix](parcelsapp/README.md#implementation-decisions):
+the old direct request stopped after 10 s, and browser recovery could return an
+unfinished page. The adapter now allows 30 s initially and one network retry
+within 45 s. The matrix preserves the original observations at the commit below.
+
 **17TRACK recheck, 2026-09-22:** all seven previously failing references again
 returned no history, so their cells now say **None**. DHL, DHL eCommerce and
 the three UK/FR Amazon Shipping references returned a matching shipment code

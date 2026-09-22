@@ -242,7 +242,7 @@ describe('persistent tracking routing', () => {
     let elapsed = 0;
     vi.spyOn(performance, 'now').mockImplementation(() => elapsed);
     const { router, universal } = setup();
-    universal.mockImplementation(async () => { elapsed = 106_000; throw new Error('overrun'); });
+    universal.mockImplementation(async () => { elapsed = 121_000; throw new Error('overrun'); });
     await expect(router.fetch(parcel(), false)).rejects.toBeInstanceOf(RoutingDeferred);
     expect(universal).toHaveBeenCalledOnce();
   });

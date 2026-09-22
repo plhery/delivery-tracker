@@ -44,24 +44,32 @@ row. Captured replies never use the direct request's identity exemption.
 
 ## How the adapter works
 
-Two tiers, `direct` then `trawl`, run by `runSteps` within the per-provider
-budget (30 s inside the chain):
+The `direct`, optional `retry`, and `trawl` steps run through `runSteps` within
+one 45 s provider budget. The chain and host router reserve that same budget;
+an explicitly shorter caller deadline still takes precedence.
 
-1. [http.ts](http.ts) sends one form-encoded anonymous POST, capped at 10 s and
+1. [http.ts](http.ts) sends a form-encoded anonymous POST, capped at 30 s and
    2 MB, with no cookies, bootstrap page, cache or redirects. A stored postcode
    is submitted as `extra[zipcode]`. Whitespace is trimmed; leading zeros,
    internal spaces and letters are preserved.
-2. On a challenge, transport failure or schema drift, the configured private
+2. A network failure, timeout or interrupted response body gets **one direct
+   retry after 2 s**, using the same number and postcode. Its request deadline
+   is the smaller of 30 s and the remaining provider budget, including the
+   backoff. No retry starts if the backoff cannot fit. Both attempts are
+   recorded separately. Two network failures end the lookup without starting
+   it a third time in a browser.
+3. On a challenge or schema drift, the configured private
    browser service (`FLARESOLVERR_URL`) loads the tracking page with
    `skipHttp`, up to tier 3, and captures responses for
    `https://parcelsapp.com/api/v2/parcels` with a 15 s settle window.
-3. Captured bodies are parsed newest first; polling replies and unrelated
+4. Captured bodies are parsed newest first; polling replies and unrelated
    shipments are skipped.
-4. When no body was readable, the rendered history in the returned HTML is
+5. When no body was readable, the rendered history in the returned HTML is
    parsed instead.
 
-HTTP 429 and server outages retain their status and `Retry-After` without a
-browser retry. `NO_DATA`, `NO_TRACKER` and empty histories are inconclusive;
+HTTP errors are not retried by the direct tier. HTTP 429 and server outages
+retain their status and `Retry-After` without a browser retry either.
+`NO_DATA`, `NO_TRACKER` and empty histories are inconclusive and are not retried;
 they do not prove a shipment was never announced. A result containing only
 recipient-input prompts including a postcode raises
 `input_required`; prompts alongside real scans are skipped. An absent browser
@@ -133,6 +141,14 @@ wording rules and the language classifier.
 
 ## Implementation decisions
 
+- **Allow cold lookups and retry network failures (2026-09-22).** The old 10 s
+  direct cap abandoned slow aggregation before it could return. Browser
+  recovery could then return an unfinished page, surfacing as an identity
+  error. A new live lookup took 10.1 s and now succeeds directly; another
+  exceeded 28 s and answered a later request in 181 ms, consistent with
+  upstream caching. Allow 30 s initially and one network retry inside a 45 s
+  total budget. The public frontend also retries failed requests after 2 s.
+  Validating data and identity remains separate from this network recovery.
 - **Direct POST first (2026-09-12).** Supersedes the September 10 browser-only
   decision: `se` contains a public checksum, not an issued credential. Known
   histories were retrieved with Node alone. Keep browser capture as bounded
@@ -226,6 +242,16 @@ that carrier's own README.
 
 ## Verification log
 
+- 2026-09-22: fresh automated calls through `UniversalTracker.fetchSource()`
+  returned the four histories that previously needed a separate recheck:
+  DHL 14 events, La Poste 16, DHL eCommerce 36 and EMS 18. These were warm
+  requests (44–124 ms). An additional DPD reference returned five events in
+  10.1 s on its first request, exceeding the old 10 s cutoff. A synthetic
+  unknown returned `NO_DATA` in 71 ms with exactly one request. Deterministic
+  tests cover the timeout/retry sequence, the total deadline including backoff,
+  repeated network failure, unchanged input, unverified aliases and router
+  reservations for later providers. This verifies local automated retrieval;
+  it does not claim a deployed sync or a cold-cache success rate.
 - 2026-09-08: the English web app renders the UTC values of its own API, so the
   rendered `dd LLL yyyy HH:mm` pair is read as UTC rather than in the machine's
   local timezone.

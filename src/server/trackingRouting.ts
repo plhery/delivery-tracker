@@ -6,11 +6,10 @@ import { detectCarrierMatch } from '../lib/carriers';
 import { activeRequirements, AUTOMATIC_CARRIER_IDS, carrierAdapter } from './carriers';
 import { normalizeCarrierResult, type CarrierResult } from './carrierResult';
 import { isRecord, type JsonObject } from './types';
-import { priorityUniversalSource, universalSources } from './universalTracking';
+import { priorityUniversalSource, universalSourceBudget, universalSources } from './universalTracking';
 import type { UniversalSource } from './universalTrackingResult';
 import { errorType, reportRoutingEvent } from './observability';
 import { carrierErrorKind, retryAfterMsOf } from '@carriers/core/errors';
-import { UPU_BUDGET_MS } from '@carriers/providers/upu/adapter';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -259,7 +258,7 @@ export class TrackingRouter {
       ...sources.filter((source) => source === 'UPU')])];
     // Reserve each source’s lookup budget plus transport allowance (UPU needs only 8s).
     // Start after direct attempts so a slow carrier cannot starve discovery.
-    const universalDeadline = performance.now() + sources.reduce((sum, source) => sum + (source === 'UPU' ? UPU_BUDGET_MS + 5_000 : 35_000), 0);
+    const universalDeadline = performance.now() + sources.reduce((sum, source) => sum + universalSourceBudget(source) + 5_000, 0);
     const attemptedUniversal = new Set<UniversalSource>();
     const universal = async (source: UniversalSource): Promise<RoutedResult | null> => {
       signal?.throwIfAborted();
@@ -284,7 +283,7 @@ export class TrackingRouter {
       let retryAfterMs = 0;
       try {
         const postcode = typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null;
-        const result = normalizeCarrierResult(await this.options.universal(source, universalNumber, Math.min(source === 'UPU' ? UPU_BUDGET_MS : 30_000, remaining - 5_000), postcode));
+        const result = normalizeCarrierResult(await this.options.universal(source, universalNumber, Math.min(universalSourceBudget(source), remaining - 5_000), postcode));
         if (!usable(result)) throw new TypeError('No usable universal progress');
         const previousFailure = state.failures[source];
         if (previousFailure) report('provider_recovered', source);

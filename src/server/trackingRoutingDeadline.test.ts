@@ -30,7 +30,7 @@ it.each(['direct', 'universal'])('reaches a real fallback after a slow %s failur
   vi.spyOn(monitoring, 'reportRoutingEvent').mockImplementation(() => undefined);
   const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => {
     if (slow === 'universal' && fetcher.mock.calls.length === 1) {
-      elapsed += 35_000.5;
+      elapsed += 50_000.5;
       return new Response('', { status: 503 });
     }
     // Exercise HTTP-to-browser recovery as well as the router's budget. The
@@ -56,5 +56,27 @@ it.each(['direct', 'universal'])('reaches a real fallback after a slow %s failur
   expect(fetcher).toHaveBeenCalledTimes(2);
   const sent = JSON.parse(String(fetcher.mock.calls.at(-1)![1]?.body));
   expect(Number.isInteger(sent.maxTimeout)).toBe(true);
-  expect(sent.maxTimeout).toBeLessThanOrEqual(slow === 'direct' ? 30_000 : 29_999.25);
+  expect(sent.maxTimeout).toBeLessThanOrEqual(slow === 'direct' ? 45_000 : 29_999.25);
+});
+
+it('reserves ParcelsApp retry time without reducing the budgets of later providers', async () => {
+  let elapsed = 0;
+  vi.spyOn(performance, 'now').mockImplementation(() => elapsed);
+  vi.spyOn(monitoring, 'reportRoutingEvent').mockImplementation(() => undefined);
+  const universal = vi.fn(async (_source: string, _number: string, budgetMs: number) => {
+    elapsed += budgetMs + 5_000;
+    throw new Error('provider timed out');
+  });
+  const router = new TrackingRouter({
+    direct: vi.fn(), universal,
+    health: {
+      acquireTrackingProvider: async () => ({ token: 'lease', retry_at: stamp }),
+      finishTrackingProvider: async () => {},
+    },
+  });
+  await expect(router.fetch({ carrier: 'unknown', tracking_number: number }, false)).rejects.toMatchObject({ attempted: 3 });
+  expect(universal.mock.calls.map(([source, , budget]) => [source, budget])).toEqual([
+    ['Ship24', 30_000], ['ParcelsApp', 45_000], ['17TRACK', 30_000],
+  ]);
+  expect(elapsed).toBe(120_000);
 });
