@@ -35,12 +35,27 @@ describe('persistent tracking routing', () => {
       routing: { failures: { heppner: { kind: 'schema', user_error: 'carrier:input_required' } } },
     });
   });
-  it.each(['ups', 'fedex', 'usps', 'canada-post', 'royal-mail'])('uses a direct carrier without contacting a universal provider', async (carrier) => {
+  it.each(['ups', 'fedex', 'usps', 'canada-post'])('uses a direct carrier without contacting a universal provider', async (carrier) => {
     const { router, direct, universal } = setup();
     const result = await router.fetch(parcel({ carrier }), false);
     expect(result.result.routing).toMatchObject({ confirmed_carrier: carrier, last_success_at: time.toISOString() });
     expect(direct).toHaveBeenCalledWith(expect.objectContaining({ tracking_number: 'TEST1234' }), carrier);
     expect(universal).not.toHaveBeenCalled();
+  });
+  it.each([false, true])('uses normal universal routing for Royal Mail, including saved direct state: %s', async (saved) => {
+    const { router, direct, universal } = setup();
+    universal.mockResolvedValue({ ...history(), discovered_carrier: 'royal-mail' });
+    const result = await router.fetch(parcel({
+      carrier: 'royal-mail',
+      carrier_data: saved ? { routing: state({
+        configured_carrier: 'royal-mail', confirmed_carrier: 'royal-mail', confirmed_number: 'TEST1234',
+        preferred_provider: 'ParcelsApp', preferred_number: 'TEST1234',
+      }) } : {},
+    }), false);
+    expect(direct).not.toHaveBeenCalled();
+    expect(universal).toHaveBeenCalledExactlyOnceWith(saved ? 'ParcelsApp' : 'Ship24', 'TEST1234', expect.any(Number), null, null);
+    expect(result.result.routing).toMatchObject({ configured_carrier: 'royal-mail',
+      preferred_provider: saved ? 'ParcelsApp' : 'Ship24' });
   });
   it('discovers in default order and remembers the working provider across instances', async () => {
     const first = setup();

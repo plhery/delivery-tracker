@@ -9,6 +9,11 @@ Implemented September 2026. Carrier selection and retrieval provider are separat
 3. Postal Ninja is excluded by default while unattended verification is unresolved. Set `TRACKING_ENABLE_POSTAL_NINJA=true` to include it experimentally before 17TRACK; do not count it as working coverage without a fresh deployed test.
 4. Remember a successful richer provider and the lookup number in `carrier_data.routing`. A subsequent check starts there, even when it is third in the default list. Respect provider cooldowns before requesting it. UPU never becomes preferred, never moves ahead through discovery rotation, and is excluded from shadow comparisons; an existing richer affinity survives a UPU fallback.
 
+**Royal Mail (2026-09-22):** uses the normal universal-provider route while its
+experimental browser adapter cannot retrieve reliably on the production server.
+The adapter and investigation notes remain under
+`packages/carriers/carriers/royal-mail/`, but it is not an active direct route.
+
 **China Post exception (2026-09-22):** checksum-valid `C…CN` and `L…CN` lookup
 numbers try **17TRACK → Ship24 → ParcelsApp → UPU**, with opt-in Postal Ninja
 before UPU. The [live comparison](../packages/carriers/providers/COMPARISON.md#china-post-specific-recommendation)
@@ -48,7 +53,7 @@ Retry failed direct routes after the recorded cooldown; successful direct recove
 | Manual good → unsupported/wrong selection | Check the new choice first. Preserve history and revalidate the prior confirmed route as recovery. If it still works on this number, automatically restore it and show the temporary notice. Carrier changes invalidate queued/in-flight work through the existing generation/lease fencing. |
 | Older fallback or terminal regression | Preserve the newer/terminal summary and prior event watermark. Provider success does not authorize a status regression. |
 
-ShipUp is marked automatic through universal lookup in the shared web/native catalog; this does not claim a dedicated direct adapter for it. The universal-fallback carriers (see the overview in `packages/carriers/README.md`) use the same universal route. Packeta, InPost, Pos Malaysia, Correos, Poste Italiane, CTT, FedEx, USPS, Canada Post, Royal Mail, Posti and Asendia have since graduated to dedicated adapters. Asendia's covers Asendia USA's platform only; its other numbers get a not-found there and continue through the universal providers. Adding a dedicated adapter later changes the catalog and allows direct discovery/recovery to take over.
+ShipUp and Royal Mail are marked automatic through universal lookup in the shared web/native catalog; this does not claim active dedicated adapters for them. The universal-fallback carriers (see the overview in `packages/carriers/README.md`) use the same universal route. Packeta, InPost, Pos Malaysia, Correos, Poste Italiane, CTT, FedEx, USPS, Canada Post, Posti and Asendia have since graduated to dedicated adapters. Asendia's covers Asendia USA's platform only; its other numbers get a not-found there and continue through the universal providers. Adding a dedicated adapter later changes the catalog and allows direct discovery/recovery to take over.
 
 La Poste retains its structured destination and resolves the partner's name,
 official URL and reference; DHL arrival links use the same catalog resolver.

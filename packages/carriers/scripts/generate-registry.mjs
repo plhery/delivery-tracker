@@ -5,8 +5,8 @@
  *
  * Resolution, per carrier:
  *   link-only mode                         -> null
- *   the folder has adapter.ts              -> its own id
  *   tracking.adapter is 'universal'        -> 'universal'
+ *   the folder has adapter.ts              -> its own id
  *   tracking.adapter names another folder
  *   that has adapter.ts                    -> that id (chronopost -> la-poste)
  *   anything else                          -> not registered yet (served by the
@@ -41,8 +41,8 @@ const unresolved = [];
 for (const [id, definition] of definitions) {
   const tracking = definition.tracking ?? {};
   if (tracking.mode === 'link-only') { carriers[id] = null; continue; }
-  if (withAdapter.includes(id)) { carriers[id] = id; continue; }
   if (tracking.adapter === 'universal') { carriers[id] = 'universal'; continue; }
+  if (withAdapter.includes(id)) { carriers[id] = id; continue; }
   if (typeof tracking.adapter === 'string' && withAdapter.includes(tracking.adapter)) { carriers[id] = tracking.adapter; continue; }
   unresolved.push(id);
 }

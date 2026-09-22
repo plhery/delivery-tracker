@@ -1,8 +1,15 @@
 # Royal Mail
 
-The dedicated adapter reads the JSON response produced by Royal Mail's public
-[tracking form](https://www.royalmail.com/track-your-item). It requires the
-private TRAWL service with this repository's `ops/trawl` compatibility build.
+Royal Mail uses the normal **universal-provider route**, like other carriers
+without an active dedicated scraper. Automatic tracking remains enabled, with
+the shared provider order, saved affinity and cooldowns.
+
+The experimental adapter and these investigation notes remain in the repository,
+but the catalog and registry route Royal Mail to `universal`. Its browser flow
+has not worked reliably on the production server and is not called by normal
+tracking or delivery-handoff discovery. The notes below describe that experiment,
+which requires the private TRAWL service with this repository's `ops/trawl`
+compatibility build and [Royal Mail's tracking form](https://www.royalmail.com/track-your-item).
 
 ## Retrieval
 
@@ -33,7 +40,8 @@ main-document response of 304 is accepted only at Tier 2/3; tracking still
 requires its own captured JSON reply. The adapter
 allows 60 seconds of browser work, with the shared client's transport allowance.
 Upstream challenges, throttles, HTTP failures and schema errors remain failures
-so normal universal-provider recovery can run.
+in the experimental adapter. Normal tracking goes straight to the shared
+universal-provider route without attempting this browser flow.
 
 ## Response contract
 
@@ -358,6 +366,17 @@ token values and live response bodies were not saved. Temporary profiles and
 the proxy were removed. TRAWL's one-hour Redis TTL cannot keep an upstream token
 valid: its cookie cache is distinct from retaining the successful browser page.
 Production behavior was not changed by this experiment.
+
+Additional server-only probes on 2026-09-22 also failed after the token-bearing
+tracking request started. Native Chromium outside Docker, with its normal
+sandbox, still reported `ERR_HTTP2_PROTOCOL_ERROR`. Language and Mac browser
+identity overrides did not recover the request. A separate `curl_cffi` replay
+failed with an HTTP/2 stream error even when the browser's request was intercepted
+before transmission so its fresh CAPTCHA token had not already been submitted.
+These experiments did not establish a working server session. They do not prove
+which browser or network property caused rejection. The production route is
+therefore restored to the existing universal providers; the scraper remains
+available only for explicit experimental calls and tests.
 
 The two recent public references and their original forum URLs are recorded in
 [numbers.json](numbers.json) as `public_shipment_report`. Their detection

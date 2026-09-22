@@ -64,8 +64,8 @@ const rows = carrierIds.map((id) => {
   const hasAdapter = existsSync(path.join(folder, 'adapter.ts'));
   const tracking = carrier.tracking ?? {};
   const route = tracking.mode === 'link-only' ? 'link only'
-    : hasAdapter ? 'dedicated'
-      : tracking.adapter === 'universal' ? 'universal providers'
+    : tracking.adapter === 'universal' ? 'universal providers'
+      : hasAdapter ? 'dedicated'
         : `via ${tracking.adapter}`;
   const steps = Array.isArray(tracking.steps) && tracking.steps.length ? tracking.steps.join(' → ') : '';
   const capabilities = Array.isArray(carrier.capabilities) ? carrier.capabilities.length : 0;

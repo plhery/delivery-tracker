@@ -170,7 +170,7 @@ export const REGISTRY: RegistryDefinition = {
     "purolator": "universal",
     "quickpac": "planzer",
     "relais-colis": "relais-colis",
-    "royal-mail": "royal-mail",
+    "royal-mail": "universal",
     "seur": "universal",
     "sf-express": "universal",
     "shipup": "universal",

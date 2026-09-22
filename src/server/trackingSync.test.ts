@@ -52,6 +52,15 @@ import { IndeterminateError, NotFoundError, SchemaError } from '@carriers/core/e
 afterEach(() => vi.restoreAllMocks());
 
 describe('dedicated carrier dispatch', () => {
+  it('dispatches Royal Mail through universal providers despite retaining its experimental adapter file', async () => {
+    const universal = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) };
+    const adapter = new CarrierTrackingAdapter(universal as unknown as UniversalTracker);
+
+    await expect(adapter.fetch('royal-mail', 'SG999999999GB', null)).resolves.toMatchObject({ status: 'in_transit' });
+    expect(universal.fetch).toHaveBeenCalledExactlyOnceWith('SG999999999GB', null);
+    expect(adapter.registry.has('royal-mail')).toBe(false);
+  });
+
   it('routes every dedicated regional carrier to its isolated adapter', async () => {
     const laPoste = vi.spyOn(LaPosteTracker.prototype, 'fetch')
       .mockResolvedValue({ status: 'in_transit' });

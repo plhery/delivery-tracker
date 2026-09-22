@@ -59,7 +59,7 @@ npm run test:contract                                               # generated 
 ## Carriers
 
 <!-- GENERATED:carriers -->
-105 carriers: 43 with a dedicated adapter, 58 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
+105 carriers: 42 with a dedicated adapter, 59 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
 
 Roughly ordered by familiarity and prominence, with major carriers first (an editorial order, not a market-share ranking).
 
@@ -71,7 +71,7 @@ Roughly ordered by familiarity and prominence, with major carriers first (an edi
 | `usps` | USPS | dedicated | trawl | 3 | 14 | 19 | [README](carriers/usps/README.md) |
 | `amazon-logistics` | Amazon Logistics | link only |  | 0 | 24 | 0 | [README](carriers/amazon-logistics/README.md) |
 | `amazon-shipping` | Amazon Shipping | dedicated | direct | 4 | 3 | 14 | [README](carriers/amazon-shipping/README.md) |
-| `royal-mail` | Royal Mail | dedicated | trawl | 3 | 4 | 11 | [README](carriers/royal-mail/README.md) |
+| `royal-mail` | Royal Mail | universal providers |  | 3 | 4 | 11 | [README](carriers/royal-mail/README.md) |
 | `swiss-post` | Swiss Post | dedicated | direct | 4 | 4 | 28 | [README](carriers/swiss-post/README.md) |
 | `la-poste` | La Poste / Colissimo | dedicated | direct → retry | 4 | 9 | 22 | [README](carriers/la-poste/README.md) |
 | `dpd` | DPD | dedicated | direct → page | 5 | 2 | 10 | [README](carriers/dpd/README.md) |
