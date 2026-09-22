@@ -106,7 +106,8 @@ const SITES = [
       // session is rejected. Keep that first reply for diagnosis, but allow
       // one automatic refresh within the normal capture deadline.
       if (status === 401 && !state.challengeRefresh
-        && Array.isArray(data?.errors) && data.errors.some(error => error?.errorCode === 'E0015')) {
+        && Array.isArray(data?.errors)
+        && data.errors.some(error => error?.errorCode === 'E0015' || error?.code === 'E0015')) {
         state.challengeRefresh = true;
         return false;
       }

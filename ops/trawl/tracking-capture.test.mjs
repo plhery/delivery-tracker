@@ -402,10 +402,10 @@ test('Royal Mail retains an automatic tracking reply without starting another lo
   assert.equal((await capture.drain()).capturedResponses.length, 1);
 });
 
-test('Royal Mail waits for the page to refresh a rejected API session once', {timeout: 1000}, async () => {
+for (const codeField of ['errorCode', 'code']) test(`Royal Mail waits for session refresh with ${codeField}`, {timeout: 1000}, async () => {
   const {capture, handlers, respond} = await fixture(royalMailUrl, royalMailApi);
   handlers.request({url: () => royalMailApi, method: () => 'GET'});
-  const denied = JSON.stringify({errors: [{errorCode: 'E0015'}]});
+  const denied = JSON.stringify({errors: [{[codeField]: 'E0015'}]});
   await respond(denied, {status: 401});
   let settled = false;
   const waiting = capture.settle(500).then(() => {settled = true;});
