@@ -3,6 +3,7 @@ import 'server-only';
 import { DateTime } from 'luxon';
 import { load } from 'cheerio';
 import type { AdapterFactory } from '../../core/adapter';
+import { isValidS10TrackingNumber } from '../../core/detection/s10';
 import { ChallengeError, SchemaError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import { runSteps } from '../../core/runner';
@@ -16,8 +17,8 @@ import { uspsStage, uspsStatus } from './status';
  * The page at `go/TrackConfirmAction?tLabels=` carries the verdict, the
  * status and the history in its own HTML: no tracking XHR exists to capture.
  * The edge refuses every non-browser client with HTTP 403 (verified
- * 2026-09-20), while a capable browser passes the interstitial check on its
- * own and receives the rendered page. The lookup therefore has a single
+ * 2026-09-20). A browser can attempt the interstitial check, but fresh
+ * checks on 2026-09-22 still returned a challenge shell. The lookup has a single
  * step: the private browser service loads the page, and the rendered DOM is
  * parsed. Nothing is ever replayed over plain HTTP.
  *
@@ -34,8 +35,10 @@ const MAX_EVENTS_TO_RETURN = 100;
 
 export function normalizeUSPSNumber(raw: string): string {
   const value = raw.toLocaleUpperCase('en-US').replace(/[\s.-]/g, '');
-  if (!/^\d{20}$/.test(value) && !/^\d{22}$/.test(value) && !/^[A-Z]{2}\d{9}US$/.test(value)) {
-    throw new SchemaError('USPS', 'USPS tracking numbers must contain 20 or 22 digits, or match the UPU S10 format');
+  // The S10 suffix identifies the issuing country, not the destination.
+  // Incoming international mail keeps that number when USPS takes over.
+  if (!/^\d{20}$/.test(value) && !/^\d{22}$/.test(value) && !isValidS10TrackingNumber(value)) {
+    throw new SchemaError('USPS', 'USPS tracking numbers must contain 20 or 22 digits, or be a checksum-valid UPU S10 number');
   }
   return value;
 }
@@ -237,8 +240,8 @@ export class USPSTracker {
     ]);
   }
 
-  /** A real browser passes the interstitial check on its own and receives the
-   * rendered page; the reply is read from that page, never replayed. */
+  /** Read the browser's rendered page without replaying its session. An
+   * unresolved challenge remains an error so universal fallback can run. */
   async #trawlResult(trawl: TrawlClient, number: string): Promise<CarrierResult> {
     const page = await trawl.scrape({
       url: uspsTrackingUrl(number),

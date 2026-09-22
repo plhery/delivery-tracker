@@ -35,16 +35,24 @@ offline test asserts the signatory placeholder never reaches a result.
 
 - `^\d{20}$`, low confidence — the printed 20-digit label.
 - `^\d{22}$`, low confidence — the 22-digit variant, shared with Austrian Post.
-- `^[A-Z]{2}\d{9}US$` — UPU S10 international labels.
+- Checksum-valid UPU S10 labels (`^[A-Z]{2}\d{9}[A-Z]{2}$`), including
+  incoming mail with foreign country suffixes.
 
-The adapter re-checks these shapes itself and refuses anything else before
-any request. Longer label barcodes from open-source examples are not
-user-typed numbers and are refused the same way.
+The adapter validates these formats before any request, using the shared S10
+checksum validator for postal labels. The suffix identifies the issuing country,
+not the destination: incoming international mail can retain its original number
+when USPS handles US delivery. The full number, including its original suffix,
+is sent unchanged to USPS and must match the returned page.
+
+Accepting a foreign number does not make every foreign postal item a USPS
+shipment. Automatic carrier detection is unchanged; callers select USPS or
+provide delivery-partner/destination evidence through the existing handoff route.
+Longer label barcodes remain outside the accepted formats.
 
 ## How the adapter works
 
-One step, `trawl`: the private browser service loads the tracking page,
-passes the interstitial check on its own, and the rendered DOM is parsed.
+One step, `trawl`: the private browser service loads the tracking page and
+lets its browser run the interstitial check. Only a resolved tracking page is parsed.
 There is no direct step — the edge answers plain HTTP with 403 — and no
 capture step, because the page carries its data as HTML. The browser's
 session is never replayed over plain HTTP.
@@ -92,12 +100,14 @@ Errors: `ChallengeError` when no browser service is configured or the page
 - History row markup is the documented assumption: rows are matched by
   content, but a success render from a live parcel has not been observed
   yet — confirm the selectors against one before trusting edge cases.
+- Live access remains unreliable: a browser can receive HTTP 200 containing
+  only a JavaScript challenge. That is a `ChallengeError`, not an empty shipment
+  or successful tracking result; the host can continue through universal providers.
 
 ## Implementation decisions
 
-- Read the rendered DOM instead of an API: the page has no tracking XHR,
-  and the interstitial check the browser passes on its own is exactly what
-  plain HTTP cannot do.
+- Read the rendered DOM instead of an API: the inspected page shell has no
+  tracking XHR, and the browser can execute the interstitial that plain HTTP cannot.
 - One step, like Mondial Relay and FedEx: with the direct path proven
   refused, a direct tier would only burn the budget on each sync.
 - Bind strictly to `#trackingNum`: the shell echoes the queried label, so
@@ -120,3 +130,10 @@ Errors: `ChallengeError` when no browser service is configured or the page
 - 2026-09-20: adapter added with offline tests and an env-gated live test.
   Live verification with a real shipment is still open (supply
   `USPS_LIVE_TRACKING_NUMBER` outside the repository).
+- 2026-09-22: fixed the US-only suffix restriction. Synthetic regression tests
+  cover foreign and US S10 labels, invalid check digits, an incoming parcel
+  through the browser transport, and rejection of a different returned identifier.
+  A fresh automated lookup with a public incoming reference passed input validation
+  but returned a challenge shell. A separate fresh browser still had no tracking
+  shell or history after a 40-second wait; local Chromium returned Access Denied.
+  This verifies the input fix, not successful live USPS history retrieval.

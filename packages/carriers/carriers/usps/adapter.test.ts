@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { StepRecorder } from '../../core/telemetry';
-import { parseUSPSTrackingHtml, USPSTracker, uspsTrackingUrl } from './adapter';
+import { normalizeUSPSNumber, parseUSPSTrackingHtml, USPSTracker, uspsTrackingUrl } from './adapter';
 import { uspsStage, uspsStatus } from './status';
 
 // 9400111899223397910421 and 9400111899223397910438 are made-up numbers in
@@ -28,6 +28,23 @@ function stepRecorder(): { recorder: StepRecorder; records: string[] } {
 }
 
 afterEach(() => vi.restoreAllMocks());
+
+describe('USPS international numbers', () => {
+  // Synthetic S10 serial; the check digit is independent of the country suffix.
+  it.each(['CN', 'GB', 'CH', 'US'])('accepts a valid postal number issued in %s', (country) => {
+    const raw = `lz 123.456-785 ${country.toLowerCase()}`;
+    const expected = `LZ123456785${country}`;
+    expect(normalizeUSPSNumber(raw)).toBe(expected);
+    expect(new URL(uspsTrackingUrl(raw)).searchParams.get('tLabels')).toBe(expected);
+  });
+
+  it.each(['LZ123456789CN', 'LZ123456789US', 'LZ12345678CN', 'LZ123456785C'])
+    ('rejects invalid international number %s before making a request', async (number) => {
+      const fetcher = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('must not fetch'));
+      await expect(new USPSTracker({ trawlUrl: TRAWL_URL }).fetch(number)).rejects.toThrow('checksum-valid UPU S10');
+      expect(fetcher).not.toHaveBeenCalled();
+    });
+});
 
 describe('USPS status vocabulary', () => {
   it('maps the wording, and nothing else', () => {
@@ -105,11 +122,11 @@ describe('USPS rendered page', () => {
 });
 
 describe('USPS lookup steps', () => {
-  function trawlReply(html: string) {
+  function trawlReply(html: string, number = DELIVERED_NUMBER) {
     return Response.json({
       tier: 3,
       statusCode: 200,
-      url: uspsTrackingUrl(DELIVERED_NUMBER),
+      url: uspsTrackingUrl(number),
       html,
       cookies: [],
       userAgent: 'Mozilla/5.0 (test browser)',
@@ -147,6 +164,21 @@ describe('USPS lookup steps', () => {
       maxTier: 3,
     });
     expect(records).toEqual(['trawl:ok', 'lookup:trawl:ok']);
+  });
+
+  it('retrieves incoming international mail under its original number and verifies the response identity', async () => {
+    const number = 'LZ123456785CN';
+    const html = DELIVERED_PAGE.replaceAll(DELIVERED_NUMBER, number);
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(trawlReply(html, number));
+    const result = await new USPSTracker({ trawlUrl: TRAWL_URL }).fetch(number);
+    expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body)).url).toBe(uspsTrackingUrl(number));
+    expect(result).toMatchObject({ status: 'delivered', tracking_url: uspsTrackingUrl(number) });
+    expect(result.events).toHaveLength(4);
+
+    // A response for another country's identifier is not a verified handoff.
+    fetcher.mockResolvedValueOnce(trawlReply(html.replaceAll(number, 'LZ123456785US'), number));
+    await expect(new USPSTracker({ trawlUrl: TRAWL_URL }).fetch(number))
+      .rejects.toThrow('USPS did not return the requested parcel');
   });
 
   it('rejects a number that is not a USPS number before any request', async () => {
