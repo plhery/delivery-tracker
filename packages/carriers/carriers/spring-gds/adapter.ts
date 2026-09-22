@@ -20,6 +20,7 @@ import 'server-only';
 import type { AdapterFactory } from '../../core/adapter';
 import { NotFoundError, SchemaError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
+import { countryTimeZone, mislabeledLocalTime } from '../../core/time';
 import { fetchBounded, parseJsonBytes } from '../../core/transport';
 import { isRecord, type JsonObject } from '../../core/types';
 import { postNLStatus } from './status';
@@ -59,6 +60,18 @@ function comparableIdentifier(value: unknown): string {
   return text(value).toLocaleUpperCase('en-US').replace(/[^A-Z0-9]/g, '');
 }
 
+/**
+ * `datetime_local` is the scan's local time although PostNL appends "Z": a
+ * Swiss scan at 09:15 local arrives as "09:15Z" (checked against Swiss
+ * Post on 2026-09-22). Each event names its country; a country spanning
+ * several zones keeps the provider's text.
+ */
+function eventTime(event: JsonObject): string {
+  const raw = text(event.datetime_local);
+  const zone = countryTimeZone(text(event.country_code)) ?? countryTimeZone(text(event.country_name));
+  return (zone ? mislabeledLocalTime(raw, zone)?.iso : undefined) ?? raw;
+}
+
 /** Projects one `tracking-items` payload. Pure: the offline tests target this. */
 export function parsePostNLTrackingResponse(value: unknown, trackingNumber: string): CarrierResult {
   const payload = record(value);
@@ -93,7 +106,7 @@ export function parsePostNLTrackingResponse(value: unknown, trackingNumber: stri
   const events = rawEvents.map((event): CarrierEvent => {
     const classified = postNLStatus(event.category);
     return {
-      time: text(event.datetime_local),
+      time: eventTime(event),
       location: text(event.country_name) || text(event.country_code),
       description: text(event.status_description) || text(event.category),
       ...(classified ? { stage: classified.stage } : {}),
@@ -104,7 +117,7 @@ export function parsePostNLTrackingResponse(value: unknown, trackingNumber: stri
   const classified = postNLStatus(category);
   // Webshop or business name only; PostNL does not expose the recipient here.
   const senderName = text(item.senderName ?? item.sender ?? item.title).replace(/\s+/g, ' ').trim().slice(0, 200) || null;
-  const deliveredAt = classified?.status === 'delivered' ? text(latest.datetime_local) || null : null;
+  const deliveredAt = classified?.status === 'delivered' ? eventTime(latest) || null : null;
   const destination = text(item.destination_code).trim().toUpperCase();
   return {
     status: classified?.status ?? (category ? 'in_transit' : 'unknown'),

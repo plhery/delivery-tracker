@@ -94,8 +94,11 @@ category leaves the event without a stage and the shipment in transit.
 ## Limitations and privacy
 
 - The endpoints are undocumented and keyless; they can change without notice.
-- Event times are the provider's local strings; the catalog timezone (`UTC`) is
-  applied by the host when they carry no offset.
+- `datetime_local` is the scan's local time even though PostNL appends `Z`
+  (a Swiss scan at 09:15 local arrives as `09:15Z`; checked against Swiss
+  Post on 2026-09-22). Each scan is re-read in the zone of its own
+  `country_code`. A country spanning several zones (US, CA, BR...) keeps the
+  provider's text, which the host then reads as UTC.
 - Only a webshop or business sender name is retained, capped at 200 characters
   and whitespace-collapsed. No recipient name, address or signature is kept.
 

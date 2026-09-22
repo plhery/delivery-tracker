@@ -60,6 +60,52 @@ export function isoTime(value: unknown, zone: string, maxLength = 64): ParsedTim
   return fromDateTime(parsed);
 }
 
+/**
+ * Wall-clock times a provider labels as UTC (or with an offset of its own)
+ * although they are the scan's local time: ParcelsApp and PostNL do this. The
+ * digits of the labeled instant, read in UTC, are re-read in `zone`.
+ * Offset-less values are read in `zone` directly.
+ */
+export function mislabeledLocalTime(value: unknown, zone: string, maxLength = 64): ParsedTime | null {
+  const raw = clean(value, maxLength);
+  if (!raw) return null;
+  const labeled = EXPLICIT_OFFSET_PATTERN.test(raw)
+    ? DateTime.fromISO(raw, { setZone: true }).toUTC()
+    : DateTime.fromISO(raw, { zone: 'utc' });
+  if (!labeled.isValid) return null;
+  const { year, month, day, hour, minute, second, millisecond } = labeled;
+  return fromDateTime(DateTime.fromObject({ year, month, day, hour, minute, second, millisecond }, { zone }));
+}
+
+// Countries that keep one civil time. Spain and Portugal use their mainland
+// zone (their islands differ by an hour). Countries spanning several zones
+// (US, CA, BR, RU, AU, MX, ID...) are absent: they need a finer location.
+const COUNTRY_ZONES: Record<string, string> = {
+  AT: 'Europe/Vienna', BE: 'Europe/Brussels', BG: 'Europe/Sofia', CH: 'Europe/Zurich',
+  CY: 'Asia/Nicosia', CZ: 'Europe/Prague', DE: 'Europe/Berlin', DK: 'Europe/Copenhagen',
+  EE: 'Europe/Tallinn', ES: 'Europe/Madrid', FI: 'Europe/Helsinki', FR: 'Europe/Paris',
+  GB: 'Europe/London', GR: 'Europe/Athens', HR: 'Europe/Zagreb', HU: 'Europe/Budapest',
+  IE: 'Europe/Dublin', IS: 'Atlantic/Reykjavik', IT: 'Europe/Rome', LI: 'Europe/Vaduz',
+  LT: 'Europe/Vilnius', LU: 'Europe/Luxembourg', LV: 'Europe/Riga', MT: 'Europe/Malta',
+  NL: 'Europe/Amsterdam', NO: 'Europe/Oslo', PL: 'Europe/Warsaw', PT: 'Europe/Lisbon',
+  RO: 'Europe/Bucharest', SE: 'Europe/Stockholm', SI: 'Europe/Ljubljana', SK: 'Europe/Bratislava',
+  TR: 'Europe/Istanbul', AE: 'Asia/Dubai', IL: 'Asia/Jerusalem', IN: 'Asia/Kolkata',
+  CN: 'Asia/Shanghai', HK: 'Asia/Hong_Kong', JP: 'Asia/Tokyo', KR: 'Asia/Seoul',
+  MY: 'Asia/Kuala_Lumpur', PH: 'Asia/Manila', SG: 'Asia/Singapore', TH: 'Asia/Bangkok',
+  TW: 'Asia/Taipei', VN: 'Asia/Ho_Chi_Minh',
+};
+const ENGLISH_REGIONS = new Intl.DisplayNames(['en'], { type: 'region' });
+const COUNTRY_BY_NAME = new Map(Object.keys(COUNTRY_ZONES)
+  .map((code) => [ENGLISH_REGIONS.of(code)?.toUpperCase(), code] as const));
+
+/** The zone of a single-zone country, from an ISO code or its English name; null otherwise. */
+export function countryTimeZone(country: unknown): string | null {
+  if (typeof country !== 'string') return null;
+  const value = country.trim().toUpperCase();
+  const code = Object.hasOwn(COUNTRY_ZONES, value) ? value : COUNTRY_BY_NAME.get(value);
+  return code ? COUNTRY_ZONES[code]! : null;
+}
+
 /** Epoch milliseconds (numbers or numeric strings); zero and negatives are rejected. */
 export function epochMillisTime(value: unknown): ParsedTime | null {
   const millis = typeof value === 'number' ? value

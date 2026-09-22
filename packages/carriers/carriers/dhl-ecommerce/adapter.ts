@@ -21,6 +21,7 @@ import type { AdapterFactory } from '../../core/adapter';
 import { ChallengeError, SchemaError, type CarrierErrorOptions } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import { runSteps, singleFlight } from '../../core/runner';
+import { countryTimeZone } from '../../core/time';
 import { NOOP_RECORDER, type StepRecorder } from '../../core/telemetry';
 import { clean as cleanText, UpstreamHttpError } from '../../core/transport';
 import { scrapeUniversalPage, type UniversalBrowserOptions } from '../../core/transport/browser';
@@ -58,16 +59,6 @@ function address(event: JsonObject): JsonObject {
 
 // UTAPI returns local wall-clock timestamps, sometimes without countryCode.
 // Resolve only unambiguous locations; never treat an unknown local time as UTC.
-const COUNTRY_ZONES: Record<string, string> = {
-  CH: 'Europe/Zurich', DE: 'Europe/Berlin', FR: 'Europe/Paris', AT: 'Europe/Vienna',
-  BE: 'Europe/Brussels', NL: 'Europe/Amsterdam', LU: 'Europe/Luxembourg',
-  GB: 'Europe/London', IE: 'Europe/Dublin', IT: 'Europe/Rome', PL: 'Europe/Warsaw',
-  CZ: 'Europe/Prague', DK: 'Europe/Copenhagen', SE: 'Europe/Stockholm', NO: 'Europe/Oslo',
-  FI: 'Europe/Helsinki', GR: 'Europe/Athens', HU: 'Europe/Budapest', RO: 'Europe/Bucharest',
-  SK: 'Europe/Bratislava', SI: 'Europe/Ljubljana', HR: 'Europe/Zagreb',
-  JP: 'Asia/Tokyo', CN: 'Asia/Shanghai', HK: 'Asia/Hong_Kong', SG: 'Asia/Singapore',
-  IN: 'Asia/Kolkata', KR: 'Asia/Seoul', TW: 'Asia/Taipei', TH: 'Asia/Bangkok',
-};
 const HUB_ZONES: Record<string, string> = {
   'melrose park, il, us': 'America/Chicago', 'hebron, ky, us': 'America/New_York',
   'lahr': 'Europe/Berlin', 'staufenberg': 'Europe/Berlin',
@@ -85,7 +76,7 @@ function eventTime(event: JsonObject): string | null {
   const locality = clean(place.addressLocality, 160);
   const country = clean(place.countryCode).toUpperCase();
   const zone = /(?:Z|[+-]\d{2}:\d{2})$/.test(raw) ? 'UTC'
-    : COUNTRY_ZONES[country] ?? COUNTRY_ZONES[locality] ?? HUB_ZONES[locality.toLowerCase()];
+    : countryTimeZone(country) ?? countryTimeZone(locality) ?? HUB_ZONES[locality.toLowerCase()];
   if (!zone) return null;
   const parsed = DateTime.fromISO(raw, { zone, setZone: true });
   return parsed.isValid ? parsed.toUTC().toISO() : null;

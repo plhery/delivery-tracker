@@ -217,11 +217,11 @@ describe('PostNL declared capabilities and privacy', () => {
       status: 'delivered',
       current_stage: 'delivered',
       last_status_text: 'Shipment delivered',
-      last_update: '2026-09-03T10:12:00',
+      last_update: '2026-09-03T10:12:00+02:00',
       // PostNL's international tracker publishes no estimate.
       expected_delivery: null,
       sender_name: 'Example Webshop',
-      delivered_at: '2026-09-03T10:12:00',
+      delivered_at: '2026-09-03T10:12:00+02:00',
     });
     expect(delivered.events?.map((event) => [event.stage, event.location])).toEqual([
       ['delivered', 'Netherlands'],
@@ -229,6 +229,17 @@ describe('PostNL declared capabilities and privacy', () => {
       ['customs', 'Netherlands'],
       ['registered', 'CN'],
     ]);
+  });
+
+  it('reads each scan in its own country\'s zone, not as the UTC PostNL labels it', () => {
+    expect(delivered.events?.map((event) => event.time)).toEqual([
+      '2026-09-03T10:12:00+02:00', '2026-09-03T06:40:00+02:00', '2026-09-01T19:05:00+02:00', '2026-08-28T11:00:00+08:00',
+    ]);
+    const multiZone = parsePostNLTrackingResponse({ data: { items: [{ item: 'LX123456785NL',
+      events: [{ category: 'Processing', datetime_local: '2026-09-02T08:00:00Z', country_code: 'US' }],
+    }] } }, 'LX123456785NL');
+    // A country with several zones cannot be resolved; the provider's text is kept.
+    expect(multiZone.events?.[0]?.time).toBe('2026-09-02T08:00:00Z');
   });
 
   it.each(carrier.capabilities)('declares %s and a fixture proves it', (capability) => {

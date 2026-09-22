@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { calendarDay, epochMillisTime, epochSecondsTime, explicitOffsetTime, isoTime, zonedTime } from './index';
+import {
+  calendarDay, countryTimeZone, epochMillisTime, epochSecondsTime, explicitOffsetTime, isoTime, mislabeledLocalTime, zonedTime,
+} from './index';
 
 describe('time policies', () => {
   it('keeps explicit offsets and rejects naive values', () => {
@@ -19,6 +21,27 @@ describe('time policies', () => {
   it('reads ISO values with or without an offset', () => {
     expect(isoTime('2026-07-01T10:00:00', 'Europe/Zurich')?.iso).toBe('2026-07-01T10:00:00+02:00');
     expect(isoTime('2026-07-01T10:00:00-04:00', 'Europe/Zurich')?.iso).toBe('2026-07-01T10:00:00-04:00');
+  });
+
+  it('re-reads a local time a provider labeled as UTC or with its own offset', () => {
+    // PostNL: a Swiss scan at 09:15 local, sent as "09:15Z".
+    expect(mislabeledLocalTime('2026-06-10T09:15:00Z', 'Europe/Zurich')).toEqual({
+      iso: '2026-06-10T09:15:00+02:00', timestamp: Date.parse('2026-06-10T07:15:00Z'),
+    });
+    // ParcelsApp: the same local clock re-labeled "+00:00" or shifted into "+02:00".
+    expect(mislabeledLocalTime('2026-06-10T14:05:00+00:00', 'Europe/Zurich')?.iso).toBe('2026-06-10T14:05:00+02:00');
+    expect(mislabeledLocalTime('2026-06-10T13:30:00+02:00', 'Europe/Zurich')?.iso).toBe('2026-06-10T11:30:00+02:00');
+    expect(mislabeledLocalTime('2026-01-15T09:30:00', 'Asia/Kolkata')?.iso).toBe('2026-01-15T09:30:00+05:30');
+    expect(mislabeledLocalTime('not a date', 'UTC')).toBeNull();
+  });
+
+  it('maps single-zone countries by code or English name only', () => {
+    expect(countryTimeZone('CH')).toBe('Europe/Zurich');
+    expect(countryTimeZone(' switzerland ')).toBe('Europe/Zurich');
+    expect(countryTimeZone('India')).toBe('Asia/Kolkata');
+    expect(countryTimeZone('US')).toBeNull();
+    expect(countryTimeZone('Canada')).toBeNull();
+    expect(countryTimeZone(undefined)).toBeNull();
   });
 
   it('accepts epoch values only when positive and finite', () => {
