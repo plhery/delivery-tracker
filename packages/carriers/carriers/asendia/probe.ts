@@ -1,24 +1,22 @@
 import 'server-only';
 
 /**
- * Asendia public tracking protocol probe.
+ * Asendia global portal (track.asendia.com) protocol probe.
  *
- * Asendia parcels are tracked through the universal providers, so this folder
- * deliberately has no `adapter.ts`: the generated registry would otherwise
- * dispatch Asendia here instead of to the universal tier. What lives here is
- * the probe behind the Asendia canary — it reproduces the official portal's
- * public request protocol far enough to prove that the portal is reachable and
- * that its Cloudflare Turnstile gate still behaves the way we recorded, and it
- * parses a response when one is obtained.
+ * Not on the sync path: the registered adapter (`adapter.ts`) reads Asendia
+ * USA's A1 platform. This module reproduces the global portal's public request
+ * protocol far enough to prove that its Cloudflare Turnstile gate still behaves
+ * the way we recorded, and it parses a response when one is obtained.
  *
- * Protocol provenance (inspected 2026-08-30):
+ * Protocol provenance (inspected 2026-08-30, rechecked 2026-09-22):
  * https://track.asendia.com/track
- * https://track.asendia.com/_next/static/chunks/pages/track/%5B%5B...tracking_id%5D%5D-d2fd6dd3353e50f8.js
- * https://track.asendia.com/_next/static/chunks/pages/_app-65ac15f78f4fd695.js
+ * https://track.asendia.com/_next/static/chunks/pages/track/%5B%5B...tracking_id%5D%5D-a4e56a18621e52da.js
  * The official frontend loads a tenant config and a public daily checksum key,
- * then POSTs to branded-parcel-search. A fresh Cloudflare Turnstile token is a
- * required body field; callers must obtain that token through an approved
- * interactive browser flow and inject it into this module.
+ * then POSTs to branded-parcel-search. `fe-tracking-configuration` sets
+ * `TRACKING.ENABLE_CAPTCHA`, and with it a fresh Cloudflare Turnstile token is
+ * a required body field; callers must obtain that token through an approved
+ * interactive browser flow and inject it into this module. The checksum hashes
+ * the comma-joined ids, which is the plain number for the single id sent here.
  *
  * Privacy: the parcel payload carries the order reference and the recipient's
  * name, address and e-mail. `parseAsendiaTrackingResponse()` rebuilds every

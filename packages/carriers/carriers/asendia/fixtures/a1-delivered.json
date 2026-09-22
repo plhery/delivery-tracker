@@ -1,0 +1,209 @@
+{
+  "trackingBrandedSummary": {
+    "destinationCountry": "Canada",
+    "destinationCountryIso2": "CA",
+    "lastMileMessage": "",
+    "finalMileTrackingLink": "https://intelcom.ca/en/track-your-package/?tracking-id=BAINT000000000000001",
+    "trackingNumberVendor": "BAINT000000000000001",
+    "trackingNumberCustomer": "SYNTHETICORDER000001",
+    "trackingNumberCustomerCarrierOriginal": "AS010501721US",
+    "service": "e-PAQ Select Direct Access Canada DDP",
+    "weight": "16.91 lb",
+    "trackingProgress": {
+      "total": 5,
+      "completed": 5
+    },
+    "consolidatedPackages": null
+  },
+  "trackingBrandedDetail": [
+    {
+      "eventCode": "B13",
+      "eventDescription": "Delivered",
+      "eventLocationDetails": {
+        "addressLine1": "1 Private Street",
+        "city": "Calgary",
+        "province": "AB",
+        "postalCode": "T0T 0T0",
+        "countryIso2": "CA",
+        "countryName": "CA"
+      },
+      "eventOn": "2026-04-05T00:11:21+00:00",
+      "eventSource": "BROADREACH API"
+    },
+    {
+      "eventCode": "B12",
+      "eventDescription": "Out for delivery",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": "Calgary",
+        "province": "AB",
+        "postalCode": null,
+        "countryIso2": "CA",
+        "countryName": "CA"
+      },
+      "eventOn": "2026-04-04T18:54:18+00:00",
+      "eventSource": "BROADREACH API"
+    },
+    {
+      "eventCode": "B11",
+      "eventDescription": "Received in destination province",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": "Calgary",
+        "province": "AB",
+        "postalCode": null,
+        "countryIso2": "CA",
+        "countryName": "CA"
+      },
+      "eventOn": "2026-04-04T15:03:50+00:00",
+      "eventSource": "BROADREACH API"
+    },
+    {
+      "eventCode": "B23",
+      "eventDescription": "Item received by carrier",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": null,
+        "countryName": null
+      },
+      "eventOn": "2026-04-04T01:04:24+00:00",
+      "eventSource": "BROADREACH API"
+    },
+    {
+      "eventCode": "B11",
+      "eventDescription": "Received in destination province",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": null,
+        "countryName": null
+      },
+      "eventOn": "2026-04-04T01:04:24+00:00",
+      "eventSource": "BROADREACH API"
+    },
+    {
+      "eventCode": "B2.2",
+      "eventDescription": "Scanned to receptacle AB",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": null,
+        "countryName": null
+      },
+      "eventOn": "2026-04-03T21:27:53+00:00",
+      "eventSource": "BROADREACH API"
+    },
+    {
+      "eventCode": "B8",
+      "eventDescription": "Customs released",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": null,
+        "countryName": null
+      },
+      "eventOn": "2026-04-02T15:05:59+00:00",
+      "eventSource": "BROADREACH API"
+    },
+    {
+      "eventCode": "B9",
+      "eventDescription": "Received cross-dock",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": null,
+        "countryName": null
+      },
+      "eventOn": "2026-04-02T13:02:00+00:00",
+      "eventSource": "BROADREACH API"
+    },
+    {
+      "eventCode": "2.2",
+      "eventDescription": "Dispatched by Asendia",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": "Salt Lake City",
+        "province": "UT",
+        "postalCode": null,
+        "countryIso2": "US",
+        "countryName": "US"
+      },
+      "eventOn": "2026-04-01T18:23:26.746668+00:00",
+      "eventSource": "A1 Manifested Data"
+    },
+    {
+      "eventCode": "B40",
+      "eventDescription": "Scanned to Pallet",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": null,
+        "countryName": null
+      },
+      "eventOn": "2026-04-01T18:23:26+00:00",
+      "eventSource": "BROADREACH API"
+    },
+    {
+      "eventCode": "2.1",
+      "eventDescription": "Sorted by Asendia",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": "Salt Lake City",
+        "province": "UT",
+        "postalCode": null,
+        "countryIso2": "US",
+        "countryName": "US"
+      },
+      "eventOn": "2026-03-31T19:36:02.723889+00:00",
+      "eventSource": "A1 Sorted Data"
+    },
+    {
+      "eventCode": "2",
+      "eventDescription": "Processed by Asendia",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": "Salt Lake City",
+        "province": "UT",
+        "postalCode": null,
+        "countryIso2": "US",
+        "countryName": "US"
+      },
+      "eventOn": "2026-03-31T19:30:43.147252+00:00",
+      "eventSource": "A1 Processed Data"
+    },
+    {
+      "eventCode": "1",
+      "eventDescription": "Shipment Information Received",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": null,
+        "countryName": null
+      },
+      "eventOn": "2026-03-30T14:37:49.383+00:00",
+      "eventSource": "A1 Imported Data"
+    }
+  ],
+  "trackingServiceMessage": "",
+  "transitTimesMessage": "",
+  "footerText": null,
+  "responseStatus": {
+    "responseStatusCode": 200,
+    "responseStatusMessage": ""
+  }
+}

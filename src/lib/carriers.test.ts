@@ -121,6 +121,11 @@ describe('carrier detection', () => {
     // MERCHANT EXAMPLE labeled for Asendia, but an La Poste S10 shape routing with its issuer.
     // Source: https://marketplace.fnacdarty.com/s/article/Dois-je-obligatoirement-renseigner-un-num%C3%A9ro-de-suivi-tracking-pour-ma-commande?language=fr_BE
     expect(detectCarrier('LF079877211FR')).toBe('la-poste');
+    // REPORTED REAL Asendia USA numbers; AS010007869US fails the S10 check digit.
+    // Source: https://www.ship24.com/couriers/asendia-tracking
+    expect(detectCarrier('AS010501721US')).toBe('asendia');
+    expect(detectCarrier('AS010007869US')).toBe('asendia');
+    expect(detectCarrier('AHOY1X39DP45')).toBe('asendia');
   });
 
   it('australia-post — Australia Post', () => {

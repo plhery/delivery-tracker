@@ -1066,9 +1066,9 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "asendia"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://a1.asendiausa.com/tracking/",
     "trackingUrlTemplate": "https://track.asendia.com/track/{trackingNumber}",
     "linkRules": [
       {
@@ -1076,11 +1076,29 @@ export const CARRIER_CAPABILITIES = {
           "track.asendia.com"
         ],
         "path": "^/track/([^/?#]+)/?$"
+      },
+      {
+        "domains": [
+          "a1.asendiausa.com",
+          "a1.asendia.com"
+        ],
+        "pathPattern": "^/tracking/?$",
+        "params": [
+          "trackingnumber"
+        ]
       }
     ],
     "detectionRules": [
       {
         "pattern": "^ASE[A-Z0-9]{8,37}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^AS\\d{9}US$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^AHOY[A-Z0-9]{8}$",
         "confidence": "high"
       }
     ]
@@ -1255,7 +1273,7 @@ export const CARRIER_CAPABILITIES = {
     "linkRules": [],
     "detectionRules": [
       {
-        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}(?!CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$)[A-Z]{2}$",
+        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!AS\\d{9}US$)(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}(?!CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$)[A-Z]{2}$",
         "confidence": "high",
         "checksum": "s10"
       }

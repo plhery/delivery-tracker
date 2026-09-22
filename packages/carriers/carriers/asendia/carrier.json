@@ -22,35 +22,36 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "asendia",
+    "steps": [
+      "direct"
+    ]
   },
   "capabilities": [
     "history",
     "location",
-    "eta",
-    "provider_code"
+    "provider_code",
+    "weight"
   ],
   "portal": {
     "url": "https://track.asendia.com/track/{trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://a1.asendiausa.com/tracking/",
     "shows": [
       "status",
       "history",
-      "eta",
-      "recipient_name",
-      "recipient_address"
+      "location",
+      "weight"
     ],
     "scraped": [
       "status",
       "history",
+      "location",
+      "weight"
+    ],
+    "discarded": [],
+    "unavailable": [
       "eta"
-    ],
-    "discarded": [
-      "recipient_name",
-      "recipient_address"
-    ],
-    "unavailable": []
+    ]
   },
   "links": [
     {
@@ -58,12 +59,32 @@
         "track.asendia.com"
       ],
       "path": "^/track/([^/?#]+)/?$"
+    },
+    {
+      "domains": [
+        "a1.asendiausa.com",
+        "a1.asendia.com"
+      ],
+      "pathPattern": "^/tracking/?$",
+      "params": [
+        "trackingnumber"
+      ]
     }
   ],
   "detection": [
     {
       "id": "asendia-1",
       "pattern": "^ASE[A-Z0-9]{8,37}$",
+      "confidence": "high"
+    },
+    {
+      "id": "asendia-2",
+      "pattern": "^AS\\d{9}US$",
+      "confidence": "high"
+    },
+    {
+      "id": "asendia-3",
+      "pattern": "^AHOY[A-Z0-9]{8}$",
       "confidence": "high"
     }
   ]

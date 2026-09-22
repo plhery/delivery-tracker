@@ -31,8 +31,6 @@ function json(relativePath: string): unknown {
   return JSON.parse(readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), 'utf8'));
 }
 
-const carrier = json('./carrier.json') as { capabilities: readonly string[]; tracking: { adapter: string } };
-
 function environmentScript(): string {
   return `window.__ENV = ${JSON.stringify({
     NEXT_PUBLIC_NODE_ENV: 'production',
@@ -92,10 +90,6 @@ describe('Asendia tracking input and public protocol', () => {
     expect(() => parseAsendiaPublicHitKey('window.__ENV = {};'))
       .toThrow('valid request checksum key');
   });
-
-  it('stays out of the adapter registry because Asendia is tracked universally', () => {
-    expect(carrier.tracking.adapter).toBe('universal');
-  });
 });
 
 describe('Asendia status vocabulary', () => {
@@ -148,7 +142,9 @@ describe('Asendia response normalization', () => {
     ]) expect(serialized).not.toContain(privateValue);
   });
 
-  it('produces every capability carrier.json declares', () => {
+  // carrier.json declares what the registered A1 adapter produces; the portal
+  // payload behind this probe carries its own set, including an estimate.
+  it('produces the fields the global portal exposes', () => {
     const delivered = parseAsendiaTrackingResponse(deliveredFixture(), TRACKING_NUMBER);
     const inFlight = deliveredFixture();
     inFlight.data[0]!.status = 'In transit';
@@ -168,8 +164,7 @@ describe('Asendia response normalization', () => {
       if (result.dimensions_text) produced.add('dimensions');
       if (result.delivered_at) produced.add('delivered_at');
     }
-    expect(carrier.capabilities.length).toBeGreaterThan(0);
-    for (const capability of carrier.capabilities) expect([...produced]).toContain(capability);
+    expect([...produced].sort()).toEqual(['eta', 'history', 'location', 'provider_code']);
   });
 
   it('rejects a wrong number, a mismatched response, and malformed data', () => {

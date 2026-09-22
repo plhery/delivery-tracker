@@ -32,6 +32,7 @@ export function carrierIdFromName(name: string): string | undefined {
   const aliases: Record<string, string> = {
     ups: 'ups', swisspost: 'swiss-post', laposte: 'la-poste', colissimo: 'la-poste',
     dhlecommerce: 'dhl-ecommerce', cainiao: 'aliexpress', postnl: 'spring-gds',
+    asendiausa: 'asendia',
   };
   if (Object.hasOwn(aliases, normalized)) return aliases[normalized];
   const matches = Object.entries(CARRIER_DEFINITIONS)

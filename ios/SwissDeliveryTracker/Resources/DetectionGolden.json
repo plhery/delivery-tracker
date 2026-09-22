@@ -1865,12 +1865,42 @@
     ]
   },
   {
+    "input": "AHOY1X39DP45",
+    "carrier": "asendia",
+    "confidence": "high",
+    "candidates": [
+      "asendia"
+    ]
+  },
+  {
+    "input": "AS010007869US",
+    "carrier": "asendia",
+    "confidence": "high",
+    "candidates": [
+      "asendia"
+    ]
+  },
+  {
+    "input": "AS010501721US",
+    "carrier": "asendia",
+    "confidence": "high",
+    "candidates": [
+      "asendia"
+    ]
+  },
+  {
     "input": "ASE12345678",
     "carrier": "asendia",
     "confidence": "high",
     "candidates": [
       "asendia"
     ]
+  },
+  {
+    "input": "ASHK12123456789011",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
   },
   {
     "input": "AT0000000001",
@@ -2211,6 +2241,18 @@
     "candidates": [
       "thailand-post"
     ]
+  },
+  {
+    "input": "EEUS027373790JP0",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
+  },
+  {
+    "input": "EEUS027988469JP0",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
   },
   {
     "input": "EM385783825KR",
@@ -3144,6 +3186,14 @@
     "confidence": "high",
     "candidates": [
       "uniuni"
+    ]
+  },
+  {
+    "input": "UX000352872CH",
+    "carrier": "swiss-post",
+    "confidence": "high",
+    "candidates": [
+      "swiss-post"
     ]
   },
   {

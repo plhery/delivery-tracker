@@ -7,7 +7,7 @@
       "stage": "returned",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "returned to sender",
@@ -15,7 +15,7 @@
       "stage": "returned",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "return initiated",
@@ -23,7 +23,7 @@
       "stage": "returned",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "shipment returned",
@@ -31,7 +31,7 @@
       "stage": "returned",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "delivery failed",
@@ -39,7 +39,7 @@
       "stage": "failed_attempt",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "failed attempt",
@@ -47,7 +47,7 @@
       "stage": "failed_attempt",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "delivery exception",
@@ -55,7 +55,7 @@
       "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded. Reclassified to exception 2026-09-12."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "unable to deliver",
@@ -63,7 +63,7 @@
       "stage": "failed_attempt",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "not delivered",
@@ -71,7 +71,7 @@
       "stage": "failed_attempt",
       "confirmedBy": "fixture",
       "firstSeen": "2026-09-12",
-      "note": "Exercised by the offline not-delivered scenario; tested before the delivered rule so it can never match the 'delivered' substring."
+      "note": "Global portal (probe). Exercised by the offline not-delivered scenario; tested before the delivered rule so it can never match the 'delivered' substring."
     },
     {
       "wording": "undelivered",
@@ -79,7 +79,7 @@
       "stage": "failed_attempt",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "non livre",
@@ -87,7 +87,7 @@
       "stage": "failed_attempt",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "French wording some partner posts still emit unharmonized; inherited from the pre-package module."
+      "note": "Global portal (probe). French wording some partner posts still emit unharmonized; inherited from the pre-package module."
     },
     {
       "wording": "delivery delayed",
@@ -95,7 +95,7 @@
       "stage": "failed_attempt",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "damaged",
@@ -103,7 +103,7 @@
       "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded. Reclassified to exception 2026-09-12."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "refused",
@@ -111,7 +111,7 @@
       "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded. Reclassified to exception 2026-09-12."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "lost",
@@ -119,7 +119,7 @@
       "stage": "exception",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded. Reclassified to exception 2026-09-12."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded. Reclassified to exception 2026-09-12."
     },
     {
       "wording": "delivered",
@@ -127,7 +127,7 @@
       "stage": "delivered",
       "confirmedBy": "fixture",
       "firstSeen": "2026-09-12",
-      "note": "Matched on the fixture scan \"Delivered\" (harmonizedCode DELIVERED)."
+      "note": "Global portal (probe). Matched on the fixture scan \"Delivered\" (harmonizedCode DELIVERED)."
     },
     {
       "wording": "collected by recipient",
@@ -135,7 +135,7 @@
       "stage": "delivered",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "handed to recipient",
@@ -143,7 +143,7 @@
       "stage": "delivered",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "ready for pickup",
@@ -151,7 +151,7 @@
       "stage": "ready_for_pickup",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "ready for collection",
@@ -159,7 +159,7 @@
       "stage": "ready_for_pickup",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "available for pickup",
@@ -167,7 +167,7 @@
       "stage": "ready_for_pickup",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "out for delivery",
@@ -175,7 +175,7 @@
       "stage": "out_for_delivery",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "in delivery",
@@ -183,7 +183,7 @@
       "stage": "out_for_delivery",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "with delivery courier",
@@ -191,7 +191,7 @@
       "stage": "out_for_delivery",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "information received",
@@ -199,7 +199,7 @@
       "stage": "registered",
       "confirmedBy": "fixture",
       "firstSeen": "2026-09-12",
-      "note": "Matched on the fixture scan \"Information received\" (harmonizedCode INFO_RECEIVED)."
+      "note": "Global portal (probe). Matched on the fixture scan \"Information received\" (harmonizedCode INFO_RECEIVED)."
     },
     {
       "wording": "shipment created",
@@ -207,7 +207,7 @@
       "stage": "registered",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "label created",
@@ -215,7 +215,7 @@
       "stage": "registered",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "pre advised",
@@ -223,7 +223,7 @@
       "stage": "registered",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "pre advice",
@@ -231,7 +231,7 @@
       "stage": "registered",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "handed to asendia",
@@ -239,7 +239,7 @@
       "stage": "in_transit",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "departed from asendia",
@@ -247,7 +247,7 @@
       "stage": "in_transit",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "arrived at destination",
@@ -255,7 +255,7 @@
       "stage": "in_transit",
       "confirmedBy": "fixture",
       "firstSeen": "2026-09-12",
-      "note": "Matched on the fixture scan \"Arrived at destination\" (harmonizedCode ARRIVED_DESTINATION)."
+      "note": "Global portal (probe). Matched on the fixture scan \"Arrived at destination\" (harmonizedCode ARRIVED_DESTINATION)."
     },
     {
       "wording": "in transit",
@@ -263,7 +263,7 @@
       "stage": "in_transit",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "processed at",
@@ -271,7 +271,7 @@
       "stage": "in_transit",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Harmonized wording inherited from the pre-package module; source not recorded."
+      "note": "Global portal (probe). Harmonized wording inherited from the pre-package module; source not recorded."
     },
     {
       "wording": "customs",
@@ -279,7 +279,599 @@
       "stage": "customs",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Wording containing 'customs' takes the customs stage rather than plain transit; inherited from the pre-package module."
+      "note": "Global portal (probe). Wording containing 'customs' takes the customs stage rather than plain transit; inherited from the pre-package module."
+    },
+    {
+      "code": "1",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 Imported Data: Shipment Information Received."
+    },
+    {
+      "code": "1.1",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 Labelled Data: Label created."
+    },
+    {
+      "code": "2",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 Processed Data: Processed by Asendia (USA); the first physical scan at an Asendia facility."
+    },
+    {
+      "code": "2.1",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 Sorted Data: Sorted by Asendia (USA)."
+    },
+    {
+      "code": "2.2",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 Manifested Data: Dispatched by Asendia (USA)."
+    },
+    {
+      "code": "ELECNOT",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "CREALAB",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "PRINTLAB",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "POSTLIST",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "PICKUP",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "ARRSUB",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "CHECKIN",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code, seen in a live A1 reply."
+    },
+    {
+      "code": "PROSUB",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "FINALAB",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "CREADES",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "DEPSUB",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "TRANSP",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "ARRHUB",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code, seen in a live A1 reply."
+    },
+    {
+      "code": "SORTHUB",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "DEPHUB",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code, seen in a live A1 reply."
+    },
+    {
+      "code": "TRANSPDEST",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "ARRDEST",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code, seen in a live A1 reply."
+    },
+    {
+      "code": "LEAVHUB",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code, seen in a live A1 reply."
+    },
+    {
+      "code": "TRANSPLOC",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "INDELIVCENTER",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code, seen in a live A1 reply."
+    },
+    {
+      "code": "DELIVPLAN",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "DELIVDELAY",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "DELFAILMOV",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "DELFAILFOW",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "DELFAILPICK",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "MISSROUTED",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "CLEARIN",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "EXPCLEAR",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "EXPCUSTIN",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "IMPCLEAR",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "IMPCUSTIN",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code, seen in a live A1 reply."
+    },
+    {
+      "code": "CLEAROUT",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "EXPCUSTOUT",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "IMPCUSTOUT",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code, seen in a live A1 reply."
+    },
+    {
+      "code": "CLEARRET",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "EXPCLEARINC",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "IMPCLEARINC",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "EXPCUSTRET",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "IMPCUSTRET",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "EXPCANCEL",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "IMPCANCEL",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "INCIDPRO",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "PAYCHARG",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "DAMAGINSP",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "ITEMLOST",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "DESTROY",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "OUTDELIVCENTER",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code, seen in a live A1 reply."
+    },
+    {
+      "code": "PICKUPREAD",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "ATTEMPT",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "DELIVFAILURE",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "DELFAILFORB",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "DELFAILINCOR",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "DELFAILUNKN",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code, seen in a live A1 reply."
+    },
+    {
+      "code": "DELFAILABS",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "DELIVERY",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code, seen in a live A1 reply."
+    },
+    {
+      "code": "RETURNED",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "RETURNDEAD",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "RETURNUNCL",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "RETURNREFU",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "RETURNFORB",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "RETURNINC",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "RETURNUNKN",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "RETURNABS",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "RETURNMOV",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "RETURNSEND",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "code": "DELIVSEND",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "prior-art",
+      "firstSeen": "2026-09-22",
+      "note": "A1 FullTrack API harmonized code from the published code list (https://gist.github.com/dalehalliwell/84b7b459eb151ccf2d2a24a28eed5fdf); not yet seen live."
+    },
+    {
+      "wording": "delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 partner scan wording (Broadreach B13, USPS I0), matched exactly."
+    },
+    {
+      "wording": "out for delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 partner scan wording (Broadreach B12, USPS DG), matched exactly."
+    },
+    {
+      "wording": "customs released",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-22",
+      "note": "A1 partner scan wording (Broadreach B8), matched exactly; the shared rules would read it as customs."
     }
   ]
 }

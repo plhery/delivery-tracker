@@ -1,0 +1,223 @@
+{
+  "trackingBrandedSummary": {
+    "destinationCountry": "Canada",
+    "destinationCountryIso2": "CA",
+    "lastMileMessage": "",
+    "finalMileTrackingLink": "https://www.canadapost.ca/trackweb/en#/details/LV000000014US",
+    "trackingNumberVendor": "LV000000014US",
+    "trackingNumberCustomer": "AHOY1X39DP45",
+    "trackingNumberCustomerCarrierOriginal": "9434600000000000000001",
+    "service": "e-PAQ Plus",
+    "weight": "1.00 lb",
+    "trackingProgress": {
+      "total": 5,
+      "completed": 5
+    },
+    "consolidatedPackages": null
+  },
+  "trackingBrandedDetail": [
+    {
+      "eventCode": "I0",
+      "eventDescription": "Delivered",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": "CA",
+        "countryName": "CA"
+      },
+      "eventOn": "2026-04-13T13:07:00+00:00",
+      "eventSource": "USPS TrackV2 API"
+    },
+    {
+      "eventCode": "DG",
+      "eventDescription": "Out for Delivery",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": "CA",
+        "countryName": "CA"
+      },
+      "eventOn": "2026-04-13T09:30:00+00:00",
+      "eventSource": "USPS TrackV2 API"
+    },
+    {
+      "eventCode": "G0",
+      "eventDescription": "Arrival at Post Office",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": "CA",
+        "countryName": "CA"
+      },
+      "eventOn": "2026-04-13T05:51:00+00:00",
+      "eventSource": "USPS TrackV2 API"
+    },
+    {
+      "eventCode": "MF",
+      "eventDescription": "Processed through Facility",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": "MONTREAL ",
+        "province": "QC",
+        "postalCode": null,
+        "countryIso2": "CA",
+        "countryName": "CA"
+      },
+      "eventOn": "2026-04-07T18:20:00+00:00",
+      "eventSource": "USPS TrackV2 API"
+    },
+    {
+      "eventCode": "E0",
+      "eventDescription": "Customs Clearance",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": "CA",
+        "countryName": "CA"
+      },
+      "eventOn": "2026-04-07T17:59:00+00:00",
+      "eventSource": "USPS TrackV2 API"
+    },
+    {
+      "eventCode": "10",
+      "eventDescription": "Arrived at USPS Regional Facility",
+      "eventLocationDetails": {
+        "addressLine1": "Private Facility Road 1",
+        "city": "JAMAICA",
+        "province": "NY",
+        "postalCode": "000-0000",
+        "countryIso2": "US",
+        "countryName": "US"
+      },
+      "eventOn": "2026-04-04T05:42:00+00:00",
+      "eventSource": "USPS TrackV2 API"
+    },
+    {
+      "eventCode": "B1",
+      "eventDescription": "Customs Clearance",
+      "eventLocationDetails": {
+        "addressLine1": "Private Facility Road 1",
+        "city": "NEW YORK",
+        "province": "NY",
+        "postalCode": "000-0000",
+        "countryIso2": "US",
+        "countryName": "US"
+      },
+      "eventOn": "2026-04-03T20:48:00+00:00",
+      "eventSource": "USPS TrackV2 API"
+    },
+    {
+      "eventCode": "2.2",
+      "eventDescription": "Dispatched by Asendia USA",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": "FOLCROFT",
+        "province": "PA",
+        "postalCode": null,
+        "countryIso2": "US",
+        "countryName": "US"
+      },
+      "eventOn": "2026-04-03T17:36:57.844234+00:00",
+      "eventSource": "A1 Manifested Data"
+    },
+    {
+      "eventCode": "2.1",
+      "eventDescription": "Sorted by Asendia USA",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": "FOLCROFT",
+        "province": "PA",
+        "postalCode": null,
+        "countryIso2": "US",
+        "countryName": "US"
+      },
+      "eventOn": "2026-04-03T12:43:56.607368+00:00",
+      "eventSource": "A1 Sorted Data"
+    },
+    {
+      "eventCode": "2",
+      "eventDescription": "Processed by Asendia USA",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": "FOLCROFT",
+        "province": "PA",
+        "postalCode": null,
+        "countryIso2": "US",
+        "countryName": "US"
+      },
+      "eventOn": "2026-04-03T03:58:28.239782+00:00",
+      "eventSource": "A1 Processed Data"
+    },
+    {
+      "eventCode": "OA",
+      "eventDescription": "Accepted at USPS Origin Facility",
+      "eventLocationDetails": {
+        "addressLine1": "Private Facility Road 1",
+        "city": null,
+        "province": null,
+        "postalCode": "000-0000",
+        "countryIso2": null,
+        "countryName": null
+      },
+      "eventOn": "2026-03-31T04:07:00+00:00",
+      "eventSource": "USPS TrackV2 API"
+    },
+    {
+      "eventCode": "1",
+      "eventDescription": "Shipment Information Received",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": null,
+        "countryName": null
+      },
+      "eventOn": "2026-03-28T00:35:48.943+00:00",
+      "eventSource": "A1 Imported Data"
+    },
+    {
+      "eventCode": "GX",
+      "eventDescription": "Shipping Label Created, USPS Awaiting Item",
+      "eventLocationDetails": {
+        "addressLine1": "Private Facility Road 1",
+        "city": null,
+        "province": null,
+        "postalCode": "000-0000",
+        "countryIso2": null,
+        "countryName": null
+      },
+      "eventOn": "2026-03-28T00:35:00+00:00",
+      "eventSource": "USPS TrackV2 API"
+    },
+    {
+      "eventCode": "MA",
+      "eventDescription": "Pre-Shipment, USPS Awaiting Item",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": null,
+        "countryName": null
+      },
+      "eventOn": "2026-03-27T00:00:00+00:00",
+      "eventSource": "USPS TrackV2 API"
+    }
+  ],
+  "trackingServiceMessage": "",
+  "transitTimesMessage": "",
+  "footerText": null,
+  "responseStatus": {
+    "responseStatusCode": 200,
+    "responseStatusMessage": ""
+  }
+}

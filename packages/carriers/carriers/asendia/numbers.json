@@ -2,6 +2,45 @@
   "carrier": "asendia",
   "records": [
     {
+      "number": "AHOY1X39DP45",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ship24.com/couriers/asendia-tracking"
+      },
+      "expect": {
+        "carrier": "asendia",
+        "confidence": "high"
+      },
+      "note": "Published Pirate Ship export number carried by Asendia USA; A1 returned its delivered history on 2026-09-22."
+    },
+    {
+      "number": "AS010007869US",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ship24.com/couriers/asendia-tracking"
+      },
+      "expect": {
+        "carrier": "asendia",
+        "confidence": "high"
+      },
+      "note": "Published Asendia USA example with an invalid S10 check digit; A1 had no data for it on 2026-09-22."
+    },
+    {
+      "number": "AS010501721US",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ship24.com/couriers/asendia-tracking"
+      },
+      "expect": {
+        "carrier": "asendia",
+        "confidence": "high"
+      },
+      "note": "Published Asendia USA example; Asendia USA's A1 tracking returned its delivered history on 2026-09-22."
+    },
+    {
       "number": "ASE12345678",
       "role": "shipment",
       "evidence": "synthetic",
@@ -12,6 +51,45 @@
         "confidence": "high"
       },
       "note": "Made-up number that follows the published format."
+    },
+    {
+      "number": "ASHK12123456789011",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://a1api.asendiausa.com/swagger/index.html?urls.primaryName=Parcel+v1.0"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Example Asendia unique identifier (ashid) in Asendia USA's Parcel API reference, not a real shipment."
+    },
+    {
+      "number": "EEUS027373790JP0",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ship24.com/couriers/asendia-tracking"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Published eBay International Shipping number attributed to Asendia; A1 had no data for it on 2026-09-22."
+    },
+    {
+      "number": "EEUS027988469JP0",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ship24.com/couriers/asendia-tracking"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Published eBay International Shipping number carried by Asendia USA; A1 returned its delivered history on 2026-09-22."
     },
     {
       "number": "LF079877211FR",
@@ -25,6 +103,19 @@
         "confidence": "high"
       },
       "note": "Published integration example, not a real shipment. The source attributes it to Asendia; detection selects La Poste / Colissimo."
+    },
+    {
+      "number": "UX000352872CH",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://a1api.asendiausa.com/swagger/index.html?urls.primaryName=Parcel+v1.0"
+      },
+      "expect": {
+        "carrier": "swiss-post",
+        "confidence": "high"
+      },
+      "note": "Example value of the trackingNumber field in Asendia USA's Parcel API reference, not a real shipment; detection selects Swiss Post for this S10 shape."
     },
     {
       "number": "LN242142606US",

@@ -23,6 +23,8 @@ describe('delivery partner evidence', () => {
     ['Unknown partner label', 'https://www.posti.fi/en/tracking#/lahetys/TEST1234?lang=en', 'posti'],
     ['Swiss Post', 'https://www.post.ch/', 'swiss-post'],
     ['USPS', 'https://tools.usps.com/go/TrackConfirmAction', 'usps'],
+    ['Asendia USA', '', 'asendia'],
+    ['Asendia', 'https://a1.asendiausa.com/tracking/?trackingnumber=TEST1234', 'asendia'],
     ['GLS', '', undefined],
     ['constructor', '', undefined],
     ['Unknown carrier', '', undefined],

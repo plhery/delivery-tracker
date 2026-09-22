@@ -59,7 +59,7 @@ npm run test:contract                                               # generated 
 ## Carriers
 
 <!-- GENERATED:carriers -->
-105 carriers: 42 with a dedicated adapter, 59 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
+105 carriers: 43 with a dedicated adapter, 58 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
 
 Roughly ordered by familiarity and prominence, with major carriers first (an editorial order, not a market-share ranking).
 
@@ -139,7 +139,7 @@ Roughly ordered by familiarity and prominence, with major carriers first (an edi
 | `colis-prive` | Colis Privé | dedicated | direct | 1 | 3 | 34 | [README](carriers/colis-prive/README.md) |
 | `relais-colis` | Relais Colis | dedicated | direct | 1 | 3 | 42 | [README](carriers/relais-colis/README.md) |
 | `paack` | Paack | dedicated | direct | 2 | 5 | 44 | [README](carriers/paack/README.md) |
-| `asendia` | Asendia | universal providers |  | 4 | 3 | 35 | [README](carriers/asendia/README.md) |
+| `asendia` | Asendia | dedicated | direct | 4 | 10 | 109 | [README](carriers/asendia/README.md) |
 | `landmark-global` | Landmark Global | universal providers |  | 0 | 3 | 0 |  |
 | `nz-post` | NZ Post | universal providers |  | 0 | 2 | 0 |  |
 | `pos-malaysia` | Pos Malaysia | dedicated | direct | 3 | 4 | 7 | [README](carriers/pos-malaysia/README.md) |

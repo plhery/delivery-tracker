@@ -1,0 +1,251 @@
+{
+  "trackingBrandedSummary": {
+    "destinationCountry": "Japan",
+    "destinationCountryIso2": "JP",
+    "lastMileMessage": "",
+    "finalMileTrackingLink": null,
+    "trackingNumberVendor": "LS000000014CH",
+    "trackingNumberCustomer": "EEUS027988469JP0",
+    "trackingNumberCustomerCarrierOriginal": "EEUS027988469JP0",
+    "service": "e-PAQ Plus",
+    "weight": "0.50 Lb",
+    "trackingProgress": {
+      "total": 5,
+      "completed": 5
+    },
+    "consolidatedPackages": null
+  },
+  "trackingBrandedDetail": [
+    {
+      "eventCode": "DELIVERY",
+      "eventDescription": "Delivered",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": "JP",
+        "countryName": "JP"
+      },
+      "eventOn": "2026-04-13T10:16:00+00:00",
+      "eventSource": "FullTrack API"
+    },
+    {
+      "eventCode": "OUTDELIVCENTER",
+      "eventDescription": "Out for delivery",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": "JP",
+        "countryName": "JP"
+      },
+      "eventOn": "2026-04-13T09:18:00+00:00",
+      "eventSource": "FullTrack API"
+    },
+    {
+      "eventCode": "DELFAILUNKN",
+      "eventDescription": "Delivery attempt (addressee unknown)",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": "JP",
+        "countryName": "JP"
+      },
+      "eventOn": "2026-04-13T02:56:00+00:00",
+      "eventSource": "FullTrack API"
+    },
+    {
+      "eventCode": "INDELIVCENTER",
+      "eventDescription": "Arrived at delivery centre",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": "JP",
+        "countryName": "JP"
+      },
+      "eventOn": "2026-04-12T17:58:00+00:00",
+      "eventSource": "FullTrack API"
+    },
+    {
+      "eventCode": "LEAVHUB",
+      "eventDescription": "Handled by local carrier",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": "JP",
+        "countryName": "JP"
+      },
+      "eventOn": "2026-04-12T03:00:00+00:00",
+      "eventSource": "FullTrack API"
+    },
+    {
+      "eventCode": "IMPCUSTOUT",
+      "eventDescription": "Out customs authorities",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": "JP",
+        "countryName": "JP"
+      },
+      "eventOn": "2026-04-12T02:59:00+00:00",
+      "eventSource": "FullTrack API"
+    },
+    {
+      "eventCode": "IMPCUSTIN",
+      "eventDescription": "In customs authorities",
+      "eventLocationDetails": {
+        "addressLine1": "Private Facility Road 1",
+        "city": "KAWASAKI ",
+        "province": "KANAGAWA",
+        "postalCode": "000-0000",
+        "countryIso2": "JP",
+        "countryName": "JP"
+      },
+      "eventOn": "2026-04-11T23:59:00+00:00",
+      "eventSource": "FullTrack API"
+    },
+    {
+      "eventCode": "IMPCUSTIN",
+      "eventDescription": "In customs authorities",
+      "eventLocationDetails": {
+        "addressLine1": "Private Facility Road 1",
+        "city": "KAWASAKI ",
+        "province": "KANAGAWA",
+        "postalCode": "000-0000",
+        "countryIso2": "JP",
+        "countryName": "JP"
+      },
+      "eventOn": "2026-04-11T23:59:00+00:00",
+      "eventSource": "FullTrack API"
+    },
+    {
+      "eventCode": "ARRDEST",
+      "eventDescription": "Arrived at destination",
+      "eventLocationDetails": {
+        "addressLine1": "Private Facility Road 1",
+        "city": "KAWASAKI",
+        "province": "KANAGAWA",
+        "postalCode": "000-0000",
+        "countryIso2": "JP",
+        "countryName": "JP"
+      },
+      "eventOn": "2026-04-11T06:32:00+00:00",
+      "eventSource": "FullTrack API"
+    },
+    {
+      "eventCode": "DEPHUB",
+      "eventDescription": "Departure transit facility",
+      "eventLocationDetails": {
+        "addressLine1": "Private Facility Road 1",
+        "city": null,
+        "province": null,
+        "postalCode": "000-0000",
+        "countryIso2": "CH",
+        "countryName": "CH"
+      },
+      "eventOn": "2026-04-05T04:49:00+00:00",
+      "eventSource": "FullTrack API"
+    },
+    {
+      "eventCode": "ARRHUB",
+      "eventDescription": "Arrived at transit facility",
+      "eventLocationDetails": {
+        "addressLine1": "Private Facility Road 1",
+        "city": null,
+        "province": null,
+        "postalCode": "000-0000",
+        "countryIso2": "CH",
+        "countryName": "CH"
+      },
+      "eventOn": "2026-04-05T04:35:00+00:00",
+      "eventSource": "FullTrack API"
+    },
+    {
+      "eventCode": "2.2",
+      "eventDescription": "Dispatched by Asendia",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": "Des Plaines",
+        "province": "IL",
+        "postalCode": null,
+        "countryIso2": "US",
+        "countryName": "US"
+      },
+      "eventOn": "2026-04-01T22:53:45.440747+00:00",
+      "eventSource": "A1 Manifested Data"
+    },
+    {
+      "eventCode": "2.1",
+      "eventDescription": "Sorted by Asendia",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": "Des Plaines",
+        "province": "IL",
+        "postalCode": null,
+        "countryIso2": "US",
+        "countryName": "US"
+      },
+      "eventOn": "2026-04-01T09:31:55.857+00:00",
+      "eventSource": "A1 Sorted Data"
+    },
+    {
+      "eventCode": "2",
+      "eventDescription": "Processed by Asendia",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": "Des Plaines",
+        "province": "IL",
+        "postalCode": null,
+        "countryIso2": "US",
+        "countryName": "US"
+      },
+      "eventOn": "2026-03-31T19:29:19.375256+00:00",
+      "eventSource": "A1 Processed Data"
+    },
+    {
+      "eventCode": "CHECKIN",
+      "eventDescription": "Check-in Asendia facility",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": "Des Plaines",
+        "province": "IL",
+        "postalCode": null,
+        "countryIso2": "US",
+        "countryName": "US"
+      },
+      "eventOn": "2026-03-31T19:29:19+00:00",
+      "eventSource": "FullTrack API"
+    },
+    {
+      "eventCode": "1",
+      "eventDescription": "Shipment Information Received",
+      "eventLocationDetails": {
+        "addressLine1": null,
+        "city": null,
+        "province": null,
+        "postalCode": null,
+        "countryIso2": null,
+        "countryName": null
+      },
+      "eventOn": "2026-03-31T15:46:06.539+00:00",
+      "eventSource": "A1 Imported Data"
+    }
+  ],
+  "trackingServiceMessage": "",
+  "transitTimesMessage": "",
+  "footerText": null,
+  "responseStatus": {
+    "responseStatusCode": 200,
+    "responseStatusMessage": ""
+  }
+}
