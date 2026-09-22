@@ -11,7 +11,7 @@ import 'server-only';
  * verification wall from an outage.
  */
 import type { AdapterFactory } from '../../core/adapter';
-import { ChallengeError, NotFoundError, SchemaError, TransportError } from '../../core/errors';
+import { ChallengeError, IndeterminateError, NotFoundError, SchemaError, TransportError } from '../../core/errors';
 import { runSteps } from '../../core/runner';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import type { StepRecorder } from '../../core/telemetry';
@@ -41,6 +41,17 @@ export class SeventeenTrackLookupError extends TransportError {
   }
 }
 
+/** A matching code-400/null-shipment reply supplies no history, not a network failure or a proven invalid number. */
+export class SeventeenTrackNoHistoryError extends IndeterminateError {
+  readonly reason = 'no_history';
+  readonly providerCode = 400;
+
+  constructor() {
+    super(SOURCE, describeLookup('no_history', 400));
+    this.name = 'SeventeenTrackNoHistoryError';
+  }
+}
+
 /** The provider asked for an interactive verification the unattended lookup cannot pass. */
 export class SeventeenTrackVerificationError extends ChallengeError {
   readonly reason = 'verification_required';
@@ -55,9 +66,9 @@ function describeLookup(reason: string, providerCode: number, providerMessage?: 
   return `${SOURCE}: ${reason} (code ${providerCode}${providerMessage ? `: ${providerMessage}` : ''})`;
 }
 
-/** Both shapes of "17TRACK answered, but not with this shipment's history". */
-export function isSeventeenTrackLookupError(error: unknown): error is SeventeenTrackLookupError | SeventeenTrackVerificationError {
-  return error instanceof SeventeenTrackLookupError || error instanceof SeventeenTrackVerificationError;
+/** Structured replies without usable history; polling may still produce a later success. */
+export function isSeventeenTrackLookupError(error: unknown): error is SeventeenTrackLookupError | SeventeenTrackNoHistoryError | SeventeenTrackVerificationError {
+  return error instanceof SeventeenTrackLookupError || error instanceof SeventeenTrackNoHistoryError || error instanceof SeventeenTrackVerificationError;
 }
 
 function lookupError(code: number, providerMessage?: string): Error {
@@ -82,6 +93,9 @@ export function parse17TrackResponse(payload: unknown, trackingNumber: string): 
   if (matches.length === 1 && isRecord(matches[0]) && Number.isInteger(matches[0].code) && matches[0].code !== 200) {
     // A shipment-level code is the lookup's own progress, never a verification wall.
     const code = Number(matches[0].code);
+    // Observed repeatedly for valid references whose other providers have history.
+    // Scope this to the matching shipment; envelope errors and unknown shapes remain failures.
+    if (code === 400 && matches[0].shipment === null) throw new SeventeenTrackNoHistoryError();
     throw new SeventeenTrackLookupError(code === 100 ? 'lookup_pending' : 'lookup_unavailable', code);
   }
   if (matches.length !== 1 || !isRecord(matches[0]) || matches[0].code !== 200 || !isRecord(matches[0].shipment)) {

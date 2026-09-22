@@ -113,9 +113,9 @@ export function operationalErrorMetadata(error: unknown): OperationalErrorMetada
     if (['UpstreamHttpError', 'DHLEcommerceSessionError'].includes(current.name) && metadata.upstreamStatus === undefined) {
       metadata.upstreamStatus = safeHttpStatus(details.status);
     }
-    if (['TrackingCaptureError', 'SeventeenTrackLookupError', 'SeventeenTrackVerificationError'].includes(current.name)) {
+    if (['TrackingCaptureError', 'SeventeenTrackLookupError', 'SeventeenTrackNoHistoryError', 'SeventeenTrackVerificationError'].includes(current.name)) {
       if (typeof details.reason === 'string' && ['capture_missing', 'capture_unreadable', 'history_missing',
-        'verification_required', 'lookup_unavailable', 'lookup_pending'].includes(details.reason)) {
+        'verification_required', 'lookup_unavailable', 'lookup_pending', 'no_history'].includes(details.reason)) {
         metadata.providerFailureReason ??= details.reason;
       }
       if (typeof details.providerCode === 'number' && Number.isInteger(details.providerCode)

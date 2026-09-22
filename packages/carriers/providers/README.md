@@ -52,7 +52,7 @@ validation and the remaining need for a known valid gated pair.
 - [core/runner](../core/runner/index.ts): step execution and telemetry;
   [core/errors](../core/errors/index.ts): shared failure categories.
 
-`TrackingCaptureError`, `SeventeenTrackLookupError` and
+`TrackingCaptureError`, `SeventeenTrackLookupError`, `SeventeenTrackNoHistoryError` and
 `SeventeenTrackVerificationError` additionally carry diagnostic reason/code
 fields. Follow the host's [observability policy](../../../docs/OBSERVABILITY.md).
 Browser build and session-cache configuration belongs in

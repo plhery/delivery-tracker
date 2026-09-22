@@ -51,6 +51,18 @@ describe('universal discovery chain', () => {
     expect(new URLSearchParams(String(options!.body)).get('carrier')).toBe('Auto-Detect');
   });
 
+  it('continues to another provider when prioritized 17TRACK returns no history', async () => {
+    const postalNumber = 'LZ000000005CN';
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(browserResponse('17TRACK', {
+      meta: { code: 200 }, shipments: [{ number: postalNumber, code: 400, shipment: null }],
+    }, { url: `https://t.17track.net/en#nums=${postalNumber}` }));
+    const browserLookup = vi.fn().mockResolvedValue({ tracking_provider: 'Ship24', current_stage: 'delivered' });
+    await expect(new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher, browserLookup }).fetch(postalNumber))
+      .resolves.toMatchObject({ tracking_provider: 'Ship24', current_stage: 'delivered' });
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(browserLookup.mock.calls).toEqual([['Ship24', postalNumber]]);
+  });
+
   it('reaches the real UPU factory only after richer lookups fail for an eligible postal number', async () => {
     const postalNumber = 'EB000000005CN';
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async (url) => String(url).includes('globaltracktrace.ptc.post')

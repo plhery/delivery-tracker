@@ -9,6 +9,7 @@ const API = 'https://t.17track.net/track/restapi';
 interface Payload { meta: { code: number }; shipments: Record<string, unknown>[] }
 const delivered = JSON.parse(readFileSync(new URL('./fixtures/delivered.json', import.meta.url), 'utf8')) as Payload;
 const history = (value = number): Payload => ({ ...delivered, shipments: [{ ...delivered.shipments[0], number: value }] });
+const noHistory = (value = number): Payload => ({ meta: { code: 200 }, shipments: [{ number: value, code: 400, shipment: null }] });
 const postalHistory = (events: Record<string, unknown>[], status = 'Expired'): Payload => ({
   meta: { code: 200 }, shipments: [{ number, code: 200, shipment: {
     latest_status: { status, sub_status: `${status}_Other` },
@@ -85,6 +86,25 @@ describe('17TRACK result parsing', () => {
     expect(parse17TrackResponse(postalHistory([postalScan('InTransit_Other')], 'NotFound'), number).current_stage).toBe('in_transit');
   });
 
+  it('distinguishes a matching no-history reply from request failure, polling and an invalid number', () => {
+    expect(thrown(() => parse17TrackResponse(noHistory(), number)))
+      .toMatchObject({ name: 'SeventeenTrackNoHistoryError', kind: 'indeterminate', status: 502, reason: 'no_history', providerCode: 400 });
+    expect(thrown(() => parse17TrackResponse({ meta: { code: 400 }, shipments: [] }, number)))
+      .toMatchObject({ name: 'SeventeenTrackLookupError', kind: 'transport', reason: 'lookup_unavailable', providerCode: 400 });
+    expect(thrown(() => parse17TrackResponse({ meta: { code: 200 }, shipments: [{ number, code: 100, shipment: null }] }, number)))
+      .toMatchObject({ name: 'SeventeenTrackLookupError', kind: 'transport', reason: 'lookup_pending', providerCode: 100 });
+  });
+
+  it('does not infer no history from another identity, ambiguity, an unknown code or an unexpected payload', () => {
+    for (const payload of [noHistory('OTHER123'), { ...noHistory(), shipments: [noHistory().shipments[0], noHistory().shipments[0]] }]) {
+      expect(thrown(() => parse17TrackResponse(payload, number))).toMatchObject({ kind: 'schema' });
+    }
+    for (const shipment of [{ number, code: 500, shipment: null }, { number, code: 400 }, { number, code: 400, shipment: {} }]) {
+      expect(thrown(() => parse17TrackResponse({ meta: { code: 200 }, shipments: [shipment] }, number)))
+        .toMatchObject({ name: 'SeventeenTrackLookupError', kind: 'transport' });
+    }
+  });
+
   it('uses matching history, keeps the reported carrier and strips recipient data', () => {
     const result = parse17TrackResponse(delivered, number);
     expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered', tracking_provider: '17TRACK',
@@ -150,12 +170,26 @@ describe('17TRACK browser capture', () => {
       [null, { capturedResponses: [{ url: 'https://t.17track.net/other', status: 200, body: '{}' }] },
         { name: 'TrackingCaptureError', reason: 'history_missing' }],
       [{ meta: { code: 200 }, shipments: [{ number, code: 400, shipment: null }] }, {},
-        { name: 'SeventeenTrackLookupError', reason: 'lookup_unavailable', providerCode: 400 }],
+        { name: 'SeventeenTrackNoHistoryError', kind: 'indeterminate', reason: 'no_history', providerCode: 400 }],
       [{ meta: { code: -14 }, shipments: [] }, {}, { name: 'SeventeenTrackVerificationError', providerCode: -14 }],
     ] as const) {
       const fetcher = vi.fn<typeof fetch>().mockResolvedValue(captured(data, overrides));
       await expect(tracker(fetcher).fetch(number)).rejects.toMatchObject(expected);
     }
+  });
+
+  it('reports no history through telemetry and accepts a later completed history', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(captured(noHistory()));
+    const recorder = { step: vi.fn(), lookup: vi.fn() };
+    const adapter = new SeventeenTrackTracker({ trawl: new TrawlClient('http://browser.test', fetcher), recorder });
+    await expect(adapter.fetch(number)).rejects.toMatchObject({ name: 'SeventeenTrackNoHistoryError', kind: 'indeterminate' });
+    expect(recorder.step).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'indeterminate', errorType: 'SeventeenTrackNoHistoryError' }));
+    expect(recorder.lookup).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'indeterminate', errorType: 'SeventeenTrackNoHistoryError' }));
+    fetcher.mockResolvedValue(captured(null, { capturedResponses: [
+      { url: API, status: 200, body: JSON.stringify(noHistory()) },
+      { url: API, status: 200, body: JSON.stringify(delivered) },
+    ] }));
+    await expect(adapter.fetch(number)).resolves.toMatchObject({ tracking_provider: '17TRACK', current_stage: 'delivered' });
   });
 
   it('accepts completed matching history after intermediate polling and keeps the API Retry-After', async () => {

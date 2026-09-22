@@ -25,25 +25,35 @@ milestone more than once. Read the history notes before choosing the largest cou
 
 | Carrier / reference | Direct | Ship24 | ParcelsApp | 17TRACK | Postal Ninja | UPU |
 | --- | --- | --- | --- | --- | --- | --- |
-| [DHL](../carriers/dhl/README.md) | Blocked | ✓ 10 | ✓ 14* | Error | ✓ 14 | ✓ 1 |
+| [DHL](../carriers/dhl/README.md) | Blocked | ✓ 10 | ✓ 14* | None | ✓ 14 | ✓ 1 |
 | [UPS](../carriers/ups/README.md) | ✓ 11 | ✓ 1 | ✓ 11 | ✓ 11 | ✓ 11 | N/A |
 | [FedEx](../carriers/fedex/README.md) | Error | ✓ 14 | ✓ 14 | ✓ 14 | ✓ 14 | N/A |
 | [USPS](../carriers/usps/README.md) | Blocked | None | None | ✓ 11 | None | N/A |
-| [Amazon Logistics](../carriers/amazon-logistics/README.md) | Link only | None | Sign-in | Error | None | N/A |
-| [Amazon Shipping](../carriers/amazon-shipping/README.md) | ✓ 12 | ✓ 12 | ✓ 12 | Error | ✓ 12 | N/A |
+| [Amazon Logistics](../carriers/amazon-logistics/README.md) | Link only | None | Sign-in | None | None | N/A |
+| [Amazon Shipping](../carriers/amazon-shipping/README.md) | ✓ 12 | ✓ 12 | ✓ 12 | None | ✓ 12 | N/A |
 | [Royal Mail](../carriers/royal-mail/README.md) | Error | None | ✓ 1 | None | ✓ 4 | None |
 | [Swiss Post](../carriers/swiss-post/README.md) | ✓ 8 | ✓ 8 | ✓ 8 | ✓ 8 | None | N/A |
 | [La Poste / Colissimo](../carriers/la-poste/README.md) | ✓ 15 | ✓ 11 | ✓ 16* | ✓ 14 | ✓ 26 | None |
 | [DPD](../carriers/dpd/README.md) | ✓ 4 | ✓ 1 | ✓ 4 | ✓ 4 | ✓ 4 | N/A |
-| [DHL eCommerce](../carriers/dhl-ecommerce/README.md) | ✓ 16 | ✓ 11 | ✓ 36* | Error | ✓ 34 | N/A |
+| [DHL eCommerce](../carriers/dhl-ecommerce/README.md) | ✓ 16 | ✓ 11 | ✓ 36* | None | ✓ 34 | N/A |
 | [AliExpress / Cainiao](../carriers/aliexpress/README.md) | ✓ 17 | None | ✓ 17 | ✓ 17 | ✓ 17 | N/A |
 | [China Post](../carriers/china-post/README.md) | No adapter | ✓ 1 | ✓ 1 | ✓ 39 | ✓ 17 | ✓ 1 |
 | [EMS](../carriers/ems/README.md) | ✓ 7 | ✓ 6 | ✓ 18* | ✓ 24 | ✓ 6 | ✓ 6 |
 | [SF Express](../carriers/sf-express/carrier.json) | No adapter | None | None | ✓ 27 | None | N/A |
 
 **\* Succeeded on a second bounded attempt** after the first failed its identity
-check. Other repeated failures remained inconclusive. A check mark confirms
+check. Other providers' repeated failures remained inconclusive. A check mark confirms
 retrieved history, not correct status mapping; the notes identify mapping issues.
+
+**17TRACK recheck, 2026-09-22:** all seven previously failing references again
+returned no history, so their cells now say **None**. DHL, DHL eCommerce and
+the three UK/FR Amazon Shipping references returned a matching shipment code
+400 with null history; both TBA references completed with explicit `NotFound`.
+A later check of the supplied TBA reference stayed pending and again supplied
+no history. The China Post control still returned 39 events. The adapter now recognizes
+that matching code-400 response as `no_history`, separately from transport,
+verification and unfinished polling failures. This is coverage for the checked
+references, not a carrier-wide unsupported verdict.
 
 ## What the missing or extra events mean
 
@@ -78,9 +88,9 @@ so an expired or account-only reference cannot determine carrier-wide coverage.
 
 | Carrier / reference | Direct | Ship24 | ParcelsApp | 17TRACK | Postal Ninja | UPU |
 | --- | --- | --- | --- | --- | --- | --- |
-| `FR3020087832` | Expired | None | None | Error | None | N/A |
-| `UK3962812222` | Expired | None | None | Error | None | N/A |
-| `TBA584861749000` | None | None | Sign-in | Error | None | N/A |
+| `FR3020087832` | Expired | None | None | None | None | N/A |
+| `UK3962812222` | Expired | None | None | None | None | N/A |
+| `TBA584861749000` | None | None | Sign-in | None | None | N/A |
 
 **Expired** is Amazon’s explicit history-retention response, not an unsupported
 carrier verdict. The TBA reference is not found by Amazon’s public Shipping
@@ -117,10 +127,11 @@ appears in a [merchant response](https://uk.trustpilot.com/review/simplesciences
 
 ## Method and reference provenance
 
-The checks used the dedicated adapters at
+The initial checks used the dedicated adapters at
 [`2b8aeed`](https://github.com/plhery/delivery-tracker/tree/2b8aeed3851ebff0a2052032c43be97b8bf72847) and
 `UniversalTracker.fetchSource()` for each provider individually; they did not
 stop after the first successful fallback. Postal Ninja was included explicitly.
+The 17TRACK recheck described above used the same references and lookup budget.
 HTTP requests and local Chromium ran locally; adapters requiring TRAWL used the
 existing browser service. This is fresh automated retrieval, not a deployed
 application-sync test or a website-advertised support list.

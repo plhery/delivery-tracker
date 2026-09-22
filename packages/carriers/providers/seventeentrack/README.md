@@ -92,17 +92,21 @@ projected as a scan or interpreted as loss. Unknown codes retain wording fallbac
 | --- | --- | --- |
 | -11, -13, -14 | interactive verification required | `SeventeenTrackVerificationError` (challenge) |
 | 100 (shipment) | lookup still polling | `SeventeenTrackLookupError`, reason `lookup_pending` |
-| any other non-200 | lookup unavailable | `SeventeenTrackLookupError`, reason `lookup_unavailable` |
+| 400 (one matching shipment, `shipment: null`) | no history supplied for this reference | `SeventeenTrackNoHistoryError` (indeterminate), reason `no_history` |
+| any other non-200, including envelope-level 400 | lookup unavailable | `SeventeenTrackLookupError`, reason `lookup_unavailable` |
 
 The provider's short `meta.message` is kept (truncated to 120 characters) so the
 intermittent code 400 stays diagnosable in Sentry.
+Only a completed, matching `NotFound` status with empty history becomes
+`NotFoundError`. A no-history reply does not prove that the number is invalid
+or that the carrier is unsupported; other providers remain eligible.
 
 ## Limitations and privacy
 
 - An aggregator reports what the underlying carriers give it; a dedicated
   carrier adapter is always preferred when one exists.
-- A provider code 400 with no history is an explicit lookup failure: never an
-  invented delivery and never an automatic carrier correction.
+- A matching shipment code 400 with a null shipment supplies no history. It
+  never becomes an invented delivery or an automatic carrier correction.
 - Demo numbers, polling replies, carrier-selection prompts and empty responses
   cannot manufacture progress.
 - Delivery wording can contain an access code or a signature. Any event whose
@@ -122,9 +126,19 @@ intermittent code 400 stays diagnosable in Sentry.
   code 100 for a final matching reply (`ops/trawl`).
 - **Rejection codes are typed, not generic failures.** `-11`, `-13` and `-14`
   mean an interactive verification is required (a challenge), a shipment code of
-  100 means the lookup is still polling, and anything else means the lookup is
-  unavailable. Routing needs that distinction for its cooldowns, and Sentry
-  keeps `reason` and `providerCode` for triage.
+  100 means the lookup is still polling, and a matching shipment code 400 with
+  null shipment is a no-history answer. Other non-200 codes remain lookup
+  failures. Routing needs that distinction for its cooldowns, and Sentry keeps
+  `reason` and `providerCode` for triage.
+- **No-history recheck (2026-09-22).** All seven failed references in the
+  [coverage comparison](../COVERAGE.md) again produced no history: five returned
+  matching code-400/null-shipment replies, while both TBA references completed
+  with `NotFound`. A later supplied-TBA check stayed pending without history;
+  it retained `lookup_pending`. The China Post control still returned 39 events. The five
+  code-400 replies now have a distinct `SeventeenTrackNoHistoryError` with
+  `indeterminate` semantics, rather than being classified as transport failures.
+  Verification, pending polling, missing capture and envelope failures retain
+  their separate diagnostics. A later completed history still wins.
 - **A structured failure survives the capture loop.** The newest readable body
   wins; when none parses, the last typed lookup failure is thrown instead of a
   generic "no history", so a verification wall is never reported as an empty
@@ -211,8 +225,9 @@ were committed for these checks. Source URLs are in the central comparison.
 Probed 2026-09-13 through the pinned TRAWL build (tunneled to production)
 with one real `public_shipment_report` corpus number per carrier (36
 carriers). ✅ means the reply echoed the requested number and carried events;
-❌ rows name the exact failure. A code 400 (`lookup_unavailable`) or an empty
-capture (`history_missing`) is a provider failure, not proof of a wrong
+❌ rows below preserve the diagnosis from that earlier sweep. Matching code-400
+replies with null shipment are now `no_history`; envelope failures remain
+`lookup_unavailable`. Empty captures (`history_missing`) do not prove a wrong
 carrier; `lookup_pending` means the lookup was still polling at budget end.
 Every carrier row below is also recorded in that carrier's own README.
 
