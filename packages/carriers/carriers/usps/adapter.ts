@@ -16,17 +16,17 @@ import { uspsStage, uspsStatus } from './status';
  *
  * The page at `go/TrackConfirmAction?tLabels=` carries the verdict, the
  * status and the history in its own HTML: no tracking XHR exists to capture.
- * The edge refuses every non-browser client with HTTP 403 (verified
- * 2026-09-20). A browser can attempt the interstitial check, but fresh
- * checks on 2026-09-22 still returned a challenge shell. The lookup has a single
+ * Plain HTTP probes returned 403. Browser checks on 2026-09-22 first returned
+ * a challenge shell, then succeeded with matching shipment timelines. Access
+ * can vary by session. The lookup has a single
  * step: the private browser service loads the page, and the rendered DOM is
  * parsed. Nothing is ever replayed over plain HTTP.
  *
  * Markup provenance: the live page shell (`.track-bar-container`,
  * `#trackingNum`, `.latest-update-banner-wrapper .banner-header`,
- * `.current-tracking-status-wrapper`), inspected 2026-09-20. History rows
- * are read by content pattern rather than class names so a reskin that keeps
- * the words keeps working.
+ * `.current-tracking-status-wrapper`), inspected 2026-09-20. Positive lookups
+ * on 2026-09-22 use `.tb-step` timeline cards, including collapsed history.
+ * The older table-shaped fixture remains a parsing fallback.
  */
 const TRACKING_BASE = 'https://tools.usps.com/go/TrackConfirmAction';
 const MAX_BYTES = 10_000_000;
@@ -147,6 +147,30 @@ function parseRow(cells: string[], index: number): ParsedRow | null {
   };
 }
 
+/** Current USPS markup includes collapsed scans in the DOM, without a table.
+ * Undated progress steps and the history-expansion control are not scans. */
+function parseTimelineRow(description: string, dateText: string, location: string): CarrierEvent | null {
+  if (!description || !DATE_PATTERN.test(dateText)) return null;
+  const stage = uspsStage(description) ?? undefined;
+  const at = eventTime(dateText, dateText, location);
+  const date = DATE_PATTERN.exec(dateText)?.[0];
+  const time = TIME_PATTERN.exec(dateText)?.[0];
+  // UTC is only a parsing frame here. An unresolved location gets an offset-free
+  // local_time, never a made-up UTC scan or another facility's timezone.
+  const local = date && time ? DateTime.fromFormat(
+    `${date.replace(/,\s*/, ' ')} ${time.replace(/\./g, '').replace(/\s*([ap])m/i, ' $1m')}`,
+    time.split(':').length === 3 ? 'MMMM d yyyy h:mm:ss a' : 'MMMM d yyyy h:mm a',
+    { locale: 'en-US', zone: 'UTC' },
+  ) : null;
+  return {
+    ...(at ? { time: at.iso } : local?.isValid ? { local_time: local.toFormat("yyyy-MM-dd'T'HH:mm:ss") } : {}),
+    ...(!at && !local?.isValid ? { raw_time: dateText } : {}),
+    ...(location ? { location: location.slice(0, 250) } : {}),
+    description: stage === 'delivered' ? 'Delivered' : description,
+    ...(stage ? { stage } : {}),
+  };
+}
+
 /** The server-rendered tracking page. */
 export function parseUSPSTrackingHtml(page: string, trackingNumber: string): CarrierResult {
   const number = normalizeUSPSNumber(trackingNumber);
@@ -163,7 +187,19 @@ export function parseUSPSTrackingHtml(page: string, trackingNumber: string): Car
   // wrapper carries the tracking verdict.
   const banner = clean($('.latest-update-banner-wrapper .banner-header').first().text());
   if (/tracking not available/i.test(banner)) return notLocated();
-  const statusArea = clean($('.current-tracking-status-wrapper').first().text(), 5_000);
+  const current = $('.current-tracking-status-wrapper .current-step').first();
+  const statusArea = clean(current.find('.tb-status-detail').first().text()
+    || current.find('.tb-status').first().text()
+    || $('.current-tracking-status-wrapper').first().text(), 5_000);
+  const timeline: CarrierEvent[] = [];
+  $('.current-tracking-status-wrapper .tb-step').each((_, row) => {
+    const parsed = parseTimelineRow(
+      clean($(row).find('.tb-status-detail').first().text(), 500),
+      clean($(row).find('.tb-date').first().text(), 100),
+      clean($(row).find('.tb-location').first().text(), 250),
+    );
+    if (parsed) timeline.push(parsed);
+  });
   const rows: ParsedRow[] = [];
   $('.tracking_history_container tr').each((index, row) => {
     const cells = $(row).find('td').map((_, cell) => $(cell).text()).get();
@@ -172,7 +208,10 @@ export function parseUSPSTrackingHtml(page: string, trackingNumber: string): Car
     if (parsed) rows.push(parsed);
   });
   rows.sort((left, right) => right.timestamp - left.timestamp || left.index - right.index);
-  const events = rows.slice(0, MAX_EVENTS_TO_RETURN).map(({ event }) => event);
+  // The current timeline is newest-first. Keep its order even when some scans
+  // have no resolvable timezone; sorting those behind dated scans loses meaning.
+  const events = timeline.length ? timeline.slice(0, MAX_EVENTS_TO_RETURN)
+    : rows.slice(0, MAX_EVENTS_TO_RETURN).map(({ event }) => event);
   const statusText = statusArea || banner || events[0]?.description || 'Tracking information received';
   const stage = uspsStage(`${statusText} ${banner}`)
     ?? events.map((event) => event.stage).find((value): value is NonNullable<typeof value> => value !== undefined);
@@ -183,6 +222,7 @@ export function parseUSPSTrackingHtml(page: string, trackingNumber: string): Car
     ...(stage ? { current_stage: stage } : {}),
     last_status_text: delivered ? 'Delivered' : statusText,
     last_update: events[0]?.time || null,
+    ...(events[0]?.local_time ? { last_update_local: events[0].local_time } : {}),
     expected_delivery: delivered ? null : expectedDelivery(`${statusArea} ${banner}`),
     events,
   };

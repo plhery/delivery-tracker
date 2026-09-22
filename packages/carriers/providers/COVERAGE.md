@@ -28,7 +28,7 @@ milestone more than once. Read the history notes before choosing the largest cou
 | [DHL](../carriers/dhl/README.md) | Blocked | ✓ 10 | ✓ 14 | None | ✓ 14 | ✓ 1 |
 | [UPS](../carriers/ups/README.md) | ✓ 11 | ✓ 1 | ✓ 11 | ✓ 11 | ✓ 11 | N/A |
 | [FedEx](../carriers/fedex/README.md) | Error | ✓ 14 | ✓ 14 | ✓ 14 | ✓ 14 | N/A |
-| [USPS](../carriers/usps/README.md) | Blocked | None | None | ✓ 11 | None | N/A |
+| [USPS](../carriers/usps/README.md) | ✓ 11† | None | None | ✓ 11 | None | N/A |
 | [Amazon Logistics](../carriers/amazon-logistics/README.md) | Link only | None | Sign-in | None | None | N/A |
 | [Amazon Shipping](../carriers/amazon-shipping/README.md) | ✓ 12 | ✓ 12 | ✓ 12 | None | ✓ 12 | N/A |
 | [Royal Mail](../carriers/royal-mail/README.md) | Error | None | ✓ 1 | None | ✓ 4 | None |
@@ -43,6 +43,10 @@ milestone more than once. Read the history notes before choosing the largest cou
 
 A check mark confirms retrieved history, not correct status mapping; the notes
 identify mapping issues.
+
+**† USPS direct recheck:** the corrected timeline parser returned 11 events for
+the same domestic reference in a later successful browser session. See the
+[USPS follow-up](#usps-follow-up-direct-history-and-operator-attribution).
 
 The initial ParcelsApp failures prompted a [timeout and recovery fix](parcelsapp/README.md#implementation-decisions):
 the old direct request stopped after 10 s, and browser recovery could return an
@@ -72,7 +76,7 @@ report the same milestone in different zones.
 | DHL | ParcelsApp and Postal Ninja return the same 14 rows, including Swiss destination sorting/forwarding details, repeated customs and delivery reports, and an earlier handoff classified as delivered. Ship24 retains an older electronic-registration event absent from both. UPU has only final delivery, losing the transport, customs and delivery-depot history. The larger counts alone do not establish a better timeline. |
 | UPS | Direct, ParcelsApp, 17TRACK and Postal Ninja return the same 11 milestones, including parcel drop-off, access-point preparation, pickup, hub movements, import scan and delivery. Ship24 returns only label creation, missing the actual journey and final delivery. This is a meaningful gap for this reference; the additional public return reference below works fully with Ship24. |
 | FedEx | The four general aggregators return the same 14 milestones: registration, pickup, hub movements, requested delivery changes, delivery round and delivery. Differences are wording, timezone conversion and stage mapping, rather than missing scans. The direct capture failed, so completeness against FedEx itself is unverified. |
-| USPS | Only 17TRACK returned usable history for the domestic reference. Its 11 rows include forwarding, facility movements, failed delivery/no access, a redelivery reminder, scheduled redelivery and final delivery. These are useful delivery and exception details, but the unavailable feeds provide no basis for a scan-by-scan completeness comparison. See the separate international reference below for origin-versus-destination coverage. |
+| USPS | Direct tracking and 17TRACK now return the same 11 domestic milestones: forwarding, facility movements, failed delivery/no access, a redelivery reminder, scheduled redelivery and final delivery. The direct lookup initially hit a challenge; the later successful page exposed a table-only parser bug, now fixed to read timeline cards. Stage mappings differ, and direct preserves a date-only reminder without inventing a clock time. See the follow-up and international reference below. |
 | Amazon Logistics | ParcelsApp's apparent event is a request to sign in to Amazon, not parcel progress; it is excluded. No anonymous history was established for the checked retail reference. |
 | Amazon Shipping | Direct, Ship24, ParcelsApp and Postal Ninja return the same 12 milestones for the public documentation reference. Direct and Ship24 clearly label availability for pickup and customer collection. ParcelsApp exposes internal `swa_rex_*` labels for those two events; Postal Ninja leaves `HoldForPickup` untranslated. These are interpretation/wording gaps, not fewer scans. |
 | Royal Mail | Ninja adds older sender-dispatch and parcel-shop acceptance history to ParcelsApp's delivery-only result, plus two delivery rows. Their reported delivery dates conflict (September 2 versus September 21); more history does not resolve which date is correct. The direct lookup failed. |
@@ -111,7 +115,7 @@ appears in a [merchant response](https://uk.trustpilot.com/review/simplesciences
 | Carrier / reference | Direct | Ship24 | ParcelsApp | 17TRACK | Postal Ninja | UPU |
 | --- | --- | --- | --- | --- | --- | --- |
 | UPS public return reference | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 9 | Error | N/A |
-| USPS inbound from China | Format rejected | Error | ✓ 21 | ✓ 56 | Error | ✓ 8 |
+| USPS inbound from China | ✓ 13† | Error | ✓ 21 | ✓ 56 | Error | ✓ 8 |
 
 - **UPS:** the public return reference has the same nine milestones in direct,
   Ship24, ParcelsApp and 17TRACK. Ship24’s sparse result in the main row is
@@ -126,9 +130,39 @@ appears in a [merchant response](https://uk.trustpilot.com/review/simplesciences
   origin sorting, airline movements and security-return history**, rather than
   35 extra US delivery scans. UPU’s eight rows retain posting/export/customs
   and final delivery but miss US arrival, domestic depot movement and
-  out-for-delivery. The direct adapter rejects the `…CN` identifier locally:
-  its S10 rule currently accepts only `…US`. That is an app input limitation,
-  not a failed request to USPS.
+  out-for-delivery. The original direct adapter rejected the `…CN` identifier
+  locally. After the foreign-number and timeline-parser fixes, direct USPS
+  returned the same 13 milestones as 17TRACK's USPS operator group. Its smaller
+  count omits China Post's additional 43 rows, not USPS delivery scans.
+
+## USPS follow-up: direct history and operator attribution
+
+Additional checks on **2026-09-22** used three public US-format numbers, without
+forcing a carrier in 17TRACK. The table records fresh calls after the timeline
+parser repair; the two older 17TRACK lookups needed a second bounded attempt
+after their initial polling replies stayed pending.
+
+| Public reference | Direct USPS | 17TRACK | Operator attribution |
+| --- | --- | --- | --- |
+| `9400130109355440699868` — [August merchant response](https://www.bbb.org/us/wa/vancouver/profile/gold-buyers/gold-to-cash-1296-1000129797/complaints) | ✓ 11, delivered | ✓ 11, delivered | All 11 events: USPS |
+| `9589071052702449080343` — [public court record, p. 5](https://www.govinfo.gov/content/pkg/USCOURTS-ilsd-3_25-cv-02196/pdf/USCOURTS-ilsd-3_25-cv-02196-0.pdf) | ✓ 3, in transit | ✓ 3, in transit | All 3 events: USPS |
+| `9500113562366007585132` — [same public record, p. 5](https://www.govinfo.gov/content/pkg/USCOURTS-ilsd-3_25-cv-02196/pdf/USCOURTS-ilsd-3_25-cv-02196-0.pdf) | None | None | USPS selected, but no history returned |
+
+The matching 17TRACK responses explicitly identify the operator as **USPS**,
+key **21051**, homepage **https://www.usps.com/**. The two positive examples
+contain only USPS events, with the same milestone sequences as the direct page.
+This establishes 17TRACK's reported operator attribution, rather than inferring
+it from the number format. It does not expose how 17TRACK obtains data internally.
+
+The original domestic control also has 11 USPS-attributed 17TRACK events. For
+the incoming control, 17TRACK explicitly separates **13 USPS (21051)** events
+from **43 China Post (3011)** events. Both operators were retrieved with the
+same original number; no replacement tracking number was used.
+
+The direct adapter now reads `.tb-step` cards, including collapsed history.
+Its earlier table-only selector missed all events even when the page loaded.
+Browser access varied across sessions: the earlier challenges were real, and
+the later successful lookups do not guarantee every future session will pass.
 
 ## Method and reference provenance
 

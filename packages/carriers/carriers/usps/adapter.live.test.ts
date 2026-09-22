@@ -29,6 +29,7 @@ describe('USPS live browser tracking', () => {
           'current_stage',
           'last_status_text',
           'last_update',
+          'last_update_local',
           'expected_delivery',
           'events',
           'tracking_source',
@@ -41,6 +42,8 @@ describe('USPS live browser tracking', () => {
           'location',
           'stage',
           'time',
+          'local_time',
+          'raw_time',
         ].includes(key))).toBe(true);
       }
     },

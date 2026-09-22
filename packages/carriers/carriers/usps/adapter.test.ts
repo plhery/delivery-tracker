@@ -12,6 +12,7 @@ const IN_TRANSIT_NUMBER = '9400111899223397910438';
 const TRAWL_URL = 'http://trawl.internal:8191';
 const DELIVERED_PAGE = readFileSync(new URL('./fixtures/delivered.html', import.meta.url), 'utf8');
 const IN_TRANSIT_PAGE = readFileSync(new URL('./fixtures/in-transit.html', import.meta.url), 'utf8');
+const TIMELINE_PAGE = readFileSync(new URL('./fixtures/timeline.html', import.meta.url), 'utf8');
 const CAPABILITIES = (JSON.parse(
   readFileSync(new URL('./carrier.json', import.meta.url), 'utf8'),
 ) as { capabilities: string[] }).capabilities;
@@ -63,6 +64,37 @@ describe('USPS status vocabulary', () => {
 });
 
 describe('USPS rendered page', () => {
+  it('reads current and collapsed timeline scans without letting old exceptions override delivery', () => {
+    const result = parseUSPSTrackingHtml(TIMELINE_PAGE, DELIVERED_NUMBER);
+    expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered', last_status_text: 'Delivered',
+      last_update: '2025-03-14T12:17:00-04:00', expected_delivery: null });
+    expect(result.events).toHaveLength(5);
+    expect(result.events?.map(event => event.description)).toEqual([
+      'Delivered', 'Out for Delivery', 'Notice Left (No Authorized Recipient Available)',
+      'In Transit, Arriving On Time', 'Accepted at USPS Origin Facility',
+    ]);
+    expect(result.events?.[2].stage).toBe('failed_attempt');
+    expect(result.events?.[3]).toEqual({ description: 'In Transit, Arriving On Time',
+      local_time: '2025-03-12T16:31:00', stage: 'in_transit' });
+    expect(result.events?.[4].time).toBe('2025-03-11T21:45:00-07:00');
+    expect(JSON.stringify(result)).not.toContain('PRIVATE RECIPIENT');
+  });
+
+  it('keeps an unresolved newest scan as local time and rejects another parcel’s timeline', () => {
+    const result = parseUSPSTrackingHtml(TIMELINE_PAGE.replaceAll('EXAMPLE CITY, NY 00000', ''), DELIVERED_NUMBER);
+    expect(result).toMatchObject({ last_update: null, last_update_local: '2025-03-14T12:17:00' });
+    expect(result.events?.[0].time).toBeUndefined();
+    expect(() => parseUSPSTrackingHtml(TIMELINE_PAGE, IN_TRANSIT_NUMBER)).toThrow('requested parcel');
+  });
+
+  it('preserves a date-only update without inventing a clock time', () => {
+    const result = parseUSPSTrackingHtml(TIMELINE_PAGE.replace('March 14, 2025 12:17 PM', 'March 14, 2025'), DELIVERED_NUMBER);
+    expect(result.events?.[0]).toMatchObject({ description: 'Delivered', raw_time: 'March 14, 2025' });
+    expect(result.events?.[0].time).toBeUndefined();
+    expect(result.events?.[0].local_time).toBeUndefined();
+    expect(result.last_update).toBeNull();
+  });
+
   it('projects the delivered history with state-zone timestamps', () => {
     const result = parseUSPSTrackingHtml(DELIVERED_PAGE, DELIVERED_NUMBER);
     expect(result).toMatchObject({

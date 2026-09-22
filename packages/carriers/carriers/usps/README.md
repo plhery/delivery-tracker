@@ -21,10 +21,11 @@ the server-rendered tracking page; no postcode or capability URL is needed.
 | Field | Source |
 |---|---|
 | `status`, `current_stage` | status area and banner wording first, then the newest staged scan |
-| `last_status_text` | `.current-tracking-status-wrapper` text, replaced by "Delivered" once delivered |
-| `last_update` | newest scan's date, clock time and state, read in the facility state zone as UTC |
+| `last_status_text` | current timeline card's detail or status, replaced by "Delivered" once delivered; older scans do not override it |
+| `last_update` | newest scan's date, clock time and state, with the facility's timezone offset |
+| `last_update_local` | newest scan's local date/time when its timezone is unresolved |
 | `expected_delivery` | an "Expected Delivery …" line, as a calendar day, dropped once delivered |
-| `events[].time`, `.location`, `.description`, `.stage` | history rows: US date, clock time, city/state location, longest remaining cell |
+| `events[].time`, `.local_time`, `.raw_time`, `.location`, `.description`, `.stage` | current and collapsed timeline cards; unresolved times remain local, and date-only text is preserved without inventing a clock time |
 
 Declared capabilities: `history`, `location`, `eta`. A delivered line may
 name who signed; the description is replaced by "Delivered" and nothing
@@ -62,10 +63,11 @@ shell reads as a challenge, a page echoing another number as a schema
 failure, and the "Tracking Not Available" banner as the unlocated unknown
 result.
 
-History rows are read by content pattern (a US date, a clock time, a
-city/state location, the longest remaining cell) rather than class names, so
-a reskin that keeps the words keeps working. Scans whose state maps to no
-zone keep the provider's own text rather than a guessed timestamp.
+The current page uses `.tb-step` cards with `.tb-status-detail`, `.tb-date`
+and `.tb-location`. Collapsed cards already contain history in the HTML.
+Undated progress placeholders and the expansion control are excluded. The
+page's newest-first order is preserved when some scans lack a known timezone.
+The older table-shaped fixture remains a fallback if no timeline scans exist.
 
 Errors: `ChallengeError` when no browser service is configured or the page
  carries no tracking shell, `SchemaError` when the reply is not about the
@@ -97,9 +99,9 @@ Errors: `ChallengeError` when no browser service is configured or the page
 - Facility times are wall-clock in the event's own state; multi-zone states
   resolve to their majority zone, and anything unresolvable keeps the
   provider's text instead of a fabricated UTC instant.
-- History row markup is the documented assumption: rows are matched by
-  content, but a success render from a live parcel has not been observed
-  yet — confirm the selectors against one before trusting edge cases.
+- Positive live history was verified against the current timeline-card markup
+  on 2026-09-22. The earlier table-only parser returned a summary with zero
+  events even when all scans were present in the page.
 - Live access remains unreliable: a browser can receive HTTP 200 containing
   only a JavaScript challenge. That is a `ChallengeError`, not an empty shipment
   or successful tracking result; the host can continue through universal providers.
@@ -137,3 +139,13 @@ Errors: `ChallengeError` when no browser service is configured or the page
   but returned a challenge shell. A separate fresh browser still had no tracking
   shell or history after a 40-second wait; local Chromium returned Access Denied.
   This verifies the input fix, not successful live USPS history retrieval.
+- 2026-09-22, later follow-up: three additional public US-format references
+  reached identity-matched USPS pages. This exposed and fixed the history
+  selector: the current page contains timeline cards, not history-table rows.
+  Fresh calls with the corrected parser returned 11 and 3 events for two new
+  domestic references; the third had no available history. The original domestic
+  and incoming references then returned 11 and 13 events respectively. Earlier
+  challenges remain valid observations of intermittent browser access.
+  On both new positive references, 17TRACK named only `USPS`, key `21051`,
+  homepage `https://www.usps.com/`, and returned the same milestone sequences.
+  See the [public references and comparison](../../providers/COVERAGE.md#usps-follow-up-direct-history-and-operator-attribution).
