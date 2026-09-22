@@ -28,6 +28,10 @@ const LIVEWIRE_UPDATE = 'https://myspeedpost.com/livewire/update';
 const DEFAULT_TIMEOUT_MS = 15_000;
 const DEFAULT_POLL_INTERVAL_MS = 750;
 const DEFAULT_MAX_POLL_ATTEMPTS = 10;
+// MySpeedPost serves its last sync until someone presses Refresh: one parcel
+// kept an 11-day-old "Item Booked" while it reached export customs.
+const REFRESH_AFTER_MS = 30 * 60_000;
+const USER_TIMEZONE = 'Europe/Zurich';
 const MAX_RESPONSE_BYTES = 2_000_000;
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
@@ -58,6 +62,7 @@ interface IndiaPostTrackerOptions {
   pollIntervalMs?: number;
   maxPollAttempts?: number;
   fetcher?: typeof fetch;
+  now?: () => Date;
 }
 
 // India Post sends ids and pincodes as numbers as often as strings, so the
@@ -102,6 +107,28 @@ function parseTrackingRequest(html: string): JsonObject {
   throw new SchemaError('India Post', 'India Post returned an invalid tracking history');
 }
 
+// India Post now sends bare codes in `event` (seen 2026-09-22 after a refresh);
+// rows synced earlier carry its prose. Only codes seen live are spelled out.
+const EVENT_TEXT: Record<string, string> = {
+  ITEM_BOOK: 'Item Booked',
+  BAG_CLOSE: 'Bag Closed',
+  BAG_DISPATCH: 'Bag Dispatched',
+  BAG_FORWARD: 'Bag Forwarded',
+  TMO_RECEIVE: 'Received at Transit Mail Office',
+  ITEM_RECEIVE: 'Item Received',
+  CUSTOM_RECEIVE: 'Item Presented to Customs',
+  CUSTOM_RETURN: 'Item Returned from Customs',
+  TRANSFER_OOE: 'Transferred to Office of Exchange',
+};
+
+/** Readable text for a code-shaped event such as `BAG_DISPATCH`; prose passes through. */
+function eventText(raw: string): string {
+  if (!/^[A-Za-z]+(?:_[A-Za-z0-9]+)+$/.test(raw)) return raw;
+  const code = raw.toUpperCase();
+  return EVENT_TEXT[code] ?? code.toLowerCase().split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
 export function parseIndiaPostTrackingHtml(
   html: string,
   trackingNumber: string,
@@ -132,7 +159,7 @@ export function parseIndiaPostTrackingHtml(
     // tracked_at is ISO; offset-less values are read as Asia/Kolkata, the zone
     // every India Post office stamps.
     const time = isoTime(rawEvent.tracked_at, 'Asia/Kolkata', 100);
-    const description = clean(rawEvent.event);
+    const description = eventText(clean(rawEvent.event));
     if (!time || !description) return;
     const office = clean(rawEvent.office, 120);
     const pincode = /^\d{6}$/.test(clean(rawEvent.pincode, 6))
@@ -169,6 +196,7 @@ export function parseIndiaPostTrackingHtml(
   const classified = latest.classified.status === 'unknown'
     ? { status: 'in_transit' as const, stage: 'in_transit' }
     : latest.classified;
+  const syncedAt = isoTime(trackingRequest.synced_at, 'UTC', 100);
   return {
     status: classified.status,
     current_stage: classified.stage,
@@ -176,6 +204,8 @@ export function parseIndiaPostTrackingHtml(
     last_update: latest.event.time ?? null,
     expected_delivery: null,
     timezone: 'Asia/Kolkata',
+    // When MySpeedPost last asked India Post; an old value means stale history.
+    ...(syncedAt ? { source_synced_at: syncedAt.iso } : {}),
     events: parsed.slice(0, 100).map((item) => item.event),
   };
 }
@@ -271,8 +301,10 @@ export class IndiaPostTracker {
   readonly pollIntervalMs: number;
   readonly maxPollAttempts: number;
   readonly fetcher: typeof fetch;
+  readonly now: () => Date;
 
   constructor(options: IndiaPostTrackerOptions = {}) {
+    this.now = options.now ?? (() => new Date());
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.pollIntervalMs = options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS;
     this.maxPollAttempts = options.maxPollAttempts ?? DEFAULT_MAX_POLL_ATTEMPTS;
@@ -357,29 +389,54 @@ export class IndiaPostTracker {
     });
     const initial = initialTrackComponent(page.html, normalized);
     if (initial.status === 'Completed') {
-      return parseIndiaPostTrackingHtml(page.html, normalized);
+      const cached = parseIndiaPostTrackingHtml(page.html, normalized);
+      const syncedAt = Date.parse(String(cached.source_synced_at ?? ''));
+      if (Number.isFinite(syncedAt) && this.now().getTime() - syncedAt < REFRESH_AFTER_MS) return cached;
+      // What the page's Refresh button sends. A failed refresh still leaves
+      // the cached history, which is better than no answer.
+      try {
+        return await this.complete(fetcher, normalized, pageUrl, csrfToken(page.html), initial.snapshot, [{
+          path: '',
+          method: '__dispatch',
+          params: ['refresh_consignment', { userTimezone: USER_TIMEZONE }],
+        }], { userTimezone: USER_TIMEZONE });
+      } catch {
+        return cached;
+      }
     }
     if (!['New', 'Processing'].includes(initial.status)) {
       throw new SchemaError('India Post', 'India Post returned an unsupported tracking state');
     }
 
     const token = csrfToken(page.html);
-    let update = initial.status === 'Processing'
-      ? await this.update(fetcher, normalized, pageUrl, token, initial.snapshot, [{
+    return initial.status === 'Processing'
+      ? this.complete(fetcher, normalized, pageUrl, token, initial.snapshot, [{
         path: '',
         method: 'fetchStatus',
         params: [],
       }])
-      : await this.update(fetcher, normalized, pageUrl, token, initial.snapshot, [{
+      : this.complete(fetcher, normalized, pageUrl, token, initial.snapshot, [{
         path: '',
         method: '__dispatch',
         params: ['set_consignment_number', { consignment_number: normalized }],
       }, {
         path: '',
         method: 'submit',
-        params: ['Europe/Zurich'],
-      }], { userTimezone: 'Europe/Zurich' });
+        params: [USER_TIMEZONE],
+      }], { userTimezone: USER_TIMEZONE });
+  }
 
+  /** Send the first calls, then poll `fetchStatus` until the component completes. */
+  private async complete(
+    fetcher: typeof fetch,
+    normalized: string,
+    pageUrl: string,
+    token: string,
+    snapshot: string,
+    calls: JsonObject[],
+    updates: JsonObject = {},
+  ): Promise<CarrierResult> {
+    let update = await this.update(fetcher, normalized, pageUrl, token, snapshot, calls, updates);
     for (let attempt = 0; attempt <= this.maxPollAttempts; attempt += 1) {
       const names = dispatchNames(update.effects);
       if (names.has('consignment_not_found')) throw new NotFoundError('India Post');

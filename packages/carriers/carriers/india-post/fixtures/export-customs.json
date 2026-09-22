@@ -1,0 +1,14 @@
+{
+  "id": "public-request",
+  "synced_at": "2026-06-20T08:00:00.000000Z",
+  "tracking_status": "Completed",
+  "tracking_events": [
+    { "tracked_at": "2026-06-01T09:15:00.000000Z", "event": "ITEM_BOOK", "event_type": "ItemBooked", "office": "Example GPO", "pincode": "110001", "remarks": "" },
+    { "tracked_at": "2026-06-02T11:20:00.000000Z", "event": "BAG_DISPATCH", "event_type": "BagDispatched", "office": "Example GPO", "pincode": "110001", "remarks": "BAG_DISPATCH" },
+    { "tracked_at": "2026-06-03T04:05:00.000000Z", "event": "Bag_Forward", "event_type": "ItemDispatched", "office": "Example Airport TMO", "pincode": "110037", "remarks": "" },
+    { "tracked_at": "2026-06-04T06:30:00.000000Z", "event": "CUSTOM_RECEIVE", "event_type": "CustomReceive", "office": "Example Foreign Post Office", "pincode": "110002", "remarks": "" },
+    { "tracked_at": "2026-06-05T07:45:00.000000Z", "event": "CUSTOM_RETURN", "event_type": "CustomReturn", "office": "Example Foreign Post Office", "pincode": "110002", "remarks": "" },
+    { "tracked_at": "2026-06-08T08:10:00.000000Z", "event": "Item released by export Customs", "event_type": "Unknown", "office": "Office - 00000001", "pincode": "", "remarks": "" },
+    { "tracked_at": "2026-06-09T10:00:00.000000Z", "event": "TRANSFER_OOE", "event_type": "Unknown", "office": "Example Foreign Post Office", "pincode": "110002", "remarks": "" }
+  ]
+}

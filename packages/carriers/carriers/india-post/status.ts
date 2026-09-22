@@ -66,10 +66,19 @@ export function classifyIndiaPostEvent(...values: unknown[]): ClassifiedStatus {
     'itemoutfordelivery',
     'sentfordelivery',
   ])) return { status: 'out_for_delivery', stage: 'out_for_delivery' };
-  if (includesAny(key, ['customs', 'customclearance'])) {
+  // Customs handing the item back (CUSTOM_RETURN, "returned from export
+  // Customs/Security", "released by export Customs") ends the customs step.
+  if (includesAny(key, [
+    'customreturn',
+    'returnedfromexportcustoms',
+    'returnedfromcustoms',
+    'releasedbyexportcustoms',
+    'releasedbycustoms',
+  ])) return { status: 'in_transit', stage: 'in_transit' };
+  if (includesAny(key, ['customs', 'customclearance', 'customreceive'])) {
     return { status: 'in_transit', stage: 'customs' };
   }
-  if (includesAny(key, ['itembooked', 'articlebooked', 'bookingconfirmed'])) {
+  if (includesAny(key, ['itembook', 'articlebooked', 'bookingconfirmed'])) {
     return { status: 'pending', stage: 'accepted' };
   }
   if (includesAny(key, [
@@ -88,6 +97,14 @@ export function classifyIndiaPostEvent(...values: unknown[]): ClassifiedStatus {
     'forwarded',
     'intransit',
     'handedover',
+    // Codes India Post sends since 2026-09 (BAG_DISPATCH, TRANSFER_OOE...).
+    'inducted',
+    'bagclose',
+    'bagdispatch',
+    'bagforward',
+    'tmoreceive',
+    'itemreceive',
+    'transferooe',
   ])) return { status: 'in_transit', stage: 'in_transit' };
   return { status: 'unknown', stage: 'in_transit' };
 }

@@ -22,6 +22,7 @@ or capability URL is needed.
 | history | yes | newest first, at most 100 events |
 | location | yes | `office` plus a six-digit `pincode` when present |
 | provider_code | yes | `event_type`, for example `ItemDelivered` |
+| source_synced_at | yes | when MySpeedPost last asked India Post (`synced_at`) |
 | timezone | yes | always `Asia/Kolkata` |
 | eta | no | the page exposes none |
 | recipient name / address / contact | no | present on the rows, never retained |
@@ -43,8 +44,11 @@ conversation with one host, not a fallback tier:
 1. `GET /track?n={number}&sync=true` through a per-lookup cookie jar, because
    the session cookie issued with the page must travel with every later call.
 2. Read the `wire:snapshot` of the `track-consignment` component. If its status
-   is already `Completed`, the page's `tracking-request` attribute holds the
-   history and no further call is made.
+   is already `Completed`, the page's `tracking-request` attribute holds
+   MySpeedPost's cached history. When its `synced_at` is under 30 minutes old
+   no further call is made. Otherwise the adapter dispatches
+   `refresh_consignment`, as the page's Refresh button does, and polls as in
+   step 4; if that refresh fails, the cached history is returned.
 3. Otherwise `POST /livewire/update` with the CSRF token from the page: either
    `__dispatch(set_consignment_number)` + `submit` for a `New` component, or
    `fetchStatus` for one already `Processing`.
@@ -74,8 +78,8 @@ is read as `Asia/Kolkata`.
 |---|---|---|
 | registered | Shipment Information Received, Label Created, Article Created, Consignment Created | prior-art |
 | accepted | `ItemBooked`, Article Booked, Booking Confirmed | fixture |
-| in_transit | `ItemDispatched`, Item Bagged, Item Received, Received At, Departed, Arrived, Forwarded, In Transit, Handed Over | fixture / prior-art |
-| customs | Customs, Custom Clearance | prior-art |
+| in_transit | `ItemDispatched`, Item Bagged, Item Received, Received At, Departed, Arrived, Forwarded, In Transit, Handed Over; codes `BAG_DISPATCH`, `Bag_Forward`, `TMO_RECEIVE`, `ITEM_RECEIVE`, `TRANSFER_OOE`; customs hand-backs `CUSTOM_RETURN`, released by export Customs | fixture / prior-art / live 2026-09-22 |
+| customs | Customs, Custom Clearance, `CUSTOM_RECEIVE` | prior-art / live 2026-09-22 |
 | out_for_delivery | `OutForDelivery`, Item Out For Delivery, Sent For Delivery | prior-art |
 | ready_for_pickup | Ready For Pickup, Ready For Collection, Awaiting Collection | prior-art |
 | delivered | `ItemDelivered`, Delivered To Recipient | fixture |
@@ -115,6 +119,18 @@ scan is never lost and no terminal stage is ever invented; at parcel level that
   lookups from sharing a component snapshot.
 - 2026-09-01: short-circuit when the page already reports `Completed`. A cached
   consignment then costs exactly one request.
+- 2026-09-22: refresh a cached lookup older than 30 minutes. MySpeedPost keeps
+  serving its last sync (`sync=true` does not renew it): a parcel showed only
+  "Item Booked" from an 11-day-old sync while India Post had since recorded
+  its dispatch, export customs and transfer to the office of exchange. One
+  `refresh_consignment` dispatch returned the 17 events.
+- 2026-09-22: India Post now sends bare codes in `event` (`ITEM_BOOK`,
+  `BAG_DISPATCH`, `CUSTOM_RECEIVE`, `CUSTOM_RETURN`, `TRANSFER_OOE`...). Codes
+  seen live are spelled out (`ITEM_BOOK` keeps the earlier "Item Booked" so a
+  stored row is not duplicated); other code-shaped values become title case.
+  `CUSTOM_RECEIVE` is the customs stage; customs handing the item back
+  (`CUSTOM_RETURN`, "released by export Customs") is in transit, not a return
+  to sender.
 - 2026-09-01: bind identity twice — the Livewire snapshot's
   `consignment_number` and the rendered fragment's `#consignment_search` value
   must both echo the requested number.

@@ -19,6 +19,9 @@ const CSRF_TOKEN = 'fixtureCsrfToken0123456789012345';
 const DELIVERED = JSON.parse(
   readFileSync(new URL('./fixtures/delivered.json', import.meta.url), 'utf8'),
 ) as { tracking_status: string; tracking_events: Array<Record<string, unknown>> };
+const EXPORT_CUSTOMS = JSON.parse(
+  readFileSync(new URL('./fixtures/export-customs.json', import.meta.url), 'utf8'),
+) as { synced_at: string; tracking_events: Array<Record<string, unknown>> };
 const CAPABILITIES = (JSON.parse(
   readFileSync(new URL('./carrier.json', import.meta.url), 'utf8'),
 ) as { capabilities: string[] }).capabilities;
@@ -45,9 +48,11 @@ function componentSnapshot(trackingNumber: string, status: string): string {
 function trackingHistoryHtml(
   trackingNumber = SAMPLE_NUMBER,
   events: Array<Record<string, unknown>> = structuredClone(DELIVERED.tracking_events),
+  syncedAt?: string,
 ): string {
   const request = JSON.stringify({
     id: 'public-request',
+    ...(syncedAt ? { synced_at: syncedAt } : {}),
     tracking_status: 'Completed',
     tracking_events: events,
   });
@@ -175,6 +180,26 @@ describe('India Post response normalization', () => {
     )).toThrow('different shipment');
   });
 
+  it('spells out code-only events and treats customs hand-backs as moving on', () => {
+    const result = parseIndiaPostTrackingHtml(
+      trackingHistoryHtml(SAMPLE_NUMBER, EXPORT_CUSTOMS.tracking_events, EXPORT_CUSTOMS.synced_at),
+      SAMPLE_NUMBER,
+    );
+    expect(result.events?.map((event) => [event.description, event.stage])).toEqual([
+      ['Transferred to Office of Exchange', 'in_transit'],
+      ['Item released by export Customs', 'in_transit'],
+      ['Item Returned from Customs', 'in_transit'],
+      ['Item Presented to Customs', 'customs'],
+      ['Bag Forwarded', 'in_transit'],
+      ['Bag Dispatched', 'in_transit'],
+      // Matches the prose of rows synced earlier, so a stored row is not duplicated.
+      ['Item Booked', 'accepted'],
+    ]);
+    expect(result).toMatchObject({ status: 'in_transit', current_stage: 'in_transit', source_synced_at: '2026-06-20T08:00:00Z' });
+    expect(classifyIndiaPostEvent('CustomReturn', 'CUSTOM_RETURN')).toEqual({ status: 'in_transit', stage: 'in_transit' });
+    expect(classifyIndiaPostEvent('Item returned from export Customs/Security')).toEqual({ status: 'in_transit', stage: 'in_transit' });
+  });
+
   it('produces every capability carrier.json declares', () => {
     expect(CAPABILITIES).toEqual(['history', 'location', 'provider_code']);
     const result = parseIndiaPostTrackingHtml(trackingHistoryHtml(), SAMPLE_NUMBER);
@@ -185,14 +210,45 @@ describe('India Post response normalization', () => {
 });
 
 describe('India Post Livewire session', () => {
-  it('uses a completed cached response without unnecessary polling', async () => {
+  it('uses a recently synced cached response without unnecessary polling', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(
-      pageHtml(SAMPLE_NUMBER, 'Completed', trackingHistoryHtml()),
+      pageHtml(SAMPLE_NUMBER, 'Completed', trackingHistoryHtml(SAMPLE_NUMBER, undefined, '2026-09-01T12:00:00Z')),
     ));
 
-    await expect(new IndiaPostTracker({ fetcher }).fetch(SAMPLE_NUMBER))
+    await expect(new IndiaPostTracker({ fetcher, now: () => new Date('2026-09-01T12:20:00Z') }).fetch(SAMPLE_NUMBER))
       .resolves.toMatchObject({ status: 'delivered' });
     expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshes a stale cached response the way the page\'s Refresh button does', async () => {
+    const stale = [structuredClone(EXPORT_CUSTOMS.tracking_events[0]!)];
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(pageHtml(SAMPLE_NUMBER, 'Completed',
+        trackingHistoryHtml(SAMPLE_NUMBER, stale, '2026-06-01T10:00:00Z'))))
+      .mockResolvedValueOnce(livewireResponse(SAMPLE_NUMBER, 'Processing', { dispatches: [{ name: 'consignment_created', params: [] }] }))
+      .mockResolvedValueOnce(livewireResponse(SAMPLE_NUMBER, 'Completed', {
+        html: trackingHistoryHtml(SAMPLE_NUMBER, EXPORT_CUSTOMS.tracking_events, EXPORT_CUSTOMS.synced_at),
+      }));
+
+    const result = await new IndiaPostTracker({ fetcher, pollIntervalMs: 0, now: () => new Date('2026-06-20T08:05:00Z') })
+      .fetch(SAMPLE_NUMBER);
+    expect(result).toMatchObject({ last_status_text: 'Transferred to Office of Exchange', source_synced_at: '2026-06-20T08:00:00Z' });
+    expect(result.events).toHaveLength(7);
+    const refresh = JSON.parse(String(fetcher.mock.calls[1]?.[1]?.body));
+    expect(refresh.components[0].calls).toEqual([{
+      path: '', method: '__dispatch', params: ['refresh_consignment', { userTimezone: 'Europe/Zurich' }],
+    }]);
+    expect(JSON.parse(String(fetcher.mock.calls[2]?.[1]?.body)).components[0].calls[0].method).toBe('fetchStatus');
+  });
+
+  it('keeps the cached history when a refresh fails', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(pageHtml(SAMPLE_NUMBER, 'Completed', trackingHistoryHtml())))
+      .mockResolvedValueOnce(new Response('<title>Just a moment...</title>', { status: 403 }));
+
+    // No synced_at at all cannot prove freshness either.
+    await expect(new IndiaPostTracker({ fetcher }).fetch(SAMPLE_NUMBER)).resolves.toMatchObject({ status: 'delivered' });
+    expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
   it('submits and polls a new valid-shaped wrong number into a clean 404', async () => {
