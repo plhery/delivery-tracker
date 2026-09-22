@@ -2,9 +2,13 @@
 
 ## Identity and scope
 
-`fedex` — Federal Express, a global integrator. Tracked automatically through
-the tracking reply the public page reads itself; no postcode or capability
-URL is needed.
+`fedex` — Federal Express, a global integrator. The dedicated adapter reads
+the public page's tracking reply; no postcode or capability URL is needed.
+
+**Current limitation (2026-09-22):** the deployed browser route receives HTTP
+403 from the tracking API. Interactive Chrome returned all 14 events for the
+same reference, but a reliable unattended retrieval was not established.
+The app's existing universal-provider recovery supplies FedEx history.
 
 ## Portals
 
@@ -51,11 +55,11 @@ the page itself received is parsed newest-first. The browser's session is
 never replayed over plain HTTP: the edge accepts the call only from the
 session it validated.
 
-There is no direct step. The tracking API sits behind Akamai Bot Manager and
-refuses every non-browser client with HTTP 403 — verified 2026-09-20 from a
-server, from headless Chrome on a residential connection, and from the
-collaborative browser, while the OAuth token endpoint next to it answers
-200. The legacy `trackingCal/track` endpoint answers 403 the same way.
+There is no plain HTTP step. Direct POST probes and fresh automated browser
+sessions received HTTP 403 on 2026-09-22, while the anonymous OAuth endpoint
+answered 200. Successful token acquisition does not establish access to the
+tracking API. The earlier 2026-09-20 checks also found the legacy
+`trackingCal/track` endpoint blocked.
 
 The rendered page is read only to tell a challenge from an inconclusive
 load. It renders its "can't find that tracking number" notice both for
@@ -65,10 +69,17 @@ readable reply fails as a transport problem. A recipient-gated shipment
 (`TRACKING.AUTHORIZATION.ERROR`) fails as input-required rather than
 retrying a verification the parcel does not carry.
 
-Errors: `ChallengeError` when no browser service is configured or the page
-carries a challenge, `TransportError` when the service captured no readable
-reply, `InputRequiredError` for recipient-gated shipments, `SchemaError`
-when the reply is not about the requested parcel.
+Errors: `ChallengeError` when no browser service is configured, the page
+carries a challenge, or the captured tracking API returns 401/403.
+`RateLimitedError` preserves a captured 429 and its Retry-After delay;
+upstream 5xx responses keep their HTTP classification. A bare API 404 remains
+a transport failure, not proof that the shipment is unknown. Missing captures
+remain `TransportError`; unreadable JSON and identity mismatches remain
+`SchemaError`; recipient gates remain `InputRequiredError`.
+
+A newer API rejection takes precedence over an older successful capture.
+A later successful response can recover from an earlier rejection. Parser
+failures are no longer hidden behind a generic missing-response error.
 
 ## Status reference
 
@@ -133,8 +144,11 @@ because the original line names the signatory.
   anonymous lookup this adapter provides. Reconsider if the browser path
   proves unreliable in production.
 - Parsing the rendered page as the primary path: the notice text cannot
-  distinguish an unknown number from a refused call, and the success DOM was
-  never observable from an automated session.
+  distinguish an unknown number from a refused API call.
+- Opening the blank tracker and submitting its normal form: one standalone
+  server-browser attempt returned all 14 events, but repeated standalone and
+  integrated fresh/cached checks returned 403. This did not establish a
+  reliable replacement and was not deployed.
 
 ## Verification log
 
@@ -144,6 +158,12 @@ because the original line names the signatory.
   and `DY` status flags); verified the 403 boundary for direct POSTs, the
   legacy endpoint and two automated browser stacks, one on a residential IP.
 - 2026-09-20: adapter added with offline tests and an env-gated live test.
-  Live verification through the production browser service with a real
-  shipment is still open (supply `FEDEX_LIVE_TRACKING_NUMBER` outside the
-  repository).
+- 2026-09-22: a captured HTTP 403 from the tracking API was incorrectly
+  reported as a missing response because the page shell itself loaded with
+  HTTP 200. Fixed the adapter's error handling and added regression tests
+  for rejection ordering, throttling, recipient verification and identity.
+- 2026-09-22: interactive Chrome confirmed 14 scans with the parser's existing
+  fields and explicit offsets. Server browser checks remained unreliable,
+  including the form experiment above; this is not a verified restoration
+  of unattended tracking. Supply `FEDEX_LIVE_TRACKING_NUMBER` outside the
+  repository when checking recovery.

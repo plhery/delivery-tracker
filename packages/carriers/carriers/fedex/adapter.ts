@@ -5,8 +5,10 @@ import type { AdapterFactory } from '../../core/adapter';
 import {
   ChallengeError,
   InputRequiredError,
+  RateLimitedError,
   SchemaError,
   TransportError,
+  UpstreamHttpError,
 } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import { runSteps } from '../../core/runner';
@@ -21,12 +23,11 @@ import { FEDEX_CODE_STAGE, fedexStage, fedexStatus } from './status';
  *
  * The page at `fedextrack/?trknbr=` is a shell: every byte of tracking data
  * arrives as `POST https://api.fedex.com/track/v2/shipments`, an
- * Akamai-gated call plain HTTP never passes (verified 2026-09-20: direct
- * POSTs, the legacy `trackingCal/track` endpoint and automated browsers all
- * end on HTTP 403, while the OAuth token endpoint next to it answers 200).
- * The lookup therefore has a single step: the private browser service loads
- * the page, and the reply the page itself received is parsed. The browser's
- * session is never replayed over plain HTTP.
+ * browser-gated call. Plain HTTP and the deployed browser service received
+ * HTTP 403 on 2026-09-22, while an interactive browser returned full history.
+ * The browser route remains available for recovery; its API rejection must
+ * stay a challenge so routing can apply the right cooldown and fallback.
+ * The browser's session is never replayed over plain HTTP.
  *
  * Response shape provenance: the page bundle's package model (`trackingNbr`,
  * `keyStatus`/`keyStatusCD`, `scanEventList` items with
@@ -244,8 +245,7 @@ export class FedExTracker {
 
   async fetch(trackingNumber: string): Promise<CarrierResult> {
     const number = normalizeFedExTrackingNumber(trackingNumber);
-    // Akamai refuses every non-browser client, so a direct attempt only burns
-    // time. There is one step, and it is the browser.
+    // Plain HTTP probes were rejected; the dedicated route uses the browser.
     const trawl = this.#browserService();
     if (!trawl) {
       throw new ChallengeError(
@@ -282,18 +282,38 @@ export class FedExTracker {
     });
     let captureError: unknown;
     // Newest first: a later reply is the page's final answer.
-    for (const entry of page.capturedResponses.slice(0, MAX_CAPTURED).reverse()) {
-      if (entry.url !== TRACK_API || entry.status !== 200 || entry.truncated || entry.body === null) continue;
+    for (const entry of page.capturedResponses.slice(-MAX_CAPTURED).reverse()) {
+      if (entry.url !== TRACK_API) continue;
+      // The page shell can load normally while its tracking API is rejected.
+      // Preserve that failure instead of reporting a missing capture or falling
+      // back to an older successful reply from the same page.
+      if (entry.status === 401 || entry.status === 403) {
+        throw new ChallengeError('FedEx', 'FedEx rejected the browser tracking request', { status: entry.status });
+      }
+      if (entry.status === 429) {
+        const header = entry.headers['retry-after'] ?? entry.headers['Retry-After'];
+        const delay = header && /^\d+(?:\.\d+)?$/.test(header) ? Number(header) * 1000
+          : header ? Date.parse(header) - Date.now() : NaN;
+        throw new RateLimitedError('FedEx', Number.isFinite(delay) ? Math.max(0, delay) : undefined);
+      }
+      if (entry.status >= 500) throw new UpstreamHttpError('FedEx', entry.status);
+      if (entry.status >= 400) {
+        throw new TransportError('FedEx', `FedEx tracking API returned HTTP ${entry.status}`, { status: entry.status });
+      }
+      if (entry.status !== 200 || entry.truncated || entry.body === null) continue;
       try {
         return this.#structuredResult(number, JSON.parse(entry.body));
       } catch (error) {
+        if (error instanceof InputRequiredError) throw error;
         // An unreadable or unrelated reply; the rendered page may still name a challenge.
-        captureError = error;
+        captureError ??= error instanceof SyntaxError
+          ? new SchemaError('FedEx', 'FedEx returned unreadable tracking JSON', { cause: error }) : error;
       }
     }
     if (parseFedExTrackingHtml(page.html) === 'challenged') {
       throw new ChallengeError('FedEx', 'FedEx challenged the browser tracking session', { cause: captureError });
     }
+    if (captureError) throw captureError;
     throw new TransportError('FedEx', 'TRAWL did not capture the FedEx tracking response', { cause: captureError });
   }
 
@@ -313,7 +333,7 @@ export const adapter: AdapterFactory = (environment) => {
   });
   return {
     id: 'fedex',
-    // Akamai refuses every non-browser client, so there is no direct tier.
+    // Browser-backed direct tracking; universal recovery belongs to the caller.
     steps: ['trawl'],
     track: (input) => tracker.fetch(input.number),
   };

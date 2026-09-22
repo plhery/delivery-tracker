@@ -223,7 +223,7 @@ describe('FedEx lookup steps', () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
-  it('reports an inconclusive browser load as a transport failure, never as not-found', async () => {
+  it('preserves unreadable tracking JSON as a schema failure, never as not-found', async () => {
     const fetcher = vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(new Response(JSON.stringify({
         tier: 3,
@@ -240,9 +240,74 @@ describe('FedEx lookup steps', () => {
     // The page renders this notice both for unknown numbers and for tracking
     // calls the edge refused, so only the structured reply decides not-found.
     await expect(new FedExTracker({ timeoutMs: 2_000, trawlUrl: TRAWL_URL, recorder }).fetch(DELIVERED_NUMBER))
-      .rejects.toMatchObject({ name: 'TransportError', message: 'TRAWL did not capture the FedEx tracking response' });
+      .rejects.toMatchObject({ name: 'SchemaError', message: 'FedEx returned unreadable tracking JSON' });
     expect(fetcher).toHaveBeenCalledTimes(1);
-    expect(records).toEqual(['trawl:transport', 'lookup:trawl:transport']);
+    expect(records).toEqual(['trawl:schema', 'lookup:trawl:schema']);
+  });
+
+  it('keeps a page without a tracking reply inconclusive', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(Response.json({
+      tier: 2, statusCode: 200, html: '<body>We cannot find that tracking number.</body>',
+      capturedResponses: [],
+    }));
+    await expect(new FedExTracker({ trawlUrl: TRAWL_URL }).fetch(DELIVERED_NUMBER))
+      .rejects.toMatchObject({ name: 'TransportError', kind: 'transport' });
+  });
+
+  it.each([401, 403])('preserves an API HTTP %s rejection even when the page looks normal', async (status) => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(Response.json({
+      tier: 2, statusCode: 200, html: '<body>Tracking app</body>',
+      capturedResponses: [
+        { url: TRACK_API, status: 200, body: JSON.stringify(deliveredFixture()) },
+        { url: TRACK_API, status, body: null },
+      ],
+    }));
+    const { recorder, records } = stepRecorder();
+    await expect(new FedExTracker({ trawlUrl: TRAWL_URL, recorder }).fetch(DELIVERED_NUMBER))
+      .rejects.toMatchObject({ name: 'ChallengeError', kind: 'challenge', status });
+    expect(records).toEqual(['trawl:challenge', 'lookup:trawl:challenge']);
+  });
+
+  it('accepts a successful reply after an earlier browser rejection', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(Response.json({
+      tier: 3, statusCode: 200, html: '<body>Tracking app</body>',
+      capturedResponses: [
+        { url: TRACK_API, status: 403, body: null },
+        { url: TRACK_API, status: 200, body: JSON.stringify(deliveredFixture()) },
+      ],
+    }));
+    await expect(new FedExTracker({ trawlUrl: TRAWL_URL }).fetch(DELIVERED_NUMBER))
+      .resolves.toMatchObject({ status: 'delivered' });
+  });
+
+  it.each([
+    [429, { 'retry-after': '120' }, { name: 'RateLimitedError', retryAfterMs: 120_000 }],
+    [503, {}, { name: 'UpstreamHttpError', kind: 'maintenance' }],
+    [404, {}, { name: 'TransportError', kind: 'transport' }],
+  ])('keeps HTTP %s distinct from an unknown shipment', async (status, headers, expected) => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(Response.json({
+      tier: 2, statusCode: 200, html: '<body>Tracking app</body>',
+      capturedResponses: [{ url: TRACK_API, status, headers, body: null }],
+    }));
+    await expect(new FedExTracker({ trawlUrl: TRAWL_URL }).fetch(DELIVERED_NUMBER))
+      .rejects.toMatchObject({ ...expected, status });
+  });
+
+  it('preserves recipient-verification and identity errors from a captured reply', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch');
+    for (const [body, expected] of [
+      [{ output: { packages: [], errorList: [{ code: 'TRACKING.AUTHORIZATION.ERROR' }] } },
+        { name: 'InputRequiredError', field: 'recipient verification' }],
+      [{ output: { packages: [{ trackingNbr: IN_TRANSIT_NUMBER, keyStatus: 'Delivered' }] } },
+        { name: 'SchemaError', message: 'FedEx did not return the requested parcel' }],
+    ]) {
+      fetcher.mockResolvedValueOnce(Response.json({
+        tier: 2, statusCode: 200, html: '<body>Tracking app</body>',
+        capturedResponses: [{ url: TRACK_API, status: 200, body: JSON.stringify(body) }],
+      }));
+      await expect(new FedExTracker({ trawlUrl: TRAWL_URL }).fetch(DELIVERED_NUMBER))
+        .rejects.toMatchObject(expected);
+    }
   });
 
   it('rejects a number that is not a FedEx number before any request', async () => {
