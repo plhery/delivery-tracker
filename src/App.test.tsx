@@ -1599,6 +1599,37 @@ describe('App', () => {
     expect(screen.getByText(/latest available tracking is shown/)).toBeInTheDocument();
   });
 
+  it('flags a failed refresh on the next delivery with the same wording as other cards', async () => {
+    const parcel: ParcelWithEvents = {
+      id: 'pkg-hero-error',
+      trackingNumber: '993412345612345680',
+      label: 'Garden chair',
+      carrier: 'swiss-post',
+      createdAt: '2026-07-14T08:00:00Z',
+      syncStatus: 'error',
+      events: [{
+        id: 'event-hero-error',
+        parcelId: 'pkg-hero-error',
+        stage: 'out_for_delivery',
+        description: 'Out for delivery',
+        occurredAt: '2026-07-14T08:00:00Z',
+      }],
+    };
+    const repo: ParcelRepo = {
+      mode: 'api',
+      list: vi.fn().mockResolvedValue([parcel]),
+      add: vi.fn(),
+      rename: vi.fn(),
+      remove: vi.fn(),
+      refresh: vi.fn().mockResolvedValue([parcel]),
+    };
+    renderApp(repo);
+
+    const hero = await screen.findByRole('button', { name: /^Next up: Garden chair/ });
+    expect(within(hero).getByText('Couldn’t get the latest update')).toHaveClass('parcel-card__notice');
+    expect(within(hero).getByText('Out for delivery')).toHaveClass('parcel-card__state');
+  });
+
   it('shows a friendly empty state when there are no parcels', async () => {
     const repo: ParcelRepo = {
       mode: 'api',

@@ -12,8 +12,10 @@
 .app--deliveries .parcel-sections { display: flex; flex-direction: column; gap: 24px; margin-top: 24px; }
 .app--deliveries .parcel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .app--deliveries .delivery-attention { margin-bottom: 10px; }
+/* An odd last flagged card spans the row so the next grid does not start after a hole. */
+.app--deliveries .delivery-attention .parcel-card-swipe:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .app--deliveries .delivery-next { margin-bottom: 10px; }
-.app--deliveries .parcel-card { min-height: 102px; padding: 13px 15px; border-radius: 16px; gap: 5px; }
+.app--deliveries .parcel-card { height: 100%; min-height: 102px; padding: 13px 15px; border-radius: 16px; gap: 5px; }
 .app--deliveries .parcel-card__top { margin-bottom: 3px; }
 .app--deliveries .parcel-card__label { font-size: 17px; font-weight: 600; }
 .app--deliveries .parcel-card__state { display: flex; align-items: center; gap: 5px; }

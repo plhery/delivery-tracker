@@ -719,7 +719,7 @@ private struct ExperimentalNextDeliveryPass: View {
                 .foregroundStyle(identity.ink)
                 .fixedSize(horizontal: false, vertical: true)
             if parcel.syncStatus == .error {
-                ParcelFlag(text: localizer.text("parcel.syncAttention"), symbol: "arrow.clockwise")
+                ParcelFlag(text: localizer.text("attention.sync_error"), symbol: "arrow.clockwise")
                     .padding(.top, 8)
             }
         }
@@ -758,7 +758,7 @@ private struct ExperimentalParcelPassCard: View {
     private var flag: String? {
         let carrierIssue = [TrackingStage.customs, .readyForPickup, .failedAttempt, .exception].contains { $0 == parcel.currentStage }
         if let notice, !carrierIssue { return notice }
-        return parcel.syncStatus == .error ? localizer.text("parcel.syncAttention") : nil
+        return parcel.syncStatus == .error ? localizer.text("attention.sync_error") : nil
     }
 
     var body: some View {

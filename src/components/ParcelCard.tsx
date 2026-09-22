@@ -35,7 +35,7 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
   const hero = variant === 'hero';
   // Carrier-reported stages already say what needs attention in the status line.
   const carrierIssue = ['customs', 'ready_for_pickup', 'failed_attempt', 'exception'].includes(current?.stage ?? '');
-  const flag = (notice && !carrierIssue ? notice : null) ?? (parcel.syncStatus === 'error' ? t('parcel.syncAttention') : null);
+  const flag = (notice && !carrierIssue ? notice : null) ?? (parcel.syncStatus === 'error' ? t('attention.sync_error') : null);
   const flagChip = flag && <span className="parcel-card__notice"><Icon name={parcel.syncStatus === 'error' ? 'refresh' : 'clock'} />{flag}</span>;
   const drag = useRef<Drag | null>(null);
   const button = useRef<HTMLButtonElement>(null);

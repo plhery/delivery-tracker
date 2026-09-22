@@ -27,7 +27,10 @@ test('keeps the next arrival, flagged issue card, and search tools in one compac
   await expect(notice).toContainText('Birthday gift');
   await expect(notice).not.toContainText('Next up');
   await expect(notice.locator('.carrier-mark')).toBeVisible();
-  expect((await notice.boundingBox())!.y).toBeGreaterThan((await hero.boundingBox())!.y);
+  const heroBounds = (await hero.boundingBox())!;
+  const noticeBounds = (await notice.boundingBox())!;
+  expect(noticeBounds.y).toBeGreaterThan(heroBounds.y);
+  expect(noticeBounds.width).toBeGreaterThan(heroBounds.width - 2);
   const region = page.getByRole('region', { name: 'On the way' });
   await expect(region.locator('.parcel-section__heading > span')).toHaveText('6');
   const row = await page.locator('.delivery-overview').boundingBox();
@@ -51,6 +54,20 @@ test('keeps the next arrival, flagged issue card, and search tools in one compac
   await expect(searchButton).toBeFocused();
   await notice.click();
   await expect(page.getByRole('dialog', { name: 'Birthday gift 🎁' })).toBeVisible();
+});
+
+test('keeps flagged cards side by side at one height', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Phones show a single column.');
+  await seed(page, [
+    parcel('customs', 'customs', '2026-09-08T09:00:00Z', 'Birthday gift'),
+    { ...parcel('lamp', 'in_transit', '2026-09-08T10:00:00Z', 'Desk lamp'), syncStatus: 'error' },
+  ]);
+  const cards = page.getByRole('region', { name: 'Needs attention' }).locator('.parcel-card');
+  await expect(cards).toHaveCount(2);
+  await expect(cards.filter({ hasText: 'Desk lamp' }).locator('.parcel-card__notice')).toHaveText('Couldn’t get the latest update');
+  const [first, second] = await Promise.all([cards.nth(0).boundingBox(), cards.nth(1).boundingBox()]);
+  expect(first!.y).toBe(second!.y);
+  expect(first!.height).toBe(second!.height);
 });
 
 test('shows the completed state with a line checkmark and newest deliveries first', async ({ page }) => {

@@ -397,7 +397,6 @@
   "parcel.sender": "Remetente: {{sender}}",
   "parcel.autoChangedCarrier": "Alterado automaticamente de {{carrier}}",
   "parcel.deliveryCarrier": "Entrega pela {{carrier}}",
-  "parcel.syncAttention": "Atualização indisponível",
   "parcel.updated": "Atualizado: {{date}}",
   "passport.acrossBorders": "Além-fronteiras",
   "passport.acrossExplanation": "Um envio entregue que passou por dois países.",

@@ -397,7 +397,6 @@
   "parcel.sender": "Absender: {{sender}}",
   "parcel.autoChangedCarrier": "Automatisch von {{carrier}} gewechselt",
   "parcel.deliveryCarrier": "Zustellung durch {{carrier}}",
-  "parcel.syncAttention": "Aktualisierung nicht verfügbar",
   "parcel.updated": "Aktualisiert: {{date}}",
   "passport.acrossBorders": "Über Grenzen hinweg",
   "passport.acrossExplanation": "Ein zugestelltes Paket, das in zwei Ländern gescannt wurde.",
