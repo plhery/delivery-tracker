@@ -23,7 +23,7 @@ capture/rendered history as recovery when the direct protocol fails:
 
 | Field | Source |
 | --- | --- |
-| `events[].time` | `states[].date` (API, always with an offset) or the `dd LLL yyyy HH:mm` pair rendered in the page, read as UTC |
+| `events[].time` | `states[].date` (API) or the `dd LLL yyyy HH:mm` pair rendered in the page: the scan's local clock, re-read in its zone (see below) |
 | `events[].description`, `events[].stage` | `states[].status` or the rendered event title |
 | `status`, `current_stage`, `last_status_text`, `last_update` | derived from the projected events |
 
@@ -164,9 +164,22 @@ wording rules and the language classifier.
 - **Notices are not events (2026-09-11).** Rows asking for a postal code or a
   destination country, and rows rendered with a date but no time, are skipped
   instead of failing the whole history or manufacturing a timestamp.
-- **Rendered times are UTC (2026-09-08).** Verified against the live JSON: the
-  English web app prints the UTC values of its API. The machine's local timezone
-  is never used.
+- **Rendered times are the API's UTC digits (2026-09-08).** Verified against
+  the live JSON: the English web app prints the UTC values of its API. The
+  machine's local timezone is never used.
+- **Those digits are the scan's local clock, not UTC (2026-09-22).** Compared
+  with the carriers' own offsets, a DPD scan at 14:05+02:00 came back as
+  `14:05+00:00`, a Swiss Post delivery at 11:30 local as `13:30+02:00`, and
+  Chronopost, Mondial Relay and DHL scans were two hours
+  late, DHL eCommerce US scans four hours early. The UTC digits are re-read in
+  the zone of the scan's carrier (`carriers[state.carrier]` mapped to the
+  catalog), else the country ending its `location`, else the zone of the carrier
+  the parcel is filed under, which routing passes in. A scan with none keeps
+  the labeled instant. The rendered page names no carrier per scan, so only the
+  parcel's zone applies there. Single-carrier replies matched the carriers'
+  own times exactly. Cross-border replies stay uncertain: an India→France
+  parcel listed La Poste's French scans under "India Post", and La Poste itself
+  labels partner-leg scans `+02:00` at hours that fit Indian local time better.
 
 ## Rejected alternatives
 
@@ -262,6 +275,11 @@ that carrier's own README.
   date and an empty time; those rows are skipped.
 - 2026-09-12: moved into `packages/carriers/providers/parcelsapp` unchanged, now
   reporting one `trawl` step per lookup.
+- 2026-09-22: live replies for a DPD, a Swiss Post and an India Post parcel
+  confirmed that `date` carries the carrier's local clock with an unreliable
+  offset; production held the same scans two hours apart when both ParcelsApp
+  and the carrier's own adapter had recorded them. Scan zones are now resolved
+  as described above.
 - 2026-09-12: compatibility sweep over 36 real corpus numbers in a real
   browser: 7 carriers with usable history (see Carrier compatibility above);
   postcode/country/sign-in prompts are notices, never events, and are recorded

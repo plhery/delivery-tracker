@@ -1699,7 +1699,9 @@ describe('TrackingSyncService', () => {
     await expect(adapter.fetch('unknown', 'TEST1234', null, '8004')).resolves.toMatchObject({ status: 'in_transit' });
     expect(universal.fetch).toHaveBeenCalledWith('TEST1234', '8004');
     await adapter.fetchUniversal('Ship24', 'TEST1234', 1000, '8004');
-    expect(universal.fetchSource).toHaveBeenCalledWith('Ship24', 'TEST1234', 1000, '8004');
+    expect(universal.fetchSource).toHaveBeenCalledWith('Ship24', 'TEST1234', 1000, '8004', null);
+    await adapter.fetchUniversal('Ship24', 'TEST1234', 1000, null, 'Europe/Zurich');
+    expect(universal.fetchSource).toHaveBeenLastCalledWith('Ship24', 'TEST1234', 1000, null, 'Europe/Zurich');
   });
 
   it('keeps expired Shipping history out of the timeline and Sentry', async () => {
@@ -1807,6 +1809,14 @@ describe('tracking anomaly detection', () => {
       'terminal_stage_regression',
       'delivered_status_conflict',
     ]));
+  });
+
+  it('flags a scan two hours ahead, the mark of a local clock read as UTC, but not minor skew', () => {
+    const now = new Date('2026-06-10T07:00:00Z');
+    const ahead = (occurred_at: string) => detectSyncAnomalies({ current_stage: 'in_transit' },
+      { status: 'in_transit', events: [] }, [{ occurred_at }], 'spring-gds', 'in_transit', now);
+    expect(ahead('2026-06-10T09:15:00Z')).toContain('future_event_timestamp');
+    expect(ahead('2026-06-10T07:35:00Z')).not.toContain('future_event_timestamp');
   });
 
   it('accepts a problem reported after delivery without calling it a regression', () => {

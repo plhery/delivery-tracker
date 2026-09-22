@@ -181,6 +181,13 @@ describe('persistent tracking routing', () => {
     expect(universal).toHaveBeenCalledOnce();
     expect(health.finishTrackingProvider).toHaveBeenCalledWith('Ship24', 'lease', 'rate_limited', 7_200_000, expect.any(Number));
   });
+  it('never moves the freshness watermark past the time of the check', async () => {
+    const { router, direct } = setup();
+    // A scan read two hours late would otherwise make the next real update look older.
+    direct.mockResolvedValue({ ...directValue(), result: history('2026-09-10T13:30:00Z') });
+    const result = await router.fetch(parcel({ carrier: 'ups' }), false);
+    expect(result.result.routing).toMatchObject({ last_event_at: time.toISOString() });
+  });
   it('keeps provider circuits closed when providers answer without history for an unknown number', async () => {
     const { router, universal, health } = setup();
     universal.mockImplementation(async (source: string) => {
@@ -306,17 +313,22 @@ describe('persistent tracking routing', () => {
     const { router, direct, universal } = setup(); direct.mockRejectedValue(new Error('delivery unavailable'));
     await router.fetch(parcel({ carrier: 'dhl', carrier_data: { original_carrier: 'dhl', active_tracking_carrier: 'swiss-post',
       active_tracking_number: 'LOCAL1234' } }), false);
-    expect(universal).toHaveBeenCalledWith('Ship24', 'LOCAL1234', expect.any(Number), null);
+    expect(universal).toHaveBeenCalledWith('Ship24', 'LOCAL1234', expect.any(Number), null, 'Europe/Zurich');
   });
   it('forwards the stored delivery postcode to universal providers', async () => {
     const { router, universal } = setup();
     await router.fetch(parcel({ dpd_postcode: '8004' }), false);
-    expect(universal).toHaveBeenCalledWith('Ship24', 'TEST1234', expect.any(Number), '8004');
+    expect(universal).toHaveBeenCalledWith('Ship24', 'TEST1234', expect.any(Number), '8004', null);
+  });
+  it('gives universal providers the parcel carrier\'s zone for scans without a trustworthy one', async () => {
+    const { router, direct, universal } = setup(); direct.mockRejectedValue(new Error('carrier down'));
+    await router.fetch(parcel({ carrier: 'dpd' }), false);
+    expect(universal).toHaveBeenCalledWith('Ship24', 'TEST1234', expect.any(Number), null, 'Europe/Zurich');
   });
   it('sends no postcode to universal providers when the parcel stores none', async () => {
     const { router, universal } = setup();
     await router.fetch(parcel(), false);
-    expect(universal).toHaveBeenCalledWith('Ship24', 'TEST1234', expect.any(Number), null);
+    expect(universal).toHaveBeenCalledWith('Ship24', 'TEST1234', expect.any(Number), null, null);
   });
   it('fails closed when shared coordination is unavailable, with a persisted retry', async () => {
     const { router, health, universal } = setup(); health.acquireTrackingProvider.mockRejectedValue(new Error('db down'));

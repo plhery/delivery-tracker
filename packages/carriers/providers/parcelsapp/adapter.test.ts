@@ -74,6 +74,33 @@ describe('ParcelsApp result parsing', () => {
     expect(JSON.stringify(result)).not.toContain('PRIVATE');
   });
 
+  it('re-reads each scan in its carrier\'s or location\'s zone instead of the UTC ParcelsApp labels', () => {
+    // Live shapes (2026-09-22): the carrier's local clock as "+00:00" or shifted into "+02:00".
+    const result = parseParcelsAppResponse({
+      carriers: ['India Post', 'Universal Postal Union', 'Swiss Post'],
+      states: [
+        { date: '2026-06-12T13:30:00+02:00', status: 'Delivered', carrier: 2 },
+        { date: '2026-06-11T18:10:00+02:00', status: 'Shipment was sorted', carrier: 1, location: 'Example Parcel Centre, Switzerland' },
+        { date: '2026-06-08T15:20:00Z', status: 'Arrived at international sorting center', carrier: 1, location: 'EXAMPLE AIR HUB' },
+        { date: '2026-06-05T20:30:00Z', status: 'Item booked', carrier: 0 },
+      ],
+    }, number, identity());
+    expect(result.events?.map((scan) => scan.time)).toEqual([
+      '2026-06-12T09:30:00.000Z', // Swiss Post: 11:30 in Zurich
+      '2026-06-11T14:10:00.000Z', // unmapped carrier, located in Switzerland
+      '2026-06-08T15:20:00.000Z', // no zone to resolve: kept as labeled
+      '2026-06-05T15:00:00.000Z', // India Post: 20:30 in Kolkata
+    ]);
+  });
+
+  it('falls back to the parcel carrier\'s zone when a scan names no usable carrier or place', () => {
+    const payload = { carriers: ['DPD Group'], states: [{ date: '2026-06-10T14:05:00+00:00', status: 'Return to sender', carrier: 0 }] };
+    expect(parseParcelsAppResponse(payload, number, identity(), 'Europe/Zurich').events?.[0]?.time).toBe('2026-06-10T12:05:00.000Z');
+    expect(parseParcelsAppResponse(payload, number, identity()).events?.[0]?.time).toBe('2026-06-10T14:05:00.000Z');
+    expect(parseParcelsAppHtml(rendered(row('10 Jun 2026', '14:05', 'Return to sender')), number, 'Europe/Zurich').events?.[0]?.time)
+      .toBe('2026-06-10T12:05:00.000Z');
+  });
+
   it('parses rendered history without parsing the surrounding marketing copy', () => {
     const html = rendered(row('18 Aug 2026', '03:04', 'Electronic information submitted by shipper'));
     expect(parseParcelsAppHtml(html + '<p>Delivered 2026-09-01</p>', number))

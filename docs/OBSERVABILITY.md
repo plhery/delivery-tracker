@@ -44,7 +44,8 @@ Anomalies currently mean:
 
 - `invalid_event_timestamp`: at least one non-empty provider timestamp could
   not be parsed;
-- `future_event_timestamp`: a normalized event is more than 24 hours ahead;
+- `future_event_timestamp`: a normalized event is more than one hour ahead of
+  the check, the usual sign of a local clock read in the wrong zone;
 - `observed_without_timestamp`: a stage-changing synthetic observation was
   needed (recorded in Postgres, intentionally not alerted by itself);
 - `terminal_stage_regression`: a delivered/returned parcel moved to another

@@ -115,12 +115,12 @@ export class UniversalTracker {
     throw new UniversalTrackingError(failures);
   }
 
-  async fetchSource(source: Source, trackingNumber: string, timeoutMs = this.options.timeoutMs ?? universalSourceBudget(source), postcode?: string | null): Promise<CarrierResult> {
+  async fetchSource(source: Source, trackingNumber: string, timeoutMs = this.options.timeoutMs ?? universalSourceBudget(source), postcode?: string | null, timezone?: string | null): Promise<CarrierResult> {
     const number = numberOf(trackingNumber);
     if (this.options.browserLookup && (source === 'Postal Ninja' || source === 'Ship24')) {
       return await this.options.browserLookup(source, number);
     }
-    return await this.provider(source).track({ number, postcode: postcode ?? null }, { budgetMs: timeoutMs });
+    return await this.provider(source).track({ number, postcode: postcode ?? null, timezone: timezone ?? null }, { budgetMs: timeoutMs });
   }
 
   /** One provider adapter, built from this tracker's environment. */

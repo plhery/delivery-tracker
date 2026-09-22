@@ -3,7 +3,7 @@ import { trackingFailureCode } from './trackingFailure';
 
 import { DateTime } from 'luxon';
 import { detectCarrierMatch } from '../lib/carriers';
-import { activeRequirements, AUTOMATIC_CARRIER_IDS, carrierAdapter } from './carriers';
+import { activeRequirements, AUTOMATIC_CARRIER_IDS, carrierAdapter, carrierTimezone } from './carriers';
 import { normalizeCarrierResult, type CarrierResult } from './carrierResult';
 import { isRecord, type JsonObject } from './types';
 import { priorityUniversalSource, universalSourceBudget, universalSources } from './universalTracking';
@@ -105,6 +105,13 @@ function answeredWithoutHistory(error: unknown): boolean {
   }
   return false;
 }
+/** A parcel carrier's own zone, when its catalog names one. */
+function carrierZone(carrier: string): string | null {
+  try {
+    const zone = carrierTimezone(carrier);
+    return zone === 'UTC' ? null : zone;
+  } catch { return null; }
+}
 function usable(value: CarrierResult): boolean {
   return Boolean(value.events?.length || value.status && !['unknown', 'pending'].includes(value.status)
     || value.current_stage && value.current_stage !== 'pending');
@@ -132,7 +139,8 @@ export class TrackingRouter {
     direct: (parcel: JsonObject, carrier: string) => Promise<RoutedResult>;
     // postcode is the parcel's stored delivery postcode, if the user supplied
     // one; providers receive it in their track input but submit it nowhere yet.
-    universal: (source: UniversalSource, number: string, timeoutMs: number, postcode: string | null) => Promise<CarrierResult>;
+    // timezone is the parcel carrier's catalog zone, or null when that is UTC.
+    universal: (source: UniversalSource, number: string, timeoutMs: number, postcode: string | null, timezone: string | null) => Promise<CarrierResult>;
     health: ProviderHealth;
     now?: () => Date;
     enablePostalNinja?: boolean;
@@ -173,7 +181,9 @@ export class TrackingRouter {
       if (state.failures[provider]) report('provider_recovered', provider);
       delete state.failures[provider];
       state.last_success_at = now().toISOString();
-      const eventTime = Math.max(latest(value.result), value.earlierResult ? latest(value.earlierResult) : 0);
+      // A future-dated scan must not make every later real update look older.
+      const eventTime = Math.min(now().getTime(),
+        Math.max(latest(value.result), value.earlierResult ? latest(value.earlierResult) : 0));
       state.last_event_at = eventTime ? iso(eventTime) : state.last_event_at;
       // Universal checks are deliberately less frequent than direct in-transit polls.
       state.next_check_at = sources.includes(provider as UniversalSource)
@@ -274,6 +284,9 @@ export class TrackingRouter {
     // Reserve each source’s lookup budget plus transport allowance (UPU needs only 8s).
     // Start after direct attempts so a slow carrier cannot starve discovery.
     const universalDeadline = performance.now() + sources.reduce((sum, source) => sum + universalSourceBudget(source) + 5_000, 0);
+    // The delivery leg's own carrier when its number is the one looked up.
+    const zone = carrierZone(universalNumber !== number && typeof metadata.active_tracking_carrier === 'string'
+      ? metadata.active_tracking_carrier : declared);
     const attemptedUniversal = new Set<UniversalSource>();
     const universal = async (source: UniversalSource): Promise<RoutedResult | null> => {
       signal?.throwIfAborted();
@@ -298,7 +311,7 @@ export class TrackingRouter {
       let retryAfterMs = 0;
       try {
         const postcode = typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null;
-        const result = normalizeCarrierResult(await this.options.universal(source, universalNumber, Math.min(universalSourceBudget(source), remaining - 5_000), postcode));
+        const result = normalizeCarrierResult(await this.options.universal(source, universalNumber, Math.min(universalSourceBudget(source), remaining - 5_000), postcode, zone));
         if (!usable(result)) throw new TypeError('No usable universal progress');
         const previousFailure = state.failures[source];
         if (previousFailure) report('provider_recovered', source);

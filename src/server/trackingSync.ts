@@ -114,7 +114,7 @@ function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
 }
 
 export interface TrackingAdapter {
-  fetchUniversal?(source: UniversalSource, trackingNumber: string, timeoutMs: number, dpdPostcode?: string | null): Promise<CarrierResult>;
+  fetchUniversal?(source: UniversalSource, trackingNumber: string, timeoutMs: number, dpdPostcode?: string | null, timezone?: string | null): Promise<CarrierResult>;
   fetch(
     carrierId: string,
     trackingNumber: string,
@@ -136,8 +136,8 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     readonly recorder: StepRecorder = hostStepRecorder(),
   ) {}
 
-  async fetchUniversal(source: UniversalSource, trackingNumber: string, timeoutMs: number, dpdPostcode?: string | null): Promise<CarrierResult> {
-    return this.universal.fetchSource(source, trackingNumber, timeoutMs, dpdPostcode ?? null);
+  async fetchUniversal(source: UniversalSource, trackingNumber: string, timeoutMs: number, dpdPostcode?: string | null, timezone?: string | null): Promise<CarrierResult> {
+    return this.universal.fetchSource(source, trackingNumber, timeoutMs, dpdPostcode ?? null, timezone ?? null);
   }
 
   async fetch(
@@ -517,7 +517,9 @@ export function detectSyncAnomalies(
   ))) {
     anomalies.add('invalid_event_timestamp');
   }
-  const futureBoundary = now.getTime() + 24 * 60 * 60 * 1_000;
+  // A local clock read in the wrong zone lands hours ahead; small upstream
+  // skew (La Poste partner scans run about half an hour early) does not alert.
+  const futureBoundary = now.getTime() + 60 * 60 * 1_000;
   if (events.some((event) => {
     const occurredAt = Date.parse(String(event.occurred_at ?? ''));
     return Number.isFinite(occurredAt) && occurredAt > futureBoundary;
@@ -770,7 +772,7 @@ export class TrackingSyncService {
         fetched = await audit.observeFetch(async () => this.adapter.fetchUniversal && carrierId !== 'amazon-shipping'
           ? await new TrackingRouter({
             direct: (candidate, carrier) => this.fetchResult(candidate, carrier),
-            universal: (source, number, timeout, postcode) => this.adapter.fetchUniversal!(source, number, timeout, postcode),
+            universal: (source, number, timeout, postcode, timezone) => this.adapter.fetchUniversal!(source, number, timeout, postcode, timezone),
             health: this.client, now: this.now,
             enablePostalNinja: process.env.TRACKING_ENABLE_POSTAL_NINJA === 'true',
           }).fetch(parcel, context.trigger === 'scheduled', context.signal)

@@ -18,6 +18,12 @@ export interface TrackingInput {
   trackingUrl?: string | null;
   /** The delivery postcode for carriers that need one; part of the tracking credential. */
   postcode?: string | null;
+  /**
+   * The zone of the carrier the parcel is filed under, for universal providers
+   * whose scan times name no zone they can be trusted with. Never a guess:
+   * absent when that carrier's catalog zone is UTC.
+   */
+  timezone?: string | null;
 }
 
 export interface TrackingContext {
