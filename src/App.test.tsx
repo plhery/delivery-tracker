@@ -229,7 +229,9 @@ describe('App', () => {
     expect(next.querySelector('.progress-track')).not.toBeInTheDocument();
     expect(next.querySelector('.carrier-mark')).toBeInTheDocument();
     expect(next.querySelector('.parcel-card__hero-bottom > svg')).not.toBeInTheDocument();
-    expect(within(screen.getByRole('region', { name: 'Needs attention' })).getByText('Birthday gift 🎁')).toBeInTheDocument();
+    const attention = screen.getByRole('region', { name: 'Needs attention' });
+    expect(within(attention).getByText('Birthday gift 🎁')).toBeInTheDocument();
+    expect(next.compareDocumentPosition(attention) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     const past = screen.getByRole('region', { name: 'Past deliveries' });
     expect(within(past).getByText('Coffee beans ☕')).toBeInTheDocument();
@@ -369,7 +371,10 @@ describe('App', () => {
     expect(deliveredDate).toHaveTextContent(/^yesterday$/);
     expect(deliveredDate).not.toHaveTextContent(/^on /);
     expect(screen.getByText('Out for delivery')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Birthday gift.*At customs/ })).toHaveClass('parcel-card--notice');
+    const customs = within(screen.getByRole('region', { name: 'Needs attention' }))
+      .getByRole('button', { name: /Birthday gift.*At customs/ });
+    expect(customs.querySelector('.carrier-mark')).toBeInTheDocument();
+    expect(customs.querySelector('.parcel-card__notice')).not.toBeInTheDocument();
   });
 
   it('treats returned parcels as final without calling them delivered', async () => {
@@ -1519,6 +1524,41 @@ describe('App', () => {
     ).toBeInTheDocument();
   });
 
+  it('keeps a quiet parcel as a card with its last status and a flag', async () => {
+    using clock = vi.spyOn(Date, 'now');
+    clock.mockReturnValue(new Date('2026-07-20T12:00:00Z').getTime());
+    const parcel: ParcelWithEvents = {
+      id: 'pkg-quiet',
+      trackingNumber: '993412345612345679',
+      label: 'Desk lamp',
+      carrier: 'swiss-post',
+      createdAt: '2026-07-10T10:00:00Z',
+      syncStatus: 'ok',
+      events: [{
+        id: 'event-quiet',
+        parcelId: 'pkg-quiet',
+        stage: 'in_transit',
+        description: 'Sorted',
+        occurredAt: '2026-07-14T10:00:00Z',
+      }],
+    };
+    const repo: ParcelRepo = {
+      mode: 'api',
+      list: vi.fn().mockResolvedValue([parcel]),
+      add: vi.fn(),
+      rename: vi.fn(),
+      remove: vi.fn(),
+      refresh: vi.fn().mockResolvedValue([parcel]),
+    };
+    renderApp(repo);
+
+    const card = await within(await screen.findByRole('region', { name: 'Needs attention' }))
+      .findByRole('button', { name: /Desk lamp — In transit\. No tracking update for four days/ });
+    expect(card.querySelector('.carrier-mark')).toHaveTextContent('Swiss Post');
+    expect(within(card).getByText('In transit')).toHaveClass('parcel-card__state');
+    expect(within(card).getByText('No tracking update for four days')).toHaveClass('parcel-card__notice');
+  });
+
   it('explains unavailable tracking without exposing carrier diagnostics', async () => {
     const parcel: ParcelWithEvents = {
       id: 'pkg-error',
@@ -1543,7 +1583,10 @@ describe('App', () => {
     const user = userEvent.setup();
     renderApp(repo);
 
-    expect(await screen.findByRole('button', { name: /Parcel — Update unavailable/ })).toBeInTheDocument();
+    const card = await screen.findByRole('button', { name: /Parcel — Update unavailable/ });
+    expect(card.querySelector('.carrier-mark')).toHaveTextContent('Swiss Post');
+    expect(within(card).getByText('Couldn’t get the latest update')).toHaveClass('parcel-card__notice');
+    expect(card.querySelector('.parcel-card__state')).not.toBeInTheDocument();
     await user.click(
       screen.getByRole('button', { name: /Parcel — Update unavailable/i }),
     );

@@ -107,7 +107,9 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke: none; stroke-width: 0; overflow: visible; }
 .carrier-mark[data-family="dhl"] .carrier-mark__name { font-style: italic; font-weight: 850; }
 .carrier-mark__dot { color: light-dark(#b98a00, #ffcf00); }
-.parcel-card__notice, .parcel-card__error { font-size: 12px; line-height: 1.45; color: var(--orange-text); }
+.parcel-card__error { font-size: 12px; line-height: 1.45; color: var(--orange-text); }
+.parcel-card__notice { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; max-width: 100%; margin-top: 4px; padding: 4px 10px 4px 8px; border-radius: 12px; background: color-mix(in srgb, var(--paper) 72%, transparent); color: var(--orange-text); font-size: 12px; font-weight: 500; line-height: 1.4; }
+.parcel-card__notice > svg { width: 13px; height: 13px; flex-shrink: 0; stroke-width: 1.8; }
 .parcel-card__error { background: var(--orange-soft); margin: 6px 0 0; padding: 12px; border-radius: 12px; }
 .parcel-card--hero { padding: 21px; border-radius: 24px; min-height: 200px; gap: 0; }
 .parcel-card__next-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--tone); opacity: .75; flex-shrink: 0; }

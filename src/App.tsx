@@ -485,19 +485,19 @@ export default function App({
           </div>
         )}
 
+        {!loading && nextCard}
         {!loading && prioritized.attention.length > 0 && (
-          <section className="delivery-notices" aria-labelledby="attention-parcels-title">
+          <section className="delivery-attention" aria-labelledby="attention-parcels-title">
             <h2 id="attention-parcels-title" className="sr-only">{t('app.needsAttention')}</h2>
             <div className="parcel-grid">
               {prioritized.attention.map(({ parcel, reason }) => (
-                <ParcelCard key={parcel.id} parcel={parcel} variant="notice"
+                <ParcelCard key={parcel.id} parcel={parcel}
                   notice={t(ATTENTION_LABELS[reason])}
                   onOpen={(p, source) => openParcelDetail(p.id, source)} onArchive={handleArchive} />
               ))}
             </div>
           </section>
         )}
-        {!loading && nextCard}
         {!loading && onTheWayCards}
         {!loading && !error && allArrived && (
           <div className="delivery-arrived">

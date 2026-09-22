@@ -210,17 +210,19 @@ private struct DeliveryListView: View {
                             )
                         }
                         listEmptyState
-                        ForEach(attentionParcels) { parcel in
-                            DeliveryAttentionNotice(parcel: parcel, transition: parcelTransition,
-                                onOpen: { path.append(parcel.id) }, onArchive: { await archive(parcel) })
-                                .modifier(arrivalCelebration(for: parcel.id))
-                                .id(parcel.id)
-                        }
                         if let nextParcel {
                             ExperimentalNextDeliveryPass(parcel: nextParcel, transition: parcelTransition,
                                 onOpen: { path.append(nextParcel.id) }, onArchive: { await archive(nextParcel) })
                                 .modifier(arrivalCelebration(for: nextParcel.id, stubInset: 43))
                                 .id(nextParcel.id)
+                        }
+                        ForEach(attentionParcels) { parcel in
+                            ExperimentalParcelPassCard(parcel: parcel,
+                                notice: parcel.attention().map { localizer.text($0.localizationKey) },
+                                transition: parcelTransition,
+                                onOpen: { path.append(parcel.id) }, onArchive: { await archive(parcel) })
+                                .modifier(arrivalCelebration(for: parcel.id))
+                                .id(parcel.id)
                         }
                         ForEach(remainingActiveParcels) { parcel in
                             ExperimentalParcelPassCard(parcel: parcel, notice: nil, transition: parcelTransition,
@@ -665,35 +667,6 @@ private struct DeliveryListView: View {
     }
 }
 
-private struct DeliveryAttentionNotice: View {
-    let parcel: Parcel
-    let transition: Namespace.ID
-    let onOpen: () -> Void
-    let onArchive: () async -> Void
-    @EnvironmentObject private var localizer: Localizer
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: parcel.currentStage?.metadata.symbol ?? "info.circle")
-                .font(.system(size: 16, weight: .light)).foregroundStyle(Brand.warning).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(parcel.attention().map { localizer.text($0.localizationKey) } ?? localizer.parcelStatus(parcel))
-                    .font(.subheadline.weight(.medium))
-                Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
-                    .font(.caption).foregroundStyle(.secondary)
-            }.frame(maxWidth: .infinity, alignment: .leading)
-            Image(systemName: "chevron.right").font(.caption2.weight(.light)).foregroundStyle(.secondary).accessibilityHidden(true)
-        }
-        .padding(13).frame(maxWidth: .infinity, minHeight: 62, alignment: .leading)
-        .background(Brand.warning.opacity(0.06), in: RoundedRectangle(cornerRadius: 13))
-        .overlay { RoundedRectangle(cornerRadius: 13).stroke(Brand.warning.opacity(0.18), lineWidth: 0.75) }
-        .matchedTransitionSource(id: parcel.id, in: transition)
-        .experimentalSwipeToArchive(title: localizer.text("parcel.archive"), cornerRadius: 13, shadow: false, onOpen: onOpen, action: onArchive)
-        .accessibilityElement(children: .combine)
-        .accessibilityHint(localizer.text("detail.label"))
-    }
-}
-
 private struct ExperimentalNextDeliveryPass: View {
     let parcel: Parcel
     let transition: Namespace.ID
@@ -746,9 +719,7 @@ private struct ExperimentalNextDeliveryPass: View {
                 .foregroundStyle(identity.ink)
                 .fixedSize(horizontal: false, vertical: true)
             if parcel.syncStatus == .error {
-                Text(localizer.text("parcel.syncAttention"))
-                    .font(.caption)
-                    .foregroundStyle(Brand.warning)
+                ParcelFlag(text: localizer.text("parcel.syncAttention"), symbol: "arrow.clockwise")
                     .padding(.top, 8)
             }
         }
@@ -783,6 +754,12 @@ private struct ExperimentalParcelPassCard: View {
             carrier: catalog.info(for: parcel.displayedCarrier, language: localizer.language))
     }
     private var date: String? { localizer.parcelDeliveryEstimate(parcel) ?? localizer.parcelCompletionDate(parcel) }
+    /// Carrier-reported stages already say what needs attention in the status line.
+    private var flag: String? {
+        let carrierIssue = [TrackingStage.customs, .readyForPickup, .failedAttempt, .exception].contains { $0 == parcel.currentStage }
+        if let notice, !carrierIssue { return notice }
+        return parcel.syncStatus == .error ? localizer.text("parcel.syncAttention") : nil
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -807,20 +784,18 @@ private struct ExperimentalParcelPassCard: View {
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            HStack(spacing: 5) {
-                if parcel.isDelivered { Image(systemName: "checkmark").font(.caption2.weight(.light)).accessibilityHidden(true) }
-                Text(localizer.parcelStatus(parcel))
+            if flag == nil || parcel.hasCarrierUpdate {
+                HStack(spacing: 5) {
+                    if parcel.isDelivered { Image(systemName: "checkmark").font(.caption2.weight(.light)).accessibilityHidden(true) }
+                    Text(localizer.parcelStatus(parcel))
+                }
+                    .font(.caption)
+                    .foregroundStyle(identity.ink)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-                .font(.caption)
-                .foregroundStyle(identity.ink)
-                .fixedSize(horizontal: false, vertical: true)
-            if parcel.syncStatus == .error {
-                Text(localizer.text("parcel.syncAttention"))
-                    .font(.caption).foregroundStyle(Brand.warning)
-            } else if let notice, parcel.currentStage != .customs,
-                      parcel.currentStage != .readyForPickup, parcel.currentStage != .failedAttempt,
-                      parcel.currentStage != .exception {
-                Text(notice).font(.caption).foregroundStyle(Brand.warning)
+            if let flag {
+                ParcelFlag(text: flag, symbol: parcel.syncStatus == .error ? "arrow.clockwise" : "clock")
+                    .padding(.top, 4)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -843,6 +818,25 @@ private struct ExperimentalParcelPassCard: View {
     private func dateLabel(_ date: String) -> some View {
         Text(date).font(.caption).foregroundStyle(identity.ink)
             .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// A problem stays on the parcel's own card instead of replacing it.
+private struct ParcelFlag: View {
+    let text: String
+    let symbol: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: symbol).font(.caption2.weight(.semibold)).accessibilityHidden(true)
+            Text(text).fixedSize(horizontal: false, vertical: true)
+        }
+        .font(.caption.weight(.medium))
+        .foregroundStyle(Brand.warning)
+        .padding(.vertical, 4)
+        .padding(.leading, 8)
+        .padding(.trailing, 10)
+        .background(Brand.paper.opacity(0.72), in: RoundedRectangle(cornerRadius: 12))
     }
 }
 

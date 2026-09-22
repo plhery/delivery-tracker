@@ -19,13 +19,15 @@ async function seed(page: Page, parcels: ParcelWithEvents[]) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
 }
 
-test('keeps the next arrival, issue notice, and search tools in one compact feed', async ({ page, isMobile }) => {
+test('keeps the next arrival, flagged issue card, and search tools in one compact feed', async ({ page, isMobile }) => {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   const hero = page.getByRole('button', { name: /^Next up: New sneakers/ });
   await expect(hero).toBeVisible();
-  const notice = page.locator('.parcel-card--notice');
+  const notice = page.getByRole('region', { name: 'Needs attention' }).locator('.parcel-card');
   await expect(notice).toContainText('Birthday gift');
   await expect(notice).not.toContainText('Next up');
+  await expect(notice.locator('.carrier-mark')).toBeVisible();
+  expect((await notice.boundingBox())!.y).toBeGreaterThan((await hero.boundingBox())!.y);
   const region = page.getByRole('region', { name: 'On the way' });
   await expect(region.locator('.parcel-section__heading > span')).toHaveText('6');
   const row = await page.locator('.delivery-overview').boundingBox();
@@ -67,7 +69,7 @@ test('keeps a long undated parcel readable and a customs notice archivable', asy
   await expect(page.locator('.parcel-card--hero')).toBeVisible();
   await expect(page.locator('.parcel-card--hero .parcel-card__eta')).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  const notice = page.locator('.parcel-card--notice');
+  const notice = page.getByRole('region', { name: 'Needs attention' }).locator('.parcel-card');
   const bounds = (await notice.boundingBox())!;
   await page.mouse.move(bounds.x + bounds.width - 15, bounds.y + bounds.height / 2);
   await page.mouse.down();
