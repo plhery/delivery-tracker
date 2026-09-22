@@ -43,7 +43,7 @@ import type { JsonObject } from './types';
 import * as observability from './observability';
 import { UniversalTrackingError } from './universalTracking';
 import { UpstreamHttpError } from './boundedFetch';
-import { readFileSync } from 'node:fs';
+import cainiaoDeliveredFixture from '../../packages/carriers/carriers/aliexpress/fixtures/delivered.json';
 import { adapter as cainiaoAdapter, parseCainiaoTrackingResponse } from '@carriers/carriers/aliexpress/adapter';
 import { adapter as postNLAdapter, parsePostNLTrackingResponse } from '@carriers/carriers/spring-gds/adapter';
 import { NOOP_RECORDER } from '@carriers/core/telemetry';
@@ -830,7 +830,7 @@ describe('TrackingSyncService', () => {
   });
 
   it('hands a real Cainiao response shape to its reported local number through normalization', async () => {
-    const payload = JSON.parse(readFileSync(new URL('../../packages/carriers/carriers/aliexpress/fixtures/delivered.json', import.meta.url), 'utf8'));
+    const payload = cainiaoDeliveredFixture;
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => Response.json(payload));
     const swiss = vi.fn().mockResolvedValue({ status: 'delivered', current_stage: 'delivered',
       last_update: '2026-03-04T12:00:00Z', events: [{ time: '2026-03-04T12:00:00Z', description: 'Delivered', stage: 'delivered' }] });
