@@ -179,3 +179,16 @@ because the original line names the signatory.
   API. IP reputation may still influence Akamai's decision; the small,
   mixed-outcome sample cannot quantify that effect or identify the exact
   browser/session signal. No proxy or form-flow change was deployed.
+- 2026-09-22: tested delayed retries separately from fresh-session success.
+  One isolated form session returned all 14 scans on its initial lookup and
+  on repeats after 10- and 30-second pauses; a fresh context then returned
+  403. In a separate two-session check, both sessions initially received
+  403. One remained rejected on its shorter retry; the other recovered about
+  74 seconds after its first reply. The deployed `/scrape` path behaved
+  differently: both the initial lookup and a retry after 15 seconds returned
+  403, as did a second pair with 60 seconds of backoff. These replies had no
+  `Retry-After` or explicit rate-limit headers. Rate-based denial remains
+  possible, but neither a rate threshold nor dependable retry recovery was
+  established. A blind retry would add latency without a demonstrated gain
+  on the deployed path, so the existing universal fallback and scheduled
+  direct cooldown remain in use.
