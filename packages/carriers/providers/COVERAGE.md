@@ -25,7 +25,7 @@ milestone more than once. Read the history notes before choosing the largest cou
 
 | Carrier / reference | Direct | Ship24 | ParcelsApp | 17TRACK | Postal Ninja | UPU |
 | --- | --- | --- | --- | --- | --- | --- |
-| [DHL](../carriers/dhl/README.md) | Blocked | ✓ 10 | ✓ 14* | None | ✓ 14 | ✓ 1 |
+| [DHL](../carriers/dhl/README.md) | Blocked | ✓ 10 | ✓ 14 | None | ✓ 14 | ✓ 1 |
 | [UPS](../carriers/ups/README.md) | ✓ 11 | ✓ 1 | ✓ 11 | ✓ 11 | ✓ 11 | N/A |
 | [FedEx](../carriers/fedex/README.md) | Error | ✓ 14 | ✓ 14 | ✓ 14 | ✓ 14 | N/A |
 | [USPS](../carriers/usps/README.md) | Blocked | None | None | ✓ 11 | None | N/A |
@@ -33,22 +33,22 @@ milestone more than once. Read the history notes before choosing the largest cou
 | [Amazon Shipping](../carriers/amazon-shipping/README.md) | ✓ 12 | ✓ 12 | ✓ 12 | None | ✓ 12 | N/A |
 | [Royal Mail](../carriers/royal-mail/README.md) | Error | None | ✓ 1 | None | ✓ 4 | None |
 | [Swiss Post](../carriers/swiss-post/README.md) | ✓ 8 | ✓ 8 | ✓ 8 | ✓ 8 | None | N/A |
-| [La Poste / Colissimo](../carriers/la-poste/README.md) | ✓ 15 | ✓ 11 | ✓ 16* | ✓ 14 | ✓ 26 | None |
+| [La Poste / Colissimo](../carriers/la-poste/README.md) | ✓ 15 | ✓ 11 | ✓ 16 | ✓ 14 | ✓ 26 | None |
 | [DPD](../carriers/dpd/README.md) | ✓ 4 | ✓ 1 | ✓ 4 | ✓ 4 | ✓ 4 | N/A |
-| [DHL eCommerce](../carriers/dhl-ecommerce/README.md) | ✓ 16 | ✓ 11 | ✓ 36* | None | ✓ 34 | N/A |
+| [DHL eCommerce](../carriers/dhl-ecommerce/README.md) | ✓ 16 | ✓ 11 | ✓ 36 | None | ✓ 34 | N/A |
 | [AliExpress / Cainiao](../carriers/aliexpress/README.md) | ✓ 17 | None | ✓ 17 | ✓ 17 | ✓ 17 | N/A |
 | [China Post](../carriers/china-post/README.md) | No adapter | ✓ 1 | ✓ 1 | ✓ 39 | ✓ 17 | ✓ 1 |
-| [EMS](../carriers/ems/README.md) | ✓ 7 | ✓ 6 | ✓ 18* | ✓ 24 | ✓ 6 | ✓ 6 |
+| [EMS](../carriers/ems/README.md) | ✓ 7 | ✓ 6 | ✓ 18 | ✓ 24 | ✓ 6 | ✓ 6 |
 | [SF Express](../carriers/sf-express/carrier.json) | No adapter | None | None | ✓ 27 | None | N/A |
 
-**\* Succeeded on a second bounded attempt** after the first failed its identity
-check. Other providers' repeated failures remained inconclusive. A check mark confirms
-retrieved history, not correct status mapping; the notes identify mapping issues.
+A check mark confirms retrieved history, not correct status mapping; the notes
+identify mapping issues.
 
-The retry-only ParcelsApp results prompted a [timeout and recovery fix](parcelsapp/README.md#implementation-decisions):
+The initial ParcelsApp failures prompted a [timeout and recovery fix](parcelsapp/README.md#implementation-decisions):
 the old direct request stopped after 10 s, and browser recovery could return an
 unfinished page. The adapter now allows 30 s initially and one network retry
-within 45 s. The matrix preserves the original observations at the commit below.
+within 45 s. All four histories were verified after the fix with unchanged event
+counts. The matrix preserves the original observations at the commit below.
 
 **17TRACK recheck, 2026-09-22:** all seven previously failing references again
 returned no history, so their cells now say **None**. DHL, DHL eCommerce and
