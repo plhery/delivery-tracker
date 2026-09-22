@@ -18,6 +18,7 @@ import type { AdapterFactory } from '../../core/adapter';
 import { normalizeTrackingNumber } from '../../core/detection/normalize';
 import { NotFoundError, SchemaError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
+import { explicitOffsetTime } from '../../core/time';
 import { fetchBounded, parseJsonBytes } from '../../core/transport';
 import { isRecord, type JsonObject } from '../../core/types';
 import {
@@ -69,6 +70,21 @@ function cainiaoHandoffNumber(trackingModule: JsonObject): string {
   return match?.[0].toUpperCase() ?? '';
 }
 
+/**
+ * A scan's time: `timeStr` is the local wall clock and `timeZone` ("GMT+2")
+ * its offset. `timeStr` alone is not UTC, and the epoch `time` field is not
+ * the instant either: it reads `timeStr` as Beijing time even for European
+ * scans, putting a morning "out for delivery" in the middle of the night
+ * (checked 2026-09-22). Without a zone the text is kept.
+ */
+function scanTime(scan: JsonObject): string {
+  const wall = text(scan.timeStr);
+  const zone = /^(?:GMT|UTC)\s*(?:([+-])(\d{1,2})(?::?(\d{2}))?)?$/i.exec(text(scan.timeZone));
+  if (!wall || !zone) return wall;
+  const offset = zone[1] ? `${zone[1]}${zone[2]!.padStart(2, '0')}:${zone[3] ?? '00'}` : 'Z';
+  return explicitOffsetTime(`${wall.replace(' ', 'T')}${offset}`)?.iso ?? wall;
+}
+
 /** Projects one `detail.json` payload. Pure: the offline tests target this. */
 export function parseCainiaoTrackingResponse(value: unknown, trackingNumber: string): CarrierResult {
   const payload = record(value);
@@ -118,7 +134,7 @@ export function parseCainiaoTrackingResponse(value: unknown, trackingNumber: str
     const code = cainiaoActionCode(event.actionCode);
     const mapped = code ? CAINIAO_ACTION_STATUS.get(code) : undefined;
     return {
-      time: text(event.timeStr),
+      time: scanTime(event),
       location: '',
       description: text(event.standerdDesc) || text(event.desc),
       ...(mapped ? { stage: actionStage[mapped] ?? 'in_transit' } : {}),
@@ -137,12 +153,12 @@ export function parseCainiaoTrackingResponse(value: unknown, trackingNumber: str
   const expectedFrom = toDate(deliveryMinTime);
   const handoff = cainiaoHandoffNumber(trackingModule);
   const destination = text(trackingModule.destCountry).trim().slice(0, 80);
-  const deliveredAt = status === 'delivered' ? text(latest.timeStr) || null : null;
+  const deliveredAt = status === 'delivered' ? scanTime(latest) || null : null;
   return {
     status,
     ...(actionStage[status] || status === 'in_transit' ? { current_stage: actionStage[status] ?? 'in_transit' } : {}),
     last_status_text: text(latest.standerdDesc) || text(latest.desc) || rawStatus,
-    last_update: text(latest.timeStr) || null,
+    last_update: scanTime(latest) || null,
     expected_delivery: status === 'delivered' ? null : expected,
     ...(status === 'delivered' || expectedFrom == null || expectedFrom === expected
       ? {}

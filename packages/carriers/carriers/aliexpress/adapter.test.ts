@@ -99,10 +99,10 @@ describe('Cainiao projection', () => {
       status: 'delivered',
       current_stage: 'delivered',
       last_status_text: 'Delivered',
-      last_update: '2026-03-04 10:15:00',
+      last_update: '2026-03-04T10:15:00+01:00',
       // A delivered parcel has no estimate left to show.
       expected_delivery: null,
-      delivered_at: '2026-03-04 10:15:00',
+      delivered_at: '2026-03-04T10:15:00+01:00',
       delivery_tracking_number: 'RA123456785CH',
     });
     expect(delivered.events?.map((event) => [event.description, event.stage])).toEqual([
@@ -111,6 +111,21 @@ describe('Cainiao projection', () => {
       ['Import customs clearance success', 'in_transit'],
       ['Shipment accepted by the warehouse', 'registered'],
     ]);
+  });
+
+  it('reads each scan at its own GMT offset and ignores the Beijing-based epoch', () => {
+    // The fixture's epoch `time` values read timeStr as GMT+8, as the live API does.
+    expect(delivered.events?.map((event) => event.time)).toEqual([
+      '2026-03-04T10:15:00+01:00', '2026-03-04T07:02:00+01:00', '2026-03-02T19:40:00+01:00', '2026-02-25T09:00:00+08:00',
+    ]);
+    const scan = (timeZone?: string) => parseCainiaoTrackingResponse({ module: [{ mailNo: 'LP00000000000001',
+      latestTrace: { actionCode: 'LH_ARRIVE', timeStr: '2026-06-10 07:40:00', timeZone, time: 1781048400000 }, detailList: [],
+    }] }, 'LP00000000000001').last_update;
+    expect(scan('GMT+5:30')).toBe('2026-06-10T07:40:00+05:30');
+    expect(scan('GMT-5')).toBe('2026-06-10T07:40:00-05:00');
+    expect(scan('GMT')).toBe('2026-06-10T07:40:00Z');
+    // Without a zone the wall clock stays text rather than becoming the epoch's instant.
+    expect(scan(undefined)).toBe('2026-06-10 07:40:00');
   });
 
   it.each(['ra 123.456-785 ch', 'RA123456785CH'])('normalizes the machine-readable partner reference before host validation: %s', (reference) => {

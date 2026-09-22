@@ -129,10 +129,13 @@ wording and records it for review.
 - **Mapping the parcel-level token as the primary signal.** Its vocabulary is
   not established across regions; two parcels in the same state have been seen
   carrying different tokens.
-- **Stamping a timezone on the scan strings.** Cainiao returns wall-clock text
-  with no offset and no zone. The provider text is passed through unchanged and
-  the carrier's catalog timezone is applied by the host, rather than guessing
-  UTC here.
+- **Reading `timeStr` without its zone, or trusting the epoch `time`.** Each
+  scan carries `timeStr` (local wall clock) and `timeZone` (`GMT+2`, `GMT+8`...);
+  the adapter combines the two. Passing `timeStr` through alone made the host
+  read it as UTC (the catalog timezone), so European scans were stored two
+  hours late. The epoch `time` field reads `timeStr` as Beijing time even for
+  European scans (checked 2026-09-22 on a delivered parcel), so it is ignored.
+  A scan without `timeZone` keeps its text.
 - **Inventing scan locations from the description.** The endpoint exposes none;
   an empty location is honest, a parsed one would not be.
 
