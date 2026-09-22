@@ -74,6 +74,26 @@ describe('DPD guest API projection', () => {
       description: 'Parcel handed to DPD',
     });
   });
+
+  it('summarizes the newest scan when the history is listed oldest first', () => {
+    const history = READY_FOR_COLLECTION.parcelEvents as unknown[];
+    const result = parseDPDTrackingApi({
+      ...READY_FOR_COLLECTION,
+      status: { description: 'RETURN_TO_SENDER' },
+      parcelEvents: [...history].reverse(),
+    }, TRACKING_NUMBER);
+
+    // The first scan must not become the summary: the sync would read its
+    // time as an older snapshot and keep the parcel at "handed to DPD".
+    expect(result).toMatchObject({
+      current_stage: 'returned',
+      last_status_text: 'Ready for collection at the Pickup parcelshop',
+      last_update: '2026-07-16T08:12:00+02:00',
+    });
+    expect(result.events?.map((event) => event.description)).toEqual(
+      parseDPDTrackingApi(READY_FOR_COLLECTION, TRACKING_NUMBER).events?.map((event) => event.description),
+    );
+  });
 });
 
 describe('DPD status vocabulary', () => {

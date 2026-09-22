@@ -200,6 +200,18 @@ function expectedDelivery(payload: JsonObject): string | null {
   return from || to ? `${date} ${from || to}` : date;
 }
 
+/**
+ * Newest scan first. The guest API has listed a parcel's scans oldest first,
+ * and the summary and freshness watermark read the first event. Equal or
+ * unreadable times keep the payload's order.
+ */
+function newestFirst(events: CarrierEvent[]): CarrierEvent[] {
+  return events
+    .map((event, index) => ({ event, index, timestamp: Date.parse(event.time ?? '') || 0 }))
+    .sort((left, right) => right.timestamp - left.timestamp || left.index - right.index)
+    .map(({ event }) => event);
+}
+
 export function parseDPDTrackingApi(
   payload: unknown,
   trackingNumber: string,
@@ -209,13 +221,13 @@ export function parseDPDTrackingApi(
   if (String(payload.parcelNumber ?? payload.shipmentId ?? '') !== trackingNumber) {
     throw new SchemaError('DPD', 'DPD did not return the requested parcel');
   }
-  const events: CarrierEvent[] = [];
+  const scans: CarrierEvent[] = [];
   const seen = new Set<string>();
   const append = (event: CarrierEvent) => {
     const key = JSON.stringify([event.time ?? '', event.location ?? '', event.description ?? '']);
     if (!seen.has(key)) {
       seen.add(key);
-      events.push(event);
+      scans.push(event);
     }
   };
   if (Array.isArray(payload.parcelEvents)) {
@@ -229,7 +241,7 @@ export function parseDPDTrackingApi(
       });
     }
   }
-  if (events.length === 0 && Array.isArray(payload.parcelHistory)) {
+  if (scans.length === 0 && Array.isArray(payload.parcelHistory)) {
     for (const raw of payload.parcelHistory) {
       if (!isRecord(raw)) continue;
       append({
@@ -239,6 +251,7 @@ export function parseDPDTrackingApi(
       });
     }
   }
+  const events = newestFirst(scans);
   const current = isRecord(payload.status) ? payload.status : {};
   const currentDescription = current.description;
   const statusText = events[0]?.description || apiDescription(currentDescription)

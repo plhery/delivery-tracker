@@ -50,7 +50,8 @@ Two tiers, declared as `tracking.steps: ["direct", "page"]`.
    the application, Remote Config returns the guest Basic credential, that
    credential buys a client-credentials access token, and the token reads
    `/v10/parcels/details/<number>`. Tokens are cached in the adapter instance
-   and refreshed one at a time. A postcode DPD rejects (HTTP 400) is retried
+   and refreshed one at a time. Scans are ordered newest first before the
+   summary is taken: production replies have listed them oldest first. A postcode DPD rejects (HTTP 400) is retried
    once without verification and the result says the postcode was not verified.
 2. `page` — the rendered consignee page, used when the guest protocol answers
    inconclusively. Cloudflare normally challenges anonymous requests, so the
