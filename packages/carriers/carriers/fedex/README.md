@@ -167,3 +167,15 @@ because the original line names the signatory.
   including the form experiment above; this is not a verified restoration
   of unattended tracking. Supply `FEDEX_LIVE_TRACKING_NUMBER` outside the
   repository when checking recovery.
+- 2026-09-22: compared the same isolated server-browser form flow on two
+  egress paths, the server's normal public IP and a temporary tunnel through
+  the local Mac's public IP. Each path returned one correct 200 reply with 14 scans
+  and one HTTP 403. Three further fresh sessions on the server IP returned
+  403. A 403 reply was Akamai's HTML `Access Denied` page (`AkamaiGHost`),
+  while a 200 reply was JSON from `API-GATEWAY`. The rejected requests had
+  the tracking call's normal authorization/header set and Akamai cookies;
+  cookie presence alone did not establish acceptance. This rules out a fixed
+  ban of either IP and locates the rejection at the edge, before the tracking
+  API. IP reputation may still influence Akamai's decision; the small,
+  mixed-outcome sample cannot quantify that effect or identify the exact
+  browser/session signal. No proxy or form-flow change was deployed.
