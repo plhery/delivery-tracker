@@ -60,7 +60,7 @@ test('carefully deletes an active parcel from its detail screen', async ({ page 
   let confirmation = page.getByRole('dialog', {
     name: /permanently delete new sneakers/i,
   });
-  await expect(confirmation).toContainText('cannot be undone');
+  await expect(confirmation).toContainText('can’t be undone');
   await expect(confirmation.getByRole('button', { name: 'Cancel' })).toBeFocused();
   await confirmation.getByRole('button', { name: 'Cancel' }).click();
   await expect(detail).toBeVisible();

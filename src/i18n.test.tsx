@@ -164,7 +164,7 @@ describe('relative delivery dates', () => {
     for (const count of [0, 2, 10]) {
       expect(t('friends.stampCount', { count })).toBe(`${count} ${pluralStamps[locale]}`);
     }
-    const singleLink = { en: 'Cancel 1 previous link', fr: 'Annuler 1 lien précédent', de: '1 früheren Link widerrufen', it: 'Annulla 1 link precedente' };
+    const singleLink = { en: 'Cancel 1 previous link', fr: 'Annuler 1 lien précédent', de: '1 früheren Link deaktivieren', it: 'Annulla 1 link precedente' };
     expect(t('friends.cancelPrevious', { count: 1 })).toBe(singleLink[locale]);
     const singleDelivered = { en: 'Delivered', fr: 'Livré', de: 'Zugestellt', it: 'Consegnato' };
     expect(t('passport.delivered', { count: 1 })).toBe(singleDelivered[locale]);

@@ -19,11 +19,15 @@ self.addEventListener('push', (event) => {
   const text = (value, fallback, limit) => (
     typeof value === 'string' && value.trim() ? value.trim().slice(0, limit) : fallback
   );
+  // Matches the generic update copy in src/server/push.ts.
   const fallbackCopy = {
-    en: ['Parcel update', 'Open tracking for the latest news about your parcel.'],
-    de: ['Paketaktualisierung', 'Öffne die Sendungsverfolgung für die neuesten Meldungen zu deinem Paket.'],
-    fr: ['Mise à jour du colis', 'Ouvrez le suivi pour connaître les dernières nouvelles de votre colis.'],
-    it: ['Aggiornamento sul pacco', 'Apri il tracciamento per le ultime notizie sul tuo pacco.'],
+    en: ['Parcel update', 'There’s an update to your parcel. Open tracking for details.'],
+    de: ['Paket-Update', 'Es gibt Neuigkeiten zu deinem Paket. Öffne die Sendungsverfolgung für Details.'],
+    fr: ['Mise à jour du colis', 'Du nouveau pour ton colis. Ouvre le suivi pour les détails.'],
+    it: ['Aggiornamento del pacco', 'Ci sono novità sul pacco. Apri il tracciamento per i dettagli.'],
+    es: ['Novedades del paquete', 'Hay novedades de tu paquete. Abre el seguimiento para ver los detalles.'],
+    pt: ['Atualização do envio', 'Há novidades sobre o teu envio. Abre o seguimento para ver os detalhes.'],
+    pl: ['Aktualizacja przesyłki', 'Są nowe informacje o Twojej przesyłce. Otwórz śledzenie, aby zobaczyć szczegóły.'],
   };
   const requestedLanguage = String(payload.lang || self.navigator?.language || 'en').split(/[-_]/)[0].toLowerCase();
   const lang = Object.hasOwn(fallbackCopy, requestedLanguage) ? requestedLanguage : 'en';

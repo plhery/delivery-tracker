@@ -177,7 +177,7 @@ final class LocalizationTests: XCTestCase {
         let cases: [(AppLanguage, String, String, String)] = [
             (.en, "stamp", "stamps", "Cancel 1 previous link"),
             (.fr, "timbre", "timbres", "Annuler 1 lien précédent"),
-            (.de, "Briefmarke", "Briefmarken", "1 früheren Link widerrufen"),
+            (.de, "Briefmarke", "Briefmarken", "1 früheren Link deaktivieren"),
             (.it, "francobollo", "francobolli", "Annulla 1 link precedente"),
         ]
         for (language, singular, plural, link) in cases {

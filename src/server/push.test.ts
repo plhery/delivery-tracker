@@ -1,4 +1,7 @@
 import { generateKeyPairSync } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import {
   DeliveryLiveActivityNotificationService,
@@ -136,5 +139,28 @@ describe('useful, localized tracking updates', () => {
     }
     expect(((live.payload({ ...row, expected_delivery: '2026-09-07' }, 'start').aps as JsonObject)['content-state'] as JsonObject).parcel)
       .toMatchObject({ detail: 'En cours de livraison', status: 'En cours de livraison' });
+  });
+});
+
+describe('service worker fallback copy', () => {
+  const worker = readFileSync(resolve(process.cwd(), 'public/push-sw.js'), 'utf8');
+
+  it.each(['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'])('matches the server %s update copy', (locale) => {
+    const listeners: Record<string, (event: unknown) => void> = {};
+    const shown: [string, { body: string; lang: string }][] = [];
+    runInNewContext(worker, {
+      caches: { delete: async () => true },
+      self: {
+        addEventListener: (type: string, listener: (event: unknown) => void) => { listeners[type] = listener; },
+        registration: { showNotification: async (title: string, options: { body: string; lang: string }) => { shown.push([title, options]); } },
+      },
+    });
+    listeners.push!({ data: { json: () => ({ lang: locale }) }, waitUntil: () => undefined });
+
+    const expected = web.payload({ locale, stage: 'update', package_id: 'package-1' });
+    expect(shown).toHaveLength(1);
+    expect(shown[0]![0]).toBe(expected.title);
+    expect(shown[0]![1].body).toBe(expected.body);
+    expect(shown[0]![1].lang).toBe(locale);
   });
 });

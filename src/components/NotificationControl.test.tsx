@@ -60,7 +60,7 @@ describe('NotificationControl', () => {
     await user.click(screen.getByRole('switch', { name: 'Delivery updates' }));
     expect(inspectPushState).toHaveBeenCalledWith(apiAuth);
     expect(enablePushNotifications).toHaveBeenCalledWith('public', apiAuth, 'en');
-    expect(await screen.findByText("You’re set for parcel updates")).toBeInTheDocument();
+    expect(await screen.findByText("You’re all set for parcel updates")).toBeInTheDocument();
     expect(notificationInvitationDismissed(apiAuth.userId)).toBe(true);
   });
 

@@ -52,7 +52,7 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
   de: {
     test_title: "Paketmeldungen sind aktiv",
     test_body: "Du erhältst die gewählten Liefermeldungen auf diesem Gerät. Du kannst sie in den Meldungseinstellungen ändern.",
-    update: 'Paketaktualisierung',
+    update: 'Paket-Update',
     today: 'heute',
     tomorrow: 'morgen',
     pending: 'Noch nicht angekündigt',

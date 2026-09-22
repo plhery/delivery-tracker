@@ -1276,7 +1276,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Delete permanently' }));
 
     expect(screen.getByRole('dialog', { name: /permanently delete old delivery/i }))
-      .toHaveTextContent('cannot be undone');
+      .toHaveTextContent('can’t be undone');
     await user.click(within(screen.getByRole('dialog', {
       name: /permanently delete old delivery/i,
     })).getByRole('button', { name: 'Delete permanently' }));
