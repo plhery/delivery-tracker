@@ -18,7 +18,10 @@ click can stall on this page.
 
 The hash route can start tracking automatically with consent already recorded.
 Once the exact tracking GET starts, capture skips duplicate form submission and
-TRAWL skips its CAPTCHA solver. Tracking connection failures end capture promptly
+TRAWL skips its CAPTCHA solver. Royal Mail may use an existing API session;
+its first HTTP 401 with `E0015` is retained while the page automatically refreshes
+the CAPTCHA token. Capture allows that one refresh within its existing deadline,
+then settles on the next final reply or repeated rejection. Tracking connection failures end capture promptly
 with an allowlisted network-error code; they must not become missing-checkbox
 errors. A page without a tracking reply still fails its tier so ineffective
 cached sessions are invalidated and normal provider recovery remains available.
@@ -99,6 +102,13 @@ page using the verified handle, in 7.1 seconds total. TRAWL now follows that
 route; the application requires the full response instead of accepting just
 the widget's first/latest scans. See the
 [Postal Ninja verification notes](../../packages/carriers/providers/postal-ninja/README.md).
+
+The Royal Mail session-refresh update was deployed on 2026-09-22. Controlled
+tests through Camoufox Tier 2 and Tier 3 retained an initial `401 / E0015` and
+captured the matching successful follow-up. The deployed code matched the
+repository source and the service was healthy. A final live lookup still hit
+the separate tracking connection reset in 8.2 seconds; the refresh fix does
+not establish reliable upstream access.
 
 ## Redis session cache
 

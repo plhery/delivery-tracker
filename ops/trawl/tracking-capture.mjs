@@ -101,9 +101,16 @@ const SITES = [
       const number = (/^#\/tracking-results\/([A-Z0-9]+)\/?$/.exec(page.hash)?.[1] ?? '');
       return /^[A-Z]{2}\d{9}GB$/.test(number) ? number : null;
     },
-    settled(data) {
-      // One GET, one final reply: any decoded envelope ends the wait. The
-      // adapter binds the mailpiece to the requested number itself.
+    settled(data, number, state, status) {
+      // The page retries E0015 with a new CAPTCHA token when its existing API
+      // session is rejected. Keep that first reply for diagnosis, but allow
+      // one automatic refresh within the normal capture deadline.
+      if (status === 401 && !state.challengeRefresh
+        && Array.isArray(data?.errors) && data.errors.some(error => error?.errorCode === 'E0015')) {
+        state.challengeRefresh = true;
+        return false;
+      }
+      // Other replies are final; the adapter verifies the mailpiece identity.
       return !!data && typeof data === 'object';
     },
   },
@@ -197,7 +204,7 @@ export async function attachTrackingCapture(page, url, options) {
       const data = JSON.parse(entry.body);
       // Preserve intermediate replies for diagnosis, but let the website carry
       // on until it holds a final reply for exactly the requested number.
-      if (site.settled(data, number, state)) finish();
+      if (site.settled(data, number, state, entry.status)) finish();
     } catch { entry.error = 'tracking response could not be read'; }
   };
   page.on('response', onResponse);
@@ -280,8 +287,8 @@ export async function attachTrackingCapture(page, url, options) {
       await awaitReply();
     } } : {}),
     hasResponse() { return Boolean((site.checkApi && terminal) || (site.perNumber && entries.some(entry => entry.body !== null || entry.status !== 200))); },
-    // Royal Mail sends this GET only after its hCaptcha success callback.
-    // A later connection failure cannot be repaired by clicking a checkbox.
+    // Royal Mail can use an existing API session or a fresh CAPTCHA token.
+    // Once the lookup starts, let its own refresh callback handle E0015.
     hasTrackingRequest() { return Boolean((site.checkApi && state.handle) || (site.perNumber && trackingRequested)); },
     settle,
     async drain() {

@@ -217,6 +217,22 @@ describe('Royal Mail lookup steps', () => {
       .resolves.toMatchObject({status: 'delivered'});
   });
 
+  it.each([true, false])('uses the final reply when session refresh succeeds: %s', async (recovered) => {
+    const rows = [
+      {url: royalMailSummaryApiUrl(DELIVERED_NUMBER), status: 401,
+        body: JSON.stringify({errors: [{errorCode: 'E0015'}]}), headers: {}},
+      {url: royalMailSummaryApiUrl(DELIVERED_NUMBER), status: 200,
+        body: JSON.stringify(DELIVERED), headers: {}},
+    ];
+    if (!recovered) rows.reverse();
+    const fetcher = vi.fn().mockResolvedValue(Response.json({
+      tier: 3, statusCode: 200, html: '<html>tracking app</html>', capturedResponses: rows,
+    }));
+    const result = new RoyalMailTracker({trawlUrl: TRAWL_URL, fetcher}).fetch(DELIVERED_NUMBER);
+    if (recovered) await expect(result).resolves.toMatchObject({status: 'delivered'});
+    else await expect(result).rejects.toMatchObject({name: 'ChallengeError'});
+  });
+
   it.each([[1, 200], [3, 302], [3, 0]])('rejects unsolved browser tier %s / document %s', async (tier, statusCode) => {
     const fetcher = vi.fn().mockResolvedValue(Response.json({tier, statusCode, html: '<html>app</html>'}));
     await expect(new RoyalMailTracker({trawlUrl: TRAWL_URL, fetcher}).fetch(DELIVERED_NUMBER))

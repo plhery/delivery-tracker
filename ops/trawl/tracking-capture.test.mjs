@@ -401,3 +401,45 @@ test('Royal Mail retains an automatic tracking reply without starting another lo
   assert.equal(capture.hasTrackingRequest(), true);
   assert.equal((await capture.drain()).capturedResponses.length, 1);
 });
+
+test('Royal Mail waits for the page to refresh a rejected API session once', {timeout: 1000}, async () => {
+  const {capture, handlers, respond} = await fixture(royalMailUrl, royalMailApi);
+  handlers.request({url: () => royalMailApi, method: () => 'GET'});
+  const denied = JSON.stringify({errors: [{errorCode: 'E0015'}]});
+  await respond(denied, {status: 401});
+  let settled = false;
+  const waiting = capture.settle(500).then(() => {settled = true;});
+  await new Promise(resolve => setTimeout(resolve, 10));
+  assert.equal(settled, false);
+  // The page is already refreshing its challenge; no second solver is needed.
+  assert.equal(capture.hasTrackingRequest(), true);
+  assert.equal(capture.hasResponse(), true);
+  await respond(royalMailReply());
+  await waiting;
+  assert.deepEqual((await capture.drain()).capturedResponses.map(row => row.status), [401, 200]);
+});
+
+test('Royal Mail preserves a rejected session when automatic recovery never arrives', {timeout: 1000}, async () => {
+  const {capture, respond} = await fixture(royalMailUrl, royalMailApi);
+  const denied = JSON.stringify({errors: [{errorCode: 'E0015'}]});
+  await respond(denied, {status: 401});
+  await capture.settle(10);
+  assert.equal((await capture.drain()).capturedResponses[0].body, denied);
+});
+
+test('Royal Mail ends repeated challenge failures and other final errors promptly', {timeout: 1000}, async () => {
+  const denied = JSON.stringify({errors: [{errorCode: 'E0015'}]});
+  for (const [status, body, firstDenied] of [
+    [401, denied, true],
+    [401, JSON.stringify({errors: [{errorCode: 'E9999'}]}), false],
+    [403, denied, false],
+    [429, JSON.stringify({httpCode: '429'}), false],
+  ]) {
+    const {capture, respond} = await fixture(royalMailUrl, royalMailApi);
+    if (firstDenied) await respond(denied, {status: 401});
+    await respond(body, {status});
+    await capture.settle(5000);
+    const rows = (await capture.drain()).capturedResponses;
+    assert.equal(rows.at(-1).body, body);
+  }
+});

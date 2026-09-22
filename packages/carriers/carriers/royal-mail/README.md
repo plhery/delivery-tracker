@@ -14,10 +14,12 @@ private TRAWL service with this repository's `ops/trawl` compatibility build.
    events and submit, verifying the input in the same document as the click.
    If a consent banner still appears, decline and wait for its reload first.
 3. Allow invisible hCaptcha to auto-pass and invoke the site's own callback.
-   Once the exact tracking GET starts, skip further form submissions and TRAWL's
-   CAPTCHA solver: that request follows the client token callback. This alone
-   does not prove that Royal Mail accepted the token or its risk assessment. A failed
-   tracking connection ends capture promptly with a bounded network-error code.
+   The page can also reuse an existing `x-rmg-api-session`. Once the exact
+   tracking GET starts, skip further form submissions and TRAWL's CAPTCHA
+   solver. A first HTTP 401 containing `E0015` stays open for the page's own
+   CAPTCHA refresh within the capture deadline; a second rejection ends the
+   wait. Other final responses and tracking connection failures end capture
+   promptly. A client token does not prove server acceptance.
    If no tracking request starts, the native solver still gets the remaining
    budget; interactive-challenge recovery is unverified.
 4. Parse the captured JSON. Cookies and challenge tokens stay in the browser;
@@ -147,8 +149,9 @@ probe. No working anonymous direct-HTTP alternative was demonstrated. Royal
 Mail's official account Tracking API is a separate access path requiring
 onboarding; these probes do not test it.
 
-Invisible hCaptcha removes the checkbox; it does not establish Royal Mail's
-passive/difficulty setting. TRAWL's checkbox/audio fallback remains unverified
+Invisible hCaptcha does not require an initial checkbox, but can present an
+interactive challenge. A drag-and-drop puzzle was observed and completed in
+the controller checks below. TRAWL's checkbox/audio fallback remains unverified
 for this widget, and current hCaptcha [accessibility documentation](https://www.hcaptcha.com/accessibility)
 describes text challenges. Its solver is identical in TRAWL 1.5.0 and
 [1.6.2](https://github.com/germondai/trawl/blob/v1.6.2/packages/tiers/src/solvers/hcaptcha.ts).
@@ -255,6 +258,53 @@ short test window, not a long-term success rate or the outcome of other recovery
 strategies. The retry wrapper remained an isolated experiment; no production
 retry or Chrome backend was deployed. Raw responses and CAPTCHA tokens were
 not retained.
+
+### Session refresh and further controller checks
+
+Further checks on 2026-09-22 varied consent, context reuse, network egress and
+the Chrome controller. None established reliable retrieval:
+
+- Keeping a Chrome context open produced several matching HTTP 200 replies.
+  Some lookups first returned HTTP 401, then the page automatically obtained a
+  fresh CAPTCHA token and returned HTTP 200. Fast repeated replies could have
+  come from browser cache; a separate cache-disabled run still failed
+  intermittently. Context reuse alone is not a demonstrated fix.
+- The public bundle stores an `x-rmg-api-session` response header as a cookie
+  and uses that session instead of a CAPTCHA token when available. Its error
+  handler runs hCaptcha again for `E0015`. This explains why treating every
+  first tracking reply as final can terminate a legitimate recovery sequence.
+- The same headed Chrome configuration through a temporary Mac HTTPS CONNECT
+  proxy returned one matching HTTP 200 and one `net::ERR_FAILED`. Direct server
+  controls also failed. Changing egress alone did not establish reliability.
+- Accepting all cookies, using an incognito context, opening only the hash URL,
+  removing the extra CDP observer and disabling HTTP/2 did not establish a
+  repeatable fix. The HTTP/2-disabled cases never started a tracking GET, so
+  they do not demonstrate a tracking response over HTTP/1.1.
+- NetLog distinguished local cancellation after successful preflight in two
+  `net::ERR_FAILED` samples from a remote stream reset in another sample.
+  The local cancellation's cause remains unidentified; these failures should
+  not all be described as server resets or insufficient loading time.
+- [SeleniumBase 4.54.10 CDP mode](https://github.com/seleniumbase/SeleniumBase/blob/master/examples/cdp_mode/ReadMe.md)
+  presented a visible drag-and-drop hCaptcha. Completing a puzzle caused the
+  token-bearing tracking GET to start, but that GET still failed with
+  `net::ERR_HTTP2_PROTOCOL_ERROR`. Solving the interactive challenge alone did
+  not fix that sample.
+- Launching Chrome directly with a minimal CDP controller, without Playwright,
+  Patchright or SeleniumBase, also produced token-bearing GETs followed by
+  HTTP/2 errors for both public references. `navigator.webdriver` was false.
+  The previously tested controller libraries are not the sole cause.
+
+Capture now preserves the first `401 / E0015` while allowing one automatic
+refresh within the existing deadline. It retains a rejection if recovery never
+arrives, ends repeated rejection promptly, and keeps other final errors final.
+The parser already reads the newest matching capture. Synthetic regression
+tests cover recovery and rejection, and controlled tests through actual TRAWL
+Tier 3 and Tier 2 both captured `[401, 200]` and the correct synthetic mailpiece.
+Those tests establish the recovery behavior, not Royal Mail availability.
+The update was deployed through Coolify and verified against the source hash.
+The service remained healthy, but its final live check still failed with a
+tracking connection reset in 8.2 seconds. Reliable deployed retrieval remains
+unproven; no Chrome backend or general network retry was enabled.
 
 The two recent public references and their original forum URLs are recorded in
 [numbers.json](numbers.json) as `public_shipment_report`. Their detection
