@@ -773,8 +773,11 @@ export class TrackingSyncService {
         const hasProgress = previousStage !== 'pending';
         // The parcel's own carrier does not know it yet: fallback providers failing on the
         // same unannounced number is not an outage, and the routing state keeps their cooldowns.
+        // Without a carrier to ask, every provider answering without history means the same.
+        const failures = error instanceof RoutingDeferred ? Object.values(error.routing.failures) : [];
         const routingUnannounced = error instanceof RoutingDeferred
-          && error.routing.failures[carrierId]?.kind === 'not_found';
+          && (error.routing.failures[carrierId]?.kind === 'not_found'
+            || (failures.length > 0 && failures.every((failure) => ['not_found', 'no_history'].includes(failure.kind))));
         if (!hasProgress && (isUnannouncedTrackingError(error) || routingUnannounced)) {
           audit.record('fetch', 'succeeded', performance.now() - fetchStartedAt, {
             disposition: 'unannounced',

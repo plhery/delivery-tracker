@@ -5,7 +5,7 @@ import type { JsonObject } from './types';
 import type { CarrierResult } from './carrierResult';
 import * as monitoring from './observability';
 import { universalCarrierHints } from './universalCarrierHints';
-import { InputRequiredError } from '@carriers/core/errors';
+import { IndeterminateError, InputRequiredError, NotFoundError } from '@carriers/core/errors';
 
 const time = new Date('2026-09-10T12:00:00Z');
 const history = (stamp = '2026-09-10T11:00:00Z'): CarrierResult => ({ status: 'in_transit', current_stage: 'in_transit',
@@ -180,6 +180,23 @@ describe('persistent tracking routing', () => {
       .rejects.toMatchObject({ stale: false, routing: { failures: { 'Ship24': { retry_at: '2026-09-10T14:00:00.000Z' } } } });
     expect(universal).toHaveBeenCalledOnce();
     expect(health.finishTrackingProvider).toHaveBeenCalledWith('Ship24', 'lease', 'rate_limited', 7_200_000, expect.any(Number));
+  });
+  it('keeps provider circuits closed when providers answer without history for an unknown number', async () => {
+    const { router, universal, health } = setup();
+    universal.mockImplementation(async (source: string) => {
+      throw source === 'Ship24' ? new NotFoundError(source)
+        : source === '17TRACK' ? new UpstreamHttpError(source, 502)
+          : new IndeterminateError(source, `${source} has no usable shipment history`);
+    });
+    await expect(router.fetch(parcel(), false)).rejects.toMatchObject({ routing: { failures: {
+      Ship24: { kind: 'not_found' },
+      ParcelsApp: { kind: 'no_history', retry_at: '2026-09-10T12:15:00.000Z' },
+      '17TRACK': { kind: 'transport' },
+    } } });
+    // Only the HTTP 5xx says anything about a provider's own health.
+    expect(health.finishTrackingProvider.mock.calls.map(([source, , kind]) => [source, kind])).toEqual([
+      ['Ship24', 'not_found'], ['ParcelsApp', 'not_found'], ['17TRACK', 'transport'],
+    ]);
   });
   it('reaches 17TRACK in the same check after the first two providers fail, then remembers it', async () => {
     const first = setup();

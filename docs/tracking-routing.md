@@ -29,7 +29,7 @@ Keep affinity rather than round-robin successful providers. Once per day per par
 The scoped China Post 17TRACK success also skips shadow comparisons: do not
 replace the verified richer feed using another source's inferred timestamp.
 
-Retry failed direct routes after the recorded cooldown; successful direct recovery takes over from universal retrieval. Transport failures start at 15 minutes, verification/schema failures at one hour, and confirmed not-found at 24 hours. Repeated failures back off to six hours (24 hours for not-found). Respect a longer explicit Retry-After up to seven days.
+Retry failed direct routes after the recorded cooldown; successful direct recovery takes over from universal retrieval. Transport failures start at 15 minutes, verification/schema failures at one hour, and confirmed not-found at 24 hours. A universal provider that answers without history for the number (its own inconclusive verdict, not an HTTP 5xx) is recorded as `no_history` on the transport schedule. Repeated failures back off to six hours (24 hours for not-found). A pending parcel whose recorded failures are all not-found or `no_history` waits instead of reporting an outage. Respect a longer explicit Retry-After up to seven days.
 
 ## Requested scenarios
 
@@ -100,7 +100,7 @@ The primary web/iPhone link follows `tracking_provider` on the displayed success
 
 ## Shared provider protection
 
-`tracking_provider_health` is service-only. An atomic RPC grants one 90-second lease per universal provider across workers. Completion is token-fenced. A crashed worker's lease expires. A healthy completion leaves a five-second spacing interval; 429 opens a minimum 15-minute cooldown, verification one hour, and other failures exponential one minute to one hour. Not-found is parcel-specific and does not open a global outage circuit.
+`tracking_provider_health` is service-only. An atomic RPC grants one 90-second lease per universal provider across workers. Completion is token-fenced. A crashed worker's lease expires. A healthy completion leaves a five-second spacing interval; 429 opens a minimum 15-minute cooldown, verification one hour, and other failures exponential one minute to one hour. Not-found and `no_history` are parcel-specific and do not open a global outage circuit.
 
 The table records attempts, successes, consecutive failures, last failure category, last success, duration, and next eligible time. Coordination failure is reported and fails closed for universal calls; a completion-write failure never discards already-retrieved data. Global health persists through restarts, as do per-parcel affinity/cooldowns.
 

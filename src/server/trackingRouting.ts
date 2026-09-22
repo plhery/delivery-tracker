@@ -9,14 +9,15 @@ import { isRecord, type JsonObject } from './types';
 import { priorityUniversalSource, universalSourceBudget, universalSources } from './universalTracking';
 import type { UniversalSource } from './universalTrackingResult';
 import { errorType, reportRoutingEvent } from './observability';
-import { carrierErrorKind, retryAfterMsOf } from '@carriers/core/errors';
+import { CarrierError, carrierErrorKind, IndeterminateError, retryAfterMsOf } from '@carriers/core/errors';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
-export type RoutingFailureKind = 'rate_limited' | 'not_found' | 'verification' | 'schema' | 'transport';
+// no_history: a universal provider answered for this number without any history.
+export type RoutingFailureKind = 'rate_limited' | 'not_found' | 'no_history' | 'verification' | 'schema' | 'transport';
 export interface ProviderHealth {
   acquireTrackingProvider(provider: string): Promise<{ token: string | null; retry_at: string }>;
-  finishTrackingProvider(provider: string, token: string, kind: RoutingFailureKind | null, retryAfterMs: number, durationMs: number): Promise<void>;
+  finishTrackingProvider(provider: string, token: string, kind: Exclude<RoutingFailureKind, 'no_history'> | null, retryAfterMs: number, durationMs: number): Promise<void>;
 }
 export interface RoutedResult {
   correction?: { carrier: string; trackingUrl: string | null; postcode: string | null };
@@ -93,6 +94,17 @@ export function routingFailure(error: unknown): { kind: RoutingFailureKind; retr
   }
   return { kind: error instanceof TypeError || error instanceof RangeError || error instanceof SyntaxError ? 'schema' : 'transport', retryAfterMs: 0 };
 }
+/**
+ * An adapter's own inconclusive verdict (17TRACK code 400, ParcelsApp NO_DATA,
+ * Postal Ninja's empty lookup) describes the number; an HTTP 5xx describes the provider.
+ */
+function answeredWithoutHistory(error: unknown): boolean {
+  let current = error;
+  for (let i = 0; i < 8 && current instanceof Error; i++, current = current.cause) {
+    if (current instanceof CarrierError) return current instanceof IndeterminateError;
+  }
+  return false;
+}
 function usable(value: CarrierResult): boolean {
   return Boolean(value.events?.length || value.status && !['unknown', 'pending'].includes(value.status)
     || value.current_stage && value.current_stage !== 'pending');
@@ -143,8 +155,11 @@ export class TrackingRouter {
       carrier: declared, provider, category: kind, trackingNumber: number,
       ...(error ? { errorClass: errorType(error), error } : {}),
     });
-    const fail = (provider: string, error: unknown): Failure => {
-      const { kind, retryAfterMs } = routingFailure(error);
+    const fail = (provider: string, error: unknown, universalSource = false): Failure => {
+      const classified = routingFailure(error);
+      const kind = universalSource && classified.kind === 'transport' && answeredWithoutHistory(error)
+        ? 'no_history' : classified.kind;
+      const { retryAfterMs } = classified;
       const count = Math.min(20, (state.failures[provider]?.count ?? 0) + 1);
       const base = kind === 'not_found' ? DAY : kind === 'verification' || kind === 'schema' ? HOUR : 15 * 60_000;
       const userError = trackingFailureCode(error);
@@ -290,7 +305,7 @@ export class TrackingRouter {
         delete state.failures[source];
         return { result: { ...result, tracking_provider: source }, sourceCarrierId: 'unknown', swissPostReady: null, handoffFallbackErrorType: null };
       } catch (error) {
-        const failure = fail(source, error);
+        const failure = fail(source, error, true);
         kind = failure.kind;
         retryAfterMs = millis(failure.retry_at) - now().getTime();
         if (kind === 'rate_limited' && recent()) {
@@ -299,7 +314,8 @@ export class TrackingRouter {
         }
         return null;
       } finally {
-        try { await this.options.health.finishTrackingProvider(source, lease.token, kind, retryAfterMs, performance.now() - before); }
+        // An answer about this number keeps the provider's circuit closed, like not-found.
+        try { await this.options.health.finishTrackingProvider(source, lease.token, kind === 'no_history' ? 'not_found' : kind, retryAfterMs, performance.now() - before); }
         catch { report('health_store_unavailable', source, 'transport'); }
       }
     };

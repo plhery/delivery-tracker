@@ -47,7 +47,7 @@ import cainiaoDeliveredFixture from '../../packages/carriers/carriers/aliexpress
 import { adapter as cainiaoAdapter, parseCainiaoTrackingResponse } from '@carriers/carriers/aliexpress/adapter';
 import { adapter as postNLAdapter, parsePostNLTrackingResponse } from '@carriers/carriers/spring-gds/adapter';
 import { NOOP_RECORDER } from '@carriers/core/telemetry';
-import { SchemaError } from '@carriers/core/errors';
+import { IndeterminateError, NotFoundError, SchemaError } from '@carriers/core/errors';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -1538,6 +1538,28 @@ describe('TrackingSyncService', () => {
       carrier_data: { routing: { failures: { dhl: { kind: 'not_found' }, Ship24: { kind: expect.any(String) } } } } });
     expect(client.recordTrackingHealth).toHaveBeenLastCalledWith(expect.any(String), 'fresh',
       expect.arrayContaining([expect.objectContaining({ kind: 'refresh', healthy: true })]));
+  });
+
+  it('keeps an unknown-carrier parcel waiting while no provider has history for it', async () => {
+    const client = { ...fakeClient(),
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-09-10T12:01:30Z' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
+    };
+    const noHistory = (source: string) => source === 'Ship24' ? new NotFoundError(source)
+      : new IndeterminateError(source, `${source} has no usable shipment history`);
+    const adapter = { fetch: vi.fn(), fetchUniversal: vi.fn(async (source: string) => { throw noHistory(source); }) };
+    const parcel = { id: 'not-handed-over', carrier: 'unknown', tracking_number: 'TEST1234', current_stage: 'pending' };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => new Date('2026-09-10T12:00:00Z'));
+    await expect(service.syncPackage(parcel, { trigger: 'scheduled' })).resolves.toMatchObject({ waiting: 1, errors: 0 });
+    expect(client.updatePackage.mock.calls.at(-1)![1]).toMatchObject({ sync_status: 'waiting', sync_error: null,
+      carrier_data: { routing: { failures: { Ship24: { kind: 'not_found' }, ParcelsApp: { kind: 'no_history' } } } } });
+
+    // A provider that could not be reached leaves the answer open.
+    adapter.fetchUniversal.mockImplementation(async (source: string) => {
+      throw source === 'ParcelsApp' ? new UpstreamHttpError(source, 502) : noHistory(source);
+    });
+    await expect(service.syncPackage({ ...parcel, id: 'provider-down' }, { trigger: 'scheduled' }))
+      .resolves.toMatchObject({ errors: 1 });
   });
 
   it('records no health sample for a scheduled check that contacted no provider', async () => {
