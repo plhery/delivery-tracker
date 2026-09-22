@@ -10,6 +10,8 @@ application, so it can move to its own repository later.
   alternatives.
 - [CORPUS.md](CORPUS.md): the tracking-number corpus and the detection sweep.
 - [providers/README.md](providers/README.md): the universal provider chain.
+- [providers/COVERAGE.md](providers/COVERAGE.md): live carrier-by-provider coverage,
+  event counts and history-quality comparisons, including direct tracking.
 
 ## Layout
 

@@ -12,6 +12,10 @@ persisted names. Protocol details live in each provider README.
 | [Postal Ninja](postal-ninja/README.md) | TRAWL widget verification then normal-page full history; local Chromium without the service; opt-in | `trawl` or `browser` |
 | [UPU](upu/README.md) | Anonymous JSON GET; final postal fallback | `direct` |
 
+[Carrier coverage matrix](COVERAGE.md): direct tracking and every universal
+provider compared on the top 15 carriers, with event counts and notes about
+missing milestones, foreign delivery legs and repeated details.
+
 The initial order is **Ship24 → ParcelsApp → 17TRACK → UPU**.
 `TRACKING_ENABLE_POSTAL_NINJA=true` inserts Postal Ninja before 17TRACK.
 UPU is eligible only for checksum-valid postal S10 numbers and always stays

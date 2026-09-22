@@ -1,5 +1,8 @@
 # Provider tradeoffs and evidence
 
+For the current carrier-by-carrier results, see the
+[coverage and history comparison](COVERAGE.md).
+
 Runtime policy lives in [tracking routing](../../../docs/tracking-routing.md).
 Protocol details belong in each provider folder; this page records why the
 providers have different roles. The default is **dedicated carrier → Ship24 →
