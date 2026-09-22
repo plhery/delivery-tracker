@@ -609,7 +609,7 @@ struct SignInView: View {
             errorView
             Button {
                 run {
-                    try await session.sendCode(to: email.cleanedEmail)
+                    try await session.sendCode(to: email.cleanedEmail, language: localizer.language)
                     step = .code
                 }
             } label: {

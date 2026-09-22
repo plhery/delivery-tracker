@@ -1,9 +1,45 @@
+{{- /* Supabase Auth renders this Go template. The apps store locale in user metadata. */ -}}
+{{- $lang := "en" -}}
+{{- $title := "Your sign-in code" -}}
+{{- $intro := "Enter this code in Delivery Tracker:" -}}
+{{- $ignore := "Didn’t ask for this code? You can ignore this email." -}}
+{{- if eq .Data.locale "de" -}}
+  {{- $lang = "de" -}}
+  {{- $title = "Dein Anmeldecode" -}}
+  {{- $intro = "Gib diesen Code in Delivery Tracker ein:" -}}
+  {{- $ignore = "Du hast keinen Code angefordert? Dann kannst du diese E-Mail ignorieren." -}}
+{{- else if eq .Data.locale "fr" -}}
+  {{- $lang = "fr" -}}
+  {{- $title = "Ton code de connexion" -}}
+  {{- $intro = "Saisis ce code dans Delivery Tracker :" -}}
+  {{- $ignore = "Tu n’as pas demandé ce code ? Tu peux ignorer cet e-mail." -}}
+{{- else if eq .Data.locale "it" -}}
+  {{- $lang = "it" -}}
+  {{- $title = "Il tuo codice di accesso" -}}
+  {{- $intro = "Inserisci questo codice in Delivery Tracker:" -}}
+  {{- $ignore = "Non hai richiesto questo codice? Puoi ignorare questa e-mail." -}}
+{{- else if eq .Data.locale "es" -}}
+  {{- $lang = "es" -}}
+  {{- $title = "Tu código de acceso" -}}
+  {{- $intro = "Introduce este código en Delivery Tracker:" -}}
+  {{- $ignore = "¿No has pedido este código? Puedes ignorar este correo." -}}
+{{- else if eq .Data.locale "pt" -}}
+  {{- $lang = "pt" -}}
+  {{- $title = "O teu código de acesso" -}}
+  {{- $intro = "Introduz este código no Delivery Tracker:" -}}
+  {{- $ignore = "Não pediste este código? Podes ignorar este e-mail." -}}
+{{- else if eq .Data.locale "pl" -}}
+  {{- $lang = "pl" -}}
+  {{- $title = "Twój kod logowania" -}}
+  {{- $intro = "Wpisz ten kod w Delivery Tracker:" -}}
+  {{- $ignore = "Jeśli to nie Ty, po prostu zignoruj tę wiadomość." -}}
+{{- end -}}
 <!doctype html>
-<html lang="en">
+<html lang="{{ $lang }}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Your Delivery Tracker sign-in code</title>
+    <title>{{ $title }}</title>
   </head>
   <body
     style="margin: 0; background: #f3f0e7; color: #1d1d1b; font-family: Arial, sans-serif"
@@ -24,10 +60,10 @@
                   Delivery Tracker
                 </p>
                 <h1 style="margin: 0 0 16px; font-size: 25px; line-height: 1.25">
-                  Your sign-in code
+                  {{ $title }}
                 </h1>
                 <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.5">
-                  Enter this code to open your delivery tracker:
+                  {{ $intro }}
                 </p>
                 <p
                   style="margin: 0 0 24px; padding: 16px; border-radius: 12px; background: #ffcf00; font-size: 32px; font-weight: 700; letter-spacing: 8px; text-align: center"
@@ -35,7 +71,7 @@
                   {{ .Token }}
                 </p>
                 <p style="margin: 0; color: #666; font-size: 13px; line-height: 1.5">
-                  If you did not request this code, you can ignore this email.
+                  {{ $ignore }}
                 </p>
               </td>
             </tr>

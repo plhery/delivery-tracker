@@ -10,6 +10,7 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
+import { useI18n } from '../i18n';
 import { abortable } from '../lib/apiClient';
 import { browserStorage, clearApiCache } from '../store/apiRepo';
 import { SessionStorage } from './sessionStorage';
@@ -101,6 +102,8 @@ export function AuthProvider({
   const [initialController] = useState(() => new AbortController());
   const identity = useRef({ userId: null as string | null, controller: initialController });
   const logout = useRef<Promise<void> | null>(null);
+  const { locale } = useI18n();
+  const savedLocale = useRef<string | null>(null);
   const [state, setState] = useState<Pick<AuthState, 'status' | 'user' | 'accessToken' | 'signal'>>(
     () => ({ ...(client ? { status: 'loading' as const, user: null, accessToken: null }
       : sessionState(null, null)), signal: initialController.signal }),
@@ -146,11 +149,25 @@ export function AuthProvider({
     storage?.allowSignIn();
     const { error } = await client.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: true },
+      options: { shouldCreateUser: true, data: { locale } },
     });
     if (error) { trackAction('sign-in-code-send', 'error'); throw error; }
     trackAction('sign-in-code-send', 'success');
-  }, [client, storage]);
+  }, [client, storage, locale]);
+
+  // The sign-in email template reads the account language from user metadata.
+  useEffect(() => {
+    const user = state.user;
+    if (!client || !user || user.user_metadata?.locale === locale) return;
+    const attempt = `${user.id}:${locale}`;
+    if (savedLocale.current === attempt) return;
+    // Waiting lets the saved language replace the initial English render first.
+    const timer = window.setTimeout(() => {
+      savedLocale.current = attempt;
+      void client.auth.updateUser({ data: { locale } }).catch(() => undefined);
+    }, 1_000);
+    return () => window.clearTimeout(timer);
+  }, [client, locale, state.user]);
 
   const signInWithProvider = useCallback(async (provider: 'google' | 'apple') => {
     const event = provider === 'apple' ? 'sign-in-apple' : 'sign-in-google';

@@ -50,15 +50,22 @@ Enable the Email provider and permit email sign-ups in Supabase Auth. Set the
 application Site URL to the production HTTPS origin and allow only legitimate
 development and production redirect origins.
 
-Customize the **Magic Link / OTP** email template so the message visibly
-contains the six-digit code:
+The app serves a branded sign-in email at `/auth-emails/magic-link.html`
+(`public/auth-emails/magic-link.html`). It shows the six-digit `{{ .Token }}`
+and picks its language from the `locale` user metadata that the web and iOS
+apps save, falling back to English. New email accounts receive the signup
+confirmation email instead of the magic link email while email auto-confirm is
+off, so point both at the same template and give both the localized subject:
 
-```html
-<h2>Your Delivery Tracker sign-in code</h2>
-<p>Enter this code in Delivery Tracker:</p>
-<p><strong>{{ .Token }}</strong></p>
-<p>If you did not request this code, you can ignore this email.</p>
+```dotenv
+GOTRUE_MAILER_TEMPLATES_MAGIC_LINK=https://delivery.example.com/auth-emails/magic-link.html
+GOTRUE_MAILER_TEMPLATES_CONFIRMATION=https://delivery.example.com/auth-emails/magic-link.html
+GOTRUE_MAILER_SUBJECTS_MAGIC_LINK={{ if eq .Data.locale "de" }}Dein Anmeldecode für Delivery Tracker{{ else if eq .Data.locale "fr" }}Ton code de connexion Delivery Tracker{{ else if eq .Data.locale "it" }}Il tuo codice di accesso a Delivery Tracker{{ else if eq .Data.locale "es" }}Tu código de acceso a Delivery Tracker{{ else if eq .Data.locale "pt" }}O teu código de acesso ao Delivery Tracker{{ else if eq .Data.locale "pl" }}Twój kod logowania do Delivery Tracker{{ else }}Your Delivery Tracker sign-in code{{ end }}
+GOTRUE_MAILER_SUBJECTS_CONFIRMATION=<same value as GOTRUE_MAILER_SUBJECTS_MAGIC_LINK>
 ```
+
+Auth caches fetched templates and keeps the last working one if a later fetch
+or parse fails.
 
 The UI calls `signInWithOtp` and then `verifyOtp` with type `email`. It does not
 consume a magic-link callback.

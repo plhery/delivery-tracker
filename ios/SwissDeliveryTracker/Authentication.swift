@@ -95,6 +95,7 @@ final class SessionStore: ObservableObject {
     private let transport: URLSession
     private let appleSignIn: any AppleSignInAuthorizing
     private let experienceKey = "sdt.native.experience.v1"
+    private let emailLanguageKey = "sdt.native.email-language.v1"
     private let defaults: UserDefaults
     private var session: AuthSession?
     private var refreshTask: Task<Void, Error>?
@@ -165,11 +166,11 @@ final class SessionStore: ObservableObject {
         state = .welcome
     }
 
-    func sendCode(to email: String) async throws {
+    func sendCode(to email: String, language: AppLanguage) async throws {
         var analyticsSucceeded = false
         DeliveryAnalytics.shared.action("sign-in-code-send", .started)
         defer { DeliveryAnalytics.shared.action("sign-in-code-send", analyticsSucceeded ? .success : .error) }
-        let body = ["email": email, "create_user": true] as [String: Any]
+        let body = ["email": email, "create_user": true, "data": ["locale": language.rawValue]] as [String: Any]
         _ = try await authRequest(
             path: "otp",
             method: "POST",
@@ -248,6 +249,26 @@ final class SessionStore: ObservableObject {
         } catch {
             DeliveryAnalytics.shared.action("sign-in-apple", .error)
             throw error
+        }
+    }
+
+    /// The sign-in email template reads the account language from user metadata.
+    func saveEmailLanguage(_ language: AppLanguage) async {
+        guard configuration.mode == .api, let userID = user?.id else { return }
+        let key = "\(emailLanguageKey).\(userID.uuidString)"
+        guard defaults.string(forKey: key) != language.rawValue else { return }
+        do {
+            guard let token = try await accessToken(), user?.id == userID else { return }
+            _ = try await authRequest(
+                path: "user",
+                method: "PUT",
+                jsonObject: ["data": ["locale": language.rawValue]],
+                response: EmptyAuthResponse.self,
+                bearer: token
+            )
+            defaults.set(language.rawValue, forKey: key)
+        } catch {
+            // A later launch or language change retries.
         }
     }
 

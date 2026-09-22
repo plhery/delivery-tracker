@@ -28,6 +28,7 @@ function authClient(session: Session | null = null) {
     verifyOtp: vi.fn().mockResolvedValue({ data: { session: SESSION }, error: null }),
     refreshSession: vi.fn().mockResolvedValue({ data: { session: SESSION }, error: null }),
     signOut: vi.fn().mockResolvedValue({ error: null }),
+    updateUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
   };
   return { client: { auth } as unknown as SupabaseClient, auth, unsubscribe };
 }
@@ -83,6 +84,33 @@ describe('AuthProvider', () => {
     expect(unsubscribe).toHaveBeenCalledOnce();
   });
 
+  it('saves the app language for the sign-in email once per account', async () => {
+    const { client, auth } = authClient(SESSION);
+    render(
+      <AuthProvider config={null} client={client}>
+        <AuthHarness />
+      </AuthProvider>,
+    );
+
+    expect(await screen.findByText('authenticated')).toBeInTheDocument();
+    await waitFor(() => expect(auth.updateUser).toHaveBeenCalledWith({ data: { locale: 'en' } }), { timeout: 2_000 });
+    expect(auth.updateUser).toHaveBeenCalledOnce();
+  });
+
+  it('leaves an account alone when its language is already saved', async () => {
+    const saved = { ...SESSION, user: { ...SESSION.user, user_metadata: { locale: 'en' } } } as Session;
+    const { client, auth } = authClient(saved);
+    render(
+      <AuthProvider config={null} client={client}>
+        <AuthHarness />
+      </AuthProvider>,
+    );
+
+    expect(await screen.findByText('authenticated')).toBeInTheDocument();
+    await new Promise((resolve) => setTimeout(resolve, 1_100));
+    expect(auth.updateUser).not.toHaveBeenCalled();
+  });
+
   it('does not treat a legacy anonymous session as an account', async () => {
     const anonymousSession = {
       ...SESSION,
@@ -117,7 +145,7 @@ describe('AuthProvider', () => {
     await user.click(screen.getByRole('button', { name: 'Send' }));
     expect(auth.signInWithOtp).toHaveBeenCalledWith({
       email: 'owner@example.test',
-      options: { shouldCreateUser: true },
+      options: { shouldCreateUser: true, data: { locale: 'en' } },
     });
 
     await user.click(screen.getByRole('button', { name: 'Verify' }));

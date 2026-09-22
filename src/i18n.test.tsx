@@ -1,4 +1,6 @@
 import en from '../shared/locales/en.json';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { StrictMode } from 'react';
 import de from '../shared/locales/de.json';
 import fr from '../shared/locales/fr.json';
@@ -42,6 +44,15 @@ describe('localization', () => {
     render(<StrictMode><I18nProvider><TranslationProbe /></I18nProvider></StrictMode>);
     await screen.findByText('Suivi de colis');
     expect(window.localStorage.getItem('deliveryTrackerLocale')).toBe('fr');
+  });
+  it('writes the sign-in email in every app language', () => {
+    const email = readFileSync(resolve(process.cwd(), 'public/auth-emails/magic-link.html'), 'utf8');
+    for (const locale of SUPPORTED_LOCALES.filter((locale) => locale !== 'en')) {
+      expect(email).toContain(`if eq .Data.locale "${locale}" -}}`);
+      expect(email).toContain(`$lang = "${locale}"`);
+    }
+    expect(email.match(/\{\{-? ?if /g)).toHaveLength(1);
+    expect(email.match(/\{\{-? ?end /g)).toHaveLength(1);
   });
   it('translates every shared tracking message in every locale and preserves original scan notes', () => {
     for (const locale of SUPPORTED_LOCALES) {

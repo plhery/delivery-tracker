@@ -139,7 +139,9 @@ subscriptions, delivery cursors or notification preferences.
 ## 3. Configure Auth and email
 
 1. Set the Auth Site URL to the public HTTPS origin and restrict redirect URLs.
-2. Enable email OTP sign-ups and put `{{ .Token }}` in the OTP template.
+2. Enable email OTP sign-ups and point the magic link and confirmation
+   templates at `/auth-emails/magic-link.html` (see
+   [Authentication](AUTHENTICATION.md#email-otp-setup)).
 3. Configure Google OAuth, custom SMTP, or both. Disable the matching frontend
    method when its provider is not production-ready.
 4. For email OTP, configure sender identity, SPF, DKIM, DMARC, CAPTCHA, and
