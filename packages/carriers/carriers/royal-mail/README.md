@@ -264,11 +264,12 @@ not retained.
 Further checks on 2026-09-22 varied consent, context reuse, network egress and
 the Chrome controller. None established reliable retrieval:
 
-- Keeping a Chrome context open produced several matching HTTP 200 replies.
-  Some lookups first returned HTTP 401, then the page automatically obtained a
-  fresh CAPTCHA token and returned HTTP 200. Fast repeated replies could have
-  come from browser cache; a separate cache-disabled run still failed
-  intermittently. Context reuse alone is not a demonstrated fix.
+- Keeping a Chrome context open, with a full navigation before each lookup,
+  produced several matching HTTP 200 replies. Some first returned HTTP 401,
+  then the page obtained a fresh CAPTCHA token and returned HTTP 200. Fast
+  repeated replies could have come from browser cache; a separate
+  cache-disabled run still failed intermittently. The later retained-page
+  check below separates browser cache from fresh successful retrieval.
 - The public bundle stores an `x-rmg-api-session` response header as a cookie
   and uses that session instead of a CAPTCHA token when available. Its error
   handler runs hCaptcha again for `E0015`. This explains why treating every
@@ -305,6 +306,58 @@ The update was deployed through Coolify and verified against the source hash.
 The service remained healthy, but its final live check still failed with a
 tracking connection reset in 8.2 seconds. Reliable deployed retrieval remains
 unproven; no Chrome backend or general network retry was enabled.
+
+### Retaining the successful page
+
+A further 2026-09-22 experiment launched installed Google Chrome directly with
+a minimal CDP controller, native keyboard/mouse events, opt-out preferences and
+fresh temporary profiles. After a successful lookup it kept the same browser,
+context and document, using **Track another item** instead of reloading. It
+cleared the HTTP cache before every subsequent lookup and checked the response
+identity and CDP cache flags. No user profile or existing user cookies were used.
+
+| Environment | New-profile attempts | Subsequent lookups on the successful page |
+|---|---|---|
+| Mac, Chrome 153.0.8010.53, direct connection | 1/1 succeeded | 4/4 succeeded across both public references |
+| Mac, second direct profile, including expiry | 1/1 succeeded | 3/3 succeeded, including renewal after expiry |
+| Mac Chrome through the server's SOCKS5 egress | 1/1 succeeded | 4/4 succeeded across both public references |
+| Server, Chrome 153.0.8010.52 under Xvfb | 0/3 succeeded | No successful session available to test |
+
+All 14 Mac replies were identity-matched HTTP 200 responses, with no disk,
+memory-cache event or service-worker hit. The initial request used a CAPTCHA
+token; all four subsequent requests in the first series used
+`x-rmg-api-session` without a CAPTCHA token. Those four network responses took
+398–560 ms. This establishes live session reuse locally, rather than merely
+repeated cached parcel data. It does not establish that page retention caused
+success, since the first fresh Mac
+lookup also worked. All three fresh server profiles failed with
+`net::ERR_HTTP2_PROTOCOL_ERROR`; two bounded replacements did not recover that
+lookup. The server's retained-page hypothesis therefore remains untested.
+
+Issued session tokens declared a 120-second lifetime. Successful subsequent
+requests returned tokens with their original expiry, rather than extending it.
+In the second direct profile, waiting 125 seconds after a successful warm lookup
+let the token expire. The same document then automatically obtained a fresh
+CAPTCHA token, returned a matching HTTP 200 and received a new 120-second
+session. The next lookup successfully used that new session. Keeping the page
+open can preserve a working renewal flow; periodic requests did not extend the
+original token. No manual CAPTCHA solving or paid solver was needed in these
+successful sequences.
+
+The egress comparison used a temporary loopback-only SSH SOCKS5 forward; a
+separate proxy check confirmed the server's public IPv4. No cookies were moved
+between hosts. The successful proxied Mac sequence argues against that IP alone
+being sufficient to cause failure. It does not isolate the remaining OS,
+Chrome patch version, graphics or container differences. The next useful server
+experiment is reproducing the successful browser environment and then testing
+page retention, rather than assuming more identical retries will work. This
+small series does not establish a long-term success rate or deployed retrieval.
+
+Only allowlisted response metadata and token expiry metadata were retained;
+token values and live response bodies were not saved. Temporary profiles and
+the proxy were removed. TRAWL's one-hour Redis TTL cannot keep an upstream token
+valid: its cookie cache is distinct from retaining the successful browser page.
+Production behavior was not changed by this experiment.
 
 The two recent public references and their original forum URLs are recorded in
 [numbers.json](numbers.json) as `public_shipment_report`. Their detection

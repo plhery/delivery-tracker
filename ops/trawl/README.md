@@ -145,10 +145,16 @@ models so redeployments preserve them. Sessions are disposable, so Redis disk
 persistence is disabled. A cache restart causes a fresh Tier 3 solve. TRAWL
 also tolerates unavailable Redis and retries its connection in the background.
 
-This caches cookies and browser identity per domain, **not tracking responses**:
-every lookup still contacts the carrier. Successful sessions refresh the
-one-hour TTL, and failed Tier 2 sessions are invalidated before Tier 3 recovery.
-It benefits other TRAWL callers that reach the browser tiers too.
+This stores cookies and the recorded User-Agent per domain, **not tracking
+responses**. Browser HTTP caching is separate. Successful sessions refresh the
+Redis entry's one-hour TTL, and failed Tier 2 sessions are invalidated before
+Tier 3 recovery. That TTL does not extend an upstream token's expiry.
+
+Tier 2 injects those cookies into a pooled context and opens a new page; Tier 3
+closes its temporary context after retrieval. The pool prefers an available
+browser last used for that domain, but Redis does not retain the successful
+page, its JavaScript state or an entire browser fingerprint. This distinction
+matters for the [Royal Mail session checks](../../packages/carriers/carriers/royal-mail/README.md#retaining-the-successful-page).
 
 Check from a machine with private access, or pipe the script into the running
 TRAWL container with `docker exec -i <container> bun run -`:
