@@ -222,6 +222,40 @@ cause. A [Playwright report](https://github.com/microsoft/playwright/issues/3600
 documents `ERR_HTTP2_PROTOCOL_ERROR` changing with browser mode and environment
 on another site. These are related symptoms, not proof of the same cause here.
 
+### Controlled retry check
+
+A follow-up on 2026-09-22 used six fresh sessions per setup, three for each
+public reference. The setups were interleaved on the same host, with headed
+Google Chrome 153.0.8010.52 and Patchright 1.62.3 held constant. Each failed
+first attempt received one form resubmission five seconds after failure,
+in the same browser session. The site's callback supplied the token; no API
+request or token was replayed directly.
+
+| Setup | First-attempt successes | Failed lookups retried | Successful retries | Final successful sessions |
+|---|---|---|---|---|
+| Standalone Patchright, new persistent profile, normal form | 1/6 | 5 | 0/5 | 1/6 |
+| TRAWL Tier 3 with injected Chrome, normal fresh context and tracking hash | 0/6 | 6 | 0/6 | 0/6 |
+
+The TRAWL test used the current consent/capture integration plus a temporary
+wrapper that rearmed response capture and resubmitted the form before the tier
+closed its context. This tested recovery inside the actual tier, rather than
+starting an unrelated browser after the failure.
+
+All 11 resubmissions sent different CAPTCHA tokens and failed with
+`net::ERR_HTTP2_PROTOCOL_ERROR`. The initial failures comprised eight HTTP/2
+errors and three `net::ERR_FAILED` errors. The sole successful lookup returned
+an identity-matched HTTP 200 summary without disk cache or a service worker.
+Median total session duration was about 9.2 seconds for standalone Chrome and
+9.0 seconds for TRAWL, including browser setup, the retry where needed and
+cleanup.
+
+This series did not reproduce the earlier successful resubmission: the tested
+five-second retry recovered none of the 11 failures. These counts describe a
+short test window, not a long-term success rate or the outcome of other recovery
+strategies. The retry wrapper remained an isolated experiment; no production
+retry or Chrome backend was deployed. Raw responses and CAPTCHA tokens were
+not retained.
+
 The two recent public references and their original forum URLs are recorded in
 [numbers.json](numbers.json) as `public_shipment_report`. Their detection
 expectations do not assert a current shipment status. Parser fixtures remain
