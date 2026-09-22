@@ -137,9 +137,12 @@ hour per parcel. After a failed check, they wait four hours. Both scheduled and
 manual refreshes use the persisted `last_synced_at` and `sync_status`, so a
 worker restart or repeated Refresh action does not bypass the cooldown. New or
 reconfigured parcels are checked immediately. From 08:00–22:00 in Europe/Zurich,
-other carriers refresh in-transit parcels every two minutes and other stages
-every ten minutes, with hourly checks overnight. Parcels that are not yet due
-do not consume the five-parcel per-owner scheduled quota.
+other carriers refresh out-for-delivery parcels every two minutes and other stages
+every ten minutes, with hourly checks overnight. A parcel with no new carrier
+event for 48 hours (counted from when it was added, if that is later) is
+checked hourly around the clock until an event arrives; manual refreshes are not
+held back. Parcels that are not yet due do not consume the five-parcel
+per-owner scheduled quota.
 PostNL uses the thirty-minute daytime and
 hourly overnight schedule, including after a failed check; manual refreshes
 are available without the GLS cooldown.

@@ -18,12 +18,12 @@ describe('guarded tracking writes', () => {
     expect(decodeURIComponent(request.mock.calls[1][0])).toContain('carrier_data->>original_package_id=eq.origin');
   });
 
-  it('loads persisted sync status and timestamps for scheduled carrier cooldowns', async () => {
+  it('loads persisted sync status and timestamps for scheduled carrier cooldowns and idle back-off', async () => {
     const client = new SupabaseServiceClient('https://database.example', 'service-key');
     const request = vi.spyOn(client, 'request').mockResolvedValue([]);
     await client.listActivePackages();
     const selected = new URL(`https://database.example${request.mock.calls[0][0]}`).searchParams.get('select')!.split(',');
-    expect(selected).toEqual(expect.arrayContaining(['sync_status', 'last_synced_at', 'carrier']));
+    expect(selected).toEqual(expect.arrayContaining(['sync_status', 'last_synced_at', 'carrier', 'created_at', 'carrier_data']));
   });
 
   it('atomically submits events, cleanup and status with the configuration generation', async () => {

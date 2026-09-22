@@ -46,6 +46,8 @@ const VALID_STAGES = new Set<string>(STAGES);
 const SLOW_POLL_CARRIERS = new Set(['gls-de', 'gls-ch', 'gls-fr']);
 const SLOW_POLL_INTERVAL_MS = 60 * 60 * 1_000;
 const FAILED_SLOW_POLL_INTERVAL_MS = 4 * SLOW_POLL_INTERVAL_MS;
+/** Scheduled checks fall back to hourly this long after a parcel's newest carrier event, or after it was added. */
+const IDLE_AFTER_MS = 48 * 60 * 60 * 1_000;
 
 /**
  * An unsuccessful partner confirmation must not double every refresh's cost.
@@ -86,6 +88,15 @@ export function isTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
   return now.getTime() >= lastChecked + interval;
 }
 
+/** The newest carrier event or the parcel's creation, whichever is later; null when neither is known. */
+function lastActivity(parcel: JsonObject): number | null {
+  // Routing keeps the event watermark; parcels outside routing (Amazon Shipping) keep only the summary time.
+  const summaryTime = isRecord(parcel.carrier_data) ? parcel.carrier_data.last_update : undefined;
+  const times = [routingState(parcel).last_event_at, summaryTime, parcel.created_at]
+    .map((value) => Date.parse(String(value ?? ''))).filter(Number.isFinite);
+  return times.length ? Math.max(...times) : null;
+}
+
 function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
   if (!isTrackingSyncDue(parcel, now)) return false;
   const lastChecked = Date.parse(String(parcel.last_synced_at ?? ''));
@@ -93,8 +104,10 @@ function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
   const local = DateTime.fromJSDate(now, { zone: 'Europe/Zurich' });
   const intervalMinutes = parcel.current_stage === 'out_for_delivery'
     ? 2 : parcel.carrier === 'spring-gds' ? 30 : 10;
+  const activity = lastActivity(parcel);
+  const idle = activity !== null && now.getTime() - activity >= IDLE_AFTER_MS;
   // Compare schedule windows so request duration does not skip the next tick.
-  const windowStart = local.hour >= 8 && local.hour < 22
+  const windowStart = !idle && local.hour >= 8 && local.hour < 22
     ? local.startOf('minute').minus({ minutes: local.minute % intervalMinutes })
     : local.startOf('hour');
   return lastChecked < windowStart.toMillis();

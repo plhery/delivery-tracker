@@ -615,6 +615,30 @@ describe('TrackingSyncService', () => {
     expect(adapter.fetch).toHaveBeenCalledTimes(checked);
   });
 
+  it.each([
+    { name: 'idle for three days', created: '2026-08-30T09:00:00Z', lastEvent: '2026-09-06T09:00:00Z', stage: 'in_transit', time: '10:10:00', checked: 0 },
+    { name: 'idle for three days', created: '2026-08-30T09:00:00Z', lastEvent: '2026-09-06T09:00:00Z', stage: 'in_transit', time: '11:00:00', checked: 1 },
+    { name: 'stuck out for delivery', created: '2026-08-30T09:00:00Z', lastEvent: '2026-09-06T09:00:00Z', stage: 'out_for_delivery', time: '10:02:00', checked: 0 },
+    { name: 'never tracked since added', created: '2026-09-07T09:00:00Z', lastEvent: null, stage: 'pending', time: '10:10:00', checked: 0 },
+    { name: 'added yesterday with old history', created: '2026-09-08T09:00:00Z', lastEvent: '2026-09-01T09:00:00Z', stage: 'in_transit', time: '10:10:00', checked: 1 },
+    { name: 'moved within 48 hours', created: '2026-08-30T09:00:00Z', lastEvent: '2026-09-07T10:30:00Z', stage: 'in_transit', time: '10:10:00', checked: 1 },
+    { name: 'outside routing with a recent summary', created: '2026-08-30T09:00:00Z', lastEvent: null, lastUpdate: '2026-09-08T18:00:00Z', stage: 'in_transit', time: '10:10:00', checked: 1 },
+  ])('checks a parcel $name at $time: $checked checks', async ({ created, lastEvent, lastUpdate, stage, time, checked }) => {
+    const parcel = {
+      id: 'idle', carrier: 'swiss-post', current_stage: stage, tracking_number: 'TEST1234',
+      created_at: created, last_synced_at: '2026-09-09T10:00:15Z', sync_status: 'ok',
+      carrier_data: lastUpdate ? { last_update: lastUpdate }
+        : { routing: { version: 1, configured_carrier: 'swiss-post', ...(lastEvent ? { last_event_at: lastEvent } : {}) } },
+    };
+    const client = fakeClient([parcel]);
+    const adapter = { fetch: vi.fn().mockResolvedValue({ status: 'in_transit' }) };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient,
+      adapter, null, () => new Date(`2026-09-09T${time}Z`));
+    await expect(service.sync()).resolves.toMatchObject({ checked });
+    // A manual refresh is never held back by the idle schedule.
+    if (!checked) await expect(service.syncPackage(parcel)).resolves.toMatchObject({ checked: 1 });
+  });
+
   it('keeps out-for-delivery parcels hourly overnight and allows manual refreshes', async () => {
     const parcel = {
       id: 'overnight', carrier: 'swiss-post', current_stage: 'out_for_delivery', tracking_number: 'TEST1234',
