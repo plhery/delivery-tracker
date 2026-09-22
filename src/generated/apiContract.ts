@@ -3207,6 +3207,14 @@ export interface ApiPushSubscriptionResponse {
   "testSent": boolean;
 }
 
+export interface ApiPushSubscriptionStatusRequest {
+  "endpoint": string;
+}
+
+export interface ApiPushSubscriptionStatusResponse {
+  "active": boolean;
+}
+
 export type ApiNativePushEnvironment = "development" | "production";
 
 export type ApiNativePushLocale = "en" | "de" | "fr" | "it" | "es" | "pt" | "pl";

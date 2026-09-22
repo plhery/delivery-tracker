@@ -80,6 +80,22 @@ describe('inspectPushState', () => {
     getSubscription.mockResolvedValueOnce({ endpoint: 'https://push.example/token' });
     await expect(inspectPushState()).resolves.toEqual({ kind: 'enabled', publicKey: 'AQID' });
   });
+
+  it('shows a kept browser subscription as off once the server stopped delivering to it', async () => {
+    const auth = { userId: 'user-1', getAccessToken: vi.fn().mockResolvedValue('token') };
+    getSubscription.mockResolvedValue({ endpoint: 'https://push.example/token' });
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(response({ available: true, publicKey: 'AQID' }))
+      .mockResolvedValueOnce(response({ active: false }))
+      .mockResolvedValueOnce(response({ available: true, publicKey: 'AQID' }))
+      .mockResolvedValueOnce(response({ active: true }));
+
+    await expect(inspectPushState(auth)).resolves.toEqual({ kind: 'prompt', publicKey: 'AQID' });
+    await expect(inspectPushState(auth)).resolves.toEqual({ kind: 'enabled', publicKey: 'AQID' });
+    expect(fetch).toHaveBeenNthCalledWith(2, '/api/push/subscriptions/status', expect.objectContaining({
+      method: 'POST', body: JSON.stringify({ endpoint: 'https://push.example/token' }),
+    }));
+  });
 });
 
 describe('notification preferences', () => {
@@ -167,8 +183,40 @@ describe('push subscription lifecycle', () => {
   it('reuses granted permission when retrying or re-enabling alerts', async () => {
     vi.stubGlobal('Notification', { permission: 'granted', requestPermission: vi.fn() });
     getSubscription.mockResolvedValue({ toJSON: () => ({ endpoint: 'https://push.example/token' }) });
-    await enablePushNotifications('AQID');
+    vi.mocked(fetch).mockResolvedValueOnce(response({ ok: true, testSent: true }));
+    await expect(enablePushNotifications('AQID')).resolves.toBe(true);
     expect(Notification.requestPermission).not.toHaveBeenCalled();
+    expect(subscribe).not.toHaveBeenCalled();
+  });
+
+  it('replaces a kept subscription the push service no longer accepts', async () => {
+    vi.stubGlobal('Notification', { permission: 'granted', requestPermission: vi.fn() });
+    const stale = {
+      endpoint: 'https://push.example/stale',
+      toJSON: () => ({ endpoint: 'https://push.example/stale' }),
+      unsubscribe: vi.fn().mockResolvedValue(true),
+    };
+    const fresh = {
+      endpoint: 'https://push.example/fresh',
+      toJSON: () => ({ endpoint: 'https://push.example/fresh' }),
+      unsubscribe: vi.fn(),
+    };
+    getSubscription.mockResolvedValue(stale);
+    subscribe.mockResolvedValue(fresh);
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(response({ ok: true, testSent: false }))
+      .mockResolvedValueOnce(response({ ok: true }))
+      .mockResolvedValueOnce(response({ ok: true, testSent: true }));
+
+    await expect(enablePushNotifications('AQID')).resolves.toBe(true);
+    const calls = vi.mocked(fetch).mock.calls.map(([, init]) => [init?.method, JSON.parse(String(init?.body)).endpoint]);
+    expect(calls).toEqual([
+      ['POST', 'https://push.example/stale'],
+      ['DELETE', 'https://push.example/stale'],
+      ['POST', 'https://push.example/fresh'],
+    ]);
+    expect(stale.unsubscribe).toHaveBeenCalledOnce();
+    expect(fresh.unsubscribe).not.toHaveBeenCalled();
   });
   it('decodes VAPID keys and registers a new subscription', async () => {
     expect([...new Uint8Array(decodePublicKey('AQID'))]).toEqual([1, 2, 3]);

@@ -473,6 +473,14 @@ struct PushSubscriptionResponse: Codable, Equatable, Hashable, Sendable {
     var testSent: Bool
 }
 
+struct PushSubscriptionStatusRequest: Codable, Equatable, Hashable, Sendable {
+    var endpoint: String
+}
+
+struct PushSubscriptionStatusResponse: Codable, Equatable, Hashable, Sendable {
+    var active: Bool
+}
+
 enum NativePushEnvironment: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
     case development
     case production

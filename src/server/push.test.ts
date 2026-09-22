@@ -4,8 +4,10 @@ import { resolve } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import {
+  CompositePushNotificationService,
   DeliveryLiveActivityNotificationService,
   NativePushNotificationService,
+  PushDispatchError,
   WebPushNotificationService,
 } from './push';
 import type { JsonObject } from './types';
@@ -162,5 +164,22 @@ describe('service worker fallback copy', () => {
     expect(shown[0]![0]).toBe(expected.title);
     expect(shown[0]![1].body).toBe(expected.body);
     expect(shown[0]![1].lang).toBe(locale);
+  });
+});
+
+describe('push channel isolation', () => {
+  it('still sends browser and iPhone alerts when the Live Activity queue fails', async () => {
+    const summary = (sent: number) => ({ attempted: sent, sent, failed: 0, expired: 0 });
+    const outage = new Error('relation "pending_live_activity_events" does not exist');
+    const composite = new CompositePushNotificationService(
+      { dispatch: async () => summary(2) } as never,
+      { dispatch: async () => summary(1) } as never,
+      { dispatch: async () => { throw outage; } } as never,
+    );
+
+    const error = await composite.dispatch().catch((reason: unknown) => reason);
+    expect(error).toBeInstanceOf(PushDispatchError);
+    expect((error as PushDispatchError).errors).toEqual([outage]);
+    expect((error as PushDispatchError).summary).toEqual(summary(3));
   });
 });

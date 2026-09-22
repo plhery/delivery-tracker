@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { PATCH } from '../../app/api/push/subscriptions/route';
+import { POST as status } from '../../app/api/push/subscriptions/status/route';
 import { SupabaseAuthenticator } from './auth';
 import { SupabaseServiceClient } from './supabase';
 
@@ -51,4 +52,30 @@ it.each(['es', 'pt', 'pl'])('stores the new notification locale %s', async (loca
   const write = vi.spyOn(SupabaseServiceClient.prototype, 'request').mockResolvedValue(null);
   expect((await request({ endpoint, locale })).status).toBe(200);
   expect(write.mock.calls[0]?.[1]?.body).toEqual({ locale });
+});
+
+const statusRequest = (body: unknown) => status(new NextRequest('https://delivery.example/api/push/subscriptions/status', {
+  method: 'POST', headers: { 'content-type': 'application/json', Authorization: 'Bearer test-session' },
+  body: JSON.stringify(body),
+}), { params: Promise.resolve({}) });
+
+it.each([[[{ id: 'subscription-1' }], true], [[], false]])(
+  'reports whether the server still delivers to this browser (%j)',
+  async (stored, active) => {
+    const read = vi.spyOn(SupabaseServiceClient.prototype, 'request').mockResolvedValue(stored);
+    const response = await statusRequest({ endpoint });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ active });
+    const url = new URL(read.mock.calls[0]![0], 'https://database.example');
+    expect(url.searchParams.get('user_id')).toBe(`eq.${owner}`);
+    expect(url.searchParams.get('endpoint')).toBe(`eq.${endpoint}`);
+    expect(url.searchParams.get('disabled_at')).toBe('is.null');
+    expect(read.mock.calls[0]![1]?.method ?? 'GET').toBe('GET');
+  },
+);
+
+it('rejects a status check without a push endpoint', async () => {
+  const read = vi.spyOn(SupabaseServiceClient.prototype, 'request');
+  expect((await statusRequest({})).status).toBe(400);
+  expect(read).not.toHaveBeenCalled();
 });

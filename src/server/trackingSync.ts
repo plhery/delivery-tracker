@@ -28,7 +28,7 @@ import {
   logOperationalEvent,
   reportRoutingEvent,
 } from './observability';
-import type { CompositePushNotificationService } from './push';
+import { PushDispatchError, type CompositePushNotificationService } from './push';
 import type { SupabaseServiceClient } from './supabase';
 import {
   TrackingSyncAudit,
@@ -624,6 +624,11 @@ export class TrackingSyncService {
       }
     } catch (error) {
       signal?.throwIfAborted();
+      if (error instanceof PushDispatchError) {
+        summary.notifications_sent = error.summary.sent;
+        summary.notification_errors = error.summary.failed;
+        summary.subscriptions_expired = error.summary.expired;
+      }
       summary.notification_errors += 1;
       captureOperationalError(error, { component: 'push', operation: 'dispatch' });
     }

@@ -925,6 +925,14 @@ export class DeliveryLiveActivityNotificationService {
   }
 }
 
+/** Carries what the healthy channels delivered when another channel failed. */
+export class PushDispatchError extends AggregateError {
+  constructor(errors: unknown[], readonly summary: PushSummary) {
+    super(errors, `${errors.length} push channel(s) failed`);
+    this.name = 'PushDispatchError';
+  }
+}
+
 export class CompositePushNotificationService {
   constructor(
     readonly web: WebPushNotificationService | null,
@@ -935,14 +943,22 @@ export class CompositePushNotificationService {
   async dispatch(signal?: AbortSignal): Promise<PushSummary> {
     signal?.throwIfAborted();
     const combined = emptySummary();
+    const errors: unknown[] = [];
     for (const service of [this.liveActivities, this.web, this.native]) {
       if (!service) continue;
-      const summary = await service.dispatch(signal);
-      combined.attempted += summary.attempted;
-      combined.sent += summary.sent;
-      combined.failed += summary.failed;
-      combined.expired += summary.expired;
+      try {
+        const summary = await service.dispatch(signal);
+        combined.attempted += summary.attempted;
+        combined.sent += summary.sent;
+        combined.failed += summary.failed;
+        combined.expired += summary.expired;
+      } catch (error) {
+        signal?.throwIfAborted();
+        // One channel's outage or schema drift must not hold back the others.
+        errors.push(error);
+      }
     }
+    if (errors.length > 0) throw new PushDispatchError(errors, combined);
     return combined;
   }
 }

@@ -6,6 +6,7 @@ import type {
   ApiNotificationStage,
   ApiPushConfigResponse,
   ApiPushSubscriptionResponse,
+  ApiPushSubscriptionStatusResponse,
 } from '../generated/apiContract';
 
 export type NotificationPreferences = ApiNotificationPreferences;
@@ -97,7 +98,14 @@ export async function inspectPushState(auth?: ApiAuth): Promise<PushState> {
   if (Notification.permission === 'denied') return { kind: 'blocked' };
   const registration = await navigator.serviceWorker.ready;
   const subscription = await registration.pushManager.getSubscription();
-  return subscription
+  // The browser keeps its subscription after the server removed or expired it,
+  // so a signed-in device counts as enabled only while the server delivers to it.
+  const active = subscription && (!auth || (await request<ApiPushSubscriptionStatusResponse>(
+    '/api/push/subscriptions/status',
+    auth,
+    { method: 'POST', body: JSON.stringify({ endpoint: subscription.endpoint }) },
+  )).active);
+  return active
     ? { kind: 'enabled', publicKey: config.publicKey }
     : { kind: 'prompt', publicKey: config.publicKey };
 }
@@ -128,24 +136,33 @@ export async function enablePushNotifications(
     : await Notification.requestPermission();
   if (permission !== 'granted') throw new Error('Notifications were not allowed');
   const registration = await navigator.serviceWorker.ready;
-  let subscription = await registration.pushManager.getSubscription();
-  const wasCreated = !subscription;
-  if (!subscription) {
-    subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: decodePublicKey(publicKey),
-    });
-  }
-  try {
-    const result = await request<ApiPushSubscriptionResponse>('/api/push/subscriptions', auth, {
-      method: 'POST',
-      body: JSON.stringify({ ...subscription.toJSON(), locale }),
-    });
-    return result.testSent;
-  } catch (error) {
-    if (wasCreated) await subscription.unsubscribe();
-    throw error;
-  }
+  const subscribe = () => registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: decodePublicKey(publicKey),
+  });
+  const register = async (subscription: PushSubscription, created: boolean) => {
+    try {
+      const result = await request<ApiPushSubscriptionResponse>('/api/push/subscriptions', auth, {
+        method: 'POST',
+        body: JSON.stringify({ ...subscription.toJSON(), locale }),
+      });
+      return result.testSent;
+    } catch (error) {
+      if (created) await subscription.unsubscribe();
+      throw error;
+    }
+  };
+  const existing = await registration.pushManager.getSubscription();
+  if (!existing) return register(await subscribe(), true);
+  if (await register(existing, false)) return true;
+  // A kept subscription can be one the push service already dropped. Replace it
+  // once rather than registering an endpoint that cannot receive alerts.
+  await request<ApiOkResponse>('/api/push/subscriptions', auth, {
+    method: 'DELETE',
+    body: JSON.stringify({ endpoint: existing.endpoint }),
+  }).catch(() => undefined);
+  await existing.unsubscribe().catch(() => false);
+  return register(await subscribe(), true);
 }
 
 /** Update language without resetting the delivery cursor or sending a welcome alert. */

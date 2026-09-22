@@ -316,6 +316,13 @@ export class SupabaseClient {
     return result[0];
   }
 
+  async hasActivePushSubscription(userId: string, endpoint: string): Promise<boolean> {
+    const params = query({
+      select: 'id', user_id: `eq.${userId}`, endpoint: `eq.${endpoint}`, disabled_at: 'is.null', limit: '1',
+    });
+    return rows(await this.request(`/rest/v1/push_subscriptions?${params}`)).length > 0;
+  }
+
   async deletePushSubscription(userId: string, endpoint: string): Promise<void> {
     const params = query({ user_id: `eq.${userId}`, endpoint: `eq.${endpoint}` });
     await this.request(`/rest/v1/push_subscriptions?${params}`, {

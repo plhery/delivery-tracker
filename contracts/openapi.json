@@ -3660,6 +3660,43 @@
         }
       }
     },
+    "/api/push/subscriptions/status": {
+      "post": {
+        "operationId": "getPushSubscriptionStatus",
+        "tags": [
+          "Notifications"
+        ],
+        "description": "Reports whether the server still delivers to this browser subscription for the signed-in account. A browser can keep a subscription after the server removed or expired it.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushSubscriptionStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Delivery state of this browser subscription",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushSubscriptionStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "502": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
     "/api/push/devices": {
       "post": {
         "operationId": "upsertNativePushDevice",
@@ -4949,6 +4986,33 @@
             "type": "boolean"
           },
           "testSent": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PushSubscriptionStatusRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "endpoint"
+        ],
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https://",
+            "maxLength": 4096
+          }
+        }
+      },
+      "PushSubscriptionStatusResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "active"
+        ],
+        "properties": {
+          "active": {
             "type": "boolean"
           }
         }
