@@ -14,6 +14,35 @@ const readmePath = path.join(packageRoot, 'README.md');
 const START = '<!-- GENERATED:carriers -->';
 const END = '<!-- /GENERATED:carriers -->';
 
+// Editorial prominence order for the overview, not a measured market-share ranking.
+// Keep unfamiliar additions alphabetical after these carriers, before unknowns.
+const carrierOrder = [
+  'dhl', 'ups', 'fedex', 'usps', 'amazon-logistics', 'amazon-shipping',
+  'royal-mail', 'swiss-post', 'la-poste', 'dpd', 'dhl-ecommerce',
+  'aliexpress', 'china-post', 'ems', 'sf-express',
+  'gls-de', 'gls-fr', 'gls-ch', 'hermes-de', 'evri',
+  'chronopost', 'mondial-relay', 'inpost', 'spring-gds',
+  'canada-post', 'australia-post', 'japan-post', 'india-post',
+  'poste-italiane', 'correos-spain', 'bpost', 'austrian-post', 'postnord',
+  'tnt', 'aramex', 'yunexpress', 'four-px', 'yanwen',
+  'j-and-t', 'jd-logistics', 'zto', 'yto', 'yunda', 'sto', 'yamato',
+  'correios-br', 'singapore-post', 'hongkong-post', 'korea-post',
+  'planzer', 'quickpac', 'dpd-fr', 'parcelforce', 'purolator', 'ontrac',
+  'delhivery', 'blue-dart', 'dtdc', 'ninja-van',
+  'packeta', 'poczta-polska', 'bring-posten', 'posti', 'an-post',
+  'ctt', 'ctt-express', 'brt', 'seur', 'correos-express', 'mrw', 'nacex',
+  'colis-prive', 'relais-colis', 'paack', 'asendia', 'landmark-global',
+  'nz-post', 'pos-malaysia', 'thailand-post', 'ukrposhta',
+  'estafeta', 'correos-chile', 'the-courier-guy',
+  'geodis', 'dachser', 'old-dominion', 'swiss-post-cargo', 'postlogistics',
+  'hermes', 'heppner', 'ciblex', 'c-chez-vous', 'colisweb', 'delivengo',
+  'uniuni', 'speedx', 'gofo', 'ecoscooting', 'tipsa', 'canpar', 'spee-dee',
+  'sunyou', 'shipup',
+];
+const carrierRank = new Map(carrierOrder.map((id, index) => [id, index]));
+carrierRank.set('intl-post', Infinity);
+carrierRank.set('unknown', Infinity);
+
 function readJson(file) {
   return existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null;
 }
@@ -24,7 +53,10 @@ function folders(root) {
     : [];
 }
 
-const rows = folders(carriersRoot).map((id) => {
+const carrierIds = folders(carriersRoot).sort((a, b) =>
+  (carrierRank.get(a) ?? carrierOrder.length) - (carrierRank.get(b) ?? carrierOrder.length)
+  || a.localeCompare(b));
+const rows = carrierIds.map((id) => {
   const folder = path.join(carriersRoot, id);
   const carrier = readJson(path.join(folder, 'carrier.json')) ?? {};
   const numbers = readJson(path.join(folder, 'numbers.json')) ?? { records: [] };
@@ -50,6 +82,8 @@ const universal = rows.filter((row) => row.includes('| universal providers |')).
 const generated = [
   START,
   `${rows.length} carriers: ${dedicated} with a dedicated adapter, ${universal} tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with \`node packages/carriers/scripts/generate-readme.mjs\`.`,
+  '',
+  'Roughly ordered by familiarity and prominence, with major carriers first (an editorial order, not a market-share ranking).',
   '',
   '| Id | Name | Route | Steps | Capabilities | Sample numbers | Known statuses | Docs |',
   '| --- | --- | --- | --- | ---: | ---: | ---: | --- |',
