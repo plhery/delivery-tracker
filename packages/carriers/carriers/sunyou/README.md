@@ -11,7 +11,7 @@ handoff.
 
 | Portal | URL | What it is |
 |---|---|---|
-| Public search | `https://sypost.net/search?trackNumber={trackingNumber}` | The page a tracking link opens. |
+| Public search | `https://sypost.net/search?orderNo={trackingNumber}` | The page a tracking link opens; it ignores the older `trackNumber` parameter. |
 | Canary | `https://sypost.net/` | Probed daily for availability. |
 
 The search page reads `sypost.net/queryTrack`, a keyless endpoint that answers

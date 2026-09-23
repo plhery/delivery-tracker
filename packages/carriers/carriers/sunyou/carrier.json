@@ -23,7 +23,7 @@
     "history"
   ],
   "portal": {
-    "url": "https://sypost.net/search?trackNumber={trackingNumber}",
+    "url": "https://sypost.net/search?orderNo={trackingNumber}",
     "canaryUrl": "https://sypost.net/",
     "shows": [
       "status",
@@ -42,6 +42,7 @@
         "sypost.net"
       ],
       "params": [
+        "orderNo",
         "trackNumber"
       ]
     }

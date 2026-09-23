@@ -175,13 +175,14 @@ export const CARRIER_CAPABILITIES = {
       "adapter": "sunyou"
     },
     "canaryUrl": "https://sypost.net/",
-    "trackingUrlTemplate": "https://sypost.net/search?trackNumber={trackingNumber}",
+    "trackingUrlTemplate": "https://sypost.net/search?orderNo={trackingNumber}",
     "linkRules": [
       {
         "domains": [
           "sypost.net"
         ],
         "params": [
+          "orderNo",
           "trackNumber"
         ]
       }
