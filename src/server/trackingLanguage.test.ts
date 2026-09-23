@@ -110,6 +110,8 @@ describe('intuitive language contrasts', () => {
     ['Order information delivered to carrier', 'registered'],
     ['Data delivered to Swiss Post', 'registered'],
     ['Daten übermittelt', 'registered'],
+    ['Prenotification Received', 'registered'],
+    ['Data Received With Prefix Label', 'registered'],
   ] as const)('[generated] does not read "%s" as a delivery', (description, expected) => {
     expect(trackingLanguageStage(description)).toBe(expected);
     expect(inferStage(description, 'pending')).toBe(expected);
