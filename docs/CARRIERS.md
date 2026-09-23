@@ -49,9 +49,16 @@ npm run test:carriers:live
 ```
 
 The rendered tracking pages linked from the UI are checked separately, with
-synthetic numbers, by `npm run test:tracking-links`; the daily carrier-canary
-workflow runs those checks and a front-door reachability probe of every
-automatic carrier's `canaryUrl`.
+synthetic numbers, by `npm run test:tracking-links`.
+
+The daily carrier-canary workflow runs the wrong-number probes that need no
+private input (`npm run test:carriers:canary`, with Chromium so the Ship24 form
+scraper runs too), the rendered-link checks, and a reachability probe of each
+distinct `canaryUrl` of the automatic carriers, where a 404, 410 or 5xx fails.
+Each job's summary lists every failed check and every inconclusive one (a
+challenge or bot block, which is not a pass). A failing run on `main` opens or
+updates a single "Daily carrier canary failures" issue, commenting only when the
+set of failing checks changes, and a clean run closes it.
 
 `src/server/fixtures/auditedTrackingHistory.json` holds 129 reviewed
 provider-description cases (no numbers, timestamps or locations) replayed

@@ -1,4 +1,4 @@
-name: Carrier front-door canaries
+name: Carrier canaries
 
 on:
   schedule:
@@ -17,6 +17,8 @@ jobs:
     name: Public carrier reachability
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      failures: ${{ steps.probe.outputs.failures }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -25,12 +27,37 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Probe automatic carrier front doors
+        id: probe
         run: npm run canary
+
+  adapters:
+    name: Carrier adapters with synthetic numbers
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      failures: ${{ steps.adapters.outputs.failures }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Look up wrong numbers through each public adapter and provider
+        id: adapters
+        env:
+          CANARY_SUMMARY_TITLE: Carrier adapters with synthetic numbers
+        run: |
+          export TRACKING_CHROMIUM_PATH="$(node -e "import('playwright-core').then(({ chromium }) => console.log(chromium.executablePath()))")"
+          npm run test:carriers:canary -- --retry 1
 
   tracking-links:
     name: Rendered UI tracking links
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
+    outputs:
+      failures: ${{ steps.links.outputs.failures }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -40,4 +67,55 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - name: Check tracking routes, rendered content and number forwarding
-        run: npm run test:tracking-links
+        id: links
+        env:
+          CANARY_SUMMARY_TITLE: Rendered UI tracking links
+        run: npm run test:tracking-links -- --retry 1
+
+  report:
+    name: Track failures in an issue
+    needs: [probe, adapters, tracking-links]
+    if: ${{ always() && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Open, update or close the canary issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          NEEDS: ${{ toJSON(needs) }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          # A superseded run says nothing about carrier health.
+          if jq -e 'any(.[]; .result == "cancelled")' <<<"$NEEDS" >/dev/null; then exit 0; fi
+          failures=$(jq -r '
+            {"probe": "Public carrier reachability", "adapters": "Carrier adapters with synthetic numbers",
+             "tracking-links": "Rendered UI tracking links"} as $names
+            | to_entries[] | select(.value.result != "success")
+            | "#### \($names[.key] // .key)\n\n\(.value.outputs.failures | select(. != null and . != "")
+                // "The job failed before reporting checks; see the run log.")\n"
+          ' <<<"$NEEDS")
+          title='Daily carrier canary failures'
+          read -r number state < <(gh issue list --state all --search "\"$title\" in:title" --limit 20 \
+            --json number,state,title --jq "map(select(.title == \"$title\")) | first // empty | \"\(.number) \(.state)\"") || true
+          if [ -z "$failures" ]; then
+            if [ "${state:-}" = OPEN ]; then gh issue close "$number" --comment "All carrier canaries passed: $RUN_URL"; fi
+            exit 0
+          fi
+          body="$failures"$'\n'"Run: $RUN_URL"
+          if [ -z "${number:-}" ]; then
+            gh issue create --title "$title" --body "$body"
+          elif [ "$state" = CLOSED ]; then
+            gh issue reopen "$number" --comment "$body"
+          else
+            # Comment only when the set of failing checks changes, so a
+            # persistent failure does not notify every day.
+            checks() { grep -E '^(####|- )' | sed 's/`: .*/`/'; }
+            previous=$(gh issue view "$number" --json body,comments --jq '(.comments | last | .body) // .body')
+            if [ "$(checks <<<"$previous")" != "$(checks <<<"$failures")" ]; then
+              gh issue comment "$number" --body "$body"
+            fi
+          fi

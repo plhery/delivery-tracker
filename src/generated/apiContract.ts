@@ -584,7 +584,7 @@ export const CARRIER_CAPABILITIES = {
         }
       ]
     },
-    "canaryUrl": "https://www.dpdgroup.com/ch/",
+    "canaryUrl": "https://www.dpdgroup.com/ch/mydpd/my-parcels/incoming",
     "trackingUrlTemplate": "https://www.dpdgroup.com/ch/mydpd/my-parcels/incoming?parcelNumber={trackingNumber}",
     "linkRules": [
       {

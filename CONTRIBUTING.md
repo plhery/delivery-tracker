@@ -59,7 +59,9 @@ must use bounded timeouts and response sizes, keep diagnostics in the protected
 sinks described in [Observability](docs/OBSERVABILITY.md), and
 degrade to a carrier link when reliable automatic tracking is unavailable.
 Every automatic carrier also needs a public, credential-free `canaryUrl` in the
-carrier contract. The daily canary reports carrier IDs, hostnames, HTTP statuses,
+carrier contract, pointing at a page its adapter depends on, and an adapter live
+test that sends a validly shaped wrong number without private input: the daily
+canary runs those tests. The daily front-door probe reports carrier IDs, hostnames, HTTP statuses,
 per-attempt timing and bounded network error details (types, codes, syscalls and
 failed IP addresses/ports, including nested causes). It records each attempt as
 it completes, including failures that recover on retry, and prints the runtime

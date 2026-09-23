@@ -1,6 +1,7 @@
 import { isIP } from 'node:net';
 import { pathToFileURL } from 'node:url';
 import contract from '../../contracts/openapi.json' with { type: 'json' };
+import { writeCanaryReport } from '../../scripts/canary-report.mjs';
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 const DEFAULT_ATTEMPTS = 2;
@@ -75,7 +76,9 @@ function canaryErrorDetails(error: unknown, seen = new Set<object>()): CanaryErr
 }
 
 export function canaryHealthy(result: CanaryResult): boolean {
-  return result.status !== null && result.status < 500;
+  // A challenge or redirect still proves the front door answers. A missing
+  // page means the canary URL, and usually the lookup behind it, has moved.
+  return result.status !== null && result.status < 500 && result.status !== 404 && result.status !== 410;
 }
 
 export function automaticCanaryTargets(
@@ -201,25 +204,30 @@ export async function carrierCanaryMain(argv = process.argv.slice(2)): Promise<n
     attempts,
     concurrency: MAX_CONCURRENCY,
   })}`);
-  const results = await runCanaries(automaticCanaryTargets(), {
+  // Many carriers share a front door (every universal one uses the same
+  // provider page), so each URL is probed once and reported for all of them.
+  const targets = automaticCanaryTargets();
+  const carriersByUrl = new Map<string, string[]>();
+  for (const target of targets) carriersByUrl.set(target.url, [...carriersByUrl.get(target.url) ?? [], target.carrierId]);
+  const results = await runCanaries(targets.filter((target) => carriersByUrl.get(target.url)![0] === target.carrierId), {
     timeoutMs,
     attempts,
     onAttempt: (target, result) => {
       console.log(`ATTEMPT ${target.carrierId} ${new URL(target.url).hostname} ${JSON.stringify(result)}`);
     },
   });
+  const failures: { result: 'failed'; check: string; reason: string }[] = [];
   for (const result of results) {
+    const carriers = carriersByUrl.get(result.target.url)!.join(',');
     const hostname = new URL(result.target.url).hostname;
-    if (canaryHealthy(result)) {
-      console.log(`PASS ${result.target.carrierId} ${hostname} HTTP ${result.status}`);
-    } else if (result.status !== null) {
-      console.log(`FAIL ${result.target.carrierId} ${hostname} HTTP ${result.status}`);
-    } else {
-      console.log(`FAIL ${result.target.carrierId} ${hostname} ${result.error ?? 'unreachable'}`);
-    }
+    const outcome = result.status !== null ? `HTTP ${result.status}` : result.error ?? 'unreachable';
+    console.log(`${canaryHealthy(result) ? 'PASS' : 'FAIL'} ${carriers} ${hostname} ${outcome}`);
+    if (!canaryHealthy(result)) failures.push({ result: 'failed', check: `${carriers} (${hostname})`, reason: outcome });
   }
-  const healthy = results.filter(canaryHealthy).length;
-  console.log(`${healthy}/${results.length} automatic carrier front doors reachable`);
+  const healthy = results.length - failures.length;
+  const totals = `${healthy}/${results.length} canary URLs reachable for ${targets.length} automatic carriers`;
+  console.log(totals);
+  writeCanaryReport({ title: 'Public carrier reachability', totals, rows: failures });
   return healthy === results.length ? 0 : 1;
 }
 

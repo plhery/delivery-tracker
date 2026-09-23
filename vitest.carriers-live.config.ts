@@ -14,5 +14,7 @@ export default defineConfig({
     fileParallelism: false,
     maxConcurrency: 1,
     testTimeout: 60_000,
+    // Lists failed and inconclusive checks in the GitHub job summary.
+    reporters: ['default', './scripts/canary-report.mjs'],
   },
 });

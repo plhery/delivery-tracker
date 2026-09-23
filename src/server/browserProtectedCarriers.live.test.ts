@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ChallengeError } from '@carriers/core/errors';
 import { DPDFranceTracker } from './dpdFrance';
 import { MondialRelayTracker } from './mondialRelay';
 import { UPSTracker } from './ups';
@@ -41,8 +42,8 @@ describe('browser-protected carriers live wrong-number handling', () => {
           message: 'DPD France could not locate the shipment',
         });
       } else {
+        expect(error).toBeInstanceOf(ChallengeError);
         expect(error).toMatchObject({
-          name: 'ChallengeError',
           message: 'DPD France requires a browser challenge solver; configure FLARESOLVERR_URL',
         });
       }

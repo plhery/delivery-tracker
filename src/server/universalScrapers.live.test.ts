@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ChallengeError } from '@carriers/core/errors';
 import { PostalNinjaTracker } from './postalNinja';
 import { Ship24Tracker } from './ship24';
 
@@ -10,8 +11,12 @@ describe.runIf(Boolean(process.env.TRACKING_CHROMIUM_PATH))('universal form scra
   for (const [name, tracker] of [
     ['Postal Ninja', new PostalNinjaTracker()], ['Ship24', new Ship24Tracker()],
   ] as const) {
-    it(`retrieves matching history from ${name}`, async () => {
-      const result = await tracker.fetch(number);
+    it(`retrieves matching history from ${name}`, async (context) => {
+      const result = await tracker.fetch(number).catch((error: unknown) => {
+        // An unsolved browser challenge proves neither breakage nor health.
+        if (!(error instanceof ChallengeError)) throw error;
+        return context.skip(`${name} browser challenge: provider remains unverified`);
+      });
       expect(result.tracking_provider).toBe(name);
       expect(result.current_stage).toBe('delivered');
       expect(result.events?.length).toBeGreaterThan(0);
