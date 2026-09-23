@@ -81,6 +81,49 @@ describe('intuitive language contrasts', () => {
     expect(event('2026-01-01T12:00:00Z', description)?.stage).toBe('registered');
   });
 
+  // GENERATED phrasings around the bare word "delivered": handoffs, pickup
+  // points, returns, forecasts and negations must not read as a delivery.
+  it.each([
+    ['Delivered to airline', 'in_transit'],
+    ['Parcel delivered to courier', 'in_transit'],
+    ['Delivered to the carrier for transport', 'in_transit'],
+    ['Delivered to sorting center', 'in_transit'],
+    ['Delivered to hub', 'in_transit'],
+    ['Delivered to the local post office for final delivery', 'in_transit'],
+    ['Delivered to destination postal operator', 'in_transit'],
+    ['Item delivered to the destination country', 'in_transit'],
+    ['Delivered to Swiss Post', 'in_transit'],
+    ['Consignment delivered to the transport company', 'in_transit'],
+    ['Consegnato al corriere', 'in_transit'],
+    ['Delivered to ParcelShop', 'ready_for_pickup'],
+    ['Delivered to Packstation', 'ready_for_pickup'],
+    ['Delivered to the pickup point', 'ready_for_pickup'],
+    ['Colis livré au point relais', 'ready_for_pickup'],
+    ['Votre colis est disponible dans votre point de retrait. Il vous sera remis sur présentation d’une pièce d’identité.', 'ready_for_pickup'],
+    ['Delivered to the sender', 'returned'],
+    ['Returned and delivered to sender', 'returned'],
+    ['Expected to be delivered on Monday', 'in_transit'],
+    ['Voraussichtlich zugestellt am Montag', 'registered'],
+    ['Not yet delivered', 'failed_attempt'],
+    ['Undelivered', 'failed_attempt'],
+    ['Your parcel is being delivered', 'out_for_delivery'],
+    ['Order information delivered to carrier', 'registered'],
+    ['Data delivered to Swiss Post', 'registered'],
+    ['Daten übermittelt', 'registered'],
+  ] as const)('[generated] does not read "%s" as a delivery', (description, expected) => {
+    expect(trackingLanguageStage(description)).toBe(expected);
+    expect(inferStage(description, 'pending')).toBe(expected);
+    expect(event('2026-01-01T12:00:00Z', description)?.stage).toBe(expected);
+  });
+
+  it.each([
+    'Delivered', 'Delivered to neighbour', 'Delivered to the mailbox', 'Delivered to the parcel box',
+    'Delivered to the post box', 'Delivered to recipient', 'Package delivered', 'Delivery successful.',
+  ])('[generated] still reads "%s" as a delivery', (description) => {
+    expect(trackingLanguageStage(description)).toBe('delivered');
+    expect(event('2026-01-01T12:00:00Z', description)?.stage).toBe('delivered');
+  });
+
   it('does not generalize Planzer’s observed Shipped=delivered convention', () => {
     for (const description of ['Shipped', 'Expédié', 'Versandt', 'Spedito']) {
       expect(trackingLanguageStage(description)).not.toBe('delivered');

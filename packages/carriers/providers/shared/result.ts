@@ -49,11 +49,15 @@ function sourceEventStage(description: string, includeBroadMovement = true): Sta
   if (/not delivered|could not.*deliver|unable to deliver|delivery (?:attempt|failed)/i.test(description)) return 'failed_attempt';
   // Carrier-reported problems that are neither a missed attempt nor a return.
   if (/damaged|broken in transit|lost in transit|(?:package|parcel|shipment) (?:is )?lost|refused(?: by)?|rejected by (?:the )?recipient|(?:incorrect|incomplete|insufficient|unknown|invalid) address|address (?:incorrect|incomplete|insufficient|unknown|invalid)|addressee (?:unknown|cannot be located)|delivery exception|shipment exception|carrier exception|held (?:by|in|at) customs|customs (?:issue|problem)|action required|awaiting instructions|(?:shipment|parcel) (?:held|on hold)/i.test(description)) return 'exception';
-  if (/delivered to (?:the )?(?:local carrier|delivery partner|post office|pickup point)/i.test(description)) return 'in_transit';
+  if (/delivered to (?:the )?(?:local carrier|delivery partner|post office)/i.test(description)) return 'in_transit';
   if (/will be available for (?:pickup|collection)/i.test(description)) return 'in_transit';
   // Sender pre-advice such as Quickpac's "Shipment recorded by sender (data delivered)".
   if (/will be delivered|being prepared by the sender|recorded by (?:the )?(?:foreign )?sender|\bdata delivered\b|en route to .*awaiting processing/i.test(description)) return 'registered';
-  if (/\bdelivered\b|delivery completed/i.test(description)) return 'delivered';
+  // The bare word also appears in handoffs, forecasts and negations ("delivered
+  // to airline", "expected to be delivered", "not yet delivered"); those follow
+  // the language rules instead of reading as a delivery.
+  if (/\bdelivered\b|delivery completed/i.test(description)
+    && [undefined, 'delivered'].includes(trackingLanguageStage(description))) return 'delivered';
   if (/ready for (?:pickup|collection)|available for (?:pickup|collection)/i.test(description)) return 'ready_for_pickup';
   if (/out for delivery/i.test(description)) return 'out_for_delivery';
   if (/clearance (?:processing )?completed|customs (?:cleared|released)/i.test(description)) return 'in_transit';
