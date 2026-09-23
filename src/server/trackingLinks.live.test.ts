@@ -16,13 +16,13 @@ const cases: { carrier: CarrierId; number: string; route: RegExp; marker: RegExp
     marker: /Mes envois|Meine Sendungen|My shipments|aucune information|keine Informationen/i },
   { carrier: 'la-poste', number: 'AB12345678901',
     route: /^https:\/\/www\.laposte\.fr\/outils\/suivre-vos-envois(?:\?|$)/,
-    marker: /suivre un envoi|suivi de votre|numéro de suivi/i },
+    marker: /suivre une lettre ou un colis|suivre un envoi|suivi de votre|numéro de suivi/i },
   { carrier: 'dpd', number: '09999999999999',
     route: /^https:\/\/www\.dpdgroup\.com\/ch\/mydpd\/my-parcels\/incoming\?/,
     marker: /parcel number|Paketnummer|numéro de colis|my parcels/i },
   { carrier: 'unknown', number: 'ZZ000000000ZZ',
     route: /^https:\/\/t\.17track\.net\/en(?:[?#]|$)/,
-    marker: /TRACK|SUIVRE/ },
+    marker: /TRACK|SUIVRE|Tracking Information/ },
   { carrier: 'dhl', number: '00340439999999999999',
     route: /^https:\/\/www\.dhl\.de\/en\/privatkunden\/dhl-sendungsverfolgung\.html\?/,
     marker: /shipment number|track shipment/i },
@@ -54,11 +54,17 @@ const cases: { carrier: CarrierId; number: string; route: RegExp; marker: RegExp
 
 describe('UI tracking links (rendered public pages)', () => {
   let browser: Browser;
+  let userAgent: string;
   beforeAll(async () => {
     browser = await chromium.launch({
       executablePath: process.env.TRACKING_CHROMIUM_PATH || chromium.executablePath(),
       headless: true,
     });
+    // Users open these links in a regular browser. DHL resets HTTP/2 streams
+    // for the default HeadlessChrome agent, so present the same desktop Chrome
+    // agent as the universal browser transport.
+    const platform = process.platform === 'darwin' ? 'Macintosh; Intel Mac OS X 10_15_7' : 'X11; Linux x86_64';
+    userAgent = `Mozilla/5.0 (${platform}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${browser.version()} Safari/537.36`;
   });
   afterAll(async () => { await browser?.close(); });
 
@@ -68,7 +74,7 @@ describe('UI tracking links (rendered public pages)', () => {
       trackingProvider: testCase.provider,
     }, 'en');
     expect(link).toBeDefined();
-    const page = await browser.newPage({ locale: 'en-US' });
+    const page = await browser.newPage({ locale: 'en-US', userAgent });
     let lookupObserved = false;
     let documentStatus: number | undefined;
     page.on('response', (response) => {
