@@ -1,7 +1,8 @@
 # Carrier coverage by tracking source
 
 Live comparison for the first 15 carriers in the [carrier overview](../README.md#carriers),
-checked **2026-09-22**. Each row compares the **same reference** across the
+checked **2026-09-22**, with a FedEx direct recheck on **2026-09-23**.
+Each row compares the **same reference** across the
 carrier's direct adapter and all five universal providers. This is observed
 coverage for these samples, not a promise that every number from a carrier works.
 
@@ -11,6 +12,8 @@ operators, translations and repeated updates can describe the same physical
 milestone more than once. Read the history notes before choosing the largest count.
 
 - **✓ n:** matching history retrieved, with n rows.
+- **Intermittent:** history was retrieved, but other sessions or later lookups
+  were challenged; a successful check does not establish reliable availability.
 - **None:** no usable history for this reference; this does not establish that
   the entire carrier is unsupported.
 - **Error:** a request, browser capture or identity check failed; coverage is
@@ -27,7 +30,7 @@ milestone more than once. Read the history notes before choosing the largest cou
 | --- | --- | --- | --- | --- | --- | --- |
 | [DHL](../carriers/dhl/README.md) | Blocked | ✓ 10 | ✓ 14 | None | ✓ 14 | ✓ 1 |
 | [UPS](../carriers/ups/README.md) | ✓ 11 | ✓ 1 | ✓ 11 | ✓ 11 | ✓ 11 | N/A |
-| [FedEx](../carriers/fedex/README.md) | Blocked | ✓ 14 | ✓ 14 | ✓ 14 | ✓ 14 | N/A |
+| [FedEx](../carriers/fedex/README.md) | ✓ 14, intermittent | ✓ 14 | ✓ 14 | ✓ 14 | ✓ 14 | N/A |
 | [USPS](../carriers/usps/README.md) | ✓ 11† | None | None | ✓ 11 | None | N/A |
 | [Amazon Logistics](../carriers/amazon-logistics/README.md) | Link only | None | Sign-in | None | None | N/A |
 | [Amazon Shipping](../carriers/amazon-shipping/README.md) | ✓ 12 | ✓ 12 | ✓ 12 | None | ✓ 12 | N/A |
@@ -75,7 +78,7 @@ report the same milestone in different zones.
 | --- | --- |
 | DHL | ParcelsApp and Postal Ninja return the same 14 rows, including Swiss destination sorting/forwarding details, repeated customs and delivery reports, and an earlier handoff classified as delivered. Ship24 retains an older electronic-registration event absent from both. UPU has only final delivery, losing the transport, customs and delivery-depot history. The larger counts alone do not establish a better timeline. |
 | UPS | Direct, ParcelsApp, 17TRACK and Postal Ninja return the same 11 milestones, including parcel drop-off, access-point preparation, pickup, hub movements, import scan and delivery. Ship24 returns only label creation, missing the actual journey and final delivery. This is a meaningful gap for this reference; the additional public return reference below works fully with Ship24. |
-| FedEx | The four general aggregators return the same 14 milestones: registration, pickup, hub movements, requested delivery changes, delivery round and delivery. Differences are wording, timezone conversion and stage mapping, rather than missing scans. A follow-up found HTTP 403 on the direct tracking API, previously misreported as a missing capture. Interactive Chrome returned the same 14 scans, but unattended direct retrieval remains blocked; see the [FedEx verification notes](../carriers/fedex/README.md#verification-log). |
+| FedEx | Direct and the four general aggregators return the same 14 milestones: registration, pickup, hub movements, requested delivery changes, delivery round and delivery. Differences are wording, timezone conversion and stage mapping, rather than missing scans. On September 23 the deployed direct browser route returned 14 scans on a fresh session and its warm refresh. It now retains verified sessions, but cold starts and later lookups can still receive HTTP 403; see the [FedEx verification notes](../carriers/fedex/README.md#verification-log). |
 | USPS | Direct tracking and 17TRACK now return the same 11 domestic milestones: forwarding, facility movements, failed delivery/no access, a redelivery reminder, scheduled redelivery and final delivery. The direct lookup initially hit a challenge; the later successful page exposed a table-only parser bug, now fixed to read timeline cards. Stage mappings differ, and direct preserves a date-only reminder without inventing a clock time. See the follow-up and international reference below. |
 | Amazon Logistics | ParcelsApp's apparent event is a request to sign in to Amazon, not parcel progress; it is excluded. No anonymous history was established for the checked retail reference. |
 | Amazon Shipping | Direct, Ship24, ParcelsApp and Postal Ninja return the same 12 milestones for the public documentation reference. Direct and Ship24 clearly label availability for pickup and customer collection. ParcelsApp exposes internal `swa_rex_*` labels for those two events; Postal Ninja leaves `HoldForPickup` untranslated. These are interpretation/wording gaps, not fewer scans. |

@@ -22,11 +22,11 @@ import { FEDEX_CODE_STAGE, fedexStage, fedexStatus } from './status';
  * FedEx, through the tracking reply the public page reads itself.
  *
  * The page at `fedextrack/?trknbr=` is a shell: every byte of tracking data
- * arrives as `POST https://api.fedex.com/track/v2/shipments`, an
+ * arrives as `POST https://api.fedex.com/track/v2/shipments`, a
  * browser-gated call. Plain HTTP and the deployed browser service received
  * HTTP 403 on 2026-09-22, while an interactive browser returned full history.
- * The browser route remains available for recovery; its API rejection must
- * stay a challenge so routing can apply the right cooldown and fallback.
+ * The browser service retains verified FedEx contexts for later lookups.
+ * API rejection must stay a challenge so routing applies cooldown/fallback.
  * The browser's session is never replayed over plain HTTP.
  *
  * Response shape provenance: the page bundle's package model (`trackingNbr`,

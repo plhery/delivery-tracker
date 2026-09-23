@@ -5,10 +5,11 @@
 `fedex` — Federal Express, a global integrator. The dedicated adapter reads
 the public page's tracking reply; no postcode or capability URL is needed.
 
-**Current limitation (2026-09-22):** the deployed browser route receives HTTP
-403 from the tracking API. Interactive Chrome returned all 14 events for the
-same reference, but a reliable unattended retrieval was not established.
-The app's existing universal-provider recovery supplies FedEx history.
+**Current limitation:** a fresh or previously accepted browser can still receive HTTP 403 from the
+tracking API. The browser service now retains a verified page/context for
+later lookups, with bounded expiry and immediate disposal on rejection.
+This improves session reuse without guaranteeing cold startup; the app's
+existing universal-provider recovery remains available.
 
 ## Portals
 
@@ -49,11 +50,22 @@ numbers and are refused the same way.
 
 ## How the adapter works
 
-One step, `trawl`: the private browser service loads the tracking page with
+One step, `trawl`: the private browser service receives the tracking page URL with
 `captureResponses: [https://api.fedex.com/track/v2/shipments]`, and the reply
-the page itself received is parsed newest-first. The browser's session is
-never replayed over plain HTTP: the edge accepts the call only from the
-session it validated.
+the page itself received is parsed newest-first. For this exact lookup the
+service opens the blank tracker and uses its normal form. It keeps the page
+and browser context only after a matching tracking response with status or
+scans. Each lookup reopens the blank form in that context, because the
+result-page form can ignore submissions or retain the previous route.
+The service matches the outgoing request number as well as the response;
+retaining a session never means reusing an old parcel response.
+
+The context remains on its original pooled browser and is preferred for later
+FedEx lookups. It closes after 30 minutes idle, two hours total, any failed
+tracking validation, or a browser restart. Session state stays in private
+browser memory; copying cookies to a new context did not preserve acceptance.
+See the [browser-service lifecycle](../../../../ops/trawl/README.md#retained-fedex-browser-session).
+The browser's session is never replayed over plain HTTP.
 
 There is no plain HTTP step. Direct POST probes and fresh automated browser
 sessions received HTTP 403 on 2026-09-22, while the anonymous OAuth endpoint
@@ -148,7 +160,8 @@ because the original line names the signatory.
 - Opening the blank tracker and submitting its normal form: one standalone
   server-browser attempt returned all 14 events, but repeated standalone and
   integrated fresh/cached checks returned 403. This did not establish a
-  reliable replacement and was not deployed.
+  reliable replacement on 2026-09-22. The later retained-context path adds
+  session reuse; it still does not guarantee that every fresh session works.
 
 ## Verification log
 
@@ -192,3 +205,23 @@ because the original line names the signatory.
   established. A blind retry would add latency without a demonstrated gain
   on the deployed path, so the existing universal fallback and scheduled
   direct cooldown remain in use.
+- 2026-09-23: implemented retention of verified FedEx contexts in the browser
+  service, including preference for their original pooled browser, expiry,
+  failure disposal and request/response identity checks. Copying cookies into
+  a new context returned 403 in the live comparison; keeping the original
+  context returned all 14 scans again. Reopening the blank form for every
+  lookup avoids the result-page form ignoring a submission. An isolated
+  full-service run returned 403, then 14 scans on a fresh session, then the
+  same 14 scans on its warm refresh (15.4 s cold, 9.8 s warm). A subsequent
+  control-number lookup returned 403 and discarded that session. Reuse is
+  useful but can still lose acceptance; it does not establish a rate limit
+  or make blind retries reliable.
+- 2026-09-23: deployed the retained-context build and verified that the running
+  helper matches repository source. Production `/scrape` returned all 14 scans
+  on the initial request (15.0 s) and its warm refresh (12.2 s), with a fresh
+  matching API request each time. The subsequent control-number request
+  returned 403 (8.9 s), which the service preserved and used to discard the
+  session. Two subsequent live calls through `FedExTracker` also received
+  403 (17.8 s and 9.7 s), correctly classified as `ChallengeError` and
+  preserving fallback eligibility. No tracking state is exported to Redis
+  by this path.

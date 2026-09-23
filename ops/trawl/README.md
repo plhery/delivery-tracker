@@ -2,8 +2,8 @@
 
 Stock TRAWL 1.3.1 ignores `captureResponses`. Version 1.5.0 adds it but refuses
 compressed responses, including 17TRACK's, UPS's, FedEx's and Royal Mail's gzip JSON, and can stop on
-polling code 100. This small compatibility build retains the normal TRAWL API and
-changes only tier 2/3 capture for five providers on their exact endpoints and public
+polling code 100. This compatibility build retains the normal TRAWL API and
+changes tier 2/3 tracking retrieval for five providers on their exact endpoints and public
 page with one valid number: 17TRACK's `track/restapi`, UPS's `GetStatus`,
 FedEx's `track/v2/shipments` and Royal Mail's per-number `microsummary`
 (exact per-number capture and form submission), plus Postal Ninja's
@@ -41,7 +41,8 @@ Capture resets its settlement promise before navigation, so the compact reply
 cannot end the wait for full history. Both phases share the original time and
 response-size budgets. Empty and untraceable widget replies do not navigate.
 
-The remaining providers retain their navigation-only flow. Capture accepts at most 20 replies, limits
+17TRACK and UPS retain their navigation-only flow. FedEx uses the retained
+browser session described below. Capture accepts at most 20 replies, limits
 stored decoded bodies to 2 MB each / 4 MB total, checks declared size when
 available, and waits at most the remaining scrape budget (30 seconds maximum).
 `response.body()` reads data already decoded by the browser; run the browser
@@ -53,6 +54,7 @@ Build and test from the repository root:
 
 ```sh
 node --test ops/trawl/tracking-capture.test.mjs
+node --test ops/trawl/fedex-session.test.mjs
 docker build -t delivery-tracker-trawl:local ops/trawl
 node ops/trawl/render-coolify.mjs > /tmp/trawl.Dockerfile
 ```
@@ -110,6 +112,42 @@ repository source and the service was healthy. A final live lookup still hit
 the separate tracking connection reset in 8.2 seconds; the refresh fix does
 not establish reliable upstream access.
 
+## Retained FedEx browser session
+
+For one valid FedEx number and its exact capture endpoint, `fedex-session.mjs`
+opens the blank official tracker and submits its normal form. After an
+identity-matched tracking reply with status or scans, it keeps that page and
+context on the original pooled browser. Each lookup reopens the blank form
+within that context, because the result-page form can ignore submissions or
+retain the previous route. It submits a new request and checks both its
+posted number and returned package identity. Tracking replies are not cached.
+
+The pool prefers an available browser with a verified FedEx session. Without
+one, it chooses the available browser least recently tried for FedEx, so a
+rejected browser does not become permanent affinity. This adds no retries to a
+lookup and does not change other providers' browser selection. Cached Redis
+cookies are not injected into the retained context.
+
+At most one FedEx context is retained per pooled browser. It closes after
+30 minutes idle, two hours total, or a rejected, malformed, missing or unrelated
+reply. Browser shutdown/recycling also discards it. Lookup budgets still apply;
+overlapping use of one session is refused, and a hanging cleanup asks the pool
+to replace the browser. Page request interception retains the normal outbound
+URL policy. New contexts count toward the pool's existing recycling limit.
+
+The state stays in private browser memory; no profile, cookies, local storage
+or tracking response is written to repository files or Redis by this path.
+Keeping cookies alone did not reproduce a working context in the live checks.
+Browser or service restarts therefore require a fresh session. Cold startup can
+still receive HTTP 403; the carrier adapter preserves that challenge and the
+application's universal-provider fallback remains available.
+
+Verified on 2026-09-23: the deployed service returned the reference's 14 scans
+on a new session and its warm refresh (15.0 s and 12.2 s). A later control-number
+lookup received 403 and discarded the session. See the
+[FedEx verification log](../../packages/carriers/carriers/fedex/README.md#verification-log)
+for the limits of this small live sample.
+
 ## Redis session cache
 
 TRAWL 1.5.0 disables session caching unless `REDIS_URL` is set. `skipHttp: true`
@@ -150,7 +188,7 @@ responses**. Browser HTTP caching is separate. Successful sessions refresh the
 Redis entry's one-hour TTL, and failed Tier 2 sessions are invalidated before
 Tier 3 recovery. That TTL does not extend an upstream token's expiry.
 
-Tier 2 injects those cookies into a pooled context and opens a new page; Tier 3
+Except for the retained FedEx route above, Tier 2 injects those cookies into a pooled context and opens a new page; Tier 3
 closes its temporary context after retrieval. The pool prefers an available
 browser last used for that domain, but Redis does not retain the successful
 page, its JavaScript state or an entire browser fingerprint. This distinction
