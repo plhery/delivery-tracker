@@ -74,6 +74,16 @@ describe('ParcelsApp result parsing', () => {
     expect(JSON.stringify(result)).not.toContain('PRIVATE');
   });
 
+  it('keeps a Quickpac pre-advice from reporting the parcel as delivered', () => {
+    // Observed wording (2026-09-21); synthetic number and dates.
+    const result = parseParcelsAppResponse({
+      carriers: ['Planzer', 'Quickpac'],
+      states: [{ date: '2026-06-10T12:22:20Z', carrier: 1, status: 'Shipment recorded by sender (data delivered)' }],
+    }, number, identity(), 'Europe/Zurich');
+    expect(result).toMatchObject({ status: 'pending', current_stage: 'registered' });
+    expect(result.events?.[0]).toMatchObject({ stage: 'registered', description: 'Shipment recorded by sender (data delivered)' });
+  });
+
   it('re-reads each scan in its carrier\'s or location\'s zone instead of the UTC ParcelsApp labels', () => {
     // Live shapes (2026-09-22): the carrier's local clock as "+00:00" or shifted into "+02:00".
     const result = parseParcelsAppResponse({

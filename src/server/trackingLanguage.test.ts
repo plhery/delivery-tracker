@@ -72,6 +72,15 @@ describe('intuitive language contrasts', () => {
     }] }).current_stage).toBe('delivered');
   });
 
+  it.each([
+    'Shipment recorded by sender (data delivered)',
+    'Consignment recorded by the foreign sender (data delivered)',
+  ])('treats sender pre-advice with "data delivered" as registered: %s', (description) => {
+    expect(trackingLanguageStage(description)).toBe('registered');
+    expect(inferStage(description, 'pending')).toBe('registered');
+    expect(event('2026-01-01T12:00:00Z', description)?.stage).toBe('registered');
+  });
+
   it('does not generalize Planzer’s observed Shipped=delivered convention', () => {
     for (const description of ['Shipped', 'Expédié', 'Versandt', 'Spedito']) {
       expect(trackingLanguageStage(description)).not.toBe('delivered');

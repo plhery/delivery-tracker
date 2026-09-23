@@ -51,7 +51,8 @@ function sourceEventStage(description: string, includeBroadMovement = true): Sta
   if (/damaged|broken in transit|lost in transit|(?:package|parcel|shipment) (?:is )?lost|refused(?: by)?|rejected by (?:the )?recipient|(?:incorrect|incomplete|insufficient|unknown|invalid) address|address (?:incorrect|incomplete|insufficient|unknown|invalid)|addressee (?:unknown|cannot be located)|delivery exception|shipment exception|carrier exception|held (?:by|in|at) customs|customs (?:issue|problem)|action required|awaiting instructions|(?:shipment|parcel) (?:held|on hold)/i.test(description)) return 'exception';
   if (/delivered to (?:the )?(?:local carrier|delivery partner|post office|pickup point)/i.test(description)) return 'in_transit';
   if (/will be available for (?:pickup|collection)/i.test(description)) return 'in_transit';
-  if (/will be delivered|being prepared by the sender|en route to .*awaiting processing/i.test(description)) return 'registered';
+  // Sender pre-advice such as Quickpac's "Shipment recorded by sender (data delivered)".
+  if (/will be delivered|being prepared by the sender|recorded by (?:the )?(?:foreign )?sender|\bdata delivered\b|en route to .*awaiting processing/i.test(description)) return 'registered';
   if (/\bdelivered\b|delivery completed/i.test(description)) return 'delivered';
   if (/ready for (?:pickup|collection)|available for (?:pickup|collection)/i.test(description)) return 'ready_for_pickup';
   if (/out for delivery/i.test(description)) return 'out_for_delivery';

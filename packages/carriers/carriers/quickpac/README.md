@@ -104,3 +104,7 @@ be read on its own.
   `Transferred`, `In delivery` and `Shipped` through the Planzer API.
 - 2026-09-12: documented as a Planzer-served carrier when the adapter moved
   into `carriers/planzer/`; no behaviour change.
+- 2026-09-23: before the Planzer API knows a new parcel, ParcelsApp can already
+  show Quickpac's own pre-advice "Shipment recorded by sender (data delivered)".
+  The shared wording rules now read it as `registered`; it had been read as a
+  delivery.
