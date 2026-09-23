@@ -49,7 +49,12 @@ npm run test:carriers:live
 ```
 
 The rendered tracking pages linked from the UI are checked separately, with
-synthetic numbers, by `npm run test:tracking-links`.
+synthetic numbers, by `npm run test:tracking-links`. Each case in
+`src/server/trackingLinkCases.ts` pins the final route and wording read from
+the live page and requires the page to look up, display or prefill the number,
+or give the carrier's specific not-found answer. A unit test requires every
+carrier with its own adapter, or without automatic tracking, to have a case for
+its link or a recorded reason in `uncheckedTrackingLinks`.
 
 The daily carrier-canary workflow runs the wrong-number probes that need no
 private input (`npm run test:carriers:canary`, with Chromium so the Ship24 form

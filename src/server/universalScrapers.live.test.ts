@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ChallengeError } from '@carriers/core/errors';
+import { ChallengeError, UpstreamHttpError } from '@carriers/core/errors';
 import { PostalNinjaTracker } from './postalNinja';
 import { Ship24Tracker } from './ship24';
 
@@ -13,9 +13,13 @@ describe.runIf(Boolean(process.env.TRACKING_CHROMIUM_PATH))('universal form scra
   ] as const) {
     it(`retrieves matching history from ${name}`, async (context) => {
       const result = await tracker.fetch(number).catch((error: unknown) => {
-        // An unsolved browser challenge proves neither breakage nor health.
-        if (!(error instanceof ChallengeError)) throw error;
-        return context.skip(`${name} browser challenge: provider remains unverified`);
+        // An unsolved challenge, or a block of the runner's network, proves
+        // neither breakage nor health.
+        if (error instanceof ChallengeError) return context.skip(`${name} browser challenge: provider remains unverified`);
+        if (error instanceof UpstreamHttpError && [403, 429].includes(error.status)) {
+          return context.skip(`${name} answered HTTP ${error.status} to this network: provider remains unverified`);
+        }
+        throw error;
       });
       expect(result.tracking_provider).toBe(name);
       expect(result.current_stage).toBe('delivered');
