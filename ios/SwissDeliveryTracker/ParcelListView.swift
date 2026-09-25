@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UIKit.UIGestureRecognizerSubclass
 
 struct ParcelListView: View {
     @EnvironmentObject private var localizer: Localizer
@@ -922,28 +923,89 @@ final class ArchivePanGestureDelegate: NSObject, UIGestureRecognizerDelegate {
     }
 }
 
+/// Also reports the press, so a card gives way under a resting finger. The press
+/// waits a moment and ends as soon as the finger moves, so starting to scroll
+/// does not flash every card it touches.
+final class ArchivePanGestureRecognizer: UIPanGestureRecognizer {
+    var onPressChanged: ((Bool) -> Void)?
+    private var pendingPress: DispatchWorkItem?
+    private var pressStart: CGPoint?
+    private var pressed = false
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesBegan(touches, with: event)
+        guard pressStart == nil, let touch = touches.first else { return }
+        pressStart = touch.location(in: view)
+        let press = DispatchWorkItem { [weak self] in self?.setPressed(true) }
+        pendingPress = press
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: press)
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesMoved(touches, with: event)
+        guard let pressStart, let location = touches.first?.location(in: view) else { return }
+        if hypot(location.x - pressStart.x, location.y - pressStart.y) > 6 { endPress() }
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesEnded(touches, with: event)
+        endPress()
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
+        super.touchesCancelled(touches, with: event)
+        endPress()
+    }
+
+    override func reset() {
+        super.reset()
+        endPress()
+        pressStart = nil
+    }
+
+    private func endPress() {
+        pendingPress?.cancel()
+        pendingPress = nil
+        setPressed(false)
+    }
+
+    private func setPressed(_ value: Bool) {
+        guard pressed != value else { return }
+        pressed = value
+        onPressChanged?(value)
+    }
+}
+
 private struct ArchivePanGesture: UIGestureRecognizerRepresentable {
     let onChanged: (CGSize) -> Void
     let onEnded: (CGFloat) -> Void
     let onCancelled: () -> Void
+    let onPressChanged: (Bool) -> Void
 
     func makeCoordinator(converter: CoordinateSpaceConverter) -> ArchivePanGestureDelegate {
         ArchivePanGestureDelegate()
     }
 
-    func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
-        let recognizer = UIPanGestureRecognizer()
+    func makeUIGestureRecognizer(context: Context) -> ArchivePanGestureRecognizer {
+        let recognizer = ArchivePanGestureRecognizer()
         recognizer.maximumNumberOfTouches = 1
         recognizer.delegate = context.coordinator
+        recognizer.onPressChanged = onPressChanged
         return recognizer
     }
 
-    func handleUIGestureRecognizerAction(_ recognizer: UIPanGestureRecognizer, context: Context) {
+    func updateUIGestureRecognizer(_ recognizer: ArchivePanGestureRecognizer, context: Context) {
+        recognizer.onPressChanged = onPressChanged
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: ArchivePanGestureRecognizer, context: Context) {
         let translation = context.converter.localTranslation ?? recognizer.translation(in: recognizer.view)
         switch recognizer.state {
         case .began, .changed:
             onChanged(CGSize(width: translation.x, height: translation.y))
         case .ended:
+            // The last change can trail the finger; decide from where it lifted.
+            onChanged(CGSize(width: translation.x, height: translation.y))
             let velocity = context.converter.localVelocity ?? recognizer.velocity(in: recognizer.view)
             // A short flick can reveal the action; archiving still needs actual travel.
             onEnded(translation.x + velocity.x * 0.15)
@@ -964,6 +1026,7 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var gestureActive = false
+    @State private var pressed = false
     @State private var swipe = ArchiveSwipeState()
     @State private var committing = false
     @State private var width: CGFloat = 0
@@ -1012,6 +1075,10 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
                 radius: shadow ? 10 : 0,
                 y: shadow ? 4 : 0
             )
+            // The same give as ExperimentalLiftButtonStyle on archived rows.
+            .scaleEffect(pressed && !reduceMotion ? 0.975 : 1)
+            .offset(y: pressed && !reduceMotion ? 1.5 : 0)
+            .brightness(pressed ? -0.025 : 0)
             .contentShape(Rectangle())
             .onGeometryChange(for: CGFloat.self) { geometry in
                 geometry.size.width
@@ -1095,7 +1162,10 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
                     settle(destination)
                 }
             },
-            onCancelled: cancelSwipe
+            onCancelled: cancelSwipe,
+            onPressChanged: { isPressed in
+                withAnimation(reduceMotion ? nil : .snappy(duration: 0.22)) { pressed = isPressed }
+            }
         )
     }
 
