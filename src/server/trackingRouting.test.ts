@@ -371,6 +371,21 @@ describe('persistent tracking routing', () => {
     expect(universalCarrierHints(['Posti'])).toMatchObject({ discovered_carrier: 'posti' });
     expect(universalCarrierHints(['La Poste', 'Posti']).discovered_carrier).toBeUndefined();
     expect(universalCarrierHints(['https://private/token'])).toEqual({ reported_carriers: [] });
+    expect(universalCarrierHints(['Chronopost France'])).toMatchObject({ discovered_carrier: 'chronopost' });
+    expect(universalCarrierHints(['Chronopost Portugal']).discovered_carrier).toBeUndefined();
+  });
+  it('reports only carrier names the catalog does not know, once per parcel', async () => {
+    const { router, universal } = setup();
+    const reported = ['La Poste', 'Posti', 'Chronopost Portugal', 'DHL Express', 'Example Parcel Co'];
+    universal.mockResolvedValue({ ...history(), reported_carriers: reported });
+    const coverage = () => vi.mocked(monitoring.reportRoutingEvent).mock.calls
+      .filter(([code]) => code === 'carrier_coverage_discovered').map(([, context]) => context.provider);
+    const first = await router.fetch(parcel(), false);
+    expect(coverage()).toEqual(['Example Parcel Co']);
+    expect(first.result.routing).toMatchObject({ reported_carriers_seen: reported });
+    vi.mocked(monitoring.reportRoutingEvent).mockClear();
+    await router.fetch(parcel({ carrier_data: { routing: first.result.routing } }), false);
+    expect(coverage()).toEqual([]);
   });
 
   it('keeps the origin watermark when a verified delivery partner confirms the same completion', async () => {

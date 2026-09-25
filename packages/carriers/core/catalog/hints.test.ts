@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { carrierIdFromPartner, carrierIdFromPartnerLinks, nationalPostCandidate } from './hints';
+import {
+  carrierIdFromName, carrierIdFromPartner, carrierIdFromPartnerLinks, isKnownCarrierName, nationalPostCandidate,
+} from './hints';
 
 describe('national postal lookup candidates', () => {
   it.each([
@@ -42,5 +44,32 @@ describe('delivery partner evidence', () => {
     const origin = 'See https://www.dhl.de/ for tracking.';
     expect(carrierIdFromPartnerLinks([origin, 'Partner: https://www.posti.fi/en/tracking'], 'dhl')).toBe('posti');
     expect(carrierIdFromPartnerLinks(['https://www.posti.fi/ https://www.post.ch/'], 'dhl')).toBeUndefined();
+  });
+});
+
+describe('carrier names reported by universal providers', () => {
+  it.each([
+    ['UPS', 'ups'], ['La Poste (Colissimo)', 'la-poste'], ['Chronopost France', 'chronopost'],
+    ['Chronopost (France)', 'chronopost'], ['Posti Finland', 'posti'], ['Swiss Post CH', 'swiss-post'],
+  ])('maps %s, a carrier followed by its own country included', (name, expected) => {
+    expect(carrierIdFromName(name)).toBe(expected);
+  });
+
+  it.each([
+    // Another company under the brand, a country without one zone, a brand with several networks.
+    'Chronopost Portugal', 'Correos Chile', 'UPS United States', 'DHL Germany', 'GLS', 'France',
+  ])('does not guess a carrier from %s', (name) => {
+    expect(carrierIdFromName(name)).toBeUndefined();
+  });
+
+  it.each([
+    'La Poste', 'La Poste (Colissimo)', 'Chronopost France', 'FedEx', 'India Post', 'Posti', 'UPS',
+    'Chronopost Portugal', 'Correos Chile', 'Royal Mail (UK)', 'DHL', 'DHL Express', 'GLS Italy', 'DPD UK',
+  ])('knows %s from the catalog', (name) => {
+    expect(isKnownCarrierName(name)).toBe(true);
+  });
+
+  it.each(['Example Parcel Co', 'Example Express Italy', 'Postexample Courier'])('treats %s as new', (name) => {
+    expect(isKnownCarrierName(name)).toBe(false);
   });
 });

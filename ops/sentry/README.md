@@ -2,9 +2,9 @@
 
 The host records individual adapter attempts, retries and fallbacks in logs,
 Sentry metrics and Prometheus. A recovered transport failure does not create a
-Sentry issue. The router still reports carrier corrections and input
-observations separately; those are not outage notifications. Carrier names a
-universal provider reports are only logged and kept in routing state, for review.
+Sentry issue. The router still reports carrier corrections, input observations
+and carrier names the catalog does not know separately; those are not outage
+notifications.
 
 Scheduled refreshes feed `record_tracking_health` in Postgres. Manual refreshes,
 unsupported carriers and superseded work do not contribute to incident thresholds.

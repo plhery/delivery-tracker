@@ -8,6 +8,8 @@
  */
 import { carrierIdFromName } from '../../core/catalog/hints';
 
+export { isKnownCarrierName } from '../../core/catalog/hints';
+
 /** Names are hints only. A direct adapter must confirm the shipment before adoption. */
 export function universalCarrierHints(raw: unknown[]): { reported_carriers: string[]; discovered_carrier?: string } {
   const names = [...new Set(raw.filter((value): value is string => typeof value === 'string'

@@ -46,8 +46,9 @@ validation and the remaining need for a known valid gated pair.
 
 - [shared/result.ts](shared/result.ts): input normalization, event construction,
   notice filtering, wording classification and history projection.
-- [shared/hints.ts](shared/hints.ts): reported carrier names to catalog ids;
-  hints do not themselves confirm a new carrier.
+- [shared/hints.ts](shared/hints.ts): reported carrier names to catalog ids,
+  and whether a name is new to the catalog; hints do not themselves confirm a
+  new carrier.
 - [shared/capture.ts](shared/capture.ts): TRAWL response decoding and capture errors.
 - [core/runner](../core/runner/index.ts): step execution and telemetry;
   [core/errors](../core/errors/index.ts): shared failure categories.

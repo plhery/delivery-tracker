@@ -8,6 +8,7 @@ import { normalizeCarrierResult, type CarrierResult } from './carrierResult';
 import { isRecord, type JsonObject } from './types';
 import { priorityUniversalSource, universalSourceBudget, universalSources } from './universalTracking';
 import type { UniversalSource } from './universalTrackingResult';
+import { isKnownCarrierName } from './universalCarrierHints';
 import { errorType, reportRoutingEvent } from './observability';
 import { CarrierError, carrierErrorKind, IndeterminateError, retryAfterMsOf } from '@carriers/core/errors';
 
@@ -381,7 +382,9 @@ export class TrackingRouter {
       if (Array.isArray(value.result.reported_carriers)) {
         const seen = Array.isArray(state.reported_carriers_seen) ? state.reported_carriers_seen : [];
         for (const name of value.result.reported_carriers) {
-          if (typeof name === 'string' && !value.result.discovered_carrier && !seen.includes(name)) report('carrier_coverage_discovered', name);
+          // A catalog carrier is no discovery, even as one leg of a handoff or with a country.
+          if (typeof name === 'string' && !value.result.discovered_carrier && !seen.includes(name)
+            && !isKnownCarrierName(name)) report('carrier_coverage_discovered', name);
         }
         state.reported_carriers_seen = [...new Set([...seen, ...value.result.reported_carriers])].slice(-20);
       }
