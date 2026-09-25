@@ -590,7 +590,11 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 
 .parcel-card-swipe--revealed .parcel-card-swipe__clip { background: var(--orange-text); }
 .auth-flow__heading h1:focus { outline: none; }
-.auth-loading { min-height: 100dvh; display: grid; align-content: center; justify-items: center; gap: 20px; padding: 24px; color: var(--ink-soft); font-size: 13px; }
+/* Quick launches and update reloads go straight to the app; the splash shows only when loading takes a while. */
+.auth-loading { min-height: 100dvh; display: grid; align-content: center; justify-items: center; gap: 20px; padding: 24px; color: var(--ink-soft); font-size: 13px; animation: splash-arrive .2s ease-out .4s both; }
+@keyframes splash-arrive { from { opacity: 0; } }
+/* After an update reload the same screen is back in place, without entrance motion. */
+[data-resumed] .deliveries-page, [data-resumed] .passport-page, [data-resumed] .sheet-backdrop, [data-resumed] .detail { animation-duration: 0s; }
 .auth-loading .parcel-illustration { width: 190px; }
 .undo-toast__message { display: grid; gap: 4px; }
 .undo-toast__message small { color: var(--orange-text); }

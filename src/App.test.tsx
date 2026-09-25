@@ -1511,6 +1511,21 @@ describe('App', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  it('returns to the same place after an update reload, without entrance motion', async () => {
+    sessionStorage.setItem('sdt.update-resume.v1', JSON.stringify({ href: window.location.href, top: 480, detailTop: 0, at: Date.now() }));
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    try {
+      renderApp();
+      await screen.findByText('Coffee beans ☕');
+      expect(scrollTo).toHaveBeenCalledWith({ top: 480, behavior: 'instant' });
+      expect(document.documentElement.dataset.resumed).toBe('');
+      await waitFor(() => expect(document.documentElement.dataset.resumed).toBeUndefined(), { timeout: 2_000 });
+      expect(sessionStorage.getItem('sdt.update-resume.v1')).toBeNull();
+    } finally {
+      scrollTo.mockRestore();
+    }
+  });
+
   it('offers the sign-in screen when the API session expires', async () => {
     const repo: ParcelRepo = {
       mode: 'api',

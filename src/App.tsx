@@ -1,6 +1,7 @@
 import './components/Deliveries.css';
 import { trackAction, trackScreen } from './lib/analytics';
 import { focusClickedButton } from './lib/modal';
+import { takeResumedScreen, type ResumedScreen } from './lib/pwaUpdates';
 import { userErrorMessage } from './lib/userMessages';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AddParcelSheet } from './components/AddParcelSheet';
@@ -233,6 +234,30 @@ export default function App({
     () => parcels.find((p) => p.id === openParcelId || p.originalParcelId === openParcelId) ?? null,
     [parcels, openParcelId],
   );
+
+  // An update reload comes back to the same place: the address reopens the tab
+  // and parcel, and the saved screen restores both scroll positions before the
+  // first paint, without entrance motion.
+  const resumed = useRef<ResumedScreen | null | undefined>(undefined);
+  const parcelOpen = Boolean(openParcel);
+  useLayoutEffect(() => {
+    if (loading) return;
+    if (resumed.current === undefined) {
+      const screen = resumed.current = takeResumedScreen();
+      if (screen) {
+        const root = document.documentElement;
+        root.dataset.resumed = '';
+        window.scrollTo({ top: screen.top, behavior: 'instant' });
+        window.setTimeout(() => { delete root.dataset.resumed; }, 1_000);
+      }
+    }
+    const screen = resumed.current;
+    const detail = parcelOpen && screen?.detailTop ? document.querySelector<HTMLElement>('.detail') : null;
+    if (detail && screen) {
+      detail.scrollTop = screen.detailTop;
+      screen.detailTop = 0;
+    }
+  }, [loading, parcelOpen]);
 
   const visibleParcels = useMemo(
     () => viewParcels(parcels, {
