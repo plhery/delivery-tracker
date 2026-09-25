@@ -7,7 +7,7 @@
  *   (`overallStatus.text.english`, `positionEvents[].text.english`). Planzer's
  *   English "Shipped" means "Zugestellt" / "Livré" — delivered, not dispatched
  *   — so each milestone is classified on its own instead of inheriting the
- *   shipment's current status.
+ *   shipment's current status, and that label is stored as "Delivered".
  * - The shared capability page renders a five-step route whose step labels are
  *   localized; `planzerRouteStage()` recognizes them by substring.
  *
@@ -43,6 +43,21 @@ export const PLANZER_EVENT_STAGE = new Map<string, Stage>([
   ['Shipped', 'delivered'],
   ['Not delivered', 'failed_attempt'],
 ]);
+
+// Planzer's English labels are translations of its German ones, and
+// "Zugestellt" came out as "Shipped" (the same event reads "Livré" and
+// "Consegnato", and the shipment summary says "Shipment delivered"). Such a
+// label is classified as received but stored in the wording it means; every
+// other label is kept verbatim. Event identities hash the stored wording, so
+// changing an entry here needs a migration for the rows already saved.
+const PLANZER_WORDING = new Map<string, string>([
+  ['Shipped', 'Delivered'],
+]);
+
+/** The wording stored and shown for one English API label. */
+export function planzerDescription(label: string): string {
+  return PLANZER_WORDING.get(label) ?? label;
+}
 
 // GENERATED localization aliases, kept separate from the observed English API
 // labels above. Prefer a future observed label/code if it contradicts an alias.

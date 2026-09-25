@@ -23,7 +23,7 @@ import type { CarrierEvent, CarrierResult } from '../../core/result';
 import { fetchBounded, parseJsonBytes } from '../../core/transport';
 import { isRecord, type JsonObject } from '../../core/types';
 import { PlanzerSharedTracker } from './shared';
-import { PLANZER_STATUS, planzerEventStage } from './status';
+import { PLANZER_STATUS, planzerDescription, planzerEventStage } from './status';
 
 const PROVIDER = 'Planzer';
 const UPSTREAM = 'Planzer tracking';
@@ -98,7 +98,7 @@ export function parsePlanzerTrackingResponse(value: unknown, shipmentNumber: str
       events.push({
         time: text(event.createdAt),
         location: '',
-        description,
+        description: planzerDescription(description),
         stage,
       });
     }
@@ -106,7 +106,7 @@ export function parsePlanzerTrackingResponse(value: unknown, shipmentNumber: str
   events.sort((left, right) => text(right.time).localeCompare(text(left.time)));
   return {
     status: PLANZER_STATUS.get(statusText) ?? (statusText ? 'in_transit' : 'unknown'),
-    last_status_text: statusText,
+    last_status_text: planzerDescription(statusText),
     last_update: events[0]?.time || null,
     expected_delivery: text(record(payload.deliveryDay).date) || null,
     events,

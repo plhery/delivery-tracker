@@ -30,7 +30,9 @@ route page itself is read.
 
 Retained: the shipment status and stage, the newest status text, every
 milestone with its timestamp and its own stage, and the delivery day as the
-estimate. The shared route adds our own neutral description per reached step.
+estimate. API labels are kept verbatim except the mistranslated `Shipped`,
+stored as `Delivered`. The shared route adds our own neutral description per
+reached step.
 
 Discarded: everything else the payload can carry, including the consignee block
 and the signature (exercised by `fixtures/delivered.json`), and the transport
@@ -87,7 +89,8 @@ already reached, and the `<time datetime>` next to each carries its timestamp.
 | `pending`, `customs`, `ready_for_pickup`, `returned` | — | not observed; reported as unmapped |
 
 `Shipped` is Planzer's English label for *delivered* (Zugestellt / Livré), not
-for *dispatched*. The full list with provenance is in `statuses.json`.
+for *dispatched*, so it is stored and shown as `Delivered`. The full list with
+provenance is in `statuses.json`.
 
 ## Limitations and privacy
 
@@ -119,6 +122,14 @@ for *dispatched*. The full list with provenance is in `statuses.json`.
 - **Quickpac shares this adapter.** Quickpac's `44…` identifiers use the same
   API and the same public page. The separate carrier id is kept for detection
   and display, so existing parcels keep their label.
+- **`Shipped` is stored as `Delivered`.** Planzer's English labels are
+  translated from its German ones, and this one is a slip: the same event reads
+  `Zugestellt`, `Livré` and `Consegnato`, and the shipment's English summary
+  says `Shipment delivered`. The stage is still classified from the label as
+  received. Event identities hash the stored wording, so
+  `20260925100000_relabel_planzer_delivered_events.sql` moved rows saved as
+  `Shipped` to the new wording and identity, archived parcels included; another
+  correction in `PLANZER_WORDING` needs the same kind of migration.
 - 2026-09-12: moved out of `src/server/upstreamAdapters.ts` and
   `src/server/planzerShared.ts`. `PlanzerTrackingError` became
   `NotFoundError('Planzer')` (same message, same 404) and the payload-shape
@@ -136,6 +147,11 @@ for *dispatched*. The full list with provenance is in `statuses.json`.
 - **Mapping `Shipped` to a dispatch stage.** It is the English label Planzer
   prints for `Zugestellt` / `Livré`; the French and German payload fields on the
   same event confirm it.
+- **Rewriting `Shipped` where the history is displayed.** The web and iOS views
+  see only the text, not the carrier that wrote it, and other carriers use
+  `Shipped` for dispatch.
+- **Storing the German labels instead.** They are the originals, but every
+  history would then switch to German; only one English label was wrong.
 - **Adding `Expédié` / `Versandt` / `Spedito` to the localization aliases.**
   Those words mean *dispatched* in ordinary usage; only the aliases that are
   semantic equivalents of Planzer's own labels are mapped.
@@ -153,3 +169,7 @@ for *dispatched*. The full list with provenance is in `statuses.json`.
 - 2026-09-12: adapter and shared-link tracker moved into this folder;
   behaviour unchanged apart from the error taxonomy (`NotFoundError` /
   `SchemaError` replace `PlanzerTrackingError` and the ad-hoc `TypeError`s).
+- 2026-09-25: a live Quickpac delivery again returned `Shipped` for the
+  milestone whose German, French and Italian texts are `Zugestellt`, `Livré`
+  and `Consegnato`, with the English summary `Shipment delivered`. The label is
+  now stored as `Delivered`.

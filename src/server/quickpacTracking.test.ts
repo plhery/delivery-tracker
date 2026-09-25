@@ -43,15 +43,25 @@ describe('Quickpac / Planzer historical event stages', () => {
         { description: 'Recorded', stage: 'registered', occurred_at: '2026-08-31T02:07:09.030Z' },
         { description: 'Transferred', stage: 'in_transit', occurred_at: '2026-08-31T16:22:27.865Z' },
         { description: 'In delivery', stage: 'out_for_delivery', occurred_at: '2026-09-01T04:05:03.811Z' },
-        { description: 'Shipped', stage: 'delivered', occurred_at: '2026-09-01T12:07:10.258Z' },
+        // Planzer's English "Shipped" is its label for "Zugestellt".
+        { description: 'Delivered', stage: 'delivered', occurred_at: '2026-09-01T12:07:10.258Z' },
       ]);
     // Stages must not change identity, otherwise re-sync would duplicate old rows.
-    expect(rows.map((row) => row.provider_event_id)).toEqual(POSITION_EVENTS.map((event) => (
-      providerEventId(carrier, event.createdAt, '', event.text.english)
+    expect(rows.map((row) => row.provider_event_id)).toEqual(POSITION_EVENTS.map((event, index) => (
+      providerEventId(carrier, event.createdAt, '', String(rows[index].description))
     )));
     // The provider payload is preserved verbatim next to the recorded stage source.
     expect(rows.map((row) => row.raw_data)).toEqual([...result.events!].reverse()
       .map((event) => ({ ...event, stage_source: 'carrier_map' })));
+  });
+
+  it('pins the identities the saved-row relabel migration derives in SQL', () => {
+    // supabase/tests/planzer_delivered_wording.sql expects the same values from
+    // 20260925100000_relabel_planzer_delivered_events.sql.
+    expect(providerEventId('quickpac', '2026-09-01T14:07:10.258', '', 'Shipped'))
+      .toBe('quickpac:e4db6ac35959c7a682393acf8c1cd1dca04dcf11c375921ecd1fbb1d223bb8f2');
+    expect(providerEventId('quickpac', '2026-09-01T14:07:10.258', '', 'Delivered'))
+      .toBe('quickpac:b37df0b80f5390316ccd97ea0dd53dc7660d87429f4cb6c62a6b563f5b5fd7b1');
   });
 
   it('keeps historical stages and identities stable as the shipment progresses', async () => {
@@ -64,7 +74,7 @@ describe('Quickpac / Planzer historical event stages', () => {
     expect(after.slice(2)).toEqual(before);
   });
 
-  it.each([
+  it.each<[string, string, string?]>([
     ['Recorded', 'registered'],
     ['Transferred', 'in_transit'],
     ['Shipment on the way', 'in_transit'],
@@ -72,11 +82,11 @@ describe('Quickpac / Planzer historical event stages', () => {
     ['Shipment out for delivery', 'out_for_delivery'],
     ['Delivered', 'delivered'],
     ['Shipment delivered', 'delivered'],
-    ['Shipped', 'delivered'],
+    ['Shipped', 'delivered', 'Delivered'],
     ['Not delivered', 'failed_attempt'],
-  ])('maps %s independently of the final delivered summary', async (description, stage) => {
+  ])('maps %s independently of the final delivered summary', async (label, stage, description = label) => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(response(payload('Shipment delivered', [{
-      createdAt: '2026-09-01T12:00:00Z', text: { english: description },
+      createdAt: '2026-09-01T12:00:00Z', text: { english: label },
     }])));
     expect((await fetchPlanzer(TRACKING_NUMBER)).events).toEqual([{
       time: '2026-09-01T12:00:00Z', location: '', description, stage,

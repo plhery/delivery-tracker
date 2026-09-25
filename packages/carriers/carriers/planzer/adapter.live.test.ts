@@ -10,13 +10,14 @@ describe('Planzer live anonymous tracking', () => {
       expect(result.status).toBe('delivered');
       for (const [description, stage] of [
         ['Recorded', 'registered'], ['Transferred', 'in_transit'],
-        ['In delivery', 'out_for_delivery'], ['Shipped', 'delivered'],
+        ['In delivery', 'out_for_delivery'], ['Delivered', 'delivered'],
       ]) {
         expect(result.events).toContainEqual(expect.objectContaining({ description, stage }));
       }
-      // "Shipped" is Planzer's delivered label; no earlier milestone may claim it.
+      // Planzer's delivered label arrives as "Shipped" and is stored as
+      // "Delivered"; no earlier milestone may claim it.
       expect(result.events?.filter((event) => event.stage === 'delivered'))
-        .toEqual([expect.objectContaining({ description: 'Shipped' })]);
+        .toEqual([expect.objectContaining({ description: 'Delivered' })]);
     },
   );
 

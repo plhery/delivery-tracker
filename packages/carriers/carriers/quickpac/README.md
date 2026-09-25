@@ -64,7 +64,8 @@ be read on its own.
 | `accepted` | `Abholung` (shared route step only) | fixture |
 | `pending`, `customs`, `ready_for_pickup`, `returned` | — | not observed; reported as unmapped |
 
-`Shipped` means *delivered*, not *dispatched*.
+`Shipped` means *delivered*, not *dispatched*, and is stored and shown as
+`Delivered`.
 
 ## Limitations and privacy
 
@@ -108,3 +109,6 @@ be read on its own.
   show Quickpac's own pre-advice "Shipment recorded by sender (data delivered)".
   The shared wording rules now read it as `registered`; it had been read as a
   delivery.
+- 2026-09-25: Planzer's `Shipped` is now stored and shown as `Delivered`, and
+  saved Quickpac rows were relabeled, archived parcels included (see the
+  Planzer folder).

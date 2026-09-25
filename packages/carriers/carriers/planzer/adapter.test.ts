@@ -9,7 +9,7 @@ import {
   PlanzerTracker,
   planzerShipmentNumber,
 } from './adapter';
-import { planzerEventStage } from './status';
+import { planzerDescription, planzerEventStage } from './status';
 
 const folder = path.dirname(fileURLToPath(import.meta.url));
 const carrier = JSON.parse(
@@ -161,6 +161,24 @@ describe('Planzer milestone labels', () => {
     expect(planzerEventStage(label)).toBe(stage);
   });
 
+  it('stores the mistranslated "Shipped" as "Delivered" and keeps other labels verbatim', () => {
+    expect(planzerDescription('Shipped')).toBe('Delivered');
+    for (const label of ['Recorded', 'Transferred', 'In delivery', 'Delivered', 'Shipment delivered', 'Zugestellt']) {
+      expect(planzerDescription(label)).toBe(label);
+    }
+    expect(parsePlanzerTrackingResponse({
+      overallStatus: { text: { english: 'Shipped' } },
+      transportPositions: [{
+        positionNumber: QUICKPAC_NUMBER,
+        positionEvents: [{ createdAt: '2026-09-01T12:00:00', text: { english: 'Shipped' } }],
+      }],
+    }, QUICKPAC_NUMBER)).toMatchObject({
+      status: 'delivered',
+      last_status_text: 'Delivered',
+      events: [{ description: 'Delivered', stage: 'delivered' }],
+    });
+  });
+
   it('refuses to turn an unfamiliar label into history', () => {
     expect(planzerEventStage('New status with private details')).toBeUndefined();
     expect(() => parsePlanzerTrackingResponse({
@@ -195,8 +213,9 @@ describe('Planzer declared capabilities and privacy', () => {
       last_update: '2026-09-01T14:07:10.258',
       expected_delivery: '2026-09-01',
     });
+    // The fixture's "Shipped" is Planzer's English for "Zugestellt".
     expect(delivered.events?.map((event) => [event.description, event.stage])).toEqual([
-      ['Shipped', 'delivered'],
+      ['Delivered', 'delivered'],
       ['In delivery', 'out_for_delivery'],
       ['Transferred', 'in_transit'],
       ['Recorded', 'registered'],
