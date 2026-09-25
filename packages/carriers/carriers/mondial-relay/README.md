@@ -23,7 +23,7 @@ coverage for every destination country.
 
 | Field | Kept | Notes |
 |---|---|---|
-| status / stage | yes | from the headline, then the events, then the milestones |
+| status / stage | yes | from the headline, then the events, then the milestones; the stage is declared as `current_stage` |
 | history | yes | `Evenements`, deduplicated, newest first, at most 100 |
 | eta | yes | `EstimatedDeliveryDate`, as a calendar day, cleared once terminal |
 | location | no | the reply's only place fields belong to the relay, not to the parcel |
@@ -42,7 +42,10 @@ the fixture, and asserts every event location stays empty.
   a postcode.
 - `^(?:\d{8}|\d{10}|\d{12})$`, low confidence — the shipment number a user
   types, per Mondial Relay's CONNECT guide. These need the 5-digit recipient
-  postcode, which may be typed separately or appended to the number.
+  postcode, which may be typed separately or appended to the number. The
+  10-digit form is the 2-digit brand followed by the 8-digit shipment, and the
+  12-digit form adds the parcel sequence, as in the label barcode; the API
+  echoes only the 8-digit shipment for both.
 
 `numbers.json` carries publicly reported samples, a synthetic barcode, and the
 negatives that prove the checksum gate.
@@ -63,7 +66,8 @@ transport, not a claim that HTTP-only retrieval can never work.
    postcode.
 3. Parse the JSON, from the captured body or from the `<pre>` a browser
    navigation wraps it in, and verify the returned `Numero` against the
-   credential before anything else.
+   credential before anything else: the number requested, or the 8-digit
+   shipment embedded in a 10-, 12- or 26-digit form.
 
 Without a browser service the lookup fails immediately with
 `ChallengeError('Mondial Relay challenged direct tracking; configure
@@ -85,6 +89,7 @@ without a usable recipient postcode, except for validated 26-digit barcodes.
 | in_transit | En cours d'acheminement, En transit, Arrivé sur l'agence, Départ de l'agence, Expédié vers; milestone `2` | fixture, prior-art |
 | out_for_delivery | En cours de livraison, En cours de distribution, En cours de mise à disposition | prior-art |
 | ready_for_pickup | Disponible dans votre Point Relais, Disponible en consigne, Prêt à être retiré; milestone `4` | fixture, prior-art |
+| ready_for_pickup | Colis disponible au Locker, Colis disponible au point de retrait, … restants pour retirer le colis en Locker | live |
 | delivered | Remis au destinataire, Retiré par le destinataire, Retrait effectué; milestone `5` | fixture, prior-art |
 | failed_attempt | Échec de livraison, Livraison impossible | prior-art |
 | exception | Anomalie, Incident, Adresse incorrecte, Colis endommagé, Colis refusé, Colis perdu | prior-art |
@@ -95,7 +100,10 @@ without a usable recipient postcode, except for validated 26-digit barcodes.
 Matching is accent- and punctuation-free, so one entry covers every casing and
 accenting the page uses. Wording that matches nothing leaves the shipment status
 to the events, then to the milestone number, and finally to `unknown`; the sync
-classifies the raw wording and records it for review.
+classifies the raw wording and records it for review. The stage that decided the
+status is declared as `current_stage`: the status vocabulary has no pickup value,
+so the sync would otherwise re-read the headline and fall back to "out for
+delivery".
 
 ## Limitations and privacy
 
@@ -147,6 +155,12 @@ classifies the raw wording and records it for review.
   `trawlBody()` in `core/transport`, which implements the same four shapes
   (string, byte array, serialized Node `Buffer`, index-keyed object). The 2 MB
   cap is passed explicitly so the decode bound is unchanged.
+- 2026-09-25: a reply that names the 8-digit shipment embedded in a 10- or
+  12-digit request is the requested parcel. A 10-digit parcel was refused as
+  "a different shipment" on every sync; the 12-digit form is the barcode's
+  public alias, whose replies already name the 8-digit shipment.
+- 2026-09-25: declare `current_stage`. A locker headline the rules did not know
+  would have reached the sync as a bare "out for delivery" status.
 
 ## Rejected alternatives
 
@@ -189,3 +203,6 @@ Also tried `4744000791` on Ship24: 5 events but DPD UK (corpus attribution unver
   the error classes moved onto the shared taxonomy.
 - 2026-09-12: universal-provider probe with corpus number `73800244620101503002000732`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
 - 2026-09-13: 17TRACK probe with corpus number `73800244620101503002000732` via prod TRAWL: no usable history (lookup_unavailable).
+- 2026-09-25: a live lookup of a 10-digit number through prod TRAWL returned the
+  parcel with `Numero` equal to its last 8 digits, and the headline
+  "Colis disponible au Locker"; both are handled since.

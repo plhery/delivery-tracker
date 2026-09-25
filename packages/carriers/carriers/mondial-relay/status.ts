@@ -54,7 +54,8 @@ export const MONDIAL_RELAY_WORDING: readonly { phrases: readonly string[]; class
   {
     phrases: [
       'disponible dans votre point relais', 'disponible au point relais',
-      'disponible dans votre locker', 'disponible en consigne',
+      'disponible dans votre locker', 'disponible au locker',
+      'disponible au point de retrait', 'disponible en consigne',
       'vous attend au point relais', 'vous attend dans le locker', 'pret a etre retire',
       // The locker countdown: "5 jours restants pour retirer le colis en Locker".
       'restants pour retirer', 'restant pour retirer',

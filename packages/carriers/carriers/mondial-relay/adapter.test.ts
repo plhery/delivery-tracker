@@ -95,12 +95,14 @@ describe('Mondial Relay tracking input', () => {
     )).toEqual({
       shipment: SYNTHETIC_TEN_DIGIT_BOUNDARY,
       postcode: OFFICIAL_PAGE_POSTCODE,
+      canonicalShipment: '00000000',
     });
     expect(normalizeMondialRelayCredential(
       `${OFFICIAL_TWELVE_DIGIT_SHIPMENT}${OFFICIAL_PAGE_POSTCODE}`,
     )).toEqual({
       shipment: OFFICIAL_TWELVE_DIGIT_SHIPMENT,
       postcode: OFFICIAL_PAGE_POSTCODE,
+      canonicalShipment: '73685166',
     });
     expect(mondialRelayTrackingUrl(PUBLIC_CREDENTIAL)).toBe(
       `${TRACKING_PAGE}?numeroExpedition=${OFFICIAL_PDF_SHIPMENT}`,
@@ -136,6 +138,7 @@ describe('Mondial Relay response normalization', () => {
 
     expect(result).toMatchObject({
       status: 'out_for_delivery',
+      current_stage: 'ready_for_pickup',
       last_status_text: 'Votre colis est disponible dans votre Point Relais®',
       last_update: '2026-08-30T10:30:00+02:00',
       expected_delivery: '2026-08-31',
@@ -211,6 +214,50 @@ describe('Mondial Relay response normalization', () => {
     )).toMatchObject({ status: 'out_for_delivery' });
   });
 
+  it('accepts the 8-digit shipment the API echoes for the longer forms', () => {
+    // The reply names the shipment without its 2-digit brand prefix (and,
+    // for the 12-digit form, without the parcel sequence).
+    const branded = `12${OFFICIAL_PDF_SHIPMENT}`;
+    expect(parseMondialRelayTrackingResponse(
+      syntheticSuccessFixture(OFFICIAL_PDF_SHIPMENT),
+      branded,
+      OFFICIAL_PAGE_POSTCODE,
+    )).toMatchObject({ status: 'out_for_delivery', current_stage: 'ready_for_pickup' });
+    expect(parseMondialRelayTrackingResponse(
+      syntheticSuccessFixture('73685166'),
+      OFFICIAL_TWELVE_DIGIT_SHIPMENT,
+      OFFICIAL_PAGE_POSTCODE,
+    )).toMatchObject({ status: 'out_for_delivery' });
+    for (const [returned, requested] of [
+      ['17185967', branded],
+      [OFFICIAL_PDF_SHIPMENT, `${OFFICIAL_PDF_SHIPMENT}12`],
+      ['12171859', branded],
+      ['73685167', OFFICIAL_TWELVE_DIGIT_SHIPMENT],
+    ]) {
+      expect(() => parseMondialRelayTrackingResponse(
+        syntheticSuccessFixture(returned),
+        requested,
+        OFFICIAL_PAGE_POSTCODE,
+      )).toThrow('different shipment');
+    }
+  });
+
+  it('declares a locker pickup instead of leaving the sync to read it as out for delivery', () => {
+    const fixture = syntheticSuccessFixture();
+    const expedition = fixture.Expedition as Record<string, unknown>;
+    expedition.SuiviContextuel = 'Colis disponible au Locker';
+    expect(parseMondialRelayTrackingResponse(fixture, PUBLIC_CREDENTIAL)).toMatchObject({
+      status: 'out_for_delivery',
+      current_stage: 'ready_for_pickup',
+      last_status_text: 'Colis disponible au Locker',
+    });
+
+    expedition.SuiviContextuel = 'Mise à jour de votre suivi';
+    expedition.Evenements = [{ Date: '2026-08-30T12:00:00', Libelle: 'Colis pris en charge en Locker' }];
+    expect(parseMondialRelayTrackingResponse(fixture, PUBLIC_CREDENTIAL))
+      .toMatchObject({ status: 'in_transit', current_stage: 'accepted' });
+  });
+
   it('uses reached official milestones only when contextual history is inconclusive', () => {
     const fixture = syntheticSuccessFixture();
     const expedition = fixture.Expedition as Record<string, unknown>;
@@ -278,6 +325,9 @@ describe('Mondial Relay response normalization', () => {
       .toEqual({ status: 'out_for_delivery', stage: 'ready_for_pickup' });
     expect(classifyStatus('1 jour restant pour retirer le colis en Locker'))
       .toEqual({ status: 'out_for_delivery', stage: 'ready_for_pickup' });
+    for (const wording of ['Colis disponible au Locker', 'Colis disponible au point de retrait']) {
+      expect(classifyStatus(wording)).toEqual({ status: 'out_for_delivery', stage: 'ready_for_pickup' });
+    }
     for (const wording of [
       'Colis expédié depuis le site logistique', 'Colis en cours de traitement sur le site logistique',
       'Colis en route vers le point de livraison',

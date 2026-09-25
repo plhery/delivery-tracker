@@ -39,7 +39,7 @@ interface MondialRelayCredential {
 
 interface ParsedEvent {
   event: CarrierEvent;
-  status: ClassifiedStatus['status'];
+  classified: ClassifiedStatus;
   timestamp: number;
   index: number;
 }
@@ -80,7 +80,11 @@ export function normalizeMondialRelayCredential(
       ? new InputRequiredError('Mondial Relay', 'the recipient postcode', CREDENTIAL_MESSAGE)
       : new SchemaError('Mondial Relay', CREDENTIAL_MESSAGE);
   }
-  return { shipment, postcode };
+  // The longer forms put the 2-digit brand before the 8-digit shipment (the
+  // 12-digit one adds the parcel sequence), and the API echoes the shipment.
+  return shipment.length > 8
+    ? { shipment, postcode, canonicalShipment: shipment.slice(2, 10) }
+    : { shipment, postcode };
 }
 
 export function mondialRelayTrackingUrl(rawShipment: string, rawPostcode = ''): string {
@@ -158,7 +162,7 @@ function parseEvents(expedition: JsonObject): ParsedEvent[] {
         description,
         stage: classified.stage,
       },
-      status: classified.status,
+      classified,
       timestamp: time.timestamp,
       index,
     });
@@ -215,14 +219,17 @@ function parseTrackingResponse(payload: unknown, credential: MondialRelayCredent
   const contextual = plainText(expedition.SuiviContextuel);
   const statusText = contextual || events[0]?.description || 'Tracking information received';
   const contextualStatus = classifyStatus(statusText);
-  const status = contextualStatus.status !== 'unknown'
-    ? contextualStatus.status
-    : parsedEvents.find((event) => event.status !== 'unknown')?.status
-      ?? milestoneStatus(expedition)?.status
-      ?? 'unknown';
+  const current = contextualStatus.status !== 'unknown'
+    ? contextualStatus
+    : parsedEvents.find((event) => event.classified.status !== 'unknown')?.classified
+      ?? milestoneStatus(expedition);
+  const status = current?.status ?? 'unknown';
 
   return {
     status,
+    // The status vocabulary has no pickup value; without the stage the sync
+    // would re-read the headline and fall back to "out for delivery".
+    ...(current ? { current_stage: current.stage } : {}),
     last_status_text: statusText,
     last_update: events[0]?.time ?? null,
     expected_delivery: ['delivered', 'exception'].includes(status)
