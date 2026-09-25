@@ -131,8 +131,7 @@ struct ParcelDetailView: View {
     private var parcel: Parcel? { store.parcels.first { $0.id == parcelID || $0.carrierData?.originalPackageID == parcelID } }
 
     private func identity(_ parcel: Parcel) -> CarrierVisualIdentity {
-        CarrierVisualIdentity(id: parcel.displayedCarrier.rawValue,
-            carrier: catalog.info(for: parcel.displayedCarrier, language: localizer.language))
+        CarrierVisualIdentity.of(parcel.displayedCarrier, catalog: catalog, language: localizer.language)
     }
 
     private func liveParcelPass(_ parcel: Parcel) -> some View {
@@ -688,10 +687,7 @@ private struct JournalEventRow: View {
 
     private var time: String {
         guard let date = DateParser.date(event.occurredAt) else { return "—" }
-        let formatter = DateFormatter()
-        formatter.locale = localizer.language.locale
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
+        return localizer.clockTime(date)
     }
 }
 
@@ -700,13 +696,16 @@ struct AutomaticCarrierNotice: View {
     @EnvironmentObject private var localizer: Localizer
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 60)) { context in
-            if let from = parcel.automaticallyChangedFrom(at: context.date) {
-                Text(localizer.text("parcel.autoChangedCarrier", [
-                    "carrier": CarrierCatalog.shared.info(for: from, language: localizer.language).displayName,
-                ]))
-                .font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+        // Only automatic carrier changes need a clock; most cards have none.
+        if parcel.carrierData?.autoChangedFrom != nil {
+            TimelineView(.periodic(from: .now, by: 60)) { context in
+                if let from = parcel.automaticallyChangedFrom(at: context.date) {
+                    Text(localizer.text("parcel.autoChangedCarrier", [
+                        "carrier": CarrierCatalog.shared.info(for: from, language: localizer.language).displayName,
+                    ]))
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
     }

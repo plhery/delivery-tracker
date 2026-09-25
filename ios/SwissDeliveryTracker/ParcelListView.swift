@@ -98,10 +98,15 @@ private struct DeliveryListView: View {
     @ObservedObject private var catalog = CarrierCatalog.shared
 
     var body: some View {
+        // Filtering, sorting and grouping run once per render, not once per section.
+        let layout = DeliveryListLayout(
+            parcels: store.parcels, query: query, status: statusFilter,
+            carrier: carrierFilter, sort: sort, featuresNext: !hasCustomView
+        )
         NavigationStack(path: $path) {
             ZStack {
                 ExperimentalBackdrop()
-                content
+                content(layout)
             }
             .safeAreaInset(edge: .top, spacing: 0) { DemoModeBar() }
             .navigationTitle(localizer.text("native.deliveries"))
@@ -191,12 +196,12 @@ private struct DeliveryListView: View {
         }
     }
 
-    private var content: some View {
+    private func content(_ layout: DeliveryListLayout) -> some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 24) {
                     VStack(alignment: .leading, spacing: 10) {
-                        if !store.parcels.isEmpty { listOverview }
+                        if !store.parcels.isEmpty { listOverview(layout) }
                         if showingSearch { searchControls }
                         if hasCustomView { filterChips }
                         if let message = store.errorMessage {
@@ -209,14 +214,14 @@ private struct DeliveryListView: View {
                                 action: { Task { await store.load(showSpinner: true) } }
                             )
                         }
-                        listEmptyState
-                        if let nextParcel {
+                        listEmptyState(layout)
+                        if let nextParcel = layout.next {
                             ExperimentalNextDeliveryPass(parcel: nextParcel, transition: parcelTransition,
                                 onOpen: { path.append(nextParcel.id) }, onArchive: { await archive(nextParcel) })
                                 .modifier(arrivalCelebration(for: nextParcel.id, stubInset: 43))
                                 .id(nextParcel.id)
                         }
-                        ForEach(attentionParcels) { parcel in
+                        ForEach(layout.attention) { parcel in
                             ExperimentalParcelPassCard(parcel: parcel,
                                 notice: parcel.attention().map { localizer.text($0.localizationKey) },
                                 transition: parcelTransition,
@@ -224,14 +229,14 @@ private struct DeliveryListView: View {
                                 .modifier(arrivalCelebration(for: parcel.id))
                                 .id(parcel.id)
                         }
-                        ForEach(remainingActiveParcels) { parcel in
+                        ForEach(layout.remaining) { parcel in
                             ExperimentalParcelPassCard(parcel: parcel, notice: nil, transition: parcelTransition,
                                 onOpen: { path.append(parcel.id) }, onArchive: { await archive(parcel) })
                                 .modifier(arrivalCelebration(for: parcel.id))
                                 .id(parcel.id)
                         }
                     }
-                    ForEach(sections) { section in sectionContent(section) }
+                    ForEach(layout.sections) { section in sectionContent(section, next: layout.next) }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
@@ -287,12 +292,12 @@ private struct DeliveryListView: View {
         }
     }
 
-    private var listOverview: some View {
+    private func listOverview(_ layout: DeliveryListLayout) -> some View {
         HStack(spacing: 8) {
-            if !activeParcels.isEmpty {
+            if !layout.active.isEmpty {
                 Text(localizer.text("app.onTheWaySection"))
                     .font(.headline.weight(.semibold))
-                Text("\(activeParcels.count)")
+                Text("\(layout.active.count)")
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 6).frame(minHeight: 20)
@@ -349,7 +354,7 @@ private struct DeliveryListView: View {
         .onKeyPress(.escape) { showingSearch = false; searchFocused = false; return .handled }
     }
 
-    @ViewBuilder private var listEmptyState: some View {
+    @ViewBuilder private func listEmptyState(_ layout: DeliveryListLayout) -> some View {
         if !store.loading {
             if store.parcels.isEmpty {
                 VStack(spacing: 18) {
@@ -358,7 +363,7 @@ private struct DeliveryListView: View {
                     Button(localizer.text("app.addParcel")) { sharedDraft = nil; showingAdd = true }
                         .buttonStyle(.borderedProminent).tint(Brand.accent).foregroundStyle(Brand.onAccent)
                 }.frame(maxWidth: .infinity).padding(.vertical, 32)
-            } else if visibleParcels.isEmpty {
+            } else if layout.visible.isEmpty {
                 ContentUnavailableView {
                     Label(localizer.text("view.noResultsTitle"), systemImage: "magnifyingglass")
                 } description: { Text(localizer.text("view.noResultsDescription")) }
@@ -453,32 +458,10 @@ private struct DeliveryListView: View {
         )
     }
 
-    private var activeParcels: [Parcel] { visibleParcels.filter(\.isActive) }
-
-    private var attentionParcels: [Parcel] {
-        let featuredID = nextParcel?.id
-        return activeParcels.filter { $0.id != featuredID && $0.attention() != nil }
-    }
-
-    private var remainingActiveParcels: [Parcel] {
-        let featuredID = nextParcel?.id
-        return activeParcels.filter { $0.id != featuredID && $0.attention() == nil }
-    }
-
-    private var sections: [ParcelSection] {
-        ParcelOrganizer.sections(from: visibleParcels).filter {
-            $0.kind == .delivered || $0.kind == .returned || $0.kind == .archived
-        }
-    }
-
     private var availableCarriers: [CarrierID] {
         Array(Set(store.parcels.map(\.carrier))).sorted {
             catalog.info(for: $0, language: localizer.language).displayName < catalog.info(for: $1, language: localizer.language).displayName
         }
-    }
-
-    private var nextParcel: Parcel? {
-        hasCustomView ? nil : ParcelOrganizer.nextDelivery(from: activeParcels)
     }
 
     private var hasCustomView: Bool {
@@ -541,7 +524,7 @@ private struct DeliveryListView: View {
         .padding(.top, 3)
     }
 
-    @ViewBuilder private func sectionContent(_ section: ParcelSection) -> some View {
+    @ViewBuilder private func sectionContent(_ section: ParcelSection, next: Parcel?) -> some View {
         switch section.kind {
         case .delivered:
             VStack(alignment: .leading, spacing: 10) {
@@ -581,7 +564,7 @@ private struct DeliveryListView: View {
             VStack(alignment: .leading, spacing: 12) {
                 sectionHeader(section)
                 ForEach(section.parcels) { parcel in
-                    if !hasCustomView, parcel.id == nextParcel?.id {
+                    if !hasCustomView, parcel.id == next?.id {
                         ExperimentalNextDeliveryPass(
                             parcel: parcel,
                             transition: parcelTransition,
@@ -679,8 +662,7 @@ private struct ExperimentalNextDeliveryPass: View {
     @ObservedObject private var catalog = CarrierCatalog.shared
 
     private var identity: CarrierVisualIdentity {
-        CarrierVisualIdentity(id: parcel.displayedCarrier.rawValue,
-            carrier: catalog.info(for: parcel.displayedCarrier, language: localizer.language))
+        CarrierVisualIdentity.of(parcel.displayedCarrier, catalog: catalog, language: localizer.language)
     }
 
     var body: some View {
@@ -750,8 +732,7 @@ private struct ExperimentalParcelPassCard: View {
     @ObservedObject private var catalog = CarrierCatalog.shared
 
     private var identity: CarrierVisualIdentity {
-        CarrierVisualIdentity(id: parcel.displayedCarrier.rawValue,
-            carrier: catalog.info(for: parcel.displayedCarrier, language: localizer.language))
+        CarrierVisualIdentity.of(parcel.displayedCarrier, catalog: catalog, language: localizer.language)
     }
     private var date: String? { localizer.parcelDeliveryEstimate(parcel) ?? localizer.parcelCompletionDate(parcel) }
     /// Carrier-reported stages already say what needs attention in the status line.

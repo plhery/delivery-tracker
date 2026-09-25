@@ -187,6 +187,11 @@ enum TrackingLocation {
         return names
     }()
 
+    /// Builds the country-name table (about 1,700 localized names) ahead of first use.
+    static func prepare() {
+        _ = countryNames
+    }
+
     private static func normalized(_ value: String) -> String {
         value.trimmingCharacters(in: .whitespacesAndNewlines)
             .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))

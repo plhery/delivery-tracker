@@ -13,9 +13,17 @@ enum Brand {
     static let background = color(light: "#F4F5F1", dark: "#151915")
     static let separator = Color(uiColor: .separator)
 
+    /// Cards ask for carrier colors on every render. Returning the same dynamic
+    /// color each time lets SwiftUI see that nothing changed.
+    private static let dynamicColors = NSCache<NSString, UIColor>()
+
     static func color(light: String, dark: String) -> Color {
-        Color(uiColor: UIColor { traits in
-            let color = UIColor(Color(hex: traits.userInterfaceStyle == .dark ? dark : light))
+        let key = "\(light)|\(dark)" as NSString
+        if let cached = dynamicColors.object(forKey: key) { return Color(uiColor: cached) }
+        let lightColor = UIColor(Color(hex: light))
+        let darkColor = UIColor(Color(hex: dark))
+        let dynamic = UIColor { traits in
+            let color = traits.userInterfaceStyle == .dark ? darkColor : lightColor
             guard traits.accessibilityContrast == .high else { return color }
             var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
             color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
@@ -27,7 +35,9 @@ enum Brand {
                 blue: min(1, max(0, blue + adjustment)),
                 alpha: alpha
             )
-        })
+        }
+        dynamicColors.setObject(dynamic, forKey: key)
+        return Color(uiColor: dynamic)
     }
 }
 

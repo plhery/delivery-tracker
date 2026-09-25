@@ -1459,3 +1459,50 @@ extension SessionIsolationTests {
         XCTAssertEqual(value.currentStage, .delivered)
     }
 }
+
+extension ParcelLogicTests {
+    func testDeliveryListLayoutFeaturesOneArrivalAndKeepsIssuesOnTheirOwnCards() {
+        let now = DateParser.date("2026-09-09T12:00:00Z")!
+        let parcels = DemoRepository.seed(now: now)
+        let layout = DeliveryListLayout(parcels: parcels, query: "", status: .all, carrier: nil, sort: .priority, featuresNext: true, now: now)
+        let next = try? XCTUnwrap(layout.next)
+        XCTAssertEqual(next?.label, "New sneakers 👟")
+        XCTAssertEqual(Set(layout.active.map(\.id)), Set(parcels.filter(\.isActive).map(\.id)))
+        XCTAssertEqual(Set(layout.attention.map(\.id) + layout.remaining.map(\.id) + [next?.id].compactMap { $0 }),
+                       Set(layout.active.map(\.id)))
+        XCTAssertFalse(layout.attention.contains { $0.id == next?.id } || layout.remaining.contains { $0.id == next?.id })
+        XCTAssertTrue(layout.attention.allSatisfy { $0.attention(now: now) != nil })
+        XCTAssertTrue(layout.remaining.allSatisfy { $0.attention(now: now) == nil })
+        XCTAssertEqual(layout.sections.map(\.kind), [.delivered, .archived])
+        let searched = DeliveryListLayout(parcels: parcels, query: "sneakers", status: .all, carrier: nil, sort: .priority, featuresNext: false, now: now)
+        XCTAssertNil(searched.next)
+        XCTAssertEqual(searched.visible.map(\.label), ["New sneakers 👟"])
+    }
+
+    func testLatestEventFollowsAChangedHistory() {
+        let now = DateParser.date("2026-09-09T12:00:00Z")!
+        var parcel = DemoRepository.seed(now: now).first { $0.label == "New sneakers 👟" }!
+        let before = parcel.currentStage
+        XCTAssertEqual(before, .outForDelivery)
+        parcel.trackingEvents.append(TrackingEvent(
+            id: UUID(), packageID: parcel.id, stage: .delivered,
+            description: "Delivered", occurredAt: DateParser.isoString(now)
+        ))
+        XCTAssertEqual(parcel.currentStage, .delivered)
+        parcel.trackingEvents.removeLast()
+        XCTAssertEqual(parcel.currentStage, before)
+    }
+
+    @MainActor func testDayKeysAndEstimatesAreStableAcrossRepeatedFormatting() throws {
+        let localizer = Localizer()
+        localizer.language = .en
+        let day = try XCTUnwrap(DateParser.deliveryDate("2026-09-12"))
+        XCTAssertEqual(ParcelOrganizer.dayKey(day), "2026-09-12")
+        XCTAssertNil(DateParser.date("2026-09-12"))
+        XCTAssertEqual(DateParser.deliveryDate("2026-09-12"), day)
+        for _ in 0..<3 {
+            XCTAssertEqual(localizer.shortDate(day), "Sat 12 sep")
+            XCTAssertEqual(localizer.dateTime(DateParser.isoString(day)), "Sat 12 sep, 00:00")
+        }
+    }
+}

@@ -309,7 +309,7 @@ final class DeliveryAPIClient {
         )
     }
 
-    private func request<T: Decodable, Body: Encodable>(
+    private func request<T: Decodable & Sendable, Body: Encodable>(
         _ path: String,
         method: String = "GET",
         body: Body?
@@ -317,17 +317,23 @@ final class DeliveryAPIClient {
         let encoded = try body.map { try JSONEncoder.deliveryTracker.encode($0) }
         let (data, _) = try await rawRequest(path, method: method, body: encoded)
         do {
-            return try JSONDecoder.deliveryTracker.decode(T.self, from: data)
+            return try await Self.decode(T.self, from: data)
         } catch {
             throw DeliveryAPIError.invalidResponse
         }
     }
 
-    private func request<T: Decodable>(
+    private func request<T: Decodable & Sendable>(
         _ path: String,
         method: String = "GET"
     ) async throws -> T {
         try await request(path, method: method, body: Optional<String>.none)
+    }
+
+    /// A full parcel list with its histories is large; decode it off the main thread.
+    @concurrent
+    private nonisolated static func decode<T: Decodable & Sendable>(_ type: T.Type, from data: Data) async throws -> T {
+        try JSONDecoder.deliveryTracker.decode(type, from: data)
     }
 
     private func performRawRequest(

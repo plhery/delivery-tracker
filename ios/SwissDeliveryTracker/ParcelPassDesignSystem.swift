@@ -316,6 +316,22 @@ struct CarrierVisualIdentity {
     let colors: [String]
     let decal: String
 
+    private final class Cached {
+        let identity: CarrierVisualIdentity
+        init(_ identity: CarrierVisualIdentity) { self.identity = identity }
+    }
+    private static let cache = NSCache<NSString, Cached>()
+
+    /// Cards rebuild whenever the list changes; derive each carrier's livery once.
+    static func of(_ carrier: CarrierID, catalog: CarrierCatalog = .shared, language: AppLanguage) -> CarrierVisualIdentity {
+        let definition = catalog.info(for: carrier, language: language)
+        let key = "\(carrier.rawValue)|\(definition.displayName)|\(definition.color)" as NSString
+        if let cached = cache.object(forKey: key) { return cached.identity }
+        let identity = CarrierVisualIdentity(id: carrier.rawValue, carrier: definition)
+        cache.setObject(Cached(identity), forKey: key)
+        return identity
+    }
+
     init(id: String, carrier: CarrierDefinition) {
         let assets = CarrierBrandAssets.shared
         family = assets.families[id] ?? id

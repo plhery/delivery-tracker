@@ -20,6 +20,11 @@ struct SwissDeliveryTrackerApp: App {
             session: session,
             localizer: localizer
         ))
+        // Build lookup tables off the main thread before the first card or parcel needs them.
+        Task.detached(priority: .utility) {
+            _ = CarrierBrandAssets.shared
+            TrackingLocation.prepare()
+        }
     }
 
     var body: some Scene {

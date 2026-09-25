@@ -146,7 +146,21 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     }
 
     static let shared = CarrierCatalog()
-    @Published private(set) var definitions: [CarrierID: CarrierDefinition]
+    @Published private(set) var definitions: [CarrierID: CarrierDefinition] {
+        didSet {
+            detections.removeAllObjects()
+            parsedInputs.removeAllObjects()
+        }
+    }
+
+    /// Views ask for the same input's result many times per render and keystroke.
+    private final class Memo<Value>: @unchecked Sendable {
+        let value: Value
+        init(_ value: Value) { self.value = value }
+    }
+    private let detections = NSCache<NSString, Memo<CarrierMatch>>()
+    private let parsedInputs = NSCache<NSString, Memo<TrackingInputMatch>>()
+    private static let expressions = NSCache<NSString, NSRegularExpression>()
 
     private static let refreshInterval: TimeInterval = 15 * 60
     private static let maximumResponseBytes = 512 * 1_024
@@ -292,6 +306,13 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         guard !number.isEmpty else {
             return CarrierMatch(carrier: .unknown, confidence: .none, candidates: [])
         }
+        if let memo = detections.object(forKey: number as NSString) { return memo.value }
+        let match = detectNormalized(number)
+        detections.setObject(Memo(match), forKey: number as NSString)
+        return match
+    }
+
+    private func detectNormalized(_ number: String) -> CarrierMatch {
         var matches: [(CarrierID, CarrierMatch.Confidence)] = []
         for (carrier, definition) in definitions {
             for rule in definition.detectionRules {
@@ -318,7 +339,13 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     func parse(_ raw: String) -> TrackingInputMatch {
         let input = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !input.isEmpty else { return Self.emptyMatch }
+        if let memo = parsedInputs.object(forKey: input as NSString) { return memo.value }
+        let match = parseTrimmed(input)
+        parsedInputs.setObject(Memo(match), forKey: input as NSString)
+        return match
+    }
 
+    private func parseTrimmed(_ input: String) -> TrackingInputMatch {
         for pasted in Self.matches(in: input, pattern: "https?://[^\\s<>\\\"']+") {
             let cleaned = pasted
                 .trimmingCharacters(
@@ -536,7 +563,13 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     }
 
     static func normalize(_ raw: String) -> String {
-        raw.uppercased().replacingOccurrences(of: "[\\s.-]", with: "", options: .regularExpression)
+        let value = raw.uppercased()
+        guard let separators = expression("[\\s.-]") else { return value }
+        return separators.stringByReplacingMatches(
+            in: value,
+            range: NSRange(value.startIndex..., in: value),
+            withTemplate: ""
+        )
     }
 
     static func format(_ raw: String) -> String {
@@ -588,8 +621,19 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             && matches(value, pattern: "\\d")
     }
 
+    /// Compiling a pattern costs far more than matching it, and detection runs
+    /// every carrier rule for each keystroke and card.
+    private static func expression(_ pattern: String, caseInsensitive: Bool = false) -> NSRegularExpression? {
+        let key = ((caseInsensitive ? "i:" : "s:") + pattern) as NSString
+        if let cached = expressions.object(forKey: key) { return cached }
+        let options: NSRegularExpression.Options = caseInsensitive ? .caseInsensitive : []
+        guard let compiled = try? NSRegularExpression(pattern: pattern, options: options) else { return nil }
+        expressions.setObject(compiled, forKey: key)
+        return compiled
+    }
+
     private static func matches(_ value: String, pattern: String) -> Bool {
-        guard let expression = try? NSRegularExpression(pattern: pattern) else { return false }
+        guard let expression = expression(pattern) else { return false }
         return expression.firstMatch(
             in: value,
             range: NSRange(value.startIndex..., in: value)
@@ -601,8 +645,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         pattern: String,
         caseInsensitive: Bool = false
     ) -> [String] {
-        let options: NSRegularExpression.Options = caseInsensitive ? .caseInsensitive : []
-        guard let expression = try? NSRegularExpression(pattern: pattern, options: options) else { return [] }
+        guard let expression = expression(pattern, caseInsensitive: caseInsensitive) else { return [] }
         return expression.matches(in: value, range: NSRange(value.startIndex..., in: value)).compactMap {
             Range($0.range, in: value).map { String(value[$0]) }
         }
@@ -613,8 +656,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         pattern: String,
         caseInsensitive: Bool = false
     ) -> String? {
-        let options: NSRegularExpression.Options = caseInsensitive ? .caseInsensitive : []
-        guard let expression = try? NSRegularExpression(pattern: pattern, options: options),
+        guard let expression = expression(pattern, caseInsensitive: caseInsensitive),
               let match = expression.firstMatch(
                 in: value,
                 range: NSRange(value.startIndex..., in: value)

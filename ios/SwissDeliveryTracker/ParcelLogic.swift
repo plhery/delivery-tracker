@@ -85,7 +85,7 @@ extension Parcel {
         trackingEvents.sorted(by: Self.eventPrecedes)
     }
 
-    private static func eventPrecedes(_ lhs: TrackingEvent, _ rhs: TrackingEvent) -> Bool {
+    fileprivate static func eventPrecedes(_ lhs: TrackingEvent, _ rhs: TrackingEvent) -> Bool {
         let left = DateParser.date(lhs.occurredAt)?.timeIntervalSince1970 ?? 0
         let right = DateParser.date(rhs.occurredAt)?.timeIntervalSince1970 ?? 0
         if left == right {
@@ -96,9 +96,7 @@ extension Parcel {
     }
 
     var currentEvent: TrackingEvent? {
-        // Status checks need only the latest carrier event, not a sorted history.
-        trackingEvents.lazy.filter { $0.stage != .pending }.min(by: Self.eventPrecedes)
-            ?? trackingEvents.min(by: Self.eventPrecedes)
+        LatestEventCache.shared.latest(of: self)
     }
 
     var currentStage: TrackingStage? { currentEvent?.stage }
@@ -176,11 +174,12 @@ extension Parcel {
         return nil
     }
 
+    private static let expectedDayPattern = try? NSRegularExpression(pattern: "^(\\d{4}-\\d{2}-\\d{2})(?:$|[ T])")
+
     var expectedDayKey: String? {
         guard let expectedDelivery else { return nil }
-        let expression = try? NSRegularExpression(pattern: "^(\\d{4}-\\d{2}-\\d{2})(?:$|[ T])")
         let range = NSRange(expectedDelivery.startIndex..., in: expectedDelivery)
-        guard let match = expression?.firstMatch(in: expectedDelivery, range: range),
+        guard let match = Self.expectedDayPattern?.firstMatch(in: expectedDelivery, range: range),
               let swiftRange = Range(match.range(at: 1), in: expectedDelivery) else { return nil }
         return String(expectedDelivery[swiftRange])
     }
@@ -190,6 +189,27 @@ extension Parcel {
             + trackingEvents.flatMap { [$0.description, $0.location ?? ""] })
             .joined(separator: " ")
             .lowercased()
+    }
+}
+
+/// Filters, sorts and every card ask for a parcel's latest event several times
+/// per render. Keep each answer until the parcel's history changes: copies of a
+/// list share their event arrays, so a hit compares storage, not events.
+private final class LatestEventCache: @unchecked Sendable {
+    static let shared = LatestEventCache()
+    private let lock = NSLock()
+    private var entries: [UUID: (events: [TrackingEvent], latest: TrackingEvent?)] = [:]
+
+    func latest(of parcel: Parcel) -> TrackingEvent? {
+        let events = parcel.trackingEvents
+        if let entry = lock.withLock({ entries[parcel.id] }), entry.events == events {
+            return entry.latest
+        }
+        // Status checks need only the latest carrier event, not a sorted history.
+        let latest = events.lazy.filter { $0.stage != .pending }.min(by: Parcel.eventPrecedes)
+            ?? events.min(by: Parcel.eventPrecedes)
+        lock.withLock { entries[parcel.id] = (events, latest) }
+        return latest
     }
 }
 
@@ -244,7 +264,8 @@ enum ParcelOrganizer {
     ) -> [Parcel] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let compact = trimmed.replacingOccurrences(of: "[\\s.-]", with: "", options: .regularExpression)
-        return parcels
+        let today = dayKey(now)
+        let matching = parcels
             .filter { parcel in
                 guard !trimmed.isEmpty else { return true }
                 let carrierName = catalog.info(for: parcel.carrier).displayName.lowercased()
@@ -259,17 +280,25 @@ enum ParcelOrganizer {
                 case .all: true
                 case .active: parcel.isActive
                 case .attention: parcel.isActive && parcel.attention(now: now) != nil
-                case .today: parcel.isActive && parcel.expectedDayKey == dayKey(now)
+                case .today: parcel.isActive && parcel.expectedDayKey == today
                 case .delivered: !parcel.isArchived && parcel.isDelivered
                 case .archived: parcel.isArchived
                 }
             }
             .filter { carrier == nil || $0.carrier == carrier }
-            .sorted { compare($0, $1, by: sort, catalog: catalog) }
+        return sorted(matching, by: sort, catalog: catalog)
+    }
+
+    /// Reads each parcel's sort fields once, instead of twice per comparison.
+    static func sorted(_ parcels: [Parcel], by sort: ParcelSort, catalog: CarrierCatalog = .shared) -> [Parcel] {
+        parcels.map { SortKey($0, sort: sort, catalog: catalog) }
+            .sorted { $0.precedes($1) }
+            .map(\.parcel)
     }
 
     /// Feature an arrival or pickup. Issues are shown separately as compact notices.
     static func nextDelivery(from parcels: [Parcel], now: Date = Date()) -> Parcel? {
+        let today = dayKey(now)
         let candidates = parcels.filter { parcel in
             guard parcel.isActive else { return false }
             let reason = parcel.attention(now: now)
@@ -278,27 +307,30 @@ enum ParcelOrganizer {
         }
         func urgency(_ parcel: Parcel) -> Int {
             if parcel.currentStage == .readyForPickup { return 0 }
-            return parcel.currentStage == .outForDelivery || parcel.expectedDayKey == dayKey(now) ? 1 : 2
+            return parcel.currentStage == .outForDelivery || parcel.expectedDayKey == today ? 1 : 2
         }
-        return candidates.sorted { left, right in
-            if urgency(left) != urgency(right) { return urgency(left) < urgency(right) }
-            return compare(left, right, by: .priority)
-        }.first
+        let next = candidates
+            .map { (urgency: urgency($0), key: SortKey($0, sort: .priority, catalog: .shared)) }
+            .min { left, right in
+                left.urgency != right.urgency ? left.urgency < right.urgency : left.key.precedes(right.key)
+            }
+        return next?.key.parcel
     }
 
     static func sections(from parcels: [Parcel], now: Date = Date()) -> [ParcelSection] {
-        let active = parcels.filter(\.isActive)
-        let attention = active.filter { $0.attention(now: now) != nil }
-        let today = active.filter {
-            $0.attention(now: now) == nil && $0.expectedDayKey == dayKey(now)
-        }
+        let today = dayKey(now)
+        let active = parcels.filter(\.isActive).map { (parcel: $0, attention: $0.attention(now: now)) }
+        let attention = active.filter { $0.attention != nil }.map(\.parcel)
+        let arrivingToday = active.filter {
+            $0.attention == nil && $0.parcel.expectedDayKey == today
+        }.map(\.parcel)
         let onTheWay = active.filter {
-            $0.attention(now: now) == nil && $0.expectedDayKey != dayKey(now)
-        }
+            $0.attention == nil && $0.parcel.expectedDayKey != today
+        }.map(\.parcel)
         let archived = sortPastParcels(parcels.filter(\.isArchived))
         let values: [(ParcelSectionKind, [Parcel])] = [
             (.attention, attention),
-            (.today, today),
+            (.today, arrivingToday),
             (.active, onTheWay),
             (.delivered, sortPastParcels(parcels.filter { !$0.isArchived && $0.isDelivered })),
             (.returned, sortPastParcels(parcels.filter { !$0.isArchived && $0.isReturned })),
@@ -307,46 +339,54 @@ enum ParcelOrganizer {
         return values.compactMap { $0.1.isEmpty ? nil : ParcelSection(kind: $0.0, parcels: $0.1) }
     }
 
-    static func compare(
-        _ lhs: Parcel,
-        _ rhs: Parcel,
-        by sort: ParcelSort,
-        catalog: CarrierCatalog = .shared
-    ) -> Bool {
-        let comparison: ComparisonResult
-        switch sort {
-        case .priority:
-            let left = lhs.expectedDayKey ?? "9999-99-99"
-            let right = rhs.expectedDayKey ?? "9999-99-99"
-            comparison = left.compare(right) == .orderedSame
-                ? updated(rhs).compare(updated(lhs))
-                : left.compare(right)
-        case .updated:
-            comparison = updated(rhs).compare(updated(lhs))
-        case .newest:
-            comparison = rhs.createdAt.compare(lhs.createdAt)
-        case .eta:
-            comparison = (lhs.expectedDayKey ?? "9999-99-99").compare(rhs.expectedDayKey ?? "9999-99-99")
-        case .carrier:
-            comparison = catalog.info(for: lhs.carrier).displayName
-                .localizedCaseInsensitiveCompare(catalog.info(for: rhs.carrier).displayName)
-        }
-        if comparison != .orderedSame { return comparison == .orderedAscending }
-        let label = lhs.label.localizedCaseInsensitiveCompare(rhs.label)
-        return label == .orderedSame ? lhs.id.uuidString < rhs.id.uuidString : label == .orderedAscending
-    }
+    private struct SortKey {
+        let parcel: Parcel
+        let sort: ParcelSort
+        let expected: String
+        let updated: String
+        let carrierName: String
 
-    private static func updated(_ parcel: Parcel) -> String {
-        parcel.currentEvent?.occurredAt ?? parcel.createdAt
+        init(_ parcel: Parcel, sort: ParcelSort, catalog: CarrierCatalog) {
+            self.parcel = parcel
+            self.sort = sort
+            expected = sort == .priority || sort == .eta ? parcel.expectedDayKey ?? "9999-99-99" : ""
+            updated = sort == .priority || sort == .updated
+                ? parcel.currentEvent?.occurredAt ?? parcel.createdAt
+                : ""
+            carrierName = sort == .carrier ? catalog.info(for: parcel.carrier).displayName : ""
+        }
+
+        func precedes(_ other: SortKey) -> Bool {
+            let comparison: ComparisonResult
+            switch sort {
+            case .priority:
+                comparison = expected.compare(other.expected) == .orderedSame
+                    ? other.updated.compare(updated)
+                    : expected.compare(other.expected)
+            case .updated:
+                comparison = other.updated.compare(updated)
+            case .newest:
+                comparison = other.parcel.createdAt.compare(parcel.createdAt)
+            case .eta:
+                comparison = expected.compare(other.expected)
+            case .carrier:
+                comparison = carrierName.localizedCaseInsensitiveCompare(other.carrierName)
+            }
+            if comparison != .orderedSame { return comparison == .orderedAscending }
+            let label = parcel.label.localizedCaseInsensitiveCompare(other.parcel.label)
+            return label == .orderedSame
+                ? parcel.id.uuidString < other.parcel.id.uuidString
+                : label == .orderedAscending
+        }
     }
 
     private static func sortPastParcels(_ parcels: [Parcel]) -> [Parcel] {
-        parcels.sorted { left, right in
-            let leftDate = completionSortDate(left)
-            let rightDate = completionSortDate(right)
-            if leftDate == rightDate { return left.id.uuidString < right.id.uuidString }
-            return leftDate > rightDate
-        }
+        parcels.map { (parcel: $0, date: completionSortDate($0)) }
+            .sorted { left, right in
+                if left.date == right.date { return left.parcel.id.uuidString < right.parcel.id.uuidString }
+                return left.date > right.date
+            }
+            .map(\.parcel)
     }
 
     private static func completionSortDate(_ parcel: Parcel) -> Date {
@@ -364,11 +404,43 @@ enum ParcelOrganizer {
         return DateParser.date(parcel.createdAt) ?? .distantPast
     }
 
+    /// The local calendar day as `yyyy-MM-dd`, without building a formatter per call.
     static func dayKey(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: date)
+        let parts = Calendar(identifier: .gregorian).dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
+    }
+}
+
+/// Everything the Deliveries list shows, derived in one pass per render.
+struct DeliveryListLayout {
+    let visible: [Parcel]
+    let active: [Parcel]
+    let next: Parcel?
+    let attention: [Parcel]
+    let remaining: [Parcel]
+    let sections: [ParcelSection]
+
+    init(
+        parcels: [Parcel],
+        query: String,
+        status: ParcelStatusFilter,
+        carrier: CarrierID?,
+        sort: ParcelSort,
+        featuresNext: Bool,
+        now: Date = Date(),
+        catalog: CarrierCatalog = .shared
+    ) {
+        visible = ParcelOrganizer.visible(
+            parcels, query: query, status: status, carrier: carrier, sort: sort, now: now, catalog: catalog
+        )
+        active = visible.filter(\.isActive)
+        let next = featuresNext ? ParcelOrganizer.nextDelivery(from: active, now: now) : nil
+        self.next = next
+        let others = active.filter { $0.id != next?.id }.map { (parcel: $0, attention: $0.attention(now: now)) }
+        attention = others.filter { $0.attention != nil }.map(\.parcel)
+        remaining = others.filter { $0.attention == nil }.map(\.parcel)
+        sections = ParcelOrganizer.sections(from: visible, now: now).filter {
+            $0.kind == .delivered || $0.kind == .returned || $0.kind == .archived
+        }
     }
 }

@@ -519,6 +519,23 @@ final class CarrierCatalogTests: XCTestCase {
     }
 
     @MainActor
+    func testRefreshedDefinitionsReplaceRememberedDetections() async throws {
+        let catalog = try CarrierCatalog(
+            data: Self.bundledCatalogData,
+            loader: { request in (Self.futureCatalogData, Self.response(for: request, status: 200)) }
+        )
+        let futureCarrier = CarrierID(rawValue: "future-express")
+        let link = "https://tracking.future.example/FX12345678"
+        XCTAssertNotEqual(catalog.detect("FX12345678").carrier, futureCarrier)
+        XCTAssertNotEqual(catalog.parse(link).carrier, futureCarrier)
+
+        let result = await catalog.refresh(from: URL(string: "https://delivery.example")!, force: true)
+        XCTAssertEqual(result, .updated)
+        XCTAssertEqual(catalog.detect("FX12345678").carrier, futureCarrier)
+        XCTAssertEqual(catalog.parse(link).carrier, futureCarrier)
+    }
+
+    @MainActor
     func testRejectsAnInvalidRemoteCatalogAndKeepsTheBundledDefinitions() async throws {
         let original = try CarrierCatalog(
             data: Self.bundledCatalogData,

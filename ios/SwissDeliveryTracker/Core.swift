@@ -134,7 +134,8 @@ final class Localizer: ObservableObject {
         } else {
             category = "other"
         }
-        let baseKey = key.replacingOccurrences(of: "\\.(one|few|many)$", with: "", options: .regularExpression)
+        let baseKey = ["one", "few", "many"].first { key.hasSuffix(".\($0)") }
+            .map { String(key.dropLast($0.count + 1)) } ?? key
         let pluralKey = "\(baseKey).\(category)"
         let selectedKey = category != "other" && messages[pluralKey] != nil ? pluralKey : key
         var result = messages[selectedKey]
@@ -252,12 +253,35 @@ final class Localizer: ObservableObject {
         return shortDate(date)
     }
 
+    private static let deliveryWindowPattern = try? NSRegularExpression(
+        pattern: "^(\\d{4}-\\d{2}-\\d{2})[ T]+(\\d{2}:\\d{2})(?:[–-](\\d{2}:\\d{2}))?$"
+    )
+
+    /// Formatters cost far more to create than to use, and cards format dates on
+    /// every render. Keep one per pattern, language and time zone.
+    private var formatters: [String: DateFormatter] = [:]
+
+    private func formatter(_ pattern: String, posix: Bool = false, gregorian: Bool = false) -> DateFormatter {
+        let timeZone = TimeZone.current
+        let key = "\(posix ? "posix" : language.rawValue)|\(gregorian)|\(timeZone.identifier)|\(pattern)"
+        if let formatter = formatters[key] { return formatter }
+        let formatter = DateFormatter()
+        formatter.locale = posix ? Locale(identifier: "en_US_POSIX") : language.locale
+        if gregorian { formatter.calendar = Calendar(identifier: .gregorian) }
+        formatter.timeZone = timeZone
+        formatter.dateFormat = pattern
+        formatters[key] = formatter
+        return formatter
+    }
+
+    /// Hours and minutes in the app language, as event rows show them.
+    func clockTime(_ date: Date) -> String {
+        formatter("HH:mm").string(from: date)
+    }
+
     func expectedDelivery(_ value: String, now: Date = Date()) -> String {
-        let expression = try? NSRegularExpression(
-            pattern: "^(\\d{4}-\\d{2}-\\d{2})[ T]+(\\d{2}:\\d{2})(?:[–-](\\d{2}:\\d{2}))?$"
-        )
         let range = NSRange(value.startIndex..., in: value)
-        if let match = expression?.firstMatch(in: value, range: range),
+        if let match = Self.deliveryWindowPattern?.firstMatch(in: value, range: range),
            let dayRange = Range(match.range(at: 1), in: value),
            let timeRange = Range(match.range(at: 2), in: value) {
             let day = expectedDelivery(String(value[dayRange]), now: now)
@@ -271,14 +295,8 @@ final class Localizer: ObservableObject {
 
         guard let date = DateParser.deliveryDate(value) else { return value }
         if value.contains("T"), let timestamp = DateParser.date(value) {
-            let formatter = DateFormatter()
-            formatter.locale = language.locale
-            formatter.dateFormat = "HH:mm"
-            let dayFormatter = DateFormatter()
-            dayFormatter.calendar = Calendar(identifier: .gregorian)
-            dayFormatter.locale = Locale(identifier: "en_US_POSIX")
-            dayFormatter.dateFormat = "yyyy-MM-dd"
-            return "\(expectedDelivery(dayFormatter.string(from: timestamp), now: now)), \(formatter.string(from: timestamp))"
+            let day = formatter("yyyy-MM-dd", posix: true, gregorian: true).string(from: timestamp)
+            return "\(expectedDelivery(day, now: now)), \(clockTime(timestamp))"
         }
         return deliveryDate(date, now: now)
     }
@@ -298,24 +316,16 @@ final class Localizer: ObservableObject {
     }
 
     func shortDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = language.locale
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.dateFormat = "EEE"
-        let weekday = formatter.string(from: date).replacingOccurrences(of: ".", with: "")
-        formatter.dateFormat = "d"
-        let day = formatter.string(from: date)
-        formatter.dateFormat = "MMM"
-        let month = formatter.string(from: date).replacingOccurrences(of: ".", with: "").lowercased(with: language.locale)
+        let weekday = formatter("EEE", gregorian: true).string(from: date).replacingOccurrences(of: ".", with: "")
+        let day = formatter("d", gregorian: true).string(from: date)
+        let month = formatter("MMM", gregorian: true).string(from: date)
+            .replacingOccurrences(of: ".", with: "").lowercased(with: language.locale)
         return "\(weekday.prefix(1).uppercased(with: language.locale))\(weekday.dropFirst()) \(day) \(month)"
     }
 
     func dateTime(_ value: String) -> String {
         guard let date = DateParser.date(value) else { return value }
-        let formatter = DateFormatter()
-        formatter.locale = language.locale
-        formatter.dateFormat = "HH:mm"
-        return "\(shortDate(date)), \(formatter.string(from: date))"
+        return "\(shortDate(date)), \(clockTime(date))"
     }
 
     func parcelStatus(_ parcel: Parcel) -> String {
@@ -364,15 +374,33 @@ enum DateParser {
         cache.countLimit = 4_096
         return cache
     }()
+    /// Day-only estimates such as "2026-09-27" never parse as timestamps.
+    private static let unparsedDates: NSCache<NSString, NSNull> = {
+        let cache = NSCache<NSString, NSNull>()
+        cache.countLimit = 1_024
+        return cache
+    }()
     private static let parserLock = NSLock()
+    private static let dayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+    private static let dayLock = NSLock()
 
     static func date(_ value: String) -> Date? {
         // Rendering asks for the same event timestamps repeatedly. Reconfiguring
         // a formatter here discards its internal state on every comparison.
         let key = value as NSString
         if let cached = parsedDates.object(forKey: key) { return cached as Date }
+        if unparsedDates.object(forKey: key) != nil { return nil }
         return parserLock.withLock {
-            guard let date = internetWithFraction.date(from: value) ?? internet.date(from: value) else { return nil }
+            guard let date = internetWithFraction.date(from: value) ?? internet.date(from: value) else {
+                unparsedDates.setObject(NSNull(), forKey: key)
+                return nil
+            }
             parsedDates.setObject(date as NSDate, forKey: key)
             return date
         }
@@ -381,11 +409,11 @@ enum DateParser {
     static func deliveryDate(_ value: String) -> Date? {
         if let timestamp = date(value) { return timestamp }
         let day = String(value.prefix(10))
-        let formatter = DateFormatter()
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.date(from: day)
+        return dayLock.withLock {
+            // Days are local, so follow a time zone change while the app runs.
+            if dayFormatter.timeZone != TimeZone.current { dayFormatter.timeZone = TimeZone.current }
+            return dayFormatter.date(from: day)
+        }
     }
 
     static func isoString(_ date: Date) -> String {
