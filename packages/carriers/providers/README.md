@@ -13,7 +13,7 @@ persisted names. Protocol details live in each provider README.
 | [UPU](upu/README.md) | Anonymous JSON GET; final postal fallback | `direct` |
 
 [Carrier coverage matrix](COVERAGE.md): direct tracking and every universal
-provider compared on the top 15 carriers, with event counts and notes about
+provider compared on the top 30 carriers, with event counts and notes about
 missing milestones, foreign delivery legs and repeated details.
 
 The initial order is **Ship24 → ParcelsApp → 17TRACK → UPU**.
