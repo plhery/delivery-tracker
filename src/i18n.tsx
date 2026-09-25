@@ -2,18 +2,19 @@ import { localizedCalendarDate } from './lib/format';
 import { trackAction } from './lib/analytics';
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from 'react';
 import type { Stage } from './types';
 import trackingMessages from '../shared/tracking-messages.json';
+import { detectLocale, isLocale, LOCALE_COOKIE, SUPPORTED_LOCALES, type Locale } from './lib/locale';
 
-export const SUPPORTED_LOCALES = ['en', 'de', 'fr', 'it', 'es', 'pt', 'pl'] as const;
-export type Locale = (typeof SUPPORTED_LOCALES)[number];
+export { detectLocale, SUPPORTED_LOCALES, type Locale };
 
 const STORAGE_KEY = 'deliveryTrackerLocale';
 
@@ -67,55 +68,57 @@ const defaultValue: I18nValue = {
 
 const I18nContext = createContext<I18nValue>(defaultValue);
 
-export function detectLocale(languages: readonly string[] = []): Locale {
-  for (const language of languages) {
-    const base = language.toLowerCase().split('-')[0];
-    if (SUPPORTED_LOCALES.includes(base as Locale)) return base as Locale;
-  }
-  return 'en';
-}
-
-function browserLocale(): Locale {
+function savedLocale(): Locale | null {
   try {
     const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (SUPPORTED_LOCALES.includes(saved as Locale)) return saved as Locale;
+    return isLocale(saved) ? saved : null;
   } catch {
     // Locale detection still works when storage is unavailable.
+    return null;
   }
-  return detectLocale(navigator.languages?.length ? navigator.languages : [navigator.language]);
 }
 
-export function I18nProvider({ children }: { children: ReactNode }) {
-  // The fixed initial locale keeps server and browser markup identical. The
-  // user's preference is restored immediately after hydration.
-  const [locale, setLocale] = useState<Locale>('en');
-  const hydrated = useRef(false);
+/** Lets the server render the next page in a chosen language. */
+function rememberLocaleCookie(locale: Locale) {
+  if (document.cookie.split('; ').includes(`${LOCALE_COOKIE}=${locale}`)) return;
+  const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = `${LOCALE_COOKIE}=${locale}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
+}
 
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      const restoredLocale = browserLocale();
-      hydrated.current = true;
-      setLocale(restoredLocale);
-    }, 0);
-    return () => window.clearTimeout(timeout);
-  }, []);
+export function I18nProvider({ children, initialLocale }: { children: ReactNode; initialLocale?: Locale }) {
+  // The server renders the language it expects the browser to choose, and
+  // hydration starts from the same one. A different saved choice replaces it
+  // before the first paint after hydration, never after the app is visible.
+  const [locale, setLocale] = useState<Locale>(initialLocale ?? 'en');
+
+  useLayoutEffect(() => {
+    const saved = savedLocale();
+    if (saved) rememberLocaleCookie(saved);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only preference, applied before paint
+    setLocale(saved ?? initialLocale
+      ?? detectLocale(navigator.languages?.length ? navigator.languages : [navigator.language]));
+  }, [initialLocale]);
 
   useEffect(() => {
     document.documentElement.lang = locale;
-    if (!hydrated.current) return;
+  }, [locale]);
+
+  const chooseLocale = useCallback((next: Locale) => {
+    setLocale(next);
+    rememberLocaleCookie(next);
     try {
-      window.localStorage.setItem(STORAGE_KEY, locale);
+      window.localStorage.setItem(STORAGE_KEY, next);
     } catch {
       // Keep language switching functional even without persistent storage.
     }
-  }, [locale]);
+  }, []);
 
   const value = useMemo<I18nValue>(() => ({
     locale,
     languageTag: languageTags[locale],
-    setLocale,
+    setLocale: chooseLocale,
     t: (key, variables) => translate(locale, key, variables),
-  }), [locale]);
+  }), [locale, chooseLocale]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }

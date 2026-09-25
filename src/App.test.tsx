@@ -903,6 +903,25 @@ describe('App', () => {
     });
   });
 
+  it('shows an added parcel without waiting for the collection to reload', async () => {
+    const base = createDemoRepo(window.localStorage);
+    const firstList = base.list();
+    const list = vi.fn().mockReturnValueOnce(firstList).mockReturnValue(new Promise(() => undefined));
+    const user = userEvent.setup();
+    renderApp({ ...base, list });
+    await screen.findByText('Coffee beans ☕');
+
+    await user.click(screen.getByRole('button', { name: /add a parcel/i }));
+    const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
+    await user.type(within(sheet).getByLabelText(/^name/i), 'Fondue set 🫕');
+    await user.type(within(sheet).getByLabelText(/tracking number/i), '99.34.111111.22222222');
+    await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
+
+    expect(await screen.findByText('Fondue set 🫕')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: /add a parcel/i })).not.toBeInTheDocument());
+    expect(list).toHaveBeenCalledTimes(2);
+  });
+
   it('keeps the add sheet open and reports repository failures', async () => {
     const base = createDemoRepo(window.localStorage);
     const user = userEvent.setup();
@@ -1463,6 +1482,33 @@ describe('App', () => {
     expect(await screen.findByRole('button', { name: /^(?:Next up: )?Saved coffee —/ })).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('Your saved parcels are still available');
     expect(screen.queryByText('No parcels yet')).not.toBeInTheDocument();
+  });
+
+  it('opens on the saved parcels while the first request is still running', () => {
+    const cached: ParcelWithEvents = {
+      id: 'cached-parcel',
+      trackingNumber: '993412345612345678',
+      label: 'Saved coffee',
+      carrier: 'swiss-post',
+      createdAt: '2026-07-15T00:00:00Z',
+      syncStatus: 'ok',
+      events: [],
+    };
+    const repo: ParcelRepo = {
+      mode: 'api',
+      list: vi.fn(() => new Promise<ParcelWithEvents[]>(() => undefined)),
+      cachedList: () => [cached],
+      add: vi.fn(),
+      rename: vi.fn(),
+      remove: vi.fn(),
+      refresh: vi.fn(),
+    };
+
+    renderApp(repo);
+
+    expect(screen.getByRole('button', { name: /^(?:Next up: )?Saved coffee —/ })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Loading parcels')).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('offers the sign-in screen when the API session expires', async () => {

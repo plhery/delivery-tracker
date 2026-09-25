@@ -48,14 +48,16 @@ export function ParcelsProvider({
   repo: ParcelRepo;
   children: ReactNode;
 }) {
-  const [parcels, setParcels] = useState<ParcelWithEvents[]>([]);
-  const [loading, setLoading] = useState(true);
+  // The last saved collection appears at once; the first request then replaces it.
+  const [savedParcels] = useState(() => repo.cachedList?.() ?? null);
+  const [parcels, setParcels] = useState<ParcelWithEvents[]>(savedParcels ?? []);
+  const [loading, setLoading] = useState(savedParcels === null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [authenticationRequired, setAuthenticationRequired] = useState(false);
   const [usingCachedData, setUsingCachedData] = useState(false);
   const mounted = useRef(true);
-  const parcelsRef = useRef<ParcelWithEvents[]>([]);
+  const parcelsRef = useRef<ParcelWithEvents[]>(savedParcels ?? []);
   const revision = useRef(0);
   const loadSequence = useRef(0);
 
@@ -128,12 +130,18 @@ export function ParcelsProvider({
     return unsubscribe;
   }, [repo, reload]);
 
+  // Show the service's answer immediately; the collection reload runs behind it.
   const addParcel = useCallback(
     async (input: NewParcelInput) => {
       try {
         const parcel = await repo.add(input);
         revision.current += 1;
-        await reload();
+        if (mounted.current) {
+          setParcels((current) => [...current.filter((candidate) => candidate.id !== parcel.id), parcel]);
+          setError(null);
+          setAuthenticationRequired(false);
+        }
+        void reload();
         return parcel;
       } catch (error) {
         if (!(error instanceof ParcelAlreadyExistsError)) rememberError(error);
@@ -148,7 +156,14 @@ export function ParcelsProvider({
       try {
         await repo.remove(id);
         revision.current += 1;
-        await reload();
+        if (mounted.current) {
+          const archivedAt = new Date().toISOString();
+          setParcels((current) => current.map((parcel) =>
+            parcel.id === id && !parcel.archivedAt ? { ...parcel, archivedAt } : parcel));
+          setError(null);
+          setAuthenticationRequired(false);
+        }
+        void reload();
       } catch (error) {
         rememberError(error);
         throw error;

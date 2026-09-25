@@ -28,13 +28,14 @@ export function ApiApplication({ invitationRoute = false }: { invitationRoute?: 
   const signOut = auth.signOut;
   const navigate = experience.navigate;
   const storage = browserStorage();
+  const userId = auth.user?.id;
   const sessionAuth = useMemo(
-    () => auth.user ? {
-      userId: auth.user.id,
+    () => userId ? {
+      userId,
       getAccessToken: auth.getAccessToken,
       signal: auth.signal,
     } : undefined,
-    [auth.user, auth.getAccessToken, auth.signal],
+    [userId, auth.getAccessToken, auth.signal],
   );
   const handleSignOut = useCallback(async () => {
     if (sessionAuth) {

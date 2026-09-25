@@ -112,6 +112,26 @@ describe('localization', () => {
     });
   });
 
+  it('starts in the server language and applies a saved choice before paint', () => {
+    const first = render(<I18nProvider initialLocale="fr"><TranslationProbe /></I18nProvider>);
+    expect(screen.getByText('Suivi de colis')).toBeInTheDocument();
+    first.unmount();
+
+    window.localStorage.setItem('deliveryTrackerLocale', 'de');
+    render(<I18nProvider initialLocale="fr"><TranslationProbe /></I18nProvider>);
+    // No waiting: the saved language is in place when rendering returns.
+    expect(screen.getByText('Sendungsverfolgung')).toBeInTheDocument();
+    expect(document.cookie).toContain('sdt.locale=de');
+  });
+
+  it('keeps the chosen language for server-rendered pages', async () => {
+    const user = userEvent.setup();
+    render(<I18nProvider><LanguageControl /></I18nProvider>);
+    await user.selectOptions(screen.getByLabelText('Language'), 'it');
+    expect(document.cookie).toContain('sdt.locale=it');
+    expect(window.localStorage.getItem('deliveryTrackerLocale')).toBe('it');
+  });
+
   it('preserves precise carrier estimates in the recipient timezone', () => {
     const t = ((key: string) => key) as Translate;
     const timestamp = new Date('2026-09-07T12:30:00Z');

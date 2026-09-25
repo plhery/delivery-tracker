@@ -87,6 +87,25 @@ describe('createApiRepo', () => {
     });
   });
 
+  it('returns the same collection while polls find nothing new', async () => {
+    const fetch = vi.fn().mockImplementation(async (_path: string, init?: RequestInit) => (
+      init?.method === 'PATCH' ? response(packageRow) : response({ packages: [packageRow] })));
+    vi.stubGlobal('fetch', fetch);
+    const repo = createApiRepo();
+
+    const saved = await repo.list();
+    const setItem = vi.spyOn(Storage.prototype, 'setItem');
+    await expect(repo.list()).resolves.toBe(saved);
+    expect(setItem).not.toHaveBeenCalled();
+
+    await repo.rename(packageRow.id, 'Coffee beans');
+    await expect(repo.list()).resolves.not.toBe(saved);
+
+    const reopened = createApiRepo();
+    const cached = reopened.cachedList?.();
+    await expect(reopened.list()).resolves.toBe(cached);
+  });
+
   it('ignores a corrupted offline snapshot', () => {
     window.localStorage.setItem(API_CACHE_KEY, '[{"id":"incomplete"}]');
     expect(createApiRepo().cachedList?.()).toBeNull();

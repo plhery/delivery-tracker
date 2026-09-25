@@ -46,9 +46,21 @@ export function clearApiCache(storage: Storage | null, userId: string): void {
 }
 
 function cachedParcels(storage: Storage | null, cacheKey: string): ParcelWithEvents[] | null {
-  if (!storage) return null;
+  return parseCachedParcels(readCache(storage, cacheKey));
+}
+
+function readCache(storage: Storage | null, cacheKey: string): string | null {
   try {
-    const value: unknown = JSON.parse(storage.getItem(cacheKey) ?? 'null');
+    return storage?.getItem(cacheKey) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function parseCachedParcels(serialized: string | null): ParcelWithEvents[] | null {
+  if (serialized === null) return null;
+  try {
+    const value: unknown = JSON.parse(serialized);
     if (!Array.isArray(value)) return null;
     const valid = value.every((parcel) => {
       if (!parcel || typeof parcel !== 'object') return false;
@@ -70,11 +82,11 @@ function cachedParcels(storage: Storage | null, cacheKey: string): ParcelWithEve
 function saveCachedParcels(
   storage: Storage | null,
   cacheKey: string,
-  parcels: ParcelWithEvents[],
+  parcels: ParcelWithEvents[] | string,
 ) {
   if (!storage) return;
   try {
-    storage.setItem(cacheKey, JSON.stringify(parcels));
+    storage.setItem(cacheKey, typeof parcels === 'string' ? parcels : JSON.stringify(parcels));
   } catch {
     // Storage can be unavailable in private browsing or on a full device.
   }
@@ -175,6 +187,8 @@ export function createApiRepo(
   let lifecycle = new AbortController();
   let revision = 0;
   let listSequence = 0;
+  // An unchanged poll returns the same array, so the screen does not re-render.
+  let latest: { serialized: string; parcels: ParcelWithEvents[] } | null = null;
   const cacheKey = auth ? `${API_CACHE_KEY}.${auth.userId}` : API_CACHE_KEY;
 
   async function request<T>(path: string, requestAuth: ApiAuth | undefined, init?: RequestInit): Promise<T> {
@@ -184,7 +198,10 @@ export function createApiRepo(
     signal.throwIfAborted();
     const value = await apiRequest<T>(path, requestAuth, { ...init, signal });
     signal.throwIfAborted();
-    if (init?.method && init.method !== 'GET') revision += 1;
+    if (init?.method && init.method !== 'GET') {
+      revision += 1;
+      latest = null;
+    }
     return value;
   }
 
@@ -289,7 +306,10 @@ export function createApiRepo(
       throw new DOMException('A newer parcel request or mutation completed', 'AbortError');
     }
     const parcels = payload.packages.map(toParcel);
-    saveCachedParcels(storage, cacheKey, parcels);
+    const serialized = JSON.stringify(parcels);
+    if (latest?.serialized === serialized) return latest.parcels;
+    latest = { serialized, parcels };
+    saveCachedParcels(storage, cacheKey, serialized);
     return parcels;
   }
 
@@ -304,7 +324,13 @@ export function createApiRepo(
   return {
     mode: 'api',
     list,
-    cachedList: () => lifecycle.signal.aborted || auth?.signal?.aborted ? null : cachedParcels(storage, cacheKey),
+    cachedList() {
+      if (lifecycle.signal.aborted || auth?.signal?.aborted) return null;
+      const serialized = readCache(storage, cacheKey);
+      const parcels = parseCachedParcels(serialized);
+      if (parcels && serialized !== null && revision === 0) latest = { serialized, parcels };
+      return parcels;
+    },
 
     async add(input: NewParcelInput): Promise<ParcelWithEvents> {
       const trackingNumber = normalizeTrackingNumber(input.trackingNumber);

@@ -1,10 +1,11 @@
 import { trackAction } from '../lib/analytics';
-import { createClient, type Session, type SupabaseClient, type User } from '@supabase/supabase-js';
+import { createClient, type AuthChangeEvent, type Session, type SupabaseClient, type User } from '@supabase/supabase-js';
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   useRef,
@@ -60,6 +61,20 @@ function configuredClient(config: AuthConfig | null, storage: SessionStorage | n
       flowType: 'pkce',
     },
   });
+}
+
+/** The saved sign-in, read without the network; the SDK verifies and refreshes it separately. */
+function savedSession(storage: SessionStorage | null): Session | null {
+  if (!storage) return null;
+  try {
+    const value: unknown = JSON.parse(storage.getItem(storage.key) ?? 'null');
+    if (!value || typeof value !== 'object') return null;
+    const session = value as Partial<Session>;
+    return typeof session.access_token === 'string' && typeof session.refresh_token === 'string'
+      && typeof session.user?.id === 'string' ? session as Session : null;
+  } catch {
+    return null;
+  }
 }
 
 function sessionState(client: SupabaseClient | null, session: Session | null) {
@@ -120,27 +135,42 @@ export function AuthProvider({
     setState({ ...next, signal: identity.current.controller.signal });
   }, [client, storage]);
 
+  // Returning users open straight into their account. Waiting for the SDK would
+  // hold the first screen on a token refresh, or on its retries while offline.
+  // Sign-in redirects exchange a new session and must not show the previous one.
+  useLayoutEffect(() => {
+    if (!client || /[?&](code|error)=/.test(window.location.search)
+      || /(access_token|error)=/.test(window.location.hash)) return;
+    const session = savedSession(storage);
+    if (session) acceptSession(session);
+  }, [client, storage, acceptSession]);
+
   useEffect(() => {
     if (!client) return;
 
     let active = true;
     let observedSession = false;
+    // A refresh that fails offline keeps the saved sign-in. Only an explicit
+    // sign-out, or the SDK discarding a rejected session, ends the account view.
+    const accept = (session: Session | null, event?: AuthChangeEvent) => {
+      acceptSession(session ?? (event === 'SIGNED_OUT' ? null : savedSession(storage)));
+    };
     void client.auth.getSession().then(({ data, error }) => {
       if (!active || observedSession || logout.current) return;
-      acceptSession(error ? null : data.session);
+      accept(error ? null : data.session);
     });
     let signedIn = false;
     const { data: listener } = client.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session && !signedIn) trackAction('sign-in-complete', 'success');
       signedIn = Boolean(session);
       observedSession = true;
-      if (active && !logout.current) acceptSession(session);
+      if (active && !logout.current) accept(session, event);
     });
     return () => {
       active = false;
       listener.subscription.unsubscribe();
     };
-  }, [client, acceptSession]);
+  }, [client, storage, acceptSession]);
 
   const sendCode = useCallback(async (email: string) => {
     trackAction('sign-in-code-send', 'started');
@@ -220,23 +250,22 @@ export function AuthProvider({
     try { await operation; } finally { logout.current = null; }
   }, [client, acceptSession, storage, state.accessToken]);
 
+  // Token refreshes replace the user object; consumers stay bound to the account.
+  const userId = state.user?.id ?? null;
   const getAccessToken = useCallback(async (refresh = false) => {
     state.signal.throwIfAborted();
-    if (!client || !state.user) return null;
+    if (!client || !userId) return null;
     const { data, error } = refresh
       ? await client.auth.refreshSession()
       : await client.auth.getSession();
     state.signal.throwIfAborted();
     if (error) throw error;
-    if (data.session && data.session.user.id !== state.user.id) {
+    if (data.session && data.session.user.id !== userId) {
       throw new DOMException('The signed-in account changed', 'AbortError');
     }
     return data.session?.access_token ?? null;
-  }, [client, state.user, state.signal]);
+  }, [client, userId, state.signal]);
 
-  // These callbacks read lifecycle refs only when invoked by consumers.
-  // The compiler currently treats passing them through useMemo as invoking them.
-  /* eslint-disable react-hooks/refs */
   const value = useMemo(
     () => ({
       ...state,
@@ -264,7 +293,6 @@ export function AuthProvider({
     ],
   );
 
-  /* eslint-enable react-hooks/refs */
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

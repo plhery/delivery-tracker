@@ -6,7 +6,7 @@ import App from './App';
 import { ApiApplication } from './ApiApplication';
 import { AuthProvider } from './auth/AuthContext';
 import { authConfigFromEnvironment } from './auth/authConfig';
-import { I18nProvider } from './i18n';
+import { I18nProvider, type Locale } from './i18n';
 import { enableAppBadgeClearing } from './lib/pushNotifications';
 import { enablePwaLiveReload, registerPwaServiceWorker } from './lib/pwaUpdates';
 import { createDemoRepo } from './store/demoRepo';
@@ -40,7 +40,7 @@ const authConfig = authConfigFromEnvironment({
   emailOtpEnabled: process.env.NEXT_PUBLIC_AUTH_EMAIL_OTP_ENABLED,
 });
 
-export function ClientApplication({ invitationRoute = false }: { invitationRoute?: boolean }) {
+export function ClientApplication({ invitationRoute = false, initialLocale }: { invitationRoute?: boolean; initialLocale?: Locale }) {
   const demoRepo = useMemo(
     () => useDemo ? createDemoRepo() : null,
     [],
@@ -61,7 +61,7 @@ export function ClientApplication({ invitationRoute = false }: { invitationRoute
   }, []);
 
   return (
-    <I18nProvider>
+    <I18nProvider initialLocale={initialLocale}>
       <AppearanceProvider>
       {demoRepo ? <DemoInvitation invitationRoute={invitationRoute}>
         {(
