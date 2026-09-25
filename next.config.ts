@@ -12,6 +12,13 @@ const withSerwist = withSerwistInit({
   // Only files the browser uses. Fonts, social images and email templates in
   // public/ are read by the server, and the manifest is rendered per request.
   globPublicPatterns: ['icons/*', 'privacy.html', 'privacy.css', 'theme.css', 'push-sw.js'],
+  // The App Router never loads the Pages Router runtime (framework, main), and
+  // modern browsers skip the nomodule polyfills. Route handlers get empty
+  // client chunks.
+  exclude: [
+    /^static\/chunks\/(?:framework|main|polyfills)-[0-9a-f]+\.js$/,
+    /^static\/chunks\/app\/(?:api|health|manifest\.webmanifest)\//,
+  ],
   // Next's dynamic documents are not part of the public-file precache. Their
   // HTML needs the response's CSP nonce; refresh them whenever the built assets
   // change, so the app shell always matches the precached scripts.

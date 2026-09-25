@@ -47,6 +47,8 @@ assert.match(worker, /["']?revision["']?:["'][a-f0-9]{64}["'],["']?url["']?:["']
 assert.match(worker, /["']?revision["']?:["'][a-f0-9]{64}["'],["']?url["']?:["']\/["']/, 'the app shell must be precached with the build it loads');
 assert.match(workerSource, /matchPrecache\('\/'\)/, 'app launches must open the precached shell');
 assert.doesNotMatch(worker, /["']\/(?:fonts\/|auth-emails\/|og\.(?:png|svg))/, 'server-only public files must not be downloaded by browsers');
+assert.doesNotMatch(worker, /\/_next\/static\/chunks\/(?:(?:framework|main|polyfills)-[0-9a-f]+\.js|app\/api\/)/, 'chunks the App Router never loads must not be precached');
+assert.match(worker, /\/_next\/static\/chunks\/main-app-[0-9a-f]+\.js/, 'the App Router entry must stay precached');
 assert.ok(!JSON.parse(serverFiles).config.deploymentId, 'a deployment id in asset addresses would re-download unchanged files after every deployment');
 assert.match(offline, /await connection\(\)/, 'offline HTML must render with its matching CSP nonce');
 assert.match(offline, /FeedbackScreen/, 'offline must use the shared translated screen');
