@@ -290,9 +290,10 @@ export function reportRoutingEvent(code: string, context: {
         context.provider, context.category ?? 'none']);
       const alert = ['carrier_mismatch_confirmed',
         'direct_support_opportunity', 'carrier_input_required', 'fresher_provider_found',
-        'health_store_unavailable', 'carrier_coverage_discovered'].includes(code);
+        'health_store_unavailable'].includes(code);
       scope.setLevel(alert ? 'warning' : 'info');
-      // Recoveries stay in logs and breadcrumbs: a Sentry issue per recovery is noise.
+      // Recoveries and reported carrier names stay in logs and breadcrumbs (the
+      // names also persist in routing state): nobody acts on them as they happen.
       if (alert || code === 'carrier_auto_swapped') {
         const message = `Tracking routing: ${code}`;
         if (context.error !== undefined) {

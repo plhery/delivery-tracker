@@ -129,6 +129,12 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   warn.mockRestore();
   reportRoutingEvent('carrier_auto_swapped', { carrier: 'dhl', provider: 'ups', trackingNumber: 'TEST-first' });
   reportRoutingEvent('provider_recovered', { carrier: 'dhl', provider: '17TRACK' });
+  const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  reportRoutingEvent('carrier_coverage_discovered', { carrier: 'dhl', provider: 'Example Post' });
+  // A reported carrier name is review material for the log, not an issue.
+  expect(JSON.parse(String(log.mock.calls.at(-1)?.[0]))).toMatchObject({ event: 'tracking_routing',
+    decision: 'carrier_coverage_discovered', carrier: 'dhl', provider: 'Example Post' });
+  log.mockRestore();
   reportRoutingEvent('direct_support_opportunity', { carrier: 'fedex', provider: 'fedex' });
   await flushObservability();
   const rateLimit = captured.events.find((event) => event.message === 'Tracking routing: provider_failed')!;
@@ -137,6 +143,7 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   expect(swap.tags).toMatchObject({ carrier: 'dhl', provider: 'ups', tracking_number: 'TEST-first' });
   expect(rateLimit).toBeUndefined();
   expect(captured.events.some((event) => event.message === 'Tracking routing: provider_recovered')).toBe(false);
+  expect(captured.events.some((event) => event.message === 'Tracking routing: carrier_coverage_discovered')).toBe(false);
   expect(captured.events.some((event) => event.message === 'Tracking routing: direct_support_opportunity')).toBe(true);
 
   const refusedBody = '<h1>Access Denied</h1><p>Reference #18.test.123; parcel 8U00000000000</p>';

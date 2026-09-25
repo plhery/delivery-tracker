@@ -125,11 +125,10 @@ Useful issue searches:
 - `component:tracking-routing operation:carrier_auto_swapped` — a correction was committed successfully (informational).
 - `component:tracking-routing operation:carrier_mismatch_confirmed` — improve carrier detection rules.
 - `component:tracking-routing operation:direct_support_opportunity` — candidate dedicated adapters.
-- `component:tracking-routing operation:carrier_coverage_discovered` — reported carrier names not mapped unambiguously; names are hints, not proven new adapters.
 - `component:tracking-routing operation:fresher_provider_found` — evidence to reconsider default ordering.
 - `component:tracking-routing operation:provider_recovered` — recovery signal (informational; does not auto-resolve an issue).
 
-Existing sync attempt/step audits remain in place. Cross-provider failures are reported before recovery, so a successful fallback does not conceal them. Internal tier warning timing is documented in [scraper monitoring](scraper-monitoring.md). Shadow checks and provider cooldowns limit issue volume. Coverage names are reported once per parcel's retained name set. The reporter uses the existing `SENTRY_DSN`; this change does not create organization-level alert recipients or notification rules.
+Existing sync attempt/step audits remain in place. Cross-provider failures are reported before recovery, so a successful fallback does not conceal them. Internal tier warning timing is documented in [scraper monitoring](scraper-monitoring.md). Shadow checks and provider cooldowns limit issue volume. Carrier names a universal provider reports without an unambiguous mapping are hints, not proven new adapters: they are logged as `tracking_routing` lines with `decision: carrier_coverage_discovered`, once per parcel's retained name set, and kept in the parcel's routing state (`reported_carriers_seen`) for review. They do not open Sentry issues, because nobody acts on one as it happens. The reporter uses the existing `SENTRY_DSN`; this change does not create organization-level alert recipients or notification rules.
 
 See [scraper monitoring](scraper-monitoring.md) for per-provider average/p95 timings, direct-path failures and recovery usage.
 
