@@ -1,7 +1,7 @@
 import { amazonOrdersUrl, isAmazonTrackingNumber, requiresAmazonAccount } from '../lib/amazon';
 import { trackAction } from '../lib/analytics';
 import { userErrorMessage } from '../lib/userMessages';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FocusEvent, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import {
   type CarrierInputField,
@@ -26,6 +26,21 @@ import './AddParcelSheet.css';
 import { lookupCarrier } from '../lib/carrierDetection';
 import type { ApiAuth } from '../lib/apiClient';
 import type { ApiCarrierDetectionResponse } from '../generated/apiContract';
+
+/** Scroll only the sheet's field list, never the page under the fixed sheet. */
+function revealFocusedField(list: HTMLElement | null) {
+  const field = document.activeElement;
+  if (!list || !(field instanceof HTMLElement) || !list.contains(field)) return;
+  const focusRing = 4;
+  const visible = list.getBoundingClientRect();
+  const target = field.getBoundingClientRect();
+  if (target.bottom + focusRing > visible.bottom) list.scrollTop += target.bottom + focusRing - visible.bottom;
+  else if (target.top - focusRing < visible.top) list.scrollTop -= visible.top - target.top + focusRing;
+}
+
+function isTextField(element: unknown): element is HTMLInputElement | HTMLTextAreaElement {
+  return element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement;
+}
 
 export function AddParcelSheet({
   onAdd,
@@ -66,6 +81,8 @@ export function AddParcelSheet({
   const [pasteError, setPasteError] = useState<string | null>(null);
   const trackingInput = useRef<HTMLTextAreaElement>(null);
   const backdrop = useRef<HTMLDivElement>(null);
+  const fields = useRef<HTMLDivElement>(null);
+  const refocusing = useRef(false);
   const saved = useRef<string | null>(null);
   const mounted = useRef(true);
   useEffect(() => {
@@ -88,6 +105,7 @@ export function AddParcelSheet({
       if (viewport.scale !== 1) return;
       element.style.setProperty('--add-viewport-height', `${viewport.height}px`);
       element.style.setProperty('--add-viewport-top', `${viewport.offsetTop}px`);
+      revealFocusedField(fields.current);
     };
     update();
     viewport.addEventListener('resize', update);
@@ -154,6 +172,27 @@ export function AddParcelSheet({
     showCarrierPicker || requiresCarrierConfirmation || carrier?.id === 'unknown'
   );
 
+  // iPhone Safari scrolls the page to center every newly focused field above
+  // the keyboard. That animated scroll drags this fixed sheet away from the
+  // visual viewport and flashes the app header until the sheet catches up.
+  // The phone sheet already fits the visible area, so refocus without
+  // scrolling. Safari only applies preventScroll to a newly focused field, so
+  // the refocus hops through another field before Safari sends its update.
+  function focusWithoutPageScroll(event: FocusEvent<HTMLDivElement>) {
+    const field = event.target;
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (refocusing.current || !ios || !isTextField(field) || !window.matchMedia?.('(max-width: 760px)').matches) return;
+    const other = Array.from(event.currentTarget.querySelectorAll('input, textarea')).find((element) => element !== field);
+    if (!isTextField(other)) return;
+    refocusing.current = true;
+    other.focus({ preventScroll: true });
+    field.focus({ preventScroll: true });
+    refocusing.current = false;
+    // Script focus restores or selects text; leave the caret after it instead.
+    field.setSelectionRange(field.value.length, field.value.length);
+    revealFocusedField(fields.current);
+  }
+
   async function pasteTrackingInput() {
     setPasteError(null);
     try {
@@ -209,6 +248,7 @@ export function AddParcelSheet({
         aria-labelledby="add-parcel-title"
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
+        onFocus={focusWithoutPageScroll}
       >
         <div className="sheet__heading">
           <div>
@@ -224,7 +264,7 @@ export function AddParcelSheet({
           </button>
         </div>
         <form onSubmit={handleSubmit} className="sheet__form">
-          <div className="add-parcel-fields">
+          <div ref={fields} className="add-parcel-fields">
             <div className="add-parcel-tracking">
               <div className="field">
                 <div className="field__label">
