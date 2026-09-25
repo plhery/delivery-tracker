@@ -1,16 +1,24 @@
 import { act, render, screen } from '@testing-library/react';
-import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import type { AuthChangeEvent, Session } from '@supabase/auth-js';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { AuthProvider, useAuth } from './AuthContext';
 
 const client = vi.hoisted(() => ({
+  options: [] as unknown[],
   auth: {
     getSession: vi.fn(),
     onAuthStateChange: vi.fn(),
     updateUser: vi.fn(),
   },
 }));
-vi.mock('@supabase/supabase-js', () => ({ createClient: () => client }));
+vi.mock('@supabase/auth-js', () => ({
+  AuthClient: class {
+    constructor(options: unknown) {
+      client.options.push(options);
+      return client.auth;
+    }
+  },
+}));
 
 const CONFIG = {
   url: 'https://project.supabase.example',
@@ -45,8 +53,24 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.clearAllMocks();
+  client.options.length = 0;
   localStorage.clear();
   window.history.replaceState(null, '', '/');
+});
+
+it('creates a PKCE auth client for the project with the publishable key', () => {
+  client.auth.getSession.mockReturnValue(new Promise(() => undefined));
+  render(<AuthProvider config={CONFIG}><Status /></AuthProvider>);
+
+  expect(client.options[0]).toMatchObject({
+    url: 'https://project.supabase.example/auth/v1',
+    headers: { Authorization: 'Bearer public-key', apikey: 'public-key' },
+    storageKey: STORAGE_KEY,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    persistSession: true,
+    flowType: 'pkce',
+  });
 });
 
 it('opens a returning account from its saved sign-in while the token refreshes', () => {

@@ -1,5 +1,5 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
-import { type Session } from '@supabase/supabase-js';
+import { type Session } from '@supabase/auth-js';
 import { NextRequest } from 'next/server';
 import { afterEach, expect, it, vi } from 'vitest';
 import { ParcelsProvider, useParcels } from '../store/ParcelsContext';

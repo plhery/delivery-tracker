@@ -1,5 +1,5 @@
 import { trackAction } from '../lib/analytics';
-import { createClient, type AuthChangeEvent, type Session, type SupabaseClient, type User } from '@supabase/supabase-js';
+import { AuthClient, type AuthChangeEvent, type GoTrueClient, type Session, type User } from '@supabase/auth-js';
 import {
   createContext,
   useCallback,
@@ -44,23 +44,26 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-function configuredClient(config: AuthConfig | null, storage: SessionStorage | null): SupabaseClient | null {
+/** The web app only signs in; the auth client alone avoids shipping the unused database, storage and realtime clients. */
+type SupabaseAuth = { auth: GoTrueClient };
+
+function configuredClient(config: AuthConfig | null, storage: SessionStorage | null): SupabaseAuth | null {
   if (!config?.url || !config.publishableKey) return null;
-  return createClient(config.url, config.publishableKey, {
-    global: {
+  return {
+    auth: new AuthClient({
+      url: new URL('/auth/v1', config.url).href,
+      headers: { Authorization: `Bearer ${config.publishableKey}`, apikey: config.publishableKey },
       fetch: (input, init) => {
         const signal = AbortSignal.any([AbortSignal.timeout(10_000), ...(init?.signal ? [init.signal] : [])]);
         return abortable(fetch(input, { ...init, signal }), signal);
       },
-    },
-    auth: {
       ...(storage ? { storage, storageKey: storage.key } : {}),
       autoRefreshToken: true,
       detectSessionInUrl: true,
       persistSession: true,
       flowType: 'pkce',
-    },
-  });
+    }),
+  };
 }
 
 /** The saved sign-in, read without the network; the SDK verifies and refreshes it separately. */
@@ -77,7 +80,7 @@ function savedSession(storage: SessionStorage | null): Session | null {
   }
 }
 
-function sessionState(client: SupabaseClient | null, session: Session | null) {
+function sessionState(client: SupabaseAuth | null, session: Session | null) {
   if (!client) {
     return {
       status: 'unconfigured' as const,
@@ -104,7 +107,7 @@ export function AuthProvider({
   children,
 }: {
   config: AuthConfig | null;
-  client?: SupabaseClient;
+  client?: SupabaseAuth;
   children: ReactNode;
 }) {
   const storage = useMemo(() => config?.url && !suppliedClient

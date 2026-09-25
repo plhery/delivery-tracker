@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { Session, SupabaseClient } from '@supabase/supabase-js';
+import type { GoTrueClient, Session } from '@supabase/auth-js';
 import { describe, expect, it, vi } from 'vitest';
 import { AuthProvider, useAuth } from './AuthContext';
 
@@ -30,7 +30,7 @@ function authClient(session: Session | null = null) {
     signOut: vi.fn().mockResolvedValue({ error: null }),
     updateUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
   };
-  return { client: { auth } as unknown as SupabaseClient, auth, unsubscribe };
+  return { client: { auth } as unknown as { auth: GoTrueClient }, auth, unsubscribe };
 }
 
 function AuthHarness() {

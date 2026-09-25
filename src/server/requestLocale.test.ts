@@ -6,7 +6,7 @@ vi.mock('next/headers', () => ({
   headers: async () => new Headers(request.acceptLanguage ? { 'accept-language': request.acceptLanguage } : {}),
 }));
 
-const { requestLocale } = await import('./requestLocale');
+const { requestLanguage, requestLocale } = await import('./requestLocale');
 
 afterEach(() => {
   request.cookie = undefined;
@@ -35,4 +35,14 @@ it('prefers a language chosen in the app', async () => {
 
 it('falls back to English without language headers', async () => {
   await expect(requestLocale()).resolves.toBe('en');
+});
+
+it('sends messages only for languages the client does not ship', async () => {
+  request.acceptLanguage = 'en-GB';
+  await expect(requestLanguage()).resolves.toEqual({ initialLocale: 'en' });
+
+  request.acceptLanguage = 'pl-PL';
+  const polish = await requestLanguage();
+  expect(polish.initialLocale).toBe('pl');
+  expect(polish.initialMessages?.['app.eyebrow']).toBe((await import('../../shared/locales/pl.json')).default['app.eyebrow']);
 });

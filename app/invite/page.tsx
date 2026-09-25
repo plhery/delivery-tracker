@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { ClientApplication } from '../../src/ClientApplication';
 import { invitationMetadata } from '../../src/server/invitationMetadata';
-import { requestLocale } from '../../src/server/requestLocale';
+import { requestLanguage } from '../../src/server/requestLocale';
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }): Promise<Metadata> {
   return invitationMetadata((await searchParams).preview);
@@ -10,5 +10,5 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 
 export default async function InvitationPage() {
   await connection();
-  return <ClientApplication invitationRoute initialLocale={await requestLocale()} />;
+  return <ClientApplication invitationRoute {...await requestLanguage()} />;
 }

@@ -7,6 +7,7 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -19,17 +20,30 @@ export { detectLocale, SUPPORTED_LOCALES, type Locale };
 const STORAGE_KEY = 'deliveryTrackerLocale';
 
 import en from '../shared/locales/en.json';
-import de from '../shared/locales/de.json';
-import fr from '../shared/locales/fr.json';
-import it from '../shared/locales/it.json';
-import es from '../shared/locales/es.json';
-import pt from '../shared/locales/pt.json';
-import pl from '../shared/locales/pl.json';
 
 export type MessageKey = keyof typeof en;
-type Messages = Record<MessageKey, string>;
+export type Messages = Record<MessageKey, string>;
 
-const dictionaries: Record<Locale, Messages> = { en, de, fr, it, es, pt, pl };
+// English ships with the app. The server sends the page's own language with
+// the page, and the others load only when someone chooses them.
+const loaders: Record<Exclude<Locale, 'en'>, () => Promise<{ default: Messages }>> = {
+  de: () => import('../shared/locales/de.json'),
+  fr: () => import('../shared/locales/fr.json'),
+  it: () => import('../shared/locales/it.json'),
+  es: () => import('../shared/locales/es.json'),
+  pt: () => import('../shared/locales/pt.json'),
+  pl: () => import('../shared/locales/pl.json'),
+};
+const dictionaries = new Map<Locale, Messages>([['en', en]]);
+
+export async function loadMessages(locale: Locale): Promise<Messages> {
+  const loaded = dictionaries.get(locale);
+  if (loaded) return loaded;
+  const messages = (await loaders[locale as Exclude<Locale, 'en'>]()).default;
+  dictionaries.set(locale, messages);
+  return messages;
+}
+
 const languageTags: Record<Locale, string> = { en: 'en-CH', de: 'de-CH', fr: 'fr-CH', it: 'it-CH', es: 'es-ES', pt: 'pt-PT', pl: 'pl-PL' };
 const polishPluralRules = new Intl.PluralRules('pl-PL');
 
@@ -45,8 +59,13 @@ interface I18nValue {
   t: Translate;
 }
 
-export function translate(locale: Locale, key: MessageKey, variables?: Record<string, string | number>) {
-  const messages = dictionaries[locale];
+/** Translates with a loaded language; an unloaded one falls back to English. */
+export function translate(
+  locale: Locale,
+  key: MessageKey,
+  variables?: Record<string, string | number>,
+  messages: Messages = dictionaries.get(locale) ?? en,
+) {
   const count = variables?.count;
   const category = typeof count === 'number' && locale === 'pl'
     ? polishPluralRules.select(count) : count === 1 ? 'one' : 'other';
@@ -85,40 +104,67 @@ function rememberLocaleCookie(locale: Locale) {
   document.cookie = `${LOCALE_COOKIE}=${locale}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
 }
 
-export function I18nProvider({ children, initialLocale }: { children: ReactNode; initialLocale?: Locale }) {
-  // The server renders the language it expects the browser to choose, and
-  // hydration starts from the same one. A different saved choice replaces it
-  // before the first paint after hydration, never after the app is visible.
-  const [locale, setLocale] = useState<Locale>(initialLocale ?? 'en');
+export function I18nProvider({ children, initialLocale, initialMessages }: {
+  children: ReactNode;
+  initialLocale?: Locale;
+  initialMessages?: Messages;
+}) {
+  // The server renders the language it expects the browser to choose and sends
+  // its messages with the page, so hydration starts from the same text. A
+  // different saved choice that is already loaded replaces it before the
+  // first paint after hydration.
+  const [language, setLanguage] = useState(() => {
+    const locale = initialLocale ?? 'en';
+    if (initialMessages) dictionaries.set(locale, initialMessages);
+    const messages = dictionaries.get(locale);
+    return messages ? { locale, messages } : { locale: 'en' as Locale, messages: en };
+  });
+  const requested = useRef(language.locale);
+
+  const show = useCallback((next: Locale) => {
+    requested.current = next;
+    const loaded = dictionaries.get(next);
+    if (loaded) {
+      setLanguage((current) => current.locale === next ? current : { locale: next, messages: loaded });
+      return;
+    }
+    void loadMessages(next).then((messages) => {
+      if (requested.current === next) setLanguage({ locale: next, messages });
+    }, () => {
+      // A newer build replaced this language file. The cookie already names the
+      // language, so the current build renders it after a reload.
+      if (requested.current === next) window.location.reload();
+    });
+  }, []);
 
   useLayoutEffect(() => {
     const saved = savedLocale();
     if (saved) rememberLocaleCookie(saved);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only preference, applied before paint
-    setLocale(saved ?? initialLocale
+    show(saved ?? initialLocale
       ?? detectLocale(navigator.languages?.length ? navigator.languages : [navigator.language]));
-  }, [initialLocale]);
+  }, [initialLocale, show]);
 
   useEffect(() => {
-    document.documentElement.lang = locale;
-  }, [locale]);
+    document.documentElement.lang = language.locale;
+  }, [language.locale]);
 
   const chooseLocale = useCallback((next: Locale) => {
-    setLocale(next);
     rememberLocaleCookie(next);
     try {
       window.localStorage.setItem(STORAGE_KEY, next);
     } catch {
       // Keep language switching functional even without persistent storage.
     }
-  }, []);
+    show(next);
+  }, [show]);
 
   const value = useMemo<I18nValue>(() => ({
-    locale,
-    languageTag: languageTags[locale],
+    locale: language.locale,
+    languageTag: languageTags[language.locale],
     setLocale: chooseLocale,
-    t: (key, variables) => translate(locale, key, variables),
-  }), [locale, chooseLocale]);
+    t: (key, variables) => translate(language.locale, key, variables, language.messages),
+  }), [language, chooseLocale]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
@@ -133,13 +179,20 @@ export function stageLabel(t: Translate, stage: Stage): string {
 
 export function LanguageControl({ className = '' }: { className?: string }) {
   const { locale, setLocale, t } = useI18n();
+  // Keep the choice selected while its language loads.
+  const [chosen, setChosen] = useState<Locale | null>(null);
   return (
     <label className={`language-control ${className}`.trim()}>
       <span>{t('language.label')}</span>
       <select
         aria-label={t('language.label')}
-        value={locale}
-        onChange={(event) => { setLocale(event.target.value as Locale); trackAction('language-change'); }}
+        value={chosen ?? locale}
+        onChange={(event) => {
+          const next = event.target.value as Locale;
+          setChosen(next);
+          setLocale(next);
+          trackAction('language-change');
+        }}
       >
         {SUPPORTED_LOCALES.map((option) => (
           <option key={option} value={option}>{t(`language.${option}`)}</option>

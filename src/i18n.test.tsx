@@ -8,11 +8,12 @@ import itMessages from '../shared/locales/it.json';
 import trackingMessages from '../shared/tracking-messages.json';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import {
   detectLocale,
   I18nProvider,
   LanguageControl,
+  loadMessages,
   localizedExpectedDelivery,
   localizedDeliveryDate,
   localizedDatePhrase,
@@ -39,6 +40,8 @@ function TranslationProbe() {
 }
 
 describe('localization', () => {
+  beforeAll(async () => { await Promise.all(SUPPORTED_LOCALES.map(loadMessages)); });
+
   it('restores the saved language before persisting during StrictMode effect replay', async () => {
     window.localStorage.setItem('deliveryTrackerLocale', 'fr');
     render(<StrictMode><I18nProvider><TranslationProbe /></I18nProvider></StrictMode>);
@@ -112,13 +115,13 @@ describe('localization', () => {
     });
   });
 
-  it('starts in the server language and applies a saved choice before paint', () => {
-    const first = render(<I18nProvider initialLocale="fr"><TranslationProbe /></I18nProvider>);
+  it('starts in the server language and applies a loaded saved choice before paint', () => {
+    const first = render(<I18nProvider initialLocale="fr" initialMessages={fr}><TranslationProbe /></I18nProvider>);
     expect(screen.getByText('Suivi de colis')).toBeInTheDocument();
     first.unmount();
 
     window.localStorage.setItem('deliveryTrackerLocale', 'de');
-    render(<I18nProvider initialLocale="fr"><TranslationProbe /></I18nProvider>);
+    render(<I18nProvider initialLocale="fr" initialMessages={fr}><TranslationProbe /></I18nProvider>);
     // No waiting: the saved language is in place when rendering returns.
     expect(screen.getByText('Sendungsverfolgung')).toBeInTheDocument();
     expect(document.cookie).toContain('sdt.locale=de');

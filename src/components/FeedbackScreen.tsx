@@ -1,12 +1,12 @@
 'use client';
 
 import { AppearanceProvider } from '../lib/appearance';
-import { I18nProvider, LanguageControl, type Locale, type MessageKey, useI18n } from '../i18n';
+import { I18nProvider, LanguageControl, type Locale, type MessageKey, type Messages, useI18n } from '../i18n';
 import { ParcelIllustration } from './Icon';
 
 type FeedbackProps = { title: MessageKey; description: MessageKey; retry?: () => void };
-export function FeedbackScreen({ initialLocale, ...props }: FeedbackProps & { initialLocale?: Locale }) {
-  return <I18nProvider initialLocale={initialLocale}><AppearanceProvider><FeedbackContent {...props} /></AppearanceProvider></I18nProvider>;
+export function FeedbackScreen({ initialLocale, initialMessages, ...props }: FeedbackProps & { initialLocale?: Locale; initialMessages?: Messages }) {
+  return <I18nProvider initialLocale={initialLocale} initialMessages={initialMessages}><AppearanceProvider><FeedbackContent {...props} /></AppearanceProvider></I18nProvider>;
 }
 function FeedbackContent({ title, description, retry }: FeedbackProps) {
   const { t } = useI18n();
