@@ -1,7 +1,5 @@
 /* Quiet stack: a bounded feed, with tools sharing the active section heading. */
 .app--deliveries .deliveries-page { max-width: 660px; margin-inline: auto; }
-.app--deliveries .app__masthead { border-bottom: 0; row-gap: 4px; padding-bottom: 0; }
-.app--deliveries .app__content { padding-top: 12px; }
 .app--deliveries .delivery-overview { min-height: 44px; margin: 0 0 10px; gap: 12px; }
 .app--deliveries .delivery-overview > .parcel-section__heading { margin: 0; flex: 1; }
 .app--deliveries .delivery-overview__actions { margin-left: auto; }
@@ -37,13 +35,7 @@
 .delivery-arrived h2 { font-size: 24px; letter-spacing: -.6px; margin-bottom: 8px; }
 .delivery-arrived p { font-size: 13px; color: var(--ink-soft); margin-bottom: 20px; }
 .delivery-arrived .button { min-height: 44px; font-size: 13px; padding: 10px 16px; border-radius: 12px; }
-@media (min-width: 761px) {
-  .app--deliveries .app__add-button span { display: inline; font-size: 12px; font-weight: 500; }
-}
 @media (max-width: 760px) {
-  .app--deliveries .app__masthead { min-height: 64px; }
-  .app--deliveries .app__title { font-size: 23px; }
-  .app--deliveries .app__content { padding-top: 8px; }
   .app--deliveries .parcel-grid { grid-template-columns: 1fr; }
   .app--deliveries .parcel-card--hero { padding: 17px 18px 18px; }
   .app--deliveries .parcel-card__hero-main { margin: 19px 0 15px; }
