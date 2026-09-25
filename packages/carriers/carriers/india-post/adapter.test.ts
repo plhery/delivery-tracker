@@ -296,4 +296,14 @@ describe('India Post Livewire session', () => {
     await expect(new IndiaPostTracker({ fetcher: malformed }).fetch(SAMPLE_NUMBER))
       .rejects.toThrow('tracking component');
   });
+
+  it('reads an ordinary page carrying Cloudflare\'s passive detection loader', async () => {
+    const loader = '<script>window.__CF$cv$params={r:\'0\',t:\'0\'};var a=document.createElement(\'script\');'
+      + 'a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.head.appendChild(a);</script>';
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(pageHtml(SAMPLE_NUMBER, 'Completed',
+      trackingHistoryHtml(SAMPLE_NUMBER, undefined, '2026-09-01T12:00:00Z') + loader)));
+
+    await expect(new IndiaPostTracker({ fetcher, now: () => new Date('2026-09-01T12:20:00Z') }).fetch(SAMPLE_NUMBER))
+      .resolves.toMatchObject({ status: 'delivered' });
+  });
 });

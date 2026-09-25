@@ -284,10 +284,13 @@ function dispatchNames(effects: JsonObject): Set<string> {
   );
 }
 
+// Since 2026-09-24 Cloudflare also injects its passive detection loader
+// (/cdn-cgi/challenge-platform/scripts/jsd/main.js) into ordinary answers, so
+// only the interstitial's own markers count as a challenge.
 function challengePage(status: number, html: string, headers: Headers): boolean {
   return [401, 403, 419, 429].includes(status)
     || headers.get('cf-mitigated') === 'challenge'
-    || /Just a moment|Enable JavaScript and cookies|cf-chl-|challenge-platform/i.test(html);
+    || /Just a moment|Enable JavaScript and cookies|cf-chl-|_cf_chl_opt/i.test(html);
 }
 
 function pause(milliseconds: number): Promise<void> {

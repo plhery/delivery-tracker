@@ -63,8 +63,11 @@ Outcomes:
 
 - A `consignment_not_found` dispatch → `NotFoundError('India Post')`.
 - A Cloudflare interstitial (status 401/403/419/429, a `cf-mitigated: challenge`
-  header, or a challenge marker in the body) → `IndiaPostChallengeError`, a
-  `ChallengeError`. It must stay retryable and must never read as not-found.
+  header, or an interstitial marker in the body such as `Just a moment` or
+  `_cf_chl_opt`) → `IndiaPostChallengeError`, a `ChallengeError`. It must stay
+  retryable and must never read as not-found. Cloudflare's passive detection
+  loader (`/cdn-cgi/challenge-platform/scripts/jsd/main.js`) also appears on
+  ordinary pages and is not a challenge.
 - Still `Processing` after the poll budget → `IndeterminateError`: the backend
   answered but proved nothing about the shipment.
 - Anything malformed → `SchemaError`.
@@ -131,6 +134,10 @@ scan is never lost and no terminal stage is ever invented; at parcel level that
   `CUSTOM_RECEIVE` is the customs stage; customs handing the item back
   (`CUSTOM_RETURN`, "released by export Customs") is in transit, not a return
   to sender.
+- 2026-09-25: a bare `challenge-platform` body marker no longer counts as a
+  challenge. Since 2026-09-24 MySpeedPost's ordinary 200 pages load Cloudflare's
+  passive detection script from that path, and every production lookup failed
+  as `IndiaPostChallengeError` until the marker was narrowed.
 - 2026-09-01: bind identity twice — the Livewire snapshot's
   `consignment_number` and the rendered fragment's `#consignment_search` value
   must both echo the requested number.
@@ -183,3 +190,7 @@ scan is never lost and no terminal stage is ever invented; at parcel level that
   test's real-consignment case became env-gated
   (`INDIA_POST_TRACKING_NUMBER`), because the number it used is recorded in
   `numbers.json` as synthetic.
+- 2026-09-25: the tracking page answers 200 with the passive
+  `/cdn-cgi/challenge-platform/scripts/jsd/main.js` loader and no interstitial
+  marker, from both production and a local network. With the narrowed markers
+  the live synthetic wrong number maps to a clean 404 again.
