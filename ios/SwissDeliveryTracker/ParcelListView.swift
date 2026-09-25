@@ -83,7 +83,6 @@ private struct DeliveryListView: View {
     @State private var sort: ParcelSort = .priority
     @State private var showingFilters = false
     @State private var showingSearch = false
-    @State private var refreshing = false
     @FocusState private var searchFocused: Bool
     @State private var showingAdd = false
     @State private var addedParcelID: UUID?
@@ -92,10 +91,15 @@ private struct DeliveryListView: View {
     @State private var showingAccount = false
     @State private var archivedExpanded = false
     @State private var sharedDraft: SharedParcelDraft?
-    @State private var actionMessage: String?
+    @State private var toast: ListToast?
     @State private var actionError: String?
 
     @ObservedObject private var catalog = CarrierCatalog.shared
+
+    private struct ListToast: Equatable {
+        let text: String
+        var warning = false
+    }
 
     var body: some View {
         // Filtering, sorting and grouping run once per render, not once per section.
@@ -193,6 +197,11 @@ private struct DeliveryListView: View {
                 try? await Task.sleep(for: .seconds(7))
                 if store.undoParcel?.id == next { store.undoParcel = nil }
             }
+        }
+        .onChange(of: store.refreshOutcome) { _, outcome in
+            guard let outcome else { return }
+            toast = outcome.failure.map { ListToast(text: $0, warning: true) }
+                ?? ListToast(text: localizer.text("sync.completed"))
         }
     }
 
@@ -317,12 +326,12 @@ private struct DeliveryListView: View {
             .accessibilityIdentifier("deliveries.search")
             Button { Task { await refreshDeliveries() } } label: {
                 Group {
-                    if refreshing { ProgressView() }
+                    if store.refreshing { ProgressView() }
                     else { Image(systemName: "arrow.clockwise").font(.body.weight(.regular)) }
                 }.frame(width: 44, height: 44)
             }
-            .disabled(refreshing)
-            .accessibilityLabel(localizer.text(refreshing ? "app.refreshing" : "app.refresh"))
+            .disabled(store.refreshing)
+            .accessibilityLabel(localizer.text(store.refreshing ? "app.refreshing" : "app.refresh"))
         }
         .foregroundStyle(Brand.ink)
         .buttonStyle(.plain)
@@ -385,12 +394,18 @@ private struct DeliveryListView: View {
         }
     }
 
+    /// Returns once the check is queued, so pull-to-refresh lets go at once;
+    /// the refresh button keeps spinning until the carriers have answered.
     private func refreshDeliveries() async {
-        guard !refreshing else { return }
-        refreshing = true
-        defer { refreshing = false }
-        do { try await store.refreshAll(); actionMessage = localizer.text("app.refreshQueued") }
-        catch { actionError = localizer.errorMessage(error) }
+        do {
+            switch try await store.refreshAll() {
+            case .queued: toast = ListToast(text: localizer.text("app.refreshQueued"))
+            case .completed: toast = ListToast(text: localizer.text("sync.completed"))
+            case .alreadyRunning: break
+            }
+        } catch {
+            actionError = localizer.errorMessage(error)
+        }
     }
 
     @ViewBuilder private var bottomControls: some View {
@@ -411,20 +426,21 @@ private struct DeliveryListView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 5)
             .transition(.move(edge: .bottom).combined(with: .opacity))
-        } else if let actionMessage {
+        } else if let toast {
             InlineToast(
-                text: actionMessage,
+                text: toast.text,
                 button: nil,
-                symbol: "checkmark.circle.fill",
-                tint: ExperimentalPalette.delivered,
+                symbol: toast.warning ? "exclamationmark.triangle.fill" : "checkmark.circle.fill",
+                tint: toast.warning ? Brand.warning : ExperimentalPalette.delivered,
                 action: nil
             )
             .padding(.horizontal, 16)
             .padding(.bottom, 5)
             .transition(.move(edge: .bottom).combined(with: .opacity))
-            .task {
+            .task(id: toast) {
+                // A newer message gets its own four seconds.
                 try? await Task.sleep(for: .seconds(4))
-                self.actionMessage = nil
+                if self.toast == toast { self.toast = nil }
             }
         } else if shouldShowNotificationInvitation {
             HStack {
@@ -442,7 +458,7 @@ private struct DeliveryListView: View {
     private var shouldShowNotificationInvitation: Bool {
         isSelected && (scenePhase == .active || store.notificationEnableInProgress)
             && path.isEmpty && !showingAdd && !showingAccount && !showingFilters
-            && !showingSearch && !searchFocused && !refreshing && actionError == nil
+            && !showingSearch && !searchFocused && !store.refreshing && actionError == nil
             && addedParcelID == nil && revealParcelID == nil && parcelBurstID == nil
             && store.shouldInviteNotifications
     }

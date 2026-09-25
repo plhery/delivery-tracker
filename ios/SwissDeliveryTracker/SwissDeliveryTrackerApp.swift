@@ -174,21 +174,31 @@ struct RootView: View {
     }
 }
 
+/// Restoring the saved session takes a frame or two. Match the launch screen and
+/// show progress only if it takes longer, instead of flashing a spinner.
 private struct LaunchView: View {
     @EnvironmentObject private var localizer: Localizer
+    @State private var slow = false
 
     var body: some View {
         ZStack {
             Brand.background.ignoresSafeArea()
-            VStack(spacing: 20) {
-                ParcelGlyph(size: 78)
-                ProgressView()
-                    .controlSize(.large)
-                    .tint(Brand.ink)
-                Text(localizer.text("auth.loading"))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            if slow {
+                VStack(spacing: 20) {
+                    ParcelGlyph(size: 78)
+                    ProgressView()
+                        .controlSize(.large)
+                        .tint(Brand.ink)
+                    Text(localizer.text("auth.loading"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .transition(.opacity)
             }
+        }
+        .task {
+            do { try await Task.sleep(for: .milliseconds(600)) } catch { return }
+            withAnimation(.easeOut(duration: 0.2)) { slow = true }
         }
     }
 }

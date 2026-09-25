@@ -84,6 +84,9 @@ final class SessionStore: ObservableObject {
     }
     private(set) var generation = UUID()
     let identityChanges = PassthroughSubject<Void, Never>()
+    /// True only while `identityChanges` announces the account saved on this device
+    /// being reopened at launch, as opposed to a sign-in or an account switch.
+    private(set) var reopeningSavedAccount = false
 
     func checkGeneration(_ expected: UUID) throws {
         try Task.checkCancellation()
@@ -133,7 +136,9 @@ final class SessionStore: ObservableObject {
             guard stored.user.isAnonymous != true else { clearLocalSession(); return }
             session = stored
             rememberExperience("account")
+            reopeningSavedAccount = true
             state = .signedIn(stored.user)
+            reopeningSavedAccount = false
             if stored.expirationDate.timeIntervalSinceNow < 60 {
                 // A network outage does not invalidate the saved account or its offline parcels.
                 // refreshSession clears credentials only for a definitive refresh rejection.

@@ -1,3 +1,4 @@
+import Combine
 import XCTest
 import UIKit
 @testable import SwissDeliveryTracker
@@ -1457,6 +1458,123 @@ extension SessionIsolationTests {
             TrackingEvent(id: UUID(uuidString: "00000000-0000-4000-8000-000000000001")!, packageID: value.id, stage: .delivered, description: "Delivered", occurredAt: "2026-09-08T10:00:00Z")
         ]
         XCTAssertEqual(value.currentStage, .delivered)
+    }
+}
+
+extension SessionIsolationTests {
+    @MainActor func testUnchangedPollKeepsTheListWithoutRepublishing() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let session = SessionStore(configuration: configuration, persistence: MemorySessionPersistence(), transport: transport)
+        defer { session.forceSignOut() }
+        try await authorize(session)
+        let store = store(session, transport)
+        respond(try JSONEncoder.deliveryTracker.encode(PackageListResponse(packages: [parcel()])))
+        await store.load()
+        var republished = 0
+        let observation = store.$parcels.dropFirst().sink { _ in republished += 1 }
+        defer { observation.cancel() }
+        await store.load()
+        XCTAssertEqual(republished, 0)
+        XCTAssertEqual(store.parcels.count, 1)
+    }
+
+    @MainActor func testReopenedAccountShowsItsSavedParcelsBeforeTheServerAnswers() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let persistence = MemorySessionPersistence()
+        let session = SessionStore(configuration: configuration, persistence: persistence, transport: transport)
+        try await authorize(session)
+        let saved = parcel()
+        respond(try JSONEncoder.deliveryTracker.encode(PackageListResponse(packages: [saved])))
+        await store(session, transport).load()
+
+        let relaunched = SessionStore(configuration: configuration, persistence: persistence, transport: transport)
+        defer { relaunched.forceSignOut() }
+        let relaunchedStore = store(relaunched, transport)
+        offline()
+        await relaunched.bootstrap()
+        XCTAssertEqual(relaunchedStore.parcels.map(\.id), [saved.id])
+        XCTAssertFalse(relaunchedStore.loading)
+        await relaunchedStore.load()
+        XCTAssertEqual(relaunchedStore.parcels.map(\.id), [saved.id])
+        XCTAssertTrue(relaunchedStore.usingCachedData)
+    }
+
+    @MainActor func testArchivedParcelLeavesTheListBeforeTheServerAnswers() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let session = SessionStore(configuration: configuration, persistence: MemorySessionPersistence(), transport: transport)
+        defer { session.forceSignOut() }
+        try await authorize(session)
+        let store = store(session, transport)
+        let parcel = parcel()
+        respond(try JSONEncoder.deliveryTracker.encode(PackageListResponse(packages: [parcel])))
+        await store.load()
+        for accepted in [false, true] {
+            let started = expectation(description: "Archive request started")
+            nonisolated(unsafe) var complete: ((Result<(Int, Data), Error>) -> Void)?
+            SessionTestURLProtocol.handler = { request, callback in
+                if request.httpMethod == "DELETE" {
+                    complete = callback
+                    started.fulfill()
+                } else { callback(.success((200, Data("{}".utf8)))) }
+            }
+            let archiving = Task { try await store.archive(parcel) }
+            await fulfillment(of: [started], timeout: 2)
+            XCTAssertEqual(store.parcels.first?.isArchived, true)
+            XCTAssertNil(store.undoParcel)
+            if accepted {
+                complete?(.success((200, Data("{\"ok\":true}".utf8))))
+                try await archiving.value
+                XCTAssertEqual(store.parcels.first?.isArchived, true)
+                XCTAssertEqual(store.undoParcel?.id, parcel.id)
+            } else {
+                complete?(.success((500, Data("{\"error\":\"Archive unavailable\"}".utf8))))
+                do { try await archiving.value; XCTFail("Expected the refusal") } catch {}
+                XCTAssertEqual(store.parcels.first?.isArchived, false)
+            }
+        }
+    }
+
+    @MainActor func testRefreshReturnsOnceQueuedAndReportsCompletion() async throws {
+        let transport = transport()
+        defer { transport.invalidateAndCancel() }
+        let session = SessionStore(configuration: configuration, persistence: MemorySessionPersistence(), transport: transport)
+        defer { session.forceSignOut() }
+        try await authorize(session)
+        let store = store(session, transport)
+        let job = UUID()
+        let parcel = parcel()
+        let queued = try JSONEncoder.deliveryTracker.encode(QueueResponse(queued: true, pending: 1, jobIDs: [job]))
+        let jobs = try JSONEncoder.deliveryTracker.encode(SyncJobListResponse(jobs: [
+            SyncJobResponse(id: job, status: .succeeded, requestedAt: "2026-09-25T10:00:00Z"),
+        ]))
+        let list = try JSONEncoder.deliveryTracker.encode(PackageListResponse(packages: [parcel]))
+        let jobsRequested = expectation(description: "Job status requested")
+        nonisolated(unsafe) var completeJobs: ((Result<(Int, Data), Error>) -> Void)?
+        SessionTestURLProtocol.handler = { request, callback in
+            switch (request.httpMethod, request.url?.path) {
+            case ("POST", "/api/sync"): callback(.success((202, queued)))
+            case ("GET", "/api/sync/jobs"):
+                completeJobs = callback
+                jobsRequested.fulfill()
+            default: callback(.success((200, list)))
+            }
+        }
+        let start = try await store.refreshAll()
+        XCTAssertEqual(start, .queued)
+        XCTAssertTrue(store.refreshing)
+        await fulfillment(of: [jobsRequested], timeout: 2)
+        XCTAssertTrue(store.refreshing)
+        let finished = expectation(description: "Refresh finished")
+        let observation = store.$refreshOutcome.dropFirst().sink { if $0 != nil { finished.fulfill() } }
+        defer { observation.cancel() }
+        completeJobs?(.success((200, jobs)))
+        await fulfillment(of: [finished], timeout: 2)
+        XCTAssertFalse(store.refreshing)
+        XCTAssertNil(store.refreshOutcome?.failure)
+        XCTAssertEqual(store.parcels.map(\.id), [parcel.id])
     }
 }
 

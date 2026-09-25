@@ -133,11 +133,10 @@ final class DeliveryAPIClient {
         )
     }
 
-    func refreshAll() async throws {
-        let generation = session.generation
+    /// Queues a check of every parcel; follow it with `waitForJobs`.
+    func queueRefreshAll() async throws -> [UUID] {
         let queued: QueueResponse = try await request("/api/sync", method: "POST")
-        try session.checkGeneration(generation)
-        try await waitForJobs(queued.jobIDs)
+        return queued.jobIDs
     }
 
     func refresh(id: UUID) async throws {
@@ -454,11 +453,14 @@ final class LiveActivityRevocations {
     }
 
     func queue(except ownerID: UUID? = nil) throws {
-        try persist(registrations.map { value in
+        let queued = registrations.map { value in
             var value = value
             if value.ownerID != ownerID { value.pending = true }
             return value
-        })
+        }
+        // Polls with Live Activities off ask again every time; skip the Keychain write.
+        guard queued != registrations else { return }
+        try persist(queued)
     }
 
     private func persist(_ values: [Registration]) throws {
