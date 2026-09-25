@@ -12,7 +12,7 @@
         "carrier": "spring-gds",
         "confidence": "high"
       },
-      "note": "Published open-source tracking example. Posti returned history in a local live check on 2026-09-21; issuer-based number detection still selects PostNL."
+      "note": "Published open-source tracking example. Posti returned history in a local live check on 2026-09-21 and in the canary until 2026-09-24; since 2026-09-25 it is past Posti's retention (zero hits, and Posti's tracker reports it as not found). Issuer-based number detection still selects PostNL."
     }
   ]
 }

@@ -52,6 +52,11 @@ absent; historical events never inherit the current parcel status.
   public corpus example; a synthetic unknown identifier produced zero hits.
   Offline tests use only synthetic identifiers, places, dates and measurements.
   This verifies local retrieval, not deployed network compatibility.
+- 2026-09-25: the public corpus example is past Posti's retention. The query
+  returns an error-free `totalHits: 0`, and Posti's own tracker shows "Item not
+  found". The live suite now checks it as a clean not-found; a delivered
+  history is verified only through `POSTI_TRACKING_NUMBER` and the offline
+  fixtures.
 
 Run the opt-in [live tests](adapter.live.test.ts) through
 `npm run test:carriers:live -- packages/carriers/carriers/posti/adapter.live.test.ts`.

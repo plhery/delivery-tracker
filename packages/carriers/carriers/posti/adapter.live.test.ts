@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { PostiTracker } from './adapter';
 
 describe('Posti public tracking', () => {
-  it('retrieves the existing public corpus example with a fresh anonymous session', async () => {
-    const result = await new PostiTracker().fetch('LR288565359NL');
-    expect(result.current_stage).toBe('delivered');
-    expect(result.events!.length).toBeGreaterThan(0);
+  it('maps the public corpus example, now past Posti\'s retention, to a clean not-found', async () => {
+    // Delivered history was returned until 2026-09-24; Posti's own tracker now
+    // reports the item as not found too.
+    await expect(new PostiTracker().fetch('LR288565359NL')).rejects.toMatchObject({ kind: 'not_found' });
   });
 
   it('distinguishes a confirmed empty search', async () => {
