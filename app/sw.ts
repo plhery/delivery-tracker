@@ -100,11 +100,24 @@ async function consumeShareTarget(): Promise<Response> {
   });
 }
 
-const serwist = new Serwist({
+const pageNavigation = new NetworkFirst({
+  cacheName: 'pages',
+  plugins: [
+    new ExpirationPlugin({ maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 }),
+    {
+      // Next's router needs the fallback's real URL when it hydrates.
+      // The target itself is precached and works without a network.
+      handlerDidError: async () => Response.redirect(new URL('/~offline', self.location.origin).href, 302),
+    },
+  ],
+});
+
+const serwist: Serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
-  navigationPreload: true,
+  // The app shell comes from the precache, so a preload request would go unused.
+  navigationPreload: false,
   runtimeCaching: [
     {
       matcher: ({ sameOrigin, url }) => sameOrigin && url.pathname === '/share-target',
@@ -125,18 +138,16 @@ const serwist = new Serwist({
       handler: new NetworkOnly(),
     },
     {
+      // Opening the app never waits for the network: every address of the
+      // single-page app starts from the shell this worker precached together
+      // with its scripts, so the two always come from the same build. The
+      // client then reads its own query and saved data.
+      matcher: ({ sameOrigin, request, url }) => sameOrigin && request.mode === 'navigate' && url.pathname === '/',
+      handler: async ({ request, event }): Promise<Response> => (await serwist.matchPrecache('/')) ?? pageNavigation.handle({ request, event }),
+    },
+    {
       matcher: ({ sameOrigin, request }) => sameOrigin && request.mode === 'navigate',
-      handler: new NetworkFirst({
-        cacheName: 'pages',
-        plugins: [
-          new ExpirationPlugin({ maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 }),
-          {
-            // Next's router needs the fallback's real URL when it hydrates.
-            // The target itself is precached and works without a network.
-            handlerDidError: async () => Response.redirect(new URL('/~offline', self.location.origin).href, 302),
-          },
-        ],
-      }),
+      handler: pageNavigation,
     },
     ...defaultCache,
   ],

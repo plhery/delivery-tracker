@@ -8,7 +8,7 @@ import { AuthProvider } from './auth/AuthContext';
 import { authConfigFromEnvironment } from './auth/authConfig';
 import { I18nProvider, type Locale } from './i18n';
 import { enableAppBadgeClearing } from './lib/pushNotifications';
-import { enablePwaLiveReload, registerPwaServiceWorker } from './lib/pwaUpdates';
+import { checkForUpdatesOnResume, enablePwaLiveReload, registerPwaServiceWorker } from './lib/pwaUpdates';
 import { createDemoRepo } from './store/demoRepo';
 import { ParcelsProvider } from './store/ParcelsContext';
 import { AppearanceProvider } from './lib/appearance';
@@ -50,12 +50,18 @@ export function ClientApplication({ invitationRoute = false, initialLocale }: { 
   useEffect(() => {
     void startAnalytics();
     const disableReload = enablePwaLiveReload();
+    let disposed = false;
+    let disableUpdateChecks = () => {};
     if (process.env.NODE_ENV === 'production') {
-      void registerPwaServiceWorker().catch(() => undefined);
+      void registerPwaServiceWorker().then((registration) => {
+        if (registration && !disposed) disableUpdateChecks = checkForUpdatesOnResume(registration);
+      }).catch(() => undefined);
     }
     const disableBadgeClearing = enableAppBadgeClearing();
     return () => {
+      disposed = true;
       disableReload();
+      disableUpdateChecks();
       disableBadgeClearing();
     };
   }, []);

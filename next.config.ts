@@ -9,16 +9,19 @@ const withSerwist = withSerwistInit({
   // Registration lives in ClientApplication so updateViaCache and reload
   // behavior are explicit and covered by the application tests.
   register: false,
-  // Next's dynamic fallback is not part of the public-file precache. Its HTML
-  // needs the response's CSP nonce; refresh it whenever the built assets change.
-  manifestTransforms: [async (entries) => ({
-    manifest: [...entries, {
-      url: '/~offline',
-      size: 0,
-      revision: createHash('sha256').update(JSON.stringify(entries)).digest('hex'),
-    }],
-    warnings: [],
-  })],
+  // Only files the browser uses. Fonts, social images and email templates in
+  // public/ are read by the server, and the manifest is rendered per request.
+  globPublicPatterns: ['icons/*', 'privacy.html', 'privacy.css', 'theme.css', 'push-sw.js'],
+  // Next's dynamic documents are not part of the public-file precache. Their
+  // HTML needs the response's CSP nonce; refresh them whenever the built assets
+  // change, so the app shell always matches the precached scripts.
+  manifestTransforms: [async (entries) => {
+    const revision = createHash('sha256').update(JSON.stringify(entries)).digest('hex');
+    return {
+      manifest: [...entries, ...['/', '/~offline'].map((url) => ({ url, size: 0, revision }))],
+      warnings: [],
+    };
+  }],
 });
 
 const nextConfig: NextConfig = {

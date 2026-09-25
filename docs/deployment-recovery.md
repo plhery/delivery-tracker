@@ -30,10 +30,15 @@ database/schema probe. `/health/live` remains a separate process-only probe.
 Health failures prevent a new version from replacing the healthy deployment;
 they do not by themselves promise that Docker will restart an unhealthy process.
 
-Coolify must enable **Include Source Commit in Build**. Docker passes the immutable
-commit to `NEXT_DEPLOYMENT_ID`; Next includes this version in assets and navigation
-responses, allowing stale browsers to reload on a version mismatch. This does not
-retain old static assets or route requests to old deployments.
+Browsers keep running the build they opened. Script and style addresses are
+named by their content, so files that a deployment does not change stay cached,
+and the service worker precaches the app shell together with the files it uses.
+A new worker takes over in the background and the open app reloads the next
+time it is put away with nothing open or typed. Do not set `NEXT_DEPLOYMENT_ID`:
+it adds the deployment to every asset address, so each deployment would make
+returning browsers download every unchanged file again and bypass the precache.
+Old static assets are not retained and requests are not routed to old
+deployments.
 
 `npm run test:deployment` exercises the built standalone server against a fake
 database: interrupt a held operation, verify immediate handoff and normal Next

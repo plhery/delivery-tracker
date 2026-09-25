@@ -26,7 +26,7 @@ jobs:
       - run: npm run test:dev
       - run: npm run test:coverage
       - run: npm run test:coverage:server
-      - run: NEXT_DEPLOYMENT_ID=${{ github.sha }} npm run build
+      - run: npm run build
       - run: npm run test:deployment
       - run: npm run test:pwa
       - run: npm audit --omit=dev

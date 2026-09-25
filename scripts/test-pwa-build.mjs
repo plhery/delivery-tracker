@@ -5,7 +5,7 @@ import { relative, resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..');
 const next = resolve(root, '.next');
 const staticDirectory = resolve(next, 'static');
-const [worker, workerSource, pushWorker, manifestText, privacy, offline, ogImage, staticEntries] = await Promise.all([
+const [worker, workerSource, pushWorker, manifestText, privacy, offline, ogImage, staticEntries, serverFiles] = await Promise.all([
   readFile(resolve(root, 'public/sw.js'), 'utf8'),
   readFile(resolve(root, 'app/sw.ts'), 'utf8'),
   readFile(resolve(root, 'public/push-sw.js'), 'utf8'),
@@ -14,6 +14,7 @@ const [worker, workerSource, pushWorker, manifestText, privacy, offline, ogImage
   readFile(resolve(root, 'app/~offline/page.tsx'), 'utf8'),
   readFile(resolve(root, 'public/og.png')),
   readdir(staticDirectory, { recursive: true, withFileTypes: true }),
+  readFile(resolve(next, 'required-server-files.json'), 'utf8'),
 ]);
 
 await stat(resolve(next, 'standalone/server.js'));
@@ -43,6 +44,10 @@ assert.match(worker, /push-sw\.js/, 'the push handler must be loaded');
 assert.match(worker, /privacy\.html/, 'the privacy notice must be cached for offline access');
 assert.match(worker, /~offline/, 'offline navigations must use the dedicated Next.js fallback');
 assert.match(worker, /["']?revision["']?:["'][a-f0-9]{64}["'],["']?url["']?:["']\/~offline["']/, 'the offline document must be explicitly precached with a build revision');
+assert.match(worker, /["']?revision["']?:["'][a-f0-9]{64}["'],["']?url["']?:["']\/["']/, 'the app shell must be precached with the build it loads');
+assert.match(workerSource, /matchPrecache\('\/'\)/, 'app launches must open the precached shell');
+assert.doesNotMatch(worker, /["']\/(?:fonts\/|auth-emails\/|og\.(?:png|svg))/, 'server-only public files must not be downloaded by browsers');
+assert.ok(!JSON.parse(serverFiles).config.deploymentId, 'a deployment id in asset addresses would re-download unchanged files after every deployment');
 assert.match(offline, /await connection\(\)/, 'offline HTML must render with its matching CSP nonce');
 assert.match(offline, /FeedbackScreen/, 'offline must use the shared translated screen');
 assert.match(pushWorker, /addEventListener\(['"]push['"]/, 'push events must be handled');
