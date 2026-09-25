@@ -25,6 +25,8 @@ import {
 } from '../types';
 
 export const API_CACHE_KEY = 'parcel-post.api-cache.v1';
+/** Posted by the service worker when a push notification reports new server state. */
+export const SERVER_UPDATE_MESSAGE = 'sdt:server-update';
 
 export function browserStorage(): Storage | null {
   if (typeof window === 'undefined') return null;
@@ -451,6 +453,7 @@ export function createApiRepo(
     subscribe(onChange: () => void | Promise<void>): () => void {
       if (lifecycle.signal.aborted) lifecycle = new AbortController();
       let pollInFlight = false;
+      let pollAgain = false;
       let stopped = false;
       let timer: number | null = null;
 
@@ -474,7 +477,12 @@ export function createApiRepo(
           await onChange();
         } finally {
           pollInFlight = false;
-          schedule();
+          if (pollAgain && !stopped) {
+            pollAgain = false;
+            void trigger();
+          } else {
+            schedule();
+          }
         }
       };
 
@@ -484,8 +492,19 @@ export function createApiRepo(
         timer = null;
         void trigger();
       };
+      // A push notification means the server already has the new tracking
+      // state: show it now rather than at the next poll. A request that was
+      // already running may predate it, so it is followed by one more.
+      const onServerUpdate = (event: MessageEvent) => {
+        if (event.data?.type !== SERVER_UPDATE_MESSAGE) return;
+        if (pollInFlight) pollAgain = true;
+        else void trigger();
+      };
+      const worker = 'serviceWorker' in navigator ? navigator.serviceWorker : null;
       notifySubscriber = () => { void trigger(); };
       document.addEventListener('visibilitychange', onVisible);
+      worker?.addEventListener('message', onServerUpdate);
+      worker?.startMessages?.();
       schedule();
       return () => {
         stopped = true;
@@ -494,6 +513,7 @@ export function createApiRepo(
         if (timer !== null) window.clearTimeout(timer);
         notifySubscriber = null;
         document.removeEventListener('visibilitychange', onVisible);
+        worker?.removeEventListener('message', onServerUpdate);
       };
     },
   };

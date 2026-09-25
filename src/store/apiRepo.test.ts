@@ -3,7 +3,7 @@ import contractFixture from '../../contracts/fixtures/delivery-api.json';
 import { ApiAuthenticationError } from '../lib/apiClient';
 import { RateLimiter } from '../server/rateLimit';
 import { ParcelAlreadyExistsError } from '../types';
-import { API_CACHE_KEY, browserStorage, clearApiCache, createApiRepo } from './apiRepo';
+import { API_CACHE_KEY, browserStorage, clearApiCache, createApiRepo, SERVER_UPDATE_MESSAGE } from './apiRepo';
 
 const packageRow = contractFixture.packageList.packages[0];
 
@@ -104,6 +104,36 @@ describe('createApiRepo', () => {
     const reopened = createApiRepo();
     const cached = reopened.cachedList?.();
     await expect(reopened.list()).resolves.toBe(cached);
+  });
+
+  it('refreshes at once when a push reports new server state', async () => {
+    const worker = new EventTarget();
+    Object.defineProperty(navigator, 'serviceWorker', { configurable: true, value: worker });
+    try {
+      let finish!: () => void;
+      const onChange = vi.fn(() => new Promise<void>((resolve) => { finish = resolve; }));
+      const stop = createApiRepo().subscribe!(onChange);
+
+      worker.dispatchEvent(new MessageEvent('message', { data: { type: 'other' } }));
+      expect(onChange).not.toHaveBeenCalled();
+      worker.dispatchEvent(new MessageEvent('message', { data: { type: SERVER_UPDATE_MESSAGE } }));
+      expect(onChange).toHaveBeenCalledTimes(1);
+
+      // A push during a running request, which may predate it, asks once more.
+      worker.dispatchEvent(new MessageEvent('message', { data: { type: SERVER_UPDATE_MESSAGE } }));
+      worker.dispatchEvent(new MessageEvent('message', { data: { type: SERVER_UPDATE_MESSAGE } }));
+      finish();
+      await vi.waitFor(() => expect(onChange).toHaveBeenCalledTimes(2));
+      finish();
+      await Promise.resolve();
+      expect(onChange).toHaveBeenCalledTimes(2);
+
+      stop();
+      worker.dispatchEvent(new MessageEvent('message', { data: { type: SERVER_UPDATE_MESSAGE } }));
+      expect(onChange).toHaveBeenCalledTimes(2);
+    } finally {
+      delete (navigator as { serviceWorker?: unknown }).serviceWorker;
+    }
   });
 
   it('ignores a corrupted offline snapshot', () => {

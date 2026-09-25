@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { ApiFriendCard, ApiFriendsActivity, ApiFriendsSnapshot, ApiFriendUpdate } from '../generated/apiContract';
 import { authenticatedFetch, type ApiAuth } from '../lib/apiClient';
+import { SERVER_UPDATE_MESSAGE } from '../store/apiRepo';
 import { useI18n } from '../i18n';
 import { Icon, PostageStamp } from './Icon';
 
@@ -56,8 +57,11 @@ export function FriendsActivityProvider({ auth, paused, children }: { auth: ApiA
       } catch { /* Polling resumes after transient network failures. */ }
       if (!disposed && !request.signal.aborted) timer = setTimeout(refresh, 30_000);
     }
-    void refresh(); document.addEventListener('visibilitychange', refresh);
-    return () => { disposed = true; controller?.abort(); clearTimeout(timer); document.removeEventListener('visibilitychange', refresh); };
+    // A push notification (such as an accepted invitation) is shown at once.
+    const onServerUpdate = (event: MessageEvent) => { if (event.data?.type === SERVER_UPDATE_MESSAGE) void refresh(); };
+    const worker = 'serviceWorker' in navigator ? navigator.serviceWorker : null;
+    void refresh(); document.addEventListener('visibilitychange', refresh); worker?.addEventListener('message', onServerUpdate);
+    return () => { disposed = true; controller?.abort(); clearTimeout(timer); document.removeEventListener('visibilitychange', refresh); worker?.removeEventListener('message', onServerUpdate); };
   }, [auth, paused]);
   const value = useMemo(() => ({ arrival, prepareArrival, consumeArrival, acknowledge }), [arrival, prepareArrival, consumeArrival, acknowledge]);
   const update = !paused ? updates[0] : undefined;

@@ -58,3 +58,18 @@ it('uses the acceptance snapshot immediately for the card entrance', async () =>
   expect(screen.getByText('Alex')).toBeInTheDocument();
   await waitFor(() => expect(document.querySelector('[data-arriving="landed"]')).toHaveTextContent('Alex'));
 });
+it('shows a pushed invitation reply without waiting for the next poll', async () => {
+  const worker = new EventTarget();
+  Object.defineProperty(navigator, 'serviceWorker', { configurable: true, value: worker });
+  try {
+    vi.mocked(fetch).mockImplementationOnce(async () => new Response(JSON.stringify({ updates: [] })));
+    render(<Harness />);
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText('Alex accepted your invitation')).toBeNull();
+
+    act(() => { worker.dispatchEvent(new MessageEvent('message', { data: { type: 'sdt:server-update' } })); });
+    expect(await screen.findByRole('button', { name: 'Alex accepted your invitation' })).toBeInTheDocument();
+  } finally {
+    delete (navigator as { serviceWorker?: unknown }).serviceWorker;
+  }
+});

@@ -54,6 +54,7 @@ assert.match(offline, /await connection\(\)/, 'offline HTML must render with its
 assert.match(offline, /FeedbackScreen/, 'offline must use the shared translated screen');
 assert.match(pushWorker, /addEventListener\(['"]push['"]/, 'push events must be handled');
 assert.match(pushWorker, /showNotification\(/, 'push events must display a notification');
+assert.match(pushWorker, /postMessage\(\{ type: 'sdt:server-update' \}\)/, 'push events must refresh open windows at once');
 assert.match(pushWorker, /addEventListener\(['"]notificationclick['"]/, 'notification clicks must be handled');
 assert.match(workerSource, /method: 'POST'/, 'private POST share targets must use the worker router');
 assert.match(workerSource, /formData\(\)/, 'shared content must be read from a POST body');

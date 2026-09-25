@@ -2,7 +2,7 @@ import { generateKeyPairSync } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { runInNewContext } from 'node:vm';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   CompositePushNotificationService,
   DeliveryLiveActivityNotificationService,
@@ -164,6 +164,23 @@ describe('service worker fallback copy', () => {
     expect(shown[0]![0]).toBe(expected.title);
     expect(shown[0]![1].body).toBe(expected.body);
     expect(shown[0]![1].lang).toBe(locale);
+  });
+
+  it('tells open windows to show the new state at once', async () => {
+    const listeners: Record<string, (event: unknown) => void> = {};
+    const postMessage = vi.fn();
+    let settled: Promise<unknown> = Promise.resolve();
+    runInNewContext(worker, {
+      caches: { delete: async () => true },
+      self: {
+        addEventListener: (type: string, listener: (event: unknown) => void) => { listeners[type] = listener; },
+        registration: { showNotification: async () => undefined },
+        clients: { matchAll: async () => [{ postMessage }] },
+      },
+    });
+    listeners.push!({ data: { json: () => ({}) }, waitUntil: (promise: Promise<unknown>) => { settled = promise; } });
+    await settled;
+    expect(postMessage).toHaveBeenCalledWith({ type: 'sdt:server-update' });
   });
 });
 

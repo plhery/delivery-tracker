@@ -47,6 +47,13 @@ self.addEventListener('push', (event) => {
   if (self.navigator && typeof self.navigator.setAppBadge === 'function') {
     tasks.push(Promise.resolve(self.navigator.setAppBadge(1)).catch(() => undefined));
   }
+  // Open windows show the new state now instead of at their next poll. The
+  // notification never depends on it. The type matches SERVER_UPDATE_MESSAGE
+  // in src/store/apiRepo.ts.
+  tasks.push(Promise.resolve()
+    .then(() => self.clients.matchAll({ type: 'window' }))
+    .then((clients) => clients.forEach((client) => client.postMessage({ type: 'sdt:server-update' })))
+    .catch(() => undefined));
   event.waitUntil(Promise.all(tasks));
 });
 
