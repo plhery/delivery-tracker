@@ -2,6 +2,20 @@
   "carrier": "chronopost",
   "records": [
     {
+      "number": "0020 1000 4133 1740 8562 5338 724P",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/mi-bloquearon-la-cuenta-y-nece/1882f5a17b1ddd17f2",
+        "date": "2026-02-02"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Called the tracking number, next to the S10 shipment code. The source attributes it to Chronopost; no rule matches this shape."
+    },
+    {
       "number": "12345678901234Q",
       "role": "shipment",
       "evidence": "synthetic",
@@ -65,6 +79,20 @@
         "confidence": "high"
       },
       "note": "Made-up number that follows the published format."
+    },
+    {
+      "number": "XU130420145JF",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/mi-bloquearon-la-cuenta-y-nece/1882f5a17b1ddd17f2",
+        "date": "2026-02-02"
+      },
+      "expect": {
+        "carrier": "chronopost",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Called the shipment code, next to a separate 28-character tracking number."
     },
     {
       "number": "XW123456785TS",

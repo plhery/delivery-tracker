@@ -50,6 +50,27 @@
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Hermes Germany, which stays one candidate among several."
     },
     {
+      "number": "1071247368",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://de.trustpilot.com/reviews/6aa6c8e1e6ef84f3d9de84c3",
+        "date": "2026-09-13"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl",
+          "mondial-relay",
+          "relais-colis",
+          "tipsa",
+          "estafeta"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Hermes Germany, which no rule claims for this shape."
+    },
+    {
       "number": "11204181008466",
       "role": "shipment",
       "evidence": "public_shipment_report",
@@ -63,6 +84,29 @@
           "gls-ch",
           "dpd",
           "dpd-fr",
+          "ciblex",
+          "hermes-de",
+          "gls-de",
+          "seur",
+          "brt",
+          "delhivery"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Hermes Germany, which stays one candidate among several."
+    },
+    {
+      "number": "39181147009513",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.paketda.de/fragen-antworten.php?suche_carrier=hermes"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "dpd",
           "ciblex",
           "hermes-de",
           "gls-de",

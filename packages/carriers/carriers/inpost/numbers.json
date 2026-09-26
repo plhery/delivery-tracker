@@ -19,6 +19,23 @@
       "note": "Open-source project example, not a real shipment. The source attributes it to InPost, which no rule claims."
     },
     {
+      "number": "620999677033395439338699",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://pl.trustpilot.com/reviews/6a847d65986657d4111d520e"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "inpost",
+          "bpost"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Quoted in a merchant's reply. The source attributes it to InPost, which stays one candidate among several."
+    },
+    {
       "number": "640000000000000000000001",
       "role": "shipment",
       "evidence": "synthetic",

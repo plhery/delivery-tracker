@@ -2,6 +2,20 @@
   "carrier": "australia-post",
   "records": [
     {
+      "number": "7T2514965601000935102",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://ie.trustpilot.com/reviews/6a90f17ecd0f0d3f7a9afab5",
+        "date": "2026-09-20"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Quoted in a merchant's reply. The source attributes it to Australia Post; no rule matches this shape."
+    },
+    {
       "number": "0301006785462006320995",
       "role": "quarantined",
       "evidence": "open_source_example",

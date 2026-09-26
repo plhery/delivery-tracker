@@ -36,6 +36,32 @@
         "confidence": "high"
       },
       "note": "Invented placeholder used by the Amazon Shipping tests. Filed under Amazon Shipping; detection selects Amazon Logistics."
+    },
+    {
+      "number": "UK3962812222",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://uk.trustpilot.com/reviews/69b20895f0f919dee98325b1"
+      },
+      "expect": {
+        "carrier": "amazon-logistics",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Quoted in a merchant's reply with an Amazon tracking link. Filed under Amazon Shipping; detection selects Amazon Logistics."
+    },
+    {
+      "number": "UK4696062386",
+      "role": "shipment",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://developer-docs.shipping.amazon.com/apis/docs/tutorial-deliver-to-counter-via-amazon-shipping"
+      },
+      "expect": {
+        "carrier": "amazon-logistics",
+        "confidence": "high"
+      },
+      "note": "Example from Amazon Shipping's own API tutorial. Filed under Amazon Shipping; detection selects Amazon Logistics."
     }
   ]
 }

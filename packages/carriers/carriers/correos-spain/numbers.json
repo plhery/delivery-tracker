@@ -2,6 +2,34 @@
   "carrier": "correos-spain",
   "records": [
     {
+      "number": "DQ0DK20000034530118220Z",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/devolucion-en-curso-1-mes/d12130a56a293035f0",
+        "date": "2026-03-31"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. A return shipment. The source attributes it to Correos; no rule matches this shape."
+    },
+    {
+      "number": "PQ0DK20000034530151002K",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/devolucion-en-curso-1-mes/d12130a56a293035f0",
+        "date": "2026-03-31"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. A return shipment. The source attributes it to Correos; no rule matches this shape."
+    },
+    {
       "number": "PR110604670130400C",
       "role": "shipment",
       "evidence": "public_shipment_report",

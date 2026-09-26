@@ -14,6 +14,20 @@
       "note": "Synthetic EMS S10 identifier; bare numbers retain their national postal operator, while an EMS link or manual selection chooses EMS."
     },
     {
+      "number": "EB865157741CN",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.chinapostaltracking.com/qa/package-stuck-export-customskeep-pending-inspection-161051/",
+        "date": "2026-09-16"
+      },
+      "expect": {
+        "carrier": "china-post",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source calls it a China Post EMS parcel; detection selects China Post."
+    },
+    {
       "number": "EW000000005FR",
       "role": "shipment",
       "evidence": "synthetic",

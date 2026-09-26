@@ -2,6 +2,20 @@
   "carrier": "evri",
   "records": [
     {
+      "number": "H0595C0000314450",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://ie.trustpilot.com/reviews/6a0adb5e679c6b7f4d03ee29",
+        "date": "2026-05-18"
+      },
+      "expect": {
+        "carrier": "evri",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Evri International parcel."
+    },
+    {
       "number": "H06R4A1011299623",
       "role": "shipment",
       "evidence": "merchant_published_example",

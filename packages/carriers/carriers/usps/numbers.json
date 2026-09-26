@@ -18,6 +18,22 @@
       "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
     },
     {
+      "number": "70041160000026196575",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://docs.fcc.gov/public/attachments/FCC-26-44A1.pdf"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "usps"
+        ]
+      },
+      "note": "Certified-mail number printed in an FCC order. The source attributes it to USPS, which stays one candidate among several."
+    },
+    {
       "number": "71123456789123456787",
       "role": "shipment",
       "evidence": "open_source_example",
@@ -150,6 +166,40 @@
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
+    },
+    {
+      "number": "9500113562366007585132",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.govinfo.gov/content/pkg/USCOURTS-ilsd-3_25-cv-02196/pdf/USCOURTS-ilsd-3_25-cv-02196-0.pdf"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "austrian-post",
+          "usps"
+        ]
+      },
+      "note": "Tracking number quoted in a public court record. The source attributes it to USPS, which stays one candidate among several."
+    },
+    {
+      "number": "9589071052702449080343",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.govinfo.gov/content/pkg/USCOURTS-ilsd-3_25-cv-02196/pdf/USCOURTS-ilsd-3_25-cv-02196-0.pdf"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "austrian-post",
+          "usps"
+        ]
+      },
+      "note": "Tracking number quoted in a public court record. The source attributes it to USPS, which stays one candidate among several."
     },
     {
       "number": "4201002334249200190132607600833457",

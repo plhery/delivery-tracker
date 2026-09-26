@@ -50,6 +50,44 @@
       "note": "Invented 12-digit placeholder; the route only resolves it after a verified GLS lookup. Filed under GLS Germany, which stays one candidate among several."
     },
     {
+      "number": "28286849236",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.paketda.de/fragen-antworten.php?suche_carrier=gls"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "gls-fr",
+          "gls-de",
+          "blue-dart",
+          "aramex"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to GLS, which stays one candidate among several."
+    },
+    {
+      "number": "YVMNN4RO",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.paketda.de/fragen-antworten.php?suche=YVMNN4RO"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "gls-fr",
+          "gls-de"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to GLS, which stays one candidate among several."
+    },
+    {
       "number": "Z6E5E29R",
       "role": "shipment",
       "evidence": "public_shipment_report",

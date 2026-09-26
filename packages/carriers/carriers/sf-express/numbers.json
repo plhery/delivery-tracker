@@ -32,6 +32,23 @@
       "note": "Open-source project example, not a real shipment. The source attributes it to SF Express, which stays one candidate among several."
     },
     {
+      "number": "SF6047789135544",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a8f6e8514e24c45061779b6",
+        "date": "2026-08-27"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "sf-express"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to SF Express, which stays one candidate among several."
+    },
+    {
       "number": "SF6047381042488",
       "role": "quarantined",
       "evidence": "public_shipment_report",
