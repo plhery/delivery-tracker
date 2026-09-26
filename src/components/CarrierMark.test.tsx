@@ -1,9 +1,9 @@
 import { render } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
-import { carrierInfo } from '../lib/carriers';
+import { describe, expect, it, vi } from 'vitest';
+import { CARRIERS, carrierInfo } from '../lib/carriers';
 import { CarrierMark } from './CarrierMark';
 import markup from './carrierMark.fixture.json';
-import { CARRIER_TRUCK, carrierDecal } from '@carriers/core/brand';
+import { CARRIER_DECALS, CARRIER_TRUCK, carrierDecal } from '@carriers/core/brand';
 
 /** Recorded SVG markup anchors the shared truck and selected liveries. */
 describe('carrier mark', () => {
@@ -27,5 +27,22 @@ describe('carrier mark', () => {
 
   it('covers the three liveries and a carrier that has none', () => {
     expect(Object.keys(markup)).toEqual(['dhl', 'ups', 'gls-ch', 'unknown']);
+  });
+
+  it('switches between every livery without React warnings or leftover shapes', () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const { container, rerender } = render(<CarrierMark carrier={carrierInfo('quickpac')} />);
+      const brandedCarriers = Object.values(CARRIERS).filter(({ id }) => CARRIER_DECALS[id]);
+      for (const carrier of [...brandedCarriers, carrierInfo('unknown'), carrierInfo('quickpac')]) {
+        rerender(<CarrierMark carrier={carrier} />);
+        const fresh = render(<CarrierMark carrier={carrier} />);
+        expect(container.innerHTML).toBe(fresh.container.innerHTML);
+        fresh.unmount();
+      }
+      expect(errors).not.toHaveBeenCalled();
+    } finally {
+      errors.mockRestore();
+    }
   });
 });

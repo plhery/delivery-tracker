@@ -29,7 +29,8 @@ export function CarrierMark({ carrier }: { carrier: CarrierInfo }) {
       <rect x={n(body.x)} y={n(body.y)} width={n(body.width)} height={n(body.height)} rx={n(body.rx)} fill={paint(body.fill)} stroke={paint(body.stroke)} strokeWidth={n(strokeWidth)} />
       <path d={cab.d} fill={paint(cab.fill)} stroke={paint(cab.stroke)} strokeWidth={n(strokeWidth)} />
       <path d={windshield.d} fill={paint(windshield.fill)} />
-      {decals[decal].map(shape => <Decal key={shape.type + ('d' in shape ? shape.d : shape.cx)} shape={shape} />)}
+      {/* Decals have a fixed paint order, and concentric layers can share coordinates. */}
+      {decals[decal].map((shape, index) => <Decal key={`${decal}-${index}`} shape={shape} />)}
       {wheels.centers.map(([x, y]) => <g key={x}>
         <circle cx={n(x)} cy={n(y)} r={n(wheels.tire.r)} fill={paint(wheels.tire.fill)} />
         <circle cx={n(x)} cy={n(y)} r={n(wheels.hub.r)} fill={paint(wheels.hub.fill)} />

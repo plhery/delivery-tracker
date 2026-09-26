@@ -17,7 +17,10 @@ test('social crawlers and browser-like preview readers receive a parcel card in 
   ]) {
     const response = await request.get('/i/' + preview, { headers: { 'user-agent': userAgent } });
     expect(response.ok()).toBe(true);
-    expect(response.headers()['cache-control']).toContain('no-store');
+    // Next's development renderer overrides page caching to allow back/forward
+    // restoration. Production invitation pages must still forbid storage.
+    const cacheDirective = process.env.CI || process.env.PLAYWRIGHT_PRODUCTION ? 'no-store' : 'no-cache';
+    expect(response.headers()['cache-control']).toContain(cacheDirective);
     expect(response.headers()['referrer-policy']).toBe('no-referrer');
     const html = await response.text();
     const head = html.slice(0, html.indexOf('</head>'));

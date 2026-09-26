@@ -10,7 +10,9 @@ test.beforeEach(async ({ page }) => {
   });
   page.on('pageerror', (error) => errors.push(error.message));
   await page.addInitScript(() => { window.localStorage.clear(); window.localStorage.setItem('sdt.web.experience.v1', 'demo'); });
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  // Wait for the scripts too: Next's async development chunks can still be
+  // downloading after DOMContentLoaded, before hydration can begin.
+  await page.goto('/');
   await expect(page).toHaveTitle('Delivery Tracker');
   // This control is rendered only after the client repository has loaded, so
   // it is also a stable signal that hydration and the first effect completed.

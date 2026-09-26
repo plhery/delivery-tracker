@@ -46,8 +46,10 @@ test('opens the looping package into sign-in, then leaves demo without a reload'
 test('offers direct sign-in with a compact card and keeps the parcel when returning', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByText('All your deliveries, in one place.', { exact: true })).toBeVisible();
+  const signIn = page.getByRole('button', { name: 'Sign in', exact: true });
+  await expect(signIn).toBeEnabled();
   await page.locator('.arrival__parcel').evaluate((element) => element.setAttribute('data-kept', 'yes'));
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await signIn.click();
   await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeFocused();
   await expect(page.locator('.auth-flow--card')).toBeVisible();
   await expect(page.locator('.arrival__parcel')).toHaveAttribute('data-kept', 'yes');
