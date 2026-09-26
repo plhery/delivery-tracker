@@ -56,10 +56,25 @@ FLARESOLVERR_URL for browser fallback')`.
   answers 404.
 - Official developer API (`apis.fedex.com`): needs per-deployment credentials, so it cannot
   serve anonymous lookups. Reconsider if the browser path stays unreliable.
-- Copying cookies into a fresh browser context: loses acceptance. Only the original context
-  keeps working.
+- Copying cookies into a fresh browser context did not reproduce acceptance in the recorded
+  comparison, while the original context still worked. The test did not isolate omitted storage,
+  initialization, browser characteristics or timing, so it does not prove intrinsic context binding.
 - Blind retries after a 403: replies carry no `Retry-After`, and retries on the deployed path
   did not recover.
+
+## Prior art checked
+
+- [`infecting/akamai` at `9390e7d`](https://github.com/infecting/akamai/tree/9390e7d9a09ccf9a0864728eb96fc66b48e548d4)
+  is an unlicensed 2022 proof of concept for an older FedEx login flow and Akamai sensor version,
+  not the current tracking endpoint. It is useful only as historical evidence that form events,
+  timing and fingerprint coherence can affect acceptance.
+- [`OXDBXKXO/akamai-toolkit` at `36b5e23`](https://github.com/OXDBXKXO/akamai-toolkit/tree/36b5e23aa111fd9099e3b5a0de618280b499fc73)
+  is MIT-licensed analysis tooling for Akamai v1.70, last updated in 2021. Its observer-before-
+  navigation method remains useful; its parser and script replacement are obsolete here.
+- [`markswendsen-code/mcp-fedex` at `02aa3ce`](https://github.com/markswendsen-code/mcp-fedex/tree/02aa3ce2d1a71a13f09cd1539541499a1cb290f5)
+  uses Chromium, stealth overrides and a retained context, but never captures the tracking API
+  response or binds returned data to the requested number. A normal page shell with an API 403
+  therefore escapes its blocker check, so it is not evidence that stealth fixes this failure.
 
 ## Limitations
 
@@ -67,6 +82,22 @@ FLARESOLVERR_URL for browser fallback')`.
   time.
 - Sender, recipient, signatory, service description, weight and dimensions are in the reply
   but never read; a test asserts it.
+
+## Latest verification
+
+- 2026-09-26: two fresh requests through the deployed Camoufox 152 retained-session runner
+  reached the tracking API and received HTTP 403. Stock Chrome 154 in headless mode instead
+  received FedEx's `System Down` shell before the form loaded, on both local and server egress.
+- The same automated Chrome in headful mode loaded the tracker on both egress paths. Through
+  the server path, its tracking preflight received HTTP 200 from `AkamaiGHost`, followed by an
+  HTML HTTP 403 for the tracking POST. Chrome exposed that rejection to Playwright as
+  `net::ERR_FAILED` because the denial lacked the normal CORS header; lower-level network
+  metadata preserved the actual status.
+- Waiting ten seconds after the form was ready allowed two additional first-party security
+  posts but produced the same tracking denial. Pointer and Enter experiments did not dispatch
+  the site's tracking request, while the page handler did. No browser switch, fixed wait or
+  extra retry was deployed from this small sample; universal-provider recovery remains the
+  reliable path.
 
 ## Testing
 

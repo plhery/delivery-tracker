@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { FedExTracker } from './adapter';
 
 // A real shipment supplied outside the repository, e.g.
-// FEDEX_LIVE_TRACKING_NUMBER=041441760228964 npm run test:carriers:live
+// FEDEX_LIVE_TRACKING_NUMBER=<tracking-number> npm run test:carriers:live
 // Open-source rule: never commit the number, a response, or any private
 // field it returns. The wrong-number probe below needs no browser service.
 const LIVE_TRACKING_NUMBER = (process.env.FEDEX_LIVE_TRACKING_NUMBER ?? '').trim();

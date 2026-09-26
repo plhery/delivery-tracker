@@ -175,8 +175,17 @@ export class FedExSessions {
       const response = await bounded(reply, timeout(), 'FedEx tracking response missing');
       if (!response) throw new Error('FedEx tracking connection failed');
       const headers = response.headers();
+      const retainedHeaders = {};
+      for (const name of ['content-type', 'server', 'retry-after']) {
+        if (headers[name]) retainedHeaders[name] = headers[name].slice(0, 100);
+      }
       const entry = { url: API, status: response.status(), body: null, truncated: false, base64Encoded: false,
-        headers: headers['retry-after'] ? { 'retry-after': headers['retry-after'].slice(0, 100) } : {} };
+        headers: retainedHeaders };
+      if ([401, 403].includes(entry.status)) {
+        entry.error = /akamai/i.test(retainedHeaders.server ?? '')
+          && /text\/html/i.test(retainedHeaders['content-type'] ?? '')
+          ? 'fedex-edge-denial' : 'fedex-browser-request-rejected';
+      }
       if (entry.status === 200) {
         const length = Number(headers['content-length'] ?? 0);
         if (!String(headers['content-type'] ?? '').includes('application/json')

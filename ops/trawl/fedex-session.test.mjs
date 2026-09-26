@@ -113,6 +113,31 @@ test('ignores a late response for the same number from an earlier request', asyn
   await f.close();
 });
 
+test('classifies an edge denial while retaining only safe response headers', async () => {
+  const f = fixture([{ status: 403, headers: {
+    'content-type': 'text/html; charset=utf-8',
+    server: 'AkamaiGHost',
+    'retry-after': '30',
+    'set-cookie': 'private-value',
+    'x-reference-error': 'private-reference',
+  } }]);
+  const result = await f.run();
+  assert.deepEqual(result.capturedResponses[0], {
+    url: API,
+    status: 403,
+    body: null,
+    truncated: false,
+    base64Encoded: false,
+    headers: {
+      'content-type': 'text/html; charset=utf-8',
+      server: 'AkamaiGHost',
+      'retry-after': '30',
+    },
+    error: 'fedex-edge-denial',
+  });
+  await f.close();
+});
+
 test('refreshes the same number through the blank form without replacing its context', async () => {
   const f = fixture();
   await f.run();

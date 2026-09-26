@@ -29,8 +29,9 @@ runs stock TRAWL.
 - Carrier runners take over matching plain GETs (no screenshot, body, extra headers or, at tier 3,
   proxy) before the tier's generic flow.
 - Capture limits: JSON only, 20 replies, 2 MB per body and 4 MB total, `settleTimeout` default
-  15 s (max 30 s). Only `Retry-After` is kept from headers. The adapter, not TRAWL, rejects pending,
-  empty or mismatched replies.
+  15 s (max 30 s). Generic capture keeps only `Retry-After`; the dedicated FedEx runner also
+  keeps bounded `Content-Type` and `Server` values to classify edge denials. The adapter, not
+  TRAWL, rejects pending, empty or mismatched replies.
 
 ## Carriers
 
@@ -55,7 +56,8 @@ Shared behaviour:
 
 ## Retained FedEx browser session
 
-FedEx's API accepts a session only in the browser context that earned it; copied cookies do not work.
+In the recorded comparison, copied cookies did not reproduce the acceptance retained by the original
+browser context. That does not prove the context is intrinsically or cryptographically bound.
 [`fedex-session.mjs`](fedex-session.mjs) keeps one verified context per pooled browser:
 
 - Each lookup reopens the blank form (the results-page form can ignore a submit or keep the previous
