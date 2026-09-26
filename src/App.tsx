@@ -17,6 +17,8 @@ import { createFriendsClient } from './lib/friends';
 import { captureCardOrigin, type CardOrigin } from './lib/cardTransition';
 import { Icon, ParcelIllustration } from './components/Icon';
 import { ParcelViewControls } from './components/ParcelViewControls';
+import { PullToRefresh } from './components/PullToRefresh';
+import { useRefreshAnimation } from './lib/useRefreshAnimation';
 import {
   type MessageKey,
   useI18n,
@@ -118,6 +120,7 @@ export default function App({
   const [undoing, setUndoing] = useState(false);
   const [undoError, setUndoError] = useState<string | null>(null);
   const [refreshNotice, setRefreshNotice] = useState<string | null>(null);
+  const { icon: refreshIcon, busy: refreshAnimating, run: animateRefresh } = useRefreshAnimation();
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ParcelStatusFilter>('all');
   const [carrierFilter, setCarrierFilter] = useState<CarrierId | ''>('');
@@ -356,14 +359,18 @@ export default function App({
   }
 
   async function refreshAll() {
-    setRefreshNotice(null);
-    try {
-      await refresh((progress) => setRefreshNotice(t(`sync.${progress}`)));
-      setRefreshNotice(t('sync.completed'));
-    } catch {
+    return animateRefresh(async () => {
       setRefreshNotice(null);
-      // The shared error banner contains the actionable failure message.
-    }
+      try {
+        await refresh((progress) => setRefreshNotice(t(`sync.${progress}`)));
+        setRefreshNotice(t('sync.completed'));
+        return true;
+      } catch {
+        setRefreshNotice(null);
+        // The shared error banner contains the actionable failure message.
+        return false;
+      }
+    });
   }
 
   async function resetDemo() {
@@ -430,7 +437,8 @@ export default function App({
           </div>
         )}
 
-        <div className="deliveries-page" hidden={tab !== 'deliveries'}>
+        <PullToRefresh hidden={tab !== 'deliveries'} enabled={!loading && !refreshing && !refreshAnimating && !adding && !openParcelId} onRefresh={refreshAll}>
+        <div className="deliveries-page">
         <div className="delivery-active" role={activeParcels.length ? 'region' : undefined} aria-labelledby={activeParcels.length ? 'active-parcels-title' : undefined}>
         <div className="delivery-overview">
           {activeParcels.length > 0 && <div className="parcel-section__heading"><h2 id="active-parcels-title">{t('app.onTheWaySection')}</h2><span>{activeParcels.length}</span></div>}
@@ -449,7 +457,7 @@ export default function App({
               <Icon name="search" />
               {hasCustomView && <><i className="delivery-search__dot" aria-hidden="true" /><span className="sr-only" id="parcel-view-active">{t('view.customized')}</span></>}
             </button>}
-            <button type="button" className="icon-button" aria-label={refreshing ? t('app.refreshing') : t('app.refresh')} aria-busy={refreshing} disabled={refreshing} onClick={() => void refreshAll()}><Icon name="refresh" className={refreshing ? 'spin' : undefined} /></button>
+            <button type="button" className="icon-button" aria-label={refreshing ? t('app.refreshing') : t('app.refresh')} aria-busy={refreshing || refreshAnimating} disabled={refreshing || refreshAnimating} data-refreshing={refreshAnimating || undefined} onClick={() => void refreshAll()}><span ref={refreshIcon} className="refresh-glyph"><Icon name="refresh" /></span></button>
           </div>
         </div>
         {!loading && parcels.length > 0 && viewControlsOpen && (
@@ -603,6 +611,7 @@ export default function App({
         )}
         </div>
         </div>
+        </PullToRefresh>
         {tab === 'passport' && <Passport parcels={parcels} loading={loading} />}
         {tab === 'friends' && <Friends key={apiAuth?.userId ?? 'demo'} client={friendsClient} parcels={parcels} demo={mode === 'demo'} onExitDemo={onExitDemo} />}
       </main>

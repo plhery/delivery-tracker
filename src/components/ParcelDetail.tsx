@@ -42,6 +42,8 @@ import { Icon, PostageStamp } from './Icon';
 import { parcelIcon, parcelTone } from '../lib/parcelDesign';
 import { ProgressTrack } from './ProgressTrack';
 import type { CardOrigin } from '../lib/cardTransition';
+import { useRefreshAnimation } from '../lib/useRefreshAnimation';
+import './Refresh.css';
 
 export function ParcelDetail({
   parcel,
@@ -100,6 +102,7 @@ export function ParcelDetail({
   const [savingTitle, setSavingTitle] = useState(false);
   const [titleError, setTitleError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
+  const { icon: refreshIcon, busy: refreshAnimating, run: animateRefresh } = useRefreshAnimation();
   const [checkError, setCheckError] = useState<string | null>(null);
   const [checkNotice, setCheckNotice] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
@@ -498,13 +501,13 @@ export function ParcelDetail({
             <button
               type="button"
               className="detail__refresh"
-              onClick={() => void checkNow()}
-              disabled={checking}
+              onClick={() => void animateRefresh(checkNow)}
+              disabled={checking || refreshAnimating}
+              aria-busy={checking || refreshAnimating}
+              data-refreshing={refreshAnimating || undefined}
               aria-label={checking ? checkNotice ?? t('detail.queueing') : t('detail.checkNow')}
             >
-              <svg className={checking ? 'spin' : undefined} aria-hidden="true" viewBox="0 0 24 24">
-                <path d="M19 8a7.5 7.5 0 1 0 .2 7.6M19 4v4h-4" />
-              </svg>
+              <span ref={refreshIcon} className="refresh-glyph"><Icon name="refresh" /></span>
             </button>
           )}
         </div>
