@@ -10,10 +10,94 @@
         "date": "2026-03-31"
       },
       "expect": {
-        "carrier": "unknown",
-        "confidence": "none"
+        "carrier": "correos-spain",
+        "confidence": "high"
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. A return shipment. The source attributes it to Correos; no rule matches this shape."
+      "note": "Publicly reported shipment number; the attribution was not independently verified. A return shipment."
+    },
+    {
+      "number": "LX309102212ES",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/entrega-de-paquete-abierto-y-s/bb3c389c2b30f513a5",
+        "date": "2026-09-18"
+      },
+      "expect": {
+        "carrier": "correos-spain",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. International letter-post item issued by Correos."
+    },
+    {
+      "number": "PHAS9C0419962810128017D",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://es.trustpilot.com/reviews/6a83008bf44f16ad720a6d32",
+        "date": "2026-08-17"
+      },
+      "expect": {
+        "carrier": "correos-spain",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Paq Ligero prefix."
+    },
+    {
+      "number": "PK0DLC0000085800128009G",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/carta-urgente-con-retraso/4085cbb5c6bb1990ab",
+        "date": "2026-09-15"
+      },
+      "expect": {
+        "carrier": "correos-spain",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
+      "number": "PK6R2M0723409010146529C",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/reparto-fallido-y-falsos-inten/fbad5e616abcfdb591",
+        "date": "2025-07-25"
+      },
+      "expect": {
+        "carrier": "correos-spain",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. One of three packages of one order; the three codes differ only in the package digit and the final check letter."
+    },
+    {
+      "number": "PK6R2M0723409020146529K",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/reparto-fallido-y-falsos-inten/fbad5e616abcfdb591",
+        "date": "2025-07-25"
+      },
+      "expect": {
+        "carrier": "correos-spain",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Second package of the same order."
+    },
+    {
+      "number": "PK6R2M0723409030146529E",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/reparto-fallido-y-falsos-inten/fbad5e616abcfdb591",
+        "date": "2025-07-25"
+      },
+      "expect": {
+        "carrier": "correos-spain",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Third package of the same order."
     },
     {
       "number": "PQ0DK20000034530151002K",
@@ -24,10 +108,10 @@
         "date": "2026-03-31"
       },
       "expect": {
-        "carrier": "unknown",
-        "confidence": "none"
+        "carrier": "correos-spain",
+        "confidence": "high"
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. A return shipment. The source attributes it to Correos; no rule matches this shape."
+      "note": "Publicly reported shipment number; the attribution was not independently verified. A return shipment."
     },
     {
       "number": "PR110604670130400C",

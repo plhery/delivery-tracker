@@ -343,6 +343,17 @@ describe('carrier detection', () => {
     // REPORTED REAL 18-char PR-prefixed specimen (national operator, separate from Correos Express).
     // Source: https://www.htcmania.com/archive/index.php/t-964137.html
     expect(detectCarrier('PR110604670130400C')).toBe('correos-spain');
+    // REPORTED REAL 23-char parcel codes: product prefix, label code, 16 digits, check letter.
+    // Source: https://www.ocu.org/reclamar/lista-reclamaciones-publicas/devolucion-en-curso-1-mes/d12130a56a293035f0
+    expect(detectCarrier('PQ0DK20000034530151002K')).toBe('correos-spain');
+    expect(detectCarrier('DQ0DK20000034530118220Z')).toBe('correos-spain');
+    // Source: https://es.trustpilot.com/reviews/6a83008bf44f16ad720a6d32
+    expect(detectCarrier('PHAS9C0419962810128017D')).toBe('correos-spain');
+    // Correos Express's all-digit 23-character numbers stay out.
+    expect(detectCarrier('99300029463629201026106')).not.toBe('correos-spain');
+    // REPORTED REAL ES S10 item, checksum-valid.
+    // Source: https://www.ocu.org/reclamar/lista-reclamaciones-publicas/entrega-de-paquete-abierto-y-s/bb3c389c2b30f513a5
+    expect(detectCarrier('LX309102212ES')).toBe('correos-spain');
     // QUARANTINED historical CV S10 shape: fails the checksum, never a positive.
     // Source: https://gist.github.com/zxp/e83a4a1b7294a5ed6207
     expect(isValidS10TrackingNumber('CV000562646ES')).toBe(false);

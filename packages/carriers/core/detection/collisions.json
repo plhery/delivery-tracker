@@ -91,6 +91,14 @@
     "shape": "AA9{9}AA",
     "carriers": [
       "chronopost",
+      "correos-spain"
+    ],
+    "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps Correos ES numbers; the country-specific high-confidence rule decides."
+  },
+  {
+    "shape": "AA9{9}AA",
+    "carriers": [
+      "chronopost",
       "ctt"
     ],
     "reason": "Chronopost's low-confidence rule accepts any S10 shape, so it overlaps CTT PT numbers; the country-specific high-confidence rule decides."

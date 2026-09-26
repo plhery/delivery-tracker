@@ -2280,9 +2280,11 @@
   },
   {
     "input": "DQ0DK20000034530118220Z",
-    "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "carrier": "correos-spain",
+    "confidence": "high",
+    "candidates": [
+      "correos-spain"
+    ]
   },
   {
     "input": "DX149431",
@@ -2819,6 +2821,14 @@
     ]
   },
   {
+    "input": "LX309102212ES",
+    "carrier": "correos-spain",
+    "confidence": "high",
+    "candidates": [
+      "correos-spain"
+    ]
+  },
+  {
     "input": "LZ430297212CN",
     "carrier": "china-post",
     "confidence": "high",
@@ -2887,6 +2897,46 @@
     "candidates": []
   },
   {
+    "input": "PHAS9C0419962810128017D",
+    "carrier": "correos-spain",
+    "confidence": "high",
+    "candidates": [
+      "correos-spain"
+    ]
+  },
+  {
+    "input": "PK0DLC0000085800128009G",
+    "carrier": "correos-spain",
+    "confidence": "high",
+    "candidates": [
+      "correos-spain"
+    ]
+  },
+  {
+    "input": "PK6R2M0723409010146529C",
+    "carrier": "correos-spain",
+    "confidence": "high",
+    "candidates": [
+      "correos-spain"
+    ]
+  },
+  {
+    "input": "PK6R2M0723409020146529K",
+    "carrier": "correos-spain",
+    "confidence": "high",
+    "candidates": [
+      "correos-spain"
+    ]
+  },
+  {
+    "input": "PK6R2M0723409030146529E",
+    "carrier": "correos-spain",
+    "confidence": "high",
+    "candidates": [
+      "correos-spain"
+    ]
+  },
+  {
     "input": "PL0000000001",
     "carrier": "amazon-logistics",
     "confidence": "high",
@@ -2896,9 +2946,11 @@
   },
   {
     "input": "PQ0DK20000034530151002K",
-    "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "carrier": "correos-spain",
+    "confidence": "high",
+    "candidates": [
+      "correos-spain"
+    ]
   },
   {
     "input": "PR110604670130400C",

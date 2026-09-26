@@ -80,6 +80,17 @@
       "id": "correos-spain-1",
       "pattern": "^PR\\d{15}C$",
       "confidence": "high"
+    },
+    {
+      "id": "correos-spain-2",
+      "pattern": "^[PD][A-Z][A-Z0-9]{4}\\d{16}[A-Z]$",
+      "confidence": "high"
+    },
+    {
+      "id": "correos-spain-3",
+      "pattern": "^[A-Z]{2}\\d{9}ES$",
+      "confidence": "high",
+      "checksum": "s10"
     }
   ]
 }

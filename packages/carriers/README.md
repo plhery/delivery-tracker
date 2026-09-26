@@ -127,7 +127,7 @@ statuses, timings and network error codes.
 | `japan-post` | Japan Post | dedicated | direct | 2 | 2 | 18 | [README](carriers/japan-post/README.md) |
 | `india-post` | India Post | dedicated | direct | 3 | 4 | 13 | [README](carriers/india-post/README.md) |
 | `poste-italiane` | Poste Italiane | dedicated | direct | 2 | 8 | 17 | [README](carriers/poste-italiane/README.md) |
-| `correos-spain` | Correos | dedicated | direct | 5 | 4 | 37 | [README](carriers/correos-spain/README.md) |
+| `correos-spain` | Correos | dedicated | direct | 5 | 10 | 41 | [README](carriers/correos-spain/README.md) |
 | `bpost` | bpost | universal providers |  | 0 | 4 | 0 |  |
 | `austrian-post` | Austrian Post | universal providers |  | 0 | 2 | 0 |  |
 | `postnord` | PostNord | universal providers |  | 0 | 1 | 0 |  |

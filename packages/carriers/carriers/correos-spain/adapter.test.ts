@@ -77,6 +77,8 @@ describe('Correos Spain response parsing', () => {
       ['H010930R', 'exception', 'failed_attempt'],
       ['O140000V', 'exception', 'returned'],
       ['X120000V', 'delivered', 'delivered'],
+      ['C010000V', 'in_transit', 'in_transit'],
+      ['H250000V', 'out_for_delivery', 'out_for_delivery'],
       ['ADV0000V', 'in_transit', 'accepted'],
       ['H01R390V', 'exception', 'failed_attempt'],
       ['H01R420V', 'exception', 'failed_attempt'],

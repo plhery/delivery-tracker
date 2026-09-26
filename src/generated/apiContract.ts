@@ -1274,7 +1274,7 @@ export const CARRIER_CAPABILITIES = {
     "linkRules": [],
     "detectionRules": [
       {
-        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!AS\\d{9}US$)(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}(?!CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$)[A-Z]{2}$",
+        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!AS\\d{9}US$)(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}(?!CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$|ES$)[A-Z]{2}$",
         "confidence": "high",
         "checksum": "s10"
       }
@@ -2842,6 +2842,15 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^PR\\d{15}C$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^[PD][A-Z][A-Z0-9]{4}\\d{16}[A-Z]$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^[A-Z]{2}\\d{9}ES$",
+        "confidence": "high",
+        "checksum": "s10"
       }
     ],
     "trackingUrlTemplate": "https://www.correos.es/es/es/herramientas/localizador/envios/detalle?tracking-number={trackingNumber}"

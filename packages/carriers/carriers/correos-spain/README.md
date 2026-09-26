@@ -18,8 +18,12 @@ Correos de Chile (`correos-chile`) are separate carriers.
 
 ## Notes
 
-- Detection is narrow (`PR` + 15 digits + `C`), but the adapter accepts any Correos-issued
-  shape (S10 `ES`, `PQ`, `PR`) and lets the envelope decide.
+- Detection covers checksum-valid `…ES` S10 numbers, `PR` + 15 digits + `C`, and the
+  23-character parcel codes: a product prefix (`P…` parcels such as `PQ`, `PK`, `PH`; `D…`
+  returns), a 4-character label code, 16 digits and a check letter. The check-letter
+  algorithm is unknown, so the rule only checks the shape. Correos Express's all-digit
+  23-character numbers don't match. The adapter itself accepts any code and lets the
+  envelope decide.
 - Only `codEvento` is mapped, never the Spanish `desTextoResumen` prose.
 - `L010000V`, `I010000V`, `X120000V` and `EOL.9001` come from a community integration and
   were never re-observed (`EOL.9001` does not even match the Correos code shape). They are

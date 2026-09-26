@@ -51,6 +51,10 @@ const EVENT_STATUS: Record<string, ClassifiedStatus> = {
   'EOL.9001': { status: 'exception', stage: 'failed_attempt' },
   'O140000V': { status: 'exception', stage: 'returned' },
   // Observed live on public parcels in the number corpus.
+  'C010000V': { status: 'in_transit', stage: 'in_transit' },
+  'F010000V': { status: 'in_transit', stage: 'in_transit' },
+  'G200000V': { status: 'in_transit', stage: 'in_transit' },
+  'H250000V': { status: 'out_for_delivery', stage: 'out_for_delivery' },
   'ADV0000V': { status: 'in_transit', stage: 'accepted' },
   'H01R390V': { status: 'exception', stage: 'failed_attempt' },
   'H01R420V': { status: 'exception', stage: 'failed_attempt' },
