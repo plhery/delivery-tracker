@@ -47,6 +47,7 @@
   "add.pasteFailed": "Nie udało się wkleić. Skopiuj numer śledzenia i spróbuj ponownie.",
   "add.requirement.dpdPostcode": "Kod pocztowy odbiorcy",
   "add.requirement.dpdPostcodeHelp": "Przewoźnik potrzebuje kodu pocztowego odbiorcy, aby pokazać aktualizacje.",
+  "add.requirement.dpdPostcodeOptionalHelp": "Dzięki niemu {{carrier}} pokaże też zweryfikowane skany i przedział czasowy doręczenia.",
   "add.requirement.trackingUrl": "Pełny link śledzenia",
   "add.requirement.trackingUrlHelp": "Wklej pełny link z wiadomości o wysyłce.",
   "add.scan": "Skanuj kod kreskowy",

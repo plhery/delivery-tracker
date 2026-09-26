@@ -24,6 +24,8 @@ export type CarrierInputValidator =
 export interface CarrierInputRequirement {
   field: CarrierInputField;
   whenTrackingNumber?: string;
+  /** The form may be submitted without it; a supplied value is still checked. */
+  optional?: boolean;
   label: string;
   type: 'text' | 'url';
   placeholder?: string;
@@ -39,6 +41,7 @@ export interface CarrierRequirementRule {
   field: CarrierInputField;
   validator: CarrierInputValidator;
   whenTrackingNumber?: string;
+  optional?: boolean;
 }
 
 export interface CarrierCatalogRequirement

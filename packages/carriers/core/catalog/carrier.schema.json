@@ -124,7 +124,7 @@
           "minLength": 1
         },
         "requirements": {
-          "description": "Extra inputs the user must supply besides the tracking number.",
+          "description": "Extra inputs the forms collect besides the tracking number. Each is required unless it is marked optional.",
           "type": "array",
           "minItems": 1,
           "items": { "$ref": "#/definitions/requirement" }
@@ -211,9 +211,13 @@
         },
         "validator": { "type": "string", "minLength": 1 },
         "whenTrackingNumber": {
-          "description": "Regular expression: the input is only required for matching tracking numbers.",
+          "description": "Regular expression: the input is only asked for and validated for matching tracking numbers.",
           "type": "string",
           "minLength": 1
+        },
+        "optional": {
+          "description": "The user may leave the input blank: the adapter tracks without it and uses it only to unlock extra detail. A value that is supplied is still validated.",
+          "type": "boolean"
         },
         "label": { "type": "string", "minLength": 1 },
         "type": { "enum": ["text", "url"] },

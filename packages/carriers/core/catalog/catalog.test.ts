@@ -14,6 +14,7 @@ import {
   carrierTimezone,
   localizedCarrierUrl,
   parcelTrackingLinks,
+  requirementSatisfied,
   tracksAutomatically,
   trackingNumberForLink,
 } from './index';
@@ -66,6 +67,36 @@ describe('the catalog lookups the server reads', () => {
     expect(activeRequirements('mondial-relay', '12345678').map((item) => item.validator)).toEqual(['francePostcode']);
     expect(carrierRequirements('mondial-relay', '12345678').map((item) => item.field)).toEqual(['dpdPostcode']);
     expect(activeRequirements('swiss-post', 'RA123456785CH')).toEqual([]);
+  });
+
+  it('marks only the DPD postcode as optional', () => {
+    expect(activeRequirements('dpd', '06080000000001')).toMatchObject([{ field: 'dpdPostcode', optional: true }]);
+    for (const [carrier, number] of [
+      ['gls-ch', '993990103198'],
+      ['gls-de', '123456789018'],
+      ['heppner', '23456789'],
+      ['paack', 'PAACK12345'],
+      ['mondial-relay', '12345678'],
+    ] as const) {
+      expect(activeRequirements(carrier, number).map((item) => item.optional), carrier).toEqual([undefined]);
+    }
+  });
+});
+
+describe('requirementSatisfied', () => {
+  const postcode = { pattern: '^[0-9]{4}$' };
+
+  it('accepts a blank value only when the input is optional', () => {
+    expect(requirementSatisfied({ ...postcode, optional: true }, '')).toBe(true);
+    expect(requirementSatisfied({ ...postcode, optional: true }, '  ')).toBe(true);
+    expect(requirementSatisfied(postcode, '')).toBe(false);
+  });
+
+  it('checks a typed value against the pattern either way', () => {
+    expect(requirementSatisfied({ ...postcode, optional: true }, '800')).toBe(false);
+    expect(requirementSatisfied({ ...postcode, optional: true }, ' 8000 ')).toBe(true);
+    expect(requirementSatisfied(postcode, '8000')).toBe(true);
+    expect(requirementSatisfied({}, 'anything')).toBe(true);
   });
 });
 

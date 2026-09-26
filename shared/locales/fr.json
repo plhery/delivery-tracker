@@ -47,6 +47,7 @@
   "add.pasteFailed": "Le collage a échoué. Copie le numéro de suivi et réessaie.",
   "add.requirement.dpdPostcode": "Code postal de livraison",
   "add.requirement.dpdPostcodeHelp": "Le transporteur a besoin du code postal de livraison pour afficher le suivi.",
+  "add.requirement.dpdPostcodeOptionalHelp": "Avec ce code, {{carrier}} affiche aussi les scans vérifiés et le créneau de livraison.",
   "add.requirement.trackingUrl": "Lien de suivi complet",
   "add.requirement.trackingUrlHelp": "Colle le lien complet de ton e-mail d’expédition.",
   "add.scan": "Scanner le code-barres",

@@ -1873,6 +1873,14 @@ describe('carrier metadata', () => {
     expect(tracksAutomatically('dpd')).toBe(true);
   });
 
+  it('offers the DPD delivery postcode as an optional input', () => {
+    expect(carrierRequirements('dpd', '06080000000001')).toMatchObject([
+      { field: 'dpdPostcode', optional: true, pattern: '^[0-9]{4}$' },
+    ]);
+    expect(carrierRequirements('gls-ch', '993990103198').map((item) => [item.field, item.optional]))
+      .toEqual([['dpdPostcode', undefined]]);
+  });
+
   it('tracks UPS deliveries automatically with browser fallback', () => {
     expect(tracksAutomatically('ups')).toBe(true);
     expect(CARRIERS.ups.trackingUrl?.('1Z999AA10123456784')).toBe(

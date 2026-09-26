@@ -21,6 +21,7 @@ export {
   displayedCarrierId,
   parcelTrackingLinks,
   parcelTrackingNumbers,
+  requirementSatisfied,
   tracksAutomatically,
 } from '@carriers/core/catalog';
 export type {

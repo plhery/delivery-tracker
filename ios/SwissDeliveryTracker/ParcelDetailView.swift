@@ -599,6 +599,12 @@ private struct ChangeCarrierView: View {
                         ForEach(requirements, id: \.field) { requirement in
                             requirementField(requirement)
                         }
+                    } footer: {
+                        if postcodeRequirement?.isOptional == true {
+                            Text(localizer.text("add.requirement.dpdPostcodeOptionalHelp", [
+                                "carrier": catalog.info(for: selectedCarrier, language: localizer.language).displayName,
+                            ]))
+                        }
                     }
                 }
 
@@ -655,7 +661,7 @@ private struct ChangeCarrierView: View {
                       url.scheme == "https",
                       url.host != nil else { return false }
             case .dpdPostcode:
-                guard requirement.accepts(deliveryPostcode) else { return false }
+                guard requirement.isSatisfied(by: deliveryPostcode) else { return false }
             }
         }
         return true
@@ -690,14 +696,21 @@ private struct ChangeCarrierView: View {
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
         case .dpdPostcode:
-            TextField(
-                localizer.text("add.requirement.dpdPostcode"),
-                text: $deliveryPostcode
-            )
-            .keyboardType(requirement.inputMode == "numeric" ? .numberPad : .asciiCapable)
-            .textContentType(.postalCode)
-            .onChange(of: deliveryPostcode) { _, value in
-                deliveryPostcode = requirement.normalizedValue(value)
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                TextField(
+                    localizer.text("add.requirement.dpdPostcode"),
+                    text: $deliveryPostcode
+                )
+                .keyboardType(requirement.inputMode == "numeric" ? .numberPad : .asciiCapable)
+                .textContentType(.postalCode)
+                .onChange(of: deliveryPostcode) { _, value in
+                    deliveryPostcode = requirement.normalizedValue(value)
+                }
+                if requirement.isOptional {
+                    Text(localizer.text("add.optional"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
     }

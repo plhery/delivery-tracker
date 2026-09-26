@@ -47,6 +47,7 @@
   "add.pasteFailed": "Não foi possível colar. Copia o número de seguimento e tenta novamente.",
   "add.requirement.dpdPostcode": "Código postal de entrega",
   "add.requirement.dpdPostcodeHelp": "A transportadora precisa do código postal de entrega para mostrar o seguimento.",
+  "add.requirement.dpdPostcodeOptionalHelp": "Com o código postal, {{carrier}} também mostra os registos verificados e o intervalo horário de entrega.",
   "add.requirement.trackingUrl": "Ligação de seguimento completa",
   "add.requirement.trackingUrlHelp": "Cola a ligação completa do e-mail de envio.",
   "add.scan": "Ler código de barras",

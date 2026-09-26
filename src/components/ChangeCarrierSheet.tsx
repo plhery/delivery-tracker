@@ -7,6 +7,7 @@ import {
   carrierRequirements,
   carrierTrackingHintKey,
   formatTrackingNumber,
+  requirementSatisfied,
   SELECTABLE_CARRIERS,
   tracksAutomatically,
 } from '../lib/carriers';
@@ -40,10 +41,8 @@ export function ChangeCarrierSheet({
   const valueFor = (field: CarrierInputField) => field === 'trackingUrl'
     ? trackingUrl
     : dpdPostcode;
-  const requirementsSatisfied = requirements.every((requirement) => {
-    const value = valueFor(requirement.field).trim();
-    return value && (!requirement.pattern || new RegExp(requirement.pattern).test(value));
-  });
+  const requirementsSatisfied = requirements.every((requirement) =>
+    requirementSatisfied(requirement, valueFor(requirement.field)));
   const nextTrackingUrl = requirements.some(({ field }) => field === 'trackingUrl')
     ? trackingUrl.trim()
     : undefined;
@@ -149,6 +148,7 @@ export function ChangeCarrierSheet({
                 {locale === 'en'
                   ? requirement.label
                   : t(`add.requirement.${requirement.field}`)}
+                {requirement.optional && <> <small>{t('add.optional')}</small></>}
               </span>
               <input
                 className="field__input"
@@ -169,13 +169,13 @@ export function ChangeCarrierSheet({
                 autoCapitalize={requirement.type === 'url' ? 'none' : undefined}
                 autoCorrect="off"
                 spellCheck={false}
-                required
+                required={!requirement.optional}
               />
               {requirement.help && (
                 <small className="field__help">
-                  {t(requirement.field === 'dpdPostcode'
-                    ? 'add.requirement.dpdPostcodeHelp'
-                    : 'add.requirement.trackingUrlHelp')}
+                  {t(requirement.field === 'trackingUrl' ? 'add.requirement.trackingUrlHelp'
+                    : requirement.optional ? 'add.requirement.dpdPostcodeOptionalHelp'
+                      : 'add.requirement.dpdPostcodeHelp', { carrier: carrier.name })}
                 </small>
               )}
             </label>

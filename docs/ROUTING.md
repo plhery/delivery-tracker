@@ -89,7 +89,7 @@ Post 17TRACK route skip shadow checks.
 | Only one or two universals know the carrier | Discovery finds one and pins it. No fan-out on normal successful checks. |
 | Unknown carrier | Try one strong direct candidate if there is one, otherwise discover a universal. Never invent a carrier from a number's shape. |
 | Everything fails | Keep progress, store the next check time, keep affinity until a replacement works. |
-| User switches to a worse carrier | Check the new choice first. If the previously confirmed route still works, restore it with the same notice. Generation fencing cancels in-flight work. |
+| User switches to a worse carrier | Check the new choice first. If the previously confirmed route still works, restore it with the same notice, using the postcode or link saved with it. Choosing the confirmed carrier again replaces those with what the user entered, so a cleared postcode is not reused. Generation fencing cancels in-flight work. |
 | Older or regressing result | Keep the newer or terminal state. A successful response never downgrades status. |
 
 ## Handoffs (two carriers)

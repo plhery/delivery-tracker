@@ -579,10 +579,11 @@
           {
             "field": "dpdPostcode",
             "validator": "swissPostcode",
+            "optional": true,
             "label": "Delivery postcode",
             "type": "text",
             "placeholder": "8000",
-            "help": "DPD uses this to unlock verified scans and delivery windows.",
+            "help": "Optional. DPD uses it to unlock verified scans and the delivery window.",
             "pattern": "^[0-9]{4}$",
             "maxLength": 4,
             "inputMode": "numeric",
@@ -4743,7 +4744,7 @@
           "dpdPostcode": {
             "type": "string",
             "pattern": "^(?=.{3,10}$)(?=.*[0-9])[A-Za-z0-9]+(?:[ -][A-Za-z0-9]+)*$",
-            "description": "Recipient postcode required by DPD and GLS Switzerland (four digits), Mondial Relay short shipment numbers (five digits; optional for validated 26-digit barcodes), Heppner (four or five digits) and Paack (carrier-specific alphanumeric format), and rejected for other carriers. This property keeps its historical name for API compatibility."
+            "description": "Recipient postcode, optional for DPD Switzerland (four digits; it unlocks verified scans) and required by GLS Switzerland (four digits), GLS Germany and Heppner (four or five digits), Mondial Relay short shipment numbers (five digits; optional for validated 26-digit barcodes) and Paack (carrier-specific alphanumeric format). It is rejected for other carriers. This property keeps its historical name for API compatibility."
           }
         }
       },
@@ -4778,7 +4779,7 @@
           "dpdPostcode": {
             "type": "string",
             "pattern": "^(?=.{3,10}$)(?=.*[0-9])[A-Za-z0-9]+(?:[ -][A-Za-z0-9]+)*$",
-            "description": "Recipient postcode required by DPD and GLS Switzerland, Mondial Relay, Heppner or Paack."
+            "description": "Recipient postcode, optional for DPD Switzerland and required by GLS Switzerland, GLS Germany, Mondial Relay short shipment numbers, Heppner or Paack."
           }
         }
       },

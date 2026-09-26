@@ -98,6 +98,19 @@ export function carrierRequirements(
   );
 }
 
+/**
+ * Whether a form value lets the parcel be saved: blank passes only for an
+ * optional input, and a value that is typed must still match the pattern.
+ */
+export function requirementSatisfied(
+  requirement: Pick<CarrierInputRequirement, 'optional' | 'pattern'>,
+  raw: string,
+): boolean {
+  const value = raw.trim();
+  if (!value) return requirement.optional === true;
+  return !requirement.pattern || new RegExp(requirement.pattern).test(value);
+}
+
 export function tracksAutomatically(carrierId: CarrierId): boolean {
   return CARRIERS[carrierId].capabilities.tracking.mode === 'automatic';
 }

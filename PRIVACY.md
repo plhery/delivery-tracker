@@ -16,7 +16,7 @@ own notice.
   locker that performed the scan — plus sender or business names, pickup-point
   details, parcel weight and dimensions where the carrier provides them.
 - Optional Planzer shared and Dachser Customer Iberia capability URLs,
-  supplied delivery postcodes for carriers that require
+  delivery postcodes you supply for carriers that require or accept
   them, and combined tracking credentials that can contain a delivery postcode.
 - Web Push subscription endpoints, encryption keys, browser user agent, native
   iPhone APNs device token, optional device name and locale, a random local

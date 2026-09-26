@@ -297,12 +297,19 @@ describe('input validation', () => {
       trackingUrl: '',
       dpdPostcode: '',
     })).toThrow('letters and numbers');
-    expect(() => newPackageValues({
-      trackingNumber: '06086514587082',
+    expect(newPackageValues({
+      trackingNumber: '06080000000001',
       label: 'Parcel',
       carrier: 'dpd',
       trackingUrl: '',
       dpdPostcode: '',
+    })).toMatchObject({ carrier: 'dpd', trackingUrl: null, dpdPostcode: null });
+    expect(() => newPackageValues({
+      trackingNumber: '06080000000001',
+      label: 'Parcel',
+      carrier: 'dpd',
+      trackingUrl: '',
+      dpdPostcode: '80A4',
     })).toThrow('four-digit');
     expect(newPackageValues({
       trackingNumber: '76434219',
@@ -407,6 +414,12 @@ describe('input validation', () => {
     });
     expect(() => packageCarrierValues({ carrier: 'mondial-relay' }, '76434219'))
       .toThrow('five-digit');
+    expect(packageCarrierValues({ carrier: 'dpd' }, '06080000000001'))
+      .toEqual({ carrier: 'dpd', trackingUrl: null, dpdPostcode: null });
+    expect(packageCarrierValues({ carrier: 'dpd', dpdPostcode: '8000' }, '06080000000001'))
+      .toMatchObject({ dpdPostcode: '8000' });
+    expect(() => packageCarrierValues({ carrier: 'gls-ch' }, '993990103198'))
+      .toThrow('four-digit');
     expect(() => packageCarrierValues({ carrier: 42 }, '76434219'))
       .toThrow('Carrier must be text');
     expect(packageCarrierValues({ carrier: 'ups' }, '440012345612345678'))

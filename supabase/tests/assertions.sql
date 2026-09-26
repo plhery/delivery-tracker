@@ -1959,3 +1959,79 @@ begin
 end;
 $$;
 rollback;
+
+-- DPD Switzerland tracks without a postcode; GLS Switzerland still needs one.
+begin;
+insert into auth.users (id, email) values ('99000000-0000-0000-0000-000000000001', 'dpd-optional@example.invalid');
+insert into public.packages (id, user_id, tracking_number, carrier, dpd_postcode, current_stage, sync_status, carrier_data)
+values
+  ('99000000-0000-0000-0000-000000000011', '99000000-0000-0000-0000-000000000001', '06080000000002', 'dpd', '8000',
+    'in_transit', 'ok', '{"routing":{"version":1,"configured_carrier":"dpd","confirmed_carrier":"dpd","confirmed_number":"06080000000002","confirmed_postcode":"8000"}}'),
+  ('99000000-0000-0000-0000-000000000012', '99000000-0000-0000-0000-000000000001', '06080000000003', 'dpd', '8000',
+    'in_transit', 'ok', '{}');
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '99000000-0000-0000-0000-000000000001', true);
+do $$
+declare
+  parcel public.packages;
+begin
+  select * into parcel from public.create_owned_package('06080000000001', '', 'dpd', null, '');
+  if parcel.carrier <> 'dpd' or parcel.dpd_postcode is not null then
+    raise exception 'DPD parcel without a postcode was not stored with a null postcode';
+  end if;
+  if not public.change_owned_package_carrier(parcel.id, 'unknown', null, null)
+      or not public.change_owned_package_carrier(parcel.id, 'dpd', null, null) then
+    raise exception 'Changing to DPD without a postcode was rejected';
+  end if;
+  select * into parcel from public.packages where id = parcel.id;
+  if parcel.carrier <> 'dpd' or parcel.dpd_postcode is not null then
+    raise exception 'Changing to DPD without a postcode did not keep a null postcode';
+  end if;
+  perform public.change_owned_package_carrier(parcel.id, 'dpd', null, '8000');
+  select * into parcel from public.packages where id = parcel.id;
+  if parcel.dpd_postcode is distinct from '8000' then
+    raise exception 'A DPD postcode added later was not stored';
+  end if;
+  begin
+    perform public.change_owned_package_carrier(parcel.id, 'dpd', null, '80A4');
+    raise exception 'Invalid DPD postcode was accepted on a carrier change' using errcode = 'P0002';
+  exception when invalid_parameter_value then null; end;
+  begin
+    perform public.change_owned_package_carrier(parcel.id, 'gls-ch', null, null);
+    raise exception 'Accepted a change to GLS Switzerland without a postcode' using errcode = 'P0002';
+  exception when invalid_parameter_value then null; end;
+  begin
+    perform public.create_owned_package('993990103198', '', 'gls-ch', null, null);
+    raise exception 'Accepted a GLS Switzerland parcel without a postcode' using errcode = 'P0002';
+  exception when invalid_parameter_value then null; end;
+
+  -- Recovery routing keeps the postcode when the owner switches away from DPD,
+  -- but a postcode cleared on DPD must not be reused or written back later.
+  perform public.change_owned_package_carrier('99000000-0000-0000-0000-000000000011', 'unknown', null, null);
+  if (select carrier_data->'routing'->>'confirmed_postcode' from public.packages
+      where id = '99000000-0000-0000-0000-000000000011') is distinct from '8000' then
+    raise exception 'Switching away from DPD dropped the recovery postcode';
+  end if;
+  perform public.change_owned_package_carrier('99000000-0000-0000-0000-000000000011', 'dpd', null, null);
+  if not exists (
+    select 1 from public.packages
+    where id = '99000000-0000-0000-0000-000000000011'
+      and dpd_postcode is null
+      and carrier_data->'routing'->>'confirmed_carrier' = 'dpd'
+      and not (carrier_data->'routing' ? 'confirmed_postcode')
+  ) then
+    raise exception 'A cleared DPD postcode stayed in recovery routing';
+  end if;
+  perform public.change_owned_package_carrier('99000000-0000-0000-0000-000000000012', 'dpd', null, null);
+  if not exists (
+    select 1 from public.packages
+    where id = '99000000-0000-0000-0000-000000000012'
+      and dpd_postcode is null
+      and carrier_data->'routing'->>'confirmed_carrier' = 'dpd'
+      and not (carrier_data->'routing' ? 'confirmed_postcode')
+  ) then
+    raise exception 'A cleared DPD postcode was copied into new recovery routing';
+  end if;
+end;
+$$;
+rollback;

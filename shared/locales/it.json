@@ -47,6 +47,7 @@
   "add.pasteFailed": "Impossibile incollare. Copia il numero di tracciamento e riprova.",
   "add.requirement.dpdPostcode": "Codice postale di consegna",
   "add.requirement.dpdPostcodeHelp": "Il corriere richiede il CAP di consegna per mostrare gli aggiornamenti.",
+  "add.requirement.dpdPostcodeOptionalHelp": "Con il CAP, {{carrier}} mostra anche le scansioni verificate e la fascia oraria di consegna.",
   "add.requirement.trackingUrl": "Link di tracciamento completo",
   "add.requirement.trackingUrlHelp": "Incolla il link completo dell’e-mail di spedizione.",
   "add.scan": "Scansiona codice a barre",

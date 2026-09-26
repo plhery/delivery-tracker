@@ -381,7 +381,12 @@ struct AddParcelView: View {
             if let requirement = postcodeRequirement {
                 requirementField(
                     title: localizer.text("add.requirement.dpdPostcode"),
-                    help: localizer.text("add.requirement.dpdPostcodeHelp")
+                    help: requirement.isOptional
+                        ? localizer.text("add.requirement.dpdPostcodeOptionalHelp", [
+                            "carrier": catalog.info(for: resolvedCarrier, language: localizer.language).displayName,
+                        ])
+                        : localizer.text("add.requirement.dpdPostcodeHelp"),
+                    optional: requirement.isOptional
                 ) {
                     TextField(requirement.placeholder ?? "", text: $deliveryPostcode)
                         .font(.body.monospacedDigit())
@@ -400,11 +405,19 @@ struct AddParcelView: View {
     private func requirementField<FieldContent: View>(
         title: String,
         help: String,
+        optional: Bool = false,
         @ViewBuilder field: () -> FieldContent
     ) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                if optional {
+                    Text(localizer.text("add.optional"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
             field()
                 .padding(14)
                 .background(Brand.paper, in: RoundedRectangle(cornerRadius: 12))
@@ -542,7 +555,7 @@ struct AddParcelView: View {
                       url.scheme == "https",
                       url.host != nil else { return false }
             case .dpdPostcode:
-                guard requirement.accepts(deliveryPostcode) else { return false }
+                guard requirement.isSatisfied(by: deliveryPostcode) else { return false }
             }
         }
         return true

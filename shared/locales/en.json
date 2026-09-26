@@ -47,6 +47,7 @@
   "add.pasteFailed": "Couldn’t paste. Copy the tracking number and try again.",
   "add.requirement.dpdPostcode": "Delivery postcode",
   "add.requirement.dpdPostcodeHelp": "The carrier needs the delivery postcode to show your parcel’s updates.",
+  "add.requirement.dpdPostcodeOptionalHelp": "With it, {{carrier}} also shows verified scans and the delivery window.",
   "add.requirement.trackingUrl": "Complete tracking link",
   "add.requirement.trackingUrlHelp": "Paste the full link from your shipping email.",
   "add.scan": "Scan barcode",

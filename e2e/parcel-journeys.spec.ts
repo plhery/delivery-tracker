@@ -142,6 +142,27 @@ test('accepts a Swiss postcode for GLS Germany and labels unknown carriers', asy
   await expect(edit).toBeHidden();
 });
 
+test('adds a DPD parcel without its optional postcode', async ({ page }) => {
+  await page.getByRole('button', { name: 'Add a parcel' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
+  await sheet.getByLabel(/^Name/).fill('Postcode-free DPD parcel');
+  await sheet.getByLabel('Tracking number or link')
+    .fill('https://www.dpdgroup.com/ch/mydpd/my-parcels/incoming?parcelNumber=06080000000001');
+  await expect(sheet.getByText('DPD', { exact: true })).toBeVisible();
+  await expect(sheet.getByText('Optional', { exact: true })).toHaveCount(2);
+  await sheet.getByLabel(/^Delivery postcode/).fill('');
+  const add = sheet.getByRole('button', { name: 'Add parcel' });
+  await expect(add).toBeEnabled();
+  await add.click();
+  await expect(sheet).toBeHidden();
+  await page.getByRole('button', { name: /^(?:Next up: )?Postcode-free DPD parcel —/ }).click();
+  const detail = page.getByRole('dialog', { name: 'Postcode-free DPD parcel' });
+  await detail.getByRole('button', { name: 'Change carrier from DPD' }).click();
+  const edit = page.getByRole('dialog', { name: 'Change carrier', exact: true });
+  await expect(edit.getByLabel(/^Delivery postcode/)).toHaveValue('');
+  await expect(edit.getByRole('button', { name: 'Save carrier' })).toBeDisabled();
+});
+
 test('parcel celebration respects reduced motion and clears before the next interaction', async ({ page }) => {
   // Hold the short celebration while inspecting it, even on a busy CI runner.
   const now = Date.now();

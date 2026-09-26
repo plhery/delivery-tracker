@@ -69,6 +69,9 @@ classifies their wording.
   retried once with `continueWithoutVerification=true`, and the result carries
   `dpd_postcode_verified: false` instead of failing. The postcode is sent only
   to DPD and never logged.
+- `carrier.json` marks the requirement `"optional": true`, so the web and iPhone
+  forms, the API and the database accept a DPD parcel without it and still
+  validate one that is typed.
 - The Firebase project, app id, package, certificate hash and API key are
   public, app-restricted values from the myDPD Android build, so they live in
   code. `DPD_FIREBASE_API_KEY` overrides the key without a release.
@@ -121,6 +124,10 @@ classifies their wording.
   `geoPosition`), the sender's id and address, `customerReference1/2`,
   `gttsZipCode`, `podUrl` (it embeds the parcel number) and `product` (the
   recipient's delivery preference). A test asserts it.
+- Verified and unverified replies for one parcel have not been compared. Scans
+  are keyed by time, location and wording, so if they differ, a postcode added
+  later keeps the unverified copies beside the verified scans and can repeat a
+  notification.
 
 ## Testing
 

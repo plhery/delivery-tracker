@@ -57,6 +57,8 @@ export function normalizeCarrierInputs(
   for (const [field, requirement] of requirements) {
     const value = supplied[field];
     if (!value) {
+      // An optional input only unlocks extra detail; a supplied one is still checked below.
+      if (requirement.optional) continue;
       if (field === 'trackingUrl') {
         throw new TypeError(`${carrierDefinition(carrierId).displayName} requires its complete tracking URL`);
       }

@@ -47,6 +47,7 @@
   "add.pasteFailed": "Einfügen fehlgeschlagen. Kopiere die Sendungsnummer und versuche es erneut.",
   "add.requirement.dpdPostcode": "Postleitzahl der Lieferadresse",
   "add.requirement.dpdPostcodeHelp": "Der Paketdienst benötigt die Zustell-PLZ, um deine Sendung anzuzeigen.",
+  "add.requirement.dpdPostcodeOptionalHelp": "Damit zeigt {{carrier}} auch bestätigte Scans und das Zustellzeitfenster.",
   "add.requirement.trackingUrl": "Vollständiger Sendungslink",
   "add.requirement.trackingUrlHelp": "Füge den vollständigen Link aus deiner Versand-E-Mail ein.",
   "add.scan": "Barcode scannen",

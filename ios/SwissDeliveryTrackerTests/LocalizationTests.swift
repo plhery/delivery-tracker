@@ -72,6 +72,7 @@ final class LocalizationTests: XCTestCase {
             "welcome.feature.alerts",
             "welcome.feature.private",
             "add.requirement.dpdPostcodeHelp",
+            "add.requirement.dpdPostcodeOptionalHelp",
             "add.requirement.trackingUrlHelp",
             "auth.subtitle",
             "auth.emailOption",

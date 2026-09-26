@@ -170,6 +170,43 @@ describe('App', () => {
     expect(document.body.style.overflow).not.toBe('hidden');
   });
 
+  it('switches carriers to DPD with or without a postcode', async () => {
+    const base = createDemoRepo(window.localStorage);
+    const changeCarrier = vi.fn(base.changeCarrier);
+    const user = userEvent.setup();
+    renderApp({ ...base, changeCarrier });
+
+    await user.click(await screen.findByText('New sneakers 👟'));
+    await user.click(screen.getByRole('button', { name: 'Change carrier from DHL' }));
+    let sheet = screen.getByRole('dialog', { name: 'Change carrier' });
+    await user.selectOptions(within(sheet).getByLabelText('Carrier'), 'gls-ch');
+    expect(within(sheet).getByLabelText(/delivery postcode/i)).toBeRequired();
+    expect(within(sheet).getByRole('button', { name: 'Save carrier' })).toBeDisabled();
+    await user.selectOptions(within(sheet).getByLabelText('Carrier'), 'dpd');
+    expect(within(sheet).getByLabelText(/delivery postcode/i)).not.toBeRequired();
+    await user.click(within(sheet).getByRole('button', { name: 'Save carrier' }));
+    expect(changeCarrier).toHaveBeenLastCalledWith(expect.any(String), {
+      carrier: 'dpd',
+      trackingUrl: undefined,
+      dpdPostcode: '',
+    });
+    await user.keyboard('{Escape}');
+
+    await user.click(await screen.findByText('Trail weekend kit 🏕️'));
+    await user.click(screen.getByRole('button', { name: 'Change carrier from DPD' }));
+    sheet = screen.getByRole('dialog', { name: 'Change carrier' });
+    const postcode = within(sheet).getByLabelText(/delivery postcode/i);
+    expect(postcode).toHaveValue('8000');
+    expect(within(sheet).getByRole('button', { name: 'Save carrier' })).toBeDisabled();
+    await user.clear(postcode);
+    await user.click(within(sheet).getByRole('button', { name: 'Save carrier' }));
+    expect(changeCarrier).toHaveBeenLastCalledWith(expect.any(String), {
+      carrier: 'dpd',
+      trackingUrl: undefined,
+      dpdPostcode: '',
+    });
+  });
+
   it('separates the latest carrier check from the last shipment event', async () => {
     const repo = createDemoRepo(window.localStorage);
     const parcels = await repo.list();
@@ -579,7 +616,7 @@ describe('App', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('asks for a DPD postcode and submits only four digits', async () => {
+  it('offers an optional DPD postcode and submits only four digits', async () => {
     const base = createDemoRepo(window.localStorage);
     const add = vi.fn(base.add);
     const user = userEvent.setup();
@@ -595,10 +632,15 @@ describe('App', () => {
     await user.selectOptions(await within(sheet).findByLabelText(/carrier/i, undefined, { timeout: 3000 }), 'dpd');
 
     const postcode = within(sheet).getByLabelText(/delivery postcode/i);
-    expect(postcode).toBeRequired();
+    expect(postcode).not.toBeRequired();
     expect(postcode).toHaveValue('8000');
+    expect(postcode.closest('label')).toHaveTextContent(/delivery postcode\s*optional/i);
+    expect(within(sheet).getByText(/DPD also shows verified scans/i)).toBeInTheDocument();
     await user.clear(postcode);
+    expect(within(sheet).getByRole('button', { name: /add parcel/i })).toBeEnabled();
+    await user.type(postcode, '800');
     expect(within(sheet).getByRole('button', { name: /add parcel/i })).toBeDisabled();
+    await user.clear(postcode);
 
     await user.type(postcode, '80A00');
     expect(postcode).toHaveValue('8000');
@@ -610,6 +652,29 @@ describe('App', () => {
       carrier: 'dpd',
       dpdPostcode: '8000',
     });
+  });
+
+  it('adds a DPD parcel without a postcode', async () => {
+    const base = createDemoRepo(window.localStorage);
+    const add = vi.fn(base.add);
+    const user = userEvent.setup();
+    renderApp({ ...base, add });
+    await screen.findByText('Coffee beans ☕');
+
+    await user.click(screen.getByRole('button', { name: /add a parcel/i }));
+    const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
+    await user.type(within(sheet).getByLabelText(/tracking number/i), '06080000000001');
+    await user.selectOptions(await within(sheet).findByLabelText(/carrier/i, undefined, { timeout: 3000 }), 'dpd');
+    await user.clear(within(sheet).getByLabelText(/delivery postcode/i));
+    await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
+
+    expect(add).toHaveBeenCalledWith({
+      trackingNumber: '06080000000001',
+      label: '',
+      carrier: 'dpd',
+      dpdPostcode: '',
+    });
+    expect(await screen.findByText('Added to tracking')).toBeInTheDocument();
   });
 
   it('prefills the postcode from the newest DPD parcel', async () => {

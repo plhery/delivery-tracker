@@ -19,8 +19,9 @@ statuses map correctly.
 - **N/A**: not an S10 number, so UPU is ineligible. **Unverified**: only an illustrative
   example exists.
 - Direct support: **Yes**; **Yes (postcode)** needs the recipient postcode (**Not tested
-  (postcode)** when none was public); **Link only**; **Disabled** (universal providers
-  are used instead); **No adapter**.
+  (postcode)** when none was public); **Yes (optional postcode)** tracks without it and
+  shows more with it; **Link only**; **Disabled** (universal providers are used
+  instead); **No adapter**.
 
 ## Coverage and history size
 
@@ -35,7 +36,7 @@ statuses map correctly.
 | [Royal Mail](../carriers/royal-mail/README.md) | Disabled | Error | No history | ✓ 1 | No history | ✓ 4 | No history |
 | [Swiss Post](../carriers/swiss-post/README.md) | Yes | ✓ 8 | ✓ 8 | ✓ 8 | ✓ 8 | No history | N/A |
 | [La Poste / Colissimo](../carriers/la-poste/README.md) | Yes | ✓ 15 | ✓ 11 | ✓ 16 | ✓ 14 | ✓ 26 | No history |
-| [DPD](../carriers/dpd/README.md) | Yes (postcode) | ✓ 4 | ✓ 1 | ✓ 4 | ✓ 4 | ✓ 4 | N/A |
+| [DPD](../carriers/dpd/README.md) | Yes (optional postcode) | ✓ 4 | ✓ 1 | ✓ 4 | ✓ 4 | ✓ 4 | N/A |
 | [DHL eCommerce](../carriers/dhl-ecommerce/README.md) | Yes | ✓ 16 | ✓ 11 | ✓ 36 | No history | ✓ 34 | N/A |
 | [AliExpress / Cainiao](../carriers/aliexpress/README.md) | Yes | ✓ 17 | No history | ✓ 17 | ✓ 17 | ✓ 17 | N/A |
 | [China Post](../carriers/china-post/README.md) | No adapter | Not tested | ✓ 1 | ✓ 1 | ✓ 39 | ✓ 17 | ✓ 1 |

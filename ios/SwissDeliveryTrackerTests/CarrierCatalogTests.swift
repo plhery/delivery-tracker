@@ -307,6 +307,8 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertTrue(glsGermany.accepts("01067"))
         XCTAssertFalse(glsGermany.accepts("800"))
         XCTAssertFalse(glsGermany.accepts("123456"))
+        XCTAssertFalse(glsGermany.isOptional)
+        XCTAssertFalse(glsGermany.isSatisfied(by: ""))
         XCTAssertEqual(catalog.info(for: .unknown, language: .en).displayName, "Unknown carrier")
         XCTAssertEqual(catalog.info(for: .unknown, language: .fr).displayName, "Transporteur inconnu")
         let dpd = try XCTUnwrap(
@@ -318,6 +320,12 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(dpd.normalizedValue("80 A00 9"), "8000")
         XCTAssertTrue(dpd.accepts("8000"))
         XCTAssertFalse(dpd.accepts("75001"))
+        // DPD tracks without the postcode; one that is typed must still be valid.
+        XCTAssertTrue(dpd.isOptional)
+        XCTAssertTrue(dpd.isSatisfied(by: ""))
+        XCTAssertTrue(dpd.isSatisfied(by: "  "))
+        XCTAssertTrue(dpd.isSatisfied(by: "8000"))
+        XCTAssertFalse(dpd.isSatisfied(by: "800"))
 
         let mondialRelay = try XCTUnwrap(
             catalog.requirements(for: .mondialRelay, trackingNumber: "76434219")
@@ -328,6 +336,8 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(mondialRelay.normalizedValue("75 A001 9"), "75001")
         XCTAssertTrue(mondialRelay.accepts("75001"))
         XCTAssertFalse(mondialRelay.accepts("8000"))
+        XCTAssertFalse(mondialRelay.isOptional)
+        XCTAssertFalse(mondialRelay.isSatisfied(by: ""))
 
         let gls = try XCTUnwrap(
             catalog.requirements(for: .glsCh, trackingNumber: "993990103198")
@@ -335,6 +345,8 @@ final class CarrierCatalogTests: XCTestCase {
         )
         XCTAssertTrue(gls.accepts("8000"))
         XCTAssertFalse(gls.accepts("75001"))
+        XCTAssertFalse(gls.isOptional)
+        XCTAssertFalse(gls.isSatisfied(by: ""))
 
         let heppner = try XCTUnwrap(
             catalog.requirements(for: .heppner, trackingNumber: "23456789")
@@ -342,6 +354,8 @@ final class CarrierCatalogTests: XCTestCase {
         )
         XCTAssertTrue(heppner.accepts("1201"))
         XCTAssertTrue(heppner.accepts("75001"))
+        XCTAssertFalse(heppner.isOptional)
+        XCTAssertFalse(heppner.isSatisfied(by: ""))
 
         let paack = try XCTUnwrap(
             catalog.requirements(for: .paack, trackingNumber: "PAACK12345")
@@ -351,6 +365,8 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertFalse(paack.accepts("12--345"))
         XCTAssertFalse(paack.accepts("ABC"))
         XCTAssertEqual(paack.normalizedValue("sw1a 1aa"), "SW1A1AA")
+        XCTAssertFalse(paack.isOptional)
+        XCTAssertFalse(paack.isSatisfied(by: ""))
     }
 
     func testBuildsUsableCarrierLinks() throws {
@@ -506,6 +522,11 @@ final class CarrierCatalogTests: XCTestCase {
             }
         )
         XCTAssertEqual(cached.info(for: futureCarrier).displayName, "Future Express")
+        // The cache is re-encoded from the decoded structs, so it must keep `optional`.
+        XCTAssertEqual(
+            cached.requirements(for: futureCarrier, trackingNumber: "FX12345678").map(\.isOptional),
+            [true]
+        )
         let cachedResult = await cached.refresh(
             from: URL(string: "https://delivery.example")!,
             force: true
@@ -571,7 +592,20 @@ final class CarrierCatalogTests: XCTestCase {
           "color": "#123456",
           "selectable": true,
           "timezone": "Europe/Paris",
-          "tracking": { "mode": "automatic", "adapter": "future-express" },
+          "tracking": {
+            "mode": "automatic",
+            "adapter": "future-express",
+            "requirements": [{
+              "field": "dpdPostcode",
+              "validator": "swissPostcode",
+              "optional": true,
+              "label": "Delivery postcode",
+              "type": "text",
+              "pattern": "^[0-9]{4}$",
+              "maxLength": 4,
+              "inputMode": "numeric"
+            }]
+          },
           "trackingUrlTemplate": "https://tracking.future.example/{trackingNumber}",
           "linkRules": [{
             "domains": ["tracking.future.example"],

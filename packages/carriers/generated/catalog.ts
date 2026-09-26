@@ -574,10 +574,11 @@ export const CARRIER_CATALOG = {
         {
           "field": "dpdPostcode",
           "validator": "swissPostcode",
+          "optional": true,
           "label": "Delivery postcode",
           "type": "text",
           "placeholder": "8000",
-          "help": "DPD uses this to unlock verified scans and delivery windows.",
+          "help": "Optional. DPD uses it to unlock verified scans and the delivery window.",
           "pattern": "^[0-9]{4}$",
           "maxLength": 4,
           "inputMode": "numeric",

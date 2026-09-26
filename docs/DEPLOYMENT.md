@@ -27,6 +27,14 @@ run `scripts/test-migrations.sh`.
 version. Apply new ones **before** deploying the server that needs them. Deploy the
 server before releasing iPhone builds that call new endpoints.
 
+For example, `20260926170000_optional_dpd_postcode.sql` lets DPD parcels be saved without
+a postcode. A server that accepts them before this migration is applied answers those
+requests with 502 errors. Older servers still require the postcode, so applying it early
+is safe. Release the iPhone build that marks the postcode optional after that server. Until
+an updated app first reaches `/api/carriers` it uses its bundled catalog, where the postcode
+is optional, and an older server rejects DPD parcels sent without one. After that, the app
+follows the server's catalog and shows the postcode as optional only when the server does.
+
 ## 2. Auth and email
 
 Follow [AUTHENTICATION.md](AUTHENTICATION.md). In short:

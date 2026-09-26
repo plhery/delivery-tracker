@@ -10,6 +10,7 @@ struct CarrierRequirement: Codable, Hashable, Sendable {
     let field: Field
     let validator: String?
     let whenTrackingNumber: String?
+    let optional: Bool?
     let label: String
     let type: String
     let placeholder: String?
@@ -32,6 +33,9 @@ struct CarrierRequirement: Codable, Hashable, Sendable {
         return value
     }
 
+    /// The parcel can be saved without it; a value that is typed is still checked.
+    var isOptional: Bool { optional == true }
+
     func accepts(_ rawValue: String) -> Bool {
         var value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
         if inputMode == "numeric" {
@@ -41,6 +45,11 @@ struct CarrierRequirement: Codable, Hashable, Sendable {
         if let maxLength, value.count > maxLength { return false }
         guard let pattern, !pattern.isEmpty else { return true }
         return value.range(of: pattern, options: .regularExpression) != nil
+    }
+
+    func isSatisfied(by rawValue: String) -> Bool {
+        if isOptional, rawValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return true }
+        return accepts(rawValue)
     }
 }
 
@@ -740,10 +749,12 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         try? data.write(to: cacheURL, options: .atomic)
     }
 
+    /// The cache is re-encoded from the decoded structs, so a file written by a build
+    /// that did not know a catalog field has lost it. Bump the name when one is added.
     private static func defaultCacheURL() -> URL? {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
             .appending(path: "delivery-tracker", directoryHint: .isDirectory)
-            .appending(path: "carrier-catalog-v1.json")
+            .appending(path: "carrier-catalog-v2.json")
     }
 
     private static let emptyMatch = TrackingInputMatch(
