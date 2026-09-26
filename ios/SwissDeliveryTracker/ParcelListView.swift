@@ -254,7 +254,12 @@ private struct DeliveryListView: View {
                 .animation(reduceMotion ? nil : .snappy(duration: 0.32), value: store.parcels.filter { !$0.isArchived }.map(\.id))
             }
             .scrollIndicators(.hidden)
-            .refreshable { await refreshDeliveries() }
+            .refreshable {
+                // SwiftUI cancels this task while the list redraws for the refresh,
+                // which cancelled the request and reported a connection error. The
+                // pull waits for a task of its own instead.
+                await Task { await refreshDeliveries() }.value
+            }
             .overlay {
                 if store.loading && store.parcels.isEmpty {
                     VStack(spacing: 12) {
@@ -404,6 +409,8 @@ private struct DeliveryListView: View {
             case .completed: toast = ListToast(text: localizer.text("sync.completed"))
             case .alreadyRunning: break
             }
+        } catch is CancellationError {
+        } catch let error as URLError where error.code == .cancelled {
         } catch {
             actionError = localizer.errorMessage(error)
         }
