@@ -521,8 +521,13 @@ struct AddParcelView: View {
         let number = CarrierCatalog.normalize(parsed.trackingNumber)
         guard !store.isDemo else { return nil }
         if amazonNumber { return number }
-        guard carrierOverride == nil, parsed.carrier == .unknown,
-              number.range(of: "^[0-9]{11,12}$", options: .regularExpression) != nil else { return nil }
+        guard carrierOverride == nil, parsed.carrier == .unknown else { return nil }
+        // 11-12 digits may be GLS Germany and 14 digits DPD, unless the number points
+        // to another carrier first (a DPD France depot): the server asks them.
+        if number.range(of: "^[0-9]{11,12}$", options: .regularExpression) != nil { return number }
+        let preferred = catalog.detect(number).preferred
+        guard number.range(of: "^[0-9]{14}$", options: .regularExpression) != nil,
+              preferred.isEmpty || preferred.contains(.dpd) else { return nil }
         return number
     }
 

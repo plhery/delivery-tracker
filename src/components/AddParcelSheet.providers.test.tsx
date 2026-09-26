@@ -75,6 +75,35 @@ describe('GLS carrier lookup', () => {
   });
 });
 
+describe('DPD carrier lookup', () => {
+  it('asks the server about a 14-digit number and keeps the DPD postcode optional', async () => {
+    vi.mocked(lookupCarrier).mockResolvedValue({ trackingNumber: '06080000000002', carrier: 'dpd' });
+    const onAdd = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<AddParcelSheet apiAuth={apiAuth} onAdd={onAdd} onClose={vi.fn()} initialTrackingInput="0608 0000 0000 02" />);
+    await waitFor(() => expect(lookupCarrier).toHaveBeenCalledWith('06080000000002', apiAuth, expect.anything()));
+    await screen.findByRole('textbox', { name: /^Delivery postcode/ });
+    expect(screen.getByText('DPD')).toBeInTheDocument();
+    const button = screen.getByRole('button', { name: /^add parcel$/i });
+    expect(button).toBeEnabled();
+    await user.click(button);
+    expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ carrier: 'dpd', dpdPostcode: '' }));
+  });
+
+  it('does not ask about a number whose depot points to another carrier', async () => {
+    render(<AddParcelSheet apiAuth={apiAuth} onAdd={vi.fn()} onClose={vi.fn()} initialTrackingInput="10000000000001" />);
+    expect(screen.getByRole('button', { name: /^add parcel$/i })).toBeEnabled();
+    expect(lookupCarrier).not.toHaveBeenCalled();
+  });
+
+  it('leaves an unrecognized 14-digit number to the user', async () => {
+    vi.mocked(lookupCarrier).mockResolvedValue({ trackingNumber: '06080000000002', carrier: 'unknown' });
+    render(<AddParcelSheet apiAuth={apiAuth} onAdd={vi.fn()} onClose={vi.fn()} initialTrackingInput="06080000000002" />);
+    await waitFor(() => expect(screen.getByRole('button', { name: /^add parcel$/i })).toBeEnabled());
+    expect(screen.getByText('Unknown carrier')).toBeInTheDocument();
+  });
+});
+
 describe('Amazon Logistics account-only tracking', () => {
   it.each(['FR3000000001', 'fr 3000-000001', 'Your parcel: FR3000000001', 'https://track.amazon.fr/tracking/FR3000000001'])(
     'explains account tracking and refuses %s', async (number) => {

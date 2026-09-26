@@ -27,6 +27,14 @@ because five other catalog carriers share the 14-digit shape. The guest API is
 DPDgroup-wide (it also answered for a DPD France parcel), so an answer proves a
 DPD parcel, not a Swiss one.
 
+`recognizes(number)` asks the guest API alone, never the page, whether DPD
+has a 14-digit number: a matching reply is true, a 404 or a 400 (DPD refuses
+some old parcels without the postcode) is false, anything else is a failure.
+The detect route (`app/api/carriers/detect/route.ts`) uses it, within six
+seconds and with a token kept warm per process, to promote a bare 14-digit
+number to `dpd` in the Add sheet, unless a preferred rule points to another
+carrier first; a failure answers 502 and the sheet falls back to "unknown".
+
 A 404 on the details call is a positive not-found and ends the lookup. A 404
 earlier in the token chain is an ordinary guest-API failure and falls through
 to `page`; a test guards this distinction.

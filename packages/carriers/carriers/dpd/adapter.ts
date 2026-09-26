@@ -96,6 +96,14 @@ class DPDAPIHttpError extends DPDAPIError {
   }
 }
 
+/** The parcel-details call itself refused the lookup (HTTP 400), not a token step. */
+class DPDDetailsRefusedError extends DPDAPIHttpError {
+  constructor() {
+    super(400);
+    this.name = 'DPDDetailsRefusedError';
+  }
+}
+
 /**
  * The rendered page recovers exactly what the guest API path used to hand it:
  * an inconclusive answer, a transport failure, or a payload that did not match
@@ -556,6 +564,26 @@ export class DPDTracker {
     return result;
   }
 
+  /**
+   * Whether DPD knows a 14-digit number, for the host's carrier-detection
+   * route, which promotes the number to `dpd` only when this returns true.
+   * Guest API only, never the page tier. A positive not-found (404) and a
+   * details lookup DPD refuses without the postcode (400, seen for old
+   * parcels) are false; any other failure, a 400 from a token step included,
+   * stays a failure.
+   */
+  async recognizes(trackingNumber: string): Promise<boolean> {
+    if (!/^\d{14}$/.test(trackingNumber)) return false;
+    try {
+      const payload = await this.detailsWithFreshToken(trackingNumber);
+      return clean(payload.parcelNumber ?? payload.shipmentId) === trackingNumber;
+    } catch (error) {
+      if (error instanceof DPDTrackingError) return false;
+      if (error instanceof DPDDetailsRefusedError) return false;
+      throw error;
+    }
+  }
+
   private async apiFetch(trackingNumber: string, postcode: string): Promise<CarrierResult> {
     let postcodeVerified: boolean | undefined;
     let payload: JsonObject;
@@ -606,6 +634,7 @@ export class DPDTracker {
       if (error instanceof DPDAPIHttpError && error.status === 404) {
         throw new DPDTrackingError();
       }
+      if (error instanceof DPDAPIHttpError && error.status === 400) throw new DPDDetailsRefusedError();
       throw error;
     }
   }

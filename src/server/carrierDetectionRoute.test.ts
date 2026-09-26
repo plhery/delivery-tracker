@@ -3,6 +3,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { POST } from '../../app/api/carriers/detect/route';
 import { detectCarrierMatch } from '../lib/carriers';
 import { SupabaseAuthenticator } from './auth';
+import { DPDTracker } from '@carriers/carriers/dpd/adapter';
 import { GLSGermanyTracker } from '@carriers/carriers/gls-de/adapter';
 
 const request = (trackingNumber: unknown, authenticated = true) => POST(new NextRequest('https://delivery.example/api/carriers/detect', {
@@ -14,6 +15,8 @@ beforeEach(() => {
   vi.stubEnv('SUPABASE_URL', 'https://database.example');
   vi.stubEnv('SUPABASE_PUBLISHABLE_KEY', 'public-key');
   vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  // Never reach DPD from a unit test; cases that need an answer override this.
+  vi.spyOn(DPDTracker.prototype, 'recognizes').mockResolvedValue(false);
   vi.spyOn(SupabaseAuthenticator.prototype, 'validate').mockResolvedValue({
     id: '10000000-0000-0000-0000-000000000002', email: null, authenticatedAt: null, sessionId: null,
   });
@@ -56,4 +59,18 @@ it('counts served detections by confidence, including a verified GLS promotion',
 it('keeps provider failures distinct from an unrecognized number', async () => {
   vi.spyOn(GLSGermanyTracker.prototype, 'recognizes').mockRejectedValue(new RangeError('different shipment'));
   expect((await request('123456789018')).status).toBe(502);
+  vi.spyOn(DPDTracker.prototype, 'recognizes').mockRejectedValue(new Error('guest API unreachable'));
+  expect((await request('06080000000002')).status).toBe(502);
+});
+
+it('promotes a 14-digit number to DPD only after DPD itself knows it', async () => {
+  const lookup = vi.spyOn(DPDTracker.prototype, 'recognizes').mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+  expect(await (await request('0608 0000 0000 02')).json()).toEqual({ trackingNumber: '06080000000002', carrier: 'dpd' });
+  expect(lookup).toHaveBeenCalledWith('06080000000002');
+  expect(await (await request('06080000000002')).json()).toEqual({ trackingNumber: '06080000000002', carrier: 'unknown' });
+  // A DPD France depot points elsewhere first; other shapes never ask DPD.
+  lookup.mockClear();
+  expect(await (await request('10000000000001')).json()).toMatchObject({ carrier: 'unknown' });
+  expect(await (await request('1234567890123')).json()).toMatchObject({ carrier: 'unknown' });
+  expect(lookup).not.toHaveBeenCalled();
 });

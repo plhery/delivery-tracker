@@ -552,6 +552,32 @@ describe('DPDTracker steps', () => {
     expect(steps[1]).toMatchObject({ fallbackFrom: 'direct', fallbackReason: 'indeterminate' });
   });
 
+  it('recognizes a number only from the guest API and never tries the page', async () => {
+    const known = mockGuestApi(Response.json(READY_FOR_COLLECTION));
+    const tracker = new DPDTracker({ timeoutMs: 1_000, trawl: null });
+    await expect(tracker.recognizes(TRACKING_NUMBER)).resolves.toBe(true);
+    expect(String(known.mock.calls[3]?.[0])).toContain('continueWithoutVerification=true');
+    // Warm token: one details request per question.
+    known.mockResolvedValueOnce(new Response('', { status: 404 }));
+    await expect(tracker.recognizes(TRACKING_NUMBER)).resolves.toBe(false);
+    known.mockResolvedValueOnce(new Response('', { status: 400 }));
+    await expect(tracker.recognizes(TRACKING_NUMBER)).resolves.toBe(false);
+    known.mockResolvedValueOnce(Response.json({ ...READY_FOR_COLLECTION, parcelNumber: '06080000000009' }));
+    await expect(tracker.recognizes(TRACKING_NUMBER)).resolves.toBe(false);
+    known.mockResolvedValueOnce(new Response('<html>maintenance</html>', { status: 500 }));
+    await expect(tracker.recognizes(TRACKING_NUMBER)).rejects.toThrow();
+    expect(known).toHaveBeenCalledTimes(8);
+    await expect(tracker.recognizes('1234')).resolves.toBe(false);
+    expect(known).toHaveBeenCalledTimes(8);
+  });
+
+  it('keeps a broken guest login a failure rather than an unknown parcel', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response('', { status: 400 }))
+      .mockResolvedValueOnce(new Response('', { status: 400 }));
+    await expect(new DPDTracker({ timeoutMs: 1_000, trawl: null }).recognizes(TRACKING_NUMBER)).rejects.toThrow();
+  });
+
   it('keeps a positive unknown parcel out of the page fallback', async () => {
     const fetcher = mockGuestApi(new Response('', { status: 404 }));
     const { recorder, steps } = recordingRecorder();

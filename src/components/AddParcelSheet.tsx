@@ -144,8 +144,12 @@ export function AddParcelSheet({
     && settledTrackingInput.trim() && !settledTrackingNumber);
   const normalizedNumber = normalizeTrackingNumber(trackingNumber);
   const amazonNumber = isAmazonTrackingNumber(normalizedNumber);
+  // 11-12 digits may be GLS Germany and 14 digits DPD, unless the number points
+  // to another carrier first (a DPD France depot): the server asks them.
+  const serverCheckable = /^\d{11,12}$/.test(normalizedNumber) || (/^\d{14}$/.test(normalizedNumber)
+    && (parsedTracking.preferred.length === 0 || parsedTracking.preferred.includes('dpd')));
   const shouldLookup = Boolean(apiAuth) && (amazonNumber || (selectedCarrier === 'auto'
-    && parsedTracking.carrier === 'unknown' && /^\d{11,12}$/.test(normalizedNumber)));
+    && parsedTracking.carrier === 'unknown' && serverCheckable));
   const lookingUp = shouldLookup && verifiedCarrier?.trackingNumber !== normalizedNumber;
   const currentVerification = verifiedCarrier?.trackingNumber === normalizedNumber ? verifiedCarrier : undefined;
   const shippingConfirmed = amazonNumber && currentVerification?.carrier === 'amazon-shipping'
