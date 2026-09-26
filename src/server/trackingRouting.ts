@@ -12,6 +12,7 @@ import { isKnownCarrierName } from '@carriers/providers/shared/hints';
 import { errorType, reportRoutingEvent } from './observability';
 import { CarrierError, carrierErrorKind, IndeterminateError, retryAfterMsOf } from '@carriers/core/errors';
 import { captureDirectLocalHistory, directHistoryNumber, hasUnresolvedDirectCurrent, hasUnresolvedDirectHistory } from './directLocalHistory';
+import { latestResultTime } from './eventTime';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -118,8 +119,9 @@ function usable(value: CarrierResult): boolean {
   return Boolean(value.events?.length || value.status && !['unknown', 'pending'].includes(value.status)
     || value.current_stage && value.current_stage !== 'pending');
 }
-function latest(value: CarrierResult): number {
-  return Math.max(millis(value.last_update), ...(value.events ?? []).map((event) => millis(event.time)), 0);
+/** The newest instant of a routed result, read in its source's zone exactly as its events are persisted. */
+function latest(value: RoutedResult): number {
+  return latestResultTime(value.result, value.sourceCarrierId);
 }
 function directCarrier(carrier: string): boolean {
   return AUTOMATIC_CARRIER_IDS.has(carrier) && carrierAdapter(carrier) !== 'universal';
@@ -141,7 +143,8 @@ export class TrackingRouter {
     direct: (parcel: JsonObject, carrier: string) => Promise<RoutedResult>;
     // postcode is the parcel's stored delivery postcode, if the user supplied
     // one; providers receive it in their track input but submit it nowhere yet.
-    // timezone is the parcel carrier's catalog zone, or null when that is UTC.
+    // timezone is the parcel carrier's catalog zone; when that is UTC, the zone
+    // of the carrier confirmed for the same number, else null.
     universal: (source: UniversalSource, number: string, timeoutMs: number, postcode: string | null, timezone: string | null) => Promise<CarrierResult>;
     health: ProviderHealth;
     now?: () => Date;
@@ -186,8 +189,8 @@ export class TrackingRouter {
       delete state.failures[provider];
       state.last_success_at = now().toISOString();
       // A future-dated scan must not make every later real update look older.
-      const eventTime = Math.min(now().getTime(),
-        Math.max(latest(value.result), value.earlierResult ? latest(value.earlierResult) : 0));
+      const eventTime = Math.min(now().getTime(), Math.max(latest(value),
+        value.earlierResult ? latestResultTime(value.earlierResult, value.earlierCarrierId ?? value.sourceCarrierId) : 0));
       state.last_event_at = eventTime && value.result.direct_local_fallback !== true ? iso(eventTime) : state.last_event_at;
       // Universal checks are deliberately less frequent than direct in-transit polls.
       state.next_check_at = sources.includes(provider as UniversalSource)
@@ -241,7 +244,7 @@ export class TrackingRouter {
         }
         if (candidate && ![value.result.status, value.result.current_stage, ...(value.result.events ?? []).map((event) => event.stage)]
           .some((stage) => stage && stage !== 'pending' && stage !== 'unknown')) return null;
-        if (candidate && latest(value.result) < millis(state.last_event_at)) return null;
+        if (candidate && latest(value) < millis(state.last_event_at)) return null;
         if (terminalStage && ['delivered', 'returned'].includes(terminalStage)
           && value.result.current_stage !== terminalStage) return null;
         if (carrier !== declared && state.confirmed_carrier !== carrier) report('carrier_mismatch_confirmed', carrier);
@@ -301,9 +304,12 @@ export class TrackingRouter {
     // Reserve each source’s lookup budget plus transport allowance (UPU needs only 8s).
     // Start after direct attempts so a slow carrier cannot starve discovery.
     const universalDeadline = performance.now() + sources.reduce((sum, source) => sum + universalSourceBudget(source) + 5_000, 0);
-    // The delivery leg's own carrier when its number is the one looked up.
+    // The delivery leg's own carrier when its number is the one looked up. A
+    // label without a local clock (asendia, unknown) defers to the carrier a
+    // direct lookup confirmed for this same number.
     const zone = carrierZone(universalNumber !== number && typeof metadata.active_tracking_carrier === 'string'
-      ? metadata.active_tracking_carrier : declared);
+      ? metadata.active_tracking_carrier : declared)
+      ?? (state.confirmed_carrier && state.confirmed_number === universalNumber ? carrierZone(state.confirmed_carrier) : null);
     const attemptedUniversal = new Set<UniversalSource>();
     const universal = async (source: UniversalSource): Promise<RoutedResult | null> => {
       signal?.throwIfAborted();
@@ -365,7 +371,7 @@ export class TrackingRouter {
           if (!(error instanceof RoutingDeferred)) throw error;
           return null;
         }) : null;
-        if (probe && latest(probe.result) > latest(value.result) && latest(probe.result) >= millis(state.last_event_at)
+        if (probe && latest(probe) > latest(value) && latest(probe) >= millis(state.last_event_at)
           && !['delivered', 'returned'].includes(String(value.result.current_stage))) {
           value = probe; chosen = alternative;
           report('fresher_provider_found', chosen);
@@ -386,7 +392,7 @@ export class TrackingRouter {
       // confirmation fails, needs credentials, or only returned older history.
       if (state.discovered_carrier && universalNumber === number && !metadata.original_carrier) {
         const watermark = state.last_event_at;
-        state.last_event_at = iso(Math.max(millis(watermark), latest(value.result)));
+        state.last_event_at = iso(Math.max(millis(watermark), latest(value)));
         const direct = await tryDirect(state.discovered_carrier, state.discovered_carrier !== declared,
           value.result.current_stage ?? value.result.status).catch((error: unknown) => {
           if (!(error instanceof RoutingDeferred)) throw error;

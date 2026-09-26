@@ -20,8 +20,9 @@ export interface TrackingInput {
   postcode?: string | null;
   /**
    * The zone of the carrier the parcel is filed under, for universal providers
-   * whose scan times name no zone they can be trusted with. Never a guess:
-   * absent when that carrier's catalog zone is UTC.
+   * whose scan times name no zone they can be trusted with. When that
+   * carrier's catalog zone is UTC, the zone of the carrier a direct lookup
+   * confirmed for the same number. Never a guess: absent when neither has one.
    */
   timezone?: string | null;
 }

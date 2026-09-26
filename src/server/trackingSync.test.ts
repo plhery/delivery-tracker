@@ -21,13 +21,13 @@ import type { SupabaseServiceClient } from './supabase';
 import { AdapterRegistry, type AdapterEnvironment } from '@carriers/core/adapter';
 import type { StepRecorder } from '@carriers/core/telemetry';
 import type { UniversalTracker } from '@carriers/providers/universal';
+import { eventTimestamp } from './eventTime';
 import {
   CarrierTrackingAdapter,
   buildEvents,
   classifyStage,
   collectStatusObservations,
   detectSyncAnomalies,
-  eventTimestamp,
   fairSyncPackages,
   inferStage,
   MAX_STATUS_OBSERVATIONS_PER_SYNC,
@@ -570,6 +570,28 @@ describe('TrackingSyncService', () => {
     const values = client.updatePackage.mock.calls.at(-1)![1];
     expect(values.current_stage).toBeUndefined();
     expect(values.carrier_data.routing.last_event_at).toBe('2026-09-10T11:00:00Z');
+  });
+  it('reads a naive local snapshot in its carrier\'s zone before comparing it with the watermark', async () => {
+    // India Post reports Kolkata wall time without an offset; routing writes the watermark from that reading.
+    const client = { ...fakeClient(),
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-07-01T12:01:30Z' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
+    };
+    const snapshot = (local: string, stage: string, text: string) => ({ status: 'in_transit', current_stage: stage,
+      last_status_text: text, last_update: local, events: [{ time: local, description: text, stage }] });
+    const adapter = { fetch: vi.fn()
+      .mockResolvedValueOnce(snapshot('2026-07-01T10:00:00.000', 'out_for_delivery', 'Out for delivery'))
+      .mockResolvedValueOnce(snapshot('2026-07-01T09:00:00.000', 'in_transit', 'In transit')), fetchUniversal: vi.fn() };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, () => new Date('2026-07-01T12:00:00Z'));
+    const parcel = { id: 'naive', carrier: 'india-post', tracking_number: 'TEST1234', current_stage: 'pending' };
+    await service.syncPackage(parcel);
+    const fresh = client.updatePackage.mock.calls.at(-1)![1];
+    expect(fresh).toMatchObject({ current_stage: 'out_for_delivery', carrier_data: { routing: { last_event_at: '2026-07-01T04:30:00.000Z' } } });
+    // An older snapshot from the same carrier must not regress the summary.
+    await service.syncPackage({ ...parcel, ...fresh, last_synced_at: '2026-07-01T11:00:00Z' });
+    const stale = client.updatePackage.mock.calls.at(-1)![1];
+    expect(stale.current_stage).toBeUndefined();
+    expect(stale.carrier_data).toMatchObject({ last_status_text: 'Out for delivery', routing: { last_event_at: '2026-07-01T04:30:00.000Z' } });
   });
   it('reconciles both refresh orders only after the scheduled batch has persisted', async () => {
     const packages = [

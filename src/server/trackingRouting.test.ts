@@ -340,6 +340,31 @@ describe('persistent tracking routing', () => {
     await router.fetch(parcel({ carrier: 'dpd' }), false);
     expect(universal).toHaveBeenCalledWith('Ship24', 'TEST1234', expect.any(Number), null, 'Europe/Zurich');
   });
+  it('gives universal providers the confirmed carrier\'s zone when the parcel carrier keeps UTC', async () => {
+    const { router, direct, universal } = setup(); direct.mockRejectedValue(new Error('carrier down'));
+    const confirmed = (number: string) => ({ routing: state({ configured_carrier: 'asendia', confirmed_carrier: 'dpd', confirmed_number: number }) });
+    await router.fetch(parcel({ carrier: 'asendia', carrier_data: confirmed('TEST1234') }), false);
+    expect(universal).toHaveBeenLastCalledWith('Ship24', 'TEST1234', expect.any(Number), null, 'Europe/Zurich');
+    // A route confirmed for another number says nothing about this one.
+    await router.fetch(parcel({ carrier: 'asendia', carrier_data: confirmed('OTHER123') }), false);
+    expect(universal).toHaveBeenLastCalledWith('Ship24', 'TEST1234', expect.any(Number), null, null);
+    // The parcel carrier's own zone still comes first.
+    await router.fetch(parcel({ carrier: 'dhl', carrier_data: { routing: state({ configured_carrier: 'dhl', confirmed_carrier: 'dpd-fr', confirmed_number: 'TEST1234' }) } }), false);
+    expect(universal).toHaveBeenLastCalledWith('Ship24', 'TEST1234', expect.any(Number), null, 'Europe/Berlin');
+  });
+  it.each([
+    // Quickpac reports Swiss wall time without an offset; the stored events read it in Zurich.
+    ['quickpac', '2026-07-01T08:00:00.000Z'],
+    // A zone no test machine is likely to run in, so the process zone cannot pass for it.
+    ['india-post', '2026-07-01T04:30:00.000Z'],
+  ])('reads a naive local last update in its carrier\'s zone for the freshness watermark (%s)', async (carrier, watermark) => {
+    const { router, direct } = setup(new Date('2026-07-01T12:00:00Z'));
+    const local = '2026-07-01T10:00:00.000';
+    direct.mockResolvedValue({ ...directValue(carrier), result: { status: 'in_transit', current_stage: 'in_transit', last_update: local,
+      events: [{ time: local, description: 'In transit', stage: 'in_transit' }] } });
+    const result = await router.fetch(parcel({ carrier }), false);
+    expect(result.result.routing).toMatchObject({ last_event_at: watermark });
+  });
   it('sends no postcode to universal providers when the parcel stores none', async () => {
     const { router, universal } = setup();
     await router.fetch(parcel(), false);

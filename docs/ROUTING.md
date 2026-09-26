@@ -116,7 +116,11 @@ proves freshness against another source, and forecasts are ignored. See the
 [UPU README](../packages/carriers/providers/upu/README.md).
 
 Universal providers also get the catalog timezone of the parcel's carrier, used only for
-scans with no trustworthy zone of their own (ParcelsApp's, for example).
+scans with no trustworthy zone of their own (ParcelsApp's, for example). When that carrier's
+zone is UTC (Asendia, `unknown`), they get the zone of the carrier a direct lookup confirmed
+for the same number instead, if any. The freshness watermark (`last_event_at`) reads
+offset-less times in the result's zone, exactly as the stored events are read, and so does
+the sync when it checks whether a returned summary is older than the watermark.
 
 ## Tracking links
 

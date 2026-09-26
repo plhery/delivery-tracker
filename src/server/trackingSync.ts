@@ -4,13 +4,12 @@ import { AmazonShippingHistoryExpiredError } from '@carriers/carriers/amazon-shi
 import { AMAZON_ACCOUNT_MESSAGE, AMAZON_HISTORY_EXPIRED, requiresAmazonAccount } from '../lib/amazon';
 
 import { createHash } from 'node:crypto';
-import { DateTime, IANAZone } from 'luxon';
+import { DateTime } from 'luxon';
 import { STAGES } from '../generated/apiContract';
 import { normalizeCarrierResult, type CarrierResult } from '@carriers/core/result';
 import { deliveryHandoff, hasDirectHandoffAdapter, type DeliveryHandoff } from './carrierHandoff';
 import {
   AUTOMATIC_CARRIER_IDS,
-  carrierTimezone,
   supportsSwissPostHandoff,
 } from './carriers';
 import type { AdapterRegistry } from '@carriers/core/adapter';
@@ -40,6 +39,7 @@ import type { UniversalSource } from '@carriers/providers/shared/result';
 import { RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
 import { upuHistory } from './upuHistory';
 import { directHistoryNumber, directLocalHistory, directLocalSnapshotIsOlder, hasUnresolvedDirectCurrent } from './directLocalHistory';
+import { eventTimestamp, latestResultTime, resultTimezone } from './eventTime';
 
 const MAX_PACKAGES_PER_OWNER_PER_SYNC = 5;
 const VALID_STAGES = new Set<string>(STAGES);
@@ -270,53 +270,6 @@ export function isUnannouncedTrackingError(error: unknown): boolean {
     current = current instanceof Error ? current.cause : null;
   }
   return false;
-}
-
-function resultTimezone(carrierId: string, result: CarrierResult): string {
-  const declared = typeof result.timezone === 'string' ? result.timezone : '';
-  if (declared.length >= 1 && declared.length <= 64 && IANAZone.isValidZone(declared)) return declared;
-  try {
-    const configured = carrierTimezone(carrierId);
-    return IANAZone.isValidZone(configured) ? configured : 'UTC';
-  } catch {
-    return 'UTC';
-  }
-}
-
-const EVENT_FORMATS = [
-  'yyyy-MM-dd HH:mm:ss',
-  'yyyy-MM-dd HH:mm',
-  'dd.MM.yyyy HH:mm:ss',
-  'dd.MM.yyyy HH:mm',
-  'dd/MM/yyyy HH:mm:ss',
-  'dd/MM/yyyy HH:mm',
-  'yyyy-MM-dd',
-  'dd.MM.yyyy',
-  'dd/MM/yyyy',
-];
-
-export function eventTimestamp(raw: unknown, assumedTimezone = 'UTC'): string | null {
-  if (typeof raw !== 'string' || !raw.trim()) return null;
-  const value = raw.trim();
-  let parsed = DateTime.fromISO(value, { setZone: true });
-  if (parsed.isValid) {
-    if (!/(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)) {
-      parsed = DateTime.fromISO(value, { zone: assumedTimezone });
-    }
-    return parsed.toUTC().toISO({ suppressMilliseconds: true }) ?? null;
-  }
-  for (const format of EVENT_FORMATS) {
-    parsed = DateTime.fromFormat(value, format, { zone: assumedTimezone });
-    if (parsed.isValid) return parsed.toUTC().toISO({ suppressMilliseconds: true }) ?? null;
-  }
-  return null;
-}
-
-/** Compare snapshots using the same carrier timezone policy as persisted events. */
-function latestResultTime(result: CarrierResult, carrier: string): number {
-  const timezone = resultTimezone(carrier, result);
-  return Math.max(0, ...[result.last_update, ...(result.events ?? []).map((event) => event.time)]
-    .map((time) => Date.parse(eventTimestamp(time, timezone) ?? '') || 0));
 }
 
 export function providerEventId(
@@ -887,7 +840,8 @@ export class TrackingSyncService {
       const progressDisappeared = anomalies.includes('progress_disappeared');
       const previousRouting = routingState(parcel);
       const previousEventTime = Date.parse(previousRouting.last_event_at ?? '');
-      const returnedEventTime = Date.parse(String(result.last_update ?? ''));
+      // Read as routing wrote the watermark: a naive local clock in its source's zone.
+      const returnedEventTime = Date.parse(eventTimestamp(result.last_update, resultTimezone(sourceCarrierId, result)) ?? '');
       const olderSnapshot = Number.isFinite(previousEventTime) && Number.isFinite(returnedEventTime)
         && returnedEventTime < previousEventTime;
       const previousData = isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
