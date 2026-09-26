@@ -2,7 +2,7 @@ import { DateTime } from 'luxon';
 import type { CarrierResult } from './carrierResult';
 import { isRecord, type JsonObject } from './types';
 
-const CARRIERS = new Set(['japan-post', 'evri']);
+const CARRIERS = new Set(['japan-post', 'evri', 'sf-express']);
 const eventKey = (event: JsonObject): string => JSON.stringify([
   event.local_time, event.time, event.description, event.location, event.provider_code,
 ]);

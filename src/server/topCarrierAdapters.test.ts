@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NOOP_RECORDER } from '@carriers/core/telemetry';
+import { TrawlClient } from '@carriers/core/transport';
+import { sfExpressApiUrl } from '@carriers/carriers/sf-express/adapter';
 import { createAdapterRegistry } from './adapterRegistry';
 import { buildEvents, CarrierTrackingAdapter, TrackingSyncService } from './trackingSync';
 import { TrackingRouter } from './trackingRouting';
@@ -15,20 +17,26 @@ const cases = [
     latestLocal: '2026-09-04T11:43:00', stage: 'delivered' },
   { carrier: 'evri', number: 'H000000000000001', fixture: 'international',
     latestLocal: '2026-06-08T12:08:00', stage: 'failed_attempt' },
+  { carrier: 'sf-express', number: 'SF0000000000001', fixture: 'delivered',
+    latestLocal: '2026-01-08T11:20:00', stage: 'delivered' },
 ];
 const observedAt = new Date('2026-09-26T12:00:00Z');
 
 function setup(carrier: string, fixtureName: string, unknownRegions: 'all' | 'destination' | 'none' = 'all') {
-  let html = readFileSync(new URL(`../../packages/carriers/carriers/${carrier}/fixtures/${fixtureName}.html`, import.meta.url), 'utf8');
+  let html = readFileSync(new URL(`../../packages/carriers/carriers/${carrier}/fixtures/${fixtureName}.${carrier === 'sf-express' ? 'json' : 'html'}`, import.meta.url), 'utf8');
   // Japan's known single-zone labels can be resolved; a multi-zone country
   // alone cannot establish the offset for these boundary cases.
   if (carrier === 'japan-post' && unknownRegions !== 'none') {
     html = html.replaceAll('MALTA', 'USA');
     if (unknownRegions === 'all') html = html.replaceAll('OSAKA', 'USA').replaceAll('KANAGAWA', 'USA');
   }
-  const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(html));
+  const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(carrier === 'sf-express' ? JSON.stringify({
+    tier: 2, status: 'success', statusCode: 200, html: '<main>Tracking</main>', capturedResponses: [{
+      url: sfExpressApiUrl('SF0000000000001'), status: 200, body: html, headers: {},
+    }],
+  }) : html));
   const universal = { fetch: vi.fn().mockRejectedValue(new Error('Unexpected universal lookup')) };
-  const registry = createAdapterRegistry({ fetcher, trawl: null, browserExecutablePath: null,
+  const registry = createAdapterRegistry({ fetcher, trawl: carrier === 'sf-express' ? new TrawlClient('http://browser.invalid', fetcher) : null, browserExecutablePath: null,
     env: {}, recorder: NOOP_RECORDER });
   const adapter = new CarrierTrackingAdapter(universal as unknown as UniversalTracker, registry, NOOP_RECORDER);
   return { adapter, fetcher, universal, registry };

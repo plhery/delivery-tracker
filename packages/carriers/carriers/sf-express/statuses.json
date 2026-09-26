@@ -1,0 +1,334 @@
+{
+  "carrier": "sf-express",
+  "entries": [
+    {
+      "code": "80",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "8000_1",
+      "stage": "delivered",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "980",
+      "stage": "delivered",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "50",
+      "stage": "accepted",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "54",
+      "stage": "accepted",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "950",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "44",
+      "stage": "out_for_delivery",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "34",
+      "stage": "out_for_delivery",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "122",
+      "stage": "out_for_delivery",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "123",
+      "stage": "out_for_delivery",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "630",
+      "stage": "out_for_delivery",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "640",
+      "stage": "out_for_delivery",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "83",
+      "stage": "out_for_delivery",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "47",
+      "stage": "out_for_delivery",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "634",
+      "stage": "out_for_delivery",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "125",
+      "stage": "out_for_delivery",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "204",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "70_5",
+      "stage": "out_for_delivery",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "70_7",
+      "stage": "out_for_delivery",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "70_65",
+      "stage": "out_for_delivery",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "14",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan routes opCode; customs clearance is completed, not pending."
+    },
+    {
+      "code": "30",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "31",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "36",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "105",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "106",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "88",
+      "stage": "in_transit",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "89",
+      "stage": "in_transit",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "205",
+      "stage": "in_transit",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "201",
+      "stage": "in_transit",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "206",
+      "stage": "in_transit",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "646",
+      "stage": "in_transit",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "202",
+      "stage": "in_transit",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Warehouse dispatch (已出库), not recipient delivery."
+    },
+    {
+      "code": "626",
+      "stage": "in_transit",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "8000_2",
+      "stage": "exception",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Official Taiwan public route event / baseBillItem operation-code group."
+    },
+    {
+      "code": "8000 / stayWhyCode 1",
+      "stage": "delivered",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "The reason disambiguates opCode 8000. An absent or unknown reason remains unclassified."
+    },
+    {
+      "code": "8000 / stayWhyCode 2",
+      "stage": "exception",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "The reason disambiguates opCode 8000. An absent or unknown reason remains unclassified."
+    },
+    {
+      "code": "8000 / stayWhyCode 3",
+      "stage": "in_transit",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "The reason disambiguates opCode 8000. An absent or unknown reason remains unclassified."
+    },
+    {
+      "code": "8000 / stayWhyCode 4",
+      "stage": "returned",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "The reason disambiguates opCode 8000. An absent or unknown reason remains unclassified."
+    },
+    {
+      "code": "8000 / stayWhyCode 6",
+      "stage": "exception",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "The reason disambiguates opCode 8000. An absent or unknown reason remains unclassified."
+    },
+    {
+      "code": "expressState 2",
+      "stage": "exception",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Shipment summary vocabulary from official abroad/billDetailItem/mixins. State 99 yields to a more specific latest scan."
+    },
+    {
+      "code": "expressState 3",
+      "stage": "in_transit",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Shipment summary vocabulary from official abroad/billDetailItem/mixins. State 99 yields to a more specific latest scan."
+    },
+    {
+      "code": "expressState 4",
+      "stage": "returned",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Shipment summary vocabulary from official abroad/billDetailItem/mixins. State 99 yields to a more specific latest scan."
+    },
+    {
+      "code": "expressState 5",
+      "stage": "exception",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Shipment summary vocabulary from official abroad/billDetailItem/mixins. State 99 yields to a more specific latest scan."
+    },
+    {
+      "code": "expressState 6",
+      "stage": "exception",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Shipment summary vocabulary from official abroad/billDetailItem/mixins. State 99 yields to a more specific latest scan."
+    },
+    {
+      "code": "expressState 99",
+      "stage": "in_transit",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Shipment summary vocabulary from official abroad/billDetailItem/mixins. State 99 yields to a more specific latest scan."
+    },
+    {
+      "code": "expressState 100",
+      "stage": "delivered",
+      "confirmedBy": "bundle",
+      "firstSeen": "2026-09-26",
+      "note": "Shipment summary vocabulary from official abroad/billDetailItem/mixins. State 99 yields to a more specific latest scan."
+    }
+  ]
+}

@@ -12,17 +12,37 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "sf-express",
+    "steps": [
+      "trawl"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "provider_code"
+  ],
   "portal": {
-    "url": "https://www.sf-express.com/chn/en/waybill/waybill-detail/{trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "url": "https://htm.sf-express.com/tw/en/dynamic_function/waybill/#search/bill-number/{trackingNumber}",
+    "canaryUrl": "https://htm.sf-express.com/tw/en/dynamic_function/waybill/",
+    "shows": [
+      "status",
+      "history"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "provider_code"
+    ],
+    "discarded": [
+      "proof_links",
+      "contact_details",
+      "facility_identifiers",
+      "weight",
+      "unverified_estimates"
+    ],
+    "unavailable": [
+      "verified_scan_timezone"
+    ]
   },
   "links": [
     {
@@ -30,6 +50,13 @@
         "sf-express.com"
       ],
       "path": "^/.+/waybill-detail/([^/?#]+)/?$"
+    },
+    {
+      "domains": [
+        "htm.sf-express.com"
+      ],
+      "pathPattern": "^/tw/en/dynamic_function/waybill/$",
+      "fragment": "^search/bill-number/(SF\\d{13}|\\d{12})$"
     }
   ],
   "detection": [

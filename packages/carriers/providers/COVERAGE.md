@@ -2,7 +2,8 @@
 
 Live comparison for the first 30 carriers in the [carrier overview](../README.md#carriers).
 Rows 1–15 were checked **2026-09-22**, with a FedEx direct recheck on
-**2026-09-23**; rows 16–30 were checked **2026-09-25**, with Japan Post, Evri International
+**2026-09-23** and SF Express direct recheck on **2026-09-26**;
+rows 16–30 were checked **2026-09-25**, with Japan Post, Evri International
 and Australia Post direct rechecks on **2026-09-26**.
 Each row compares the **same reference** across the
 carrier's direct adapter and all five universal providers. This is observed
@@ -66,7 +67,7 @@ choosing the largest count.
 | [AliExpress / Cainiao](../carriers/aliexpress/README.md) | Yes | ✓ 17 | No history | ✓ 17 | ✓ 17 | ✓ 17 | N/A |
 | [China Post](../carriers/china-post/README.md) | No adapter | Not tested | ✓ 1 | ✓ 1 | ✓ 39 | ✓ 17 | ✓ 1 |
 | [EMS](../carriers/ems/README.md) | Yes | ✓ 7 | ✓ 6 | ✓ 18 | ✓ 24 | ✓ 6 | ✓ 6 |
-| [SF Express](../carriers/sf-express/README.md) | No adapter | Not tested | No history | No history | ✓ 27 | No history | N/A |
+| [SF Express](../carriers/sf-express/README.md) | Yes | ✓ 22‖ | No history | No history | ✓ 27 | No history | N/A |
 | [GLS Germany](../carriers/gls-de/README.md) | Yes (postcode) | Not tested (postcode) | No history | No history | No history | No history | N/A |
 | [GLS France](../carriers/gls-fr/README.md) | Yes | No history | No history | ✓ 4 | No history | No history | N/A |
 | [GLS Switzerland](../carriers/gls-ch/README.md) | Yes (postcode) | Unverified | Unverified | Unverified | Unverified | Unverified | N/A |
@@ -77,7 +78,7 @@ choosing the largest count.
 | [InPost](../carriers/inpost/README.md) | Yes | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 8 | No history | N/A |
 | [PostNL](../carriers/spring-gds/README.md) | Yes | ✓ 16 | ✓ 16 | No history | No history | ✓ 16 | No history |
 | [Canada Post](../carriers/canada-post/README.md) | Yes | Summary only | ✓ 12 | ✓ 11 | ✓ 25 | Error | ✓ 1 |
-| [Australia Post](../carriers/australia-post/README.md) | Yes (browser) | ✓ 12¶ | No history | No history | No history | ✓ 12 | N/A |
+| [Australia Post](../carriers/australia-post/README.md) | Yes | ✓ 12¶ | No history | No history | No history | ✓ 12 | N/A |
 | [Japan Post](../carriers/japan-post/README.md) | Yes | ✓ 13‡ | ✓ 13 | ✓ 27 | ✓ 27 | ✓ 28 | ✓ 1 |
 | [India Post](../carriers/india-post/README.md) | Yes | ✓ 21 | ✓ 21 | No history | ✓ 21 | No history | No history |
 | [Poste Italiane](../carriers/poste-italiane/README.md) | Yes | No history | No history | No history | No history | No history | N/A |
@@ -118,6 +119,13 @@ the direct adapter uses the anonymous tracking flow without signing in. Plain
 HTTP remains challenged. The live adapter tests also passed against the deployed
 browser service for matching history and a synthetic unknown reference.
 See the [Australia Post retrieval notes](../carriers/australia-post/README.md).
+
+**‖ SF Express direct recheck, 2026-09-26:** the official Taiwan endpoint
+returned 22 matching events in fresh automated browser sessions after GeeTest
+verification, then passed the live adapter check against the deployed service.
+Scan times have no verified timezone and remain local wall times.
+A synthetic unknown reference received an explicit query restriction, which is
+not classified as not-found. See the [SF Express retrieval and timestamp notes](../carriers/sf-express/README.md).
 
 The initial ParcelsApp failures prompted a [timeout and recovery fix](parcelsapp/README.md#implementation-decisions):
 the old direct request stopped after 10 s, and browser recovery could return an
@@ -160,7 +168,7 @@ report the same milestone in different zones.
 | AliExpress / Cainiao | All four successful sources return the same 18 upstream rows, including one last-mile forecast (shown directly as “Carrier update” at the matching event time). Excluding that forecast leaves **17 scans each**. Both origin and destination legs, customs, delivery round and delivery are present; extra carrier-note wording is not extra history. |
 | China Post | 17TRACK supplies 23 China Post and 16 Correios Brazil rows. Ninja supplies mainly the 16-row Brazilian leg plus a repeated final-delivery report, omitting most Chinese sorting, export and airline history. Ship24, ParcelsApp and UPU provide final delivery only: they lose both older transport history and useful customs/payment and out-for-delivery milestones. ParcelsApp misclassifies its final-delivery row as pending; Ninja includes delivery text but its projected summary remains out for delivery. 17TRACK gives the most useful combined history here, with overlapping reports still counted separately. |
 | EMS | Direct's seven rows include a new **export cancellation** absent from Ship24's six and 17TRACK's longer history. ParcelsApp includes the cancellation and export-office arrival; its extra rows largely repeat posting, customs and dispatch milestones in different operators' wording. UPU and Ninja contain the cancellation but omit export-office arrival. 17TRACK adds older China Post domestic sorting, security-return and India Post reports, with overlaps; its longest feed is not the freshest. The cancellation text is present but not mapped to a dedicated stage by the current parsers. |
-| SF Express | Only 17TRACK returned usable history: 27 rows covering pickup, international flights, customs release, the delivery round and delivery, plus repeated loading/unloading and weighing details. It establishes useful international and last-mile coverage for this reference. Other feeds returned no history and there is no direct adapter, so the count cannot establish completeness against SF Express itself. |
+| SF Express | The September 26 direct recheck returned 22 local-time scans covering collection, loading and hub movement, international flights, customs clearance, the delivery round and recipient delivery. 17TRACK's earlier 27 rows include additional administrative and handling detail and usable timestamps. The direct endpoint supplies no timezone, so the host retains its history while still seeking dated universal results. Other feeds returned no history. |
 | GLS Germany | The public April reference reached the direct adapter's postcode requirement. None of the aggregators supplied history. No recipient postcode was available, so this row cannot compare direct event depth with their empty results; the missing detail must not be mistaken for lack of a direct adapter. |
 | GLS France | ParcelsApp alone retains four older rows: registration, departure from a GLS parcel centre and two delivered reports. Those reports may describe the same delivery, so the count is not four distinct milestones; acceptance, delivery round and other intermediate movements are absent. The public 2025 reference has already fallen out of the direct service's history. |
 | GLS Switzerland | Only Swiss Post's illustrative parcel number was available. It no longer resolves at the direct service, and the aggregators gave no usable rows. This is a reference-age limitation, not evidence that any source lacks live GLS Switzerland coverage. The direct detail endpoint also needs the recipient postcode for a real shipment. |
@@ -274,10 +282,10 @@ Universal calls received a 45-second budget (UPU retains its shorter limit);
 dedicated adapters retained their own internal deadlines. Browser lookups were
 serialized to limit upstream and browser-service load. An unavailable direct
 adapter and an ineligible UPU format were recorded without inventing a network result.
-The Japan Post, Evri International and Australia Post direct rechecks on
+The Japan Post, Evri International, Australia Post and SF Express direct rechecks on
 September 26 used their new retrieval paths; their carrier notes document
 network and browser checks. Other sources in those rows retain their
-September 25 results.
+original comparison dates.
 No accounts were signed into. Existing postcode input was supplied for initial
 rows where needed; none of the new public references included a recipient
 postcode. Thus GLS Germany's detailed direct history, and the direct history

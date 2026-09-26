@@ -23,6 +23,9 @@ export interface TrackingLinkCase {
 // independently of the generated link templates, so a template that drifts
 // fails here instead of passing against itself.
 export const trackingLinkCases: TrackingLinkCase[] = [
+  { carrier: 'sf-express', number: 'SF0000000000001',
+    route: /^https:\/\/htm\.sf-express\.com\/tw\/en\/dynamic_function\/waybill\/#search\/bill-number\//,
+    marker: /Track.*Trace|Shipment|Waybill/i },
   { carrier: 'swiss-post', number: '989999999999999999',
     route: /^https:\/\/service\.post\.ch\/ekp-web\/ui\//,
     marker: /Meine Sendungen|My consignments|Mes envois|Sendungsnummer/ },

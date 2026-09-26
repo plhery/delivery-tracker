@@ -41,6 +41,7 @@ import { adapter as posti } from '../carriers/posti/adapter';
 import { adapter as postlogistics } from '../carriers/postlogistics/adapter';
 import { adapter as relaisColis } from '../carriers/relais-colis/adapter';
 import { adapter as royalMail } from '../carriers/royal-mail/adapter';
+import { adapter as sfExpress } from '../carriers/sf-express/adapter';
 import { adapter as springGds } from '../carriers/spring-gds/adapter';
 import { adapter as sunyou } from '../carriers/sunyou/adapter';
 import { adapter as swissPost } from '../carriers/swiss-post/adapter';
@@ -90,6 +91,7 @@ export const REGISTRY: RegistryDefinition = {
     "postlogistics": postlogistics,
     "relais-colis": relaisColis,
     "royal-mail": royalMail,
+    "sf-express": sfExpress,
     "spring-gds": springGds,
     "sunyou": sunyou,
     "swiss-post": swissPost,
@@ -178,7 +180,7 @@ export const REGISTRY: RegistryDefinition = {
     "relais-colis": "relais-colis",
     "royal-mail": "universal",
     "seur": "universal",
-    "sf-express": "universal",
+    "sf-express": "sf-express",
     "shipup": "universal",
     "singapore-post": "universal",
     "spee-dee": "universal",

@@ -11,7 +11,12 @@ for (const tier of [2, 3]) {
   if (source.split(beforeSolve).length !== 2) throw new Error('TRAWL solver integration changed');
   const start = 'const start = Date.now()';
   if (source.split(start).length !== 2) throw new Error('TRAWL tier entry changed');
-  const fedex = `if (${tier === 3 ? '!proxyUrl && ' : ''}!screenshot && (!method || method === "GET")
+  const carrierRunners = `if (${tier === 3 ? '!proxyUrl && ' : ''}!screenshot && (!method || method === "GET")
+    && !body && !Object.keys(extraHeaders ?? {}).length && sfExpressSessionNumber(url, capture)) {
+    return await sfExpressSessions.run({ url, handle, tier: ${tier}, maxTimeout, capture,
+      installPolicy: page => installOutboundPolicy(page, validateOutboundUrl) })
+  }
+  if (${tier === 3 ? '!proxyUrl && ' : ''}!screenshot && (!method || method === "GET")
     && !body && !Object.keys(extraHeaders ?? {}).length && australiaPostBrowserRequest(url, capture)) {
     return await runAustraliaPostBrowser({ url, handle, tier: ${tier}, maxTimeout, capture,
       installPolicy: page => installOutboundPolicy(page, validateOutboundUrl) })
@@ -24,8 +29,9 @@ for (const tier of [2, 3]) {
   ${start}`;
   writeFileSync(path, 'import { attachTrackingCapture } from "../utils/tracking-capture.mjs"\n'
     + 'import { australiaPostBrowserRequest, runAustraliaPostBrowser } from "../utils/australia-post-browser.mjs"\n'
+    + 'import { sfExpressSessionNumber, sfExpressSessions } from "../utils/sf-express-session.mjs"\n'
     + 'import { fedexSessions, fedexSessionNumber } from "../utils/fedex-session.mjs"\n'
-    + source.replace(start, fedex)
+    + source.replace(start, carrierRunners)
       .replace(needle, 'const pageCapture = await attachTrackingCapture(page, url, capture) ?? attachPageCapture(page, capture)')
       .replace(solverGuard, 'if (solveRemaining > 5000 && !pageCapture.hasResponse?.() && !pageCapture.hasTrackingRequest?.())')
       .replace(beforeSolve, 'await pageCapture.prepare?.(maxTimeout - (Date.now() - start))\n    ' + beforeSolve));

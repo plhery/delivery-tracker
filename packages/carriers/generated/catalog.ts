@@ -2358,15 +2358,22 @@ export const CARRIER_CATALOG = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "sf-express"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://htm.sf-express.com/tw/en/dynamic_function/waybill/",
     "linkRules": [
       {
         "domains": [
           "sf-express.com"
         ],
         "path": "^/.+/waybill-detail/([^/?#]+)/?$"
+      },
+      {
+        "domains": [
+          "htm.sf-express.com"
+        ],
+        "pathPattern": "^/tw/en/dynamic_function/waybill/$",
+        "fragment": "^search/bill-number/(SF\\d{13}|\\d{12})$"
       }
     ],
     "detectionRules": [
@@ -2379,7 +2386,7 @@ export const CARRIER_CATALOG = {
         "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://www.sf-express.com/chn/en/waybill/waybill-detail/{trackingNumber}"
+    "trackingUrlTemplate": "https://htm.sf-express.com/tw/en/dynamic_function/waybill/#search/bill-number/{trackingNumber}"
   },
   "sto": {
     "displayName": "STO Express",

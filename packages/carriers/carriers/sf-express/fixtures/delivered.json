@@ -1,0 +1,32 @@
+{
+  "success": true,
+  "code": 0,
+  "message": "Request successful",
+  "detailMessage": null,
+  "result": [{
+    "id": "SF0000000000001",
+    "origin": "***",
+    "destination": "***",
+    "mainlandToMainland": false,
+    "delivered": true,
+    "signed": true,
+    "expressState": "",
+    "waybillStatus": 4,
+    "waybillStatusMessage": "Customer Sign-off",
+    "childSet": [],
+    "expectedDeliveryTime": null,
+    "pisDeliveryTm": {
+      "waybillNo": "SF0000000000001",
+      "queryPromise": "2026-01-08 11:20:00",
+      "promiseTime": "2026-01-10 20:00:00"
+    },
+    "routes": [
+      { "scanDateTime": "2026-01-04 12:00:00", "remark": "The shipment has been collected by SF Express", "zoneCode": "SYNTHETIC_ORIGIN", "opCode": "950", "stayWhyCode": "" },
+      { "scanDateTime": "2026-01-05 14:00:00", "remark": "Shipment loaded at the origin hub", "zoneCode": "SYNTHETIC_ORIGIN", "opCode": "30", "stayWhyCode": "" },
+      { "scanDateTime": "2026-01-06 15:00:00", "remark": "The shipment has arrived at the destination hub", "zoneCode": "SYNTHETIC_DESTINATION", "opCode": "106", "stayWhyCode": "" },
+      { "scanDateTime": "2026-01-07 10:00:00", "remark": "Customs clearance completed", "zoneCode": "SYNTHETIC_DESTINATION", "opCode": "14", "stayWhyCode": "" },
+      { "scanDateTime": "2026-01-08 07:50:00", "remark": "Out for delivery", "zoneCode": "SYNTHETIC_DESTINATION", "opCode": "204", "stayWhyCode": "" },
+      { "scanDateTime": "2026-01-08 11:20:00", "remark": "Your express has been delivered", "zoneCode": "SYNTHETIC_DESTINATION", "opCode": "80", "stayWhyCode": "" }
+    ]
+  }]
+}

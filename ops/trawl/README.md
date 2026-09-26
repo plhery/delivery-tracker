@@ -3,11 +3,12 @@
 Stock TRAWL 1.3.1 ignores `captureResponses`. Version 1.5.0 adds it but refuses
 compressed responses, including 17TRACK's, UPS's, FedEx's and Royal Mail's gzip JSON, and can stop on
 polling code 100. This compatibility build retains the normal TRAWL API and
-changes tier 2/3 tracking retrieval for six providers on their exact endpoints and public
+changes tier 2/3 tracking retrieval for seven providers on their exact endpoints and public
 page with one valid number: 17TRACK's `track/restapi`, UPS's `GetStatus`,
 FedEx's `track/v2/shipments` and Royal Mail's per-number `microsummary`
 (exact per-number capture and form submission), plus Postal Ninja's
-`track/check` and `track/get`, and Australia Post's anonymous shipment query.
+`track/check` and `track/get`, Australia Post's anonymous shipment query, and
+SF Express's Taiwan route query.
 Every other capture request keeps stock behaviour.
 
 The adapter observes the browser's response. For Royal Mail it preloads four
@@ -57,6 +58,7 @@ Build and test from the repository root:
 node --test ops/trawl/tracking-capture.test.mjs
 node --test ops/trawl/fedex-session.test.mjs
 node --test ops/trawl/australia-post-browser.test.mjs
+node --test ops/trawl/sf-express-gap.test.mjs ops/trawl/sf-express-session.test.mjs
 docker build -t delivery-tracker-trawl:local ops/trawl
 node ops/trawl/render-coolify.mjs > /tmp/trawl.Dockerfile
 ```
@@ -158,6 +160,35 @@ cookies or browser page are retained between lookups.
 The deployed build passed both live Australia Post adapter tests on 2026-09-26:
 matching dated history in 4.8 seconds and a synthetic unknown reference in
 5.0 seconds. These checks exercise the adapter through the service's normal API.
+
+## SF Express public route query
+
+The exact Taiwan tracking deep link and single-number route capture opt into
+`sf-express-session.mjs` before either tier's generic solver runs. It creates a
+fresh context on the leased browser, installs the normal outbound policy and
+observes the actual GET before navigation. Only the matching host, route,
+number and known locale parameters can supply the captured response.
+
+The public page uses GeeTest v4 bind mode. The helper waits for stable geometry,
+reads its paired PNG assets from the exact `static.geetest.com` picture path,
+and identifies the gap using the piece's alpha contour and interior color
+alignment. It rejects uncertain matches. Successful tracking requires the
+page's own route response; popup disappearance alone is never success.
+
+PNG reads are limited to 256 KiB and 512×512 pixels, with a 256×256 piece limit.
+The base image's existing `ffmpeg` decodes through bounded pipes, without
+temporary files. The lookup deadline aborts asset reads and kills decoding;
+response JSON is limited to 2 MB. The context closes on completion or failure,
+and failed cleanup requests browser replacement. No cookies, tokens or image
+assets are retained. Other providers keep their existing solver behavior.
+
+On 2026-09-26, fresh automated checks returned the matching 22-event history.
+The helper completed a positive check in 14.6 seconds using the pool's ordinary
+humanized pointer behavior and a 30-second budget. A synthetic unknown query
+reached the backend but returned restriction code `60000`; this does not prove
+not-found handling or unrestricted access to all SF shipment classes.
+The deployed service then passed both adapter live checks: exactly 22 scans
+in 14.6 seconds, and the explicit synthetic-query restriction in 13.6 seconds.
 
 ## Retained FedEx browser session
 

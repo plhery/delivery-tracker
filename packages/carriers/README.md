@@ -59,7 +59,7 @@ npm run test:contract                                               # generated 
 ## Carriers
 
 <!-- GENERATED:carriers -->
-105 carriers: 45 with a dedicated adapter, 56 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
+105 carriers: 46 with a dedicated adapter, 55 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
 
 Roughly ordered by familiarity and prominence, with major carriers first (an editorial order, not a market-share ranking).
 
@@ -79,7 +79,7 @@ Roughly ordered by familiarity and prominence, with major carriers first (an edi
 | `aliexpress` | AliExpress / Cainiao | dedicated | direct | 4 | 2 | 50 | [README](carriers/aliexpress/README.md) |
 | `china-post` | China Post | universal providers |  | 0 | 2 | 0 | [README](carriers/china-post/README.md) |
 | `ems` | EMS | dedicated | direct | 2 | 2 | 16 | [README](carriers/ems/README.md) |
-| `sf-express` | SF Express | universal providers |  | 0 | 2 | 0 | [README](carriers/sf-express/README.md) |
+| `sf-express` | SF Express | dedicated | trawl | 2 | 2 | 47 | [README](carriers/sf-express/README.md) |
 | `gls-de` | GLS Germany | dedicated | direct | 7 | 3 | 26 | [README](carriers/gls-de/README.md) |
 | `gls-fr` | GLS France | dedicated | direct | 4 | 6 | 29 | [README](carriers/gls-fr/README.md) |
 | `gls-ch` | GLS Switzerland | dedicated | direct | 7 | 1 | 26 | [README](carriers/gls-ch/README.md) |
