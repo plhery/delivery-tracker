@@ -136,7 +136,8 @@ describe('carrier detection', () => {
     expect(numeric.candidates).not.toContain('australia-post');
     expect(detectCarrier('LK201223662AU')).toBe('intl-post');
     expect(detectCarrier('LH290032509AU')).toBe('intl-post');
-    expectUniversalFallback('australia-post');
+    expect(CARRIERS['australia-post'].capabilities.tracking.adapter).toBe('australia-post');
+    expect(tracksAutomatically('australia-post')).toBe(true);
   });
 
   it('austrian-post — Austrian Post', () => {
@@ -511,7 +512,8 @@ describe('carrier detection', () => {
     // distinct from Hermes Einrichtungs-Service and Hermes Germany H-digits).
     // Source: https://wobaaa.com/aliexpress-uk-tracking-numbers/
     expect(detectCarrier('H06R4A1011299623')).toBe('evri');
-    expectUniversalFallback('evri');
+    expect(CARRIERS['evri'].capabilities.tracking.adapter).toBe('evri');
+    expect(tracksAutomatically('evri')).toBe(true);
   });
 
   it('fedex — FedEx', () => {
@@ -698,7 +700,8 @@ describe('carrier detection', () => {
     // Source: https://www.post.japanpost.jp/service/send/oversea/information/ems_search_en.html
     expect(isValidS10TrackingNumber('UL123456789JP')).toBe(false);
     expect(detectCarrier('UL123456789JP')).toBe('unknown');
-    expectUniversalFallback('japan-post');
+    expect(CARRIERS['japan-post'].capabilities.tracking.adapter).toBe('japan-post');
+    expect(tracksAutomatically('japan-post')).toBe(true);
   });
 
   it('jd-logistics — JD Logistics', () => {
