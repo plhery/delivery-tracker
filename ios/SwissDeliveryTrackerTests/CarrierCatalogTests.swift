@@ -467,6 +467,23 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertFalse(CarrierCatalog.isValidS10("RA123456789CH"))
     }
 
+    func testHermesCheckDigitAndDepotPreferenceMatchTheWebEngine() {
+        XCTAssertTrue(CarrierCatalog.isValidHermesParcelNumber("12345678901231"))
+        XCTAssertFalse(CarrierCatalog.isValidHermesParcelNumber("12345678901234"))
+        XCTAssertTrue(catalog.detect("12345678901231").candidates.contains(.hermesDe))
+        XCTAssertFalse(catalog.detect("12345678901234").candidates.contains(.hermesDe))
+        XCTAssertFalse(catalog.detect("12345678901234").candidates.contains(.glsCh))
+
+        // A DPD Switzerland depot prefix lists DPD first but still asks the user.
+        let swissDepot = catalog.detect("06080000000002")
+        XCTAssertEqual(swissDepot.carrier, .unknown)
+        XCTAssertEqual(swissDepot.confidence, .low)
+        XCTAssertEqual(swissDepot.preferred, [.dpd])
+        XCTAssertEqual(swissDepot.candidates.first, .dpd)
+        XCTAssertEqual(catalog.detect("10000000000001").candidates.first, .dpdFr)
+        XCTAssertEqual(catalog.detect("06200000000002").preferred, [])
+    }
+
     func testAcceptsASelectableCarrierThatWasNotCompiledIntoTheApp() throws {
         let dynamic = try CarrierCatalog(data: Self.futureCatalogData)
         let futureCarrier = CarrierID(rawValue: "future-express")
@@ -662,6 +679,7 @@ extension CarrierCatalogTests {
             let carrier: String
             let confidence: String
             let candidates: [String]
+            let preferred: [String]?
         }
         let url = try XCTUnwrap(Bundle.main.url(forResource: "DetectionGolden", withExtension: "json"))
         let entries = try JSONDecoder().decode([Entry].self, from: Data(contentsOf: url))
@@ -676,8 +694,10 @@ extension CarrierCatalogTests {
             case .none: confidence = "none"
             }
             let candidates = match.candidates.map(\.rawValue).sorted()
+            let preferred = match.preferred.map(\.rawValue).sorted()
             if match.carrier.rawValue != entry.carrier || confidence != entry.confidence
-                || candidates != entry.candidates.sorted() {
+                || candidates != entry.candidates.sorted() || preferred != (entry.preferred ?? []).sorted()
+                || Array(match.candidates.prefix(preferred.count).map(\.rawValue)).sorted() != preferred {
                 mismatches.append("\(entry.input): expected \(entry.carrier)/\(entry.confidence) \(entry.candidates), got \(match.carrier.rawValue)/\(confidence) \(candidates)")
             }
         }

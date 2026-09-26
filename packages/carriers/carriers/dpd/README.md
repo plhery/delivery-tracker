@@ -18,6 +18,15 @@ DPD Switzerland (myDPD), Swiss last-mile parcels only. DPD France is
    legacy command API when one is configured (`FLARESOLVERR_URL`) and directly
    otherwise; a challenge then fails with an error naming `FLARESOLVERR_URL`.
 
+Numbers are 14 digits: the 4-digit depot that printed the label, then 10
+digits, with no check digit inside (DPD Parcel Label Specification 2.4.1; a
+separate Mod 37,36 check character may be printed after them). Detection lists
+DPD first for Swiss depots 0606–0619 (DPD's published depot table, which the
+public sample in `numbers.json` agrees with) but still asks the user,
+because five other catalog carriers share the 14-digit shape. The guest API is
+DPDgroup-wide (it also answered for a DPD France parcel), so an answer proves a
+DPD parcel, not a Swiss one.
+
 A 404 on the details call is a positive not-found and ends the lookup. A 404
 earlier in the token chain is an ordinary guest-API failure and falls through
 to `page`; a test guards this distinction.

@@ -18,6 +18,12 @@ back to `Europe/Berlin`) and stored as UTC.
 
 ## Notes
 
+- Detection: `H` + 15–19 digits selects Hermes. A bare 14-digit number is only
+  a suggestion, and only when its last digit passes the modulo-10 check weighted
+  3, 1, 3, … from the left (paketda.de's "Paket-Prüfziffern"). Every publicly
+  reported 14-digit Hermes number in `numbers.json` passes it; about one in ten
+  other 14-digit numbers passes by chance (one La Poste sample does), so Hermes
+  stays a suggestion there.
 - Stages come from the `parcelStatus` enum only, no wording rules. The enum is
   stable, and wording would only add a chance to be wrong. The enum was read
   from the carrier's public bundle `gcp-prd.my-deliveries.de/tnt/bundle/tnt-bundle-v2.js`.

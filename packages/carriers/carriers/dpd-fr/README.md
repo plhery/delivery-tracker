@@ -20,6 +20,10 @@ non-2xx statuses are indeterminate.
 
 ## Notes
 
+- Detection: `250` + 12 digits selects DPD France. Other numbers starting with
+  0 or 1 (12–15 digits) are suggestions; 14-digit numbers from the ex-Exapaq
+  depots 10xx list DPD France first (DPD's published depot table and the
+  published integration example), without selecting it.
 - `direct` is kept although Cloudflare usually challenges it: when it passes it
   saves a browser session. (Mondial Relay dropped its direct tier because it
   never passed.)

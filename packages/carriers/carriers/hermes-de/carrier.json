@@ -80,7 +80,8 @@
     {
       "id": "hermes-de-2",
       "pattern": "^\\d{14}$",
-      "confidence": "low"
+      "confidence": "low",
+      "checksum": "hermes"
     }
   ]
 }

@@ -39,8 +39,12 @@ offline catalog. `/api/carriers` serves the same data. Edit the folder, never th
 generated output.
 
 **Detection.** Broad numeric shapes are suggestions the user confirms. Distinctive
-families and checksum-valid UPU S10 numbers pick a carrier automatically. Every rule needs
-a sample number, and undeclared overlaps between carriers fail the sweep. The iPhone app
+families and checksum-valid UPU S10 numbers pick a carrier automatically. A rule can
+require a checksum (`s10`, `mondial-relay`, `hermes`) before it matches, and a
+low-confidence rule can be `preferred`: its shape is evidence for the carrier, such as a
+DPD depot range, so the carrier is listed first among the suggestions and is the one
+routing and the Add sheet check first. It never selects the carrier. Every rule needs a
+sample number, and undeclared overlaps between carriers fail the sweep. The iPhone app
 replays the same golden file.
 
 ## Adding a carrier

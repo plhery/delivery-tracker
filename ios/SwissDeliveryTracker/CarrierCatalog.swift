@@ -79,6 +79,8 @@ struct CarrierDefinition: Codable, Sendable {
         let pattern: String
         let confidence: String
         let checksum: String?
+        /// Low-confidence number evidence: the carrier is listed first among suggestions.
+        let preferred: Bool?
     }
 
     var displayName: String
@@ -106,6 +108,8 @@ struct CarrierMatch: Equatable, Sendable {
     let carrier: CarrierID
     let confidence: Confidence
     let candidates: [CarrierID]
+    /// Candidates a `preferred` rule backs with number evidence, listed first.
+    var preferred: [CarrierID] = []
 }
 
 struct TrackingInputMatch: Equatable, Sendable {
@@ -322,26 +326,30 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     }
 
     private func detectNormalized(_ number: String) -> CarrierMatch {
-        var matches: [(CarrierID, CarrierMatch.Confidence)] = []
+        var matches: [(carrier: CarrierID, confidence: CarrierMatch.Confidence, preferred: Bool)] = []
         for (carrier, definition) in definitions {
             for rule in definition.detectionRules {
                 guard Self.matches(number, pattern: rule.pattern) else { continue }
                 if rule.checksum == "mondial-relay" && !Self.isValidMondialRelayBarcode(number) { continue }
                 if rule.checksum == "s10" && !Self.isValidS10(number) { continue }
-                matches.append((carrier, rule.confidence == "high" ? .high : .low))
+                if rule.checksum == "hermes" && !Self.isValidHermesParcelNumber(number) { continue }
+                matches.append((carrier, rule.confidence == "high" ? .high : .low, rule.preferred == true))
                 break
             }
         }
-        let high = matches.filter { $0.1 == .high }
+        let high = matches.filter { $0.confidence == .high }
         let ranked = high.isEmpty ? matches : high
-        let candidates = ranked.map(\.0).sorted { $0.rawValue < $1.rawValue }
+        // Number evidence first; the dictionary has no order, so sort each group.
+        let preferred = ranked.filter(\.preferred).map(\.carrier).sorted { $0.rawValue < $1.rawValue }
+        let candidates = preferred + ranked.filter { !$0.preferred }.map(\.carrier).sorted { $0.rawValue < $1.rawValue }
         if high.count == 1 {
-            return CarrierMatch(carrier: high[0].0, confidence: .high, candidates: candidates)
+            return CarrierMatch(carrier: high[0].carrier, confidence: .high, candidates: candidates, preferred: preferred)
         }
         return CarrierMatch(
             carrier: .unknown,
             confidence: matches.isEmpty ? .none : .low,
-            candidates: candidates
+            candidates: candidates,
+            preferred: preferred
         )
     }
 
@@ -605,6 +613,14 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         return sequence > 0 && sequence <= count && check(0..<14) == digits[14] && check(15..<25) == digits[25]
     }
 
+    /// Hermes Germany's legacy 14-digit numbers: a modulo-10 check digit weighted 3, 1, 3, … from the left.
+    static func isValidHermesParcelNumber(_ value: String) -> Bool {
+        guard matches(value, pattern: "^[0-9]{14}$") else { return false }
+        let digits = value.compactMap(\.wholeNumberValue)
+        let sum = digits[0..<13].enumerated().reduce(0) { $0 + $1.element * ($1.offset % 2 == 0 ? 3 : 1) }
+        return (10 - sum % 10) % 10 == digits[13]
+    }
+
     static func isValidS10(_ raw: String) -> Bool {
         let value = normalize(raw)
         guard matches(value, pattern: "^[A-Z]{2}\\d{9}[A-Z]{2}$") else { return false }
@@ -754,7 +770,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     private static func defaultCacheURL() -> URL? {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
             .appending(path: "delivery-tracker", directoryHint: .isDirectory)
-            .appending(path: "carrier-catalog-v2.json")
+            .appending(path: "carrier-catalog-v3.json")
     }
 
     private static let emptyMatch = TrackingInputMatch(

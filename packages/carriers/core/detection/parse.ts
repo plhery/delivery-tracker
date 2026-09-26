@@ -56,6 +56,7 @@ export function parseTrackingInput(raw: string): TrackingInputMatch {
       carrier: 'unknown',
       confidence: 'none',
       candidates: [],
+      preferred: [],
       source: 'none',
     };
   }
@@ -88,6 +89,7 @@ export function parseTrackingInput(raw: string): TrackingInputMatch {
             carrier: rule.carrier,
             confidence: 'high',
             candidates: [rule.carrier],
+            preferred: [],
             trackingUrl: rule.keepsCapabilityUrl ? trackingUrl : undefined,
             source: 'link',
           };
@@ -118,6 +120,7 @@ export function parseTrackingInput(raw: string): TrackingInputMatch {
     carrier: 'unknown',
     confidence: 'none',
     candidates: [],
+    preferred: [],
     source: 'none',
   };
 }

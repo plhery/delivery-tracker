@@ -95,6 +95,12 @@
   ],
   "detection": [
     {
+      "id": "dpd-2",
+      "pattern": "^06(?:0[6-9]|1\\d)\\d{10}$",
+      "confidence": "low",
+      "preferred": true
+    },
+    {
       "id": "dpd-1",
       "pattern": "^\\d{14}$",
       "confidence": "low"

@@ -38,11 +38,9 @@
         "carrier": "unknown",
         "confidence": "low",
         "candidates": [
-          "gls-ch",
           "dpd",
           "ciblex",
           "hermes-de",
-          "gls-de",
           "seur",
           "brt",
           "delhivery"
@@ -61,11 +59,8 @@
         "carrier": "unknown",
         "confidence": "low",
         "candidates": [
-          "gls-ch",
           "dpd",
           "ciblex",
-          "hermes-de",
-          "gls-de",
           "seur",
           "brt",
           "delhivery"

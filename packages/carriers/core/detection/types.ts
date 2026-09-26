@@ -14,6 +14,8 @@ export interface CarrierDetection {
   carrier: CarrierId;
   confidence: DetectionConfidence;
   candidates: CarrierId[];
+  /** Candidates a `preferred` rule backs with number evidence, listed first. */
+  preferred: CarrierId[];
 }
 
 export interface TrackingInputMatch extends CarrierDetection {

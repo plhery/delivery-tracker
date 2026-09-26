@@ -143,12 +143,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "dpd",
       "dpd-fr",
       "ciblex",
-      "hermes-de",
-      "gls-de",
       "seur",
       "brt",
       "delhivery"
@@ -159,12 +156,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "dpd",
       "dpd-fr",
       "ciblex",
-      "hermes-de",
-      "gls-de",
       "seur",
       "brt",
       "delhivery"
@@ -175,12 +169,10 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "dpd",
       "dpd-fr",
       "ciblex",
       "hermes-de",
-      "gls-de",
       "seur",
       "brt",
       "delhivery"
@@ -191,12 +183,10 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "dpd",
       "dpd-fr",
       "ciblex",
       "hermes-de",
-      "gls-de",
       "seur",
       "brt",
       "delhivery"
@@ -295,15 +285,15 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "dpd",
       "dpd-fr",
       "ciblex",
-      "hermes-de",
-      "gls-de",
       "seur",
       "brt",
       "delhivery"
+    ],
+    "preferred": [
+      "dpd"
     ]
   },
   {
@@ -345,12 +335,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "dpd",
       "dpd-fr",
       "ciblex",
-      "hermes-de",
-      "gls-de",
       "seur",
       "brt",
       "delhivery"
@@ -370,10 +357,8 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "dpd-fr",
       "la-poste",
-      "gls-de",
       "correos-chile",
       "delhivery",
       "yunda"
@@ -411,15 +396,15 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
-      "dpd",
       "dpd-fr",
+      "dpd",
       "ciblex",
-      "hermes-de",
-      "gls-de",
       "seur",
       "brt",
       "delhivery"
+    ],
+    "preferred": [
+      "dpd-fr"
     ]
   },
   {
@@ -439,15 +424,15 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
-      "dpd",
       "dpd-fr",
+      "dpd",
       "ciblex",
-      "hermes-de",
-      "gls-de",
       "seur",
       "brt",
       "delhivery"
+    ],
+    "preferred": [
+      "dpd-fr"
     ]
   },
   {
@@ -455,12 +440,10 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "dpd",
       "dpd-fr",
       "ciblex",
       "hermes-de",
-      "gls-de",
       "seur",
       "brt",
       "delhivery"
@@ -471,10 +454,8 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "dpd-fr",
       "la-poste",
-      "gls-de",
       "correos-chile",
       "delhivery",
       "yunda"
@@ -574,12 +555,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "dpd",
       "dpd-fr",
       "ciblex",
-      "hermes-de",
-      "gls-de",
       "seur",
       "brt",
       "delhivery"
@@ -649,10 +627,8 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "dpd-fr",
       "la-poste",
-      "gls-de",
       "correos-chile",
       "delhivery",
       "yunda"
@@ -663,10 +639,8 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "dpd-fr",
       "la-poste",
-      "gls-de",
       "correos-chile",
       "delhivery",
       "yunda"
@@ -824,12 +798,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "dpd",
       "dpd-fr",
       "ciblex",
-      "hermes-de",
-      "gls-de",
       "seur",
       "brt",
       "delhivery"
@@ -920,9 +891,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "la-poste",
-      "gls-de",
       "correos-chile",
       "delhivery",
       "yunda"
@@ -953,11 +922,8 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "dpd",
       "ciblex",
-      "hermes-de",
-      "gls-de",
       "seur",
       "brt",
       "delhivery"
@@ -1082,11 +1048,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "dpd",
       "ciblex",
       "hermes-de",
-      "gls-de",
       "seur",
       "brt",
       "delhivery"
@@ -1561,11 +1525,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "dpd",
       "ciblex",
       "hermes-de",
-      "gls-de",
       "seur",
       "brt",
       "delhivery"
@@ -1576,11 +1538,8 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "dpd",
       "ciblex",
-      "hermes-de",
-      "gls-de",
       "seur",
       "brt",
       "delhivery"
@@ -1668,9 +1627,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "gls-ch",
       "la-poste",
-      "gls-de",
       "correos-chile",
       "delhivery",
       "yunda"

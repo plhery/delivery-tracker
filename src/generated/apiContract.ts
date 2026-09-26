@@ -557,7 +557,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low"
       },
       {
-        "pattern": "^\\d{11,14}$",
+        "pattern": "^\\d{11,12}$",
         "confidence": "low"
       }
     ]
@@ -602,6 +602,11 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
+        "pattern": "^06(?:0[6-9]|1\\d)\\d{10}$",
+        "confidence": "low",
+        "preferred": true
+      },
+      {
         "pattern": "^\\d{14}$",
         "confidence": "low"
       }
@@ -630,6 +635,11 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^250\\d{12}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^10\\d{12}$",
+        "confidence": "low",
+        "preferred": true
       },
       {
         "pattern": "^(?:[01]\\d{11,14}|250\\d{9,11})$",
@@ -1178,7 +1188,8 @@ export const CARRIER_CAPABILITIES = {
       },
       {
         "pattern": "^\\d{14}$",
-        "confidence": "low"
+        "confidence": "low",
+        "checksum": "hermes"
       }
     ],
     "canaryUrl": "https://www.myhermes.de/empfangen/sendungsverfolgung/"
@@ -1232,7 +1243,7 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^(?:(?=[A-Z0-9]{8}$)(?=.*[A-Z])(?=.*\\d)[A-Z0-9]{8}|\\d{11,14})$",
+        "pattern": "^(?:(?=[A-Z0-9]{8}$)(?=.*[A-Z])(?=.*\\d)[A-Z0-9]{8}|\\d{11,12})$",
         "confidence": "low"
       }
     ],

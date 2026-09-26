@@ -18,6 +18,8 @@ export interface DetectionGoldenEntry {
   readonly carrier: string;
   readonly confidence: 'high' | 'low' | 'none';
   readonly candidates: readonly string[];
+  /** Only when a `preferred` rule backs a candidate with number evidence. */
+  readonly preferred?: readonly string[];
 }
 
 const testingDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -44,6 +46,7 @@ export function buildDetectionGolden(): DetectionGoldenEntry[] {
       carrier: match.carrier,
       confidence: match.confidence,
       candidates: match.candidates,
+      ...(match.preferred.length > 0 ? { preferred: match.preferred } : {}),
     });
   }
   return [...entries.values()].sort((left, right) => (left.input < right.input ? -1 : 1));

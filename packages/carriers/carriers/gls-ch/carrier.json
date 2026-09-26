@@ -114,7 +114,7 @@
     },
     {
       "id": "gls-ch-2",
-      "pattern": "^\\d{11,14}$",
+      "pattern": "^\\d{11,12}$",
       "confidence": "low"
     }
   ]

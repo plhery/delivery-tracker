@@ -98,7 +98,7 @@ The sweep asserts five things:
 - **Collisions.** Every carrier overlap the corpus produces is declared in
   `core/detection/collisions.json`. An undeclared overlap fails the sweep.
 - **The golden file.** `contracts/fixtures/detection-golden.json` holds one
-  `{ input, carrier, confidence, candidates }` entry per number, replayed by the
+  `{ input, carrier, confidence, candidates, preferred? }` entry per number, replayed by the
   native tests so the Swift port cannot drift from this one.
 
 The generator runs the sweep in update mode rather than re-implementing

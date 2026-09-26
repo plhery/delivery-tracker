@@ -263,7 +263,11 @@
         },
         "pattern": { "type": "string", "minLength": 1 },
         "confidence": { "enum": ["high", "low"] },
-        "checksum": { "enum": ["s10", "mondial-relay"] }
+        "checksum": { "enum": ["s10", "mondial-relay", "hermes"] },
+        "preferred": {
+          "description": "Low-confidence rules only: the number shape is evidence for this carrier (such as a depot range), so it is listed first among the suggestions. It never selects the carrier on its own.",
+          "const": true
+        }
       }
     }
   }

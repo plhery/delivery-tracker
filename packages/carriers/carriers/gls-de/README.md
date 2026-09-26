@@ -14,6 +14,9 @@ is sent, so a wrong or expired number never transmits it.
 
 ## Notes
 
+- Detection suggests GLS for 11- and 12-digit numbers (11 digits and a check
+  digit) and 8-character Track IDs. GLS parcel numbers are never 13 or 14
+  digits, so those shapes are left to the carriers that use them.
 - HTTP 404 is a not-found only when the body has GLS's `lastError: E000`.
   Otherwise it stays an upstream error: the service also returns 404 for
   challenges and invalid postcodes, which must not look like an expired parcel.

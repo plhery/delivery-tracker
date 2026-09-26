@@ -417,7 +417,7 @@ describe('carrier detection', () => {
   it('dhl — DHL', () => {
     for (const number of ['LF123456785DE', 'LX123456785DE', 'CY123456785DE']) {
       expect(detectCarrierMatch(number)).toEqual({
-        carrier: 'dhl', confidence: 'high', candidates: ['dhl'],
+        carrier: 'dhl', confidence: 'high', candidates: ['dhl'], preferred: [],
       });
     }
     expect(detectCarrier('lf 123.456-785 de')).toBe('dhl');
@@ -430,7 +430,7 @@ describe('carrier detection', () => {
     // REPORTED REAL 20-digit DHL shipment in the 00340434 range.
     // Source: https://www.paketda.de/fragen-antworten
     expect(detectCarrierMatch('00340434633751428115')).toEqual({
-      carrier: 'dhl', confidence: 'high', candidates: ['dhl'],
+      carrier: 'dhl', confidence: 'high', candidates: ['dhl'], preferred: [],
     });
     expect(detectCarrier('JJD0099999999')).toBe('dhl');
     expect(detectCarrier('JVGL0099999999')).toBe('dhl');
@@ -918,10 +918,10 @@ describe('carrier detection', () => {
     // Planzer-issued 20-digit delivery IDs carry the 91346097 prefix (synthetic
     // shape checks); any other bare 20-digit number stays out of Planzer routing.
     expect(detectCarrierMatch('91346097123456789012')).toEqual({
-      carrier: 'planzer', confidence: 'high', candidates: ['planzer'],
+      carrier: 'planzer', confidence: 'high', candidates: ['planzer'], preferred: [],
     });
     expect(detectCarrierMatch('91346 09712 34567 89012')).toEqual({
-      carrier: 'planzer', confidence: 'high', candidates: ['planzer'],
+      carrier: 'planzer', confidence: 'high', candidates: ['planzer'], preferred: [],
     });
     expect(detectCarrier('999.90.03316119')).toBe('planzer');
     expect(detectCarrier('9999003316119')).toBe('planzer');
@@ -1123,7 +1123,7 @@ describe('carrier detection', () => {
 
   it('spring-gds — PostNL', () => {
     expect(detectCarrierMatch('LX123456785NL')).toEqual({
-      carrier: 'spring-gds', confidence: 'high', candidates: ['spring-gds'],
+      carrier: 'spring-gds', confidence: 'high', candidates: ['spring-gds'], preferred: [],
     });
     expect(detectCarrier('lx 123.456-785 nl')).toBe('spring-gds');
     expect(detectCarrier('LX123456789NL')).toBe('unknown');
@@ -1367,7 +1367,7 @@ describe('ambiguous number shapes', () => {
     // everything else stays out of Planzer/DHL routing. OSS fixtures below.
     // Source: https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json
     expect(detectCarrierMatch('03071790000523483741')).toEqual({
-      carrier: 'unknown', confidence: 'low', candidates: ['usps'],
+      carrier: 'unknown', confidence: 'low', candidates: ['usps'], preferred: [],
     });
     const second = detectCarrierMatch('71123456789123456787');
     expect(second).toMatchObject({ carrier: 'unknown', confidence: 'low' });
@@ -1379,6 +1379,7 @@ describe('ambiguous number shapes', () => {
       carrier: 'unknown',
       confidence: 'low',
       candidates: ['dhl', 'mondial-relay', 'relais-colis', 'tipsa', 'estafeta'],
+      preferred: [],
     });
   });
 
@@ -1387,6 +1388,7 @@ describe('ambiguous number shapes', () => {
       carrier: 'unknown',
       confidence: 'low',
       candidates: ['gls-ch', 'gls-fr', 'gls-de', 'blue-dart', 'aramex'],
+      preferred: [],
     });
   });
 
@@ -1395,6 +1397,7 @@ describe('ambiguous number shapes', () => {
       carrier: 'unknown',
       confidence: 'low',
       candidates: ['fedex', 'gls-ch', 'dpd-fr', 'mondial-relay', 'gls-fr', 'colis-prive', 'gls-de', 'mrw', 'purolator', 'sf-express', 'sto', 'zto', 'yamato', 'j-and-t'],
+      preferred: [],
     });
   });
 
@@ -1402,12 +1405,14 @@ describe('ambiguous number shapes', () => {
     expect(detectCarrierMatch('01234567890123')).toEqual({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['gls-ch', 'dpd', 'dpd-fr', 'ciblex', 'hermes-de', 'gls-de', 'seur', 'brt', 'delhivery'],
+      candidates: ['dpd', 'dpd-fr', 'ciblex', 'seur', 'brt', 'delhivery'],
+      preferred: [],
     });
     expect(detectCarrierMatch('10594002378611')).toEqual({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['gls-ch', 'dpd', 'dpd-fr', 'ciblex', 'hermes-de', 'gls-de', 'seur', 'brt', 'delhivery'],
+      candidates: ['dpd-fr', 'dpd', 'ciblex', 'seur', 'brt', 'delhivery'],
+      preferred: ['dpd-fr'],
     });
   });
 
@@ -1416,6 +1421,7 @@ describe('ambiguous number shapes', () => {
       carrier: 'unknown',
       confidence: 'low',
       candidates: ['fedex', 'dpd-fr'],
+      preferred: [],
     });
   });
 
@@ -1424,11 +1430,13 @@ describe('ambiguous number shapes', () => {
       carrier: 'unknown',
       confidence: 'low',
       candidates: ['mondial-relay', 'heppner'],
+      preferred: [],
     });
     expect(detectCarrierMatch('AB12CD34')).toEqual({
       carrier: 'unknown',
       confidence: 'low',
       candidates: ['gls-ch', 'gls-fr', 'gls-de'],
+      preferred: [],
     });
   });
 
@@ -1437,11 +1445,13 @@ describe('ambiguous number shapes', () => {
       carrier: 'unknown',
       confidence: 'low',
       candidates: ['dhl-ecommerce', 'colis-prive'],
+      preferred: [],
     });
     expect(detectCarrierMatch('99112233445500000')).toEqual({
       carrier: 'unknown',
       confidence: 'low',
       candidates: ['dhl-ecommerce'],
+      preferred: [],
     });
   });
 });

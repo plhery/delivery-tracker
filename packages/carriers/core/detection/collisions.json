@@ -435,12 +435,10 @@
     "carriers": [
       "correos-chile",
       "delhivery",
-      "gls-ch",
-      "gls-de",
       "la-poste",
       "yunda"
     ],
-    "reason": "13-digit numbers are shared by six carriers; the number stays a low-confidence suggestion."
+    "reason": "13-digit numbers are shared by four carriers; the number stays a low-confidence suggestion."
   },
   {
     "shape": "9{13}",
@@ -448,25 +446,21 @@
       "correos-chile",
       "delhivery",
       "dpd-fr",
-      "gls-ch",
-      "gls-de",
       "la-poste",
       "yunda"
     ],
-    "reason": "13-digit numbers starting with 0 or 1 add DPD France to the six carriers already sharing that length; the number stays a suggestion."
+    "reason": "13-digit numbers starting with 0 or 1 add DPD France to the four carriers already sharing that length; the number stays a suggestion."
   },
   {
     "shape": "9{13}",
     "carriers": [
       "correos-chile",
       "delhivery",
-      "gls-ch",
-      "gls-de",
       "la-poste",
       "planzer",
       "yunda"
     ],
-    "reason": "The Planzer 99990 range sits inside the 13-digit space six carriers match broadly; the Planzer rule decides."
+    "reason": "The Planzer 99990 range sits inside the 13-digit space four carriers match broadly; the Planzer rule decides."
   },
   {
     "shape": "9{14}",
@@ -475,12 +469,9 @@
       "ciblex",
       "delhivery",
       "dpd",
-      "gls-ch",
-      "gls-de",
-      "hermes-de",
       "seur"
     ],
-    "reason": "14-digit numbers are shared by eight carriers; the number stays a low-confidence suggestion."
+    "reason": "14-digit numbers are shared by five carriers; the number stays a low-confidence suggestion. A DPD Switzerland depot prefix (0606-0619) only lists DPD first."
   },
   {
     "shape": "9{14}",
@@ -490,12 +481,34 @@
       "delhivery",
       "dpd",
       "dpd-fr",
-      "gls-ch",
-      "gls-de",
+      "seur"
+    ],
+    "reason": "14-digit numbers starting with 0 or 1 add DPD France to the five carriers already sharing that length; the number stays a suggestion. A DPD France depot prefix (10) lists DPD France first."
+  },
+  {
+    "shape": "9{14}",
+    "carriers": [
+      "brt",
+      "ciblex",
+      "delhivery",
+      "dpd",
       "hermes-de",
       "seur"
     ],
-    "reason": "14-digit numbers starting with 0 or 1 add DPD France to the eight carriers already sharing that length; the number stays a suggestion."
+    "reason": "A 14-digit number whose last digit passes the Hermes check adds Hermes Germany to the five carriers sharing that length; the number stays a suggestion."
+  },
+  {
+    "shape": "9{14}",
+    "carriers": [
+      "brt",
+      "ciblex",
+      "delhivery",
+      "dpd",
+      "dpd-fr",
+      "hermes-de",
+      "seur"
+    ],
+    "reason": "A 14-digit number starting with 0 or 1 whose last digit passes the Hermes check matches DPD France and Hermes Germany as well; the number stays a suggestion."
   },
   {
     "shape": "9{12}",

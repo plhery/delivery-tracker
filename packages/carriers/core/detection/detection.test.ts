@@ -3,6 +3,7 @@ import {
   detectCarrier,
   detectCarrierMatch,
   formatTrackingNumber,
+  isValidHermesParcelNumber,
   isValidMondialRelayBarcode,
   isValidS10TrackingNumber,
   normalizeTrackingNumber,
@@ -43,13 +44,42 @@ describe('the detection engine', () => {
   it('selects a carrier only when exactly one rule claims high confidence', () => {
     expect(detectCarrier('RA123456785CH')).toBe('swiss-post');
     expect(detectCarrierMatch('RA123456785CH')).toMatchObject({ carrier: 'swiss-post', confidence: 'high' });
-    expect(detectCarrierMatch('')).toEqual({ carrier: 'unknown', confidence: 'none', candidates: [] });
+    expect(detectCarrierMatch('')).toEqual({ carrier: 'unknown', confidence: 'none', candidates: [], preferred: [] });
   });
 
   it('rejects a number whose declared checksum does not verify', () => {
     expect(detectCarrier('RA123456789CH')).toBe('unknown');
     expect(isValidMondialRelayBarcode('12123456780101006623123454')).toBe(true);
     expect(isValidMondialRelayBarcode('12123456780101006623123455')).toBe(false);
+  });
+
+  it('checks the Hermes digit before offering Hermes for a 14-digit number', () => {
+    expect(isValidHermesParcelNumber('12345678901231')).toBe(true);
+    expect(isValidHermesParcelNumber('12345678901234')).toBe(false);
+    expect(isValidHermesParcelNumber('1234567890123')).toBe(false);
+    expect(detectCarrierMatch('12345678901231').candidates).toContain('hermes-de');
+    expect(detectCarrierMatch('12345678901234').candidates).not.toContain('hermes-de');
+  });
+
+  it('keeps GLS to its 11- and 12-digit parcel numbers', () => {
+    expect(detectCarrierMatch('123456789012').candidates).toEqual(expect.arrayContaining(['gls-ch', 'gls-de']));
+    expect(detectCarrierMatch('1234567890123').candidates).not.toEqual(expect.arrayContaining(['gls-ch']));
+    expect(detectCarrierMatch('12345678901234').candidates).not.toEqual(expect.arrayContaining(['gls-de']));
+  });
+
+  it('lists the carrier a depot prefix points to first, without selecting it', () => {
+    // DPD numbers start with the depot that printed the label: 0606-0619 is
+    // DPD Switzerland, 10xx DPD France. Other 14-digit carriers stay candidates.
+    expect(detectCarrierMatch('06080000000002')).toMatchObject({
+      carrier: 'unknown', confidence: 'low', preferred: ['dpd'],
+      candidates: ['dpd', 'dpd-fr', 'ciblex', 'seur', 'brt', 'delhivery'],
+    });
+    expect(detectCarrierMatch('10000000000001')).toMatchObject({
+      carrier: 'unknown', confidence: 'low', preferred: ['dpd-fr'],
+    });
+    expect(detectCarrierMatch('10000000000001').candidates[0]).toBe('dpd-fr');
+    // An Austrian depot (0620+) is still a DPD shape, but without the preference.
+    expect(detectCarrierMatch('06200000000002')).toMatchObject({ confidence: 'low', preferred: [] });
   });
 
   it('reads a number out of a pasted carrier link', () => {

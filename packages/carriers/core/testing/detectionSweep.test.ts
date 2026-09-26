@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   detectCarrierMatch,
+  isValidHermesParcelNumber,
   isValidMondialRelayBarcode,
   isValidS10TrackingNumber,
   normalizeTrackingNumber,
@@ -35,7 +36,8 @@ interface DetectionRule {
   readonly id: string;
   readonly pattern: string;
   readonly confidence: 'high' | 'low';
-  readonly checksum?: 's10' | 'mondial-relay';
+  readonly checksum?: 's10' | 'mondial-relay' | 'hermes';
+  readonly preferred?: true;
 }
 
 interface CarrierRule {
@@ -63,6 +65,7 @@ function ruleMatches(rule: DetectionRule, value: string): boolean {
   if (!new RegExp(rule.pattern).test(value)) return false;
   if (rule.checksum === 's10') return isValidS10TrackingNumber(value);
   if (rule.checksum === 'mondial-relay') return isValidMondialRelayBarcode(value);
+  if (rule.checksum === 'hermes') return isValidHermesParcelNumber(value);
   return true;
 }
 
