@@ -107,7 +107,7 @@ statuses, timings and network error codes.
 | `royal-mail` | Royal Mail | universal providers |  | 3 | 4 | 11 | [README](carriers/royal-mail/README.md) |
 | `swiss-post` | Swiss Post | dedicated | direct | 4 | 4 | 28 | [README](carriers/swiss-post/README.md) |
 | `la-poste` | La Poste / Colissimo | dedicated | direct → retry | 4 | 9 | 22 | [README](carriers/la-poste/README.md) |
-| `dpd` | DPD | dedicated | direct → page | 5 | 2 | 10 | [README](carriers/dpd/README.md) |
+| `dpd` | DPD | dedicated | direct → page | 8 | 2 | 16 | [README](carriers/dpd/README.md) |
 | `dhl-ecommerce` | DHL eCommerce | dedicated | browser | 5 | 8 | 18 | [README](carriers/dhl-ecommerce/README.md) |
 | `aliexpress` | AliExpress / Cainiao | dedicated | direct | 4 | 2 | 50 | [README](carriers/aliexpress/README.md) |
 | `china-post` | China Post | universal providers |  | 0 | 4 | 0 | [README](carriers/china-post/README.md) |

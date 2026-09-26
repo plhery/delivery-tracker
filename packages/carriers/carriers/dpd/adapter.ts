@@ -16,10 +16,12 @@ import {
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import { runSteps, singleFlight } from '../../core/runner';
 import type { StepRecorder } from '../../core/telemetry';
-import { isoTime, explicitOffsetTime, zonedTime } from '../../core/time';
+import { isoTime, explicitOffsetTime, zonedTime, type ParsedTime } from '../../core/time';
 import { TrawlClient, decodeText, fetchBounded, parseJsonBytes } from '../../core/transport';
 import { isRecord, type JsonObject } from '../../core/types';
-import { API_LABELS, apiStage, apiStatus, wordingStatus } from './status';
+import {
+  API_LABELS, PROOF_OF_DELIVERY_SCAN, apiStage, apiStatus, scanStage, wordingStatus,
+} from './status';
 
 // Protocol provenance:
 // - The myDPD Android application talks to a guest JSON API: a Firebase
@@ -105,14 +107,51 @@ const PAGE_RECOVERS = new Set<CarrierErrorKind>(['indeterminate', 'transport', '
  * Local to this adapter: the guest API mixes strings and numbers in the fields
  * we project, and its labels are not length-capped here (they are capped at the
  * projection site instead), so `core/transport`'s string-only `clean` would
- * change what a numeric city or code normalizes to.
+ * change what a numeric city or code normalizes to. Anything else (objects,
+ * arrays, booleans) is empty: `String()` of an object is "[object Object]".
  */
 function clean(value: unknown): string {
-  return String(value ?? '').trim().split(/\s+/).filter(Boolean).join(' ');
+  const text = textual(value);
+  return text === undefined ? '' : String(text).trim().split(/\s+/).filter(Boolean).join(' ');
+}
+
+/**
+ * The value when `clean` can read it, otherwise undefined, so a `??` chain
+ * passes over an object as it does over null. An empty string still stops the
+ * chain: stored events are keyed on what that chain produced.
+ */
+function textual(value: unknown): string | number | undefined {
+  return typeof value === 'string' || (typeof value === 'number' && Number.isFinite(value))
+    ? value
+    : undefined;
+}
+
+/** What DPD writes where it has no value, e.g. `country: "UNDEFINED"` on customs scans. */
+const PLACEHOLDERS = new Set(['UNDEFINED', 'UNKNOWN', 'NULL', 'NONE', 'N/A', '-']);
+
+/** Provider text with DPD's placeholders read as empty. */
+function known(value: unknown): string {
+  const text = clean(value);
+  return PLACEHOLDERS.has(text.toUpperCase()) ? '' : text;
+}
+
+/** The first candidate that carries real text. */
+function firstText(...candidates: unknown[]): string {
+  for (const candidate of candidates) {
+    const text = known(candidate);
+    if (text) return text;
+  }
+  return '';
 }
 
 function optionalText(value: unknown): string | null {
   return clean(value) || null;
+}
+
+/** A guest API code (`DEY`, `PARCEL_HANDED`) fit to travel as `provider_code`, or ''. */
+function scanCode(value: unknown): string {
+  const code = known(value).toUpperCase().replaceAll(' ', '_');
+  return /^[A-Z0-9_]{1,40}$/.test(code) ? code : '';
 }
 
 export function dpdTrackingUrl(trackingNumber: string, language?: string): string {
@@ -143,50 +182,95 @@ function apiDescription(value: unknown): string {
 }
 
 function apiSender(payload: JsonObject, current: JsonObject): string | null {
-  // Webshop sender only; recipient names stay out. ParcelShop collection
-  // points are operational locations, not private addresses.
-  for (const candidate of [payload.senderName, payload.sender, current.senderName]) {
-    const value = clean(candidate);
-    if (value) return value.slice(0, 200);
-  }
-  return null;
+  // Webshop sender only; recipient names stay out. A verified lookup sends
+  // `sender` as an object with a company, a name, an id and a postal address:
+  // only the company, then the name, is read. The `receiver` block never is.
+  const sender = isRecord(payload.sender) ? payload.sender : {};
+  const value = firstText(
+    sender.companyName, sender.name, payload.senderName, payload.sender, current.senderName,
+  );
+  return value ? value.slice(0, 200) : null;
 }
 
 function apiPickupPoint(payload: JsonObject, current: JsonObject, stage: string | null): string | null {
   if (stage !== 'ready_for_pickup') return null;
-  for (const candidate of [
-    current.pickupPoint, current.parcelShop, payload.pickupPoint,
-    payload.parcelShop, current.receiverName, payload.receiverName,
-  ]) {
-    const value = isRecord(candidate) ? clean(candidate.name ?? candidate.shopName) : clean(candidate);
-    if (value) return value.slice(0, 200);
-  }
-  return null;
+  // ParcelShop collection points are operational locations, not private
+  // addresses. `receiverName` is the last fallback and is only read as text.
+  const value = firstText(
+    ...[current.pickupPoint, current.parcelShop, payload.pickupPoint, payload.parcelShop]
+      .map((candidate) => (isRecord(candidate) ? firstText(candidate.name, candidate.shopName) : candidate)),
+    current.receiverName,
+    payload.receiverName,
+  );
+  return value ? value.slice(0, 200) : null;
 }
 
 function apiLocation(event: JsonObject): string {
-  const city = clean(event.city);
-  const country = clean(event.country ?? event.countryCode ?? event.depotCountry);
+  const city = known(event.city);
+  // A scan's own `country` wins even when it is a placeholder: `depotCountry`
+  // names the business unit's depot on every scan, customs and paperwork scans
+  // included. It stays the last fallback for a scan that names no country at
+  // all, as it always was, so places stored from such scans keep their identity.
+  const country = known(textual(event.country) ?? textual(event.countryCode) ?? textual(event.depotCountry));
   return city && country && city.toLocaleLowerCase('en-US') !== country.toLocaleLowerCase('en-US')
     ? `${city}, ${country}`
     : city || country;
 }
 
 /**
- * Guest API timestamps: an explicit offset wins, then the zone the payload
- * names for that scan, then Swiss time. Unparsable values keep their raw text.
+ * A scan's `eventDateAndTimeZoneId` as a zone luxon reads. DPD sends "+02:00"
+ * and "Europe/Zurich"; "+0200", "UTC+2", "Z", "UTC" and "GMT" are accepted
+ * too. Anything else passes through, and an unreadable zone means Swiss time.
  */
-function apiEventTime(date: unknown, clock: unknown = '', timezoneName: unknown = null): string {
+function scanZone(value: unknown): string {
+  const text = clean(value);
+  if (/^(?:Z|UTC|GMT)$/i.test(text)) return 'UTC';
+  const offset = /^(?:UTC|GMT)?([+-])(\d{1,2}):?(\d{2})?$/i.exec(text);
+  if (!offset) return text;
+  const [, sign, hours, minutes = '00'] = offset;
+  return Number(hours) <= 14 && Number(minutes) < 60 ? `UTC${sign}${hours!.padStart(2, '0')}:${minutes}` : '';
+}
+
+/** How this adapter read a zone id before `scanZone`; stored events carry its spelling. */
+function storedTime(value: string, zoneId: unknown): ParsedTime | null {
+  const zoneText = clean(zoneId);
+  const zone = /^[+-]\d{2}:\d{2}$/.test(zoneText) ? `UTC${zoneText}` : zoneText || TIMEZONE;
+  return isoTime(value, zone) ?? (zoneText ? isoTime(value, TIMEZONE) : null);
+}
+
+/**
+ * Guest API timestamps: an explicit offset wins, then the zone DPD names for
+ * that scan, then Swiss time. Unparsable values keep their raw text.
+ *
+ * The sync keys stored events on this exact string. When the instant is the
+ * one the adapter read before (with `storedZoneId`, Swiss time for
+ * `parcelEvents`), the earlier spelling is returned so no stored scan is
+ * duplicated.
+ */
+function apiEventTime(
+  date: unknown,
+  clock: unknown = '',
+  zoneId: unknown = null,
+  storedZoneId: unknown = zoneId,
+): string {
   const dateText = clean(date);
   const clockText = clean(clock);
   const value = clockText ? `${dateText}T${clockText}` : dateText;
   if (!value) return '';
   const offsetParsed = explicitOffsetTime(value);
   if (offsetParsed) return offsetParsed.iso;
-  const zoneValue = clean(timezoneName);
-  const zone = /^[+-]\d{2}:\d{2}$/.test(zoneValue) ? `UTC${zoneValue}` : zoneValue || TIMEZONE;
-  const parsed = isoTime(value, zone) ?? (zoneValue ? isoTime(value, TIMEZONE) : null);
-  return parsed?.iso ?? clean(`${dateText} ${clockText}`);
+  const zone = scanZone(zoneId);
+  const parsed = (zone ? isoTime(value, zone) : null) ?? isoTime(value, TIMEZONE);
+  const stored = storedTime(value, storedZoneId);
+  return (stored && stored.timestamp === parsed?.timestamp ? stored : parsed)?.iso
+    ?? clean(`${dateText} ${clockText}`);
+}
+
+/** The parcel weight in kilograms; absent, zero and implausible values are dropped. */
+function apiWeight(value: unknown): number | null {
+  const text = clean(value).replace(',', '.');
+  const weight = /^\d+(?:\.\d+)?$/.test(text) ? Number(text) : Number.NaN;
+  return Number.isFinite(weight) && weight > 0 && weight < 10_000 ? weight : null;
 }
 
 function expectedDelivery(payload: JsonObject): string | null {
@@ -218,8 +302,29 @@ export function parseDPDTrackingApi(
   postcodeVerified?: boolean,
 ): CarrierResult {
   if (!isRecord(payload)) throw new DPDAPIError('DPD guest API returned an invalid response');
-  if (String(payload.parcelNumber ?? payload.shipmentId ?? '') !== trackingNumber) {
+  if (clean(payload.parcelNumber ?? payload.shipmentId) !== trackingNumber) {
     throw new SchemaError('DPD', 'DPD did not return the requested parcel');
+  }
+  const history = Array.isArray(payload.parcelHistory) ? payload.parcelHistory.filter(isRecord) : [];
+  // A verified lookup lists each movement twice: in `parcelEvents` with its
+  // wording, place and scan code but a bare Swiss wall clock, and in
+  // `parcelHistory` with the enumeration and DPD's offset for that scan. A
+  // scan takes the offset of the history entry at the same wall clock, so the
+  // repeated autumn hour keeps its instant; without one it is read in Swiss time.
+  // Only a scan alone at its wall clock with a single entry there is paired
+  // and lent that entry's stage. Otherwise nothing says which entry is whose:
+  // the scans share an offset only when every entry there names the same zone.
+  const parcelEvents = Array.isArray(payload.parcelEvents) ? payload.parcelEvents.filter(isRecord) : [];
+  const scanWallClock = (raw: JsonObject) => `${clean(raw.date)}T${clean(raw.time)}`;
+  const entriesAt = new Map<string, JsonObject[]>();
+  for (const raw of history) {
+    const wallClock = clean(raw.eventDateAndTime).slice(0, 19);
+    if (wallClock) entriesAt.set(wallClock, [...(entriesAt.get(wallClock) ?? []), raw]);
+  }
+  const scansAt = new Map<string, number>();
+  for (const raw of parcelEvents) {
+    const wallClock = scanWallClock(raw);
+    scansAt.set(wallClock, (scansAt.get(wallClock) ?? 0) + 1);
   }
   const scans: CarrierEvent[] = [];
   const seen = new Set<string>();
@@ -230,37 +335,68 @@ export function parseDPDTrackingApi(
       scans.push(event);
     }
   };
-  if (Array.isArray(payload.parcelEvents)) {
-    for (const raw of payload.parcelEvents) {
-      if (!isRecord(raw)) continue;
-      append({
-        time: apiEventTime(raw.date, raw.time),
-        location: apiLocation(raw),
-        description: clean(raw.translation ?? raw.eventTypeText ?? apiDescription(raw.eventType))
-          || 'Tracking update',
-      });
-    }
+  // Only the fields below leave a scan. `podUrl` embeds the parcel number, and
+  // `pudoId`, `buShortName` and `depotCountry` are DPD's own routing data.
+  for (const raw of parcelEvents) {
+    const code = scanCode(raw.eventType);
+    const wallClock = scanWallClock(raw);
+    const entries = entriesAt.get(wallClock) ?? [];
+    const twin = entries.length === 1 && scansAt.get(wallClock) === 1 ? entries[0] : undefined;
+    const zoneId = new Set(entries.map((entry) => clean(entry.eventDateAndTimeZoneId))).size === 1
+      ? entries[0]?.eventDateAndTimeZoneId
+      : null;
+    const stage = scanStage(code) ?? apiStage(code) ?? (twin ? apiStage(twin.description) : null);
+    append({
+      time: apiEventTime(raw.date, raw.time, zoneId, null),
+      location: apiLocation(raw),
+      description: clean(textual(raw.translation) ?? textual(raw.eventTypeText) ?? apiDescription(raw.eventType))
+        || 'Tracking update',
+      ...(stage ? { stage } : {}),
+      ...(code ? { provider_code: code } : {}),
+    });
   }
-  if (scans.length === 0 && Array.isArray(payload.parcelHistory)) {
-    for (const raw of payload.parcelHistory) {
-      if (!isRecord(raw)) continue;
+  if (scans.length === 0) {
+    for (const raw of history) {
+      const code = scanCode(raw.description);
+      const stage = apiStage(code);
       append({
         time: apiEventTime(raw.eventDateAndTime, '', raw.eventDateAndTimeZoneId),
         location: apiLocation(raw),
         description: apiDescription(raw.description),
+        ...(stage ? { stage } : {}),
+        ...(code ? { provider_code: code } : {}),
       });
     }
   }
-  const events = newestFirst(scans);
   const current = isRecord(payload.status) ? payload.status : {};
   const currentDescription = current.description;
+  const stage = apiStage(currentDescription);
+  // The proof-of-delivery scan follows the delivery scan by minutes, with no
+  // place. Next to it the paperwork adds nothing, and as the newest event its
+  // wording, which no rule maps, would become the summary and the apps'
+  // current stage. Alone it proves the delivery only when the enumeration
+  // says delivered; otherwise (a return, say) it would hide the real state.
+  const deliveryScanned = scans.some((event) => (
+    event.stage === 'delivered' && event.provider_code !== PROOF_OF_DELIVERY_SCAN
+  ));
+  const events = newestFirst(scans.flatMap((event) => {
+    if (event.provider_code !== PROOF_OF_DELIVERY_SCAN) return [event];
+    return deliveryScanned || stage !== 'delivered' ? [] : [{ ...event, stage: 'delivered' }];
+  }));
   const statusText = events[0]?.description || apiDescription(currentDescription)
     || 'Tracking information received';
-  const stage = apiStage(currentDescription);
+  const status = apiStatus(currentDescription, statusText, events.length > 0);
   const sender = apiSender(payload, current);
   const pickupPoint = apiPickupPoint(payload, current, stage);
+  const weight = apiWeight(payload.weight);
+  const deliveredAt = status === 'delivered'
+    ? events.find((event) => event.stage === 'delivered')?.time
+    : undefined;
+  // Never projected: `receiver` (name, contact, address, geoPosition), the
+  // sender's id and address, `customerReference1/2`, `gttsZipCode`, `podUrl`
+  // and `product`, which holds the recipient's delivery preference.
   const result: CarrierResult = {
-    status: apiStatus(currentDescription, statusText, events.length > 0),
+    status,
     ...(stage ? { current_stage: stage } : {}),
     last_status_text: statusText,
     last_update: events[0]?.time || apiEventTime(
@@ -268,7 +404,7 @@ export function parseDPDTrackingApi(
       '',
       current.eventDateAndTimeZoneId,
     ) || null,
-    expected_delivery: expectedDelivery(payload),
+    expected_delivery: status === 'delivered' || status === 'exception' ? null : expectedDelivery(payload),
     events,
     source: 'mydpd_guest_api',
     delivery_date: optionalText(payload.deliveryDate),
@@ -277,6 +413,8 @@ export function parseDPDTrackingApi(
     is_predictive_date: Boolean(payload.isPredictiveDate),
     ...(sender ? { sender_name: sender } : {}),
     ...(pickupPoint ? { pickup_point: pickupPoint } : {}),
+    ...(weight !== null ? { weight_kg: weight } : {}),
+    ...(deliveredAt ? { delivered_at: deliveredAt } : {}),
   };
   if (postcodeVerified !== undefined) result.dpd_postcode_verified = postcodeVerified;
   return result;

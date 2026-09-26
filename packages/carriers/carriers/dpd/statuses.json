@@ -14,9 +14,9 @@
       "code": "PARCEL_HANDED",
       "wording": "Parcel handed to DPD",
       "language": "en",
-      "confirmedBy": "fixture",
+      "confirmedBy": "live",
       "firstSeen": "2026-09-12",
-      "note": "Moves the result to in_transit; no milestone of its own, so the event stays unmapped for the sync to classify."
+      "note": "Moves the result to in_transit; no milestone of its own, so the event stays unmapped for the sync to classify. Its verified parcelEvents twin is ORI."
     },
     {
       "code": "IN_TRANSIT",
@@ -86,6 +86,59 @@
       "confirmedBy": "live",
       "firstSeen": "2026-09-12",
       "note": "The guest API's catch-all; neither a status nor a stage is derived from it."
+    },
+    {
+      "code": "CCO",
+      "wording": "Your parcel cleared customs successfully",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Scan code (Customs - Out) with no parcelHistory twin. Its country is the UNDEFINED placeholder, so the scan has no place."
+    },
+    {
+      "code": "ORI",
+      "wording": "Your parcel arrived at our depot",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Scan code (Origin depot - In), at the same instant as PARCEL_HANDED. Unmapped like its twin, so the event and the result stage both come from this wording; a stage here would disagree with the result stage and put accepted after customs on imports."
+    },
+    {
+      "code": "DLI",
+      "wording": "Your parcel arrived at our delivery depot",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Scan code (Destination depot - Inbound), at the same instant as AT_DELIVERY_CENTER."
+    },
+    {
+      "code": "DLO",
+      "wording": "Your parcel is out for delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Scan code (Destination depot - Out for delivery), at the same instant as PARCEL_OUT_FOR_DELIVERY."
+    },
+    {
+      "code": "DEY",
+      "wording": "Your parcel has been delivered successfully",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Scan code (Delivery - Delivered), at the same instant as DELIVERED."
+    },
+    {
+      "code": "DEYY",
+      "wording": "We received the proof of delivery",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Scan code (Delivery - Proof of delivery), minutes after DEY with no place. Dropped when a delivery scan is listed or the enumeration is not DELIVERED; staged delivered only when it is the sole delivery evidence of a delivered parcel. Its podUrl is never kept."
     }
   ]
 }

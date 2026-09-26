@@ -63,6 +63,22 @@ describe('classifyWording', () => {
     }
   });
 
+  it('reads verb-first clearance as completed and keeps negated or pending clearance in customs', () => {
+    for (const wording of [
+      'Your parcel cleared customs successfully', 'Cleared customs', 'Shipment cleared by customs',
+      'The parcel has been cleared through customs',
+    ]) {
+      expect(classifyWording(wording)).toEqual({ stage: 'in_transit', source: 'wording:language' });
+    }
+    for (const wording of [
+      'The parcel has not cleared customs yet', 'Parcel has not yet been cleared through customs',
+      "Shipment hasn't cleared customs", 'Your parcel will be cleared through customs',
+      'Parcel is being cleared by customs',
+    ]) {
+      expect(wordingStage(wording)).toBe('customs');
+    }
+  });
+
   it('maps sender drop-off and carrier pickup scans to accepted', () => {
     for (const wording of [
       'Drop-Off', 'Pickup Scan', 'Pick-up scan',

@@ -44,6 +44,8 @@ import * as observability from './observability';
 import { UniversalTrackingError } from '@carriers/providers/universal';
 import { UpstreamHttpError } from '@carriers/core/transport';
 import cainiaoDeliveredFixture from '../../packages/carriers/carriers/aliexpress/fixtures/delivered.json';
+import dpdDeliveredFixture from '../../packages/carriers/carriers/dpd/fixtures/delivered-verified.json';
+import { parseDPDTrackingApi } from '@carriers/carriers/dpd/adapter';
 import { adapter as cainiaoAdapter, parseCainiaoTrackingResponse } from '@carriers/carriers/aliexpress/adapter';
 import { adapter as postNLAdapter, parsePostNLTrackingResponse } from '@carriers/carriers/spring-gds/adapter';
 import { NOOP_RECORDER } from '@carriers/core/telemetry';
@@ -221,6 +223,61 @@ describe('tracking event normalization', () => {
       { stage: 'in_transit', description: 'Carrier-specific scan' },
       { stage: 'delivered', description: 'Delivered' },
     ]);
+  });
+
+  it('keeps a verified DPD delivery delivered: the proof-of-delivery scan is not the newest row', () => {
+    const result = normalizeCarrierResult(parseDPDTrackingApi(dpdDeliveredFixture, '06080000000001', true));
+    const rows = buildEvents(
+      { id: 'package-1', carrier: 'dpd', current_stage: 'out_for_delivery' },
+      result,
+      'dpd',
+      new Date('2026-07-16T12:00:00Z'),
+    );
+
+    expect(resultStage(result)).toBe('delivered');
+    expect(rows.map((row) => [
+      row.occurred_at, row.stage, row.location, (row.raw_data as JsonObject).stage_source,
+    ])).toEqual([
+      ['2026-07-16T08:12:00Z', 'delivered', 'Urdorf, CH', 'carrier_map'],
+      ['2026-07-16T04:10:45Z', 'out_for_delivery', 'Urdorf, CH', 'carrier_map'],
+      ['2026-07-16T01:48:00Z', 'in_transit', 'Urdorf, CH', 'carrier_map'],
+      ['2026-07-15T16:05:12Z', 'in_transit', 'Urdorf, CH', 'wording:language'],
+      ['2026-07-15T14:30:00Z', 'in_transit', null, 'carrier_map'],
+    ]);
+    expect(rows[0]?.provider_event_id).toBe(providerEventId(
+      'dpd', '2026-07-16T10:12:00+02:00', 'Urdorf, CH', 'Your parcel has been delivered successfully',
+    ));
+    // Only the unmapped depot-arrival scan is recorded for review.
+    expect(collectStatusObservations(rows, 'dpd').map((observation) => [
+      observation.provider_code, observation.chosen_stage,
+    ])).toEqual([['ORI', 'in_transit']]);
+  });
+
+  it('adds no observed DPD row when the newest verified scan is the depot arrival', () => {
+    // The enumeration beside ORI (PARCEL_HANDED) has no stage, so the result
+    // stage comes from the scan's wording; the scan must agree with it.
+    const scans = (dpdDeliveredFixture.parcelEvents as JsonObject[]);
+    const history = (dpdDeliveredFixture.parcelHistory as JsonObject[]);
+    for (const eventTypes of [['ORI'], ['ORI', 'CCO']]) {
+      const result = normalizeCarrierResult(parseDPDTrackingApi({
+        ...dpdDeliveredFixture,
+        status: { ...history[0], description: 'PARCEL_HANDED' },
+        parcelHistory: history.filter((entry) => entry.description === 'PARCEL_HANDED'),
+        parcelEvents: scans.filter((scan) => eventTypes.includes(String(scan.eventType))),
+      }, '06080000000001', true));
+      for (const previousStage of ['pending', 'registered', 'accepted']) {
+        const rows = buildEvents(
+          { id: 'package-1', carrier: 'dpd', current_stage: previousStage },
+          result,
+          'dpd',
+          new Date('2026-07-15T20:00:00Z'),
+        );
+
+        expect(resultStage(result)).toBe('in_transit');
+        expect(rows.map((row) => [row.stage, (row.raw_data as JsonObject).observed_without_provider_timestamp ?? false]))
+          .toEqual(eventTypes.map(() => ['in_transit', false]));
+      }
+    }
   });
 
   it('creates stable provider ids and drops events without usable timestamps', () => {

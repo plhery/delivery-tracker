@@ -1,0 +1,231 @@
+{
+  "parcelNumber": "06080000000001",
+  "shipmentId": "06080000000001",
+  "status": {
+    "status": 5,
+    "description": "DELIVERED",
+    "deliveryType": "HOME",
+    "eventDateAndTime": "2026-07-16T10:41:30",
+    "eventDateAndTimeZoneId": "Europe/Zurich",
+    "city": null,
+    "countryCode": "CH",
+    "homeDelivery": true
+  },
+  "deliveryDate": "2026-07-16",
+  "parcelSearchType": "BY_PARCEL_NUMBER",
+  "fmpRedirectionPossibility": false,
+  "sender": {
+    "senderId": "SENDER0000000001",
+    "name": "Example Webshop AG",
+    "companyName": null,
+    "emailAddress": null,
+    "phoneNumber": null,
+    "address": {
+      "streetName": "Sender Street",
+      "houseNumber": "1",
+      "zipCode": "00000",
+      "city": "Sender City",
+      "country": "DE",
+      "doorCode": null,
+      "additionalInformation": null,
+      "door": null,
+      "floor": null,
+      "stairs": null,
+      "typeOfRoad": null,
+      "doorCode2": null,
+      "interPhone": null,
+      "additionalAddress": null,
+      "building": null
+    },
+    "senderLogo": null
+  },
+  "receiver": {
+    "name": "Private Recipient",
+    "companyName": null,
+    "emailAddress": "recipient@example.invalid",
+    "phoneNumber": "+41000000000",
+    "address": {
+      "streetName": "Private Street",
+      "houseNumber": "7",
+      "zipCode": "9999",
+      "city": "Private Town",
+      "country": "CH",
+      "doorCode": null,
+      "additionalInformation": null,
+      "door": null,
+      "floor": null,
+      "stairs": null,
+      "typeOfRoad": null,
+      "doorCode2": null,
+      "interPhone": null,
+      "additionalAddress": null,
+      "building": null
+    },
+    "geoPosition": {
+      "lat": 46.000001,
+      "lon": 8.000001
+    }
+  },
+  "weight": 1.4,
+  "product": "Example product (recipient delivery preference)",
+  "parcelHistory": [
+    {
+      "status": 1,
+      "description": "PARCEL_HANDED",
+      "deliveryType": "HOME",
+      "eventDateAndTime": "2026-07-15T18:05:12",
+      "eventDateAndTimeZoneId": "+02:00",
+      "city": "Urdorf",
+      "countryCode": "CH",
+      "homeDelivery": true
+    },
+    {
+      "status": 3,
+      "description": "AT_DELIVERY_CENTER",
+      "deliveryType": "HOME",
+      "eventDateAndTime": "2026-07-16T03:48:00",
+      "eventDateAndTimeZoneId": "+02:00",
+      "city": "Urdorf",
+      "countryCode": "CH",
+      "homeDelivery": true
+    },
+    {
+      "status": 4,
+      "description": "PARCEL_OUT_FOR_DELIVERY",
+      "deliveryType": "HOME",
+      "eventDateAndTime": "2026-07-16T06:10:45",
+      "eventDateAndTimeZoneId": "+02:00",
+      "city": "Urdorf",
+      "countryCode": "CH",
+      "homeDelivery": true
+    },
+    {
+      "status": 5,
+      "description": "DELIVERED",
+      "deliveryType": "HOME",
+      "eventDateAndTime": "2026-07-16T10:12:00",
+      "eventDateAndTimeZoneId": "+02:00",
+      "city": "Urdorf",
+      "countryCode": "CH",
+      "homeDelivery": true
+    }
+  ],
+  "ratingModifiable": true,
+  "actionBoxStatus": "CANNOT_RETRIEVE_ACTIONS",
+  "parcelType": "INCOMING",
+  "type": "NORMAL",
+  "customerReference1": "PRIVATE-REFERENCE-1",
+  "customerReference2": "PRIVATE-REFERENCE-2",
+  "refused": false,
+  "gttsZipCode": "9999",
+  "confirmation": "TRUE",
+  "returning": false,
+  "pickupPass": {
+    "qrCode": null,
+    "available": false,
+    "idCheck": false
+  },
+  "digitalLabelAvailable": false,
+  "shipperVoucherLogo": {
+    "shipperLogo": null
+  },
+  "shipmentBUCode": "036",
+  "pickupPassParcelShop": {
+    "standardPickupPass": {
+      "qrCode": null,
+      "qrCodeAvailable": false
+    },
+    "securedPickupPass": null,
+    "pinCode": null,
+    "idCheck": false
+  },
+  "isPredictiveDate": false,
+  "parcelEvents": [
+    {
+      "time": "10:41:30",
+      "date": "2026-07-16",
+      "translation": "We received the proof of delivery",
+      "pudoId": null,
+      "pudoType": null,
+      "country": "UNDEFINED",
+      "buShortName": "DPD-CH",
+      "depotCountry": "CH",
+      "city": null,
+      "podUrl": "https://pod.example.invalid/tracking/pods?parcelNumber=06080000000001&date=2026-07-16",
+      "eventType": "DEYY",
+      "eventTypeText": "Delivery - Proof of delivery"
+    },
+    {
+      "time": "10:12:00",
+      "date": "2026-07-16",
+      "translation": "Your parcel has been delivered successfully",
+      "pudoId": null,
+      "pudoType": null,
+      "country": "CH",
+      "buShortName": "DPD-CH",
+      "depotCountry": "CH",
+      "city": "Urdorf",
+      "podUrl": "https://pod.example.invalid/tracking/pods?parcelNumber=06080000000001&date=2026-07-16",
+      "eventType": "DEY",
+      "eventTypeText": "Delivery - Delivered"
+    },
+    {
+      "time": "06:10:45",
+      "date": "2026-07-16",
+      "translation": "Your parcel is out for delivery",
+      "pudoId": null,
+      "pudoType": null,
+      "country": "CH",
+      "buShortName": "DPD-CH",
+      "depotCountry": "CH",
+      "city": "Urdorf",
+      "podUrl": null,
+      "eventType": "DLO",
+      "eventTypeText": "Destination depot - Out for delivery"
+    },
+    {
+      "time": "03:48:00",
+      "date": "2026-07-16",
+      "translation": "Your parcel arrived at our delivery depot",
+      "pudoId": null,
+      "pudoType": null,
+      "country": "CH",
+      "buShortName": "DPD-CH",
+      "depotCountry": "CH",
+      "city": "Urdorf",
+      "podUrl": null,
+      "eventType": "DLI",
+      "eventTypeText": "Destination depot - Inbound"
+    },
+    {
+      "time": "18:05:12",
+      "date": "2026-07-15",
+      "translation": "Your parcel arrived at our depot",
+      "pudoId": null,
+      "pudoType": null,
+      "country": "CH",
+      "buShortName": "DPD-CH",
+      "depotCountry": "CH",
+      "city": "Urdorf",
+      "podUrl": null,
+      "eventType": "ORI",
+      "eventTypeText": "Origin depot - In"
+    },
+    {
+      "time": "16:30:00",
+      "date": "2026-07-15",
+      "translation": "Your parcel cleared customs successfully",
+      "pudoId": null,
+      "pudoType": null,
+      "country": "UNDEFINED",
+      "buShortName": "DPD-CH",
+      "depotCountry": "CH",
+      "city": null,
+      "podUrl": null,
+      "eventType": "CCO",
+      "eventTypeText": "Customs - Out"
+    }
+  ],
+  "isMasterParcel": true,
+  "shipmentType": "SHIPMENT"
+}

@@ -1,0 +1,94 @@
+{
+  "parcelNumber": "06080000000001",
+  "shipmentId": "06080000000001",
+  "status": {
+    "status": 5,
+    "description": "DELIVERED",
+    "deliveryType": "HOME",
+    "eventDateAndTime": "2026-07-16T10:41:30",
+    "eventDateAndTimeZoneId": "Europe/Zurich",
+    "city": null,
+    "countryCode": "CH",
+    "homeDelivery": true
+  },
+  "deliveryDate": "2026-07-16",
+  "parcelSearchType": "BY_PARCEL_NUMBER",
+  "fmpRedirectionPossibility": false,
+  "receiver": {
+    "name": null,
+    "companyName": null,
+    "emailAddress": null,
+    "phoneNumber": null,
+    "address": {
+      "streetName": null,
+      "houseNumber": null,
+      "zipCode": null,
+      "city": null,
+      "country": null,
+      "doorCode": null,
+      "additionalInformation": null,
+      "door": null,
+      "floor": null,
+      "stairs": null,
+      "typeOfRoad": null,
+      "doorCode2": null,
+      "interPhone": null,
+      "additionalAddress": null,
+      "building": null
+    },
+    "geoPosition": null
+  },
+  "parcelHistory": [
+    {
+      "status": 1,
+      "description": "PARCEL_HANDED",
+      "deliveryType": null,
+      "eventDateAndTime": "2026-07-15T18:05:12",
+      "eventDateAndTimeZoneId": "+02:00",
+      "city": null,
+      "countryCode": null,
+      "homeDelivery": false
+    },
+    {
+      "status": 3,
+      "description": "AT_DELIVERY_CENTER",
+      "deliveryType": null,
+      "eventDateAndTime": "2026-07-16T03:48:00",
+      "eventDateAndTimeZoneId": "+02:00",
+      "city": null,
+      "countryCode": null,
+      "homeDelivery": false
+    },
+    {
+      "status": 4,
+      "description": "PARCEL_OUT_FOR_DELIVERY",
+      "deliveryType": null,
+      "eventDateAndTime": "2026-07-16T06:10:45",
+      "eventDateAndTimeZoneId": "+02:00",
+      "city": null,
+      "countryCode": null,
+      "homeDelivery": false
+    },
+    {
+      "status": 5,
+      "description": "DELIVERED",
+      "deliveryType": null,
+      "eventDateAndTime": "2026-07-16T10:12:00",
+      "eventDateAndTimeZoneId": "+02:00",
+      "city": null,
+      "countryCode": null,
+      "homeDelivery": false
+    }
+  ],
+  "actionBoxStatus": "DISABLED",
+  "parcelType": "INCOMING",
+  "type": "NORMAL",
+  "refused": false,
+  "confirmation": "FALSE",
+  "returning": false,
+  "digitalLabelAvailable": false,
+  "shipmentBUCode": "036",
+  "isPredictiveDate": false,
+  "isMasterParcel": true,
+  "shipmentType": "SHIPMENT"
+}
