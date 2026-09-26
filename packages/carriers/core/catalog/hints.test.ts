@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  carrierIdFromName, carrierIdFromPartner, carrierIdFromPartnerLinks, isKnownCarrierName, nationalPostCandidate,
+  brandTimeZones, carrierIdFromName, carrierIdFromPartner, carrierIdFromPartnerLinks, carrierNameCountryZone, isKnownCarrierName,
+  nationalPostCandidate,
 } from './hints';
 
 describe('national postal lookup candidates', () => {
@@ -71,5 +72,37 @@ describe('carrier names reported by universal providers', () => {
 
   it.each(['Example Parcel Co', 'Example Express Italy', 'Postexample Courier'])('treats %s as new', (name) => {
     expect(isKnownCarrierName(name)).toBe(false);
+  });
+});
+
+describe('zones implied by carrier names', () => {
+  it.each([
+    // A carrier or brand network followed by a single-clock country, even when no carrier is identified.
+    ['Chronopost France', 'Europe/Paris'], ['DPD UK', 'Europe/London'], ['GLS Italy', 'Europe/Rome'],
+    ['DHL Parcel Netherlands', 'Europe/Amsterdam'], ['DHL Germany', 'Europe/Berlin'], ['Chronopost Portugal', 'Europe/Lisbon'],
+    ['Royal Mail (UK)', 'Europe/London'], ['Cainiao (China)', 'Asia/Shanghai'],
+  ])('reads %s in %s', (name, zone) => {
+    expect(carrierNameCountryZone(name)).toBe(zone);
+  });
+
+  it.each(['Swiss Post', 'UPS', 'Asendia USA', 'UPS United States', 'Correos Chile', 'DPD Group', 'DHL', 'Example Express Italy', ''])(
+    'implies no zone for %s', (name) => {
+      expect(carrierNameCountryZone(name)).toBeNull();
+    },
+  );
+
+  it('keeps name resolution for discovery unchanged', () => {
+    for (const name of ['DPD UK', 'GLS Italy', 'DHL Parcel Netherlands', 'DPD Group']) expect(carrierIdFromName(name)).toBeUndefined();
+  });
+
+  it('lists the zones of a bare brand only when all of its carriers keep a local clock', () => {
+    // ParcelsApp reads brand-only scans in these zones. A catalog change here moves
+    // stored scan instants, and so event ids: plan a re-key before updating the sets.
+    expect(brandTimeZones('DPD Group')).toEqual(['Europe/Zurich', 'Europe/Paris']);
+    expect(brandTimeZones('dpd')).toEqual(['Europe/Zurich', 'Europe/Paris']);
+    expect(new Set(brandTimeZones('GLS'))).toEqual(new Set(['Europe/Zurich', 'Europe/Berlin', 'Europe/Paris']));
+    expect(brandTimeZones('Hermes')).toEqual(['Europe/Berlin']);
+    // DHL eCommerce is UTC, so the brand's clock is unknown.
+    for (const name of ['DHL', 'DHL Group', 'DPD Local', 'DPD UK', 'Post', 'Example Parcel Co']) expect(brandTimeZones(name)).toEqual([]);
   });
 });

@@ -60,6 +60,16 @@ export function isoTime(value: unknown, zone: string, maxLength = 64): ParsedTim
   return fromDateTime(parsed);
 }
 
+/** The digits of a labeled instant read in UTC, or of an offset-less value as given. */
+function labeledDigits(value: unknown, maxLength: number): DateTime | null {
+  const raw = clean(value, maxLength);
+  if (!raw) return null;
+  const labeled = EXPLICIT_OFFSET_PATTERN.test(raw)
+    ? DateTime.fromISO(raw, { setZone: true }).toUTC()
+    : DateTime.fromISO(raw, { zone: 'utc' });
+  return labeled.isValid ? labeled : null;
+}
+
 /**
  * Wall-clock times a provider labels as UTC (or with an offset of its own)
  * although they are the scan's local time: ParcelsApp and PostNL do this. The
@@ -67,14 +77,29 @@ export function isoTime(value: unknown, zone: string, maxLength = 64): ParsedTim
  * Offset-less values are read in `zone` directly.
  */
 export function mislabeledLocalTime(value: unknown, zone: string, maxLength = 64): ParsedTime | null {
-  const raw = clean(value, maxLength);
-  if (!raw) return null;
-  const labeled = EXPLICIT_OFFSET_PATTERN.test(raw)
-    ? DateTime.fromISO(raw, { setZone: true }).toUTC()
-    : DateTime.fromISO(raw, { zone: 'utc' });
-  if (!labeled.isValid) return null;
+  const labeled = labeledDigits(value, maxLength);
+  if (!labeled) return null;
   const { year, month, day, hour, minute, second, millisecond } = labeled;
   return fromDateTime(DateTime.fromObject({ year, month, day, hour, minute, second, millisecond }, { zone }));
+}
+
+/** The wall clock `mislabeledLocalTime` re-reads, as an offset-less ISO string. */
+export function mislabeledWallTime(value: unknown, maxLength = 64): string | null {
+  return labeledDigits(value, maxLength)?.toISO({ includeOffset: false }) ?? null;
+}
+
+/**
+ * One zone for several that keep the same clock at `wallIso`, an offset-less
+ * wall time: the first zone when every zone reads it as the same instant.
+ * Null when none is given, a zone or the time is invalid, the time carries an
+ * offset (every zone would agree), or the zones disagree at that moment, as
+ * Zurich and London always do.
+ */
+export function sharedClockZone(zones: readonly string[], wallIso: string): string | null {
+  if (!zones.length || EXPLICIT_OFFSET_PATTERN.test(wallIso)) return null;
+  const instants = zones.map((zone) => DateTime.fromISO(wallIso, { zone }));
+  const first = instants[0]!.toMillis();
+  return instants.every((instant) => instant.isValid && instant.toMillis() === first) ? zones[0]! : null;
 }
 
 // Countries that keep one civil time. Spain and Portugal use their mainland

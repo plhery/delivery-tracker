@@ -64,12 +64,36 @@ step exists for future protocol changes.
   an empty result for it.
 - Times: `states[].date` is the scan's local clock, labelled as UTC or shifted into a
   wrong offset (a DPD scan at 14:05+02:00 comes back as `14:05+00:00`). The adapter
-  keeps the UTC digits and re-reads them in the zone of the scan's carrier
-  (`carriers[state.carrier]`), else the country at the end of `location`, else the
-  parcel's carrier zone passed in by routing. With no zone, an offset is taken as given
-  and an offset-less date fails the direct result.
+  keeps the UTC digits and re-reads them in the first zone it finds:
+  1. the catalog zone of the scan's carrier (`carriers[state.carrier]`), unless it is UTC;
+  2. the country at the end of `location`;
+  3. the country that name ends with, after a catalog carrier or brand ("DPD UK",
+     "GLS Italy", "DHL Parcel Netherlands"), if that country has a single clock. It comes
+     after the location because the name can be a branch, not the scan's place
+     ("Cainiao (China)" scanning in Spain);
+  4. for a bare brand or brand group ("DPD Group", "GLS", "Hermes") on a scan with no
+     location, the zone of that brand's catalog carriers, if every one of them reads the
+     digits as the same instant;
+  5. the zone routing passes for the parcel.
+
+  With no zone, an offset is taken as given and an offset-less date fails the direct
+  result. Steps 3 and 4 choose a zone only: `carrierIdFromName` still treats these brands
+  as ambiguous, so discovery and routing are unchanged.
+- Brand zones: a bare brand does not say which network scanned. The DPD, GLS and Hermes
+  carriers in the catalog all keep Central European time, which step 4 checks for each
+  scan, DST changes included. A brand with a UTC carrier (DHL, through DHL eCommerce) gets
+  no zone. A location that names no single-clock country ("Toronto, ON", "Chicago, US")
+  can be one of the brand's networks outside the catalog, so step 4 skips any scan with
+  a location. A location-less scan from such a network (a UK depot shown only as "DPD
+  Group") would still be read as Central European time.
+- Brand zones follow the catalog. A new DPD, GLS or Hermes carrier, or a changed
+  `timezone`, on another clock turns step 4 off for that brand and moves its stored scans,
+  and so their event ids: plan a re-key of stored ParcelsApp rows with such a change.
+  `hints.test.ts` pins the current zone sets so the change cannot pass unnoticed.
 - The rendered page prints the same UTC digits (`dd LLL yyyy HH:mm`) and names no carrier
-  per scan, so only the parcel's zone applies. The server's timezone is never used.
+  per scan, so only the parcel's zone applies. The server's timezone is never used. A
+  scan that the JSON reply reads in another zone (steps 1 to 4) gets another instant, and
+  so another event id, when a lookup falls back to the page.
 - Cross-border replies stay uncertain: scans can be filed under the wrong operator (an
   India-to-France parcel listed La Poste scans under India Post).
 - Notices are skipped, not events: `require_fields` rows, postcode, sign-in and

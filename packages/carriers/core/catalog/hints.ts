@@ -1,4 +1,4 @@
-import { CARRIER_DEFINITIONS } from './definitions';
+import { CARRIER_DEFINITIONS, carrierTimezone } from './definitions';
 import { matchesDomain } from './linkRules';
 import { countryTimeZone } from '../time';
 import type { CarrierId } from '../../generated/catalog';
@@ -92,6 +92,38 @@ export function isKnownCarrierName(name: string): boolean {
   const qualified = countryQualified(name);
   return [key(name), ...(qualified ? [key(qualified.base)] : [])].some((candidate) =>
     CATALOG_NAMES.has(candidate) || NETWORK_BRANDS.some((brand) => candidate.startsWith(brand)));
+}
+
+/**
+ * The single clock of the country after a known carrier or brand network
+ * ("DPD UK", "GLS Italy", "DHL Parcel Netherlands"), for scans that carry no
+ * zone of their own. A zone only, never a carrier. Null for a country with
+ * several zones and for names new to the catalog, whose last word need not be
+ * a place. The name can be a branch rather than where the scan happened
+ * ("Cainiao (China)"), so a scan's own location comes first.
+ */
+export function carrierNameCountryZone(name: string): string | null {
+  const qualified = countryQualified(name);
+  return qualified && isKnownCarrierName(name) ? countryTimeZone(qualified.country) : null;
+}
+
+/**
+ * The catalog zones of a brand named bare or as a group ("DPD", "DPD Group",
+ * "GLS", "Hermes"): one per carrier whose id is the brand or starts with it
+ * and a dash. The name cannot say which network scanned, so use them only
+ * when they all read the scan's clock as one instant (`sharedClockZone`).
+ * Empty for other names, and when any network has no local clock (DHL, whose
+ * eCommerce network is UTC). The set follows the catalog: a new network of a
+ * brand on another clock turns the brand's zone off, which moves the stored
+ * instants, and so the event ids, of that brand's past scans.
+ */
+export function brandTimeZones(name: string): string[] {
+  const normalized = key(name);
+  const brand = NETWORK_BRANDS.find((candidate) => normalized === candidate || normalized === `${candidate}group`);
+  if (!brand) return [];
+  const zones = Object.keys(CARRIER_DEFINITIONS)
+    .filter((id) => id === brand || id.startsWith(`${brand}-`)).map((id) => carrierTimezone(id));
+  return zones.includes('UTC') ? [] : [...new Set(zones)];
 }
 
 /** Known portal hosts only. This identifies a lookup hint; it never follows the URL. */

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  calendarDay, countryTimeZone, epochMillisTime, epochSecondsTime, explicitOffsetTime, isoTime, mislabeledLocalTime, zonedTime,
+  calendarDay, countryTimeZone, epochMillisTime, epochSecondsTime, explicitOffsetTime, isoTime, mislabeledLocalTime,
+  mislabeledWallTime, sharedClockZone, zonedTime,
 } from './index';
 
 describe('time policies', () => {
@@ -33,6 +34,32 @@ describe('time policies', () => {
     expect(mislabeledLocalTime('2026-06-10T13:30:00+02:00', 'Europe/Zurich')?.iso).toBe('2026-06-10T11:30:00+02:00');
     expect(mislabeledLocalTime('2026-01-15T09:30:00', 'Asia/Kolkata')?.iso).toBe('2026-01-15T09:30:00+05:30');
     expect(mislabeledLocalTime('not a date', 'UTC')).toBeNull();
+  });
+
+  it('exposes the wall clock a mislabeled time is re-read from', () => {
+    expect(mislabeledWallTime('2026-06-10T14:05:00+00:00')).toBe('2026-06-10T14:05:00.000');
+    expect(mislabeledWallTime('2026-06-10T13:30:00+02:00')).toBe('2026-06-10T11:30:00.000');
+    expect(mislabeledWallTime('2026-01-15T09:30:00')).toBe('2026-01-15T09:30:00.000');
+    expect(mislabeledWallTime('not a date')).toBeNull();
+  });
+
+  it('picks one zone only when every zone reads the wall clock as the same instant', () => {
+    const central = ['Europe/Zurich', 'Europe/Paris', 'Europe/Berlin'];
+    expect(sharedClockZone(central, '2026-06-10T14:05:00')).toBe('Europe/Zurich');
+    expect(sharedClockZone(central, '2026-01-15T09:30:00')).toBe('Europe/Zurich');
+    // Around both 2026 DST changes, the skipped and the repeated hour included.
+    for (const wall of ['2026-03-29T01:30:00', '2026-03-29T02:30:00', '2026-03-29T03:30:00',
+      '2026-10-25T01:30:00', '2026-10-25T02:30:00', '2026-10-25T03:30:00']) {
+      expect(sharedClockZone(central, wall)).toBe('Europe/Zurich');
+    }
+    for (const wall of ['2026-06-10T14:05:00', '2026-01-15T09:30:00', '2026-03-29T00:30:00', '2026-10-25T01:30:00']) {
+      expect(sharedClockZone(['Europe/Zurich', 'Europe/London'], wall)).toBeNull();
+    }
+    expect(sharedClockZone([], '2026-06-10T14:05:00')).toBeNull();
+    expect(sharedClockZone(['Europe/Zurich', 'Not/AZone'], '2026-06-10T14:05:00')).toBeNull();
+    expect(sharedClockZone(['Europe/Zurich'], 'not a date')).toBeNull();
+    // An instant is the same everywhere: that is not a shared clock.
+    expect(sharedClockZone(['Europe/Zurich', 'Europe/London'], '2026-06-10T14:05:00Z')).toBeNull();
   });
 
   it('maps single-zone countries by code or English name only', () => {

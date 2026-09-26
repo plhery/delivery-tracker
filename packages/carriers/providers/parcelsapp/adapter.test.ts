@@ -104,11 +104,63 @@ describe('ParcelsApp result parsing', () => {
   });
 
   it('falls back to the parcel carrier\'s zone when a scan names no usable carrier or place', () => {
-    const payload = { carriers: ['DPD Group'], states: [{ date: '2026-06-10T14:05:00+00:00', status: 'Return to sender', carrier: 0 }] };
+    const payload = { carriers: ['Example Parcel Co'], states: [{ date: '2026-06-10T14:05:00+00:00', status: 'Return to sender', carrier: 0 }] };
     expect(parseParcelsAppResponse(payload, number, identity(), 'Europe/Zurich').events?.[0]?.time).toBe('2026-06-10T12:05:00.000Z');
     expect(parseParcelsAppResponse(payload, number, identity()).events?.[0]?.time).toBe('2026-06-10T14:05:00.000Z');
     expect(parseParcelsAppHtml(rendered(row('10 Jun 2026', '14:05', 'Return to sender')), number, 'Europe/Zurich').events?.[0]?.time)
       .toBe('2026-06-10T12:05:00.000Z');
+  });
+
+  it('reads a bare brand in the clock all of its catalog networks keep', () => {
+    // Live shape (2026-09-26): scans named only "DPD Group", without a location,
+    // on a parcel filed under a carrier with no local clock.
+    const scans = (carriers: string[], dates: string[], extra: Record<string, unknown> = {}) => parseParcelsAppResponse({
+      carriers, states: dates.map((date) => ({ date, status: 'In transit', carrier: 0, ...extra })),
+    }, number, identity()).events?.map((scan) => scan.time);
+    expect(scans(['DPD Group'], ['2026-07-02T18:30:00+00:00', '2026-01-14T09:15:00+00:00'])).toEqual([
+      '2026-07-02T16:30:00.000Z', // summer: CEST
+      '2026-01-14T08:15:00.000Z', // winter: CET
+    ]);
+    expect(scans(['GLS'], ['2026-07-02T18:30:00+00:00'])).toEqual(['2026-07-02T16:30:00.000Z']);
+    expect(scans(['Hermes'], ['2026-01-14T09:15:00+00:00'])).toEqual(['2026-01-14T08:15:00.000Z']);
+    // A network the name or location places elsewhere keeps that country's clock.
+    expect(scans(['DPD UK'], ['2026-07-02T18:30:00+00:00'])).toEqual(['2026-07-02T17:30:00.000Z']);
+    expect(scans(['DPD Group'], ['2026-07-02T18:30:00+00:00'], { location: 'Example Hub, United Kingdom' }))
+      .toEqual(['2026-07-02T17:30:00.000Z']);
+    // A location it cannot place may be a network outside the catalog: no brand clock.
+    for (const location of ['EXAMPLE CITY, CA, US', 'Example City, ON', 'Example Hub']) {
+      expect(scans(['GLS'], ['2026-07-02T18:30:00+00:00'], { location })).toEqual(['2026-07-02T18:30:00.000Z']);
+    }
+    // A name's country can be a branch: the scan's own location comes first.
+    expect(scans(['Cainiao (China)'], ['2026-07-02T18:30:00+00:00'], { location: 'Example Hub, Spain' }))
+      .toEqual(['2026-07-02T16:30:00.000Z']);
+    expect(scans(['Cainiao (China)'], ['2026-07-02T18:30:00+00:00'])).toEqual(['2026-07-02T10:30:00.000Z']);
+    // DHL eCommerce keeps no local clock, so the bare brand has no zone of its own.
+    expect(scans(['DHL'], ['2026-07-02T18:30:00+00:00'])).toEqual(['2026-07-02T18:30:00.000Z']);
+    expect(parseParcelsAppResponse({ carriers: ['DHL'], states: [{ date: '2026-07-02T18:30:00+00:00', status: 'In transit', carrier: 0 }] },
+      number, identity(), 'Europe/Zurich').events?.[0]?.time).toBe('2026-07-02T16:30:00.000Z');
+  });
+
+  it('keeps the instants of scans whose carrier resolved before brand and country names did', () => {
+    // A Chronopost + DHL Parcel Netherlands handoff: the DHL scans carry no
+    // location and were read in the parcel carrier's zone (Berlin). Their name
+    // now reads them in Amsterdam, which keeps the same clock, so stored rows
+    // keep their identity.
+    const result = parseParcelsAppResponse({
+      carriers: ['Chronopost France', 'DHL Parcel Netherlands'],
+      states: [
+        { date: '2026-07-03T11:42:00+00:00', status: 'Delivered', carrier: 0, location: 'EXAMPLE-VILLE' },
+        { date: '2026-07-02T19:05:00+00:00', status: 'Handed over to the delivery partner', carrier: 1 },
+        { date: '2026-03-29T01:30:00+00:00', status: 'Sorted at the parcel centre', carrier: 1 },
+        { date: '2026-01-14T07:20:00+00:00', status: 'Received by the carrier', carrier: 1 },
+      ],
+    }, number, identity(), 'Europe/Berlin');
+    expect(result.events?.map((scan) => scan.time)).toEqual([
+      '2026-07-03T09:42:00.000Z',
+      '2026-07-02T17:05:00.000Z',
+      '2026-03-29T00:30:00.000Z',
+      '2026-01-14T06:20:00.000Z',
+    ]);
   });
 
   it('parses rendered history without parsing the surrounding marketing copy', () => {

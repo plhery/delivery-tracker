@@ -14,12 +14,12 @@ import { DateTime } from 'luxon';
 import timers from 'node:timers/promises';
 import type { AdapterFactory } from '../../core/adapter';
 import { carrierTimezone } from '../../core/catalog';
-import { carrierIdFromName } from '../../core/catalog/hints';
+import { brandTimeZones, carrierIdFromName, carrierNameCountryZone } from '../../core/catalog/hints';
 import { carrierErrorKind, ChallengeError, IndeterminateError, InputRequiredError, SchemaError, UpstreamHttpError, UpstreamNetworkError } from '../../core/errors';
 import { runSteps } from '../../core/runner';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import type { StepRecorder } from '../../core/telemetry';
-import { countryTimeZone, mislabeledLocalTime } from '../../core/time';
+import { countryTimeZone, mislabeledLocalTime, mislabeledWallTime, sharedClockZone } from '../../core/time';
 import type { TrawlClient } from '../../core/transport';
 import { isRecord } from '../../core/types';
 import { capturedBodies, loadCapture, type CaptureSpec } from '../shared/capture';
@@ -50,9 +50,12 @@ export function parseParcelsAppResponse(payload: unknown, trackingNumber: string
  * ParcelsApp's `date` is the scan's local clock, labeled as UTC or shifted
  * into an offset of its own: a DPD scan at 14:05+02:00 arrives as
  * "14:05+00:00", a Swiss Post delivery at 11:30 local as "13:30+02:00"
- * (both shapes checked 2026-09-22). Its UTC digits are re-read in
- * the zone of the scan's carrier, else its location's country, else the zone
- * of the carrier the parcel is filed under. Without one it stays as labeled.
+ * (both shapes checked 2026-09-22). Its UTC digits are re-read in the zone
+ * of the scan's carrier, else its location's country, else the country the
+ * carrier name ends with ("DPD UK"), else, for a scan with no location, the
+ * clock that all catalog networks of a bare brand share at that moment ("DPD
+ * Group": DPD Switzerland and France), else the zone routing passes for the
+ * parcel. Without one it stays as labeled.
  */
 function scanZone(payload: Record<string, unknown>, state: Record<string, unknown>, fallback: string | null): string | null {
   const carriers = Array.isArray(payload.carriers) ? payload.carriers : [];
@@ -60,8 +63,17 @@ function scanZone(payload: Record<string, unknown>, state: Record<string, unknow
   const carrier = typeof name === 'string' ? carrierIdFromName(name) : undefined;
   const zone = carrier ? carrierTimezone(carrier) : 'UTC';
   if (zone !== 'UTC') return zone;
-  const country = typeof state.location === 'string' ? state.location.split(',').at(-1) : undefined;
-  return countryTimeZone(country) ?? fallback;
+  const location = typeof state.location === 'string' ? state.location.trim() : '';
+  const located = countryTimeZone(location.split(',').at(-1));
+  if (located) return located;
+  if (typeof name !== 'string') return fallback;
+  const named = carrierNameCountryZone(name);
+  if (named) return named;
+  // A location with no single-clock country ("Toronto, ON", "Chicago, US")
+  // can be a network of the brand outside the catalog, on another clock.
+  const brand = location ? [] : brandTimeZones(name);
+  const wall = brand.length ? mislabeledWallTime(state.date) : null;
+  return (wall ? sharedClockZone(brand, wall) : null) ?? fallback;
 }
 
 function parseHistory(payload: unknown, timezone: string | null = null): CarrierResult {
