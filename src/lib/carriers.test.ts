@@ -1068,7 +1068,8 @@ describe('carrier detection', () => {
     const prefixed = detectCarrierMatch('SF6047381042488');
     expect(prefixed).toMatchObject({ carrier: 'unknown', confidence: 'low' });
     expect(prefixed.candidates).toContain('sf-express');
-    expectUniversalFallback('sf-express');
+    expect(CARRIERS['sf-express'].capabilities.tracking.adapter).toBe('sf-express');
+    expect(tracksAutomatically('sf-express')).toBe(true);
   });
 
   it('shipup — ShipUp', () => {
