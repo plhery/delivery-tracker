@@ -1,0 +1,136 @@
+{
+  "carrier": "japan-post",
+  "entries": [
+    {
+      "wording": "Posting/Collection",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26"
+    },
+    {
+      "wording": "En route",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26"
+    },
+    {
+      "wording": "Arrival at outward office of exchange",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26"
+    },
+    {
+      "wording": "Dispatch from outward office of exchange",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26"
+    },
+    {
+      "wording": "Arrival at inward office of exchange",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26"
+    },
+    {
+      "wording": "Item presented to import Customs",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26"
+    },
+    {
+      "wording": "In Customs",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26"
+    },
+    {
+      "wording": "Item held at inward Office of Exchange",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26"
+    },
+    {
+      "wording": "Item returned from import Customs",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26"
+    },
+    {
+      "wording": "Departure from inward office of exchange",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26"
+    },
+    {
+      "wording": "Processing at delivery Post Office",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26"
+    },
+    {
+      "wording": "Item out for physical delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26"
+    },
+    {
+      "wording": "Final delivery",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26"
+    },
+    {
+      "wording": "Arrival",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "documentation",
+      "firstSeen": "2026-09-26",
+      "note": "Official Japan Post tracking notices: https://www.post.japanpost.jp/service/send/oversea/information/ems_search_en.html"
+    },
+    {
+      "wording": "Dispatched from Exchange Office",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "documentation",
+      "firstSeen": "2026-09-26",
+      "note": "Official Japan Post tracking notices: https://www.post.japanpost.jp/service/send/oversea/information/ems_search_en.html"
+    },
+    {
+      "wording": "Transported in bond",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "documentation",
+      "firstSeen": "2026-09-26",
+      "note": "Official Japan Post tracking notices: https://www.post.japanpost.jp/service/send/oversea/information/ems_search_en.html"
+    },
+    {
+      "wording": "Arrived in bond",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "documentation",
+      "firstSeen": "2026-09-26",
+      "note": "Official Japan Post tracking notices: https://www.post.japanpost.jp/service/send/oversea/information/ems_search_en.html"
+    },
+    {
+      "wording": "Returned to sender",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "documentation",
+      "firstSeen": "2026-09-26",
+      "note": "Official Japan Post tracking notices: https://www.post.japanpost.jp/service/send/oversea/information/ems_search_en.html"
+    }
+  ]
+}

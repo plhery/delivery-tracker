@@ -11,6 +11,7 @@ import type { UniversalSource } from './universalTrackingResult';
 import { isKnownCarrierName } from './universalCarrierHints';
 import { errorType, reportRoutingEvent } from './observability';
 import { CarrierError, carrierErrorKind, IndeterminateError, retryAfterMsOf } from '@carriers/core/errors';
+import { captureDirectLocalHistory, directHistoryNumber, hasUnresolvedDirectCurrent, hasUnresolvedDirectHistory } from './directLocalHistory';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -153,6 +154,8 @@ export class TrackingRouter {
     const declared = String(parcel.carrier);
     const number = String(parcel.tracking_number ?? '');
     const metadata = isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
+    let localDirectFallback: { value: RoutedResult; carrier: string } | undefined;
+    let localHistory: JsonObject | undefined;
     const universalNumber = metadata.original_carrier && metadata.active_tracking_carrier
       && typeof metadata.active_tracking_number === 'string' ? metadata.active_tracking_number : number;
     if (state.preferred_number && state.preferred_number !== universalNumber) state.preferred_provider = undefined;
@@ -185,7 +188,7 @@ export class TrackingRouter {
       // A future-dated scan must not make every later real update look older.
       const eventTime = Math.min(now().getTime(),
         Math.max(latest(value.result), value.earlierResult ? latest(value.earlierResult) : 0));
-      state.last_event_at = eventTime ? iso(eventTime) : state.last_event_at;
+      state.last_event_at = eventTime && value.result.direct_local_fallback !== true ? iso(eventTime) : state.last_event_at;
       // Universal checks are deliberately less frequent than direct in-transit polls.
       state.next_check_at = sources.includes(provider as UniversalSource)
         ? iso(now().getTime() + (freshnessWindow(now()) === HOUR ? 15 * 60_000 : HOUR)) : undefined;
@@ -199,6 +202,7 @@ export class TrackingRouter {
           postcode: state.confirmed_postcode ?? null };
       }
       return { ...value, result: { ...value.result, routing: state,
+        ...(localHistory ? { direct_local_history: localHistory } : {}),
         ...(directCarrier(provider) ? { active_tracking_carrier: value.sourceCarrierId } : {}),
         ...(swap ? { auto_changed_from: declared, auto_changed_to: provider, auto_changed_at: now().toISOString() } : {}),
       } };
@@ -217,12 +221,24 @@ export class TrackingRouter {
       if (millis(state.failures[carrier]?.retry_at) > now().getTime()) return null;
       attemptedDirect.add(carrier);
       try {
-        const value = await this.options.direct(candidate ? { ...parcel, carrier,
+        const lookupParcel = candidate ? { ...parcel, carrier,
           tracking_url: ownInputs ? state.confirmed_tracking_url : null,
           dpd_postcode: ownInputs ? state.confirmed_postcode : null,
-          carrier_data: {} } : parcel, carrier);
+          carrier_data: {} } : parcel;
+        const value = await this.options.direct(lookupParcel, carrier);
         value.result = normalizeCarrierResult(value.result);
         if (!usable(value.result)) throw Object.assign(new Error('No confirmed shipment progress'), { status: 404 });
+        if (hasUnresolvedDirectHistory(value.sourceCarrierId, value.result)) {
+          localHistory = captureDirectLocalHistory(value.sourceCarrierId, String(directHistoryNumber(lookupParcel, value.result)), value.result);
+        }
+        if (hasUnresolvedDirectCurrent(value.sourceCarrierId, value.result)) {
+          // Preserve the direct evidence, but let timestamped or richer
+          // providers supply the normal timeline and freshness watermark.
+          // A discovered candidate with no instants cannot displace a source
+          // whose dated progress already established the carrier.
+          if (!candidate) localDirectFallback = { value, carrier };
+          return null;
+        }
         if (candidate && ![value.result.status, value.result.current_stage, ...(value.result.events ?? []).map((event) => event.stage)]
           .some((stage) => stage && stage !== 'pending' && stage !== 'unknown')) return null;
         if (candidate && latest(value.result) < millis(state.last_event_at)) return null;
@@ -322,7 +338,7 @@ export class TrackingRouter {
         const failure = fail(source, error, true);
         kind = failure.kind;
         retryAfterMs = millis(failure.retry_at) - now().getTime();
-        if (kind === 'rate_limited' && recent()) {
+        if (kind === 'rate_limited' && recent() && !localDirectFallback) {
           state.next_check_at = iso(Math.min(millis(failure.retry_at), millis(state.last_success_at) + freshnessWindow(now())));
           throw new RoutingDeferred(state, false, attempted());
         }
@@ -392,6 +408,11 @@ export class TrackingRouter {
       state.last_probe_at ??= now().toISOString();
       state.discovery_cursor = 0;
       return persistResult(value, chosen);
+    }
+    if (localDirectFallback) {
+      const { value, carrier } = localDirectFallback;
+      value.result = { ...value.result, direct_local_fallback: true };
+      return persistResult(value, carrier);
     }
     state.discovery_cursor = (offset + Math.max(1, [...attemptedUniversal].filter((source) => source !== 'UPU').length)) % richerSources.length;
     const deadlines = Object.values(state.failures).map((failure) => millis(failure.retry_at)).filter((time) => time > now().getTime());

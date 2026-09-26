@@ -157,6 +157,13 @@ export const trackingLinkCases: TrackingLinkCase[] = [
   { carrier: 'ems', number: 'EB000000005CN',
     route: /^https:\/\/items\.ems\.post\/api\/publicTracking\/track\?/,
     marker: /Public Tracking|no results found/i },
+  { carrier: 'japan-post', number: 'CN000000005JP',
+    route: /^https:\/\/trackings\.post\.japanpost\.jp\/services\/srv\/search\/direct\?/,
+    marker: /Track & Trace|Your item was not found/i },
+  // The shared page links UK tracking and the international POST-only form.
+  { carrier: 'evri', number: 'H000000000000001',
+    route: /^https:\/\/www\.evri\.com\/track-a-parcel\/?$/,
+    marker: /Parcel tracking is easy with Evri|Track a parcel/i, forwarding: 'none' },
 ];
 
 /**

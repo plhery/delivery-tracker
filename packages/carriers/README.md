@@ -59,7 +59,7 @@ npm run test:contract                                               # generated 
 ## Carriers
 
 <!-- GENERATED:carriers -->
-105 carriers: 42 with a dedicated adapter, 59 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
+105 carriers: 44 with a dedicated adapter, 57 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
 
 Roughly ordered by familiarity and prominence, with major carriers first (an editorial order, not a market-share ranking).
 
@@ -79,19 +79,19 @@ Roughly ordered by familiarity and prominence, with major carriers first (an edi
 | `aliexpress` | AliExpress / Cainiao | dedicated | direct | 4 | 2 | 50 | [README](carriers/aliexpress/README.md) |
 | `china-post` | China Post | universal providers |  | 0 | 2 | 0 | [README](carriers/china-post/README.md) |
 | `ems` | EMS | dedicated | direct | 2 | 2 | 16 | [README](carriers/ems/README.md) |
-| `sf-express` | SF Express | universal providers |  | 0 | 2 | 0 |  |
+| `sf-express` | SF Express | universal providers |  | 0 | 2 | 0 | [README](carriers/sf-express/README.md) |
 | `gls-de` | GLS Germany | dedicated | direct | 7 | 3 | 26 | [README](carriers/gls-de/README.md) |
 | `gls-fr` | GLS France | dedicated | direct | 4 | 6 | 29 | [README](carriers/gls-fr/README.md) |
 | `gls-ch` | GLS Switzerland | dedicated | direct | 7 | 1 | 26 | [README](carriers/gls-ch/README.md) |
 | `hermes-de` | Hermes Germany | dedicated | direct | 5 | 4 | 39 | [README](carriers/hermes-de/README.md) |
-| `evri` | Evri | universal providers |  | 0 | 1 | 0 |  |
+| `evri` | Evri | dedicated | direct | 3 | 1 | 16 | [README](carriers/evri/README.md) |
 | `chronopost` | Chronopost | via la-poste | direct → retry | 4 | 6 | 6 | [README](carriers/chronopost/README.md) |
 | `mondial-relay` | Mondial Relay | dedicated | trawl | 2 | 8 | 45 | [README](carriers/mondial-relay/README.md) |
 | `inpost` | InPost | dedicated | direct | 1 | 7 | 21 | [README](carriers/inpost/README.md) |
 | `spring-gds` | PostNL | dedicated | direct | 4 | 16 | 16 | [README](carriers/spring-gds/README.md) |
 | `canada-post` | Canada Post | dedicated | direct | 4 | 4 | 15 | [README](carriers/canada-post/README.md) |
-| `australia-post` | Australia Post | universal providers |  | 0 | 3 | 0 |  |
-| `japan-post` | Japan Post | universal providers |  | 0 | 2 | 0 |  |
+| `australia-post` | Australia Post | universal providers |  | 0 | 3 | 0 | [README](carriers/australia-post/README.md) |
+| `japan-post` | Japan Post | dedicated | direct | 2 | 2 | 18 | [README](carriers/japan-post/README.md) |
 | `india-post` | India Post | dedicated | direct | 3 | 4 | 13 | [README](carriers/india-post/README.md) |
 | `poste-italiane` | Poste Italiane | dedicated | direct | 2 | 8 | 17 | [README](carriers/poste-italiane/README.md) |
 | `correos-spain` | Correos | dedicated | direct | 5 | 2 | 33 | [README](carriers/correos-spain/README.md) |

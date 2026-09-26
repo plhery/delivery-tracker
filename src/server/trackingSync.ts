@@ -40,6 +40,7 @@ import { UniversalTracker } from './universalTracking';
 import type { UniversalSource } from './universalTrackingResult';
 import { RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
 import { upuHistory } from './upuHistory';
+import { directHistoryNumber, directLocalHistory, directLocalSnapshotIsOlder, hasUnresolvedDirectCurrent } from './directLocalHistory';
 
 const MAX_PACKAGES_PER_OWNER_PER_SYNC = 5;
 const VALID_STAGES = new Set<string>(STAGES);
@@ -423,7 +424,7 @@ export function buildEvents(
         description,
       ),
       raw_data: {
-        ...(result.tracking_provider === 'UPU' ? matchingEvent : {}),
+        ...(result.tracking_provider === 'UPU' || result.direct_local_fallback === true ? matchingEvent : {}),
         observed_without_provider_timestamp: true,
         stage_source: stageSource(
           VALID_STAGES.has(declaredCurrent) ? declaredCurrent : String(matchingEvent?.stage ?? ''),
@@ -898,13 +899,23 @@ export class TrackingSyncService {
         || (previousData.tracking_provider === 'UPU' && typeof previousData.last_update_local === 'string'
           && String(result.last_update_local ?? '') < previousData.last_update_local)
       );
-      const preserveSummary = progressDisappeared || olderSnapshot || unprovenUpuSummary
+      const localOnlyFallback = result.direct_local_fallback === true && hasUnresolvedDirectCurrent(sourceCarrierId, result);
+      const previousLocalHistory = isRecord(previousData.direct_local_history) ? previousData.direct_local_history : {};
+      const sameLocalSource = previousData.direct_local_fallback === true
+        && previousLocalHistory.carrier === sourceCarrierId && previousLocalHistory.number === directHistoryNumber(parcel, result);
+      const unprovenLocalSummary = localOnlyFallback && (
+        (previousStage !== 'pending' && !sameLocalSource)
+        || (sameLocalSource && directLocalSnapshotIsOlder(previousLocalHistory, result))
+      );
+      const preserveSummary = progressDisappeared || olderSnapshot || unprovenUpuSummary || unprovenLocalSummary
         || (['delivered', 'returned'].includes(previousStage) && selectedStage !== previousStage);
       const carrierData: JsonObject = Object.fromEntries(
         Object.entries(result).filter(([key, value]) => key !== 'events' && value != null),
       );
       const postalHistory = upuHistory(parcel, result, now);
       if (postalHistory) carrierData.upu_history = postalHistory;
+      const localHistory = directLocalHistory(parcel, result);
+      if (localHistory) carrierData.direct_local_history = localHistory;
       // Linked journey identity belongs to the parcel, not an individual carrier response.
       if (isRecord(parcel.carrier_data)) {
         for (const key of ['original_carrier', 'original_tracking_number', 'original_tracking_url', 'original_package_id', 'active_tracking_carrier', 'active_tracking_number', 'original_canonical_tracking_number', 'auto_changed_from', 'auto_changed_to', 'auto_changed_at']) {
@@ -962,6 +973,11 @@ export class TrackingSyncService {
           ...(isRecord(values.carrier_data) ? values.carrier_data : previousData), upu_history: postalHistory,
         };
       }
+      if (preserveSummary && localHistory) {
+        values.carrier_data = {
+          ...(isRecord(values.carrier_data) ? values.carrier_data : previousData), direct_local_history: localHistory,
+        };
+      }
       if (fetched.correction && !preserveSummary) {
         values.carrier = fetched.correction.carrier;
         values.tracking_url = fetched.correction.trackingUrl;
@@ -971,7 +987,7 @@ export class TrackingSyncService {
         values.carrier_data.routing.configured_carrier = carrierId;
       }
       const outcome = progressDisappeared ? 'error' : knownUpdate ? 'updated' : 'waiting';
-      const eventsToPersist = progressDisappeared || (preserveSummary && result.tracking_provider === 'UPU') ? [] : events;
+      const eventsToPersist = progressDisappeared || (preserveSummary && (result.tracking_provider === 'UPU' || localOnlyFallback)) ? [] : events;
       operation = 'persist_package';
       await audit.step('persist_package', async () => {
         await persist(values, eventsToPersist, progressDisappeared ? [] : deleteDescriptions);

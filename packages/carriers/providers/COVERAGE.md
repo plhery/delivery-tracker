@@ -2,10 +2,16 @@
 
 Live comparison for the first 30 carriers in the [carrier overview](../README.md#carriers).
 Rows 1–15 were checked **2026-09-22**, with a FedEx direct recheck on
-**2026-09-23**; rows 16–30 were checked **2026-09-25**.
+**2026-09-23**; rows 16–30 were checked **2026-09-25**, with Japan Post and Evri International
+direct rechecks on **2026-09-26**.
 Each row compares the **same reference** across the
 carrier's direct adapter and all five universal providers. This is observed
 coverage for these samples, not a promise that every number from a carrier works.
+
+**Direct support** describes the app's current carrier integration;
+**Direct sample** records the dated lookup outcome. A supported adapter can return no
+history for an old number or require an extra input. Support is separate from
+these samples' success and does not imply verified deployment compatibility.
 
 **Numbers are returned history rows**, after the existing adapter projection and
 manual exclusion of sign-in notices and identified forecasts. Different
@@ -16,7 +22,7 @@ choosing the largest count.
 - **✓ n:** matching history retrieved, with n rows.
 - **Intermittent:** history was retrieved, but other sessions or later lookups
   were challenged; a successful check does not establish reliable availability.
-- **None:** no usable history for this reference; this does not establish that
+- **No history:** no usable history for this reference; this does not establish that
   the entire carrier is unsupported. It includes explicit no-data/no-info replies,
   even when an adapter conservatively classifies them as indeterminate.
 - **Summary only:** a carrier response was returned, but it contained zero
@@ -26,47 +32,56 @@ choosing the largest count.
 - **Sign-in:** account-access notice, with zero shipment scans.
 - **N/A:** the supplied format is not eligible for UPU, which requires a valid
   postal S10 identifier.
-- **No adapter / Link only:** no direct implementation to execute in this app.
-  “Direct” includes the dedicated adapter's browser recovery where implemented.
-- **Postcode needed:** the direct source requires the recipient's postcode for
-  event history. A public number alone cannot test that history.
+- **Yes:** an active carrier-specific adapter is implemented, including a shared
+  carrier adapter or browser retrieval where configured. This is not restricted
+  to direct HTTP requests.
+- **Yes (postcode):** the adapter works with the required recipient postcode.
+  This does not claim that a sample lacking that postcode was tested; its
+  history outcome is **Not tested (postcode)**. Mondial Relay requires this
+  input for short shipment numbers, not validated full label barcodes.
+- **No adapter:** a direct integration has not been implemented. **Link only**
+  provides the carrier website link without automatic direct retrieval.
+  **Disabled** means experimental adapter code exists but normal tracking uses
+  universal providers instead.
+- **Not tested:** no direct adapter was available for the recorded comparison,
+  or a required input was missing. This is not a no-history response.
 - **Unverified:** the only available reference is an illustrative example with
   no retained history. Negative lookups cannot establish live coverage.
 
 ## Coverage and history size
 
-| Carrier / reference | Direct | Ship24 | ParcelsApp | 17TRACK | Postal Ninja | UPU |
-| --- | --- | --- | --- | --- | --- | --- |
-| [DHL](../carriers/dhl/README.md) | Blocked | ✓ 10 | ✓ 14 | None | ✓ 14 | ✓ 1 |
-| [UPS](../carriers/ups/README.md) | ✓ 11 | ✓ 1 | ✓ 11 | ✓ 11 | ✓ 11 | N/A |
-| [FedEx](../carriers/fedex/README.md) | ✓ 14, intermittent | ✓ 14 | ✓ 14 | ✓ 14 | ✓ 14 | N/A |
-| [USPS](../carriers/usps/README.md) | ✓ 11† | None | None | ✓ 11 | None | N/A |
-| [Amazon Logistics](../carriers/amazon-logistics/README.md) | Link only | None | Sign-in | None | None | N/A |
-| [Amazon Shipping](../carriers/amazon-shipping/README.md) | ✓ 12 | ✓ 12 | ✓ 12 | None | ✓ 12 | N/A |
-| [Royal Mail](../carriers/royal-mail/README.md) | Error | None | ✓ 1 | None | ✓ 4 | None |
-| [Swiss Post](../carriers/swiss-post/README.md) | ✓ 8 | ✓ 8 | ✓ 8 | ✓ 8 | None | N/A |
-| [La Poste / Colissimo](../carriers/la-poste/README.md) | ✓ 15 | ✓ 11 | ✓ 16 | ✓ 14 | ✓ 26 | None |
-| [DPD](../carriers/dpd/README.md) | ✓ 4 | ✓ 1 | ✓ 4 | ✓ 4 | ✓ 4 | N/A |
-| [DHL eCommerce](../carriers/dhl-ecommerce/README.md) | ✓ 16 | ✓ 11 | ✓ 36 | None | ✓ 34 | N/A |
-| [AliExpress / Cainiao](../carriers/aliexpress/README.md) | ✓ 17 | None | ✓ 17 | ✓ 17 | ✓ 17 | N/A |
-| [China Post](../carriers/china-post/README.md) | No adapter | ✓ 1 | ✓ 1 | ✓ 39 | ✓ 17 | ✓ 1 |
-| [EMS](../carriers/ems/README.md) | ✓ 7 | ✓ 6 | ✓ 18 | ✓ 24 | ✓ 6 | ✓ 6 |
-| [SF Express](../carriers/sf-express/carrier.json) | No adapter | None | None | ✓ 27 | None | N/A |
-| [GLS Germany](../carriers/gls-de/README.md) | Postcode needed | None | None | None | None | N/A |
-| [GLS France](../carriers/gls-fr/README.md) | None | None | ✓ 4 | None | None | N/A |
-| [GLS Switzerland](../carriers/gls-ch/README.md) | Unverified | Unverified | Unverified | Unverified | Unverified | N/A |
-| [Hermes Germany](../carriers/hermes-de/README.md) | None | None | None | None | None | N/A |
-| [Evri](../carriers/evri/carrier.json) | No adapter | None | ✓ 21 | None | None | N/A |
-| [Chronopost](../carriers/chronopost/README.md) | None | None | None | None | None | None |
-| [Mondial Relay](../carriers/mondial-relay/README.md) | None | None | None | None | None | N/A |
-| [InPost](../carriers/inpost/README.md) | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 8 | None | N/A |
-| [PostNL](../carriers/spring-gds/README.md) | ✓ 16 | ✓ 16 | None | None | ✓ 16 | None |
-| [Canada Post](../carriers/canada-post/README.md) | Summary only | ✓ 12 | ✓ 11 | ✓ 25 | Error | ✓ 1 |
-| [Australia Post](../carriers/australia-post/carrier.json) | No adapter | None | None | None | ✓ 12 | N/A |
-| [Japan Post](../carriers/japan-post/carrier.json) | No adapter | ✓ 13 | ✓ 27 | ✓ 27 | ✓ 28 | ✓ 1 |
-| [India Post](../carriers/india-post/README.md) | ✓ 21 | ✓ 21 | None | ✓ 21 | None | None |
-| [Poste Italiane](../carriers/poste-italiane/README.md) | None | None | None | None | None | N/A |
-| [Correos Spain](../carriers/correos-spain/README.md) | ✓ 12 | Error | ✓ 12 | ✓ 12 | None | N/A |
+| Carrier / reference | Direct support | Direct sample | Ship24 | ParcelsApp | 17TRACK | Postal Ninja | UPU |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| [DHL](../carriers/dhl/README.md) | Yes | Blocked | ✓ 10 | ✓ 14 | No history | ✓ 14 | ✓ 1 |
+| [UPS](../carriers/ups/README.md) | Yes | ✓ 11 | ✓ 1 | ✓ 11 | ✓ 11 | ✓ 11 | N/A |
+| [FedEx](../carriers/fedex/README.md) | Yes | ✓ 14, intermittent | ✓ 14 | ✓ 14 | ✓ 14 | ✓ 14 | N/A |
+| [USPS](../carriers/usps/README.md) | Yes | ✓ 11† | No history | No history | ✓ 11 | No history | N/A |
+| [Amazon Logistics](../carriers/amazon-logistics/README.md) | Link only | Not tested | No history | Sign-in | No history | No history | N/A |
+| [Amazon Shipping](../carriers/amazon-shipping/README.md) | Yes | ✓ 12 | ✓ 12 | ✓ 12 | No history | ✓ 12 | N/A |
+| [Royal Mail](../carriers/royal-mail/README.md) | Disabled | Error | No history | ✓ 1 | No history | ✓ 4 | No history |
+| [Swiss Post](../carriers/swiss-post/README.md) | Yes | ✓ 8 | ✓ 8 | ✓ 8 | ✓ 8 | No history | N/A |
+| [La Poste / Colissimo](../carriers/la-poste/README.md) | Yes | ✓ 15 | ✓ 11 | ✓ 16 | ✓ 14 | ✓ 26 | No history |
+| [DPD](../carriers/dpd/README.md) | Yes (postcode) | ✓ 4 | ✓ 1 | ✓ 4 | ✓ 4 | ✓ 4 | N/A |
+| [DHL eCommerce](../carriers/dhl-ecommerce/README.md) | Yes | ✓ 16 | ✓ 11 | ✓ 36 | No history | ✓ 34 | N/A |
+| [AliExpress / Cainiao](../carriers/aliexpress/README.md) | Yes | ✓ 17 | No history | ✓ 17 | ✓ 17 | ✓ 17 | N/A |
+| [China Post](../carriers/china-post/README.md) | No adapter | Not tested | ✓ 1 | ✓ 1 | ✓ 39 | ✓ 17 | ✓ 1 |
+| [EMS](../carriers/ems/README.md) | Yes | ✓ 7 | ✓ 6 | ✓ 18 | ✓ 24 | ✓ 6 | ✓ 6 |
+| [SF Express](../carriers/sf-express/README.md) | No adapter | Not tested | No history | No history | ✓ 27 | No history | N/A |
+| [GLS Germany](../carriers/gls-de/README.md) | Yes (postcode) | Not tested (postcode) | No history | No history | No history | No history | N/A |
+| [GLS France](../carriers/gls-fr/README.md) | Yes | No history | No history | ✓ 4 | No history | No history | N/A |
+| [GLS Switzerland](../carriers/gls-ch/README.md) | Yes (postcode) | Unverified | Unverified | Unverified | Unverified | Unverified | N/A |
+| [Hermes Germany](../carriers/hermes-de/README.md) | Yes | No history | No history | No history | No history | No history | N/A |
+| [Evri](../carriers/evri/README.md) | Yes (international) | ✓ 20§ | No history | ✓ 21 | No history | No history | N/A |
+| [Chronopost](../carriers/chronopost/README.md) | Yes (via La Poste) | No history | No history | No history | No history | No history | No history |
+| [Mondial Relay](../carriers/mondial-relay/README.md) | Yes (postcode for short numbers) | No history | No history | No history | No history | No history | N/A |
+| [InPost](../carriers/inpost/README.md) | Yes | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 8 | No history | N/A |
+| [PostNL](../carriers/spring-gds/README.md) | Yes | ✓ 16 | ✓ 16 | No history | No history | ✓ 16 | No history |
+| [Canada Post](../carriers/canada-post/README.md) | Yes | Summary only | ✓ 12 | ✓ 11 | ✓ 25 | Error | ✓ 1 |
+| [Australia Post](../carriers/australia-post/README.md) | No adapter | Not tested | No history | No history | No history | ✓ 12 | N/A |
+| [Japan Post](../carriers/japan-post/README.md) | Yes | ✓ 13‡ | ✓ 13 | ✓ 27 | ✓ 27 | ✓ 28 | ✓ 1 |
+| [India Post](../carriers/india-post/README.md) | Yes | ✓ 21 | ✓ 21 | No history | ✓ 21 | No history | No history |
+| [Poste Italiane](../carriers/poste-italiane/README.md) | Yes | No history | No history | No history | No history | No history | N/A |
+| [Correos Spain](../carriers/correos-spain/README.md) | Yes | ✓ 12 | Error | ✓ 12 | ✓ 12 | No history | N/A |
 
 A check mark confirms retrieved history, not correct status mapping; the notes
 identify mapping issues.
@@ -81,18 +96,35 @@ negative carrier-coverage results.
 the same domestic reference in a later successful browser session. See the
 [USPS follow-up](#usps-follow-up-direct-history-and-operator-attribution).
 
+**‡ Japan Post direct recheck, 2026-09-26:** the new direct adapter returned
+13 matching events through final delivery for the same public reference. This
+was fresh adapter retrieval, with the official HTTP route also checked from
+the server; the September 25 universal-provider counts remain unchanged. The official page labels overseas scans as local times,
+which the adapter resolves only when the event location establishes a verified
+timezone; other local times stay unresolved. See the
+[Japan Post verification notes](../carriers/japan-post/README.md).
+
+**§ Evri International direct recheck, 2026-09-26:** the carrier-linked
+GlobalEco portal returned 20 history rows for the same reference, using one
+anonymous HTTP request. The September 25 ParcelsApp count remains 21. This
+direct adapter covers international parcels; domestic UK tracking still relies
+on universal providers. The source reports wall times without a verified zone.
+See the [Evri scope and timestamp notes](../carriers/evri/README.md).
+
 The initial ParcelsApp failures prompted a [timeout and recovery fix](parcelsapp/README.md#implementation-decisions):
 the old direct request stopped after 10 s, and browser recovery could return an
 unfinished page. The adapter now allows 30 s initially and one network retry
 within 45 s. All four histories were verified after the fix with unchanged event
-counts. The matrix preserves the original observations at the commit below.
+counts. Apart from the dated rechecks, the matrix preserves the original
+observations at the commits below.
 
 **17TRACK recheck, 2026-09-22:** all seven previously failing references again
-returned no history, so their cells now say **None**. DHL, DHL eCommerce and
+returned no history, so their cells now say **No history**. DHL, DHL eCommerce and
 the three UK/FR Amazon Shipping references returned a matching shipment code
 400 with null history; both TBA references completed with explicit `NotFound`.
-A later check of the supplied TBA reference stayed pending and again supplied
-no history. The China Post control still returned 39 events. The adapter now recognizes
+A later check of the supplied TBA reference stayed pending; that unfinished
+lookup is inconclusive and does not replace its earlier completed result.
+The China Post control still returned 39 events. The adapter now recognizes
 that matching code-400 response as `no_history`, separately from transport,
 verification and unfinished polling failures. This is coverage for the checked
 references, not a carrier-wide unsupported verdict.
@@ -125,14 +157,14 @@ report the same milestone in different zones.
 | GLS France | ParcelsApp alone retains four older rows: registration, departure from a GLS parcel centre and two delivered reports. Those reports may describe the same delivery, so the count is not four distinct milestones; acceptance, delivery round and other intermediate movements are absent. The public 2025 reference has already fallen out of the direct service's history. |
 | GLS Switzerland | Only Swiss Post's illustrative parcel number was available. It no longer resolves at the direct service, and the aggregators gave no usable rows. This is a reference-age limitation, not evidence that any source lacks live GLS Switzerland coverage. The direct detail endpoint also needs the recipient postcode for a real shipment. |
 | Hermes Germany | The public April number returned no history in any source; a separate September public number did not improve the result. Both are negative controls for those exact references only. No comparison of event types is possible without a live positive reference. |
-| Evri | ParcelsApp alone supplied 21 rows across creation, Heathrow acceptance/export, destination border and customs, local depot and failed-delivery attempts. Repeated cross-dock, customs and attempted-delivery wording means 21 rows are fewer distinct milestones. This reference has no observed successful final delivery. |
+| Evri | The September 25 comparison returned 21 rows through ParcelsApp across creation, Heathrow acceptance/export, destination border and customs, local depot and failed-delivery attempts. On September 26 the new international direct adapter returned 20 rows for the same reference, including the latest failed attempt; its local clocks have no verified UTC offsets. Repeated cross-dock, customs and attempted-delivery wording means 21 rows are fewer distinct milestones. This reference has no observed successful final delivery. |
 | Chronopost | The public XU shipment code returned no history through the shared La Poste direct adapter or any universal provider, including UPU. The same February complaint also labels a separate 28-character number as tracking: none of the universal providers found history for it, while the direct adapter rejects that format locally. Neither negative reference establishes current carrier-wide coverage. |
 | Mondial Relay | The old public 26-digit label barcode returned no history anywhere. Its validated barcode allows the direct adapter to try an anonymous alias; the common shorter numbers instead need the recipient postcode. This sample cannot distinguish history retention from source coverage. |
 | InPost | Direct, Ship24 and ParcelsApp share nine milestones from label creation to delivery. The direct feed identifies the actionable locker-ready row; Ship24 and ParcelsApp include its text but map it to pending. 17TRACK's eight rows omit that locker-ready row altogether. Its longer descriptive text adds no extra physical scan. |
 | PostNL | Direct, Ship24 and Postal Ninja each return the same 16 rows, including export, destination arrival, a failed attempt, a return notice and eventual delivery. Paired sort/arrival rows are overlapping reports, not separate legs. Direct currently maps the out-for-delivery row as accepted; Postal Ninja's rows have no usable timestamps. ParcelsApp, 17TRACK and UPU supplied no history for this valid S10 number. |
 | Canada Post | Direct returned a summary without scans. ParcelsApp's 11 dated rows cover Canada Post acceptance, export, US customs, the delivery round and delivery. Ship24's 12 include two undated repeats, so its larger count adds no clear milestone. 17TRACK's 25 include the USPS destination-facility journey and overlapping Canada Post/USPS reports; this is the useful extra foreign-country leg, not 14 extra delivery attempts. UPU has only final delivery. |
-| Australia Post | Postal Ninja alone returned 12 undated rows from shipment registration and lodgement through facility movement, the delivery round and delivery. The count includes repeated transit/sorting updates and a safe-place delivery preference, rather than 12 distinct movement scans. No source returned dated history for this recent public number, and there is no direct adapter. |
-| Japan Post | ParcelsApp and 17TRACK each return 27 dated rows spanning Japan Post export and Malta Post import, customs-payment hold, destination processing and delivery. 17TRACK explicitly attributes both operators; some paired handoff and delivery rows overlap. Postal Ninja shows 28 mostly equivalent but undated rows, including a repeated final-delivery report. Ship24's 13 undated rows keep the broad journey but omit the payment hold and much of the destination-carrier detail. UPU has final delivery only. |
+| Australia Post | Postal Ninja alone returned 12 undated rows from shipment registration and lodgement through facility movement, the delivery round and delivery. The count includes repeated transit/sorting updates and a safe-place delivery preference, rather than 12 distinct movement scans. The September 25 comparison had no dated history for this recent public number. A September 26 manual direct-browser check returned 12 dated rows, but the server browser was challenged before requesting shipment data; no direct adapter is enabled. See the [Australia Post investigation](../carriers/australia-post/README.md). |
+| Japan Post | The September 26 direct recheck returned 13 events through delivery, retaining source local times and resolving each sample event’s timezone from its own location. ParcelsApp and 17TRACK each return 27 dated rows spanning Japan Post export and Malta Post import, customs-payment hold, destination processing and delivery. 17TRACK explicitly attributes both operators; some paired handoff and delivery rows overlap. Postal Ninja shows 28 mostly equivalent but undated rows, including a repeated final-delivery report. Ship24's 13 undated rows keep the broad journey but omit the payment hold and much of the destination-carrier detail. UPU has final delivery only. |
 | India Post | Direct, Ship24 and 17TRACK all return 21 rows with booking, bags received/dispatched at intermediate offices, the delivery round and delivery. Many rows are operational bag handling, not distinct customer-facing progress. Direct and 17TRACK retain dates; Ship24's projection loses them. ParcelsApp, Ninja and UPU supplied no history even though this is a valid S10 number. |
 | Poste Italiane | The public 2025 number returned no history through any source, including the direct adapter. A separate official format example was also unavailable directly. These are old or illustrative references, so missing rows cannot rank event depth or show current carrier support. |
 | Correos Spain | Direct, ParcelsApp and 17TRACK contain the same 12 scans: acceptance, sorting, two delivery rounds and failed attempts, pickup availability, then expiry of the pickup window. 17TRACK correctly surfaces the final exception; direct leaves summary status unknown and ParcelsApp still says in transit. The event text is present in all three, so this is mainly status interpretation, not missing history. Ship24 timed out during recovery and Ninja had no history. |
@@ -143,11 +175,11 @@ The three supplied online references were also checked individually. Their
 results are separate from the working documentation example in the main matrix,
 so an expired or account-only reference cannot determine carrier-wide coverage.
 
-| Carrier / reference | Direct | Ship24 | ParcelsApp | 17TRACK | Postal Ninja | UPU |
+| Carrier / reference | Direct sample | Ship24 | ParcelsApp | 17TRACK | Postal Ninja | UPU |
 | --- | --- | --- | --- | --- | --- | --- |
-| `FR3020087832` | Expired | None | None | None | None | N/A |
-| `UK3962812222` | Expired | None | None | None | None | N/A |
-| `TBA584861749000` | None | None | Sign-in | None | None | N/A |
+| `FR3020087832` | Expired | No history | No history | No history | No history | N/A |
+| `UK3962812222` | Expired | No history | No history | No history | No history | N/A |
+| `TBA584861749000` | No history | No history | Sign-in | No history | No history | N/A |
 
 **Expired** is Amazon’s explicit history-retention response, not an unsupported
 carrier verdict. The TBA reference is not found by Amazon’s public Shipping
@@ -160,7 +192,7 @@ appears in a [merchant response](https://uk.trustpilot.com/review/simplesciences
 
 ## Additional UPS and international USPS checks
 
-| Carrier / reference | Direct | Ship24 | ParcelsApp | 17TRACK | Postal Ninja | UPU |
+| Carrier / reference | Direct sample | Ship24 | ParcelsApp | 17TRACK | Postal Ninja | UPU |
 | --- | --- | --- | --- | --- | --- | --- |
 | UPS public return reference | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 9 | Error | N/A |
 | USPS inbound from China | ✓ 13† | Error | ✓ 21 | ✓ 56 | Error | ✓ 8 |
@@ -194,7 +226,7 @@ after their initial polling replies stayed pending.
 | --- | --- | --- | --- |
 | `9400130109355440699868` — [August merchant response](https://www.bbb.org/us/wa/vancouver/profile/gold-buyers/gold-to-cash-1296-1000129797/complaints) | ✓ 11, delivered | ✓ 11, delivered | All 11 events: USPS |
 | `9589071052702449080343` — [public court record, p. 5](https://www.govinfo.gov/content/pkg/USCOURTS-ilsd-3_25-cv-02196/pdf/USCOURTS-ilsd-3_25-cv-02196-0.pdf) | ✓ 3, in transit | ✓ 3, in transit | All 3 events: USPS |
-| `9500113562366007585132` — [same public record, p. 5](https://www.govinfo.gov/content/pkg/USCOURTS-ilsd-3_25-cv-02196/pdf/USCOURTS-ilsd-3_25-cv-02196-0.pdf) | None | None | USPS selected, but no history returned |
+| `9500113562366007585132` — [same public record, p. 5](https://www.govinfo.gov/content/pkg/USCOURTS-ilsd-3_25-cv-02196/pdf/USCOURTS-ilsd-3_25-cv-02196-0.pdf) | No history | No history | USPS selected, but no history returned |
 
 The matching 17TRACK responses explicitly identify the operator as **USPS**,
 key **21051**, homepage **https://www.usps.com/**. The two positive examples
@@ -234,6 +266,10 @@ Universal calls received a 45-second budget (UPU retains its shorter limit);
 dedicated adapters retained their own internal deadlines. Browser lookups were
 serialized to limit upstream and browser-service load. An unavailable direct
 adapter and an ineligible UPU format were recorded without inventing a network result.
+The Japan Post and Evri International direct rechecks on September 26 used
+their new adapters; their carrier notes document local and server HTTP checks.
+Other sources in those rows retain their September 25 results. The separate
+Australia Post browser investigation did not enable an adapter.
 No accounts were signed into. Existing postcode input was supplied for initial
 rows where needed; none of the new public references included a recipient
 postcode. Thus GLS Germany's detailed direct history, and the direct history

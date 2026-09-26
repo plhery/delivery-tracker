@@ -15,17 +15,46 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "evri",
+    "upstreamName": "Evri International",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "weight"
+  ],
   "portal": {
     "url": "https://www.evri.com/track-a-parcel",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "canaryUrl": "https://globaleco.app/track/",
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "weight",
+      "sender_name",
+      "destination",
+      "comments",
+      "tracking_alias"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "weight"
+    ],
+    "discarded": [
+      "sender_name",
+      "destination",
+      "comments",
+      "tracking_alias"
+    ],
+    "unavailable": [
+      "eta",
+      "provider_code"
+    ]
   },
   "links": [],
   "detection": [

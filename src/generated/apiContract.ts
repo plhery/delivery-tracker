@@ -1388,9 +1388,10 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "evri",
+      "upstreamName": "Evri International"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://globaleco.app/track/",
     "linkRules": [],
     "detectionRules": [
       {
@@ -2327,9 +2328,9 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "japan-post"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://trackings.post.japanpost.jp/services/srv/search",
     "linkRules": [
       {
         "domains": [

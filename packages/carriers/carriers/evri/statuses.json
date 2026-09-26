@@ -1,0 +1,133 @@
+{
+  "carrier": "evri",
+  "entries": [
+    {
+      "wording": "Created",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact GlobalEco international event label."
+    },
+    {
+      "wording": "Received at Evri",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact GlobalEco international event label."
+    },
+    {
+      "wording": "Accepted",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact GlobalEco international event label."
+    },
+    {
+      "wording": "Consolidated",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact GlobalEco international event label."
+    },
+    {
+      "wording": "Processed at Export Gateway",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact GlobalEco international event label."
+    },
+    {
+      "wording": "Cross Docked",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact GlobalEco international event label."
+    },
+    {
+      "wording": "In transit",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact GlobalEco international event label."
+    },
+    {
+      "wording": "In customs",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact GlobalEco international event label."
+    },
+    {
+      "wording": "Customs cleared",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact GlobalEco international event label."
+    },
+    {
+      "wording": "At the local depot",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact GlobalEco international event label."
+    },
+    {
+      "wording": "Delivery Attempted",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact GlobalEco international event label."
+    },
+    {
+      "wording": "Carrier label error",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact GlobalEco international event label."
+    },
+    {
+      "wording": "Out for delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-26",
+      "note": "Synthetic semantic boundary; not observed in the live reference."
+    },
+    {
+      "wording": "Ready for collection",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-26",
+      "note": "Synthetic semantic boundary; not observed in the live reference."
+    },
+    {
+      "wording": "Delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-26",
+      "note": "Synthetic semantic boundary; not observed in the live reference."
+    },
+    {
+      "wording": "Returned to sender",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-26",
+      "note": "Synthetic semantic boundary; not observed in the live reference."
+    }
+  ]
+}

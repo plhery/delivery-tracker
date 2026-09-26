@@ -17,6 +17,7 @@ import { adapter as dhlEcommerce } from '../carriers/dhl-ecommerce/adapter';
 import { adapter as dpd } from '../carriers/dpd/adapter';
 import { adapter as dpdFr } from '../carriers/dpd-fr/adapter';
 import { adapter as ems } from '../carriers/ems/adapter';
+import { adapter as evri } from '../carriers/evri/adapter';
 import { adapter as fedex } from '../carriers/fedex/adapter';
 import { adapter as geodis } from '../carriers/geodis/adapter';
 import { adapter as glsCh } from '../carriers/gls-ch/adapter';
@@ -27,6 +28,7 @@ import { adapter as hermes } from '../carriers/hermes/adapter';
 import { adapter as hermesDe } from '../carriers/hermes-de/adapter';
 import { adapter as indiaPost } from '../carriers/india-post/adapter';
 import { adapter as inpost } from '../carriers/inpost/adapter';
+import { adapter as japanPost } from '../carriers/japan-post/adapter';
 import { adapter as laPoste } from '../carriers/la-poste/adapter';
 import { adapter as mondialRelay } from '../carriers/mondial-relay/adapter';
 import { adapter as paack } from '../carriers/paack/adapter';
@@ -63,6 +65,7 @@ export const REGISTRY: RegistryDefinition = {
     "dpd": dpd,
     "dpd-fr": dpdFr,
     "ems": ems,
+    "evri": evri,
     "fedex": fedex,
     "geodis": geodis,
     "gls-ch": glsCh,
@@ -73,6 +76,7 @@ export const REGISTRY: RegistryDefinition = {
     "hermes-de": hermesDe,
     "india-post": indiaPost,
     "inpost": inpost,
+    "japan-post": japanPost,
     "la-poste": laPoste,
     "mondial-relay": mondialRelay,
     "paack": paack,
@@ -129,7 +133,7 @@ export const REGISTRY: RegistryDefinition = {
     "ecoscooting": "universal",
     "ems": "ems",
     "estafeta": "universal",
-    "evri": "universal",
+    "evri": "evri",
     "fedex": "fedex",
     "four-px": "universal",
     "geodis": "geodis",
@@ -145,7 +149,7 @@ export const REGISTRY: RegistryDefinition = {
     "inpost": "inpost",
     "intl-post": "universal",
     "j-and-t": "universal",
-    "japan-post": "universal",
+    "japan-post": "japan-post",
     "jd-logistics": "universal",
     "korea-post": "universal",
     "la-poste": "la-poste",
