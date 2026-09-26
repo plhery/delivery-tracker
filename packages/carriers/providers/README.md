@@ -1,68 +1,66 @@
 # Universal providers
 
-Providers supply fallback tracking and carrier discovery; they are not
-selectable carriers. [universal.ts](universal.ts) owns their factories and
-persisted names. Protocol details live in each provider README.
+Aggregators used for fallback tracking and carrier discovery when no dedicated adapter
+answers. They are not carriers a user can select. [universal.ts](universal.ts) owns the
+factories, the order and the persisted names.
 
-| Provider | Implementation | Steps |
-| --- | --- | --- |
-| [Ship24](ship24/README.md) | Signed anonymous JSON POST, local Chromium recovery | `direct`, `browser` |
-| [ParcelsApp](parcelsapp/README.md) | Anonymous form POST with postcode; TRAWL capture recovery | `direct`, `trawl` |
-| [17TRACK](seventeentrack/README.md) | TRAWL capture with the compatibility build | `trawl` |
-| [Postal Ninja](postal-ninja/README.md) | TRAWL widget verification then normal-page full history; local Chromium without the service; opt-in | `trawl` or `browser` |
-| [UPU](upu/README.md) | Anonymous JSON GET; final postal fallback | `direct` |
+| Provider | Retrieval | Steps | Strength |
+| --- | --- | --- | --- |
+| [Ship24](ship24/README.md) | Signed anonymous JSON POST, local Chromium recovery | `direct`, `browser` | Fast, broad, carrier hints |
+| [ParcelsApp](parcelsapp/README.md) | Anonymous form POST with postcode, TRAWL recovery | `direct`, `retry`, `trawl` | Fuller histories, destination legs |
+| [17TRACK](seventeentrack/README.md) | TRAWL capture (compatibility build) | `trawl` | Per-leg multi-operator histories |
+| [Postal Ninja](postal-ninja/README.md) | TRAWL widget, then results page. Local Chromium is compact-only | `trawl` or `browser` | Alternative full histories (opt-in) |
+| [UPU](upu/README.md) | Anonymous JSON GET | `direct` | Cheap last-resort postal history |
 
-[Carrier coverage matrix](COVERAGE.md): direct tracking and every universal
-provider compared on the top 30 carriers, with event counts and notes about
-missing milestones, foreign delivery legs and repeated details.
+Default order: **Ship24 → ParcelsApp → 17TRACK → UPU**.
+`TRACKING_ENABLE_POSTAL_NINJA=true` adds Postal Ninja before 17TRACK. UPU needs a
+checksum-valid S10 number and always stays last. Checksum-valid China Post `C…CN` and
+`L…CN` numbers start with 17TRACK. Affinity, cooldowns and budgets are in
+[docs/ROUTING.md](../../../docs/ROUTING.md). [COMPARISON.md](COMPARISON.md) explains the
+order, and [COVERAGE.md](COVERAGE.md) compares results carrier by carrier.
 
-The initial order is **Ship24 → ParcelsApp → 17TRACK → UPU**.
-`TRACKING_ENABLE_POSTAL_NINJA=true` inserts Postal Ninja before 17TRACK.
-UPU is eligible only for checksum-valid postal S10 numbers and always stays
-last: success never gives it affinity or a place in shadow comparisons.
-Checksum-valid China Post `C…CN` and `L…CN` references instead start with 17TRACK,
-whose richer history was verified through the existing unattended adapter.
-EMS and untested number families keep their existing routes. The router applies
-this priority before saved fallback affinity, while respecting cooldowns.
+## Shared behaviour
 
-[Provider tradeoffs and dated comparisons](COMPARISON.md) explain coverage,
-latency, history, timestamps, browser dependencies and the China Post/EMS/UPU
-alternatives. That evidence motivates the order; it is not a reliability SLA.
-
-`UniversalTracker.fetch()` calls providers until one returns successfully and
-aggregates failures in `UniversalTrackingError` if none do. Production
-[tracking routing](../../../docs/tracking-routing.md) calls `fetchSource()`
-with its own eligibility, affinity, cooldowns and budget. Keep that policy
-there rather than copying it into provider docs. Persisted provider names also
-drive displayed links and must remain compatible with saved parcel state.
-
-The host forwards the parcel's stored delivery postcode into every provider's
-track input. ParcelsApp submits it as `extra[zipcode]` in its direct request;
-the other providers do not consume it. Input prompts remain notices, never
-shipment scans. See the ParcelsApp README for the observed limits of postcode
-validation and the remaining need for a known valid gated pair.
+- `UniversalTracker.fetch()` tries providers in order until one succeeds, otherwise it
+  throws `UniversalTrackingError` with every failure. Production routing calls
+  `fetchSource()` per provider under its own policy.
+- Numbers are uppercased with spaces, dots and dashes removed, and must match
+  `^(?=.*\d)[A-Z0-9]{4,40}$`. Every result must be bound to the requested number.
+- The parcel's stored postcode is passed to every provider, but only ParcelsApp uses it.
+  Routing also passes the zone of the parcel's carrier. It is used only for scans with no
+  trustworthy zone of their own.
+- UI notices (postcode or country prompts, sign-in requests, "no information") never
+  become events. A result made only of input prompts raises `input_required`.
+- Privacy: a non-delivered event that mentions a PIN, access code, door number or
+  signature is dropped, and a delivered event's text becomes `Delivered`. Recipient
+  fields are never read.
+- One wording-to-stage vocabulary serves all providers. Unmatched wording stays
+  `pending` and never inherits the shipment's stage.
+- Reported carrier names are hints. Routing may try that carrier's adapter, but only that
+  adapter confirming the shipment adopts the carrier.
+- Persisted names (`Ship24`, `ParcelsApp`, `17TRACK`, `Postal Ninja`, `UPU`) are stored
+  in routing state and drive displayed links. Don't rename them.
 
 ## Shared implementation
 
-- [shared/result.ts](shared/result.ts): input normalization, event construction,
-  notice filtering, wording classification and history projection.
-- [shared/hints.ts](shared/hints.ts): reported carrier names to catalog ids,
-  and whether a name is new to the catalog; hints do not themselves confirm a
-  new carrier.
+- [shared/result.ts](shared/result.ts): input normalization, event construction, notice
+  and privacy filters, wording classification, history projection.
+- [shared/hints.ts](shared/hints.ts): reported carrier names to catalog ids, and whether
+  a name is new to the catalog.
 - [shared/capture.ts](shared/capture.ts): TRAWL response decoding and capture errors.
-- [core/runner](../core/runner/index.ts): step execution and telemetry;
-  [core/errors](../core/errors/index.ts): shared failure categories.
+- [core/runner](../core/runner/index.ts) runs steps and records telemetry.
+  [core/errors](../core/errors/index.ts) holds the shared failure categories.
 
-`TrackingCaptureError`, `SeventeenTrackLookupError`, `SeventeenTrackNoHistoryError` and
-`SeventeenTrackVerificationError` additionally carry diagnostic reason/code
-fields. Follow the host's [observability policy](../../../docs/OBSERVABILITY.md).
-Browser build and session-cache configuration belongs in
-[ops/trawl](../../../ops/trawl/README.md).
+`TrackingCaptureError` and the `SeventeenTrack*Error` classes carry diagnostic
+`reason`/code fields. Follow [docs/OBSERVABILITY.md](../../../docs/OBSERVABILITY.md).
+TRAWL build and session-cache settings live in [ops/trawl](../../../ops/trawl/README.md).
 
 ## Adding or changing a provider
 
-Keep its adapter, parser tests, fixtures and one README together. Register the
-factory in `universal.ts`; update the default order only with evidence for the
-intended environment. Record protocol sources, non-obvious choices and dated
-verification in that README. Run the package checks and routing tests; assess
-compatibility with persisted provider names before renaming one.
+- Keep the adapter, parser tests, synthetic fixtures and one README in its folder.
+- Add the name to `UniversalSource` in `shared/result.ts` and register the factory in
+  `universal.ts`. Add the name to the `tracking_provider_health` provider check
+  constraint with a Supabase migration.
+- Change the default order only with evidence, and record it in
+  [COMPARISON.md](COMPARISON.md).
+- Run the package checks and routing tests.

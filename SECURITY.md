@@ -25,7 +25,7 @@ account ownership is enforced again by Postgres RLS, and new ownerless records
 are rejected. Carrier integrations are best-effort and must not be treated as
 trusted input.
 
-Operators must complete the ownership cutover in `docs/DEPLOYMENT.md` before
-removing an existing edge-authentication layer. Keep the database, service-role
+When upgrading from a pre-account deployment, finish the ownership migration in
+`docs/DEPLOYMENT.md` before removing edge authentication. Keep the database, service-role
 key, SMTP credentials, VAPID private key, carrier secrets, and origin ports
 unreachable from the public internet except through their intended interfaces.

@@ -26,7 +26,7 @@ import { eventStage, eventStatus } from './status';
 //   code is an inconclusive provider failure.
 // - Production HTTP 403s carried La Poste's "Site indisponible - Incident en
 //   cours" page and immediately following checks succeeded, so a 403 is
-//   retried twice inside the original deadline (see README.md).
+//   retried up to three times inside the original deadline (see README.md).
 const TRACKING_API = 'https://www.laposte.fr/ssu/sun/back/suivi-unifie';
 const TRACKING_PAGE = 'https://www.laposte.fr/outils/suivre-vos-envois';
 const TIMEZONE = 'Europe/Paris';

@@ -1,96 +1,54 @@
 # Australia Post
 
-The adapter reads the anonymous tracking response used by the official
-[tracking application](https://auspost.com.au/mypost/track/). It requires the
-repository's TRAWL browser service and its Australia Post capture preparation.
-An account, user login and postcode are not required by the verified flow.
+Australia Post articles and consignments (10–34 alphanumeric characters), tracked through the
+anonymous shipments API behind the official [tracking app](https://auspost.com.au/mypost/track/),
+driven by the TRAWL browser service. Plain HTTP is challenged.
 
-## Retrieval
+## How it works
 
-[adapter.ts](adapter.ts) requests the official `/mypost/track/details/{number}`
-page and captures only the exact requested query:
+1. `trawl`: TRAWL opens `/mypost/track/details/{number}` (tiers 2–3, no plain HTTP) and captures
+   exactly `GET https://digitalapi.auspost.com.au/shipments-gateway/v1/watchlist/shipments?trackingIds={number}`.
+   - The Australia Post helper ([`australia-post-browser.mjs`](../../../../ops/trawl/australia-post-browser.mjs),
+     see [`ops/trawl/README.md`](../../../../ops/trawl/README.md)) reads the current public API key
+     from the page's app module and makes that GET inside the browser session with
+     `AP_CHANNEL_NAME: WEB_DETAIL`. The key is never pinned here, and browser state is never replayed
+     over plain HTTP.
+   - Each lookup gets a fresh browser context that is closed afterwards.
 
-```text
-GET https://digitalapi.auspost.com.au/shipments-gateway/v1/watchlist/shipments?trackingIds={number}
-```
+Budget: 45 s by default (max 60 s), including a 15 s TRAWL transport allowance; 15 s or less fails
+before dispatch. The capture is capped at 1 MB. On the capture, 401/403 is a challenge and 429 is rate
+limited; a missing capture or changed schema is an error for normal provider fallback.
 
-The browser preparation extracts the current public API key from the current
-same-origin application module. It makes the anonymous GET within that browser
-session with `AP_CHANNEL_NAME: WEB_DETAIL`, JSON content type and browser
-credentials. The key is not pinned in the adapter, and browser state is not
-replayed through a plain HTTP client. The login iframe's HTTP 403 does not
-invalidate a successful anonymous tracking response.
+## Notes
 
-Fresh isolated headless browser contexts on the server network returned the
-same matching twelve-event shipment twice and the explicit negative control on
-2026-09-26. After deploying the context runner, both live adapter tests passed
-against the deployed TRAWL service: matched dated history and a synthetic
-unknown reference, each in about five seconds. Plain HTTP was rejected. No
-shared logged-in browser or headful browser pool is required by this observed flow.
+- The context uses `AUSTRALIA_POST_BROWSER_LOCALE` (default `de-DE`) because the pool's `en-US` and
+  `en-AU` locales got HTTP 403 from the deployment network. Another network may need its own value.
+  It does not affect status language or event time zones.
+- The login iframe can return 403 while tracking still works; waiting for account bootstrap would
+  discard usable data.
+- Identity: exactly one entry must list the number in `trackingIds`, the article must match through
+  `shipment.articles[].articleId`, and its single detail object must repeat the article and
+  consignment IDs.
+- A consignment number is accepted only when it has one article. Multi-article consignments are
+  rejected as ambiguous, since one delivered sibling doesn't mean the consignment is delivered. An
+  exact article number selects its own history; sibling and shipment-wide states never classify it.
+- Not-found is only the HTTP 200 entry with `status: 400`, `errorCode: 21`, `Invalid Tracking ID`,
+  `Failed`. Empty arrays, other identities and other errors are schema failures.
+- Each scan is classified by its own `eventCode`, then its milestone label. Awaiting collection,
+  attempted delivery and returns are not delivery.
+- Event time comes from `localeDateTime` (explicit offset), else the epoch-ms `dateTime`. If both
+  exist and disagree, the parse fails. Events are sorted by instant.
+- `statusModificationDateTime` and summary milestone timestamps are not scan times (they can be hours
+  off the delivery scan). `last_update` and `delivered_at` come from events.
+- Delivered wording is replaced with `Delivered` so signature or safe-place text can't leak a name.
 
-The shared browser pool's English locale was separately rejected. TRAWL's
-Australia-specific runner uses a fresh context with a verified network locale
-(`AUSTRALIA_POST_BROWSER_LOCALE`, default `de-DE`) on that same pooled browser.
-This setting does not select the language of shipment statuses or infer event
-timezones. Contexts close after each lookup, and other carriers keep their
-existing browser configuration. Different deployment networks need their own
-compatibility check.
+## Limitations
 
-The total default budget is 45 seconds, including the TRAWL client's 15-second
-transport allowance. Smaller caller budgets and cancellation propagate through
-the service request and bounded recovery; a budget of 15 seconds or less fails
-before dispatch. Captured tracking JSON is capped at 1 MB. A missing capture,
-challenge, throttle or changed schema remains an error for normal provider
-fallback. The adapter does not turn arbitrary HTTP errors into not found.
+- No ETA.
+- Recipient and sender blocks, addresses, barcodes, access instructions, proof links, collection
+  credentials and facility IDs are never kept. At most 100 of 500 events are kept.
 
-## Identity and negative results
+## Testing
 
-The response is an array of lookup entries. Exactly one entry must include the
-requested reference in `trackingIds`. A successful entry must identify the
-requested article independently through `shipment.articles[].articleId`, and
-its single detail object must repeat that article and its consignment identity.
-
-A consignment reference is accepted only when it names a single article.
-Multi-article consignments are deliberately rejected as ambiguous rather than
-declaring an unfinished consignment delivered because one sibling arrived.
-An exact article reference can select its own history from a multi-article
-consignment; sibling and shipment-wide summary states do not classify it.
-
-The observed unknown reference returned HTTP 200 with a matched entry carrying
-`status: 400` and `errorCode: 21`, `Invalid Tracking ID`, `Failed`. Only that
-specific domain signature is not found. Empty arrays, unrelated identities and
-other error objects remain distinct schema failures.
-
-## Status, time and privacy
-
-Every historical scan uses its own event code or milestone label. The current
-status comes from the selected article, and unknown values remain unclassified.
-Pickup availability, attempted delivery and returns do not mean delivery.
-Status provenance lives in [statuses.json](statuses.json).
-
-Event `localeDateTime` carries an explicit offset; its epoch-millisecond
-`dateTime` agreed with that instant in the observed history. The parser preserves
-the offset or uses the verified epoch field when no offset is present, and
-rejects conflicting dates. It sorts by absolute instant, removes exact duplicate
-scans and retains at most 100 of up to 500 input events.
-
-`statusModificationDateTime` and summary milestone timestamps are not scan times:
-they differed from the delivered scan by about ten hours in the observed reply.
-The parser ignores those values and derives `last_update` and `delivered_at`
-from actual events. No ETA is inferred from null or unverified estimate fields.
-
-Only status, dated events, coarse scan locations, provider event codes and the
-delivery instant are retained. Recipient and sender blocks, street addresses,
-barcodes, access instructions, proof links, collection credentials and facility
-identifiers are discarded. Delivered wording is reduced to `Delivered` so a
-signature or safe-place description cannot retain a person's name.
-
-## Validation
-
-Synthetic fixtures preserve the current response structure; see
-[fixtures/README.md](fixtures/README.md). Unit tests cover identity isolation,
-multiple articles, negative signatures, status boundaries, dates, privacy,
-capture selection, serialization, cancellation, budgets and payload limits.
-Supply `AUSTRALIA_POST_TRACKING_NUMBER` and `FLARESOLVERR_URL` outside the
-repository to run the positive live adapter test. No live reference or response
-is committed.
+`npm run test:carriers:live -- packages/carriers/carriers/australia-post` with `FLARESOLVERR_URL`. Add
+`AUSTRALIA_POST_TRACKING_NUMBER` for the positive case; the synthetic not-found runs without it.

@@ -1,162 +1,111 @@
 # Architecture
 
-Delivery Tracker is a full-stack Next.js PWA for parcel tracking. Supabase Auth identifies
-users, Postgres row-level security (RLS) isolates their parcels, and only
-server-side route handlers and the background tracker can access the
-service-role key.
+A Next.js app (web, PWA and API) plus a native SwiftUI iPhone app. Supabase Auth
+identifies users, Postgres row-level security (RLS) isolates their parcels, and a
+background worker in the same Node process refreshes carriers.
 
 ```text
-                         email OTP
-Browser/PWA + native iPhone app <----------> Supabase Auth
-              |
-              | Bearer access token
-              v
-Next.js route handlers -- user token -----> PostgREST + Postgres RLS
-        |
-        +---- service role ---------------> durable background sync writes
-        +---------------------------------> bounded carrier adapters
-        +---------------------------------> Web Push endpoints + APNs
+Browser/PWA + iPhone app <---- email OTP / OAuth ----> Supabase Auth
+          |
+          | Bearer access token
+          v
+Next.js route handlers --- user token ---> PostgREST + Postgres RLS
+          |
+          +--- service role ---> background sync writes
+          +--------------------> carrier adapters (packages/carriers)
+          +--------------------> Web Push + APNs
 ```
 
-## Components
+## Where things live
 
-- `src/auth/` configures the browser's persisted, auto-refreshing Supabase
-  session. `src/store/` talks only to the same-origin application API.
-- `ios/` contains the native SwiftUI app, Share extension, protected offline
-  cache, Keychain-backed Auth session, and APNs registration flow.
-- `app/` contains the App Router pages, route handlers, manifest, and offline
-  route. `proxy.ts` adds a per-request CSP nonce and security headers.
-- `src/server/auth.ts` validates bearer tokens with Supabase Auth and creates a
-  PostgREST client carrying that user's JWT. `src/server/api.ts` applies
-  privacy-safe logging and account-scoped rate limits to route handlers.
-- `packages/carriers/` holds every carrier: catalog entries, tracking-number
-  detection, adapters and universal providers, status vocabulary, sample
-  corpus and per-carrier documentation. It imports nothing from the app; the
-  host wires HTTP, sessions and telemetry through its interfaces (see
-  [packages/carriers/ARCHITECTURE.md](../packages/carriers/ARCHITECTURE.md)).
-- `src/server/trackingSync.ts` performs carrier checks through the generated
-  adapter registry and
-  `src/server/background.ts` runs the scheduler. `public.sync_jobs` is the
-  durable, deduplicated queue; the Node.js worker claims jobs with database
-  leases so deploys, crashes, and multiple replicas do not lose or double-run
-  active work. This is the only workflow that needs cross-account access.
-- `src/server/observability.ts` and `src/server/trackingAudit.ts` connect
-  Sentry issues and structured logs to the service-role-only
-  `tracking_sync_attempts` and `tracking_sync_steps` decision ledger. See
-  [OBSERVABILITY.md](OBSERVABILITY.md) for the operator queries and runbook.
-- `src/server/push.ts` delivers Web Push, ordinary APNs alerts, and ActivityKit
-  start/update/end pushes only to installations owned by the package's account.
-  ActivityKit is dispatched first, so a successful delivery-day surface can
-  replace the matching ordinary banner while APNs failure retains the alert as
-  a fallback.
-  All three channels use friendly status-specific sentences. Delivery alerts
-  show the carrier's event time in the recipient's timezone when the source
-  includes a clock time; date-only or app-observed updates omit it. Delayed
-  alerts include the date for older deliveries. Estimates
-  appear only while a parcel is progressing toward delivery, never after
-  delivery, a failed attempt, pickup availability, or return.
-- `supabase/migrations/` is the append-only database history;
-  `supabase/tests/assertions.sql` exercises the RLS boundary in PostgreSQL.
-- `contracts/openapi.json` generates the TypeScript and Swift contract types
-  and the native offline carrier fallback. The public `/api/carriers` resource
-  lets installed iPhone builds refresh carrier metadata with ETag revalidation;
-  native carrier identifiers remain string-backed so future values cannot break
-  parcel decoding. `contracts/fixtures/delivery-api.json` is decoded in
-  TypeScript and Swift tests to catch cross-platform payload drift.
+| Path | What |
+| --- | --- |
+| `app/` | App Router pages, route handlers, manifest, service worker, offline page |
+| `proxy.ts` | Per-request CSP nonce and security headers |
+| `src/` | React client (`components/`, `store/`, `auth/`, `i18n.tsx`) |
+| `src/server/` | API helpers, auth, sync worker, routing, push, observability |
+| `packages/carriers/` | Every carrier: catalog, detection, adapters, universal providers ([README](../packages/carriers/README.md)) |
+| `shared/` | Translations, tracking message map and analytics catalog, shared by web and iOS |
+| `contracts/` | OpenAPI contract (source of TypeScript and Swift types) and cross-platform fixtures |
+| `supabase/` | Append-only migrations and SQL assertions for RLS |
+| `ios/` | SwiftUI app, Share extension, widgets, Live Activities ([README](../ios/README.md)) |
+| `ops/` | TRAWL browser service, Sentry and Grafana dashboards |
+| `scripts/` | Code generation, validation and smoke tests |
+
+Key server modules:
+
+- `auth.ts` validates the bearer token and builds a PostgREST client carrying the
+  user's JWT. `api.ts` adds logging and per-account rate limits.
+- `background.ts` runs the scheduler. `public.sync_jobs` is the durable, deduplicated
+  queue, and workers claim jobs with leases, so deploys, crashes and replicas never lose
+  or double-run work. This is the only code path with cross-account access.
+- `trackingSync.ts` runs one refresh through the adapter registry;
+  `trackingRouting.ts` decides which source to ask ([ROUTING.md](ROUTING.md)).
+- `push.ts` sends Web Push, APNs alerts and Live Activity updates, only to the parcel
+  owner's devices.
+- `observability.ts` and `trackingAudit.ts` link Sentry and logs to the private audit
+  tables ([OBSERVABILITY.md](OBSERVABILITY.md)).
 
 ## Trust boundaries
 
-- The Supabase URL and publishable key are intentionally public. The Supabase
-  service-role key, VAPID private key, and APNs `.p8` key are server-only secrets.
-- Every private API request requires a current Supabase access token. Reads pass
-  that token to PostgREST, so RLS remains the final ownership boundary. Package
-  mutations use owner-bound database functions that repeat validation, enforce
-  account quotas, and cannot target another account.
-- The service role bypasses RLS and is restricted to scheduled carrier work,
-  push delivery, and account deletion. It never reaches the browser bundle.
-- Tracking numbers, labels, carrier history, push endpoints, and Planzer or
-  Dachser capability URLs are private user data and must not appear in
-  application logs or analytics.
-- Carrier responses are untrusted, size-bounded input. Every adapter uses
-  fixed timeouts, host validation where capability URLs are accepted, and a
-  shared bounded-response reader. Tracking integrations are best effort and
-  cannot establish user identity.
-- The Dachser adapter allowlists normalized shipment state and never stores the
-  sender, recipient, address, contact, document URLs, or raw carrier response.
-- Browser push endpoints are accepted only for known browser push-service hosts,
-  and push delivery never follows redirects.
-- The service worker caches only the public application shell and static assets.
-  Same-origin APIs, health checks, Supabase Auth, and all other cross-origin
-  requests use a network-only strategy and never enter browser Cache Storage.
-- Native device, ActivityKit push-to-start, and per-activity update tokens are
-  accepted only as bounded hexadecimal opaque values, never exposed to database
-  client roles, and forwarded only to Apple's fixed production or sandbox APNs
-  hosts over HTTP/2. A random installation identifier safely correlates the two
-  APNs paths and is rebound atomically when the iPhone changes accounts.
-- Cloudflare may provide TLS, proxying, and abuse protection, but Cloudflare
-  Access is not part of the public application's identity model.
-- Forwarded client addresses are used only when `TRUST_PROXY_HEADERS=true` and
-  the deployment's trusted reverse proxy overwrites those headers. Otherwise
-  the pre-authentication fallback bucket is deliberately global. A one-way
-  token hash adds a credential-specific bucket, and authenticated limits remain
-  account-scoped.
-- HTTP and worker logs record request/job/attempt identifiers, routes, status,
-  timing and carrier details. Tracking sync logs also include tracking numbers.
-  Sentry retains original errors and diagnostic context, including tracking
-  numbers and upstream request/response details, without application-level
-  sanitization. See [Observability](OBSERVABILITY.md) and
-  [upstream HTTP diagnostics](upstream-http-diagnostics.md) for the recorded fields.
+- **Secrets**: the service-role key, VAPID private key and APNs `.p8` stay on the server.
+  The Supabase URL and publishable key are public by design.
+- **Ownership**: every private request needs a valid Supabase token. Reads go through
+  PostgREST with that token, so RLS is the final check. Writes use owner-bound database
+  functions that re-validate, enforce quotas and can't target another account.
+- **Service role**: used only for scheduled carrier work, push delivery and account
+  deletion. It never reaches the browser.
+- **Private data**: tracking numbers, labels, carrier history, push endpoints and capability
+  URLs (Planzer, Dachser) never go into analytics. They do appear in operator logs and
+  Sentry; see [OBSERVABILITY.md](OBSERVABILITY.md).
+- **Carrier responses are untrusted**. Adapters use fixed timeouts, a shared bounded
+  response reader, and host validation wherever they accept a URL.
+- **Push**: browser endpoints must belong to known push services, and delivery never
+  follows redirects. APNs tokens are opaque hex values, sent only to Apple's fixed hosts.
+- **Service worker**: caches only the public app shell and static assets. APIs, health and
+  Auth are network-only.
+- **Proxies**: forwarded client IPs are trusted only with `TRUST_PROXY_HEADERS=true`.
+  Cloudflare may sit in front for TLS and abuse protection, but it isn't part of identity.
 
 ## Data lifecycle
 
-Adding a parcel writes an account-owned package through the user's RLS-scoped
-client and queues durable work with the service role. Web and iPhone clients
-poll the small owner-checked job resource, then reload the parcel collection
-once at completion. Carrier events inherit privacy through their package.
-Archiving retains the parcel and history. Account deletion removes the Supabase
-Auth user; foreign-key cascades remove packages, jobs, events, browser
-subscriptions, native devices, ActivityKit tokens, delivery acknowledgements,
-and tracking audit rows. Completed audit rows otherwise expire after 90 days.
+- **Adding a parcel** writes it through the user's RLS client and queues a job with the
+  service role. Clients poll the small job resource, then reload the parcel list once.
+- **Archiving** keeps the parcel and its history.
+- **Deleting an account** removes the Auth user. Foreign-key cascades remove parcels,
+  jobs, events, push registrations, Live Activity tokens and audit rows. Other audit rows
+  expire after 90 days.
+- **Share target**: the PWA receives shared text via `POST`. The service worker keeps it
+  in a one-time cache entry, so tracking text never appears in a URL or HTTP log.
 
-Live Activities are intentionally narrower than Home Screen widgets. The
-delivery-day queue starts one only for an `out_for_delivery` event, updates the
-same parcel identity, and ends it on delivery, failed attempt, a reported
-problem, pickup readiness, return, archive, sign-out, or opt-out. The iPhone keeps at most two. Successful
-server deliveries are acknowledged durably before the ordinary APNs dispatcher
-decides whether its matching banner is redundant.
+## Notifications and Live Activities
 
-The PWA Web Share Target submits with `POST`. Its service worker places the
-bounded draft in a private, one-time Cache Storage entry and redirects using
-only a marker, so tracking text never appears in a URL or routine HTTP log.
+- Web Push, APNs and Live Activities use the same status sentences. Delivered alerts show
+  the carrier's event time in the recipient's timezone when the carrier gave a clock time.
+- Estimates appear only while a parcel is on its way. They are hidden after delivery, a
+  failed attempt, pickup readiness or a return, and whenever they are in the past.
+- An `exception` means the carrier reported a problem that is neither a missed delivery
+  nor a return. The parcel keeps its place and keeps refreshing.
+- A Live Activity starts only at `out_for_delivery`. It ends on delivery, failed attempt,
+  problem, pickup, return, archive, sign-out or opt-out. At most two run at once. Live
+  Activity pushes go first, so a successful one replaces the matching banner; if it fails,
+  the banner is sent.
 
-Rows left by the former shared deployment intentionally remain ownerless and
-invisible until an operator completes the explicit cutover in
-[DEPLOYMENT.md](DEPLOYMENT.md). New ownerless rows are rejected by database
-constraints.
+## Copy and languages
 
-### Message and notification copy
+App copy is available in English, German, French, Italian, Spanish, Portuguese and Polish
+([shared/locales](../shared/locales/README.md)). Carrier scan text and parcel names are
+shown as-is; known app-generated timeline messages are translated
+([LOCALIZATION.md](LOCALIZATION.md)). Errors map to localized guidance and never show raw
+diagnostics. Status labels don't imply a carrier delay when only our check failed.
 
-App-owned copy is localized in English, German, French, Italian, Spanish, Portuguese and Polish. The shared
-web catalog generates the native catalog; generation checks key and interpolation
-parity. Original carrier scan notes and user-entered parcel names stay unchanged.
-Known app-generated timeline messages are translated at display time.
+Push registrations store the device language. The web updates it when the user changes
+language, and the Share extension reads it from the app group.
 
-Messages explain what happened and, when useful, the next action. UI errors map
-known service failures to localized guidance; raw service diagnostics are not
-shown as user-facing copy. Status labels remain short and avoid implying a
-carrier delay when only the app’s tracking check failed.
+## Contracts
 
-Browser and native push alerts share stage-specific sentences. Delivered alerts
-use a reliable carrier timestamp when available; other outcomes give relevant
-pickup, missed-delivery, problem, or return guidance. An `exception` update says
-the carrier reported a problem that is neither a missed attempt nor a return;
-the parcel keeps its place on the happy path and keeps refreshing. Finished
-shipments, pickup, reported problems and failed attempts omit delivery
-estimates. Out-for-delivery alerts omit a bare “today” but
-keep useful times and windows. Past estimates are hidden across cards, details,
-widgets and notifications. Live Activities avoid repeating the status as detail.
-
-Browser subscriptions store a device locale, refreshed when the signed-in user
-changes the app language. The owner-scoped locale update preserves subscription
-cursors and disabled state and sends no test alert. Native registrations already
-store the app language; the Share extension reads it from the shared app group.
+`contracts/openapi.json` generates the TypeScript and Swift API types and the iPhone's
+offline carrier catalog. `/api/carriers` serves the catalog with ETag so installed apps pick
+up new carriers without a release; native carrier ids are plain strings, so unknown values
+decode safely. `contracts/fixtures/delivery-api.json` is decoded by both TypeScript and
+Swift tests to catch payload drift.

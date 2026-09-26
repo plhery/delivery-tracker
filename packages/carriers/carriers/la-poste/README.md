@@ -1,187 +1,71 @@
 # La Poste / Colissimo
 
-## Identity and scope
+La Poste's unified tracking feed. It serves Colissimo, tracked mail,
+[Chronopost](../chronopost/README.md) and [Delivengo](../delivengo/README.md),
+so those two folders point `tracking.adapter` here.
 
-La Poste, the French postal operator, and its Colissimo parcel brand. This
-folder owns the adapter for the group's unified tracking feed, which also
-serves tracked mail, **Chronopost** and **Delivengo**: those two carriers have
-their own folders for identity, numbers and portal facts and point their
-`tracking.adapter` here. Last mile in France (`region.countries: ["FR"]`).
+## How it works
 
-## Portals
+1. `direct`: one keyless GET of
+   `https://www.laposte.fr/ssu/sun/back/suivi-unifie/{number}?lang=fr`, the feed
+   the public tracker calls, with the tracker page as `Referer`.
+2. `retry`: the same request, up to three times, only after an HTTP 403 and only
+   while the original 15-second deadline has time left. Each attempt gets the
+   remaining time, so retries never extend the lookup.
 
-- Public tracker: `https://www.laposte.fr/outils/suivre-vos-envois?code={trackingNumber}`.
-  The page may drop its query string after moving the number into its own
-  search field.
-- Feed the page calls: `https://www.laposte.fr/ssu/sun/back/suivi-unifie/{number}?lang=fr`,
-  keyless.
-- The portal shows status, the event history with its country, a delivery
-  estimate, and — for some shipments — recipient identity and address. The last
-  two are dropped.
+The feed answers with an array; only the entry whose `shipment.idShip` equals
+the requested number is read. `returnCode` 104 is the only positive not-found;
+any other non-zero code is inconclusive, so the router can fall back to a
+universal provider.
 
-## What we retrieve
+## Notes
 
-Declared capabilities: `history`, `location`, `eta`, `provider_code`.
+- The 403 is usually La Poste's "Site indisponible - Incident en cours" page.
+  Despite the wording it is a one-request edge hiccup, not maintenance: the next
+  lookup succeeds, and it is most likely on the first request after a quiet
+  period. Treating it as maintenance and skipping retries sent roughly ten
+  times more lookups to the router, each benching the adapter for an hour. A real
+  incident still fails all four attempts within seconds.
+- Only 403 is retried. A 429 or a malformed payload won't be fixed by an
+  instant repeat.
+- The retries are three separate runner steps with the id `retry`, not a loop,
+  so each rejection keeps its own diagnostics and the `attempts` label on
+  `carrier_lookup_total` shows which retry served the lookup. `steps` lists
+  tiers (`direct`, `retry`), not attempts.
+- The deadline check lives in the `recovers` predicate. An exhausted lookup
+  still throws the provider's `UpstreamHttpError` (403), not a
+  `BudgetExceededError`.
+- Status precedence: incident wording, then event `code`, then `group`, then
+  wording. La Poste keeps a failed delivery inside its original group
+  ("Incident : livraison impossible" arrives with code `DR1`, meaning
+  registered).
+- `AG1` means ready for pickup whatever its group or sentence. `DO1` is customs
+  entry. Pickup and customs are set as `current_stage` because the status
+  vocabulary has no value for them.
+- Timestamps already carry their Paris offset and are passed through verbatim.
+  `isoTime` only validates them; impossible dates are dropped.
+- `contextData.partner` names the foreign carrier after export; it becomes
+  `delivery_carrier` and `delivery_tracking_number`.
 
-Status and last status text, the event history with each event's timestamp
-(offset included, as the feed sends it), its country, its stage and its
-`group/code` pair as `provider_code`, plus the delivery estimate while the
-shipment is not final. When a shipment has no events yet, the completed
-timeline step supplies the status text and date.
+## Rejected approaches
 
-## Tracking numbers
+- Scraping the public tracker page: it calls this keyless feed itself.
+- Chronopost's SOAP service: exposes more consignment metadata than tracking
+  needs and isn't meant for automated use. The unified feed answers the same
+  numbers.
+- Retrying a 403 with backoff: the hiccup is brief, so waiting only spends the
+  user's deadline.
+- Treating every non-zero `returnCode` as not-found: that reports parcels
+  missing during a provider outage.
 
-Three families are accepted: 13-character domestic numbers (two alphanumerics
-plus eleven digits), UPU S10 identifiers, and 15-character foreign express
-numbers (fourteen digits plus a letter). Domestic numbers beginning `6` or `8`
-and checksum-valid `…FR` S10 numbers that are not a Chronopost prefix are
-detected with high confidence; the broader alphanumeric family stays a
-suggestion. `numbers.json` holds published merchant examples, two publicly
-reported numbers and three synthetic numbers built to the published shapes.
+## Limitations
 
-No second input is required: the feed is keyless.
-
-## How the adapter works
-
-One request with two tiers of the same request, declared as
-`tracking.steps: ["direct", "retry"]`.
-
-1. `direct` — one bounded GET of the unified feed with the public tracker as
-   `Referer`.
-2. `retry` — the same request again, run at most three times, only after an
-   HTTP 403, and only while the original 15-second deadline still has time left. Each
-   attempt is bounded by the time remaining on that one deadline, so the
-   retries never extend the lookup.
-
-The response is matched on `shipment.idShip` before anything is projected: a
-feed entry for another number is refused. `returnCode` 104 is a positive
-not-found; any other non-zero code is reported as inconclusive.
-
-## Status reference
-
-Each event carries a coarse `group` and a finer `code`. The code outranks the
-group, the group outranks the wording, and explicit incident wording outranks
-all three, because La Poste keeps a failed delivery inside its original group.
-
-| Stage | Wording or code (raw) | Confirmed by |
-|---|---|---|
-| `registered` | `EXPANN`, `DR1` | live / fixture |
-| `accepted` | `PC1` | live |
-| `in_transit` | `ACHNAT`, `DISARR`, `ET1`, `EP1` | fixture / live |
-| `out_for_delivery` | `DISTOU`, `MD1` | live |
-| `ready_for_pickup` | `DISMAD`, `disponible au point de retrait`, `disponible en point relais`, `attend au relais` | fixture / live |
-| `delivered` | `DESBAL`, `DESTIN`, `DESLIVD`, `DI1` | fixture / live |
-| `returned` | `RETOUR`, any wording containing `retour` | live |
-| `failed_attempt` | `échec`, `impossible`, `non livré`, `n'a pas pu vous être remis` | fixture |
-| `exception` | `incident`, `anomalie`, `avarie`, `endommagé`, `refusé`, `adresse incorrecte` | fixture |
-| `pending` | not observed; reported as unmapped | — |
-| `customs` | not observed; reported as unmapped | — |
-
-Wording that neither the codes nor the French rules recognize falls through to
-the shared multilingual classifier in `core/status`, and is recorded for review
-if that leaves it unresolved.
-
-## Limitations and privacy
-
-- The feed carries a recipient block on the shipment and a recipient address on
-  individual events. Neither is read: events are built from an explicit
-  allowlist of wording, time, country and codes.
-- `location` is the event's country, not a city: the feed does not publish a
-  finer operational location.
+- `location` is the event's country; the feed has no city.
 - The delivery estimate is dropped once the shipment is final.
-- Timestamps are kept exactly as the feed sends them, offset included. Values
-  that are not a real calendar date are dropped rather than repaired.
-- La Poste's edge can reject an anonymous lookup with an HTTP 403 "Site
-  indisponible - Incident en cours" page before it can answer; that is what the
-  `retry` tier is for. Despite its wording the page is a hiccup of one request,
-  not maintenance: it arrives after about 1.5 seconds instead of the usual 0.3,
-  a lookup for another parcel seconds later is answered, and it is several times
-  more likely on the first request after a quiet quarter of an hour than on a
-  parcel polled every two minutes.
+- Recipient blocks and addresses on the shipment and its events are never read;
+  events are built from an allowlist of wording, time, country and codes.
 
-## Implementation decisions
+## Testing
 
-- **One adapter for four brands.** `suivi-unifie` answers for Colissimo,
-  tracked mail, Chronopost and Delivengo, so `chronopost` and `delivengo` set
-  `tracking.adapter: "la-poste"` instead of getting adapters of their own. It
-  also means Chronopost never needs its SOAP response, which exposes more
-  consignment metadata than tracking requires.
-- **The shipment identifier is verified before anything is projected.** The
-  feed takes an array of numbers and can answer for more than one; the entry
-  whose `shipment.idShip` equals the requested number is the only one read.
-- **`returnCode` 104 is the only positive not-found.** Every other non-zero code
-  means the feed could not answer, and is reported as inconclusive so the router
-  can try a universal provider instead of telling the user the parcel does not
-  exist.
-- **The retries are three extra runner steps with the id `retry`, not a loop.**
-  `runSteps` is given `direct`, `retry`, `retry`, `retry`; step ids do not have
-  to be unique, and the runner distinguishes the specs by identity. This keeps
-  each retried rejection reported with its own diagnostics, and
-  `carrier_lookup_total{final_step="retry"}` says through its `attempts` label
-  which retry served the lookup. Collapsing the retries into a single `retry`
-  step would have hidden that; folding them into `direct` would have hidden
-  them altogether.
-  `adapter.steps` and `carrier.json` list the two distinct tiers,
-  `["direct", "retry"]`, because they name tiers rather than attempts.
-- **The deadline lives in the `recovers` predicate.** A retry is refused once
-  the original 15-second deadline is spent, so an exhausted lookup still throws
-  the provider's own `UpstreamHttpError` (403, with its bounded body
-  diagnostics) rather than a `BudgetExceededError`. The router's behaviour and
-  the Sentry issue stay what they were.
-- **Only HTTP 403 is retried, the incident page included.** Other statuses and
-  every parsing failure propagate immediately: a 429 or a malformed payload is
-  not going to be fixed by an instant repeat. From 2026-09-12 to 2026-09-20 the
-  incident page was treated as explicit maintenance and skipped the retries;
-  lookups lost to the router went from 0.16% to 1.86%, and each one benched the
-  adapter for an hour of universal-provider refreshes. A lasting incident still
-  fails all four attempts within a few seconds and reaches the router.
-- **Timestamps are passed through, not re-rendered.** The feed already sends an
-  offset; `core/time`'s `isoTime` is used to *validate* the value, and the
-  provider's own string is what reaches the result.
-
-## Rejected alternatives
-
-- **Scraping the public tracker page.** The page calls this feed itself; the
-  feed is keyless, stable and carries the codes the page renders.
-- **Using Chronopost's SOAP service for Chronopost numbers.** It exposes more
-  consignment metadata than tracking needs and is not intended for automated
-  extraction. The unified feed answers the same numbers.
-- **Retrying a 403 with a backoff.** The observed outage was a few hundred
-  milliseconds of edge trouble; a backoff would spend the user's deadline
-  waiting rather than asking again.
-- **Treating every non-zero `returnCode` as not-found.** That would report
-  missing parcels during a provider outage.
-
-
-## Universal provider compatibility
-
-Probed 2026-09-12 with the corpus number `8G45061126689` (shipment, `public_shipment_report`, [source](https://forum.quechoisir.org/arnaque-par-rue-du-commerce-je-demande-justice-t22371.html)).
-
-| Provider | Result |
-| --- | --- |
-| Ship24 | ❌ No usable history — HTTP 404 (2013/2014 numbers, likely expired) |
-| ParcelsApp | ❌ No usable history — destination-country prompt |
-| 17TRACK | ❌ No usable history — captured replies without history (2026-09-13) |
-
-Also tried `8U01130342039` on Ship24: 404.
-
-## Verification log
-
-- 2026-09-10: the tracking-link audit confirmed the public tracker page
-  interactively (docs/CARRIERS.md).
-- 2026-09-10: production HTTP 403s carried the "Site indisponible - Incident en
-  cours" page, and immediately following checks succeeded — the evidence behind
-  the two immediate retries.
-- 2026-09-12: moved into this folder. The feed, the status map and the retry
-  budget are unchanged; the retries are now expressed as runner steps.
-- 2026-09-20: the incident page is retried again, now three times. To check
-  that it works, compare over a few days of La Poste traffic:
-  `sum by (attempts) (increase(carrier_lookup_total{carrier="la-poste",final_step="retry",outcome="ok"}[7d]))`
-  (lookups a retry saved, by the attempt that served them) with
-  `sum(increase(carrier_lookup_total{carrier="la-poste",outcome="challenge"}[7d]))`
-  (lookups lost after every retry), and watch the La Poste row of the
-  "Refreshes served by a universal provider" panel fall from about 6% towards
-  zero. An `attempts="4"` series that never appears means the third retry is
-  not needed.
-- 2026-09-12: universal-provider probe with corpus number `8G45061126689`: Ship24: no usable history; ParcelsApp: no usable history; 17TRACK: not verified in this pass.
-- 2026-09-13: 17TRACK probe with corpus number `8G45061126689` via prod TRAWL: no usable history (history_missing; 2014 number).
+`npm run test:carriers:live -- src/server/frenchDirectCarriers.live.test.ts`
+(no env vars) checks a wrong number gets a clean not-found or the recognized 403.

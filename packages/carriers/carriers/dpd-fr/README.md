@@ -1,144 +1,59 @@
 # DPD France
 
-## Identity and scope
+DPD France (formerly Exapaq), French last mile only. Tracked by parsing the
+server-rendered recipient trace page. DPD Switzerland is a different protocol
+in [`dpd`](../dpd/README.md).
 
-DPD France, the French member of the DPDgroup network, formerly Exapaq. This
-folder covers French last-mile parcels only (`region.countries: ["FR"]`); DPD
-Switzerland has its own folder (`dpd`) and a completely different protocol.
+## How it works
 
-## Portals
+1. `direct`: one GET of `https://trace.dpd.fr/fr/trace/{number}` with a
+   browser-like `User-Agent`, 20 s timeout. A 403 with
+   `cf-mitigated: challenge` or a "Just a moment" page is a Cloudflare challenge.
+2. `trawl`: the browser service's `scrape` API (`skipHttp`, `maxTier: 3`), only
+   after a challenge. The step is disabled when `FLARESOLVERR_URL` is unset;
+   the `direct` challenge then says "configure FLARESOLVERR_URL" itself, so
+   telemetry shows one step and the operator still gets the hint.
 
-- Recipient trace page: `https://trace.dpd.fr/fr/trace/{trackingNumber}` — the
-  page a recipient opens, and the link the app shows.
-- One page can describe two parcels: the outbound leg (`#infos1`,
-  `tr.tabTraceColisAller`) and its return leg (`#infos2`,
-  `tr.tabTraceColisRetour`).
-- The page shows status, the scan timeline with its agency or sorting-centre
-  location, the planned delivery date, and — depending on the shipment — the
-  internal customer reference, the delivery address and a proof-of-delivery
-  block. Only the first four are retained.
+Both tiers return HTML for the same parser. "Numéro de colis inconnu" (or "pas
+en mesure de retrouver") with no parcel number on the page is not-found. Other
+non-2xx statuses are indeterminate.
 
-## What we retrieve
+## Notes
 
-Declared capabilities: `history`, `location`, `eta`.
+- `direct` is kept although Cloudflare usually challenges it: when it passes it
+  saves a browser session. (Mondial Relay dropped its direct tier because it
+  never passed.)
+- One page can show an outbound parcel (`#infos1`, `tr.tabTraceColisAller`) and
+  its return (`#infos2`, `tr.tabTraceColisRetour`). The requested number picks
+  the leg; the other leg's rows are never read. A page without the requested
+  number is a `SchemaError`.
+- No status codes, only French prose, compared lowercase without accents or
+  punctuation (DPD varies them between rows).
+- Rule order matters: returns, then incidents, then delivery. "votre colis sera
+  retourné à l'expéditeur" would otherwise match a delivery rule, and "nous
+  avons reçu une réclamation" would look like movement.
+- "retard" maps to `failed_attempt`; "réclamation" and "enquête est ouverte" to
+  `exception`.
+- Unrecognized wording keeps the row with no `stage`; the result status comes
+  from the newest recognized row.
+- Rows print naive `dd/MM/yyyy` + `HH:mm` in two cells, read in Europe/Paris.
+  The planned delivery date is a calendar day, dropped once delivered or in
+  exception.
 
-Status, the timeline with each row's wording, Paris timestamp and operational
-location, and the planned delivery date while the parcel is still moving. The
-result also carries the public tracking URL and records that it came from a
-rendered page.
+## Rejected approaches
 
-## Tracking numbers
+- A JSON feed behind the page: there is none; the timeline exists only as
+  markup.
 
-12 to 15 digits, starting with `0`, `1` or `250`. Only the 15-digit `250…`
-family is distinctive enough for high-confidence detection; the broader numeric
-family stays a low-confidence suggestion that the user confirms.
-`numbers.json` holds two published merchant integration examples and one
-synthetic number built to the published shape.
+## Limitations
 
-No second input is required: the trace page is keyless.
+- DPD France's site terms restrict unapproved automated access. Treat this as
+  experimental; a contracted API is the long-term fix.
+- Customer reference, delivery address and proof-of-delivery blocks are never
+  read: the parser visits only timeline rows and labelled detail rows.
 
-## How the adapter works
+## Testing
 
-Two tiers, declared as `tracking.steps: ["direct", "trawl"]`.
-
-1. `direct` — one bounded HTML GET of the trace page with a browser-like
-   `User-Agent`, bounded to 20 s by default.
-2. `trawl` — the private browser service's native `scrape` API
-   (`skipHttp`, `maxTier: 3`), used only when the direct request is challenged
-   by Cloudflare. It is a disabled step when `FLARESOLVERR_URL` is not
-   configured; in that case the direct challenge carries the setup hint itself.
-
-Both tiers produce HTML, and the same pure parser reads it: the requested
-number selects the outbound or the return leg, rows from the other leg are
-never read, and rows are de-duplicated and sorted newest first.
-
-## Status reference
-
-The page carries no status codes: every row is French prose, matched on a
-diacritic- and punctuation-free form of the sentence. Returns and incidents are
-checked before the delivery wording, because "votre colis sera retourné à
-l'expéditeur" contains neither an incident noun nor a negative verb.
-
-| Stage | Wording or code (raw) | Confirmed by |
-|---|---|---|
-| `returned` | `retour à l'expéditeur`, `retourné à l'expéditeur`, `sera retourné à l'expéditeur` | live |
-| `failed_attempt` | `échec de livraison`, `livraison impossible`, `tentative de livraison`, `retard` | fixture / live |
-| `exception` | `réclamation`, `enquête est ouverte`, `incident`, `anomalie`, `endommagé`, `refusé`, `perdu` | fixture / live |
-| `delivered` | `votre colis est livré`, `votre colis a été livré`, `remis au destinataire`, `livraison effectuée` | fixture / live |
-| `ready_for_pickup` | `disponible en relais`, `disponible au relais`, `disponible en agence`, `disponible en consigne`, `attend en relais` | live |
-| `out_for_delivery` | `en cours de livraison`, `en tournée de livraison`, `chauffeur a pris en charge` | fixture / live |
-| `registered` | `en préparation chez l'expéditeur`, `informations concernant votre colis ont été transmises`, `données du colis transmises` | live |
-| `in_transit` | `remis à DPD`, `pris en charge par DPD`, `en transit`, `arrivé en France`, `arrivé dans notre agence`, `prochaine agence`, `centre de tri` | fixture / live |
-| `pending` | not observed; reported as unmapped | — |
-| `accepted` | not observed; reported as unmapped | — |
-| `customs` | not observed; reported as unmapped | — |
-
-`statuses.json` lists each fragment separately. Wording the map does not
-recognize keeps the row in the history with no `stage` at all, and leaves the
-result status `unknown`, so the newest recognized row decides the parcel's
-status.
-
-## Limitations and privacy
-
-- The internal customer reference, the delivery address block and the
-  proof-of-delivery block are on the page and are never read: the parser only
-  visits the timeline rows and the details rows it recognizes by label.
-- The return leg's rows are excluded from an outbound lookup and vice versa, so
-  a shared page cannot leak the other party's history.
-- The planned delivery date is dropped once the parcel is delivered or in an
-  exception state.
-- DPD France's site terms broadly restrict unapproved automated access, so this
-  integration is experimental and should be replaced by a contracted API before
-  being relied on as a long-term production integration.
-
-## Implementation decisions
-
-- **The direct request is kept even though Cloudflare usually blocks it.**
-  It succeeds often enough — and costs one bounded GET — that going straight to
-  the browser service would spend a browser on every sync. Mondial Relay made
-  the opposite call because its direct path was blocked from every network
-  tested; DPD France's is not.
-- **The requested number selects the leg.** A trace page can carry an outbound
-  parcel and its return. Reading `#infos1`/`tabTraceColisAller` for the outbound
-  number and `#infos2`/`tabTraceColisRetour` for the return keeps one recipient
-  from seeing the other leg's history, and makes a page for a different shipment
-  a hard `SchemaError` rather than a silent mismatch.
-- **Wording is matched on a normalized form.** DPD France varies accents,
-  apostrophes and trailing punctuation between rows, so every comparison runs on
-  the lowercase, diacritic-free, punctuation-free text.
-- **Order of the wording rules is load-bearing.** Returns, then incidents, then
-  delivery: "votre colis sera retourné à l'expéditeur" would otherwise fall
-  through to a delivery rule, and "nous avons reçu une réclamation" would
-  otherwise look like ordinary movement.
-- **The missing browser tier is a disabled step, not a failed one.** When
-  `FLARESOLVERR_URL` is unset the `trawl` step is skipped and the challenge
-  thrown by `direct` carries the message
-  "DPD France requires a browser challenge solver; configure FLARESOLVERR_URL",
-  so telemetry shows one attempted step and the operator still gets the hint.
-- **Assigning `in_transit` to unrecognized wording.** Resolved 2026-09-12:
-  the adapter now omits `stage` entirely for wording `status.ts` does not
-  recognize, like every other adapter, and the host sync's classifier records
-  the wording instead. The result status for an unmapped latest row stays
-  `unknown`, so the newest recognized row still decides the parcel's status.
-  `status.ts` keeps its fallback tuple (owned elsewhere); the adapter is the
-  caller that drops the stage.
-- **Timestamps use `core/time`'s `zonedTime`.** Rows print naive
-  `dd/MM/yyyy HH:mm` wall clock; Europe/Paris is applied explicitly rather than
-  guessing UTC.
-
-## Rejected alternatives
-
-- **Looking for a JSON feed behind the page.** The trace page is server-rendered
-  and exposes no reusable JSON endpoint; the timeline only exists as markup.
-- **Keeping the proof-of-delivery and address blocks "for diagnostics".**
-  The parser does not read those nodes or include them in the tracking result.
-
-
-## Verification log
-
-- 2026-09-10: Cloudflare challenges anonymous direct requests from several
-  networks; the private browser service is normally required (docs/CARRIERS.md).
-- 2026-09-12: moved into this folder. The parser, the wording map and the two
-  tiers are unchanged; only the error classes changed.
-- 2026-09-12: unmapped wording no longer carries an `in_transit` stage; the
-  offline suite asserts the missing key and the `unknown` result status.
+`npm run test:carriers:live -- src/server/browserProtectedCarriers.live.test.ts`
+runs without a browser service, so it accepts either a clean not-found or the
+challenge error.

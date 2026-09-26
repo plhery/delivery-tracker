@@ -1,166 +1,79 @@
-# Native iPhone app
+# iPhone app
 
-`SwissDeliveryTracker.xcodeproj` is a real SwiftUI iPhone application, not a
-web view. It targets iOS 18 or newer and adopts Liquid Glass automatically on
-iOS 26 while retaining a material-based presentation on iOS 18–25.
+A native SwiftUI app (not a web view) for iOS 18+, with a Share extension, Home Screen
+widgets and Live Activities. It uses Liquid Glass on iOS 26 and materials on older
+versions. It talks to the same authenticated `/api` as the web app.
 
 ## Run the demo
 
-1. Open `SwissDeliveryTracker.xcodeproj` in Xcode 26.
-2. Select the `SwissDeliveryTracker` scheme and an iPhone simulator.
-3. Run. The checked-in configuration starts in local demo mode and needs no
-   account, network, Apple team, or private credentials.
+Open `SwissDeliveryTracker.xcodeproj` in Xcode 26, pick the `SwissDeliveryTracker` scheme
+and an iPhone simulator, and run. The checked-in configuration starts in demo mode: no
+account, network or Apple team needed. Refresh advances the fictional parcels, and Account
+resets them.
 
-Refreshing advances fictional parcels. Reset the sample data from Account.
+## Connect to a server
 
-First launch opens with a tappable parcel that unfolds into sign-in. The
-Deliveries tab keeps the current tracking list; Passport collects delivery
-milestones, average and fastest journeys, and countries reported at the first
-physical scan. Delivery times run from the first acceptance or transit scan to
-delivery, including archived deliveries with complete histories. Missing or
-ambiguous locations remain unknown, and the first scan country is not a claim
-about the sender's location. Passport cards and stamps respond to touch with
-spring motion and haptics, respecting Reduce Motion.
+Copy `Configuration/Local.xcconfig.example` to `Configuration/Local.xcconfig` (gitignored)
+and set the API origin, Supabase URL and publishable key. Never put a service-role key,
+APNs key, OAuth secret or SMTP credential in the app.
 
-## Connect the production service
+- Add `swissdeliverytracker://auth-callback` to the Supabase redirect allow list.
+- Supabase is used only for sign-in. All parcel changes go through the API.
+- Building from a temporary checkout? Copy `Local.xcconfig` into its `ios/Configuration/`
+  first. Before installing an account build, check it with
+  `node scripts/validate-ios-install.mjs /path/to/SwissDeliveryTracker.app`.
+  `scripts/refresh-ios-app.sh` runs this for you and refuses unconfigured builds.
+- The carrier catalog refreshes from `/api/carriers` (ETag-cached) at launch and on
+  foreground, with the generated catalog bundled as offline fallback. New carriers don't
+  need an app release.
 
-Copy `Configuration/Local.xcconfig.example` to
-`Configuration/Local.xcconfig`, then set the public API origin, Supabase URL,
-and Supabase publishable key. The local file is gitignored. Never put a
-service-role key, APNs `.p8` key, OAuth secret, or SMTP credential in the app.
+## Signing for a device
 
-When building from a temporary checkout or `git archive`, copy the ignored
-`Local.xcconfig` into its `ios/Configuration/` directory before building.
-Before installing an account-enabled build, validate the resolved app bundle:
+1. Select your team for the app, `ShareExtension` and `DeliveryWidget` targets.
+2. Register the three bundle ids (`com.plhery.SwissDeliveryTracker` and its extensions),
+   or change them to your own.
+3. Create the App Group, set `SDT_APP_GROUP_IDENTIFIER` in `Shared.xcconfig`, and enable
+   it on all three targets.
+4. Enable Push Notifications on the app id.
+5. Create an APNs key and set `APNS_TEAM_ID`, `APNS_KEY_ID`, `APNS_PRIVATE_KEY` and
+   `APNS_BUNDLE_ID` on the server. The bundle id must match the installed app.
 
-```sh
-node scripts/validate-ios-install.mjs /path/to/SwissDeliveryTracker.app
-```
+`scripts/refresh-ios-app.sh` can also install with a free Personal Team. Apple doesn't
+allow App Groups or push there, so the widget can't read parcels and Live Activities don't
+update while the app is closed. Sign in with Apple also needs a paid team
+([AUTHENTICATION.md](../docs/AUTHENTICATION.md)).
 
-The refresh helper runs this check automatically and refuses to replace the
-iPhone app with an unconfigured build. Simulator demo builds remain available.
+## Notifications, widgets, Live Activities
 
-The iOS app talks to the same authenticated `/api` contract as the PWA. The
-Supabase URL and publishable key are used only for Google OAuth or email OTP;
-all parcel mutations still go through the application API and its ownership
-checks.
+- The app asks for notification permission only after the user taps Enable (from a small
+  prompt above the tab bar, or from Account). The device token goes to the API and isn't
+  stored locally. Debug builds use the APNs sandbox and Release builds use production.
+- **Live Activities** have their own setting and don't need alert permission. The server
+  starts one at `out_for_delivery`, updates it, and ends it with the outcome, for up to two
+  parcels. Sign-out, account deletion or turning the setting off ends them and removes the
+  registration.
+- **The widget** shows the next parcel and up to two out-for-delivery parcels. Tapping one
+  opens it.
 
-Carrier metadata is refreshed from the public `/api/carriers` endpoint at
-launch and when the app returns to the foreground. The response is validated,
-cached with its ETag, and observed by the native pickers and parcel views. The
-generated catalog remains bundled as an offline fallback. Carrier identifiers
-decode as extensible strings, so a backend carrier addition that uses the
-existing catalog fields does not require a new iOS release after this version
-has been installed.
+## Resources and tests
 
-For Google sign-in, add this app’s callback URL to Supabase Auth:
-
-```text
-swissdeliverytracker://auth-callback
-```
-
-## Signing, sharing, and notifications
-
-Before installing on a physical iPhone:
-
-1. Select your Apple Developer team for the app, Share extension, and Delivery
-   Widget extension.
-2. Register bundle IDs for `com.plhery.SwissDeliveryTracker` and its
-   `.ShareExtension` and `.DeliveryWidget` extensions, or change all three
-   target identifiers to your own reverse-DNS names.
-3. Create the matching App Group and update `SDT_APP_GROUP_IDENTIFIER` in
-   `Shared.xcconfig` if you changed it. Enable that group on the app and both
-   extension targets.
-4. Enable Push Notifications on the app App ID and keep the Push Notifications
-   capability enabled in Xcode.
-5. Create an APNs signing key and configure the server’s `APNS_TEAM_ID`,
-   `APNS_KEY_ID`, `APNS_PRIVATE_KEY`, and `APNS_BUNDLE_ID`. The bundle ID must
-   exactly match the installed app.
-
-A compact invitation appears above the Deliveries tab bar once a signed-in user
-has a parcel. It waits until sheets, search, parcel details, and arrival effects
-are finished. Not now is remembered on this device for that account; previous
-onboarding choices, disabled notifications, and denied permission are respected.
-Notifications remain available in Account settings.
-
-The app asks for notification permission only after the user taps Enable. It
-requests the current opaque device token from Apple at launch and forwards it
-over the authenticated API; it does not persist that token locally. Debug
-builds register against APNs sandbox and Release builds use production.
-
-Live Activities are a separate account setting and do not depend on alert
-notification permission. When enabled, the app registers ActivityKit's opaque
-push-to-start token and each active activity's update token with the authenticated
-service. This lets the server start, update, and end the delivery surface while
-the app is closed. Signing out, deleting the account, or turning the setting off
-ends local activities and removes that installation's ActivityKit registration.
-
-The Delivery Widget shows the next active parcel and prioritizes up to two
-out-for-delivery parcels. Its small card and each parcel in its medium card open
-the corresponding parcel in the app. The same target supplies separate Lock
-Screen and Dynamic Island Live Activities for up to two parcels. An activity
-appears only at `out_for_delivery`, stays tied to that parcel, and shows a
-delivered, failed-attempt, pickup, or return outcome briefly before dismissal.
-Home Screen widget sharing and Live Activities have independent toggles.
-
-The repository's `scripts/refresh-ios-app.sh` helper can install with a free
-Personal Team. Apple does not allow App Groups or push notifications for that
-signing mode, so the installed personal build supports the Live Activity but
-cannot share parcel data with the Home Screen widget or receive server-driven
-ActivityKit updates while closed. A paid-team build enables both.
-
-## Feature parity
-
-| Web capability | Native implementation |
-| --- | --- |
-| Google OAuth, email OTP, session refresh, sign-out | Authentication Services, native OTP form, Keychain session |
-| Paste number, carrier URL, shipping text, or scan a barcode | Native add sheet with the shared carrier parser and camera scanner |
-| All contract-defined carriers and special Planzer, Dachser, DPD, S10, and handoff rules | Dynamically refreshed catalog with a generated offline fallback |
-| Authenticated API request/response models | Swift Codable models generated from every OpenAPI schema |
-| Search, status/carrier filters, priority/date sorting | Searchable native list, pickers, and sections |
-| Refresh all or one parcel and live updates | Pull to refresh, toolbar/detail actions, lightweight sync-job polling |
-| Rename, archive/undo, restore, direct permanent delete | Detail menus, swipe action, toast, and a destructive confirmation alert |
-| Carrier progress, expected date, history, source links | SwiftUI detail hero, progress track, timeline, external links |
-| Global presets, quiet hours, per-parcel mute | Native notification settings and parcel toggle |
-| Browser Share Target | iOS Share extension for text and URLs |
-| Next-up and out-for-delivery glance surface | Small/medium Home Screen widget plus Lock Screen and Dynamic Island Live Activity |
-| Offline snapshot and demo mode | Protected per-account cache and persistent fictional demo |
-| Account export, privacy, account deletion | System share sheet, privacy link, destructive account flow |
-| English, German, French, Italian, Spanish, Portuguese, Polish | Catalog generated from `shared/locales/` for app and widget copy |
-
-Regenerate contract-backed Swift models and native resources after changing the
-OpenAPI contract, carriers, or copy:
+After changing the API contract, carriers or copy:
 
 ```bash
-npm run contract:generate
-npm run ios:resources
+npm run contract:generate   # Swift models and catalog from contracts/openapi.json
+npm run ios:resources       # translations, message map, analytics catalog
 ```
 
-## Verification
-
-From `ios/`:
+Build from `ios/`:
 
 ```bash
-xcodebuild \
-  -project SwissDeliveryTracker.xcodeproj \
-  -scheme SwissDeliveryTracker \
-  -sdk iphonesimulator \
-  -destination 'generic/platform=iOS Simulator' \
+xcodebuild -project SwissDeliveryTracker.xcodeproj -scheme SwissDeliveryTracker \
+  -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
   CODE_SIGNING_ALLOWED=NO build
 ```
 
-Use an available simulator name or identifier with the same command and replace
-`build` with `test` to run the Swift unit tests. APNs itself requires a signed
-build on a physical device; the simulator and demo mode exercise the surrounding
-UI without Apple credentials.
+Use a real simulator destination and `test` instead of `build` to run the unit tests. APNs
+itself needs a signed build on a device.
 
-## Usage analytics
-
-The app reads the service's public `/api/analytics/config` at launch, then sends
-bounded, best-effort screen views and named actions directly to self-hosted
-Umami. No SDK, credentials, tracking permission, account IDs, parcel contents,
-referrers or persistent analytics device identifiers are used. Account's **Usage
-analytics** setting disables collection on this device. Simulator and local demo
-builds never send events. An installed app needs to be rebuilt/updated to include
-this client; enabling the server configuration alone cannot instrument older
-native builds. See [the analytics runbook](../docs/ANALYTICS.md).
+Analytics (optional) follows [ANALYTICS.md](../docs/ANALYTICS.md). Simulator and demo
+builds never send events.

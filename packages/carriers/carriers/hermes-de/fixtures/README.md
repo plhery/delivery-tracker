@@ -1,6 +1,6 @@
 # Hermes Germany fixtures
 
-| File | Scenario | Provenance |
-| --- | --- | --- |
-| `delivered-neighbour.json` | Delivered to a neighbour: an out-of-order history, one exact duplicate row, a row carrying the carrier's own `historyText`, plus the recipient block the projection must drop. | Constructed in the shape observed on the public recipient service (2026-09-08); the barcode is synthetic. |
-| `out-for-delivery.json` | Same parcel out for delivery, with an `eta` and the `EDL_BOOKED_DROPOFF` preference booking the adapter ignores. | Constructed in the same shape; the barcode is synthetic. |
+- `delivered-neighbour.json`: delivered to a neighbour, with an out-of-order history, one exact duplicate row, a row with its own `historyText` and a recipient block the projection must drop.
+- `out-for-delivery.json`: the same parcel out for delivery, with an `eta` and the ignored `EDL_BOOKED_DROPOFF` booking.
+
+Both are constructed in the recipient service's shape; barcodes are synthetic.

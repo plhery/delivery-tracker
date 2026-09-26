@@ -1,156 +1,57 @@
 # Swiss Post
 
-## Identity and scope
+Swiss Post domestic parcels and inbound international letter-post (`…CH` S10
+numbers), tracked through the anonymous API behind the public `service.post.ch`
+tracker. AliExpress/Cainiao letter-post that ends in Switzerland is handed off
+here (`src/server/carrierHandoff.ts`). Freight goes to
+[swiss-post-cargo](../swiss-post-cargo/README.md) and PostLogistics
+track-and-trace to [postlogistics](../postlogistics/README.md).
 
-Swiss Post (Die Post / La Poste Suisse / La Posta Svizzera) is Switzerland's
-universal postal operator and the country's largest parcel carrier; it also
-delivers in Liechtenstein. This folder covers both the domestic parcel network
-and inbound international letter-post, which is how most cross-border parcels
-finish their journey — including the AliExpress/Cainiao handoff, where a tracked
-`L…CH` letter-post number is checked against Swiss Post before every sync and
-becomes the primary source as soon as Swiss Post has a usable record.
+## How it works
 
-## Portals
+`direct`: four calls on one cookie jar under `https://service.post.ch/ekp-web/api`,
+each bounded at 10 s.
 
-| Portal | URL | Role |
-| --- | --- | --- |
-| Public tracking | `https://service.post.ch/ekp-web/ui/entry/search/{trackingNumber}` | The page we link to, and the app whose API we call. |
-| Canary | `https://service.post.ch/` | Credential-free reachability probe. |
+1. `GET /user` creates a throwaway anonymous user and returns an `x-csrf-token` header.
+2. `POST /history?userId=…` with `{ searchQuery }` returns a search `hash`.
+3. `GET /history/not-included/{hash}?userId=…` returns matching shipments.
+   An empty array is the clean not-found.
+4. `GET /shipment/id/{identity}/events` returns the scans. Optional: if it fails,
+   the shipment summary is still returned.
 
-## What we retrieve
+Event wording comes from `core/rest/translations/en/shipment-text-messages`,
+fetched once per process and only when there are events. Keys are dotted
+patterns with `*` wildcards; the most specific match of the same length wins,
+and the `INLAND`/`IMPORT`/`EXPORT` segment comes from the shipment's own flags.
 
-Retained: shipment status and stage, the raw `globalStatus`, the event history
-(the carrier's own timestamp string, the scan city and postcode, the translated
-wording and the full dotted event code), the delivery estimate or window, the
-canonical Swiss Post shipment number and the international barcode when the
-carrier echoes one.
+## Notes
 
-Discarded: recipient name, delivery address, signature and delivery
-instructions, and the internal `identity` handle used to request events.
+- One cookie jar per lookup — the user, CSRF token and hash are only valid
+  together, and a shared jar could leak one search's hash into another.
+- Exactly one result must match the number, on `shipmentNumber` or the echoed
+  `internationalBarcode` — the endpoint is a search and can return neighbouring
+  shipments. None or two matches are refused. Numbers are compared without
+  spaces, dots or dashes, so the portal's dotted form matches.
+- The newest event code overrides `globalStatus`, which lags: a MyPost24 locker
+  deposit (`2102`) reads `DELIVERED` at shipment level while the parcel still
+  waits for pickup.
+- `LETTER.*.90.*` import scans have their own code table. The same numbers mean
+  different things for parcels, and their wording ("Completion of customs
+  clearance", "Arrival at the collection/delivery point") reads like active
+  customs or a delivery when it is neither.
+- Codes are classified, not wording: wording depends on the translation table.
+  Unmapped codes get no stage and are left to the sync.
+- Timestamps are kept exactly as sent and parsed only to sort (offset-less
+  values read as UTC for that comparison). `core/time` is not used for this reason.
+- Wording is only trimmed, not whitespace-collapsed, so `core/transport`'s
+  `clean()` is not used.
+- Scan locations keep the depot's city and postcode: it separates same-named
+  Swiss towns, and it is the scanning facility's postcode, not the recipient's
+  (see [PRIVACY.md](../../../../PRIVACY.md)). Recipient name, address, signature
+  and delivery instructions are never read; a test asserts it.
 
-## Tracking numbers
+## Testing
 
-Two high-confidence shapes: S10 (`[A-Z]{2}` + 9 digits + `CH`, check digit
-validated) and the 18-digit domestic form starting `98` or `99`. Both are
-catalogued in `carrier.json`; samples live in `numbers.json`. Numbers are
-compared after stripping spaces, dots and dashes and upper-casing, so the
-dotted form the portal prints (`99.34.123456.12345678`) matches what a user
-types.
-
-## How the adapter works
-
-One step, `direct`, but four chained requests behind one cookie jar, because the
-tracker signs an anonymous visitor in before it will search:
-
-1. `GET /api/user` creates a throwaway user and returns an `x-csrf-token`.
-2. `POST /api/history?userId=…` with the search query returns a result `hash`.
-3. `GET /api/history/not-included/{hash}?userId=…` returns the shipments.
-4. `GET /api/shipment/id/{identity}/events` returns that shipment's scans.
-
-Each call is bounded at 10 s. Step 4 is optional: if it fails, the shipment
-summary is still returned, because a summary is more useful than an error.
-
-An empty array from step 3 is the carrier's clean not-found. Otherwise exactly
-one returned shipment must match the requested number, on either its own
-`shipmentNumber` or its `internationalBarcode` — two matches are an ambiguous
-shipment and none is a different shipment, both refused rather than guessed.
-
-Event wording comes from the service's own translation table, fetched once per
-process and only when there are events to translate. Keys are dotted patterns
-with `*` wildcards (`PARCEL.*.1.1003.INLAND`); the most specific pattern of the
-same length wins, and `INLAND`/`IMPORT`/`EXPORT` is chosen from the shipment's
-own international flags. A sub-event adds a detail suffix after an em dash.
-
-## Status reference
-
-| Stage | Wording or code (raw) | Confirmed by |
-| --- | --- | --- |
-| registered | `600`; `LETTER.*.90.620`; `REPORTED`, `REGISTERED` | fixture |
-| accepted | `LETTER.*.90.912` | fixture |
-| in_transit | `820`, `1201`, `1202`; `LETTER.*.90.{804,805,818,915,1001,1213,1218}`; `TO_BE_DELIVERED`, `CUSTOMS` | fixture |
-| out_for_delivery | `1003`; `IN_DELIVERY` | fixture |
-| ready_for_pickup | `2102` (MyPost24 deposit) | fixture |
-| delivered | `4600`; `DELIVERED` | fixture |
-| customs | `LETTER.*.90.803` | fixture |
-| failed_attempt | `MISSED_DELIVERY`, `NOT_DELIVERED` (shipment level only) | prior-art |
-| returned | `3600`; `RETURNED` | prior-art |
-| pending | not an event stage; announcements are reported as `registered` | — |
-
-Any other event code is deliberately left without a stage: the event keeps its
-translated wording and its raw code, and the sync classifies and records it.
-Full entries are in `statuses.json`.
-
-## Limitations and privacy
-
-Event timestamps are kept exactly as the carrier sends them, and are parsed only
-to sort — an offset-less value is read as UTC for that comparison alone, never
-rewritten. The declared timezone is `Europe/Zurich`.
-
-Scan locations keep the facility's city **and postcode**. That postcode belongs
-to the sorting or delivery centre that performed the scan, not to the recipient,
-so it is an operational location under the notice's retained-data bullet:
-"city, region, country, and the postcode or name of the depot, parcel shop or
-locker that performed the scan; never the recipient's street or postcode"
-([PRIVACY.md](../../../../PRIVACY.md)). It is retained because it is what
-distinguishes two same-named Swiss towns in the history. No recipient name,
-street, signature or delivery instruction is ever projected.
-
-The lookup needs no credential: the anonymous user, CSRF token and search hash
-are created per call and discarded with the cookie jar.
-
-## Implementation decisions
-
-- Keep one cookie jar per lookup. The anonymous user, the CSRF token and the
-  search hash are only valid together; sharing a jar across lookups would let
-  one search's hash leak into another's result.
-- Let the newest event code override the shipment summary. `globalStatus` lags:
-  a MyPost24 locker deposit reads `DELIVERED` at shipment level while the parcel
-  is still waiting for the recipient, so event code `2102` maps to
-  `ready_for_pickup` and wins.
-- 2026-09-10: give the `LETTER.*.90.*` import scans their own table. The same
-  numeric codes mean different things for parcels and for inbound letter-post,
-  and their English wording ("Completion of customs clearance process",
-  "Arrival at the collection/delivery point") reads like a delivery or like
-  active customs if classified by words.
-- Treat the event call as optional. When `/events` fails, the shipment summary
-  is still returned; an error there would throw away a usable status.
-- Fetch the translation table lazily, once per process, and only when the
-  shipment actually has events. It is large and static, and a lookup with no
-  events has nothing to translate.
-- Require an exact number match, on either the Swiss Post number or the echoed
-  international barcode, and refuse two matches as ambiguous. The search
-  endpoint is a *search*: it can return neighbouring shipments.
-- 2026-09-12: `SwissPostTrackingError` became `NotFoundError('Swiss Post')` and
-  the remaining `TypeError`/`RangeError`s became `SchemaError` with their
-  original messages. No caller used `instanceof` on the old class.
-
-## Rejected alternatives
-
-- `core/transport`'s `clean()` for provider text: it collapses inner whitespace,
-  and Swiss Post's translated wording is shown to the user as the carrier writes
-  it. The local `text()` only trims and caps.
-- `core/time` for event timestamps: the adapter deliberately does not normalize
-  them. It keeps the carrier's own string and parses it only to sort, so nothing
-  is rewritten on the way to the app.
-- Classifying event wording instead of codes: the wording is whatever the
-  translation table returns for the requested language, so it is not a stable
-  key. Codes are.
-- Dropping the scan postcode from locations: it is what separates two same-named
-  Swiss towns in the history, and it is the scanning depot's postcode rather
-  than the recipient's. Settled 2026-09-12 by stating that boundary explicitly
-  in [PRIVACY.md](../../../../PRIVACY.md) instead of re-deciding it per carrier.
-
-
-## Verification log
-
-- 2026-09-10: the ten `LETTER.*.90.*` import scan codes were confirmed against
-  their English wording; `804`/`805` mean clearance *completed* and `1001` means
-  arrival at the collection point, neither of which is a delivery.
-- 2026-09-12: adapter moved into this folder; the status tables moved to
-  `status.ts` and the shipment payload to `fixtures/out-for-delivery.json`.
-  `SwissPostTrackingError` became `NotFoundError('Swiss Post')` — same message,
-  same 404 status. `tracking.adapter` is now `"swiss-post"`; the placeholder
-  `"upstream"` and the redundant `upstreamName` are gone, and the generated
-  registry resolves this carrier to its own folder.
-- 2026-09-12: the scan-postcode question closed against the privacy notice's
-  operational-location wording; no parser or projection change.
+`npm run test:carriers:live -- packages/carriers/carriers/swiss-post` (no env
+vars; checks that a valid-shaped unknown number returns a clean 404). The
+fixture is constructed in the public result shape with a synthetic number.

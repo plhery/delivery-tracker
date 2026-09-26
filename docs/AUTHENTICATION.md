@@ -1,16 +1,12 @@
 # Authentication
 
-Delivery Tracker supports Google OAuth, Sign in with Apple, and passwordless email one-time
-passwords (OTP) through Supabase Auth. Supabase is the identity and session
-provider. An SMTP provider is only the mail transport used by Supabase; it is
-not a second login system. All login methods produce the same account-owned
-data boundary.
+Sign-in goes through Supabase Auth: Google, Sign in with Apple (off by default) and
+email one-time codes. Every method leads to the same account. SMTP is only how Supabase
+sends the code, not a separate login system.
 
-Apple sign-in stays disabled until configured. See [Apple setup and activation](APPLE_SIGN_IN.md); it requires a paid Apple Developer Program membership.
+## Configuration
 
-## Browser and server configuration
-
-The production frontend must be built with:
+Frontend build values:
 
 ```dotenv
 NEXT_PUBLIC_SUPABASE_URL=https://supabase.example.com
@@ -20,7 +16,7 @@ NEXT_PUBLIC_AUTH_APPLE_ENABLED=false
 NEXT_PUBLIC_AUTH_EMAIL_OTP_ENABLED=false
 ```
 
-The server needs the matching private configuration:
+Server runtime values:
 
 ```dotenv
 SUPABASE_URL=https://supabase.example.com
@@ -29,33 +25,30 @@ SUPABASE_PUBLISHABLE_KEY=sb_publishable_example
 SUPABASE_SERVICE_ROLE_KEY=server-only-service-role-key
 ```
 
-The URL and publishable key are safe to expose; RLS protects database rows. The
-service-role key bypasses RLS and must never use a `NEXT_PUBLIC_` prefix or enter logs,
-screenshots, frontend build arguments, or repository history.
+The URL and publishable key are public; RLS protects the rows. The service-role key
+bypasses RLS. It must never get a `NEXT_PUBLIC_` prefix or appear in logs, screenshots,
+build arguments or git.
 
-The native iPhone app uses the same public values from its gitignored
-`ios/Configuration/Local.xcconfig`. When native Google sign-in is enabled, add
-this exact deep link to Supabase Auth's redirect allow list:
+The iPhone app reads the same public values from the gitignored
+`ios/Configuration/Local.xcconfig`. It completes PKCE in `ASWebAuthenticationSession` and
+keeps the session in Keychain. Add its callback to the Supabase redirect allow list:
 
 ```text
 swissdeliverytracker://auth-callback
 ```
 
-The app completes PKCE in `ASWebAuthenticationSession` and stores the resulting
-session in Keychain. The Google client secret still remains only in Supabase.
+On self-hosted Supabase, configure GoTrue through environment variables (site URL, allow
+list, SMTP, templates). The hosted dashboard doesn't configure a self-hosted Auth server.
 
-## Email OTP setup
+## Email codes
 
-Enable the Email provider and permit email sign-ups in Supabase Auth. Set the
-application Site URL to the production HTTPS origin and allow only legitimate
-development and production redirect origins.
+Enable the Email provider with sign-ups, set the Site URL to the production origin, and
+allow only real redirect origins.
 
-The app serves a branded sign-in email at `/auth-emails/magic-link.html`
-(`public/auth-emails/magic-link.html`). It shows the six-digit `{{ .Token }}`
-and picks its language from the `locale` user metadata that the web and iOS
-apps save, falling back to English. New email accounts receive the signup
-confirmation email instead of the magic link email while email auto-confirm is
-off, so point both at the same template and give both the localized subject:
+The app serves a branded template at `/auth-emails/magic-link.html`. It shows the six-digit
+`{{ .Token }}` and picks its language from the `locale` user metadata the apps save
+(English by default). While auto-confirm is off, new accounts get the *confirmation* email
+instead of the magic-link one, so point both at the same template:
 
 ```dotenv
 GOTRUE_MAILER_TEMPLATES_MAGIC_LINK=https://delivery.example.com/auth-emails/magic-link.html
@@ -64,42 +57,24 @@ GOTRUE_MAILER_SUBJECTS_MAGIC_LINK={{ if eq .Data.locale "de" }}Dein Anmeldecode 
 GOTRUE_MAILER_SUBJECTS_CONFIRMATION=<same value as GOTRUE_MAILER_SUBJECTS_MAGIC_LINK>
 ```
 
-Auth caches fetched templates and keeps the last working one if a later fetch
-or parse fails.
+Auth caches the template and keeps the last good copy if a later fetch fails. The UI calls
+`signInWithOtp` then `verifyOtp` (type `email`). It never uses magic-link callbacks.
 
-The UI calls `signInWithOtp` and then `verifyOtp` with type `email`. It does not
-consume a magic-link callback.
+**Use your own SMTP before opening sign-ups.** Supabase's default sender only reaches team
+addresses and is heavily rate-limited. Any SMTP service works. Use a dedicated sender
+address, publish SPF, DKIM and DMARC, turn off link tracking, and enable CAPTCHA and Auth
+email rate limits. Otherwise the OTP endpoint can be abused.
 
-For hosted Supabase, edit Auth settings and templates in the Supabase dashboard.
-For self-hosted Supabase, configure GoTrue's site URL, allowed redirect URLs,
-SMTP settings, and mailer template values in the deployment environment; the
-hosted dashboard template editor does not configure a self-hosted Auth server.
+## Google
 
-## SMTP is required for a public service
-
-Supabase's hosted default sender is a testing aid: it is restricted to project
-team addresses, heavily rate-limited, and has no delivery SLA. Configure a
-custom SMTP service before opening sign-up to the public. Any SMTP-compatible
-service works, including Resend, Postmark, Amazon SES, SendGrid, Brevo, or a
-mail server you already operate.
-
-Use a dedicated sender such as `no-reply@auth.example.com`, publish SPF, DKIM,
-and DMARC records, disable link tracking, and keep SMTP credentials server-only.
-Enable CAPTCHA and tune Supabase's email rate limits before promoting the app
-widely; OTP endpoints can otherwise be abused to consume quota or harm sender
-reputation.
-
-## Google OAuth setup
-
-Create a **Web application** client in Google Auth Platform. Add the application
-origin, such as `https://delivery.example.com`, as an authorized JavaScript
-origin and add the exact Supabase callback URL as an authorized redirect URI:
+Create a **Web application** OAuth client. Add the app origin as a JavaScript origin and
+the Supabase callback as the redirect URI:
 
 ```text
 https://supabase.example.com/auth/v1/callback
 ```
 
-For self-hosted Supabase, pass the client credentials only to GoTrue:
+Give the credentials to GoTrue only, never to the app container or the browser:
 
 ```dotenv
 GOTRUE_EXTERNAL_GOOGLE_ENABLED=true
@@ -108,39 +83,64 @@ GOTRUE_EXTERNAL_GOOGLE_SECRET=server-only-client-secret
 GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI=https://supabase.example.com/auth/v1/callback
 ```
 
-Set `GOTRUE_SITE_URL` and `GOTRUE_URI_ALLOW_LIST` to the application origin,
-restart the Auth service, and verify `/auth/v1/settings` reports Google as
-enabled. The Google client secret never belongs in the Delivery Tracker
-container or browser bundle.
+Set `GOTRUE_SITE_URL` and `GOTRUE_URI_ALLOW_LIST`, restart Auth, and check that
+`/auth/v1/settings` lists Google.
 
-## Session duration
+## Sign in with Apple
 
-The browser client persists the Supabase session and refreshes its short-lived
-access token automatically. Supabase sessions last indefinitely by default, so
-a user can remain signed in for a month or longer unless they sign out, delete
-their account, a security-sensitive action revokes the session, or an operator
-configures an inactivity or maximum-lifetime limit.
+Implemented on web and iOS, off until configured. It needs a paid Apple Developer
+membership, because a Personal Team can't enable the capability.
 
-Keep the access-token lifetime short (the Supabase default is normally one
-hour); refresh tokens maintain the long session. Do not try to make the access
-JWT itself last a month. If time-boxed or inactivity limits are enabled, choose
-at least 30 days for the requested experience and test refresh after closing and
-reopening the installed PWA.
+1. Enable **Sign in with Apple** on the app ID `com.plhery.SwissDeliveryTracker` (or yours).
+2. Create a Services ID for the web (e.g. `com.plhery.SwissDeliveryTracker.web`). Register
+   your Supabase host as its domain and `https://supabase.example.com/auth/v1/callback` as
+   its return URL.
+3. Create a Sign in with Apple key and keep the `.p8` outside the repo. Generate the client
+   secret JWT from it. Apple caps its lifetime at six months, so renew it in time.
+4. Configure GoTrue. The Services ID must come first; the bundle ID is accepted as an
+   ID-token audience. Keep nonce verification on.
 
-## Verification checklist
+   ```env
+   GOTRUE_EXTERNAL_APPLE_ENABLED=true
+   GOTRUE_EXTERNAL_APPLE_CLIENT_ID=com.plhery.SwissDeliveryTracker.web,com.plhery.SwissDeliveryTracker
+   GOTRUE_EXTERNAL_APPLE_SECRET=<server-only client secret JWT>
+   GOTRUE_EXTERNAL_APPLE_REDIRECT_URI=https://supabase.example.com/auth/v1/callback
+   ```
 
-1. Request a code for a non-team email address and verify the branded message
-   arrives once.
-2. Enter the code, reload the browser, reopen the installed PWA, and relaunch
-   the configured iPhone build.
-3. Confirm another account cannot see, sync, archive, restore, export, or receive
-   notifications for the first account's parcel.
-4. Sign out and confirm private API requests return `401`.
-5. Download account data, then test account deletion with a disposable user.
-   Account deletion requires a sign-in from the last ten minutes; an older
-   session is signed out and must authenticate again before retrying.
+5. Register your email sender with Apple's private relay so Hide My Email addresses
+   receive codes.
+6. Turn the buttons on:
+   - Web: build with `NEXT_PUBLIC_AUTH_APPLE_ENABLED=true`.
+   - iOS: set `SDT_APPLE_AUTH_ENABLED = YES` in `Local.xcconfig`, and sign with the paid
+     team and a profile that includes `com.apple.developer.applesignin`. The Personal Team
+     script turns Apple sign-in off.
 
-Current upstream references: [email OTP](https://supabase.com/docs/guides/auth/auth-email-passwordless),
-[email templates](https://supabase.com/docs/guides/auth/auth-email-templates),
-[custom SMTP](https://supabase.com/docs/guides/auth/auth-smtp), and
-[sessions](https://supabase.com/docs/guides/auth/sessions).
+The web uses Supabase OAuth with PKCE. iOS uses the native sheet (email scope only) and
+exchanges the identity token plus the original nonce with Supabase. Pending friend
+invitations survive the redirect.
+
+## Sessions
+
+The client keeps the Supabase session and refreshes the short-lived access token. Sessions
+don't expire by default, so users stay signed in until they sign out or delete their
+account. Keep the access-token lifetime short (about an hour); refresh tokens carry the
+long session. If you enable time-box or inactivity limits, use at least 30 days.
+
+## Checklist
+
+1. Request a code for a non-team address; the branded email arrives once.
+2. Sign in, reload, reopen the installed PWA and relaunch the iPhone app.
+3. A second account can't see, refresh, archive, export or get notifications for the first
+   account's parcels.
+4. After sign-out, private API calls return `401`.
+5. Export data, then delete a disposable account. Deletion needs a sign-in from the last
+   ten minutes.
+6. For Apple: first and repeat sign-in, Hide My Email, cancel, sign-out, and returning to a
+   pending invitation, on both platforms.
+
+References: Supabase [email OTP](https://supabase.com/docs/guides/auth/auth-email-passwordless),
+[templates](https://supabase.com/docs/guides/auth/auth-email-templates),
+[SMTP](https://supabase.com/docs/guides/auth/auth-smtp),
+[sessions](https://supabase.com/docs/guides/auth/sessions),
+[Apple](https://supabase.com/docs/guides/auth/social-login/auth-apple); Apple
+[web configuration](https://developer.apple.com/help/account/capabilities/configure-sign-in-with-apple-for-the-web/).

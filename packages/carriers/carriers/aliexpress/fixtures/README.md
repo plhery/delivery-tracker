@@ -1,6 +1,6 @@
-# AliExpress / Cainiao fixtures
+# Fixtures
 
-| File | Scenario | Provenance |
-|---|---|---|
-| `delivered.json` | `detail.json` module for a delivered parcel: four scans from warehouse acceptance to `GTMS_SIGNED`, an ETA window, a partner handoff number, and the recipient identity block such a module can carry. | Constructed after the documented response shape. Every identifier, name, address and timestamp is made up; `LP00000000000001` and `RA123456785CH` are synthetic. Each scan has the live `timeZone` and a Beijing-based epoch `time`, as the API sends them. |
-| `in-transit.json` | The same module mid-journey: line-haul scans only, an unresolved ETA window (`deliveryMinTime` before `deliveryMaxTime`), no delivery. | Constructed. `LP00000000000002` is synthetic. |
+- `delivered.json`: a delivered `detail.json` module (four scans up to `GTMS_SIGNED`, an ETA window, a partner handoff number, and a recipient block the adapter must ignore).
+- `in-transit.json`: the same module mid-journey, line-haul scans only, with an open ETA window.
+
+Both are constructed from the live response shape; every identifier, name, address and time is synthetic. Scans keep the live `timeZone` and Beijing-based epoch `time`.

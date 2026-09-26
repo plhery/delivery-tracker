@@ -5,9 +5,8 @@ import 'server-only';
  *
  * Planzer's own tracking app reads a keyless JSON API:
  * `api.tracking.app.planzer.ch/api/v1/shipments/{shipment}/Pak`. Quickpac's
- * 18-digit `44…` identifiers go through the same API and the same public page
- * (docs/CARRIERS.md, "Planzer shared links"), so one adapter serves both
- * carrier ids.
+ * 18-digit `44…` identifiers go through the same API and the same public page,
+ * so one adapter serves both carrier ids (see ./README.md).
  *
  * A shipment may carry several transport positions; only the position whose
  * `positionNumber` equals the requested shipment number is read, because the
@@ -130,8 +129,8 @@ export class PlanzerTracker {
       {
         provider: UPSTREAM,
         timeoutMs: this.timeoutMs,
-        // One replay after a transport failure or HTTP 502/503/504, as
-        // docs/CARRIERS.md documents for PostNL and Planzer / Quickpac.
+        // One replay after a transport failure, HTTP 502/503/504, or a 429
+        // with a short Retry-After; parsing and validation are never retried.
         retryTransient: true,
         fetcher: this.fetcher,
       },

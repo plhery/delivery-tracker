@@ -1,77 +1,61 @@
-# Brand assets
+# Brand
 
-One carrier identity, rendered twice. The web draws an SVG and the iPhone draws
-a SwiftUI `Canvas`; both read the same data, and parity tests check their
-palettes and drawings.
-
-## What is data
+Carrier colours and truck marks. The web draws an SVG, the iPhone a SwiftUI `Canvas`; both read the
+same data, and a parity test on each side fails when a drawing drifts.
 
 | File | Owns |
-|---|---|
-| `carriers/<id>/carrier.json` → `brand` | the carrier's `color`, its `family`, an explicit `palette`, and which `decal` its truck wears |
-| `core/brand/palette.json` | `DEFAULT_CARRIER_COLOR`, `FALLBACK_BRAND_COLOR`, the nine properties and the `mix()` amounts that derive each one from `brand.color` |
-| `core/brand/truck.json` | the truck: body, cab, windshield, wheels and the decal variants |
+| --- | --- |
+| `carriers/<id>/carrier.json` → `brand` | `color`, and optionally `family`, `palette` and `decal` |
+| [`palette.json`](palette.json) | default and fallback colours, the nine palette properties, and the `mix()` amounts that derive each from `brand.color` |
+| [`truck.json`](truck.json) | truck geometry and the decal variants |
 
-`carrier.schema.json` validates the `brand` block. Only `brand.color` reaches
-the published contract: changing it regenerates the web and bundled iOS catalogs.
-`palette`, `family` and `decal` are brand-only keys.
+Only `brand.color` is part of the published contract; changing it regenerates the web and iOS
+catalogs. `palette`, `family` and `decal` are brand-only. [`carrier.schema.json`](../catalog/carrier.schema.json) validates the block.
 
-### Families
+## Adding or changing a carrier
 
-Several carrier ids can share one identity — the three GLS country folders are
-one brand. Each member declares `brand.family: "gls"`; exactly one of them
-(`gls-ch`) declares the `palette` and `decal` the family wears. The generator
-rejects a family that declares either twice, and keys its output by carrier id,
-so no client has to know the rule.
+- A new carrier needs only `brand.color`. Take it from the carrier's logo SVG or website palette and
+  record the source in [SOURCES.md](SOURCES.md).
+- The nine palette properties are `surface-light`, `surface-dark`, `ink-light`, `ink-dark`,
+  `brand-light`, `brand-dark`, `truck`, `edge`, `accent`. Anything not declared is mixed from
+  `brand.color`. Override only for a second brand colour or for readability.
+- Yellow trucks declare a dark `accent` and `brand-light` so labels and marks stay readable
+  (see `swiss-post`, `la-poste`).
+- Neutral gray is reserved for `unknown`; a test enforces it.
+- Families: ids that share one identity (the GLS country folders) each declare `brand.family: "gls"`,
+  and exactly one member (`gls-ch`) declares the `palette` and `decal`. The generator rejects a family
+  that declares either twice and keys its output by carrier id, so clients never resolve families.
+- Decals are small, simplified marks built from polygons, line segments and circles, never logo files
+  or wordmarks (the iPhone draws the truck at 27 × 18 points). Add one under `decals.<name>` in
+  `truck.json`, set `brand.decal`, and add the name to the outline test in `brand.test.ts`, which
+  checks that `d` matches the points and that every shape stays inside the truck body.
 
-### Palettes
+## Shapes and paints
 
-A palette is nine colors: `surface-light`, `surface-dark`, `ink-light`,
-`ink-dark`, `brand-light`, `brand-dark`, `truck`, `edge`, `accent`. Every
-property is optional; whatever a carrier does not declare is mixed out of
-`brand.color` with the amounts in `palette.json`. Several carriers declare overrides for a second brand color or a dark decoration
-on a yellow truck. A new carrier needs only its color; see [SOURCES.md](SOURCES.md)
-for the color references and custom decorations.
+The two renderers need different primitives, so `truck.json` spells each shape both ways and the
+tests check they match:
+
+- a polygon has a `d` (drawn by the SVG) and `points` (filled by the canvas). Curves are flattened to
+  short edges so both draw the same outline; reference aspect ratios are preserved.
+- a stroked line has a `d` and `segments`. The default stripe is one segment 2 units wide.
+- a paint is a `#rrggbb` literal or one of the nine property names, which the web resolves to
+  `var(--carrier-<name>)` and the iPhone to the matching `CarrierVisualIdentity` colour.
 
 ## Generation
 
-`npm run contract:generate` runs `scripts/generate-brand.mjs`, which writes
-`packages/carriers/generated/brand.ts`: `CARRIER_PALETTES`, `CARRIER_DECALS`,
-`CARRIER_FAMILIES`, `DEFAULT_CARRIER_COLOR` and `CARRIER_TRUCK`, all keyed by
-carrier id. `npm run ios:resources` renders the same payload, plus the mix
-amounts, into `ios/SwissDeliveryTracker/Resources/Brand.json`.
+- `npm run contract:generate` runs [`generate-brand.mjs`](../../scripts/generate-brand.mjs) and writes
+  `packages/carriers/generated/brand.ts` (palettes, decals, families, default colour, truck).
+- `npm run ios:resources` writes the same payload plus the mix amounts to
+  `ios/SwissDeliveryTracker/Resources/Brand.json`.
+- `npm run test:contract` and `npm run ios:resources -- --check` fail when either output is stale.
 
-`npm run test:contract` and `npm run ios:resources -- --check` fail when either
-artifact is stale.
+## Parity tests
 
-## How the parity tests work
-
-**Web.** `src/lib/carrierBrand.ts` turns a carrier into the nine CSS custom
-properties and `src/components/CarrierMark.tsx` renders `CARRIER_TRUCK`
-attribute by attribute. `src/components/CarrierMark.test.tsx` compares the
-rendered markup for a DHL, UPS, GLS and plain carrier against
-`carrierMark.fixture.json`, captured from the hand-written SVG this data
-replaced: any change to `truck.json` that would move a pixel fails there.
-
-**iPhone.** `CarrierBrandAssets` loads `Brand.json` once. `CarrierVisualIdentity`
-resolves families, palettes and mix amounts from it; `CarrierFleetMark` draws
-its decal segments, polygons and circles. Adding an identity no longer requires
-copying a palette or decoration into a Swift switch. The base truck remains
-in `CarrierTruckGeometry`, checked against the shared geometry by
-`ios/SwissDeliveryTrackerTests/BrandParityTests.swift`. Those tests also check
-all carrier identities and ensure the decoded decorations produce visible
-paths within the truck body.
-
-Where the two renderers cannot share one primitive, `truck.json` carries both
-spellings of the same shape and the parity test checks the relation between
-them:
-
-- an outline has a `d` (what the SVG draws) and `points` (the straight-line path
-  the canvas fills). They describe the same outline, except for the UPS shield,
-  whose curved `d` the canvas approximates with five points;
-- a stroked decal has a `d` and `segments`. The default stripe is one segment
-  `2` units wide, stroked by both clients.
-
-A paint is either a `#rrggbb` literal or the name of one of the nine properties:
-the web resolves the latter to `var(--carrier-<name>)`, the iPhone to the
-matching `CarrierVisualIdentity` color.
+- Web: `src/lib/carrierBrand.ts` builds the nine CSS custom properties and
+  `src/components/CarrierMark.tsx` renders `CARRIER_TRUCK`. `CarrierMark.test.tsx` compares DHL, UPS,
+  GLS and a plain carrier against `carrierMark.fixture.json`, so any `truck.json` change that moves a
+  pixel fails.
+- iPhone: `CarrierBrandAssets` loads `Brand.json`, `CarrierVisualIdentity` resolves families and
+  palettes, `CarrierFleetMark` draws decals, and `CarrierTruckGeometry` holds the base truck.
+  `ios/SwissDeliveryTrackerTests/BrandParityTests.swift` checks the geometry against the shared data,
+  every carrier identity, and that each decal draws visible paths inside the truck body.

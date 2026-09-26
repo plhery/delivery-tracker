@@ -1,284 +1,146 @@
-# Public deployment runbook
+# Deployment
 
-This runbook makes the application publicly reachable while retaining
-Cloudflare as the TLS/reverse-proxy layer and replacing Cloudflare Access with
-Supabase Auth.
+The app is one long-running Next.js container: web, API and background worker. It needs
+Supabase (Auth, PostgREST, Postgres 16+) and HTTPS. The official instance runs at
+`https://delivery.plhery.com`, behind Cloudflare.
 
-## 1. Prepare the dependencies
+## Requirements
 
-- A Supabase stack with Auth, PostgREST, and PostgreSQL 16 or newer.
-- A transactional SMTP service and authenticated sending domain.
-- A container host capable of building the repository Dockerfile.
-- A public HTTPS hostname. The official deployment uses
-  `https://delivery.plhery.com`.
-- Stable VAPID keys if Web Push is enabled.
-- An Apple App ID, APNs key, and signing team if native iPhone notifications or
-  server-driven Live Activities are enabled.
-- Database backups and a tested restore path.
+- A Supabase stack and a tested backup/restore path.
+- SMTP with an authenticated sending domain, if email sign-in is on.
+- A host that can build the `Dockerfile` and keep the container running. Serverless
+  won't work: the worker must stay alive.
+- Optional: stable VAPID keys (Web Push), and an APNs key with an Apple team (iPhone
+  notifications and Live Activities).
 
-Review [AUTHENTICATION.md](AUTHENTICATION.md) before configuring Auth. Never put
-the service-role, VAPID private, SMTP, carrier, or Cloudflare credentials in a
-frontend build argument.
+Never pass the service-role, VAPID private, SMTP, APNs or carrier credentials as build
+arguments.
 
-## 2. Back up and migrate the database
+## 1. Database
 
-Take a fresh database backup. Apply every `supabase/migrations/*.sql` file in
-filename order and stop on the first error. The migration CI job applies the
-complete history to a clean PostgreSQL 16 database and runs RLS assertions.
+Back up, then apply every `supabase/migrations/*.sql` in filename order, stopping at the
+first error. CI applies the full history to a clean Postgres 16 and runs the RLS
+assertions. To do the same locally, point `TEST_DATABASE_URL` at a disposable database and
+run `scripts/test-migrations.sh`.
 
-Before deploying UPU postal fallback, apply
-`20260921100000_add_upu_provider.sql`. It extends the service-only provider
-health allowlist; existing leases, cooldowns and parcel history are unchanged.
+**Upgrades.** Migrations are append-only and written to be compatible with the running
+version. Apply new ones **before** deploying the server that needs them. Deploy the
+server before releasing iPhone builds that call new endpoints.
 
-Before deploying the Amazon Shipping distinction, apply
-`20260912210000_add_amazon_shipping.sql`. It adds `amazon-shipping` to the package
-carrier constraint and both ownership-enforcing package RPCs. It is compatible
-with the previous app version and does not reclassify existing parcels.
+## 2. Auth and email
 
-Before deploying selectable EMS tracking, apply
-`20260921160000_add_ems.sql`. It adds `ems` to the package carrier constraint and
-both ownership-enforcing package RPCs without changing existing selections.
+Follow [AUTHENTICATION.md](AUTHENTICATION.md). In short:
 
-For an existing private/shared deployment, the migrations preserve old parcels
-with `user_id IS NULL`. Those rows are invisible to every signed-in user. Do not
-assign them until the intended owner has successfully signed in once and has an
-`auth.users` record.
+1. Set the Auth Site URL to the public origin and restrict redirect URLs.
+2. Enable email OTP and point the magic-link and confirmation templates at
+   `/auth-emails/magic-link.html`.
+3. Configure Google (and optionally Apple). Turn off a frontend method whose provider isn't
+   ready.
+4. For email: SPF, DKIM, DMARC, CAPTCHA and Auth rate limits.
+5. Leave session time-box and inactivity limits off, or set both to 30 days or more.
 
-Preflight the cutover with a service-role SQL session:
+## 3. Build and run
 
-```sql
-select id, email, created_at from auth.users order by created_at;
-select count(*) as ownerless_packages from public.packages where user_id is null;
-select count(*) as ownerless_push_subscriptions
-from public.push_subscriptions where user_id is null;
-```
-
-Replace `OWNER_UUID` below with the verified Auth user ID. Check for a tracking
-number conflict before claiming rows:
-
-```sql
-select tracking_number, count(*)
-from public.packages
-where user_id is null or user_id = 'OWNER_UUID'::uuid
-group by tracking_number
-having count(*) > 1;
-```
-
-Resolve any returned duplicate explicitly, then perform the one-way claim:
-
-```sql
-begin;
-
-update public.packages
-set user_id = 'OWNER_UUID'::uuid
-where user_id is null;
-
--- Old browser endpoints have no trustworthy owner. Users opt in again.
-delete from public.push_subscriptions where user_id is null;
-
-alter table public.packages
-  validate constraint packages_owner_required_check;
-alter table public.packages alter column user_id set not null;
-
-alter table public.push_subscriptions
-  validate constraint push_subscriptions_owner_required_check;
-alter table public.push_subscriptions alter column user_id set not null;
-
-commit;
-```
-
-Verify zero ownerless rows remain and take another backup. If this is a new
-deployment, the validation and `NOT NULL` steps can be performed immediately.
-
-### Tracking generation rollout (September 2026)
-
-Before deploying persistent universal routing, apply
-`20260912150000_tracking_provider_health.sql` and
-`20260912160000_preserve_carrier_change_history.sql`.
-They add shared service-only provider leases/cooldowns and preserve existing
-history when a carrier changes. See [Tracking routing](tracking-routing.md) for
-provider order, schedules, Sentry searches, and the experimental Postal Ninja flag.
-
-Before deploying the worker that calls `apply_tracking_sync`, apply
-`20260906120000_guard_tracking_sync_generation.sql`. This additive migration
-assigns configuration tokens to existing parcels and exposes a service-only
-transaction for events and status updates. It does not rewrite tracking history.
-Drain or stop old worker instances during rollout: older code does not submit
-generation tokens and cannot reject a superseded carrier result. New workers
-fail closed if the migration or token is missing.
-
-Before deploying the lease-renewing worker, apply
-`20260910120000_sync_job_lease_fencing.sql`. Stop or drain older workers during
-rollout: they do not submit lease ownership with tracking writes. The new
-service-only RPCs renew live leases, reject writes after ownership loss, and
-finish jobs only for their current owner. Workers fail closed if these RPCs are
-missing. No parcel history is rewritten.
-
-Deploy the server before releasing native clients that use `GET /api/sync/jobs`.
-The existing single-job endpoint remains compatible with older clients.
-For a local database test, run `scripts/test-migrations.sh` with
-`TEST_DATABASE_URL` pointing at a disposable database; it includes generation,
-transaction rollback, ownership, and privilege assertions.
-
-Before deploying the worker that records unmapped carrier wording, apply
-`20260913100000_tracking_status_observations.sql`. It adds the service-only
-review table and its upsert function. Older workers never call it, and no
-tracking history is rewritten.
-
-Before deploying the `exception` tracking stage, apply
-`20260913110000_exception_tracking_stage.sql`. It widens the tracking event and
-package stage constraints, adds the stage to the notification preference
-constraint, default and save function, and extends the inline queue defaults so
-subscribers who never chose stages still receive problem alerts.
-
-Before deploying Spanish, Portuguese and Polish support, apply
-`20260912090000_add_es_pt_pl_locales.sql`. It expands the locale constraints
-for browser push, APNs and both Live Activity tables without changing existing
-subscriptions, delivery cursors or notification preferences.
-
-## 3. Configure Auth and email
-
-1. Set the Auth Site URL to the public HTTPS origin and restrict redirect URLs.
-2. Enable email OTP sign-ups and point the magic link and confirmation
-   templates at `/auth-emails/magic-link.html` (see
-   [Authentication](AUTHENTICATION.md#email-otp-setup)).
-3. Configure Google OAuth, custom SMTP, or both. Disable the matching frontend
-   method when its provider is not production-ready.
-4. For email OTP, configure sender identity, SPF, DKIM, DMARC, CAPTCHA, and
-   appropriate Auth email rate limits.
-5. For Google, configure the exact Supabase callback URI and keep the OAuth
-   client secret only in the Auth service.
-6. Leave session time-box and inactivity limits disabled for persistent login,
-   or set both to at least 30 days.
-
-## 4. Build and deploy
-
-The two browser values are build-time arguments:
+Public Supabase values are build arguments:
 
 ```bash
 docker build \
   --build-arg NEXT_PUBLIC_SUPABASE_URL=https://supabase.example.com \
   --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_example \
-  -t swiss-delivery-tracker .
+  -t delivery-tracker .
 ```
 
-The production Docker build validates these values, requires API mode, and
-requires at least one enabled authentication method. It fails before running
-`next build` rather than producing an unusable sign-in screen.
+The build fails early unless API mode is on and at least one sign-in method is enabled.
 
-Set the matching server variables plus `SUPABASE_SERVICE_ROLE_KEY` at runtime.
-Add the stable VAPID key pair and `VAPID_SUBJECT` only when browser push is
-enabled. For native push, set `APNS_TEAM_ID`, `APNS_KEY_ID`, the complete
-`APNS_PRIVATE_KEY` `.p8` value, and `APNS_BUNDLE_ID`; partial VAPID or APNs
-configuration is rejected at startup. See `.env.example` for the complete inventory.
-The same APNs key sends ordinary alerts and ActivityKit pushes; the app bundle
-ID is used directly for alerts and with Apple's `.push-type.liveactivity` topic
-suffix for Live Activities.
+At runtime, set the server Supabase values and `SUPABASE_SERVICE_ROLE_KEY`. Push is
+optional:
 
-This application includes a durable in-process scheduler, so run the standalone
-Next.js server as a continuously running container or process. A request-only
-serverless runtime will not keep the carrier worker alive.
+- Web Push: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`.
+- APNs: `APNS_TEAM_ID`, `APNS_KEY_ID`, `APNS_PRIVATE_KEY` (the whole `.p8`) and
+  `APNS_BUNDLE_ID`. The same key sends alerts and Live Activity pushes.
 
-Set `TRUST_PROXY_HEADERS=true` only when a trusted reverse proxy connects to the
-container and overwrites `CF-Connecting-IP`, `X-Real-IP`, and
-`X-Forwarded-For`. Leave it false when clients can reach the origin directly.
+Partial VAPID or APNs configuration is rejected at startup. [`.env.example`](../.env.example)
+lists everything.
 
-Expose container port `3000`, use `GET /health` as the health check, and keep the
-container behind HTTPS. The public health response intentionally contains only
-`{"ok": true}` with HTTP 200 when a database probe succeeds within 2.5 seconds
-and the worker has successfully claimed/polled or renewed a job in the last
-120 seconds; otherwise it returns `{"ok": false}` with HTTP 503. `GET /health/live`
-checks process liveness alone. Authenticated API responses use `Cache-Control: no-store`.
+- Expose port `3000` behind HTTPS.
+- `GET /health` returns `{"ok": true}` when the database answers within 2.5 s and the
+  worker has polled or renewed a job in the last 120 s. Otherwise it returns 503.
+  `GET /health/live` checks the process only.
+- Set `TRUST_PROXY_HEADERS=true` only if a trusted proxy overwrites `CF-Connecting-IP`,
+  `X-Real-IP` and `X-Forwarded-For`.
+- Set the platform's stop grace period to **30 s** (Coolify: *Stop Grace Period*).
+- Don't set `NEXT_DEPLOYMENT_ID`: it changes every asset URL on each deploy, so returning
+  browsers re-download everything.
 
-## 5. Cut over without exposing private data
+After deploying, run `scripts/smoke-url.sh https://your-hostname` from outside the origin.
 
-1. Keep Cloudflare Access enabled while deploying the new image.
-2. Sign in through the new OTP screen and verify the intended Auth user ID.
-3. Claim legacy parcels using step 2 and confirm they appear only for that user.
-4. Test with a second disposable account and verify cross-account isolation.
-5. Exercise add, sync, archive, restore, browser and native push opt-in, export,
-   sign-out, and account deletion. Separately enable Live Activities, move a
-   disposable parcel to out for delivery, verify it starts while the app is
-   closed without a duplicate ordinary banner, and verify its terminal state
-   dismisses after the grace period. Confirm API rate limits return `429` and
-   `Retry-After` when exceeded.
-6. Remove the Cloudflare Access application/policy for the app hostname, but
-   retain Cloudflare proxying, TLS, WAF, and origin restrictions as desired.
-7. Run `scripts/smoke-url.sh https://your-hostname` from outside the origin.
-8. Make the GitHub repository public only after the live app is protected by
-   Supabase Auth and the repository/history scan contains no private secrets.
+## Shutdown and crash recovery
 
-The manual `Production origin smoke` workflow accepts optional Cloudflare Access
-service-token secrets for private or transitional deployments. Remove those
-repository secrets when they are no longer used.
+On SIGTERM/SIGINT the process turns unready at once and stops taking new work. It aborts
+active tracking and hands its job back to the queue, closing audit rows as `interrupted`
+without using up a retry. Next.js then drains HTTP requests. Time limits: 6.5 s for the
+handoff, 500 ms for Sentry, 25 s overall.
 
-## 6. Operate and recover
+If a process is killed or the host dies, its job's **90 s lease** (renewed every 15 s)
+expires and another worker picks it up. A job gets three crash attempts; orderly deploys
+don't count. All writes are fenced by lease ownership and the database clock, so
+overlapping containers can safely share the queue.
 
-- Configure the dedicated Sentry project with `SENTRY_DSN`,
-  `SENTRY_ENVIRONMENT=production`, zero tracing unless deliberately changed,
-  and an immutable release. Keep new-issue, regression, and Cron monitor
-  notifications enabled. See [OBSERVABILITY.md](OBSERVABILITY.md).
-- Monitor `401`, `429`, database gateway failures, carrier failures, suspicious
-  classifications, missed scheduled checks, SMTP bounces, and push disablement.
-  Tracking logs include tracking numbers, and Sentry retains original diagnostic
-  context. Restrict access and retention; sanitize exports before sharing them
-  in public issues. See [OBSERVABILITY.md](OBSERVABILITY.md).
-- Application logs are one-line JSON. Alert on `sync_claim_failed`,
-  `sync_job_failed`, and `sync_job_finish_failed`; use `request_id` and `job_id`
-  for correlation without adding user or parcel data to logs.
-- The API allows 12 sync requests per account per five minutes, 240 reads per
-  minute, and 60 other writes per minute. Edge and Auth-level abuse controls are
-  still required for unauthenticated OTP traffic.
-- Database functions cap each account at 50 active and 500 total parcels, and a
-  scheduled synchronization processes at most five parcels per account in
-  round-robin order. A user-requested Refresh all queues every eligible parcel;
-  the worker controls execution concurrency. Treat changes to these limits as security-sensitive.
-- Next.js handles request admission. Application pre-authentication limits
-  combine a trusted forwarded address with a hashed bearer credential when
-  supplied; authenticated limits are per account. Keep the origin behind an
-  edge rate limiter as an independent layer.
-- Carrier refreshes live in `public.sync_jobs`. Running jobs renew their 15-minute leases every 30 seconds. Tracking writes
-  check ownership transactionally and renewal failures stop the current job. Jobs can
-  be reclaimed after a worker crash; active package and scheduled jobs are
-  deduplicated, and terminal job records are retained for 30 days. Back up this
-  table with the rest of Postgres.
-- Every refresh writes a service-role-only attempt and step trace. Start with
-  `tracking_sync_health_24h`, then follow a Sentry `attempt_id` into
-  `tracking_sync_attempts` and `tracking_sync_steps`. Completed traces remain
-  for 90 days; hard-crashed attempts are marked abandoned after 30 minutes.
-- Back up Postgres independently. Regularly test restoring Auth, parcel, event,
-  and push tables together.
-- Rotate service-role, SMTP, VAPID, APNs, and carrier credentials if exposed.
-  Rotating VAPID keys invalidates existing browser subscriptions; revoke an
-  exposed APNs key in the Apple Developer portal before replacing it.
-- If auth or ownership verification fails during cutover, re-enable Cloudflare
-  Access immediately. Do not undo ownership by setting `user_id` back to null.
+Open browsers keep their build. Assets are content-hashed and precached. The app switches
+to a new build by itself, in the background or after a few idle seconds, and never while
+something is open or being typed. It comes back to the same tab, parcel and scroll
+position.
 
-## Session and logout fixes (September 2026)
+`npm run test:deployment` (run in CI after the build) interrupts a job on the built server,
+checks the handoff, restarts and finishes the job.
 
-Apply `20260911120000_live_activity_session_revocation.sql` before deploying the
-matching server/iOS release. It supports installations with ActivityKit disabled
-and does not enable that channel. If enabling ActivityKit later, apply its base
-migration and rerun the session-revocation migration afterward.
+## Operating
 
-Existing ActivityKit registrations without a session binding are disabled; opening
-the updated app registers them again. Registrations now belong to a verified Auth
-session and disappear when that session is deleted. The native app saves a
-separate deletion capability in Keychain before registering, retains failed cleanup
-across sign-out/restarts, and retries without retaining account credentials. As
-with any remote operation, an offline revocation reaches the server once network
-access resumes. A one-day tombstone rejects registration requests that arrive
-after cleanup; old capabilities cannot delete a newer binding.
+- **Sentry**: set `SENTRY_DSN`, `SENTRY_ENVIRONMENT=production`, an immutable release, and
+  keep tracing at 0 unless you mean it. See [OBSERVABILITY.md](OBSERVABILITY.md) for alerts,
+  logs and audit queries.
+- **Logs** are one-line JSON. Alert on `sync_claim_failed`, `sync_job_failed` and
+  `sync_job_finish_failed`. They contain tracking numbers, so restrict access.
+- **API limits** per account: 12 sync requests per 5 min, 240 reads per minute, 60 other
+  writes per minute. Keep an edge rate limiter too, since unauthenticated OTP traffic needs
+  it.
+- **Quotas** (enforced in the database): 50 active and 500 total parcels per account.
+  Scheduled sync processes at most five due parcels per account per run. Treat changes to
+  these limits as security-sensitive.
+- **Queue**: `public.sync_jobs`, deduplicated. Finished jobs are kept for 30 days.
+- **Backups**: back up Postgres independently and regularly test restoring Auth, parcels,
+  events and push tables together.
+- **Secrets**: rotate anything exposed. New VAPID keys invalidate all browser subscriptions.
+  Revoke an exposed APNs key in the Apple Developer portal before replacing it.
 
-The share extension saves only after explicit confirmation. Users then open the
-app to finish adding the parcel; unconsumed drafts expire after ten minutes.
+## Migrating from a pre-account deployment
 
-## Carrier history classification repair
+Early private deployments stored parcels without an owner (`user_id IS NULL`). Those rows
+are invisible to everyone until claimed. New deployments can skip this section.
 
-Deploy the corrected classifier, then apply
-`20260912090000_repair_carrier_history_stages.sql` to repair previously saved
-GLS, DHL, Swiss Post, Quickpac and UPS scans, including archived parcels.
-The repair preserves event identities, raw evidence, timestamps and notification
-receipts. It updates a package's current stage only when the corrected latest
-event requires it, such as a MyPost24 deposit becoming `ready_for_pickup`.
-Rerunning the migration makes no further changes.
+Keep any edge authentication (Cloudflare Access) in place until this is done. Sign in once
+as the intended owner, then, with the service role:
+
+```sql
+-- Preflight: owner id, ownerless counts, duplicate numbers
+select id, email, created_at from auth.users order by created_at;
+select count(*) from public.packages where user_id is null;
+select tracking_number, count(*) from public.packages
+where user_id is null or user_id = 'OWNER_UUID'::uuid
+group by tracking_number having count(*) > 1;
+
+-- Resolve duplicates, then claim (one way)
+begin;
+update public.packages set user_id = 'OWNER_UUID'::uuid where user_id is null;
+delete from public.push_subscriptions where user_id is null;  -- users opt in again
+alter table public.packages validate constraint packages_owner_required_check;
+alter table public.packages alter column user_id set not null;
+alter table public.push_subscriptions validate constraint push_subscriptions_owner_required_check;
+alter table public.push_subscriptions alter column user_id set not null;
+commit;
+```
+
+Then check isolation with a second disposable account and try the main flows (add,
+refresh, archive, push opt-in, export, sign-out, delete). Only after that, remove the edge
+authentication. If something goes wrong, turn edge authentication back on. Never set
+`user_id` back to null.

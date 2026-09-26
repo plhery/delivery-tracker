@@ -1,29 +1,73 @@
 # Friends
 
-Friends is a small, private stamp collection shared by mutual invitation. It has no public profiles, discovery, address-book access, follower counts, purchase leaderboard, or delivery feed.
+A small, private stamp collection shared by mutual invitation. There are no public profiles,
+discovery, contact import, follower counts, leaderboards or delivery feed.
 
-Joining is opt-in. A person chooses a nickname and sees exactly what will be shared before saving. Passport statistics (delivered count, average journey rounded up to whole days, twelve available Passport stamps (earned stamps only)) can be hidden independently. A coarse “a parcel arrived this week” signal has its own switch. Both switches start enabled for a new profile, beneath an always-visible preview; existing saved choices are preserved. It exposes neither a parcel nor an exact time. No parcel contents or labels, tracking numbers, carriers, locations, emails, Google photos, active shipments, or parcel identifiers cross the Friends boundary.
+## What is shared
 
-A single-use invitation link expires after seven days; creating a new link keeps older invitations active. Accepting a link consumes only that invitation. Shared links use `/i/<key>` with no fragment. The random 16-character key (96 bits, base64url, historically named `previewId` in the API and `preview_id` in the database) authorizes both previewing and accepting the invitation. Anyone who obtains the link can sign in and explicitly accept it; the key can appear in infrastructure access logs and social-platform caches. Treat it as an invitation credential. It grants only the opted-in friendship, never account access or private parcel data. Keys are stored in the access-restricted invitation table, expire after seven days, and are removed on acceptance or revocation. Social GETs and rate-limited public POST previews reveal only the sender’s nickname and never consume a link. The server renders Open Graph/Twitter metadata and a parcel card with the working standalone link as its canonical URL. Preview HTML and images are not cached by the app; social platforms may retain their own copies. Invitation pages send `Referrer-Policy: no-referrer`; analytics uses fixed screen/action names and never records URLs or keys. Clients strip the key from the browser address before authentication. Existing `/i/key#token` links work even after their fragment is removed. Older `/invite?preview=hash#token` and fragment-only links remain supported using a separately hashed token; the public legacy hash cannot accept an invitation. Older clients can still create and manage links using that token. Opening the parcel reveals sign-in or an explicit accept action. Newcomers preview and save their sharing choices before accepting. The pending invitation key and parcel state survive authentication in web sessionStorage or native UserDefaults for up to seven days; sender data is fetched again and never persisted. Dismissing or accepting clears the pending link. Personal Team iOS builds open through the web welcome’s “Open in iOS app” custom-scheme link; universal links require a provisioned Associated Domains entitlement. Either friend can remove the connection. Disabling Friends deletes the profile, invitations, and both sides of every friendship. Account deletion cascades through these records too.
+Joining is opt-in. The user picks a nickname and sees a live preview of exactly what
+friends will see. Two switches (both on by default for a new profile) control:
 
-On iOS and web, open your own Friends card to find **Cancel invitation links** in sharing preferences. After confirmation, it revokes all outstanding links without creating a replacement or changing existing friends. This works after closing the original invitation sheet or restarting the app, and is safe to repeat when no link remains. The invitation sheet shows its URL and the number of older active invitations. Cancelling those older invitations preserves the displayed link and any newer links created elsewhere; cancelling the current link affects only that link. Both iOS invitation sheets open compactly and can expand, including for large text. A new invitation can still be created normally. Demo settings omit this action because demo invitations cannot be shared.
+- **Passport stats**: delivered count, average journey (rounded up to whole days) and
+  earned Passport stamps.
+- **"A parcel arrived this week"**: a coarse signal with no parcel or exact time.
 
-The database computes allowlisted summaries directly from owned tracking events. Client-supplied statistics are never accepted. All friend tables deny direct client access; the unauthenticated preview endpoint projects only the nickname of an unexpired invitation; authenticated database functions bind the caller with `auth.uid()` and project only mutual friends. Raw parcel RLS stays unchanged. Friend data uses network-only APIs, has no persistent client cache, and is cleared when the app backgrounds or the view closes. A visible view refreshes every 60 seconds so privacy changes propagate. The account export includes only the owner’s sharing preferences and their connections (nickname and public card ID), not other people’s statistics.
+Nothing else crosses the boundary: no parcel names or contents, tracking numbers, carriers,
+locations, emails, photos, active shipments or ids.
 
-Demo friends are clearly fictional, local fixtures using the same response contract. Their actions never reach another person. Strings and response types are shared by web and iOS. Reduced Motion, keyboard access, VoiceOver, dark appearance, and narrow screens follow the existing UI system.
+## Invitations
 
-Rollout: apply the Friends migrations through `20260911220000_invitation_outcomes.sql` before deploying the server and releasing the clients. The standalone-link migration makes existing short IDs usable for acceptance without changing invitation rows, expiry, or legacy token hashes. Apply it before deploying clients that accept short keys. Run `scripts/test-migrations.sh` on a disposable database, including the multiple-invitation migration fixture, standalone-link lifecycle, consent, authentication, revocation and RLS assertions. The UI reports an unavailable service if the backend is unreachable; it never fills a real account with demo friends.
+- A link is `/i/<key>`: a random 16-character base64url key (96 bits), called
+  `previewId` / `preview_id` for historical reasons. It lets you preview and accept one
+  invitation, so treat it as a credential. It grants only the friendship, never account
+  or parcel access.
+- Links are single-use and expire after seven days. Creating a new link keeps older ones
+  valid. **Cancel invitation links** (in your own Friends card) revokes all outstanding
+  links without touching existing friends.
+- Public previews (including social-card GETs and rate-limited POSTs) reveal only the
+  sender's nickname and never consume the link. Pages send `Referrer-Policy: no-referrer`,
+  clients strip the key from the address bar before sign-in, and analytics never records
+  URLs or keys. Social platforms may cache previews on their side.
+- A pending invitation survives sign-in, kept in sessionStorage on the web and
+  UserDefaults on iOS, for up to seven days. Newcomers choose their sharing settings before
+  accepting.
+- Reopening an accepted link shows `already_accepted` or `already_friends` to the account
+  that accepted it, and creates nothing new. Unavailable links stay closed.
+- Older link formats (`/i/key#token`, `/invite?preview=hash#token`) still work.
+- Personal Team iOS builds open links through the web page's "Open in iOS app" button;
+  universal links need the Associated Domains entitlement.
 
-Invitation outcomes: authenticated preview and acceptance return `invitationState`
-(`already_accepted` or `already_friends`) without creating another connection or
-notification. Web and iOS reveal these messages only after opening the parcel.
-Unavailable links keep the parcel closed and omit the opening action. Consumed
-links have no public preview; only the accepting account can retrieve their
-nickname and outcome through the authenticated RPC. Private receipts are removed
-when either Friends profile is deleted. Links consumed before this migration
-cannot be recovered because their invitation records were already deleted.
-Apply the outcomes migration before deploying the updated server and clients.
+Either friend can remove the connection. Turning Friends off deletes the profile,
+invitations and both sides of every friendship, and account deletion cascades the same way.
 
-Shared Passport stamps include the original four plus `acrossBorders`, `aroundWorld`, `theRegular`, `rightNextDoor`, `worthTheWait`, `busyDoorstep`, `pickedUp`, and `homeForHolidays`. The database derives them from the owner's tracking events, including archived parcels, and returns only earned identifiers under the existing `shareStats` consent. Country awards require explicit country evidence; registration scans, ambiguous state/canton codes, tied scans, and returned parcels cannot prove a completed route. Repeated delivery scans count once. Calendar awards use UTC because Friends does not store the owner's device timezone; near midnight these can differ from the local Passport.
+## How it's enforced
 
-For this collection expansion, release clients that understand all twelve IDs and deploy the updated API validator **before** applying `20260911230000_friend_passport_stamps.sql`. Old validators limit the array to four and old iOS enum decoders reject new IDs. The migration preserves the private projection, authenticated RPCs, and parcel RLS. It needs no data backfill: stamps are computed when a snapshot is requested. The Friends layout can be updated independently using the shared stamp metadata.
+- The database computes summaries from the owner's tracking events. Client-sent statistics
+  are never accepted.
+- Friend tables deny direct client access. The anonymous preview returns only the
+  nickname of an unexpired invitation, and authenticated functions bind `auth.uid()` and
+  return mutual friends only. Parcel RLS is unchanged.
+- Friend data is network-only and never cached. It is cleared when the app goes to the
+  background or the view closes, and a visible view refreshes every 60 s so privacy changes
+  spread.
+- Account export includes your own settings and your friends' nicknames and card ids,
+  never their stats.
+
+## Stamps
+
+Twelve shareable stamps: the original four plus `acrossBorders`, `aroundWorld`,
+`theRegular`, `rightNextDoor`, `worthTheWait`, `busyDoorstep`, `pickedUp` and
+`homeForHolidays`. They're derived from all of the owner's events, archived parcels
+included, and returned only when stats sharing is on.
+
+- Country stamps need explicit country evidence. Registration scans, ambiguous state or
+  canton codes, tied scans and returns don't count.
+- Repeated delivery scans count once.
+- Calendar stamps use UTC, since Friends doesn't know the owner's timezone, so they can
+  differ from the local Passport near midnight.
+
+## Demo
+
+Demo friends are local fixtures that use the same response shapes. Nothing reaches a real
+person, and demo settings hide the cancel-links action. If the backend is down, the UI says
+so and never falls back to demo data.

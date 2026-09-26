@@ -1,61 +1,45 @@
 # Japan Post
 
-The direct adapter uses one anonymous GET to Japan Post's
-[English tracking portal](https://trackings.post.japanpost.jp/services/srv/search?locale=en).
-The request contains `reqCodeNo1` and `locale=en`; no browser, account, cookie,
-postcode or API key is needed. The carrier's result table, rather than an
-echoed form field, must match the requested tracking number.
+Japan Post items, tracked through the anonymous [English tracking portal](https://trackings.post.japanpost.jp/services/srv/search?locale=en).
+Accepts checksum-valid S10 references and 11–13 digit domestic numbers.
 
-The adapter accepts checksum-valid tracked S10 references and the portal's
-documented 11–13 digit domestic format. U-prefixed customs labels are rejected:
-[Japan Post explicitly says these are not tracking barcodes](https://www.post.japanpost.jp/service/send/oversea/information/ems_search_en.html).
-The live positive check covers an international parcel; domestic parsing is
-covered by a synthetic fixture variation, not a positive live domestic check.
+## How it works
 
-Only the event date, status wording and office/prefecture/country are projected.
-The alternating postal-code rows are not events. Free-form details, office
-contact information and unrelated page content are excluded. The adapter
-retains the latest 100 distinct events and fails on incomplete or changed
-tables rather than silently dropping a newer malformed scan.
+1. `direct`: one GET to `https://trackings.post.japanpost.jp/services/srv/search/direct?reqCodeNo1={number}&locale=en`.
+   No cookies, browser or key. 15 s default deadline (or the router's budget), 1 MB cap, caller
+   cancellation.
 
-The history header explicitly labels overseas timestamps as local time.
-Offset-less wall times are preserved in `events[].local_time` and
-`last_update_local`, along with the carrier's sequence. The row's own
-Prefecture / Country cell resolves `OSAKA`, `KANAGAWA` and `JAPAN` to
-`Asia/Tokyo`, and `MALTA` to `Europe/Malta`. Only an unambiguous full local
-timestamp in these confirmed places produces an explicit UTC event `time`.
-Date-only, unknown-place, multi-zone, nonexistent spring-clock and ambiguous
-autumn-clock values remain local. The latest row sets `last_update` only when
-its own instant is resolved; otherwise it is null even when an older row has
-a known instant. The catalog keeps its neutral timezone.
+## Notes
 
-Unresolved dates remain in a bounded `direct_local_history` archive but do not
-create UTC scan timestamps in the persisted timeline or establish cross-provider
-freshness. When the latest scan has no resolved instant, routing also tries the
-universal providers for a dated timeline and retains direct tracking as a
-fallback. An unresolved fallback cannot overwrite an established richer-source
-summary. This small
-place map is deliberately conservative; a parcel-wide destination or another
-scan's zone never supplies a missing timezone. Unknown wording stays unknown;
-an item returned **from customs** is still in transit.
+- `U`-prefixed customs labels are rejected:
+  [Japan Post says they are not tracking barcodes](https://www.post.japanpost.jp/service/send/oversea/information/ems_search_en.html).
+- Identity comes from the `Item number` cell of the details table (`配達状況詳細`), not the echoed
+  form field. Exactly one details table and one history table (`履歴情報`) must exist. Changed headers
+  or malformed rows fail the parse instead of silently dropping a newer scan.
+- Not-found is the result table (`照会結果`) holding the number and `** Your item was not found…`.
+  HTTP 404/410 means the endpoint is gone (transport error), not the parcel.
+- History rows come in pairs: the event row, then a postal-code row that is not an event. Postal
+  codes, the free-form details column and office contacts are discarded.
+- The history header labels overseas scans as local time. Every event keeps its wall clock in
+  `local_time`. A UTC `time` is added only when the row's own Prefecture/Country cell is in a small
+  confirmed map (`OSAKA`, `KANAGAWA`, `JAPAN` → `Asia/Tokyo`; `MALTA` → `Europe/Malta`) and the
+  timestamp is full and unambiguous (not date-only, not in a DST gap or fold). Another scan's zone or
+  the destination never fills the gap: a guessed zone produces wrong instants that look authoritative.
+- `last_update` is set only when the latest row itself resolved; otherwise it is null and
+  `last_update_local` carries the wall clock. Routing then also tries universal providers for a dated
+  timeline, keeps the direct history as fallback, and never lets an unresolved result overwrite a
+  richer saved summary.
+- Rows arrive oldest first and are reversed, not sorted, so mixed resolved and unresolved rows keep
+  the carrier's order. Exact duplicates are dropped; the latest 100 are kept.
+- "Item returned from import Customs" is still in transit. Unknown wording stays unknown.
+- Prior art: [BINM7MD/jp-post-api](https://github.com/BINM7MD/jp-post-api) (MIT) uses the same
+  endpoint and row pairing.
 
-On 2026-09-26, fresh direct HTTP retrieval of the public reference already
-listed in [provider coverage](../../providers/COVERAGE.md) returned 13 events
-through final delivery; each had a resolved local event zone. A checksum-valid
-synthetic unknown reference returned the official item-not-found row. A separate direct HTTP request from the server
-also returned the matching history table and final-delivery row. These checks
-establish the HTTP route on both networks; the deployed application's retrieval
-has not been verified. Universal fallback remains available for errors or items
-outside the portal's available history.
+## Limitations
 
-Parser fixtures are reconstructed with synthetic identities, dates and offices.
-Set `JAPAN_POST_TRACKING_NUMBER` outside the repository for the optional live
-positive test. The normal offline suite tests identity mismatches, ambiguous
-tables, local-clock order, status semantics, malformed history, cancellation,
-deadlines, response bounds and not-found classification.
+- No ETA.
+- Domestic numbers are covered only by a synthetic fixture, not a live check.
 
-Prior art inspected:
-[BINM7MD/jp-post-api at 1d5fa05](https://github.com/BINM7MD/jp-post-api/blob/1d5fa05ca698d94c2330ee767f763011cefa499f/jp.js)
-(MIT) uses the same direct endpoint and alternating rows. This adapter was
-implemented against the current official response with independent identity,
-schema, transport and status checks.
+## Testing
+
+`npm run test:carriers:live -- packages/carriers/carriers/japan-post` with `JAPAN_POST_TRACKING_NUMBER`.

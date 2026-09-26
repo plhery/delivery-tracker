@@ -1,81 +1,63 @@
 # Usage analytics
 
-The official deployment uses Umami 3.2 at `https://u.plhery.com`. The web and PWA
-share the **Delivery Tracker** property; native uses **Delivery Tracker iOS**.
-Use your Umami administration dashboard to inspect these properties. Web event
-data distinguishes
-`platform=web` and `platform=pwa`; native sends `platform=ios`. `mode` distinguishes
-anonymous, demo and account screens. Umami's visitor counts are estimates from
-its rotating IP/user-agent session hashing, not registered accounts or installs.
-No persistent identifier or account identity is supplied by either client.
+Optional, self-hosted [Umami](https://umami.is). Web and PWA share one property (tagged
+`platform=web` or `platform=pwa`); the iPhone app uses a second one (`platform=ios`).
+`mode` separates anonymous, demo and account screens. Neither client sends a persistent
+identifier or account identity, so visitor counts are Umami's own estimates.
 
 ## Configuration
 
-Set these **runtime** environment variables in the deployment:
+Runtime environment variables, all four required:
 
-- `UMAMI_URL`: HTTPS origin of the public collector, without a path.
-- `UMAMI_APP_ORIGIN`: HTTPS origin of this delivery instance.
-- `UMAMI_WEBSITE_ID`: Umami UUID for the web/PWA property.
-- `UMAMI_IOS_WEBSITE_ID`: Umami UUID for the native property.
+| Variable | Value |
+| --- | --- |
+| `UMAMI_URL` | HTTPS origin of the collector, no path |
+| `UMAMI_APP_ORIGIN` | HTTPS origin of this instance |
+| `UMAMI_WEBSITE_ID` | Umami id of the web/PWA property |
+| `UMAMI_IOS_WEBSITE_ID` | Umami id of the iPhone property |
 
-All four are required, and collection is enabled only with `NODE_ENV=production`.
-These are public identifiers, never API keys. `/api/analytics/config` is uncached
-and exposes only these collection settings. Clients verify that the configured
-hostname matches the service they are using. The web CSP adds only the configured
-Umami origin to `connect-src`; no remote JavaScript is loaded. Leave configuration
-unset for local builds, forks, staging and Coolify previews. Native simulators
-and builds configured for local demo mode always disable collection.
+Collection only runs with `NODE_ENV=production`. Leave these unset for local builds,
+forks, staging and previews. Simulators and demo builds never send events.
 
-Both clients use Umami's `/api/send` collection protocol. Queues are bounded to
-30 pending events; requests time out after five seconds, failures are dropped,
-and analytics never delay or fail user operations. Events are not persisted or
-replayed after offline use. Session cache tokens live in memory only. Native requests use an iOS-compatible
-user agent with a DeliveryTracker suffix because Umami filters bare app user
-agents as bots; explicit payload metadata still identifies the native app.
+The values are public ids, not keys. Clients read them from the uncached
+`/api/analytics/config` and check the hostname. The CSP allows only that origin in
+`connect-src`, and no remote script is loaded.
 
-## Event catalog
+Both clients post to Umami's `/api/send`. The queue holds at most 30 events, and requests
+time out after 5 s. Failures are dropped and never delay the user; nothing is stored for
+offline replay. The iPhone app uses a Safari-like user agent with a `DeliveryTracker`
+suffix, because Umami drops bare app user agents as bots.
 
-[`shared/analytics.json`](../shared/analytics.json) is the authoritative allowlist
-of screens, actions and API mappings. `npm run ios:resources` copies this catalog
-into the native bundle. No action names are derived from user text.
+## Events
 
-- **Navigation:** welcome, sign-in, deliveries, passport, friends, parcel,
-  invitation, account, add-parcel and notifications. Paths are virtual screen
-  names, never actual URLs containing parcel IDs, auth codes or invite links.
-- **Authentication:** Google sign-in and email-code attempts/results, successful
-  authentication, sign-out, demo entry/exit.
-- **Parcels:** add, rename, change carrier, archive, restore, permanent delete,
-  per-parcel notification changes, refresh one/all, copy tracking, carrier link,
-  paste, native scanner, shared input.
-- **Discovery:** debounced search usage (no query), status/carrier filter changes,
-  sorting, archive/filter opening, friends and stamp interaction.
-- **Friends:** profile save, create/revoke/accept invitation, remove friend,
-  disable friends, copy/share invitation.
-- **Preferences and account:** language, appearance, notifications, native widget
-  and Live Activity settings, account export/deletion, privacy notice, app opens,
-  native foreground and notification/deep-link opens.
+[`shared/analytics.json`](../shared/analytics.json) is the allowlist of screens, actions
+and API mappings. `npm run ios:resources` copies it into the iPhone bundle. Screen paths
+are virtual names, never real URLs.
 
-User API operations emit one final result after any authentication retry:
-`outcome=success`, `error`, or `accepted` for a queued HTTP 202 action. Accepted
-refresh events mean the server queued work, not that every carrier succeeded.
-Automatic polling, carrier detection, token renewal, device-token registration,
-and invitation previews are excluded. UI interactions use no outcome or
-`started` when completion is controlled by the OS (for example native sharing).
-Local demo parcel mutations never count as successful account API operations.
+- **Navigation**: welcome, sign-in, deliveries, passport, friends, parcel, invitation,
+  account, add-parcel, notifications.
+- **Auth**: sign-in attempts and results, sign-out, demo entry/exit.
+- **Parcels**: add, rename, change carrier, archive, restore, delete, mute, refresh, copy,
+  open carrier link, paste, scan, share-in.
+- **Discovery**: search used (never the query), filters, sorting.
+- **Friends**: profile save, invitation create/revoke/accept/share, remove, disable.
+- **Settings**: language, appearance, notifications, widgets, Live Activities, export,
+  account deletion, app opens.
 
-## Privacy and verification
+API actions report one final `outcome`: `success`, `error`, or `accepted` for a queued
+(HTTP 202) request. `accepted` means the work was queued, not that carriers answered.
+Background polling, detection, token renewal and invitation previews aren't tracked.
+Demo actions never count as account API successes.
 
-No emails, account IDs, parcel IDs/labels/contents, tracking numbers, postcodes,
-invitation codes, raw errors, search terms, query strings or referrers are sent.
-Umami still receives the connection IP/user agent, basic device metadata and
-language. Account's **Usage analytics** toggle disables further collection and
-clears queued events; the web also honors DNT, GPC and `umami.disabled=1`.
-See the public privacy notice for retention and controls.
+## Privacy
 
-Tests cover payload sanitization, configuration gating, opt-outs, queue bounds,
-network failures, and the shared action mapping. To verify deployment, load the
-public app, open a screen and exercise a harmless control; confirm page views
-and the named event in the web property. Rebuild/install the native app to pick
-up instrumentation; existing installations cannot gain new Swift code from a
-server deployment. Do not test destructive account/parcel operations on real
-user data. See Umami's [collection API](https://docs.umami.is/docs/api/sending-stats).
+Never sent: emails, account or parcel ids, labels, tracking numbers, postcodes, invitation
+codes, errors, search terms, query strings or referrers. Umami still sees the IP, user
+agent, basic device data and language.
+
+The **Usage analytics** switch in Account turns collection off and clears the queue. The
+web also honours DNT, GPC and `umami.disabled=1`. Retention is described in the public
+privacy notice.
+
+To check a deployment, open the app, change a harmless setting, and confirm the page view
+and event in Umami. iPhone changes need a new app build.

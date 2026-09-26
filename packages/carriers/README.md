@@ -1,67 +1,100 @@
-# Carrier package
+# Carriers
 
-Everything the app knows about parcel carriers lives here: the catalog, the
-tracking-number detection engine, the scrapers ("adapters") and the universal
-providers, the status vocabulary, the sample corpus and one folder of
-documentation per carrier. The package imports nothing from the web
-application, so it can move to its own repository later.
+Everything the app knows about carriers: the catalog, tracking-number detection, the
+adapters that fetch history, the universal fallback providers and the status vocabulary.
+The package imports nothing from the app, which plugs in HTTP, browser sessions and
+telemetry through [`AdapterEnvironment`](core/adapter/index.ts).
 
-- [ARCHITECTURE.md](ARCHITECTURE.md): the design, the decisions and their
-  alternatives.
-- [CORPUS.md](CORPUS.md): the tracking-number corpus and the detection sweep.
-- [providers/README.md](providers/README.md): the universal provider chain.
-- [providers/COVERAGE.md](providers/COVERAGE.md): live carrier-by-provider coverage,
-  event counts and history-quality comparisons, including direct tracking.
+- [ARCHITECTURE.md](ARCHITECTURE.md): how adapters are registered, run and reported.
+- [CORPUS.md](CORPUS.md): sample tracking numbers and the detection sweep.
+- [providers/](providers/README.md): Ship24, ParcelsApp, 17TRACK, Postal Ninja, UPU, plus
+  [coverage by carrier](providers/COVERAGE.md).
+- [docs/ROUTING.md](../../docs/ROUTING.md): how a refresh chooses between an adapter and the
+  providers.
 
 ## Layout
 
+```text
+core/          detection, catalog, status vocabulary, result contract, errors, transport, runner
+carriers/<id>/ one folder per carrier (below)
+providers/     universal providers and the shared discovery chain
+generated/     catalog, adapter registry and brand assets (never edit by hand)
+scripts/       new-carrier, generate-registry, generate-readme, generate-brand, detection-golden
 ```
-core/         detection, catalog, status vocabulary, result contract, errors, transport, runner, telemetry
-carriers/<id> one folder per carrier: carrier.json, numbers.json, statuses.json, README, adapter, tests, fixtures
-providers/    Ship24, ParcelsApp, 17TRACK, Postal Ninja and the discovery chain
-generated/    catalog and adapter registry, produced by the scripts below
-scripts/      new-carrier, generate-registry, generate-readme, detection-golden
-```
+
+A carrier folder holds:
+
+| File | Purpose |
+| --- | --- |
+| `carrier.json` | Source of truth: name, brand, timezone, links, inputs, capabilities, detection rules, `tracking.steps` |
+| `numbers.json` | Sample numbers with provenance ([CORPUS.md](CORPUS.md)) |
+| `statuses.json` | Observed status wording and codes, with evidence |
+| `adapter.ts`, `parser.ts`, `status.ts` | Retrieval, parsing and the status map (dedicated adapters only) |
+| `fixtures/`, `*.test.ts` | Scrubbed responses, offline tests, env-gated live test |
+| `README.md` | Only what the files above can't say: request flow, gotchas, limitations |
+
+`npm run contract:generate` merges every `carrier.json` into `contracts/openapi.json`
+(`x-carriers`), the TypeScript and Swift contracts, the package registry and the iPhone's
+offline catalog. `/api/carriers` serves the same data. Edit the folder, never the
+generated output.
+
+**Detection.** Broad numeric shapes are suggestions the user confirms. Distinctive
+families and checksum-valid UPU S10 numbers pick a carrier automatically. Every rule needs
+a sample number, and undeclared overlaps between carriers fail the sweep. The iPhone app
+replays the same golden file.
 
 ## Adding a carrier
 
-1. `npm run carrier:new -- --id <id> --name "<Name>" --canary-url <https url>`
-   scaffolds the folder with a valid `carrier.json`, empty `numbers.json` and
-   `statuses.json`, and a README skeleton.
-2. Fill `carrier.json`: detection rules (each with an `id` and a `source`),
-   links, portal facts, inputs, `capabilities`, `tracking.steps`.
-3. Add sample numbers to `numbers.json` with their evidence family and source
-   (CORPUS.md), run the sweep, record what the engine answers, declare any new
-   overlap in `core/detection/collisions.json`.
-4. For a dedicated adapter: `adapter.ts` exporting a pure `parse()` and the
-   `adapter` factory, `status.ts` with the code or wording map and its
-   provenance, scrubbed `fixtures/`, `adapter.test.ts` with the capability guard
-   and privacy assertions, and an env-gated `adapter.live.test.ts`.
-5. Keep integration-specific decisions and verification in one README.md;
-   update the [maintained sources](ARCHITECTURE.md#sources-of-truth) rather than
-   copying catalog facts or general scraper instructions into it.
-6. `npm run contract:generate` (merges the catalog, regenerates the registry),
-   `node packages/carriers/scripts/generate-readme.mjs`, then
-   `npm run test:contract`, `npm run lint`, `npm run typecheck` and the test
-   suites.
-7. Add the database carrier constraint migration the app needs (see
-   docs/DEPLOYMENT.md) and verify one real parcel end to end before calling the
-   carrier supported.
+1. `npm run carrier:new -- --id <id> --name "<Name>" --canary-url <https url>` scaffolds
+   the folder.
+2. Fill `carrier.json`: detection rules (each with an `id` and a `source`), links, inputs,
+   `capabilities`, `tracking.steps`.
+3. Add sample numbers to `numbers.json` and run the sweep ([CORPUS.md](CORPUS.md)).
+4. For a dedicated adapter: `adapter.ts` with a pure `parse()` and the factory, `status.ts`,
+   scrubbed `fixtures/`, `adapter.test.ts` (capability guard and privacy assertions) and an
+   env-gated `adapter.live.test.ts`.
+5. Automatic carriers also need:
+   - a public, credential-free `canaryUrl` that the adapter depends on;
+   - a live test that sends a well-formed wrong number, which the daily canary runs;
+   - a rendered-link case in `src/server/trackingLinkCases.ts`, or a reason in
+     `uncheckedTrackingLinks`.
+6. Adapters must use bounded timeouts and response sizes, and fall back to the carrier link
+   when automatic tracking isn't reliable.
+7. Keep the README short: how retrieval works, gotchas and why, limitations, how to run
+   the live test. No dates, status tables or copies of `carrier.json`.
+8. Run `npm run contract:generate`, `node packages/carriers/scripts/generate-readme.mjs`,
+   `npm run ios:resources`, then `npm run test:contract`, lint, typecheck and the tests.
+9. Add a migration extending the package carrier constraint, and verify one real parcel end
+   to end.
 
-## Running the checks
+## Tests
 
 ```sh
-npx vitest run --config vitest.server.config.ts packages/carriers   # offline tests
-npm run test:carriers:live                                          # opt-in live probes
-npm run test:contract                                               # generated artifacts current
+npx vitest run --config vitest.server.config.ts packages/carriers   # offline, fixtures only
+npm run test:carriers:live      # opt-in live probes; real numbers come from env vars
+npm run test:tracking-links     # rendered carrier tracking pages, synthetic numbers
+npm run test:contract           # generated files are current
 ```
 
-## Carriers
+Live probes send well-formed but wrong numbers and expect each carrier's clean not-found
+(or its known challenge). Real numbers are only ever read from environment variables.
+
+The **daily canary** workflow runs the probes that need no private input
+(`npm run test:carriers:canary`, with Chromium), the rendered-link checks, and a
+reachability check of every `canaryUrl` (404, 410 and 5xx fail). A failing run on `main`
+opens or updates one "Daily carrier canary failures" issue, and a clean run closes it.
+Challenges and bot blocks count as inconclusive, not as passes.
+
+The canary never sends or logs tracking numbers. It reports carrier ids, hosts, HTTP
+statuses, timings and network error codes.
+
+`src/server/fixtures/auditedTrackingHistory.json` replays reviewed provider descriptions
+(no numbers, times or places) through stage classification on every `npm test`.
+
+## Overview
 
 <!-- GENERATED:carriers -->
-105 carriers: 46 with a dedicated adapter, 55 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
-
-Roughly ordered by familiarity and prominence, with major carriers first (an editorial order, not a market-share ranking).
+105 carriers: 46 with a dedicated adapter, 55 through the universal providers, the rest through another carrier's adapter or link only. Roughly ordered by prominence. Generated by `node packages/carriers/scripts/generate-readme.mjs`.
 
 | Id | Name | Route | Steps | Capabilities | Sample numbers | Known statuses | Docs |
 | --- | --- | --- | --- | ---: | ---: | ---: | --- |
@@ -95,15 +128,15 @@ Roughly ordered by familiarity and prominence, with major carriers first (an edi
 | `india-post` | India Post | dedicated | direct | 3 | 4 | 13 | [README](carriers/india-post/README.md) |
 | `poste-italiane` | Poste Italiane | dedicated | direct | 2 | 8 | 17 | [README](carriers/poste-italiane/README.md) |
 | `correos-spain` | Correos | dedicated | direct | 5 | 2 | 33 | [README](carriers/correos-spain/README.md) |
-| `bpost` | bpost | universal providers |  | 0 | 4 | 0 | [README](carriers/bpost/README.md) |
+| `bpost` | bpost | universal providers |  | 0 | 4 | 0 |  |
 | `austrian-post` | Austrian Post | universal providers |  | 0 | 2 | 0 |  |
 | `postnord` | PostNord | universal providers |  | 0 | 1 | 0 |  |
 | `tnt` | TNT | universal providers |  | 0 | 4 | 0 |  |
 | `aramex` | Aramex | universal providers |  | 0 | 1 | 0 |  |
-| `yunexpress` | YunExpress | universal providers |  | 0 | 1 | 0 | [README](carriers/yunexpress/README.md) |
+| `yunexpress` | YunExpress | universal providers |  | 0 | 1 | 0 |  |
 | `four-px` | 4PX | universal providers |  | 0 | 1 | 0 |  |
 | `yanwen` | Yanwen | universal providers |  | 0 | 2 | 0 |  |
-| `j-and-t` | J&T Express | universal providers |  | 0 | 1 | 0 | [README](carriers/j-and-t/README.md) |
+| `j-and-t` | J&T Express | universal providers |  | 0 | 1 | 0 |  |
 | `jd-logistics` | JD Logistics | universal providers |  | 0 | 1 | 0 |  |
 | `zto` | ZTO Express | universal providers |  | 0 | 1 | 0 |  |
 | `yto` | YTO Express | universal providers |  | 0 | 1 | 0 |  |
@@ -120,22 +153,22 @@ Roughly ordered by familiarity and prominence, with major carriers first (an edi
 | `parcelforce` | Parcelforce Worldwide | universal providers |  | 0 | 1 | 0 |  |
 | `purolator` | Purolator | universal providers |  | 0 | 7 | 0 |  |
 | `ontrac` | OnTrac | universal providers |  | 0 | 15 | 0 |  |
-| `delhivery` | Delhivery | universal providers |  | 0 | 2 | 0 | [README](carriers/delhivery/README.md) |
-| `blue-dart` | Blue Dart | universal providers |  | 0 | 3 | 0 | [README](carriers/blue-dart/README.md) |
+| `delhivery` | Delhivery | universal providers |  | 0 | 2 | 0 |  |
+| `blue-dart` | Blue Dart | universal providers |  | 0 | 3 | 0 |  |
 | `dtdc` | DTDC | universal providers |  | 0 | 1 | 0 |  |
 | `ninja-van` | Ninja Van | universal providers |  | 0 | 2 | 0 |  |
 | `packeta` | Packeta | dedicated | direct | 4 | 4 | 16 | [README](carriers/packeta/README.md) |
 | `poczta-polska` | Poczta Polska | universal providers |  | 0 | 6 | 0 |  |
 | `bring-posten` | Bring | universal providers |  | 0 | 1 | 0 |  |
 | `posti` | Posti | dedicated | direct → refresh | 5 | 1 | 13 | [README](carriers/posti/README.md) |
-| `an-post` | An Post | universal providers |  | 0 | 1 | 0 | [README](carriers/an-post/README.md) |
+| `an-post` | An Post | universal providers |  | 0 | 1 | 0 |  |
 | `ctt` | CTT Portugal | dedicated | direct | 3 | 1 | 10 | [README](carriers/ctt/README.md) |
-| `ctt-express` | CTT Express | universal providers |  | 0 | 3 | 0 | [README](carriers/ctt-express/README.md) |
-| `brt` | BRT | universal providers |  | 0 | 3 | 0 | [README](carriers/brt/README.md) |
-| `seur` | SEUR | universal providers |  | 0 | 3 | 0 | [README](carriers/seur/README.md) |
-| `correos-express` | Correos Express | universal providers |  | 0 | 3 | 0 | [README](carriers/correos-express/README.md) |
-| `mrw` | MRW | universal providers |  | 0 | 5 | 0 | [README](carriers/mrw/README.md) |
-| `nacex` | NACEX | universal providers |  | 0 | 2 | 0 | [README](carriers/nacex/README.md) |
+| `ctt-express` | CTT Express | universal providers |  | 0 | 3 | 0 |  |
+| `brt` | BRT | universal providers |  | 0 | 3 | 0 |  |
+| `seur` | SEUR | universal providers |  | 0 | 3 | 0 |  |
+| `correos-express` | Correos Express | universal providers |  | 0 | 3 | 0 |  |
+| `mrw` | MRW | universal providers |  | 0 | 5 | 0 |  |
+| `nacex` | NACEX | universal providers |  | 0 | 2 | 0 |  |
 | `colis-prive` | Colis Privé | dedicated | direct | 1 | 3 | 34 | [README](carriers/colis-prive/README.md) |
 | `relais-colis` | Relais Colis | dedicated | direct | 1 | 3 | 42 | [README](carriers/relais-colis/README.md) |
 | `paack` | Paack | dedicated | direct | 2 | 5 | 44 | [README](carriers/paack/README.md) |
@@ -159,11 +192,11 @@ Roughly ordered by familiarity and prominence, with major carriers first (an edi
 | `c-chez-vous` | C Chez Vous | dedicated | direct | 1 | 2 | 5 | [README](carriers/c-chez-vous/README.md) |
 | `colisweb` | Colisweb | dedicated | direct | 2 | 1 | 20 | [README](carriers/colisweb/README.md) |
 | `delivengo` | Delivengo | via la-poste | direct → retry | 4 | 1 | 0 | [README](carriers/delivengo/README.md) |
-| `uniuni` | UniUni | universal providers |  | 0 | 2 | 0 | [README](carriers/uniuni/README.md) |
-| `speedx` | SpeedX | universal providers |  | 0 | 4 | 0 | [README](carriers/speedx/README.md) |
+| `uniuni` | UniUni | universal providers |  | 0 | 2 | 0 |  |
+| `speedx` | SpeedX | universal providers |  | 0 | 4 | 0 |  |
 | `gofo` | GOFO Express | universal providers |  | 0 | 2 | 0 |  |
-| `ecoscooting` | Ecoscooting | universal providers |  | 0 | 5 | 0 | [README](carriers/ecoscooting/README.md) |
-| `tipsa` | TIPSA | universal providers |  | 0 | 1 | 0 | [README](carriers/tipsa/README.md) |
+| `ecoscooting` | Ecoscooting | universal providers |  | 0 | 5 | 0 |  |
+| `tipsa` | TIPSA | universal providers |  | 0 | 1 | 0 |  |
 | `canpar` | Canpar | universal providers |  | 0 | 4 | 0 |  |
 | `spee-dee` | Spee-Dee | universal providers |  | 0 | 3 | 0 |  |
 | `sunyou` | SunYou | dedicated | direct | 1 | 3 | 7 | [README](carriers/sunyou/README.md) |

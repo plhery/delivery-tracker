@@ -1,15 +1,14 @@
 ## What changed
 
-Describe the user-facing and technical effect of this change.
+The user-facing and technical effect of this change.
 
-## Verification
+## Checklist
 
-- [ ] Frontend lint, tests, and build pass when applicable.
-- [ ] Next.js lint, type checks, and tests pass when applicable.
-- [ ] Database changes include migration and RLS assertions.
-- [ ] No private tracking numbers, postcodes, credentials, internal endpoints, or capability URLs are included in the diff, description, logs, or screenshots. Cited public corpus examples follow `packages/carriers/CORPUS.md`.
-- [ ] Documentation reflects configuration or behavior changes.
+- [ ] Lint, type checks, tests and build pass for the areas touched.
+- [ ] Database changes include a migration and RLS assertions.
+- [ ] No private tracking numbers, postcodes, credentials, internal endpoints or capability URLs in the diff, description, logs or screenshots. Public corpus examples follow `packages/carriers/CORPUS.md`.
+- [ ] Docs reflect configuration or behaviour changes.
 
 ## Screenshots
 
-Include before/after screenshots for visible changes, with private delivery data removed.
+Before/after for visible changes, with private delivery data removed.

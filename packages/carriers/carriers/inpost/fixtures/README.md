@@ -1,5 +1,5 @@
 # InPost fixtures
 
-| File | Scenario | Provenance |
-|---|---|---|
-| `delivered.json` | Cross-border hub response for a delivered parcel: registration, middle-mile move, locker arrival and collection, all four codes mapped, plus the recipient identity and signature fields the hub can carry. | Constructed after the live 2026-09-10 hub shape and the prior-art payload samples. Every identifier, name, address and timestamp is made up. |
+- `delivered.json`: hub response for a delivered cross-border parcel (registration, middle
+  mile, locker arrival, collection) plus the recipient and signature fields the parser must
+  drop. Constructed from the live hub shape; every identifier, name and address is synthetic.

@@ -1,81 +1,50 @@
-# Tracking incidents and notifications
+# Tracking incidents
 
-The host records individual adapter attempts, retries and fallbacks in logs,
-Sentry metrics and Prometheus. A recovered transport failure does not create a
-Sentry issue. The router still reports carrier corrections, input observations
-and carrier names the catalog does not know separately; those are not outage
-notifications.
+Carrier and provider outages open a single Sentry incident, and a recovery event closes it.
+Postgres (`record_tracking_health`) decides when, from scheduled refreshes only. Manual
+refreshes, unsupported carriers and superseded work don't count. Samples last 24 hours and
+hold only provider ids, outcome categories, HTTP statuses and opaque ids.
 
-Scheduled refreshes feed `record_tracking_health` in Postgres. Manual refreshes,
-unsupported carriers and superseded work do not contribute to incident thresholds.
-Samples last 24 hours and contain only provider identifiers, outcome categories,
-HTTP statuses and opaque internal identifiers, not tracking payloads.
+Individual attempts, retries and fallbacks go to logs, metrics and Prometheus instead. A
+failure that recovers never opens an issue. See [OBSERVABILITY.md](../../docs/OBSERVABILITY.md).
 
-| Incident | Opens when | Recovery |
+| Incident | Opens when | Recovers when |
 | --- | --- | --- |
-| Shipment refresh | Three failed scheduled checks of the same parcel in 24 hours, or at least five failures and more than 20% of checks in one hour | Three latest checks succeeded and no refresh threshold remains breached |
-| Direct transport | More than 50% failed, at least ten direct probes in 24 hours | Three latest direct probes succeeded |
-| Provider lookup | More than 50% failed, at least ten lookups in 24 hours | Three latest lookups succeeded |
+| Shipment refresh | 3 failed scheduled checks of one parcel in 24 h, or ≥ 5 failures and > 20 % of checks in one hour | The 3 latest checks succeed and no threshold is still breached |
+| Direct transport | > 50 % of ≥ 10 direct probes failed in 24 h | The 3 latest direct probes succeed |
+| Provider lookup | > 50 % of ≥ 10 lookups failed in 24 h | The 3 latest lookups succeed |
 
-One sample per provider and scheduled refresh prevents retries from inflating the
-rate. Direct transport and provider totals are distinct: a direct failure followed
-by a successful browser result is a failed direct sample and a successful provider
-sample. A carrier whose only tier is direct records the provider sample alone, so
-one outage opens one incident. Missing input and positive not-found results are
-healthy samples that count toward recovery but never toward the outage rate, so a
-provider whose only traffic is a probe for an unknown parcel can still recover. A
-skipped direct probe during UPS cooldown is not a success. A scheduled check that
-contacted no provider because every tier was cooling down records no sample at all.
+## Counting rules
 
-An incident recovers only on healthy samples of its own kind and subject. When
-that tier is no longer probed (the carrier has no parcel left, or a code change
-stopped recording the sample) the incident closes once its last sample has aged
-out of the 24-hour window. No recovery event is sent, because no recovery was
-observed; resolve the Sentry issue by hand. A tier that is still failing when
-traffic resumes opens a new incident.
+- One sample per provider per scheduled refresh, so retries don't inflate the rate.
+- A direct failure rescued by the browser counts as a failed *direct* sample and a
+  successful *provider* sample. A carrier with only a direct step records the provider
+  sample alone, so one outage opens one incident.
+- Missing input and genuine not-found are healthy. They count toward recovery, never toward
+  an outage.
+- A step skipped during a cooldown is not a success. A check that contacted nobody because
+  everything was cooling down records nothing.
+- A parcel whose own carrier says not-found stays `waiting` even if every fallback fails.
+  The fallbacks can't know a parcel the carrier hasn't announced.
+- If a tier stops being probed (no parcels left), its incident closes once its last sample
+  ages out, **without** a recovery event. Resolve that Sentry issue by hand.
 
-A parcel with no progress whose own carrier answers not-found stays `waiting`
-even when every fallback provider fails on the same number: the fallback chain
-cannot know a parcel the carrier has not announced, so that is not a refresh
-failure. The routing state (cooldowns, next check) is still persisted.
+## Delivery
 
-Postgres serializes incident transitions. Repeated incidents notify at most once
-per six hours; a recovery is emitted once without that delay. A pending event has
-a two-minute delivery lease and is acknowledged only after the Sentry SDK flushes.
-A crashed worker or failed flush can retry the pending event on a later check.
-Delivery is at least once: a crash between send and acknowledgement may duplicate
-an event. The SDK fingerprint groups it with the same incident.
+Postgres serializes transitions. A repeated incident notifies at most once per 6 hours;
+recovery is sent at once. Events are delivered at least once (2-minute lease, acknowledged
+after the SDK flushes), and duplicates group under the same fingerprint.
 
-Sentry events use `component:tracking-health`, `incident_kind`, `incident_state`
-and `provider` tags. The `tracking_health` context includes counts, impact,
-evidence, suppression policy and next steps. Recovery events share the incident
-fingerprint and say “recovered”; they do not change Sentry's issue status.
-Configure the production notification rule to match `component:tracking-health`
-and all levels, including informational recovery events. Do not apply another
-frequency threshold to these events: Postgres already made that decision.
-Keep infrastructure notification rules separate from recovered carrier attempts.
-Grafana's carrier dashboard remains useful for investigation without sending a
-second copy of the same carrier alert.
+Events carry `component:tracking-health`, `incident_kind`, `incident_state` and `provider`
+tags, plus a `tracking_health` context with counts, impact, evidence and next steps.
+Recovery events say "recovered" but don't change the issue status.
 
-## Retry policy
+**Alert rule:** match `component:tracking-health` at all levels, informational recoveries
+included. Don't add a frequency threshold, because Postgres already applied one. Keep
+infrastructure alerts in separate rules.
 
-- DPD parcel-details reads retry one 502/503/504 after 1–3 seconds of jitter,
-  within the original HTTP request budget. Authentication, parsing, 404 and 429
-  are not retried by this policy. An explicit Retry-After suppresses this immediate retry.
-- UPS reads the status reply the browser made from the tracking page (the
-  `ops/trawl` compatibility build captures it). Plain HTTP runs only without a
-  browser service: since 2026-09-10 Akamai holds that status call open until the
-  timeout for any session a browser did not establish, so no direct probe runs and
-  no `direct` sample is recorded while a browser service is configured.
-- La Poste retries an HTTP 403 three times immediately, within the original
-  deadline, its "Site indisponible - Incident en cours" page included: the page
-  is served for single requests while the next one succeeds. A lasting incident
-  fails every attempt and then goes to provider fallback and cooldown.
-- TRAWL retries a confirmed closed-browser response once, only if `/health` reports
-  a live, available browser and time remains in the original scrape budget. Other
-  HTTP 500s and a still-busy/unhealthy pool are not retried by this policy.
+If the health functions are missing, the audit reports an evaluation failure; saving
+shipments is never affected.
 
-Deploy the health migration before deploying the application. Missing RPCs report
-an audit/health evaluation failure instead of breaking shipment persistence.
-`20260920100000_tracking_health_expired_incidents.sql` only replaces the
-function body, so it can be applied before or after the application.
+[`scraper-health-dashboard.json`](scraper-health-dashboard.json) is an importable Sentry
+dashboard for step latency, errors and recovery.

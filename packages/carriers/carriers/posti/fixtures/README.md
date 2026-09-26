@@ -1,4 +1,5 @@
-The GraphQL shape and English event wording follow the public Posti tracker
-observed on 2026-09-21. All identifiers, timestamps, measurements, places and
-private-field sentinels in this fixture are synthetic. It contains no captured
-customer response or anonymous session token.
+# Posti fixtures
+
+- `delivered.json`: `SearchShipments` answer following the public tracker's GraphQL shape and
+  English wording. Every identifier, time, measurement, place and private-field sentinel is
+  synthetic; no captured response or session token.

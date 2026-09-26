@@ -1,5 +1,3 @@
-# SunYou fixtures
+# Fixtures
 
-| File | Scenario | Provenance |
-|---|---|---|
-| `delivered.json` | The unwrapped `queryTrack` payload for a delivered cross-border parcel: two origin scans stamped `+08:00`, two destination scans stamped `+02:00`, and the recipient and signature fields such a record can carry. | Constructed after the per-leg timezone behaviour documented in the public prior-art fixtures at https://github.com/ha-parcel-integrations/ha-sunyou/blob/main/tests/payloads.py. `SYAE100000001` is the open-source example number already in `numbers.json`; the names, the address, the signature URL and every timestamp are made up. |
+`delivered.json` is an unwrapped `queryTrack` payload for a delivered parcel: two `+08:00` origin scans, two `+02:00` destination scans, and recipient and signature fields the adapter must ignore. Shaped after the [ha-sunyou](https://github.com/ha-parcel-integrations/ha-sunyou/blob/main/tests/payloads.py) test payloads; names, address, signature URL and times are made up.

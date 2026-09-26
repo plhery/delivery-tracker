@@ -1,29 +1,25 @@
-# Contributing to Delivery Tracker
+# Contributing
 
-Thanks for helping improve Delivery Tracker. Keep changes focused,
-explain the user problem they solve, and keep private shipment data out of
-code, tests, screenshots, logs attached to issues, and commit descriptions.
+Thanks for helping. Keep changes focused and explain the user problem they solve.
 
-The [tracking-number corpus](packages/carriers/CORPUS.md) permits cited examples
-already published by carriers, open-source projects, merchants or public shipment
-reports. Keep their provenance; use synthetic values for ordinary fixtures.
-Private live-test inputs belong outside the repository or in an ignored
-`private.numbers.json` or `.private/` directory. Sanitize raw captures and
-diagnostic exports before sharing them, even when the test itself passed.
+**Keep private shipment data out** of code, tests, screenshots, issue logs and commit
+messages. Use synthetic values in fixtures. Published tracking numbers may go in the
+[corpus](packages/carriers/CORPUS.md) with their source. Real numbers for live tests belong
+outside the repo, or in the git-ignored `private.numbers.json` or `.private/`. Sanitize
+captures and diagnostic exports before sharing them.
 
-## Local setup
+## Setup
 
-1. Install Node 24.
-2. Run `nvm use && npm install`.
-3. Run `npm run dev` for the self-contained demo application.
+```bash
+nvm use        # Node 24
+npm install
+npm run dev    # self-contained demo, no account or database needed
+```
 
-Production mode needs a Supabase project and the server-only values documented
-in `.env.example`. Never expose a service-role key through a `NEXT_PUBLIC_`
-variable.
+Production mode needs Supabase and the server values in `.env.example`. Never expose a
+service-role key through a `NEXT_PUBLIC_` variable.
 
 ## Before opening a pull request
-
-Run:
 
 ```bash
 npm run lint
@@ -32,42 +28,19 @@ npm run test:scripts
 npm run test:contract
 npm run test:coverage
 npm run test:coverage:server
-npm run test:e2e
+npm run test:e2e        # first time: npx playwright install chromium
 npm run build
 npm run test:pwa
 ```
 
-Install Chromium once before the first browser run with
-`npx playwright install chromium`. The journeys run against the fictional demo
-data at desktop and mobile viewport sizes.
+The browser tests use the fictional demo data at desktop and mobile sizes.
 
-Database changes must be append-only migrations with corresponding assertions
-in `supabase/tests/assertions.sql`. Keep commits small enough to review on their
-own and update the OpenAPI contract before changing generated API types.
-
-## Carrier integrations
-
-Every carrier is described by `packages/carriers/carriers/<id>/carrier.json`,
-the single source of truth for its name, brand, timezone, portal, tracking
-links and detection rules; `npm run carrier:new` scaffolds a folder and
-`npm run contract:generate` merges them into `contracts/openapi.json` and the
-generated TypeScript, Swift and package catalogs. Change the folder, not the
-generated contract.
-
-Carrier sites and undocumented APIs can change without notice. New adapters
-must use bounded timeouts and response sizes, keep diagnostics in the protected
-sinks described in [Observability](docs/OBSERVABILITY.md), and
-degrade to a carrier link when reliable automatic tracking is unavailable.
-Every automatic carrier also needs a public, credential-free `canaryUrl` in the
-carrier contract, pointing at a page its adapter depends on, and an adapter live
-test that sends a validly shaped wrong number without private input: the daily
-canary runs those tests. Add a rendered-link case for the carrier's tracking
-page to `src/server/trackingLinkCases.ts`, or record why it cannot be checked. The daily front-door probe reports carrier IDs, hostnames, HTTP statuses,
-per-attempt timing and bounded network error details (types, codes, syscalls and
-failed IP addresses/ports, including nested causes). It records each attempt as
-it completes, including failures that recover on retry, and prints the runtime
-version and probe settings. It never sends or logs tracking numbers, and excludes
-raw error messages, stacks, full URLs, headers and response bodies.
+- **Database changes** are new, append-only migrations, with assertions in
+  `supabase/tests/assertions.sql`.
+- **API changes** start in `contracts/openapi.json`; regenerate the types from it.
+- **Carriers**: edit the carrier's folder, never the generated contract. See
+  [adding a carrier](packages/carriers/README.md).
+- Keep commits small enough to review on their own.
 
 By contributing, you agree that your contribution is licensed under the
 repository's Apache License 2.0.

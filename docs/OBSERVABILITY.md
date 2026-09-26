@@ -1,109 +1,67 @@
-# Tracking observability
+# Observability
 
-Delivery Tracker records a carrier refresh in three deliberately separate
-places:
+Each carrier refresh leaves a trace in three places:
 
-1. one-line JSON logs explain the live control flow and identify the tracking number;
-2. private Postgres audit rows retain the classification evidence and every
-   completed step; and
-3. Sentry groups actionable failures and suspicious classifications, using an
-   opaque `attempt_id` to link back to Postgres.
+1. **Logs**: one-line JSON describing the control flow, including the tracking number.
+2. **Postgres audit**: private rows with every step and the evidence behind each status
+   decision.
+3. **Sentry**: groups failures and suspicious classifications. An opaque `attempt_id`
+   links each event back to Postgres.
 
-Sentry is a protected diagnostic data store for this project. Original errors,
-their causes, custom error properties, and SDK diagnostic context are retained
-there without application-level sanitization. Each tracking sync includes the
-parcel's `tracking_number` in structured console logs and as a searchable Sentry
-tag on errors, anomalies, and audit-write failures. These diagnostics retain the
-number even after the parcel and its database audit rows are deleted, subject to
-the configured log and Sentry retention. Postgres retains the complete refresh audit.
+Metrics (Sentry and Prometheus) cover latency and fallback use.
 
-Per-provider latency and hidden HTTP-to-browser recoveries are documented in
-[scraper monitoring](scraper-monitoring.md), with the live Sentry dashboard.
+**Privacy.** Logs and Sentry keep tracking numbers, original errors and upstream
+request/response details, with no field redaction in the app. They survive parcel deletion
+until retention expires. Restrict access and retention, and sanitize anything you share
+publicly.
 
-## What is recorded
+## Postgres audit
 
-`public.tracking_sync_attempts` stores one row per parcel check. It records the
-configured and actual carrier, job and package references, previous stage,
-provider status, reported and selected stages, event counts, outcome, error
-class, and anomaly codes. The bounded `status_text` is private database data;
-it exists specifically to explain a mistaken classifier decision. The audit
-writer does not automatically copy it into logs or Sentry.
+All tables and views here are service-role only.
 
-`public.tracking_sync_steps` records `selected`, `fetch`, `normalize`,
-`persist_events`, `persist_package`, and `complete` with status and duration.
-An expected not-yet-announced or wrong tracking number is a successful `fetch`
-whose disposition is `unannounced`; the attempt finishes as `waiting`. A
-network, challenge, parser, or storage failure has a failed step and finishes
-as `error`.
+- `tracking_sync_attempts`: one row per check. It holds the configured and actual carrier,
+  job and package, previous and selected stage, provider status, event counts, outcome,
+  error class, anomaly codes and a bounded private `status_text`.
+- `tracking_sync_steps`: `selected`, `fetch`, `normalize`, `persist_events`,
+  `persist_package`, `complete`, each with status and duration. A not-yet-announced number
+  is a successful `fetch` with disposition `unannounced`, and the attempt ends as
+  `waiting`. Real failures end as `error`.
 
-Completed audit rows are retained for 90 days. A running attempt older than 30
-minutes is marked `abandoned`, and that condition is sent to Sentry. Package or
-account deletion cascades immediately through its audit history.
+Completed rows are kept for 90 days. Attempts still running after 30 min are marked
+`abandoned` and reported. Deleting a package or account deletes its audit.
 
-Anomalies currently mean:
+**Anomaly codes:**
 
-- `invalid_event_timestamp`: at least one non-empty provider timestamp could
-  not be parsed;
-- `future_event_timestamp`: a normalized event is more than one hour ahead of
-  the check, the usual sign of a local clock read in the wrong zone;
-- `observed_without_timestamp`: a stage-changing synthetic observation was
-  needed (recorded in Postgres, intentionally not alerted by itself);
-- `terminal_stage_regression`: a delivered/returned parcel moved to another
-  stage, except to `exception`, which reports a problem discovered after the
-  fact rather than a rewritten history;
-- `delivered_status_conflict`: provider status says delivered while the chosen
-  stage does not; and
-- `progress_disappeared`: a parcel with prior progress suddenly has no usable
-  provider evidence.
+| Code | Meaning |
+| --- | --- |
+| `invalid_event_timestamp` | A provider timestamp couldn't be parsed |
+| `future_event_timestamp` | An event is over 1 h in the future, usually a local clock read in the wrong zone |
+| `observed_without_timestamp` | A synthetic observation was needed to change stage (recorded, not alerted) |
+| `terminal_stage_regression` | A delivered/returned parcel moved stage (`exception` excepted) |
+| `delivered_status_conflict` | The provider says delivered but the chosen stage doesn't |
+| `progress_disappeared` | A parcel with progress suddenly has no usable evidence; the last known state is kept |
 
-When progress disappears, the refresh is marked as an error and the last known
-stage, status text, estimated delivery and carrier data are retained. The empty
-provider response remains visible in the audit and Sentry anomaly.
+## Unmapped wording
 
-## Status observations
+`tracking_status_observations` collects carrier wording whose stage didn't come from a
+carrier status map, so it can be mapped instead of guessed forever. There is one row per
+carrier, provider code and normalized description. `count` and `last_seen` grow on repeat
+sightings. It holds no tracking number or account reference. Each refresh records at most
+32 observations, and a failed write never fails the refresh.
 
-`public.tracking_status_observations` collects the carrier wording whose stage
-did not come from a carrier status map, so it can be mapped later instead of
-guessed forever. There is one row per distinct carrier, provider code and
-normalized description: a repeated sighting increments `count` and moves
-`last_seen`, keeping the original `first_seen`. A row holds the carrier, the
-provider code when the carrier sends one, the lowercased and whitespace-collapsed
-description (500 characters at most), the chosen stage, the stage source, an
-optional language note and an optional `sample_event_id` pointing at one
-tracking event to inspect. It holds no tracking number, package or account
-reference, and it is service-role only like the rest of the ledger.
+Each event records its stage source in `tracking_events.raw_data.stage_source`:
+`carrier_map` (explicit adapter stage), `wording:<rule>` (classifier rule that matched), or
+`none` (fallback).
 
-Every persisted event records where its stage came from in
-`tracking_events.raw_data.stage_source`:
-
-- `carrier_map`: the adapter supplied an explicit, valid stage for that event;
-- `wording:<rule>`: the wording classifier matched, where `<rule>` is the rule
-  that decided it (`language` for the multilingual rules, then `delivered`,
-  `out_for_delivery`, `ready_for_pickup`, `customs`, `exception`, `accepted`, `registered`,
-  `in_transit` and the other keyword rules);
-- `none`: nothing matched and the fallback stage was used.
-
-Each refresh records at most 32 observations, deduplicated by observation key,
-after its events are persisted. A failed observation write is logged as
-`tracking_status_observation_write_failed` and reported to Sentry once per
-worker process; it never fails the refresh.
-
-Start a review with the carriers that produce the most unmapped sightings:
+Review, most frequent first:
 
 ```sql
-select carrier,
-       count(*) as wordings,
-       sum(count) as sightings,
-       max(last_seen) as last_seen
+select carrier, count(*) as wordings, sum(count) as sightings, max(last_seen) as last_seen
 from public.tracking_status_observations
 where reviewed_at is null
 group by carrier
 order by sightings desc, wordings desc;
-```
 
-Then read one carrier's wording, most frequent first:
-
-```sql
 select provider_code, description_normalized, chosen_stage, stage_source,
        count, first_seen, last_seen, sample_event_id
 from public.tracking_status_observations
@@ -111,178 +69,148 @@ where reviewed_at is null and carrier = 'CARRIER_ID'
 order by count desc, last_seen desc;
 ```
 
-The review workflow, for an operator or an agent:
-
-1. read the wording, its provider code and its sample event;
-2. map the code or wording in that carrier's status map, or add a classifier
-   wording rule when the wording is generic across carriers;
-3. add a fixture covering it and run that carrier's tests;
-4. mark the row:
+For each row: map the code or wording in the carrier's `status.ts` (or add a generic
+classifier rule), add a fixture, run the carrier's tests, then mark it:
 
 ```sql
 update public.tracking_status_observations
-set reviewed_at = now(), resolution = 'mapped'
+set reviewed_at = now(), resolution = 'mapped'  -- or 'wording_rule', 'ignored'
 where observation_key = 'OBSERVATION_KEY';
 ```
 
-`resolution` is `mapped` for a carrier status map entry, `wording_rule` for a
-classifier rule, and `ignored` for wording that deliberately stays unmapped. A
-wording that appears again after a review inserts no new row: its count keeps
-growing, so re-checking reviewed rows shows whether a mapping actually took
-effect.
-
-## Carrier check frequency
-
-GLS Germany, Switzerland and France are checked at most once an
-hour per parcel. After a failed check, they wait four hours. Both scheduled and
-manual refreshes use the persisted `last_synced_at` and `sync_status`, so a
-worker restart or repeated Refresh action does not bypass the cooldown. New or
-reconfigured parcels are checked immediately. From 08:00–22:00 in Europe/Zurich,
-other carriers refresh out-for-delivery parcels every two minutes and other stages
-every ten minutes, with hourly checks overnight. A parcel with no new carrier
-event for 48 hours (counted from when it was added, if that is later) is
-checked hourly around the clock until an event arrives; manual refreshes are not
-held back. Parcels that are not yet due do not consume the five-parcel
-per-owner scheduled quota.
-PostNL uses the thirty-minute daytime and
-hourly overnight schedule, including after a failed check; manual refreshes
-are available without the GLS cooldown.
-
-HTTP 429 responses without `Retry-After` are not immediately retried. Explicit
-retry windows up to one minute are still honored by adapters that enable a
-single transient retry; longer windows fail the attempt rather than blocking
-the worker. Each attempted check still has its own audit and Sentry event when
-it fails; issue grouping does not discard repeated events.
+A reviewed wording that keeps appearing keeps counting up, which shows whether the mapping
+took effect.
 
 ## First-response queries
 
-Run these with the Supabase service role or directly as a database operator.
-The tables and views are inaccessible to browser roles.
-
-Carrier health over the last day:
-
 ```sql
-select *
-from public.tracking_sync_health_24h
+-- Carrier health, last 24 h
+select * from public.tracking_sync_health_24h
 order by error_percent desc nulls last, attempts desc;
-```
 
-Open an alert by its Sentry `attempt_id`:
-
-```sql
-select *
-from public.tracking_sync_attempts
-where id = 'SENTRY_ATTEMPT_ID';
-
+-- One Sentry event
+select * from public.tracking_sync_attempts where id = 'SENTRY_ATTEMPT_ID';
 select sequence, step, status, duration_ms, details, error_type, occurred_at
-from public.tracking_sync_steps
-where attempt_id = 'SENTRY_ATTEMPT_ID'
-order by sequence;
-```
+from public.tracking_sync_steps where attempt_id = 'SENTRY_ATTEMPT_ID' order by sequence;
 
-Recent suspicious decisions:
+-- Recent suspicious decisions
+select * from public.tracking_sync_recent_anomalies order by started_at desc limit 100;
 
-```sql
-select *
-from public.tracking_sync_recent_anomalies
-order by started_at desc
-limit 100;
-```
-
-Repeated failures by carrier and error class:
-
-```sql
+-- Repeated failures by carrier, last 7 days
 select configured_carrier, error_type, count(*) as failures,
        min(started_at) as first_seen, max(started_at) as last_seen
 from public.tracking_sync_attempts
-where outcome in ('error', 'abandoned')
-  and started_at >= now() - interval '7 days'
+where outcome in ('error', 'abandoned') and started_at >= now() - interval '7 days'
 group by configured_carrier, error_type
 order by failures desc, last_seen desc;
+
+-- Stuck attempts (maintenance clears these after 30 min)
+select id, job_id, package_id, configured_carrier, current_step, started_at, now() - started_at as age
+from public.tracking_sync_attempts where outcome = 'running' order by started_at;
 ```
 
-Attempts that have not completed (maintenance should empty this after 30
-minutes):
+## Logs
 
-```sql
-select id, job_id, package_id, configured_carrier, current_step, started_at,
-       now() - started_at as age
-from public.tracking_sync_attempts
-where outcome = 'running'
-order by started_at;
-```
+Key JSON events:
 
-When a classifier appears wrong, use `package_id` from the attempt to inspect
-the account-private package and its already-normalized events. Relevant evidence
-can also be attached to the protected Sentry issue when needed for diagnosis.
-
-## Logs and correlation
-
-Important JSON events are:
-
-- `tracking_sync_started`, `tracking_sync_step`, and
-  `tracking_sync_completed`, correlated by `attempt_id`;
-- `tracking_sync_audit_write_failed`,
-  `tracking_sync_audit_maintenance_failed` and
+- `tracking_sync_started`, `tracking_sync_step`, `tracking_sync_completed` (by `attempt_id`);
+- `tracking_sync_audit_write_failed`, `tracking_sync_audit_maintenance_failed`,
   `tracking_status_observation_write_failed`;
-- `sync_claim_failed`, `sync_job_failed`, and `sync_job_finish_failed`,
-  correlated by `job_id`; and
-- `http_request`, correlated with Sentry by `request_id` for server errors.
+- `sync_claim_failed`, `sync_job_failed`, `sync_job_finish_failed` (by `job_id`). Alert on
+  these;
+- `http_request` (by `request_id`, matching Sentry for server errors).
 
-The logging helper explicitly permits `tracking_number`. It drops other fields
-whose names look like tracking, parcel,
-package, user, label, description, location, status text, URL, token, cookie,
-authorization, secret, or password data. Keep new fields scalar and bounded.
+The logger allows `tracking_number` explicitly. It drops other fields whose names look
+like parcel, user, label, location, status text, URL, token, cookie or secret data. Keep
+new fields scalar and bounded.
 
-## Sentry behavior
+## Sentry
 
-The Node SDK is enabled only when `SENTRY_DSN` is set. Its normal non-performance
-integrations are enabled, including request/fetch instrumentation, breadcrumbs,
-source context, and linked errors. Diagnostic data collection includes user
-information; tracing still defaults to zero. There is no application-level
-`beforeSend` scrubber or replacement exception: original messages, stacks,
-causes, requests, contexts, tags, and extras reach the SDK event pipeline.
-`ExtraErrorData` also records custom error properties. The SDK's own field
-limits and built-in sensitive-key filtering, plus any Sentry project-side data
-scrubbing, still apply.
+The SDK is enabled only when `SENTRY_DSN` is set. Default integrations are on, tracing is
+off by default, and there is no `beforeSend` scrubber. Sentry's own limits and project-side
+scrubbing still apply. Automatic lookups wrap each provider failure in an `AggregateError`
+so every cause is visible.
 
-Automatic carrier lookup retains each provider's original failure inside an
-`AggregateError`, allowing Sentry to show the individual causes while the app
-continues to display a readable lookup summary. Previously ingested, sanitized
-events cannot recover their discarded details; this behavior applies to new
-events after deployment.
+- **Grouping**: by component, operation, carrier and error/anomaly type. `attempt_id`,
+  `job_id`, `request_id`, `tracking_number`, `upstream_status` and `database_code` are
+  searchable tags.
+- **Source maps** stay in the server image only, never in browser assets.
+- **Crons**: daytime and overnight schedules send check-ins; a missed or failed run alerts.
+- **Alerts**: notify on new issues and regressions in `production`, and keep the Cron
+  alerts. Avoid "more than 0 times in 5 minutes" rules: they fire on every failed check.
+- **Incidents**: carrier and provider outages open once, with a recovery event, from
+  thresholds computed in Postgres. See [ops/sentry](../ops/sentry/README.md).
+- **Routing searches**: see [ROUTING.md](ROUTING.md).
 
-Issue fingerprints group by component, operation, carrier, anomaly/error type.
-Opaque `attempt_id`, `job_id`, and `request_id` tags make individual executions
-searchable. Known upstream HTTP failures also include `upstream_status`; known
-database failures include `database_status` and a strictly validated
-`database_code`. Production builds retain source maps only in the standalone
-server image, where Node uses them to produce source-level stack traces; they
-are never copied to browser assets or `public`. Daytime and overnight scheduled
-jobs send Sentry Cron check-ins; the SDK creates monitors for the Zurich
-schedules and reports a missed or failed run after one occurrence.
+### Upstream HTTP diagnostics
 
-Recommended project alerts:
+Rejected responses from `fetchBounded` carry `UpstreamHttpError.diagnostics`, attached to
+Sentry's `upstream_http` context before fallback. It contains:
 
-- notify on every new issue in the `production` environment;
-- notify when a resolved issue regresses; and
-- keep the automatically-created Cron monitor alerts enabled.
+- content type, server header, request/correlation IDs and `Retry-After`;
+- recognized body signatures and error codes, plus a text excerpt of the body;
+- all response headers, and the request URL, method, headers, body and timeout.
 
-An issue-frequency rule such as "more than 0 times in 5 minutes" with a
-five-minute action interval alerts on each ten-minute failed check, even when
-all events share one fingerprint and issue. Use new-issue and regression
-conditions for incident notifications instead of that per-occurrence rule.
+Body inspection stops after 8 KiB or 200 ms. `body_read` says whether the body was
+complete, empty, truncated, timed out, unreadable or skipped as binary. `body_signals` are
+hints, not proof: a bare 403 or `access_denied` doesn't identify an anti-bot vendor.
+Request IDs and excerpts don't affect grouping.
 
-## Incident sequence
+## Metrics
 
-1. Read the Sentry component, operation, carrier, and error/anomaly type.
-2. If present, copy only the opaque attempt id into the attempt and step
-   queries above.
-3. Confirm whether failure happened in carrier fetch, normalization, event
-   persistence, or package persistence.
-4. For classification anomalies, compare provider status, reported stage,
-   selected stage, private status text, and normalized events.
-5. Check nearby attempts for the same carrier to separate a single malformed
-   shipment from a provider-wide change.
-6. After remediation, run the provider tests and one controlled refresh, then
-   verify the new audit row and Sentry recovery.
+The host [step recorder](../src/server/stepRecorder.ts) turns each adapter step into
+metrics. Steps are declared per carrier in `carrier.json` (`direct`, `retry`, `trawl`,
+`browser`…). `phase:total` is one runner invocation, not the whole refresh. Filter by one
+phase when counting attempts; summing phases double-counts.
+
+**Sentry metrics**, which work with tracing off:
+- `tracking.scrape.duration` (ms) and `tracking.scrape.attempts`, tagged `carrier`,
+  `phase`, `outcome`, `error_type`;
+- `tracking.scrape.fallbacks`, with `from_phase` and `to_phase`.
+
+Import [the Scraper Health dashboard](../ops/sentry/scraper-health-dashboard.json) and set
+your project ID.
+
+A step failure is recorded immediately, but the `transport_fallback` warning is sent when
+the recovery step completes. An interrupted recovery may never send it.
+
+**Prometheus** metrics are served at `GET /api/metrics` when `METRICS_TOKEN` (16+ chars) is
+set, sent as a bearer token. Labels never contain tracking data.
+
+| Series | Answers |
+| --- | --- |
+| `carrier_step_duration_seconds` (carrier, step, outcome) | How long each step takes |
+| `carrier_step_total` (+ error_type) | Which step fails, and how |
+| `carrier_lookup_total` (carrier, final_step, outcome, attempts) | Which step served the result, after how many attempts |
+| `carrier_fallback_total` (from_step, to_step, reason) | How often recovery is needed |
+| `carrier_status_mapping_total` (carrier, stage_source) | Share of events mapped explicitly, by wording, or not at all |
+| `carrier_detection_total` (result) | Detection confidence served to clients |
+| `carrier_refresh_total` (carrier, served_by, outcome) | Who served each refresh: `adapter`, `other_adapter`, `provider` or `none` |
+
+Useful questions:
+
+- **Is the browser fallback earning its cost?**
+  `carrier_lookup_total{final_step="trawl"}` over all successful lookups.
+- **Is a carrier's adapter actually serving it?**
+  `carrier_refresh_total{served_by="provider",outcome="updated"}` over all `updated`. It
+  should stay near zero for carriers with their own adapter. One direct failure benches the
+  adapter for its cooldown, so small failure rates show up amplified.
+- **Does an in-adapter retry ever help?**
+  `carrier_lookup_total{final_step="retry",outcome="ok",attempts=~"[2-9]"}`.
+- **New unmapped wording?** A rising `stage_source="none"` share. See
+  [Unmapped wording](#unmapped-wording).
+
+[ops/grafana/carrier-scrapers.json](../ops/grafana/carrier-scrapers.json) is an importable
+Grafana dashboard with these panels. Its "silent carriers" stat flags carriers with lookups
+last week but none in two days: silence isn't success.
+
+## Incident checklist
+
+1. Read the Sentry component, operation, carrier and error/anomaly type.
+2. Put the `attempt_id` into the attempt and step queries above.
+3. Find where it failed: fetch, normalize, event persistence or package persistence.
+4. For classification anomalies, compare provider status, reported and selected stage,
+   `status_text` and the normalized events.
+5. Check nearby attempts for the same carrier: one odd shipment, or a provider change?
+6. After the fix, run the carrier's tests and one controlled refresh, then check the new
+   audit row and the Sentry recovery.

@@ -1,182 +1,70 @@
 # UPS
 
-## Identity and scope
+Global UPS tracking from the site's own `GetStatus` JSON, read through a browser because
+Akamai blocks plain HTTP. Parcels handed to a national post for the last mile are still
+reported from the UPS record.
 
-`ups` — United Parcel Service, a global integrator. Tracked automatically; no
-postcode or capability URL is needed. Parcels UPS hands to a national post for
-the last mile are still reported from the UPS record, because that is the only
-record this adapter reads.
+## How it works
 
-## Portals
+The adapter accepts only `1Z` numbers and rejects anything else before any request.
 
-- Public tracker: `https://www.ups.com/track?tracknum={trackingNumber}`
-  (the adapter builds it with `loc=en_US` and `requester=ST/trackdetails`, the
-  same query the site's own detail view uses).
-- The page itself calls `https://webapis.ups.com/track/api/Track/GetStatus`,
-  which is what the adapter reads once it holds a session. That call needs the
-  page's cookies and the `X-XSRF-TOKEN-ST` value they carry.
-- Canary: `https://www.ups.com/assets/resources/webcontent/en_US/terms_service.pdf`,
-  a static asset, so the canary is not itself subject to the challenge.
+1. `trawl` (whenever a browser service is configured): loads
+   `https://www.ups.com/track?loc=en_US&tracknum=…&requester=ST/trackdetails` with
+   `captureResponses` on `POST https://webapis.ups.com/track/api/Track/GetStatus?loc=en_US`
+   and parses the reply the page itself received. If nothing readable was captured, it parses
+   the rendered page instead: current status and delivery location, no history.
+2. `direct` (only without a browser service): plain HTTP with an in-memory cookie jar.
+   - Fetch the tracking page, check it set the `X-XSRF-TOKEN-ST` cookie, then POST
+     `GetStatus` with that value as the `X-XSRF-TOKEN` header. Cache the session.
+   - A cached session that gets rejected fetches the page once and retries; a second
+     rejection drops it.
+   - If the API call fails, the fetched page is parsed as a rendered page. Otherwise it fails
+     with `ChallengeError('UPS challenged direct tracking; configure FLARESOLVERR_URL for
+     browser fallback')`.
 
-## What we retrieve
+In practice Akamai holds `GetStatus` open until the timeout (20 s direct) for any session a
+browser did not establish. A deployment without a browser service therefore gets only the
+rendered status, after that wait.
 
-| Field | Kept | Notes |
-|---|---|---|
-| status | yes | `progressBarType` first, then the status prose |
-| history | yes | the `shipmentProgressActivities` scans, newest first |
-| location | yes | the scan's `location`: city and country, never an address |
-| eta | yes | `scheduledDeliveryDateDetail`, as a calendar day |
-| provider_code | no | UPS activities carry no stable per-scan code |
-| weight, dimensions | no | not in the response this endpoint returns |
-| recipient, signature, delivery photo | no | present in the response, never retained |
+## Notes
 
-Declared capabilities: `history`, `location`, `eta`. The offline test asserts
-each of them against the fixture.
+- Lookups are serialized per adapter instance: the jar and XSRF token are shared, and two
+  concurrent refreshes produce a session that belongs to neither.
+- HTTP 401/403/419/429, or a page with no token, raise `UPSSessionRejected` (a
+  `ChallengeError`), which the refresh-once logic reacts to. Any other HTTP error, including
+  404, is indeterminate: it proves nothing about the parcel and must not start a not-found
+  cooldown.
+- `direct` is disabled whenever a browser exists, with no cooldown probe: every probe costs
+  the full direct timeout and hits the same block.
+- Status comes from `progressBarType` first, then substring matches on the prose. UPS scans
+  carry no stable code, so events get no stage; the sync classifies each scan's wording.
+- UPS's `Exception` token does not say whether it is a failed attempt or a return; both
+  surface as `exception`.
+- The rendered-page parser reads only the active progress-bar milestone. Reading the whole
+  bar classified label-created parcels as out for delivery.
+- Scan times are built from the UTC pair UPS sends, or the local pair plus its explicit
+  offset. A scan with neither keeps the raw text; no zone is guessed.
+- The scheduled delivery date has no year. The adapter picks the year that puts it within
+  the last week or in the future.
+- The canary URL is a static PDF so the canary itself is not challenged.
 
-## Tracking numbers
+## Rejected approaches
 
-- `^1Z[A-Z0-9]{16}$`, high confidence — the printed `1Z…` number. The adapter
-  re-checks this shape itself and refuses anything else before any request.
-- `^[KJV]\d{10}$`, low confidence — UPS also issues these, but so do others, so
-  they stay a suggestion and never select UPS on their own.
+- Calling `GetStatus` without loading the page first: 401 without the page's cookies.
+- Replaying the browser's cookies over plain HTTP: Akamai holds that call open too, from
+  datacenter and residential IPs alike.
+- Parsing the rendered page as the primary path: it has no history.
 
-`numbers.json` carries open-source examples plus one synthetic `1Z` number.
+## Limitations
 
-## How the adapter works
+- No delivery window, weight or dimensions: the endpoint returns none.
+- Without a browser service there is no history.
+- Recipient name, address, signature and delivery photo are in the reply but never kept; a
+  test asserts it.
 
-Two steps, and which one runs depends on whether a browser service is
-configured.
+## Testing
 
-`trawl` runs whenever a browser service is configured. It loads the tracking
-page in a real browser with `captureResponses: [GetStatus]`, and the pinned
-compatibility build of the service (`ops/trawl`) hands back the JSON the page
-itself received. That reply is parsed like the direct one. If no reply was
-captured or none was readable, the page the browser rendered is parsed instead:
-status and delivery location only, no history. The browser's cookies are never
-replayed over plain HTTP.
-
-`direct` runs only without a browser service. It is plain HTTP with a cookie
-jar held in memory for the process:
-
-1. A cached session, if one exists, calls `GetStatus` straight away. If UPS
-   rejects it, the tracking page is fetched once to refresh the cookies and the
-   call is retried; a second rejection drops the session.
-2. Otherwise a fresh session fetches the tracking page, checks that it received
-   an `X-XSRF-TOKEN-ST` cookie, calls `GetStatus`, and is then cached.
-
-A challenged direct lookup still tries to parse whatever direct page it managed
-to fetch, and otherwise fails with `ChallengeError('UPS challenged direct
-tracking; configure FLARESOLVERR_URL for browser fallback')`. Since 2026-09-10
-Akamai holds `GetStatus` open until the request timeout for every session a
-browser did not establish, so a deployment without a browser service gets the
-rendered status only, after the direct timeout. Lookups are serialized per
-adapter instance so two of them can never refresh the shared session at once.
-
-Errors: `UPSSessionRejected` (a `ChallengeError`) for HTTP 401/403/419/429 and
-for a page with no token, `IndeterminateError` for any other rejected status or
-a non-200 API envelope, `SchemaError` when the reply is not about the requested
-parcel, `TransportError` when the browser service captured no reply and its
-page could not be parsed either.
-
-## Status reference
-
-| Stage | Wording or code (raw) | Confirmed by |
-|---|---|---|
-| pending | `ManifestUpload`; Label Created, Manifest Upload, Shipment Ready for UPS | prior-art |
-| accepted | `FirstUPSPossession`; First UPS Possession | prior-art |
-| in_transit | `InTransit`; On the Way, In Transit, We Have Your Package, Departed, Arrived, Processing at UPS Facility | fixture, prior-art |
-| out_for_delivery | `OutForDelivery`; Out For Delivery | fixture |
-| delivered | `Delivered`; Delivered, Left at | fixture, prior-art |
-| failed_attempt | `Exception`; Delivery Attempted, We Missed You, Not Delivered, Exception, Action Required | prior-art |
-| returned | Return to Sender, Returned | prior-art |
-| registered | not observed; reported as unmapped | — |
-| ready_for_pickup | not observed; reported as unmapped | — |
-| customs | not observed; reported as unmapped | — |
-
-The map produces the result-level status only. UPS scans carry no stable code,
-so the adapter attaches no stage to an event: the sync classifies each scan's
-wording and records it for review. `failed_attempt` and `returned` both surface
-as the result status `exception`; UPS's own `Exception` token does not say
-which, so nothing here decides it.
-
-## Limitations and privacy
-
-- No delivery window, weight or dimensions: this endpoint returns none.
-- Timestamps are assembled from the UTC pair UPS sends beside each scan, or
-  from the local pair plus its explicit offset. A scan with neither keeps the
-  provider's own text rather than being stamped with a guessed zone.
-- The response carries the recipient name, the destination address and links to
-  the signature and the delivery photo. None of them is retained; the offline
-  test feeds a fixture containing them and asserts the result JSON contains none
-  of their values.
-- The rendered-page fallback reads the delivery-location block into the event
-  location. On a public lookup UPS renders that as a city and country.
-- Session cookies and the XSRF token live in memory for the process and are
-  never logged or persisted.
-
-## Implementation decisions
-
-- Read the page's own `GetStatus` endpoint rather than the rendered HTML: it
-  returns the whole scan history as JSON, where the page carries only the
-  current status.
-- Keep the cookie jar in memory and reuse it across lookups. Establishing a UPS
-  session is the expensive part; the structured call afterwards is cheap.
-- One refresh, then drop. A rejected cached session is given exactly one page
-  fetch to recover; a second rejection means the session is dead, not slow.
-- Serialize lookups through the adapter instance. The jar and the XSRF token are
-  shared state, and two lookups refreshing them at once produce a session that
-  belongs to neither.
-- 2026-09-12: `UPSSessionRejected` stays a distinct class because the adapter
-  itself reacts to it — refresh once, then drop the session — and it now extends
-  `ChallengeError`, so routing treats a rejected session as a verification
-  problem rather than a schema problem.
-- 2026-09-12: the "configure FLARESOLVERR_URL" failure became a `ChallengeError`
-  with the same message. It is what it always was: UPS asking for a browser we
-  do not have.
-- 2026-09-12: the two tiers became `runSteps` with the ids `direct` and `trawl`,
-  the ids the existing dashboards already use. The cached session, its one
-  refresh and a fresh session are all inside `direct`: they are the same plain
-  HTTP transport, not separate tiers.
-- 2026-09-12: the rendered-page parse stays inside the `trawl` step, as before,
-  plus the no-browser-service case where the direct page is all there is.
-- 2026-09-12: the browser step reads the captured `GetStatus` reply and no
-  longer seeds a plain HTTP session from the browser's cookies. `direct` is
-  disabled whenever a browser service exists, and with it the direct-failure
-  cooldown: a probe cost the full direct timeout, kept a `direct` health
-  incident open and could never succeed. The rendered page now reads only the
-  active milestone of the progress bar; reading the whole bar classified a
-  label-created parcel as out for delivery.
-
-## Rejected alternatives
-
-- Calling `GetStatus` without first loading the tracking page: it answers 401
-  without the cookies the page sets.
-- Treating an HTTP 404 from the page or the API as a not-found: neither proves
-  the shipment is absent, and it would put a day-long cooldown on a lookup that
-  a browser can still answer. They stay indeterminate.
-- Parsing the rendered page as the primary path: it has no history, so every
-  sync would see one event and never a timeline.
-- Replaying the browser's cookies over plain HTTP (the approach until
-  2026-09-12): Akamai holds `GetStatus` open until the timeout for that replay
-  too, from the production host and from a residential connection alike, so
-  every browser lookup ended on the rendered page after a 20-second wait.
-- Probing direct access on a cooldown while a browser service exists: each
-  probe costs the direct timeout, and the same block applies to all of them.
-
-
-## Verification log
-
-- 2026-09-10: interactive check of the public tracking page; the direct
-  anonymous flow is subject to an Akamai challenge, which is what the browser
-  step exists for.
-- 2026-09-10: the live wrong-number canary accepts either a privacy-safe
-  no-result or the exact recognized browser-challenge error, nothing else.
-- 2026-09-12: adapter moved into this folder; the status map moved to
-  `status.ts`, the tiers moved onto `runSteps`, and the error classes moved onto
-  the shared taxonomy.
-- 2026-09-12: production had returned no UPS history since 2026-09-10 22:30
-  UTC. `GetStatus` answered a cookie-less POST at once but held every session
-  with the page's cookies open for the full timeout, from the production
-  container and from a residential connection alike, with the browser's own
-  cookies replayed too. The browser's own call captured through the
-  compatibility build returned HTTP 200 JSON, so that is what the adapter reads.
+No dedicated live test. The wrong-number canary in
+[`src/server/browserProtectedCarriers.live.test.ts`](../../../../src/server/browserProtectedCarriers.live.test.ts)
+accepts either a clean no-result or the exact challenge error above:
+`npm run test:carriers:live -- src/server/browserProtectedCarriers.live.test.ts`.

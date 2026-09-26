@@ -1,73 +1,74 @@
 # Carrier package architecture
 
-The package contains the catalog, number detection, adapters, universal
-providers and result normalization. It does not import the web application,
-Supabase or Sentry. The host supplies configuration and telemetry through
-[AdapterEnvironment](core/adapter/index.ts).
+The package holds the catalog, detection, adapters, universal providers and result
+normalization. It never imports the app, Supabase or Sentry. The host passes configuration
+and telemetry through [`AdapterEnvironment`](core/adapter/index.ts).
 
 ## Sources of truth
 
-| Concern | Maintained source |
+| Concern | Lives in |
 | --- | --- |
-| Identity, links, inputs, capabilities and declared steps | `carriers/<id>/carrier.json` |
-| Number examples and their provenance | `carriers/<id>/numbers.json`; [corpus rules](CORPUS.md) |
-| Status observations and evidence | `carriers/<id>/statuses.json` |
-| Actual status mapping | Carrier `status.ts`, or [provider result helpers](providers/shared/result.ts) |
+| Identity, links, inputs, capabilities, declared steps | `carriers/<id>/carrier.json` |
+| Sample numbers and provenance | `carriers/<id>/numbers.json` ([CORPUS.md](CORPUS.md)) |
+| Observed status wording and evidence | `carriers/<id>/statuses.json` |
+| Actual status mapping | the carrier's `status.ts`, or [provider result helpers](providers/shared/result.ts) |
 | Runtime interface and result validation | [core/adapter](core/adapter/index.ts), [core/result](core/result/index.ts) |
-| Protocol choices, limitations and verification | One README per carrier/provider; provenance beside fixtures |
-| Generated catalog, registry and brand assets | `generated/`; regenerate through `npm run contract:generate` |
+| Protocol, gotchas, limitations | one README per carrier or provider |
+| Catalog, registry, brand assets | `generated/`, rebuilt by `npm run contract:generate` |
 
-READMEs explain non-obvious behavior; they should not duplicate changing
-contracts or become a second status database. General reverse-engineering
-methods belong in the reusable scraper skill, not a repo-specific casebook.
+READMEs explain what the code and JSON can't. They don't copy contracts or status lists.
 
-## Registration and execution
+## Registration
 
-The [registry generator](scripts/generate-registry.mjs) resolves link-only
-carriers to `null`, folders with `adapter.ts` to their own factory, universal
-carriers to `universal`, and shared adapters to the referenced folder.
-`tracking.adapter` names a folder or `universal`; the API contract generator
-rejects any other value for an automatic carrier.
-`--check --strict` verifies the output and rejects unresolved automatic carriers.
+The [registry generator](scripts/generate-registry.mjs) maps each carrier to its adapter:
 
-An adapter exports an `AdapterFactory`. Its instance exposes `id`, `steps`
-and `track(input, context?)`; input carries the stored number, optional
-capability URL and postcode. The context can provide cancellation and a budget.
-[AdapterRegistry](core/adapter/index.ts) creates and caches instances by adapter
-id. Modules are statically imported; only instance creation is lazy.
+- link-only carriers → `null`;
+- folders with `adapter.ts` → their own factory;
+- `tracking.adapter: "universal"` → the universal providers;
+- `tracking.adapter: "<folder>"` → another carrier's adapter (Chronopost uses `la-poste`).
 
-[runSteps](core/runner/index.ts) attempts enabled steps in order, supplies the
-remaining budget and signal, and records completed steps and lookup outcomes.
-Adapters must pass these controls into their actual I/O. Default recovery
-allows challenge, transport, indeterminate and unclassified errors; adapters
-can supply explicit recovery predicates. `singleFlight()` serializes operations
-on an instance. The error taxonomy is in [core/errors](core/errors/index.ts);
-the host's [routingFailure](../../src/server/trackingRouting.ts) consumes it
-before applying compatibility handling for other errors.
+`--check --strict` fails on stale output or an automatic carrier without an adapter. The
+host builds the registry in [`adapterRegistry.ts`](../../src/server/adapterRegistry.ts).
+Modules are imported statically; only instances are created lazily and cached.
 
-The host constructs the registry in [adapterRegistry.ts](../../src/server/adapterRegistry.ts).
-Cross-provider ordering, affinity, cooldowns and shared leases belong to
-[tracking routing](../../docs/tracking-routing.md), not individual scrapers.
+## Execution
 
-## Results and telemetry
+An adapter factory returns `{ id, steps, track(input, context?) }`. `input` carries the
+number plus an optional capability URL and postcode. `context` carries cancellation and a
+time budget, and adapters must pass both down to their real I/O.
 
-`normalizeCarrierResult()` validates known fields but preserves extra result
-and event properties. Each parser selects the fields it returns; normalization
-is not a field allowlist. The host sync classifies events without an explicit
-stage and records the classification source. Time helpers live in `core/time`;
-provider-specific offset or wall-time interpretation remains with each parser.
+[`runSteps`](core/runner/index.ts) tries the enabled steps in order (`direct`, `retry`,
+`refresh`, `page`, `trawl`, `browser`), passing the remaining budget and recording each step
+for telemetry. By default it moves on after challenge, transport, indeterminate and
+unclassified errors; adapters can supply their own recovery rules. `singleFlight()`
+serializes work on one instance, for example to avoid two session renewals at once.
 
-The host [StepRecorder](../../src/server/stepRecorder.ts) emits Sentry metrics
-and logs; registered sinks add Prometheus. The sync's database attempt ledger
-is separate from these per-adapter step records. Operational diagnostic policy
-is maintained in [Observability](../../docs/OBSERVABILITY.md), with phase timing
-and emission behavior in [scraper monitoring](../../docs/scraper-monitoring.md).
-Do not add a second package-level privacy or logging policy.
+Errors use the taxonomy in [core/errors](core/errors/index.ts). The host's
+[`routingFailure`](../../src/server/trackingRouting.ts) turns them into routing decisions.
+Ordering between carriers and providers, affinity, cooldowns and shared leases belong to
+[routing](../../docs/ROUTING.md), never to an adapter.
 
-## Checks
+## Status model
 
-See the [package README](README.md#running-the-checks) for commands. Offline
-fixtures exercise parsing and recovery; opt-in live tests check current
-transport compatibility. A generated catalog or passing fixture does not
-establish live coverage. Preserve dated evidence and unresolved limitations
-in the affected integration's README.
+Each event's stage is decided in this order:
+
+1. **Carrier map**: the adapter sets `stage` from a code or wording in its `status.ts`.
+2. **Provider stage**: a universal provider's declared stage or sub-status.
+3. **Wording classifier** ([core/status](core/status/wording.ts)): multilingual rules,
+   then broad keyword rules. The host applies it to events without a `stage`.
+4. **Fallback** when nothing matches.
+
+An event with no `stage` means "no explicit mapping", not "unknown". The host records which
+of these decided each event (`raw_data.stage_source`), and unmapped wording is collected for
+review ([OBSERVABILITY.md](../../docs/OBSERVABILITY.md)).
+
+`normalizeCarrierResult()` validates known fields and keeps extra ones. It is not a field
+allowlist: each parser decides what it returns. Time helpers live in `core/time`, but each
+parser owns how it reads its provider's offsets and wall-clock times.
+
+## Telemetry
+
+The host's [`StepRecorder`](../../src/server/stepRecorder.ts) turns step records into Sentry
+metrics, logs and Prometheus series. The database audit of each refresh is separate. Privacy
+and logging policy lives in [OBSERVABILITY.md](../../docs/OBSERVABILITY.md), and the package
+doesn't add its own.

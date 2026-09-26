@@ -1,175 +1,71 @@
 # Planzer
 
-## Identity and scope
+Planzer, a Swiss transport group. Two kinds of shipment: ordinary deliveries,
+tracked by shipment number through Planzer's keyless tracking API, and shared
+shipments (`999.90.########`), which are not in the API and need the full shared
+link with its `accessKey`. The same adapter serves
+[quickpac](../quickpac/README.md), whose `44…` numbers use this API.
 
-Planzer is a Swiss transport and logistics group. Two kinds of shipment reach
-this folder:
+## How it works
 
-- **Ordinary deliveries**, tracked by their shipment number. Twenty-digit
-  delivery IDs carry the `91346097` prefix; other bare twenty-digit numbers are
-  deliberately kept out of Planzer routing.
-- **Shared shipments** (`999.90.########`), which are not in the tracking API
-  at all and need the complete shared link with its `accessKey`.
+`direct`, one bounded request. The factory picks the route: a parcel with a
+tracking URL goes to the shared page, everything else to the API. The URL
+decides the route; it is not a fallback tier.
 
-The same adapter also serves the `quickpac` carrier id: Quickpac's eighteen-digit
-`44…` identifiers use this API and this public page (docs/CARRIERS.md). Quickpac
-keeps its own carrier id for detection and display only.
+1. API: `GET https://api.tracking.app.planzer.ch/api/v1/shipments/{shipment}/Pak`,
+   10 s timeout. One replay after a transport failure or HTTP 502/503/504, or
+   after a 429 with a `Retry-After` of at most 60 s. An unknown number is an
+   HTTP 404.
+2. Shared link: `GET https://trackandtrace.planzergroup.com/shared/sendungen/{number}?accessKey=…`,
+   15 s timeout. The page has no status code; its five route steps are read from
+   the markup (tooltip label names the stage, `text-primary` marks reached
+   steps, `<time datetime>` gives the timestamp). A short page is not-found only
+   when it shows Planzer's "no shipments found" notice; otherwise it is a
+   schema error (maintenance, partial render).
 
-## Portals
+## Notes
 
-| Portal | URL | What it is |
-|---|---|---|
-| Tracking app | `https://tracking.app.planzer.ch/delivery/info?deliveryNumber={trackingNumber}` | The public page for an ordinary shipment; the canary probes its root. |
-| Shared link | `https://trackandtrace.planzergroup.com/shared/sendungen/{number}?accessKey=…` | A capability URL for one shared shipment. |
+- The shared URL is a capability URL. It must be `https://` on
+  `trackandtrace.planzergroup.com`, with no credentials, port or fragment, a
+  path whose number matches the tracked number, and exactly one well-formed
+  `accessKey`. The key is never logged or stored in fixtures or docs.
+- A `reference.shipment` composite (printed on some labels) is looked up by the
+  shipment half without leading zeros.
+- API responses can include transport positions of other shipments in the same
+  delivery. Only the position whose `positionNumber` equals the requested
+  number is read — showing another would be a privacy failure.
+- An unfamiliar API milestone label is a `SchemaError`, not an unmapped event.
+  The vocabulary is small and stable, so new wording is likely a schema change,
+  and guessing risks a false delivery.
+- Each milestone is classified on its own, not from the shipment status.
+  Inheriting would stamp `delivered` on earlier events and make re-syncs
+  duplicate history.
+- `Shipped` means delivered: it is Planzer's mistranslation of `Zugestellt`
+  (the same event reads `Livré` / `Consegnato`). It is classified as received
+  and stored as `Delivered` via `PLANZER_WORDING`. Event identities hash the
+  stored wording, so any new entry there needs a migration for saved rows, like
+  `supabase/migrations/*_relabel_planzer_delivered_events.sql`.
+- Shared-page step labels are in the recipient's language, so each stage is
+  matched by substring and the stored description is our own neutral wording.
+  This keeps history stable whatever language the page was fetched in.
+- Neither route publishes scan locations. Timestamps have no offset; the host
+  applies `Europe/Zurich`. Consignee and signature blocks are never read.
 
-The tracking app is backed by `api.tracking.app.planzer.ch/api/v1/shipments/
-{shipment}/Pak`, a keyless JSON API. The shared link has no API behind it: the
-route page itself is read.
+## Rejected approaches
 
-## What we retrieve
+- Shared page as a second tier after the API — the API never knows shared
+  shipments, so it would add a guaranteed failure per lookup.
+- Mapping `Shipped` to a dispatch stage — the other-language fields on the same
+  event say delivered.
+- Rewriting `Shipped` at display time — the views only see text, and other
+  carriers use `Shipped` for dispatch.
+- Storing the German labels — every history would switch to German to fix one label.
+- Adding `Expédié` / `Versandt` / `Spedito` as aliases — those mean dispatched;
+  only equivalents of Planzer's own labels are mapped.
 
-Retained: the shipment status and stage, the newest status text, every
-milestone with its timestamp and its own stage, and the delivery day as the
-estimate. API labels are kept verbatim except the mistranslated `Shipped`,
-stored as `Delivered`. The shared route adds our own neutral description per
-reached step.
+## Testing
 
-Discarded: everything else the payload can carry, including the consignee block
-and the signature (exercised by `fixtures/delivered.json`), and the transport
-positions that belong to a different shipment in the same delivery.
-
-Unavailable: scan locations. Neither route publishes them, so events carry an
-empty location rather than an invented one.
-
-## Tracking numbers
-
-| Rule | Shape | Note |
-|---|---|---|
-| `planzer-1` | `999.90.########` | Shared shipments; the tracking URL is required for these. |
-| `planzer-2` | `91346097` + 12 digits | Twenty-digit delivery IDs. |
-
-A number containing a dot is treated as `reference.shipment`: only the shipment
-half is looked up, without its leading zeros. Samples and what the engine
-answers for them are in `numbers.json`.
-
-## How the adapter works
-
-One bounded request per lookup with a 10-second timeout, declared as a single
-`direct` step. The factory picks the route: a parcel with a tracking URL goes
-to the shared-link tracker, everything else to the API.
-
-The API call replays once after a transport failure or an HTTP 502, 503 or 504,
-and after an HTTP 429 only when it supplies a short, valid `Retry-After`
-(docs/CARRIERS.md). Invalid data and other HTTP errors are never retried.
-
-A response may contain transport positions of other shipments, so only the
-position whose `positionNumber` equals the requested shipment number is read.
-An unfamiliar milestone label is an error, not an unmapped event: Planzer's
-label vocabulary is small and stable, and silently accepting new wording risks
-turning an unknown state into a delivery.
-
-The shared route page carries no status code. Its five steps are read from the
-markup: the tooltip label names the stage, `text-primary` marks the steps
-already reached, and the `<time datetime>` next to each carries its timestamp.
-
-## Status reference
-
-| Stage | Wording (raw) | Confirmed by |
-|---|---|---|
-| `registered` | `Recorded` | live 2026-09-06 |
-| `in_transit` | `Transferred` | live 2026-09-06 |
-| `out_for_delivery` | `In delivery` | live 2026-09-06 |
-| `delivered` | `Shipped` | live 2026-09-06 |
-| `in_transit` | `Shipment on the way` | fixture |
-| `out_for_delivery` | `Shipment out for delivery` | fixture |
-| `delivered` | `Delivered`, `Shipment delivered` | fixture |
-| `failed_attempt` | `Not delivered` | fixture |
-| `registered` / `in_transit` / `out_for_delivery` / `delivered` | German, French and Italian aliases | fixture (generated) |
-| `accepted` | `Abholung` (shared route step only) | fixture |
-| `pending`, `customs`, `ready_for_pickup`, `returned` | — | not observed; reported as unmapped |
-
-`Shipped` is Planzer's English label for *delivered* (Zugestellt / Livré), not
-for *dispatched*, so it is stored and shown as `Delivered`. The full list with
-provenance is in `statuses.json`.
-
-## Limitations and privacy
-
-- The shared link's `accessKey` is part of the tracking credential. It is
-  validated, used for one lookup, and never written to logs, issues, metrics,
-  fixtures or documentation.
-- Both endpoints are undocumented and keyless; they can change without notice.
-- Milestone timestamps carry no offset; the catalog timezone (`Europe/Zurich`)
-  is applied by the host.
-- No consignee name, address or signature is retained.
-
-## Implementation decisions
-
-- **One adapter, two routes.** The capability URL decides which route serves a
-  lookup; it is not a fallback tier, so both live in the same `direct` step.
-  A parcel without a tracking URL always uses the API, which is what the host's
-  dispatch chain did before the move.
-- **Each milestone is classified on its own.** Planzer's English `Shipped`
-  means *delivered*; inheriting the shipment's current status would have
-  stamped `delivered` on earlier events and made re-syncs duplicate history
-  with different stages.
-- **An unfamiliar milestone label is an error.** The label vocabulary is small
-  and stable, so new wording is far more likely to be a schema change than a
-  new state. Failing loudly surfaces it through the existing sync error
-  monitoring instead of guessing.
-- **Only matching transport positions are read.** A delivery can carry
-  positions of other shipments; showing one would be a privacy failure, not a
-  bug.
-- **Quickpac shares this adapter.** Quickpac's `44…` identifiers use the same
-  API and the same public page. The separate carrier id is kept for detection
-  and display, so existing parcels keep their label.
-- **`Shipped` is stored as `Delivered`.** Planzer's English labels are
-  translated from its German ones, and this one is a slip: the same event reads
-  `Zugestellt`, `Livré` and `Consegnato`, and the shipment's English summary
-  says `Shipment delivered`. The stage is still classified from the label as
-  received. Event identities hash the stored wording, so
-  `20260925100000_relabel_planzer_delivered_events.sql` moved rows saved as
-  `Shipped` to the new wording and identity, archived parcels included; another
-  correction in `PLANZER_WORDING` needs the same kind of migration.
-- 2026-09-12: moved out of `src/server/upstreamAdapters.ts` and
-  `src/server/planzerShared.ts`. `PlanzerTrackingError` became
-  `NotFoundError('Planzer')` (same message, same 404) and the payload-shape
-  `TypeError`/`RangeError`s became `SchemaError` with their messages unchanged.
-  One exception: `Planzer returned an unrecognized tracking event status` stays
-  a `TypeError`, because the host's grouped Quickpac test asserts that exact
-  error object and is deleted with the legacy dispatch chain. It becomes a
-  `SchemaError` as soon as that assertion moves to matching the message.
-
-## Rejected alternatives
-
-- **Treating the shared link as a second tier after the API.** The API does not
-  know shared shipments at all, so a fallback would only add a guaranteed
-  failure and a wasted request per lookup.
-- **Mapping `Shipped` to a dispatch stage.** It is the English label Planzer
-  prints for `Zugestellt` / `Livré`; the French and German payload fields on the
-  same event confirm it.
-- **Rewriting `Shipped` where the history is displayed.** The web and iOS views
-  see only the text, not the carrier that wrote it, and other carriers use
-  `Shipped` for dispatch.
-- **Storing the German labels instead.** They are the originals, but every
-  history would then switch to German; only one English label was wrong.
-- **Adding `Expédié` / `Versandt` / `Spedito` to the localization aliases.**
-  Those words mean *dispatched* in ordinary usage; only the aliases that are
-  semantic equivalents of Planzer's own labels are mapped.
-- **Parsing the shared page's localized step labels as the retained
-  description.** The page renders them in the recipient's language; our own
-  neutral wording per stage keeps the history stable whichever language the
-  page was fetched in.
-
-
-## Verification log
-
-- 2026-09-06: a real Quickpac delivery returned the four milestones `Recorded`,
-  `Transferred`, `In delivery` and `Shipped`, with sub-second timestamps and no
-  offset.
-- 2026-09-12: adapter and shared-link tracker moved into this folder;
-  behaviour unchanged apart from the error taxonomy (`NotFoundError` /
-  `SchemaError` replace `PlanzerTrackingError` and the ad-hoc `TypeError`s).
-- 2026-09-25: a live Quickpac delivery again returned `Shipped` for the
-  milestone whose German, French and Italian texts are `Zugestellt`, `Livré`
-  and `Consegnato`, with the English summary `Shipment delivered`. The label is
-  now stored as `Delivered`.
+`npm run test:carriers:live -- packages/carriers/carriers/planzer`. Unknown-number
+checks need no env vars. Set `QUICKPAC_DELIVERED_TRACKING_NUMBER` to a real
+delivered Quickpac parcel to also check the four milestones and the `Shipped`
+relabel.

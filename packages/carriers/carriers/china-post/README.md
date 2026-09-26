@@ -1,213 +1,58 @@
 # China Post
 
-China Post currently uses the [universal providers](../../providers/README.md).
-There is no dedicated adapter in this folder. This investigation establishes a
-CAPTCHA-free official route for **EMS items**, not every China Post service.
-A follow-up also verified the [UPU anonymous JSON API](../../providers/upu/README.md)
-for both an EMS item and an ordinary postal item, with incomplete-history
-limits. No production routing was changed.
+No dedicated adapter: China Post numbers go to the [universal providers](../../providers/README.md).
+EMS items have their own official route in [`ems`](../ems/README.md), used when the user picks EMS
+or pastes its link.
 
-## Official China Post challenge
+## Current route
 
-Observed on 2026-09-21 in Chrome, using synthetic input:
+- Checksum-valid `C…CN` and `L…CN` numbers try 17TRACK first, then the ordinary chain (Ship24,
+  ParcelsApp, UPU last). The rule is `priorityUniversalSource` in
+  [`providers/universal.ts`](../../providers/universal.ts).
+- Why: 17TRACK returns much richer dated history for these families (both legs, including
+  out-for-delivery) and handles China Post's Chinese sub-status codes. UPU's anonymous API often
+  has only the final delivery or misses the latest milestones. Evidence is in
+  [`providers/COMPARISON.md`](../../providers/COMPARISON.md).
+- `E…CN` (EMS) and other formats keep ordinary discovery. `R` and untracked `U` mail were not
+  evaluated.
+- The official site shows only a two-event preview without login, so it is not a completeness
+  reference either.
 
-- The catalog's old mail-tracking URL redirects to
-  [the current tracking app](https://www.ems.com.cn/queryList).
-- Submitting a number opens an ordered **Chinese-character click CAPTCHA**.
-  The [English site](https://www.ems.com.cn/english/) displays the same kind of
-  challenge, including Chinese instructions. Changing language does not avoid it.
-- `POST /ems-web/cutPic/getPictureNew` returns JSON with
-  `data.type: "WORD_IMAGE_CLICK"`, an issued challenge `id`, a background image,
-  a separate prompt image and their dimensions. The extra `data` field was empty;
-  it did not disclose answer positions.
-- The widget collects four ordered clicks and emits normalized coordinates and
-  timing fields. The tracking code carries the challenge id as `capcode` and
-  transforms the click list into `trackList`. The request also uses `time` and
-  `ticket` headers derived from public frontend configuration. Reproducing that
-  signature alone does not reproduce the challenge answer.
+## Official site (ems.com.cn)
 
-The type and image-response field set match
-[Tianai CAPTCHA's response model](https://github.com/dromara/tianai-captcha/blob/master/tianai-captcha/src/main/java/cloud/tianai/captcha/application/vo/ImageCaptchaVO.java).
-This suggests a Tianai-compatible implementation; its backend version or fork
-was not verified. It is not the slider puzzle used by the older scraper below,
-and no reCAPTCHA/hCaptcha widget was observed in this China Post form.
+The tracker at `https://www.ems.com.cn/queryList` (and the English site) gates every lookup behind
+an ordered Chinese-character click CAPTCHA.
 
-There is also a separate HTTP protection layer. Plain requests to the old page,
-`cutPic/getPic`, `cutPic/getPictureNew` and `currentTime/queryTime` returned
-HTTP 405 with an HTML blocking page. Chrome reached the app and challenge JSON.
-Those 405s are not shipment-not-found replies, nor evidence that the legacy
-endpoints have been removed.
+- `POST /ems-web/cutPic/getPictureNew` returns `data.type: "WORD_IMAGE_CLICK"`, a challenge `id`, a
+  background and a prompt image. The shape matches [Tianai CAPTCHA](https://github.com/dromara/tianai-captcha).
+- The widget collects four ordered clicks. The lookup sends the challenge id as `capcode`, the clicks
+  as `trackList`, and `time`/`ticket` headers derived from public frontend config. Reproducing the
+  headers does not answer the challenge.
+- Plain HTTP to the page and the `cutPic` / `currentTime` endpoints gets HTTP 405 with an HTML block
+  page, not a not-found.
+- TRAWL and Camoufox reach the page and receive the challenge, so transport is fine. The solver has
+  nothing for character clicks (it handles Turnstile, reCAPTCHA audio, hCaptcha and GeeTest sliders).
+- Full history needs a login even after the CAPTCHA, so solving it may only buy the preview.
+- `capcode` is kept in local storage for the list-to-detail step. A solver must stay in the same
+  browser context; exported cookies are not enough.
 
-Current frontend evidence:
+## Rejected approaches
 
-- [Character-click widget](https://www.ems.com.cn/js/chunk-57f065d3.10e05a4f.js).
-- [Tracking flow](https://www.ems.com.cn/js/chunk-5b114696.3da48dd0.js).
-- [API methods and click-list transformation](https://www.ems.com.cn/js/app~c714bc7b.7fce8b7a.js).
+- Official API platform (`api.ems.com.cn`, service `040001`): needs a contract customer code and a
+  signed, encrypted payload. Not anonymous.
+- `track-chinapost.com`: returns a "Getting data" shell behind reCAPTCHA v3 and an `_rtoken` cookie.
+  Its HTTP 200 is misleading.
+- ChinaPostalTracking: an iframe around the 17TRACK widget, calling the same
+  `t.17track.net/track/restapi` our 17TRACK adapter uses. Unsigned requests get `meta.code: -14`.
+  Not an independent source.
+- Old slider solvers (e.g. AlienZaki/PostAPI, OpenCV matching on `cutPic/getPic`): built for the
+  previous slider CAPTCHA, not the current click challenge; no license.
+- Other GitHub clients wrap TrackingMore, 17TRACK or the credentialed EMS partner API. None is an
+  anonymous scraper.
+- EMS Cooperative (`items.ems.post`): answers "does not denote an EMS item" for ordinary `LZ…CN`
+  mail, so it covers EMS only.
 
-No successful omission of the challenge, automated solution of the current
-puzzle, or reuse lifetime was established. A dedicated vision solver is a
-possible engineering approach, not a verified capability of the existing
-browser service. The evidence does not justify calling the CAPTCHA impossible.
+## What might work next
 
-## Browser-service follow-up, 2026-09-26
-
-Fresh TRAWL Tier 3 reached the official page, and a separate server Camoufox
-session submitted a synthetic identifier and received the current
-`WORD_IMAGE_CLICK` challenge. Page transport is therefore traversable. The
-installed solver supports Turnstile, reCAPTCHA audio, hCaptcha auto-pass and
-GeeTest sliders, but has no solver for these four ordered character clicks.
-No automated answer or matching official tracking history was demonstrated.
-
-The current frontend retains `capcode` in local storage for the list-to-detail
-transition. A future solver should test the same browser context, challenge
-expiry and number binding; exporting cookies alone omits that state. Reuse
-across unrelated queries remains unverified. The frontend also gates complete
-history behind login, so solving the challenge may only establish preview access.
-
-The [official API platform](https://api.ems.com.cn/) documents tracking service
-`040001`, covering up to one year. Its `/amp-prod-api/f/amp/api/open` integration
-requires a contract customer code, authorization and a signed/encrypted payload.
-Eligibility and the permitted shipment scope must be established for that route;
-it is not an anonymous replacement for the website.
-
-## Working official alternative: EMS Cooperative
-
-The [official EMS tracking page](https://www.ems.post/en/global-network/tracking)
-embeds `https://items.ems.post/`. Its form submits a plain GET:
-
-```text
-https://items.ems.post/api/publicTracking/track?language=EN&itemId={number}
-```
-
-A fresh Node `fetch` with a browser User-Agent returned six tracking events for
-the EMS reference in 82 ms. A separate Python request returned the same six
-events in 91 ms. These are individual local measurements, not a production
-benchmark. The reduced request used only the User-Agent override: no landing
-page, cookie jar, Referer, API key, JavaScript execution or CAPTCHA answer.
-Default Python urllib requests had returned 403; that did **not** establish a
-browser/session requirement.
-
-Keep live numbers outside the repository. A bounded reproduction with the
-tested User-Agent is:
-
-```sh
-curl --get --max-time 15 \
-  --user-agent 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36' \
-  --data-urlencode 'language=EN' \
-  --data-urlencode "itemId=${CHINA_POST_LIVE_NUMBER:?Set a reference number locally}" \
-  'https://items.ems.post/api/publicTracking/track'
-```
-
-The response is server-rendered HTML. The result lists the requested identifier
-and a table with date/time, status and location. An adapter would need to bind
-that result to the requested number and preserve offset-less dates as local
-wall time until timezone semantics are established.
-
-Two controls define important limits:
-
-- A real ordinary `LZ…CN` item returned HTTP 200 with “does not denote an EMS
-  item.” This is a service restriction, not evidence that the shipment is absent.
-- The synthetic, checksum-valid EMS-shaped `EB000000005CN` returned HTTP 200
-  with “There were no results found.” Its table still contains a header and a
-  message row; neither is a tracking event.
-
-This route is now implemented as the selectable [EMS carrier](../ems/README.md),
-with dedicated retrieval ahead of the host's universal fallback. Choose EMS or
-paste its official tracking link to use it; bare China Post numbers retain
-their existing routing. It cannot replace fallback for all `CN` numbers.
-International EMS milestones do not establish parity with every domestic scan;
-the EMS README records timestamp and production-network limitations.
-
-## Other routes checked
-
-All observations below are from 2026-09-21 on the local machine.
-
-| Route | Evidence | Practical conclusion |
-| --- | --- | --- |
-| Existing [Ship24 adapter](../../providers/ship24/README.md) | Signed HTTP returned six events for the EMS reference in 413 ms, reporting `EMS Post`. The ordinary postal reference returned one delivered event in 1,895 ms, reporting `UPU`. A synthetic control returned HTTP 404. | Already usable through current routing. The second result is limited history, not proof of complete China Post scan coverage. |
-| Existing [ParcelsApp adapter](../../providers/parcelsapp/README.md) | Direct calls for the EMS reference and a synthetic control each reached the 10-second transport deadline without a response. | Inconclusive for China Post coverage; no browser recovery was tested in this pass. |
-| [UPU Global Track & Trace](../../providers/upu/README.md) | Follow-up verified its documented anonymous JSON API without a CAPTCHA, key or prior session. The EMS reference returned five actual events plus an estimate; the ordinary reference returned one delivery event. | Now integrated as the final fallback for eligible postal numbers. The website CAPTCHA does not gate this documented API. Its EMS history lacked one arrival shown by the EMS Cooperative route. |
-| [track-chinapost.com](https://track-chinapost.com/startairmail.php) | Both the landing page and old `result_china.php` POST returned an HTTP 200 “Getting data” shell. It loads reCAPTCHA v3 and obtains an `_rtoken` cookie before reloading. | The old HTML scraper is not currently a verified shortcut. HTTP 200 alone is misleading. |
-| [17TRACK](../../providers/seventeentrack/README.md) | Already a universal provider; no new China Post-specific live probe in this pass. | Retain existing fallback; do not claim new verification. |
-
-Positive references came from public shipment reports:
-[EMS report](https://www.chinapostaltracking.com/qa/package-stuck-export-customskeep-pending-inspection-161051/)
-and [ordinary postal report](https://www.chinapostaltracking.com/qa/demora-160174/).
-The two records in `numbers.json` are SDK examples, explicitly not known live
-shipments; they were not positive availability controls. Raw responses,
-challenge tokens and live identifiers were not added as fixtures.
-
-## ChinaPostalTracking embeds 17TRACK
-
-On 2026-09-21, a fresh HTTP lookup and Chrome inspection traced
-[ChinaPostalTracking](https://www.chinapostaltracking.com/) through:
-
-1. Form POST `trackingno={number}` to `/package-tracking/`.
-2. Its [tracking bundle](https://www.chinapostaltracking.com/bundles/track)
-   creates an iframe at
-   `https://www.yourzodiacsign.com/Content/iframe/track.aspx?trackno={number}`.
-3. That wrapper loads [17TRACK's externalcall.js](https://www.17track.net/externalcall.js)
-   and calls the [documented widget](https://www.17track.net/en/widget)
-   with `YQ_Fc: "0"` and `YQ_Lang: "en"`.
-4. The widget runs at `extcall.17track.net/en/track` and sends signed browser
-   requests to `https://t.17track.net/track/restapi`, the endpoint already used
-   by our 17TRACK adapter. The outer page explicitly labels its source 17Track.
-
-The outer POST returns an HTML shell, not shipment history. The comment form's
-image CAPTCHA is unrelated to this tracking submission. No interactive CAPTCHA
-was needed for the three public references in the browser check, but an unsigned
-JSON request with the observed data shape and embed Origin/Referer returned
-HTTP 200 with `meta.code: -14`, not tracking data. A simpler server-side route
-was not demonstrated. Searches did not identify a useful independent GitHub
-client for this exact website; its shipped widget code established provenance.
-
-The embed did return substantially richer history than UPU; see the
-[three-reference comparison](../../providers/COMPARISON.md#17track-widget-follow-up).
-This supports improving the existing 17TRACK integration, not adding this
-wrapper as another independent provider. The Q&A answers remain third-party
-reports; the widget trace does not establish how staff prepared those answers.
-English widget chrome did not translate Chinese scans automatically. The
-[language investigation](../../../../docs/tracking-localization.md) records the
-separate translation toggle, native UPU labels and application design constraints.
-
-## GitHub prior art
-
-| Project and inspected revision | Implementation | Relevance today |
-| --- | --- | --- |
-| [AlienZaki/PostAPI EMS](https://github.com/AlienZaki/PostAPI/blob/531de00e22a8b27017b44d0d35823c2693d0a675/EMS/ems_tracking_service.py), file last changed 2023-01-25 | Fetches `cutPic/getPic`, implements OpenCV edge/template matching for the slider, constructs `time`/`ticket`, then calls official tracking endpoints. | A solver implementation for the old CAPTCHA, without fresh success verification. Its `xpos`/slider protocol differs from the current `trackList`. No repository license was found; it was not copied or executed. |
-| [hdnpt/geartrack](https://github.com/hdnpt/geartrack/blob/acc345d96ad1aa4c280d50a443b4d3be5f37d5cb/src/trackChinaPost.js), file last changed 2017-06-27, MIT | Posts `order_no` to third-party `track-chinapost.com/result_china.php` and parses a table. | Does not bypass the official CAPTCHA. The endpoint now presented the reCAPTCHA shell above. |
-| [slince/shipment-tracking](https://github.com/slince/shipment-tracking/blob/7e5a4c65ef9c59ec34a8b17716f01dfab050605f/src/EMS/EMSTracker.php), file last changed 2017-10-31 | Uses the EMS partner API with a caller-supplied `authenticate` header. | An authenticated integration, not an anonymous scraper. No license file was found in the inspected root. |
-| [bernalli/parcel-tracker-bot](https://github.com/bernalli/parcel-tracker-bot/blob/cc3656216346d07436cb9018393191abffd6b45a/src/parcel_tracker/trackers/china_post.py), inspected 2026-09-21, MIT | Recognizes China Post numbers and delegates to its Track17-backed base class. | Aggregator delegation, not a direct scraper. |
-| [clooney/china-post-tracking-api](https://github.com/clooney/china-post-tracking-api/tree/9333e321824a6090817bc265b1a1169ab7ca496e), last commit 2024-08-29 | TrackingMore API integration documentation. | Requires a provider API credential; the name does not indicate a free reverse-engineered endpoint. No repository license was reported. |
-
-UPU's anonymous JSON route now supplies shared postal fallback, while the
-EMS Cooperative route supplies EMS-specific history. Both need constrained
-eligibility and existing fallback for incomplete coverage. Solving the China Post character CAPTCHA is a separate option if
-broader official-site history is needed and a reliable, bounded solver can be
-demonstrated.
-
-## Integrated postal fallback
-
-UPU now runs last in the shared universal chain for checksum-valid S10 numbers.
-It is a provider, not a carrier relabeling or an EMS-only route. See the
-[UPU adapter notes](../../providers/upu/README.md) and the central
-[provider tradeoffs](../../providers/COMPARISON.md) for CAPTCHA/API findings,
-coverage, sparse histories, uncertain timestamps and the ordering decision.
-Earlier dated investigation notes describe the state at the time of each probe.
-
-The [non-EMS follow-up](../../providers/COMPARISON.md#china-post-non-ems-follow-up)
-compares three live public `LZ`/`CY` references. UPU matched Ship24 on two and
-returned history where Ship24 returned metadata only on the third. This improves
-the case for a targeted fast path, but does not establish full history, UTC
-accuracy or coverage of all non-EMS services.
-
-The user's subsequent official-site checks showed a two-event public preview
-and a login prompt for more history. UPU includes final delivery for both
-delivered references, omits their out-for-delivery events, and lacks the
-Venezuela reference's latest airline-receipt/flight-arrival milestones. The
-central comparison distinguishes this manual evidence from automated API
-results. The subsequent 17TRACK check superseded the initial UPU-first proposal:
-the existing unattended adapter now returns substantially richer dated history
-and handles its Chinese sub-status codes. Checksum-valid `L…CN`/`C…CN` references
-try 17TRACK first, with ordinary providers and UPU available on failure. EMS
-retains its dedicated route. See the [current decision and remaining limits](../../providers/COMPARISON.md#china-post-specific-recommendation).
+A vision solver for the four-click challenge, run in one browser context and tested for challenge
+expiry and number binding. Only worth it if the login-gated history is acceptable.

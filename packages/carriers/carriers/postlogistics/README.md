@@ -1,125 +1,45 @@
 # PostLogistics
 
-## Identity and scope
+Swiss Post's logistics arm, tracked through the keyless endpoint behind
+`tracking.postlogistics.ch`. It accepts barcodes and customer references. No
+detection rule claims its identifiers, so parcels arrive here only when the
+carrier is picked. Ordinary Swiss Post parcels go to
+[swiss-post](../swiss-post/README.md).
 
-PostLogistics is Swiss Post's logistics arm; this folder covers its own
-track-and-trace service, the one behind `tracking.postlogistics.ch`. It is
-separate from the `swiss-post` carrier, which tracks ordinary Swiss Post parcels
-and letters. Parcels reach this folder because the sender picked PostLogistics:
-the catalog has no exclusive detection rule for its identifiers.
+## How it works
 
-## Portals
+`direct`: one `POST https://eosapi.postlogistics.ch/api/trackandtrace/public?culture=fr-FR`
+with `{"Identifier": "…"}`. No session, cookie or token; 15 s timeout, no retry
+(nothing to rebuild, and the next scheduled check retries anyway). Same protocol
+as [swiss-post-cargo](../swiss-post-cargo/README.md).
 
-| Portal | URL | What it is |
-|---|---|---|
-| Swiss Post tracking | `https://www.swisspost.ch/swisspost-tracking?formattedParcelCodes={trackingNumber}` | Where a tracking link points. |
-| PostLogistics tracker | `https://tracking.postlogistics.ch/` | The track-and-trace page the endpoint belongs to. |
-| Canary | `https://service.post.ch/` | Probed daily for availability. |
+- `Data: null` is the explicit unknown-identifier answer and becomes a 404.
+- `Type: 1` is a barcode lookup: only the shipment whose `Identifier` equals the
+  requested barcode is read, because the answer can include neighbouring shipments.
+- `Type: 2` is a customer reference: every returned shipment belongs to the
+  lookup and their histories are merged. A `Type: 2` answer with no resolved
+  barcode is refused — nothing ties the history to the reference.
+- Any other `Type` is refused rather than guessed, which could show someone
+  else's parcel.
 
-The tracker posts the identifier to
-`eosapi.postlogistics.ch/api/trackandtrace/public`, a keyless JSON endpoint.
-That endpoint is what the adapter reads.
+## Notes
 
-## What we retrieve
+- History is sorted by absolute instant, with provider order as tie-breaker —
+  merged references interleave barcodes with different offsets, so array order
+  would put an older scan on top.
+- Only outcome codes are mapped (`DEL`, `DLV`, `POD`, `SIG` → delivered, `NTF` →
+  pending); everything else stays in transit. Events carry no stage and the sync
+  classifies their wording. A wrong "delivered" is worse than a missing nuance.
+- The estimate is `DriveAndArrive.PlannedDeliveryDate`, falling back to
+  `EstimatedArrival`.
+- Timestamps are kept as sent; the host applies `Europe/Zurich` when there is no offset.
+- Recipient and signature blocks are never read; the fixture exercises this.
 
-Retained: the shipment status, the newest status text, every history entry with
-its timestamp, its description and its operational city, and the planned
-delivery date (or the estimated arrival) as the estimate.
+## Limitations
 
-Discarded: everything else a shipment can carry, including the recipient block
-and the signature (exercised by `fixtures/delivered.json`).
+- The endpoint is undocumented and can change without notice.
 
-Unavailable: an explicit per-event stage. The endpoint gives one three-letter
-code per scan but no stage vocabulary, so events are returned without a stage
-and the sync classifies their wording.
+## Testing
 
-## Tracking numbers
-
-No exclusive detection rule. The service accepts two kinds of input and says
-which it got:
-
-- a barcode, answered as `Type: 1`;
-- a customer reference, answered as `Type: 2` with the barcodes it resolved to.
-
-`numbers.json` holds one invented placeholder, recorded as a negative: it
-resolves to no carrier, which is what the engine should answer for it.
-
-## How the adapter works
-
-One bounded POST with a 15-second timeout, declared as a single `direct` step.
-No session, cookie or token is involved and nothing is retried.
-
-`Type: 1` answers may contain several shipments, so only the one whose
-`Identifier` equals the requested barcode is read. `Type: 2` answers are
-merged: the requested string is not a barcode, so every shipment returned
-belongs to this lookup. Any other type is refused rather than guessed at, and a
-`Type: 2` answer with no resolved barcode is refused too.
-
-Merged references interleave several barcodes, so history is ordered by
-absolute instant, with the provider's own order kept for entries that share
-one.
-
-A `Data: null` answer is the service's explicit "unknown identifier" and
-becomes a clean 404.
-
-## Status reference
-
-| Stage | Code (raw) | Confirmed by |
-|---|---|---|
-| `delivered` | `DEL`, `DLV`, `POD`, `SIG` | fixture |
-| `registered` | `NTF` (shipment announced) | fixture |
-| everything else | any other code | not mapped; the shipment stays in transit and the wording is classified by the sync |
-| `accepted`, `in_transit`, `out_for_delivery`, `customs`, `failed_attempt`, `ready_for_pickup`, `returned`, `pending` | — | not observed; reported as unmapped |
-
-The map is deliberately small: a wrong "delivered" is worse than a missing
-nuance. `statuses.json` carries the full list with provenance.
-
-## Limitations and privacy
-
-- The endpoint is undocumented and keyless; it can change without notice.
-- History timestamps carry their own offset when the service supplies one; the
-  catalog timezone (`Europe/Zurich`) is applied by the host otherwise.
-- No recipient name, address or signature is retained, and none is written to
-  logs, fixtures or documentation.
-
-## Implementation decisions
-
-- **The response type decides how the answer is read.** `Type: 1` is a barcode
-  lookup and the echoed identifier must match, because the service can return
-  neighbouring shipments. `Type: 2` is a customer reference: the requested
-  string is not a barcode, so every shipment it resolved to belongs to this
-  lookup and all of them are merged.
-- **An unsupported type is an error.** Guessing which reading applies to a
-  third type would eventually show somebody else's parcel.
-- **A `Type: 2` answer with no resolved barcode is refused.** Without an
-  identifier there is nothing tying the history to the reference that was
-  looked up.
-- **History is ordered by absolute instant.** Merged references interleave
-  scans from several barcodes whose timestamps carry different offsets; the
-  provider's order is kept only as a tie-breaker so equal instants stay stable.
-- **Only the outcome codes are mapped.** `DEL`, `DLV`, `POD`, `SIG` and `NTF`
-  decide the shipment; every other code leaves it in transit and lets the sync
-  classify the description. Mapping too little is the documented preference.
-- 2026-09-12: moved out of `src/server/upstreamAdapters.ts` into this folder.
-  `UpstreamTrackingError` became `NotFoundError('PostLogistics')` (same
-  message, same 404) and the payload-shape `TypeError`/`RangeError`s became
-  `SchemaError` with their messages unchanged.
-
-## Rejected alternatives
-
-- **Stamping an event stage from the three-letter code.** Only the delivery and
-  announcement codes have an unambiguous meaning; the rest describe internal
-  handling steps whose stage is better derived from the description.
-- **Retrying the POST.** The endpoint is a single keyless call with no session
-  to rebuild; a transient failure is visible as a sync error and the next
-  scheduled check retries it anyway.
-- **Sorting by the provider's array order alone.** For `Type: 2` answers that
-  interleaves barcodes and puts an older scan on top.
-
-
-## Verification log
-
-- 2026-09-12: adapter moved into this folder from
-  `src/server/upstreamAdapters.ts`; behaviour unchanged apart from the error
-  taxonomy (`NotFoundError` / `SchemaError` replace the previous ad-hoc
-  classes).
+`npm run test:carriers:live -- packages/carriers/carriers/postlogistics` (no env
+vars; checks that an unissued barcode returns a clean 404).

@@ -1,63 +1,51 @@
 # Posti
 
-The dedicated adapter uses the anonymous consumer GraphQL flow behind
-[Posti's public tracker](https://www.posti.fi/en/tracking). It covers Finnish
-delivery of foreign-issued postal identifiers as well as explicit Posti
-lookups. A foreign S10 suffix still identifies the issuer; it is not evidence
-that Posti handles a shipment. Number-only detection is unchanged.
+Finnish postal operator, including Finnish delivery of foreign-issued postal numbers. Tracked
+through the anonymous consumer GraphQL flow behind [posti.fi/en/tracking](https://www.posti.fi/en/tracking).
+There is no detection rule: a foreign S10 suffix names the issuer, not the deliverer, so Posti
+is reached through a `posti.fi` link, an explicit pick or routing.
 
-## Retrieval
+## How it works
 
-1. A bare `POST https://auth-service.posti.fi/api/v1/anonymous_token` obtains
-   an anonymous role token and an ID token.
-2. `POST https://graphql.posti.fi/graphql` runs `SearchShipments` with
-   `PUBLIC_SHIPMENTS`, the requested identifier, and English locale. The role
-   token goes in `Authorization`, the ID token in `X-Posti-Token: Bearer …`.
+1. `direct`:
+   - `POST https://auth-service.posti.fi/api/v1/anonymous_token` (no body) returns an
+     anonymous role token and an ID token. The session is cached until the earlier expiry,
+     minus 30 seconds.
+   - `POST https://graphql.posti.fi/graphql` runs `SearchShipments` with `PUBLIC_SHIPMENTS`,
+     the identifier and English locale. Role token in `Authorization`, ID token in
+     `X-Posti-Token: Bearer …`. No browser, cookie, key or page bootstrap.
+2. `refresh`: after HTTP 401/403 or GraphQL `Unauthorized`, fetch a new anonymous session once
+   and replay. Throttling, parser failures and other GraphQL errors are not retried.
 
-No browser, login, cookie, API key, or page bootstrap is needed. Sessions are
-cached until the earlier token expiry, with a 30-second margin. An HTTP 401/403
-from the query, or GraphQL `Unauthorized`, refreshes the anonymous session
-once. Bootstrap, lookup and refresh share one cancellable 15-second budget.
-Throttling, parser failures and other GraphQL errors do not trigger retries.
+Bootstrap, lookup and refresh share one cancellable 15-second budget.
 
-The query, projection and limits are maintained in [adapter.ts](adapter.ts).
-It selects tracking fields, measurements and the public pickup-point name;
-recipient addresses, pickup credentials and payment fields are not requested.
-Returned `displayId` must match exactly. Duplicate matches and multi-parcel
-overviews are rejected. Only an error-free `totalHits: 0` with empty `hits`
-means not found; partial or malformed responses remain failures.
+## Notes
 
-## Status and time
+- The query in [adapter.ts](adapter.ts) selects only tracking fields, measurements and the
+  public pickup-point name. Recipient address, pickup code and payment fields are never
+  requested.
+- `displayId` must match exactly. Duplicate matches and multi-parcel overviews are rejected.
+- Only an error-free `totalHits: 0` with empty `hits` is not-found; partial or malformed
+  responses stay failures.
+- Parcel-level enums (`status.main`/`subStatus`) and each event's English label are mapped
+  independently. The main status wins even when its scan is missing, and past events never
+  inherit it.
+- Pickup availability is not delivery; transport back to the sender is not a completed
+  return. Notification and pre-advice rows prove no movement.
+- `reasonDescription` is shown but never used to classify.
+- Only timestamps with explicit offsets are kept; missing or ambiguous times stay unset.
+- Measurements need a known unit and a positive finite value.
+- Main status enums come from Posti's public parcels bundle
+  (`cdn.posti.fi/omaposti/parcels/public/remoteEntry.js`). Endpoint discovery started from
+  [hatlabs/posti-cli](https://github.com/hatlabs/posti-cli) (MIT); code and fixtures here are
+  independent.
 
-[status.ts](status.ts) maps Posti's parcel-level enums independently from each
-event's English label. Pickup availability is not delivery; transport back to
-the sender is not a completed return. Explanatory `reasonDescription` text is
-displayed but never used to classify an event. Notification/pre-advice rows
-and unmapped labels do not prove movement. Unknown main codes remain unknown.
+## Limitations
 
-Only timestamps with explicit offsets are accepted. Missing or ambiguous
-times stay unset. Measurements require known units and positive finite values.
-The main status remains authoritative even when the corresponding scan is
-absent; historical events never inherit the current parcel status.
+- No sender or recipient name: the public search does not expose them.
+- Old parcels past Posti's retention return not-found, as on Posti's own tracker.
 
-## Sources and verification
+## Testing
 
-- Prior protocol lead: [hatlabs/posti-cli](https://github.com/hatlabs/posti-cli/blob/12cdda2e34e011111bfedc2ef721d0dce3902d07/src/posti_cli/core/tracking.py),
-  revision `12cdda2e34e011111bfedc2ef721d0dce3902d07` (MIT). Used for endpoint
-  discovery; implementation and fixtures here were written independently.
-- 2026-09-21: observed the current public browser flow, including the
-  `SearchShipments` request and the anonymous-token exchange. Main status enums
-  come from Posti's [public parcels bundle](https://cdn.posti.fi/omaposti/parcels/public/remoteEntry.js).
-- 2026-09-21: fresh automated local HTTP retrieval succeeded for the existing
-  public corpus example; a synthetic unknown identifier produced zero hits.
-  Offline tests use only synthetic identifiers, places, dates and measurements.
-  This verifies local retrieval, not deployed network compatibility.
-- 2026-09-25: the public corpus example is past Posti's retention. The query
-  returns an error-free `totalHits: 0`, and Posti's own tracker shows "Item not
-  found". The live suite now checks it as a clean not-found; a delivered
-  history is verified only through `POSTI_TRACKING_NUMBER` and the offline
-  fixtures.
-
-Run the opt-in [live tests](adapter.live.test.ts) through
-`npm run test:carriers:live -- packages/carriers/carriers/posti/adapter.live.test.ts`.
-Additional authorized inputs can be supplied through `POSTI_TRACKING_NUMBER`.
+`npm run test:carriers:live -- packages/carriers/carriers/posti`. Without env vars it checks
+two not-found cases; set `POSTI_TRACKING_NUMBER` to also check a real shipment.

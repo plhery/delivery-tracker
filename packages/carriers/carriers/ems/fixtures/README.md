@@ -1,12 +1,5 @@
-# EMS fixture provenance
+# Fixtures
 
-`positive.html`, `international.html`, `absent.html` and `non-ems.html` preserve
-the result-table structure observed from the official EMS Cooperative endpoint
-on 2026-09-21. Identifiers and facilities are synthetic; the first positive
-fixture's dates are shifted. Scripts and unrelated page furniture are removed.
-The input echo is retained to test that it cannot substitute for a result table.
+`positive.html` and `international.html` are result tables with live EMS wording and row order; `absent.html` is the empty-result row; `non-ems.html` is the "does not denote an EMS item" reply for an ordinary postal item.
 
-The two positive fixtures preserve observed event wording and provider order.
-Terminal and unknown-wording cases in the tests are reconstructed variations,
-not claims that those statuses occurred on the live references. No live number,
-recipient information or session material is included.
+Identifiers, facilities and dates are synthetic. Scripts and page chrome are stripped, but the input echo is kept to prove it cannot stand in for the result table.

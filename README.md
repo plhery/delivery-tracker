@@ -62,21 +62,17 @@ Supabase, and set `NEXT_PUBLIC_USE_API=true`. See [Authentication](docs/AUTHENTI
 
 ## Carriers
 
-104 carrier integrations, combining dedicated scrapers with
-aggregator fallbacks. Coverage includes Swiss Post, Planzer, Quickpac, DHL,
-DPD, GLS, La Poste / Colissimo, Chronopost, Mondial Relay, PostNL, Hermes, UPS,
-and regional delivery services.
+Over 100 carriers, including Swiss Post, DHL, UPS, FedEx, USPS, DPD, GLS, La Poste /
+Colissimo, Chronopost, Mondial Relay, PostNL, Royal Mail and Cainiao. Most major carriers
+have a dedicated adapter. Others go through Ship24, ParcelsApp and 17TRACK, which also step
+in when an adapter fails.
 
-Tracking numbers and carriers are detected from pasted numbers, tracking links,
-or shipping messages. Carrier-specific status codes and multilingual tracking
-text are parsed into consistent delivery stages and timelines. Tracking history
-and available delivery estimates refresh automatically in the background.
+The app detects the carrier from a pasted number, tracking link or shipping email, turns
+each carrier's status codes and wording into the same delivery stages, and keeps refreshing
+in the background.
 
-Ship24, ParcelsApp, and 17TRACK provide fallback tracking and carrier discovery
-when a direct integration is unavailable. Every carrier lives in its own folder
-under [`packages/carriers`](packages/carriers/README.md) with its catalog entry,
-sample numbers, status vocabulary, adapter, tests and documentation; see
-[carrier support](docs/CARRIERS.md) for the overview.
+Each carrier has its own folder in [`packages/carriers`](packages/carriers/README.md) with
+its catalog entry, sample numbers, status vocabulary, adapter and tests.
 
 ## iPhone
 
@@ -136,8 +132,18 @@ See [Contributing](CONTRIBUTING.md) for the full validation workflow.
 
 ## Documentation
 
-[Architecture](docs/ARCHITECTURE.md) · [Friends](docs/FRIENDS.md) ·
-[Observability](docs/OBSERVABILITY.md) · [Analytics](docs/ANALYTICS.md) ·
-[Privacy](PRIVACY.md) · [Security](SECURITY.md)
+| | |
+| --- | --- |
+| [Architecture](docs/ARCHITECTURE.md) | Components, trust boundaries, data lifecycle |
+| [Carriers](packages/carriers/README.md) | Carrier package, adding a carrier, tests |
+| [Routing](docs/ROUTING.md) | How a refresh picks a carrier adapter or fallback provider |
+| [Deployment](docs/DEPLOYMENT.md) | Self-hosting, upgrades, operations |
+| [Authentication](docs/AUTHENTICATION.md) | Google, Apple and email sign-in |
+| [Observability](docs/OBSERVABILITY.md) | Logs, audit tables, Sentry, metrics |
+| [Friends](docs/FRIENDS.md) | Private stamp sharing |
+| [Analytics](docs/ANALYTICS.md) | Optional Umami usage analytics |
+| [Localization](docs/LOCALIZATION.md) | Carrier text languages |
+| [iPhone](ios/README.md) | Native app setup |
+| [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md) | |
 
 Licensed under [Apache 2.0](LICENSE).

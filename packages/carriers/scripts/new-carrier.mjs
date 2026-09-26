@@ -99,25 +99,32 @@ function validateCarrier(carrier) {
 }
 
 function readmeSkeleton(options) {
+  if (options.mode === 'link-only') {
+    return `# ${options.name}
+
+Link only: the app recognizes the number and opens the carrier's tracking page.
+TODO: say why there is no automatic tracking.
+`;
+  }
   return `# ${options.name}
 
-Catalog, portals and detection rules: [carrier.json](carrier.json).
-Sample numbers: [numbers.json](numbers.json).
-Status observations: [statuses.json](statuses.json).
+TODO: one or two sentences on what this covers and how it is tracked.
 
-## Integration
+## How it works
 
-${options.mode === 'link-only' ? 'This carrier is link-only: we only recognize and rebuild its tracking link.' : 'TODO: describe the request flow, required inputs and recovery behavior.'}
+1. \`direct\`: TODO endpoint, session or token handling, and what triggers a retry.
 
-## Limitations and decisions
+## Notes
 
-TODO: record limitations and non-obvious choices that help maintain this
-integration. Omit sections that add no useful context.
+- TODO: non-obvious decisions, each with a short why.
 
-## Verification log
+## Limitations
 
-| Date | What was checked | Result |
-| --- | --- | --- |
+- TODO: what is not supported or not retrieved.
+
+## Testing
+
+\`npm run test:carriers:live -- packages/carriers/carriers/${options.id}\`
 `;
 }
 
@@ -132,7 +139,7 @@ function checklist(options) {
     `  2. Add detection rules and tracking-link rules to ${folder}/carrier.json.`,
     `  3. Add evidence-tagged sample numbers to ${folder}/numbers.json, drop its "gap" line, and run the detection sweep.`,
     `  4. Record observed status wordings in ${folder}/statuses.json.`,
-    `  5. Describe setup, limitations and verification in ${folder}/README.md.`,
+    `  5. Describe how it works, gotchas and limitations in ${folder}/README.md.`,
     '  6. Run npm run contract:generate, then npm run ios:resources.',
     '  7. Run npm run test:contract and the carrier tests.',
     '',

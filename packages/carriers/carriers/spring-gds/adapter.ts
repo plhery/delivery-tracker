@@ -6,7 +6,7 @@ import 'server-only';
  * The folder keeps the historical `spring-gds` id for parcels and clients that
  * already store it; the carrier is presented as PostNL everywhere else. Spring
  * GDS is PostNL's international subsidiary and its mailingtechnology.com
- * portal shows the same barcode (docs/CARRIERS.md).
+ * portal shows the same barcode (see this folder's README).
  *
  * `postnl.post` hands out a short-lived visitor token to anyone who asks, then
  * accepts a batch tracking request with it. Both calls replay once after a

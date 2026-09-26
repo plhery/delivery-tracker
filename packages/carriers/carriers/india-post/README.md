@@ -1,196 +1,63 @@
 # India Post
 
-## Identity and scope
+India Post (Department of Posts, including Speed Post) S10 items ending in `IN`, tracked through
+[MySpeedPost](https://myspeedpost.com/track), a third-party tracker that answers without an account.
+India Post's own site is interactive, rate-limited and does not answer anonymous programmatic
+requests reliably.
 
-`india-post` — the Department of Posts, India's universal postal operator
-(Speed Post for express). Last mile in `IN`. Tracked automatically; no postcode
-or capability URL is needed.
+## How it works
 
-## Portals
-
-- Tracking page used: `https://myspeedpost.com/track?n={trackingNumber}&sync=true`.
-  MySpeedPost is a third-party tracker, not India Post's own site; it exposes the
-  tracking form as a Livewire component and completes the lookup asynchronously
-  through `/livewire/update`.
-- Canary: `https://myspeedpost.com/track`.
-
-## What we retrieve
-
-| Field | Kept | Notes |
-|---|---|---|
-| status / stage | yes | classified from `event_type`, `event` and `remarks` together |
-| history | yes | newest first, at most 100 events |
-| location | yes | `office` plus a six-digit `pincode` when present |
-| provider_code | yes | `event_type`, for example `ItemDelivered` |
-| source_synced_at | yes | when MySpeedPost last asked India Post (`synced_at`) |
-| timezone | yes | always `Asia/Kolkata` |
-| eta | no | the page exposes none |
-| recipient name / address / contact | no | present on the rows, never retained |
-
-Declared capabilities: `history`, `location`, `provider_code`. The offline test
-asserts each of them against the fixture.
-
-## Tracking numbers
-
-One high-confidence rule: `^[A-Z]{2}\d{9}IN$` with a valid S10 check digit.
-`numbers.json` holds one open-source example and three synthetic numbers; no
-real consignment number is committed.
-
-## How the adapter works
-
-Single step, `direct` — the Livewire submit-and-poll cycle is one stateful
-conversation with one host, not a fallback tier:
-
-1. `GET /track?n={number}&sync=true` through a per-lookup cookie jar, because
-   the session cookie issued with the page must travel with every later call.
-2. Read the `wire:snapshot` of the `track-consignment` component. If its status
-   is already `Completed`, the page's `tracking-request` attribute holds
-   MySpeedPost's cached history. When its `synced_at` is under 30 minutes old
-   no further call is made. Otherwise the adapter dispatches
-   `refresh_consignment`, as the page's Refresh button does, and polls as in
-   step 4; if that refresh fails, the cached history is returned.
-3. Otherwise `POST /livewire/update` with the CSRF token from the page: either
-   `__dispatch(set_consignment_number)` + `submit` for a `New` component, or
-   `fetchStatus` for one already `Processing`.
-4. Poll `fetchStatus` until the component reports `Completed`, then parse the
-   HTML fragment it returns.
-
-Identity binds twice: the Livewire snapshot must echo the requested
-`consignment_number`, and the rendered fragment's `#consignment_search` input
-must too.
+1. `direct`: one stateful Livewire conversation with MySpeedPost. A per-lookup cookie jar
+   (`fetch-cookie` + `tough-cookie`) carries the page's session cookie to every call and keeps
+   concurrent lookups from sharing a component snapshot.
+   1. `GET /track?n={number}&sync=true`; read the `track-consignment` component's `wire:snapshot` and
+      the CSRF token.
+   2. If the component is already `Completed`, its `tracking-request` attribute holds MySpeedPost's
+      cached history. If `synced_at` is under 30 minutes old, return it. Otherwise dispatch
+      `refresh_consignment` (the page's Refresh button) and poll; if the refresh fails, return the
+      cached history.
+   3. Otherwise `POST /livewire/update`: `__dispatch(set_consignment_number)` + `submit` for a `New`
+      component, `fetchStatus` for one already `Processing`.
+   4. Poll `fetchStatus` (up to 10 × 750 ms) until `Completed`, then parse the returned HTML fragment.
 
 Outcomes:
 
-- A `consignment_not_found` dispatch → `NotFoundError('India Post')`.
-- A Cloudflare interstitial (status 401/403/419/429, a `cf-mitigated: challenge`
-  header, or an interstitial marker in the body such as `Just a moment` or
-  `_cf_chl_opt`) → `IndiaPostChallengeError`, a `ChallengeError`. It must stay
-  retryable and must never read as not-found. Cloudflare's passive detection
-  loader (`/cdn-cgi/challenge-platform/scripts/jsd/main.js`) also appears on
-  ordinary pages and is not a challenge.
-- Still `Processing` after the poll budget → `IndeterminateError`: the backend
-  answered but proved nothing about the shipment.
-- Anything malformed → `SchemaError`.
+- `consignment_not_found` dispatch: not found.
+- Cloudflare interstitial (HTTP 401/403/419/429, `cf-mitigated: challenge`, or `Just a moment`,
+  `cf-chl-`, `_cf_chl_opt` in the body): `IndiaPostChallengeError`, retryable, never not-found.
+- Still `Processing` after the poll budget: `IndeterminateError`. The backend answered but proved
+  nothing, so no not-found cooldown.
 
-Timestamps are ISO; a value carrying its own offset keeps it, an offset-less one
-is read as `Asia/Kolkata`.
+## Notes
 
-## Status reference
+- Stale caches are refreshed because MySpeedPost serves its last sync until someone presses Refresh;
+  `sync=true` does not renew it. A cached "Item Booked" can hide days of later scans.
+- Cloudflare's passive loader `/cdn-cgi/challenge-platform/scripts/jsd/main.js` appears on ordinary
+  200 pages. Treating `challenge-platform` as a challenge marker once made every lookup fail.
+- Identity is bound twice: the snapshot's `consignment_number` and the fragment's
+  `#consignment_search` value must both match.
+- `event` is either prose (older syncs) or a bare code (`ITEM_BOOK`, `BAG_DISPATCH`,
+  `CUSTOM_RECEIVE`…). Known codes are spelled out, with `ITEM_BOOK` → "Item Booked" to match the old
+  prose so stored rows don't duplicate. Other codes become title case.
+- There is no stable status code. `event_type`, `event` and `remarks` are joined into one normalized
+  key and matched by substring, most specific first. Unrecognized rows keep an `in_transit` stage with
+  an `unknown` status, so no scan is dropped and no terminal stage is invented.
+- `CUSTOM_RECEIVE` is customs. `CUSTOM_RETURN` and "released by export Customs" mean customs handed
+  the item back: in transit, not returned to sender.
+- `tracked_at` without an offset is read as `Asia/Kolkata`. `synced_at` is returned as
+  `source_synced_at`.
+- IDs and pincodes arrive as numbers or strings, hence `cleanScalar`. A pincode is kept only when it
+  is exactly six digits.
 
-| Stage | Code / wording (raw) | Confirmed by |
-|---|---|---|
-| registered | Shipment Information Received, Label Created, Article Created, Consignment Created | prior-art |
-| accepted | `ItemBooked`, Article Booked, Booking Confirmed | fixture |
-| in_transit | `ItemDispatched`, Item Bagged, Item Received, Received At, Departed, Arrived, Forwarded, In Transit, Handed Over; codes `BAG_DISPATCH`, `Bag_Forward`, `TMO_RECEIVE`, `ITEM_RECEIVE`, `TRANSFER_OOE`; customs hand-backs `CUSTOM_RETURN`, released by export Customs | fixture / prior-art / live 2026-09-22 |
-| customs | Customs, Custom Clearance, `CUSTOM_RECEIVE` | prior-art / live 2026-09-22 |
-| out_for_delivery | `OutForDelivery`, Item Out For Delivery, Sent For Delivery | prior-art |
-| ready_for_pickup | Ready For Pickup, Ready For Collection, Awaiting Collection | prior-art |
-| delivered | `ItemDelivered`, Delivered To Recipient | fixture |
-| failed_attempt | `DeliveryAttempted`, Delivery Failed, Not Delivered, Undelivered | prior-art |
-| exception | Insufficient Address, Addressee Cannot Be Located, Damaged, Refused, Lost | prior-art |
-| returned | `ReturnToSender`, Returned To Customer, Returned To Booking Office, Return Item | prior-art |
-| pending | — | not observed; reported as unmapped |
+## Limitations
 
-India Post has no stable status code: `event_type`, `event` and `remarks` are
-all English prose worded differently per office. The classifier normalizes the
-three into one alphanumeric key and matches substrings, most specific first.
-An unrecognized row keeps the `in_transit` stage with an `unknown` status, so a
-scan is never lost and no terminal stage is ever invented; at parcel level that
-`unknown` becomes plain `in_transit`.
+- No ETA.
+- Only booking, dispatch, customs and delivery wording has been seen live. Failure, return and pickup
+  rules come from prior art ([njs-tracker-scraper](https://github.com/bivu-m/njs-tracker-scraper));
+  new wording lands on `in_transit` until added.
+- Recipient remark, address and contact number are never read; the offline test asserts it.
 
-## Limitations and privacy
+## Testing
 
-- No delivery estimate.
-- The vocabulary is prose, so the classifier is a substring matcher rather than
-  a code map. A newly worded event lands on `in_transit` until its wording is
-  added.
-- Rows can carry a recipient remark, a `recipient_address` and a
-  `pincode_info.contact_number`. None of them is retained: events are built from
-  an explicit allowlist, and the offline test feeds a fixture carrying all three
-  and asserts the result JSON contains none of their values.
-- `office` plus `pincode` is an operational location; the pincode is only kept
-  when it is exactly six digits.
-
-## Implementation decisions
-
-- 2026-09-01: track through MySpeedPost's Livewire flow. It is the surface that
-  answers without an account, and its `tracking-request` attribute carries the
-  whole history as JSON once the lookup completes.
-- 2026-09-01: use a per-lookup cookie jar (`fetch-cookie` + `tough-cookie`).
-  Livewire is stateful: the session cookie issued with the page must travel with
-  every `/livewire/update` call, and one jar per lookup keeps concurrent
-  lookups from sharing a component snapshot.
-- 2026-09-01: short-circuit when the page already reports `Completed`. A cached
-  consignment then costs exactly one request.
-- 2026-09-22: refresh a cached lookup older than 30 minutes. MySpeedPost keeps
-  serving its last sync (`sync=true` does not renew it): a parcel showed only
-  "Item Booked" from an 11-day-old sync while India Post had since recorded
-  its dispatch, export customs and transfer to the office of exchange. One
-  `refresh_consignment` dispatch returned the 17 events.
-- 2026-09-22: India Post now sends bare codes in `event` (`ITEM_BOOK`,
-  `BAG_DISPATCH`, `CUSTOM_RECEIVE`, `CUSTOM_RETURN`, `TRANSFER_OOE`...). Codes
-  seen live are spelled out (`ITEM_BOOK` keeps the earlier "Item Booked" so a
-  stored row is not duplicated); other code-shaped values become title case.
-  `CUSTOM_RECEIVE` is the customs stage; customs handing the item back
-  (`CUSTOM_RETURN`, "released by export Customs") is in transit, not a return
-  to sender.
-- 2026-09-25: a bare `challenge-platform` body marker no longer counts as a
-  challenge. Since 2026-09-24 MySpeedPost's ordinary 200 pages load Cloudflare's
-  passive detection script from that path, and every production lookup failed
-  as `IndiaPostChallengeError` until the marker was narrowed.
-- 2026-09-01: bind identity twice — the Livewire snapshot's
-  `consignment_number` and the rendered fragment's `#consignment_search` value
-  must both echo the requested number.
-- 2026-09-01: classify from `event_type`, `event` and `remarks` joined into one
-  normalized key, most specific rule first. There is no stable code, and offices
-  word the same event differently.
-- 2026-09-01: keep Cloudflare interstitials as a distinct challenge outcome so
-  they stay retryable and never turn into a day-long not-found cooldown.
-- 2026-09-12: an exhausted poll budget became `IndeterminateError` instead of a
-  bare `Error`. The backend answered, it simply never finished, which proves
-  nothing about the shipment.
-- 2026-09-12: the classifier moved to `status.ts` and now uses `cleanScalar`
-  from `core/transport` in place of the module's own number-tolerant `clean`.
-  India Post sends pincodes and ids as numbers as often as strings, so the
-  number-tolerant helper is required; the only difference from the old local
-  copy is that `cleanScalar` does not truncate a numeric value to `maxLength`.
-- 2026-09-12: `normalizeIndiaPostTrackingNumber` keeps throwing `TypeError`; it
-  validates an argument, not a provider response.
-
-## Rejected alternatives
-
-- Polling India Post's own tracking site: it is interactive and rate-limited,
-  and it does not answer anonymous programmatic requests reliably.
-- Treating a still-`Processing` component as not-found: it would put a working
-  consignment into a not-found cooldown for a day.
-- Dropping rows whose wording is unrecognized: every row is a physical scan, so
-  losing it would make the history look emptier than the portal's.
-
-## Open questions
-
-- The live test's real-consignment case is now gated on
-  `INDIA_POST_TRACKING_NUMBER`. It previously used `JN067614884IN`, which
-  `numbers.json` records as a synthetic number built to the published shape — so
-  as written it could only ever have 404ed. A real number must not be committed;
-  the operator supplies one through the environment variable.
-- Only the booking, dispatch and delivery wordings are fixture-confirmed. The
-  failure, return, customs and pickup keys come from prior art and have not been
-  re-observed.
-
-
-## Verification log
-
-- 2026-09-01: the MySpeedPost tracker inspected. It is a Livewire component at
-  `/track` that completes the lookup through `/livewire/update`; the flow needs
-  a cookie jar, the page's CSRF token and the component snapshot.
-- 2026-09-01: Cloudflare interstitials confirmed to be distinguishable from a
-  genuine miss by status, `cf-mitigated` header and body markers.
-- 2026-09-12: adapter moved into this folder; the classifier moved to
-  `status.ts` and the error classes moved onto the shared taxonomy. The live
-  test's real-consignment case became env-gated
-  (`INDIA_POST_TRACKING_NUMBER`), because the number it used is recorded in
-  `numbers.json` as synthetic.
-- 2026-09-25: the tracking page answers 200 with the passive
-  `/cdn-cgi/challenge-platform/scripts/jsd/main.js` loader and no interstitial
-  marker, from both production and a local network. With the narrowed markers
-  the live synthetic wrong number maps to a clean 404 again.
+`npm run test:carriers:live -- packages/carriers/carriers/india-post` with `INDIA_POST_TRACKING_NUMBER`
+set to a real consignment. The synthetic not-found case runs without it.
