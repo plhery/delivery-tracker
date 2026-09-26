@@ -27,7 +27,8 @@ import {
   reportRoutingEvent,
 } from './observability';
 import { PushDispatchError, type CompositePushNotificationService } from './push';
-import type { SupabaseServiceClient } from './supabase';
+import { STORED_EVENT_IDENTITIES, type SupabaseServiceClient } from './supabase';
+import { sameInstantIdentities, withIdentities } from './eventIdentity';
 import {
   TrackingSyncAudit,
   type SyncAnomalyCode,
@@ -604,16 +605,22 @@ export class TrackingSyncService {
 
   // Unmapped carrier wording is review material, never a reason to fail a
   // refresh: a failed write is logged each time and reported to Sentry once.
+  // The events keep their computed identities, whose prefix names the carrier
+  // that worded them; a reused identity only locates the sample row.
   private async recordStatusObservations(
     events: JsonObject[],
     carrierId: string,
     context: SyncRunContext,
+    reusedIdentities: ReadonlyMap<string, string> = new Map(),
   ): Promise<void> {
     for (const event of events) {
       const raw = isRecord(event.raw_data) ? event.raw_data : {};
       if (typeof raw.stage_source === 'string') recordStatusMapping(carrierId, raw.stage_source);
     }
-    const observations = collectStatusObservations(events, carrierId);
+    const observations = collectStatusObservations(events, carrierId).map((observation) => {
+      const stored = reusedIdentities.get(observation.provider_event_id);
+      return stored ? { ...observation, provider_event_id: stored } : observation;
+    });
     if (observations.length === 0) return;
     try {
       await this.client.recordTrackingStatusObservations(observations);
@@ -941,9 +948,11 @@ export class TrackingSyncService {
       }
       const outcome = progressDisappeared ? 'error' : knownUpdate ? 'updated' : 'waiting';
       const eventsToPersist = progressDisappeared || (preserveSummary && (result.tracking_provider === 'UPU' || localOnlyFallback)) ? [] : events;
+      // A reworded scan (DPD with and without the postcode) updates its stored row in place.
+      const reusedIdentities = sameInstantIdentities(eventsToPersist, storedEventIdentities(parcel), sourceCarrierId);
       operation = 'persist_package';
       await audit.step('persist_package', async () => {
-        await persist(values, eventsToPersist, progressDisappeared ? [] : deleteDescriptions);
+        await persist(values, withIdentities(eventsToPersist, reusedIdentities), progressDisappeared ? [] : deleteDescriptions);
       }, () => ({
         outcome,
         selected_stage: selectedStage,
@@ -953,9 +962,10 @@ export class TrackingSyncService {
       });
       audit.record('persist_events', 'succeeded', 0, {
         events_persisted: eventsToPersist.length,
+        identities_reused: reusedIdentities.size,
         atomic_with_package: true,
       });
-      await this.recordStatusObservations(eventsToPersist, sourceCarrierId, context);
+      await this.recordStatusObservations(eventsToPersist, sourceCarrierId, context, reusedIdentities);
       const completion = {
         outcome,
         sourceCarrier: sourceCarrierId,
@@ -1181,6 +1191,12 @@ export class TrackingSyncService {
       handoffFallbackErrorType,
     };
   }
+}
+
+/** The stored event identities a sync loader embedded; none when the parcel came from elsewhere. */
+function storedEventIdentities(parcel: JsonObject): JsonObject[] {
+  const stored = parcel[STORED_EVENT_IDENTITIES];
+  return Array.isArray(stored) ? stored.filter(isRecord) : [];
 }
 
 export function fairSyncPackages(

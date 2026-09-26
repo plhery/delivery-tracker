@@ -17,7 +17,7 @@ import { MondialRelayTracker } from '@carriers/carriers/mondial-relay/adapter';
 import { PaackTracker } from '@carriers/carriers/paack/adapter';
 import { RelaisColisTracker } from '@carriers/carriers/relais-colis/adapter';
 import { SwissPostCargoTracker } from '@carriers/carriers/swiss-post-cargo/adapter';
-import type { SupabaseServiceClient } from './supabase';
+import { STORED_EVENT_IDENTITIES, type SupabaseServiceClient } from './supabase';
 import { AdapterRegistry, type AdapterEnvironment } from '@carriers/core/adapter';
 import type { StepRecorder } from '@carriers/core/telemetry';
 import type { UniversalTracker } from '@carriers/providers/universal';
@@ -45,6 +45,7 @@ import { UniversalTrackingError } from '@carriers/providers/universal';
 import { UpstreamHttpError } from '@carriers/core/transport';
 import cainiaoDeliveredFixture from '../../packages/carriers/carriers/aliexpress/fixtures/delivered.json';
 import dpdDeliveredFixture from '../../packages/carriers/carriers/dpd/fixtures/delivered-verified.json';
+import dpdUnverifiedFixture from '../../packages/carriers/carriers/dpd/fixtures/delivered-unverified.json';
 import { parseDPDTrackingApi } from '@carriers/carriers/dpd/adapter';
 import { adapter as cainiaoAdapter, parseCainiaoTrackingResponse } from '@carriers/carriers/aliexpress/adapter';
 import { adapter as postNLAdapter, parsePostNLTrackingResponse } from '@carriers/carriers/spring-gds/adapter';
@@ -1946,5 +1947,148 @@ describe('tracking anomaly detection', () => {
       null,
       new Date('2026-08-31T12:00:00Z'),
     )).toContain('progress_disappeared');
+  });
+});
+
+/**
+ * tracking_events with the RPC's upsert: a stored identity updates its row in
+ * place, keeping the row id (and so created_at and push receipts). Postgres
+ * refuses one batch that carries an identity twice, and so does this.
+ */
+function eventStore() {
+  const rows = new Map<string, JsonObject>();
+  let created = 0;
+  const client = fakeClient();
+  client.applyTrackingSync.mockImplementation(async (
+    parcel: JsonObject, values: JsonObject, events: JsonObject[] = [], descriptions: string[] = [],
+  ) => {
+    const ids = events.map((event) => String(event.provider_event_id));
+    if (new Set(ids).size !== ids.length) throw new Error('ON CONFLICT DO UPDATE command cannot affect row a second time');
+    for (const event of events) {
+      const id = String(event.provider_event_id);
+      rows.set(id, { ...event, id: rows.get(id)?.id ?? `row-${++created}` });
+    }
+    for (const [id, row] of rows) if (descriptions.includes(String(row.description))) rows.delete(id);
+    await client.updatePackage(parcel.id, values);
+    return true;
+  });
+  return {
+    client,
+    rows,
+    /** What the sync loaders embed: each stored identity and its instant, spelled as PostgREST returns it. */
+    identities: () => [...rows.values()].map((row) => ({
+      provider_event_id: row.provider_event_id,
+      occurred_at: new Date(String(row.occurred_at)).toISOString().replace('.000Z', '+00:00'),
+    })),
+    batch: () => (client.applyTrackingSync.mock.calls.at(-1)?.[2] ?? []) as JsonObject[],
+  };
+}
+
+describe('reworded DPD scans', () => {
+  // The fixtures' synthetic number: a DPD reply must name the parcel asked for.
+  const NUMBER = '06080000000001';
+  const unverified = () => parseDPDTrackingApi(dpdUnverifiedFixture, NUMBER, false);
+  const verified = () => parseDPDTrackingApi(dpdDeliveredFixture, NUMBER, true);
+  const now = () => new Date('2026-07-16T12:00:00Z');
+  const parcel = { id: 'dpd-postcode-later', user_id: 'owner', carrier: 'dpd', tracking_number: NUMBER };
+  const ids = (events: JsonObject[]) => events.map((event) => String(event.provider_event_id));
+
+  it('updates the stored scans in place when the postcode is added later', async () => {
+    const store = eventStore();
+    const adapter = { fetch: vi.fn().mockResolvedValueOnce(unverified()).mockResolvedValue(verified()) };
+    const service = new TrackingSyncService(store.client as unknown as SupabaseServiceClient, adapter, null, now);
+    const load = (changes: JsonObject) => ({ ...parcel, ...changes, [STORED_EVENT_IDENTITIES]: store.identities() });
+
+    await service.syncPackage(load({ current_stage: 'pending', dpd_postcode: null }));
+    const unverifiedIds = ids(store.batch());
+    expect(unverifiedIds).toHaveLength(4);
+    const rowIds = unverifiedIds.map((id) => store.rows.get(id)?.id);
+    // A proof-of-delivery row stored before the parser dropped that scan.
+    const proof = {
+      package_id: parcel.id, provider_event_id: providerEventId('dpd', '2026-07-16T10:41:30+02:00', '', 'We received the proof of delivery'),
+      occurred_at: '2026-07-16T08:41:30Z', description: 'We received the proof of delivery', id: 'row-proof',
+    };
+    store.rows.set(proof.provider_event_id, proof);
+
+    await service.syncPackage(load({ current_stage: 'delivered', dpd_postcode: '8000' }));
+    const customs = providerEventId('dpd', '2026-07-15T16:30:00+02:00', '', 'Your parcel cleared customs successfully');
+    // Newest first: DEY, DLO, DLI and ORI keep the identities of their unverified twins.
+    expect(ids(store.batch())).toEqual([...unverifiedIds, customs]);
+    expect(store.client.applyTrackingSync.mock.calls.at(-1)?.[3]).toEqual([]);
+    expect(store.rows.size).toBe(6);
+    expect(unverifiedIds.map((id) => store.rows.get(id)?.id)).toEqual(rowIds);
+    expect(store.rows.get(unverifiedIds[0]!)).toMatchObject({
+      description: 'Your parcel has been delivered successfully', location: 'Urdorf, CH', stage: 'delivered',
+    });
+    expect(store.rows.get(proof.provider_event_id)).toEqual(proof);
+    // The depot-arrival wording is still DPD's to review, sampled from the row it updated.
+    expect(store.client.recordTrackingStatusObservations.mock.calls.at(-1)?.[0]).toEqual([
+      expect.objectContaining({ carrier: 'dpd', provider_code: 'ORI', provider_event_id: unverifiedIds[3] }),
+    ]);
+
+    // The next verified reply finds the reused identities again.
+    await service.syncPackage(load({ current_stage: 'delivered', dpd_postcode: '8000' }));
+    expect(ids(store.batch())).toEqual([...unverifiedIds, customs]);
+    expect(store.rows.size).toBe(6);
+    expect(store.client.recordTrackingStatusObservations.mock.calls.at(-1)?.[0]).toEqual([
+      expect.objectContaining({ provider_event_id: unverifiedIds[3] }),
+    ]);
+  });
+
+  it('shares one row per scan with a universal copy, whichever source answered last', async () => {
+    vi.spyOn(observability, 'reportRoutingEvent').mockImplementation(() => undefined);
+    const store = eventStore();
+    const client = { ...store.client,
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-07-16T12:01:30Z' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
+    };
+    const universalCopy: CarrierResult = {
+      status: 'delivered', current_stage: 'delivered', last_status_text: 'Delivered to recipient',
+      last_update: '2026-07-16T08:12:00Z',
+      events: [
+        { time: '2026-07-16T08:12:00Z', location: 'Urdorf', description: 'Delivered to recipient', stage: 'delivered' },
+        { time: '2026-07-16T04:10:45Z', location: 'Urdorf', description: 'With delivery courier', stage: 'out_for_delivery' },
+        { time: '2026-07-16T01:48:00Z', location: 'Urdorf', description: 'Arrived at delivery facility', stage: 'in_transit' },
+        { time: '2026-07-15T16:05:12Z', location: 'Urdorf', description: 'Arrived at facility', stage: 'in_transit' },
+      ],
+    };
+    const down = new Error('DPD guest API unavailable');
+    const adapter = {
+      fetch: vi.fn()
+        .mockRejectedValueOnce(down)
+        .mockResolvedValueOnce(unverified())
+        .mockRejectedValueOnce(down)
+        .mockResolvedValueOnce(verified())
+        .mockRejectedValueOnce(down),
+      fetchUniversal: vi.fn().mockResolvedValue(universalCopy),
+    };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, now);
+    // Each check starts from a fresh snapshot, so the router asks DPD first every time.
+    const sync = async (dpdPostcode: string | null) => {
+      await service.syncPackage({ ...parcel, current_stage: store.rows.size ? 'delivered' : 'pending',
+        dpd_postcode: dpdPostcode, [STORED_EVENT_IDENTITIES]: store.identities() });
+      return ids(store.batch());
+    };
+
+    const universalIds = await sync(null);
+    expect(universalIds).toHaveLength(4);
+    expect(universalIds.every((id) => id.startsWith('unknown:'))).toBe(true);
+    const rowIds = universalIds.map((id) => store.rows.get(id)?.id);
+
+    // DPD takes over the universal rows at the same instants.
+    expect(await sync(null)).toEqual(universalIds);
+    expect(store.rows.get(universalIds[0]!)).toMatchObject({ description: 'Delivered', location: null });
+    // The universal copy finds its own identities stored and takes the rows back.
+    expect(await sync(null)).toEqual(universalIds);
+    expect(store.rows.get(universalIds[0]!)).toMatchObject({ description: 'Delivered to recipient', location: 'Urdorf' });
+    // The verified reply takes them over again; only its customs scan is new.
+    const verifiedIds = await sync('8000');
+    expect(verifiedIds.slice(0, 4)).toEqual(universalIds);
+    expect(verifiedIds[4]).toBe(providerEventId('dpd', '2026-07-15T16:30:00+02:00', '', 'Your parcel cleared customs successfully'));
+    expect(await sync('8000')).toEqual(universalIds);
+
+    expect(adapter.fetchUniversal).toHaveBeenCalledTimes(3);
+    expect(store.rows.size).toBe(5);
+    expect(universalIds.map((id) => store.rows.get(id)?.id)).toEqual(rowIds);
   });
 });

@@ -17,7 +17,11 @@ translating it (not implemented).
   event.
 - Event identity ([`providerEventId`](../src/server/trackingSync.ts)) hashes carrier, time,
   location and description. Rewriting stored descriptions per language would duplicate
-  scans, so translation has to happen at display time.
+  scans, so translation has to happen at display time. DPD is the one source whose new
+  wording takes over a stored scan, and only at that scan's exact instant: the row is
+  updated in place. A universal copy that DPD took over keeps its identity, so its wording
+  then follows whichever source answered last
+  ([`eventIdentity.ts`](../src/server/eventIdentity.ts)).
 - Pick tracking sources for coverage, freshness and identity, never for language. A handoff
   can bring English destination scans but never translates earlier origin scans.
 

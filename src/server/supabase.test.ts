@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { SupabaseServiceClient, SupabaseUserClient } from './supabase';
+import { STORED_EVENT_IDENTITIES, SupabaseServiceClient, SupabaseUserClient } from './supabase';
 
 describe('guarded tracking writes', () => {
   it('requests account-scoped automatic linking', async () => {
@@ -56,6 +56,32 @@ describe('guarded tracking writes', () => {
     expect(userRequest.mock.calls[0][0]).not.toContain('tracking_generation');
     expect(decodeURIComponent(serviceRequest.mock.calls[0][0])).toContain('tracking_generation,user_id');
     expect(userRequest.mock.calls[0][0]).not.toContain('user_id');
+  });
+
+  it('gives only the sync loaders the stored event identities, under their own alias', async () => {
+    const service = new SupabaseServiceClient('https://database.example', 'service-key');
+    const user = new SupabaseUserClient('https://database.example', 'public-key', 'token');
+    const serviceRequest = vi.spyOn(service, 'request').mockResolvedValue([]);
+    const userRequest = vi.spyOn(user, 'request').mockResolvedValue([]);
+    const select = (request: typeof serviceRequest, index: number) => new URL(
+      `https://database.example${request.mock.calls[index]![0]}`,
+    ).searchParams.get('select')!;
+    await service.getPackage('package-1');
+    await service.listActivePackages();
+    await user.getPackage('package-1');
+    await user.listPackages();
+    await user.listActivePackages();
+
+    const identities = `${STORED_EVENT_IDENTITIES}:tracking_events(provider_event_id,occurred_at)`;
+    expect(select(serviceRequest, 0).endsWith(`,${identities}`)).toBe(true);
+    expect(select(serviceRequest, 1).endsWith(`,${identities}`)).toBe(true);
+    // The API's package shape is unchanged and never names provider_event_id.
+    const apiShape = 'id,tracking_number,label,carrier,created_at,expected_delivery,last_status_text,'
+      + 'last_synced_at,sync_status,sync_error,tracking_url,dpd_postcode,carrier_data,archived_at,'
+      + 'notifications_muted,tracking_events(id,package_id,stage,description,location,occurred_at)';
+    expect(select(userRequest, 0)).toBe(apiShape);
+    expect(select(userRequest, 1)).toBe(apiShape);
+    expect(select(userRequest, 2)).not.toContain('provider_event_id');
   });
 
   it('always scopes batch status reads to the requesting owner', async () => {

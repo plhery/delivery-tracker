@@ -124,10 +124,30 @@ classifies their wording.
   `geoPosition`), the sender's id and address, `customerReference1/2`,
   `gttsZipCode`, `podUrl` (it embeds the parcel number) and `product` (the
   recipient's delivery preference). A test asserts it.
-- Verified and unverified replies for one parcel have not been compared. Scans
-  are keyed by time, location and wording, so if they differ, a postcode added
-  later keeps the unverified copies beside the verified scans and can repeat a
-  notification.
+- The two shapes word and place the same scan differently ("Delivered" with no
+  place, "Your parcel has been delivered successfully" at "Urdorf, CH"), so each
+  has its own event identity. When a DPD reply brings a scan whose identity is
+  not stored, the sync gives it the identity of the one stored DPD or universal
+  (`unknown:`) row at the exact same instant
+  ([`eventIdentity.ts`](../../../../src/server/eventIdentity.ts)). That row is
+  updated in place and keeps its id, `created_at` and push receipts, so adding
+  the postcode later, or DPD rejecting it, copies no scan and repeats no
+  notification. A scan only the verified shape lists, such as customs (`CCO`),
+  is a new row. Two stored rows or two new scans at one instant reuse nothing,
+  and neither does a scan whose instant differs between the shapes.
+- A universal reply is not matched this way. After DPD-only history, its copies
+  are added beside DPD's scans, as for any fallback. Once DPD has taken over a
+  universal row, the row keeps its `unknown:` identity: the next universal reply
+  rewrites it in place and the next DPD reply takes it back, so its wording
+  follows the source that answered last.
+- The takeover checks only the instant and the identity prefix, not the stage
+  or the carrier a universal row names. A universal row from another carrier
+  (an earlier leg in the same feed) that is alone at a DPD scan's exact second
+  is taken over too: it shows DPD's wording while DPD answers, and since it
+  keeps its push receipts, that DPD scan is not announced. A row whose stage
+  was never announced (`pending`, or a stage the owner turned off) has no
+  receipt, so a DPD scan that takes it over with an announced stage is
+  announced once, as a new row would have been.
 
 ## Testing
 

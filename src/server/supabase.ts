@@ -3,7 +3,7 @@ import 'server-only';
 import { isRecord, type JsonObject } from './types';
 
 const REQUEST_TIMEOUT_MS = 20_000;
-const PACKAGE_SELECT = [
+const PACKAGE_COLUMNS = [
   'id',
   'tracking_number',
   'label',
@@ -19,8 +19,18 @@ const PACKAGE_SELECT = [
   'carrier_data',
   'archived_at',
   'notifications_muted',
-  'tracking_events(id,package_id,stage,description,location,occurred_at)',
 ].join(',');
+/** The package shape the API returns. It never carries provider_event_id. */
+const PACKAGE_SELECT = `${PACKAGE_COLUMNS},tracking_events(id,package_id,stage,description,location,occurred_at)`;
+const ACTIVE_PACKAGE_SELECT = 'id,user_id,tracking_number,label,carrier,current_stage,tracking_url,dpd_postcode,created_at,last_synced_at,sync_status,carrier_data,tracking_generation';
+/**
+ * Where the sync loaders put each stored event's identity and instant, so a
+ * reworded scan can update its row in place (see eventIdentity.ts). Only the
+ * service client's sync loaders embed it, under this alias: no API response
+ * or mapper reads it, and provider_event_id never reaches a client.
+ */
+export const STORED_EVENT_IDENTITIES = 'stored_event_identities';
+const SYNC_EVENT_IDENTITIES = `${STORED_EVENT_IDENTITIES}:tracking_events(provider_event_id,occurred_at)`;
 
 export class SupabaseError extends Error {
   constructor(
@@ -226,11 +236,12 @@ export class SupabaseClient {
   }
 
   async listActivePackages(): Promise<JsonObject[]> {
+    return await this.activePackages(ACTIVE_PACKAGE_SELECT);
+  }
+
+  protected async activePackages(select: string): Promise<JsonObject[]> {
     const params = query([
-      [
-        'select',
-        'id,user_id,tracking_number,label,carrier,current_stage,tracking_url,dpd_postcode,created_at,last_synced_at,sync_status,carrier_data,tracking_generation',
-      ],
+      ['select', select],
       ['archived_at', 'is.null'],
       ['or', '(current_stage.not.in.(delivered,returned),last_status_text.eq.TO_BE_DELIVERED)'],
       ['order', 'last_synced_at.asc.nullsfirst,created_at.asc'],
@@ -626,18 +637,28 @@ export class SupabaseClient {
 }
 
 export class SupabaseServiceClient extends SupabaseClient {
+  /**
+   * The sync worker's snapshot of one package. It embeds the stored event
+   * identities instead of the public event list, which the worker never reads.
+   */
   override async getPackage(packageId: string): Promise<JsonObject | null> {
+    const select = `${PACKAGE_COLUMNS},current_stage,tracking_generation,user_id,${SYNC_EVENT_IDENTITIES}`;
     const params = query({
-      select: `${PACKAGE_SELECT},current_stage,tracking_generation,user_id`,
+      select,
       id: `eq.${packageId}`,
       limit: '1',
     });
     const parcel = rows(await this.request(`/rest/v1/packages?${params}`))[0];
     if (parcel) return parcel;
     return rows(await this.request(`/rest/v1/packages?${query({
-      select: `${PACKAGE_SELECT},current_stage,tracking_generation,user_id`,
+      select,
       'carrier_data->>original_package_id': `eq.${packageId}`, limit: '1',
     })}`))[0] ?? null;
+  }
+
+  /** Scheduled sync candidates, with their stored event identities. */
+  override async listActivePackages(): Promise<JsonObject[]> {
+    return await this.activePackages(`${ACTIVE_PACKAGE_SELECT},${SYNC_EVENT_IDENTITIES}`);
   }
 
   async autoLinkPackages(userId?: string): Promise<number> {

@@ -91,6 +91,7 @@ Post 17TRACK route skip shadow checks.
 | Everything fails | Keep progress, store the next check time, keep affinity until a replacement works. |
 | User switches to a worse carrier | Check the new choice first. If the previously confirmed route still works, restore it with the same notice, using the postcode or link saved with it. Choosing the confirmed carrier again replaces those with what the user entered, so a cleared postcode is not reused. Generation fencing cancels in-flight work. |
 | Older or regressing result | Keep the newer or terminal state. A successful response never downgrades status. |
+| Same scans, new wording | Each wording is its own stored event. DPD is the exception: its scan takes over the one stored DPD or universal row at the exact same instant, which is updated in place. A universal row DPD took over keeps its identity, so the next universal reply rewords it in place again: its wording follows the source that answered last ([`eventIdentity.ts`](../src/server/eventIdentity.ts), [DPD README](../packages/carriers/carriers/dpd/README.md)). |
 
 ## Handoffs (two carriers)
 
