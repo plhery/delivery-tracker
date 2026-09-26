@@ -36,15 +36,27 @@ async function finishTurn(button: Locator) {
   await expect(glyph).toHaveCSS('transform', 'none');
 }
 
-test('finishes fast refreshes with a complete eased turn, on the list and parcel detail', async ({ page }) => {
+test('finishes fast refreshes with a complete eased turn, on the list and parcel detail', async ({ page, isMobile }) => {
   await demo(page, true);
-  const refresh = page.locator('.delivery-overview button').last();
-  await refresh.click();
-  await finishTurn(refresh);
+  // Touch screens refresh the list by pulling, so only pointers show its button.
+  if (!isMobile) {
+    const refresh = page.locator('.delivery-refresh');
+    await refresh.click();
+    await finishTurn(refresh);
+  }
   await page.locator('.parcel-card').filter({ hasText: 'Coffee beans' }).click();
   const detailRefresh = page.locator('.detail__refresh');
   await detailRefresh.click();
   await finishTurn(detailRefresh);
+});
+
+test('shows the list refresh button to pointers and assistive technology, not on touch screens', async ({ page, isMobile }) => {
+  await demo(page);
+  const refresh = page.getByRole('button', { name: 'Refresh tracking' });
+  await expect(refresh).toHaveCount(1);
+  const box = await refresh.boundingBox();
+  if (isMobile) expect(box!.width).toBeLessThanOrEqual(1);
+  else expect(box!.width).toBe(44);
 });
 
 async function pull(surface: Locator, distance: number, end = true) {
@@ -63,15 +75,37 @@ async function pull(surface: Locator, distance: number, end = true) {
   }, { distance, end });
 }
 
+type ColorSample = { result: string | null; background: string; color: string; stroke: string };
+
+/** Records the seal's colors every frame until the gesture has settled. */
+async function recordSealColors(surface: Locator) {
+  await surface.evaluate((root) => {
+    const disc = root.querySelector('.pull-refresh__disc')!, ring = root.querySelector('.pull-refresh__ring')!;
+    const samples: ColorSample[] = [];
+    (window as unknown as { sealColors: ColorSample[] }).sealColors = samples;
+    const sample = () => {
+      if (root.getAttribute('data-phase') !== 'idle') {
+        const seal = getComputedStyle(disc);
+        samples.push({ result: root.getAttribute('data-result'), background: seal.backgroundColor, color: seal.color, stroke: getComputedStyle(ring).stroke });
+      }
+      if (!samples.length || root.getAttribute('data-phase') !== 'idle') requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
+}
+
 test('resists the pull, arms on distance, and settles after a completion check', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'Touch interaction');
   await demo(page);
   const surface = page.locator('.pull-refresh');
+  const content = surface.locator('.pull-refresh__content');
+  await recordSealColors(surface);
   await pull(surface, 190, false);
   await expect(surface).toHaveAttribute('data-armed', 'true');
-  const displacement = await surface.evaluate((element) => Number.parseFloat((element as HTMLElement).style.getPropertyValue('--pull-distance')));
+  const displacement = await content.evaluate((element) => Number(/translate3d\(0(?:px)?, ([\d.]+)px/.exec((element as HTMLElement).style.transform)?.[1]));
   expect(displacement).toBeGreaterThan(72);
   expect(displacement).toBeLessThan(100);
+  await expect(content).toHaveCSS('will-change', 'transform');
   await expect(surface.locator('.pull-refresh__label')).toHaveText('Release to refresh');
   await surface.dispatchEvent('touchend', { touches: [] });
   await expect(surface).toHaveAttribute('data-phase', 'refreshing');
@@ -79,7 +113,19 @@ test('resists the pull, arms on distance, and settles after a completion check',
   await expect(surface.locator('.pull-refresh__label')).toHaveText('Tracking updated');
   await expect(surface).toHaveAttribute('data-phase', 'idle');
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(surface.locator('.pull-refresh__content')).toHaveCSS('transform', 'none');
+  await expect(content).toHaveCSS('transform', 'none');
+  await expect(content).toHaveCSS('will-change', 'auto');
+  // The indicator is the feedback; no toast repeats it.
+  await expect(page.locator('.action-toast')).toHaveCount(0);
+
+  // Green (light theme tokens) belongs to the success state only.
+  const green = ['rgb(36, 97, 62)', 'rgb(220, 240, 215)'];
+  const samples = await page.evaluate(() => (window as unknown as { sealColors: ColorSample[] }).sealColors);
+  const beforeSuccess = samples.filter((sample) => !sample.result);
+  expect(beforeSuccess.length).toBeGreaterThan(3);
+  expect(beforeSuccess.filter((sample) => [sample.background, sample.color, sample.stroke].some((value) => green.includes(value)))).toEqual([]);
+  expect(samples.some((sample) => sample.result === 'success' && sample.stroke === green[0] && sample.background === green[1])).toBe(true);
+
   await pull(surface, 60);
   await expect(surface).toHaveAttribute('data-phase', 'settling');
   await expect(surface).toHaveAttribute('data-phase', 'idle');
@@ -87,7 +133,8 @@ test('resists the pull, arms on distance, and settles after a completion check',
 
 test('supports reduced motion and a motion preference changed mid-refresh', async ({ page, isMobile }) => {
   await demo(page, true);
-  const refresh = page.locator('.delivery-overview button').last();
+  if (isMobile) await page.locator('.parcel-card').filter({ hasText: 'Coffee beans' }).click();
+  const refresh = page.locator(isMobile ? '.detail__refresh' : '.delivery-refresh');
   await refresh.click();
   await expect(refresh).toBeDisabled();
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -96,11 +143,15 @@ test('supports reduced motion and a motion preference changed mid-refresh', asyn
   await refresh.click();
   await expect(refresh).toBeEnabled();
   if (isMobile) {
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    // Opening the card scrolled it into view; a pull starts only at the top.
+    await page.evaluate(() => window.scrollTo(0, 0));
     const surface = page.locator('.pull-refresh');
     await pull(surface, 190);
     await expect(surface).toHaveAttribute('data-phase', 'refreshing');
     await expect(surface.locator('.pull-refresh__content')).toHaveCSS('transform', 'none');
-    await expect(surface.locator('.pull-refresh__arrow')).toHaveCSS('animation-name', 'none');
+    expect(await surface.locator('.pull-refresh__arrow').evaluate((element) => element.getAnimations().length)).toBe(0);
     await expect(surface).toHaveAttribute('data-phase', 'idle');
   }
 });

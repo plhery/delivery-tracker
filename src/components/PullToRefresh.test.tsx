@@ -34,18 +34,27 @@ describe('PullToRefresh', () => {
     start(parcel);
     move(parcel, 120, 290);
     expect(surface).toHaveAttribute('data-armed', 'true');
+    // The drag moves the content directly, without an inherited variable on the list.
+    const content = surface.querySelector<HTMLElement>('.pull-refresh__content')!;
+    expect(content.style.transform).toMatch(/^translate3d\(0(px)?, 8\d\.\d+px, 0(px)?\)$/);
+    expect(surface.getAttribute('style')).toBeNull();
     expect(onRefresh).not.toHaveBeenCalled();
     release(parcel);
     fireEvent.click(parcel);
     expect(click).not.toHaveBeenCalled();
+    // The request starts after the release motion's first frame.
+    expect(onRefresh).not.toHaveBeenCalled();
+    await act(() => vi.advanceTimersByTimeAsync(20));
     expect(onRefresh).toHaveBeenCalledTimes(1);
     expect(surface).toHaveAttribute('data-phase', 'refreshing');
     start(parcel); move(parcel, 120, 300); release(parcel);
+    await act(() => vi.advanceTimersByTimeAsync(20));
     expect(onRefresh).toHaveBeenCalledTimes(1);
-    await act(() => vi.advanceTimersByTimeAsync(900));
+    await act(() => vi.advanceTimersByTimeAsync(880));
     expect(surface).toHaveAttribute('data-phase', 'success');
-    await act(() => vi.advanceTimersByTimeAsync(900));
+    await act(() => vi.advanceTimersByTimeAsync(1_200));
     expect(surface).toHaveAttribute('data-phase', 'idle');
+    expect(content.style.transform).toBe('');
     fireEvent.click(parcel);
     expect(click).toHaveBeenCalledTimes(1);
   });
@@ -75,6 +84,30 @@ describe('PullToRefresh', () => {
     expect(onRefresh).not.toHaveBeenCalled();
   });
 
+  it('labels the wait with reported progress and announces the result', async () => {
+    vi.useFakeTimers();
+    let finish!: (updated: boolean) => void;
+    const onRefresh = vi.fn((report: (status: string) => void) => {
+      report('Checking with the carrier…');
+      return new Promise<boolean>((resolve) => { finish = resolve; });
+    });
+    const { parcel, surface } = setup(onRefresh);
+    const label = surface.querySelector('.pull-refresh__label')!;
+    const announcement = surface.querySelector('[aria-live]')!;
+    start(parcel); move(parcel, 120, 300);
+    expect(announcement).toHaveTextContent('Release to refresh');
+    release(parcel);
+    await act(() => vi.advanceTimersByTimeAsync(20));
+    expect(label).toHaveTextContent('Checking with the carrier…');
+    expect(announcement).toHaveTextContent('');
+    await act(async () => { finish(true); });
+    await act(() => vi.advanceTimersByTimeAsync(880));
+    expect(label).toHaveTextContent('Tracking updated');
+    expect(announcement).toHaveTextContent('Tracking updated');
+    await act(() => vi.advanceTimersByTimeAsync(1_200));
+    expect(label).toHaveTextContent('Pull to refresh');
+  });
+
   it('keeps a slow request visible, reports failure without a success check, and permits retry', async () => {
     vi.useFakeTimers();
     let fail!: (error: Error) => void;
@@ -86,8 +119,9 @@ describe('PullToRefresh', () => {
     await act(async () => { fail(new Error('Offline')); });
     await act(() => vi.advanceTimersByTimeAsync(1));
     expect(surface).toHaveAttribute('data-phase', 'error');
-    await act(() => vi.advanceTimersByTimeAsync(1_100));
+    await act(() => vi.advanceTimersByTimeAsync(1_600));
     start(parcel); move(parcel, 120, 300); release(parcel);
+    await act(() => vi.advanceTimersByTimeAsync(20));
     expect(onRefresh).toHaveBeenCalledTimes(2);
     unmount();
     await act(async () => { fail(new Error('Offline')); });

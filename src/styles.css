@@ -470,6 +470,8 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .undo-toast button, .action-toast button { min-height: 36px; border-radius: 10px; color: var(--blue); background: var(--blue-soft); padding: 7px 12px; font-weight: 600; font-size: 12px; white-space: nowrap; }
 .toast-mark { display: inline-grid; place-items: center; width: 28px; height: 28px; flex: 0 0 28px; border-radius: 50%; color: var(--green); background: var(--green-soft); }
 .toast-mark svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.toast-mark--pending { color: var(--ink-soft); background: var(--control); }
+.toast-mark--pending svg { animation: spin 1.1s linear infinite; }
 .spin { animation: spin .8s linear infinite; }
 
 @keyframes page-arrive { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }

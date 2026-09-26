@@ -129,11 +129,16 @@ describe('App', () => {
     renderApp(repo);
     await screen.findByText('Coffee beans ☕');
     await user.click(screen.getByRole('button', { name: 'Refresh tracking' }));
-    expect(screen.getByRole('status')).toHaveTextContent('Waiting to check with the carrier');
+    const toast = () => screen.getByRole('status');
+    // A success check appears only once the refresh has finished.
+    expect(toast()).toHaveTextContent('Waiting to check with the carrier');
+    expect(toast().querySelector('.toast-mark')).toHaveClass('toast-mark--pending');
     act(() => progress?.('running'));
-    expect(screen.getByRole('status')).toHaveTextContent('Checking with the carrier');
+    expect(toast()).toHaveTextContent('Checking with the carrier');
+    expect(toast().querySelector('.toast-mark')).toHaveClass('toast-mark--pending');
     await act(async () => finish(parcels));
-    expect(screen.getByRole('status')).toHaveTextContent('The latest available tracking is shown.');
+    expect(toast()).toHaveTextContent('The latest available tracking is shown.');
+    expect(toast().querySelector('.toast-mark')).toHaveClass('toast-mark--success');
   });
 
   it('keeps keyboard focus in the carrier sheet and restores it to the detail dialog', async () => {

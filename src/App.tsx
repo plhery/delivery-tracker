@@ -45,17 +45,19 @@ import {
 } from './lib/shareTarget';
 import { currentStage, isDelivered } from './lib/stages';
 import { useParcels } from './store/ParcelsContext';
-import type { CarrierId, ParcelWithEvents } from './types';
+import type { CarrierId, ParcelWithEvents, SyncProgress } from './types';
 
 const DETAIL_HISTORY_KEY = 'parcelPostDetail';
 const PARCEL_VIEW_CONTROLS_ID = 'parcel-view-controls';
 
-function ToastMark({ kind }: { kind: 'archive' | 'success' }) {
+function ToastMark({ kind }: { kind: 'archive' | 'pending' | 'success' }) {
   return (
     <span className={`toast-mark toast-mark--${kind}`} aria-hidden="true">
       <svg viewBox="0 0 24 24">
         {kind === 'success' ? (
           <path d="m7.5 12.5 3 3 6-7" />
+        ) : kind === 'pending' ? (
+          <path d="M19 8a7.5 7.5 0 1 0 .2 7.6M19 4v4h-4" />
         ) : (
           <>
             <path d="M5 8h14v11H5z" />
@@ -120,7 +122,8 @@ export default function App({
   const [undoParcel, setUndoParcel] = useState<ParcelWithEvents | null>(null);
   const [undoing, setUndoing] = useState(false);
   const [undoError, setUndoError] = useState<string | null>(null);
-  const [refreshNotice, setRefreshNotice] = useState<string | null>(null);
+  // Pending notices report a refresh in progress and stay until it ends.
+  const [refreshNotice, setRefreshNotice] = useState<{ text: string; pending?: boolean } | null>(null);
   const { icon: refreshIcon, busy: refreshAnimating, run: animateRefresh } = useRefreshAnimation();
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ParcelStatusFilter>('all');
@@ -169,10 +172,10 @@ export default function App({
   }, [undoParcel, undoing, undoError]);
 
   useEffect(() => {
-    if (!refreshNotice || refreshing) return;
+    if (!refreshNotice || refreshNotice.pending) return;
     const timeout = window.setTimeout(() => setRefreshNotice(null), 4_000);
     return () => window.clearTimeout(timeout);
-  }, [refreshNotice, refreshing]);
+  }, [refreshNotice]);
 
   useEffect(() => {
     const interval = window.setInterval(() => setViewNow(Date.now()), 60_000);
@@ -340,9 +343,9 @@ export default function App({
     await changeList(() => deleteParcel(parcel.id));
     if (openParcelId === parcel.id) closeParcelDetail();
     setUndoParcel((current) => current?.id === parcel.id ? null : current);
-    setRefreshNotice(t('app.deletedToast', {
+    setRefreshNotice({ text: t('app.deletedToast', {
       name: parcel.label || t('common.parcel'),
-    }));
+    }) });
   }
 
   function clearView() {
@@ -371,18 +374,22 @@ export default function App({
     }
   }
 
-  async function refreshAll() {
+  async function refreshTracking(onProgress: (progress: SyncProgress) => void) {
+    try {
+      await refresh(onProgress);
+      return true;
+    } catch {
+      // The shared error banner contains the actionable failure message.
+      return false;
+    }
+  }
+
+  // The pull indicator shows its own progress; the button reports through the toast.
+  function refreshWithButton() {
     return animateRefresh(async () => {
       setRefreshNotice(null);
-      try {
-        await refresh((progress) => setRefreshNotice(t(`sync.${progress}`)));
-        setRefreshNotice(t('sync.completed'));
-        return true;
-      } catch {
-        setRefreshNotice(null);
-        // The shared error banner contains the actionable failure message.
-        return false;
-      }
+      const updated = await refreshTracking((progress) => setRefreshNotice({ text: t(`sync.${progress}`), pending: true }));
+      setRefreshNotice(updated ? { text: t('sync.completed') } : null);
     });
   }
 
@@ -450,7 +457,7 @@ export default function App({
           </div>
         )}
 
-        <PullToRefresh hidden={tab !== 'deliveries'} enabled={!loading && !refreshing && !refreshAnimating && !adding && !openParcelId} onRefresh={refreshAll}>
+        <PullToRefresh hidden={tab !== 'deliveries'} enabled={!loading && !refreshing && !refreshAnimating && !adding && !openParcelId} onRefresh={(report) => refreshTracking((progress) => report(t(`sync.${progress}`)))}>
         <div ref={deliveriesPage} className="deliveries-page">
         <div className="delivery-active" role={activeParcels.length ? 'region' : undefined} aria-labelledby={activeParcels.length ? 'active-parcels-title' : undefined}>
         <div className="delivery-overview">
@@ -470,7 +477,7 @@ export default function App({
               <Icon name="search" />
               {hasCustomView && <><i className="delivery-search__dot" aria-hidden="true" /><span className="sr-only" id="parcel-view-active">{t('view.customized')}</span></>}
             </button>}
-            <button type="button" className="icon-button" aria-label={refreshing ? t('app.refreshing') : t('app.refresh')} aria-busy={refreshing || refreshAnimating} disabled={refreshing || refreshAnimating} data-refreshing={refreshAnimating || undefined} onClick={() => void refreshAll()}><span ref={refreshIcon} className="refresh-glyph"><Icon name="refresh" /></span></button>
+            <button type="button" className="icon-button delivery-refresh" aria-label={refreshing ? t('app.refreshing') : t('app.refresh')} aria-busy={refreshing || refreshAnimating} disabled={refreshing || refreshAnimating} data-refreshing={refreshAnimating || undefined} onClick={() => void refreshWithButton()}><span ref={refreshIcon} className="refresh-glyph"><Icon name="refresh" /></span></button>
           </div>
         </div>
         {!loading && parcels.length > 0 && viewControlsOpen && (
@@ -692,8 +699,8 @@ export default function App({
 
       {refreshNotice && !undoParcel && (
         <div className="action-toast" role="status">
-          <ToastMark kind="success" />
-          <span>{refreshNotice}</span>
+          <ToastMark kind={refreshNotice.pending ? 'pending' : 'success'} />
+          <span>{refreshNotice.text}</span>
         </div>
       )}
     </div>
