@@ -59,7 +59,7 @@ npm run test:contract                                               # generated 
 ## Carriers
 
 <!-- GENERATED:carriers -->
-105 carriers: 44 with a dedicated adapter, 57 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
+105 carriers: 45 with a dedicated adapter, 56 tracked through the universal providers, the rest through another carrier's adapter or link only. Regenerate with `node packages/carriers/scripts/generate-readme.mjs`.
 
 Roughly ordered by familiarity and prominence, with major carriers first (an editorial order, not a market-share ranking).
 
@@ -90,7 +90,7 @@ Roughly ordered by familiarity and prominence, with major carriers first (an edi
 | `inpost` | InPost | dedicated | direct | 1 | 7 | 21 | [README](carriers/inpost/README.md) |
 | `spring-gds` | PostNL | dedicated | direct | 4 | 16 | 16 | [README](carriers/spring-gds/README.md) |
 | `canada-post` | Canada Post | dedicated | direct | 4 | 4 | 15 | [README](carriers/canada-post/README.md) |
-| `australia-post` | Australia Post | universal providers |  | 0 | 3 | 0 | [README](carriers/australia-post/README.md) |
+| `australia-post` | Australia Post | dedicated | trawl | 4 | 3 | 22 | [README](carriers/australia-post/README.md) |
 | `japan-post` | Japan Post | dedicated | direct | 2 | 2 | 18 | [README](carriers/japan-post/README.md) |
 | `india-post` | India Post | dedicated | direct | 3 | 4 | 13 | [README](carriers/india-post/README.md) |
 | `poste-italiane` | Poste Italiane | dedicated | direct | 2 | 8 | 17 | [README](carriers/poste-italiane/README.md) |

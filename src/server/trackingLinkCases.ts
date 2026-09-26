@@ -160,6 +160,9 @@ export const trackingLinkCases: TrackingLinkCase[] = [
   { carrier: 'japan-post', number: 'CN000000005JP',
     route: /^https:\/\/trackings\.post\.japanpost\.jp\/services\/srv\/search\/direct\?/,
     marker: /Track & Trace|Your item was not found/i },
+  { carrier: 'australia-post', number: '7T0000000000000000001',
+    route: /^https:\/\/auspost\.com\.au\/mypost\/track\/details\//,
+    marker: /Australia Post|Track your item/i },
   // The shared page links UK tracking and the international POST-only form.
   { carrier: 'evri', number: 'H000000000000001',
     route: /^https:\/\/www\.evri\.com\/track-a-parcel\/?$/,

@@ -2,8 +2,8 @@
 
 Live comparison for the first 30 carriers in the [carrier overview](../README.md#carriers).
 Rows 1–15 were checked **2026-09-22**, with a FedEx direct recheck on
-**2026-09-23**; rows 16–30 were checked **2026-09-25**, with Japan Post and Evri International
-direct rechecks on **2026-09-26**.
+**2026-09-23**; rows 16–30 were checked **2026-09-25**, with Japan Post, Evri International
+and Australia Post direct rechecks on **2026-09-26**.
 Each row compares the **same reference** across the
 carrier's direct adapter and all five universal providers. This is observed
 coverage for these samples, not a promise that every number from a carrier works.
@@ -77,7 +77,7 @@ choosing the largest count.
 | [InPost](../carriers/inpost/README.md) | Yes | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 8 | No history | N/A |
 | [PostNL](../carriers/spring-gds/README.md) | Yes | ✓ 16 | ✓ 16 | No history | No history | ✓ 16 | No history |
 | [Canada Post](../carriers/canada-post/README.md) | Yes | Summary only | ✓ 12 | ✓ 11 | ✓ 25 | Error | ✓ 1 |
-| [Australia Post](../carriers/australia-post/README.md) | No adapter | Not tested | No history | No history | No history | ✓ 12 | N/A |
+| [Australia Post](../carriers/australia-post/README.md) | Yes (browser) | ✓ 12¶ | No history | No history | No history | ✓ 12 | N/A |
 | [Japan Post](../carriers/japan-post/README.md) | Yes | ✓ 13‡ | ✓ 13 | ✓ 27 | ✓ 27 | ✓ 28 | ✓ 1 |
 | [India Post](../carriers/india-post/README.md) | Yes | ✓ 21 | ✓ 21 | No history | ✓ 21 | No history | No history |
 | [Poste Italiane](../carriers/poste-italiane/README.md) | Yes | No history | No history | No history | No history | No history | N/A |
@@ -110,6 +110,14 @@ anonymous HTTP request. The September 25 ParcelsApp count remains 21. This
 direct adapter covers international parcels; domestic UK tracking still relies
 on universal providers. The source reports wall times without a verified zone.
 See the [Evri scope and timestamp notes](../carriers/evri/README.md).
+
+**¶ Australia Post direct recheck, 2026-09-26:** the browser's anonymous
+shipment API returned 12 matching dated events from the server network in
+repeated fresh contexts. The account-login iframe can be challenged independently;
+the direct adapter uses the anonymous tracking flow without signing in. Plain
+HTTP remains challenged. The live adapter tests also passed against the deployed
+browser service for matching history and a synthetic unknown reference.
+See the [Australia Post retrieval notes](../carriers/australia-post/README.md).
 
 The initial ParcelsApp failures prompted a [timeout and recovery fix](parcelsapp/README.md#implementation-decisions):
 the old direct request stopped after 10 s, and browser recovery could return an
@@ -163,7 +171,7 @@ report the same milestone in different zones.
 | InPost | Direct, Ship24 and ParcelsApp share nine milestones from label creation to delivery. The direct feed identifies the actionable locker-ready row; Ship24 and ParcelsApp include its text but map it to pending. 17TRACK's eight rows omit that locker-ready row altogether. Its longer descriptive text adds no extra physical scan. |
 | PostNL | Direct, Ship24 and Postal Ninja each return the same 16 rows, including export, destination arrival, a failed attempt, a return notice and eventual delivery. Paired sort/arrival rows are overlapping reports, not separate legs. Direct currently maps the out-for-delivery row as accepted; Postal Ninja's rows have no usable timestamps. ParcelsApp, 17TRACK and UPU supplied no history for this valid S10 number. |
 | Canada Post | Direct returned a summary without scans. ParcelsApp's 11 dated rows cover Canada Post acceptance, export, US customs, the delivery round and delivery. Ship24's 12 include two undated repeats, so its larger count adds no clear milestone. 17TRACK's 25 include the USPS destination-facility journey and overlapping Canada Post/USPS reports; this is the useful extra foreign-country leg, not 14 extra delivery attempts. UPU has only final delivery. |
-| Australia Post | Postal Ninja alone returned 12 undated rows from shipment registration and lodgement through facility movement, the delivery round and delivery. The count includes repeated transit/sorting updates and a safe-place delivery preference, rather than 12 distinct movement scans. The September 25 comparison had no dated history for this recent public number. A September 26 manual direct-browser check returned 12 dated rows, but the server browser was challenged before requesting shipment data; no direct adapter is enabled. See the [Australia Post investigation](../carriers/australia-post/README.md). |
+| Australia Post | Postal Ninja returned 12 undated rows on September 25. The September 26 direct browser adapter returned 12 dated events for the same reference, from registration and lodgement through facility movement, the delivery round and delivery. Counts include administrative updates and a safe-place delivery preference. An initial server-page check stalled on the optional login iframe; the follow-up isolated the anonymous tracking API and retrieved the history in repeated fresh browser contexts. See the [Australia Post retrieval notes](../carriers/australia-post/README.md). |
 | Japan Post | The September 26 direct recheck returned 13 events through delivery, retaining source local times and resolving each sample event’s timezone from its own location. ParcelsApp and 17TRACK each return 27 dated rows spanning Japan Post export and Malta Post import, customs-payment hold, destination processing and delivery. 17TRACK explicitly attributes both operators; some paired handoff and delivery rows overlap. Postal Ninja shows 28 mostly equivalent but undated rows, including a repeated final-delivery report. Ship24's 13 undated rows keep the broad journey but omit the payment hold and much of the destination-carrier detail. UPU has final delivery only. |
 | India Post | Direct, Ship24 and 17TRACK all return 21 rows with booking, bags received/dispatched at intermediate offices, the delivery round and delivery. Many rows are operational bag handling, not distinct customer-facing progress. Direct and 17TRACK retain dates; Ship24's projection loses them. ParcelsApp, Ninja and UPU supplied no history even though this is a valid S10 number. |
 | Poste Italiane | The public 2025 number returned no history through any source, including the direct adapter. A separate official format example was also unavailable directly. These are old or illustrative references, so missing rows cannot rank event depth or show current carrier support. |
@@ -266,10 +274,10 @@ Universal calls received a 45-second budget (UPU retains its shorter limit);
 dedicated adapters retained their own internal deadlines. Browser lookups were
 serialized to limit upstream and browser-service load. An unavailable direct
 adapter and an ineligible UPU format were recorded without inventing a network result.
-The Japan Post and Evri International direct rechecks on September 26 used
-their new adapters; their carrier notes document local and server HTTP checks.
-Other sources in those rows retain their September 25 results. The separate
-Australia Post browser investigation did not enable an adapter.
+The Japan Post, Evri International and Australia Post direct rechecks on
+September 26 used their new retrieval paths; their carrier notes document
+network and browser checks. Other sources in those rows retain their
+September 25 results.
 No accounts were signed into. Existing postcode input was supplied for initial
 rows where needed; none of the new public references included a recipient
 postcode. Thus GLS Germany's detailed direct history, and the direct history

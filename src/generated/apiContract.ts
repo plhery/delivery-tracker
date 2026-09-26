@@ -2579,9 +2579,9 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "australia-post"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://auspost.com.au/mypost/track/",
     "linkRules": [
       {
         "domains": [
@@ -2590,10 +2590,16 @@ export const CARRIER_CAPABILITIES = {
         "params": [
           "id"
         ]
+      },
+      {
+        "domains": [
+          "auspost.com.au"
+        ],
+        "path": "^/mypost/track/details/([^/?#]+)/?$"
       }
     ],
     "detectionRules": [],
-    "trackingUrlTemplate": "https://auspost.com.au/mypost/track/search?id={trackingNumber}"
+    "trackingUrlTemplate": "https://auspost.com.au/mypost/track/details/{trackingNumber}"
   },
   "hongkong-post": {
     "displayName": "Hongkong Post",

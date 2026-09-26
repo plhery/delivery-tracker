@@ -32,3 +32,28 @@ Implementing a direct adapter requires repeatable retrieval of matching
 shipment history, including service scope, returned identity, timestamps,
 and verified handling of CAPTCHA and empty replies. A manually completed
 puzzle alone would not establish automated support.
+
+## TRAWL follow-up, 2026-09-26
+
+The official [Taiwan tracking page](https://htm.sf-express.com/tw/en/dynamic_function/waybill/)
+offers a different route: GeeTest v4 in bind mode, followed by
+`/sf-service-core-web/service/bills/{number}/routes`. The installed
+[TRAWL GeeTest solver](https://github.com/germondai/trawl/blob/v1.5.0/packages/tiers/src/solvers/geetest.ts)
+supports sliders, but expects an initial verification button that bind mode
+does not display. A fresh service lookup loaded the puzzle and failed at that
+button; it captured no shipment response.
+
+Isolated experiments skipped the missing button and bounded old-version
+selectors. The stock solver reported success after one slide even though the
+puzzle remained visible and no routes request completed. Its success check can
+accept missing elements or visibility errors, and its gap calculation ignores
+the slice's vertical position and transparent margins. The widget's entrance
+animation also temporarily changes rendered geometry.
+
+A subsequent prototype waited for stable dimensions and used the rendered-to-
+native image scale. Template matching was not reliable across different puzzle
+images, so it stopped rather than submitting a low-confidence answer. No new
+matching tracking history was retrieved. This route remains a concrete option
+for a better v4 gap detector with callback/response-based success validation;
+enabling TRAWL's existing generic solver alone is insufficient. These probes
+did not change the deployed solver or enable a direct carrier adapter.

@@ -2,7 +2,69 @@
 // This compatibility adapter observes the browser's own reply for a few exact
 // tracking endpoints, each on its public page with one valid number. Every
 // other capture request keeps TRAWL's stock behaviour.
+
+// Run inside the carrier page: its anonymous tracking API is independent of
+// the optional account iframe, which can be challenged while tracking works.
+// Public client configuration stays in this context and is never returned.
+export async function requestAustraliaPostInPage({ number, budgetMs }) {
+  if (location.origin !== 'https://auspost.com.au' || !/^[A-Z0-9]{10,34}$/.test(number)) {
+    throw new Error('Australia Post lookup context is invalid');
+  }
+  if (!(budgetMs > 0)) throw new Error('Australia Post lookup budget exhausted');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), Math.min(budgetMs, 15_000));
+  try {
+    const modules = [...document.querySelectorAll('script[type="module"][src]')]
+      .map(script => new URL(script.src, location.href))
+      .filter(url => url.origin === location.origin && /^\/mypost\/track\/assets\/index-[\w-]+\.js$/.test(url.pathname)
+        && !url.search && !url.hash);
+    if (modules.length !== 1) throw new Error('Australia Post application module is missing or ambiguous');
+    const bundle = await fetch(modules[0].href, { signal: controller.signal, credentials: 'same-origin', redirect: 'error' });
+    if (!bundle.ok || !bundle.body || Number(bundle.headers.get('content-length')) > 4_000_000) {
+      await bundle.body?.cancel();
+      throw new Error('Australia Post application module is unavailable');
+    }
+    const reader = bundle.body.getReader();
+    const decoder = new TextDecoder();
+    let source = '';
+    let size = 0;
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        size += value.byteLength;
+        if (size > 4_000_000) {
+          await reader.cancel();
+          throw new Error('Australia Post application module exceeds its size limit');
+        }
+        source += decoder.decode(value, { stream: true });
+      }
+      source += decoder.decode();
+    } finally { reader.releaseLock(); }
+    const matches = [...source.matchAll(/\bshipmentsGateway:"([A-Za-z0-9._-]{16,200})"/g)];
+    if (matches.length !== 1) throw new Error('Australia Post anonymous client configuration changed');
+    const api = new URL('https://digitalapi.auspost.com.au/shipments-gateway/v1/watchlist/shipments');
+    api.searchParams.set('trackingIds', number);
+    await fetch(api.href, { credentials: 'include', redirect: 'error', signal: controller.signal,
+      headers: { 'api-key': matches[0][1], 'Content-Type': 'application/json', AP_CHANNEL_NAME: 'WEB_DETAIL' } });
+  } finally { clearTimeout(timer); }
+}
+
 const SITES = [
+  {
+    api: 'https://digitalapi.auspost.com.au/shipments-gateway/v1/watchlist/shipments',
+    queryNumber: true,
+    number(page) {
+      if (page.origin !== 'https://auspost.com.au' || page.search || page.hash) return null;
+      return /^\/mypost\/track\/details\/([A-Z0-9]{10,34})\/?$/.exec(page.pathname)?.[1] ?? null;
+    },
+    settled(data, number) {
+      return Array.isArray(data) && data.some(item => Array.isArray(item?.trackingIds) && item.trackingIds.includes(number));
+    },
+    async prepare(page, number, budgetMs) {
+      await page.evaluate(requestAustraliaPostInPage, { number, budgetMs });
+    },
+  },
   {
     api: 'https://postal.ninja/track/get',
     checkApi: 'https://postal.ninja/track/check',
@@ -135,12 +197,14 @@ export async function attachTrackingCapture(page, url, options) {
   const requested = options.captureResponses ?? [];
   const site = SITES.find(candidate => candidate.number(target)
     && (!candidate.checkApi || requested.includes(candidate.checkApi))
-    && (candidate.perNumber
+    && (candidate.queryNumber
+      ? requested.includes(`${candidate.api}?trackingIds=${candidate.number(target)}`)
+      : candidate.perNumber
       ? requested.includes(candidate.api + candidate.number(target))
       : requested.includes(candidate.api)));
   if (!site) return undefined;
   const number = site.number(target);
-  const api = site.api + (site.perNumber ? number : '');
+  const api = site.api + (site.queryNumber ? `?trackingIds=${number}` : site.perNumber ? number : '');
   if (site.perNumber) {
     await page.context().addCookies(Object.entries(ROYAL_MAIL_OPT_OUT).map(([name, value]) => ({
       name, value, domain: '.royalmail.com', path: '/', secure: true, sameSite: 'Lax',
@@ -179,7 +243,7 @@ export async function attachTrackingCapture(page, url, options) {
   const onResponse = async response => {
     if (!accepting || (response.url() !== api && response.url() !== site.checkApi)
       || (site.checkApi && response.request().method() !== 'POST')
-      || (site.perNumber && response.request().method() !== 'GET') || ++count > 20) return;
+      || ((site.perNumber || site.queryNumber) && response.request().method() !== 'GET') || ++count > 20) return;
     const headers = response.headers();
     const entry = { url: response.url(), status: response.status(), body: null,
       headers: headers['retry-after'] ? { 'retry-after': headers['retry-after'].slice(0, 100) } : {},
@@ -209,7 +273,7 @@ export async function attachTrackingCapture(page, url, options) {
     } catch { entry.error = 'tracking response could not be read'; }
   };
   page.on('response', onResponse);
-  if (site.perNumber) {
+  if (site.perNumber || site.queryNumber) {
     page.on('request', onRequest);
     page.on('requestfailed', onRequestFailed);
   }
@@ -287,23 +351,24 @@ export async function attachTrackingCapture(page, url, options) {
       // sends the API request and resets the widget; do not click it again.
       await awaitReply();
     } } : {}),
-    hasResponse() { return Boolean((site.checkApi && terminal) || (site.perNumber && entries.some(entry => entry.body !== null || entry.status !== 200))); },
+    hasResponse() { return Boolean(((site.checkApi || site.queryNumber) && terminal) || (site.perNumber && entries.some(entry => entry.body !== null || entry.status !== 200))); },
     // Royal Mail can use an existing API session or a fresh CAPTCHA token.
     // Once the lookup starts, let its own refresh callback handle E0015.
-    hasTrackingRequest() { return Boolean((site.checkApi && state.handle) || (site.perNumber && trackingRequested)); },
+    hasTrackingRequest() { return Boolean((site.checkApi && state.handle) || ((site.perNumber || site.queryNumber) && trackingRequested)); },
     settle,
     async drain() {
       accepting = false;
       page.off('response', onResponse);
-      if (site.perNumber) {
+      if (site.perNumber || site.queryNumber) {
         page.off('request', onRequest);
         page.off('requestfailed', onRequestFailed);
       }
       // A loaded app shell is not a successful Royal Mail session. Let the
       // orchestrator invalidate cached cookies and try its fresh browser tier.
-      if (site.perNumber && entries.length === 0) {
-        if (networkError) throw new Error(`Royal Mail tracking request failed: ${networkError}`);
-        throw new Error('Royal Mail produced no tracking response after form submission');
+      if ((site.perNumber || site.queryNumber) && entries.length === 0) {
+        const provider = site.queryNumber ? 'Australia Post' : 'Royal Mail';
+        if (networkError) throw new Error(`${provider} tracking request failed: ${networkError}`);
+        throw new Error(`${provider} produced no tracking response after submission`);
       }
       return { capturedResponses: entries.map(entry => ({ ...entry })) };
     },

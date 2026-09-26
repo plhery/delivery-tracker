@@ -49,6 +49,27 @@ puzzle, or reuse lifetime was established. A dedicated vision solver is a
 possible engineering approach, not a verified capability of the existing
 browser service. The evidence does not justify calling the CAPTCHA impossible.
 
+## Browser-service follow-up, 2026-09-26
+
+Fresh TRAWL Tier 3 reached the official page, and a separate server Camoufox
+session submitted a synthetic identifier and received the current
+`WORD_IMAGE_CLICK` challenge. Page transport is therefore traversable. The
+installed solver supports Turnstile, reCAPTCHA audio, hCaptcha auto-pass and
+GeeTest sliders, but has no solver for these four ordered character clicks.
+No automated answer or matching official tracking history was demonstrated.
+
+The current frontend retains `capcode` in local storage for the list-to-detail
+transition. A future solver should test the same browser context, challenge
+expiry and number binding; exporting cookies alone omits that state. Reuse
+across unrelated queries remains unverified. The frontend also gates complete
+history behind login, so solving the challenge may only establish preview access.
+
+The [official API platform](https://api.ems.com.cn/) documents tracking service
+`040001`, covering up to one year. Its `/amp-prod-api/f/amp/api/open` integration
+requires a contract customer code, authorization and a signed/encrypted payload.
+Eligibility and the permitted shipment scope must be established for that route;
+it is not an anonymous replacement for the website.
+
 ## Working official alternative: EMS Cooperative
 
 The [official EMS tracking page](https://www.ems.post/en/global-network/tracking)

@@ -54,6 +54,8 @@ export interface TrawlCallOptions {
   timeoutMs: number;
   maxBytes?: number;
   fetcher?: typeof fetch;
+  /** Cancel the service request and all readiness/recovery requests together. */
+  signal?: AbortSignal;
   /** Require a solved browser tier (2 or 3) with HTTP 200. Default true. */
   requireSolved?: boolean;
 }
@@ -151,11 +153,24 @@ export class TrawlClient {
     return this.withPath('v1');
   }
 
+  private requestFetcher(options: TrawlCallOptions): typeof fetch {
+    const fetcher = options.fetcher ?? this.fetcher ?? fetch;
+    if (!options.signal) return fetcher;
+    return (input, init) => {
+      options.signal!.throwIfAborted();
+      return fetcher(input, { ...init, signal: AbortSignal.any([
+        options.signal!, ...(init?.signal ? [init.signal] : []),
+      ]) });
+    };
+  }
+
   /** Native API: load a page in a browser tier, optionally capturing in-page API responses. */
   async scrape(request: TrawlScrapeRequest, options: TrawlCallOptions): Promise<TrawlScrapeResponse> {
+    options.signal?.throwIfAborted();
     const deadline = performance.now() + options.timeoutMs + TRANSPORT_ALLOWANCE_MS;
     try { return await this.scrapeOnce(request, options); }
     catch (error) {
+      options.signal?.throwIfAborted();
       // Retry only an identified dead browser, never maintenance, challenges or arbitrary 500s.
       if (!(error instanceof UpstreamHttpError) || error.status < 500
         || !/Target page, context or browser has been closed/.test(error.diagnostics?.body_excerpt ?? '')
@@ -163,12 +178,13 @@ export class TrawlClient {
       try {
         const { bytes } = await fetchBounded(this.withPath('health'), {}, {
           provider: 'TRAWL readiness', timeoutMs: 2_000, maxBytes: 16_384,
-          fetcher: options.fetcher ?? this.fetcher,
+          fetcher: this.requestFetcher(options),
         });
+        options.signal?.throwIfAborted();
         const health = parseJsonBytes(bytes, 'TRAWL readiness');
         if (!isRecord(health) || health.status !== 'ok' || !isRecord(health.pool)
           || Number(health.pool.live) < 1 || Number(health.pool.available) < 1) throw error;
-      } catch { throw error; }
+      } catch { options.signal?.throwIfAborted(); throw error; }
       const remaining = Math.floor(deadline - performance.now() - TRANSPORT_ALLOWANCE_MS);
       if (remaining < 1_000) throw error;
       return this.scrapeOnce({ ...request, maxTimeout: Math.min(request.maxTimeout ?? options.timeoutMs, remaining) },
@@ -177,6 +193,7 @@ export class TrawlClient {
   }
 
   private async scrapeOnce(request: TrawlScrapeRequest, options: TrawlCallOptions): Promise<TrawlScrapeResponse> {
+    options.signal?.throwIfAborted();
     const { bytes } = await fetchBounded(this.scrapeUrl(), {
       method: 'POST',
       headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
@@ -185,8 +202,9 @@ export class TrawlClient {
       provider: options.provider,
       timeoutMs: options.timeoutMs + TRANSPORT_ALLOWANCE_MS,
       maxBytes: options.maxBytes ?? DEFAULT_MAX_BYTES,
-      fetcher: options.fetcher ?? this.fetcher,
+      fetcher: this.requestFetcher(options),
     });
+    options.signal?.throwIfAborted();
     const value = parseJsonBytes(bytes, options.provider);
     if (!isRecord(value)) throw new TrawlError(options.provider, 'The browser service returned an invalid response');
     if (value.error) {
@@ -213,6 +231,7 @@ export class TrawlClient {
 
   /** Legacy command API (`request.get`): returns the solved page HTML. */
   async solve(url: string, options: TrawlCallOptions): Promise<string> {
+    options.signal?.throwIfAborted();
     const { bytes } = await fetchBounded(this.commandUrl(), {
       method: 'POST',
       headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
@@ -221,8 +240,9 @@ export class TrawlClient {
       provider: options.provider,
       timeoutMs: options.timeoutMs + TRANSPORT_ALLOWANCE_MS,
       maxBytes: options.maxBytes ?? DEFAULT_MAX_BYTES,
-      fetcher: options.fetcher ?? this.fetcher,
+      fetcher: this.requestFetcher(options),
     });
+    options.signal?.throwIfAborted();
     const payload = parseJsonBytes(bytes, options.provider);
     const solution = isRecord(payload) && isRecord(payload.solution) ? payload.solution : {};
     if (isRecord(payload) && payload.status === 'ok' && [200, 302].includes(Number(solution.status))

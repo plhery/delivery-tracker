@@ -12,16 +12,42 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "australia-post",
+    "steps": [
+      "trawl"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "provider_code",
+    "delivered_at"
+  ],
   "portal": {
-    "url": "https://auspost.com.au/mypost/track/search?id={trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "url": "https://auspost.com.au/mypost/track/details/{trackingNumber}",
+    "canaryUrl": "https://auspost.com.au/mypost/track/",
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "provider_code",
+      "delivered_at",
+      "recipient_name",
+      "address",
+      "delivery_proof"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "provider_code",
+      "delivered_at"
+    ],
+    "discarded": [
+      "recipient_name",
+      "address",
+      "delivery_proof"
+    ],
     "unavailable": []
   },
   "links": [
@@ -32,6 +58,12 @@
       "params": [
         "id"
       ]
+    },
+    {
+      "domains": [
+        "auspost.com.au"
+      ],
+      "path": "^/mypost/track/details/([^/?#]+)/?$"
     }
   ],
   "detection": []

@@ -101,4 +101,46 @@ describe('dead browser recovery', () => {
     await expect(new TrawlClient('http://trawl:8191', fetcher).scrape({ url: 'https://example.test' }, options)).rejects.toMatchObject({ status: 500 });
     expect(fetcher).toHaveBeenCalledTimes(3);
   });
+
+  it('does not start or recover a cancelled scrape', async () => {
+    const controller = new AbortController();
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async (_input, init) => {
+      controller.abort();
+      expect(init?.signal?.aborted).toBe(true);
+      return closed();
+    });
+    const client = new TrawlClient('http://trawl:8191', fetcher);
+    await expect(client.scrape({ url: 'https://example.test' }, { ...options, signal: controller.signal })).rejects.toThrow();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    await expect(client.scrape({ url: 'https://example.test' }, { ...options, signal: controller.signal })).rejects.toThrow();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it('cancels readiness without starting a second browser attempt', async () => {
+    const controller = new AbortController();
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(closed()).mockImplementationOnce(async (_input, init) => {
+      controller.abort();
+      expect(init?.signal?.aborted).toBe(true);
+      return Response.json({ status: 'ok', pool: { live: 1, available: 1 } });
+    });
+    await expect(new TrawlClient('http://trawl:8191', fetcher).scrape({ url: 'https://example.test' },
+      { ...options, signal: controller.signal })).rejects.toThrow();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it('propagates cancellation to the recovery request while preserving the caller fetcher', async () => {
+    const controller = new AbortController();
+    const unused = vi.fn<typeof fetch>();
+    const override = vi.fn<typeof fetch>().mockResolvedValueOnce(closed())
+      .mockResolvedValueOnce(Response.json({ status: 'ok', pool: { live: 1, available: 1 } }))
+      .mockImplementationOnce(async (_input, init) => {
+        controller.abort();
+        expect(init?.signal?.aborted).toBe(true);
+        return Response.json({ tier: 3, statusCode: 200, html: '<html/>' });
+      });
+    await expect(new TrawlClient('http://trawl:8191', unused).scrape({ url: 'https://example.test' },
+      { ...options, fetcher: override, signal: controller.signal })).rejects.toThrow();
+    expect(override).toHaveBeenCalledTimes(3);
+    expect(unused).not.toHaveBeenCalled();
+  });
 });

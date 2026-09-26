@@ -1,0 +1,172 @@
+[
+  {
+    "status": 200,
+    "trackingIds": [
+      "7T0000000001000000001"
+    ],
+    "shipment": {
+      "status": "Success",
+      "consignmentId": "7T00000000",
+      "articles": [
+        {
+          "articleId": "7T0000000001000000001",
+          "status": {
+            "statusAttributeName": "Delivery Status of Article",
+            "statusAttributeValue": "Delivered",
+            "statusModificationDateTime": 1780927800000
+          },
+          "trackStatusOfArticle": "Delivered",
+          "barcode": "PRIVATE BARCODE",
+          "userOwnership": false,
+          "details": [
+            {
+              "articleId": "7T0000000001000000001",
+              "consignmentId": "7T00000000",
+              "articleType": "Parcel Post",
+              "sender": "PRIVATE SENDER",
+              "address": {
+                "addressee": "PRIVATE RECIPIENT",
+                "addressLine1": "PRIVATE STREET",
+                "postCode": "PRIVATE POSTCODE"
+              },
+              "fromAddress": {
+                "email": "PRIVATE EMAIL"
+              },
+              "accessCode": "PRIVATE ACCESS CODE",
+              "toolTipText": "PRIVATE TOOLTIP",
+              "deliverySummary": {
+                "imageExists": true,
+                "imageUrl": "https://example.invalid/private-proof"
+              },
+              "events": [
+                {
+                  "dateTime": 1780891800000,
+                  "localeDateTime": "2026-06-08T14:10:00+10:00",
+                  "description": "Delivered - Left in a safe place",
+                  "location": "Example sorting facility",
+                  "eventCode": "DD-ER15",
+                  "wcid": "PRIVATE FACILITY ID",
+                  "milestone": "Delivered"
+                },
+                {
+                  "dateTime": 1780870200000,
+                  "localeDateTime": "2026-06-08T08:10:00+10:00",
+                  "description": "Onboard for delivery",
+                  "location": "Example sorting facility",
+                  "eventCode": "AFP-ER13",
+                  "wcid": "PRIVATE FACILITY ID",
+                  "milestone": "It's coming today"
+                },
+                {
+                  "dateTime": 1780834200000,
+                  "localeDateTime": "2026-06-07T22:10:00+10:00",
+                  "description": "In transit to next facility",
+                  "location": "Example sorting facility",
+                  "eventCode": "TTP-ER81",
+                  "wcid": "PRIVATE FACILITY ID",
+                  "milestone": "It's on its way"
+                },
+                {
+                  "dateTime": 1780827000000,
+                  "localeDateTime": "2026-06-07T20:10:00+10:00",
+                  "description": "Processing at facility",
+                  "location": "Example sorting facility",
+                  "eventCode": "AFP-ER37",
+                  "wcid": "PRIVATE FACILITY ID",
+                  "milestone": "It's on its way"
+                },
+                {
+                  "dateTime": 1780814400000,
+                  "localeDateTime": "2026-06-07T16:10:00+09:30",
+                  "description": "In transit to next facility",
+                  "location": "Example sorting facility",
+                  "eventCode": "TTP-ER81",
+                  "wcid": "PRIVATE FACILITY ID",
+                  "milestone": "It's on its way"
+                },
+                {
+                  "dateTime": 1780810800000,
+                  "localeDateTime": "2026-06-07T15:10:00+09:30",
+                  "description": "Item processed at sorting facility",
+                  "location": "Example sorting facility",
+                  "eventCode": "NSS-ER42",
+                  "wcid": "PRIVATE FACILITY ID",
+                  "milestone": "It's on its way"
+                },
+                {
+                  "dateTime": 1780792800000,
+                  "localeDateTime": "2026-06-07T10:10:00+09:30",
+                  "description": "In transit to next facility",
+                  "location": "Example sorting facility",
+                  "eventCode": "TTP-ER81",
+                  "wcid": "PRIVATE FACILITY ID",
+                  "milestone": "It's on its way"
+                },
+                {
+                  "dateTime": 1780713600000,
+                  "localeDateTime": "2026-06-06T12:10:00+09:30",
+                  "description": "Item processed at sorting facility",
+                  "location": "Example sorting facility",
+                  "eventCode": "NSS-ER42",
+                  "wcid": "PRIVATE FACILITY ID",
+                  "milestone": "It's on its way"
+                },
+                {
+                  "dateTime": 1780627200000,
+                  "localeDateTime": "2026-06-05T12:10:00+09:30",
+                  "description": "Lodged by Sender",
+                  "location": "Example sorting facility",
+                  "eventCode": "AFC-ER36",
+                  "wcid": "PRIVATE FACILITY ID",
+                  "milestone": "We've got it"
+                },
+                {
+                  "dateTime": 1780576800000,
+                  "localeDateTime": "2026-06-04T22:10:00+09:30",
+                  "description": "Shipping information approved by Australia Post",
+                  "location": "Example sorting facility",
+                  "eventCode": "ADMIN-ER40",
+                  "wcid": "PRIVATE FACILITY ID",
+                  "milestone": "Label created by sender"
+                },
+                {
+                  "dateTime": 1780558800000,
+                  "localeDateTime": "2026-06-04T17:10:00+09:30",
+                  "description": "Leave in a safe place requested",
+                  "location": null,
+                  "eventCode": "CE-SR05",
+                  "wcid": "PRIVATE FACILITY ID",
+                  "milestone": "Label created by sender"
+                },
+                {
+                  "dateTime": 1780555200000,
+                  "localeDateTime": "2026-06-04T16:10:00+09:30",
+                  "description": "Shipping information received by Australia Post",
+                  "location": "Example sorting facility",
+                  "eventCode": "ADMIN-ER39",
+                  "wcid": "PRIVATE FACILITY ID",
+                  "milestone": "Label created by sender"
+                }
+              ],
+              "milestones": [
+                {
+                  "name": "Delivered",
+                  "status": "Current",
+                  "dateTime": "2026-06-08T14:10:57Z"
+                }
+              ],
+              "estimatedDeliveryDateRange": null,
+              "signatureOnDelivery": {
+                "required": true
+              }
+            }
+          ]
+        }
+      ],
+      "milestone": {
+        "name": "Delivered",
+        "dateTime": "2026-06-08T14:10:58Z"
+      }
+    }
+  }
+]

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { attachTrackingCapture } from './tracking-capture.mjs';
+import { runInNewContext } from 'node:vm';
+import { attachTrackingCapture, requestAustraliaPostInPage } from './tracking-capture.mjs';
 const api = 'https://t.17track.net/track/restapi';
 const number = 'ZZ12345678900';
 const reply = code => JSON.stringify({ meta: { code: 200 }, shipments: [{ number, code }] });
@@ -26,6 +27,109 @@ async function fixture(url = `https://t.17track.net/en#nums=${number}`, endpoint
   });
   return { page, capture, respond, handlers, detached: () => detached };
 }
+
+const australiaNumber = '7T0000000000000000001';
+const australiaUrl = `https://auspost.com.au/mypost/track/details/${australiaNumber}`;
+const australiaApi = `https://digitalapi.auspost.com.au/shipments-gateway/v1/watchlist/shipments?trackingIds=${australiaNumber}`;
+const australiaReply = (trackingId = australiaNumber, status = 200) => JSON.stringify([
+  { trackingIds: [trackingId], status, ...(status === 200 ? { shipment: { articles: [{ articleId: trackingId }] } } : {}) },
+]);
+
+test('Australia Post capture requires the exact public page, number and anonymous GET', async () => {
+  for (const url of [australiaUrl.replace('auspost.com.au', 'other.test'), australiaUrl + '?x=1',
+    australiaUrl + '#test', australiaUrl.replace('/details/', '/search/'), australiaUrl + ',OTHER123456']) {
+    assert.equal(await attachTrackingCapture({}, url, { captureResponses: [australiaApi] }), undefined);
+  }
+  assert.equal(await attachTrackingCapture({}, australiaUrl, { captureResponses: [australiaApi.replace(australiaNumber, '0000000000000')] }), undefined);
+  const { capture, respond } = await fixture(australiaUrl, australiaApi);
+  await respond(australiaReply(), { method: 'POST' });
+  await respond(australiaReply('0000000000000'));
+  assert.equal(capture.hasResponse(), false);
+  await respond(australiaReply());
+  assert.equal(capture.hasResponse(), true);
+  await capture.settle(100);
+  assert.equal((await capture.drain()).capturedResponses.length, 2);
+});
+
+test('Australia Post stops on a matched negative or challenge instead of accepting an app shell', async () => {
+  for (const [body, status] of [[australiaReply(australiaNumber, 400), 200], ['', 403]]) {
+    const { capture, respond } = await fixture(australiaUrl, australiaApi);
+    await respond(body, { status });
+    assert.equal(capture.hasResponse(), true);
+    await capture.settle(100);
+    assert.equal((await capture.drain()).capturedResponses[0].status, status);
+  }
+  const { capture } = await fixture(australiaUrl, australiaApi);
+  await assert.rejects(capture.drain(), /Australia Post produced no tracking response/);
+});
+
+function australiaBrowser({ source = 'api:{shipmentsGateway:"synthetic-public-client-config"}', scripts,
+  origin = 'https://auspost.com.au', fetcher, budgetMs = 1000 } = {}) {
+  const calls = [];
+  const globals = { URL, AbortController, TextDecoder, setTimeout, clearTimeout,
+    location: { origin, href: australiaUrl },
+    document: { querySelectorAll: () => (scripts ?? ['https://auspost.com.au/mypost/track/assets/index-example.js']).map(src => ({ src })) },
+    fetch: async (url, options) => {
+      calls.push({ url, options });
+      return fetcher ? fetcher(url, options) : new Response(url.includes('/assets/') ? source : australiaReply());
+    },
+    args: { number: australiaNumber, budgetMs },
+  };
+  return { calls, run: () => runInNewContext(`(${requestAustraliaPostInPage.toString()})(args)`, globals) };
+}
+
+test('Australia Post reads current public configuration and submits only the anonymous tracking request', async () => {
+  const browser = australiaBrowser();
+  assert.equal(await browser.run(), undefined);
+  assert.equal(browser.calls.length, 2);
+  assert.equal(browser.calls[0].options.redirect, 'error');
+  const { url, options } = browser.calls[1];
+  assert.equal(url, australiaApi);
+  assert.equal(options.credentials, 'include');
+  assert.equal(options.headers['api-key'], 'synthetic-public-client-config');
+  assert.equal(options.headers.AP_CHANNEL_NAME, 'WEB_DETAIL');
+  assert.equal(options.headers.Authorization, undefined);
+  assert.equal(options.signal.aborted, false);
+});
+
+test('Australia Post refuses foreign or ambiguous modules and changed public configuration', async () => {
+  for (const options of [
+    { origin: 'https://other.test' }, { scripts: ['https://other.test/mypost/track/assets/index-example.js'] },
+    { scripts: ['https://auspost.com.au/mypost/track/assets/index-a.js', 'https://auspost.com.au/mypost/track/assets/index-b.js'] },
+    { source: 'configuration changed' },
+    { source: 'shipmentsGateway:"synthetic-public-config-one",shipmentsGateway:"synthetic-public-config-two"' },
+  ]) {
+    const browser = australiaBrowser(options);
+    await assert.rejects(browser.run(), /Australia Post/);
+    assert.equal(browser.calls.some(call => call.url === australiaApi), false);
+  }
+});
+
+test('Australia Post bounds bootstrap bytes and aborts a hanging bootstrap', async () => {
+  const tooLarge = australiaBrowser({ source: 'x'.repeat(4_000_001) });
+  await assert.rejects(tooLarge.run(), /size limit/);
+  assert.equal(tooLarge.calls.length, 1);
+  const exhausted = australiaBrowser({ budgetMs: 0 });
+  await assert.rejects(exhausted.run(), /budget exhausted/);
+  assert.equal(exhausted.calls.length, 0);
+  const hanging = australiaBrowser({ budgetMs: 10, fetcher: (_url, { signal }) => new Promise((resolve, reject) => {
+    signal.addEventListener('abort', () => reject(new Error('Aborted')), { once: true });
+  }) });
+  await assert.rejects(hanging.run(), /Aborted/);
+});
+
+test('Australia Post preparation captures history before the generic CAPTCHA solver runs', async () => {
+  const { page, capture, respond } = await fixture(australiaUrl, australiaApi);
+  page.evaluate = async (callback, args) => {
+    assert.equal(callback, requestAustraliaPostInPage);
+    assert.equal(args.number, australiaNumber);
+    assert.ok(args.budgetMs > 0);
+    await respond(australiaReply());
+  };
+  await capture.prepare(1000);
+  assert.equal(capture.hasResponse(), true);
+  await capture.drain();
+});
 
 const ninjaGet = 'https://postal.ninja/track/get';
 const ninjaCheck = 'https://postal.ninja/track/check';

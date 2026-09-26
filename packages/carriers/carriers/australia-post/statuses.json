@@ -1,0 +1,172 @@
+{
+  "carrier": "australia-post",
+  "entries": [
+    {
+      "code": "DD-ER15",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Observed public shipment-gateway event code."
+    },
+    {
+      "code": "AFP-ER13",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Observed public shipment-gateway event code."
+    },
+    {
+      "code": "TTP-ER81",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Observed public shipment-gateway event code."
+    },
+    {
+      "code": "AFP-ER37",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Observed public shipment-gateway event code."
+    },
+    {
+      "code": "NSS-ER42",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Observed public shipment-gateway event code."
+    },
+    {
+      "code": "AFC-ER36",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Observed public shipment-gateway event code."
+    },
+    {
+      "code": "ADMIN-ER40",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Observed public shipment-gateway event code."
+    },
+    {
+      "code": "ADMIN-ER39",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Observed public shipment-gateway event code."
+    },
+    {
+      "code": "CE-SR05",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Observed public shipment-gateway event code."
+    },
+    {
+      "wording": "Delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact public article milestone or event wording."
+    },
+    {
+      "wording": "It's coming today",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact public article milestone or event wording."
+    },
+    {
+      "wording": "It's on its way",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact public article milestone or event wording."
+    },
+    {
+      "wording": "We've got it",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact public article milestone or event wording."
+    },
+    {
+      "wording": "Label created by sender",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact public article milestone or event wording."
+    },
+    {
+      "wording": "Onboard for delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-26",
+      "note": "Exact public article milestone or event wording."
+    },
+    {
+      "wording": "Out for delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-26",
+      "note": "Synthetic semantic boundary; not observed in the live reference."
+    },
+    {
+      "wording": "In transit",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-26",
+      "note": "Synthetic semantic boundary; not observed in the live reference."
+    },
+    {
+      "wording": "Awaiting collection",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-26",
+      "note": "Synthetic semantic boundary; not observed in the live reference."
+    },
+    {
+      "wording": "Attempted delivery",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-26",
+      "note": "Synthetic semantic boundary; not observed in the live reference."
+    },
+    {
+      "wording": "Delayed",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-26",
+      "note": "Synthetic semantic boundary; not observed in the live reference."
+    },
+    {
+      "wording": "Return to sender",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-26",
+      "note": "Synthetic semantic boundary; not observed in the live reference."
+    },
+    {
+      "wording": "Returned to sender",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "fixture",
+      "firstSeen": "2026-09-26",
+      "note": "Synthetic semantic boundary; not observed in the live reference."
+    }
+  ]
+}

@@ -3,11 +3,12 @@
 Stock TRAWL 1.3.1 ignores `captureResponses`. Version 1.5.0 adds it but refuses
 compressed responses, including 17TRACK's, UPS's, FedEx's and Royal Mail's gzip JSON, and can stop on
 polling code 100. This compatibility build retains the normal TRAWL API and
-changes tier 2/3 tracking retrieval for five providers on their exact endpoints and public
+changes tier 2/3 tracking retrieval for six providers on their exact endpoints and public
 page with one valid number: 17TRACK's `track/restapi`, UPS's `GetStatus`,
 FedEx's `track/v2/shipments` and Royal Mail's per-number `microsummary`
 (exact per-number capture and form submission), plus Postal Ninja's
-`track/check` and `track/get`. Every other capture request keeps stock behaviour.
+`track/check` and `track/get`, and Australia Post's anonymous shipment query.
+Every other capture request keeps stock behaviour.
 
 The adapter observes the browser's response. For Royal Mail it preloads four
 non-identifying "Decline all" preference cookies before navigation, avoiding the
@@ -55,6 +56,7 @@ Build and test from the repository root:
 ```sh
 node --test ops/trawl/tracking-capture.test.mjs
 node --test ops/trawl/fedex-session.test.mjs
+node --test ops/trawl/australia-post-browser.test.mjs
 docker build -t delivery-tracker-trawl:local ops/trawl
 node ops/trawl/render-coolify.mjs > /tmp/trawl.Dockerfile
 ```
@@ -111,6 +113,51 @@ captured the matching successful follow-up. The deployed code matched the
 repository source and the service was healthy. A final live lookup still hit
 the separate tracking connection reset in 8.2 seconds; the refresh fix does
 not establish reliable upstream access.
+
+## Australia Post anonymous tracking
+
+For one identifier on the official `/mypost/track/details/{number}` page and
+its exact `shipments-gateway/v1/watchlist/shipments?trackingIds={number}`
+capture URL, preparation makes the same anonymous GET as the frontend.
+The site's optional account-login iframe can be challenged while this API
+works; waiting for account bootstrap would incorrectly discard usable tracking.
+The frontend explicitly permits an anonymous request when login is unavailable.
+
+Preparation reads the current public `shipmentsGateway` client configuration
+from the page's single same-origin application module. It does not execute
+downloaded code or return the client value. Module retrieval has a 4 MB streaming
+limit and shares a 15-second preparation deadline with the tracking request.
+Tracking responses retain the existing 2 MB per-response capture limit.
+Unknown or ambiguous configuration fails closed; no live key is stored in code.
+
+The GET carries `AP_CHANNEL_NAME: WEB_DETAIL` and the page's ordinary browser
+session. No account credentials, login token, CAPTCHA solver, proxy or headful
+pool are required by this path. The adapter binds the returned tracking ID and
+article identity and checks the actual scan offsets. HTTP 200 app HTML alone
+cannot count as a successful lookup.
+
+On 2026-09-26, the new helper returned 12 matching dated events in two fresh
+headless contexts on the server network (6.6 and 6.7 seconds). A fresh synthetic
+negative completed in 5.9 seconds with a matching error envelope. These are
+individual checks, not an availability guarantee. Plain HTTP was still challenged.
+
+The shared pool's English locale also received HTTP 403 even though its browser
+engine and network could retrieve the data. Controlled checks isolated the
+locale override: `de-DE` on a fresh context returned the same history, whereas
+`en-US` and `en-AU` were rejected. The Australia-specific runner therefore opens
+a temporary context on the leased browser with `AUSTRALIA_POST_BROWSER_LOCALE`
+(default `de-DE`, verified on the deployment network). Other deployments should
+verify their own locale/network combination. This does not change the shared
+pool, require another browser process, or set a timezone for carrier events.
+
+Both cached and fresh service tiers use that context with the normal outbound
+URL policy. It returns only matching captures and closes on success, error or
+deadline; failed cleanup asks the pool to replace the browser. No Australia Post
+cookies or browser page are retained between lookups.
+
+The deployed build passed both live Australia Post adapter tests on 2026-09-26:
+matching dated history in 4.8 seconds and a synthetic unknown reference in
+5.0 seconds. These checks exercise the adapter through the service's normal API.
 
 ## Retained FedEx browser session
 

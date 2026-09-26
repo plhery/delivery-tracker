@@ -12,12 +12,18 @@ for (const tier of [2, 3]) {
   const start = 'const start = Date.now()';
   if (source.split(start).length !== 2) throw new Error('TRAWL tier entry changed');
   const fedex = `if (${tier === 3 ? '!proxyUrl && ' : ''}!screenshot && (!method || method === "GET")
+    && !body && !Object.keys(extraHeaders ?? {}).length && australiaPostBrowserRequest(url, capture)) {
+    return await runAustraliaPostBrowser({ url, handle, tier: ${tier}, maxTimeout, capture,
+      installPolicy: page => installOutboundPolicy(page, validateOutboundUrl) })
+  }
+  if (${tier === 3 ? '!proxyUrl && ' : ''}!screenshot && (!method || method === "GET")
     && !body && !Object.keys(extraHeaders ?? {}).length && fedexSessionNumber(url, capture)) {
     return await fedexSessions.run({ url, handle, tier: ${tier}, maxTimeout, capture,
       installPolicy: page => installOutboundPolicy(page, validateOutboundUrl) })
   }
   ${start}`;
   writeFileSync(path, 'import { attachTrackingCapture } from "../utils/tracking-capture.mjs"\n'
+    + 'import { australiaPostBrowserRequest, runAustraliaPostBrowser } from "../utils/australia-post-browser.mjs"\n'
     + 'import { fedexSessions, fedexSessionNumber } from "../utils/fedex-session.mjs"\n'
     + source.replace(start, fedex)
       .replace(needle, 'const pageCapture = await attachTrackingCapture(page, url, capture) ?? attachPageCapture(page, capture)')
