@@ -24,8 +24,9 @@
 .add-parcel-sheet .button--primary { min-height: 48px; border-radius: 14px; padding: 12px 23px; font-weight: 600; }
 
 @media (max-width: 760px) {
-  .sheet-backdrop.add-parcel-backdrop { top: var(--add-viewport-top, 0px); bottom: auto; height: var(--add-viewport-height, 100dvh); padding: 0; overflow: hidden; align-items: stretch; }
-  .sheet.add-parcel-sheet { max-width: none; max-height: none; height: 100%; border: 0; border-radius: 0; padding: max(16px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); box-shadow: none; }
+  /* The sheet ends at the translucent keyboard; its shadow paints the canvas under it. */
+  .sheet-backdrop.add-parcel-backdrop { top: var(--add-viewport-top, 0px); bottom: auto; height: var(--add-viewport-height, 100dvh); padding: 0; overflow: visible; align-items: stretch; }
+  .sheet.add-parcel-sheet { max-width: none; max-height: none; height: 100%; border: 0; border-radius: 0; padding: max(16px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); box-shadow: 0 0 0 100vmax var(--canvas); }
   .add-parcel-sheet .sheet__form { flex: 1; }
   .add-parcel-fields { flex: 1; align-content: start; }
   .add-parcel-sheet .sheet__actions { padding-top: 20px; }

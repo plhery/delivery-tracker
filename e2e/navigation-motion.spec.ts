@@ -38,6 +38,10 @@ test('stretches continuously between tabs and follows history, translations, and
   expect(Math.abs(middle!.x - start!.x)).toBeLessThan(1);
   expect(middle!.width).toBeGreaterThan(Math.max(start!.width, destination!.width));
   expect(middle!.x + middle!.width).toBeGreaterThan(destination!.x);
+  // Safari composites transforms apart from width, so both edges must move on one clock.
+  expect(await pill.evaluate((element) => element.getAnimations()
+    .flatMap((animation) => (animation.effect as KeyframeEffect).getKeyframes())
+    .some((keyframe) => 'transform' in keyframe))).toBe(false);
 
   await navigation.getByRole('button', { name: 'Friends', exact: true }).click();
   expect(Math.abs((await pill.boundingBox())!.x - middle!.x)).toBeLessThan(1);

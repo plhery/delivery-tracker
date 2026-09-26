@@ -26,7 +26,7 @@ export function AppNavigation({ selected, onSelect }: { selected: AppTab; onSele
       const button = nav.querySelector<HTMLButtonElement>('[aria-current="page"]');
       if (!button || !button.offsetWidth || !button.offsetHeight) return;
       const target = {
-        transform: `translateX(${button.offsetLeft}px)`,
+        left: `${button.offsetLeft}px`,
         width: `${button.offsetWidth}px`,
         top: `${button.offsetTop}px`,
         height: `${button.offsetHeight}px`,
@@ -35,24 +35,25 @@ export function AppNavigation({ selected, onSelect }: { selected: AppTab; onSele
       if (key === previous) return;
       // A second tap continues from the visible edges, even mid-stretch.
       const visible = getComputedStyle(pill);
-      const from = { transform: visible.transform, width: visible.width };
+      const left = parseFloat(visible.left);
+      const right = left + parseFloat(visible.width);
       animation?.cancel();
       Object.assign(pill.style, target);
       nav.dataset.selectionReady = 'true';
       if (animate && previous && pill.animate && !reducedMotion?.matches) {
-        const left = new DOMMatrixReadOnly(from.transform).m41;
-        const right = left + parseFloat(from.width);
         const targetLeft = button.offsetLeft;
         const targetRight = targetLeft + button.offsetWidth;
         const movingRight = targetLeft + targetRight > left + right;
         const stretchLeft = Math.min(left, targetLeft);
         const stretchRight = Math.max(right, targetRight);
-        const frame = (l: number, r: number) => ({ transform: `translateX(${l}px)`, width: `${r - l}px` });
+        const frame = (l: number, r: number) => ({ left: `${l}px`, width: `${r - l}px` });
         const easing = 'cubic-bezier(.23,1,.32,1)';
         // Lead with one edge, pull the trailing edge through, then relax the
-        // small landing squeeze. Animate the width so corners keep their shape.
+        // small landing squeeze. Animate width so corners keep their shape, and
+        // left rather than transform: Safari runs transforms on the compositor
+        // and width on the page, and the drift swung the right edge past the tab.
         animation = pill.animate([
-          { ...from, offset: 0, easing },
+          { ...frame(left, right), offset: 0, easing },
           { ...frame(stretchLeft, stretchRight), offset: 150 / 610, easing },
           { ...frame(targetLeft + (movingRight ? 3 : 0), targetRight - (movingRight ? 0 : 3)), offset: 450 / 610, easing },
           { ...frame(targetLeft, targetRight), offset: 1 },
