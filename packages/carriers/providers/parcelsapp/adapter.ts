@@ -23,6 +23,7 @@ import { countryTimeZone, mislabeledLocalTime, mislabeledWallTime, sharedClockZo
 import type { TrawlClient } from '../../core/transport';
 import { isRecord } from '../../core/types';
 import { capturedBodies, loadCapture, type CaptureSpec } from '../shared/capture';
+import { universalCarrierHints } from '../shared/hints';
 import { event, isNotice, numberOf, result, type UniversalSource } from '../shared/result';
 import { PARCELSAPP_API, ParcelsAppHttpClient } from './http';
 
@@ -43,7 +44,7 @@ function parcelsIdentity(html: string, number: string): boolean {
 
 export function parseParcelsAppResponse(payload: unknown, trackingNumber: string, html: string, timezone: string | null = null): CarrierResult {
   if (!parcelsIdentity(html, numberOf(trackingNumber))) throw new SchemaError(SOURCE, 'ParcelsApp shipment identity missing');
-  return parseHistory(payload, timezone);
+  return parseHistory(payload, trackingNumber, timezone);
 }
 
 /**
@@ -76,7 +77,7 @@ function scanZone(payload: Record<string, unknown>, state: Record<string, unknow
   return (wall ? sharedClockZone(brand, wall) : null) ?? fallback;
 }
 
-function parseHistory(payload: unknown, timezone: string | null = null): CarrierResult {
+function parseHistory(payload: unknown, trackingNumber: string, timezone: string | null = null): CarrierResult {
   if (isRecord(payload) && payload.error === 'RELOAD') throw new ChallengeError(SOURCE);
   if (isRecord(payload) && (payload.error === 'NO_DATA' || payload.error === 'NO_TRACKER')) {
     throw new IndeterminateError(SOURCE, 'ParcelsApp has no usable shipment history');
@@ -99,7 +100,13 @@ function parseHistory(payload: unknown, timezone: string | null = null): Carrier
     }
     throw new IndeterminateError(SOURCE, 'No usable tracking events');
   }
-  return result(events, SOURCE);
+  // The carriers ParcelsApp aggregated for this number ("DPD Group"), as
+  // discovery hints; routing confirms one with its own adapter before adopting it.
+  const services = Array.isArray(payload.services) ? payload.services : [];
+  const carriers = Array.isArray(payload.carriers) ? payload.carriers : [];
+  return { ...result(events, SOURCE), ...universalCarrierHints([
+    ...carriers, ...services.map((service: unknown) => isRecord(service) ? service.name : undefined),
+  ].slice(0, 20), numberOf(trackingNumber)) };
 }
 
 function browserCanRecover(error: unknown): boolean {
@@ -167,7 +174,7 @@ export class ParcelsAppTracker {
       if (isRecord(payload) && payload.correctId && payload.correctId !== number) {
         throw new SchemaError(SOURCE, 'ParcelsApp returned an unverified tracking alias');
       }
-      return { ...parseHistory(payload, timezone), tracking_source: 'structured-web-response' };
+      return { ...parseHistory(payload, number, timezone), tracking_source: 'structured-web-response' };
     };
     return runSteps({ carrier: SOURCE, budgetMs, recorder: this.options.recorder }, [{
       id: 'direct',

@@ -3,16 +3,18 @@ import { trackingFailureCode } from './trackingFailure';
 
 import { DateTime } from 'luxon';
 import { detectCarrierMatch } from '../lib/carriers';
-import { activeRequirements, AUTOMATIC_CARRIER_IDS, carrierAdapter, carrierTimezone } from './carriers';
+import { AUTOMATIC_CARRIER_IDS, carrierAdapter, carrierTimezone, requiredRequirements } from './carriers';
 import { normalizeCarrierResult, type CarrierResult } from '@carriers/core/result';
 import { isRecord, type JsonObject } from './types';
 import { priorityUniversalSource, universalSourceBudget, universalSources } from '@carriers/providers/universal';
 import type { UniversalSource } from '@carriers/providers/shared/result';
 import { isKnownCarrierName } from '@carriers/providers/shared/hints';
+import { carrierBrand } from '@carriers/core/catalog/hints';
 import { errorType, reportRoutingEvent } from './observability';
 import { CarrierError, carrierErrorKind, IndeterminateError, retryAfterMsOf } from '@carriers/core/errors';
 import { captureDirectLocalHistory, directHistoryNumber, hasUnresolvedDirectCurrent, hasUnresolvedDirectHistory } from './directLocalHistory';
 import { latestResultTime } from './eventTime';
+import { CARRIER_REGIONS } from '@carriers/generated/regions';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -47,6 +49,8 @@ export interface RoutingState extends JsonObject {
   next_check_at?: string;
   direct_retry_at?: string;
   last_probe_at?: string;
+  /** Per-candidate schedule of the probes that ask carriers the number points to. */
+  candidate_probes?: Record<string, { count: number; retry_at: string }>;
   probe_cursor: number;
   discovery_cursor: number;
   failures: Record<string, Failure>;
@@ -125,6 +129,26 @@ function latest(value: RoutedResult): number {
 }
 function directCarrier(carrier: string): boolean {
   return AUTOMATIC_CARRIER_IDS.has(carrier) && carrierAdapter(carrier) !== 'universal';
+}
+
+// The app's home market: a carrier delivering here is worth one lookup for an
+// ambiguous number even when the number itself does not point to it.
+const HOME_COUNTRY = 'CH';
+const MAX_CANDIDATE_PROBES = 2;
+const CANDIDATE_PROBE_WINDOW = 30 * DAY;
+
+/**
+ * The detection candidates worth a direct lookup when the filed carrier cannot
+ * track a number: those a preferred rule backs (a DPD depot range), then the
+ * home market's, each with its own adapter and no required input. A high-
+ * confidence number is the correction path's, not a probe's.
+ */
+export function probeCandidates(number: string): string[] {
+  const detected = detectCarrierMatch(number);
+  if (detected.confidence !== 'low') return [];
+  return detected.candidates.filter((carrier) => directCarrier(carrier)
+    && requiredRequirements(carrier, number).length === 0
+    && (detected.preferred.includes(carrier) || (CARRIER_REGIONS[carrier] ?? []).includes(HOME_COUNTRY)));
 }
 
 export class RoutingDeferred extends Error {
@@ -212,13 +236,17 @@ export class TrackingRouter {
     };
     const attemptedDirect = new Set<string>();
     let attempts = 0;
-    const attempted = () => attemptedDirect.size + attempts;
-    const tryDirect = async (carrier: string, candidate = false, terminalStage?: string): Promise<RoutedResult | null> => {
+    // Probes are this parcel's own guesses: they are no evidence of provider health.
+    let probeContacts = 0;
+    const attempted = () => attemptedDirect.size - probeContacts + attempts;
+    const tryDirect = async (carrier: string, candidate = false, terminalStage?: string, probe = false): Promise<RoutedResult | null> => {
       signal?.throwIfAborted();
       if (!directCarrier(carrier) || attemptedDirect.has(carrier)) return null;
-      // Never borrow a postcode/capability from another carrier or guess missing input.
+      // Never borrow a postcode/capability from another carrier or guess missing
+      // input. An optional input (DPD's postcode) only adds detail, so a
+      // candidate that needs nothing else is looked up without it.
       const ownInputs = state.confirmed_carrier === carrier && state.confirmed_number === number;
-      if (candidate && !ownInputs && activeRequirements(carrier, number).length) {
+      if (candidate && !ownInputs && requiredRequirements(carrier, number).length) {
         report('carrier_input_required', carrier); return null;
       }
       if (millis(state.failures[carrier]?.retry_at) > now().getTime()) return null;
@@ -242,8 +270,11 @@ export class TrackingRouter {
           if (!candidate) localDirectFallback = { value, carrier };
           return null;
         }
+        // A probe needs movement: a pre-advice ("Order created") proves the
+        // label, not that this carrier has the parcel yet.
+        const notYet = probe ? ['pending', 'unknown', 'registered'] : ['pending', 'unknown'];
         if (candidate && ![value.result.status, value.result.current_stage, ...(value.result.events ?? []).map((event) => event.stage)]
-          .some((stage) => stage && stage !== 'pending' && stage !== 'unknown')) return null;
+          .some((stage) => stage && !notYet.includes(stage))) return null;
         if (candidate && latest(value) < millis(state.last_event_at)) return null;
         if (terminalStage && ['delivered', 'returned'].includes(terminalStage)
           && value.result.current_stage !== terminalStage) return null;
@@ -292,6 +323,49 @@ export class TrackingRouter {
     for (const candidate of candidates) {
       const value = await tryDirect(candidate, true);
       if (value) return persistResult(value, candidate);
+    }
+
+    // The filed carrier cannot track this number: it has no adapter of its own
+    // (unknown, a universal-only carrier) or its adapter does not know the
+    // number (a forwarder such as Asendia, a wrong label). A transient failure
+    // is not that. Ask the carriers the number points to before the
+    // universals, never another network of the filed carrier's own brand,
+    // for open parcels in their first month.
+    const filedCannotTrack = !directCarrier(primary) || state.failures[primary]?.kind === 'not_found';
+    const open = !['delivered', 'returned'].includes(String(parcel.current_stage));
+    const young = typeof parcel.created_at !== 'string' || now().getTime() - millis(parcel.created_at) < CANDIDATE_PROBE_WINDOW;
+    if (filedCannotTrack && open && young && universalNumber === number && !metadata.original_carrier) {
+      const brand = carrierBrand(primary) ?? carrierBrand(declared);
+      let asked = 0;
+      for (const candidate of probeCandidates(number)) {
+        if (asked >= MAX_CANDIDATE_PROBES) break;
+        if (candidate === primary || candidate === declared || (brand && carrierBrand(candidate) === brand)
+          || attemptedDirect.has(candidate) || millis(state.candidate_probes?.[candidate]?.retry_at) > now().getTime()
+          || millis(state.failures[candidate]?.retry_at) > now().getTime()) continue;
+        asked++;
+        const failure = state.failures[candidate];
+        const retry = state.direct_retry_at;
+        const value = await tryDirect(candidate, true, undefined, true).catch((error: unknown) => {
+          if (!(error instanceof RoutingDeferred)) throw error;
+          return null;
+        });
+        if (attemptedDirect.has(candidate)) probeContacts++;
+        if (value) {
+          if (state.candidate_probes) delete state.candidate_probes[candidate];
+          return persistResult(value, candidate);
+        }
+        // A miss is this parcel's schedule, not the carrier's failure: it
+        // decides neither the parcel's status nor the filed carrier's retry.
+        // Retry after 1, 2, 4, then 6 hours, since a parcel shows up once it
+        // is handed over, and daily after six misses.
+        if (failure) state.failures[candidate] = failure;
+        else delete state.failures[candidate];
+        state.direct_retry_at = retry;
+        const count = Math.min(20, (state.candidate_probes?.[candidate]?.count ?? 0) + 1);
+        state.candidate_probes = { ...state.candidate_probes, [candidate]: {
+          count, retry_at: iso(now().getTime() + Math.min(count > 6 ? DAY : 6 * HOUR, HOUR * 2 ** (count - 1))),
+        } };
+      }
     }
 
     const richerSources = sources.filter((source) => source !== 'UPU');

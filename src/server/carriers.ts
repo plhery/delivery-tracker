@@ -15,6 +15,7 @@ export {
   carrierAdapter,
   carrierDefinition,
   carrierTimezone,
+  requiredRequirements,
 } from '@carriers/core/catalog';
 export {
   isValidS10TrackingNumber,

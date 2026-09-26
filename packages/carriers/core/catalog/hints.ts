@@ -108,21 +108,34 @@ export function carrierNameCountryZone(name: string): string | null {
 }
 
 /**
- * The catalog zones of a brand named bare or as a group ("DPD", "DPD Group",
- * "GLS", "Hermes"): one per carrier whose id is the brand or starts with it
- * and a dash. The name cannot say which network scanned, so use them only
- * when they all read the scan's clock as one instant (`sharedClockZone`).
- * Empty for other names, and when any network has no local clock (DHL, whose
- * eCommerce network is UTC). The set follows the catalog: a new network of a
- * brand on another clock turns the brand's zone off, which moves the stored
- * instants, and so the event ids, of that brand's past scans.
+ * The catalog networks of a brand named bare or as a group ("DPD", "DPD
+ * Group", "GLS", "Hermes"): every carrier whose id is the brand or starts with
+ * it and a dash. Empty for other names. The name alone cannot say which
+ * network it means; only the tracking number can narrow it.
  */
-export function brandTimeZones(name: string): string[] {
+/** The multi-network brand a catalog carrier belongs to ("dpd" for `dpd-fr`), if any. */
+export function carrierBrand(id: string): string | undefined {
+  return NETWORK_BRANDS.find((brand) => id === brand || id.startsWith(`${brand}-`));
+}
+
+export function brandCarrierIds(name: string): string[] {
   const normalized = key(name);
   const brand = NETWORK_BRANDS.find((candidate) => normalized === candidate || normalized === `${candidate}group`);
   if (!brand) return [];
-  const zones = Object.keys(CARRIER_DEFINITIONS)
-    .filter((id) => id === brand || id.startsWith(`${brand}-`)).map((id) => carrierTimezone(id));
+  return Object.keys(CARRIER_DEFINITIONS).filter((id) => carrierBrand(id) === brand);
+}
+
+/**
+ * The catalog zones of a brand's networks (`brandCarrierIds`). The name cannot
+ * say which network scanned, so use them only when they all read the scan's
+ * clock as one instant (`sharedClockZone`). Empty for other names, and when
+ * any network has no local clock (DHL, whose eCommerce network is UTC). The
+ * set follows the catalog: a new network of a brand on another clock turns the
+ * brand's zone off, which moves the stored instants, and so the event ids, of
+ * that brand's past scans.
+ */
+export function brandTimeZones(name: string): string[] {
+  const zones = brandCarrierIds(name).map((id) => carrierTimezone(id));
   return zones.includes('UTC') ? [] : [...new Set(zones)];
 }
 

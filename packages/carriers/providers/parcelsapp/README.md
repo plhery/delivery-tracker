@@ -98,6 +98,11 @@ step exists for future protocol changes.
   India-to-France parcel listed La Poste scans under India Post).
 - Notices are skipped, not events: `require_fields` rows, postcode, sign-in and
   destination-country prompts, and rows rendered with a date but no time.
+- `carriers` and `services[].name` become `reported_carriers`, and `discovered_carrier`
+  when exactly one name maps to a catalog carrier. A bare brand ("DPD Group") maps only
+  when the number leaves one of its catalog networks (a DPD depot range picks DPD
+  Switzerland or France); routing then confirms it with that carrier's adapter. The
+  rendered page names no carriers.
 - Sender, destination and estimate fields are not kept.
 
 ## Limitations

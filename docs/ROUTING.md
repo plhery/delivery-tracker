@@ -12,7 +12,9 @@ provider.
 
 1. **The carrier's own adapter**, when it has one. Cainiao (`aliexpress`) is an aggregator
    too, but it is only queried for AliExpress-style numbers and the Swiss Post handoff.
-2. **Universal providers**: Ship24 → ParcelsApp → 17TRACK → UPU.
+2. **Carriers the number points to**, when the filed carrier cannot track it (see
+   [Candidate probes](#candidate-probes)).
+3. **Universal providers**: Ship24 → ParcelsApp → 17TRACK → UPU.
    - UPU is only for checksum-valid postal S10 numbers, always last, never remembered as
      the preferred source and never used for shadow checks.
    - Postal Ninja is off by default. `TRACKING_ENABLE_POSTAL_NINJA=true` inserts it before
@@ -84,14 +86,37 @@ Post 17TRACK route skip shadow checks.
 
 | Situation | Behaviour |
 | --- | --- |
-| Wrong carrier selected, right one supported | On failure, try the detected carrier, then a saved confirmed route, then universals. When a universal names a supported carrier, the router asks that carrier's adapter directly. It swaps only after that adapter returns real progress on the same number, at least as recent as what we have. The UI shows "Swapped automatically from X" for 12 h. |
-| Carrier needs a postcode or capability URL | Report `carrier_input_required` and continue with universals. Inputs are never borrowed from another carrier. |
+| Wrong carrier selected, right one supported | On failure, try the detected carrier, then a saved confirmed route, then the carriers the number points to, then universals. When a universal names a supported carrier, the router asks that carrier's adapter directly. A bare brand ("DPD Group") counts only when the number leaves one of the brand's catalog networks, by shape or a preferred rule such as a DPD depot range. It swaps only after that adapter returns real progress on the same number, at least as recent as what we have. The UI shows "Swapped automatically from X" for 12 h. |
+| Carrier needs a postcode or capability URL | Report `carrier_input_required` and continue with universals. Inputs are never borrowed from another carrier. An optional input (DPD's postcode) does not block a lookup; the lookup runs without it. |
 | Only one or two universals know the carrier | Discovery finds one and pins it. No fan-out on normal successful checks. |
-| Unknown carrier | Try one strong direct candidate if there is one, otherwise discover a universal. Never invent a carrier from a number's shape. |
+| Unknown carrier | Try one strong direct candidate if there is one, then the carriers the number points to, otherwise discover a universal. Never invent a carrier from a number's shape: a probe adopts a carrier only on its own real progress. |
 | Everything fails | Keep progress, store the next check time, keep affinity until a replacement works. |
 | User switches to a worse carrier | Check the new choice first. If the previously confirmed route still works, restore it with the same notice, using the postcode or link saved with it. Choosing the confirmed carrier again replaces those with what the user entered, so a cleared postcode is not reused. Generation fencing cancels in-flight work. |
 | Older or regressing result | Keep the newer or terminal state. A successful response never downgrades status. |
 | Same scans, new wording | Each wording is its own stored event. DPD is the exception: its scan takes over the one stored DPD or universal row at the exact same instant, which is updated in place. A universal row DPD took over keeps its identity, so the next universal reply rewords it in place again: its wording follows the source that answered last ([`eventIdentity.ts`](../src/server/eventIdentity.ts), [DPD README](../packages/carriers/carriers/dpd/README.md)). |
+
+## Candidate probes
+
+When the filed carrier cannot track the number, the router asks the carriers the number
+points to before the universals. "Cannot track" means it has no adapter of its own
+(`unknown`, a universal-only carrier) or its adapter answered not-found (a forwarder such
+as Asendia, a wrong label); a transient failure does not count. A candidate is a
+low-confidence detection match with its own adapter and no required input, either backed
+by a `preferred` rule (number evidence, such as DPD Switzerland's depots 0606–0619 or DPD
+France's 10xx) or serving the app's home market, Switzerland. Preferred candidates go
+first, and another network of the filed carrier's own brand is never asked.
+
+- At most two probes per check, for open parcels in their first 30 days, never for a
+  linked journey.
+- A probe is a correction lookup: no inputs from another carrier, and it is adopted only on
+  real progress on the same number, at least as recent as what we have, with the same
+  "Swapped automatically" notice. A pre-advice ("Order created") is not enough.
+- Misses are kept in `routing.candidate_probes`, not with the carrier failures, so they
+  decide neither the parcel's status, nor the filed carrier's retry, nor the health
+  evidence of the check. The next probe waits 1, 2, 4, then 6 hours, since a parcel appears
+  once it is handed over, and a day after six misses.
+- Country lists come from each `carrier.json` `region` through the generated
+  `packages/carriers/generated/regions.ts`; the public catalog does not carry them.
 
 ## Handoffs (two carriers)
 

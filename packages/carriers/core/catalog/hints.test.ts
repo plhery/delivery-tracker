@@ -1,8 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
-  brandTimeZones, carrierIdFromName, carrierIdFromPartner, carrierIdFromPartnerLinks, carrierNameCountryZone, isKnownCarrierName,
+  brandCarrierIds, brandTimeZones, carrierIdFromName, carrierIdFromPartner, carrierIdFromPartnerLinks, carrierNameCountryZone, isKnownCarrierName,
   nationalPostCandidate,
 } from './hints';
+
+describe('brand networks', () => {
+  it('lists the catalog networks of a bare or group brand name', () => {
+    expect(brandCarrierIds('DPD Group')).toEqual(['dpd', 'dpd-fr']);
+    expect(brandCarrierIds('gls')).toEqual(expect.arrayContaining(['gls-ch', 'gls-de', 'gls-fr']));
+    expect(brandCarrierIds('DPD UK')).toEqual([]);
+    expect(brandCarrierIds('Swiss Post')).toEqual([]);
+  });
+});
 
 describe('national postal lookup candidates', () => {
   it.each([

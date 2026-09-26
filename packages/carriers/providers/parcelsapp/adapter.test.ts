@@ -141,6 +141,26 @@ describe('ParcelsApp result parsing', () => {
       number, identity(), 'Europe/Zurich').events?.[0]?.time).toBe('2026-07-02T16:30:00.000Z');
   });
 
+  it('reports the carriers it aggregated and resolves a bare brand with the number', () => {
+    const reply = (carriers: string[]) => ({
+      carriers, services: carriers.map((name) => ({ slug: name.toLowerCase().replace(/ /g, '-'), name, isFinished: true })),
+      states: [{ date: '2026-07-02T08:30:00+00:00', status: 'Delivered', carrier: 0 }],
+    });
+    // A Swiss DPD depot prefix picks DPD Switzerland out of the DPD networks.
+    const swiss = '06080000000002';
+    expect(parseParcelsAppResponse(reply(['DPD Group']), swiss, identity(swiss))).toMatchObject({
+      reported_carriers: ['DPD Group'], discovered_carrier: 'dpd',
+    });
+    // Another depot matches both DPD networks: the brand stays a hint only.
+    const austrian = '06200000000002';
+    const unresolved = parseParcelsAppResponse(reply(['DPD Group']), austrian, identity(austrian));
+    expect(unresolved.reported_carriers).toEqual(['DPD Group']);
+    expect(unresolved.discovered_carrier).toBeUndefined();
+    // Two carriers on one journey never pick one.
+    expect(parseParcelsAppResponse(reply(['Swiss Post', 'DPD Group']), swiss, identity(swiss)).discovered_carrier).toBeUndefined();
+    expect(parseParcelsAppResponse(reply(['Swiss Post']), number, identity()).discovered_carrier).toBe('swiss-post');
+  });
+
   it('keeps the instants of scans whose carrier resolved before brand and country names did', () => {
     // A Chronopost + DHL Parcel Netherlands handoff: the DHL scans carry no
     // location and were read in the parcel carrier's zone (Berlin). Their name

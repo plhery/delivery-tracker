@@ -43,6 +43,14 @@ export function activeRequirements(
   );
 }
 
+/** The inputs a lookup cannot run without; an optional one only adds detail. */
+export function requiredRequirements(
+  carrierId: string,
+  trackingNumber: string,
+): CarrierRequirementRule[] {
+  return activeRequirements(carrierId, trackingNumber).filter((requirement) => requirement.optional !== true);
+}
+
 export const AUTOMATIC_CARRIER_IDS = new Set(
   Object.entries(CARRIER_DEFINITIONS)
     .filter(([, definition]) => definition.tracking.mode === 'automatic')

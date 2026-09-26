@@ -129,7 +129,7 @@ export function parse17TrackResponse(payload: unknown, trackingNumber: string): 
   }
   return { ...result(events, SOURCE), ...(undated ? { undated_event_count: undated } : {}),
     ...universalCarrierHints(tracking.providers.map((provider) =>
-    isRecord(provider) && isRecord(provider.provider) ? provider.provider.name : undefined)) };
+    isRecord(provider) && isRecord(provider.provider) ? provider.provider.name : undefined), number) };
 }
 
 export interface SeventeenTrackOptions {

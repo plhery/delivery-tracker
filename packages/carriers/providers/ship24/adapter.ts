@@ -49,7 +49,7 @@ export function parseShip24Response(payload: unknown, trackingNumber: string): C
   // website/phone fields and alternate numbers are not needed for discovery.
   const couriers = Array.isArray(payload.data.couriers) ? payload.data.couriers.slice(0, MAX_COURIERS) : [];
   return { ...result(events, SOURCE), ...universalCarrierHints(couriers.map((courier) =>
-    isRecord(courier) && isRecord(courier.translation) ? courier.translation.name : undefined)) };
+    isRecord(courier) && isRecord(courier.translation) ? courier.translation.name : undefined), number) };
 }
 
 /**

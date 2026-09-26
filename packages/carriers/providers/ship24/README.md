@@ -50,7 +50,8 @@ credentials. No account, cookie, fingerprint or issued token is used.
   shipment or inventing a UTC instant.
 - `dispatch_code_id: 7` is treated as delivered.
 - `couriers[].translation.name` becomes `reported_carriers`, and becomes
-  `discovered_carrier` only when exactly one name maps to a catalog id.
+  `discovered_carrier` only when exactly one name maps to a catalog id. A bare brand
+  ("DPD") maps only when the number leaves one of the brand's catalog networks.
 - The aggregator's delivery estimate, courier phone/website and alternate numbers are
   not kept.
 

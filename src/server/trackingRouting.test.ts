@@ -155,6 +155,119 @@ describe('persistent tracking routing', () => {
     expect(direct).toHaveBeenCalledWith(expect.objectContaining({ carrier: 'ups' }), 'ups');
     expect(result.result.routing).toMatchObject({ confirmed_carrier: 'ups' });
   });
+  describe('carriers the number points to', () => {
+    // A Swiss DPD depot prefix; the number is only a suggestion by shape.
+    const swissDpd = '06080000000002';
+    const notFound = (carrier: string) => new NotFoundError(carrier);
+    it('asks DPD before the universals when the filed forwarder does not know the number', async () => {
+      const { router, direct, universal } = setup();
+      direct.mockImplementation(async (_lookup: JsonObject, carrier: string) => {
+        if (carrier === 'asendia') throw notFound('Asendia');
+        return directValue('dpd');
+      });
+      const result = await router.fetch(parcel({ carrier: 'asendia', tracking_number: swissDpd, dpd_postcode: null }), false);
+      expect(direct.mock.calls.map(([, carrier]) => carrier)).toEqual(['asendia', 'dpd']);
+      // The optional postcode does not gate the lookup, and none is borrowed.
+      expect(direct.mock.calls[1][0]).toMatchObject({ carrier: 'dpd', dpd_postcode: null, tracking_url: null });
+      expect(universal).not.toHaveBeenCalled();
+      expect(result.correction).toEqual({ carrier: 'dpd', trackingUrl: null, postcode: null });
+      expect(result.result).toMatchObject({ auto_changed_from: 'asendia', auto_changed_to: 'dpd' });
+    });
+    it('retries a missed probe within hours, outside the carrier failures', async () => {
+      const { router, direct, universal } = setup();
+      direct.mockRejectedValue(notFound('carrier'));
+      const result = await router.fetch(parcel({ tracking_number: swissDpd }), false);
+      expect(direct.mock.calls.map(([, carrier]) => carrier)).toEqual(['dpd']);
+      expect(universal).toHaveBeenCalled();
+      const routing = result.result.routing as JsonObject & { failures: JsonObject; candidate_probes: JsonObject };
+      expect(routing.candidate_probes).toEqual({ dpd: { count: 1, retry_at: '2026-09-10T13:00:00.000Z' } });
+      // The miss decides neither the parcel's status nor a carrier cooldown.
+      expect(routing.failures).not.toHaveProperty('dpd');
+      expect(routing.direct_retry_at).not.toBe('2026-09-11T12:00:00.000Z');
+      // Inside the cooldown the next check goes straight to the universals.
+      const next = setup(new Date('2026-09-10T12:30:00Z'));
+      const again = await next.router.fetch(parcel({ tracking_number: swissDpd, carrier_data: result.result }), false);
+      expect(next.direct).not.toHaveBeenCalled();
+      // After it, a second miss doubles the wait.
+      const later = setup(new Date('2026-09-10T13:05:00Z'));
+      later.direct.mockRejectedValue(notFound('carrier'));
+      const third = await later.router.fetch(parcel({ tracking_number: swissDpd, carrier_data: again.result }), false);
+      expect((third.result.routing as JsonObject & { candidate_probes: JsonObject }).candidate_probes)
+        .toEqual({ dpd: { count: 2, retry_at: '2026-09-10T15:05:00.000Z' } });
+    });
+    it.each([
+      ['a pre-advice only', { status: 'registered', current_stage: 'registered', last_update: '2026-09-10T11:00:00Z',
+        events: [{ time: '2026-09-10T11:00:00Z', description: 'Order created', stage: 'registered' }] }],
+      ['history older than what the parcel has', history('2026-09-09T11:00:00Z')],
+    ])('backs off instead of adopting a probe answer with %s', async (_label, answer) => {
+      const { router, direct } = setup();
+      direct.mockResolvedValue({ ...directValue('dpd'), result: answer as CarrierResult });
+      const saved = { routing: state({ last_event_at: '2026-09-10T10:00:00Z' }) };
+      const result = await router.fetch(parcel({ tracking_number: swissDpd, carrier_data: saved }), false);
+      expect(result.correction).toBeUndefined();
+      expect(result.result.tracking_provider).toBe('Ship24');
+      expect(result.result.routing).toMatchObject({ candidate_probes: { dpd: { count: 1 } } });
+    });
+    it.each([
+      ['a transient failure of the filed carrier', 'dpd-fr', '11000000000001', new Error('timeout')],
+      ['another network of the filed brand', 'dpd', '10000000000001', notFound('DPD')],
+    ])('does not probe for %s', async (_label, carrier, trackingNumber, error) => {
+      const { router, direct } = setup();
+      direct.mockRejectedValue(error);
+      await router.fetch(parcel({ carrier, tracking_number: trackingNumber }), false);
+      expect(direct.mock.calls.map(([, called]) => called)).toEqual([carrier]);
+    });
+    it('keeps a failed probe out of the health evidence of a check that reached nobody else', async () => {
+      const { router, direct, health } = setup();
+      direct.mockRejectedValue(new Error('DPD down'));
+      health.acquireTrackingProvider.mockResolvedValue({ token: null, retry_at: '2026-09-10T12:30:00Z' });
+      await expect(router.fetch(parcel({ tracking_number: swissDpd }), false))
+        .rejects.toMatchObject({ name: 'RoutingDeferredError', attempted: 0 });
+      expect(direct).toHaveBeenCalledOnce();
+    });
+    it('still confirms DPD named by an aggregator while its probe is cooling down', async () => {
+      const { router, direct, universal } = setup();
+      universal.mockResolvedValue({ ...history(), ...universalCarrierHints(['DPD Group'], swissDpd) });
+      direct.mockResolvedValue(directValue('dpd'));
+      const saved = { routing: state({ candidate_probes: { dpd: { count: 7, retry_at: '2026-09-11T11:00:00Z' } } }) };
+      const result = await router.fetch(parcel({ tracking_number: swissDpd, carrier_data: saved }), false);
+      expect(direct.mock.calls.map(([, carrier]) => carrier)).toEqual(['dpd']);
+      expect(result.result).toMatchObject({ auto_changed_to: 'dpd' });
+    });
+    it.each([
+      ['a delivered parcel', { current_stage: 'delivered' }],
+      ['a parcel older than a month', { created_at: '2026-08-01T00:00:00Z' }],
+      ['a linked journey', { carrier_data: { original_carrier: 'asendia', active_tracking_carrier: 'dpd', active_tracking_number: 'LOCAL1234' } }],
+    ])('does not probe for %s', async (_label, overrides) => {
+      const { router, direct } = setup();
+      direct.mockRejectedValue(notFound('carrier'));
+      await router.fetch(parcel({ carrier: 'asendia', tracking_number: swissDpd, ...overrides }), false);
+      expect(direct.mock.calls.map(([, carrier]) => carrier)).not.toContain('dpd');
+    });
+    it('probes only carriers with number evidence or a home-market network', async () => {
+      const { router, direct } = setup();
+      direct.mockRejectedValue(notFound('carrier'));
+      // 10xx is DPD France's depot range (preferred); DPD Switzerland serves the home market.
+      await router.fetch(parcel({ tracking_number: '10000000000001' }), false);
+      expect(direct.mock.calls.map(([, carrier]) => carrier)).toEqual(['dpd-fr', 'dpd']);
+      // No probe for numbers without low-confidence candidates worth a lookup.
+      const other = setup();
+      await other.router.fetch(parcel({ tracking_number: 'TEST1234' }), false);
+      expect(other.direct).not.toHaveBeenCalled();
+    });
+    it('confirms DPD when an aggregator names "DPD Group" and the probe is not due', async () => {
+      const { router, direct, universal } = setup();
+      universal.mockResolvedValue({ ...history(), ...universalCarrierHints(['DPD Group'], swissDpd) });
+      direct.mockImplementation(async (_lookup: JsonObject, carrier: string) => {
+        if (carrier === 'asendia') throw notFound('Asendia');
+        return directValue('dpd');
+      });
+      const result = await router.fetch(parcel({ carrier: 'asendia', tracking_number: swissDpd, created_at: '2026-07-01T00:00:00Z' }), false);
+      expect(universal).toHaveBeenCalledOnce();
+      expect(direct.mock.calls.map(([, carrier]) => carrier)).toEqual(['asendia', 'dpd']);
+      expect(result.result).toMatchObject({ auto_changed_from: 'asendia', auto_changed_to: 'dpd' });
+    });
+  });
   it('does not borrow verification inputs from another carrier', async () => {
     const { router, direct, universal } = setup();
     await router.fetch(parcel({ dpd_postcode: '8000', carrier_data: { routing: state({ discovered_carrier: 'mondial-relay' }) } }), false);
@@ -391,6 +504,9 @@ describe('persistent tracking routing', () => {
   });
   it('does not guess a regional carrier from a brand or cross-border provider list', () => {
     expect(universalCarrierHints(['DHL']).discovered_carrier).toBeUndefined();
+    // A bare brand resolves only when the number leaves one of its networks.
+    expect(universalCarrierHints(['DPD Group'], '06080000000002')).toMatchObject({ discovered_carrier: 'dpd' });
+    expect(universalCarrierHints(['DPD Group'], '06200000000002').discovered_carrier).toBeUndefined();
     expect(universalCarrierHints(['UPS', 'Swiss Post']).discovered_carrier).toBeUndefined();
     expect(universalCarrierHints(['UPS'])).toMatchObject({ discovered_carrier: 'ups' });
     expect(universalCarrierHints(['Posti'])).toMatchObject({ discovered_carrier: 'posti' });
