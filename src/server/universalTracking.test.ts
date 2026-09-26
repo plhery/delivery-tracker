@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { isUnannouncedTrackingError, CarrierTrackingAdapter } from './trackingSync';
-import { UniversalTrackingError } from './universalTracking';
-import { HermesGermanyTracker } from './hermesGermany';
-import { GLSGermanyTracker } from './glsGermany';
-import { LaPosteTracker } from './laPoste';
+import { UniversalTrackingError } from '@carriers/providers/universal';
+import { HermesGermanyTracker } from '@carriers/carriers/hermes-de/adapter';
+import { GLSGermanyTracker } from '@carriers/carriers/gls-de/adapter';
+import { LaPosteTracker } from '@carriers/carriers/la-poste/adapter';
 
 // The providers themselves live in packages/carriers/providers; this file keeps
 // the host-side dispatch into the universal chain under test.

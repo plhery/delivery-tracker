@@ -1,13 +1,14 @@
 import { vi } from 'vitest';
-import { parseDHLTrackingResponse } from '../server/dhl';
-import { parseDHLEcommerceResponse } from '../server/dhlEcommerce';
-import { parseLaPosteTrackingResponse } from '../server/laPoste';
-import { parseSwissPostShipment } from '../server/swissPost';
-import { parseGLSSwitzerlandTrackingResponse } from '../server/glsSwitzerland';
-import { classifyIndiaPostEvent } from '../server/indiaPost';
-import { fetchPlanzer, fetchPostNL } from '../server/upstreamAdapters';
-import { event } from '../server/universalTrackingResult';
-import type { CarrierResult } from '../server/carrierResult';
+import { parseDHLTrackingResponse } from '@carriers/carriers/dhl/adapter';
+import { parseDHLEcommerceResponse } from '@carriers/carriers/dhl-ecommerce/adapter';
+import { parseLaPosteTrackingResponse } from '@carriers/carriers/la-poste/adapter';
+import { parseSwissPostShipment } from '@carriers/carriers/swiss-post/adapter';
+import { parseGLSSwitzerlandTrackingResponse } from '@carriers/carriers/gls-ch/adapter';
+import { classifyIndiaPostEvent } from '@carriers/carriers/india-post/adapter';
+import { fetchPlanzer } from '@carriers/carriers/planzer/adapter';
+import { fetchPostNL } from '@carriers/carriers/spring-gds/adapter';
+import { event } from '@carriers/providers/shared/result';
+import type { CarrierResult } from '@carriers/core/result';
 
 const NUMBER = 'AB12345678901';
 const TIME = '2026-01-01T12:00:00Z';

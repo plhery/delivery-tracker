@@ -1,4 +1,4 @@
-import type { CarrierResult } from './carrierResult';
+import type { CarrierResult } from '@carriers/core/result';
 import { activeRequirements, AUTOMATIC_CARRIER_IDS, carrierAdapter } from './carriers';
 import { carrierIdsFromPartnerLinks, nationalPostCandidate } from '@carriers/core/catalog/hints';
 import { detectCarrierMatch, isValidS10TrackingNumber, supportsSwissPostHandoff } from '@carriers/core/detection';

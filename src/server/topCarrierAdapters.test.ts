@@ -7,7 +7,7 @@ import { sfExpressApiUrl } from '@carriers/carriers/sf-express/adapter';
 import { createAdapterRegistry } from './adapterRegistry';
 import { buildEvents, CarrierTrackingAdapter, TrackingSyncService } from './trackingSync';
 import { TrackingRouter } from './trackingRouting';
-import type { UniversalTracker } from './universalTracking';
+import type { UniversalTracker } from '@carriers/providers/universal';
 import type { SupabaseServiceClient } from './supabase';
 import type { JsonObject } from './types';
 import { directLocalHistory, directLocalSnapshotIsOlder } from './directLocalHistory';

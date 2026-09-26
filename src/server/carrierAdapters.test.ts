@@ -7,12 +7,12 @@ import {
   dpdTrackingUrl,
   parseDPDTrackingApi,
   parseDPDTrackingHtml,
-} from './dpd';
+} from '@carriers/carriers/dpd/adapter';
 import {
   parseUPSTrackingHtml,
   parseUPSTrackingResponse,
   upsTrackingUrl,
-} from './ups';
+} from '@carriers/carriers/ups/adapter';
 
 const DPD_NUMBER = '06086514587082';
 const UPS_NUMBER = '1Z999AA10123456784';

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { Stage } from '../types';
-import { trackingLanguageStage } from './trackingLanguage';
+import { trackingLanguageStage } from '@carriers/core/status';
 import { inferStage, buildEvents } from './trackingSync';
-import { event } from './universalTrackingResult';
-import { parseDHLEcommerceResponse } from './dhlEcommerce';
-import { parseDHLTrackingResponse } from './dhl';
+import { event } from '@carriers/providers/shared/result';
+import { parseDHLEcommerceResponse } from '@carriers/carriers/dhl-ecommerce/adapter';
+import { parseDHLTrackingResponse } from '@carriers/carriers/dhl/adapter';
 
 // GENERATED contrasts, not observed carrier scans. These intuitive equivalents
 // test the semantic boundaries around the real histories and remain overridable.

@@ -1,12 +1,12 @@
 /**
  * The catalog lookups and the S10 checksum now live in the carrier package.
  * Input validation stays here because it depends on the carrier-specific
- * validators in `./dachser` and `./planzerShared`.
+ * validators in `@carriers/carriers/dachser/adapter` and `@carriers/carriers/planzer/shared`.
  */
 import { activeRequirements, carrierDefinition, type CarrierRequirementRule } from '@carriers/core/catalog';
 import { isValidMondialRelayBarcode } from '@carriers/core/detection';
-import { validateDachserTrackingUrl } from './dachser';
-import { validatePlanzerSharedUrl } from './planzerShared';
+import { validateDachserTrackingUrl } from '@carriers/carriers/dachser/adapter';
+import { validatePlanzerSharedUrl } from '@carriers/carriers/planzer/shared';
 
 export {
   AUTOMATIC_CARRIER_IDS,

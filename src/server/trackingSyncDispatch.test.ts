@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DHLTracker } from './dhl';
-import { DHLEcommerceTracker } from './dhlEcommerce';
+import { DHLTracker } from '@carriers/carriers/dhl/adapter';
+import { DHLEcommerceTracker } from '@carriers/carriers/dhl-ecommerce/adapter';
 import { CarrierTrackingAdapter } from './trackingSync';
 
 /**

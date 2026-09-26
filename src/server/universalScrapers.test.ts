@@ -1,15 +1,11 @@
 // @vitest-environment node
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { chromium } from 'playwright-core';
-import { scrapeUniversalPage } from './universalBrowser';
-import { PostalNinjaTracker, parsePostalNinjaResponse } from './postalNinja';
-import { Ship24Tracker, parseShip24Response } from './ship24';
+import { scrapeUniversalPage } from '@carriers/core/transport/browser';
+import { PostalNinjaTracker, parsePostalNinjaResponse } from '@carriers/providers/postal-ninja/adapter';
+import { Ship24Tracker, parseShip24Response } from '@carriers/providers/ship24/adapter';
 
 vi.mock('playwright-core', () => ({ chromium: { launch: vi.fn() } }));
-// These tests exercise browser recovery, independent of the HTTP fast path.
-vi.mock('./ship24Http', () => ({ ship24Http: {
-  fetch: vi.fn().mockRejectedValue(new Error('HTTP unavailable')),
-} }));
 vi.mock('./observability', async importOriginal => ({ ...await importOriginal<typeof import('./observability')>(), reportRoutingEvent: vi.fn() }));
 const number = 'ZZ12345678900';
 const ninja = (events: unknown[] = [

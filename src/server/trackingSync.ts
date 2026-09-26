@@ -1,13 +1,12 @@
 import 'server-only';
 import { deferredTrackingFailure, trackingFailureCode } from './trackingFailure';
-import { AmazonShippingHistoryExpiredError } from './amazonShipping';
+import { AmazonShippingHistoryExpiredError } from '@carriers/carriers/amazon-shipping/adapter';
 import { AMAZON_ACCOUNT_MESSAGE, AMAZON_HISTORY_EXPIRED, requiresAmazonAccount } from '../lib/amazon';
 
 import { createHash } from 'node:crypto';
 import { DateTime, IANAZone } from 'luxon';
 import { STAGES } from '../generated/apiContract';
-import type { CarrierResult } from './carrierResult';
-import { normalizeCarrierResult } from './carrierResult';
+import { normalizeCarrierResult, type CarrierResult } from '@carriers/core/result';
 import { deliveryHandoff, hasDirectHandoffAdapter, type DeliveryHandoff } from './carrierHandoff';
 import {
   AUTOMATIC_CARRIER_IDS,
@@ -36,8 +35,8 @@ import {
   type SyncRunContext,
 } from './trackingAudit';
 import { isRecord, type JsonObject } from './types';
-import { UniversalTracker } from './universalTracking';
-import type { UniversalSource } from './universalTrackingResult';
+import { UniversalTracker } from '@carriers/providers/universal';
+import type { UniversalSource } from '@carriers/providers/shared/result';
 import { RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
 import { upuHistory } from './upuHistory';
 import { directHistoryNumber, directLocalHistory, directLocalSnapshotIsOlder, hasUnresolvedDirectCurrent } from './directLocalHistory';

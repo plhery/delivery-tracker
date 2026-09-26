@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ChallengeError, UpstreamHttpError } from '@carriers/core/errors';
-import { PostalNinjaTracker } from './postalNinja';
-import { Ship24Tracker } from './ship24';
+import { PostalNinjaTracker } from '@carriers/providers/postal-ninja/adapter';
+import { Ship24Tracker } from '@carriers/providers/ship24/adapter';
 
 // Public forum example; no account or recipient details required.
 // https://www.reddit.com/r/AirReps/comments/1vfhh53/please_help_yunexpress_alibaba_tracking_stuck_on/

@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon';
-import type { CarrierResult } from './carrierResult';
+import type { CarrierResult } from '@carriers/core/result';
 import { isRecord, type JsonObject } from './types';
 
 const CARRIERS = new Set(['japan-post', 'evri', 'sf-express']);

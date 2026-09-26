@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildEvents, providerEventId } from './trackingSync';
-import { fetchPlanzer } from './upstreamAdapters';
+import { fetchPlanzer } from '@carriers/carriers/planzer/adapter';
 
 // Minimal reproduction of a real Quickpac response checked on 2026-09-06.
 // Keep its actual timestamps/labels, but replace the private shipment identifier.

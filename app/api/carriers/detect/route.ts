@@ -1,7 +1,7 @@
 import { isAmazonTrackingNumber } from '../../../../src/lib/amazon';
 import { checkAmazonShipping } from '../../../../src/server/amazonShippingEligibility';
 import { apiRoute, HttpError, json, readJsonObject } from '../../../../src/server/api';
-import { GLSGermanyTracker } from '../../../../src/server/glsGermany';
+import { GLSGermanyTracker } from '@carriers/carriers/gls-de/adapter';
 import { recordDetection } from '../../../../src/server/metrics';
 import { detectCarrierMatch, normalizeTrackingNumber } from '../../../../src/lib/carriers';
 import type { ApiCarrierDetectionResponse } from '../../../../src/generated/apiContract';

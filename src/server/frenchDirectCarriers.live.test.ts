@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ColisPriveTracker } from './colisPrive';
-import { GeodisTracker } from './geodis';
-import { LaPosteTracker } from './laPoste';
-import { RelaisColisTracker } from './relaisColis';
+import { ColisPriveTracker } from '@carriers/carriers/colis-prive/adapter';
+import { GeodisTracker } from '@carriers/carriers/geodis/adapter';
+import { LaPosteTracker } from '@carriers/carriers/la-poste/adapter';
+import { RelaisColisTracker } from '@carriers/carriers/relais-colis/adapter';
 
 describe('French direct carriers live wrong-number handling', () => {
   it('maps Relais Colis no data to a clean 404', async () => {

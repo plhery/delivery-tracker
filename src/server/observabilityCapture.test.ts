@@ -2,9 +2,9 @@ import { afterEach, expect, it, vi } from 'vitest';
 import * as Sentry from '@sentry/node';
 import type { Event } from '@sentry/node';
 import { captureOperationalError, captureTrackingHealth, flushObservability, initObservability, reportRoutingEvent } from './observability';
-import { UniversalTrackingError } from './universalTracking';
-import { UpstreamHttpError } from './boundedFetch';
-import { LaPosteTracker } from './laPoste';
+import { UniversalTrackingError } from '@carriers/providers/universal';
+import { UpstreamHttpError } from '@carriers/core/transport';
+import { LaPosteTracker } from '@carriers/carriers/la-poste/adapter';
 import { hostStepRecorder } from './stepRecorder';
 
 const captured = vi.hoisted(() => ({ events: [] as Event[] }));

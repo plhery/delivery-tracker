@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { POST } from '../../app/api/carriers/detect/route';
 import { detectCarrierMatch } from '../lib/carriers';
 import { SupabaseAuthenticator } from './auth';
-import { GLSGermanyTracker } from './glsGermany';
+import { GLSGermanyTracker } from '@carriers/carriers/gls-de/adapter';
 
 const request = (trackingNumber: unknown, authenticated = true) => POST(new NextRequest('https://delivery.example/api/carriers/detect', {
   method: 'POST', headers: { 'content-type': 'application/json', ...(authenticated ? { Authorization: 'Bearer detection-test' } : {}) },

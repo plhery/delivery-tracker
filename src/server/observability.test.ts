@@ -7,9 +7,9 @@ import {
   resolveSentryRelease,
   shouldReportRepeatedFailure,
 } from './observability';
-import { UpstreamHttpError } from './boundedFetch';
+import { UpstreamHttpError } from '@carriers/core/transport';
 import { SupabaseError } from './supabase';
-import { TrackingCaptureError, SeventeenTrackLookupError, SeventeenTrackNoHistoryError } from './universalTracking';
+import { TrackingCaptureError, SeventeenTrackLookupError, SeventeenTrackNoHistoryError } from '@carriers/providers/universal';
 
 afterEach(() => vi.restoreAllMocks());
 

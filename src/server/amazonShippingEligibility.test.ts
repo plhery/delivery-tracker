@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST as detect } from '../../app/api/carriers/detect/route';
 import { POST as add } from '../../app/api/packages/route';
-import { AmazonShippingHistoryExpiredError, AmazonShippingNotFoundError, AmazonShippingTracker } from './amazonShipping';
+import { AmazonShippingHistoryExpiredError, AmazonShippingNotFoundError, AmazonShippingTracker } from '@carriers/carriers/amazon-shipping/adapter';
 import { SupabaseAuthenticator } from './auth';
 import { SupabaseServiceClient, SupabaseUserClient } from './supabase';
 import * as background from './background';

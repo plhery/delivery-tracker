@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { AMAZON_ACCOUNT_MESSAGE, AMAZON_CHECK_UNAVAILABLE_MESSAGE } from '../lib/amazon';
-import { AmazonShippingHistoryExpiredError, AmazonShippingNotFoundError, AmazonShippingTracker } from './amazonShipping';
+import { AmazonShippingHistoryExpiredError, AmazonShippingNotFoundError, AmazonShippingTracker } from '@carriers/carriers/amazon-shipping/adapter';
 import { captureOperationalError } from './observability';
 import { HttpError } from './api';
 

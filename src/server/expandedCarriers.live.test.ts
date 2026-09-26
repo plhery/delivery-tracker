@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { UpstreamHttpError } from '@carriers/core/errors';
-import { GLSGermanyTracker } from './glsGermany';
-import { HermesGermanyTracker } from './hermesGermany';
+import { GLSGermanyTracker } from '@carriers/carriers/gls-de/adapter';
+import { HermesGermanyTracker } from '@carriers/carriers/hermes-de/adapter';
 import { CarrierTrackingAdapter } from './trackingSync';
 
 describe('public forum tracking examples', () => {

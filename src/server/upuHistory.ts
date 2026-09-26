@@ -1,4 +1,4 @@
-import type { CarrierResult } from './carrierResult';
+import type { CarrierResult } from '@carriers/core/result';
 import { isRecord, type JsonObject } from './types';
 
 /** Wall-time scans cannot enter the timestamped timeline as invented UTC instants. */

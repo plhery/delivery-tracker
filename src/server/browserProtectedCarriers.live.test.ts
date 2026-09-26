@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ChallengeError } from '@carriers/core/errors';
-import { DPDFranceTracker } from './dpdFrance';
-import { MondialRelayTracker } from './mondialRelay';
-import { UPSTracker } from './ups';
+import { DPDFranceTracker } from '@carriers/carriers/dpd-fr/adapter';
+import { MondialRelayTracker } from '@carriers/carriers/mondial-relay/adapter';
+import { UPSTracker } from '@carriers/carriers/ups/adapter';
 
 describe('browser-protected carriers live wrong-number handling', () => {
   it('gets a privacy-safe UPS no-result or the recognized browser challenge', async () => {

@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { UpstreamHttpError } from './boundedFetch';
+import { UpstreamHttpError } from '@carriers/core/transport';
 import { freshnessWindow, RoutingDeferred, routingState, TrackingRouter, type RoutedResult } from './trackingRouting';
 import type { JsonObject } from './types';
-import type { CarrierResult } from './carrierResult';
+import type { CarrierResult } from '@carriers/core/result';
 import * as monitoring from './observability';
-import { universalCarrierHints } from './universalCarrierHints';
+import { universalCarrierHints } from '@carriers/providers/shared/hints';
 import { IndeterminateError, InputRequiredError, NotFoundError } from '@carriers/core/errors';
 
 const time = new Date('2026-09-10T12:00:00Z');

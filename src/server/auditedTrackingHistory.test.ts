@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import history from './fixtures/auditedTrackingHistory.json';
 import { buildEvents } from './trackingSync';
-import { event } from './universalTrackingResult';
+import { event } from '@carriers/providers/shared/result';
 import { replayAuditedScan } from '../test/replayTrackingHistory';
 
 const TIME = '2026-01-01T12:00:00Z';

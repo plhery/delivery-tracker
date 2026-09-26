@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { deliveryHandoff } from './carrierHandoff';
-import { normalizeCarrierResult, type CarrierResult } from './carrierResult';
+import { normalizeCarrierResult, type CarrierResult } from '@carriers/core/result';
 
 describe('general delivery handoff candidates', () => {
   it('keeps tracking history when optional partner evidence is malformed', () => {

@@ -1,26 +1,26 @@
-import { AmazonShippingHistoryExpiredError, AmazonShippingTracker } from './amazonShipping';
+import { AmazonShippingHistoryExpiredError, AmazonShippingTracker } from '@carriers/carriers/amazon-shipping/adapter';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { secondsUntilNextSync, workerPollDelay } from './background';
-import { normalizeCarrierResult, type CarrierResult } from './carrierResult';
-import { ColisPriveTracker, ColisPriveTrackingError } from './colisPrive';
-import { ColiswebTracker } from './colisweb';
-import { CChezVousTracker } from './cChezVous';
-import { CiblexTracker } from './ciblex';
-import { DPDFranceTracker } from './dpdFrance';
-import { GeodisTracker } from './geodis';
-import { GLSFranceTracker } from './glsFrance';
-import { GLSSwitzerlandTracker } from './glsSwitzerland';
-import { HeppnerTracker } from './heppner';
-import { IndiaPostTracker } from './indiaPost';
-import { LaPosteTracker } from './laPoste';
-import { MondialRelayTracker } from './mondialRelay';
-import { PaackTracker } from './paack';
-import { RelaisColisTracker } from './relaisColis';
-import { SwissPostCargoTracker } from './swissPostCargo';
+import { normalizeCarrierResult, type CarrierResult } from '@carriers/core/result';
+import { ColisPriveTracker, ColisPriveTrackingError } from '@carriers/carriers/colis-prive/adapter';
+import { ColiswebTracker } from '@carriers/carriers/colisweb/adapter';
+import { CChezVousTracker } from '@carriers/carriers/c-chez-vous/adapter';
+import { CiblexTracker } from '@carriers/carriers/ciblex/adapter';
+import { DPDFranceTracker } from '@carriers/carriers/dpd-fr/adapter';
+import { GeodisTracker } from '@carriers/carriers/geodis/adapter';
+import { GLSFranceTracker } from '@carriers/carriers/gls-fr/adapter';
+import { GLSSwitzerlandTracker } from '@carriers/carriers/gls-ch/adapter';
+import { HeppnerTracker } from '@carriers/carriers/heppner/adapter';
+import { IndiaPostTracker } from '@carriers/carriers/india-post/adapter';
+import { LaPosteTracker } from '@carriers/carriers/la-poste/adapter';
+import { MondialRelayTracker } from '@carriers/carriers/mondial-relay/adapter';
+import { PaackTracker } from '@carriers/carriers/paack/adapter';
+import { RelaisColisTracker } from '@carriers/carriers/relais-colis/adapter';
+import { SwissPostCargoTracker } from '@carriers/carriers/swiss-post-cargo/adapter';
 import type { SupabaseServiceClient } from './supabase';
 import { AdapterRegistry, type AdapterEnvironment } from '@carriers/core/adapter';
 import type { StepRecorder } from '@carriers/core/telemetry';
-import type { UniversalTracker } from './universalTracking';
+import type { UniversalTracker } from '@carriers/providers/universal';
 import {
   CarrierTrackingAdapter,
   buildEvents,
@@ -41,8 +41,8 @@ import {
 } from './trackingSync';
 import type { JsonObject } from './types';
 import * as observability from './observability';
-import { UniversalTrackingError } from './universalTracking';
-import { UpstreamHttpError } from './boundedFetch';
+import { UniversalTrackingError } from '@carriers/providers/universal';
+import { UpstreamHttpError } from '@carriers/core/transport';
 import cainiaoDeliveredFixture from '../../packages/carriers/carriers/aliexpress/fixtures/delivered.json';
 import { adapter as cainiaoAdapter, parseCainiaoTrackingResponse } from '@carriers/carriers/aliexpress/adapter';
 import { adapter as postNLAdapter, parsePostNLTrackingResponse } from '@carriers/carriers/spring-gds/adapter';
