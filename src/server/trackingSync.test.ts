@@ -1459,7 +1459,7 @@ describe('TrackingSyncService', () => {
       id: 'package-1',
       user_id: 'user-1',
       carrier: 'dpd',
-      tracking_number: '06086514587082',
+      tracking_number: '06080000000002',
       current_stage: 'pending',
     };
     const client = fakeClient([parcel]);
@@ -1601,7 +1601,7 @@ describe('TrackingSyncService', () => {
     const parcel = {
       id: 'package-2',
       carrier: 'dpd',
-      tracking_number: '06086514587082',
+      tracking_number: '06080000000002',
       current_stage: 'pending',
     };
     const client = fakeClient();
@@ -1850,7 +1850,7 @@ describe('TrackingSyncService', () => {
     const parcel = {
       id: 'package-audit-outage',
       carrier: 'dpd',
-      tracking_number: '06086514587082',
+      tracking_number: '06080000000002',
       current_stage: 'pending',
     };
     const client = fakeClient();

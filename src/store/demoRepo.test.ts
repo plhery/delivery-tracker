@@ -185,7 +185,7 @@ describe('createDemoRepo', () => {
 
   it('stores the postcode with a DPD parcel', async () => {
     const parcel = await createDemoRepo(window.localStorage).add({
-      trackingNumber: '06086514587082',
+      trackingNumber: '06080000000002',
       label: 'DPD parcel',
       carrier: 'dpd',
       dpdPostcode: '8000',

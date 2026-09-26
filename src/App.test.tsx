@@ -627,7 +627,7 @@ describe('App', () => {
     const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
     await user.type(
       within(sheet).getByLabelText(/tracking number/i),
-      '06086514587082',
+      '06080000000002',
     );
     await user.selectOptions(await within(sheet).findByLabelText(/carrier/i, undefined, { timeout: 3000 }), 'dpd');
 
@@ -647,7 +647,7 @@ describe('App', () => {
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
 
     expect(add).toHaveBeenCalledWith({
-      trackingNumber: '06086514587082',
+      trackingNumber: '06080000000002',
       label: '',
       carrier: 'dpd',
       dpdPostcode: '8000',
@@ -680,7 +680,7 @@ describe('App', () => {
   it('prefills the postcode from the newest DPD parcel', async () => {
     const repo = createDemoRepo(window.localStorage);
     await repo.add({
-      trackingNumber: '06086514587082',
+      trackingNumber: '06080000000002',
       label: 'Previous DPD parcel',
       carrier: 'dpd',
       dpdPostcode: '8000',
@@ -693,7 +693,7 @@ describe('App', () => {
     const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
     await user.type(
       within(sheet).getByLabelText(/tracking number/i),
-      '06086514587083',
+      '06080000000003',
     );
     await user.selectOptions(await within(sheet).findByLabelText(/carrier/i, undefined, { timeout: 3000 }), 'dpd');
 
@@ -703,7 +703,7 @@ describe('App', () => {
   it('offers every regional carrier and keeps carrier postcodes isolated', async () => {
     const repo = createDemoRepo(window.localStorage);
     await repo.add({
-      trackingNumber: '06086514587082',
+      trackingNumber: '06080000000002',
       label: 'Previous DPD parcel',
       carrier: 'dpd',
       dpdPostcode: '8000',
@@ -873,11 +873,11 @@ describe('App', () => {
     const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
     await user.type(
       within(sheet).getByLabelText(/tracking number or link/i),
-      'https://www.dpdgroup.com/ch/mydpd/my-parcels/incoming?parcelNumber=06086514587082',
+      'https://www.dpdgroup.com/ch/mydpd/my-parcels/incoming?parcelNumber=06080000000002',
     );
 
-    expect(within(sheet).getByText('06086514587082').closest('p')).toHaveTextContent(
-      /found 06086514587082 in the pasted link/i,
+    expect(within(sheet).getByText('06080000000002').closest('p')).toHaveTextContent(
+      /found 06080000000002 in the pasted link/i,
     );
     expect(within(sheet).getByText(/DPD/i, { selector: 'strong' })).toBeInTheDocument();
     await user.type(within(sheet).getByLabelText(/delivery postcode/i), '8000');
@@ -885,7 +885,7 @@ describe('App', () => {
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
 
     expect(add).toHaveBeenCalledWith({
-      trackingNumber: '06086514587082',
+      trackingNumber: '06080000000002',
       label: '',
       carrier: 'dpd',
       dpdPostcode: '8000',

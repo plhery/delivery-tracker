@@ -14,7 +14,7 @@ import {
   upsTrackingUrl,
 } from '@carriers/carriers/ups/adapter';
 
-const DPD_NUMBER = '06086514587082';
+const DPD_NUMBER = '06080000000002';
 const UPS_NUMBER = '1Z999AA10123456784';
 
 afterEach(() => vi.restoreAllMocks());

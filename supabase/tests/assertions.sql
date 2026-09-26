@@ -343,7 +343,7 @@ select public.create_owned_package(
 );
 
 select public.create_owned_package(
-  '06086514587082', 'Verified DPD parcel', 'dpd', null, '8000'
+  '06080000000002', 'Verified DPD parcel', 'dpd', null, '8000'
 );
 
 select public.create_owned_package(
@@ -451,7 +451,7 @@ begin
 
   if not exists (
     select 1 from public.packages
-    where tracking_number = '06086514587082'
+    where tracking_number = '06080000000002'
       and dpd_postcode = '8000'
       and user_id = '10000000-0000-0000-0000-000000000001'
   ) then
@@ -577,7 +577,7 @@ begin
 
   begin
     perform public.create_owned_package(
-      '06086514587083', '', 'dpd', null, '80A4'
+      '06080000000003', '', 'dpd', null, '80A4'
     );
     raise exception 'invalid DPD postcode was accepted';
   exception when invalid_parameter_value then
@@ -673,10 +673,10 @@ begin
   end if;
 
   if not public.set_owned_package_archived(
-    (select id from public.packages where tracking_number = '06086514587082'),
+    (select id from public.packages where tracking_number = '06080000000002'),
     true
   ) or not public.set_owned_package_archived(
-    (select id from public.packages where tracking_number = '06086514587082'),
+    (select id from public.packages where tracking_number = '06080000000002'),
     false
   ) then
     raise exception 'owner could not archive and restore a package through the RPC';
@@ -723,7 +723,7 @@ begin
   begin
     update public.packages
     set dpd_postcode = '3000'
-    where tracking_number = '06086514587082';
+    where tracking_number = '06080000000002';
     raise exception 'authenticated user changed a stored DPD postcode';
   exception when insufficient_privilege then
     null;
@@ -784,7 +784,7 @@ begin
   end if;
   if exists (
     select 1 from public.packages
-    where tracking_number = '06086514587082'
+    where tracking_number = '06080000000002'
       and dpd_postcode = '8000'
   ) then
     raise exception 'second user could see first-user DPD verification data';

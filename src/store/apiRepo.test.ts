@@ -218,14 +218,14 @@ describe('createApiRepo', () => {
     }));
 
     await createApiRepo().add({
-      trackingNumber: '06086514587082',
+      trackingNumber: '06080000000002',
       label: 'DPD parcel',
       carrier: 'dpd',
       dpdPostcode: '8000',
     });
     expect(fetch).toHaveBeenLastCalledWith('/api/packages', expect.objectContaining({
       body: JSON.stringify({
-        trackingNumber: '06086514587082',
+        trackingNumber: '06080000000002',
         label: 'DPD parcel',
         carrier: 'dpd',
         dpdPostcode: '8000',
