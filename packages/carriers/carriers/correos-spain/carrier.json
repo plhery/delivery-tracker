@@ -50,13 +50,13 @@
     "scraped": [
       "status",
       "history",
-      "recipient_name",
       "weight",
       "dimensions",
       "pickup_point",
       "delivered_at"
     ],
     "discarded": [
+      "recipient_name",
       "recipient_address",
       "signature"
     ],

@@ -98,16 +98,17 @@ By carrier:
 - **China Post, Canada Post, DHL eCommerce:** the extra rows are the foreign or
   destination leg, which is the useful part. The rest are overlapping reports.
 - **Royal Mail:** sources disagree on the delivery date, and more rows do not settle it.
-- **Correos Spain:** all three successful feeds hold the same 12 scans. Only 17TRACK
-  surfaces the final exception (pickup window expired).
+- **Correos Spain:** all three successful feeds hold the same 12 scans. The direct adapter
+  and 17TRACK surface the final one (pickup window expired, parcel going back); ParcelsApp
+  still says in transit.
 - **GLS Germany, GLS Switzerland, short Mondial Relay numbers:** direct history needs the
   recipient postcode, which no public reference had.
 - **Chronopost, Hermes Germany, Mondial Relay, Poste Italiane, GLS France direct:** the
   public references are old, so the negatives say nothing about current coverage.
 
 Mapping gaps seen in these samples: 17TRACK maps Swiss Post vehicle loading to in
-transit; PostNL direct maps out-for-delivery as accepted; Correos direct leaves the
-summary unknown; EMS export cancellation has no dedicated stage.
+transit; PostNL direct maps out-for-delivery as accepted; EMS export cancellation has no
+dedicated stage.
 
 ## Other carriers
 

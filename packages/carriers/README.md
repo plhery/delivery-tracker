@@ -101,33 +101,33 @@ statuses, timings and network error codes.
 | `dhl` | DHL | dedicated | direct → trawl | 3 | 11 | 22 | [README](carriers/dhl/README.md) |
 | `ups` | UPS | dedicated | direct → trawl | 3 | 6 | 30 | [README](carriers/ups/README.md) |
 | `fedex` | FedEx | dedicated | trawl | 4 | 8 | 29 | [README](carriers/fedex/README.md) |
-| `usps` | USPS | dedicated | trawl | 3 | 14 | 19 | [README](carriers/usps/README.md) |
+| `usps` | USPS | dedicated | trawl | 3 | 17 | 19 | [README](carriers/usps/README.md) |
 | `amazon-logistics` | Amazon Logistics | link only |  | 0 | 24 | 0 | [README](carriers/amazon-logistics/README.md) |
-| `amazon-shipping` | Amazon Shipping | dedicated | direct | 4 | 3 | 14 | [README](carriers/amazon-shipping/README.md) |
+| `amazon-shipping` | Amazon Shipping | dedicated | direct | 4 | 5 | 14 | [README](carriers/amazon-shipping/README.md) |
 | `royal-mail` | Royal Mail | universal providers |  | 3 | 4 | 11 | [README](carriers/royal-mail/README.md) |
 | `swiss-post` | Swiss Post | dedicated | direct | 4 | 4 | 28 | [README](carriers/swiss-post/README.md) |
 | `la-poste` | La Poste / Colissimo | dedicated | direct → retry | 4 | 9 | 22 | [README](carriers/la-poste/README.md) |
 | `dpd` | DPD | dedicated | direct → page | 5 | 2 | 10 | [README](carriers/dpd/README.md) |
 | `dhl-ecommerce` | DHL eCommerce | dedicated | browser | 5 | 8 | 18 | [README](carriers/dhl-ecommerce/README.md) |
 | `aliexpress` | AliExpress / Cainiao | dedicated | direct | 4 | 2 | 50 | [README](carriers/aliexpress/README.md) |
-| `china-post` | China Post | universal providers |  | 0 | 2 | 0 | [README](carriers/china-post/README.md) |
-| `ems` | EMS | dedicated | direct | 2 | 2 | 16 | [README](carriers/ems/README.md) |
-| `sf-express` | SF Express | dedicated | trawl | 2 | 2 | 47 | [README](carriers/sf-express/README.md) |
-| `gls-de` | GLS Germany | dedicated | direct | 7 | 3 | 26 | [README](carriers/gls-de/README.md) |
+| `china-post` | China Post | universal providers |  | 0 | 4 | 0 | [README](carriers/china-post/README.md) |
+| `ems` | EMS | dedicated | direct | 2 | 3 | 16 | [README](carriers/ems/README.md) |
+| `sf-express` | SF Express | dedicated | trawl | 2 | 3 | 47 | [README](carriers/sf-express/README.md) |
+| `gls-de` | GLS Germany | dedicated | direct | 7 | 5 | 26 | [README](carriers/gls-de/README.md) |
 | `gls-fr` | GLS France | dedicated | direct | 4 | 6 | 29 | [README](carriers/gls-fr/README.md) |
 | `gls-ch` | GLS Switzerland | dedicated | direct | 7 | 1 | 26 | [README](carriers/gls-ch/README.md) |
-| `hermes-de` | Hermes Germany | dedicated | direct | 5 | 4 | 39 | [README](carriers/hermes-de/README.md) |
-| `evri` | Evri | dedicated | direct | 3 | 1 | 16 | [README](carriers/evri/README.md) |
-| `chronopost` | Chronopost | via la-poste | direct → retry | 4 | 6 | 6 | [README](carriers/chronopost/README.md) |
+| `hermes-de` | Hermes Germany | dedicated | direct | 5 | 6 | 39 | [README](carriers/hermes-de/README.md) |
+| `evri` | Evri | dedicated | direct | 3 | 2 | 16 | [README](carriers/evri/README.md) |
+| `chronopost` | Chronopost | via la-poste | direct → retry | 4 | 8 | 6 | [README](carriers/chronopost/README.md) |
 | `mondial-relay` | Mondial Relay | dedicated | trawl | 2 | 8 | 45 | [README](carriers/mondial-relay/README.md) |
-| `inpost` | InPost | dedicated | direct | 1 | 7 | 21 | [README](carriers/inpost/README.md) |
+| `inpost` | InPost | dedicated | direct | 1 | 8 | 21 | [README](carriers/inpost/README.md) |
 | `spring-gds` | PostNL | dedicated | direct | 4 | 16 | 16 | [README](carriers/spring-gds/README.md) |
 | `canada-post` | Canada Post | dedicated | direct | 4 | 4 | 15 | [README](carriers/canada-post/README.md) |
-| `australia-post` | Australia Post | dedicated | trawl | 4 | 3 | 22 | [README](carriers/australia-post/README.md) |
+| `australia-post` | Australia Post | dedicated | trawl | 4 | 4 | 22 | [README](carriers/australia-post/README.md) |
 | `japan-post` | Japan Post | dedicated | direct | 2 | 2 | 18 | [README](carriers/japan-post/README.md) |
 | `india-post` | India Post | dedicated | direct | 3 | 4 | 13 | [README](carriers/india-post/README.md) |
 | `poste-italiane` | Poste Italiane | dedicated | direct | 2 | 8 | 17 | [README](carriers/poste-italiane/README.md) |
-| `correos-spain` | Correos | dedicated | direct | 5 | 2 | 33 | [README](carriers/correos-spain/README.md) |
+| `correos-spain` | Correos | dedicated | direct | 5 | 4 | 37 | [README](carriers/correos-spain/README.md) |
 | `bpost` | bpost | universal providers |  | 0 | 4 | 0 |  |
 | `austrian-post` | Austrian Post | universal providers |  | 0 | 2 | 0 |  |
 | `postnord` | PostNord | universal providers |  | 0 | 1 | 0 |  |

@@ -50,6 +50,12 @@ const EVENT_STATUS: Record<string, ClassifiedStatus> = {
   'M01E020R': { status: 'exception', stage: 'failed_attempt' },
   'EOL.9001': { status: 'exception', stage: 'failed_attempt' },
   'O140000V': { status: 'exception', stage: 'returned' },
+  // Observed live on public parcels in the number corpus.
+  'ADV0000V': { status: 'in_transit', stage: 'accepted' },
+  'H01R390V': { status: 'exception', stage: 'failed_attempt' },
+  'H01R420V': { status: 'exception', stage: 'failed_attempt' },
+  // The pickup window closed: the parcel goes back to the sender.
+  'L03D320R': { status: 'exception', stage: 'returned' },
 };
 
 /** The stage and status for a Correos `codEvento`, or undefined when unmapped. */

@@ -33,6 +33,10 @@
     { "code": "X130000R", "language": "es", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },
     { "code": "M01E020R", "language": "es", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },
     { "code": "EOL.9001", "language": "es", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "Carried over from the prior-art map; shape does not match the other Correos codes and has not been re-observed." },
-    { "code": "O140000V", "language": "es", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" }
+    { "code": "O140000V", "language": "es", "stage": "returned", "confirmedBy": "prior-art", "firstSeen": "2026-09-10", "note": "" },
+    { "code": "ADV0000V", "wording": "Devolución admitida", "language": "es", "stage": "accepted", "confirmedBy": "live", "firstSeen": "2026-09-26", "note": "First movement of a return shipment's own code, after the pre-registration." },
+    { "code": "H01R390V", "wording": "Realizado intento de entrega", "language": "es", "stage": "failed_attempt", "confirmedBy": "live", "firstSeen": "2026-09-26", "note": "" },
+    { "code": "H01R420V", "wording": "Intento de entrega. Ausente", "language": "es", "stage": "failed_attempt", "confirmedBy": "live", "firstSeen": "2026-09-26", "note": "Recipient absent." },
+    { "code": "L03D320R", "wording": "Finalizado plazo retirada", "language": "es", "stage": "returned", "confirmedBy": "live", "firstSeen": "2026-09-26", "note": "Pickup window closed; the parcel goes back to the sender. Reported as status 'exception', like other carriers' uncollected codes." }
   ]
 }
