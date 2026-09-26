@@ -11,13 +11,13 @@ async function aligned(navigation: Locator) {
   })).toBeLessThan(1.5);
 }
 
-test('glides continuously between tabs and follows history, translations, and motion preferences', async ({ page }) => {
+test('stretches continuously between tabs and follows history, translations, and motion preferences', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('sdt.web.experience.v1', 'demo');
     const animate = HTMLElement.prototype.animate;
     HTMLElement.prototype.animate = function (frames, options) {
       const animation = animate.call(this, frames, options);
-      if (typeof options === 'object' && options.id === 'tab-selection-glide') {
+      if (typeof options === 'object' && options.id === 'tab-selection-rubber') {
         animation.pause();
         animation.currentTime = 0;
       }
@@ -35,15 +35,22 @@ test('glides continuously between tabs and follows history, translations, and mo
   await pill.evaluate((element) => element.getAnimations().forEach((animation) => { animation.currentTime = 100; }));
   const middle = await pill.boundingBox();
   const destination = await navigation.getByRole('button', { name: 'Passport', exact: true }).boundingBox();
-  expect(middle!.x).toBeGreaterThan(start!.x);
-  expect(middle!.x).toBeLessThan(destination!.x);
+  expect(Math.abs(middle!.x - start!.x)).toBeLessThan(1);
+  expect(middle!.width).toBeGreaterThan(Math.max(start!.width, destination!.width));
+  expect(middle!.x + middle!.width).toBeGreaterThan(destination!.x);
 
   await navigation.getByRole('button', { name: 'Friends', exact: true }).click();
   expect(Math.abs((await pill.boundingBox())!.x - middle!.x)).toBeLessThan(1);
+  expect(Math.abs((await pill.boundingBox())!.width - middle!.width)).toBeLessThan(1);
   await pill.evaluate((element) => element.getAnimations().forEach((animation) => animation.finish()));
   await aligned(navigation);
+  const beforeBack = await pill.boundingBox();
   await page.goBack();
   await expect(navigation.getByRole('button', { name: 'Passport', exact: true })).toHaveAttribute('aria-current', 'page');
+  await pill.evaluate((element) => element.getAnimations().forEach((animation) => { animation.currentTime = 100; }));
+  const reverse = await pill.boundingBox();
+  expect(reverse!.x).toBeLessThan(beforeBack!.x);
+  expect(Math.abs(reverse!.x + reverse!.width - beforeBack!.x - beforeBack!.width)).toBeLessThan(1);
   await pill.evaluate((element) => element.getAnimations().forEach((animation) => animation.finish()));
   await aligned(navigation);
 

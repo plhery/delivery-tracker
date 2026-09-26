@@ -33,15 +33,31 @@ export function AppNavigation({ selected, onSelect }: { selected: AppTab; onSele
       };
       const key = JSON.stringify(target);
       if (key === previous) return;
-      // A second tap continues from the visible position, even mid-glide.
+      // A second tap continues from the visible edges, even mid-stretch.
       const visible = getComputedStyle(pill);
       const from = { transform: visible.transform, width: visible.width };
       animation?.cancel();
       Object.assign(pill.style, target);
       nav.dataset.selectionReady = 'true';
       if (animate && previous && pill.animate && !reducedMotion?.matches) {
-        animation = pill.animate([from, { transform: target.transform, width: target.width }], {
-          id: 'tab-selection-glide', duration: 320, easing: 'cubic-bezier(.22,1,.36,1)',
+        const left = new DOMMatrixReadOnly(from.transform).m41;
+        const right = left + parseFloat(from.width);
+        const targetLeft = button.offsetLeft;
+        const targetRight = targetLeft + button.offsetWidth;
+        const movingRight = targetLeft + targetRight > left + right;
+        const stretchLeft = Math.min(left, targetLeft);
+        const stretchRight = Math.max(right, targetRight);
+        const frame = (l: number, r: number) => ({ transform: `translateX(${l}px)`, width: `${r - l}px` });
+        const easing = 'cubic-bezier(.23,1,.32,1)';
+        // Lead with one edge, pull the trailing edge through, then relax the
+        // small landing squeeze. Animate the width so corners keep their shape.
+        animation = pill.animate([
+          { ...from, offset: 0, easing },
+          { ...frame(stretchLeft, stretchRight), offset: 150 / 610, easing },
+          { ...frame(targetLeft + (movingRight ? 3 : 0), targetRight - (movingRight ? 0 : 3)), offset: 450 / 610, easing },
+          { ...frame(targetLeft, targetRight), offset: 1 },
+        ], {
+          id: 'tab-selection-rubber', duration: 610,
         });
       }
       previous = key;
