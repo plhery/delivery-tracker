@@ -6,9 +6,16 @@
 .add-parcel-fields { display: grid; gap: 20px; overflow-y: auto; overscroll-behavior: contain; padding: 4px; margin: -4px; }
 .add-parcel-tracking { display: grid; gap: 10px; min-width: 0; }
 .add-parcel-sheet .field__input { border-radius: 14px; padding: 13px 14px; min-height: 50px; }
-.add-parcel-sheet .field__input--tracking { min-height: 82px; font: inherit; font-size: 16px; line-height: 1.5; background: var(--paper); border-color: var(--line); }
+.add-parcel-sheet .field__input--tracking { min-height: 50px; max-height: 138px; font: inherit; font-size: 16px; line-height: 22px; resize: none; background: var(--paper); border-color: var(--line); }
+.add-parcel-sheet .field__input--tracking::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .add-parcel-sheet .field__input--tracking:focus { border-color: var(--ochre); }
 .add-parcel-sheet .sheet__carrier-hint { margin: 0; font-size: 12px; overflow-wrap: anywhere; }
+/* Feedback about the number arrives once typing pauses; ease it in. */
+.add-parcel-tracking > :not(:first-child) { animation: add-parcel-feedback-in .2s ease-out both; }
+.add-parcel-tracking > .add-parcel-notice { display: grid; grid-template-rows: 1fr; animation: add-parcel-notice-open .24s ease-out both; }
+.add-parcel-notice > p { min-height: 0; overflow: hidden; margin: 0; padding-inline: 2px; color: var(--orange-text); font-size: 12px; line-height: 1.45; }
+@keyframes add-parcel-feedback-in { from { opacity: 0; translate: 0 -4px; } }
+@keyframes add-parcel-notice-open { from { grid-template-rows: 0fr; margin-top: -10px; opacity: 0; } }
 .add-parcel-carrier__row { display: flex; align-items: center; gap: 8px; min-height: 36px; }
 .add-parcel-carrier__row > svg { width: 17px; height: 17px; flex-shrink: 0; color: var(--ink-soft); }
 .add-parcel-carrier__identity { display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 8px; min-width: 0; }
@@ -26,6 +33,7 @@
 @media (max-width: 760px) {
   /* The sheet ends at the translucent keyboard; its shadow paints the canvas under it. */
   .sheet-backdrop.add-parcel-backdrop { top: var(--add-viewport-top, 0px); bottom: auto; height: var(--add-viewport-height, 100dvh); padding: 0; overflow: visible; align-items: stretch; }
+  .add-parcel-backdrop[data-keyboard] .sheet.add-parcel-sheet { padding-bottom: 12px; }
   .sheet.add-parcel-sheet { max-width: none; max-height: none; height: 100%; border: 0; border-radius: 0; padding: max(16px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); box-shadow: 0 0 0 100vmax var(--canvas); }
   .add-parcel-sheet .sheet__form { flex: 1; }
   .add-parcel-fields { flex: 1; align-content: start; }

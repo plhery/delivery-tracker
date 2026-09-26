@@ -1,7 +1,7 @@
 import { amazonOrdersUrl, isAmazonTrackingNumber, requiresAmazonAccount } from '../lib/amazon';
 import { trackAction } from '../lib/analytics';
 import { userErrorMessage } from '../lib/userMessages';
-import { useEffect, useRef, useState, type FocusEvent, type FormEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type FocusEvent, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import {
   type CarrierInputField,
@@ -64,6 +64,8 @@ export function AddParcelSheet({
   const { locale, t } = useI18n();
   const [label, setLabel] = useState(initialLabel);
   const [trackingInputValue, setTrackingInputValue] = useState(initialTrackingInput);
+  // The input as it stood when typing last paused, or right after a paste.
+  const [settledTrackingInput, setSettledTrackingInput] = useState(initialTrackingInput);
   const [carrierInputs, setCarrierInputs] = useState<Record<CarrierInputField, string>>({
     trackingUrl: '',
     dpdPostcode: '',
@@ -80,6 +82,7 @@ export function AddParcelSheet({
   const [existingParcelId, setExistingParcelId] = useState<string | null>(null);
   const [pasteError, setPasteError] = useState<string | null>(null);
   const trackingInput = useRef<HTMLTextAreaElement>(null);
+  const pastingTrackingInput = useRef(false);
   const backdrop = useRef<HTMLDivElement>(null);
   const fields = useRef<HTMLDivElement>(null);
   const refocusing = useRef(false);
@@ -105,6 +108,8 @@ export function AddParcelSheet({
       if (viewport.scale !== 1) return;
       element.style.setProperty('--add-viewport-height', `${viewport.height}px`);
       element.style.setProperty('--add-viewport-top', `${viewport.offsetTop}px`);
+      // The keyboard covers the home indicator, so its safe-area padding goes.
+      element.toggleAttribute('data-keyboard', viewport.height < window.innerHeight - 100);
       revealFocusedField(fields.current);
     };
     update();
@@ -116,8 +121,26 @@ export function AddParcelSheet({
     };
   }, []);
 
+  // One line fits a number; grow for pasted links and shipping messages.
+  useLayoutEffect(() => {
+    const input = trackingInput.current;
+    if (!input) return;
+    input.style.height = '';
+    input.style.height = `${input.scrollHeight + input.offsetHeight - input.clientHeight}px`;
+  }, [trackingInputValue]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSettledTrackingInput(trackingInputValue), 800);
+    return () => clearTimeout(timer);
+  }, [trackingInputValue]);
+
   const parsedTracking = parseTrackingInput(trackingInputValue);
   const trackingNumber = parsedTracking.trackingNumber;
+  // Half-typed input is not a mistake: the notice and the carrier picker wait
+  // for a pause or a paste, then stay put while editing continues.
+  const settledTrackingNumber = parseTrackingInput(settledTrackingInput).trackingNumber;
+  const trackingNotFound = Boolean(trackingInputValue.trim() && !trackingNumber
+    && settledTrackingInput.trim() && !settledTrackingNumber);
   const normalizedNumber = normalizeTrackingNumber(trackingNumber);
   const amazonNumber = isAmazonTrackingNumber(normalizedNumber);
   const shouldLookup = Boolean(apiAuth) && (amazonNumber || (selectedCarrier === 'auto'
@@ -169,7 +192,7 @@ export function AddParcelSheet({
       : t(carrierTrackingHintKey(carrier.id), { carrier: carrier.name })
     : '';
   const carrierPickerVisible = !amazonNumber && Boolean(trackingNumber) && (
-    showCarrierPicker || requiresCarrierConfirmation || carrier?.id === 'unknown'
+    showCarrierPicker || (Boolean(settledTrackingNumber) && (requiresCarrierConfirmation || carrier?.id === 'unknown'))
   );
 
   // iPhone Safari scrolls the page to center every newly focused field above
@@ -200,6 +223,7 @@ export function AddParcelSheet({
       if (!text.trim()) throw new Error('Clipboard is empty');
       trackAction('parcel-paste', 'success');
       setTrackingInputValue(text);
+      setSettledTrackingInput(text);
     } catch {
       setPasteError(t('add.pasteFailed'));
     }
@@ -283,8 +307,11 @@ export function AddParcelSheet({
                   ref={trackingInput}
                   value={trackingInputValue}
                   placeholder={t('add.trackingPlaceholder')}
+                  onPaste={() => { pastingTrackingInput.current = true; }}
                   onChange={(e) => {
                     setTrackingInputValue(e.target.value);
+                    if (pastingTrackingInput.current) setSettledTrackingInput(e.target.value);
+                    pastingTrackingInput.current = false;
                     if (existingParcelId) {
                       setExistingParcelId(null);
                       setError(null);
@@ -293,15 +320,15 @@ export function AddParcelSheet({
                   autoCapitalize="characters"
                   autoCorrect="off"
                   spellCheck={false}
-                  rows={2}
+                  rows={1}
                   required
                 />
               </div>
               {pasteError && <p className="sheet__error" role="status">{pasteError}</p>}
-              {trackingInputValue.trim() && !trackingNumber && (
-                <p className="sheet__error" role="status">
-                  {t('add.notFound')}
-                </p>
+              {trackingNotFound && (
+                <div className="add-parcel-notice">
+                  <p role="status">{t('add.notFound')}</p>
+                </div>
               )}
               {parsedTracking.source !== 'number' && trackingNumber && (
                 <p className="sheet__carrier-hint">

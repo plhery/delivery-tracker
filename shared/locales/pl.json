@@ -53,7 +53,7 @@
   "add.scanTitle": "Skanuj kod kreskowy przesyłki",
   "add.title": "Dodaj przesyłkę",
   "add.tracking": "Numer lub link śledzenia",
-  "add.trackingPlaceholder": "Wklej numer, link lub wiadomość o wysyłce",
+  "add.trackingPlaceholder": "Wklej numer, link lub wiadomość",
   "add.unknownCarrier": "Nie rozpoznaliśmy przewoźnika. Wybierz go, aby włączyć automatyczne aktualizacje.",
   "add.useDetectedCarrier": "Użyj wykrytego przewoźnika",
   "app.addParcel": "Dodaj przesyłkę",

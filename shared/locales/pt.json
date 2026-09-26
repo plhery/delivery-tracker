@@ -53,7 +53,7 @@
   "add.scanTitle": "Ler um código de barras de seguimento",
   "add.title": "Adicionar um envio",
   "add.tracking": "Número ou ligação de seguimento",
-  "add.trackingPlaceholder": "Cola um número, ligação ou mensagem de envio",
+  "add.trackingPlaceholder": "Cola um número, ligação ou mensagem",
   "add.unknownCarrier": "Não identificámos a transportadora. Escolhe uma para ativar as atualizações automáticas.",
   "add.useDetectedCarrier": "Usar a transportadora detetada",
   "app.addParcel": "Adicionar envio",

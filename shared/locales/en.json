@@ -53,7 +53,7 @@
   "add.scanTitle": "Scan a tracking barcode",
   "add.title": "Add a parcel",
   "add.tracking": "Tracking number or link",
-  "add.trackingPlaceholder": "Paste a number, link, or shipping message",
+  "add.trackingPlaceholder": "Paste a number, link, or message",
   "add.unknownCarrier": "We haven’t identified the carrier. Choose one to enable automatic updates.",
   "add.useDetectedCarrier": "Use detected carrier",
   "app.addParcel": "Add parcel",

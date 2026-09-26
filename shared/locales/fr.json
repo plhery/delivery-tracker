@@ -53,7 +53,7 @@
   "add.scanTitle": "Scanner un code-barres de suivi",
   "add.title": "Ajouter un colis",
   "add.tracking": "Numéro ou lien de suivi",
-  "add.trackingPlaceholder": "Colle un numéro, un lien ou un message d’expédition",
+  "add.trackingPlaceholder": "Colle un numéro, un lien ou un message",
   "add.unknownCarrier": "Nous n’avons pas identifié le transporteur. Choisis-le pour activer les mises à jour automatiques.",
   "add.useDetectedCarrier": "Utiliser le transporteur détecté",
   "app.addParcel": "Ajouter un colis",

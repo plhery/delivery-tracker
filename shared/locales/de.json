@@ -53,7 +53,7 @@
   "add.scanTitle": "Sendungsbarcode scannen",
   "add.title": "Paket hinzufügen",
   "add.tracking": "Sendungsnummer oder Link",
-  "add.trackingPlaceholder": "Nummer, Link oder Versandnachricht einfügen",
+  "add.trackingPlaceholder": "Nummer, Link oder Nachricht einfügen",
   "add.unknownCarrier": "Wir haben den Paketdienst nicht erkannt. Wähle ihn aus, um automatische Updates zu erhalten.",
   "add.useDetectedCarrier": "Erkannten Paketdienst verwenden",
   "app.addParcel": "Paket hinzufügen",

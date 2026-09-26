@@ -53,7 +53,7 @@
   "add.scanTitle": "Escanear un código de seguimiento",
   "add.title": "Añadir un paquete",
   "add.tracking": "Número o enlace de seguimiento",
-  "add.trackingPlaceholder": "Pega un número, enlace o mensaje de envío",
+  "add.trackingPlaceholder": "Pega un número, enlace o mensaje",
   "add.unknownCarrier": "No hemos identificado el transportista. Elige uno para activar las actualizaciones automáticas.",
   "add.useDetectedCarrier": "Usar el transportista detectado",
   "app.addParcel": "Añadir paquete",

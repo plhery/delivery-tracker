@@ -587,7 +587,7 @@ describe('App', () => {
       within(sheet).getByLabelText(/tracking number/i),
       '06086514587082',
     );
-    await user.selectOptions(within(sheet).getByLabelText(/carrier/i), 'dpd');
+    await user.selectOptions(await within(sheet).findByLabelText(/carrier/i, undefined, { timeout: 3000 }), 'dpd');
 
     const postcode = within(sheet).getByLabelText(/delivery postcode/i);
     expect(postcode).toBeRequired();
@@ -625,7 +625,7 @@ describe('App', () => {
       within(sheet).getByLabelText(/tracking number/i),
       '06086514587083',
     );
-    await user.selectOptions(within(sheet).getByLabelText(/carrier/i), 'dpd');
+    await user.selectOptions(await within(sheet).findByLabelText(/carrier/i, undefined, { timeout: 3000 }), 'dpd');
 
     expect(within(sheet).getByLabelText(/delivery postcode/i)).toHaveValue('8000');
   });
@@ -647,7 +647,7 @@ describe('App', () => {
     const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
     await user.type(within(sheet).getByLabelText(/tracking number/i), '76434219');
 
-    const carrier = within(sheet).getByLabelText('Carrier');
+    const carrier = await within(sheet).findByLabelText('Carrier', undefined, { timeout: 3000 });
     for (const name of [
       'DPD France',
       'Mondial Relay',
@@ -754,7 +754,8 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /add a parcel/i }));
     const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
     await user.type(within(sheet).getByLabelText(/tracking number/i), 'ambiguous-123');
-    await user.selectOptions(within(sheet).getByLabelText('Carrier'), 'planzer');
+    // The picker for an unrecognized number waits until typing pauses.
+    await user.selectOptions(await within(sheet).findByLabelText('Carrier', undefined, { timeout: 3000 }), 'planzer');
     expect(within(sheet).getByText(/Planzer/i, { selector: 'strong' })).toBeInTheDocument();
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
 
@@ -971,7 +972,8 @@ describe('App', () => {
       within(sheet).getByRole('button', { name: /add parcel/i }),
     ).toBeDisabled();
     await user.type(within(sheet).getByLabelText(/tracking number/i), 'hello there');
-    expect(within(sheet).getByText(/couldn’t find a tracking number/i)).toBeInTheDocument();
+    expect(within(sheet).queryByText(/couldn’t find a tracking number/i)).not.toBeInTheDocument();
+    expect(await within(sheet).findByText(/couldn’t find a tracking number/i, undefined, { timeout: 3000 })).toBeInTheDocument();
     expect(within(sheet).getByRole('button', { name: /add parcel/i })).toBeDisabled();
   });
 
