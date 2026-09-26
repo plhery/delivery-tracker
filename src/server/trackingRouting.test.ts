@@ -332,8 +332,8 @@ describe('persistent tracking routing', () => {
   });
   it('forwards the stored delivery postcode to universal providers', async () => {
     const { router, universal } = setup();
-    await router.fetch(parcel({ dpd_postcode: '8004' }), false);
-    expect(universal).toHaveBeenCalledWith('Ship24', 'TEST1234', expect.any(Number), '8004', null);
+    await router.fetch(parcel({ dpd_postcode: '8000' }), false);
+    expect(universal).toHaveBeenCalledWith('Ship24', 'TEST1234', expect.any(Number), '8000', null);
   });
   it('gives universal providers the parcel carrier\'s zone for scans without a trustworthy one', async () => {
     const { router, direct, universal } = setup(); direct.mockRejectedValue(new Error('carrier down'));

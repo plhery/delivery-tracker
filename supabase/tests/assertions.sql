@@ -343,7 +343,7 @@ select public.create_owned_package(
 );
 
 select public.create_owned_package(
-  '06086514587082', 'Verified DPD parcel', 'dpd', null, '8004'
+  '06086514587082', 'Verified DPD parcel', 'dpd', null, '8000'
 );
 
 select public.create_owned_package(
@@ -452,7 +452,7 @@ begin
   if not exists (
     select 1 from public.packages
     where tracking_number = '06086514587082'
-      and dpd_postcode = '8004'
+      and dpd_postcode = '8000'
       and user_id = '10000000-0000-0000-0000-000000000001'
   ) then
     raise exception 'DPD postcode was not stored for its owner';
@@ -586,7 +586,7 @@ begin
 
   begin
     perform public.create_owned_package(
-      'NOTDPD8004', '', 'dhl', null, '8004'
+      'NOTDPD8000', '', 'dhl', null, '8000'
     );
     raise exception 'delivery postcode was accepted for a different carrier';
   exception when invalid_parameter_value then
@@ -785,7 +785,7 @@ begin
   if exists (
     select 1 from public.packages
     where tracking_number = '06086514587082'
-      and dpd_postcode = '8004'
+      and dpd_postcode = '8000'
   ) then
     raise exception 'second user could see first-user DPD verification data';
   end if;
@@ -1929,9 +1929,9 @@ begin
   end loop;
   select * into parcel from public.create_owned_package('12345678901', '', 'gls-de', null, '01067');
   if parcel.dpd_postcode <> '01067' then raise exception 'German postcode lost its leading zero'; end if;
-  perform public.change_owned_package_carrier(parcel.id, 'gls-de', null, '8004');
+  perform public.change_owned_package_carrier(parcel.id, 'gls-de', null, '3000');
   select * into parcel from public.packages where id = parcel.id;
-  if parcel.dpd_postcode <> '8004' then raise exception 'Swiss postcode was not saved for GLS Germany'; end if;
+  if parcel.dpd_postcode <> '3000' then raise exception 'Swiss postcode was not saved for GLS Germany'; end if;
   select * into parcel from public.create_owned_package('12345678902', '', 'gls-de', null, '8000');
   if parcel.dpd_postcode <> '8000' then raise exception 'Swiss postcode was not accepted for GLS Germany'; end if;
   begin

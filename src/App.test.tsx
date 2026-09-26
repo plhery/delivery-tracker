@@ -591,19 +591,19 @@ describe('App', () => {
 
     const postcode = within(sheet).getByLabelText(/delivery postcode/i);
     expect(postcode).toBeRequired();
-    expect(postcode).toHaveValue('8004');
+    expect(postcode).toHaveValue('8000');
     await user.clear(postcode);
     expect(within(sheet).getByRole('button', { name: /add parcel/i })).toBeDisabled();
 
-    await user.type(postcode, '80A04');
-    expect(postcode).toHaveValue('8004');
+    await user.type(postcode, '80A00');
+    expect(postcode).toHaveValue('8000');
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
 
     expect(add).toHaveBeenCalledWith({
       trackingNumber: '06086514587082',
       label: '',
       carrier: 'dpd',
-      dpdPostcode: '8004',
+      dpdPostcode: '8000',
     });
   });
 
@@ -613,7 +613,7 @@ describe('App', () => {
       trackingNumber: '06086514587082',
       label: 'Previous DPD parcel',
       carrier: 'dpd',
-      dpdPostcode: '8004',
+      dpdPostcode: '8000',
     });
     const user = userEvent.setup();
     renderApp(repo);
@@ -627,7 +627,7 @@ describe('App', () => {
     );
     await user.selectOptions(within(sheet).getByLabelText(/carrier/i), 'dpd');
 
-    expect(within(sheet).getByLabelText(/delivery postcode/i)).toHaveValue('8004');
+    expect(within(sheet).getByLabelText(/delivery postcode/i)).toHaveValue('8000');
   });
 
   it('offers every regional carrier and keeps carrier postcodes isolated', async () => {
@@ -636,7 +636,7 @@ describe('App', () => {
       trackingNumber: '06086514587082',
       label: 'Previous DPD parcel',
       carrier: 'dpd',
-      dpdPostcode: '8004',
+      dpdPostcode: '8000',
     });
     const add = vi.fn(repo.add);
     const user = userEvent.setup();
@@ -809,7 +809,7 @@ describe('App', () => {
       /found 06086514587082 in the pasted link/i,
     );
     expect(within(sheet).getByText(/DPD/i, { selector: 'strong' })).toBeInTheDocument();
-    await user.type(within(sheet).getByLabelText(/delivery postcode/i), '8004');
+    await user.type(within(sheet).getByLabelText(/delivery postcode/i), '8000');
 
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
 
@@ -817,7 +817,7 @@ describe('App', () => {
       trackingNumber: '06086514587082',
       label: '',
       carrier: 'dpd',
-      dpdPostcode: '8004',
+      dpdPostcode: '8000',
     });
   });
 

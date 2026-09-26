@@ -221,14 +221,14 @@ describe('createApiRepo', () => {
       trackingNumber: '06086514587082',
       label: 'DPD parcel',
       carrier: 'dpd',
-      dpdPostcode: '8004',
+      dpdPostcode: '8000',
     });
     expect(fetch).toHaveBeenLastCalledWith('/api/packages', expect.objectContaining({
       body: JSON.stringify({
         trackingNumber: '06086514587082',
         label: 'DPD parcel',
         carrier: 'dpd',
-        dpdPostcode: '8004',
+        dpdPostcode: '8000',
       }),
     }));
   });

@@ -52,7 +52,7 @@ test('keeps Add above a reduced visual viewport while required fields scroll', a
   expect(addBounds.y + addBounds.height).toBeLessThanOrEqual(415);
   expect(addBounds.y).toBeGreaterThan(35);
   await expect(add).toBeDisabled();
-  await dialog.getByLabel(/Delivery postcode/).fill('8004');
+  await dialog.getByLabel(/Delivery postcode/).fill('8000');
   await dialog.getByLabel(/^Name/).scrollIntoViewIfNeeded();
   await dialog.getByLabel(/^Name/).click();
   await dialog.getByLabel(/^Name/).fill('Coffee beans');

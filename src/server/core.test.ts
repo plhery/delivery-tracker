@@ -389,7 +389,7 @@ describe('input validation', () => {
   });
 
   it('validates carrier corrections against the existing tracking number', () => {
-    for (const dpdPostcode of ['8004', '01067']) {
+    for (const dpdPostcode of ['8000', '01067']) {
       expect(newPackageValues({ trackingNumber: '123456789018', label: '', carrier: 'gls-de', dpdPostcode }))
         .toMatchObject({ carrier: 'gls-de', dpdPostcode });
       expect(packageCarrierValues({ carrier: 'gls-de', dpdPostcode }, '123456789018'))

@@ -1705,10 +1705,10 @@ describe('TrackingSyncService', () => {
     const registry = new AdapterRegistry({ factories: {}, carriers: { unknown: 'universal' } },
       { trawl: null, browserExecutablePath: null, recorder, env: {} } satisfies AdapterEnvironment);
     const adapter = new CarrierTrackingAdapter(universal as unknown as UniversalTracker, registry, recorder);
-    await expect(adapter.fetch('unknown', 'TEST1234', null, '8004')).resolves.toMatchObject({ status: 'in_transit' });
-    expect(universal.fetch).toHaveBeenCalledWith('TEST1234', '8004');
-    await adapter.fetchUniversal('Ship24', 'TEST1234', 1000, '8004');
-    expect(universal.fetchSource).toHaveBeenCalledWith('Ship24', 'TEST1234', 1000, '8004', null);
+    await expect(adapter.fetch('unknown', 'TEST1234', null, '8000')).resolves.toMatchObject({ status: 'in_transit' });
+    expect(universal.fetch).toHaveBeenCalledWith('TEST1234', '8000');
+    await adapter.fetchUniversal('Ship24', 'TEST1234', 1000, '8000');
+    expect(universal.fetchSource).toHaveBeenCalledWith('Ship24', 'TEST1234', 1000, '8000', null);
     await adapter.fetchUniversal('Ship24', 'TEST1234', 1000, null, 'Europe/Zurich');
     expect(universal.fetchSource).toHaveBeenLastCalledWith('Ship24', 'TEST1234', 1000, null, 'Europe/Zurich');
   });

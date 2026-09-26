@@ -48,10 +48,10 @@ describe('GLS carrier lookup', () => {
     const postcode = await screen.findByRole('textbox', { name: /^Delivery postcode/ });
     expect(screen.getByText('GLS Germany')).toBeInTheDocument();
     expect(button).toBeDisabled();
-    await user.type(postcode, '8004');
+    await user.type(postcode, '8000');
     expect(button).toBeEnabled();
     await user.click(button);
-    expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ carrier: 'gls-de', dpdPostcode: '8004' }));
+    expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ carrier: 'gls-de', dpdPostcode: '8000' }));
   });
 
   it('keeps the manual selection when an earlier lookup finishes', async () => {

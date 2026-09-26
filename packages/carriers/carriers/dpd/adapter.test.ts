@@ -127,12 +127,12 @@ describe('DPDTracker steps', () => {
     const { recorder, steps } = recordingRecorder();
 
     const result = await new DPDTracker({ timeoutMs: 1_000, trawl: null, recorder })
-      .fetch(TRACKING_NUMBER, '8004');
+      .fetch(TRACKING_NUMBER, '8000');
 
     expect(result).toMatchObject({ status: 'out_for_delivery' });
     expect(result.tracking_url).toContain(TRACKING_NUMBER);
     expect(steps.map((step) => [step.step, step.outcome])).toEqual([['direct', 'ok']]);
-    expect(String(fetcher.mock.calls[3]?.[0])).toContain('dataForVerification=8004');
+    expect(String(fetcher.mock.calls[3]?.[0])).toContain('dataForVerification=8000');
   });
 
   it('retries without verification when DPD rejects the postcode, and says so', async () => {
@@ -230,9 +230,9 @@ describe('DPD adapter factory', () => {
 
     expect(instance.id).toBe('dpd');
     expect(instance.steps).toEqual(['direct', 'page']);
-    await expect(instance.track({ number: TRACKING_NUMBER, postcode: '8004' }))
+    await expect(instance.track({ number: TRACKING_NUMBER, postcode: '8000' }))
       .resolves.toMatchObject({ status: 'out_for_delivery' });
-    expect(String(fetcher.mock.calls[3]?.[0])).toContain('dataForVerification=8004');
+    expect(String(fetcher.mock.calls[3]?.[0])).toContain('dataForVerification=8000');
   });
 });
 

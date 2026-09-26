@@ -1533,7 +1533,7 @@ final class DemoRepository {
                 createdAt: iso(sample.events.map(\.hoursAgo).max() ?? 0), expectedDelivery: expected,
                 lastStatusText: history.sorted(by: { $0.occurredAt > $1.occurredAt }).first?.description,
                 lastSyncedAt: iso(0.2), syncStatus: .ok, syncError: nil,
-                trackingURL: nil, dpdPostcode: sample.carrier == .dpd ? "8004" : nil,
+                trackingURL: nil, dpdPostcode: sample.carrier == .dpd ? "8000" : nil,
                 carrierData: nil, archivedAt: sample.archivedHoursAgo.map(iso), notificationsMuted: false,
                 trackingEvents: history
             )

@@ -188,13 +188,13 @@ describe('createDemoRepo', () => {
       trackingNumber: '06086514587082',
       label: 'DPD parcel',
       carrier: 'dpd',
-      dpdPostcode: '8004',
+      dpdPostcode: '8000',
     });
 
-    expect(parcel.dpdPostcode).toBe('8004');
+    expect(parcel.dpdPostcode).toBe('8000');
     const reloaded = await createDemoRepo(window.localStorage).list();
     expect(reloaded.find((candidate) => candidate.id === parcel.id)?.dpdPostcode)
-      .toBe('8004');
+      .toBe('8000');
   });
 
   it('archives and restores a parcel without deleting it', async () => {

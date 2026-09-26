@@ -303,7 +303,7 @@ final class CarrierCatalogTests: XCTestCase {
             catalog.requirements(for: .glsDe, trackingNumber: "123456789018")
                 .first(where: { $0.field == .dpdPostcode })
         )
-        XCTAssertTrue(glsGermany.accepts("8004"))
+        XCTAssertTrue(glsGermany.accepts("8000"))
         XCTAssertTrue(glsGermany.accepts("01067"))
         XCTAssertFalse(glsGermany.accepts("800"))
         XCTAssertFalse(glsGermany.accepts("123456"))
@@ -313,10 +313,10 @@ final class CarrierCatalogTests: XCTestCase {
             catalog.requirements(for: .dpd, trackingNumber: "12345678901234")
                 .first(where: { $0.field == .dpdPostcode })
         )
-        XCTAssertEqual(dpd.placeholder, "8004")
+        XCTAssertEqual(dpd.placeholder, "8000")
         XCTAssertEqual(dpd.maxLength, 4)
-        XCTAssertEqual(dpd.normalizedValue("80 A04 9"), "8004")
-        XCTAssertTrue(dpd.accepts("8004"))
+        XCTAssertEqual(dpd.normalizedValue("80 A00 9"), "8000")
+        XCTAssertTrue(dpd.accepts("8000"))
         XCTAssertFalse(dpd.accepts("75001"))
 
         let mondialRelay = try XCTUnwrap(
@@ -327,7 +327,7 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(mondialRelay.maxLength, 5)
         XCTAssertEqual(mondialRelay.normalizedValue("75 A001 9"), "75001")
         XCTAssertTrue(mondialRelay.accepts("75001"))
-        XCTAssertFalse(mondialRelay.accepts("8004"))
+        XCTAssertFalse(mondialRelay.accepts("8000"))
 
         let gls = try XCTUnwrap(
             catalog.requirements(for: .glsCh, trackingNumber: "993990103198")

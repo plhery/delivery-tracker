@@ -128,7 +128,7 @@ test('accepts a Swiss postcode for GLS Germany and labels unknown carriers', asy
   await expect(sheet.getByText('GLS Germany', { exact: true })).toBeVisible();
   const add = sheet.getByRole('button', { name: 'Add parcel' });
   await expect(add).toBeDisabled();
-  await sheet.getByLabel(/^Delivery postcode/).fill('8004');
+  await sheet.getByLabel(/^Delivery postcode/).fill('8000');
   await expect(add).toBeEnabled();
   await add.click();
   await expect(sheet).toBeHidden();
@@ -136,7 +136,7 @@ test('accepts a Swiss postcode for GLS Germany and labels unknown carriers', asy
   const detail = page.getByRole('dialog', { name: 'Cross-border GLS parcel' });
   await detail.getByRole('button', { name: 'Change carrier from GLS Germany' }).click();
   const edit = page.getByRole('dialog', { name: 'Change carrier', exact: true });
-  await expect(edit.getByLabel(/^Delivery postcode/)).toHaveValue('8004');
+  await expect(edit.getByLabel(/^Delivery postcode/)).toHaveValue('8000');
   await edit.getByLabel(/^Delivery postcode/).fill('1201');
   await edit.getByRole('button', { name: 'Save carrier' }).click();
   await expect(edit).toBeHidden();

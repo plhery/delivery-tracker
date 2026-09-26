@@ -165,7 +165,7 @@ export function seedParcels(now: number): ParcelWithEvents[] {
       createdAt: iso(Math.max(...sample.events.map((event) => event.hoursAgo))),
       expectedDelivery, syncStatus: 'ok',
       archivedAt: sample.archivedHoursAgo === undefined ? undefined : iso(sample.archivedHoursAgo),
-      dpdPostcode: sample.carrier === 'dpd' ? '8004' : undefined,
+      dpdPostcode: sample.carrier === 'dpd' ? '8000' : undefined,
       events: sample.events.map((event) => ({
         id: uid(), parcelId: id, stage: event.stage as Stage,
         description: event.description, location: event.location, occurredAt: iso(event.hoursAgo),

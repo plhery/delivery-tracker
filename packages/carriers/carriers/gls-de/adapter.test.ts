@@ -55,7 +55,7 @@ describe('GLS Germany', () => {
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(new Response(JSON.stringify({ tuStatus: [overview] })))
       .mockResolvedValueOnce(new Response(JSON.stringify(parcel())));
-    await expect(new GLSGermanyTracker().fetch(NUMBER, '8004')).resolves.toMatchObject({
+    await expect(new GLSGermanyTracker().fetch(NUMBER, '8000')).resolves.toMatchObject({
       delivery_carrier: 'swiss-post', delivery_tracking_number: NUMBER,
     });
   });
@@ -84,17 +84,17 @@ describe('GLS Germany', () => {
     const fetcher = vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(new Response(JSON.stringify({ tuStatus: [parcel('99999999999'), parcel()] })))
       .mockResolvedValueOnce(new Response(JSON.stringify(parcel())));
-    const result = await new GLSGermanyTracker().fetch(`${NUMBER}8`, ' 8004 ');
+    const result = await new GLSGermanyTracker().fetch(`${NUMBER}8`, ' 8000 ');
     expect(result.events).toHaveLength(2);
     const detail = new URL(String(fetcher.mock.calls[1][0]));
     expect(detail.pathname).toContain(`/rstt028/${NUMBER}`);
-    expect(detail.searchParams.get('postalCode')).toBe('8004');
+    expect(detail.searchParams.get('postalCode')).toBe('8000');
   });
 
   it('does not accept a different 11-digit parcel for a printed number', async () => {
     const fetcher = vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(new Response(JSON.stringify({ tuStatus: [parcel('99999999999')] })));
-    await expect(new GLSGermanyTracker().fetch(`${NUMBER}8`, '8004')).rejects.toThrow('different shipment');
+    await expect(new GLSGermanyTracker().fetch(`${NUMBER}8`, '8000')).rejects.toThrow('different shipment');
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 

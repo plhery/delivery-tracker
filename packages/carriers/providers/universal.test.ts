@@ -154,10 +154,10 @@ describe('universal discovery chain', () => {
       events: [{ timestamp: '2026-09-10T10:00:00+02:00', status: 'Delivered', dispatch_code_id: 7 }] } };
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => reply(ship24History));
     const tracker = new UniversalTracker({ fetcher });
-    await expect(tracker.fetchSource('Ship24', number, 20_000, '8004')).resolves.toMatchObject({
+    await expect(tracker.fetchSource('Ship24', number, 20_000, '8000')).resolves.toMatchObject({
       current_stage: 'delivered', tracking_provider: 'Ship24',
     });
-    await expect(tracker.fetch(number, '8004')).resolves.toMatchObject({
+    await expect(tracker.fetch(number, '8000')).resolves.toMatchObject({
       current_stage: 'delivered', tracking_provider: 'Ship24',
     });
     expect(fetcher).toHaveBeenCalledTimes(2);
