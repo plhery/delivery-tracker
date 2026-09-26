@@ -14,6 +14,47 @@
 .detail--postcard .detail__carrier .carrier-mark__truck { width: 27px; height: 18px; }
 .detail--postcard .detail__notification { display: grid; place-items: center; width: 44px; height: 44px; background: transparent; color: var(--tone); opacity: .75; }
 .detail--postcard .detail__notification svg { width: 18px; height: 18px; stroke-width: 1.2; }
+.detail__notification .parcel-bell__body { transform-origin: 12px 4px; }
+.detail__notification .parcel-bell__clapper { transform-origin: 12px 17px; }
+.detail__notification .parcel-bell__slash { stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; }
+.detail__notification[aria-pressed=true] .parcel-bell__slash { stroke-dashoffset: 0; opacity: 1; }
+.detail__notification .parcel-bell__waves { opacity: 0; transform-origin: 12px 10px; }
+@media (prefers-reduced-motion: no-preference) {
+  .detail__notification svg { overflow: visible; transition: transform 160ms ease-out; }
+  .detail__notification:active:not(:disabled) svg { transform: scale(.88); }
+  .detail__notification .parcel-bell__slash { transition: stroke-dashoffset 220ms ease-out, opacity 160ms ease-out; }
+  .detail__notification[data-animated][aria-pressed=false] .parcel-bell__body { animation: parcel-bell-ring 820ms ease-in-out; }
+  .detail__notification[data-animated][aria-pressed=false] .parcel-bell__clapper { animation: parcel-bell-clapper 820ms ease-in-out; }
+  .detail__notification[data-animated][aria-pressed=false] .parcel-bell__waves { animation: parcel-bell-waves 820ms ease-out; }
+  .detail__notification[data-animated][aria-pressed=true] .parcel-bell__body { animation: parcel-bell-settle 320ms ease-out; }
+}
+@keyframes parcel-bell-ring {
+  0%, 100% { transform: rotate(0); }
+  14% { transform: rotate(17deg); }
+  30% { transform: rotate(-14deg); }
+  46% { transform: rotate(10deg); }
+  62% { transform: rotate(-6deg); }
+  78% { transform: rotate(3deg); }
+}
+@keyframes parcel-bell-clapper {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-1.5px); }
+  36% { transform: translateX(1.2px); }
+  52% { transform: translateX(-.8px); }
+  68% { transform: translateX(.4px); }
+  84% { transform: translateX(-.2px); }
+}
+@keyframes parcel-bell-waves {
+  0%, 100% { opacity: 0; transform: scaleX(.9); }
+  18%, 46% { opacity: .65; transform: scaleX(1.08); }
+  32%, 64% { opacity: .15; transform: scaleX(1); }
+  80% { opacity: 0; transform: scaleX(1.16); }
+}
+@keyframes parcel-bell-settle {
+  0%, 100% { transform: rotate(0) scale(1); }
+  35% { transform: rotate(-7deg) scale(.94); }
+  70% { transform: rotate(3deg) scale(1.02); }
+}
 .detail--postcard .detail__title-row { align-items: center; margin-top: 16px; gap: 20px; }
 .detail--postcard .detail__title { flex: 1; min-width: 0; font-size: 28px; letter-spacing: -.8px; }
 .detail--postcard .detail__title-row .postage-stamp { flex-shrink: 0; width: 45px; height: 56px; padding: 7px; }

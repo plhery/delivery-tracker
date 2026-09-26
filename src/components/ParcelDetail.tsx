@@ -112,6 +112,7 @@ export function ParcelDetail({
   const [copiedNumber, setCopiedNumber] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const [savingNotifications, setSavingNotifications] = useState(false);
+  const [notificationsAnimated, setNotificationsAnimated] = useState(false);
   const [notificationError, setNotificationError] = useState<string | null>(null);
   const backButton = useRef<HTMLButtonElement>(null);
   const actionsMenu = useRef<HTMLDetailsElement>(null);
@@ -218,6 +219,7 @@ export function ParcelDetail({
     setNotificationError(null);
     try {
       await onSetNotificationsMuted(parcel, !parcel.notificationsMuted);
+      setNotificationsAnimated(true);
     } catch (error) {
       setNotificationError(
         userErrorMessage(error, t, 'detail.notificationFailed'),
@@ -368,9 +370,17 @@ export function ParcelDetail({
             <CarrierMark carrier={displayedCarrier} />
           </button>
           <button type="button" className="detail__notification" disabled={savingNotifications}
+            data-animated={notificationsAnimated || undefined}
             aria-label={parcel.notificationsMuted ? t('detail.unmute') : t('detail.mute')}
             aria-pressed={!!parcel.notificationsMuted} onClick={() => void toggleNotifications()}>
-            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />{parcel.notificationsMuted && <path d="m3 3 18 18" />}</svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <g className="parcel-bell__body">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+                <path className="parcel-bell__clapper" d="M10 21h4" />
+              </g>
+              <path className="parcel-bell__slash" pathLength="1" d="m3 3 18 18" />
+              <g className="parcel-bell__waves"><path d="M1 6a10 10 0 0 0 0 8M23 6a10 10 0 0 1 0 8" /></g>
+            </svg>
           </button>
         </div>
         <AutoCarrierNotice parcel={parcel} className="detail__sender" />

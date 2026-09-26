@@ -18,6 +18,7 @@ struct ParcelDetailView: View {
     @State private var errorMessage: String?
     @State private var showingCarrierEditor = false
     @State private var showingDeleteConfirmation = false
+    @State private var notificationAnimation = 0
 
     @ObservedObject private var catalog = CarrierCatalog.shared
 
@@ -149,10 +150,13 @@ struct ParcelDetailView: View {
                     .accessibilityLabel(localizer.text("detail.changeCarrierFrom", ["carrier": carrier.displayName]))
                     Spacer(minLength: 8)
                     Button {
-                        run { try await store.setMuted(parcel, muted: !parcel.notificationsMuted) }
+                        run {
+                            try await store.setMuted(parcel, muted: !parcel.notificationsMuted)
+                            notificationAnimation += 1
+                            UISelectionFeedbackGenerator().selectionChanged()
+                        }
                     } label: {
-                        Image(systemName: parcel.notificationsMuted ? "bell.slash" : "bell")
-                            .font(.system(size: 16, weight: .light))
+                        ParcelNotificationBell(muted: parcel.notificationsMuted, trigger: notificationAnimation)
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
                     }
@@ -459,6 +463,77 @@ struct ParcelDetailView: View {
             catch { errorMessage = localizer.errorMessage(error) }
             working = false
         }
+    }
+}
+
+private struct ParcelNotificationBell: View {
+    let muted: Bool
+    let trigger: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private struct Pose {
+        var angle = 0.0
+        var scale = 1.0
+        var waves = 0.0
+    }
+
+    var body: some View {
+        let reduceMotion = self.reduceMotion
+        return Color.clear
+            .frame(width: 18, height: 18)
+            .keyframeAnimator(initialValue: Pose(), trigger: trigger) { _, pose in
+                ZStack {
+                    Image(systemName: "bell")
+                        .font(.system(size: 16, weight: .light))
+                        .frame(width: 18, height: 18)
+                        .rotationEffect(.degrees(reduceMotion ? 0 : pose.angle), anchor: UnitPoint(x: 0.5, y: 0.16))
+                        .scaleEffect(reduceMotion ? 1 : pose.scale)
+                    Path { path in
+                        path.move(to: CGPoint(x: 2, y: 2))
+                        path.addLine(to: CGPoint(x: 16, y: 16))
+                    }
+                    .trim(from: 0, to: muted ? 1 : 0)
+                    .stroke(style: StrokeStyle(lineWidth: 1, lineCap: .round))
+                    .opacity(muted ? 1 : 0)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: muted)
+                    Path { path in
+                        path.move(to: CGPoint(x: 0, y: 4))
+                        path.addQuadCurve(to: CGPoint(x: 0, y: 11), control: CGPoint(x: -2, y: 7.5))
+                        path.move(to: CGPoint(x: 18, y: 4))
+                        path.addQuadCurve(to: CGPoint(x: 18, y: 11), control: CGPoint(x: 20, y: 7.5))
+                    }
+                    .stroke(style: StrokeStyle(lineWidth: 0.9, lineCap: .round))
+                    .opacity(reduceMotion || muted ? 0 : pose.waves)
+                }
+                .frame(width: 18, height: 18)
+            } keyframes: { _ in
+                KeyframeTrack(\.angle) {
+                    if muted {
+                        CubicKeyframe(-7, duration: 0.112)
+                        CubicKeyframe(3, duration: 0.112)
+                        CubicKeyframe(0, duration: 0.096)
+                    } else {
+                        CubicKeyframe(17, duration: 0.115)
+                        CubicKeyframe(-14, duration: 0.131)
+                        CubicKeyframe(10, duration: 0.131)
+                        CubicKeyframe(-6, duration: 0.131)
+                        CubicKeyframe(3, duration: 0.132)
+                        CubicKeyframe(0, duration: 0.18)
+                    }
+                }
+                KeyframeTrack(\.scale) {
+                    CubicKeyframe(muted ? 0.94 : 1, duration: 0.112)
+                    CubicKeyframe(muted ? 1.02 : 1, duration: 0.112)
+                    CubicKeyframe(1, duration: 0.096)
+                }
+                KeyframeTrack(\.waves) {
+                    CubicKeyframe(muted ? 0 : 0.65, duration: 0.148)
+                    CubicKeyframe(muted ? 0 : 0.15, duration: 0.114)
+                    CubicKeyframe(muted ? 0 : 0.65, duration: 0.115)
+                    CubicKeyframe(0, duration: 0.279)
+                }
+            }
+            .accessibilityHidden(true)
     }
 }
 
