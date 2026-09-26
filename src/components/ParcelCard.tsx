@@ -1,5 +1,5 @@
 import { AutoCarrierNotice } from './AutoCarrierNotice';
-import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { activeTrackingCarrierId, displayedCarrierId, carrierInfo } from '../lib/carriers';
 import { localizedDatePhrase, localizedExpectedDelivery, useI18n } from '../i18n';
 import { localizedParcelCompletionDate, parcelDeliveryEstimate, parcelDisplayStatusKey, parcelHasCarrierUpdate } from '../lib/parcelStatus';
@@ -10,8 +10,7 @@ import type { ParcelWithEvents } from '../types';
 import { CarrierMark } from './CarrierMark';
 import { carrierBrand } from '../lib/carrierBrand';
 import { Icon, PostageStamp } from './Icon';
-
-type Drag = { x: number; y: number; pointerId: number; origin: number; width: number; direction: 'horizontal' | 'vertical' | null };
+import { bindSwipeRow, type SwipeRow } from '../lib/swipeRow';
 
 export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regular' }: {
   parcel: ParcelWithEvents;
@@ -37,91 +36,56 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
   const carrierIssue = ['customs', 'ready_for_pickup', 'failed_attempt', 'exception'].includes(current?.stage ?? '');
   const flag = (notice && !carrierIssue ? notice : null) ?? (parcel.syncStatus === 'error' ? t('attention.sync_error') : null);
   const flagChip = flag && <span className="parcel-card__notice"><Icon name={parcel.syncStatus === 'error' ? 'refresh' : 'clock'} />{flag}</span>;
-  const drag = useRef<Drag | null>(null);
+  const row = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
-  const suppressClick = useRef(false);
-  const releaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [offset, setOffset] = useState(0);
-  const [dragging, setDragging] = useState(false);
+  const tray = useRef<HTMLDivElement>(null);
+  const block = useRef<HTMLDivElement>(null);
+  const action = useRef<HTMLButtonElement>(null);
+  const swipe = useRef<SwipeRow | null>(null);
+  const [open, setOpen] = useState(false);
   const [archiving, setArchiving] = useState(false);
-  const [collapsing, setCollapsing] = useState(false);
   const [archiveError, setArchiveError] = useState<string | null>(null);
-  const [swipeThreshold, setSwipeThreshold] = useState(187);
-  const armed = dragging && -offset >= swipeThreshold;
-  useEffect(() => () => { if (releaseTimer.current) clearTimeout(releaseTimer.current); }, []);
-
-  function suppressReleaseClick() {
-    suppressClick.current = true;
-    if (releaseTimer.current) clearTimeout(releaseTimer.current);
-    releaseTimer.current = setTimeout(() => { suppressClick.current = false; }, 350);
-  }
-  async function archive() {
-    if (!onArchive || archiving) return;
-    setArchiveError(null);
-    setArchiving(true);
-    setOffset(-(button.current?.getBoundingClientRect().width ?? 400));
-    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (!reduced) await new Promise((resolve) => setTimeout(resolve, 180));
-    setCollapsing(true);
-    if (!reduced) await new Promise((resolve) => setTimeout(resolve, 180));
-    try { await onArchive(parcel); }
-    catch (reason) {
-      setArchiving(false); setCollapsing(false); setOffset(0);
-      setArchiveError(userErrorMessage(reason, t, 'detail.archiveFailed'));
-    }
-  }
-  function handlePointerDown(event: PointerEvent<HTMLButtonElement>) {
-    if (!onArchive || archiving || event.isPrimary === false || event.button > 0) return;
-    setSwipeThreshold(Math.max(154, event.currentTarget.getBoundingClientRect().width * 0.52));
-    drag.current = { x: event.clientX, y: event.clientY, pointerId: event.pointerId, origin: offset, width: event.currentTarget.getBoundingClientRect().width, direction: null };
-  }
-  function handlePointerMove(event: PointerEvent<HTMLButtonElement>) {
-    const start = drag.current;
-    if (!start || start.pointerId !== event.pointerId) return;
-    const x = event.clientX - start.x;
-    const y = event.clientY - start.y;
-    if (start.direction === null) {
-      if (Math.max(Math.abs(x), Math.abs(y)) < 8) return;
-      start.direction = Math.abs(x) > Math.abs(y) * 1.25 ? 'horizontal' : 'vertical';
-      if (start.direction === 'horizontal') {
-        event.currentTarget.setPointerCapture?.(event.pointerId);
-        setDragging(true);
-      }
-    }
-    if (start.direction !== 'horizontal') return;
-    event.preventDefault();
-    suppressClick.current = true;
-    setOffset(Math.max(-Math.max(start.width, 88), Math.min(0, start.origin + x)));
-  }
-  function finishSwipe(event: PointerEvent<HTMLButtonElement>) {
-    const start = drag.current;
-    drag.current = null;
-    setDragging(false);
-    if (!start || start.direction !== 'horizontal') return;
-    suppressReleaseClick();
-    const end = Math.min(0, start.origin + event.clientX - start.x);
-    if (-end >= Math.max(154, start.width * 0.52)) void archive();
-    else setOffset(end < -36 ? -88 : 0);
-  }
-  function cancelSwipe() {
-    const wasHorizontal = drag.current?.direction === 'horizontal';
-    drag.current = null;
-    setDragging(false);
-    if (wasHorizontal) { setOffset(offset < -44 ? -88 : 0); suppressReleaseClick(); }
-  }
+  const latest = useRef({ parcel, onArchive, t });
+  useEffect(() => { latest.current = { parcel, onArchive, t }; });
+  const swipeable = Boolean(onArchive);
+  useEffect(() => {
+    if (!swipeable || !row.current || !button.current || !tray.current || !block.current || !action.current) return;
+    const controller = bindSwipeRow({ row: row.current, card: button.current, tray: tray.current, block: block.current, action: action.current }, {
+      // The next parcel takes the hero's place, so the page keeps its height.
+      reflow: !hero,
+      onOpenChange: setOpen,
+      onArchiveStart: () => { setArchiveError(null); setArchiving(true); },
+      onArchive: async () => {
+        const { parcel, onArchive, t } = latest.current;
+        try {
+          await onArchive?.(parcel);
+          return true;
+        } catch (reason) {
+          setArchiving(false);
+          setArchiveError(userErrorMessage(reason, t, 'detail.archiveFailed'));
+          return false;
+        }
+      },
+    });
+    swipe.current = controller;
+    return () => { controller.destroy(); swipe.current = null; };
+  }, [swipeable, hero]);
   const statusSummary = completionDate ? `${statusLabel} ${localizedDatePhrase(completionDate, t)}` : statusLabel;
   const statusAria = expectedDelivery ? t('parcel.ariaExpected', { name: parcelName, status: statusSummary, date: expectedDelivery }) : t('parcel.aria', { name: parcelName, status: statusSummary });
 
   const label = [statusAria, flag, deliveryLabel].filter(Boolean).join('. ');
 
-  return <div data-parcel-id={parcel.id} data-carrier={carrier.id} style={branding.style} className={`parcel-card-swipe${hero ? ' parcel-card-swipe--hero' : ''}${offset ? ' parcel-card-swipe--revealed' : ''}${collapsing ? ' parcel-card-swipe--collapsing' : ''}`}>
+  return <div ref={row} data-parcel-id={parcel.id} data-carrier={carrier.id} style={branding.style} className={`parcel-card-swipe${hero ? ' parcel-card-swipe--hero' : ''}`}>
     <div className="parcel-card-swipe__clip">
-      {onArchive && <button type="button" className={`parcel-card-swipe__archive${armed ? ' parcel-card-swipe__archive--armed' : ''}`} aria-label={t('parcel.archiveAria', { name: parcelName })}
-        aria-hidden={offset > -8} tabIndex={offset <= -8 ? 0 : -1} disabled={archiving} style={{ visibility: offset <= -8 ? 'visible' : 'hidden' }} onClick={() => void archive()}><Icon name="archive" /><span>{archiving ? t('detail.archiving') : t('parcel.archive')}</span></button>}
-      <button ref={button} type="button" className={`parcel-card${hero ? ' parcel-card--hero' : ''}${parcel.archivedAt ? ' parcel-card--archived' : ''}${dragging ? ' parcel-card--dragging' : ''}`}
-        style={{ transform: `translateX(${offset}px)` }} disabled={archiving} aria-busy={archiving} aria-label={hero ? `${t('app.nextUp')}: ${label}` : label}
-        onClick={(event) => { if (suppressClick.current) return; if (offset) setOffset(0); else onOpen(parcel, event.currentTarget); }}
-        onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={finishSwipe} onPointerCancel={cancelSwipe}>
+      {onArchive && <div ref={tray} className="parcel-card-swipe__tray">
+        <div ref={block} className="parcel-card-swipe__block">
+          <button ref={action} type="button" className="parcel-card-swipe__archive" aria-label={t('parcel.archiveAria', { name: parcelName })}
+            aria-hidden={!open} tabIndex={open ? 0 : -1} disabled={archiving} onClick={() => swipe.current?.archive()}><Icon name="archive" /><span>{t('parcel.archive')}</span></button>
+        </div>
+      </div>}
+      <button ref={button} type="button" className={`parcel-card${hero ? ' parcel-card--hero' : ''}${parcel.archivedAt ? ' parcel-card--archived' : ''}`}
+        disabled={archiving} aria-busy={archiving} aria-label={hero ? `${t('app.nextUp')}: ${label}` : label}
+        onClick={(event) => { if (!swipe.current?.consumeClick()) onOpen(parcel, event.currentTarget); }}>
         {hero ? <>
           <span className="parcel-card__hero-top"><CarrierMark carrier={carrier} /><span className="parcel-card__next-label">{t('app.nextUp')}</span></span>
           <span className="parcel-card__hero-main"><strong className="parcel-card__label">{parcelName}</strong><PostageStamp icon={parcelIcon(current?.stage)} /></span>

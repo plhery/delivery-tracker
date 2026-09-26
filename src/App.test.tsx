@@ -1197,7 +1197,7 @@ describe('App', () => {
     const label = await screen.findByText('Coffee beans ☕');
     const card = label.closest('button');
     expect(card).not.toBeNull();
-    fireEvent.pointerDown(card!, { pointerId: 1, isPrimary: true, clientX: 240, clientY: 100 });
+    fireEvent.pointerDown(card!, { pointerId: 1, isPrimary: true, clientX: 300, clientY: 100 });
     fireEvent.pointerMove(card!, { pointerId: 1, isPrimary: true, clientX: 30, clientY: 105 });
     fireEvent.pointerUp(card!, { pointerId: 1, isPrimary: true, clientX: 30, clientY: 105 });
     fireEvent.click(card!);

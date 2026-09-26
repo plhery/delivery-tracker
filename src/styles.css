@@ -89,14 +89,15 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .parcel-section__heading > span { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 8px; border-radius: 999px; background: var(--control); font-weight: 600; }
 .parcel-section__heading h2, .section-heading h2 { margin: 0; }
 .parcel-section__heading > span, .section-heading > span { color: var(--ink-soft); font-size: 13px; font-variant-numeric: tabular-nums; }
-.parcel-grid { display: grid; gap: 12px; }
-.parcel-card-swipe { min-width: 0; display: grid; grid-template-rows: 1fr; transition: grid-template-rows .18s var(--ease-out), opacity .18s; }
-.parcel-card-swipe--collapsing { grid-template-rows: 0fr; opacity: 0; }
+/* A row that leaves is kept in place, out of the layout, while the rows after it close the gap. */
+.parcel-grid { position: relative; display: grid; gap: 12px; }
+.delivery-next { position: relative; }
+.parcel-card-swipe { min-width: 0; display: grid; grid-template-rows: 1fr; }
 .parcel-card-swipe__clip { min-height: 0; position: relative; overflow: hidden; border-radius: 18px; background: transparent; isolation: isolate; }
 .parcel-card-swipe { --tone: light-dark(var(--carrier-ink-light), var(--carrier-ink-dark)); --tone-surface: light-dark(var(--carrier-surface-light), var(--carrier-surface-dark)); --carrier-brand: light-dark(var(--carrier-brand-light), var(--carrier-brand-dark)); }
-.parcel-card { width: 100%; min-height: 117px; position: relative; z-index: 1; padding: 16px 18px; display: flex; flex-direction: column; align-items: stretch; gap: 7px; text-align: left; background: var(--tone-surface, var(--paper)); color: var(--ink); border-radius: 18px; touch-action: pan-y pinch-zoom; transition: transform .26s var(--spring), scale .2s var(--spring); }
-.parcel-card--dragging { transition: none; cursor: grabbing; }
-.parcel-card:active:not(.parcel-card--dragging):not(:disabled) { scale: .988; }
+.parcel-card { width: 100%; min-height: 117px; position: relative; z-index: 1; padding: 16px 18px; display: flex; flex-direction: column; align-items: stretch; gap: 7px; text-align: left; background: var(--tone-surface, var(--paper)); color: var(--ink); border-radius: 18px; touch-action: pan-y pinch-zoom; transition: scale .2s var(--spring); }
+.parcel-card-swipe[data-swipe="dragging"] .parcel-card { cursor: grabbing; -webkit-user-select: none; user-select: none; }
+.parcel-card-swipe:not([data-swipe]) .parcel-card:active:not(:disabled) { scale: .988; }
 .parcel-card__top, .parcel-card__hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .parcel-card__top { margin-bottom: 5px; }
 .parcel-card__label { font-size: 18px; font-weight: 650; letter-spacing: -.4px; line-height: 1.3; overflow-wrap: anywhere; }
@@ -126,9 +127,15 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .postage-stamp__print { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #f6e9b7; border: 1px solid #bcab75; }
 .postage-stamp__print svg { width: 30px; height: 30px; stroke-width: 1.4; }
 .postage-stamp__cancel { position: absolute; width: 32px; height: 32px; border: 1px solid rgb(32 37 30 / 30%); border-radius: 50%; bottom: 3px; right: -7px; outline: 1px solid rgb(32 37 30 / 18%); outline-offset: -5px; }
-.parcel-card-swipe__archive { position: absolute; right: 0; top: 0; bottom: 0; width: 88px; background: var(--orange-text); color: var(--canvas); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 5px; font-size: 10px; font-weight: 600; }
-.parcel-card-swipe__archive--armed svg { scale: 1.25; }
-.parcel-card-swipe__archive svg { transition: scale .2s var(--spring); }
+/* Swipe to archive: the action rides on the card's edge, then leaps to it past the commit point. */
+.parcel-card-swipe__tray { position: absolute; inset: 0; background: var(--orange-soft); }
+.parcel-card-swipe:not([data-swipe]) .parcel-card-swipe__tray { visibility: hidden; }
+.parcel-card-swipe__block { position: absolute; top: 0; bottom: 0; left: calc(100% - 88px); width: 100%; background: var(--orange-text); }
+/* Reach under the card's round corners, overlapping the block so no seam shows at fractional offsets. */
+.parcel-card-swipe__block::before { content: ""; position: absolute; top: 0; bottom: 0; right: calc(100% - 1px); width: 25px; background: inherit; }
+.parcel-card-swipe__archive { position: absolute; left: 0; top: 0; bottom: 0; width: 88px; padding: 0; background: none; color: var(--canvas); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 5px; font-size: 10px; font-weight: 600; }
+.parcel-card-swipe__archive svg { transition: scale .3s var(--spring); }
+.parcel-card-swipe[data-armed] .parcel-card-swipe__archive svg { scale: 1.2; }
 .archived-section > details > summary { list-style: none; display: flex; align-items: center; gap: 8px; cursor: pointer; min-height: 48px; border-radius: 15px; color: var(--ink-soft); font-size: 14px; padding: 9px 4px; }
 .archived-section__chevron { width: 16px; height: 16px; rotate: 90deg; transition: rotate .2s; }
 .archived-section > details[open] .archived-section__chevron { rotate: -90deg; }
@@ -491,7 +498,7 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 @media (hover: hover) {
   .icon-button:hover, .sheet__close:hover, .detail__title-edit:hover, .app__add-button:hover, .field__inline-action:hover { background: var(--control); }
   .button--primary:hover { filter: brightness(1.025); }
-  .parcel-card:hover:not(.parcel-card--dragging) .postage-stamp { scale: 1.025; }
+  .parcel-card-swipe:not([data-swipe="dragging"]) .parcel-card:hover .postage-stamp { scale: 1.025; }
   .postage-stamp { transition: scale .18s ease-out; }
   .time-card:hover, .stamp-card:hover { scale: 1.012; }
   .settings-row:hover { filter: brightness(.97); }
@@ -578,7 +585,7 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
   .sheet__actions .button { padding: 12px; font-size: 13px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .parcel-card:hover:not(.parcel-card--dragging) .postage-stamp { scale: 1; }
+  .parcel-card-swipe:not([data-swipe="dragging"]) .parcel-card:hover .postage-stamp { scale: 1; }
   .arrival__tilt, .arrival__press { transform: none !important; }
   .parcel-illustration__glints, .parcel-illustration__light { display: none; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
@@ -589,7 +596,6 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
   .passport-seal, .progress-track__dot--filled { forced-color-adjust: none; }
 }
 
-.parcel-card-swipe--revealed .parcel-card-swipe__clip { background: var(--orange-text); }
 .auth-flow__heading h1:focus { outline: none; }
 /* Quick launches and update reloads go straight to the app; the splash shows only when loading takes a while. */
 .auth-loading { min-height: 100dvh; display: grid; align-content: center; justify-items: center; gap: 20px; padding: 24px; color: var(--ink-soft); font-size: 13px; animation: splash-arrive .2s ease-out .4s both; }

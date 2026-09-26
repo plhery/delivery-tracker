@@ -1,6 +1,7 @@
 import './components/Deliveries.css';
 import { trackAction, trackScreen } from './lib/analytics';
 import { focusClickedButton } from './lib/modal';
+import { glideNextListChange } from './lib/listGlide';
 import { takeResumedScreen, type ResumedScreen } from './lib/pwaUpdates';
 import { userErrorMessage } from './lib/userMessages';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -127,6 +128,7 @@ export default function App({
   const [sort, setSort] = useState<ParcelSort>('priority');
   const [viewControlsOpen, setViewControlsOpen] = useState(false);
   const searchToggle = useRef<HTMLButtonElement>(null);
+  const deliveriesPage = useRef<HTMLDivElement>(null);
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
   const [viewNow, setViewNow] = useState(() => Date.now());
   const [openParcelId, setOpenParcelId] = useState<string | null>(null);
@@ -315,8 +317,19 @@ export default function App({
     [parcels],
   );
 
+  // The other cards glide into place when a parcel leaves or returns.
+  async function changeList(change: () => Promise<void>) {
+    const stopGlide = glideNextListChange(deliveriesPage.current);
+    try {
+      await change();
+    } catch (reason) {
+      stopGlide();
+      throw reason;
+    }
+  }
+
   async function handleArchive(parcel: ParcelWithEvents) {
-    await removeParcel(parcel.id);
+    await changeList(() => removeParcel(parcel.id));
     if (openParcelId === parcel.id) closeParcelDetail();
     setUndoError(null);
     setUndoing(false);
@@ -324,7 +337,7 @@ export default function App({
   }
 
   async function handleDelete(parcel: ParcelWithEvents) {
-    await deleteParcel(parcel.id);
+    await changeList(() => deleteParcel(parcel.id));
     if (openParcelId === parcel.id) closeParcelDetail();
     setUndoParcel((current) => current?.id === parcel.id ? null : current);
     setRefreshNotice(t('app.deletedToast', {
@@ -340,7 +353,7 @@ export default function App({
   }
 
   async function handleRestore(parcel: ParcelWithEvents) {
-    await restoreParcel(parcel.id);
+    await changeList(() => restoreParcel(parcel.id));
     setUndoParcel((current) => current?.id === parcel.id ? null : current);
     if (openParcelId === parcel.id) closeParcelDetail();
   }
@@ -396,7 +409,7 @@ export default function App({
       ))}
     </div>
   ) : null;
-  const nextCard = nextParcel && <div className="delivery-next"><ParcelCard parcel={nextParcel} variant="hero" onOpen={(parcel, source) => openParcelDetail(parcel.id, source)} onArchive={handleArchive} /></div>;
+  const nextCard = nextParcel && <div className="delivery-next"><ParcelCard key={nextParcel.id} parcel={nextParcel} variant="hero" onOpen={(parcel, source) => openParcelDetail(parcel.id, source)} onArchive={handleArchive} /></div>;
 
   return (
     <div className={`app${tab === 'deliveries' ? ' app--deliveries' : ''}`} onClickCapture={focusClickedButton}>
@@ -438,7 +451,7 @@ export default function App({
         )}
 
         <PullToRefresh hidden={tab !== 'deliveries'} enabled={!loading && !refreshing && !refreshAnimating && !adding && !openParcelId} onRefresh={refreshAll}>
-        <div className="deliveries-page">
+        <div ref={deliveriesPage} className="deliveries-page">
         <div className="delivery-active" role={activeParcels.length ? 'region' : undefined} aria-labelledby={activeParcels.length ? 'active-parcels-title' : undefined}>
         <div className="delivery-overview">
           {activeParcels.length > 0 && <div className="parcel-section__heading"><h2 id="active-parcels-title">{t('app.onTheWaySection')}</h2><span>{activeParcels.length}</span></div>}
