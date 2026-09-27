@@ -184,11 +184,10 @@ round pending while its "new delivery instructions" row reads as out for deliver
 Shipper pre-advice (PostNord), unhanded labels (Aramex) and Austrian Post's handover to
 a delivery partner map to accepted.
 
-For 18 of the 41 public numbers behind rows 31–60, detection neither selects nor suggests
-the carrier the source names: among them OnTrac's 17-character `1LSCX…`, J&T `JY…` and
-`JT…`, DTDC `7D…`, YTO `YT…`, Yanwen `…YP`, Ninja Van and Planzer composites. It selects
-Royal Mail for a Parcelforce `GI…GB` number and La Poste for a Korea Post domestic
-number. Each answer is recorded in the carrier's `numbers.json`.
+Detection selects or suggests the named carrier for the public numbers behind rows
+31–60, except Planzer composites, which stay undetected on purpose (see the
+[Planzer README](../carriers/planzer/README.md)). DTDC's `Z` numbers share Packeta's shape
+and stay with Packeta. Each answer is recorded in the carrier's `numbers.json`.
 
 ## Other carriers
 

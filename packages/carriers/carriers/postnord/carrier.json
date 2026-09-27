@@ -30,6 +30,17 @@
       "id": "postnord-1",
       "pattern": "^\\d{11}SE$",
       "confidence": "high"
+    },
+    {
+      "id": "postnord-2",
+      "pattern": "^[A-Z]{2}\\d{9}(?:SE|DK)$",
+      "confidence": "high",
+      "checksum": "s10"
+    },
+    {
+      "id": "postnord-3",
+      "pattern": "^00\\d(?:57|73|70|64)\\d{15}$",
+      "confidence": "low"
     }
   ]
 }

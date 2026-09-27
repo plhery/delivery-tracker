@@ -30,6 +30,12 @@
       "id": "yanwen-1",
       "pattern": "^BYS\\d{9}$",
       "confidence": "high"
+    },
+    {
+      "id": "yanwen-2",
+      "pattern": "^[A-Z]{2}\\d{9}YP$",
+      "confidence": "high",
+      "checksum": "s10"
     }
   ]
 }

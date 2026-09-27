@@ -10,10 +10,10 @@
         "date": "2026-09-26"
       },
       "expect": {
-        "carrier": "unknown",
-        "confidence": "none"
+        "carrier": "dtdc",
+        "confidence": "high"
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to DTDC; no rule matches this shape."
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
     },
     {
       "number": "N95614372",
@@ -28,6 +28,23 @@
         "confidence": "high"
       },
       "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "T5001109884",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a9d03a2531e78ca983c377f",
+        "date": "2026-09-06"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dtdc"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to DTDC, which stays one candidate among several."
     }
   ]
 }

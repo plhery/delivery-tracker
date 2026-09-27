@@ -50,7 +50,7 @@
   "detection": [
     {
       "id": "royal-mail-1",
-      "pattern": "^(?!(?:EA|EB|EC|ED|EE|CP))[A-Z]{2}\\d{9}GB$",
+      "pattern": "^(?!(?:EA|EB|EC|ED|EE|CP|GI))[A-Z]{2}\\d{9}GB$",
       "confidence": "high",
       "checksum": "s10"
     }

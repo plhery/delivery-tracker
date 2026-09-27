@@ -49,13 +49,10 @@
         "date": "2026-09-24"
       },
       "expect": {
-        "carrier": "unknown",
-        "confidence": "low",
-        "candidates": [
-          "colis-prive"
-        ]
+        "carrier": "ontrac",
+        "confidence": "high"
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to OnTrac, which no rule claims."
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
     },
     {
       "number": "1LSCXVE0058631Y",

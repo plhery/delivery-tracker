@@ -29,7 +29,8 @@
         "candidates": [
           "dhl-ecommerce",
           "correos-express",
-          "canada-post"
+          "canada-post",
+          "tnt"
         ]
       },
       "note": "Official documentation example, not a real shipment. The source attributes it to DHL eCommerce, which stays one candidate among several."

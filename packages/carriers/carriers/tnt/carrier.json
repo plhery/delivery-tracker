@@ -30,6 +30,11 @@
       "id": "tnt-1",
       "pattern": "^\\d{9}$",
       "confidence": "low"
+    },
+    {
+      "id": "tnt-2",
+      "pattern": "^\\d{16}$",
+      "confidence": "low"
     }
   ]
 }

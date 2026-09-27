@@ -36,10 +36,10 @@
         "date": "2026-03-26"
       },
       "expect": {
-        "carrier": "intl-post",
+        "carrier": "yanwen",
         "confidence": "high"
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Yanwen; detection selects the generic postal carrier."
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
     }
   ]
 }

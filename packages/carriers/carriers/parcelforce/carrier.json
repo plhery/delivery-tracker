@@ -37,7 +37,7 @@
   "detection": [
     {
       "id": "parcelforce-1",
-      "pattern": "^(?:EA|EB|EC|ED|EE|CP)\\d{9}GB$",
+      "pattern": "^(?:EA|EB|EC|ED|EE|CP|GI)\\d{9}GB$",
       "confidence": "high",
       "checksum": "s10"
     }

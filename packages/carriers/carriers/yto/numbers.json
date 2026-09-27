@@ -24,10 +24,10 @@
         "date": "2026-06-20"
       },
       "expect": {
-        "carrier": "unknown",
-        "confidence": "none"
+        "carrier": "yto",
+        "confidence": "high"
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to YTO Express; no rule matches this shape."
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
     }
   ]
 }

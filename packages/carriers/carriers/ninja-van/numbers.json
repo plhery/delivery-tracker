@@ -28,10 +28,10 @@
         "date": "2026-02-10"
       },
       "expect": {
-        "carrier": "unknown",
-        "confidence": "none"
+        "carrier": "ninja-van",
+        "confidence": "high"
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ninja Van; no rule matches this shape. Indonesian parcel (Ninja Xpress)."
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Indonesian parcel (Ninja Xpress)."
     },
     {
       "number": "NLMYA71943214",
@@ -42,10 +42,10 @@
         "date": "2026-04-12"
       },
       "expect": {
-        "carrier": "unknown",
-        "confidence": "none"
+        "carrier": "ninja-van",
+        "confidence": "high"
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ninja Van; no rule matches this shape. Malaysian parcel."
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Malaysian parcel."
     },
     {
       "number": "NVSGBEDBP03784ADPL",
@@ -56,9 +56,12 @@
       },
       "expect": {
         "carrier": "unknown",
-        "confidence": "none"
+        "confidence": "low",
+        "candidates": [
+          "ninja-van"
+        ]
       },
-      "note": "Official documentation example, not a real shipment. The source attributes it to Ninja Van; no rule matches this shape."
+      "note": "Official documentation example, not a real shipment. The source attributes it to Ninja Van, which stays one candidate among several."
     }
   ]
 }

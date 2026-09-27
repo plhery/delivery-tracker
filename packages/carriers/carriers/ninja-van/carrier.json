@@ -25,5 +25,16 @@
     "unavailable": []
   },
   "links": [],
-  "detection": []
+  "detection": [
+    {
+      "id": "ninja-van-1",
+      "pattern": "^NL(?:MY|SG|ID|PH|TH|VN)[A-Z]{1,2}\\d{8,10}$",
+      "confidence": "high"
+    },
+    {
+      "id": "ninja-van-2",
+      "pattern": "^NV(?:SG|MY|PH|ID|TH|VN)[A-Z0-9]{8,20}$",
+      "confidence": "low"
+    }
+  ]
 }

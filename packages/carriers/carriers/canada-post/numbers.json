@@ -14,7 +14,8 @@
         "candidates": [
           "dhl-ecommerce",
           "correos-express",
-          "canada-post"
+          "canada-post",
+          "tnt"
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to Canada Post, which stays one candidate among several."
@@ -32,7 +33,8 @@
         "candidates": [
           "dhl-ecommerce",
           "correos-express",
-          "canada-post"
+          "canada-post",
+          "tnt"
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to Canada Post, which stays one candidate among several."
@@ -50,7 +52,8 @@
         "candidates": [
           "dhl-ecommerce",
           "correos-express",
-          "canada-post"
+          "canada-post",
+          "tnt"
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to Canada Post, which stays one candidate among several."
@@ -68,7 +71,8 @@
         "candidates": [
           "dhl-ecommerce",
           "correos-express",
-          "canada-post"
+          "canada-post",
+          "tnt"
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to Canada Post, which stays one candidate among several."

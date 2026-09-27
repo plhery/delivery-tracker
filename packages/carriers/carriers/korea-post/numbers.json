@@ -10,10 +10,17 @@
         "date": "2026-09-24"
       },
       "expect": {
-        "carrier": "la-poste",
-        "confidence": "high"
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "la-poste",
+          "correos-chile",
+          "delhivery",
+          "yunda",
+          "korea-post"
+        ]
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Korea Post; detection selects La Poste. Domestic parcel."
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Korea Post, which stays one candidate among several. Domestic parcel."
     },
     {
       "number": "EM385783825KR",

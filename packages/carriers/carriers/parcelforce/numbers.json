@@ -23,10 +23,10 @@
         "date": "2026-09-21"
       },
       "expect": {
-        "carrier": "royal-mail",
+        "carrier": "parcelforce",
         "confidence": "high"
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Parcelforce Worldwide; detection selects Royal Mail."
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
     }
   ]
 }

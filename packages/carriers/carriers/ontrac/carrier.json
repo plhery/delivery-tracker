@@ -52,7 +52,7 @@
     },
     {
       "id": "ontrac-4",
-      "pattern": "^1LSCX[A-Z0-9]{10}$",
+      "pattern": "^1LS[A-Z0-9]{12,14}$",
       "confidence": "high"
     }
   ]

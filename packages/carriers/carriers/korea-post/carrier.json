@@ -40,6 +40,11 @@
       "pattern": "^[A-Z]{2}\\d{9}KR$",
       "confidence": "high",
       "checksum": "s10"
+    },
+    {
+      "id": "korea-post-2",
+      "pattern": "^6\\d{12}$",
+      "confidence": "low"
     }
   ]
 }

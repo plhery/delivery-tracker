@@ -133,14 +133,14 @@ statuses, timings and network error codes.
 | `poste-italiane` | Poste Italiane | dedicated | direct | 2 | 8 | 17 | [README](carriers/poste-italiane/README.md) |
 | `correos-spain` | Correos | dedicated | direct | 5 | 10 | 41 | [README](carriers/correos-spain/README.md) |
 | `bpost` | bpost | universal providers |  | 0 | 6 | 0 |  |
-| `austrian-post` | Austrian Post | universal providers |  | 0 | 3 | 0 |  |
+| `austrian-post` | Austrian Post | universal providers |  | 0 | 4 | 0 |  |
 | `postnord` | PostNord | universal providers |  | 0 | 4 | 0 |  |
 | `tnt` | TNT | universal providers |  | 0 | 6 | 0 |  |
 | `aramex` | Aramex | universal providers |  | 0 | 3 | 0 |  |
 | `yunexpress` | YunExpress | universal providers |  | 0 | 2 | 0 |  |
 | `four-px` | 4PX | universal providers |  | 0 | 2 | 0 |  |
 | `yanwen` | Yanwen | universal providers |  | 0 | 3 | 0 |  |
-| `j-and-t` | J&T Express | universal providers |  | 0 | 4 | 0 |  |
+| `j-and-t` | J&T Express | universal providers |  | 0 | 5 | 0 |  |
 | `jd-logistics` | JD Logistics | universal providers |  | 0 | 1 | 0 |  |
 | `zto` | ZTO Express | universal providers |  | 0 | 1 | 0 |  |
 | `yto` | YTO Express | universal providers |  | 0 | 2 | 0 |  |
@@ -151,7 +151,7 @@ statuses, timings and network error codes.
 | `singapore-post` | Singapore Post | universal providers |  | 0 | 5 | 0 |  |
 | `hongkong-post` | Hongkong Post | universal providers |  | 0 | 2 | 0 |  |
 | `korea-post` | Korea Post | universal providers |  | 0 | 3 | 0 |  |
-| `planzer` | Planzer | dedicated | direct | 2 | 6 | 28 | [README](carriers/planzer/README.md) |
+| `planzer` | Planzer | dedicated | direct | 2 | 7 | 28 | [README](carriers/planzer/README.md) |
 | `quickpac` | Quickpac | via planzer | direct | 2 | 2 | 26 | [README](carriers/quickpac/README.md) |
 | `dpd-fr` | DPD France | dedicated | direct → trawl | 3 | 4 | 40 | [README](carriers/dpd-fr/README.md) |
 | `parcelforce` | Parcelforce Worldwide | universal providers |  | 0 | 2 | 0 |  |
@@ -159,7 +159,7 @@ statuses, timings and network error codes.
 | `ontrac` | OnTrac | universal providers |  | 0 | 16 | 0 |  |
 | `delhivery` | Delhivery | universal providers |  | 0 | 5 | 0 |  |
 | `blue-dart` | Blue Dart | universal providers |  | 0 | 5 | 0 |  |
-| `dtdc` | DTDC | universal providers |  | 0 | 2 | 0 |  |
+| `dtdc` | DTDC | universal providers |  | 0 | 3 | 0 |  |
 | `ninja-van` | Ninja Van | universal providers |  | 0 | 4 | 0 |  |
 | `packeta` | Packeta | dedicated | direct | 4 | 5 | 16 | [README](carriers/packeta/README.md) |
 | `poczta-polska` | Poczta Polska | universal providers |  | 0 | 6 | 0 |  |

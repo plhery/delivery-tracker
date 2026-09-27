@@ -39,6 +39,16 @@
       "id": "dtdc-1",
       "pattern": "^N\\d{8}$",
       "confidence": "high"
+    },
+    {
+      "id": "dtdc-2",
+      "pattern": "^7[DX]\\d{9}$",
+      "confidence": "high"
+    },
+    {
+      "id": "dtdc-3",
+      "pattern": "^[BDHPTUV]\\d{10}$",
+      "confidence": "low"
     }
   ]
 }

@@ -758,7 +758,7 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^[68][A-Z0-9]\\d{11}$",
+        "pattern": "^[68][A-Z]\\d{11}$",
         "confidence": "high"
       },
       {
@@ -1286,7 +1286,7 @@ export const CARRIER_CAPABILITIES = {
     "linkRules": [],
     "detectionRules": [
       {
-        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!AS\\d{9}US$)(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}(?!CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$|ES$)[A-Z]{2}$",
+        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!AS\\d{9}US$)(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}(?!CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$|ES$|SE$|DK$|AT$|YP$)[A-Z]{2}$",
         "confidence": "high",
         "checksum": "s10"
       }
@@ -1357,7 +1357,7 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^(?!(?:EA|EB|EC|ED|EE|CP))[A-Z]{2}\\d{9}GB$",
+        "pattern": "^(?!(?:EA|EB|EC|ED|EE|CP|GI))[A-Z]{2}\\d{9}GB$",
         "confidence": "high",
         "checksum": "s10"
       }
@@ -1386,7 +1386,7 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^(?:EA|EB|EC|ED|EE|CP)\\d{9}GB$",
+        "pattern": "^(?:EA|EB|EC|ED|EE|CP|GI)\\d{9}GB$",
         "confidence": "high",
         "checksum": "s10"
       }
@@ -1507,6 +1507,11 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^\\d{22}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^[A-Z]{2}\\d{9}AT$",
+        "confidence": "high",
+        "checksum": "s10"
       }
     ],
     "trackingUrlTemplate": "https://www.post.at/en/s/track-and-trace-search"
@@ -1526,6 +1531,15 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^\\d{11}SE$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^[A-Z]{2}\\d{9}(?:SE|DK)$",
+        "confidence": "high",
+        "checksum": "s10"
+      },
+      {
+        "pattern": "^00\\d(?:57|73|70|64)\\d{15}$",
+        "confidence": "low"
       }
     ],
     "trackingUrlTemplate": "https://www.postnord.se/en/our-tools/track-and-trace"
@@ -1960,7 +1974,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       },
       {
-        "pattern": "^1LSCX[A-Z0-9]{10}$",
+        "pattern": "^1LS[A-Z0-9]{12,14}$",
         "confidence": "high"
       }
     ],
@@ -2453,6 +2467,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^D\\d{11}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^YT\\d{13}$",
+        "confidence": "high"
       }
     ],
     "trackingUrlTemplate": "https://www.ytoglobal.com/"
@@ -2539,6 +2557,10 @@ export const CARRIER_CAPABILITIES = {
         "pattern": "^[A-Z]{2}\\d{9}KR$",
         "confidence": "high",
         "checksum": "s10"
+      },
+      {
+        "pattern": "^6\\d{12}$",
+        "confidence": "low"
       }
     ],
     "trackingUrlTemplate": "https://trace.epost.go.kr/xtts/tt/epost/ems/ems_eng.jsp"
@@ -2587,6 +2609,14 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^N\\d{8}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^7[DX]\\d{9}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^[BDHPTUV]\\d{10}$",
+        "confidence": "low"
       }
     ],
     "trackingUrlTemplate": "https://www.dtdc.com/track-your-shipment?trackingId={trackingNumber}"
@@ -2682,7 +2712,16 @@ export const CARRIER_CAPABILITIES = {
     },
     "canaryUrl": "https://t.17track.net/",
     "linkRules": [],
-    "detectionRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^NL(?:MY|SG|ID|PH|TH|VN)[A-Z]{1,2}\\d{8,10}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^NV(?:SG|MY|PH|ID|TH|VN)[A-Z0-9]{8,20}$",
+        "confidence": "low"
+      }
+    ],
     "trackingUrlTemplate": "https://www.ninjavan.co/en-my/tracking"
   },
   "china-post": {
@@ -2826,6 +2865,10 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^\\d{9}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{16}$",
+        "confidence": "low"
       }
     ],
     "trackingUrlTemplate": "https://www.tnt.com/express/en_gc/site/shipping-tools/track.html"
@@ -2882,6 +2925,11 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^BYS\\d{9}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^[A-Z]{2}\\d{9}YP$",
+        "confidence": "high",
+        "checksum": "s10"
       }
     ],
     "trackingUrlTemplate": "https://track.yanwenlogistics.com/tracking.php"
@@ -2923,6 +2971,18 @@ export const CARRIER_CAPABILITIES = {
     "detectionRules": [
       {
         "pattern": "^\\d{12}$",
+        "confidence": "low"
+      },
+      {
+        "pattern": "^JT\\d{13}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^JY\\d{10}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^JD\\d{10}$",
         "confidence": "low"
       }
     ],

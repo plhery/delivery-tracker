@@ -77,6 +77,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "postnord",
       "usps"
     ]
   },
@@ -87,7 +88,8 @@
     "candidates": [
       "dhl-ecommerce",
       "correos-express",
-      "canada-post"
+      "canada-post",
+      "tnt"
     ]
   },
   {
@@ -650,7 +652,8 @@
     "candidates": [
       "dhl-ecommerce",
       "correos-express",
-      "canada-post"
+      "canada-post",
+      "tnt"
     ]
   },
   {
@@ -660,7 +663,8 @@
     "candidates": [
       "dhl-ecommerce",
       "correos-express",
-      "canada-post"
+      "canada-post",
+      "tnt"
     ]
   },
   {
@@ -756,10 +760,10 @@
   },
   {
     "input": "1LSCXLNA062725426",
-    "carrier": "unknown",
-    "confidence": "low",
+    "carrier": "ontrac",
+    "confidence": "high",
     "candidates": [
-      "colis-prive"
+      "ontrac"
     ]
   },
   {
@@ -1017,7 +1021,8 @@
     "candidates": [
       "dhl-ecommerce",
       "correos-express",
-      "canada-post"
+      "canada-post",
+      "tnt"
     ]
   },
   {
@@ -1100,7 +1105,8 @@
     "candidates": [
       "dhl-ecommerce",
       "correos-express",
-      "canada-post"
+      "canada-post",
+      "tnt"
     ]
   },
   {
@@ -1233,7 +1239,8 @@
     "candidates": [
       "dhl-ecommerce",
       "correos-express",
-      "canada-post"
+      "canada-post",
+      "tnt"
     ]
   },
   {
@@ -1465,10 +1472,23 @@
   },
   {
     "input": "6097542557191",
-    "carrier": "la-poste",
-    "confidence": "high",
+    "carrier": "unknown",
+    "confidence": "low",
     "candidates": [
-      "la-poste"
+      "la-poste",
+      "correos-chile",
+      "delhivery",
+      "yunda",
+      "korea-post"
+    ]
+  },
+  {
+    "input": "61214174",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "mondial-relay",
+      "heppner"
     ]
   },
   {
@@ -1549,7 +1569,8 @@
     "candidates": [
       "dhl-ecommerce",
       "correos-express",
-      "canada-post"
+      "canada-post",
+      "tnt"
     ]
   },
   {
@@ -1559,7 +1580,8 @@
     "candidates": [
       "dhl-ecommerce",
       "correos-express",
-      "canada-post"
+      "canada-post",
+      "tnt"
     ]
   },
   {
@@ -1669,14 +1691,17 @@
     "candidates": [
       "dhl-ecommerce",
       "correos-express",
-      "canada-post"
+      "canada-post",
+      "tnt"
     ]
   },
   {
     "input": "7D119335452",
-    "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "carrier": "dtdc",
+    "confidence": "high",
+    "candidates": [
+      "dtdc"
+    ]
   },
   {
     "input": "7T2514965601000935102",
@@ -1966,7 +1991,8 @@
     "candidates": [
       "dhl-ecommerce",
       "correos-express",
-      "canada-post"
+      "canada-post",
+      "tnt"
     ]
   },
   {
@@ -2247,6 +2273,14 @@
     "confidence": "low",
     "candidates": [
       "chronopost"
+    ]
+  },
+  {
+    "input": "CA643257963AT",
+    "carrier": "austrian-post",
+    "confidence": "high",
+    "candidates": [
+      "austrian-post"
     ]
   },
   {
@@ -2663,10 +2697,10 @@
   },
   {
     "input": "GI049170518GB",
-    "carrier": "royal-mail",
+    "carrier": "parcelforce",
     "confidence": "high",
     "candidates": [
-      "royal-mail"
+      "parcelforce"
     ]
   },
   {
@@ -2766,6 +2800,15 @@
     ]
   },
   {
+    "input": "JD0587577815",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "colis-prive",
+      "j-and-t"
+    ]
+  },
+  {
     "input": "JFV247545960",
     "carrier": "purolator",
     "confidence": "high",
@@ -2815,9 +2858,11 @@
   },
   {
     "input": "JT0022543312549",
-    "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "carrier": "j-and-t",
+    "confidence": "high",
+    "candidates": [
+      "j-and-t"
+    ]
   },
   {
     "input": "JVGL0099999999",
@@ -2829,18 +2874,18 @@
   },
   {
     "input": "JY1276193661",
-    "carrier": "unknown",
-    "confidence": "low",
+    "carrier": "j-and-t",
+    "confidence": "high",
     "candidates": [
-      "colis-prive"
+      "j-and-t"
     ]
   },
   {
     "input": "JY1592273075",
-    "carrier": "unknown",
-    "confidence": "low",
+    "carrier": "j-and-t",
+    "confidence": "high",
     "candidates": [
-      "colis-prive"
+      "j-and-t"
     ]
   },
   {
@@ -3155,15 +3200,19 @@
   },
   {
     "input": "NLIDAP8003114210",
-    "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "carrier": "ninja-van",
+    "confidence": "high",
+    "candidates": [
+      "ninja-van"
+    ]
   },
   {
     "input": "NLMYA71943214",
-    "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "carrier": "ninja-van",
+    "confidence": "high",
+    "candidates": [
+      "ninja-van"
+    ]
   },
   {
     "input": "NN376766183BR",
@@ -3176,8 +3225,10 @@
   {
     "input": "NVSGBEDBP03784ADPL",
     "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "confidence": "low",
+    "candidates": [
+      "ninja-van"
+    ]
   },
   {
     "input": "PHAS9C0419962810128017D",
@@ -3403,10 +3454,10 @@
   },
   {
     "input": "RR123815032SE",
-    "carrier": "intl-post",
+    "carrier": "postnord",
     "confidence": "high",
     "candidates": [
-      "intl-post"
+      "postnord"
     ]
   },
   {
@@ -3562,6 +3613,14 @@
     ]
   },
   {
+    "input": "T5001109884",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dtdc"
+    ]
+  },
+  {
     "input": "TBA000000000000",
     "carrier": "amazon-logistics",
     "confidence": "high",
@@ -3671,10 +3730,10 @@
   },
   {
     "input": "UK844354295YP",
-    "carrier": "intl-post",
+    "carrier": "yanwen",
     "confidence": "high",
     "candidates": [
-      "intl-post"
+      "yanwen"
     ]
   },
   {
@@ -3687,10 +3746,10 @@
   },
   {
     "input": "UO820761246SE",
-    "carrier": "intl-post",
+    "carrier": "postnord",
     "confidence": "high",
     "candidates": [
-      "intl-post"
+      "postnord"
     ]
   },
   {
@@ -3714,7 +3773,8 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "ups"
+      "ups",
+      "dtdc"
     ]
   },
   {
@@ -3807,9 +3867,11 @@
   },
   {
     "input": "YT8879092508074",
-    "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "carrier": "yto",
+    "confidence": "high",
+    "candidates": [
+      "yto"
+    ]
   },
   {
     "input": "YVMNN4RO",

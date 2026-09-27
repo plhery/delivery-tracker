@@ -15,10 +15,11 @@
         "candidates": [
           "dhl-ecommerce",
           "correos-express",
-          "canada-post"
+          "canada-post",
+          "tnt"
         ]
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to TNT France, which no rule claims."
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to TNT France, which stays one candidate among several."
     },
     {
       "number": "1320002490250705",
@@ -34,10 +35,11 @@
         "candidates": [
           "dhl-ecommerce",
           "correos-express",
-          "canada-post"
+          "canada-post",
+          "tnt"
         ]
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to TNT France, which no rule claims."
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to TNT France, which stays one candidate among several."
     },
     {
       "number": "211691259",

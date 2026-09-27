@@ -30,6 +30,11 @@
       "id": "yto-1",
       "pattern": "^D\\d{11}$",
       "confidence": "high"
+    },
+    {
+      "id": "yto-2",
+      "pattern": "^YT\\d{13}$",
+      "confidence": "high"
     }
   ]
 }

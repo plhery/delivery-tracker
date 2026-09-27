@@ -34,6 +34,12 @@
       "id": "austrian-post-1",
       "pattern": "^\\d{22}$",
       "confidence": "low"
+    },
+    {
+      "id": "austrian-post-2",
+      "pattern": "^[A-Z]{2}\\d{9}AT$",
+      "confidence": "high",
+      "checksum": "s10"
     }
   ]
 }

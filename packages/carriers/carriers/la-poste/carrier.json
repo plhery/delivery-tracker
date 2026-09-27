@@ -71,7 +71,7 @@
   "detection": [
     {
       "id": "la-poste-1",
-      "pattern": "^[68][A-Z0-9]\\d{11}$",
+      "pattern": "^[68][A-Z]\\d{11}$",
       "confidence": "high"
     },
     {

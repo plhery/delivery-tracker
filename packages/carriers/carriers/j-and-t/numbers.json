@@ -30,6 +30,24 @@
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to J&T Express, which stays one candidate among several."
     },
     {
+      "number": "JD0587577815",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://mediakonsumen.com/2026/09/14/surat-pembaca/dugaan-pencurian-dalam-pengiriman-jt-express-paket-disayat-isi-diambil-ditutup-lakban-ulang-dan-lepas-tangan",
+        "date": "2026-09-14"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "colis-prive",
+          "j-and-t"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to J&T Express, which stays one candidate among several. Indonesian parcel."
+    },
+    {
       "number": "JT0022543312549",
       "role": "shipment",
       "evidence": "public_shipment_report",
@@ -38,10 +56,10 @@
         "date": "2026-08-20"
       },
       "expect": {
-        "carrier": "unknown",
-        "confidence": "none"
+        "carrier": "j-and-t",
+        "confidence": "high"
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to J&T Express; no rule matches this shape. Philippine parcel."
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Philippine parcel."
     },
     {
       "number": "JY1276193661",
@@ -52,13 +70,10 @@
         "date": "2026-09-13"
       },
       "expect": {
-        "carrier": "unknown",
-        "confidence": "low",
-        "candidates": [
-          "colis-prive"
-        ]
+        "carrier": "j-and-t",
+        "confidence": "high"
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to J&T Express, which no rule claims. Indonesian parcel."
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Indonesian parcel."
     },
     {
       "number": "JY1592273075",
@@ -69,13 +84,10 @@
         "date": "2026-09-22"
       },
       "expect": {
-        "carrier": "unknown",
-        "confidence": "low",
-        "candidates": [
-          "colis-prive"
-        ]
+        "carrier": "j-and-t",
+        "confidence": "high"
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to J&T Express, which no rule claims. Indonesian parcel."
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Indonesian parcel."
     }
   ]
 }

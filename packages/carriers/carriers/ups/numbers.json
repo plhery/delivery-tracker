@@ -82,7 +82,8 @@
         "carrier": "unknown",
         "confidence": "low",
         "candidates": [
-          "ups"
+          "ups",
+          "dtdc"
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to UPS, which stays one candidate among several."

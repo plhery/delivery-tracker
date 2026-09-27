@@ -39,6 +39,21 @@
       "id": "j-and-t-1",
       "pattern": "^\\d{12}$",
       "confidence": "low"
+    },
+    {
+      "id": "j-and-t-2",
+      "pattern": "^JT\\d{13}$",
+      "confidence": "high"
+    },
+    {
+      "id": "j-and-t-3",
+      "pattern": "^JY\\d{10}$",
+      "confidence": "high"
+    },
+    {
+      "id": "j-and-t-4",
+      "pattern": "^JD\\d{10}$",
+      "confidence": "low"
     }
   ]
 }

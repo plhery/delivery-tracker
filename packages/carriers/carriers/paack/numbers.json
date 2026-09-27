@@ -64,7 +64,8 @@
         "candidates": [
           "dhl-ecommerce",
           "correos-express",
-          "canada-post"
+          "canada-post",
+          "tnt"
         ]
       },
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Paack, which no rule claims."
