@@ -151,7 +151,7 @@ statuses, timings and network error codes.
 | `singapore-post` | Singapore Post | universal providers |  | 0 | 5 | 0 |  |
 | `hongkong-post` | Hongkong Post | universal providers |  | 0 | 2 | 0 |  |
 | `korea-post` | Korea Post | universal providers |  | 0 | 3 | 0 |  |
-| `planzer` | Planzer | dedicated | direct | 2 | 6 | 26 | [README](carriers/planzer/README.md) |
+| `planzer` | Planzer | dedicated | direct | 2 | 6 | 28 | [README](carriers/planzer/README.md) |
 | `quickpac` | Quickpac | via planzer | direct | 2 | 2 | 26 | [README](carriers/quickpac/README.md) |
 | `dpd-fr` | DPD France | dedicated | direct → trawl | 3 | 4 | 40 | [README](carriers/dpd-fr/README.md) |
 | `parcelforce` | Parcelforce Worldwide | universal providers |  | 0 | 2 | 0 |  |

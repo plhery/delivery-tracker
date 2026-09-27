@@ -8,9 +8,10 @@ import 'server-only';
  * 18-digit `44…` identifiers go through the same API and the same public page,
  * so one adapter serves both carrier ids (see ./README.md).
  *
- * A shipment may carry several transport positions; only the position whose
- * `positionNumber` equals the requested shipment number is read, because the
- * response can include positions of other shipments in the same delivery.
+ * A shipment may carry several transport positions. A parcel number reads only
+ * the position whose `positionNumber` equals it, because the response can
+ * include positions of other shipments in the same delivery. A shipment number
+ * (the reply's own `shipmentNumber`) reads every position of that shipment.
  *
  * Shipments shared through a capability link are not in this API: they are
  * served by `./shared`, chosen by the factory when the parcel has a tracking
@@ -52,13 +53,36 @@ function comparableIdentifier(value: unknown): string {
 
 /**
  * The shipment number the API expects. Planzer prints `reference.shipment`
- * composites on some labels; only the shipment half is looked up, without its
- * leading zeros.
+ * composites (`87979.0061660090`); only the shipment half is looked up, without
+ * its leading zeros. The app stores numbers without dots, so a 5-digit
+ * reference followed by a zero-padded 10-digit shipment is split the same way.
  */
 export function planzerShipmentNumber(trackingNumber: string): string {
-  if (!trackingNumber.includes('.')) return trackingNumber;
-  const raw = trackingNumber.split('.', 2)[1] ?? '';
+  const raw = trackingNumber.includes('.')
+    ? trackingNumber.split('.', 2)[1] ?? ''
+    : /^\d{5}(0\d{9})$/.exec(trackingNumber)?.[1];
+  if (raw === undefined) return trackingNumber;
   return raw.replace(/^0+/, '') || raw;
+}
+
+// The parcels of one shipment repeat each milestone seconds or minutes apart.
+const SAME_MILESTONE_MS = 15 * 60_000;
+
+function eventMillis(time: string): number {
+  // Naive local timestamps with up to seven fractional digits; only differences matter.
+  return Date.parse(`${time.slice(0, 19)}Z`);
+}
+
+/** One row per milestone the parcels share, at its first occurrence. */
+function mergeParcelMilestones(events: CarrierEvent[]): CarrierEvent[] {
+  const kept: CarrierEvent[] = [];
+  for (const event of [...events].sort((left, right) => text(left.time).localeCompare(text(right.time)))) {
+    const at = eventMillis(text(event.time));
+    const repeated = kept.some((other) => other.description === event.description
+      && Math.abs(eventMillis(text(other.time)) - at) <= SAME_MILESTONE_MS);
+    if (!repeated) kept.push(event);
+  }
+  return kept;
 }
 
 /** Projects one `/shipments/{shipment}/Pak` payload. Pure: the offline tests target this. */
@@ -78,13 +102,16 @@ export function parsePlanzerTrackingResponse(value: unknown, shipmentNumber: str
   if (identified.length === 0) {
     throw new SchemaError(PROVIDER, 'Planzer did not return a shipment identifier');
   }
-  const matchingPositions = identified.filter(
+  const parcelPositions = identified.filter(
     (position) => comparableIdentifier(position.positionNumber) === requested,
   );
+  // Looked up by shipment number: every position belongs to the requested shipment.
+  const wholeShipment = parcelPositions.length === 0 && comparableIdentifier(payload.shipmentNumber) === requested;
+  const matchingPositions = wholeShipment ? identified : parcelPositions;
   if (matchingPositions.length === 0) {
     throw new SchemaError(PROVIDER, 'Planzer returned a different shipment');
   }
-  const events: CarrierEvent[] = [];
+  let events: CarrierEvent[] = [];
   for (const position of matchingPositions) {
     for (const event of recordArray(position.positionEvents)) {
       const description = text(record(event.text).english);
@@ -102,6 +129,7 @@ export function parsePlanzerTrackingResponse(value: unknown, shipmentNumber: str
       });
     }
   }
+  if (matchingPositions.length > 1) events = mergeParcelMilestones(events);
   events.sort((left, right) => text(right.time).localeCompare(text(left.time)));
   return {
     status: PLANZER_STATUS.get(statusText) ?? (statusText ? 'in_transit' : 'unknown'),

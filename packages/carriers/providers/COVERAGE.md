@@ -78,7 +78,7 @@ statuses map correctly.
 | [Singapore Post](../carriers/singapore-post/carrier.json) | No adapter | Not tested | ✓ 4 | ✓ 12 | ✓ 18 | ✓ 11 | ✓ 4 |
 | [Hongkong Post](../carriers/hongkong-post/carrier.json) | No adapter | Not tested | ✓ 26 | ✓ 35 | ✓ 17 | ✓ 35 | No history |
 | [Korea Post](../carriers/korea-post/carrier.json) | No adapter | Not tested | No history | No history | No history | No history | N/A |
-| [Planzer](../carriers/planzer/README.md) | Yes | Error | No history | No history | No history | No history | N/A |
+| [Planzer](../carriers/planzer/README.md) | Yes | ✓ 4 | No history | No history | No history | No history | N/A |
 | [Quickpac](../carriers/quickpac/README.md) | Yes (via Planzer) | No history | No history | No history | No history | No history | N/A |
 | [DPD France](../carriers/dpd-fr/README.md) | Yes | ✓ 10 | ✓ 10 | ✓ 5 | No history | No history | N/A |
 | [Parcelforce Worldwide](../carriers/parcelforce/carrier.json) | No adapter | Not tested | No history | No history | No history | ✓ 3 | No history |
@@ -159,10 +159,9 @@ By carrier:
 - **Aramex:** a domestic delivery in the UAE had 16 undated rows in Postal Ninja only. An
   international shipment had the same 26 rows in Ship24, 17TRACK and Postal Ninja, and
   none in ParcelsApp.
-- **Planzer:** the API answers the `reference.shipment` numbers Planzer prints, but the
-  adapter only accepts a reply whose parcel number equals the request, so it rejects
-  them as another shipment. The app also strips the dot before the adapter can split
-  the composite. No aggregator knows Planzer.
+- **Planzer:** the direct adapter reads the `reference.shipment` numbers Planzer prints,
+  stored with or without the dot, and returns 4 to 6 rows for the three public
+  references. No aggregator knows Planzer.
 - **Yamato:** ParcelsApp answered with a January FedEx parcel that shares the 12 digits
   (it reported FedEx and GLS), not the July Yamato parcel. Nothing else had history.
 - **DPD France:** direct and Ship24 return the same 10 rows, direct with depots and

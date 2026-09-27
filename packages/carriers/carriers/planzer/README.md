@@ -29,11 +29,21 @@ decides the route; it is not a fallback tier.
   `trackandtrace.planzergroup.com`, with no credentials, port or fragment, a
   path whose number matches the tracked number, and exactly one well-formed
   `accessKey`. The key is never logged or stored in fixtures or docs.
-- A `reference.shipment` composite (printed on some labels) is looked up by the
-  shipment half without leading zeros.
-- API responses can include transport positions of other shipments in the same
-  delivery. Only the position whose `positionNumber` equals the requested
-  number is read — showing another would be a privacy failure.
+- Planzer's messages print the shipment as a `reference.shipment` composite
+  (`12345.0012345678`). Only the shipment half is looked up, without leading
+  zeros. The app stores numbers without dots, so a 15-digit number made of a
+  5-digit reference and a zero-padded 10-digit shipment is split the same way.
+  The API does not return the reference, so only the shipment half is checked.
+- A parcel number reads only the position whose `positionNumber` equals it: the
+  reply can include positions of other shipments in the same delivery, and
+  showing one would be a privacy failure. A shipment number is accepted when the
+  reply's own `shipmentNumber` equals it; every position then belongs to that
+  shipment, and a milestone the parcels repeat within 15 minutes is kept once.
+- No detection rule points at the 8-digit shipment or the composite. Such a rule
+  would make Planzer a candidate probe for other carriers' numbers
+  ([ROUTING.md](../../../../docs/ROUTING.md)), and a matching
+  8-digit shipment is too weak an identity to adopt someone else's parcel. These
+  numbers are tracked only when the user files the parcel under Planzer.
 - An unfamiliar API milestone label is a `SchemaError`, not an unmapped event.
   The vocabulary is small and stable, so new wording is likely a schema change,
   and guessing risks a false delivery.

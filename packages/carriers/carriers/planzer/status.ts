@@ -28,6 +28,8 @@ export const PLANZER_STATUS = new Map<string, CarrierStatus>([
   ['Shipment delivered', 'delivered'],
   ['Shipped', 'delivered'],
   ['Not delivered', 'exception'],
+  ['Not delivered – A delivery card has been deposited', 'exception'],
+  ['New delivery released', 'in_transit'],
 ]);
 
 // Classify each milestone independently of the shipment's current status.
@@ -42,6 +44,9 @@ export const PLANZER_EVENT_STAGE = new Map<string, Stage>([
   ['Shipment delivered', 'delivered'],
   ['Shipped', 'delivered'],
   ['Not delivered', 'failed_attempt'],
+  ['Not delivered – A delivery card has been deposited', 'failed_attempt'],
+  // "Erneute Zustellung ausgelöst": a redelivery was booked after a failed attempt.
+  ['New delivery released', 'in_transit'],
 ]);
 
 // Planzer's English labels are translations of its German ones, and

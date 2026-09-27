@@ -78,6 +78,52 @@ describe('Planzer and Quickpac no-data responses', () => {
   it('looks up only the shipment half of a reference composite', () => {
     expect(planzerShipmentNumber('ref.000123456')).toBe('123456');
     expect(planzerShipmentNumber('ref.000')).toBe('000');
+    // The same composite as the app stores it, without the dot.
+    expect(planzerShipmentNumber('12345.0012345678')).toBe('12345678');
+    expect(planzerShipmentNumber('123450012345678')).toBe('12345678');
+    // Other shapes go to the API unchanged.
+    expect(planzerShipmentNumber('123451234567890')).toBe('123451234567890');
+    expect(planzerShipmentNumber('12345678')).toBe('12345678');
+  });
+
+  it('reads every parcel of a shipment looked up by shipment number, once per milestone', async () => {
+    const parcel = (positionNumber: string, times: string[]) => ({
+      positionNumber,
+      positionEvents: ['Recorded', 'Transferred', 'In delivery', 'Shipped']
+        .map((english, index) => ({ createdAt: times[index], text: { english } })),
+    });
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({
+      shipmentNumber: '12345678',
+      overallStatus: { text: { english: 'Shipment delivered' } },
+      deliveryAddress: { name: 'Made Up Recipient', street: 'Example Street', houseNumber: '1' },
+      transportPositions: [
+        parcel('00000000000000000017', ['2026-09-01T13:24:52.0503924', '2026-09-01T17:21:52.001', '2026-09-02T03:54:29.410465', '2026-09-02T11:38:03.275']),
+        parcel('00000000000000000024', ['2026-09-01T13:24:52.0503989', '2026-09-01T17:21:55.001', '2026-09-02T03:54:35.0183809', '2026-09-02T11:38:03.275']),
+      ],
+    }));
+
+    const result = await fetchPlanzer('123450012345678');
+    expect(String(fetcher.mock.calls[0]?.[0])).toContain('/shipments/12345678/Pak');
+    expect(result).toMatchObject({ status: 'delivered', last_update: '2026-09-02T11:38:03.275' });
+    expect(result.events?.map((event) => [event.time, event.description, event.stage])).toEqual([
+      ['2026-09-02T11:38:03.275', 'Delivered', 'delivered'],
+      ['2026-09-02T03:54:29.410465', 'In delivery', 'out_for_delivery'],
+      ['2026-09-01T17:21:52.001', 'Transferred', 'in_transit'],
+      ['2026-09-01T13:24:52.0503924', 'Recorded', 'registered'],
+    ]);
+    expect(JSON.stringify(result)).not.toContain('Made Up Recipient');
+  });
+
+  it('keeps a milestone per parcel when the parcels reach it at different times', () => {
+    const result = parsePlanzerTrackingResponse({
+      shipmentNumber: '12345678',
+      overallStatus: { text: { english: 'Shipment delivered' } },
+      transportPositions: ['2026-09-02T11:38:03', '2026-09-03T09:10:00'].map((createdAt, index) => ({
+        positionNumber: `0000000000000000001${index}`,
+        positionEvents: [{ createdAt, text: { english: 'Shipped' } }],
+      })),
+    }, '12345678');
+    expect(result.events?.map((event) => event.time)).toEqual(['2026-09-03T09:10:00', '2026-09-02T11:38:03']);
   });
 
   it('uses only the matching transport position and recognizes the delivered label', async () => {
@@ -118,6 +164,14 @@ describe('Planzer and Quickpac no-data responses', () => {
     await expect(fetchPlanzer('123456')).rejects.toThrow('different shipment');
   });
 
+  it('rejects a reply for another shipment number', () => {
+    expect(() => parsePlanzerTrackingResponse({
+      shipmentNumber: '87654321',
+      overallStatus: { text: { english: 'Shipment on the way' } },
+      transportPositions: [{ positionNumber: '00000000000000000017', positionEvents: [] }],
+    }, '12345678')).toThrow('different shipment');
+  });
+
   it('uses the environment fetcher the factory hands the tracker', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
       overallStatus: { text: { english: 'Recorded' } },
@@ -144,6 +198,8 @@ describe('Planzer milestone labels', () => {
     // Planzer's English "Shipped" means delivered, not dispatched.
     ['Shipped', 'delivered'],
     ['Not delivered', 'failed_attempt'],
+    ['Not delivered – A delivery card has been deposited', 'failed_attempt'],
+    ['New delivery released', 'in_transit'],
     // Generated localization aliases, matched case-insensitively.
     ['Enregistré', 'registered'],
     ['Erfasst', 'registered'],

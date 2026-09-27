@@ -74,6 +74,22 @@
       "note": ""
     },
     {
+      "wording": "Not delivered – A delivery card has been deposited",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "German \"Nicht zugestellt - Zustellkarte hinterlassen\"."
+    },
+    {
+      "wording": "New delivery released",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "German \"Erneute Zustellung ausgelöst\": a redelivery was booked after a failed attempt."
+    },
+    {
       "wording": "enregistré",
       "language": "fr",
       "stage": "registered",
