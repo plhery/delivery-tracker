@@ -14,6 +14,7 @@ describe('classifyWording', () => {
     expect(classifyWording('Package refused by the recipient')).toEqual({ stage: 'exception', source: 'wording:language' });
     expect(classifyWording('Indirizzo errato')).toEqual({ stage: 'exception', source: 'wording:language' });
     expect(classifyWording('Carrier exception')).toEqual({ stage: 'exception', source: 'wording:exception_incident' });
+    expect(classifyWording('Updated delivery address required from customer')).toEqual({ stage: 'exception', source: 'wording:language' });
     expect(wordingStage('Przesyłka zatrzymana')).toBe('exception');
   });
 
@@ -21,6 +22,62 @@ describe('classifyWording', () => {
     expect(wordingStage('Delivery attempt, recipient absent')).toBe('failed_attempt');
     expect(wordingStage('Non livré, destinataire absent')).toBe('failed_attempt');
     expect(wordingStage('Retour à l\'expéditeur')).toBe('returned');
+  });
+
+  it('reads missed rounds worded around the attempt, the absent recipient or a closed business', () => {
+    for (const wording of [
+      "We've attempted to deliver the shipment, but the customer was not available at the time. Not to worry, the delivery has been rescheduled",
+      "We've attempted to deliver the shipment, but the customer was not available at the time. Not to worry, the delivery will be re-attempted",
+      'Attempted delivery - receiver unavailable',
+      'Absence. Attempted delivery.',
+      '<User not at home>',
+      'Unsuccessful delivery. Reason : Absence of addressee Result :',
+      "We're sorry but we were unable to complete your delivery. Please continue to check your tracking for real time updates",
+      'The driver tried to deliver the package, but the business was closed. We will reattempt up to 3 times. Contact us with any access or delivery instructions',
+      'Business closed. Please provide hours',
+    ]) expect(classifyWording(wording)).toEqual({ stage: 'failed_attempt', source: 'wording:language' });
+    // A scheduled attempt, a sender pickup attempt or a hypothetical absence is not a missed round.
+    for (const wording of [
+      'Attempted delivery tomorrow', 'Attempted delivery scheduled for tomorrow', 'Delivery will be attempted tomorrow',
+      'Pickup attempted', 'Pickup attempted - business closed', 'Attempted pickup, customer not available',
+      'If you are not at home, the courier will leave the parcel with a neighbour',
+      'If the recipient is not available, the parcel goes to the nearest pickup point',
+    ]) expect(wordingStage(wording, 'pending')).not.toBe('failed_attempt');
+  });
+
+  it('reads the postal and aggregator labels of first scans, the round and delivery', () => {
+    for (const [wording, stage] of [
+      ['Posting/Collection', 'accepted'],
+      ['Posted', 'accepted'],
+      ['Origin Scan', 'accepted'],
+      ['The shipment has been received at our Aramex origin office and will continue its journey to the destination country', 'accepted'],
+      ['The shipment item has been dropped off after latest drop-off time.', 'accepted'],
+      ['Item created', 'registered'],
+      ['Item out for physical delivery', 'out_for_delivery'],
+      ['Final delivery', 'delivered'],
+    ] as const) expect(classifyWording(wording)).toEqual({ stage, source: 'wording:language' });
+    for (const wording of ['Final delivery attempt tomorrow', 'Posted to the wrong address']) {
+      expect(wordingStage(wording, 'pending')).not.toBe('delivered');
+      expect(wordingStage(wording, 'pending')).not.toBe('accepted');
+    }
+  });
+
+  it('tells a courier on the round from a notice that only mentions the round', () => {
+    expect(classifyWording("An Aramex Delivery Champion has the shipment and is expected to reach the customer's doorstep shortly"))
+      .toEqual({ stage: 'out_for_delivery', source: 'wording:language' });
+    // New instructions with the round still to come, like "Delivery option requested".
+    expect(wordingStage('The customer has shared new delivery instructions and the status will be updated once shipment is out for delivery'))
+      .toBe('in_transit');
+  });
+
+  it('keeps sender pre-advice and labels the carrier has not received at registered', () => {
+    for (const wording of [
+      'We have received a notification from your shipper that they are preparing an item for you. The tracking information will be updated when the parcel is handed over to PostNord.',
+      'Shipper generated a new shipment label, but the shipment has not been handed over to Aramex, yet. Shipment will be updated once collected from shipper and received in Aramex offices',
+      'The package data was sent to OnTrac, but we have yet to receive the package from the sender. Tracking will update once it arrives. Please contact the sender for more information',
+    ]) expect(classifyWording(wording)).toEqual({ stage: 'registered', source: 'wording:language' });
+    // The carrier itself taking the parcel is still acceptance.
+    expect(wordingStage('The parcel was handed over to GLS.')).toBe('accepted');
   });
 
   it('keeps postal storage wording (a parcel waiting for collection) out of exception', () => {
@@ -96,10 +153,15 @@ describe('classifyWording', () => {
       'At local carrier facility', 'Left origin facility', 'Parcel is leaving airport', 'Item Dispatched', 'Delay',
       'Received by local delivery company', 'Received by logistics company', 'Delivery option requested',
       'The notification for delivery has been sent to the recipient',
+      'Item handed over to delivery partner', 'Item distributed', 'The shipment item has been loaded.',
+      'Your package has been loaded onto a vehicle',
     ]) expect(classifyWording(wording)).toEqual({ stage: 'in_transit', source: 'wording:language' });
     expect(wordingStage('On vehicle for delivery')).toBe('out_for_delivery');
     expect(wordingStage('On FedEx vehicle for delivery')).toBe('out_for_delivery');
+    expect(wordingStage('Loaded onto the delivery vehicle')).toBe('out_for_delivery');
     expect(wordingStage('Delivery successful.')).toBe('delivered');
+    expect(wordingStage('Delivery complete. Recipient : () Result : Delivery complete')).toBe('delivered');
+    expect(wordingStage('Delivery completion expected tomorrow', 'pending')).not.toBe('delivered');
     expect(wordingStage('Parcel Data Received')).toBe('registered');
     expect(wordingStage('Shipment information sent to FedEx')).toBe('registered');
     // A parcel left with the recipient is a delivery, not a departure.

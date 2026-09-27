@@ -13,6 +13,10 @@ const contrasts: { expected: Stage; en: string; fr: string; de: string; it: stri
     de: 'Zurück an den Absender', it: 'Restituito al mittente' },
   { expected: 'failed_attempt', en: 'Delivery attempt failed', fr: 'Échec de la tentative de livraison',
     de: 'Zustellversuch fehlgeschlagen', it: 'Tentativo di consegna non riuscito' },
+  { expected: 'failed_attempt', en: 'Attempted delivery, recipient not available', fr: 'Destinataire absent',
+    de: 'Empfänger nicht angetroffen', it: 'Destinatario assente' },
+  { expected: 'failed_attempt', en: 'Business closed', fr: 'Entreprise fermée',
+    de: 'Geschäft geschlossen', it: 'Attività chiusa' },
   { expected: 'in_transit', en: 'Delivered to the local carrier', fr: 'Livré au transporteur local',
     de: 'An den lokalen Zusteller übergeben', it: 'Consegnato al corriere locale' },
   { expected: 'ready_for_pickup', en: 'Ready for collection', fr: 'Disponible au point de retrait',
@@ -79,6 +83,24 @@ describe('intuitive language contrasts', () => {
     expect(trackingLanguageStage(description)).toBe('registered');
     expect(inferStage(description, 'pending')).toBe('registered');
     expect(event('2026-01-01T12:00:00Z', description)?.stage).toBe('registered');
+  });
+
+  // OBSERVED universal-provider wording where the provider rules ("handed over",
+  // "out for delivery") used to decide before the language rules.
+  it.each([
+    ['We have received a notification from your shipper that they are preparing an item for you. The tracking information will be updated when the parcel is handed over to PostNord.', 'registered'],
+    ['Shipper generated a new shipment label, but the shipment has not been handed over to Aramex, yet. Shipment will be updated once collected from shipper and received in Aramex offices', 'registered'],
+    ['Item handed over to delivery partner', 'in_transit'],
+    ['The customer has shared new delivery instructions and the status will be updated once shipment is out for delivery', 'in_transit'],
+    ["We've attempted to deliver the shipment, but the customer was not available at the time. Not to worry, the delivery has been rescheduled", 'failed_attempt'],
+  ] as const)('[observed universal] stages "%s" as %s', (description, expected) => {
+    expect(inferStage(description, 'pending')).toBe(expected);
+    expect(event('2026-01-01T12:00:00Z', description)?.stage).toBe(expected);
+  });
+
+  it('[observed universal] reduces a delivery that names its recipient to a safe description', () => {
+    expect(event('2026-01-01T12:00:00Z', 'Delivery complete. Recipient : () Result : Delivery complete'))
+      .toMatchObject({ stage: 'delivered', description: 'Delivered' });
   });
 
   // GENERATED phrasings around the bare word "delivered": handoffs, pickup

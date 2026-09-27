@@ -109,8 +109,8 @@ By source:
 - **ParcelsApp** often has the richest destination leg (DHL eCommerce, Canada Post,
   Japan Post), and was the only aggregator with GLS France, Evri and DTDC history. It
   exposes internal labels (`swa_rex_*` for Amazon Shipping pickup), shows Amazon sign-in
-  notices (excluded from counts), and maps `Final delivery` to pending. It asks for a
-  postcode for bpost's 24-digit numbers and answered a Yamato number with a FedEx parcel.
+  notices (excluded from counts), and repeats a delivery as `Final delivery`. It asks for
+  a postcode for bpost's 24-digit numbers and answered a Yamato number with a FedEx parcel.
 - **17TRACK** gives the best multi-operator journeys, naming each operator: China Post
   plus Correios, Canada Post plus USPS, Japan Post plus Malta Post, Singapore Post plus
   China Post. It was the only aggregator with USPS and SF Express history. It misses some
@@ -178,12 +178,8 @@ By carrier:
 
 Mapping gaps seen in these samples: 17TRACK maps Swiss Post vehicle loading to in
 transit; PostNL direct maps out-for-delivery as accepted; EMS export cancellation has no
-dedicated stage. The shared wording leaves many failed delivery attempts pending
-(Aramex, Purolator, Yanwen's Italian leg, Japan Post's "Absence. Attempted delivery."),
-maps OnTrac's "business closed" attempts to in transit, and leaves Aramex's delivery
-round pending while its "new delivery instructions" row reads as out for delivery.
-Shipper pre-advice (PostNord), unhanded labels (Aramex) and Austrian Post's handover to
-a delivery partner map to accepted.
+dedicated stage. YTO's English scans on ParcelsApp stay pending: its "PDA normal delivery
+scan" was the return, so reading it as a delivery would be wrong.
 
 Detection selects or suggests the named carrier for the public numbers behind rows
 31–60, except Planzer composites, which stay undetected on purpose (see the

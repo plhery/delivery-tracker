@@ -59,7 +59,9 @@ function sourceEventStage(description: string, includeBroadMovement = true): Sta
   if (/\bdelivered\b|delivery completed/i.test(description)
     && [undefined, 'delivered'].includes(trackingLanguageStage(description))) return 'delivered';
   if (/ready for (?:pickup|collection)|available for (?:pickup|collection)/i.test(description)) return 'ready_for_pickup';
-  if (/out for delivery/i.test(description)) return 'out_for_delivery';
+  // "The status will be updated once shipment is out for delivery" is not the round itself.
+  if (/out for delivery/i.test(description)
+    && !/(?:once|when|as soon as) (?:the |your )?(?:shipment|parcel|package|item) is out for delivery/i.test(description)) return 'out_for_delivery';
   if (/clearance (?:processing )?completed|customs (?:cleared|released)/i.test(description)) return 'in_transit';
   if (/customs|clearance/i.test(description)) return 'customs';
   if (/instruction data.*provided.*electronically|electronic information|information (?:received|submitted)|label (?:created|printed)|pre.?advice|shipment announced/i.test(description)) return 'registered';
