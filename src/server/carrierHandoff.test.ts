@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deliveryHandoff } from './carrierHandoff';
+import { deliveryHandoff, hasDirectHandoffAdapter } from './carrierHandoff';
 import { normalizeCarrierResult, type CarrierResult } from '@carriers/core/result';
 
 describe('general delivery handoff candidates', () => {
@@ -92,6 +92,19 @@ describe('general delivery handoff candidates', () => {
       expect(deliveryHandoff('la-poste', 'CW123456785FR', { delivery_carrier, destination_country: 'FI' })).toBeNull();
     }
     expect(deliveryHandoff('la-poste', 'CW123456785FR', { delivery_carrier: 'posti', delivery_tracking_number: 'bad?number' })).toBeNull();
+  });
+});
+
+describe('delivery partners with an optional input', () => {
+  it('hands DPD only a reference of its own shape, and never its postcode', () => {
+    expect(hasDirectHandoffAdapter('dpd', '06080000000002')).toBe(true);
+    expect(hasDirectHandoffAdapter('dpd', 'CW123456785FR')).toBe(false);
+    // A required postcode still rules a partner out.
+    expect(hasDirectHandoffAdapter('gls-ch', '123456789012')).toBe(false);
+    expect(deliveryHandoff('la-poste', 'CW123456785FR', { delivery_carrier: 'dpd', delivery_tracking_number: '06080000000002' }))
+      .toEqual({ carrier: 'dpd', number: '06080000000002', basis: 'partner' });
+    // Without its own number the partner would be asked about the postal one.
+    expect(deliveryHandoff('la-poste', 'CW123456785FR', { delivery_carrier: 'dpd' })).toBeNull();
   });
 });
 

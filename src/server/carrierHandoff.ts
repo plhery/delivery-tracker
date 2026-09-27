@@ -1,5 +1,6 @@
 import type { CarrierResult } from '@carriers/core/result';
-import { activeRequirements, AUTOMATIC_CARRIER_IDS, carrierAdapter } from './carriers';
+import type { CarrierId } from '@carriers/generated/catalog';
+import { activeRequirements, AUTOMATIC_CARRIER_IDS, carrierAdapter, requiredRequirements } from './carriers';
 import { carrierIdsFromPartnerLinks, nationalPostCandidate } from '@carriers/core/catalog/hints';
 import { detectCarrierMatch, isValidS10TrackingNumber, supportsSwissPostHandoff } from '@carriers/core/detection';
 
@@ -10,8 +11,13 @@ export interface DeliveryHandoff {
 }
 
 export function hasDirectHandoffAdapter(carrier: string, number: string): boolean {
-  return AUTOMATIC_CARRIER_IDS.has(carrier) && carrierAdapter(carrier) !== 'universal'
-    && activeRequirements(carrier, number).length === 0;
+  if (!AUTOMATIC_CARRIER_IDS.has(carrier) || carrierAdapter(carrier) === 'universal') return false;
+  // Another carrier's inputs are never borrowed, so a required one rules the carrier out.
+  if (requiredRequirements(carrier, number).length > 0) return false;
+  // A carrier with only an optional input (DPD's postcode) looks parcels up by
+  // its own number: hand it a reference of its own shape, never a postal one.
+  return activeRequirements(carrier, number).length === 0
+    || detectCarrierMatch(number).candidates.includes(carrier as CarrierId);
 }
 
 /** Propose one confirmation lookup; a candidate never changes the carrier by itself. */

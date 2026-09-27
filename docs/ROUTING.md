@@ -127,8 +127,9 @@ A parcel often changes carrier at the border. The origin history is always kept.
 - With no named partner, a checksum-valid S10 number and a reported destination country can
   propose **one** national-post lookup ([catalog hints](../packages/carriers/core/catalog/hints.ts)).
   The issuer suffix and transit scans never pick the operator.
-- The partner is only adopted once its own adapter (no extra inputs needed) returns dated,
-  fresh progress. Failed confirmations wait 55 min unless the origin history or the partner
+- The partner is only adopted once its own adapter (no required inputs) returns dated,
+  fresh progress. A partner whose only input is optional (DPD's postcode) is asked without
+  it, and only with a reference of its own number shape, never the origin's postal number. Failed confirmations wait 55 min unless the origin history or the partner
   changes.
 - Compatibility: AliExpress `L…CH` numbers keep a Swiss Post confirmation probe, and
   selected Swiss postal routes keep their Cainiao fallback.
