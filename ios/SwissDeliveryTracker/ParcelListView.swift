@@ -1149,30 +1149,65 @@ final class ArchivePanGestureDelegate: NSObject, UIGestureRecognizerDelegate {
         let direction = translation == .zero ? pan.velocity(in: pan.view) : translation
         return abs(direction.x) > abs(direction.y) * 1.25
     }
+
+    /// The list may start scrolling while a card waits to see the drag's direction;
+    /// the card stops that scroll if the drag turns out horizontal.
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+        guard let archive = gestureRecognizer as? ArchivePanGestureRecognizer,
+              other is UIPanGestureRecognizer, other.view is UIScrollView else { return false }
+        archive.scroll = other
+        return true
+    }
 }
 
 /// Also reports the press, so a card gives way under a resting finger. The press
 /// waits a moment and ends as soon as the finger moves, so starting to scroll
 /// does not flash every card it touches.
 final class ArchivePanGestureRecognizer: UIPanGestureRecognizer {
+    /// A real fingertip's first points wobble, often straight down as it settles, so
+    /// the direction is judged only after this much travel. Judging it after 4 points
+    /// read most swipes on an iPhone as vertical; simulated drags never showed it.
+    static let decisionDistance: CGFloat = 10
     var onPressChanged: ((Bool) -> Void)?
+    /// The list's scroll, which may run until the drag shows its direction.
+    weak var scroll: UIGestureRecognizer?
     private var pendingPress: DispatchWorkItem?
     private var pressStart: CGPoint?
+    private var origin: CGPoint?
+    private var scrollStopped = false
     private var pressed = false
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
         super.touchesBegan(touches, with: event)
         guard pressStart == nil, let touch = touches.first else { return }
         pressStart = touch.location(in: view)
+        // In window space, so a list that starts scrolling does not skew the direction.
+        origin = touch.location(in: nil)
         let press = DispatchWorkItem { [weak self] in self?.setPressed(true) }
         pendingPress = press
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: press)
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+        if let pressStart, let location = touches.first?.location(in: view),
+           hypot(location.x - pressStart.x, location.y - pressStart.y) > 6 { endPress() }
+        if state == .possible, let origin, let location = touches.first?.location(in: nil) {
+            let dx = location.x - origin.x
+            let dy = location.y - origin.y
+            if hypot(dx, dy) < Self.decisionDistance { return }
+            if abs(dx) <= abs(dy) * 1.25 {
+                state = .failed
+                return
+            }
+        }
         super.touchesMoved(touches, with: event)
-        guard let pressStart, let location = touches.first?.location(in: view) else { return }
-        if hypot(location.x - pressStart.x, location.y - pressStart.y) > 6 { endPress() }
+        if state == .began, !scrollStopped, let scroll {
+            // Cancel the list's scroll under a card that is being swiped.
+            scrollStopped = true
+            scroll.isEnabled = false
+            scroll.isEnabled = true
+        }
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
@@ -1189,6 +1224,8 @@ final class ArchivePanGestureRecognizer: UIPanGestureRecognizer {
         super.reset()
         endPress()
         pressStart = nil
+        origin = nil
+        scrollStopped = false
     }
 
     private func endPress() {

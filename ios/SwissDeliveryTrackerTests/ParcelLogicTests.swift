@@ -127,6 +127,17 @@ final class ParcelLogicTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testArchiveRecognizerLetsTheListScrollUntilTheDragShowsItsDirection() {
+        let delegate = ArchivePanGestureDelegate()
+        let recognizer = ArchivePanGestureRecognizer()
+        let list = UIScrollView()
+        XCTAssertTrue(delegate.gestureRecognizer(recognizer, shouldRecognizeSimultaneouslyWith: list.panGestureRecognizer))
+        XCTAssertTrue(recognizer.scroll === list.panGestureRecognizer)
+        XCTAssertFalse(delegate.gestureRecognizer(recognizer, shouldRecognizeSimultaneouslyWith: UIPanGestureRecognizer()))
+        XCTAssertFalse(delegate.gestureRecognizer(recognizer, shouldRecognizeSimultaneouslyWith: UITapGestureRecognizer()))
+    }
+
     func testArchiveReleaseKeepsTheFingerPositionUntilTheSettleAnimation() {
         var swipe = ArchiveSwipeState()
         // The first 8 points only pick the direction, so the card starts without a jump.
