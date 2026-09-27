@@ -74,6 +74,7 @@ private struct DeliveryListView: View {
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Environment(\.scenePhase) private var scenePhase
 
     @Namespace private var parcelTransition
@@ -94,6 +95,7 @@ private struct DeliveryListView: View {
     @State private var sharedDraft: SharedParcelDraft?
     @State private var toast: ListToast?
     @State private var actionError: String?
+    @State private var pull = PullToRefreshModel()
 
     @ObservedObject private var catalog = CarrierCatalog.shared
 
@@ -199,11 +201,6 @@ private struct DeliveryListView: View {
                 if store.undoParcel?.id == next { store.undoParcel = nil }
             }
         }
-        .onChange(of: store.refreshOutcome) { _, outcome in
-            guard let outcome else { return }
-            toast = outcome.failure.map { ListToast(text: $0, warning: true) }
-                ?? ListToast(text: localizer.text("sync.completed"))
-        }
     }
 
     private func content(_ layout: DeliveryListLayout) -> some View {
@@ -252,13 +249,19 @@ private struct DeliveryListView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 28)
                 .animation(reduceMotion ? nil : .snappy(duration: 0.32), value: store.parcels.filter { !$0.isArchived }.map(\.id))
+                .background(alignment: .top) {
+                    PullToRefreshIndicator(model: pull, pullLabel: localizer.text("app.pullToRefresh"))
+                }
             }
             .scrollIndicators(.hidden)
+            .onScrollGeometryChange(for: PullGeometry.self, of: PullGeometry.init) { _, geometry in
+                pull.track(geometry)
+            }
             .refreshable {
                 // SwiftUI cancels this task while the list redraws for the refresh,
                 // which cancelled the request and reported a connection error. The
                 // pull waits for a task of its own instead.
-                await Task { await refreshDeliveries() }.value
+                await Task { await refreshFromPull() }.value
             }
             .overlay {
                 if store.loading && store.parcels.isEmpty {
@@ -330,14 +333,17 @@ private struct DeliveryListView: View {
             }
             .accessibilityLabel(localizer.text(showingSearch ? "view.hideControls" : "view.showControls"))
             .accessibilityIdentifier("deliveries.search")
-            Button { Task { await refreshDeliveries() } } label: {
-                Group {
-                    if store.refreshing { ProgressView() }
-                    else { Image(systemName: "arrow.clockwise").font(.body.weight(.regular)) }
-                }.frame(width: 44, height: 44)
+            // Pulling refreshes the list; VoiceOver users also get a button.
+            if voiceOverEnabled {
+                Button { Task { await refreshForVoiceOver() } } label: {
+                    Group {
+                        if store.refreshing { ProgressView() }
+                        else { Image(systemName: "arrow.clockwise").font(.body.weight(.regular)) }
+                    }.frame(width: 44, height: 44)
+                }
+                .disabled(store.refreshing)
+                .accessibilityLabel(localizer.text(store.refreshing ? "app.refreshing" : "app.refresh"))
             }
-            .disabled(store.refreshing)
-            .accessibilityLabel(localizer.text(store.refreshing ? "app.refreshing" : "app.refresh"))
         }
         .foregroundStyle(Brand.ink)
         .buttonStyle(.plain)
@@ -400,19 +406,62 @@ private struct DeliveryListView: View {
         }
     }
 
-    /// Returns once the check is queued, so pull-to-refresh lets go at once;
-    /// the refresh button keeps spinning until the carriers have answered.
-    private func refreshDeliveries() async {
+    private enum CheckOutcome { case checked, failed(String), interrupted }
+
+    /// Holds the pull open until every parcel has been checked, then shows the
+    /// result on the seal before letting go, as the web app does.
+    private func refreshFromPull() async {
+        pull.begin(label: localizer.text("app.refreshing"))
+        let started = ContinuousClock.now
+        let outcome = await checkAllParcels()
+        // A check that answers at once still shows the arrow turning.
+        try? await Task.sleep(until: started + .milliseconds(900), clock: .continuous)
+        switch outcome {
+        case .checked:
+            finishPull(succeeded: true, label: localizer.text("app.refreshComplete"))
+            try? await Task.sleep(for: .milliseconds(700))
+        case .failed(let message):
+            finishPull(succeeded: false, label: localizer.text("detail.checkFailed"))
+            try? await Task.sleep(for: .milliseconds(1100))
+            toast = ListToast(text: message, warning: true)
+        case .interrupted:
+            break
+        }
+        pull.settle()
+    }
+
+    private func refreshForVoiceOver() async {
+        switch await checkAllParcels() {
+        case .checked:
+            AccessibilityNotification.Announcement(localizer.text("app.refreshComplete")).post()
+        case .failed(let message):
+            toast = ListToast(text: message, warning: true)
+            AccessibilityNotification.Announcement(message).post()
+        case .interrupted:
+            break
+        }
+    }
+
+    private func finishPull(succeeded: Bool, label: String) {
+        pull.finish(succeeded: succeeded, label: label)
+        AccessibilityNotification.Announcement(label).post()
+    }
+
+    private func checkAllParcels() async -> CheckOutcome {
+        let previousOutcome = store.refreshOutcome?.id
         do {
-            switch try await store.refreshAll() {
-            case .queued: toast = ListToast(text: localizer.text("app.refreshQueued"))
-            case .completed: toast = ListToast(text: localizer.text("sync.completed"))
-            case .alreadyRunning: break
-            }
+            if try await store.refreshAll() == .completed { return .checked }
+            pull.update(label: localizer.text("sync.running"))
+            // The store finishes a queued check in the background; wait for its outcome.
+            for await refreshing in store.$refreshing.values where !refreshing { break }
+            guard let outcome = store.refreshOutcome, outcome.id != previousOutcome else { return .interrupted }
+            return outcome.failure.map(CheckOutcome.failed) ?? .checked
         } catch is CancellationError {
+            return .interrupted
         } catch let error as URLError where error.code == .cancelled {
+            return .interrupted
         } catch {
-            actionError = localizer.errorMessage(error)
+            return .failed(localizer.errorMessage(error))
         }
     }
 
