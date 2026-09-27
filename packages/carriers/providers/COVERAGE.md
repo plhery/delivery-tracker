@@ -227,7 +227,7 @@ and 17TRACK. Many samples are old, so "–" often just means the history expired
   numbers and postcodes were withheld, and no account was signed into.
 - One reference per row. Extra references and bounded rechecks only investigated
   failures and are not averaged in.
-- Rows 31–60 were checked on 27 September at `6ed4d22`. Each uses the newest public post
+- Rows 31–60 each use the newest public post
   found that ties a number to the carrier (Trustpilot reviews, complaint letters, Q&A
   threads, shop pull requests), skipping pages that print the author's contact details.
   The numbers and their sources are in each carrier's `numbers.json`.

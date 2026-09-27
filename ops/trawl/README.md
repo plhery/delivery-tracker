@@ -56,8 +56,7 @@ Shared behaviour:
 
 ## Retained FedEx browser session
 
-In the recorded comparison, copied cookies did not reproduce the acceptance retained by the original
-browser context. That does not prove the context is intrinsically or cryptographically bound.
+FedEx's acceptance does not survive copying cookies into a fresh context, so
 [`fedex-session.mjs`](fedex-session.mjs) keeps one verified context per pooled browser:
 
 - Each lookup reopens the blank form (the results-page form can ignore a submit or keep the previous
