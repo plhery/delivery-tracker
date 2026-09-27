@@ -157,6 +157,66 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(catalog.detect("99112233445500000").confidence, .low)
     }
 
+    func testRecognitionAsksOnlyAboutASettledAmbiguousNumber() {
+        let number = "12345678901"
+        let ambiguous = catalog.parse(number)
+        XCTAssertEqual(ambiguous.confidence, .low)
+        XCTAssertEqual(ambiguous.carrier, .unknown)
+        XCTAssertTrue(CarrierRecognition.applies(to: ambiguous, amazon: false, demo: false, carrierOverride: nil))
+        XCTAssertFalse(CarrierRecognition.applies(to: ambiguous, amazon: false, demo: true, carrierOverride: nil))
+        // A carrier picked by hand that could own the number needs no question;
+        // one that cannot (a forwarder such as Asendia) gets it as a hint.
+        XCTAssertFalse(CarrierRecognition.applies(to: ambiguous, amazon: false, demo: false, carrierOverride: .glsDe))
+        XCTAssertTrue(CarrierRecognition.applies(to: ambiguous, amazon: false, demo: false, carrierOverride: .asendia))
+        XCTAssertFalse(CarrierRecognition.applies(to: ambiguous, amazon: true, demo: false, carrierOverride: nil))
+        XCTAssertFalse(CarrierRecognition.applies(to: catalog.parse("1Z999AA10123456784"), amazon: false, demo: false, carrierOverride: nil))
+
+        var recognition = CarrierRecognition()
+        // Typing alone never asks the carriers.
+        XCTAssertNil(recognition.request(for: number, applies: true))
+        XCTAssertEqual(recognition.status(for: number, applies: true), .idle)
+
+        recognition.settledNumber = number
+        XCTAssertEqual(recognition.request(for: number, applies: true), number)
+        XCTAssertEqual(recognition.status(for: number, applies: true), .recognizing)
+        XCTAssertNil(recognition.request(for: number, applies: false))
+        XCTAssertEqual(recognition.status(for: number, applies: false), .idle)
+        // Editing the number drops the request until it settles again.
+        XCTAssertNil(recognition.request(for: "1234567890", applies: true))
+        XCTAssertEqual(recognition.status(for: "1234567890", applies: true), .idle)
+        XCTAssertNil(CarrierRecognition(settledNumber: "").request(for: "", applies: true))
+    }
+
+    func testRecognitionAnswersResolveAChoiceOrStaySilent() throws {
+        let number = "12345678901"
+        var recognition = CarrierRecognition(settledNumber: number)
+
+        recognition.answer = CarrierDetectionResponse(trackingNumber: number, carrier: .glsCh)
+        XCTAssertEqual(recognition.status(for: number, applies: true), .recognized(.glsCh))
+        XCTAssertEqual(recognition.status(for: number, applies: false), .idle)
+        // One answer per settled number: returning to it shows the answer without asking again.
+        XCTAssertNil(recognition.request(for: number, applies: true))
+        // An answer for another number never leaks into the current one.
+        XCTAssertEqual(recognition.status(for: "12345678902", applies: true), .idle)
+        // The recognized carrier brings its required postcode, which then gates Add.
+        let postcode = try XCTUnwrap(catalog.requirements(for: .glsCh, trackingNumber: number).first)
+        XCTAssertEqual(postcode.field, .dpdPostcode)
+        XCTAssertFalse(postcode.isOptional)
+
+        recognition.answer = CarrierDetectionResponse(trackingNumber: "06080000000002", carrier: .unknown, recognized: [.dpd, .hermesDe])
+        XCTAssertEqual(recognition.status(for: "06080000000002", applies: true), .several([.dpd, .hermesDe]))
+        XCTAssertEqual(recognition.status(for: number, applies: true), .recognizing)
+
+        // No carrier knows it, or the request failed: the number stays unknown without a hint.
+        for answer in [
+            CarrierDetectionResponse(trackingNumber: number, carrier: .unknown),
+            CarrierDetectionResponse(trackingNumber: number, carrier: .unknown, recognized: [.glsDe]),
+        ] {
+            recognition.answer = answer
+            XCTAssertEqual(recognition.status(for: number, applies: true), .idle)
+        }
+    }
+
     func testRecognisesDutchPostAndExplainsGenericPostalTracking() {
         let detected = catalog.detect("LX123456785NL")
         XCTAssertEqual(detected.carrier, .springGDS)

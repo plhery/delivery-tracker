@@ -30,6 +30,8 @@ export interface Parcel {
   autoChangedFrom?: CarrierId;
   autoChangedTo?: CarrierId;
   autoChangedAt?: string;
+  /** A carrier that knows the number but needs this input before it can track the parcel. */
+  inputNeeded?: { carrier: CarrierId; field: 'dpdPostcode' | 'trackingUrl' };
   originalParcelId?: string;
   originalCarrier?: CarrierId;
   originalTrackingNumber?: string;

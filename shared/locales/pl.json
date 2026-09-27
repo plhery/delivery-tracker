@@ -638,5 +638,10 @@
   "add.useCarrier": "Wybierz: {{carrier}}",
   "add.usePostcode": "Użyj {{postcode}}",
   "detail.postcodeNotVerified": "Kod pocztowy {{postcode}} nie został przyjęty przez {{carrier}}, więc widać mniej szczegółów.",
-  "detail.editPostcode": "Zmień kod pocztowy"
+  "detail.editPostcode": "Zmień kod pocztowy",
+  "add.recognizing": "Sprawdzamy, który przewoźnik ma tę przesyłkę…",
+  "add.recognized": "{{carrier}} ma tę przesyłkę.",
+  "add.recognizedSeveral": "Ten numer jest znany przewoźnikom: {{carriers}}. Wybierz przewoźnika.",
+  "detail.inputNeeded": "{{carrier}} ma tę przesyłkę. Dodaj kod pocztowy odbiorcy, aby ją śledzić.",
+  "detail.inputNeededAction": "Dodaj kod pocztowy"
 }

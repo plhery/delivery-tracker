@@ -112,3 +112,5 @@
 .detail--postcard .detail__carrier-links--journey .detail__carrier-link { display: grid; grid-template-columns: minmax(0, 1fr) 14px; flex: 1 1 140px; gap: 4px 8px; min-height: 56px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--tone) 18%, transparent); border-radius: 10px; }
 .detail--postcard .detail__carrier-links--journey small { grid-column: 1 / -1; font-size: 11px; color: var(--ink-soft); }
 .detail--postcard .detail__carrier-links--journey .detail__carrier-link--active { background: color-mix(in srgb, var(--tone) 7%, transparent); }
+.detail__input-needed { margin-top: 12px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-size: 14px; }
+.detail__input-needed p { margin: 0; }

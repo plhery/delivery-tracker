@@ -308,6 +308,61 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertNil(older.senderName)
     }
 
+    func testDecodesRoutingInputNeededAndPromptsOnlyWhileAnotherCarrierWaits() throws {
+        let packageID = UUID()
+        let json = """
+        {
+          "packages": [{
+            "id": "\(packageID.uuidString)",
+            "tracking_number": "12345678901",
+            "label": "Test parcel",
+            "carrier": "gls-de",
+            "created_at": "2026-08-01T10:00:00Z",
+            "sync_status": "ok",
+            "carrier_data": { "routing": { "input_needed": { "carrier": "gls-ch", "field": "dpdPostcode" } } },
+            "notifications_muted": false,
+            "tracking_events": [{
+              "id": "\(UUID().uuidString)",
+              "package_id": "\(packageID.uuidString)",
+              "stage": "in_transit",
+              "description": "In transit",
+              "location": null,
+              "occurred_at": "2026-08-09T10:00:00Z"
+            }]
+          }]
+        }
+        """
+        let parcel = try XCTUnwrap(JSONDecoder.deliveryTracker.decode(PackageListResponse.self, from: Data(json.utf8)).packages.first)
+        XCTAssertEqual(parcel.inputNeeded, CarrierInputNeeded(carrier: .glsCh, field: .dpdPostcode))
+        XCTAssertEqual(parcel.inputNeededPrompt?.carrier, .glsCh)
+
+        var sameCarrier = parcel
+        sameCarrier.carrier = .glsCh
+        XCTAssertNil(sameCarrier.inputNeededPrompt)
+        var archived = parcel
+        archived.archivedAt = "2026-08-10T10:00:00Z"
+        XCTAssertNil(archived.inputNeededPrompt)
+        for stage in [TrackingStage.delivered, .returned] {
+            var finished = parcel
+            finished.trackingEvents.append(event(packageID, stage, "2026-08-10T10:00:00Z"))
+            XCTAssertNil(finished.inputNeededPrompt, stage.rawValue)
+        }
+        let trackingURLNeeded = try JSONDecoder.deliveryTracker.decode(
+            CarrierInputNeeded.self, from: Data(#"{"carrier":"gls-ch","field":"trackingUrl"}"#.utf8)
+        )
+        XCTAssertEqual(trackingURLNeeded.field, .trackingURL)
+        var link = parcel
+        link.carrierData?.routing?.inputNeeded = trackingURLNeeded
+        XCTAssertNil(link.inputNeededPrompt)
+
+        let older = try JSONDecoder.deliveryTracker.decode(CarrierData.self, from: Data(#"{"sender_name":"Example sender"}"#.utf8))
+        XCTAssertNil(older.routing)
+        var untouched = parcel
+        untouched.carrierData = older
+        XCTAssertNil(untouched.inputNeeded)
+        XCTAssertNil(untouched.inputNeededPrompt)
+    }
+
     func testDecodesSharedAPIContractFixture() throws {
         struct Fixture: Decodable {
             let packageList: PackageListResponse

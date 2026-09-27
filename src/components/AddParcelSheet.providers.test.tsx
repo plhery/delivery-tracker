@@ -44,8 +44,8 @@ describe('GLS carrier lookup', () => {
     const user = userEvent.setup();
     render(<AddParcelSheet apiAuth={apiAuth} onAdd={onAdd} onClose={vi.fn()} initialTrackingInput="123456789018" />);
     const button = screen.getByRole('button', { name: /^add parcel$/i });
-    expect(button).toBeDisabled();
     const postcode = await screen.findByRole('textbox', { name: /^Delivery postcode/ });
+    expect(screen.getByText('GLS Germany has this parcel.')).toBeInTheDocument();
     expect(screen.getByText('GLS Germany')).toBeInTheDocument();
     expect(button).toBeDisabled();
     await user.type(postcode, '8000');
@@ -90,10 +90,49 @@ describe('DPD carrier lookup', () => {
     expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ carrier: 'dpd', dpdPostcode: '' }));
   });
 
-  it('does not ask about a number whose depot points to another carrier', async () => {
-    render(<AddParcelSheet apiAuth={apiAuth} onAdd={vi.fn()} onClose={vi.fn()} initialTrackingInput="10000000000001" />);
-    expect(screen.getByRole('button', { name: /^add parcel$/i })).toBeEnabled();
+  it('asks once the number is settled, never on each keystroke', async () => {
+    vi.mocked(lookupCarrier).mockResolvedValue({ trackingNumber: '06080000000002', carrier: 'dpd' });
+    const user = userEvent.setup();
+    render(<AddParcelSheet apiAuth={apiAuth} onAdd={vi.fn()} onClose={vi.fn()} />);
+    const input = screen.getByRole('textbox', { name: /tracking number/i });
+    await user.type(input, '06080000000002');
+    await new Promise((resolve) => setTimeout(resolve, 400));
     expect(lookupCarrier).not.toHaveBeenCalled();
+    // Leaving the field settles the number.
+    await user.tab();
+    await waitFor(() => expect(lookupCarrier).toHaveBeenCalledOnce());
+    expect(lookupCarrier).toHaveBeenCalledWith('06080000000002', apiAuth, expect.anything());
+    expect(await screen.findByText('DPD has this parcel.')).toBeInTheDocument();
+  });
+
+  it('saves instead of asking when the field is left for the Add button', async () => {
+    const onAdd = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<AddParcelSheet apiAuth={apiAuth} onAdd={onAdd} onClose={vi.fn()} />);
+    await user.type(screen.getByRole('textbox', { name: /tracking number/i }), '06080000000002');
+    await user.click(screen.getByRole('button', { name: /^add parcel$/i }));
+    expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ carrier: 'unknown' }));
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(lookupCarrier).not.toHaveBeenCalled();
+  });
+
+  it('never holds the Add button while carriers are asked', async () => {
+    vi.mocked(lookupCarrier).mockReturnValue(new Promise(() => undefined));
+    const onAdd = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<AddParcelSheet apiAuth={apiAuth} onAdd={onAdd} onClose={vi.fn()} initialTrackingInput="06080000000002" />);
+    expect(await screen.findByText('Checking which carrier has this parcel…')).toBeInTheDocument();
+    const button = screen.getByRole('button', { name: /^add parcel$/i });
+    expect(button).toBeEnabled();
+    await user.click(button);
+    expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ carrier: 'unknown' }));
+  });
+
+  it('asks the user to choose when several carriers know the number', async () => {
+    vi.mocked(lookupCarrier).mockResolvedValue({ trackingNumber: '12345678901231', carrier: 'unknown', recognized: ['dpd', 'hermes-de'] });
+    render(<AddParcelSheet apiAuth={apiAuth} onAdd={vi.fn()} onClose={vi.fn()} initialTrackingInput="12345678901231" />);
+    expect(await screen.findByText('This number is known to DPD or Hermes Germany. Choose your carrier.')).toBeInTheDocument();
+    expect(screen.getByRole('combobox')).toBeInTheDocument();
   });
 
   it('points out the carrier that knows a number filed under a forwarder, without blocking it', async () => {

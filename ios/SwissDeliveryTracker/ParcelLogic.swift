@@ -81,6 +81,17 @@ extension Parcel {
         return from
     }
 
+    /// A carrier that knows the number but needs this input before it can track the parcel.
+    var inputNeeded: CarrierInputNeeded? { carrierData?.routing?.inputNeeded }
+
+    /// Recognition found another carrier that needs the delivery postcode, while
+    /// the parcel is still on its way.
+    var inputNeededPrompt: CarrierInputNeeded? {
+        guard let inputNeeded, inputNeeded.field == .dpdPostcode, inputNeeded.carrier != carrier,
+              isActive else { return nil }
+        return inputNeeded
+    }
+
     var sortedEvents: [TrackingEvent] {
         trackingEvents.sorted(by: Self.eventPrecedes)
     }

@@ -23,7 +23,7 @@ struct AddParcelView: View {
     @State private var carrierOverride: CarrierID?
     @State private var lookupAttempt = 0
     @State private var verifiedCarrier: CarrierDetectionResponse?
-    @State private var knownCarrier: CarrierDetectionResponse?
+    @State private var recognition: CarrierRecognition
     @FocusState private var focusedField: Field?
 
     @ObservedObject private var catalog = CarrierCatalog.shared
@@ -40,6 +40,10 @@ struct AddParcelView: View {
         self.onAdded = onAdded
         _label = State(initialValue: draft?.label ?? "")
         _trackingInput = State(initialValue: draft?.trackingInput ?? "")
+        // A shared number is settled as soon as the sheet opens.
+        _recognition = State(initialValue: CarrierRecognition(
+            settledNumber: Self.trackingNumber(in: draft?.trackingInput ?? "").nonEmpty
+        ))
     }
 
     var body: some View {
@@ -88,6 +92,7 @@ struct AddParcelView: View {
             .animation(reduceMotion ? nil : .snappy(duration: 0.28), value: parsed.trackingNumber.isEmpty)
             .animation(reduceMotion ? nil : .snappy(duration: 0.3), value: requirements)
             .animation(reduceMotion ? nil : .snappy(duration: 0.3), value: errorMessage)
+            .animation(reduceMotion ? nil : .snappy(duration: 0.3), value: recognitionStatus)
             .sensoryFeedback(.selection, trigger: resolvedCarrier) { oldValue, newValue in
                 oldValue != newValue && newValue != .unknown
             }
@@ -98,6 +103,7 @@ struct AddParcelView: View {
                         showingScanner = false
                     }
                     focusedField = nil
+                    recognition.settledNumber = Self.trackingNumber(in: value)
                 }
                 .environmentObject(localizer)
             }
@@ -111,6 +117,11 @@ struct AddParcelView: View {
             .onChange(of: resolvedCarrier, initial: true) { _, carrier in
                 prepareRequiredDetails(for: carrier)
             }
+            .onChange(of: focusedField) { previous, current in
+                // Leaving the tracking field settles the number, unless it left to save.
+                guard previous == .tracking, current != .tracking, !saving else { return }
+                recognition.settledNumber = normalizedNumber
+            }
             .task(id: "\(lookupTrackingNumber ?? ""):\(lookupAttempt)") {
                 guard let number = lookupTrackingNumber else { return }
                 do {
@@ -121,18 +132,20 @@ struct AddParcelView: View {
                     verifiedCarrier = result
                 } catch {
                     guard !Task.isCancelled else { return }
-                    verifiedCarrier = CarrierDetectionResponse(trackingNumber: number, amazonShippingStatus: catalog.isAmazonTrackingNumber(number) ? .unavailable : nil, carrier: catalog.isAmazonTrackingNumber(number) ? .amazonLogistics : .unknown)
+                    verifiedCarrier = CarrierDetectionResponse(trackingNumber: number, amazonShippingStatus: .unavailable, carrier: .amazonLogistics)
                 }
             }
-            .task(id: hintTrackingNumber ?? "") {
-                guard let number = hintTrackingNumber else { return }
+            .task(id: recognitionRequest) {
+                guard let number = recognitionRequest else { return }
                 do {
-                    try await Task.sleep(for: .milliseconds(350))
                     let result = try await store.detectCarrier(trackingNumber: number)
-                    guard !Task.isCancelled, result.trackingNumber == number else { return }
-                    knownCarrier = result
+                    guard !Task.isCancelled else { return }
+                    guard result.trackingNumber == number else { throw DeliveryAPIError.invalidResponse }
+                    recognition.answer = result
                 } catch {
-                    // Only a hint: a failed lookup shows nothing.
+                    guard !Task.isCancelled else { return }
+                    // No answer keeps the number a suggestion; the first sync asks again.
+                    recognition.answer = CarrierDetectionResponse(trackingNumber: number, carrier: .unknown)
                 }
             }
         }
@@ -286,12 +299,7 @@ struct AddParcelView: View {
             Menu {
                 Picker(localizer.text("add.carrier"), selection: Binding(
                     get: { carrierOverride },
-                    set: { carrier in
-                        carrierOverride = carrier
-                        focusedField = nil
-                        errorMessage = nil
-                        duplicateParcelID = nil
-                    }
+                    set: selectCarrier
                 )) {
                     Text(localizer.text("add.detect")).tag(Optional<CarrierID>.none)
                     ForEach(catalog.selectableCarriers) { carrier in
@@ -339,7 +347,12 @@ struct AddParcelView: View {
                     ]))
             }
 
-            if !automatic || shippingConfirmed {
+            if let recognitionHint {
+                Text(recognitionHint)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if !automatic || shippingConfirmed {
                 Text(localizer.text(shippingConfirmed ? (currentVerification?.amazonShippingStatus == .expired ? "add.amazonHistoryExpired" : "add.amazonShippingConfirmed") : catalog.trackingHintKey(for: resolvedCarrier), ["carrier": definition.displayName]))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -355,6 +368,12 @@ struct AddParcelView: View {
                     carrierOverride = known
                 }
                 .font(.subheadline)
+            }
+            if carrierOverride == nil, case .several(let carriers) = recognitionStatus {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) { recognizedChoices(carriers) }
+                    VStack(alignment: .leading, spacing: 0) { recognizedChoices(carriers) }
+                }
             }
             if amazonNumber && currentVerification?.amazonShippingStatus == .unavailable {
                 Text(localizer.text("add.amazonCheckUnavailable")).font(.caption).foregroundStyle(.secondary)
@@ -375,6 +394,23 @@ struct AddParcelView: View {
         Text(localizer.text(carrierOverride == nil && resolvedCarrier != .unknown ? "add.detectedCarrier" : "add.carrier"))
             .font(.caption)
             .foregroundStyle(.secondary)
+    }
+
+    /// The carriers that all know the number, one tap each instead of the full list.
+    private func recognizedChoices(_ carriers: [CarrierID]) -> some View {
+        ForEach(carriers) { carrier in
+            Button { selectCarrier(carrier) } label: {
+                Text(catalog.info(for: carrier, language: localizer.language).displayName)
+                    .font(.subheadline.weight(.medium))
+                    .padding(.horizontal, 14)
+                    .frame(minHeight: 36)
+                    .background(Brand.paper, in: Capsule())
+                    .overlay(Capsule().strokeBorder(Brand.separator.opacity(0.3), lineWidth: 1))
+                    .padding(.vertical, 4)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(TactileButtonStyle())
+        }
     }
 
     private var requiredDetails: some View {
@@ -530,10 +566,47 @@ struct AddParcelView: View {
 
     private var parsed: TrackingInputMatch { catalog.parse(trackingInput) }
 
+    private var normalizedNumber: String { CarrierCatalog.normalize(parsed.trackingNumber) }
+
+    private static func trackingNumber(in input: String) -> String {
+        CarrierCatalog.normalize(CarrierCatalog.shared.parse(input).trackingNumber)
+    }
+
     private var amazonNumber: Bool { catalog.isAmazonTrackingNumber(parsed.trackingNumber) }
 
     private var currentVerification: CarrierDetectionResponse? {
-        verifiedCarrier?.trackingNumber == CarrierCatalog.normalize(parsed.trackingNumber) ? verifiedCarrier : nil
+        verifiedCarrier?.trackingNumber == normalizedNumber ? verifiedCarrier : nil
+    }
+
+    private var recognizable: Bool {
+        CarrierRecognition.applies(to: parsed, amazon: amazonNumber, demo: store.isDemo, carrierOverride: carrierOverride)
+    }
+
+    private var recognitionRequest: String? {
+        recognition.request(for: normalizedNumber, applies: recognizable)
+    }
+
+    private var recognitionStatus: CarrierRecognition.Status {
+        recognition.status(for: normalizedNumber, applies: recognizable)
+    }
+
+    private var recognitionHint: String? {
+        // For a carrier picked by hand, only the hint below the carrier says anything.
+        guard carrierOverride == nil else { return nil }
+        return switch recognitionStatus {
+        case .idle:
+            nil
+        case .recognizing:
+            localizer.text("add.recognizing")
+        case .recognized(let carrier):
+            localizer.text("add.recognized", ["carrier": catalog.info(for: carrier, language: localizer.language).displayName])
+        case .several(let carriers):
+            localizer.text("add.recognizedSeveral", [
+                "carriers": carriers
+                    .map { catalog.info(for: $0, language: localizer.language).displayName }
+                    .joined(separator: " \(localizer.text("auth.or")) "),
+            ])
+        }
     }
 
     private var shippingConfirmed: Bool {
@@ -547,39 +620,22 @@ struct AddParcelView: View {
     private var resolvedCarrier: CarrierID {
         if amazonNumber { return shippingConfirmed ? .amazonShipping : .amazonLogistics }
         if let carrierOverride { return carrierOverride }
-        return currentVerification?.carrier ?? parsed.carrier
+        if case .recognized(let carrier) = recognitionStatus { return carrier }
+        return parsed.carrier
     }
 
+    /// Amazon numbers must be verified before they can be added.
     private var lookupTrackingNumber: String? {
-        let number = CarrierCatalog.normalize(parsed.trackingNumber)
-        guard !store.isDemo else { return nil }
-        if amazonNumber { return number }
-        guard carrierOverride == nil, parsed.carrier == .unknown, serverCheckable(number) else { return nil }
-        return number
+        guard !store.isDemo, amazonNumber else { return nil }
+        return normalizedNumber
     }
 
-    /// 11-12 digits may be GLS Germany and 14 digits DPD, unless the number points
-    /// to another carrier first (a DPD France depot): the server asks them.
-    private func serverCheckable(_ number: String) -> Bool {
-        if number.range(of: "^[0-9]{11,12}$", options: .regularExpression) != nil { return true }
-        let preferred = catalog.detect(number).preferred
-        return number.range(of: "^[0-9]{14}$", options: .regularExpression) != nil
-            && (preferred.isEmpty || preferred.contains(.dpd))
-    }
-
-    /// A carrier picked by hand that the number cannot belong to (a forwarder such
-    /// as Asendia for a DPD number) gets the same question, as a hint only.
-    private var hintTrackingNumber: String? {
-        let number = CarrierCatalog.normalize(parsed.trackingNumber)
-        guard !store.isDemo, !amazonNumber, let carrierOverride, serverCheckable(number),
-              !catalog.detect(number).candidates.contains(carrierOverride) else { return nil }
-        return number
-    }
-
+    /// For a carrier picked by hand that the number cannot belong to (a forwarder
+    /// such as Asendia for a DPD number), the carrier recognition found stays a hint.
     private var knownElsewhere: CarrierID? {
-        guard let number = hintTrackingNumber, let known = knownCarrier, known.trackingNumber == number,
-              known.carrier != .unknown, known.carrier != carrierOverride else { return nil }
-        return known.carrier
+        guard let carrierOverride, case .recognized(let carrier) = recognitionStatus,
+              carrier != carrierOverride else { return nil }
+        return carrier
     }
 
     private var requirements: [CarrierRequirement] {
@@ -644,6 +700,14 @@ struct AddParcelView: View {
             trackingInput = value
         }
         focusedField = .tracking
+        recognition.settledNumber = Self.trackingNumber(in: value)
+    }
+
+    private func selectCarrier(_ carrier: CarrierID?) {
+        carrierOverride = carrier
+        focusedField = nil
+        errorMessage = nil
+        duplicateParcelID = nil
     }
 
     private func submitTracking() {

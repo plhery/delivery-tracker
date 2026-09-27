@@ -638,5 +638,10 @@
   "add.useCarrier": "{{carrier}} verwenden",
   "add.usePostcode": "{{postcode}} verwenden",
   "detail.postcodeNotVerified": "{{carrier}} hat die Postleitzahl {{postcode}} nicht akzeptiert und zeigt deshalb weniger Details.",
-  "detail.editPostcode": "Postleitzahl ändern"
+  "detail.editPostcode": "Postleitzahl ändern",
+  "add.recognizing": "Prüfe, welcher Paketdienst dieses Paket hat …",
+  "add.recognized": "{{carrier}} hat dieses Paket.",
+  "add.recognizedSeveral": "Diese Nummer ist bei {{carriers}} bekannt. Wähle deinen Paketdienst.",
+  "detail.inputNeeded": "{{carrier}} hat dieses Paket. Gib die Postleitzahl der Lieferadresse ein, um es zu verfolgen.",
+  "detail.inputNeededAction": "Postleitzahl eingeben"
 }

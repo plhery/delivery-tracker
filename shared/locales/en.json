@@ -638,5 +638,10 @@
   "add.useCarrier": "Use {{carrier}}",
   "add.usePostcode": "Use {{postcode}}",
   "detail.postcodeNotVerified": "{{carrier}} didn't accept postcode {{postcode}}, so it shows fewer details.",
-  "detail.editPostcode": "Edit postcode"
+  "detail.editPostcode": "Edit postcode",
+  "add.recognizing": "Checking which carrier has this parcel…",
+  "add.recognized": "{{carrier}} has this parcel.",
+  "add.recognizedSeveral": "This number is known to {{carriers}}. Choose your carrier.",
+  "detail.inputNeeded": "{{carrier}} has this parcel. Add the delivery postcode to track it.",
+  "detail.inputNeededAction": "Add postcode"
 }

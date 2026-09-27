@@ -638,5 +638,10 @@
   "add.useCarrier": "Usar {{carrier}}",
   "add.usePostcode": "Usar {{postcode}}",
   "detail.postcodeNotVerified": "{{carrier}} não aceitou o código postal {{postcode}}, por isso mostra menos detalhes.",
-  "detail.editPostcode": "Alterar código postal"
+  "detail.editPostcode": "Alterar código postal",
+  "add.recognizing": "A verificar que transportadora tem esta encomenda…",
+  "add.recognized": "A {{carrier}} tem esta encomenda.",
+  "add.recognizedSeveral": "Este número é conhecido por {{carriers}}. Escolhe a tua transportadora.",
+  "detail.inputNeeded": "A {{carrier}} tem esta encomenda. Adiciona o código postal de entrega para a seguir.",
+  "detail.inputNeededAction": "Adicionar código postal"
 }

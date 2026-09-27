@@ -21,17 +21,20 @@ import type {
 
 export function ChangeCarrierSheet({
   parcel,
+  initialCarrier = parcel.carrier,
   onChange,
   onClose: onDismissed,
 }: {
   parcel: ParcelWithEvents;
+  /** Preselected carrier, such as one that recognized the number and needs a postcode. */
+  initialCarrier?: CarrierId;
   onChange: (input: ParcelCarrierInput) => Promise<unknown>;
   onClose: () => void;
 }) {
   const { locale, t } = useI18n();
-  const [selectedCarrier, setSelectedCarrier] = useState<CarrierId>(parcel.carrier);
-  const [trackingUrl, setTrackingUrl] = useState(parcel.trackingUrl ?? '');
-  const [dpdPostcode, setDpdPostcode] = useState(parcel.dpdPostcode ?? '');
+  const [selectedCarrier, setSelectedCarrier] = useState<CarrierId>(initialCarrier);
+  const [trackingUrl, setTrackingUrl] = useState(initialCarrier === parcel.carrier ? parcel.trackingUrl ?? '' : '');
+  const [dpdPostcode, setDpdPostcode] = useState(initialCarrier === parcel.carrier ? parcel.dpdPostcode ?? '' : '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const carrierSelect = useRef<HTMLSelectElement>(null);

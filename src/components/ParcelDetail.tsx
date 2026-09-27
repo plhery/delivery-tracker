@@ -32,7 +32,7 @@ import {
 import { currentEvent } from '../lib/stages';
 import { isBackSwipe, type TouchPoint } from '../lib/swipe';
 import { useSheetDialog } from '../lib/modal';
-import type { ParcelCarrierInput, ParcelWithEvents, SyncProgress } from '../types';
+import type { CarrierId, ParcelCarrierInput, ParcelWithEvents, SyncProgress } from '../types';
 import { ChangeCarrierSheet } from './ChangeCarrierSheet';
 import { TrackingJournal } from './TrackingJournal';
 import { CarrierMark } from './CarrierMark';
@@ -82,6 +82,9 @@ export function ParcelDetail({
   const amazonHistoryExpired = carrier.id === 'amazon-shipping' && parcel.syncError === AMAZON_HISTORY_EXPIRED;
   const automaticTracking = tracksAutomatically(carrier.id) && !amazonHistoryExpired;
   const current = currentEvent(parcel.events);
+  // Recognition found the carrier, but it needs the postcode before it can track.
+  const inputNeeded = parcel.inputNeeded?.field === 'dpdPostcode' && parcel.inputNeeded.carrier !== parcel.carrier
+    && !parcel.archivedAt && !['delivered', 'returned'].includes(current?.stage ?? '') ? parcel.inputNeeded : undefined;
   const status = parcelDisplayStatus(parcel);
   const statusLabel = t(parcelDisplayStatusKey(parcel));
   const completionDate = localizedParcelCompletionDate(parcel, languageTag, t);
@@ -98,6 +101,8 @@ export function ParcelDetail({
   const backdropPress = useRef(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [editingCarrier, setEditingCarrier] = useState(false);
+  // The carrier sheet opens on a recognized carrier when the prompt below asks for its input.
+  const [carrierSheetInitial, setCarrierSheetInitial] = useState<CarrierId>();
   const [title, setTitle] = useState(parcel.label);
   const [savingTitle, setSavingTitle] = useState(false);
   const [titleError, setTitleError] = useState<string | null>(null);
@@ -384,6 +389,15 @@ export function ParcelDetail({
           </button>
         </div>
         <AutoCarrierNotice parcel={parcel} className="detail__sender" />
+        {inputNeeded && (
+          <div className="detail__input-needed" role="status">
+            <p>{t('detail.inputNeeded', { carrier: carrierInfo(inputNeeded.carrier, locale).name })}</p>
+            <button type="button" className="text-button" onClick={() => {
+              setCarrierSheetInitial(inputNeeded.carrier);
+              setEditingCarrier(true);
+            }}>{t('detail.inputNeededAction')}</button>
+          </div>
+        )}
         {editingTitle ? (
           <form className="detail__title-form" onSubmit={handleTitleSubmit}>
             <input
@@ -560,8 +574,9 @@ export function ParcelDetail({
       {editingCarrier && (
         <ChangeCarrierSheet
           parcel={parcel}
+          initialCarrier={carrierSheetInitial}
           onChange={(input) => onChangeCarrier(parcel, input)}
-          onClose={() => setEditingCarrier(false)}
+          onClose={() => { setEditingCarrier(false); setCarrierSheetInitial(undefined); }}
         />
       )}
 

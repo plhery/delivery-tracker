@@ -40,6 +40,24 @@ describe('shipment details', () => {
     expect(screen.queryByText(/didn't accept postcode/)).not.toBeInTheDocument();
   });
 
+  it('offers the carrier that recognized the number and needs a postcode', async () => {
+    const view = show({ carrier: 'unknown', trackingNumber: '12345678901', inputNeeded: { carrier: 'gls-ch', field: 'dpdPostcode' } });
+    const prompt = screen.getByText('GLS Switzerland has this parcel. Add the delivery postcode to track it.');
+    expect(prompt).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Add postcode' }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('combobox')).toHaveValue('gls-ch');
+    expect(screen.getByRole('textbox', { name: /^Delivery postcode/ })).toBeInTheDocument();
+    view.unmount();
+    // Nothing to ask once it is filed under that carrier, or when it is delivered.
+    const filed = show({ carrier: 'gls-ch', trackingNumber: '12345678901', inputNeeded: { carrier: 'gls-ch', field: 'dpdPostcode' } });
+    expect(screen.queryByText(/has this parcel/)).not.toBeInTheDocument();
+    filed.unmount();
+    show({ carrier: 'unknown', trackingNumber: '12345678901', inputNeeded: { carrier: 'gls-ch', field: 'dpdPostcode' },
+      events: [{ id: 'event', parcelId: 'parcel', stage: 'delivered', description: 'Delivered', occurredAt: '2026-09-10T10:00:00Z' }] });
+    expect(screen.queryByText(/has this parcel/)).not.toBeInTheDocument();
+  });
+
   it('never displays legacy diagnostics', () => {
     show({ syncStatus: 'error', syncError: 'private upstream error details' });
     expect(screen.queryByText('private upstream error details')).not.toBeInTheDocument();

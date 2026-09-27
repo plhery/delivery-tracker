@@ -16,7 +16,7 @@ struct ParcelDetailView: View {
     @State private var copiedNumber: String?
     @State private var working = false
     @State private var errorMessage: String?
-    @State private var showingCarrierEditor = false
+    @State private var carrierEditor: CarrierEditorRequest?
     @State private var showingDeleteConfirmation = false
     @State private var notificationAnimation = 0
 
@@ -65,7 +65,7 @@ struct ParcelDetailView: View {
                             copy(parcel.trackingNumbers[0].number)
                         }
                         Button(localizer.text("detail.changeCarrier"), systemImage: "truck.box") {
-                            showingCarrierEditor = true
+                            carrierEditor = CarrierEditorRequest()
                         }
                         Divider()
                         if parcel.isArchived {
@@ -98,9 +98,9 @@ struct ParcelDetailView: View {
         } message: {
             Text(errorMessage ?? "")
         }
-        .sheet(isPresented: $showingCarrierEditor) {
+        .sheet(item: $carrierEditor) { request in
             if let parcel {
-                ChangeCarrierView(parcel: parcel)
+                ChangeCarrierView(parcel: parcel, initialCarrier: request.initialCarrier)
                     .environmentObject(store)
                     .environmentObject(localizer)
             }
@@ -143,7 +143,7 @@ struct ParcelDetailView: View {
         return VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
-                    Button { showingCarrierEditor = true } label: {
+                    Button { carrierEditor = CarrierEditorRequest() } label: {
                         CarrierFleetMark(identity: branding)
                     }
                     .buttonStyle(.plain)
@@ -166,6 +166,9 @@ struct ParcelDetailView: View {
                     .accessibilityLabel(localizer.text(parcel.notificationsMuted ? "detail.unmute" : "detail.mute"))
                 }
                 AutomaticCarrierNotice(parcel: parcel)
+                if let needed = parcel.inputNeededPrompt {
+                    inputNeededPrompt(needed, tint: branding.ink)
+                }
                 HStack(alignment: .center, spacing: 18) {
                     Text(parcel.label.nonEmpty ?? localizer.text("common.parcel"))
                         .font(.title2.weight(.semibold))
@@ -187,7 +190,7 @@ struct ParcelDetailView: View {
                             .font(.caption).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                         if parcel.archivedAt == nil {
-                            Button(localizer.text("detail.editPostcode")) { showingCarrierEditor = true }
+                            Button(localizer.text("detail.editPostcode")) { carrierEditor = CarrierEditorRequest() }
                                 .font(.caption.weight(.semibold))
                         }
                     }
@@ -229,7 +232,7 @@ struct ParcelDetailView: View {
                     Text(localizer.text(parcel.amazonShippingHistoryExpired ? "add.amazonHistoryExpired" : catalog.trackingHintKey(for: parcel.activeTrackingCarrier), ["carrier": carrier.displayName]))
                         .font(.footnote).foregroundStyle(.secondary)
                     if !catalog.requiresAmazonAccount(parcel.activeTrackingCarrier) && !parcel.amazonShippingHistoryExpired {
-                        Button(localizer.text("detail.changeCarrier")) { showingCarrierEditor = true }
+                        Button(localizer.text("detail.changeCarrier")) { carrierEditor = CarrierEditorRequest() }
                             .font(.footnote).foregroundStyle(branding.ink)
                     }
                 }
@@ -238,12 +241,34 @@ struct ParcelDetailView: View {
                     .font(.footnote).foregroundStyle(Brand.warning)
                 if error == "carrier:input_required", parcel.activeTrackingCarrier == parcel.carrier,
                    !catalog.requirements(for: parcel.carrier, trackingNumber: parcel.trackingNumber).isEmpty {
-                    Button(localizer.text("detail.updateTrackingDetails")) { showingCarrierEditor = true }
+                    Button(localizer.text("detail.updateTrackingDetails")) { carrierEditor = CarrierEditorRequest() }
                         .font(.footnote).foregroundStyle(branding.ink)
                 }
             }
             Divider()
         }
+        .accessibilityElement(children: .contain)
+    }
+
+    /// Recognition found the carrier, but it needs the postcode before it can track.
+    private func inputNeededPrompt(_ needed: CarrierInputNeeded, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(localizer.text("detail.inputNeeded", [
+                "carrier": catalog.info(for: needed.carrier, language: localizer.language).displayName,
+            ]))
+            .font(.footnote)
+            .fixedSize(horizontal: false, vertical: true)
+            Button {
+                carrierEditor = CarrierEditorRequest(initialCarrier: needed.carrier)
+            } label: {
+                Text(localizer.text("detail.inputNeededAction"))
+                    .font(.footnote.weight(.semibold))
+                    .frame(minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(TactileButtonStyle())
+        }
+        .foregroundStyle(tint)
         .accessibilityElement(children: .contain)
     }
 
@@ -565,11 +590,13 @@ private struct ChangeCarrierView: View {
 
     @ObservedObject private var catalog = CarrierCatalog.shared
 
-    init(parcel: Parcel) {
+    /// `initialCarrier` preselects a carrier, such as one that recognized the number and needs a postcode.
+    init(parcel: Parcel, initialCarrier: CarrierID? = nil) {
         self.parcel = parcel
-        _selectedCarrier = State(initialValue: parcel.carrier)
-        _trackingURL = State(initialValue: parcel.trackingURL ?? "")
-        _deliveryPostcode = State(initialValue: parcel.dpdPostcode ?? "")
+        let carrier = initialCarrier ?? parcel.carrier
+        _selectedCarrier = State(initialValue: carrier)
+        _trackingURL = State(initialValue: carrier == parcel.carrier ? parcel.trackingURL ?? "" : "")
+        _deliveryPostcode = State(initialValue: carrier == parcel.carrier ? parcel.dpdPostcode ?? "" : "")
     }
 
     var body: some View {
@@ -751,6 +778,12 @@ private struct ChangeCarrierView: View {
             }
         }
     }
+}
+
+/// The carrier editor opens on a recognized carrier when a prompt asks for its input.
+private struct CarrierEditorRequest: Identifiable {
+    let id = UUID()
+    var initialCarrier: CarrierID?
 }
 
 private struct JournalDay: Identifiable {

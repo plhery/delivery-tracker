@@ -75,6 +75,13 @@ export function AddParcelSheet({
   const [carrierPostcodes, setCarrierPostcodes] = useState<Partial<Record<CarrierId, string>>>({});
   const [selectedCarrier, setSelectedCarrier] = useState<CarrierId | 'auto'>('auto');
   const [verifiedCarrier, setVerifiedCarrier] = useState<ApiCarrierDetectionResponse>();
+  // Carrier recognition: a shape several carriers share is checked with them
+  // once the number is settled (the field loses focus, a paste, a shared
+  // number), never on each keystroke. It never holds the Add button: after
+  // saving, the first sync asks the same carriers again.
+  const [recognitionNumber, setRecognitionNumber] = useState(() =>
+    normalizeTrackingNumber(parseTrackingInput(initialTrackingInput).trackingNumber));
+  const [recognition, setRecognition] = useState<ApiCarrierDetectionResponse>();
   const [lookupAttempt, setLookupAttempt] = useState(0);
   const [showCarrierPicker, setShowCarrierPicker] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -143,26 +150,29 @@ export function AddParcelSheet({
     && settledTrackingInput.trim() && !settledTrackingNumber);
   const normalizedNumber = normalizeTrackingNumber(trackingNumber);
   const amazonNumber = isAmazonTrackingNumber(normalizedNumber);
-  // 11-12 digits may be GLS Germany and 14 digits DPD, unless the number points
-  // to another carrier first (a DPD France depot): the server asks them.
-  const serverCheckable = /^\d{11,12}$/.test(normalizedNumber) || (/^\d{14}$/.test(normalizedNumber)
-    && (parsedTracking.preferred.length === 0 || parsedTracking.preferred.includes('dpd')));
-  const shouldLookup = Boolean(apiAuth) && (amazonNumber || (selectedCarrier === 'auto'
-    && parsedTracking.carrier === 'unknown' && serverCheckable));
-  // A carrier picked by hand that the number cannot belong to (a forwarder
-  // such as Asendia for a DPD number) gets the same question, as a hint only.
-  const pickedElsewhere = Boolean(apiAuth) && !amazonNumber && selectedCarrier !== 'auto' && serverCheckable
-    && !parsedTracking.candidates.includes(selectedCarrier);
+  // Amazon numbers must be verified before they can be added.
+  const shouldLookup = Boolean(apiAuth) && amazonNumber;
   const lookingUp = shouldLookup && verifiedCarrier?.trackingNumber !== normalizedNumber;
   const currentVerification = verifiedCarrier?.trackingNumber === normalizedNumber ? verifiedCarrier : undefined;
+  // A carrier picked by hand that the number cannot belong to (a forwarder
+  // such as Asendia for a DPD number) gets the same question, as a hint only.
+  const pickedElsewhere = selectedCarrier !== 'auto' && !parsedTracking.candidates.includes(selectedCarrier);
+  const recognizable = Boolean(apiAuth) && !amazonNumber && parsedTracking.confidence === 'low'
+    && parsedTracking.carrier === 'unknown' && (selectedCarrier === 'auto' || pickedElsewhere);
+  const recognizing = recognizable && recognitionNumber === normalizedNumber && recognition?.trackingNumber !== normalizedNumber;
+  const currentRecognition = recognizable && recognition?.trackingNumber === normalizedNumber ? recognition : undefined;
+  // In automatic mode the answer selects the carrier; for a picked one it stays a hint.
+  const recognizedCarrier = selectedCarrier === 'auto' && currentRecognition?.carrier !== 'unknown' ? currentRecognition?.carrier : undefined;
+  const recognizedChoices = selectedCarrier === 'auto' ? currentRecognition?.recognized ?? [] : [];
   const shippingConfirmed = amazonNumber && currentVerification?.carrier === 'amazon-shipping'
     && ['available', 'expired'].includes(currentVerification.amazonShippingStatus ?? '');
   const accountRequired = amazonNumber ? !shippingConfirmed : requiresAmazonAccount(selectedCarrier);
-  const detectedCarrier = shouldLookup && currentVerification ? currentVerification.carrier : parsedTracking.carrier;
+  const detectedCarrier = shouldLookup && currentVerification ? currentVerification.carrier
+    : recognizedCarrier ?? parsedTracking.carrier;
   const resolvedCarrier = amazonNumber ? shippingConfirmed ? 'amazon-shipping' : 'amazon-logistics'
     : selectedCarrier === 'auto' ? detectedCarrier : selectedCarrier;
   useEffect(() => {
-    if ((!shouldLookup && !pickedElsewhere) || !apiAuth) return;
+    if (!shouldLookup || !apiAuth) return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
       void lookupCarrier(normalizedNumber, apiAuth, controller.signal).then((result) => {
@@ -172,9 +182,24 @@ export function AddParcelSheet({
       });
     }, 350);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [shouldLookup, pickedElsewhere, normalizedNumber, apiAuth, amazonNumber, lookupAttempt]);
-  const knownElsewhere = pickedElsewhere && currentVerification && currentVerification.carrier !== 'unknown'
-    && currentVerification.carrier !== selectedCarrier ? carrierInfo(currentVerification.carrier, locale) : null;
+  }, [shouldLookup, normalizedNumber, apiAuth, amazonNumber, lookupAttempt]);
+  useEffect(() => {
+    if (!recognizable || !apiAuth || saving || recognitionNumber !== normalizedNumber) return;
+    const controller = new AbortController();
+    // A tap on Add also blurs the field; the short wait lets that save go
+    // first instead of asking the carriers the first sync asks anyway.
+    const timer = setTimeout(() => {
+      void lookupCarrier(normalizedNumber, apiAuth, controller.signal).then((result) => {
+        if (!controller.signal.aborted) setRecognition(result);
+      }).catch(() => {
+        // No answer keeps the number a suggestion; the first sync asks again.
+        if (!controller.signal.aborted) setRecognition({ trackingNumber: normalizedNumber, carrier: 'unknown' });
+      });
+    }, 200);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [recognizable, recognitionNumber, normalizedNumber, apiAuth, saving]);
+  const knownElsewhere = pickedElsewhere && currentRecognition && currentRecognition.carrier !== 'unknown'
+    && currentRecognition.carrier !== selectedCarrier ? carrierInfo(currentRecognition.carrier, locale) : null;
   const carrier = trackingNumber ? carrierInfo(resolvedCarrier, locale) : null;
   const requirements = carrier ? carrierRequirements(carrier.id, trackingNumber) : [];
   const requiresCarrierConfirmation =
@@ -199,8 +224,14 @@ export function AddParcelSheet({
       })
       : t(carrierTrackingHintKey(carrier.id), { carrier: carrier.name })
     : '';
+  const recognitionHint = recognizing && selectedCarrier === 'auto' ? t('add.recognizing')
+    : recognizedCarrier ? t('add.recognized', { carrier: carrierInfo(recognizedCarrier, locale).name })
+      : recognizedChoices.length > 1 ? t('add.recognizedSeveral', {
+        carriers: recognizedChoices.map((choice) => carrierInfo(choice, locale).name).join(` ${t('auth.or')} `),
+      }) : '';
   const carrierPickerVisible = !amazonNumber && Boolean(trackingNumber) && (
-    showCarrierPicker || (Boolean(settledTrackingNumber) && (requiresCarrierConfirmation || carrier?.id === 'unknown'))
+    showCarrierPicker || recognizedChoices.length > 1
+    || (Boolean(settledTrackingNumber) && (requiresCarrierConfirmation || carrier?.id === 'unknown'))
   );
 
   // iPhone Safari scrolls the page to center every newly focused field above
@@ -232,6 +263,7 @@ export function AddParcelSheet({
       trackAction('parcel-paste', 'success');
       setTrackingInputValue(text);
       setSettledTrackingInput(text);
+      setRecognitionNumber(normalizeTrackingNumber(parseTrackingInput(text).trackingNumber));
     } catch {
       setPasteError(t('add.pasteFailed'));
     }
@@ -316,9 +348,17 @@ export function AddParcelSheet({
                   value={trackingInputValue}
                   placeholder={t('add.trackingPlaceholder')}
                   onPaste={() => { pastingTrackingInput.current = true; }}
+                  onBlur={(event) => {
+                    // Leaving the field for Add saves instead; the first sync recognizes.
+                    if (event.relatedTarget instanceof HTMLButtonElement && event.relatedTarget.type === 'submit') return;
+                    setRecognitionNumber(normalizedNumber);
+                  }}
                   onChange={(e) => {
                     setTrackingInputValue(e.target.value);
-                    if (pastingTrackingInput.current) setSettledTrackingInput(e.target.value);
+                    if (pastingTrackingInput.current) {
+                      setSettledTrackingInput(e.target.value);
+                      setRecognitionNumber(normalizeTrackingNumber(parseTrackingInput(e.target.value).trackingNumber));
+                    }
                     pastingTrackingInput.current = false;
                     if (existingParcelId) {
                       setExistingParcelId(null);
@@ -348,7 +388,7 @@ export function AddParcelSheet({
                 </p>
               )}
               {carrier && trackingNumber && (
-                <div className={`add-parcel-carrier${amazonNumber ? ' add-parcel-carrier--account' : ''}`} aria-live="polite" aria-busy={lookingUp}>
+                <div className={`add-parcel-carrier${amazonNumber ? ' add-parcel-carrier--account' : ''}`} aria-live="polite" aria-busy={lookingUp || recognizing}>
                   <div className="add-parcel-carrier__row">
                     <Icon name="truck" />
                     <span className="add-parcel-carrier__identity">
@@ -372,8 +412,8 @@ export function AddParcelSheet({
                       </button>
                     )}
                   </div>
-                  {(shippingConfirmed || requiresCarrierConfirmation || !tracksAutomatically(carrier.id)) && (
-                    <p className="add-parcel-carrier__hint">{carrierHint}</p>
+                  {(recognitionHint || shippingConfirmed || requiresCarrierConfirmation || !tracksAutomatically(carrier.id)) && (
+                    <p className="add-parcel-carrier__hint">{recognitionHint || carrierHint}</p>
                   )}
                   {knownElsewhere && (
                     <div>

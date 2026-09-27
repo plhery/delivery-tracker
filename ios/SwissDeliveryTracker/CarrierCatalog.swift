@@ -125,6 +125,52 @@ struct TrackingInputMatch: Equatable, Sendable {
     let source: Source
 }
 
+/// Carrier recognition in the Add sheet: a shape several carriers share is
+/// checked with them once the number is settled (the field loses focus, a
+/// paste, a scan, a shared number), never on each keystroke. It never holds
+/// the Add button: after saving, the first sync asks the same carriers again.
+struct CarrierRecognition: Equatable, Sendable {
+    enum Status: Equatable, Sendable {
+        case idle
+        case recognizing
+        /// One carrier knows the number.
+        case recognized(CarrierID)
+        /// Unrelated carriers all know it: the user chooses.
+        case several([CarrierID])
+    }
+
+    /// The normalized number as it stood when it was last settled.
+    var settledNumber: String?
+    /// The server's answer for a settled number.
+    var answer: CarrierDetectionResponse?
+
+    /// Only a number no carrier claims with confidence is worth asking about: while
+    /// the carrier is still detected, or when a carrier picked by hand cannot own
+    /// the number (a forwarder such as Asendia), as a hint only.
+    static func applies(to input: TrackingInputMatch, amazon: Bool, demo: Bool, carrierOverride: CarrierID?) -> Bool {
+        guard !demo, !amazon, input.confidence == .low, input.carrier == .unknown else { return false }
+        guard let carrierOverride else { return true }
+        return !input.candidates.contains(carrierOverride)
+    }
+
+    /// The number to ask about: the settled one, while it is still the number in
+    /// the field and has no answer yet.
+    func request(for number: String, applies: Bool) -> String? {
+        status(for: number, applies: applies) == .recognizing ? number : nil
+    }
+
+    func status(for number: String, applies: Bool) -> Status {
+        guard applies, !number.isEmpty else { return .idle }
+        guard let answer, answer.trackingNumber == number else {
+            return settledNumber == number ? .recognizing : .idle
+        }
+        if answer.carrier != .unknown { return .recognized(answer.carrier) }
+        let choices = answer.recognized ?? []
+        // No carrier knows it, or the answer failed: the number stays a suggestion.
+        return choices.count > 1 ? .several(choices) : .idle
+    }
+}
+
 struct ParcelTrackingLink: Identifiable, Sendable {
     enum Role: Sendable { case active, waiting, history }
     let carrier: CarrierID

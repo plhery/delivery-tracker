@@ -116,6 +116,7 @@ function toParcel(row: ApiPackageRow): ParcelWithEvents {
     autoChangedFrom: row.carrier_data?.auto_changed_from ?? undefined,
     autoChangedTo: row.carrier_data?.auto_changed_to ?? undefined,
     autoChangedAt: row.carrier_data?.auto_changed_at ?? undefined,
+    inputNeeded: row.carrier_data?.routing?.input_needed ?? undefined,
     senderName: row.carrier_data?.sender_name?.trim() || undefined,
     expectedDeliveryFrom: row.carrier_data?.expected_delivery_from ?? undefined,
     pickupPoint: row.carrier_data?.pickup_point?.trim() || undefined,
