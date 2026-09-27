@@ -9,7 +9,7 @@ import { isRecord, type JsonObject } from './types';
 import { priorityUniversalSource, universalSourceBudget, universalSources } from '@carriers/providers/universal';
 import type { UniversalSource } from '@carriers/providers/shared/result';
 import { isKnownCarrierName } from '@carriers/providers/shared/hints';
-import { carrierBrand } from '@carriers/core/catalog/hints';
+import { brandCarrierIds, carrierBrand, carrierIdFromName } from '@carriers/core/catalog/hints';
 import { errorType, reportRoutingEvent } from './observability';
 import { CarrierError, carrierErrorKind, IndeterminateError, retryAfterMsOf } from '@carriers/core/errors';
 import { captureDirectLocalHistory, directHistoryNumber, hasUnresolvedDirectCurrent, hasUnresolvedDirectHistory } from './directLocalHistory';
@@ -126,6 +126,28 @@ function usable(value: CarrierResult): boolean {
 /** The newest instant of a routed result, read in its source's zone exactly as its events are persisted. */
 function latest(value: RoutedResult): number {
   return latestResultTime(value.result, value.sourceCarrierId);
+}
+// Numbers are reused, and carriers' number spaces overlap (a 12-digit Yamato
+// number can be an old FedEx parcel). A universal history that ended a month
+// before the parcel was added and names only other catalog carriers is not it.
+const FOREIGN_HISTORY_GAP = 30 * DAY;
+/** Whether a reported name can mean this carrier: its id, a brand network of it, or a name the catalog doesn't know. */
+function mayNameCarrier(name: string, carrier: string): boolean {
+  const id = carrierIdFromName(name);
+  if (id) return id === carrier;
+  const networks = brandCarrierIds(name);
+  if (networks.length) return networks.includes(carrier);
+  const brand = carrierBrand(carrier);
+  if (brand && name.toLowerCase().replace(/[^a-z0-9]/g, '').startsWith(brand)) return true;
+  return !isKnownCarrierName(name);
+}
+function foreignHistory(result: CarrierResult, carrier: string, addedAt: unknown): boolean {
+  if (carrier === 'unknown' || carrier === 'intl-post' || typeof addedAt !== 'string') return false;
+  const names = Array.isArray(result.reported_carriers)
+    ? result.reported_carriers.filter((name): name is string => typeof name === 'string') : [];
+  if (!names.length || names.some((name) => mayNameCarrier(name, carrier))) return false;
+  const newest = latestResultTime(result, 'unknown');
+  return newest > 0 && newest < millis(addedAt) - FOREIGN_HISTORY_GAP;
 }
 function directCarrier(carrier: string): boolean {
   return AUTOMATIC_CARRIER_IDS.has(carrier) && carrierAdapter(carrier) !== 'universal';
@@ -385,8 +407,9 @@ export class TrackingRouter {
     // The delivery leg's own carrier when its number is the one looked up. A
     // label without a local clock (asendia, unknown) defers to the carrier a
     // direct lookup confirmed for this same number.
-    const zone = carrierZone(universalNumber !== number && typeof metadata.active_tracking_carrier === 'string'
-      ? metadata.active_tracking_carrier : declared)
+    const universalCarrier = universalNumber !== number && typeof metadata.active_tracking_carrier === 'string'
+      ? metadata.active_tracking_carrier : declared;
+    const zone = carrierZone(universalCarrier)
       ?? (state.confirmed_carrier && state.confirmed_number === universalNumber ? carrierZone(state.confirmed_carrier) : null);
     const attemptedUniversal = new Set<UniversalSource>();
     const universal = async (source: UniversalSource): Promise<RoutedResult | null> => {
@@ -414,6 +437,10 @@ export class TrackingRouter {
         const postcode = typeof parcel.dpd_postcode === 'string' ? parcel.dpd_postcode : null;
         const result = normalizeCarrierResult(await this.options.universal(source, universalNumber, Math.min(universalSourceBudget(source), remaining - 5_000), postcode, zone));
         if (!usable(result)) throw new TypeError('No usable universal progress');
+        if (foreignHistory(result, universalCarrier, parcel.created_at)) {
+          report('foreign_history_rejected', source);
+          throw new IndeterminateError(source, `${source} returned an older parcel of another carrier for this number`);
+        }
         const previousFailure = state.failures[source];
         if (previousFailure) report('provider_recovered', source);
         delete state.failures[source];

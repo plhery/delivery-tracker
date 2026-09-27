@@ -163,7 +163,8 @@ By carrier:
   stored with or without the dot, and returns 4 to 6 rows for the three public
   references. No aggregator knows Planzer.
 - **Yamato:** ParcelsApp answered with a January FedEx parcel that shares the 12 digits
-  (it reported FedEx and GLS), not the July Yamato parcel. Nothing else had history.
+  (it reported FedEx and GLS), not the July Yamato parcel. Routing ignores such a
+  history ([ROUTING.md](../../../docs/ROUTING.md)). Nothing else had history.
 - **DPD France:** direct and Ship24 return the same 10 rows, direct with depots and
   times. ParcelsApp condenses them into 5.
 - **Hongkong Post:** for an AliExpress item, Ship24, ParcelsApp and Postal Ninja include

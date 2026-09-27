@@ -532,6 +532,28 @@ describe('persistent tracking routing', () => {
     expect(coverage()).toEqual([]);
   });
 
+  it('ignores an older parcel of another carrier that a universal returns for a reused number', async () => {
+    const { router, universal } = setup();
+    universal.mockResolvedValueOnce({ ...history('2026-01-09T13:19:00Z'), reported_carriers: ['FedEx', 'GLS'] });
+    const result = await router.fetch(parcel({ carrier: 'yamato', tracking_number: '123456789012', created_at: '2026-09-01T00:00:00Z' }), false);
+    expect(universal.mock.calls.map(([source]) => source)).toEqual(['Ship24', 'ParcelsApp']);
+    expect(result.result).toMatchObject({ tracking_provider: 'ParcelsApp', last_update: '2026-09-10T11:00:00Z' });
+    expect(result.result.routing).toMatchObject({ failures: { Ship24: { kind: 'no_history' } } });
+    expect(vi.mocked(monitoring.reportRoutingEvent)).toHaveBeenCalledWith('foreign_history_rejected', expect.objectContaining({ provider: 'Ship24' }));
+  });
+  it.each([
+    ['a name for the filed carrier', { carrier: 'yamato' }, ['Yamato Transport'], '2026-01-09T13:19:00Z'],
+    ['a name the catalog does not know', { carrier: 'yamato' }, ['Example Parcel Co'], '2026-01-09T13:19:00Z'],
+    ['no filed carrier', { carrier: 'unknown' }, ['FedEx'], '2026-01-09T13:19:00Z'],
+    ['a recent history', { carrier: 'yamato' }, ['FedEx'], '2026-08-20T10:00:00Z'],
+  ])('keeps a universal history with %s', async (_label, filed, reported, stamp) => {
+    const { router, universal } = setup();
+    universal.mockResolvedValueOnce({ ...history(stamp), reported_carriers: reported });
+    const result = await router.fetch(parcel({ ...filed, tracking_number: '123456789012', created_at: '2026-09-01T00:00:00Z' }), false);
+    expect(universal).toHaveBeenCalledTimes(1);
+    expect(result.result).toMatchObject({ tracking_provider: 'Ship24', last_update: stamp });
+  });
+
   it('keeps the origin watermark when a verified delivery partner confirms the same completion', async () => {
     const { router, direct, universal } = setup();
     direct.mockResolvedValue({ sourceCarrierId: 'posti', swissPostReady: null, handoffFallbackErrorType: null,

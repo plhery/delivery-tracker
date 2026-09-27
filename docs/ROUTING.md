@@ -90,6 +90,7 @@ Post 17TRACK route skip shadow checks.
 | Carrier needs a postcode or capability URL | Report `carrier_input_required` and continue with universals. Inputs are never borrowed from another carrier. An optional input (DPD's postcode) does not block a lookup; the lookup runs without it. |
 | Only one or two universals know the carrier | Discovery finds one and pins it. No fan-out on normal successful checks. |
 | Unknown carrier | Try one strong direct candidate if there is one, then the carriers the number points to, otherwise discover a universal. Never invent a carrier from a number's shape: a probe adopts a carrier only on its own real progress. |
+| A universal returns another parcel | Numbers are reused and carriers' number spaces overlap. For a parcel filed under a specific carrier, a universal history counts as no history when every carrier it names is a different catalog carrier and its newest scan is more than 30 days older than the parcel. The next provider is asked. |
 | Everything fails | Keep progress, store the next check time, keep affinity until a replacement works. |
 | User switches to a worse carrier | Check the new choice first. If the previously confirmed route still works, restore it with the same notice, using the postcode or link saved with it. Choosing the confirmed carrier again replaces those with what the user entered, so a cleared postcode is not reused. Generation fencing cancels in-flight work. |
 | Older or regressing result | Keep the newer or terminal state. A successful response never downgrades status. |
@@ -184,6 +185,7 @@ parcel.
 | `carrier_auto_swapped` | A carrier correction was committed |
 | `carrier_mismatch_confirmed` | Detection rules could be improved |
 | `candidate_probe_confirmed` | A candidate probe found the carrier the number points to (logs and breadcrumbs only) |
+| `foreign_history_rejected` | A universal returned an older parcel of another carrier for the number (logs and breadcrumbs only) |
 | `direct_support_opportunity` | Candidate for a dedicated adapter |
 | `carrier_coverage_discovered` | A provider named a carrier the catalog doesn't know |
 | `fresher_provider_found` | Evidence to revisit the default order |
