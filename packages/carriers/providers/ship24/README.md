@@ -46,8 +46,11 @@ credentials. No account, cookie, fingerprint or issued token is used.
 - A reply counts only when `data.tracking_number` matches the requested number.
 - Times come from `timestamp`, which carries the real offset. `datetime` can end in `Z`
   while holding the carrier's local time. Some legs (Chronopost, for example) have no
-  offset in `timestamp`. Those scans are kept as `local_time` instead of dropping the
-  shipment or inventing a UTC instant.
+  offset in `timestamp`: that is the scanning carrier's wall clock. It is read in the
+  clock every courier the reply names keeps at that moment, else the scan location's
+  country, else the zone routing passes for the parcel's carrier. With none of them the
+  scan stays a `local_time`, which the timeline cannot place, rather than a guessed
+  UTC instant.
 - `dispatch_code_id: 7` is treated as delivered.
 - `couriers[].translation.name` becomes `reported_carriers`, and becomes
   `discovered_carrier` only when exactly one name maps to a catalog id. A bare brand
