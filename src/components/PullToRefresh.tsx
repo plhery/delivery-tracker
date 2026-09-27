@@ -5,7 +5,7 @@ import { Icon } from './Icon';
 import './Refresh.css';
 
 const THRESHOLD = 72;
-const HOLD = 64;
+const HOLD = 56;
 const SLOP = 8;
 const MIN_SPIN_MS = 900;
 const SETTLE_MS = 420;
@@ -199,7 +199,6 @@ export function PullToRefresh({ children, enabled, hidden, onRefresh }: {
     <div ref={indicator} className="pull-refresh__indicator" aria-hidden="true">
       <span className="pull-refresh__seal">
         <span className="pull-refresh__disc">
-          <svg className="pull-refresh__ring" viewBox="0 0 44 44"><circle cx="22" cy="22" r="20" pathLength="1" /></svg>
           <span ref={arrow} className="pull-refresh__arrow"><Icon name="refresh" /></span>
           <span className="pull-refresh__result"><Icon name={result === 'error' ? 'close' : 'check'} /></span>
         </span>

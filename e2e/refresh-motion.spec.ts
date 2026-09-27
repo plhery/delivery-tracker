@@ -75,18 +75,18 @@ async function pull(surface: Locator, distance: number, end = true) {
   }, { distance, end });
 }
 
-type ColorSample = { result: string | null; background: string; color: string; stroke: string };
+type ColorSample = { result: string | null; background: string; color: string };
 
 /** Records the seal's colors every frame until the gesture has settled. */
 async function recordSealColors(surface: Locator) {
   await surface.evaluate((root) => {
-    const disc = root.querySelector('.pull-refresh__disc')!, ring = root.querySelector('.pull-refresh__ring')!;
+    const disc = root.querySelector('.pull-refresh__disc')!;
     const samples: ColorSample[] = [];
     (window as unknown as { sealColors: ColorSample[] }).sealColors = samples;
     const sample = () => {
       if (root.getAttribute('data-phase') !== 'idle') {
         const seal = getComputedStyle(disc);
-        samples.push({ result: root.getAttribute('data-result'), background: seal.backgroundColor, color: seal.color, stroke: getComputedStyle(ring).stroke });
+        samples.push({ result: root.getAttribute('data-result'), background: seal.backgroundColor, color: seal.color });
       }
       if (!samples.length || root.getAttribute('data-phase') !== 'idle') requestAnimationFrame(sample);
     };
@@ -123,8 +123,8 @@ test('resists the pull, arms on distance, and settles after a completion check',
   const samples = await page.evaluate(() => (window as unknown as { sealColors: ColorSample[] }).sealColors);
   const beforeSuccess = samples.filter((sample) => !sample.result);
   expect(beforeSuccess.length).toBeGreaterThan(3);
-  expect(beforeSuccess.filter((sample) => [sample.background, sample.color, sample.stroke].some((value) => green.includes(value)))).toEqual([]);
-  expect(samples.some((sample) => sample.result === 'success' && sample.stroke === green[0] && sample.background === green[1])).toBe(true);
+  expect(beforeSuccess.filter((sample) => [sample.background, sample.color].some((value) => green.includes(value)))).toEqual([]);
+  expect(samples.some((sample) => sample.result === 'success' && sample.color === green[0] && sample.background === green[1])).toBe(true);
 
   await pull(surface, 60);
   await expect(surface).toHaveAttribute('data-phase', 'settling');
