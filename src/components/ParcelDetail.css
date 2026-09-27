@@ -60,6 +60,8 @@
 .detail--postcard .detail__title-row .postage-stamp { flex-shrink: 0; width: 45px; height: 56px; padding: 7px; }
 .detail--postcard .detail__title-row .postage-stamp svg { width: 22px; height: 22px; stroke-width: 1.1; }
 .detail--postcard .detail__sender { margin-top: 8px; color: var(--ink-soft); font-size: 12px; overflow-wrap: anywhere; }
+.detail--postcard .detail__postcode-note { margin-top: 8px; color: var(--ink-soft); font-size: 12px; line-height: 1.4; }
+.detail__postcode-edit { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
 .detail__shipment-facts { display: grid; gap: 12px; margin: 0 0 20px; }
 .detail__shipment-facts div { display: grid; grid-template-columns: minmax(90px, 1fr) minmax(0, 2fr); gap: 16px; }
 .detail__shipment-facts dt { color: var(--ink-soft); font-size: 12px; }

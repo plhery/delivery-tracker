@@ -633,5 +633,10 @@
   "event.carrier.lockerPlanned": "Entrega prevista no cacifo",
   "event.carrier.orderRegistered": "Pedido registado",
   "event.carrier.appointmentBooking": "A agendar a entrega",
-  "event.carrier.preparing": "Pedido em preparação"
+  "event.carrier.preparing": "Pedido em preparação",
+  "add.carrierKnownElsewhere": "{{carrier}} conhece este número.",
+  "add.useCarrier": "Usar {{carrier}}",
+  "add.usePostcode": "Usar {{postcode}}",
+  "detail.postcodeNotVerified": "{{carrier}} não aceitou o código postal {{postcode}}, por isso mostra menos detalhes.",
+  "detail.editPostcode": "Alterar código postal"
 }

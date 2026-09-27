@@ -633,5 +633,10 @@
   "event.carrier.lockerPlanned": "Livraison en consigne prévue",
   "event.carrier.orderRegistered": "Commande enregistrée",
   "event.carrier.appointmentBooking": "Prise de rendez-vous",
-  "event.carrier.preparing": "Commande en préparation"
+  "event.carrier.preparing": "Commande en préparation",
+  "add.carrierKnownElsewhere": "{{carrier}} connaît ce numéro.",
+  "add.useCarrier": "Utiliser {{carrier}}",
+  "add.usePostcode": "Utiliser {{postcode}}",
+  "detail.postcodeNotVerified": "{{carrier}} n'a pas accepté le code postal {{postcode}} et affiche donc moins de détails.",
+  "detail.editPostcode": "Modifier le code postal"
 }

@@ -96,6 +96,29 @@ describe('DPD carrier lookup', () => {
     expect(lookupCarrier).not.toHaveBeenCalled();
   });
 
+  it('points out the carrier that knows a number filed under a forwarder, without blocking it', async () => {
+    vi.mocked(lookupCarrier).mockResolvedValue({ trackingNumber: '06080000000002', carrier: 'dpd' });
+    const onAdd = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<AddParcelSheet apiAuth={apiAuth} onAdd={onAdd} onClose={vi.fn()} initialTrackingInput="06080000000002" />);
+    await user.selectOptions(await screen.findByRole('combobox'), 'asendia');
+    expect(await screen.findByText('DPD knows this number.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^add parcel$/i })).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: 'Use DPD' }));
+    await user.click(screen.getByRole('button', { name: /^add parcel$/i }));
+    expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ carrier: 'dpd' }));
+  });
+
+  it('keeps quiet when the picked carrier is one the number can belong to', async () => {
+    vi.mocked(lookupCarrier).mockResolvedValue({ trackingNumber: '06080000000002', carrier: 'dpd' });
+    const user = userEvent.setup();
+    render(<AddParcelSheet apiAuth={apiAuth} onAdd={vi.fn()} onClose={vi.fn()} initialTrackingInput="06080000000002" />);
+    await user.selectOptions(await screen.findByRole('combobox'), 'seur');
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    expect(lookupCarrier).not.toHaveBeenCalled();
+    expect(screen.queryByText(/knows this number/)).not.toBeInTheDocument();
+  });
+
   it('leaves an unrecognized 14-digit number to the user', async () => {
     vi.mocked(lookupCarrier).mockResolvedValue({ trackingNumber: '06080000000002', carrier: 'unknown' });
     render(<AddParcelSheet apiAuth={apiAuth} onAdd={vi.fn()} onClose={vi.fn()} initialTrackingInput="06080000000002" />);

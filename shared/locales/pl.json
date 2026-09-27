@@ -633,5 +633,10 @@
   "event.carrier.lockerPlanned": "Planowane doręczenie do automatu paczkowego",
   "event.carrier.orderRegistered": "Zamówienie zarejestrowane",
   "event.carrier.appointmentBooking": "Ustalanie terminu doręczenia",
-  "event.carrier.preparing": "Zamówienie w przygotowaniu"
+  "event.carrier.preparing": "Zamówienie w przygotowaniu",
+  "add.carrierKnownElsewhere": "{{carrier}} zna ten numer.",
+  "add.useCarrier": "Wybierz: {{carrier}}",
+  "add.usePostcode": "Użyj {{postcode}}",
+  "detail.postcodeNotVerified": "Kod pocztowy {{postcode}} nie został przyjęty przez {{carrier}}, więc widać mniej szczegółów.",
+  "detail.editPostcode": "Zmień kod pocztowy"
 }

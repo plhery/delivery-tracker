@@ -3227,6 +3227,7 @@ export interface ApiPackageRow {
   "receiver_name"?: string | null;
   "dimensions_text"?: string | null;
   "weight_kg"?: number | null;
+  "dpd_postcode_verified"?: boolean | null;
 };
   "archived_at": string | null;
   "notifications_muted": boolean;

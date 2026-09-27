@@ -30,6 +30,16 @@ describe('shipment details', () => {
     expect(screen.queryByText('carrier:input_required')).not.toBeInTheDocument();
   });
 
+  it('says when DPD rejected the postcode and opens the editor to change it', async () => {
+    const view = show({ carrier: 'dpd', trackingNumber: '06080000000002', dpdPostcode: '8000', dpdPostcodeVerified: false });
+    expect(screen.getByText(/DPD didn't accept postcode 8000, so it shows fewer details\./)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Edit postcode' }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    view.unmount();
+    show({ carrier: 'dpd', trackingNumber: '06080000000002', dpdPostcode: '8000', dpdPostcodeVerified: true });
+    expect(screen.queryByText(/didn't accept postcode/)).not.toBeInTheDocument();
+  });
+
   it('never displays legacy diagnostics', () => {
     show({ syncStatus: 'error', syncError: 'private upstream error details' });
     expect(screen.queryByText('private upstream error details')).not.toBeInTheDocument();

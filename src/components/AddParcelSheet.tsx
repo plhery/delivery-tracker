@@ -71,9 +71,8 @@ export function AddParcelSheet({
     trackingUrl: '',
     dpdPostcode: '',
   });
-  const [carrierPostcodes, setCarrierPostcodes] = useState<Partial<Record<CarrierId, string>>>({
-    dpd: lastDpdPostcode ?? '',
-  });
+  // DPD's postcode is optional: the last one is offered, never filled in.
+  const [carrierPostcodes, setCarrierPostcodes] = useState<Partial<Record<CarrierId, string>>>({});
   const [selectedCarrier, setSelectedCarrier] = useState<CarrierId | 'auto'>('auto');
   const [verifiedCarrier, setVerifiedCarrier] = useState<ApiCarrierDetectionResponse>();
   const [lookupAttempt, setLookupAttempt] = useState(0);
@@ -150,6 +149,10 @@ export function AddParcelSheet({
     && (parsedTracking.preferred.length === 0 || parsedTracking.preferred.includes('dpd')));
   const shouldLookup = Boolean(apiAuth) && (amazonNumber || (selectedCarrier === 'auto'
     && parsedTracking.carrier === 'unknown' && serverCheckable));
+  // A carrier picked by hand that the number cannot belong to (a forwarder
+  // such as Asendia for a DPD number) gets the same question, as a hint only.
+  const pickedElsewhere = Boolean(apiAuth) && !amazonNumber && selectedCarrier !== 'auto' && serverCheckable
+    && !parsedTracking.candidates.includes(selectedCarrier);
   const lookingUp = shouldLookup && verifiedCarrier?.trackingNumber !== normalizedNumber;
   const currentVerification = verifiedCarrier?.trackingNumber === normalizedNumber ? verifiedCarrier : undefined;
   const shippingConfirmed = amazonNumber && currentVerification?.carrier === 'amazon-shipping'
@@ -159,7 +162,7 @@ export function AddParcelSheet({
   const resolvedCarrier = amazonNumber ? shippingConfirmed ? 'amazon-shipping' : 'amazon-logistics'
     : selectedCarrier === 'auto' ? detectedCarrier : selectedCarrier;
   useEffect(() => {
-    if (!shouldLookup || !apiAuth) return;
+    if ((!shouldLookup && !pickedElsewhere) || !apiAuth) return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
       void lookupCarrier(normalizedNumber, apiAuth, controller.signal).then((result) => {
@@ -169,7 +172,9 @@ export function AddParcelSheet({
       });
     }, 350);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [shouldLookup, normalizedNumber, apiAuth, amazonNumber, lookupAttempt]);
+  }, [shouldLookup, pickedElsewhere, normalizedNumber, apiAuth, amazonNumber, lookupAttempt]);
+  const knownElsewhere = pickedElsewhere && currentVerification && currentVerification.carrier !== 'unknown'
+    && currentVerification.carrier !== selectedCarrier ? carrierInfo(currentVerification.carrier, locale) : null;
   const carrier = trackingNumber ? carrierInfo(resolvedCarrier, locale) : null;
   const requirements = carrier ? carrierRequirements(carrier.id, trackingNumber) : [];
   const requiresCarrierConfirmation =
@@ -370,6 +375,14 @@ export function AddParcelSheet({
                   {(shippingConfirmed || requiresCarrierConfirmation || !tracksAutomatically(carrier.id)) && (
                     <p className="add-parcel-carrier__hint">{carrierHint}</p>
                   )}
+                  {knownElsewhere && (
+                    <div>
+                      <p className="add-parcel-carrier__hint">{t('add.carrierKnownElsewhere', { carrier: knownElsewhere.name })}</p>
+                      <button type="button" className="add-parcel-carrier__account-link" onClick={() => { setSelectedCarrier(knownElsewhere.id); setShowCarrierPicker(false); }}>
+                        {t('add.useCarrier', { carrier: knownElsewhere.name })}
+                      </button>
+                    </div>
+                  )}
                   {amazonNumber && currentVerification?.amazonShippingStatus === 'unavailable' && (
                     <div>
                       <p className="add-parcel-carrier__hint">{t('add.amazonCheckUnavailable')}</p>
@@ -440,6 +453,16 @@ export function AddParcelSheet({
                       spellCheck={false}
                       required={!requirement.optional}
                     />
+                    {requirement.field === 'dpdPostcode' && requirement.optional && resolvedCarrier === 'dpd'
+                      && lastDpdPostcode && !carrierInputValue('dpdPostcode') && (
+                      <button
+                        type="button"
+                        className="field__suggestion"
+                        onClick={() => setCarrierPostcodes((current) => ({ ...current, dpd: lastDpdPostcode }))}
+                      >
+                        {t('add.usePostcode', { postcode: lastDpdPostcode })}
+                      </button>
+                    )}
                     {requirement.help && (
                       <small className="field__help">
                         {t(requirement.field === 'trackingUrl' ? 'add.requirement.trackingUrlHelp'

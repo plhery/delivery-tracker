@@ -40,6 +40,8 @@ export interface Parcel {
   syncError?: string;
   trackingUrl?: string;
   dpdPostcode?: string;
+  /** False when DPD rejected the stored postcode and tracked without it. */
+  dpdPostcodeVerified?: boolean;
   /** Carrier currently supplying automatic updates for a multi-carrier journey. */
   trackingSource?: CarrierId;
   trackingProvider?: string;

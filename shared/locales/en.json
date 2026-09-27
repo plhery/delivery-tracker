@@ -633,5 +633,10 @@
   "event.carrier.lockerPlanned": "Locker delivery planned",
   "event.carrier.orderRegistered": "Order registered",
   "event.carrier.appointmentBooking": "Scheduling delivery",
-  "event.carrier.preparing": "Order being prepared"
+  "event.carrier.preparing": "Order being prepared",
+  "add.carrierKnownElsewhere": "{{carrier}} knows this number.",
+  "add.useCarrier": "Use {{carrier}}",
+  "add.usePostcode": "Use {{postcode}}",
+  "detail.postcodeNotVerified": "{{carrier}} didn't accept postcode {{postcode}}, so it shows fewer details.",
+  "detail.editPostcode": "Edit postcode"
 }

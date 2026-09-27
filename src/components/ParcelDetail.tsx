@@ -424,6 +424,16 @@ export function ParcelDetail({
           </div>
         )}
         {parcel.senderName?.trim() && <p className="detail__sender">{t('parcel.sender', { sender: parcel.senderName.trim() })}</p>}
+        {parcel.carrier === 'dpd' && parcel.dpdPostcode && parcel.dpdPostcodeVerified === false && (
+          <p className="detail__postcode-note">
+            {t('detail.postcodeNotVerified', { carrier: carrier.name, postcode: parcel.dpdPostcode })}{' '}
+            {!parcel.archivedAt && (
+              <button type="button" className="detail__postcode-edit" onClick={() => setEditingCarrier(true)}>
+                {t('detail.editPostcode')}
+              </button>
+            )}
+          </p>
+        )}
         {trackingLinks.length > 1 && trackingSources}
         <p className="detail__state">{statusLabel}</p>
         {(completionDate || estimate) && (

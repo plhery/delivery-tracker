@@ -633,5 +633,10 @@
   "event.carrier.lockerPlanned": "Consegna all’armadietto prevista",
   "event.carrier.orderRegistered": "Ordine registrato",
   "event.carrier.appointmentBooking": "Programmazione della consegna",
-  "event.carrier.preparing": "Ordine in preparazione"
+  "event.carrier.preparing": "Ordine in preparazione",
+  "add.carrierKnownElsewhere": "{{carrier}} conosce questo numero.",
+  "add.useCarrier": "Usa {{carrier}}",
+  "add.usePostcode": "Usa {{postcode}}",
+  "detail.postcodeNotVerified": "{{carrier}} non ha accettato il codice postale {{postcode}}, quindi mostra meno dettagli.",
+  "detail.editPostcode": "Modifica codice postale"
 }

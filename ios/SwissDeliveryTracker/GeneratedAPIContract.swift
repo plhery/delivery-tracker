@@ -792,6 +792,7 @@ struct CarrierData: Codable, Equatable, Hashable, Sendable {
     var receiverName: String? = nil
     var dimensionsText: String? = nil
     var weightKg: Double? = nil
+    var dpdPostcodeVerified: Bool? = nil
 
     private enum CodingKeys: String, CodingKey {
         case activeTrackingCarrier
@@ -811,6 +812,7 @@ struct CarrierData: Codable, Equatable, Hashable, Sendable {
         case receiverName
         case dimensionsText
         case weightKg
+        case dpdPostcodeVerified
     }
 }
 

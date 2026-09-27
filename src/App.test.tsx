@@ -633,10 +633,10 @@ describe('App', () => {
 
     const postcode = within(sheet).getByLabelText(/delivery postcode/i);
     expect(postcode).not.toBeRequired();
-    expect(postcode).toHaveValue('8000');
+    // Optional, so the last DPD postcode is offered rather than filled in.
+    expect(postcode).toHaveValue('');
     expect(postcode.closest('label')).toHaveTextContent(/delivery postcode\s*optional/i);
     expect(within(sheet).getByText(/DPD also shows verified scans/i)).toBeInTheDocument();
-    await user.clear(postcode);
     expect(within(sheet).getByRole('button', { name: /add parcel/i })).toBeEnabled();
     await user.type(postcode, '800');
     expect(within(sheet).getByRole('button', { name: /add parcel/i })).toBeDisabled();
@@ -677,7 +677,7 @@ describe('App', () => {
     expect(await screen.findByText('Added to tracking')).toBeInTheDocument();
   });
 
-  it('prefills the postcode from the newest DPD parcel', async () => {
+  it('offers the postcode of the newest DPD parcel without filling it in', async () => {
     const repo = createDemoRepo(window.localStorage);
     await repo.add({
       trackingNumber: '06080000000002',
@@ -697,7 +697,11 @@ describe('App', () => {
     );
     await user.selectOptions(await within(sheet).findByLabelText(/carrier/i, undefined, { timeout: 3000 }), 'dpd');
 
-    expect(within(sheet).getByLabelText(/delivery postcode/i)).toHaveValue('8000');
+    const postcode = within(sheet).getByLabelText(/delivery postcode/i);
+    expect(postcode).toHaveValue('');
+    await user.click(within(sheet).getByRole('button', { name: 'Use 8000' }));
+    expect(postcode).toHaveValue('8000');
+    expect(within(sheet).queryByRole('button', { name: 'Use 8000' })).not.toBeInTheDocument();
   });
 
   it('offers every regional carrier and keeps carrier postcodes isolated', async () => {

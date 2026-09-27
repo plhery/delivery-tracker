@@ -4739,6 +4739,13 @@
                   "null"
                 ],
                 "minimum": 0
+              },
+              "dpd_postcode_verified": {
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "False when DPD rejected the stored delivery postcode and the lookup continued without it."
               }
             }
           },

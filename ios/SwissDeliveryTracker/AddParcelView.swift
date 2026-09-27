@@ -23,6 +23,7 @@ struct AddParcelView: View {
     @State private var carrierOverride: CarrierID?
     @State private var lookupAttempt = 0
     @State private var verifiedCarrier: CarrierDetectionResponse?
+    @State private var knownCarrier: CarrierDetectionResponse?
     @FocusState private var focusedField: Field?
 
     @ObservedObject private var catalog = CarrierCatalog.shared
@@ -121,6 +122,17 @@ struct AddParcelView: View {
                 } catch {
                     guard !Task.isCancelled else { return }
                     verifiedCarrier = CarrierDetectionResponse(trackingNumber: number, amazonShippingStatus: catalog.isAmazonTrackingNumber(number) ? .unavailable : nil, carrier: catalog.isAmazonTrackingNumber(number) ? .amazonLogistics : .unknown)
+                }
+            }
+            .task(id: hintTrackingNumber ?? "") {
+                guard let number = hintTrackingNumber else { return }
+                do {
+                    try await Task.sleep(for: .milliseconds(350))
+                    let result = try await store.detectCarrier(trackingNumber: number)
+                    guard !Task.isCancelled, result.trackingNumber == number else { return }
+                    knownCarrier = result
+                } catch {
+                    // Only a hint: a failed lookup shows nothing.
                 }
             }
         }
@@ -333,6 +345,17 @@ struct AddParcelView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            if let known = knownElsewhere {
+                let name = catalog.info(for: known, language: localizer.language).displayName
+                Text(localizer.text("add.carrierKnownElsewhere", ["carrier": name]))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button(localizer.text("add.useCarrier", ["carrier": name])) {
+                    carrierOverride = known
+                }
+                .font(.subheadline)
+            }
             if amazonNumber && currentVerification?.amazonShippingStatus == .unavailable {
                 Text(localizer.text("add.amazonCheckUnavailable")).font(.caption).foregroundStyle(.secondary)
                 Button(localizer.text("add.amazonRetry")) {
@@ -379,24 +402,34 @@ struct AddParcelView: View {
             }
 
             if let requirement = postcodeRequirement {
-                requirementField(
-                    title: localizer.text("add.requirement.dpdPostcode"),
-                    help: requirement.isOptional
-                        ? localizer.text("add.requirement.dpdPostcodeOptionalHelp", [
-                            "carrier": catalog.info(for: resolvedCarrier, language: localizer.language).displayName,
-                        ])
-                        : localizer.text("add.requirement.dpdPostcodeHelp"),
-                    optional: requirement.isOptional
-                ) {
-                    TextField(requirement.placeholder ?? "", text: $deliveryPostcode)
-                        .font(.body.monospacedDigit())
-                        .keyboardType(requirement.inputMode == "numeric" ? .numberPad : .asciiCapable)
-                        .textContentType(.postalCode)
-                        .focused($focusedField, equals: .deliveryPostcode)
-                        .accessibilityLabel(localizer.text("add.requirement.dpdPostcode"))
-                        .onChange(of: deliveryPostcode) { _, value in
-                            deliveryPostcode = requirement.normalizedValue(value)
+                VStack(alignment: .leading, spacing: 10) {
+                    requirementField(
+                        title: localizer.text("add.requirement.dpdPostcode"),
+                        help: requirement.isOptional
+                            ? localizer.text("add.requirement.dpdPostcodeOptionalHelp", [
+                                "carrier": catalog.info(for: resolvedCarrier, language: localizer.language).displayName,
+                            ])
+                            : localizer.text("add.requirement.dpdPostcodeHelp"),
+                        optional: requirement.isOptional
+                    ) {
+                        TextField(requirement.placeholder ?? "", text: $deliveryPostcode)
+                            .font(.body.monospacedDigit())
+                            .keyboardType(requirement.inputMode == "numeric" ? .numberPad : .asciiCapable)
+                            .textContentType(.postalCode)
+                            .focused($focusedField, equals: .deliveryPostcode)
+                            .accessibilityLabel(localizer.text("add.requirement.dpdPostcode"))
+                            .onChange(of: deliveryPostcode) { _, value in
+                                deliveryPostcode = requirement.normalizedValue(value)
+                            }
+                    }
+                    // An optional postcode is offered, never filled in for the user.
+                    if requirement.isOptional, deliveryPostcode.isEmpty,
+                       let suggestion = previousPostcode(for: resolvedCarrier).map(requirement.normalizedValue)?.nonEmpty {
+                        Button(localizer.text("add.usePostcode", ["postcode": suggestion])) {
+                            deliveryPostcode = suggestion
                         }
+                        .font(.subheadline)
+                    }
                 }
             }
         }
@@ -521,14 +554,32 @@ struct AddParcelView: View {
         let number = CarrierCatalog.normalize(parsed.trackingNumber)
         guard !store.isDemo else { return nil }
         if amazonNumber { return number }
-        guard carrierOverride == nil, parsed.carrier == .unknown else { return nil }
-        // 11-12 digits may be GLS Germany and 14 digits DPD, unless the number points
-        // to another carrier first (a DPD France depot): the server asks them.
-        if number.range(of: "^[0-9]{11,12}$", options: .regularExpression) != nil { return number }
-        let preferred = catalog.detect(number).preferred
-        guard number.range(of: "^[0-9]{14}$", options: .regularExpression) != nil,
-              preferred.isEmpty || preferred.contains(.dpd) else { return nil }
+        guard carrierOverride == nil, parsed.carrier == .unknown, serverCheckable(number) else { return nil }
         return number
+    }
+
+    /// 11-12 digits may be GLS Germany and 14 digits DPD, unless the number points
+    /// to another carrier first (a DPD France depot): the server asks them.
+    private func serverCheckable(_ number: String) -> Bool {
+        if number.range(of: "^[0-9]{11,12}$", options: .regularExpression) != nil { return true }
+        let preferred = catalog.detect(number).preferred
+        return number.range(of: "^[0-9]{14}$", options: .regularExpression) != nil
+            && (preferred.isEmpty || preferred.contains(.dpd))
+    }
+
+    /// A carrier picked by hand that the number cannot belong to (a forwarder such
+    /// as Asendia for a DPD number) gets the same question, as a hint only.
+    private var hintTrackingNumber: String? {
+        let number = CarrierCatalog.normalize(parsed.trackingNumber)
+        guard !store.isDemo, !amazonNumber, let carrierOverride, serverCheckable(number),
+              !catalog.detect(number).candidates.contains(carrierOverride) else { return nil }
+        return number
+    }
+
+    private var knownElsewhere: CarrierID? {
+        guard let number = hintTrackingNumber, let known = knownCarrier, known.trackingNumber == number,
+              known.carrier != .unknown, known.carrier != carrierOverride else { return nil }
+        return known.carrier
     }
 
     private var requirements: [CarrierRequirement] {
@@ -566,13 +617,18 @@ struct AddParcelView: View {
         return true
     }
 
-    private func prepareRequiredDetails(for carrier: CarrierID) {
-        guard postcodeRequirement != nil, deliveryPostcode.isEmpty else { return }
-        let previous = store.parcels
+    private func previousPostcode(for carrier: CarrierID) -> String? {
+        store.parcels
             .sorted(by: { $0.createdAt > $1.createdAt })
             .first(where: { $0.carrier == carrier && $0.dpdPostcode != nil })?
-            .dpdPostcode ?? ""
-        deliveryPostcode = postcodeRequirement?.normalizedValue(previous) ?? ""
+            .dpdPostcode
+    }
+
+    /// A required postcode starts from the last one used for this carrier; an
+    /// optional one is only offered (see `requiredDetails`).
+    private func prepareRequiredDetails(for carrier: CarrierID) {
+        guard let requirement = postcodeRequirement, !requirement.isOptional, deliveryPostcode.isEmpty else { return }
+        deliveryPostcode = requirement.normalizedValue(previousPostcode(for: carrier) ?? "")
     }
 
     private func paste() {

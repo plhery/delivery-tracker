@@ -633,5 +633,10 @@
   "event.carrier.lockerPlanned": "Lieferung an Paketstation geplant",
   "event.carrier.orderRegistered": "Bestellung erfasst",
   "event.carrier.appointmentBooking": "Liefertermin wird vereinbart",
-  "event.carrier.preparing": "Bestellung wird vorbereitet"
+  "event.carrier.preparing": "Bestellung wird vorbereitet",
+  "add.carrierKnownElsewhere": "{{carrier}} kennt diese Nummer.",
+  "add.useCarrier": "{{carrier}} verwenden",
+  "add.usePostcode": "{{postcode}} verwenden",
+  "detail.postcodeNotVerified": "{{carrier}} hat die Postleitzahl {{postcode}} nicht akzeptiert und zeigt deshalb weniger Details.",
+  "detail.editPostcode": "Postleitzahl ändern"
 }

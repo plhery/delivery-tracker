@@ -184,6 +184,7 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .field__inline-action { display: flex; align-items: center; gap: 5px; margin: -8px 0 -8px auto; min-height: 44px; padding: 5px 8px; color: var(--ink-soft); background: transparent; font-size: 12px; border-radius: 9px; }
 .field__inline-action svg { width: 16px; height: 16px; }
 .field__help { color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
+.field__suggestion { justify-self: start; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: none; color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
 .sheet__carrier-card { display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--blue-soft); color: var(--blue); border-radius: 18px; animation: page-arrive .25s; }
 .sheet__carrier-card--warning { background: var(--orange-soft); color: var(--orange-text); }
 .sheet__carrier-mark { flex: 0 0 36px; width: 36px; height: 42px; border: 1px dashed currentColor; border-radius: 3px; display: grid; place-items: center; transform: rotate(-3deg); opacity: .8; }

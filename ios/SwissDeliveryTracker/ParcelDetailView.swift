@@ -180,6 +180,18 @@ struct ParcelDetailView: View {
                         .font(.caption).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                if parcel.carrier == .dpd, let postcode = parcel.dpdPostcode?.nonEmpty,
+                   parcel.carrierData?.dpdPostcodeVerified == false {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(localizer.text("detail.postcodeNotVerified", ["carrier": carrier.displayName, "postcode": postcode]))
+                            .font(.caption).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if parcel.archivedAt == nil {
+                            Button(localizer.text("detail.editPostcode")) { showingCarrierEditor = true }
+                                .font(.caption.weight(.semibold))
+                        }
+                    }
+                }
                 if trackingLinks.count > 1 { trackingSources(trackingLinks, tint: branding.ink) }
                 VStack(alignment: .leading, spacing: 6) {
                     Text(localizer.parcelStatus(parcel))
@@ -549,6 +561,7 @@ private struct ChangeCarrierView: View {
     @State private var deliveryPostcode: String
     @State private var saving = false
     @State private var errorMessage: String?
+    @State private var detent: PresentationDetent = .medium
 
     @ObservedObject private var catalog = CarrierCatalog.shared
 
@@ -634,8 +647,12 @@ private struct ChangeCarrierView: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        // Inputs and their help sit below the half-height sheet: open fully for them.
+        .presentationDetents([.medium, .large], selection: $detent)
         .presentationDragIndicator(.visible)
+        .onChange(of: requirements.isEmpty, initial: true) { _, empty in
+            if !empty { detent = .large }
+        }
     }
 
     private var requirements: [CarrierRequirement] {

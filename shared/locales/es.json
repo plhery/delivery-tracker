@@ -633,5 +633,10 @@
   "event.carrier.lockerPlanned": "Entrega prevista en taquilla",
   "event.carrier.orderRegistered": "Pedido registrado",
   "event.carrier.appointmentBooking": "Programando la entrega",
-  "event.carrier.preparing": "Pedido en preparación"
+  "event.carrier.preparing": "Pedido en preparación",
+  "add.carrierKnownElsewhere": "{{carrier}} conoce este número.",
+  "add.useCarrier": "Usar {{carrier}}",
+  "add.usePostcode": "Usar {{postcode}}",
+  "detail.postcodeNotVerified": "{{carrier}} no ha aceptado el código postal {{postcode}}, así que muestra menos detalles.",
+  "detail.editPostcode": "Cambiar código postal"
 }
