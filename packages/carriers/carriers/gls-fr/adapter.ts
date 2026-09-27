@@ -11,7 +11,8 @@ import 'server-only';
 
 import { DateTime } from 'luxon';
 import type { AdapterFactory } from '../../core/adapter';
-import { SchemaError } from '../../core/errors';
+import { isValidGlsParcelNumber } from '../../core/detection';
+import { SchemaError, UpstreamHttpError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import { EXPLICIT_OFFSET_PATTERN, type ParsedTime } from '../../core/time';
 import { cleanScalar, fetchBounded, parseJsonBytes } from '../../core/transport';
@@ -66,15 +67,28 @@ function expectedDelivery(value: unknown): string | null {
   return parsedTime(value)?.iso.slice(0, 10) ?? null;
 }
 
+/**
+ * A GLS parcel number is 11 digits; labels print it with its check digit as a
+ * 12th. A 12-digit number is accepted only when that digit is valid, and is
+ * known by its first 11 digits.
+ */
+function parcelNumber(value: string): string {
+  if (/^(?:[A-Z0-9]{8}|\d{11})$/.test(value)) return value;
+  return isValidGlsParcelNumber(value) ? value.slice(0, 11) : '';
+}
+
 function normalizedCandidate(value: unknown): string {
-  const candidate = cleanScalar(value, 32).toLocaleUpperCase('en-US').replace(/[\s.-]/g, '');
-  return /^(?:[A-Z0-9]{8}|\d{11})$/.test(candidate) ? candidate : '';
+  return parcelNumber(cleanScalar(value, 32).toLocaleUpperCase('en-US').replace(/[\s.-]/g, ''));
+}
+
+function printedNumber(raw: string): string {
+  return raw.toLocaleUpperCase('en-US').replace(/[\s.-]/g, '');
 }
 
 export function normalizeGLSFranceTrackingNumber(raw: string): string {
-  const value = raw.toLocaleUpperCase('en-US').replace(/[\s.-]/g, '');
-  if (!/^(?:[A-Z0-9]{8}|\d{11})$/.test(value)) {
-    throw new TypeError('GLS France tracking numbers must contain 8 letters or digits, or 11 digits');
+  const value = parcelNumber(printedNumber(raw));
+  if (!value) {
+    throw new TypeError('GLS France tracking numbers must contain 8 letters or digits, or 11 digits (12 with a valid check digit)');
   }
   return value;
 }
@@ -210,7 +224,19 @@ export class GLSFranceTracker {
 
   async fetch(trackingNumber: string): Promise<CarrierResult> {
     const normalized = normalizeGLSFranceTrackingNumber(trackingNumber);
-    const { bytes } = await fetchBounded(glsFranceTrackingApiUrl(normalized), {
+    const printed = printedNumber(trackingNumber);
+    try {
+      return await this.lookup(normalized, normalized);
+    } catch (error) {
+      // The 11-digit parcel number is what GLS keys a parcel by. Should the
+      // French backend only know the number as printed, ask for it once too.
+      if (printed === normalized || !(error instanceof UpstreamHttpError) || error.status !== 404) throw error;
+      return await this.lookup(printed, normalized);
+    }
+  }
+
+  private async lookup(code: string, normalized: string): Promise<CarrierResult> {
+    const { bytes } = await fetchBounded(`${TRACKING_API}/${encodeURIComponent(code)}`, {
       headers: {
         Accept: 'application/json',
         'Accept-Language': 'fr-FR,fr;q=0.9',

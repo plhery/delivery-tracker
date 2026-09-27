@@ -41,8 +41,10 @@ The parser:
 ## Limitations
 
 - The endpoint is undocumented and may change or start challenging requests.
-- The adapter accepts 8 alphanumerics or 11 digits. Detection also suggests
-  12-digit numbers whose GLS check digit passes, but the adapter rejects them.
+- The adapter accepts 8 alphanumerics, 11 digits, or 12 digits whose last is a
+  valid GLS check digit. A GLS parcel number is 11 digits, so a 12-digit number is
+  looked up by its first 11 and, only if that is not found, once more as printed;
+  either way the parcel is identified by its 11 digits.
 - No sender, pickup-point name, weight or dimensions in the response, so those
   capabilities are not declared.
 

@@ -14,6 +14,8 @@ import { glsFranceStatus } from './status';
 
 const TRACKING_NUMBER = '00AB12CD';
 const NUMERIC_TRACKING_NUMBER = '36631000001';
+/** The same parcel number printed with its GLS check digit. */
+const PRINTED_TRACKING_NUMBER = '366310000017';
 const CAPABILITIES: readonly string[] = JSON.parse(
   readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'carrier.json'), 'utf8'),
 ).capabilities;
@@ -43,6 +45,13 @@ describe('GLS France tracking input', () => {
     expect(glsFranceTrackingApiUrl(NUMERIC_TRACKING_NUMBER)).toBe(
       `https://public.infra-prod.prod.cloud.fr.gls-group.com/consignee-ws/api/v1/command/public/codes/${NUMERIC_TRACKING_NUMBER}`,
     );
+  });
+
+  it('knows a 12-digit printed number by its 11-digit parcel number', () => {
+    expect(normalizeGLSFranceTrackingNumber('3663 1000 0017')).toBe(NUMERIC_TRACKING_NUMBER);
+    expect(glsFranceTrackingUrl(PRINTED_TRACKING_NUMBER)).toBe(`https://moncolis.gls-france.com/fr/${NUMERIC_TRACKING_NUMBER}`);
+    // A wrong check digit is not a GLS number.
+    expect(() => normalizeGLSFranceTrackingNumber('366310000018')).toThrow('12 with a valid check digit');
   });
 
   it('rejects unsupported or unsafe identifiers', () => {
@@ -268,6 +277,34 @@ describe('GLS France response normalization', () => {
     });
     expect(fetcher).toHaveBeenCalledTimes(1);
     expect(String(fetcher.mock.calls[0]![0])).toBe(glsFranceTrackingApiUrl(wrongNumber));
+  });
+
+  it('looks a printed number up by its parcel number, then as printed once', async () => {
+    const found = () => {
+      const fixture = deliveredFixture();
+      fixture.colis.numeroGp = PRINTED_TRACKING_NUMBER;
+      return new Response(JSON.stringify(fixture), { headers: { 'Content-Type': 'application/json' } });
+    };
+    const direct = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(found());
+    await expect(new GLSFranceTracker({ timeoutMs: 1_000 }).fetch(PRINTED_TRACKING_NUMBER))
+      .resolves.toMatchObject({ status: 'delivered' });
+    expect(direct.mock.calls.map(([url]) => String(url).split('/').at(-1))).toEqual([NUMERIC_TRACKING_NUMBER]);
+    direct.mockRestore();
+
+    const fallback = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(`404 No command found for code: ${NUMERIC_TRACKING_NUMBER}`, { status: 404 }))
+      .mockResolvedValueOnce(found());
+    await expect(new GLSFranceTracker({ timeoutMs: 1_000 }).fetch(PRINTED_TRACKING_NUMBER))
+      .resolves.toMatchObject({ status: 'delivered' });
+    expect(fallback.mock.calls.map(([url]) => String(url).split('/').at(-1)))
+      .toEqual([NUMERIC_TRACKING_NUMBER, PRINTED_TRACKING_NUMBER]);
+    fallback.mockRestore();
+
+    // Two not-founds stay a not-found; an 11-digit number is asked once.
+    const missing = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response('404 No command found', { status: 404 }));
+    await expect(new GLSFranceTracker({ timeoutMs: 1_000 }).fetch(PRINTED_TRACKING_NUMBER)).rejects.toMatchObject({ status: 404, kind: 'not_found' });
+    await expect(new GLSFranceTracker({ timeoutMs: 1_000 }).fetch(NUMERIC_TRACKING_NUMBER)).rejects.toMatchObject({ status: 404 });
+    expect(missing).toHaveBeenCalledTimes(3);
   });
 
   it('enforces the adapter response-size limit', async () => {
