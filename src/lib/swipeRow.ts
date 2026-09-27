@@ -58,6 +58,8 @@ export interface SwipeRowParts {
   card: HTMLElement;
   tray: HTMLElement;
   block: HTMLElement;
+  /** Fills under the card's round corners while the action touches the card. */
+  ears: HTMLElement;
   action: HTMLElement;
 }
 
@@ -73,14 +75,14 @@ export interface SwipeRow {
 let openRow: SwipeRow | null = null;
 
 /** Swipe left to reveal the archive action; a long swipe or a throw archives. No React render per frame. */
-export function bindSwipeRow({ row, card, tray, block, action }: SwipeRowParts, options: {
+export function bindSwipeRow({ row, card, tray, block, ears, action }: SwipeRowParts, options: {
   reflow: boolean;
   onOpenChange: (open: boolean) => void;
   onArchiveStart: () => void;
   /** Resolves true once the parcel is archived and its row is about to leave. */
   onArchive: () => Promise<boolean>;
 }): SwipeRow {
-  const parts = [card, tray, block, action];
+  const parts = [card, tray, block, ears, action];
   const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   let width = 360;
   let pose: Pose = { reveal: 0, spread: 0, land: 0 };
@@ -94,20 +96,23 @@ export function bindSwipeRow({ row, card, tray, block, action }: SwipeRowParts, 
   let drag: { id: number; x: number; y: number; grab: number | null; touch: boolean; samples: { time: number; reveal: number }[] } | null = null;
 
   const px = (value: number) => `${Math.round(value * 100) / 100}px`;
-  function transforms({ reveal, spread, land }: Pose) {
+  function styles({ reveal, spread, land }: Pose): Keyframe[] {
     const shown = Math.min(reveal, width);
     const shift = spread * Math.max(0, shown - ACTION);
+    const gap = (1 - spread) * Math.max(0, shown - ACTION);
     return [
-      `translateX(${px(-shown)})`,
+      { transform: `translateX(${px(-shown)})` },
       // The action rides on the card's edge until it is fully shown.
-      `translateX(${px(Math.max(0, ACTION - shown))})`,
-      `translateX(${px(-shift)})`,
-      `translateX(${px(land * (shift - (width - ACTION) / 2))})`,
+      { transform: `translateX(${px(Math.max(0, ACTION - shown))})` },
+      { transform: `translateX(${px(-shift)})` },
+      // Once a gap opens, the tray shows there instead.
+      { opacity: String(Math.round(Math.max(0, 1 - gap / 6) * 1000) / 1000) },
+      { transform: `translateX(${px(land * (shift - (width - ACTION) / 2))})` },
     ];
   }
   function render(next: Pose) {
     pose = next;
-    transforms(next).forEach((transform, index) => { parts[index].style.transform = transform; });
+    styles(next).forEach((style, index) => { Object.assign(parts[index].style, style); });
   }
   function mark(state?: 'dragging' | 'moving' | 'open' | 'archiving') {
     if (state) row.dataset.swipe = state;
@@ -144,7 +149,7 @@ export function bindSwipeRow({ row, card, tray, block, action }: SwipeRowParts, 
    * Spring to `target` from the current pose and speed; the compositor plays sampled keyframes.
    * Resolves true when the motion completes, or as soon as `ready` holds on its way.
    */
-  function animateTo(target: Pose, velocity: number, spring: Spring, ready?: (pose: Pose) => boolean): Promise<boolean> {
+  function animateTo(target: Pose, velocity: number, spring: Spring, ready?: (pose: Pose) => boolean, glued = false): Promise<boolean> {
     stopMotion();
     cancelAnimationFrame(frame);
     const now = performance.now();
@@ -154,7 +159,15 @@ export function bindSwipeRow({ row, card, tray, block, action }: SwipeRowParts, 
     const springs = still ? { reveal: REDUCED, spread: REDUCED, land: REDUCED } : { reveal: spring, spread: LEAP, land: LEAP };
     const speeds = { reveal: still ? 0 : velocity, spread: still ? 0 : leaping.velocity, land: 0 };
     const channel = (key: keyof Pose, seconds: number) => springAt(springs[key], start[key], target[key], speeds[key], seconds).value;
-    const at = (seconds: number): Pose => ({ reveal: channel('reveal', seconds), spread: channel('spread', seconds), land: channel('land', seconds) });
+    const gap = (1 - start.spread) * Math.max(0, Math.min(start.reveal, width) - ACTION);
+    const at = (seconds: number): Pose => {
+      const next = { reveal: channel('reveal', seconds), spread: channel('spread', seconds), land: channel('land', seconds) };
+      const beyond = Math.min(next.reveal, width) - ACTION;
+      if (!glued || start.spread >= 1 || beyond <= 0) return next;
+      // On the way out the action stays on the card's edge: its gap closes instead of widening.
+      const progress = Math.min(1, Math.max(0, (next.spread - start.spread) / (1 - start.spread)));
+      return { ...next, spread: Math.min(1, Math.max(0, 1 - gap * (1 - progress) / beyond)) };
+    };
     const seconds = Math.max(
       springSettleTime(springs.reveal, start.reveal, target.reveal, speeds.reveal),
       springSettleTime(springs.spread, start.spread, target.spread, speeds.spread, 0.002),
@@ -168,12 +181,13 @@ export function bindSwipeRow({ row, card, tray, block, action }: SwipeRowParts, 
     const steps = Math.max(2, Math.ceil(seconds * 120));
     const frames = parts.map(() => [] as Keyframe[]);
     for (let step = 0; step <= steps; step++) {
-      transforms(step === steps ? target : at(seconds * step / steps))
-        .forEach((transform, index) => frames[index].push({ transform }));
+      styles(step === steps ? target : at(seconds * step / steps))
+        .forEach((style, index) => frames[index].push(style));
     }
     // The inline pose is the end state; the animations only cover the way there.
     render(target);
-    const animations = parts.flatMap((part, index) => frames[index].every(({ transform }) => transform === frames[index][0].transform)
+    const unchanged = (frame: Keyframe, first: Keyframe) => frame.transform === first.transform && frame.opacity === first.opacity;
+    const animations = parts.flatMap((part, index) => frames[index].every((frame) => unchanged(frame, frames[index][0]))
       ? [] : [part.animate(frames[index], { duration: seconds * 1000, easing: 'linear' })]);
     if (!animations.length) return Promise.resolve(true);
     const current: Motion = { animations, seconds, at };
@@ -218,7 +232,7 @@ export function bindSwipeRow({ row, card, tray, block, action }: SwipeRowParts, 
     options.onArchiveStart();
     // The row starts leaving once the card is out of sight and the label has nearly centred.
     await animateTo({ reveal: width, spread: 1, land: 1 }, Math.max(0, velocity), EXIT,
-      ({ reveal, land }) => reveal >= width - 2 && land >= 0.92);
+      ({ reveal, land }) => reveal >= width - 2 && land >= 0.92, true);
     if (destroyed) return;
     const leaving = leaveList(row, options.reflow);
     await leaving.faded;

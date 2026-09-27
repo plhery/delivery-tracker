@@ -41,12 +41,12 @@ describe('bindSwipeRow', () => {
 
   function setup(onArchive = vi.fn(async () => true)) {
     document.body.innerHTML = `<div class="deliveries-page"><div class="parcel-grid"><div class="parcel-card-swipe" id="row">
-      <div id="tray"><div id="block"><button id="action"></button></div></div><button id="card"></button>
+      <div id="tray"><div id="block"><span id="ears"></span><button id="action"></button></div></div><button id="card"></button>
     </div></div></div>`;
     const element = (id: string) => document.getElementById(id)!;
     const onOpenChange = vi.fn();
     const onArchiveStart = vi.fn();
-    row = bindSwipeRow({ row: element('row'), card: element('card'), tray: element('tray'), block: element('block'), action: element('action') },
+    row = bindSwipeRow({ row: element('row'), card: element('card'), tray: element('tray'), block: element('block'), ears: element('ears'), action: element('action') },
       { reflow: true, onOpenChange, onArchiveStart, onArchive });
     return { card: element('card'), element: element('row'), onOpenChange, onArchiveStart, onArchive };
   }
@@ -72,6 +72,17 @@ describe('bindSwipeRow', () => {
     expect(card.style.transform).toBe('translateX(0px)');
     await vi.waitFor(() => expect(element.dataset.swipe).toBeUndefined());
     expect(row!.consumeClick()).toBe(false);
+  });
+
+  it('fills the card corners only while the action touches the card', () => {
+    const { card } = setup();
+    const ears = document.getElementById('ears')!;
+    pointer(card, 'pointerdown', 300);
+    pointer(card, 'pointermove', 240);
+    expect(ears.style.opacity).toBe('1');
+    pointer(card, 'pointermove', 150);
+    expect(ears.style.opacity).toBe('0');
+    pointer(card, 'pointerup', 150);
   });
 
   it('leaves vertical drags to the page', () => {

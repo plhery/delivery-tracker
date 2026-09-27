@@ -131,8 +131,8 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .parcel-card-swipe__tray { position: absolute; inset: 0; background: var(--orange-soft); }
 .parcel-card-swipe:not([data-swipe]) .parcel-card-swipe__tray { visibility: hidden; }
 .parcel-card-swipe__block { position: absolute; top: 0; bottom: 0; left: calc(100% - 88px); width: 100%; background: var(--orange-text); }
-/* Reach under the card's round corners, overlapping the block so no seam shows at fractional offsets. */
-.parcel-card-swipe__block::before { content: ""; position: absolute; top: 0; bottom: 0; right: calc(100% - 1px); width: 25px; background: inherit; }
+/* Fills under the card's round corners while the action touches it, overlapping the block so no seam shows. */
+.parcel-card-swipe__ears { position: absolute; top: 0; bottom: 0; right: calc(100% - 1px); width: 25px; background: inherit; }
 .parcel-card-swipe__archive { position: absolute; left: 0; top: 0; bottom: 0; width: 88px; padding: 0; background: none; color: var(--canvas); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 5px; font-size: 10px; font-weight: 600; }
 .parcel-card-swipe__archive svg { transition: scale .3s var(--spring); }
 .parcel-card-swipe[data-armed] .parcel-card-swipe__archive svg { scale: 1.2; }

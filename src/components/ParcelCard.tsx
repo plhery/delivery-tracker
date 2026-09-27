@@ -40,6 +40,7 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
   const button = useRef<HTMLButtonElement>(null);
   const tray = useRef<HTMLDivElement>(null);
   const block = useRef<HTMLDivElement>(null);
+  const ears = useRef<HTMLSpanElement>(null);
   const action = useRef<HTMLButtonElement>(null);
   const swipe = useRef<SwipeRow | null>(null);
   const [open, setOpen] = useState(false);
@@ -49,8 +50,8 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
   useEffect(() => { latest.current = { parcel, onArchive, t }; });
   const swipeable = Boolean(onArchive);
   useEffect(() => {
-    if (!swipeable || !row.current || !button.current || !tray.current || !block.current || !action.current) return;
-    const controller = bindSwipeRow({ row: row.current, card: button.current, tray: tray.current, block: block.current, action: action.current }, {
+    if (!swipeable || !row.current || !button.current || !tray.current || !block.current || !ears.current || !action.current) return;
+    const controller = bindSwipeRow({ row: row.current, card: button.current, tray: tray.current, block: block.current, ears: ears.current, action: action.current }, {
       // The next parcel takes the hero's place, so the page keeps its height.
       reflow: !hero,
       onOpenChange: setOpen,
@@ -79,6 +80,7 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
     <div className="parcel-card-swipe__clip">
       {onArchive && <div ref={tray} className="parcel-card-swipe__tray">
         <div ref={block} className="parcel-card-swipe__block">
+          <span ref={ears} className="parcel-card-swipe__ears" />
           <button ref={action} type="button" className="parcel-card-swipe__archive" aria-label={t('parcel.archiveAria', { name: parcelName })}
             aria-hidden={!open} tabIndex={open ? 0 : -1} disabled={archiving} onClick={() => swipe.current?.archive()}><Icon name="archive" /><span>{t('parcel.archive')}</span></button>
         </div>
