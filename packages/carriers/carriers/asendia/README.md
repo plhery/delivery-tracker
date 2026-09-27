@@ -77,6 +77,8 @@ providers in the same check (see [routing](../../../../docs/ROUTING.md)).
 ## Testing
 
 `npm run test:carriers:live -- packages/carriers/carriers/asendia`. `adapter.live.test.ts`
-checks a history and an unknown number; set `ASENDIA_LIVE_NUMBER` to replace the published
-default if A1 archives it. `probe.live.test.ts` checks that the portal still rejects an invalid
+checks a synthetic unknown number after validating the page's public key. Set
+`ASENDIA_LIVE_NUMBER` to an authorized current shipment to also check matching history;
+that test is skipped without it because A1 can archive old public examples. Offline fixtures
+cover history parsing. `probe.live.test.ts` checks that the portal still rejects an invalid
 Turnstile token. The probe reads a real token from `ASENDIA_TURNSTILE_TOKEN` for manual runs.
