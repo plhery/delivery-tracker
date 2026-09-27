@@ -183,6 +183,22 @@ describe('ParcelsApp result parsing', () => {
     ]);
   });
 
+  it('reads rendered scans in the clock of the carrier each one names, as the JSON reply does', () => {
+    const swiss = '06080000000002';
+    const carrierRow = (date: string, time: string, description: string, carrier: string) =>
+      `<li class="event"><div class="event-time"><strong>${date}</strong><span>${time}</span></div><div class="event-content"><strong>${description}</strong><div class="carrier"><div class="courier-icon"></div> ${carrier} </div></div></li>`;
+    const page = identity(swiss).replace('</table>', `</table><ul class="events">${
+      carrierRow('02 Jul 2026', '10:37', 'Delivered', 'DPD Group')}${carrierRow('14 Jan 2026', '09:15', 'Parcel handed', 'DPD Group')}</ul>`);
+    const rendered = parseParcelsAppHtml(page, swiss);
+    const json = parseParcelsAppResponse({ carriers: ['DPD Group'], states: [
+      { date: '2026-07-02T10:37:00+00:00', status: 'Delivered', carrier: 0 },
+      { date: '2026-01-14T09:15:00+00:00', status: 'Parcel handed', carrier: 0 },
+    ] }, swiss, identity(swiss));
+    expect(rendered.events?.map((scan) => scan.time)).toEqual(['2026-07-02T08:37:00.000Z', '2026-01-14T08:15:00.000Z']);
+    expect(rendered.events?.map((scan) => scan.time)).toEqual(json.events?.map((scan) => scan.time));
+    expect(rendered).toMatchObject({ reported_carriers: ['DPD Group'], discovered_carrier: 'dpd' });
+  });
+
   it('parses rendered history without parsing the surrounding marketing copy', () => {
     const html = rendered(row('18 Aug 2026', '03:04', 'Electronic information submitted by shipper'));
     expect(parseParcelsAppHtml(html + '<p>Delivered 2026-09-01</p>', number))

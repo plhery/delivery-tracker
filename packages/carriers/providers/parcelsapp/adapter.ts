@@ -125,6 +125,10 @@ export function parseParcelsAppHtml(html: string, trackingNumber: string, timezo
   const nodes = $('.tracking-info .parcel .events > .event');
   if (nodes.length > MAX_EVENTS) throw new SchemaError(SOURCE, 'ParcelsApp returned too many events');
   const events: CarrierEvent[] = [];
+  // Each scan names its carrier ("DPD Group") under its wording, as the JSON
+  // reply's `carriers` index does: the same zone rules then give the same
+  // instants, and so the same event ids, whichever tier answered.
+  const carriers: string[] = [];
   nodes.each((_, node) => {
     const row = $(node);
     if (row.find('input, select, form').length) return;
@@ -135,15 +139,18 @@ export function parseParcelsAppHtml(html: string, trackingNumber: string, timezo
     // Notice rows ("No information about your package...") render a date with
     // an empty time. Skip them instead of failing the whole history.
     if (!time) return;
-    // The English web app renders the UTC digits of its API (verified against
-    // the live JSON on 2026-09-08), which are the scan's local clock. The page
-    // names no carrier per scan: only the parcel's own carrier zone applies.
-    const stamp = DateTime.fromFormat(`${date} ${time}`, 'dd LLL yyyy HH:mm', { locale: 'en', zone: timezone ?? 'UTC' });
-    if (!stamp.isValid) throw new SchemaError(SOURCE, 'ParcelsApp returned an invalid event date');
-    const parsed = event(stamp.toISO(), description);
+    // The English web app renders the UTC digits of its API, which are the
+    // scan's local clock.
+    const labeled = DateTime.fromFormat(`${date} ${time}`, 'dd LLL yyyy HH:mm', { locale: 'en', zone: 'UTC' });
+    if (!labeled.isValid) throw new SchemaError(SOURCE, 'ParcelsApp returned an invalid event date');
+    const name = row.find('.event-content .carrier').first().text().replace(/\s+/g, ' ').trim();
+    if (name && !carriers.includes(name)) carriers.push(name);
+    const state = { date: labeled.toISO(), ...(name ? { carrier: carriers.indexOf(name) } : {}) };
+    const zone = scanZone({ carriers }, state, timezone);
+    const parsed = event((zone ? mislabeledLocalTime(state.date, zone)?.iso : undefined) ?? state.date, description);
     if (parsed) events.push(parsed);
   });
-  return result(events, SOURCE);
+  return { ...result(events, SOURCE), ...universalCarrierHints(carriers.slice(0, 20), numberOf(trackingNumber)) };
 }
 
 export interface ParcelsAppOptions {

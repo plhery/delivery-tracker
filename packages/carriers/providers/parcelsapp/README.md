@@ -90,10 +90,10 @@ step exists for future protocol changes.
   `timezone`, on another clock turns step 4 off for that brand and moves its stored scans,
   and so their event ids: plan a re-key of stored ParcelsApp rows with such a change.
   `hints.test.ts` pins the current zone sets so the change cannot pass unnoticed.
-- The rendered page prints the same UTC digits (`dd LLL yyyy HH:mm`) and names no carrier
-  per scan, so only the parcel's zone applies. The server's timezone is never used. A
-  scan that the JSON reply reads in another zone (steps 1 to 4) gets another instant, and
-  so another event id, when a lookup falls back to the page.
+- The rendered page prints the same UTC digits (`dd LLL yyyy HH:mm`) and names each
+  scan's carrier under its wording (`.event-content .carrier`), so it goes through the
+  same steps and gives the same instants, and event ids, as the JSON reply. It shows no
+  scan location, so step 2 never applies there. The server's timezone is never used.
 - Cross-border replies stay uncertain: scans can be filed under the wrong operator (an
   India-to-France parcel listed La Poste scans under India Post).
 - Notices are skipped, not events: `require_fields` rows, postcode, sign-in and
@@ -102,7 +102,7 @@ step exists for future protocol changes.
   when exactly one name maps to a catalog carrier. A bare brand ("DPD Group") maps only
   when the number leaves one of its catalog networks (a DPD depot range picks DPD
   Switzerland or France); routing then confirms it with that carrier's adapter. The
-  rendered page names no carriers.
+  rendered page's per-scan carrier names give the same hints.
 - Sender, destination and estimate fields are not kept.
 
 ## Limitations
