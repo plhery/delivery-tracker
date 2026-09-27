@@ -80,6 +80,10 @@ describe('bindSwipeRow', () => {
     pointer(card, 'pointerdown', 300);
     pointer(card, 'pointermove', 240);
     expect(ears.style.opacity).toBe('1');
+    // A sliver of gap stays covered, so no hairline of tray shows beside the card.
+    pointer(card, 'pointermove', 201);
+    expect(card.style.transform).toBe('translateX(-90.4px)');
+    expect(ears.style.opacity).toBe('1');
     pointer(card, 'pointermove', 150);
     expect(ears.style.opacity).toBe('0');
     pointer(card, 'pointerup', 150);

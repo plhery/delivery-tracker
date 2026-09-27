@@ -1333,11 +1333,12 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
             Brand.warning
                 .frame(width: width)
                 .offset(x: blockStart)
-            // Only while the action touches the card; otherwise the tray shows in the gap.
+            // Only while the action touches the card; otherwise the tray shows in the gap. It stays
+            // solid across the last few points of a leap, which would leave a hairline of tray.
             Brand.warning
                 .frame(width: reach)
                 .offset(x: blockStart - reach)
-                .opacity(max(0, 1 - gap / 6))
+                .opacity(min(1, max(0, 1 - (gap - 3) / 6)))
             Button {
                 trigger(action, provideFeedback: true)
             } label: {

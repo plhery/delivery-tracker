@@ -105,8 +105,9 @@ export function bindSwipeRow({ row, card, tray, block, ears, action }: SwipeRowP
       // The action rides on the card's edge until it is fully shown.
       { transform: `translateX(${px(Math.max(0, ACTION - shown))})` },
       { transform: `translateX(${px(-shift)})` },
-      // Once a gap opens, the tray shows there instead.
-      { opacity: String(Math.round(Math.max(0, 1 - gap / 6) * 1000) / 1000) },
+      // Once a real gap opens, the tray shows there instead. The fill stays solid across the
+      // last few points of a leap, which otherwise leave a hairline of tray beside the card.
+      { opacity: String(Math.round(Math.min(1, Math.max(0, 1 - (gap - 3) / 6)) * 1000) / 1000) },
       { transform: `translateX(${px(land * (shift - (width - ACTION) / 2))})` },
     ];
   }
