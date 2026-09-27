@@ -1,8 +1,9 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { RefreshOutcome } from '../lib/userMessages';
 import { PullToRefresh } from './PullToRefresh';
 
-function setup(onRefresh = vi.fn().mockResolvedValue(true)) {
+function setup(onRefresh = vi.fn().mockResolvedValue('updated')) {
   const click = vi.fn();
   const view = render(<PullToRefresh enabled hidden={false} onRefresh={onRefresh}>
     <button onClick={click}>Parcel</button><input aria-label="Search" />
@@ -84,13 +85,10 @@ describe('PullToRefresh', () => {
     expect(onRefresh).not.toHaveBeenCalled();
   });
 
-  it('labels the wait with reported progress and announces the result', async () => {
+  it('labels the wait and announces whether anything changed', async () => {
     vi.useFakeTimers();
-    let finish!: (updated: boolean) => void;
-    const onRefresh = vi.fn((report: (status: string) => void) => {
-      report('Checking with the carrier…');
-      return new Promise<boolean>((resolve) => { finish = resolve; });
-    });
+    let finish!: (outcome: RefreshOutcome) => void;
+    const onRefresh = vi.fn(() => new Promise<RefreshOutcome>((resolve) => { finish = resolve; }));
     const { parcel, surface } = setup(onRefresh);
     const label = surface.querySelector('.pull-refresh__label')!;
     const announcement = surface.querySelector('[aria-live]')!;
@@ -98,20 +96,33 @@ describe('PullToRefresh', () => {
     expect(announcement).toHaveTextContent('Release to refresh');
     release(parcel);
     await act(() => vi.advanceTimersByTimeAsync(20));
-    expect(label).toHaveTextContent('Checking with the carrier…');
+    expect(label).toHaveTextContent('Checking for updates…');
     expect(announcement).toHaveTextContent('');
-    await act(async () => { finish(true); });
+    await act(async () => { finish('unchanged'); });
     await act(() => vi.advanceTimersByTimeAsync(880));
-    expect(label).toHaveTextContent('Tracking updated');
-    expect(announcement).toHaveTextContent('Tracking updated');
+    expect(surface).toHaveAttribute('data-result', 'success');
+    expect(label).toHaveTextContent('No new updates');
+    expect(announcement).toHaveTextContent('No new updates');
     await act(() => vi.advanceTimersByTimeAsync(1_200));
     expect(label).toHaveTextContent('Pull to refresh');
+  });
+
+  it('keeps turning without a result while the checks outlive the wait', async () => {
+    vi.useFakeTimers();
+    const { parcel, surface } = setup(vi.fn().mockResolvedValue('pending'));
+    start(parcel); move(parcel, 120, 300); release(parcel);
+    await act(() => vi.advanceTimersByTimeAsync(900));
+    expect(surface).toHaveAttribute('data-phase', 'refreshing');
+    expect(surface).not.toHaveAttribute('data-result');
+    expect(surface.querySelector('.pull-refresh__label')).toHaveTextContent('Still checking. Updates will appear here.');
+    await act(() => vi.advanceTimersByTimeAsync(1_600));
+    expect(surface).toHaveAttribute('data-phase', 'idle');
   });
 
   it('keeps a slow request visible, reports failure without a success check, and permits retry', async () => {
     vi.useFakeTimers();
     let fail!: (error: Error) => void;
-    const onRefresh = vi.fn(() => new Promise<boolean>((_, reject) => { fail = reject; }));
+    const onRefresh = vi.fn(() => new Promise<RefreshOutcome>((_, reject) => { fail = reject; }));
     const { parcel, surface, unmount } = setup(onRefresh);
     start(parcel); move(parcel, 120, 300); release(parcel);
     await act(() => vi.advanceTimersByTimeAsync(3_000));

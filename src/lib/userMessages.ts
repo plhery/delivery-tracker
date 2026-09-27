@@ -1,4 +1,24 @@
 import type { MessageKey, Translate } from '../i18n';
+import { RefreshTimeoutError } from '../types';
+
+/** How a tracking refresh ended. The pull, the refresh buttons and a parcel's check share its messages. */
+export type RefreshOutcome = 'updated' | 'unchanged' | 'pending' | 'failed';
+
+export const REFRESH_MESSAGES = {
+  updated: 'app.refreshComplete',
+  unchanged: 'app.refreshUnchanged',
+  pending: 'app.refreshTimeout',
+  failed: 'detail.checkFailed',
+} as const satisfies Record<RefreshOutcome, MessageKey>;
+
+/** Settles a refresh that resolves true when it brought new tracking; the caller presents a failure's reason. */
+export async function refreshOutcome(refresh: Promise<boolean>): Promise<RefreshOutcome> {
+  try {
+    return await refresh ? 'updated' : 'unchanged';
+  } catch (error) {
+    return error instanceof RefreshTimeoutError ? 'pending' : 'failed';
+  }
+}
 
 /** Keep service diagnostics out of UI copy; known validation failures still get a useful next step. */
 export function userErrorMessage(error: unknown, t: Translate, fallback: MessageKey = 'error.generic'): string {

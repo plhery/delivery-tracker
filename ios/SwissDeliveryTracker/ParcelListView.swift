@@ -406,25 +406,29 @@ private struct DeliveryListView: View {
         }
     }
 
-    private enum CheckOutcome { case checked, failed(String), interrupted }
-
     /// Holds the pull open until every parcel has been checked, then shows the
     /// result on the seal before letting go, as the web app does.
     private func refreshFromPull() async {
         pull.begin(label: localizer.text("app.refreshing"))
         let started = ContinuousClock.now
-        let outcome = await checkAllParcels()
+        let result = await checkAllParcels()
         // A check that answers at once still shows the arrow turning.
         try? await Task.sleep(until: started + .milliseconds(900), clock: .continuous)
-        switch outcome {
-        case .checked:
-            finishPull(succeeded: true, label: localizer.text("app.refreshComplete"))
-            try? await Task.sleep(for: .milliseconds(700))
-        case .failed(let message):
+        switch result {
+        case .failed(let message)?:
             finishPull(succeeded: false, label: localizer.text("detail.checkFailed"))
             try? await Task.sleep(for: .milliseconds(1100))
             toast = ListToast(text: message, warning: true)
-        case .interrupted:
+        case .stillChecking?:
+            // The checks keep running, so the arrow keeps turning under the message.
+            let label = localizer.text("app.refreshTimeout")
+            pull.update(label: label)
+            AccessibilityNotification.Announcement(label).post()
+            try? await Task.sleep(for: .milliseconds(1100))
+        case let result?:
+            finishPull(succeeded: true, label: localizer.text(result.messageKey))
+            try? await Task.sleep(for: .milliseconds(700))
+        case nil:
             break
         }
         pull.settle()
@@ -432,12 +436,12 @@ private struct DeliveryListView: View {
 
     private func refreshForVoiceOver() async {
         switch await checkAllParcels() {
-        case .checked:
-            AccessibilityNotification.Announcement(localizer.text("app.refreshComplete")).post()
-        case .failed(let message):
+        case .failed(let message)?:
             toast = ListToast(text: message, warning: true)
             AccessibilityNotification.Announcement(message).post()
-        case .interrupted:
+        case let result?:
+            AccessibilityNotification.Announcement(localizer.text(result.messageKey)).post()
+        case nil:
             break
         }
     }
@@ -447,19 +451,19 @@ private struct DeliveryListView: View {
         AccessibilityNotification.Announcement(label).post()
     }
 
-    private func checkAllParcels() async -> CheckOutcome {
+    /// Nil when the check was interrupted, such as by signing out.
+    private func checkAllParcels() async -> ParcelStore.RefreshResult? {
         let previousOutcome = store.refreshOutcome?.id
         do {
-            if try await store.refreshAll() == .completed { return .checked }
-            pull.update(label: localizer.text("sync.running"))
+            if case .completed(let result) = try await store.refreshAll() { return result }
             // The store finishes a queued check in the background; wait for its outcome.
             for await refreshing in store.$refreshing.values where !refreshing { break }
-            guard let outcome = store.refreshOutcome, outcome.id != previousOutcome else { return .interrupted }
-            return outcome.failure.map(CheckOutcome.failed) ?? .checked
+            guard let outcome = store.refreshOutcome, outcome.id != previousOutcome else { return nil }
+            return outcome.result
         } catch is CancellationError {
-            return .interrupted
+            return nil
         } catch let error as URLError where error.code == .cancelled {
-            return .interrupted
+            return nil
         } catch {
             return .failed(localizer.errorMessage(error))
         }

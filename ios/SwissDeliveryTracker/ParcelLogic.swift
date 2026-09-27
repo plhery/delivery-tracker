@@ -96,6 +96,19 @@ extension Parcel {
         trackingEvents.sorted(by: Self.eventPrecedes)
     }
 
+    /// Whether refreshed parcels bring new tracking: a changed timeline, status
+    /// line or delivery date. A parcel that replaced another is compared with it.
+    static func trackingChanged(from before: [Parcel], to after: [Parcel]) -> Bool {
+        let earlier = Dictionary(before.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return after.contains { parcel in
+            guard let previous = earlier[parcel.id] ?? parcel.carrierData?.originalPackageID.flatMap({ earlier[$0] })
+            else { return true }
+            return parcel.trackingEvents != previous.trackingEvents
+                || parcel.lastStatusText != previous.lastStatusText
+                || parcel.expectedDelivery != previous.expectedDelivery
+        }
+    }
+
     fileprivate static func eventPrecedes(_ lhs: TrackingEvent, _ rhs: TrackingEvent) -> Bool {
         let left = DateParser.date(lhs.occurredAt)?.timeIntervalSince1970 ?? 0
         let right = DateParser.date(rhs.occurredAt)?.timeIntervalSince1970 ?? 0

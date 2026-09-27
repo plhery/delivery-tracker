@@ -14,7 +14,7 @@ final class PullToRefreshTests: XCTestCase {
         // sometimes before the refresh action has run.
         model.track(PullGeometry(overscroll: 118.7, inset: 224, height: 874))
         XCTAssertEqual(model.distance, 178.7, accuracy: 0.01)
-        model.begin(label: "Requesting updates…")
+        model.begin(label: "Checking for updates…")
         model.track(PullGeometry(overscroll: 110, inset: 224, height: 874))
         XCTAssertEqual(model.distance, 170, accuracy: 0.01)
         XCTAssertEqual(model.holdDistance, 60)
@@ -27,18 +27,18 @@ final class PullToRefreshTests: XCTestCase {
 
     func testResultAppearsOnlyAtTheEndAndClearsOnceSettled() async throws {
         let model = PullToRefreshModel()
-        model.begin(label: "Requesting updates…")
+        model.begin(label: "Checking for updates…")
         XCTAssertEqual(model.phase, .refreshing)
         XCTAssertEqual(model.starts, 1)
         XCTAssertNil(model.result)
 
-        model.update(label: "Checking with the carrier…")
-        XCTAssertEqual(model.label, "Checking with the carrier…")
+        model.update(label: "Still checking. Updates will appear here.")
+        XCTAssertEqual(model.label, "Still checking. Updates will appear here.")
         XCTAssertNil(model.result)
 
         model.finish(succeeded: true, label: "Tracking updated")
         XCTAssertEqual(model.result, .succeeded)
-        model.update(label: "Checking with the carrier…")
+        model.update(label: "Still checking. Updates will appear here.")
         XCTAssertEqual(model.label, "Tracking updated")
 
         model.settle()
@@ -55,7 +55,7 @@ final class PullToRefreshTests: XCTestCase {
         let model = PullToRefreshModel()
         model.track(PullGeometry(overscroll: 0, inset: 164, height: 874))
         model.track(PullGeometry(overscroll: 180, inset: 164, height: 874))
-        model.begin(label: "Requesting updates…")
+        model.begin(label: "Checking for updates…")
         model.finish(succeeded: true, label: "Tracking updated")
         model.settle()
         // The finger still holds the content down when the refresh ends.
@@ -74,15 +74,15 @@ final class PullToRefreshTests: XCTestCase {
 
     func testRefreshStartedWhileSettlingIsNotResetByTheEarlierOne() async throws {
         let model = PullToRefreshModel()
-        model.begin(label: "Requesting updates…")
-        model.finish(succeeded: false, label: "Couldn’t request an update. Try again.")
+        model.begin(label: "Checking for updates…")
+        model.finish(succeeded: false, label: "Couldn’t check. Try again.")
         XCTAssertEqual(model.result, .failed)
         model.settle()
-        model.begin(label: "Requesting updates…")
+        model.begin(label: "Checking for updates…")
         XCTAssertNil(model.result)
         try await Task.sleep(for: .milliseconds(700))
         XCTAssertEqual(model.phase, .refreshing)
-        XCTAssertEqual(model.label, "Requesting updates…")
+        XCTAssertEqual(model.label, "Checking for updates…")
         XCTAssertEqual(model.starts, 2)
     }
 }

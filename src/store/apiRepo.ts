@@ -16,12 +16,12 @@ import type {
 } from '../generated/apiContract';
 import {
   ParcelAlreadyExistsError,
+  RefreshTimeoutError,
   type NewParcelInput,
   type ParcelCarrierInput,
   type ParcelRepo,
   type ParcelWithEvents,
   type TrackingEvent,
-  type SyncProgress,
 } from '../types';
 
 export const API_CACHE_KEY = 'parcel-post.api-cache.v1';
@@ -222,16 +222,12 @@ export function createApiRepo(
     signal.addEventListener('abort', onAbort, { once: true });
   });
 
-  async function waitForJobs(
-    jobIds: string[],
-    onProgress?: (progress: SyncProgress) => void,
-  ): Promise<void> {
+  async function waitForJobs(jobIds: string[]): Promise<void> {
     if (jobIds.length === 0) return;
     const pending = new Set(jobIds);
     const signal = lifecycle.signal;
     const deadline = Date.now() + 120_000;
     let interval = Math.max(1_000, jobPollIntervalMs);
-    onProgress?.('queued');
     while (Date.now() < deadline) {
       signal.throwIfAborted();
       let retryAfter = 0;
@@ -248,7 +244,6 @@ export function createApiRepo(
         if (!Array.isArray(jobs) || jobs.length !== ids.length || ids.some((id) => !jobs.some((job) => job.id === id))) {
           throw new Error('The delivery service returned incomplete job statuses');
         }
-        if (jobs.some((job) => job.status === 'running')) onProgress?.('running');
         const failed = jobs.find((job) => job.status === 'failed' || (job.result?.errors ?? 0) > 0);
         if (failed) {
           notifySubscriber?.();
@@ -269,7 +264,7 @@ export function createApiRepo(
       await wait(Math.min(Math.max(interval, retryAfter), Math.max(0, deadline - Date.now())), signal);
       interval = Math.min(interval * 1.5, 10_000);
     }
-    throw new Error('The tracking check is taking longer than expected. Updates will appear automatically.');
+    throw new RefreshTimeoutError();
   }
 
   function monitorJobs(jobIds: string[]) {
@@ -433,19 +428,19 @@ export function createApiRepo(
       }
     },
 
-    async refresh(onProgress): Promise<ParcelWithEvents[]> {
+    async refresh(): Promise<ParcelWithEvents[]> {
       const queued = await request<ApiQueueResponse>('/api/sync', auth, { method: 'POST' });
-      await waitForJobs(queued.jobIds, onProgress);
+      await waitForJobs(queued.jobIds);
       return list();
     },
 
-    async refreshParcel(id: string, onProgress): Promise<ParcelWithEvents> {
+    async refreshParcel(id: string): Promise<ParcelWithEvents> {
       const queued = await request<ApiQueueResponse>(
         `/api/packages/${encodeURIComponent(id)}/sync`,
         auth,
         { method: 'POST' },
       );
-      await waitForJobs(queued.jobIds, onProgress);
+      await waitForJobs(queued.jobIds);
       const parcels = await list();
       const parcel = parcels.find((candidate) => candidate.id === id || candidate.originalParcelId === id);
       if (!parcel) throw new Error('Package not found after queueing its tracking check');

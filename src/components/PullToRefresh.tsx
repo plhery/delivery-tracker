@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { useI18n } from '../i18n';
+import { REFRESH_MESSAGES, type RefreshOutcome } from '../lib/userMessages';
 import { Icon } from './Icon';
 import './Refresh.css';
 
@@ -13,8 +14,7 @@ const TURN_MS = 850;
 // Enough turns to outlast the longest tracking wait without restarting the spin.
 const TURNS = 160;
 type Phase = 'idle' | 'pulling' | 'refreshing' | 'success' | 'error' | 'settling';
-type Result = 'success' | 'error' | null;
-type View = { hidden: boolean; phase: Phase; armed: boolean; result: Result; status: string | null };
+type View = { hidden: boolean; phase: Phase; armed: boolean; outcome: RefreshOutcome | null };
 
 /** UIScrollView's rubber band: the content keeps following the finger with growing resistance. */
 function rubberBand(offset: number, dimension: number) {
@@ -25,8 +25,8 @@ export function PullToRefresh({ children, enabled, hidden, onRefresh }: {
   children: ReactNode;
   enabled: boolean;
   hidden: boolean;
-  /** Resolves true once tracking is updated; `report` replaces the label while it waits. */
-  onRefresh: (report: (status: string) => void) => Promise<boolean | undefined>;
+  /** Resolves once every parcel has been checked, or the wait has ended. */
+  onRefresh: () => Promise<RefreshOutcome>;
 }) {
   const { t } = useI18n();
   const root = useRef<HTMLDivElement>(null);
@@ -34,7 +34,7 @@ export function PullToRefresh({ children, enabled, hidden, onRefresh }: {
   const arrow = useRef<HTMLSpanElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const latest = useRef({ enabled, onRefresh });
-  const rest: View = { hidden, phase: 'idle', armed: false, result: null, status: null };
+  const rest: View = { hidden, phase: 'idle', armed: false, outcome: null };
   const [view, setView] = useState(rest);
   useEffect(() => { latest.current = { enabled, onRefresh }; });
 
@@ -68,9 +68,6 @@ export function PullToRefresh({ children, enabled, hidden, onRefresh }: {
       marker.style.setProperty('--pull-distance', `${distance}px`);
       marker.style.setProperty('--pull-progress', String(progress));
     };
-    const report = (status: string) => {
-      if (alive) setView((previous) => previous.phase === 'refreshing' ? { ...previous, status } : previous);
-    };
     const settle = () => {
       locked = true;
       armed = false;
@@ -81,7 +78,7 @@ export function PullToRefresh({ children, enabled, hidden, onRefresh }: {
         spin?.cancel();
         spin = undefined;
         place(0);
-        show({ phase: 'idle', result: null, status: null });
+        show({ phase: 'idle', outcome: null });
         locked = false;
       }, SETTLE_MS);
     };
@@ -150,13 +147,14 @@ export function PullToRefresh({ children, enabled, hidden, onRefresh }: {
       }
       const began = Date.now();
       const run = async () => {
-        let success = false;
-        try { success = (await latest.current.onRefresh(report)) === true; } catch { /* The caller presents the error. */ }
+        let outcome: RefreshOutcome = 'failed';
+        try { outcome = await latest.current.onRefresh(); } catch { /* The caller presents the error. */ }
         if (!alive) return;
         later(() => {
-          const result = success ? 'success' : 'error';
-          show({ phase: result, result });
-          later(settle, success ? 700 : 1100);
+          // Checks that outlive the wait keep the arrow turning under their message.
+          if (outcome === 'pending') show({ outcome });
+          else show({ outcome, phase: outcome === 'failed' ? 'error' : 'success' });
+          later(settle, outcome === 'failed' || outcome === 'pending' ? 1100 : 700);
         }, Math.max(0, MIN_SPIN_MS - (Date.now() - began)));
       };
       // Request once the release motion is on screen: a refresh that resolves at
@@ -189,11 +187,11 @@ export function PullToRefresh({ children, enabled, hidden, onRefresh }: {
 
   // Reset after hiding, so switching tabs cannot preserve an unfinished pull.
   if (view.hidden !== hidden) setView(rest);
-  const { phase, armed, result, status } = view;
-  const label = result === 'success' ? t('app.refreshComplete')
-    : result === 'error' ? t('detail.checkFailed')
-      : phase === 'refreshing' ? status ?? t('app.refreshing')
-        : armed ? t('app.releaseToRefresh') : t('app.pullToRefresh');
+  const { phase, armed, outcome } = view;
+  const result = outcome === 'failed' ? 'error' : outcome === 'updated' || outcome === 'unchanged' ? 'success' : null;
+  const label = outcome ? t(REFRESH_MESSAGES[outcome])
+    : phase === 'refreshing' ? t('app.refreshing')
+      : armed ? t('app.releaseToRefresh') : t('app.pullToRefresh');
 
   return <div ref={root} className="pull-refresh" hidden={hidden} data-phase={phase} data-armed={armed || undefined} data-result={result ?? undefined}>
     <div ref={indicator} className="pull-refresh__indicator" aria-hidden="true">
@@ -205,7 +203,7 @@ export function PullToRefresh({ children, enabled, hidden, onRefresh }: {
       </span>
       <span className="pull-refresh__label">{label}</span>
     </div>
-    <span className="sr-only" aria-live="polite" aria-atomic="true">{armed || result ? label : ''}</span>
+    <span className="sr-only" aria-live="polite" aria-atomic="true">{armed || outcome ? label : ''}</span>
     <div ref={content} className="pull-refresh__content">{children}</div>
   </div>;
 }

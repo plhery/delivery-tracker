@@ -7,12 +7,27 @@ import WidgetKit
 
 @MainActor
 final class ParcelStore: ObservableObject {
-    enum RefreshStart { case queued, completed, alreadyRunning }
+    enum RefreshStart: Equatable { case queued, completed(RefreshResult), alreadyRunning }
 
-    /// How a background check of every parcel ended; `failure` is shown as is.
+    /// How a check ended; a failure's message is shown as is.
+    enum RefreshResult: Equatable {
+        case updated, unchanged, stillChecking, failed(String)
+
+        /// Shared with the web app's pull, refresh button and parcel check.
+        var messageKey: String {
+            switch self {
+            case .updated: "app.refreshComplete"
+            case .unchanged: "app.refreshUnchanged"
+            case .stillChecking: "app.refreshTimeout"
+            case .failed: "detail.checkFailed"
+            }
+        }
+    }
+
+    /// How a background check of every parcel ended.
     struct RefreshOutcome: Equatable {
         let id = UUID()
-        let failure: String?
+        let result: RefreshResult
     }
 
     @Published private(set) var parcels: [Parcel] = [] {
@@ -424,10 +439,12 @@ final class ParcelStore: ObservableObject {
         let generation = session.generation
         guard !refreshing else { return .alreadyRunning }
         refreshing = true
+        // Compared with the list as the check began: a push may reload it first.
+        let before = parcels
         if isDemo {
             parcels = demo.refreshAll()
             refreshing = false
-            return .completed
+            return .completed(Parcel.trackingChanged(from: before, to: parcels) ? .updated : .unchanged)
         }
         let jobIDs: [UUID]
         do {
@@ -438,25 +455,29 @@ final class ParcelStore: ObservableObject {
             throw error
         }
         refreshTask = Task { [weak self] in
-            await self?.finishRefresh(jobIDs, generation: generation)
+            await self?.finishRefresh(jobIDs, since: before, generation: generation)
         }
         return .queued
     }
 
-    private func finishRefresh(_ jobIDs: [UUID], generation: UUID) async {
-        var failure: String?
+    private func finishRefresh(_ jobIDs: [UUID], since before: [Parcel], generation: UUID) async {
+        let result: RefreshResult
         do {
             try await api.waitForJobs(jobIDs)
             try session.checkGeneration(generation)
             await load(showSpinner: false)
+            result = Parcel.trackingChanged(from: before, to: parcels) ? .updated : .unchanged
+        } catch DeliveryAPIError.refreshTimeout {
+            // The checks keep running; their results arrive with a later load.
+            result = .stillChecking
         } catch {
             guard !(error is CancellationError) else { return }
-            failure = localizer.errorMessage(error)
+            result = .failed(localizer.errorMessage(error))
         }
         guard (try? session.checkGeneration(generation)) != nil else { return }
         refreshing = false
         refreshTask = nil
-        refreshOutcome = RefreshOutcome(failure: failure)
+        refreshOutcome = RefreshOutcome(result: result)
     }
 
     func refresh(_ parcel: Parcel) async throws {

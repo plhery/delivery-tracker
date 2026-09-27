@@ -91,7 +91,13 @@ export class ParcelAlreadyExistsError extends Error {
   }
 }
 
-export type SyncProgress = 'queued' | 'running';
+/** The tracking checks outlived the wait; they keep running and their results arrive with the next poll. */
+export class RefreshTimeoutError extends Error {
+  constructor() {
+    super('The tracking check is taking longer than expected. Updates will appear automatically.');
+    this.name = 'RefreshTimeoutError';
+  }
+}
 
 /** Storage backends: the shared server API in production, local demo in development. */
 export interface ParcelRepo {
@@ -109,9 +115,9 @@ export interface ParcelRepo {
   /** Permanently delete an owned parcel and all of its tracking history. */
   deletePermanently?(id: string): Promise<void>;
   /** Re-sync tracking; in demo mode this advances the simulation. */
-  refresh(onProgress?: (progress: SyncProgress) => void): Promise<ParcelWithEvents[]>;
+  refresh(): Promise<ParcelWithEvents[]>;
   /** Re-sync one parcel without waiting for every active carrier. */
-  refreshParcel?(id: string, onProgress?: (progress: SyncProgress) => void): Promise<ParcelWithEvents>;
+  refreshParcel?(id: string): Promise<ParcelWithEvents>;
   /** Optional shared-data polling. Returns unsubscribe. */
   subscribe?(onChange: () => void | Promise<void>): () => void;
   /** Last successfully loaded API snapshot for read-only offline fallback. */

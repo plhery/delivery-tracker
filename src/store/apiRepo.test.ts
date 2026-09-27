@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import contractFixture from '../../contracts/fixtures/delivery-api.json';
 import { ApiAuthenticationError } from '../lib/apiClient';
 import { RateLimiter } from '../server/rateLimit';
-import { ParcelAlreadyExistsError } from '../types';
+import { ParcelAlreadyExistsError, RefreshTimeoutError } from '../types';
 import { API_CACHE_KEY, browserStorage, clearApiCache, createApiRepo, SERVER_UPDATE_MESSAGE } from './apiRepo';
 
 const packageRow = contractFixture.packageList.packages[0];
@@ -539,13 +539,21 @@ describe('createApiRepo', () => {
       return response({ packages: [packageRow] });
     });
     vi.stubGlobal('fetch', fetch);
-    const progress = vi.fn();
-    const refresh = createApiRepo().refresh(progress);
+    const refresh = createApiRepo().refresh();
     await vi.advanceTimersByTimeAsync(90_000);
     await expect(refresh).resolves.toHaveLength(1);
     expect(reads).toBeLessThan(20);
-    expect(progress).toHaveBeenNthCalledWith(1, 'queued');
-    expect(progress).toHaveBeenCalledWith('running');
+  });
+
+  it('ends the wait with a timeout error while the jobs keep running', async () => {
+    const fetch = vi.fn(async (path: string) => path === '/api/sync'
+      ? response({ jobIds: [contractFixture.job.id] })
+      : response({ jobs: [{ ...contractFixture.job, status: 'running' }] }));
+    vi.stubGlobal('fetch', fetch);
+    const refresh = createApiRepo().refresh();
+    const settled = expect(refresh).rejects.toBeInstanceOf(RefreshTimeoutError);
+    await vi.advanceTimersByTimeAsync(120_000);
+    await settled;
   });
 
   it.each(['12', new Date('2026-09-06T12:00:12Z').toUTCString()])(

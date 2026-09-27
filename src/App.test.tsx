@@ -5,7 +5,7 @@ import App from './App';
 import { ApiAuthenticationError } from './lib/apiClient';
 import { createDemoRepo } from './store/demoRepo';
 import { ParcelsProvider } from './store/ParcelsContext';
-import type { ParcelRepo, ParcelWithEvents, SyncProgress } from './types';
+import { RefreshTimeoutError, type ParcelRepo, type ParcelWithEvents } from './types';
 
 function renderApp(repo: ParcelRepo = createDemoRepo(window.localStorage)) {
   return render(
@@ -115,30 +115,41 @@ describe('App', () => {
     expect(within(detail).queryByRole('note')).not.toBeInTheDocument();
   });
 
-  it('shows queued, running and completed refresh feedback at the correct time', async () => {
+  it('says whether a refresh brought new tracking once it has finished', async () => {
     const repo = createDemoRepo(window.localStorage);
     const parcels = await repo.list();
-    let progress: ((phase: SyncProgress) => void) | undefined;
     let finish!: (parcels: ParcelWithEvents[]) => void;
-    repo.refresh = vi.fn<ParcelRepo['refresh']>((onProgress) => {
-      progress = onProgress;
-      progress?.('queued');
-      return new Promise((resolve) => { finish = resolve; });
-    });
+    repo.refresh = vi.fn<ParcelRepo['refresh']>(() => new Promise((resolve) => { finish = resolve; }));
+    const user = userEvent.setup();
+    renderApp(repo);
+    await screen.findByText('Coffee beans ☕');
+    const button = screen.getByRole('button', { name: 'Refresh tracking' });
+    const toast = () => screen.getByRole('status');
+    await user.click(button);
+    // A success check appears only once the refresh has finished.
+    expect(toast()).toHaveTextContent('Checking for updates…');
+    expect(toast().querySelector('.toast-mark')).toHaveClass('toast-mark--pending');
+    await act(async () => finish(parcels));
+    expect(toast()).toHaveTextContent('No new updates');
+    expect(toast().querySelector('.toast-mark')).toHaveClass('toast-mark--success');
+
+    await waitFor(() => expect(button).toBeEnabled());
+    await user.click(button);
+    const [first, ...rest] = parcels;
+    await act(async () => finish([{ ...first, lastStatusText: 'Sorted at the depot' }, ...rest]));
+    expect(toast()).toHaveTextContent('Tracking updated');
+  });
+
+  it('reports checks that outlive the wait as still running, not as an error', async () => {
+    const repo = createDemoRepo(window.localStorage);
+    repo.refresh = vi.fn<ParcelRepo['refresh']>().mockRejectedValue(new RefreshTimeoutError());
     const user = userEvent.setup();
     renderApp(repo);
     await screen.findByText('Coffee beans ☕');
     await user.click(screen.getByRole('button', { name: 'Refresh tracking' }));
-    const toast = () => screen.getByRole('status');
-    // A success check appears only once the refresh has finished.
-    expect(toast()).toHaveTextContent('Waiting to check with the carrier');
-    expect(toast().querySelector('.toast-mark')).toHaveClass('toast-mark--pending');
-    act(() => progress?.('running'));
-    expect(toast()).toHaveTextContent('Checking with the carrier');
-    expect(toast().querySelector('.toast-mark')).toHaveClass('toast-mark--pending');
-    await act(async () => finish(parcels));
-    expect(toast()).toHaveTextContent('The latest available tracking is shown.');
-    expect(toast().querySelector('.toast-mark')).toHaveClass('toast-mark--success');
+    const toast = await screen.findByText('Still checking. Updates will appear here.');
+    expect(toast.closest('.action-toast')?.querySelector('.toast-mark')).toHaveClass('toast-mark--pending');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('keeps keyboard focus in the carrier sheet and restores it to the detail dialog', async () => {
@@ -1504,7 +1515,7 @@ describe('App', () => {
 
     const cards = await screen.findAllByText('Delivered', { selector: '.parcel-card__state' });
     expect(cards.length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByRole('status')).toHaveTextContent("The latest available tracking is shown.");
+    expect(screen.getByRole('status')).toHaveTextContent('Tracking updated');
   });
 
   it('shows initial-load and refresh failures', async () => {
@@ -1732,8 +1743,8 @@ describe('App', () => {
       screen.getByText(/No tracking updates yet/i),
     ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /check now/i }));
-    expect(repo.refreshParcel).toHaveBeenCalledWith(parcel.id, expect.any(Function));
-    expect(screen.getByText(/latest available tracking is shown/)).toBeInTheDocument();
+    expect(repo.refreshParcel).toHaveBeenCalledWith(parcel.id);
+    expect(screen.getByText('No new updates')).toBeInTheDocument();
   });
 
   it('flags a failed refresh on the next delivery with the same wording as other cards', async () => {

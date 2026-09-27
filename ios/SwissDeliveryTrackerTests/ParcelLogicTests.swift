@@ -1730,8 +1730,36 @@ extension SessionIsolationTests {
         completeJobs?(.success((200, jobs)))
         await fulfillment(of: [finished], timeout: 2)
         XCTAssertFalse(store.refreshing)
-        XCTAssertNil(store.refreshOutcome?.failure)
+        // The parcel was not on the list before the check.
+        XCTAssertEqual(store.refreshOutcome?.result, .updated)
         XCTAssertEqual(store.parcels.map(\.id), [parcel.id])
+    }
+
+    func testRefreshReportsNewTrackingOnlyWhenTheTimelineStatusOrDeliveryDateChanged() {
+        let checked = parcel()
+        var rechecked = checked
+        rechecked.lastSyncedAt = "2026-09-25T10:05:00Z"
+        rechecked.syncStatus = .ok
+        XCTAssertFalse(Parcel.trackingChanged(from: [checked], to: [rechecked]))
+
+        var status = checked
+        status.lastStatusText = "Sorted at the depot"
+        XCTAssertTrue(Parcel.trackingChanged(from: [checked], to: [status]))
+        var delivery = checked
+        delivery.expectedDelivery = "2026-09-27"
+        XCTAssertTrue(Parcel.trackingChanged(from: [checked], to: [delivery]))
+        var scanned = checked
+        scanned.trackingEvents.append(TrackingEvent(
+            id: UUID(), packageID: checked.id, stage: .inTransit,
+            description: "Sorted at the depot", occurredAt: "2026-09-25T10:00:00Z"
+        ))
+        XCTAssertTrue(Parcel.trackingChanged(from: [checked], to: [scanned]))
+
+        // A delivery partner's parcel continues the one it replaced.
+        var handoff = checked
+        handoff.id = UUID()
+        handoff.carrierData = CarrierData(originalPackageID: checked.id)
+        XCTAssertFalse(Parcel.trackingChanged(from: [checked], to: [handoff]))
     }
 }
 

@@ -10,13 +10,29 @@ import {
 } from 'react';
 import {
   ParcelAlreadyExistsError,
+  RefreshTimeoutError,
   type NewParcelInput,
   type ParcelCarrierInput,
   type ParcelRepo,
   type ParcelWithEvents,
-  type SyncProgress,
 } from '../types';
 import { ApiAuthenticationError } from '../lib/apiClient';
+
+/** What a refresh can change for the reader: the timeline, the status line and the delivery date. */
+function trackingState(parcel: ParcelWithEvents | undefined): string | undefined {
+  return parcel && JSON.stringify([
+    parcel.lastStatusText,
+    parcel.expectedDelivery,
+    parcel.events.map((event) => [event.id, event.stage, event.description, event.location, event.occurredAt]),
+  ]);
+}
+
+/** Whether refreshed parcels bring new tracking; a parcel that replaced another is compared with it. */
+function trackingChanged(before: ParcelWithEvents[], after: ParcelWithEvents[]): boolean {
+  const earlier = new Map(before.map((parcel) => [parcel.id, parcel]));
+  return after.some((parcel) => trackingState(parcel)
+    !== trackingState(earlier.get(parcel.id) ?? earlier.get(parcel.originalParcelId ?? '')));
+}
 
 interface ParcelsState {
   parcels: ParcelWithEvents[];
@@ -33,8 +49,10 @@ interface ParcelsState {
   removeParcel: (id: string) => Promise<void>;
   restoreParcel: (id: string) => Promise<void>;
   deleteParcel: (id: string) => Promise<void>;
-  refresh: (onProgress?: (progress: SyncProgress) => void) => Promise<void>;
-  refreshParcel: (id: string, onProgress?: (progress: SyncProgress) => void) => Promise<void>;
+  /** Resolves true when the check brought new tracking. */
+  refresh: () => Promise<boolean>;
+  /** Resolves true when the check brought new tracking for this parcel. */
+  refreshParcel: (id: string) => Promise<boolean>;
   retryLoad: () => Promise<void>;
   resetDemoData: () => Promise<void>;
 }
@@ -271,30 +289,36 @@ export function ParcelsProvider({
     }
   }, [repo, rememberError]);
 
-  const refresh = useCallback(async (onProgress?: (progress: SyncProgress) => void) => {
+  const refresh = useCallback(async () => {
     setRefreshing(true);
     const startedRevision = revision.current;
+    // Compared with the list as the refresh began: polling may show its results first.
+    const before = parcelsRef.current;
     try {
-      const list = await repo.refresh(onProgress);
-      if (startedRevision !== revision.current) return;
+      const list = await repo.refresh();
+      const changed = trackingChanged(before, list);
+      if (startedRevision !== revision.current) return changed;
       revision.current += 1;
       if (mounted.current) {
         setParcels(list);
         setError(null);
         setAuthenticationRequired(false);
       }
+      return changed;
     } catch (e) {
-      rememberError(e);
+      // Checks that outlive the wait are still running, which is no error.
+      if (!(e instanceof RefreshTimeoutError)) rememberError(e);
       throw e;
     } finally {
       if (mounted.current) setRefreshing(false);
     }
   }, [repo, rememberError]);
 
-  const refreshParcel = useCallback(async (id: string, onProgress?: (progress: SyncProgress) => void) => {
+  const refreshParcel = useCallback(async (id: string) => {
+    const before = parcelsRef.current;
     try {
       const parcel = repo.refreshParcel
-        ? await repo.refreshParcel(id, onProgress)
+        ? await repo.refreshParcel(id)
         : (await repo.refresh()).find((candidate) => candidate.id === id);
       if (!parcel) throw new Error('Parcel not found after refreshing');
       revision.current += 1;
@@ -305,8 +329,9 @@ export function ParcelsProvider({
         setError(null);
         setAuthenticationRequired(false);
       }
+      return trackingChanged(before.filter((candidate) => candidate.id === id), [parcel]);
     } catch (error) {
-      rememberError(error);
+      if (!(error instanceof RefreshTimeoutError)) rememberError(error);
       throw error;
     }
   }, [repo, rememberError]);

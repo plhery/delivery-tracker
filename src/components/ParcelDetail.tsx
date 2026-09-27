@@ -32,7 +32,7 @@ import {
 import { currentEvent } from '../lib/stages';
 import { isBackSwipe, type TouchPoint } from '../lib/swipe';
 import { useSheetDialog } from '../lib/modal';
-import type { CarrierId, ParcelCarrierInput, ParcelWithEvents, SyncProgress } from '../types';
+import { RefreshTimeoutError, type CarrierId, type ParcelCarrierInput, type ParcelWithEvents } from '../types';
 import { ChangeCarrierSheet } from './ChangeCarrierSheet';
 import { TrackingJournal } from './TrackingJournal';
 import { CarrierMark } from './CarrierMark';
@@ -71,7 +71,8 @@ export function ParcelDetail({
     parcel: ParcelWithEvents,
     muted: boolean,
   ) => Promise<unknown>;
-  onRefresh: (parcel: ParcelWithEvents, onProgress?: (progress: SyncProgress) => void) => Promise<unknown>;
+  /** Resolves true when the check brought new tracking. */
+  onRefresh: (parcel: ParcelWithEvents) => Promise<boolean>;
   onRestore: (parcel: ParcelWithEvents) => Promise<unknown>;
   onArchive: (parcel: ParcelWithEvents) => Promise<unknown>;
   onDelete: (parcel: ParcelWithEvents) => Promise<unknown>;
@@ -158,13 +159,13 @@ export function ParcelDetail({
     if (checking) return;
     setChecking(true);
     setCheckError(null);
-    setCheckNotice(null);
+    setCheckNotice(t('app.refreshing'));
     try {
-      await onRefresh(parcel, (progress) => setCheckNotice(t(`sync.${progress}`)));
-      setCheckNotice(t('sync.completed'));
+      setCheckNotice(t(await onRefresh(parcel) ? 'app.refreshComplete' : 'app.refreshUnchanged'));
     } catch (error) {
-      setCheckNotice(null);
-      setCheckError(userErrorMessage(error, t, 'detail.checkFailed'));
+      const stillChecking = error instanceof RefreshTimeoutError;
+      setCheckNotice(stillChecking ? t('app.refreshTimeout') : null);
+      if (!stillChecking) setCheckError(userErrorMessage(error, t, 'detail.checkFailed'));
     } finally {
       setChecking(false);
     }
@@ -539,7 +540,7 @@ export function ParcelDetail({
               disabled={checking || refreshAnimating}
               aria-busy={checking || refreshAnimating}
               data-refreshing={refreshAnimating || undefined}
-              aria-label={checking ? checkNotice ?? t('detail.queueing') : t('detail.checkNow')}
+              aria-label={checking ? t('app.refreshing') : t('detail.checkNow')}
             >
               <span ref={refreshIcon} className="refresh-glyph"><Icon name="refresh" /></span>
             </button>
