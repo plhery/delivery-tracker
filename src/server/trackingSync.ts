@@ -12,7 +12,7 @@ import {
   AUTOMATIC_CARRIER_IDS,
   supportsSwissPostHandoff,
 } from './carriers';
-import type { AdapterRegistry } from '@carriers/core/adapter';
+import type { AdapterRegistry, Recognition } from '@carriers/core/adapter';
 import { runSteps } from '@carriers/core/runner';
 import type { StepRecorder } from '@carriers/core/telemetry';
 import { createAdapterRegistry, hostAdapterEnvironment } from './adapterRegistry';
@@ -116,6 +116,8 @@ function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
 
 export interface TrackingAdapter {
   fetchUniversal?(source: UniversalSource, trackingNumber: string, timeoutMs: number, dpdPostcode?: string | null, timezone?: string | null): Promise<CarrierResult>;
+  /** A carrier's cheap check of whether it knows a number (carrier.json `tracking.recognition`). */
+  recognize?(carrierId: string, trackingNumber: string): Promise<Recognition>;
   fetch(
     carrierId: string,
     trackingNumber: string,
@@ -139,6 +141,12 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
 
   async fetchUniversal(source: UniversalSource, trackingNumber: string, timeoutMs: number, dpdPostcode?: string | null, timezone?: string | null): Promise<CarrierResult> {
     return this.universal.fetchSource(source, trackingNumber, timeoutMs, dpdPostcode ?? null, timezone ?? null);
+  }
+
+  async recognize(carrierId: string, trackingNumber: string): Promise<Recognition> {
+    const registered = this.registry.for(carrierId);
+    if (!registered?.recognize) throw new RangeError(`${carrierId} cannot recognize a number`);
+    return await registered.recognize(trackingNumber);
   }
 
   async fetch(
@@ -734,6 +742,7 @@ export class TrackingSyncService {
             direct: (candidate, carrier) => this.fetchResult(candidate, carrier),
             universal: (source, number, timeout, postcode, timezone) => this.adapter.fetchUniversal!(source, number, timeout, postcode, timezone),
             health: this.client, now: this.now,
+            ...(this.adapter.recognize ? { recognize: (carrier: string, number: string) => this.adapter.recognize!(carrier, number) } : {}),
             enablePostalNinja: process.env.TRACKING_ENABLE_POSTAL_NINJA === 'true',
           }).fetch(parcel, context.trigger === 'scheduled', context.signal)
           : await this.fetchResult(parcel, carrierId));

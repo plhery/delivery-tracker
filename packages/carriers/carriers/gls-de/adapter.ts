@@ -129,5 +129,6 @@ export const adapter: AdapterFactory = (environment) => {
     id: 'gls-de',
     steps: ['direct'],
     track: (input) => tracker.fetch(input.number, input.postcode ?? ''),
+    recognize: async (number) => ({ known: await tracker.recognizes(number) }),
   };
 };

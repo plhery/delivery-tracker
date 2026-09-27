@@ -399,6 +399,35 @@ export class GLSSwitzerlandTracker {
     return { ...result, ...glsDeliveryReference(overviewResult) };
   }
 
+  /**
+   * Whether GLS knows a number, from the overview alone: no postcode is sent.
+   * Only a 404 whose body carries GLS's `lastError: E000` is a not-found here;
+   * a 400 or 403 can be a challenge, so it stays a failure.
+   */
+  async recognizes(rawTrackingNumber: string): Promise<boolean> {
+    const trackingNumber = normalizeGLSSwitzerlandTrackingNumber(rawTrackingNumber);
+    const { response, bytes } = await fetchBounded(glsSwitzerlandOverviewApiUrl(trackingNumber, this.now()), {
+      headers: pageHeaders(),
+    }, {
+      provider: 'GLS Switzerland tracking',
+      timeoutMs: this.timeoutMs,
+      maxBytes: MAX_RESPONSE_BYTES,
+      allowHttpError: true,
+      ...(this.#fetcher ? { fetcher: this.#fetcher } : {}),
+    });
+    if (response.status === 404) {
+      const payload = parseJsonBytes(bytes, PROVIDER);
+      if (isRecord(payload) && payload.lastError === 'E000') return false;
+    }
+    if (!response.ok) throw new UpstreamHttpError('GLS Switzerland tracking', response.status);
+    try {
+      return parseGLSSwitzerlandTrackingResponse(parseJsonBytes(bytes, PROVIDER), trackingNumber).status !== 'unknown';
+    } catch (error) {
+      if (error instanceof GLSSwitzerlandTrackingError) return false;
+      throw error;
+    }
+  }
+
   private async request(url: string): Promise<unknown> {
     const { response, bytes } = await fetchBounded(url, {
       headers: pageHeaders(),
@@ -426,5 +455,6 @@ export const adapter: AdapterFactory = (environment) => {
     id: 'gls-ch',
     steps: ['direct'],
     track: (input) => tracker.fetch(input.number, input.postcode ?? ''),
+    recognize: async (number) => ({ known: await tracker.recognizes(number) }),
   };
 };

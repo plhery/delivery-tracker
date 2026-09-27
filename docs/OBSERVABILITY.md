@@ -119,8 +119,10 @@ Key JSON events:
 - `sync_claim_failed`, `sync_job_failed`, `sync_job_finish_failed` (by `job_id`). Alert on
   these;
 - `http_request` (by `request_id`, matching Sentry for server errors). A failed request
-  carries `error_class`; a 502 that wraps an upstream failure also names it in
-  `error_cause` (for example `CarrierLookupTimeoutError` or `DPDAPIHttpError`).
+  carries `error_class`; a 502 that wraps an upstream failure also names that failure's
+  class in `error_cause`;
+- `carrier_recognition`: how many carriers the Add sheet's recognition asked, how many
+  knew the number or failed, and what it settled on (a carrier, `choice` or `none`).
 
 The logger allows `tracking_number` explicitly. It drops other fields whose names look
 like parcel, user, label, location, status text, URL, token, cookie or secret data. Keep

@@ -1,6 +1,6 @@
 import 'server-only';
 
-import type { AdapterFactory } from '../../core/adapter';
+import { recognizeFromLookup, type AdapterFactory } from '../../core/adapter';
 import { SchemaError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import { clean, cleanScalar, fetchBounded, parseJsonBytes } from '../../core/transport';
@@ -225,5 +225,6 @@ export const adapter: AdapterFactory = (environment) => {
     id: 'canada-post',
     steps: ['direct'],
     track: (input) => tracker.fetch(input.number),
+    recognize: (number) => recognizeFromLookup(() => tracker.fetch(number)),
   };
 };

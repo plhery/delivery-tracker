@@ -1,6 +1,6 @@
 import 'server-only';
 
-import type { AdapterFactory } from '../../core/adapter';
+import { accepted, recognizeFromLookup, type AdapterFactory } from '../../core/adapter';
 import { NotFoundError, SchemaError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import { explicitOffsetTime } from '../../core/time';
@@ -142,5 +142,6 @@ export const adapter: AdapterFactory = (environment) => {
     id: 'inpost',
     steps: ['direct'],
     track: (input) => tracker.fetch(input.number),
+    recognize: (number) => recognizeFromLookup(() => tracker.fetch(number), () => accepted(() => normalizeInpostTrackingNumber(number))),
   };
 };

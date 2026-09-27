@@ -19,7 +19,10 @@
     "adapter": "relais-colis",
     "steps": [
       "direct"
-    ]
+    ],
+    "recognition": {
+      "rank": 25
+    }
   },
   "capabilities": [
     "history"

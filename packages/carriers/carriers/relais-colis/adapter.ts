@@ -22,7 +22,7 @@ import 'server-only';
 import { load } from 'cheerio';
 import makeFetchCookie from 'fetch-cookie';
 import { CookieJar } from 'tough-cookie';
-import type { AdapterFactory } from '../../core/adapter';
+import { recognizeFromLookup, type AdapterFactory } from '../../core/adapter';
 import { IndeterminateError, NotFoundError, SchemaError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult, CarrierStatus } from '../../core/result';
 import { clean, decodeText, fetchBounded, UpstreamHttpError } from '../../core/transport';
@@ -257,5 +257,6 @@ export const adapter: AdapterFactory = (environment) => {
     id: 'relais-colis',
     steps: ['direct'],
     track: (input) => tracker.fetch(input.number),
+    recognize: (number) => recognizeFromLookup(() => tracker.fetch(number)),
   };
 };

@@ -3037,6 +3037,7 @@ export interface ApiCarrierDetectionResponse {
   "trackingNumber": string;
   "amazonShippingStatus"?: "available" | "expired" | "not-found" | "unavailable";
   "carrier": ApiCarrierId;
+  "recognized"?: Array<ApiCarrierId>;
 }
 
 export interface ApiAccountExportResponse {
@@ -3228,6 +3229,12 @@ export interface ApiPackageRow {
   "dimensions_text"?: string | null;
   "weight_kg"?: number | null;
   "dpd_postcode_verified"?: boolean | null;
+  "routing"?: {
+  "input_needed"?: {
+  "carrier": ApiCarrierId;
+  "field": "dpdPostcode" | "trackingUrl";
+};
+};
 };
   "archived_at": string | null;
   "notifications_muted": boolean;

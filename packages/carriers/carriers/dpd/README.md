@@ -30,15 +30,13 @@ and offers to edit the postcode. It is sent only to DPD and never logged. Being
 optional, it is never filled in for a new parcel: the Add sheet offers the last
 DPD postcode as a one-tap suggestion.
 
-**Add-time check.** `recognizes(number)` asks the guest API alone whether DPD knows
-a 14-digit number: a matching reply is true, a 404 or a details-call 400 is false,
-anything else (a login failure included) is a failure. The detect route
-(`app/api/carriers/detect/route.ts`) uses it, within six seconds and with a warm
-token, to promote a bare 14-digit number to `dpd` in the Add sheet unless a
-preferred rule points elsewhere. A failure answers 502 and the sheet falls back to
-"unknown". When a carrier picked by hand cannot own the number (a forwarder such
-as Asendia), the sheet asks too and offers the carrier that knows it, without
-blocking the choice.
+**Recognition.** `recognizes(number)`, the adapter's `recognize()`, asks the guest
+API alone whether DPD knows a 14-digit number: a matching reply is true, a 404 or a
+details-call 400 is false, anything else (a login failure included) is a failure.
+Carrier recognition uses it in the Add sheet and in routing
+([ROUTING.md](../../../../docs/ROUTING.md)). When a carrier picked by hand cannot own
+the number (a forwarder such as Asendia), the sheet asks too and offers the carrier
+that knows it, without blocking the choice.
 
 ## Numbers
 

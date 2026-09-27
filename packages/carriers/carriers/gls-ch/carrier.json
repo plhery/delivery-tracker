@@ -47,7 +47,10 @@
     ],
     "steps": [
       "direct"
-    ]
+    ],
+    "recognition": {
+      "rank": 60
+    }
   },
   "capabilities": [
     "history",

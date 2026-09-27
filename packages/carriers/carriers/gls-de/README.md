@@ -26,15 +26,14 @@ is sent, so a wrong or expired number never transmits it.
   either side of the Swiss–German border.
 - The result's timezone is relabelled `Europe/Berlin`. Both services run on
   CET/CEST, so only the label changes.
-- `recognizes(number)` queries the overview on the `/DE/en/` variant. It
-  returns false only for a clean not-found and rethrows everything else. The
-  detect route (`app/api/carriers/detect/route.ts`) uses it to promote a bare
-  11–12 digit number to `gls-de`, so an outage must not read as "not GLS". It
-  never sends a postcode.
+- `recognizes(number)`, the adapter's `recognize()`, queries the overview on
+  the `/DE/en/` variant. It returns false only for a clean not-found and
+  rethrows everything else, so an outage never reads as "not GLS". It never
+  sends a postcode. Carrier recognition uses it, and the user is then asked for
+  the postcode (see [ROUTING.md](../../../../docs/ROUTING.md)).
 - `GLSGermanyTrackingError` keeps its name because
-  `src/server/expandedCarriers.live.test.ts` asserts it. The constructor still
-  accepts a positional timeout because the detect route calls
-  `new GLSGermanyTracker(5_000)`.
+  `src/server/expandedCarriers.live.test.ts` asserts it. The constructor also
+  accepts a positional timeout.
 
 ## Testing
 

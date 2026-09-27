@@ -7,6 +7,7 @@
  * declares its steps; it reaches the network only through what the
  * `AdapterEnvironment` provides, and it reports through the `StepRecorder`.
  */
+import { carrierErrorKind } from '../errors';
 import type { CarrierResult } from '../result';
 import type { StepRecorder } from '../telemetry';
 import type { TrawlClient } from '../transport/trawl';
@@ -45,14 +46,71 @@ export interface AdapterEnvironment {
   env: Readonly<Record<string, string | undefined>>;
 }
 
+/** Whether a carrier knows a tracking number, from a cheap check. */
+export interface Recognition {
+  known: boolean;
+  /** The newest activity the check saw, when it reports one; old parcels can share a reused number. */
+  lastActivityAt?: string | null;
+}
+
 export interface CarrierAdapter {
   readonly id: string;
   /** The tiers this adapter can go through, in order; telemetry labels use these ids. */
   readonly steps: readonly string[];
   track(input: TrackingInput, context?: TrackingContext): Promise<CarrierResult>;
+  /**
+   * Required when carrier.json declares `tracking.recognition`: whether the
+   * carrier knows the number, without the user's inputs, through plain HTTP
+   * only (never a browser tier). A positive not-found is `known: false`; any
+   * other failure throws.
+   */
+  recognize?(number: string, context?: TrackingContext): Promise<Recognition>;
 }
 
 export type AdapterFactory = (environment: AdapterEnvironment) => CarrierAdapter;
+
+/**
+ * `recognize()` for an adapter whose ordinary lookup is already cheap: a
+ * result with scans, or a status past pending, is known; a positive not-found
+ * is unknown; any other failure is thrown. `accepts` is the adapter's own
+ * number check: a form it cannot look up is unknown without a request. Only
+ * for lookups without a browser tier.
+ */
+/** Whether a number check passes: false when it throws its TypeError. */
+export function accepted(check: () => unknown): boolean {
+  try {
+    check();
+    return true;
+  } catch (error) {
+    if (error instanceof TypeError) return false;
+    throw error;
+  }
+}
+
+export async function recognizeFromLookup(
+  lookup: () => Promise<CarrierResult>,
+  accepts: () => boolean = () => true,
+): Promise<Recognition> {
+  if (!accepts()) return { known: false };
+  let result: CarrierResult;
+  try {
+    result = await lookup();
+  } catch (error) {
+    if (carrierErrorKind(error) === 'not_found') return { known: false };
+    throw error;
+  }
+  // Only ISO timestamps: some adapters keep a carrier's own day-first dates.
+  const iso = (value: string | null | undefined) => /^\d{4}-\d{2}-\d{2}T/.test(value ?? '') ? Date.parse(value!) : Number.NaN;
+  const times = (result.events ?? []).map((event) => iso(event.time)).filter(Number.isFinite);
+  // A pending status without a scan is no evidence: some carriers answer any number that way.
+  const known = (result.events?.length ?? 0) > 0 || !['unknown', 'pending', undefined].includes(result.status);
+  const updated = iso(result.last_update);
+  return {
+    known,
+    lastActivityAt: !known ? null : times.length ? new Date(Math.max(...times)).toISOString()
+      : Number.isFinite(updated) ? new Date(updated).toISOString() : null,
+  };
+}
 
 /** Registered adapter factories plus the carrier → adapter mapping, as generated. */
 export interface RegistryDefinition {

@@ -1,6 +1,6 @@
 import 'server-only';
 
-import type { AdapterFactory } from '../../core/adapter';
+import { accepted, recognizeFromLookup, type AdapterFactory } from '../../core/adapter';
 import { carrierIdFromPartner } from '../../core/catalog/hints';
 import {
   CarrierError,
@@ -272,5 +272,6 @@ export const adapter: AdapterFactory = (environment) => {
     // request after a transient HTTP 403, inside the original deadline.
     steps: ['direct', 'retry'],
     track: (input) => tracker.fetch(input.number),
+    recognize: (number) => recognizeFromLookup(() => tracker.fetch(number), () => accepted(() => normalizeLaPosteTrackingNumber(number))),
   };
 };

@@ -26,7 +26,10 @@
     "steps": [
       "direct",
       "retry"
-    ]
+    ],
+    "recognition": {
+      "rank": 45
+    }
   },
   "capabilities": [
     "history",

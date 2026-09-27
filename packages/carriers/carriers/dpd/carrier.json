@@ -38,7 +38,10 @@
     "steps": [
       "direct",
       "page"
-    ]
+    ],
+    "recognition": {
+      "rank": 70
+    }
   },
   "capabilities": [
     "history",

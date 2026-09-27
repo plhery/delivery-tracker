@@ -20,7 +20,10 @@
     "adapter": "hermes-de",
     "steps": [
       "direct"
-    ]
+    ],
+    "recognition": {
+      "rank": 40
+    }
   },
   "capabilities": [
     "history",

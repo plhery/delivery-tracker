@@ -864,5 +864,6 @@ export const adapter: AdapterFactory = (environment) => {
     // solved by the browser service when one is configured, second.
     steps: ['direct', 'page'],
     track: (input) => tracker.fetch(input.number, input.postcode ?? ''),
+    recognize: async (number) => ({ known: await tracker.recognizes(number) }),
   };
 };

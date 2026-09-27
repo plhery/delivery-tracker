@@ -28,7 +28,10 @@
     "adapter": "inpost",
     "steps": [
       "direct"
-    ]
+    ],
+    "recognition": {
+      "rank": 35
+    }
   },
   "capabilities": [
     "history"

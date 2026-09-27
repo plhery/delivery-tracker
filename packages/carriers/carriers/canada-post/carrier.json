@@ -15,7 +15,10 @@
     "adapter": "canada-post",
     "steps": [
       "direct"
-    ]
+    ],
+    "recognition": {
+      "rank": 15
+    }
   },
   "capabilities": [
     "history",

@@ -133,6 +133,15 @@
           "description": "Ordered runner steps. Reserved for the runner phase; empty means the adapter still owns its own flow.",
           "type": "array",
           "items": { "type": "string", "minLength": 1 }
+        },
+        "recognition": {
+          "description": "Present when the adapter implements recognize(): a cheap check, without the user's inputs, of whether the carrier knows a number (plain HTTP, a clean not-found, no browser). Ambiguous numbers ask these carriers. rank orders them by how common they are for the app's users, highest first.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rank"],
+          "properties": {
+            "rank": { "type": "integer", "minimum": 1, "maximum": 100 }
+          }
         }
       }
     },

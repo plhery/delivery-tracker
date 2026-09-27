@@ -233,6 +233,21 @@ describe('GLS Switzerland response normalization', () => {
 });
 
 describe('GLS Switzerland tracker', () => {
+  it('recognizes a number from the overview alone and keeps a challenge a failure', async () => {
+    const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+    const fetcher = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(json(deliveredOverviewFixture()))
+      .mockResolvedValueOnce(json({ lastError: 'E000' }, 404))
+      .mockResolvedValueOnce(new Response('<html>blocked</html>', { status: 403 }));
+    const tracker = new GLSSwitzerlandTracker({ timeoutMs: 1_000, now: () => FIXED_MILLIS });
+    await expect(tracker.recognizes(OFFICIAL_TEST_PARCEL_NUMBER)).resolves.toBe(true);
+    expect(String(fetcher.mock.calls[0]?.[0])).toBe(glsSwitzerlandOverviewApiUrl(OFFICIAL_TEST_PARCEL_NUMBER, FIXED_MILLIS));
+    await expect(tracker.recognizes(OFFICIAL_TEST_PARCEL_NUMBER)).resolves.toBe(false);
+    await expect(tracker.recognizes(OFFICIAL_TEST_PARCEL_NUMBER)).rejects.toMatchObject({ name: 'UpstreamHttpError', status: 403 });
+    // Never the postcode-gated detail request.
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
   it('uses the anonymous overview and postcode-gated detail requests', async () => {
     const fetcher = vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(new Response(JSON.stringify(deliveredOverviewFixture()), {

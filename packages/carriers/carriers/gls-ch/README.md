@@ -48,6 +48,10 @@ HTTP 400, 403 and 404 all mean "no such parcel" and raise
 - Scan date and time arrive as separate offset-less fields and are read in
   `Europe/Zurich` (gls-de relabels the timezone only).
 - The estimate is dropped once the parcel is delivered or in exception.
+- `recognizes(number)`, the adapter's `recognize()`, reads the overview alone.
+  Unlike a lookup, it takes only a 404 with GLS's `lastError: E000` as a
+  not-found: a 400 or 403 there can be a challenge. Carrier recognition uses it,
+  and the user is then asked for the postcode.
 - The postcode is a tracking credential: sent only to `rstt028`, never to the
   overview, never logged. Scan locations keep ParcelShop name, country and
   city; the street and postcode in the same `address` object are dropped, as

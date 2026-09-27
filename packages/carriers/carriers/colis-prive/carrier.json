@@ -19,7 +19,10 @@
     "adapter": "colis-prive",
     "steps": [
       "direct"
-    ]
+    ],
+    "recognition": {
+      "rank": 30
+    }
   },
   "capabilities": [
     "history"

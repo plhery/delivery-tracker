@@ -4290,6 +4290,14 @@
           },
           "carrier": {
             "$ref": "#/components/schemas/CarrierId"
+          },
+          "recognized": {
+            "description": "Carriers that each know the number when no single one could be picked; the user chooses.",
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "$ref": "#/components/schemas/CarrierId"
+            }
           }
         }
       },
@@ -4746,6 +4754,34 @@
                   "null"
                 ],
                 "description": "False when DPD rejected the stored delivery postcode and the lookup continued without it."
+              },
+              "routing": {
+                "type": "object",
+                "description": "Server routing state; clients read only the fields listed here.",
+                "additionalProperties": true,
+                "properties": {
+                  "input_needed": {
+                    "description": "A carrier that knows the tracking number but needs the listed input before it can track the parcel.",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "carrier",
+                      "field"
+                    ],
+                    "properties": {
+                      "carrier": {
+                        "$ref": "#/components/schemas/CarrierId"
+                      },
+                      "field": {
+                        "type": "string",
+                        "enum": [
+                          "dpdPostcode",
+                          "trackingUrl"
+                        ]
+                      }
+                    }
+                  }
+                }
               }
             }
           },

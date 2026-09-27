@@ -14,7 +14,8 @@ import { errorType, reportRoutingEvent } from './observability';
 import { CarrierError, carrierErrorKind, IndeterminateError, retryAfterMsOf } from '@carriers/core/errors';
 import { captureDirectLocalHistory, directHistoryNumber, hasUnresolvedDirectCurrent, hasUnresolvedDirectHistory } from './directLocalHistory';
 import { latestResultTime } from './eventTime';
-import { CARRIER_REGIONS } from '@carriers/generated/regions';
+import type { Recognition } from '@carriers/core/adapter';
+import { MAX_RECOGNITIONS, recognitionCandidates, recognizeAll, settleRecognition } from './carrierRecognition';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -49,8 +50,10 @@ export interface RoutingState extends JsonObject {
   next_check_at?: string;
   direct_retry_at?: string;
   last_probe_at?: string;
-  /** Per-candidate schedule of the probes that ask carriers the number points to. */
+  /** Per-candidate schedule of the recognitions that ask carriers the number points to. */
   candidate_probes?: Record<string, { count: number; retry_at: string }>;
+  /** A carrier that knows the number but cannot track it without the user's input. */
+  input_needed?: { carrier: string; field: string };
   probe_cursor: number;
   discovery_cursor: number;
   failures: Record<string, Failure>;
@@ -153,25 +156,9 @@ function directCarrier(carrier: string): boolean {
   return AUTOMATIC_CARRIER_IDS.has(carrier) && carrierAdapter(carrier) !== 'universal';
 }
 
-// The app's home market: a carrier delivering here is worth one lookup for an
-// ambiguous number even when the number itself does not point to it.
-const HOME_COUNTRY = 'CH';
-const MAX_CANDIDATE_PROBES = 2;
 const CANDIDATE_PROBE_WINDOW = 30 * DAY;
-
-/**
- * The detection candidates worth a direct lookup when the filed carrier cannot
- * track a number: those a preferred rule backs (a DPD depot range), then the
- * home market's, each with its own adapter and no required input. A high-
- * confidence number is the correction path's, not a probe's.
- */
-export function probeCandidates(number: string): string[] {
-  const detected = detectCarrierMatch(number);
-  if (detected.confidence !== 'low') return [];
-  return detected.candidates.filter((carrier) => directCarrier(carrier)
-    && requiredRequirements(carrier, number).length === 0
-    && (detected.preferred.includes(carrier) || (CARRIER_REGIONS[carrier] ?? []).includes(HOME_COUNTRY)));
-}
+/** Every recognition answer a sync waits for; later answers are ignored. */
+const RECOGNITION_BUDGET_MS = 15_000;
 
 export class RoutingDeferred extends Error {
   /** `attempted` counts providers actually contacted; zero means every tier was still cooling down. */
@@ -193,6 +180,8 @@ export class TrackingRouter {
     // of the carrier confirmed for the same number, else null.
     universal: (source: UniversalSource, number: string, timeoutMs: number, postcode: string | null, timezone: string | null) => Promise<CarrierResult>;
     health: ProviderHealth;
+    /** A carrier's cheap check of whether it knows a number; without it, no recognition runs. */
+    recognize?: (carrier: string, number: string) => Promise<Recognition>;
     now?: () => Date;
     enablePostalNinja?: boolean;
   }) {}
@@ -233,6 +222,8 @@ export class TrackingRouter {
     const persistResult = (value: RoutedResult, provider: string): RoutedResult => {
       if (state.failures[provider]) report('provider_recovered', provider);
       delete state.failures[provider];
+      // A carrier tracks the parcel directly: nothing is left to ask the user.
+      if (directCarrier(provider)) delete state.input_needed;
       state.last_success_at = now().toISOString();
       // A future-dated scan must not make every later real update look older.
       const eventTime = Math.min(now().getTime(), Math.max(latest(value),
@@ -354,41 +345,61 @@ export class TrackingRouter {
     // The filed carrier cannot track this number: it has no adapter of its own
     // (unknown, a universal-only carrier) or its adapter does not know the
     // number (a forwarder such as Asendia, a wrong label). A transient failure
-    // is not that. Ask the carriers the number points to before the
-    // universals, never another network of the filed carrier's own brand,
-    // for open parcels in their first month.
+    // is not that. Before the universals, ask the carriers the number could
+    // belong to whether they know it, never another network of the filed
+    // carrier's own brand, for open parcels in their first month.
     const filedCannotTrack = !directCarrier(primary) || state.failures[primary]?.kind === 'not_found';
     const open = !['delivered', 'returned'].includes(String(parcel.current_stage));
     const young = typeof parcel.created_at !== 'string' || now().getTime() - millis(parcel.created_at) < CANDIDATE_PROBE_WINDOW;
-    if (filedCannotTrack && open && young && universalNumber === number && !metadata.original_carrier) {
+    const recognize = this.options.recognize;
+    if (recognize && filedCannotTrack && open && young && universalNumber === number && !metadata.original_carrier) {
       const brand = carrierBrand(primary) ?? carrierBrand(declared);
-      let asked = 0;
-      for (const candidate of probeCandidates(number)) {
-        if (asked >= MAX_CANDIDATE_PROBES) break;
-        if (candidate === primary || candidate === declared || (brand && carrierBrand(candidate) === brand)
-          || attemptedDirect.has(candidate) || millis(state.candidate_probes?.[candidate]?.retry_at) > now().getTime()
-          || millis(state.failures[candidate]?.retry_at) > now().getTime()) continue;
-        asked++;
-        const failure = state.failures[candidate];
+      const due = recognitionCandidates(number, {
+        hint: state.discovered_carrier,
+        skip: (candidate) => candidate === primary || candidate === declared
+          || Boolean(brand && carrierBrand(candidate) === brand) || attemptedDirect.has(candidate)
+          || millis(state.candidate_probes?.[candidate]?.retry_at) > now().getTime()
+          || millis(state.failures[candidate]?.retry_at) > now().getTime(),
+      }).slice(0, MAX_RECOGNITIONS);
+      const outcomes = due.length ? await recognizeAll(due, (candidate) => recognize(candidate, number), RECOGNITION_BUDGET_MS) : [];
+      signal?.throwIfAborted();
+      // A carrier that knows the number and needs no input gets a full
+      // lookup, adopted only on real progress (a pre-advice is not enough).
+      for (const outcome of outcomes) {
+        if (outcome.status !== 'known' || outcome.needsInput) continue;
+        const failure = state.failures[outcome.carrier];
         const retry = state.direct_retry_at;
-        const value = await tryDirect(candidate, true, undefined, true).catch((error: unknown) => {
+        const value = await tryDirect(outcome.carrier, true, undefined, true).catch((error: unknown) => {
           if (!(error instanceof RoutingDeferred)) throw error;
           return null;
         });
-        if (attemptedDirect.has(candidate)) probeContacts++;
+        if (attemptedDirect.has(outcome.carrier)) probeContacts++;
         if (value) {
-          if (state.candidate_probes) delete state.candidate_probes[candidate];
-          return persistResult(value, candidate);
+          if (state.candidate_probes) delete state.candidate_probes[outcome.carrier];
+          return persistResult(value, outcome.carrier);
         }
-        // A miss is this parcel's schedule, not the carrier's failure: it
-        // decides neither the parcel's status nor the filed carrier's retry.
-        // Retry after 1, 2, 4, then 6 hours, since a parcel shows up once it
-        // is handed over, and daily after six misses.
-        if (failure) state.failures[candidate] = failure;
-        else delete state.failures[candidate];
+        // Not adopted: the parcel's own schedule, not the carrier's failure.
+        if (failure) state.failures[outcome.carrier] = failure;
+        else delete state.failures[outcome.carrier];
         state.direct_retry_at = retry;
-        const count = Math.min(20, (state.candidate_probes?.[candidate]?.count ?? 0) + 1);
-        state.candidate_probes = { ...state.candidate_probes, [candidate]: {
+      }
+      // A carrier that knows the number but needs the user's input (GLS's
+      // postcode) is offered to the user instead.
+      const needing = settleRecognition(outcomes.filter((outcome) => outcome.needsInput), now()).carrier;
+      const field = outcomes.find((outcome) => outcome.carrier === needing)?.needsInput;
+      if (needing && field) {
+        if (state.input_needed?.carrier !== needing) report('carrier_input_needed', needing);
+        state.input_needed = { carrier: needing, field };
+      } else if (outcomes.some((outcome) => outcome.carrier === state.input_needed?.carrier && outcome.status !== 'failed')) {
+        // Asked again, it no longer knows the number (or only an old parcel with it).
+        delete state.input_needed;
+      }
+      // Nothing adopted: ask again after 1, 2, 4, then 6 hours, since a parcel
+      // shows up once it is handed over, and daily after six misses. These
+      // answers decide neither the parcel's status nor the filed carrier's retry.
+      for (const outcome of outcomes) {
+        const count = Math.min(20, (state.candidate_probes?.[outcome.carrier]?.count ?? 0) + 1);
+        state.candidate_probes = { ...state.candidate_probes, [outcome.carrier]: {
           count, retry_at: iso(now().getTime() + Math.min(count > 6 ? DAY : 6 * HOUR, HOUR * 2 ** (count - 1))),
         } };
       }

@@ -16,7 +16,7 @@ import 'server-only';
  * portal uses for operational sites.
  */
 import { load } from 'cheerio';
-import type { AdapterFactory } from '../../core/adapter';
+import { recognizeFromLookup, type AdapterFactory } from '../../core/adapter';
 import { IndeterminateError, NotFoundError, SchemaError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult, CarrierStatus } from '../../core/result';
 import { clean, decodeText, fetchBounded, UpstreamHttpError } from '../../core/transport';
@@ -191,5 +191,6 @@ export const adapter: AdapterFactory = (environment) => {
     id: 'ciblex',
     steps: ['direct'],
     track: (input) => tracker.fetch(input.number),
+    recognize: (number) => recognizeFromLookup(() => tracker.fetch(number)),
   };
 };

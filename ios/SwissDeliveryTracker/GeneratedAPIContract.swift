@@ -10,6 +10,7 @@ struct CarrierDetectionResponse: Codable, Equatable, Hashable, Sendable {
     var trackingNumber: String
     var amazonShippingStatus: CarrierDetectionResponseAmazonShippingStatus? = nil
     var carrier: CarrierID
+    var recognized: [CarrierID]? = nil
 }
 
 struct AccountExportResponse: Codable, Equatable, Hashable, Sendable {
@@ -793,6 +794,7 @@ struct CarrierData: Codable, Equatable, Hashable, Sendable {
     var dimensionsText: String? = nil
     var weightKg: Double? = nil
     var dpdPostcodeVerified: Bool? = nil
+    var routing: CarrierDataRouting? = nil
 
     private enum CodingKeys: String, CodingKey {
         case activeTrackingCarrier
@@ -813,12 +815,29 @@ struct CarrierData: Codable, Equatable, Hashable, Sendable {
         case dimensionsText
         case weightKg
         case dpdPostcodeVerified
+        case routing
     }
 }
 
 enum FriendsActionResponseInvitationState: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
     case alreadyAccepted = "already_accepted"
     case alreadyFriends = "already_friends"
+
+    var id: String { rawValue }
+}
+
+struct CarrierDataRouting: Codable, Equatable, Hashable, Sendable {
+    var inputNeeded: CarrierInputNeeded? = nil
+}
+
+struct CarrierInputNeeded: Codable, Equatable, Hashable, Sendable {
+    var carrier: CarrierID
+    var field: CarrierInputNeededField
+}
+
+enum CarrierInputNeededField: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case dpdPostcode
+    case trackingURL = "trackingUrl"
 
     var id: String { rawValue }
 }

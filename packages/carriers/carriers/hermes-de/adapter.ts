@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { DateTime } from 'luxon';
-import type { AdapterFactory } from '../../core/adapter';
+import { recognizeFromLookup, type AdapterFactory } from '../../core/adapter';
 import { InputRequiredError, NotFoundError, SchemaError, UpstreamHttpError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import { clean, fetchBounded, parseJsonBytes } from '../../core/transport';
@@ -173,5 +173,6 @@ export const adapter: AdapterFactory = (environment) => {
     id: 'hermes-de',
     steps: ['direct'],
     track: (input) => tracker.fetch(input.number),
+    recognize: (number) => recognizeFromLookup(() => tracker.fetch(number)),
   };
 };

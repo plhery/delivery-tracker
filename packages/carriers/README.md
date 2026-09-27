@@ -64,11 +64,17 @@ replays the same golden file.
      `uncheckedTrackingLinks`.
 6. Adapters must use bounded timeouts and response sizes, and fall back to the carrier link
    when automatic tracking isn't reliable.
-7. Keep the README short: how retrieval works, gotchas and why, limitations, how to run
+7. When the adapter can tell cheaply, without the user's inputs and without a browser,
+   whether it knows a number (a clean not-found), implement `recognize()` (often
+   `recognizeFromLookup` around the plain lookup) and declare `tracking.recognition` with a
+   popularity `rank`. Ambiguous numbers then ask it, in the Add sheet and in routing
+   ([ROUTING.md](../../docs/ROUTING.md)). The catalog test fails when a declared carrier's
+   adapter has no `recognize()`.
+8. Keep the README short: how retrieval works, gotchas and why, limitations, how to run
    the live test. No dates, status tables or copies of `carrier.json`.
-8. Run `npm run contract:generate`, `node packages/carriers/scripts/generate-readme.mjs`,
+9. Run `npm run contract:generate`, `node packages/carriers/scripts/generate-readme.mjs`,
    `npm run ios:resources`, then `npm run test:contract`, lint, typecheck and the tests.
-9. Add a migration extending the package carrier constraint, and verify one real parcel end
+10. Add a migration extending the package carrier constraint, and verify one real parcel end
    to end.
 
 ## Tests

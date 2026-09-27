@@ -19,7 +19,10 @@
     "adapter": "ciblex",
     "steps": [
       "direct"
-    ]
+    ],
+    "recognition": {
+      "rank": 20
+    }
   },
   "capabilities": [
     "history",

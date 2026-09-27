@@ -436,6 +436,9 @@ const swiftSchemaNames = {
 const swiftInlineNames = {
   'AccountExportResponse.account': 'AccountExportAccount',
   'PackageRow.carrier_data': 'CarrierData',
+  'PackageRow.carrier_data.routing': 'CarrierDataRouting',
+  'PackageRow.carrier_data.routing.input_needed': 'CarrierInputNeeded',
+  'PackageRow.carrier_data.routing.input_needed.field': 'CarrierInputNeededField',
   'NativePushDeviceRequest.environment': 'NativePushEnvironment',
   'NativePushDeviceRequest.locale': 'NativePushLocale',
 };

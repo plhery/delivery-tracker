@@ -1,26 +1,55 @@
+import type { AdapterRegistry } from '@carriers/core/adapter';
 import { isAmazonTrackingNumber } from '../../../../src/lib/amazon';
 import { checkAmazonShipping } from '../../../../src/server/amazonShippingEligibility';
+import { createAdapterRegistry } from '../../../../src/server/adapterRegistry';
 import { apiRoute, HttpError, json, readJsonObject } from '../../../../src/server/api';
-import { DPDTracker } from '@carriers/carriers/dpd/adapter';
-import { GLSGermanyTracker } from '@carriers/carriers/gls-de/adapter';
+import { MAX_RECOGNITIONS, recognitionCandidates, recognizeAll, settleRecognition } from '../../../../src/server/carrierRecognition';
 import { recordDetection } from '../../../../src/server/metrics';
+import { logOperationalEvent } from '../../../../src/server/observability';
 import { detectCarrierMatch, normalizeTrackingNumber } from '../../../../src/lib/carriers';
-import type { ApiCarrierDetectionResponse } from '../../../../src/generated/apiContract';
+import type { ApiCarrierDetectionResponse, ApiCarrierId } from '../../../../src/generated/apiContract';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-// One instance per server process keeps DPD's guest token warm between lookups.
-const dpd = new DPDTracker({ timeoutMs: 4_000, trawl: null });
-const DPD_LOOKUP_BUDGET_MS = 6_000;
+/** The Add sheet waits this long for the carriers it asks; the first sync asks again after saving. */
+const RECOGNITION_BUDGET_MS = 3_000;
+/** A focus-out repeated on the same number reuses the answer instead of asking the carriers again. */
+const ANSWER_TTL_MS = 10 * 60_000;
+const MAX_ANSWERS = 500;
 
-async function withinBudget<T>(task: Promise<T>, budgetMs: number): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  try {
-    return await Promise.race([task, new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(Object.assign(new Error('Carrier lookup timed out'), { name: 'CarrierLookupTimeoutError' })), budgetMs);
-    })]);
-  } finally { clearTimeout(timer); }
+// One registry per server process keeps carrier sessions (DPD's guest token) warm.
+let registry: AdapterRegistry | undefined;
+const answers = new Map<string, { at: number; answer: ApiCarrierDetectionResponse }>();
+
+async function recognize(trackingNumber: string): Promise<ApiCarrierDetectionResponse> {
+  const cached = answers.get(trackingNumber);
+  if (cached && Date.now() - cached.at < ANSWER_TTL_MS) return cached.answer;
+  const candidates = recognitionCandidates(trackingNumber).slice(0, MAX_RECOGNITIONS);
+  const outcomes = await recognizeAll(candidates, async (carrier) => {
+    const adapter = (registry ??= createAdapterRegistry()).for(carrier);
+    if (!adapter?.recognize) throw new RangeError(`${carrier} cannot recognize a number`);
+    return await adapter.recognize(trackingNumber);
+  }, RECOGNITION_BUDGET_MS);
+  const { carrier, choices } = settleRecognition(outcomes);
+  const answer: ApiCarrierDetectionResponse = carrier
+    ? { trackingNumber, carrier: carrier as ApiCarrierId }
+    : { trackingNumber, carrier: 'unknown', ...(choices.length > 1 ? { recognized: choices as ApiCarrierId[] } : {}) };
+  if (candidates.length) {
+    logOperationalEvent('carrier_recognition', {
+      asked: candidates.length,
+      known: outcomes.filter((outcome) => outcome.status === 'known').length,
+      failed: outcomes.filter((outcome) => outcome.status === 'failed').length,
+      settled: carrier ?? (choices.length > 1 ? 'choice' : 'none'),
+    });
+  }
+  // A carrier that could not answer may answer on the next focus-out.
+  if (outcomes.every((outcome) => outcome.status !== 'failed')) {
+    answers.delete(trackingNumber);
+    answers.set(trackingNumber, { at: Date.now(), answer });
+    if (answers.size > MAX_ANSWERS) answers.delete(answers.keys().next().value!);
+  }
+  return answer;
 }
 
 export const POST = apiRoute(async ({ request }) => {
@@ -38,27 +67,10 @@ export const POST = apiRoute(async ({ request }) => {
     return json({ trackingNumber, carrier: ['available', 'expired'].includes(amazonShippingStatus) ? 'amazon-shipping' : 'amazon-logistics', amazonShippingStatus } satisfies ApiCarrierDetectionResponse);
   }
   const detected = detectCarrierMatch(trackingNumber);
-  let { carrier, confidence } = detected;
-  // Numeric shapes overlap between carriers. Only promote GLS after its own
-  // service returns a matching shipment; do not guess from a numeric prefix.
-  if (carrier === 'unknown' && /^\d{11,12}$/.test(trackingNumber)) {
-    try {
-      if (await new GLSGermanyTracker(5_000).recognizes(trackingNumber)) { carrier = 'gls-de'; confidence = 'high'; }
-    } catch (error) {
-      throw new HttpError(502, 'Carrier lookup is temporarily unavailable', undefined, { cause: error });
-    }
-  }
-  // 14 digits are shared by several carriers. DPD's own guest API settles
-  // whether DPD has the parcel, unless the number points to another carrier
-  // first (a DPD France depot). Only a positive answer promotes it.
-  if (carrier === 'unknown' && /^\d{14}$/.test(trackingNumber) && detected.candidates.includes('dpd')
-    && (detected.preferred.length === 0 || detected.preferred.includes('dpd'))) {
-    try {
-      if (await withinBudget(dpd.recognizes(trackingNumber), DPD_LOOKUP_BUDGET_MS)) { carrier = 'dpd'; confidence = 'high'; }
-    } catch (error) {
-      throw new HttpError(502, 'Carrier lookup is temporarily unavailable', undefined, { cause: error });
-    }
-  }
-  recordDetection(confidence);
-  return json({ trackingNumber, carrier } satisfies ApiCarrierDetectionResponse);
+  // A shape shared by several carriers: ask the ones that can answer cheaply.
+  // Only a carrier that knows the number is returned; the rest stay suggestions.
+  const answer = detected.confidence === 'low' ? await recognize(trackingNumber)
+    : { trackingNumber, carrier: detected.carrier } satisfies ApiCarrierDetectionResponse;
+  recordDetection(answer.carrier !== 'unknown' ? 'high' : detected.confidence);
+  return json(answer);
 }, { loadService: false });
