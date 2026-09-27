@@ -129,68 +129,141 @@ final class ParcelLogicTests: XCTestCase {
 
     func testArchiveReleaseKeepsTheFingerPositionUntilTheSettleAnimation() {
         var swipe = ArchiveSwipeState()
-        swipe.drag(translation: CGSize(width: -120, height: 3), width: 360)
+        // The first 8 points only pick the direction, so the card starts without a jump.
+        swipe.drag(translation: CGSize(width: -60, height: 3), width: 360)
+        XCTAssertEqual(swipe.reveal, 52, accuracy: 0.001)
 
-        XCTAssertEqual(swipe.release(predictedTranslation: -125, width: 360), .revealed)
+        XCTAssertEqual(swipe.release(velocity: -300, width: 360), .revealed)
         // Releasing used to reset the displayed translation to zero for a frame.
-        XCTAssertEqual(swipe.offset, -120)
+        XCTAssertEqual(swipe.reveal, 52, accuracy: 0.001)
         XCTAssertNil(swipe.cancel())
-        XCTAssertEqual(swipe.offset, -120)
-        swipe.settle(at: -88)
+        swipe.settle(at: 88)
 
+        // Past the action the card resists the finger.
         swipe.drag(translation: CGSize(width: -12, height: 0), width: 360)
-        XCTAssertEqual(swipe.offset, -100)
+        XCTAssertEqual(swipe.reveal, 91.2, accuracy: 0.001)
     }
 
     func testShortArchiveSwipeClosesFromTheReleasePosition() {
         var swipe = ArchiveSwipeState()
         swipe.drag(translation: CGSize(width: -25, height: 0), width: 360)
-        XCTAssertEqual(swipe.release(predictedTranslation: -28, width: 360), .closed)
-        XCTAssertEqual(swipe.offset, -25)
+        XCTAssertEqual(swipe.release(velocity: 0, width: 360), .closed)
+        XCTAssertEqual(swipe.reveal, 17, accuracy: 0.001)
     }
 
     func testReversingAnOpenArchiveSwipeClosesIt() {
         var swipe = ArchiveSwipeState()
-        swipe.settle(at: -88)
+        swipe.settle(at: 88)
         swipe.drag(translation: CGSize(width: 65, height: 2), width: 360)
-        XCTAssertEqual(swipe.offset, -23)
-        XCTAssertEqual(swipe.release(predictedTranslation: 90, width: 360), .closed)
-        XCTAssertEqual(swipe.offset, -23)
+        XCTAssertEqual(swipe.reveal, 31, accuracy: 0.001)
+        XCTAssertEqual(swipe.release(velocity: 400, width: 360), .closed)
+        XCTAssertEqual(swipe.reveal, 31, accuracy: 0.001)
     }
 
-    func testArchiveRequiresActualDistanceNotJustFlingVelocity() {
+    func testArchiveNeedsTheCommitPointOrAThrowPastTheAction() {
         var swipe = ArchiveSwipeState()
         swipe.drag(translation: CGSize(width: -30, height: 0), width: 360)
-        XCTAssertEqual(swipe.release(predictedTranslation: -400, width: 360), .revealed)
+        XCTAssertEqual(swipe.release(velocity: -2000, width: 360), .revealed)
 
         swipe.settle(at: 0)
-        swipe.drag(translation: CGSize(width: -210, height: 1), width: 360)
-        XCTAssertEqual(swipe.release(predictedTranslation: -210, width: 360), .archive)
-        XCTAssertEqual(swipe.offset, -210)
+        swipe.drag(translation: CGSize(width: -120, height: 1), width: 360)
+        XCTAssertEqual(swipe.release(velocity: -500, width: 360), .revealed)
+        swipe.settle(at: 0)
+        swipe.drag(translation: CGSize(width: -120, height: 1), width: 360)
+        XCTAssertEqual(swipe.release(velocity: -1500, width: 360), .archive)
+
+        swipe.settle(at: 0)
+        swipe.drag(translation: CGSize(width: -230, height: 1), width: 360)
+        XCTAssertGreaterThanOrEqual(swipe.reveal, ArchiveSwipeState.commitPoint(width: 360))
+        XCTAssertEqual(swipe.release(velocity: 0, width: 360), .archive)
     }
 
     func testVerticalScrollDoesNotBecomeAnArchiveSwipe() {
         var swipe = ArchiveSwipeState()
         swipe.drag(translation: CGSize(width: -3, height: -18), width: 360)
         swipe.drag(translation: CGSize(width: -200, height: -25), width: 360)
-        XCTAssertEqual(swipe.offset, 0)
-        XCTAssertNil(swipe.release(predictedTranslation: -250, width: 360))
+        XCTAssertEqual(swipe.reveal, 0)
+        XCTAssertNil(swipe.release(velocity: -900, width: 360))
     }
 
     func testCancelledSwipeSettlesWithoutArchivingOrResettingItsPosition() {
         var swipe = ArchiveSwipeState()
         swipe.drag(translation: CGSize(width: -220, height: 0), width: 360)
+        let reveal = swipe.reveal
         XCTAssertEqual(swipe.cancel(), .revealed)
-        XCTAssertEqual(swipe.offset, -220)
+        XCTAssertEqual(swipe.reveal, reveal)
         XCTAssertNil(swipe.cancel())
     }
 
     func testArchiveSwipeStaysWithinCardBounds() {
         var swipe = ArchiveSwipeState()
         swipe.drag(translation: CGSize(width: 50, height: 0), width: 360)
-        XCTAssertEqual(swipe.offset, 0)
+        XCTAssertLessThan(swipe.reveal, 0)
+        XCTAssertGreaterThan(swipe.reveal, -44)
         swipe.drag(translation: CGSize(width: -500, height: 0), width: 360)
-        XCTAssertEqual(swipe.offset, -360)
+        XCTAssertLessThan(swipe.reveal, 360)
+    }
+
+    func testArchiveSwipeTravelIsContinuousAndInvertible() {
+        let knee = 88 + (ArchiveSwipeState.commitPoint(width: 360) - 88) / 0.8
+        for travel: CGFloat in [-120, -1, 0, 30, 88, 120, knee - 1, knee + 1, 260, 400] {
+            let reveal = ArchiveSwipeState.reveal(forTravel: travel, width: 360)
+            XCTAssertEqual(ArchiveSwipeState.travel(forReveal: reveal, width: 360), travel, accuracy: 0.0001)
+        }
+        for edge: CGFloat in [0, 88, knee] {
+            let step = ArchiveSwipeState.reveal(forTravel: edge + 0.0001, width: 360) - ArchiveSwipeState.reveal(forTravel: edge - 0.0001, width: 360)
+            XCTAssertLessThan(step, 0.001)
+        }
+        XCTAssertEqual(ArchiveSwipeState.commitPoint(width: 360), 180)
+        XCTAssertEqual(ArchiveSwipeState.commitPoint(width: 200), 144)
+    }
+
+    func testSwipeSpringStartsWithItsReleaseSpeedAndSettlesOnTarget() {
+        let start = SwipeSpring.fling.state(from: 40, to: 88, velocity: 600, at: 0)
+        XCTAssertEqual(start.value, 40, accuracy: 0.0001)
+        XCTAssertEqual(start.velocity, 600, accuracy: 0.0001)
+        let rest = SwipeSpring.snap.state(from: 40, to: 88, velocity: 600, at: 1.5)
+        XCTAssertEqual(rest.value, 88, accuracy: 0.01)
+        let samples = (0..<120).map { SwipeSpring.snap.state(from: 0, to: 100, velocity: 0, at: Double($0) / 120).value }
+        XCTAssertLessThanOrEqual(samples.max() ?? 0, 100)
+        let settle = SwipeSpring.snap.settleTime(from: 0, to: 100, velocity: 0)
+        XCTAssertGreaterThan(settle, 0.25)
+        XCTAssertLessThan(settle, 0.6)
+    }
+
+    func testArchiveSwipeMotionHandsOverItsPositionAndSpeed() {
+        let began = Date(timeIntervalSinceReferenceDate: 0)
+        let motion = ArchiveSwipeMotion(
+            from: ArchiveSwipePose(reveal: 150), to: ArchiveSwipePose(reveal: 360, spread: 1, land: 1),
+            velocity: ArchiveSwipePose(reveal: 900), spring: .exit, reduceMotion: false, began: began
+        )
+        XCTAssertEqual(motion.pose(at: began).reveal, 150, accuracy: 0.001)
+        XCTAssertEqual(motion.velocity(at: began).reveal, 900, accuracy: 0.001)
+        let midway = began.addingTimeInterval(0.1)
+        XCTAssertGreaterThan(motion.pose(at: midway).reveal, 150)
+        XCTAssertGreaterThan(motion.pose(at: midway).land, 0)
+        XCTAssertEqual(motion.pose(at: began.addingTimeInterval(motion.duration + 0.1)), motion.target)
+        let leave = motion.time { $0.reveal >= 358 && $0.land >= 0.92 }
+        XCTAssertGreaterThan(leave, 0.1)
+        XCTAssertLessThan(leave, motion.duration)
+
+        // A throw from beside the action: the gap to the card only closes on the way out.
+        let exit = ArchiveSwipeMotion(
+            from: ArchiveSwipePose(reveal: 106), to: ArchiveSwipePose(reveal: 370, spread: 1, land: 1),
+            velocity: ArchiveSwipePose(reveal: 2000), spring: .exit, reduceMotion: false, glued: true, began: began
+        )
+        var gap: CGFloat = 18.001
+        for step in 0...60 {
+            let pose = exit.pose(at: began.addingTimeInterval(Double(step) / 120))
+            let next = (1 - pose.spread) * max(0, min(pose.reveal, 370) - 88)
+            XCTAssertLessThanOrEqual(next, gap + 0.001)
+            gap = next
+        }
+
+        let still = ArchiveSwipeMotion(from: ArchiveSwipePose(reveal: 150), to: ArchiveSwipePose(),
+                                       velocity: ArchiveSwipePose(reveal: 900), spring: .fling, reduceMotion: true, began: began)
+        XCTAssertEqual(still.velocity, ArchiveSwipePose())
+        XCTAssertEqual(still.revealSpring, .reduced)
     }
 
     func testInternationalPostWaitsForItsAutomaticLookup() {

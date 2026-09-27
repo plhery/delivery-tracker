@@ -10,6 +10,8 @@ enum Brand {
     static let cream = color(light: "#F0F0E9", dark: "#292C28")
     static let paper = color(light: "#FFFFFF", dark: "#242824")
     static let warning = color(light: "#963E19", dark: "#FFB184")
+    /// The tray behind a swiped card, like the web's soft orange.
+    static let warningSoft = color(light: "#FFDDC7", dark: "#4C3123")
     static let background = color(light: "#F4F5F1", dark: "#151915")
     static let separator = Color(uiColor: .separator)
 

@@ -681,9 +681,16 @@ private struct DeliveryListView: View {
         }
     }
 
-    private func archive(_ parcel: Parcel) async {
-        do { try await store.archive(parcel) }
-        catch { actionError = localizer.errorMessage(error) }
+    /// Returns whether the parcel left the list, so a swiped card only returns after a failure.
+    @discardableResult
+    private func archive(_ parcel: Parcel) async -> Bool {
+        do {
+            try await store.archive(parcel)
+            return true
+        } catch {
+            actionError = localizer.errorMessage(error)
+            return false
+        }
     }
 
     private func clearFilters() {
@@ -727,7 +734,7 @@ private struct ExperimentalNextDeliveryPass: View {
     let parcel: Parcel
     let transition: Namespace.ID
     let onOpen: () -> Void
-    let onArchive: () async -> Void
+    let onArchive: () async -> Bool
 
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -799,7 +806,7 @@ private struct ExperimentalParcelPassCard: View {
     let notice: String?
     let transition: Namespace.ID
     let onOpen: () -> Void
-    let onArchive: (() async -> Void)?
+    let onArchive: (() async -> Bool)?
 
     @EnvironmentObject private var localizer: Localizer
     @ObservedObject private var catalog = CarrierCatalog.shared
@@ -898,7 +905,7 @@ private struct ExperimentalDeliveredParcelCard: View {
     let parcel: Parcel
     let transition: Namespace.ID
     let onOpen: () -> Void
-    let onArchive: (() async -> Void)?
+    let onArchive: (() async -> Bool)?
 
     var body: some View {
         ExperimentalParcelPassCard(
@@ -917,7 +924,7 @@ private extension View {
         cornerRadius: CGFloat,
         shadow: Bool = true,
         onOpen: @escaping () -> Void,
-        action: (() async -> Void)?
+        action: (() async -> Bool)?
     ) -> some View {
         modifier(ExperimentalSwipeToArchiveModifier(
             title: title,
@@ -929,42 +936,207 @@ private extension View {
     }
 }
 
-/// The displayed offset survives gesture release and cancellation until settling.
+/// Finger travel to revealed width, and where a released swipe settles. Matches
+/// the web card: one to one across the action, resisted up to the commit point,
+/// softly bounded after, and a released speed that can open, close or archive.
 struct ArchiveSwipeState {
     enum Destination: Equatable { case closed, revealed, archive }
     static let actionWidth: CGFloat = 88
-    private(set) var offset: CGFloat = 0
-    private var origin: CGFloat?
+    static let hysteresis: CGFloat = 8
+    static let resistance: CGFloat = 0.8
+    /// Release speeds in points per second: a flick picks open or closed, a throw past the action archives.
+    static let flickSpeed: CGFloat = 110
+    static let throwSpeed: CGFloat = 1000
+    private(set) var reveal: CGFloat = 0
+    private var origin: (travel: CGFloat, slop: CGFloat)?
     private var horizontal = false
 
-    static func commitThreshold(width: CGFloat) -> CGFloat {
-        max(actionWidth * 1.75, width * 0.52)
+    static func commitPoint(width: CGFloat) -> CGFloat {
+        max(actionWidth + 56, width * 0.5)
     }
 
+    private static func rubber(_ distance: CGFloat, limit: CGFloat) -> CGFloat {
+        limit * (1 - 1 / (1 + resistance * distance / limit))
+    }
+
+    private static func unrubber(_ value: CGFloat, limit: CGFloat) -> CGFloat {
+        value * limit / (resistance * (limit - value))
+    }
+
+    static func reveal(forTravel travel: CGFloat, width: CGFloat) -> CGFloat {
+        let commit = commitPoint(width: width)
+        let knee = actionWidth + (commit - actionWidth) / resistance
+        if travel < 0 { return -rubber(-travel, limit: actionWidth / 2) }
+        if travel <= actionWidth { return travel }
+        if travel <= knee { return actionWidth + (travel - actionWidth) * resistance }
+        return commit + rubber(travel - knee, limit: width - commit)
+    }
+
+    /// The finger travel that shows `reveal`, so a caught card continues without a jump.
+    static func travel(forReveal reveal: CGFloat, width: CGFloat) -> CGFloat {
+        let commit = commitPoint(width: width)
+        if reveal < 0 { return -unrubber(min(-reveal, actionWidth / 2 - 0.01), limit: actionWidth / 2) }
+        if reveal <= actionWidth { return reveal }
+        if reveal <= commit { return actionWidth + (reveal - actionWidth) / resistance }
+        return actionWidth + (commit - actionWidth) / resistance
+            + unrubber(min(reveal - commit, width - commit - 0.01), limit: width - commit)
+    }
+
+    /// `velocity` is the revealing speed: positive while the card moves left.
+    static func destination(reveal: CGFloat, velocity: CGFloat, width: CGFloat) -> Destination {
+        if reveal >= commitPoint(width: width) || (reveal >= actionWidth && velocity >= throwSpeed) { return .archive }
+        if abs(velocity) >= flickSpeed { return velocity > 0 ? .revealed : .closed }
+        // Slow releases project their speed the way scrolling momentum would.
+        return reveal + velocity * 0.5 > actionWidth / 2 ? .revealed : .closed
+    }
+
+    /// The first points of a drag only pick its direction, so the card starts moving without a jump.
     mutating func drag(translation: CGSize, width: CGFloat) {
         if origin == nil {
-            origin = offset
             horizontal = abs(translation.width) > abs(translation.height)
+            let slop = min(max(translation.width, -Self.hysteresis), Self.hysteresis)
+            origin = (Self.travel(forReveal: reveal, width: width), slop)
         }
         guard horizontal, let origin else { return }
-        offset = max(-max(width, Self.actionWidth), min(0, origin + translation.width))
+        reveal = Self.reveal(forTravel: origin.travel - (translation.width - origin.slop), width: width)
     }
 
-    mutating func release(predictedTranslation: CGFloat, width: CGFloat) -> Destination? {
+    /// `velocity` is the finger's horizontal speed in points per second.
+    mutating func release(velocity: CGFloat, width: CGFloat) -> Destination? {
         defer { origin = nil; horizontal = false }
-        guard horizontal, let origin else { return nil }
-        if offset <= -Self.commitThreshold(width: width) { return .archive }
-        return origin + predictedTranslation < -Self.actionWidth * 0.42 ? .revealed : .closed
+        guard horizontal, origin != nil else { return nil }
+        return Self.destination(reveal: reveal, velocity: -velocity, width: width)
     }
 
     mutating func cancel() -> Destination? {
         defer { origin = nil; horizontal = false }
         guard horizontal, origin != nil else { return nil }
-        return offset < -Self.actionWidth / 2 ? .revealed : .closed
+        return reveal > Self.actionWidth / 2 ? .revealed : .closed
     }
 
-    mutating func settle(at offset: CGFloat) {
-        self.offset = offset
+    mutating func settle(at reveal: CGFloat) {
+        self.reveal = reveal
+    }
+}
+
+/// A damped spring with a perceptual `duration` and an optional `bounce`, solved in
+/// closed form so a motion can hand over to the next one at any moment with its speed.
+struct SwipeSpring: Equatable {
+    var duration: Double
+    var bounce: Double = 0
+
+    static let snap = SwipeSpring(duration: 0.3)
+    static let fling = SwipeSpring(duration: 0.42, bounce: 0.15)
+    static let leap = SwipeSpring(duration: 0.28)
+    static let exit = SwipeSpring(duration: 0.32)
+    static let reduced = SwipeSpring(duration: 0.24)
+
+    /// Position and velocity, in units per second, `seconds` after leaving `from` at `velocity`.
+    func state(from: Double, to: Double, velocity: Double, at seconds: Double) -> (value: Double, velocity: Double) {
+        let omega = 2 * Double.pi / duration
+        let damping = 1 - min(max(bounce, 0), 0.9)
+        let offset = from - to
+        if damping < 1 {
+            let decay = damping * omega
+            let frequency = omega * (1 - damping * damping).squareRoot()
+            let sine = (velocity + decay * offset) / frequency
+            let fade = exp(-decay * seconds)
+            let cosine = cos(frequency * seconds)
+            let sinus = sin(frequency * seconds)
+            return (to + fade * (offset * cosine + sine * sinus),
+                    fade * (velocity * cosine - (decay * velocity + omega * omega * offset) / frequency * sinus))
+        }
+        let slope = velocity + omega * offset
+        let fade = exp(-omega * seconds)
+        return (to + (offset + slope * seconds) * fade, (velocity - omega * slope * seconds) * fade)
+    }
+
+    /// Seconds until the spring rests within `precision` of its target.
+    func settleTime(from: Double, to: Double, velocity: Double, precision: Double = 0.5) -> Double {
+        var seconds = 0.0
+        while seconds < 2 {
+            let current = state(from: from, to: to, velocity: velocity, at: seconds)
+            if abs(current.value - to) < precision && abs(current.velocity) < precision * 20 { return seconds }
+            seconds += 1 / 120
+        }
+        return 2
+    }
+}
+
+/// How far the card has moved left, whether the action has leapt to the card's
+/// edge, and whether its label has moved to the middle of the row.
+struct ArchiveSwipePose: Equatable {
+    var reveal: CGFloat = 0
+    var spread: CGFloat = 0
+    var land: CGFloat = 0
+}
+
+/// Springs every channel of the pose to a target. The pose at any moment comes
+/// from the closed form, so a new motion starts from the current one's position and speed.
+struct ArchiveSwipeMotion: Identifiable {
+    let id = UUID()
+    let start: ArchiveSwipePose
+    let target: ArchiveSwipePose
+    let velocity: ArchiveSwipePose
+    let revealSpring: SwipeSpring
+    let leapSpring: SwipeSpring
+    /// On the way out the action stays on the card's edge: its gap closes instead of widening.
+    let glued: Bool
+    let began: Date
+    let duration: TimeInterval
+
+    init(from start: ArchiveSwipePose, to target: ArchiveSwipePose, velocity: ArchiveSwipePose = .init(),
+         spring: SwipeSpring, reduceMotion: Bool, glued: Bool = false, began: Date = .now) {
+        self.start = start
+        self.target = target
+        self.glued = glued
+        self.velocity = reduceMotion ? ArchiveSwipePose() : velocity
+        revealSpring = reduceMotion ? .reduced : spring
+        leapSpring = reduceMotion ? .reduced : .leap
+        self.began = began
+        duration = max(
+            revealSpring.settleTime(from: start.reveal, to: target.reveal, velocity: self.velocity.reveal),
+            leapSpring.settleTime(from: start.spread, to: target.spread, velocity: self.velocity.spread, precision: 0.002),
+            leapSpring.settleTime(from: start.land, to: target.land, velocity: self.velocity.land, precision: 0.002)
+        )
+    }
+
+    private func states(at seconds: Double) -> [(value: Double, velocity: Double)] {
+        [revealSpring.state(from: start.reveal, to: target.reveal, velocity: velocity.reveal, at: seconds),
+         leapSpring.state(from: start.spread, to: target.spread, velocity: velocity.spread, at: seconds),
+         leapSpring.state(from: start.land, to: target.land, velocity: velocity.land, at: seconds)]
+    }
+
+    func pose(at date: Date) -> ArchiveSwipePose {
+        pose(after: date.timeIntervalSince(began))
+    }
+
+    private func pose(after seconds: Double) -> ArchiveSwipePose {
+        guard seconds < duration else { return target }
+        let channels = states(at: max(0, seconds))
+        var pose = ArchiveSwipePose(reveal: channels[0].value, spread: channels[1].value, land: channels[2].value)
+        let action = ArchiveSwipeState.actionWidth
+        let beyond = min(pose.reveal, target.reveal) - action
+        if glued, start.spread < 1, beyond > 0 {
+            let gap = (1 - start.spread) * max(0, min(start.reveal, target.reveal) - action)
+            let progress = min(1, max(0, (pose.spread - start.spread) / (1 - start.spread)))
+            pose.spread = min(1, max(0, 1 - gap * (1 - progress) / beyond))
+        }
+        return pose
+    }
+
+    func velocity(at date: Date) -> ArchiveSwipePose {
+        let seconds = date.timeIntervalSince(began)
+        guard seconds < duration else { return ArchiveSwipePose() }
+        let channels = states(at: max(0, seconds))
+        return ArchiveSwipePose(reveal: channels[0].velocity, spread: channels[1].velocity, land: channels[2].velocity)
+    }
+
+    /// Seconds from the start until `reached` holds along the way, or the whole motion.
+    func time(until reached: (ArchiveSwipePose) -> Bool) -> TimeInterval {
+        var seconds = 0.0
+        while seconds < duration && !reached(pose(after: seconds)) { seconds += 1 / 120 }
+        return min(seconds, duration)
     }
 }
 
@@ -1034,7 +1206,8 @@ final class ArchivePanGestureRecognizer: UIPanGestureRecognizer {
 
 private struct ArchivePanGesture: UIGestureRecognizerRepresentable {
     let onChanged: (CGSize) -> Void
-    let onEnded: (CGFloat) -> Void
+    /// Receives the finger's velocity when it lifts.
+    let onEnded: (CGPoint) -> Void
     let onCancelled: () -> Void
     let onPressChanged: (Bool) -> Void
 
@@ -1062,9 +1235,7 @@ private struct ArchivePanGesture: UIGestureRecognizerRepresentable {
         case .ended:
             // The last change can trail the finger; decide from where it lifted.
             onChanged(CGSize(width: translation.x, height: translation.y))
-            let velocity = context.converter.localVelocity ?? recognizer.velocity(in: recognizer.view)
-            // A short flick can reveal the action; archiving still needs actual travel.
-            onEnded(translation.x + velocity.x * 0.15)
+            onEnded(context.converter.localVelocity ?? recognizer.velocity(in: recognizer.view))
         case .cancelled, .failed:
             onCancelled()
         default:
@@ -1078,52 +1249,32 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
     let cornerRadius: CGFloat
     let shadow: Bool
     let onOpen: () -> Void
-    let action: (() async -> Void)?
+    let action: (() async -> Bool)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var gestureActive = false
     @State private var pressed = false
     @State private var swipe = ArchiveSwipeState()
+    /// The pose at rest or under the finger; `motion` drives it between gestures.
+    @State private var pose = ArchiveSwipePose()
+    @State private var motion: ArchiveSwipeMotion?
+    @State private var armed = false
     @State private var committing = false
     @State private var width: CGFloat = 0
     @State private var archiveFeedback = 0
 
     private let actionWidth = ArchiveSwipeState.actionWidth
+    /// While the action touches the card, it also fills under the card's round corners.
+    private let reach: CGFloat = 24
 
     @ViewBuilder
     func body(content: Content) -> some View {
         if let action {
-            ZStack(alignment: .trailing) {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(Brand.warning)
-                    .overlay(alignment: .trailing) {
-                        Button {
-                            trigger(action, provideFeedback: true)
-                        } label: {
-                            Label(title, systemImage: "archivebox.fill")
-                                .labelStyle(.iconOnly)
-                                .font(.system(size: 18, weight: .bold))
-                                .scaleEffect(archiveIconScale)
-                                .symbolEffect(.bounce, value: isCommitArmed && !reduceMotion)
-                                .animation(
-                                    reduceMotion
-                                        ? nil
-                                        : .snappy(duration: 0.22, extraBounce: 0.16),
-                                    value: isCommitArmed
-                                )
-                                .foregroundStyle(Brand.color(light: "#FFFFFF", dark: "#292820"))
-                                .frame(width: max(actionWidth, revealedWidth))
-                                .frame(maxHeight: .infinity)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .allowsHitTesting(revealedWidth >= 8)
-                        .accessibilityHidden(revealedWidth < 8)
-                    }
-                    .opacity(revealProgress)
-
+            TimelineView(.animation(paused: motion == nil)) { timeline in
+                let shown = displayedPose(at: timeline.date)
                 content
-                    .offset(x: currentOffset)
+                    .offset(x: -min(shown.reveal, rowWidth))
+                    .background(alignment: .leading) { actionLayers(shown, action: action) }
             }
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .shadow(
@@ -1144,11 +1295,9 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
             .simultaneousGesture(tapGesture, including: .gesture)
             .gesture(swipeGesture(action: action))
             .onDisappear(perform: cancelSwipe)
+            .task(id: motion?.id) { await finishMotion() }
             .allowsHitTesting(!committing)
-            .sensoryFeedback(
-                .impact(weight: .medium, intensity: 0.9),
-                trigger: isCommitArmed
-            ) { wasArmed, isArmed in
+            .sensoryFeedback(.impact(weight: .medium, intensity: 0.9), trigger: armed) { wasArmed, isArmed in
                 !wasArmed && isArmed
             }
             .sensoryFeedback(.impact(weight: .medium, intensity: 0.8), trigger: archiveFeedback)
@@ -1163,29 +1312,59 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
         }
     }
 
-    private var currentOffset: CGFloat {
-        swipe.offset
+    private var rowWidth: CGFloat { max(width, actionWidth) }
+
+    private func displayedPose(at date: Date) -> ArchiveSwipePose {
+        motion?.pose(at: date) ?? pose
     }
 
-    private var revealProgress: CGFloat {
-        min(1, max(0, -currentOffset / actionWidth))
-    }
-
-    private var revealedWidth: CGFloat {
-        max(0, -currentOffset)
-    }
-
-    private var commitThreshold: CGFloat {
-        ArchiveSwipeState.commitThreshold(width: width)
-    }
-
-    private var isCommitArmed: Bool {
-        gestureActive && !committing && width > 0 && revealedWidth >= commitThreshold
-    }
-
-    private var archiveIconScale: CGFloat {
-        let revealScale = 0.76 + (revealProgress * 0.24)
-        return revealScale * (isCommitArmed && !reduceMotion ? 1.22 : 1)
+    /// A soft tray behind the card, and the action that rides on the card's edge
+    /// until it is fully shown, then leaps to that edge past the commit point.
+    private func actionLayers(_ shown: ArchiveSwipePose, action: @escaping () async -> Bool) -> some View {
+        let width = rowWidth
+        let visible = min(shown.reveal, width)
+        let tray = max(0, actionWidth - visible)
+        let shift = shown.spread * max(0, visible - actionWidth)
+        let blockStart = tray + width - actionWidth - shift
+        let gap = (1 - shown.spread) * max(0, visible - actionWidth)
+        return ZStack(alignment: .leading) {
+            Brand.warningSoft
+                .offset(x: tray)
+            Brand.warning
+                .frame(width: width)
+                .offset(x: blockStart)
+            // Only while the action touches the card; otherwise the tray shows in the gap.
+            Brand.warning
+                .frame(width: reach)
+                .offset(x: blockStart - reach)
+                .opacity(max(0, 1 - gap / 6))
+            Button {
+                trigger(action, provideFeedback: true)
+            } label: {
+                VStack(spacing: 5) {
+                    Image(systemName: "archivebox.fill")
+                        .font(.system(size: 18, weight: .bold))
+                        .scaleEffect(armed && !reduceMotion ? 1.2 : 1)
+                        .symbolEffect(.bounce, value: armed && !reduceMotion)
+                    Text(title)
+                        .font(.caption2.weight(.semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+                .foregroundStyle(Brand.color(light: "#FFFFFF", dark: "#292820"))
+                .frame(width: actionWidth)
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            // On the way out the label moves to the middle of the row.
+            .offset(x: blockStart + shown.land * (shift - (width - actionWidth) / 2))
+            .allowsHitTesting(visible >= 8)
+            .accessibilityHidden(visible < 8)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        // Hidden at rest, so no colour shows through the card's anti-aliased corners.
+        .opacity(visible > 0.25 ? 1 : 0)
     }
 
     private var tapGesture: some Gesture {
@@ -1195,27 +1374,33 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
             }
     }
 
-    private func swipeGesture(action: @escaping () async -> Void) -> ArchivePanGesture {
+    private func swipeGesture(action: @escaping () async -> Bool) -> ArchivePanGesture {
         ArchivePanGesture(
             onChanged: { translation in
                 guard !committing else { return }
-                var transaction = Transaction(animation: nil)
-                transaction.disablesAnimations = true
-                withTransaction(transaction) {
-                    gestureActive = true
-                    swipe.drag(translation: translation, width: width)
+                let now = Date()
+                quietly {
+                    if !gestureActive {
+                        gestureActive = true
+                        // Catch the card wherever it is on screen.
+                        swipe.settle(at: displayedPose(at: now).reveal)
+                    }
+                    swipe.drag(translation: translation, width: rowWidth)
+                    follow(at: now)
                 }
+                setArmed(swipe.reveal >= ArchiveSwipeState.commitPoint(width: rowWidth))
             },
-            onEnded: { predictedTranslation in
+            onEnded: { velocity in
                 gestureActive = false
-                guard !committing, let destination = swipe.release(
-                    predictedTranslation: predictedTranslation,
-                    width: width
-                ) else { return }
+                guard !committing, let destination = swipe.release(velocity: velocity.x, width: rowWidth) else {
+                    setArmed(false)
+                    return
+                }
                 if destination == .archive {
-                    trigger(action, provideFeedback: false)
+                    trigger(action, velocity: -velocity.x, provideFeedback: false)
                 } else {
-                    settle(destination)
+                    setArmed(false)
+                    settle(destination, velocity: -velocity.x)
                 }
             },
             onCancelled: cancelSwipe,
@@ -1225,42 +1410,106 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
         )
     }
 
+    /// Our own motion draws every frame; SwiftUI must not animate these changes again.
+    private func quietly(_ change: () -> Void) {
+        var transaction = Transaction(animation: nil)
+        transaction.disablesAnimations = true
+        withTransaction(transaction, change)
+    }
+
+    /// Keep the card under the finger while the action leaps to or from its edge.
+    private func follow(at now: Date) {
+        let shown = displayedPose(at: now)
+        let speed = motion?.velocity(at: now) ?? ArchiveSwipePose()
+        let leapt: CGFloat = swipe.reveal >= ArchiveSwipeState.commitPoint(width: rowWidth) ? 1 : 0
+        let target = ArchiveSwipePose(reveal: swipe.reveal, spread: leapt)
+        let start = ArchiveSwipePose(reveal: swipe.reveal, spread: shown.spread, land: shown.land)
+        if reduceMotion || (abs(start.spread - leapt) < 0.001 && abs(speed.spread) < 0.01 && abs(start.land) < 0.001) {
+            pose = target
+            motion = nil
+        } else {
+            motion = ArchiveSwipeMotion(from: start, to: target, velocity: ArchiveSwipePose(spread: speed.spread, land: speed.land),
+                                        spring: .snap, reduceMotion: reduceMotion, began: now)
+        }
+    }
+
+    private func finishMotion() async {
+        guard let current = motion else { return }
+        try? await Task.sleep(for: .seconds(max(0, current.duration - Date().timeIntervalSince(current.began))))
+        guard !Task.isCancelled, motion?.id == current.id else { return }
+        quietly {
+            pose = current.target
+            motion = nil
+        }
+    }
+
+    private func setArmed(_ value: Bool) {
+        guard armed != value else { return }
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.22, extraBounce: 0.16)) { armed = value }
+    }
+
     private func cancelSwipe() {
         gestureActive = false
+        setArmed(false)
         guard !committing, let destination = swipe.cancel() else { return }
         settle(destination)
     }
 
-    private func settle(_ destination: ArchiveSwipeState.Destination) {
-        withAnimation(reduceMotion ? nil : .snappy(duration: 0.26)) {
-            swipe.settle(at: destination == .revealed ? -actionWidth : 0)
+    /// Spring to the closed or revealed position, keeping the current speed unless the finger gave one.
+    private func settle(_ destination: ArchiveSwipeState.Destination, velocity: CGFloat? = nil) {
+        let now = Date()
+        let shown = displayedPose(at: now)
+        let speed = motion?.velocity(at: now) ?? ArchiveSwipePose()
+        let reveal = destination == .revealed ? actionWidth : 0
+        let flung = destination == .revealed && (velocity ?? 0) >= ArchiveSwipeState.flickSpeed
+        quietly {
+            swipe.settle(at: reveal)
+            motion = ArchiveSwipeMotion(
+                from: shown, to: ArchiveSwipePose(reveal: reveal),
+                velocity: ArchiveSwipePose(reveal: velocity ?? speed.reveal, spread: speed.spread, land: speed.land),
+                spring: flung ? .fling : .snap, reduceMotion: reduceMotion, began: now
+            )
         }
     }
 
     private func handleTap(at location: CGPoint) {
         guard !committing else { return }
-        if currentOffset < -1 {
-            guard location.x < width - revealedWidth else { return }
+        let shown = displayedPose(at: .now)
+        if shown.reveal > 1 {
+            guard location.x < rowWidth - shown.reveal else { return }
             settle(.closed)
             return
         }
         onOpen()
     }
 
-    private func trigger(_ action: @escaping () async -> Void, provideFeedback: Bool) {
+    private func trigger(_ action: @escaping () async -> Bool, velocity: CGFloat? = nil, provideFeedback: Bool) {
         guard !committing else { return }
         committing = true
         if provideFeedback { archiveFeedback += 1 }
-        withAnimation(reduceMotion ? nil : .snappy(duration: 0.24)) {
-            swipe.settle(at: -max(width, actionWidth))
-        } completion: {
-            Task { @MainActor in
-                await action()
-                // The row normally disappears. If the request failed, return it
-                // only after the result, rather than on an arbitrary timer.
-                committing = false
-                settle(.closed)
-            }
+        let now = Date()
+        let shown = displayedPose(at: now)
+        let speed = motion?.velocity(at: now) ?? ArchiveSwipePose()
+        let width = rowWidth
+        let exit = ArchiveSwipeMotion(
+            from: shown, to: ArchiveSwipePose(reveal: width, spread: 1, land: 1),
+            velocity: ArchiveSwipePose(reveal: max(0, velocity ?? speed.reveal), spread: speed.spread, land: speed.land),
+            spring: .exit, reduceMotion: reduceMotion, glued: true, began: now
+        )
+        quietly {
+            swipe.settle(at: width)
+            motion = exit
+        }
+        // The row leaves the list once the card is out of sight and the label has nearly centred.
+        let leave = exit.time { $0.reveal >= width - 2 && $0.land >= 0.92 }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(leave))
+            // The list removes the row at once; it comes back only when archiving failed.
+            let archived = await action()
+            guard !archived else { return }
+            committing = false
+            setArmed(false)
+            settle(.closed)
         }
     }
 }
