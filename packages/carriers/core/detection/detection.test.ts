@@ -3,6 +3,7 @@ import {
   detectCarrier,
   detectCarrierMatch,
   formatTrackingNumber,
+  isValidGlsParcelNumber,
   isValidHermesParcelNumber,
   isValidMondialRelayBarcode,
   isValidS10TrackingNumber,
@@ -61,8 +62,19 @@ describe('the detection engine', () => {
     expect(detectCarrierMatch('12345678901234').candidates).not.toContain('hermes-de');
   });
 
+  it('offers GLS for a 12-digit number only when its check digit passes', () => {
+    // 11 digits, weights 3-1 from the right plus one: 12345678901 → 1.
+    expect(isValidGlsParcelNumber('123456789011')).toBe(true);
+    expect(isValidGlsParcelNumber('123456789012')).toBe(false);
+    expect(isValidGlsParcelNumber('12345678901')).toBe(false);
+    expect(detectCarrierMatch('123456789011').candidates).toEqual(expect.arrayContaining(['gls-ch', 'gls-de', 'gls-fr']));
+    expect(detectCarrierMatch('123456789012').candidates).not.toContain('gls-de');
+    // 11 digits are the same parcel number without its check digit.
+    expect(detectCarrierMatch('12345678901').candidates).toEqual(expect.arrayContaining(['gls-ch', 'gls-de', 'gls-fr']));
+  });
+
   it('keeps GLS to its 11- and 12-digit parcel numbers', () => {
-    expect(detectCarrierMatch('123456789012').candidates).toEqual(expect.arrayContaining(['gls-ch', 'gls-de']));
+    expect(detectCarrierMatch('123456789011').candidates).toEqual(expect.arrayContaining(['gls-ch', 'gls-de']));
     expect(detectCarrierMatch('1234567890123').candidates).not.toEqual(expect.arrayContaining(['gls-ch']));
     expect(detectCarrierMatch('12345678901234').candidates).not.toEqual(expect.arrayContaining(['gls-de']));
   });

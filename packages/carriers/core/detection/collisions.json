@@ -567,6 +567,21 @@
     "carriers": [
       "colis-prive",
       "fedex",
+      "j-and-t",
+      "mondial-relay",
+      "mrw",
+      "sf-express",
+      "sto",
+      "yamato",
+      "zto"
+    ],
+    "reason": "12-digit numbers are shared by nine carriers; the number stays a low-confidence suggestion."
+  },
+  {
+    "shape": "9{12}",
+    "carriers": [
+      "colis-prive",
+      "fedex",
       "gls-ch",
       "gls-de",
       "gls-fr",
@@ -578,7 +593,23 @@
       "yamato",
       "zto"
     ],
-    "reason": "12-digit numbers are shared by twelve carriers; the number stays a low-confidence suggestion."
+    "reason": "A 12-digit number whose last digit passes the GLS check adds the three GLS networks to the nine carriers sharing that length; the number stays a suggestion."
+  },
+  {
+    "shape": "9{12}",
+    "carriers": [
+      "colis-prive",
+      "fedex",
+      "j-and-t",
+      "mondial-relay",
+      "mrw",
+      "purolator",
+      "sf-express",
+      "sto",
+      "yamato",
+      "zto"
+    ],
+    "reason": "12-digit numbers in the Purolator range are shared by ten carriers; the number stays a low-confidence suggestion."
   },
   {
     "shape": "9{12}",
@@ -597,7 +628,24 @@
       "yamato",
       "zto"
     ],
-    "reason": "12-digit numbers in the Purolator range are shared by thirteen carriers; the number stays a low-confidence suggestion."
+    "reason": "A 12-digit number in the Purolator range whose last digit passes the GLS check adds the three GLS networks to the ten carriers sharing it; the number stays a suggestion."
+  },
+  {
+    "shape": "9{12}",
+    "carriers": [
+      "colis-prive",
+      "dpd-fr",
+      "fedex",
+      "j-and-t",
+      "mondial-relay",
+      "mrw",
+      "purolator",
+      "sf-express",
+      "sto",
+      "yamato",
+      "zto"
+    ],
+    "reason": "12-digit numbers starting with 0 or 1 add DPD France to the ten carriers already sharing that length; the number stays a suggestion."
   },
   {
     "shape": "9{12}",
@@ -617,7 +665,7 @@
       "yamato",
       "zto"
     ],
-    "reason": "12-digit numbers starting with 0 or 1 add DPD France to the thirteen carriers already sharing that length; the number stays a suggestion."
+    "reason": "A 12-digit number starting with 0 or 1 whose last digit passes the GLS check matches DPD France and the three GLS networks as well; the number stays a suggestion."
   },
   {
     "shape": "9{20}",

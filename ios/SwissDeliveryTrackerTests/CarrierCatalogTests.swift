@@ -474,6 +474,12 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertFalse(catalog.detect("12345678901234").candidates.contains(.hermesDe))
         XCTAssertFalse(catalog.detect("12345678901234").candidates.contains(.glsCh))
 
+        XCTAssertTrue(CarrierCatalog.isValidGlsParcelNumber("123456789011"))
+        XCTAssertFalse(CarrierCatalog.isValidGlsParcelNumber("123456789012"))
+        XCTAssertTrue(catalog.detect("123456789011").candidates.contains(.glsDe))
+        XCTAssertFalse(catalog.detect("123456789012").candidates.contains(.glsDe))
+        XCTAssertTrue(catalog.detect("12345678901").candidates.contains(.glsDe))
+
         // A DPD Switzerland depot prefix lists DPD first but still asks the user.
         let swissDepot = catalog.detect("06080000000002")
         XCTAssertEqual(swissDepot.carrier, .unknown)

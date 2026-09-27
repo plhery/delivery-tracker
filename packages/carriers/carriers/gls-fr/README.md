@@ -42,7 +42,7 @@ The parser:
 
 - The endpoint is undocumented and may change or start challenging requests.
 - The adapter accepts 8 alphanumerics or 11 digits. Detection also suggests
-  12-digit numbers (low confidence), but the adapter rejects them.
+  12-digit numbers whose GLS check digit passes, but the adapter rejects them.
 - No sender, pickup-point name, weight or dimensions in the response, so those
   capabilities are not declared.
 

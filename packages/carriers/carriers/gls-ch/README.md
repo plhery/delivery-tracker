@@ -24,9 +24,10 @@ HTTP 400, 403 and 404 all mean "no such parcel" and raise
 
 ## Notes
 
-- Detection suggests GLS for 11- and 12-digit numbers (11 digits and a check
-  digit) and 8-character Track IDs. GLS parcel numbers are never 13 or 14
-  digits, so those shapes are left to the carriers that use them.
+- A GLS parcel number is 11 digits, printed with a check digit as a 12th
+  (weights 3, 1, 3, … from the right, plus one). Nine other carriers share
+  the 12-digit shape, so detection offers GLS for it only when that digit
+  passes. GLS numbers are never 13 or 14 digits.
 - Identity: the parcel must echo the number on `tuNo`, `trackId`, `trackingId`
   or a track/parcel reference. A 12-digit printed number may come back as its
   first 11 digits (documented in GLS ShipIT), so that alias is accepted by exact

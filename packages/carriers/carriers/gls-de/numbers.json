@@ -22,7 +22,7 @@
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to GLS Germany, which stays one candidate among several."
     },
     {
-      "number": "123456789018",
+      "number": "123456789011",
       "role": "shipment",
       "evidence": "synthetic",
       "derivedFrom": "invented",
@@ -47,7 +47,7 @@
           "j-and-t"
         ]
       },
-      "note": "Invented 12-digit placeholder; the route only resolves it after a verified GLS lookup. Filed under GLS Germany, which stays one candidate among several."
+      "note": "Invented 12-digit placeholder with a valid GLS check digit; the route only resolves it after a verified GLS lookup. Filed under GLS Germany, which stays one candidate among several."
     },
     {
       "number": "28286849236",

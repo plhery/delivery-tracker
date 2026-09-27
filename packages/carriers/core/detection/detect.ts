@@ -12,6 +12,7 @@
 import type { CarrierId } from '../../generated/catalog';
 import type { DetectionRule } from '../catalog/types';
 import { CARRIER_DEFINITIONS } from '../catalog/definitions';
+import { isValidGlsParcelNumber } from './gls';
 import { isValidHermesParcelNumber } from './hermes';
 import { isValidMondialRelayBarcode } from './mondialRelay';
 import { normalizeTrackingNumber } from './normalize';
@@ -22,6 +23,7 @@ function checksumPasses(rule: DetectionRule, trackingNumber: string): boolean {
   if (rule.checksum === 'mondial-relay') return isValidMondialRelayBarcode(trackingNumber);
   if (rule.checksum === 's10') return isValidS10TrackingNumber(trackingNumber);
   if (rule.checksum === 'hermes') return isValidHermesParcelNumber(trackingNumber);
+  if (rule.checksum === 'gls') return isValidGlsParcelNumber(trackingNumber);
   return true;
 }
 

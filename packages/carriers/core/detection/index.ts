@@ -19,6 +19,7 @@ export {
   recognizedNumberInText,
 } from './candidates';
 export { detectCarrier, detectCarrierMatch } from './detect';
+export { isValidGlsParcelNumber } from './gls';
 export { isValidHermesParcelNumber } from './hermes';
 export { isValidMondialRelayBarcode } from './mondialRelay';
 export {

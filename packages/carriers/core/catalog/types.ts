@@ -70,7 +70,7 @@ export interface CarrierInfo {
 export interface DetectionRule {
   pattern: string;
   confidence: Exclude<DetectionConfidence, 'none'>;
-  checksum?: 's10' | 'mondial-relay' | 'hermes';
+  checksum?: 's10' | 'mondial-relay' | 'hermes' | 'gls';
   /** Low confidence only: number evidence that lists this carrier first among suggestions. */
   preferred?: boolean;
 }

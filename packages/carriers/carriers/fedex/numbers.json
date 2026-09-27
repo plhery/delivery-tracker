@@ -30,11 +30,8 @@
         "confidence": "low",
         "candidates": [
           "fedex",
-          "gls-ch",
           "mondial-relay",
-          "gls-fr",
           "colis-prive",
-          "gls-de",
           "mrw",
           "purolator",
           "sf-express",
@@ -58,11 +55,8 @@
         "confidence": "low",
         "candidates": [
           "fedex",
-          "gls-ch",
           "mondial-relay",
-          "gls-fr",
           "colis-prive",
-          "gls-de",
           "mrw",
           "sf-express",
           "sto",

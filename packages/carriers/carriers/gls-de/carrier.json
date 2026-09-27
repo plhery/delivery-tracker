@@ -107,8 +107,14 @@
   "detection": [
     {
       "id": "gls-de-1",
-      "pattern": "^(?:(?=[A-Z0-9]{8}$)(?=.*[A-Z])(?=.*\\d)[A-Z0-9]{8}|\\d{11,12})$",
+      "pattern": "^(?:(?=[A-Z0-9]{8}$)(?=.*[A-Z])(?=.*\\d)[A-Z0-9]{8}|\\d{11})$",
       "confidence": "low"
+    },
+    {
+      "id": "gls-de-2",
+      "pattern": "^\\d{12}$",
+      "confidence": "low",
+      "checksum": "gls"
     }
   ]
 }

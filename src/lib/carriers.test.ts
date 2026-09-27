@@ -1396,9 +1396,13 @@ describe('ambiguous number shapes', () => {
     expect(detectCarrierMatch('123456789012')).toEqual({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['fedex', 'gls-ch', 'dpd-fr', 'mondial-relay', 'gls-fr', 'colis-prive', 'gls-de', 'mrw', 'purolator', 'sf-express', 'sto', 'zto', 'yamato', 'j-and-t'],
+      candidates: ['fedex', 'dpd-fr', 'mondial-relay', 'colis-prive', 'mrw', 'purolator', 'sf-express', 'sto', 'zto', 'yamato', 'j-and-t'],
       preferred: [],
     });
+    // A valid GLS check digit adds the GLS networks.
+    expect(detectCarrierMatch('123456789011').candidates).toEqual(
+      ['fedex', 'gls-ch', 'dpd-fr', 'mondial-relay', 'gls-fr', 'colis-prive', 'gls-de', 'mrw', 'purolator', 'sf-express', 'sto', 'zto', 'yamato', 'j-and-t'],
+    );
   });
 
   it('keeps 14-digit numbers ambiguous', () => {
