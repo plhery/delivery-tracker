@@ -108,7 +108,7 @@ struct PullToRefreshIndicator: View {
     let model: PullToRefreshModel
     let pullLabel: String
 
-    static let height: CGFloat = 58
+    static let height: CGFloat = 48
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -117,7 +117,7 @@ struct PullToRefreshIndicator: View {
         let progress = model.progress
         // Kept a little under halfway down the gap, so it stays centred as it grows.
         let gap = pulling ? model.distance : max(model.holdDistance, model.distance)
-        VStack(spacing: 5) {
+        VStack(spacing: 4) {
             PullToRefreshSeal(model: model, progress: progress)
                 .scaleEffect(reduceMotion ? 1 : 0.82 + 0.18 * progress)
             Text(model.label ?? pullLabel)
@@ -133,7 +133,7 @@ struct PullToRefreshIndicator: View {
         .opacity(model.phase == .settling || (pulling && model.awaitingRest) ? 0
             : pulling ? min(1, max(0, progress * 2 - 0.15)) : 1)
         .animation(.easeOut(duration: 0.22), value: model.phase)
-        .offset(y: -0.55 * gap - 26)
+        .offset(y: -0.55 * gap - 21)
         .background { NativeRefreshSpinnerHider(pulling: model.distance > 0) }
         .sensoryFeedback(.impact(weight: .light), trigger: model.starts)
         .allowsHitTesting(false)
@@ -154,34 +154,33 @@ private struct PullToRefreshSeal: View {
         ZStack {
             Circle()
                 .fill(discColor(result))
-                .shadow(color: .black.opacity(0.06), radius: 7, y: 3)
-            ring(result: result, active: active)
+                .shadow(color: .black.opacity(0.05), radius: 6, y: 2)
             PullToRefreshArrow(
                 degrees: reduceMotion ? 0 : 270 * progress,
                 spinning: active && !reduceMotion,
                 color: active ? Brand.ink : PullToRefreshPalette.inkSoft
             )
-            .frame(width: 22, height: 22)
+            .frame(width: 18, height: 18)
             .opacity(result == nil ? 1 : 0)
             .animation(.easeOut(duration: 0.18), value: result)
             PullToRefreshGlyph(cross: result == .failed)
                 .trim(from: 0, to: result == nil ? 0 : 1)
                 .stroke(result == .failed ? Brand.warning : ExperimentalPalette.delivered,
-                        style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
-                .frame(width: 18, height: 18)
+                        style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+                .frame(width: 15, height: 15)
                 .animation(result == nil ? nil : .easeOut(duration: 0.26).delay(0.08), value: result)
                 .opacity(result == nil ? 0 : 1)
                 .scaleEffect(result == nil && !reduceMotion ? 0.65 : 1)
                 .animation(result == nil ? nil : .spring(duration: 0.3, bounce: 0.2), value: result)
         }
-        .frame(width: 38, height: 38)
+        .frame(width: 32, height: 32)
         .animation(result == nil ? nil : .easeOut(duration: 0.2), value: result)
         .keyframeAnimator(initialValue: 1.0, trigger: model.starts) { content, scale in
             content.scaleEffect(pops ? scale : 1)
         } keyframes: { _ in
             // A short pop when the refresh starts, where the web seal pops as it arms.
             KeyframeTrack {
-                LinearKeyframe(1.1, duration: 0.12, timingCurve: .easeOut)
+                LinearKeyframe(1.06, duration: 0.12, timingCurve: .easeOut)
                 SpringKeyframe(1, duration: 0.4, spring: Spring(duration: 0.4, bounce: 0.5))
             }
         }
@@ -193,38 +192,6 @@ private struct PullToRefreshSeal: View {
         case .failed: ExperimentalPalette.pickupSurface
         case nil: Brand.paper
         }
-    }
-
-    private func ring(result: PullToRefreshModel.Result?, active: Bool) -> some View {
-        let color: Color = switch result {
-        case .succeeded: ExperimentalPalette.delivered
-        case .failed: Brand.warning
-        case nil: active ? Brand.ink : PullToRefreshPalette.inkSoft
-        }
-        return KeyframeAnimator(initialValue: CGFloat(1), trigger: result == .succeeded) { sweep in
-            // Success draws the ring around the check; before that it follows the pull.
-            Circle()
-                .trim(from: 0, to: result == .succeeded ? sweep : active ? 1 : progress)
-                .stroke(color, style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
-        } keyframes: { _ in
-            KeyframeTrack {
-                MoveKeyframe(0)
-                LinearKeyframe(1, duration: 0.5, timingCurve: .easeOut)
-            }
-        }
-        .rotationEffect(.degrees(-90))
-        .frame(width: 40, height: 40)
-        .keyframeAnimator(initialValue: 0.22, trigger: model.starts) { content, fade in
-            content.opacity(result == .succeeded ? 1 : result == .failed ? 0.7 : active ? fade : 0.45)
-        } keyframes: { _ in
-            // Full ink as the refresh starts, then a faint track behind the spinning arrow.
-            KeyframeTrack {
-                MoveKeyframe(0.7)
-                LinearKeyframe(0.7, duration: 0.25)
-                LinearKeyframe(0.22, duration: 0.35, timingCurve: .easeInOut)
-            }
-        }
-        .animation(.easeOut(duration: 0.2), value: active)
     }
 }
 
@@ -269,7 +236,7 @@ private struct PullToRefreshArrow: UIViewRepresentable {
         private static let turn: CFTimeInterval = 0.85
         private let glyph = UIImageView(image: UIImage(
             systemName: "arrow.clockwise",
-            withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: 13.5, weight: .medium)
         ))
         private var spinning = false
 
