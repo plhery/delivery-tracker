@@ -25,6 +25,7 @@ import { isRecord } from '../../core/types';
 import { capturedBodies, loadCapture, type CaptureSpec } from '../shared/capture';
 import { universalCarrierHints } from '../shared/hints';
 import { event, isNotice, numberOf, result, type UniversalSource } from '../shared/result';
+import { carrierScan, markReturnLeg, type CarrierScan } from '../shared/scans';
 import { PARCELSAPP_API, ParcelsAppHttpClient } from './http';
 
 const SOURCE: UniversalSource = 'ParcelsApp';
@@ -58,9 +59,13 @@ export function parseParcelsAppResponse(payload: unknown, trackingNumber: string
  * Group": DPD Switzerland and France), else the zone routing passes for the
  * parcel. Without one it stays as labeled.
  */
-function scanZone(payload: Record<string, unknown>, state: Record<string, unknown>, fallback: string | null): string | null {
+function stateCarrierName(payload: Record<string, unknown>, state: Record<string, unknown>): unknown {
   const carriers = Array.isArray(payload.carriers) ? payload.carriers : [];
-  const name = typeof state.carrier === 'number' ? carriers[state.carrier] : undefined;
+  return typeof state.carrier === 'number' ? carriers[state.carrier] : undefined;
+}
+
+function scanZone(payload: Record<string, unknown>, state: Record<string, unknown>, fallback: string | null): string | null {
+  const name = stateCarrierName(payload, state);
   const carrier = typeof name === 'string' ? carrierIdFromName(name) : undefined;
   const zone = carrier ? carrierTimezone(carrier) : 'UTC';
   if (zone !== 'UTC') return zone;
@@ -86,13 +91,18 @@ function parseHistory(payload: unknown, trackingNumber: string, timezone: string
     throw new SchemaError(SOURCE, 'ParcelsApp lookup unavailable');
   }
   const events: CarrierEvent[] = [];
+  const scans: { event: CarrierEvent; scan: CarrierScan }[] = [];
   for (const raw of payload.states) {
     if (!isRecord(raw)) throw new SchemaError(SOURCE, 'ParcelsApp returned an invalid event');
     if (raw.require_fields || raw.error) continue;
     const zone = scanZone(payload, raw, timezone);
-    const parsed = event((zone ? mislabeledLocalTime(raw.date, zone)?.iso : undefined) ?? raw.date, raw.status);
+    const name = stateCarrierName(payload, raw);
+    const scan = carrierScan(typeof name === 'string' ? carrierIdFromName(name) : undefined, typeof raw.status === 'string' ? raw.status : '');
+    const parsed = event((zone ? mislabeledLocalTime(raw.date, zone)?.iso : undefined) ?? raw.date, scan?.wording ?? raw.status);
     if (parsed) events.push(parsed);
+    if (parsed && scan) scans.push({ event: Object.assign(parsed, { stage: scan.stage }), scan });
   }
+  markReturnLeg(scans);
   if (!events.length) {
     const fields = payload.states.flatMap((raw: unknown) => isRecord(raw) && Array.isArray(raw.require_fields) ? raw.require_fields : []);
     if (fields.some((field: unknown) => isRecord(field) && field.name === 'zipcode')) {
@@ -129,6 +139,7 @@ export function parseParcelsAppHtml(html: string, trackingNumber: string, timezo
   // reply's `carriers` index does: the same zone rules then give the same
   // instants, and so the same event ids, whichever tier answered.
   const carriers: string[] = [];
+  const scans: { event: CarrierEvent; scan: CarrierScan }[] = [];
   nodes.each((_, node) => {
     const row = $(node);
     if (row.find('input, select, form').length) return;
@@ -147,9 +158,12 @@ export function parseParcelsAppHtml(html: string, trackingNumber: string, timezo
     if (name && !carriers.includes(name)) carriers.push(name);
     const state = { date: labeled.toISO(), ...(name ? { carrier: carriers.indexOf(name) } : {}) };
     const zone = scanZone({ carriers }, state, timezone);
-    const parsed = event((zone ? mislabeledLocalTime(state.date, zone)?.iso : undefined) ?? state.date, description);
+    const scan = carrierScan(name ? carrierIdFromName(name) : undefined, description);
+    const parsed = event((zone ? mislabeledLocalTime(state.date, zone)?.iso : undefined) ?? state.date, scan?.wording ?? description);
     if (parsed) events.push(parsed);
+    if (parsed && scan) scans.push({ event: Object.assign(parsed, { stage: scan.stage }), scan });
   });
+  markReturnLeg(scans);
   return { ...result(events, SOURCE), ...universalCarrierHints(carriers.slice(0, 20), numberOf(trackingNumber)) };
 }
 

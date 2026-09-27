@@ -2432,7 +2432,7 @@
       "displayName": "STO Express",
       "color": "#ff6700",
       "selectable": true,
-      "timezone": "UTC",
+      "timezone": "Asia/Shanghai",
       "tracking": {
         "mode": "automatic",
         "adapter": "universal"
@@ -2451,7 +2451,7 @@
       "displayName": "Yunda Express",
       "color": "#ffce00",
       "selectable": true,
-      "timezone": "UTC",
+      "timezone": "Asia/Shanghai",
       "tracking": {
         "mode": "automatic",
         "adapter": "universal"
@@ -2470,7 +2470,7 @@
       "displayName": "YTO Express",
       "color": "#4d148c",
       "selectable": true,
-      "timezone": "UTC",
+      "timezone": "Asia/Shanghai",
       "tracking": {
         "mode": "automatic",
         "adapter": "universal"
@@ -2493,7 +2493,7 @@
       "displayName": "ZTO Express",
       "color": "#0279ff",
       "selectable": true,
-      "timezone": "UTC",
+      "timezone": "Asia/Shanghai",
       "tracking": {
         "mode": "automatic",
         "adapter": "universal"

@@ -9,7 +9,7 @@
     "color": "#0279ff"
   },
   "selectable": true,
-  "timezone": "UTC",
+  "timezone": "Asia/Shanghai",
   "tracking": {
     "mode": "automatic",
     "adapter": "universal",

@@ -1,0 +1,149 @@
+{
+  "carrier": "yto",
+  "entries": [
+    {
+      "wording": "揽收扫描",
+      "language": "zh",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "Relayed by ParcelsApp; stored as \"Picked up\"."
+    },
+    {
+      "wording": "Pickup scan",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "ParcelsApp's translation of 揽收扫描; stored as \"Picked up\"."
+    },
+    {
+      "wording": "装件入车扫描",
+      "language": "zh",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "Relayed by ParcelsApp; stored as \"Loaded for transport\"."
+    },
+    {
+      "wording": "Load scan into vehicle",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "ParcelsApp's translation of 装件入车扫描; stored as \"Loaded for transport\"."
+    },
+    {
+      "wording": "下车扫描",
+      "language": "zh",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "Relayed by ParcelsApp; stored as \"Unloaded at a sorting centre\"."
+    },
+    {
+      "wording": "Get off scan",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "ParcelsApp's translation of 下车扫描; stored as \"Unloaded at a sorting centre\"."
+    },
+    {
+      "wording": "快件城市信息",
+      "language": "zh",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "Relayed by ParcelsApp; stored as \"In transit\"."
+    },
+    {
+      "wording": "Package city information",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "ParcelsApp's translation of 快件城市信息; stored as \"In transit\"."
+    },
+    {
+      "wording": "退回件扫描",
+      "language": "zh",
+      "stage": "returned",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "Relayed by ParcelsApp; stored as \"Return to the sender started\". Later delivery-side scans are stored as the trip back to the sender."
+    },
+    {
+      "wording": "Return package scan",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "ParcelsApp's translation of 退回件扫描; stored as \"Return to the sender started\"."
+    },
+    {
+      "wording": "派件扫描",
+      "language": "zh",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "Relayed by ParcelsApp; stored as \"Out for delivery\". After a return scan: \"Out for delivery back to the sender\", stage returned."
+    },
+    {
+      "wording": "Delivery scan",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "ParcelsApp's translation of 派件扫描; stored as \"Out for delivery\"."
+    },
+    {
+      "wording": "入柜|入库",
+      "language": "zh",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "Relayed by ParcelsApp; stored as \"In a parcel locker or pickup station\". After a return scan: \"In a parcel locker or station on its way back\", stage returned."
+    },
+    {
+      "wording": "In cabinet | In storage",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "ParcelsApp's translation of 入柜|入库; stored as \"In a parcel locker or pickup station\"."
+    },
+    {
+      "wording": "小件员取出",
+      "language": "zh",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "Relayed by ParcelsApp; stored as \"Taken out of the locker by the courier\". The courier took the parcel back out of the locker or station."
+    },
+    {
+      "wording": "Small item handler takes out.",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "ParcelsApp's translation of 小件员取出; stored as \"Taken out of the locker by the courier\"."
+    },
+    {
+      "wording": "PDA正常签收扫描",
+      "language": "zh",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "Relayed by ParcelsApp; stored as \"Delivered\". After a return scan it is the sender signing: \"Returned to the sender\", stage returned."
+    },
+    {
+      "wording": "PDA normal delivery scan",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-27",
+      "note": "ParcelsApp's translation of PDA正常签收扫描; stored as \"Delivered\"."
+    }
+  ]
+}

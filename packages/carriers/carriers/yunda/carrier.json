@@ -13,7 +13,7 @@
     }
   },
   "selectable": true,
-  "timezone": "UTC",
+  "timezone": "Asia/Shanghai",
   "tracking": {
     "mode": "automatic",
     "adapter": "universal",

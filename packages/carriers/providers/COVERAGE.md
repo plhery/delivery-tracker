@@ -153,9 +153,10 @@ By carrier:
   16-digit numbers). Ninja Van's newest public numbers, from February and April, had
   none either.
 - **JD Logistics, ZTO, Yunda, STO:** public posts mask Chinese domestic numbers, so only
-  2015 examples were available. YTO's one public number had 30 English rows in
-  ParcelsApp, all but the pickup left pending, and 20 Chinese rows in 17TRACK, including
-  the return.
+  2015 examples were available. YTO's one public number had 30 rows in ParcelsApp,
+  which relays YTO's own scan labels in Chinese or in its English translation, and 20
+  Chinese rows in 17TRACK. Both show the return
+  ([YTO README](../carriers/yto/README.md)).
 - **Aramex:** a domestic delivery in the UAE had 16 undated rows in Postal Ninja only. An
   international shipment had the same 26 rows in Ship24, 17TRACK and Postal Ninja, and
   none in ParcelsApp.
@@ -178,8 +179,7 @@ By carrier:
 
 Mapping gaps seen in these samples: 17TRACK maps Swiss Post vehicle loading to in
 transit; PostNL direct maps out-for-delivery as accepted; EMS export cancellation has no
-dedicated stage. YTO's English scans on ParcelsApp stay pending: its "PDA normal delivery
-scan" was the return, so reading it as a delivery would be wrong.
+dedicated stage.
 
 Detection selects or suggests the named carrier for the public numbers behind rows
 31–60, except Planzer composites, which stay undetected on purpose (see the

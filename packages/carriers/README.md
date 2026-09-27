@@ -149,7 +149,7 @@ statuses, timings and network error codes.
 | `j-and-t` | J&T Express | universal providers |  | 0 | 5 | 0 |  |
 | `jd-logistics` | JD Logistics | universal providers |  | 0 | 1 | 0 |  |
 | `zto` | ZTO Express | universal providers |  | 0 | 1 | 0 |  |
-| `yto` | YTO Express | universal providers |  | 0 | 2 | 0 |  |
+| `yto` | YTO Express | universal providers |  | 0 | 2 | 18 | [README](carriers/yto/README.md) |
 | `yunda` | Yunda Express | universal providers |  | 0 | 1 | 0 |  |
 | `sto` | STO Express | universal providers |  | 0 | 1 | 0 |  |
 | `yamato` | Yamato Transport | universal providers |  | 0 | 2 | 0 |  |

@@ -2433,7 +2433,7 @@ export const CARRIER_CATALOG = {
     "displayName": "STO Express",
     "color": "#ff6700",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Asia/Shanghai",
     "tracking": {
       "mode": "automatic",
       "adapter": "universal"
@@ -2452,7 +2452,7 @@ export const CARRIER_CATALOG = {
     "displayName": "Yunda Express",
     "color": "#ffce00",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Asia/Shanghai",
     "tracking": {
       "mode": "automatic",
       "adapter": "universal"
@@ -2471,7 +2471,7 @@ export const CARRIER_CATALOG = {
     "displayName": "YTO Express",
     "color": "#4d148c",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Asia/Shanghai",
     "tracking": {
       "mode": "automatic",
       "adapter": "universal"
@@ -2494,7 +2494,7 @@ export const CARRIER_CATALOG = {
     "displayName": "ZTO Express",
     "color": "#0279ff",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Asia/Shanghai",
     "tracking": {
       "mode": "automatic",
       "adapter": "universal"

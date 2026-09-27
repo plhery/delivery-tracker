@@ -27,6 +27,62 @@ function tracker(fetcher: typeof fetch, trawlUrl = 'http://browser.test') {
   return new ParcelsAppTracker({ httpClient: null, trawl: new TrawlClient(trawlUrl, fetcher) });
 }
 
+describe('ParcelsApp YTO scans', () => {
+  // YTO's scan types as ParcelsApp relays them, in Chinese or in its own translation.
+  const labels = {
+    chinese: ['揽收扫描', '装件入车扫描', '下车扫描', '派件扫描', '入柜|入库', 'PDA正常签收扫描', '退回件扫描'],
+    english: ['Pickup scan', 'Load scan into vehicle', 'Get off scan', 'Delivery scan', 'In cabinet | In storage', 'PDA normal delivery scan', 'Return package scan'],
+  };
+  // ParcelsApp labels the scans' China wall clock as UTC.
+  const states = (names: string[], order: number[]) => order.map((index, position) => ({
+    date: `2026-05-0${position + 1}T18:00:00Z`, status: names[index], carrier: 0,
+  })).reverse();
+  const history = (language: keyof typeof labels, order: number[]) =>
+    parseParcelsAppResponse({ carriers: ['YTO Express'], states: states(labels[language], order) }, number, identity());
+
+  it('gives both label languages the same stages and stored wording', () => {
+    const chinese = history('chinese', [0, 1, 2, 3, 4, 5]);
+    expect(history('english', [0, 1, 2, 3, 4, 5]).events).toEqual(chinese.events);
+    expect(chinese).toMatchObject({ status: 'delivered', current_stage: 'delivered' });
+    expect(chinese.events?.map((event) => [event.time, event.description, event.stage])).toEqual([
+      ['2026-05-06T10:00:00.000Z', 'Delivered', 'delivered'],
+      ['2026-05-05T10:00:00.000Z', 'In a parcel locker or pickup station', 'ready_for_pickup'],
+      ['2026-05-04T10:00:00.000Z', 'Out for delivery', 'out_for_delivery'],
+      ['2026-05-03T10:00:00.000Z', 'Unloaded at a sorting centre', 'in_transit'],
+      ['2026-05-02T10:00:00.000Z', 'Loaded for transport', 'in_transit'],
+      ['2026-05-01T10:00:00.000Z', 'Picked up', 'accepted'],
+    ]);
+  });
+
+  it.each(['chinese', 'english'] as const)('reads the delivery-side scans after a return scan as the trip back (%s)', (language) => {
+    const returned = history(language, [0, 1, 6, 3, 4, 5]);
+    expect(returned).toMatchObject({ status: 'exception', current_stage: 'returned', last_status_text: 'Returned to the sender' });
+    expect(returned.events?.slice(0, 4).map((event) => [event.description, event.stage])).toEqual([
+      ['Returned to the sender', 'returned'],
+      ['In a parcel locker or station on its way back', 'returned'],
+      ['Out for delivery back to the sender', 'returned'],
+      ['Return to the sender started', 'returned'],
+    ]);
+  });
+
+  it('leaves labels of other carriers and unknown YTO labels to the shared rules', () => {
+    const other = parseParcelsAppResponse({ carriers: ['Example Parcel Co'], states: [{ date: '2026-05-01T18:00:00Z', status: '派件扫描', carrier: 0 }] }, number, identity());
+    expect(other.events?.[0]).toMatchObject({ description: '派件扫描', stage: 'pending' });
+    const unknown = parseParcelsAppResponse({ carriers: ['YTO Express'], states: [{ date: '2026-05-01T18:00:00Z', status: '问题件扫描', carrier: 0 }] }, number, identity());
+    expect(unknown.events?.[0]).toMatchObject({ description: '问题件扫描', stage: 'pending' });
+  });
+
+  it('reads the same scans from the rendered page', () => {
+    const scan = (day: string, description: string) =>
+      `<li class="event"><div class="event-time"><strong>0${day} May 2026</strong><span>18:00</span></div><div class="event-content"><strong>${description}</strong><span class="carrier">YTO Express</span></div></li>`;
+    const page = rendered([scan('2', 'PDA正常签收扫描'), scan('1', '揽收扫描')].join(''));
+    expect(parseParcelsAppHtml(page, number).events?.map((event) => [event.time, event.description, event.stage])).toEqual([
+      ['2026-05-02T10:00:00.000Z', 'Delivered', 'delivered'],
+      ['2026-05-01T10:00:00.000Z', 'Picked up', 'accepted'],
+    ]);
+  });
+});
+
 describe('ParcelsApp result parsing', () => {
   it('does not treat postal-code prompts or delivery preferences as movement', () => {
     const result = parseParcelsAppResponse(announced, number, identity());
