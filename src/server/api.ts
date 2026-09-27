@@ -157,6 +157,8 @@ function logRequest(
     duration_ms: Math.round((performance.now() - startedAt) * 10) / 10,
   };
   if (error) payload.error_class = error instanceof Error ? error.name : typeof error;
+  // A 502 names the upstream failure behind it: a timeout, an HTTP status, a login.
+  if (error instanceof HttpError && error.cause instanceof Error) payload.error_cause = error.cause.name;
   logOperationalEvent('http_request', payload, status >= 500 ? 'error' : 'info');
 }
 

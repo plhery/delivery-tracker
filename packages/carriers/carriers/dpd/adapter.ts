@@ -14,7 +14,7 @@ import {
   type CarrierErrorOptions,
 } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
-import { runSteps, singleFlight } from '../../core/runner';
+import { runSteps } from '../../core/runner';
 import type { StepRecorder } from '../../core/telemetry';
 import { isoTime, explicitOffsetTime, zonedTime, type ParsedTime } from '../../core/time';
 import { TrawlClient, decodeText, fetchBounded, parseJsonBytes } from '../../core/transport';
@@ -54,6 +54,8 @@ const INSTALLATIONS_URL = `https://firebaseinstallations.googleapis.com/v1/proje
 const REMOTE_CONFIG_URL = `https://firebaseremoteconfig.googleapis.com/v1/projects/${FIREBASE_PROJECT_NUMBER}/namespaces/firebase:fetch`;
 const TIMEZONE = 'Europe/Zurich';
 const DEFAULT_TIMEOUT_MS = 90_000;
+/** How long a failed guest login answers new lookups before the next attempt. */
+const TOKEN_FAILURE_MEMORY_MS = 30_000;
 /** The browser service may spend the whole request timeout plus its own transport allowance. */
 const SOLVER_ALLOWANCE_MS = 15_000;
 const MAX_BYTES = 10_000_000;
@@ -521,7 +523,8 @@ export class DPDTracker {
   #installationFid = '';
   #installationToken = '';
   #installationExpiresAt = 0;
-  readonly #tokenFlight = singleFlight();
+  #tokenRefresh: Promise<string> | null = null;
+  #tokenFailure: { error: unknown; until: number } | null = null;
 
   constructor(options: DPDTrackerOptions = {}) {
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -641,11 +644,19 @@ export class DPDTracker {
 
   private async accessToken(): Promise<string> {
     if (this.#accessToken && Date.now() < this.#accessTokenExpiresAt) return this.#accessToken;
-    // One refresh at a time: two lookups must not race for the guest credential.
-    return await this.#tokenFlight(async () => {
-      if (this.#accessToken && Date.now() < this.#accessTokenExpiresAt) return this.#accessToken;
-      return await this.refreshAccessToken();
-    });
+    // Concurrent lookups share one refresh and its outcome. A failed guest
+    // login is answered from memory for a short while, so a queue of lookups
+    // during an outage does not replay the whole token chain one by one.
+    if (this.#tokenRefresh) return await this.#tokenRefresh;
+    if (this.#tokenFailure && Date.now() < this.#tokenFailure.until) throw this.#tokenFailure.error;
+    this.#tokenRefresh = this.refreshAccessToken().then((token) => {
+      this.#tokenFailure = null;
+      return token;
+    }, (error: unknown) => {
+      this.#tokenFailure = { error, until: Date.now() + TOKEN_FAILURE_MEMORY_MS };
+      throw error;
+    }).finally(() => { this.#tokenRefresh = null; });
+    return await this.#tokenRefresh;
   }
 
   private async refreshAccessToken(): Promise<string> {

@@ -18,7 +18,7 @@ async function withinBudget<T>(task: Promise<T>, budgetMs: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([task, new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new Error('Carrier lookup timed out')), budgetMs);
+      timer = setTimeout(() => reject(Object.assign(new Error('Carrier lookup timed out'), { name: 'CarrierLookupTimeoutError' })), budgetMs);
     })]);
   } finally { clearTimeout(timer); }
 }
@@ -44,8 +44,8 @@ export const POST = apiRoute(async ({ request }) => {
   if (carrier === 'unknown' && /^\d{11,12}$/.test(trackingNumber)) {
     try {
       if (await new GLSGermanyTracker(5_000).recognizes(trackingNumber)) { carrier = 'gls-de'; confidence = 'high'; }
-    } catch {
-      throw new HttpError(502, 'Carrier lookup is temporarily unavailable');
+    } catch (error) {
+      throw new HttpError(502, 'Carrier lookup is temporarily unavailable', undefined, { cause: error });
     }
   }
   // 14 digits are shared by several carriers. DPD's own guest API settles
@@ -55,8 +55,8 @@ export const POST = apiRoute(async ({ request }) => {
     && (detected.preferred.length === 0 || detected.preferred.includes('dpd'))) {
     try {
       if (await withinBudget(dpd.recognizes(trackingNumber), DPD_LOOKUP_BUDGET_MS)) { carrier = 'dpd'; confidence = 'high'; }
-    } catch {
-      throw new HttpError(502, 'Carrier lookup is temporarily unavailable');
+    } catch (error) {
+      throw new HttpError(502, 'Carrier lookup is temporarily unavailable', undefined, { cause: error });
     }
   }
   recordDetection(confidence);

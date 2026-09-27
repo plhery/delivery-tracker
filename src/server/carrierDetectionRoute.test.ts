@@ -59,8 +59,12 @@ it('counts served detections by confidence, including a verified GLS promotion',
 it('keeps provider failures distinct from an unrecognized number', async () => {
   vi.spyOn(GLSGermanyTracker.prototype, 'recognizes').mockRejectedValue(new RangeError('different shipment'));
   expect((await request('123456789018')).status).toBe(502);
-  vi.spyOn(DPDTracker.prototype, 'recognizes').mockRejectedValue(new Error('guest API unreachable'));
+  const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  vi.spyOn(DPDTracker.prototype, 'recognizes').mockRejectedValue(Object.assign(new Error('guest API unreachable'), { name: 'DPDAPIError' }));
   expect((await request('06080000000002')).status).toBe(502);
+  // The request log names the upstream failure behind the 502.
+  const logged = log.mock.calls.map(([line]) => String(line)).find((line) => line.includes('"http_request"'));
+  expect(logged).toContain('"error_cause":"DPDAPIError"');
 });
 
 it('promotes a 14-digit number to DPD only after DPD itself knows it', async () => {

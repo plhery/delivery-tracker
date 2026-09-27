@@ -578,6 +578,33 @@ describe('DPDTracker steps', () => {
     await expect(new DPDTracker({ timeoutMs: 1_000, trawl: null }).recognizes(TRACKING_NUMBER)).rejects.toThrow();
   });
 
+  it('shares one guest login between concurrent lookups', async () => {
+    const fetcher = mockGuestApi(Response.json(READY_FOR_COLLECTION))
+      .mockResolvedValueOnce(Response.json(READY_FOR_COLLECTION))
+      .mockResolvedValueOnce(Response.json(READY_FOR_COLLECTION));
+    const tracker = new DPDTracker({ timeoutMs: 1_000, trawl: null });
+    await expect(Promise.all([1, 2, 3].map(() => tracker.recognizes(TRACKING_NUMBER)))).resolves.toEqual([true, true, true]);
+    // Installation, Remote Config and the token once; three details requests.
+    expect(fetcher).toHaveBeenCalledTimes(6);
+  });
+
+  it('answers lookups from a failed login for a short while, then tries again', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      const fetcher = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 503 }));
+      const tracker = new DPDTracker({ timeoutMs: 1_000, trawl: null });
+      await expect(Promise.all([1, 2, 3].map(() => tracker.recognizes(TRACKING_NUMBER)))).rejects.toThrow();
+      const calls = fetcher.mock.calls.length;
+      await expect(tracker.recognizes(TRACKING_NUMBER)).rejects.toThrow();
+      expect(fetcher).toHaveBeenCalledTimes(calls);
+      vi.setSystemTime(Date.now() + 31_000);
+      await expect(tracker.recognizes(TRACKING_NUMBER)).rejects.toThrow();
+      expect(fetcher.mock.calls.length).toBeGreaterThan(calls);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('keeps a positive unknown parcel out of the page fallback', async () => {
     const fetcher = mockGuestApi(new Response('', { status: 404 }));
     const { recorder, steps } = recordingRecorder();

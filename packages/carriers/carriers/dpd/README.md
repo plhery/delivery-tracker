@@ -9,8 +9,10 @@ DPD Switzerland (myDPD), Swiss last-mile parcels only. DPD France is
    `www.dpdgroup.com/concept/webservice`. A Firebase installation identifies the
    app, Remote Config returns the guest Basic credential, that credential buys a
    client-credentials token, and the token reads `/v10/parcels/details/<number>`.
-   Tokens are cached per instance and refreshed through `singleFlight()`. A 400/401
-   on the token call drops the Basic credential and retries once.
+   Tokens are cached per instance. Concurrent lookups share one refresh, and a
+   failed login answers new lookups for 30 seconds, so a burst of lookups during
+   a login outage costs one attempt. A 400/401 on the token call drops the Basic
+   credential and retries once.
 2. `page`: the rendered consignee page (`/ch/mydpd/my-parcels/track`), when the
    guest API is inconclusive, fails in transport or returns a mismatched payload.
    It sits behind Cloudflare, so it goes through the browser service when
@@ -27,8 +29,8 @@ carries `dpd_postcode_verified: false` instead of failing. It is sent only to DP
 and never logged.
 
 **Add-time check.** `recognizes(number)` asks the guest API alone whether DPD knows
-a 14-digit number: a matching reply is true, a 404 or 400 is false, anything else
-is a failure. The detect route (`app/api/carriers/detect/route.ts`) uses it, within
+a 14-digit number: a matching reply is true, a 404 or a details-call 400 is false,
+anything else (a login failure included) is a failure. The detect route (`app/api/carriers/detect/route.ts`) uses it, within
 six seconds and with a warm token, to promote a bare 14-digit number to `dpd` in
 the Add sheet unless a preferred rule points elsewhere. A failure answers 502 and
 the sheet falls back to "unknown".

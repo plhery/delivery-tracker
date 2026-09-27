@@ -118,7 +118,9 @@ Key JSON events:
   `tracking_status_observation_write_failed`;
 - `sync_claim_failed`, `sync_job_failed`, `sync_job_finish_failed` (by `job_id`). Alert on
   these;
-- `http_request` (by `request_id`, matching Sentry for server errors).
+- `http_request` (by `request_id`, matching Sentry for server errors). A failed request
+  carries `error_class`; a 502 that wraps an upstream failure also names it in
+  `error_cause` (for example `CarrierLookupTimeoutError` or `DPDAPIHttpError`).
 
 The logger allows `tracking_number` explicitly. It drops other fields whose names look
 like parcel, user, label, location, status text, URL, token, cookie or secret data. Keep
