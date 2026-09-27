@@ -520,6 +520,27 @@ export class SupabaseClient {
     });
   }
 
+  /**
+   * Each package's newest scan instant up to now, ignoring the app's own
+   * placeholder rows and future-dated scans (forecasts, clocks read ahead).
+   */
+  async latestScanTimes(packageIds: string[]): Promise<Map<string, string>> {
+    const latest = new Map<string, string>();
+    const now = new Date().toISOString();
+    await Promise.all([...new Set(packageIds)].map(async (packageId) => {
+      const events = rows(await this.request(`/rest/v1/tracking_events?${query([
+        ['package_id', `eq.${packageId}`],
+        ['or', '(provider_event_id.is.null,provider_event_id.not.like.app:*)'],
+        ['occurred_at', `lte.${now}`],
+        ['select', 'occurred_at'],
+        ['order', 'occurred_at.desc'],
+        ['limit', '1'],
+      ])}`));
+      if (typeof events[0]?.occurred_at === 'string') latest.set(packageId, events[0].occurred_at);
+    }));
+    return latest;
+  }
+
   async listPendingPushNotifications(): Promise<JsonObject[]> {
     const params = query({ select: '*', order: 'event_created_at.asc', limit: '1000' });
     return rows(await this.request(`/rest/v1/pending_push_notifications?${params}`));

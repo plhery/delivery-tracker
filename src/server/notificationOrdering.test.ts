@@ -13,6 +13,7 @@ it.each(['web', 'native', 'live'] as const)('sends the latest milestone and ackn
     { ...base, event_id: 'old', stage: 'accepted', occurred_at: '2026-09-07T09:00:00Z' },
     { ...base, event_id: 'latest', stage: 'delivered', occurred_at: '2026-09-08T11:00:00Z' },
   ];
+  vi.spyOn(client, 'latestScanTimes').mockResolvedValue(new Map([['pkg', '2026-09-08T11:00:00Z']]));
   const apns = new NativePushNotificationService(client, 'team', 'key', privateKey, 'app');
   if (channel === 'web') {
     vi.spyOn(client, 'listPendingPushNotifications').mockResolvedValue(events);
@@ -51,4 +52,39 @@ it('uses delivery progress for timestamp ties and numeric time for timezone offs
   expect([delivered, accepted].sort(compareNotificationEvents)[0]).toBe(delivered);
   expect(compareNotificationEvents({ ...accepted, occurred_at: '2026-09-08T13:00:00+02:00' }, delivered)).toBeGreaterThan(0);
   expect(compareNotificationEvents({ ...accepted, occurred_at: null }, { ...delivered, occurred_at: 'bad' })).toBeGreaterThan(0);
+});
+
+it.each(['web', 'native'] as const)('records a backfilled older scan as handled without announcing it for %s', async (channel) => {
+  const client = new SupabaseServiceClient('https://example.test', 'test');
+  const base = { subscription_id: 'sub', device_id: 'device', package_id: 'pkg', event_created_at: '2026-09-27T12:00:00Z' };
+  // A carrier change stored the customs scan after the parcel was already delivered.
+  const backfill = [{ ...base, event_id: 'customs', stage: 'customs', occurred_at: '2026-09-23T15:23:40Z' }];
+  const latest = vi.spyOn(client, 'latestScanTimes').mockResolvedValue(new Map([['pkg', '2026-09-24T08:37:04Z']]));
+  const apns = new NativePushNotificationService(client, 'team', 'key', privateKey, 'app');
+  const service = channel === 'web' ? new WebPushNotificationService(client, '', '', '') : apns;
+  const send = vi.spyOn(service, 'send').mockResolvedValue();
+  const ack = channel === 'web'
+    ? vi.spyOn(client, 'recordPushDeliveries').mockResolvedValue()
+    : vi.spyOn(client, 'recordNativePushDeliveries').mockResolvedValue();
+  if (channel === 'web') {
+    vi.spyOn(client, 'listPendingPushNotifications').mockResolvedValue(backfill);
+    vi.spyOn(client, 'updatePushSubscription').mockResolvedValue();
+  } else {
+    vi.spyOn(client, 'listPendingNativePushNotifications').mockResolvedValue(backfill);
+    vi.spyOn(client, 'updateNativePushDevice').mockResolvedValue();
+  }
+  expect(await service.dispatch()).toMatchObject({ attempted: 0, sent: 0 });
+  expect(latest).toHaveBeenCalledWith(['pkg']);
+  expect(send).not.toHaveBeenCalled();
+  expect(ack).toHaveBeenCalledWith(channel === 'web' ? 'sub' : 'device', ['customs']);
+
+  // The parcel's newest scan is news, and so is one within an hour of it
+  // (clock skew); a failed lookup announces as before.
+  latest.mockResolvedValueOnce(new Map([['pkg', '2026-09-23T15:23:40Z']]))
+    .mockResolvedValueOnce(new Map([['pkg', '2026-09-23T16:15:00Z']]))
+    .mockRejectedValueOnce(new Error('down'));
+  await service.dispatch();
+  await service.dispatch();
+  await service.dispatch();
+  expect(send).toHaveBeenCalledTimes(3);
 });

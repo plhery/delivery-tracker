@@ -412,6 +412,30 @@ export function compareNotificationEvents(left: JsonObject, right: JsonObject): 
     || stringField(right, 'event_id').localeCompare(stringField(left, 'event_id'));
 }
 
+/**
+ * A sync can store scans older than ones the parcel already shows: a carrier
+ * change backfills history, a provider reports a scan late. That is not news.
+ * A batch is announced only when its newest scan is the parcel's newest, give
+ * or take an hour of clock skew (partner scans can run ahead); an older one is
+ * recorded as handled without a notification. When the lookup fails, every
+ * batch is announced as before.
+ */
+async function parcelScanTimes(client: SupabaseServiceClient, batches: Iterable<JsonObject[]>): Promise<Map<string, string>> {
+  try {
+    return await client.latestScanTimes([...batches].map((events) => stringField(events[0]!, 'package_id')).filter(Boolean));
+  } catch {
+    return new Map();
+  }
+}
+
+const BACKFILL_TOLERANCE_MS = 60 * 60 * 1_000;
+
+export function isBackfilledScan(newest: JsonObject, latest: ReadonlyMap<string, string>): boolean {
+  const scanned = Date.parse(stringField(newest, 'occurred_at'));
+  const parcel = Date.parse(latest.get(stringField(newest, 'package_id')) ?? '');
+  return Number.isFinite(scanned) && Number.isFinite(parcel) && scanned < parcel - BACKFILL_TOLERANCE_MS;
+}
+
 export class WebPushNotificationService {
   constructor(
     readonly client: SupabaseServiceClient,
@@ -429,10 +453,15 @@ export class WebPushNotificationService {
       grouped.set(key, [...(grouped.get(key) ?? []), row]);
     }
     const summary = emptySummary();
+    const latest = await parcelScanTimes(this.client, grouped.values());
     for (const events of grouped.values()) {
       signal?.throwIfAborted();
       const newest = [...events].sort(compareNotificationEvents)[0]!;
       const subscriptionId = stringField(newest, 'subscription_id');
+      if (isBackfilledScan(newest, latest)) {
+        await this.client.recordPushDeliveries(subscriptionId, events.map((event) => stringField(event, 'event_id')).filter(Boolean));
+        continue;
+      }
       summary.attempted += 1;
       try {
         await this.send(newest);
@@ -622,11 +651,12 @@ export class NativePushNotificationService {
       grouped.set(key, [...(grouped.get(key) ?? []), row]);
     }
     const summary = emptySummary();
+    const latest = await parcelScanTimes(this.client, grouped.values());
     for (const events of grouped.values()) {
       signal?.throwIfAborted();
       const newest = [...events].sort(compareNotificationEvents)[0]!;
       const deviceId = stringField(newest, 'device_id');
-      if (newest.live_activity_delivered === true) {
+      if (newest.live_activity_delivered === true || isBackfilledScan(newest, latest)) {
         await this.client.recordNativePushDeliveries(
           deviceId,
           events.map((event) => stringField(event, 'event_id')).filter(Boolean),

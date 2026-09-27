@@ -42,7 +42,9 @@ Key server modules:
 - `trackingSync.ts` runs one refresh through the adapter registry;
   `trackingRouting.ts` decides which source to ask ([ROUTING.md](ROUTING.md)).
 - `push.ts` sends Web Push, APNs alerts and Live Activity updates, only to the parcel
-  owner's devices.
+  owner's devices. Each batch of new scans announces its newest one, and only when it is
+  the parcel's newest scan: history a carrier change backfills, or a scan reported late,
+  is recorded as handled without an alert.
 - `observability.ts` and `trackingAudit.ts` link Sentry and logs to the private audit
   tables ([OBSERVABILITY.md](OBSERVABILITY.md)).
 
