@@ -2,6 +2,48 @@
   "carrier": "blue-dart",
   "records": [
     {
+      "number": "36206727712",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6ab5202501cff3e7b1b7d7de",
+        "date": "2026-09-24"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "gls-fr",
+          "gls-de",
+          "blue-dart",
+          "aramex"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Blue Dart, which stays one candidate among several."
+    },
+    {
+      "number": "51963160653",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6aaeff36682a8671edecce99",
+        "date": "2026-09-19"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "gls-fr",
+          "gls-de",
+          "blue-dart",
+          "aramex"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Blue Dart, which stays one candidate among several."
+    },
+    {
       "number": "79034111041",
       "role": "shipment",
       "evidence": "official_documentation_example",

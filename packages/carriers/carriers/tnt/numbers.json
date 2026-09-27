@@ -2,6 +2,44 @@
   "carrier": "tnt",
   "records": [
     {
+      "number": "1319298002846673",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a58c1f15d75ae6cf50b8bf7",
+        "date": "2026-07-16"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl-ecommerce",
+          "correos-express",
+          "canada-post"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to TNT France, which no rule claims."
+    },
+    {
+      "number": "1320002490250705",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a636f2d0801a8c8be5d2c1b",
+        "date": "2026-07-24"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl-ecommerce",
+          "correos-express",
+          "canada-post"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to TNT France, which no rule claims."
+    },
+    {
       "number": "211691259",
       "role": "shipment",
       "evidence": "open_source_example",

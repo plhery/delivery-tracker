@@ -2,6 +2,20 @@
   "carrier": "hongkong-post",
   "records": [
     {
+      "number": "LP157079155HK",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://detail.chiebukuro.yahoo.co.jp/qa/question_detail/q12329081017",
+        "date": "2026-06-20"
+      },
+      "expect": {
+        "carrier": "hongkong-post",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. AliExpress item to Japan; the page does not name the carrier."
+    },
+    {
       "number": "RE113184005HK",
       "role": "shipment",
       "evidence": "open_source_example",

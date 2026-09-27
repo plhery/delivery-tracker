@@ -13,6 +13,20 @@
         "confidence": "high"
       },
       "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "4PX3002790888841CN",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.chinapostaltracking.com/qa/what-is-my-tracking-number-format-159483/",
+        "date": "2026-06-26"
+      },
+      "expect": {
+        "carrier": "four-px",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
     }
   ]
 }

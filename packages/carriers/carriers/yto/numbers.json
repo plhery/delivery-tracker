@@ -14,6 +14,20 @@
         "confidence": "high"
       },
       "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "YT8879092508074",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ptt.cc/bbs/e-shopping/M.1781927397.A.39F.html",
+        "date": "2026-06-20"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to YTO Express; no rule matches this shape."
     }
   ]
 }

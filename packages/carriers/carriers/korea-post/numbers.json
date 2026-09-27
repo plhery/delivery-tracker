@@ -2,6 +2,20 @@
   "carrier": "korea-post",
   "records": [
     {
+      "number": "6097542557191",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://kin.naver.com/qna/detail.naver?dirId=81302&docId=495290455",
+        "date": "2026-09-24"
+      },
+      "expect": {
+        "carrier": "la-poste",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Korea Post; detection selects La Poste. Domestic parcel."
+    },
+    {
       "number": "EM385783825KR",
       "role": "shipment",
       "evidence": "open_source_example",
@@ -14,6 +28,20 @@
         "confidence": "high"
       },
       "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "ES401809342KR",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://kin.naver.com/qna/detail.naver?dirId=81302&docId=495261561",
+        "date": "2026-09-22"
+      },
+      "expect": {
+        "carrier": "korea-post",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. EMS item to Japan."
     }
   ]
 }

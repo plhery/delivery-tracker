@@ -38,6 +38,24 @@
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to bpost, which stays one candidate among several."
     },
     {
+      "number": "323299903171288510995037",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6aad4fb49a4ec9a1f36c3a6c",
+        "date": "2026-09-18"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "inpost",
+          "bpost"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to bpost, which stays one candidate among several."
+    },
+    {
       "number": "CE500137339BE",
       "role": "shipment",
       "evidence": "public_shipment_report",
@@ -50,6 +68,20 @@
         "confidence": "high"
       },
       "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
+      "number": "LD737351137BE",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6aad494aa36ef0697f60cd4d",
+        "date": "2026-09-18"
+      },
+      "expect": {
+        "carrier": "bpost",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Cross-border item handled by Landmark Global."
     },
     {
       "number": "UI539489067BE",

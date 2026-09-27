@@ -26,6 +26,20 @@
         "confidence": "high"
       },
       "note": "Published integration example, not a real shipment."
+    },
+    {
+      "number": "UK844354295YP",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.chinapostaltracking.com/qa/non-ho-ricevuto-nulla-157549/",
+        "date": "2026-03-26"
+      },
+      "expect": {
+        "carrier": "intl-post",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Yanwen; detection selects the generic postal carrier."
     }
   ]
 }

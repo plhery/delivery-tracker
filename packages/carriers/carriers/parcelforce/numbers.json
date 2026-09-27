@@ -13,6 +13,20 @@
         "confidence": "high"
       },
       "note": "Official documentation example, not a real shipment."
+    },
+    {
+      "number": "GI049170518GB",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6ab10ab55824d015aa93bd4c",
+        "date": "2026-09-21"
+      },
+      "expect": {
+        "carrier": "royal-mail",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Parcelforce Worldwide; detection selects Royal Mail."
     }
   ]
 }

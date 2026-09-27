@@ -99,6 +99,20 @@
       "note": "Open-source project example, not a real shipment."
     },
     {
+      "number": "EWN001815469",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6aa47d13e59cb2883d7ebb28",
+        "date": "2026-09-12"
+      },
+      "expect": {
+        "carrier": "purolator",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
       "number": "JFV247545960",
       "role": "shipment",
       "evidence": "open_source_example",

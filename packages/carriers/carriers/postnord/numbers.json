@@ -2,6 +2,23 @@
   "carrier": "postnord",
   "records": [
     {
+      "number": "00573132901903503247",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6aa18ce5ceeb19b7855a6717",
+        "date": "2026-09-09"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "usps"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to PostNord, which no rule claims."
+    },
+    {
       "number": "84971563697SE",
       "role": "shipment",
       "evidence": "open_source_example",
@@ -13,6 +30,34 @@
         "confidence": "high"
       },
       "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "RR123815032SE",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6aa0642b73c446456c716614",
+        "date": "2026-09-08"
+      },
+      "expect": {
+        "carrier": "intl-post",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to PostNord; detection selects the generic postal carrier."
+    },
+    {
+      "number": "UO820761246SE",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6ab411ce25125859f760401f",
+        "date": "2026-09-23"
+      },
+      "expect": {
+        "carrier": "intl-post",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to PostNord; detection selects the generic postal carrier."
     }
   ]
 }

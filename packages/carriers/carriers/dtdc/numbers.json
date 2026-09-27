@@ -2,6 +2,20 @@
   "carrier": "dtdc",
   "records": [
     {
+      "number": "7D119335452",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6ab70eab4f8ac906897c270d",
+        "date": "2026-09-26"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to DTDC; no rule matches this shape."
+    },
+    {
       "number": "N95614372",
       "role": "shipment",
       "evidence": "open_source_example",

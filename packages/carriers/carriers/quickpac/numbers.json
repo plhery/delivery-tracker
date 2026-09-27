@@ -2,6 +2,20 @@
   "carrier": "quickpac",
   "records": [
     {
+      "number": "440010970004135028",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://blog.emeidi.com/2025/05/26/quickpac-pakete-tracken/",
+        "date": "2025-05-26"
+      },
+      "expect": {
+        "carrier": "quickpac",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
       "number": "440012345612345678",
       "role": "shipment",
       "evidence": "synthetic",

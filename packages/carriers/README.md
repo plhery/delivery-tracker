@@ -132,36 +132,36 @@ statuses, timings and network error codes.
 | `india-post` | India Post | dedicated | direct | 3 | 4 | 13 | [README](carriers/india-post/README.md) |
 | `poste-italiane` | Poste Italiane | dedicated | direct | 2 | 8 | 17 | [README](carriers/poste-italiane/README.md) |
 | `correos-spain` | Correos | dedicated | direct | 5 | 10 | 41 | [README](carriers/correos-spain/README.md) |
-| `bpost` | bpost | universal providers |  | 0 | 4 | 0 |  |
-| `austrian-post` | Austrian Post | universal providers |  | 0 | 2 | 0 |  |
-| `postnord` | PostNord | universal providers |  | 0 | 1 | 0 |  |
-| `tnt` | TNT | universal providers |  | 0 | 4 | 0 |  |
-| `aramex` | Aramex | universal providers |  | 0 | 1 | 0 |  |
-| `yunexpress` | YunExpress | universal providers |  | 0 | 1 | 0 |  |
-| `four-px` | 4PX | universal providers |  | 0 | 1 | 0 |  |
-| `yanwen` | Yanwen | universal providers |  | 0 | 2 | 0 |  |
-| `j-and-t` | J&T Express | universal providers |  | 0 | 1 | 0 |  |
+| `bpost` | bpost | universal providers |  | 0 | 6 | 0 |  |
+| `austrian-post` | Austrian Post | universal providers |  | 0 | 3 | 0 |  |
+| `postnord` | PostNord | universal providers |  | 0 | 4 | 0 |  |
+| `tnt` | TNT | universal providers |  | 0 | 6 | 0 |  |
+| `aramex` | Aramex | universal providers |  | 0 | 3 | 0 |  |
+| `yunexpress` | YunExpress | universal providers |  | 0 | 2 | 0 |  |
+| `four-px` | 4PX | universal providers |  | 0 | 2 | 0 |  |
+| `yanwen` | Yanwen | universal providers |  | 0 | 3 | 0 |  |
+| `j-and-t` | J&T Express | universal providers |  | 0 | 4 | 0 |  |
 | `jd-logistics` | JD Logistics | universal providers |  | 0 | 1 | 0 |  |
 | `zto` | ZTO Express | universal providers |  | 0 | 1 | 0 |  |
-| `yto` | YTO Express | universal providers |  | 0 | 1 | 0 |  |
+| `yto` | YTO Express | universal providers |  | 0 | 2 | 0 |  |
 | `yunda` | Yunda Express | universal providers |  | 0 | 1 | 0 |  |
 | `sto` | STO Express | universal providers |  | 0 | 1 | 0 |  |
-| `yamato` | Yamato Transport | universal providers |  | 0 | 1 | 0 |  |
-| `correios-br` | Correios Brazil | universal providers |  | 0 | 3 | 0 |  |
-| `singapore-post` | Singapore Post | universal providers |  | 0 | 3 | 0 |  |
-| `hongkong-post` | Hongkong Post | universal providers |  | 0 | 1 | 0 |  |
-| `korea-post` | Korea Post | universal providers |  | 0 | 1 | 0 |  |
-| `planzer` | Planzer | dedicated | direct | 2 | 4 | 26 | [README](carriers/planzer/README.md) |
-| `quickpac` | Quickpac | via planzer | direct | 2 | 1 | 26 | [README](carriers/quickpac/README.md) |
-| `dpd-fr` | DPD France | dedicated | direct → trawl | 3 | 3 | 40 | [README](carriers/dpd-fr/README.md) |
-| `parcelforce` | Parcelforce Worldwide | universal providers |  | 0 | 1 | 0 |  |
-| `purolator` | Purolator | universal providers |  | 0 | 7 | 0 |  |
-| `ontrac` | OnTrac | universal providers |  | 0 | 15 | 0 |  |
-| `delhivery` | Delhivery | universal providers |  | 0 | 2 | 0 |  |
-| `blue-dart` | Blue Dart | universal providers |  | 0 | 3 | 0 |  |
-| `dtdc` | DTDC | universal providers |  | 0 | 1 | 0 |  |
-| `ninja-van` | Ninja Van | universal providers |  | 0 | 2 | 0 |  |
-| `packeta` | Packeta | dedicated | direct | 4 | 4 | 16 | [README](carriers/packeta/README.md) |
+| `yamato` | Yamato Transport | universal providers |  | 0 | 2 | 0 |  |
+| `correios-br` | Correios Brazil | universal providers |  | 0 | 5 | 0 |  |
+| `singapore-post` | Singapore Post | universal providers |  | 0 | 5 | 0 |  |
+| `hongkong-post` | Hongkong Post | universal providers |  | 0 | 2 | 0 |  |
+| `korea-post` | Korea Post | universal providers |  | 0 | 3 | 0 |  |
+| `planzer` | Planzer | dedicated | direct | 2 | 6 | 26 | [README](carriers/planzer/README.md) |
+| `quickpac` | Quickpac | via planzer | direct | 2 | 2 | 26 | [README](carriers/quickpac/README.md) |
+| `dpd-fr` | DPD France | dedicated | direct → trawl | 3 | 4 | 40 | [README](carriers/dpd-fr/README.md) |
+| `parcelforce` | Parcelforce Worldwide | universal providers |  | 0 | 2 | 0 |  |
+| `purolator` | Purolator | universal providers |  | 0 | 8 | 0 |  |
+| `ontrac` | OnTrac | universal providers |  | 0 | 16 | 0 |  |
+| `delhivery` | Delhivery | universal providers |  | 0 | 5 | 0 |  |
+| `blue-dart` | Blue Dart | universal providers |  | 0 | 5 | 0 |  |
+| `dtdc` | DTDC | universal providers |  | 0 | 2 | 0 |  |
+| `ninja-van` | Ninja Van | universal providers |  | 0 | 4 | 0 |  |
+| `packeta` | Packeta | dedicated | direct | 4 | 5 | 16 | [README](carriers/packeta/README.md) |
 | `poczta-polska` | Poczta Polska | universal providers |  | 0 | 6 | 0 |  |
 | `bring-posten` | Bring | universal providers |  | 0 | 1 | 0 |  |
 | `posti` | Posti | dedicated | direct → refresh | 5 | 1 | 13 | [README](carriers/posti/README.md) |

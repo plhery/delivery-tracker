@@ -15,6 +15,20 @@
       "note": "Official documentation example, not a real shipment."
     },
     {
+      "number": "Z3110953842",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.paketda.de/fragen-antworten.php?suche=Z3110953842",
+        "date": "2023-06-05"
+      },
+      "expect": {
+        "carrier": "packeta",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
       "number": "Z8328162946",
       "role": "shipment",
       "evidence": "public_shipment_report",

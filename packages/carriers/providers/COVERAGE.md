@@ -2,7 +2,7 @@
 
 Checked in September 2026 with one public reference per carrier. Each reference was
 looked up through the carrier's direct adapter and through every universal provider
-separately. The first 30 carriers of the [carrier overview](../README.md) are in the
+separately. The first 60 carriers of the [carrier overview](../README.md) are in the
 matrix. Results describe these references, not every number from a carrier.
 
 Numbers are history rows after projection. Operators, translations and repeated reports
@@ -13,11 +13,13 @@ statuses map correctly.
 - **✓ n**: matching history with n rows. **Intermittent**: retrieved, but other sessions
   were challenged.
 - **No history**: nothing usable for this reference. **Summary only**: a response with
-  no rows. **Sign-in**: only an account notice.
+  no rows. **Sign-in**: only an account notice. **Postcode prompt**: only a request for
+  the recipient postcode.
 - **Error**: request, capture or identity check failed, so coverage is inconclusive.
-  **Blocked**: the session was challenged.
+  **Blocked**: the session was challenged. **Wrong carrier**: history of another
+  carrier's parcel with the same number.
 - **N/A**: not an S10 number, so UPU is ineligible. **Unverified**: only an illustrative
-  example exists.
+  or years-old example exists.
 - Direct support: **Yes**; **Yes (postcode)** needs the recipient postcode (**Not tested
   (postcode)** when none was public); **Yes (optional postcode)** tracks without it and
   shows more with it; **Link only**; **Disabled** (universal providers are used
@@ -57,6 +59,36 @@ statuses map correctly.
 | [India Post](../carriers/india-post/README.md) | Yes | ✓ 21 | ✓ 21 | No history | ✓ 21 | No history | No history |
 | [Poste Italiane](../carriers/poste-italiane/README.md) | Yes | No history | No history | No history | No history | No history | N/A |
 | [Correos Spain](../carriers/correos-spain/README.md) | Yes | ✓ 12 | Error | ✓ 12 | ✓ 12 | No history | N/A |
+| [bpost](../carriers/bpost/carrier.json) | No adapter | Not tested | No history | Postcode prompt | No history | No history | N/A |
+| [Austrian Post](../carriers/austrian-post/carrier.json) | No adapter | Not tested | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 9 | N/A |
+| [PostNord](../carriers/postnord/carrier.json) | No adapter | Not tested | ✓ 6 | ✓ 6 | ✓ 6 | ✓ 7 | No history |
+| [TNT](../carriers/tnt/carrier.json) | No adapter | Not tested | No history | No history | No history | No history | N/A |
+| [Aramex](../carriers/aramex/carrier.json) | No adapter | Not tested | No history | No history | No history | ✓ 16 | N/A |
+| [YunExpress](../carriers/yunexpress/carrier.json) | No adapter | Not tested | ✓ 14 | ✓ 15 | ✓ 14 | ✓ 15 | N/A |
+| [4PX](../carriers/four-px/carrier.json) | No adapter | Not tested | ✓ 25 | ✓ 26 | ✓ 26 | ✓ 26 | N/A |
+| [Yanwen](../carriers/yanwen/carrier.json) | No adapter | Not tested | ✓ 1 | ✓ 29 | ✓ 29 | No history | No history |
+| [J&T Express](../carriers/j-and-t/carrier.json) | No adapter | Not tested | No history | No history | No history | No history | N/A |
+| [JD Logistics](../carriers/jd-logistics/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Unverified | N/A |
+| [ZTO Express](../carriers/zto/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Unverified | N/A |
+| [YTO Express](../carriers/yto/carrier.json) | No adapter | Not tested | Error | ✓ 30 | ✓ 20 | No history | N/A |
+| [Yunda Express](../carriers/yunda/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Unverified | N/A |
+| [STO Express](../carriers/sto/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Unverified | N/A |
+| [Yamato Transport](../carriers/yamato/carrier.json) | No adapter | Not tested | Error | Wrong carrier | No history | No history | N/A |
+| [Correios Brazil](../carriers/correios-br/carrier.json) | No adapter | Not tested | ✓ 8 | No history | ✓ 8 | ✓ 8 | No history |
+| [Singapore Post](../carriers/singapore-post/carrier.json) | No adapter | Not tested | ✓ 4 | ✓ 12 | ✓ 18 | ✓ 11 | ✓ 4 |
+| [Hongkong Post](../carriers/hongkong-post/carrier.json) | No adapter | Not tested | ✓ 26 | ✓ 35 | ✓ 17 | ✓ 35 | No history |
+| [Korea Post](../carriers/korea-post/carrier.json) | No adapter | Not tested | No history | No history | No history | No history | N/A |
+| [Planzer](../carriers/planzer/README.md) | Yes | Error | No history | No history | No history | No history | N/A |
+| [Quickpac](../carriers/quickpac/README.md) | Yes (via Planzer) | No history | No history | No history | No history | No history | N/A |
+| [DPD France](../carriers/dpd-fr/README.md) | Yes | ✓ 10 | ✓ 10 | ✓ 5 | No history | No history | N/A |
+| [Parcelforce Worldwide](../carriers/parcelforce/carrier.json) | No adapter | Not tested | No history | No history | No history | ✓ 3 | No history |
+| [Purolator](../carriers/purolator/carrier.json) | No adapter | Not tested | No history | ✓ 12 | ✓ 12 | No history | N/A |
+| [OnTrac](../carriers/ontrac/carrier.json) | No adapter | Not tested | No history | ✓ 14 | No history | ✓ 14 | N/A |
+| [Delhivery](../carriers/delhivery/carrier.json) | No adapter | Not tested | No history | No history | No history | No history | N/A |
+| [Blue Dart](../carriers/blue-dart/carrier.json) | No adapter | Not tested | No history | No history | No history | No history | N/A |
+| [DTDC](../carriers/dtdc/carrier.json) | No adapter | Not tested | No history | ✓ 35 | No history | No history | N/A |
+| [Ninja Van](../carriers/ninja-van/carrier.json) | No adapter | Not tested | No history | No history | No history | No history | N/A |
+| [Packeta](../carriers/packeta/README.md) | Yes | No history | No history | No history | No history | No history | N/A |
 
 ## What the differences mean
 
@@ -70,22 +102,27 @@ By source:
   times with no verified zone (SF Express, Evri International, overseas Japan Post
   scans).
 - **Ship24** is sparse for some references: label-only for UPS (a second UPS reference
-  was complete), one old row for DPD, and it stops before La Poste's final events. Some
-  postal legs come back undated (India Post, Japan Post).
+  was complete), one old row for DPD, one row for Yanwen, and it stops before La Poste's
+  final events. It had nothing for OnTrac, Purolator, Parcelforce or the Indian
+  carriers, and its browser recovery timed out twice for Yamato and YTO. Some histories
+  come back undated (India Post, Japan Post, Austrian Post, PostNord, DPD France).
 - **ParcelsApp** often has the richest destination leg (DHL eCommerce, Canada Post,
-  Japan Post), and was the only aggregator with GLS France and Evri history. It exposes
-  internal labels (`swa_rex_*` for Amazon Shipping pickup), shows Amazon sign-in notices
-  (excluded from counts), and maps `Final delivery` to pending.
+  Japan Post), and was the only aggregator with GLS France, Evri and DTDC history. It
+  exposes internal labels (`swa_rex_*` for Amazon Shipping pickup), shows Amazon sign-in
+  notices (excluded from counts), and maps `Final delivery` to pending. It asks for a
+  postcode for bpost's 24-digit numbers and answered a Yamato number with a FedEx parcel.
 - **17TRACK** gives the best multi-operator journeys, naming each operator: China Post
-  plus Correios, Canada Post plus USPS, Japan Post plus Malta Post. It was the only
-  aggregator with USPS and SF Express history. It misses some actionable rows (La Poste
-  pickup-ready, InPost locker-ready). Its first poll can stay pending, and a second
-  bounded call then completes.
-- **Postal Ninja** often matches ParcelsApp and had the most rows for La Poste. Many rows
-  are undated (PostNL, Australia Post, Japan Post), and some codes stay untranslated
-  (`HoldForPickup`).
+  plus Correios, Canada Post plus USPS, Japan Post plus Malta Post, Singapore Post plus
+  China Post. It was the only aggregator with USPS and SF Express history. It misses some
+  actionable rows (La Poste pickup-ready, InPost locker-ready) and had nothing for OnTrac,
+  DTDC or DPD France. Its first poll can stay pending, and a second bounded call then
+  completes. Chinese domestic scans can carry courier names and phone numbers.
+- **Postal Ninja** often matches ParcelsApp and had the most rows for La Poste. It was the
+  only source with Parcelforce rows and with a domestic Aramex delivery. Many rows are
+  undated (PostNL, Australia Post, Japan Post), some codes stay untranslated
+  (`HoldForPickup`), and it refuses Purolator, DTDC and JD formats.
 - **UPU** usually has final delivery only (DHL, China Post, Canada Post, Japan Post). EMS
-  is the exception.
+  is the exception, and Singapore Post's four exchange-office scans match Ship24's.
 
 By carrier:
 
@@ -104,44 +141,81 @@ By carrier:
   still says in transit.
 - **GLS Germany, GLS Switzerland, short Mondial Relay numbers:** direct history needs the
   recipient postcode, which no public reference had.
-- **Chronopost, Hermes Germany, Mondial Relay, Poste Italiane, GLS France direct:** the
-  public references are old, so the negatives say nothing about current coverage.
+- **Chronopost, Hermes Germany, Mondial Relay, Poste Italiane, GLS France direct,
+  Quickpac, Packeta:** the public references are old, so the negatives say nothing about
+  current coverage.
+- **bpost, Korea Post:** domestic numbers (bpost's 24 digits, Korea Post's 13) had no
+  history anywhere. S10 items did: a bpost `LD…BE` item through Landmark Global had 20
+  rows in ParcelsApp and 14 in 17TRACK, and a Korea Post EMS item had 15 to 43 in every
+  feed but Postal Ninja.
+- **J&T Express, Delhivery, Blue Dart, TNT:** no aggregator had history for any of two or
+  three recent references each (J&T in the Philippines and Indonesia, TNT France's
+  16-digit numbers). Ninja Van's newest public numbers, from February and April, had
+  none either.
+- **JD Logistics, ZTO, Yunda, STO:** public posts mask Chinese domestic numbers, so only
+  2015 examples were available. YTO's one public number had 30 English rows in
+  ParcelsApp, all but the pickup left pending, and 20 Chinese rows in 17TRACK, including
+  the return.
+- **Aramex:** a domestic delivery in the UAE had 16 undated rows in Postal Ninja only. An
+  international shipment had the same 26 rows in Ship24, 17TRACK and Postal Ninja, and
+  none in ParcelsApp.
+- **Planzer:** the API answers the `reference.shipment` numbers Planzer prints, but the
+  adapter only accepts a reply whose parcel number equals the request, so it rejects
+  them as another shipment. The app also strips the dot before the adapter can split
+  the composite. No aggregator knows Planzer.
+- **Yamato:** ParcelsApp answered with a January FedEx parcel that shares the 12 digits
+  (it reported FedEx and GLS), not the July Yamato parcel. Nothing else had history.
+- **DPD France:** direct and Ship24 return the same 10 rows, direct with depots and
+  times. ParcelsApp condenses them into 5.
+- **Hongkong Post:** for an AliExpress item, Ship24, ParcelsApp and Postal Ninja include
+  the Cainiao origin leg (26 to 35 rows); 17TRACK keeps the two postal legs (17).
+- **Singapore Post:** for an item to China, 17TRACK adds China Post's leg in Chinese;
+  Ship24 and UPU have only the four exchange-office scans.
+- **PostNord, 4PX, Austrian Post, Correios Brazil:** the successful feeds hold the same
+  scans, give or take one. Postal Ninja adds a "last day to pickup" row after PostNord's
+  delivery.
+- **Parcelforce:** only Postal Ninja had rows (booking and collection).
 
 Mapping gaps seen in these samples: 17TRACK maps Swiss Post vehicle loading to in
 transit; PostNL direct maps out-for-delivery as accepted; EMS export cancellation has no
-dedicated stage.
+dedicated stage. The shared wording leaves many failed delivery attempts pending
+(Aramex, Purolator, Yanwen's Italian leg, Japan Post's "Absence. Attempted delivery."),
+maps OnTrac's "business closed" attempts to in transit, and leaves Aramex's delivery
+round pending while its "new delivery instructions" row reads as out for delivery.
+Shipper pre-advice (PostNord), unhanded labels (Aramex) and Austrian Post's handover to
+a delivery partner map to accepted.
+
+For 18 of the 41 public numbers behind rows 31–60, detection neither selects nor suggests
+the carrier the source names: among them OnTrac's 17-character `1LSCX…`, J&T `JY…` and
+`JT…`, DTDC `7D…`, YTO `YT…`, Yanwen `…YP`, Ninja Van and Planzer composites. It selects
+Royal Mail for a Parcelforce `GI…GB` number and La Poste for a Korea Post domestic
+number. Each answer is recorded in the carrier's `numbers.json`.
 
 ## Other carriers
 
-One public sample each, probed through Ship24, ParcelsApp and 17TRACK. Many samples are
-old, so "–" often just means the history expired.
+Carriers beyond the first 60, one public sample each, probed through Ship24, ParcelsApp
+and 17TRACK. Many samples are old, so "–" often just means the history expired.
 
 | Carrier | Route | Ship24 | ParcelsApp | 17TRACK |
 | --- | --- | --- | --- | --- |
 | An Post | universal | ✓ | – | ✓ |
-| Blue Dart | universal | – | postcode prompt | – |
-| bpost | universal | – | postcode prompt | – |
 | BRT | universal | – | – | – |
 | Ciblex | dedicated | – | postcode prompt | – |
 | Colis Privé | dedicated | – | – | – |
 | Correos Express | universal | – | – | – |
 | CTT Express | universal | ✓ | ✓ | ✓ |
 | CTT Portugal | dedicated | – | ✓ | ✓ |
-| Delhivery | universal | – | postcode prompt | – |
 | Ecoscooting | universal | – | – | – |
 | GEODIS | dedicated | – | postcode prompt | – |
-| J&T Express | universal | timeout | postcode prompt | – |
 | MRW | universal | – | – | ✓ |
 | NACEX | universal | – | – | rejects the `agency/number` format |
 | Paack | dedicated | – | – | – |
-| Packeta | dedicated | – | – | – |
 | Relais Colis | dedicated | – | – | – |
 | SEUR | universal | wrong carrier (DPD) | wrong carrier (DPD); SEUR asks for postcode | – |
 | SpeedX | universal | – | – | – |
 | SunYou | dedicated | – | ✓ | ✓ |
 | TIPSA | universal | – | – | – |
 | UniUni | universal | – | ✓ | – |
-| YunExpress | universal | ✓ | ✓ | ✓ |
 
 ## Method
 
@@ -153,3 +227,10 @@ old, so "–" often just means the history expired.
   numbers and postcodes were withheld, and no account was signed into.
 - One reference per row. Extra references and bounded rechecks only investigated
   failures and are not averaged in.
+- Rows 31–60 were checked on 27 September at `6ed4d22`. Each uses the newest public post
+  found that ties a number to the carrier (Trustpilot reviews, complaint letters, Q&A
+  threads, shop pull requests), skipping pages that print the author's contact details.
+  The numbers and their sources are in each carrier's `numbers.json`.
+- For those rows, a first-call timeout, pending 17TRACK poll or Postal Ninja capture
+  failure got one bounded recheck, and the cell shows the recheck. Every all-negative row
+  got one or two more recent references; the notes say where they differed.

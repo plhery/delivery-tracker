@@ -2,6 +2,24 @@
   "carrier": "planzer",
   "records": [
     {
+      "number": "11652.0059554609",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a1ad21200205c065a1b7aa8",
+        "date": "2026-05-30"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "fedex",
+          "dpd-fr"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Planzer, which no rule claims. Printed as reference.shipment."
+    },
+    {
       "number": "12345678",
       "role": "shipment",
       "evidence": "open_source_example",
@@ -17,6 +35,23 @@
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to Planzer, which no rule claims."
+    },
+    {
+      "number": "87979.0061660090",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a463a9fe1dee431b2338215",
+        "date": "2026-07-02"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "fedex"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Planzer, which no rule claims. Printed as reference.shipment."
     },
     {
       "number": "91346097123456789012",

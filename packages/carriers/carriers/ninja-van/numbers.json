@@ -20,6 +20,34 @@
       "note": "Official documentation example, not a real shipment. The source attributes it to Ninja Van, which no rule claims."
     },
     {
+      "number": "NLIDAP8003114210",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://mediakonsumen.com/2026/02/10/surat-pembaca/21-pesanan-lazada-berisi-ponsel-hilang-dalam-pengiriman-karena-permainan-jasa-kirim-mengganti-isi-paket-dan-sampai-pembeli-tidak-sesuai",
+        "date": "2026-02-10"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ninja Van; no rule matches this shape. Indonesian parcel (Ninja Xpress)."
+    },
+    {
+      "number": "NLMYA71943214",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/69db93b2876e4c3ccfc16628",
+        "date": "2026-04-12"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ninja Van; no rule matches this shape. Malaysian parcel."
+    },
+    {
       "number": "NVSGBEDBP03784ADPL",
       "role": "shipment",
       "evidence": "official_documentation_example",

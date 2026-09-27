@@ -2,6 +2,20 @@
   "carrier": "correios-br",
   "records": [
     {
+      "number": "AD803652820BR",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://github.com/universidadedeterapias/meDIZ/pull/86",
+        "date": "2026-08-20"
+      },
+      "expect": {
+        "carrier": "correios-br",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
       "number": "ES446391025BR",
       "role": "shipment",
       "evidence": "open_source_example",
@@ -26,6 +40,20 @@
         "confidence": "high"
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to Correios Brazil; detection selects Hongkong Post."
+    },
+    {
+      "number": "NN376766183BR",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6ab708ba54e925ea877fb1b1",
+        "date": "2026-09-26"
+      },
+      "expect": {
+        "carrier": "correios-br",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. AliExpress item still on its Cainiao leg when reported."
     },
     {
       "number": "RA222491899CN",

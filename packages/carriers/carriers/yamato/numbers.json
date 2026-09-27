@@ -29,6 +29,35 @@
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to Yamato Transport, which stays one candidate among several."
+    },
+    {
+      "number": "490567612253",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://github.com/07-hajime-tokyo/invoice-site_byCodex/pull/11",
+        "date": "2026-08-23"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "fedex",
+          "gls-ch",
+          "mondial-relay",
+          "gls-fr",
+          "colis-prive",
+          "gls-de",
+          "mrw",
+          "purolator",
+          "sf-express",
+          "sto",
+          "zto",
+          "yamato",
+          "j-and-t"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Yamato Transport, which stays one candidate among several."
     }
   ]
 }

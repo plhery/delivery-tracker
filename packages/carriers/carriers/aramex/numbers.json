@@ -21,6 +21,48 @@
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to Aramex, which stays one candidate among several."
+    },
+    {
+      "number": "34913932303",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6aa34217e4eabf7830d01a11",
+        "date": "2026-09-11"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "gls-fr",
+          "gls-de",
+          "blue-dart",
+          "aramex"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Aramex, which stays one candidate among several."
+    },
+    {
+      "number": "52594815954",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6ab224d5d826a3a9645a808f",
+        "date": "2026-09-22"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "gls-fr",
+          "gls-de",
+          "blue-dart",
+          "aramex"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Aramex, which stays one candidate among several. Domestic delivery in the UAE."
     }
   ]
 }

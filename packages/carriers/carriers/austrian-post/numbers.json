@@ -19,6 +19,24 @@
       "note": "Official documentation example, not a real shipment. The source attributes it to Austrian Post, which stays one candidate among several."
     },
     {
+      "number": "1040906599808880244007",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a75ae37aa311760875cbad5",
+        "date": "2026-08-07"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "austrian-post",
+          "usps"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Austrian Post, which stays one candidate among several."
+    },
+    {
       "number": "CA482156827DE",
       "role": "quarantined",
       "evidence": "official_documentation_example",
