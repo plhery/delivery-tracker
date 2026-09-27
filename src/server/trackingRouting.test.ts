@@ -172,6 +172,9 @@ describe('persistent tracking routing', () => {
       expect(universal).not.toHaveBeenCalled();
       expect(result.correction).toEqual({ carrier: 'dpd', trackingUrl: null, postcode: null });
       expect(result.result).toMatchObject({ auto_changed_from: 'asendia', auto_changed_to: 'dpd' });
+      // An expected probe outcome is logged, not raised as a detection gap.
+      expect(monitoring.reportRoutingEvent).toHaveBeenCalledWith('candidate_probe_confirmed', expect.objectContaining({ provider: 'dpd' }));
+      expect(monitoring.reportRoutingEvent).not.toHaveBeenCalledWith('carrier_mismatch_confirmed', expect.anything());
     });
     it('retries a missed probe within hours, outside the carrier failures', async () => {
       const { router, direct, universal } = setup();

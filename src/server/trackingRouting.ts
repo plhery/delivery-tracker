@@ -278,7 +278,11 @@ export class TrackingRouter {
         if (candidate && latest(value) < millis(state.last_event_at)) return null;
         if (terminalStage && ['delivered', 'returned'].includes(terminalStage)
           && value.result.current_stage !== terminalStage) return null;
-        if (carrier !== declared && state.confirmed_carrier !== carrier) report('carrier_mismatch_confirmed', carrier);
+        // A probe finding the carrier its number points to is the expected
+        // outcome, not a detection gap: log it without raising an alert.
+        if (carrier !== declared && state.confirmed_carrier !== carrier) {
+          report(probe ? 'candidate_probe_confirmed' : 'carrier_mismatch_confirmed', carrier);
+        }
         state.confirmed_carrier = carrier;
         state.confirmed_number = number;
         if (candidate && !ownInputs) {

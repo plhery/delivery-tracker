@@ -182,6 +182,7 @@ parcel.
 | `health_store_unavailable` | Migration or database coordination problem |
 | `carrier_auto_swapped` | A carrier correction was committed |
 | `carrier_mismatch_confirmed` | Detection rules could be improved |
+| `candidate_probe_confirmed` | A candidate probe found the carrier the number points to (logs and breadcrumbs only) |
 | `direct_support_opportunity` | Candidate for a dedicated adapter |
 | `carrier_coverage_discovered` | A provider named a carrier the catalog doesn't know |
 | `fresher_provider_found` | Evidence to revisit the default order |
