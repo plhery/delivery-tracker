@@ -949,7 +949,8 @@ struct ArchiveSwipeState {
     static let throwSpeed: CGFloat = 1000
     private(set) var reveal: CGFloat = 0
     private var origin: (travel: CGFloat, slop: CGFloat)?
-    private var horizontal = false
+    /// Unknown until the drag has actually moved.
+    private var horizontal: Bool?
 
     static func commitPoint(width: CGFloat) -> CGFloat {
         max(actionWidth + 56, width * 0.5)
@@ -993,24 +994,29 @@ struct ArchiveSwipeState {
     /// The first points of a drag only pick its direction, so the card starts moving without a jump.
     mutating func drag(translation: CGSize, width: CGFloat) {
         if origin == nil {
-            horizontal = abs(translation.width) > abs(translation.height)
+            // On iOS 27 a recognized pan reports zero first and measures from there, so
+            // there is nothing to absorb; earlier versions report the travel so far.
             let slop = min(max(translation.width, -Self.hysteresis), Self.hysteresis)
             origin = (Self.travel(forReveal: reveal, width: width), slop)
         }
-        guard horizontal, let origin else { return }
+        // Judging a zero translation would call every drag vertical.
+        if horizontal == nil, translation != .zero {
+            horizontal = abs(translation.width) > abs(translation.height)
+        }
+        guard horizontal == true, let origin else { return }
         reveal = Self.reveal(forTravel: origin.travel - (translation.width - origin.slop), width: width)
     }
 
     /// `velocity` is the finger's horizontal speed in points per second.
     mutating func release(velocity: CGFloat, width: CGFloat) -> Destination? {
-        defer { origin = nil; horizontal = false }
-        guard horizontal, origin != nil else { return nil }
+        defer { origin = nil; horizontal = nil }
+        guard horizontal == true, origin != nil else { return nil }
         return Self.destination(reveal: reveal, velocity: -velocity, width: width)
     }
 
     mutating func cancel() -> Destination? {
-        defer { origin = nil; horizontal = false }
-        guard horizontal, origin != nil else { return nil }
+        defer { origin = nil; horizontal = nil }
+        guard horizontal == true, origin != nil else { return nil }
         return reveal > Self.actionWidth / 2 ? .revealed : .closed
     }
 
@@ -1307,11 +1313,17 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if let action {
-            TimelineView(.animation(paused: motion == nil)) { timeline in
-                let shown = displayedPose(at: timeline.date)
+            // The body reads the pose and hands it to the timeline, so every change redraws
+            // the card without relying on the paused timeline's closure.
+            let resting = pose
+            let running = motion
+            let span = rowWidth
+            let leapt = armed
+            TimelineView(.animation(paused: running == nil)) { timeline in
+                let shown = running?.pose(at: timeline.date) ?? resting
                 content
-                    .offset(x: -min(shown.reveal, rowWidth))
-                    .background(alignment: .leading) { actionLayers(shown, action: action) }
+                    .offset(x: -min(shown.reveal, span))
+                    .background(alignment: .leading) { actionLayers(shown, width: span, armed: leapt, action: action) }
             }
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .shadow(
@@ -1357,8 +1369,8 @@ private struct ExperimentalSwipeToArchiveModifier: ViewModifier {
 
     /// A soft tray behind the card, and the action that rides on the card's edge
     /// until it is fully shown, then leaps to that edge past the commit point.
-    private func actionLayers(_ shown: ArchiveSwipePose, action: @escaping () async -> Bool) -> some View {
-        let width = rowWidth
+    private func actionLayers(_ shown: ArchiveSwipePose, width: CGFloat, armed: Bool,
+                              action: @escaping () async -> Bool) -> some View {
         let visible = min(shown.reveal, width)
         let tray = max(0, actionWidth - visible)
         let shift = shown.spread * max(0, visible - actionWidth)

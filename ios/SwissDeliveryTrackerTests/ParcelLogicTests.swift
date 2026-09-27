@@ -155,6 +155,24 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertEqual(swipe.reveal, 91.2, accuracy: 0.001)
     }
 
+    func testArchiveSwipeThatStartsAtZeroFollowsTheFingerOneToOne() {
+        // iOS 27 reports a recognized pan at zero before it moves.
+        var swipe = ArchiveSwipeState()
+        swipe.drag(translation: .zero, width: 360)
+        swipe.drag(translation: CGSize(width: -15.5, height: -2), width: 360)
+        XCTAssertEqual(swipe.reveal, 15.5, accuracy: 0.001)
+        swipe.drag(translation: CGSize(width: -48, height: -5), width: 360)
+        XCTAssertEqual(swipe.reveal, 48, accuracy: 0.001)
+        XCTAssertEqual(swipe.release(velocity: -600, width: 360), .revealed)
+
+        swipe.settle(at: 0)
+        swipe.drag(translation: .zero, width: 360)
+        swipe.drag(translation: CGSize(width: -3, height: -18), width: 360)
+        swipe.drag(translation: CGSize(width: -120, height: -20), width: 360)
+        XCTAssertEqual(swipe.reveal, 0)
+        XCTAssertNil(swipe.release(velocity: -900, width: 360))
+    }
+
     func testShortArchiveSwipeClosesFromTheReleasePosition() {
         var swipe = ArchiveSwipeState()
         swipe.drag(translation: CGSize(width: -25, height: 0), width: 360)
