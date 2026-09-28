@@ -141,7 +141,7 @@ statuses, timings and network error codes.
 | `bpost` | bpost | universal providers |  | 0 | 6 | 0 |  |
 | `austrian-post` | Austrian Post | dedicated | direct | 1 | 4 | 6 | [README](carriers/austrian-post/README.md) |
 | `postnord` | PostNord | dedicated | direct | 3 | 4 | 11 | [README](carriers/postnord/README.md) |
-| `tnt` | TNT | dedicated | direct | 1 | 6 | 1 | [README](carriers/tnt/README.md) |
+| `tnt` | TNT | dedicated | direct | 4 | 6 | 15 | [README](carriers/tnt/README.md) |
 | `aramex` | Aramex | dedicated | direct | 1 | 3 | 6 | [README](carriers/aramex/README.md) |
 | `yunexpress` | YunExpress | dedicated | browser → trawl | 2 | 2 | 15 | [README](carriers/yunexpress/README.md) |
 | `four-px` | 4PX | dedicated | direct | 3 | 2 | 17 | [README](carriers/four-px/README.md) |

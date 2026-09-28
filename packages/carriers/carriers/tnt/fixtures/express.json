@@ -1,0 +1,104 @@
+{
+  "tracker.output": {
+    "consignment": [
+      {
+        "shipmentId": 100000000002,
+        "consignmentKey": "WW100000001      SYA  202603270800",
+        "consignmentNumber": "100000001",
+        "customerReference": "SYNTHETIC-REFERENCE",
+        "numberOfPieces": 1,
+        "signatory": null,
+        "originAddress": { "city": "Synthetic Origin", "country": "China", "countryCode": "CN" },
+        "originDate": "2026-03-27T09:10:00+08:00",
+        "destinationAddress": { "city": "Synthetic Destination", "country": "Switzerland", "countryCode": "CH" },
+        "destinationDate": "2026-04-02T18:00:00+08:00",
+        "status": {
+          "groupCode": "INTRAN", "severity": "INFO", "isCancelled": false, "isDelivered": false,
+          "isDeliveredAtReceiver": false, "isDeliveredAtBroker": false, "isNewBooking": false,
+          "isPending": false, "hasSignatory": false, "hasProofOfDelivery": false
+        },
+        "analytics": {
+          "originDateSources": { "collection": "2026-03-27T08:00:00+08:00", "pickup": "2026-03-27T09:10:00+08:00", "usedDate": "pickup" },
+          "destinationDateSources": {
+            "originalEta": "2026-04-02T18:00:00+08:00", "revisedEta": null, "outForDeliveryEta": null,
+            "delivered": null, "usedDate": "originalEta", "edtw": null
+          },
+          "product": null
+        },
+        "events": [
+          {
+            "date": "2026-03-27T09:40:00+08:00", "legacyCode": "OS", "statusDescription": "Shipment in transit",
+            "location": { "city": "Synthetic Hub", "country": "China", "countryCode": "CN" }
+          },
+          {
+            "date": "2026-03-27T09:30:00+08:00", "legacyCode": "TR", "statusDescription": "Shipment in transit",
+            "location": { "city": "Synthetic Hub", "country": "China", "countryCode": "CN" }
+          },
+          {
+            "date": "2026-03-27T09:10:00+08:00", "legacyCode": "PU", "statusDescription": "Shipment collected from collection address",
+            "location": { "city": "Synthetic Origin", "country": "China", "countryCode": "CN" }
+          }
+        ]
+      },
+      {
+        "shipmentId": 100000000001,
+        "consignmentKey": "WW100000001      SYB  202503100900",
+        "consignmentNumber": "100000001",
+        "customerReference": null,
+        "numberOfPieces": 2,
+        "signatory": "SYNTHETIC SIGNATORY",
+        "originAddress": { "city": "Synthetic Earlier Origin", "country": "Belgium", "countryCode": "BE" },
+        "originDate": "2025-03-10T15:00:00+01:00",
+        "destinationAddress": { "city": "Synthetic Earlier Destination", "country": "Italy", "countryCode": "IT" },
+        "destinationDate": "2025-03-12T10:20:00+01:00",
+        "status": {
+          "groupCode": "DELRED", "severity": "INFO", "isCancelled": false, "isDelivered": true,
+          "isDeliveredAtReceiver": true, "isDeliveredAtBroker": false, "isNewBooking": false,
+          "isPending": false, "hasSignatory": true, "hasProofOfDelivery": true
+        },
+        "analytics": {
+          "originDateSources": { "collection": "2025-03-10T15:00:00+01:00", "pickup": null, "usedDate": "collection" },
+          "destinationDateSources": {
+            "originalEta": "2025-03-12T18:00:00+01:00", "revisedEta": null, "outForDeliveryEta": null,
+            "delivered": "2025-03-12T10:20:00+01:00", "usedDate": "delivered", "edtw": null
+          },
+          "product": null
+        },
+        "events": [
+          {
+            "date": "2025-03-12T10:20:00+01:00", "legacyCode": "OK", "statusDescription": "Shipment delivered in good condition",
+            "location": { "city": "Synthetic Earlier Destination", "country": "Italy", "countryCode": "IT" }
+          },
+          {
+            "date": "2025-03-10T19:00:00+01:00", "legacyCode": "CI", "statusDescription": "Shipment now at the depot nearest to collection address",
+            "location": { "city": "Synthetic Earlier Origin", "country": "Belgium", "countryCode": "BE" }
+          }
+        ]
+      },
+      {
+        "shipmentId": 100000000003,
+        "consignmentKey": "WW10000001       SYC  202603280700",
+        "consignmentNumber": "10000001",
+        "customerReference": null,
+        "numberOfPieces": 1,
+        "signatory": null,
+        "originAddress": { "city": "Synthetic Other Origin", "country": "United Kingdom", "countryCode": "GB" },
+        "originDate": "2026-03-28T07:00:00+00:00",
+        "destinationAddress": { "city": "Synthetic Other Destination", "country": "United Kingdom", "countryCode": "GB" },
+        "destinationDate": "2026-03-29T12:00:00+01:00",
+        "status": {
+          "groupCode": "INTRAN", "severity": "INFO", "isCancelled": false, "isDelivered": false,
+          "isDeliveredAtReceiver": false, "isDeliveredAtBroker": false, "isNewBooking": false,
+          "isPending": true, "hasSignatory": false, "hasProofOfDelivery": false
+        },
+        "analytics": null,
+        "events": [
+          {
+            "date": "2026-03-29T08:00:00+01:00", "legacyCode": "OD", "statusDescription": "Shipment is out for delivery.",
+            "location": { "city": "Synthetic Other Destination", "country": "United Kingdom", "countryCode": "GB" }
+          }
+        ]
+      }
+    ]
+  }
+}

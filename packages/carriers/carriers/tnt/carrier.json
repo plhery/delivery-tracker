@@ -21,20 +21,33 @@
     }
   },
   "capabilities": [
-    "history"
+    "history",
+    "location",
+    "eta",
+    "provider_code"
   ],
   "portal": {
-    "url": "https://www.tnt.com/express/en_gc/site/shipping-tools/track.html",
+    "url": "https://www.tnt.com/express/en_gb/site/shipping-tools/tracking.html?searchType=con&cons={trackingNumber}",
     "canaryUrl": "https://www.tnt.fr/public/suivi_colis/recherche/index.do",
     "shows": [
       "status",
-      "history"
+      "history",
+      "location",
+      "eta",
+      "customer_reference",
+      "signature"
     ],
     "scraped": [
       "status",
-      "history"
+      "history",
+      "location",
+      "eta",
+      "provider_code"
     ],
-    "discarded": [],
+    "discarded": [
+      "customer_reference",
+      "signature"
+    ],
     "unavailable": []
   },
   "links": [],

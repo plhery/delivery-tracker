@@ -8,6 +8,119 @@
       "confirmedBy": "live",
       "firstSeen": "2026-09-28",
       "note": "National tracking history label; future rail labels are not events."
+    },
+    {
+      "code": "PU",
+      "wording": "Shipment collected from collection address",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "CI",
+      "wording": "Shipment now at the depot nearest to collection address",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "TR",
+      "wording": "Shipment in transit",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "OS",
+      "wording": "Shipment in transit",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "IS",
+      "wording": "Shipment arrived at connection point",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "HW",
+      "wording": "Shipment arrived at TNT location",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "AS",
+      "wording": "Shipment being processed at TNT location.",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "IR",
+      "wording": "Shipment now at depot nearest to delivery address",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "OD",
+      "wording": "Shipment is out for delivery.",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "OK",
+      "wording": "Shipment delivered in good condition",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "LP",
+      "wording": "Shipment partially delivered. Recovery actions underway",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28",
+      "note": "Only part of the consignment arrived; the shared wording rules would read a delivery."
+    },
+    {
+      "code": "MR",
+      "wording": "Delay due to routing error. We're working hard to deliver on time.",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "WL",
+      "wording": "Delay due to routing error. Recovery actions underway",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "RTS",
+      "wording": "Returned to sender as agreed",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
     }
   ]
 }

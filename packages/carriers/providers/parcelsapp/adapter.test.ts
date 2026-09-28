@@ -213,8 +213,33 @@ describe('ParcelsApp result parsing', () => {
     expect(unresolved.reported_carriers).toEqual(['DPD Group']);
     expect(unresolved.discovered_carrier).toBeUndefined();
     // Two carriers on one journey never pick one.
-    expect(parseParcelsAppResponse(reply(['Swiss Post', 'DPD Group']), swiss, identity(swiss)).discovered_carrier).toBeUndefined();
+    const journey = reply(['Swiss Post', 'DPD Group']);
+    journey.states.push({ date: '2026-07-01T16:00:00+00:00', status: 'In transit', carrier: 1 });
+    expect(parseParcelsAppResponse(journey, swiss, identity(swiss)).discovered_carrier).toBeUndefined();
     expect(parseParcelsAppResponse(reply(['Swiss Post']), number, identity()).discovered_carrier).toBe('swiss-post');
+  });
+
+  it('takes the hint from the carrier every scan names, not from carriers asked without an answer', () => {
+    // Live shape (2026-09-28): the carriers ParcelsApp tried, with every scan from one of them.
+    const reply = (carriers: string[], states: Record<string, unknown>[]) => parseParcelsAppResponse({
+      carriers, services: carriers.map((name) => ({ slug: name.toLowerCase(), name })), states,
+    }, '123456784', identity('123456784'));
+    const scan = (carrier?: number) => ({ date: '2026-07-02T08:30:00+00:00', status: 'Shipment in transit', ...(carrier === undefined ? {} : { carrier }) });
+    expect(reply(['TNT', 'TNT', 'Example Transport'], [scan(0), scan(1)])).toMatchObject({
+      reported_carriers: ['TNT', 'Example Transport'], discovered_carrier: 'tnt',
+    });
+    expect(reply(['TNT', 'Example Transport'], [scan(0), scan(1)]).discovered_carrier).toBeUndefined();
+    expect(reply(['TNT', 'Example Transport'], [scan(0), scan()]).discovered_carrier).toBeUndefined();
+    expect(reply(['Example Transport', 'TNT'], [scan(0)]).discovered_carrier).toBeUndefined();
+  });
+
+  it('keeps the UTC instants ParcelsApp gives TNT international scans', () => {
+    // Checked against tnt.com's offsets (2026-09-28); a TNT France number keeps the French clock.
+    const scan = (trackingNumber: string) => parseParcelsAppResponse({
+      carriers: ['TNT'], states: [{ date: '2026-07-02T11:20:00+00:00', status: 'Shipment in transit', carrier: 0, location: 'Example Hub, China' }],
+    }, trackingNumber, identity(trackingNumber)).events?.[0]?.time;
+    expect(scan('123456784')).toBe('2026-07-02T11:20:00.000Z');
+    expect(scan('1000000000000001')).toBe('2026-07-02T09:20:00.000Z');
   });
 
   it('keeps the instants of scans whose carrier resolved before brand and country names did', () => {

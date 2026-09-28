@@ -62,7 +62,7 @@ statuses map correctly.
 | [bpost](../carriers/bpost/carrier.json) | No adapter | Not tested | No history | Postcode prompt | No history | No history | N/A |
 | [Austrian Post](../carriers/austrian-post/README.md) | Yes | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 9 | N/A |
 | [PostNord](../carriers/postnord/README.md) | Yes | ✓ 6 | ✓ 6 | ✓ 6 | ✓ 6 | ✓ 7 | No history |
-| [TNT](../carriers/tnt/README.md) | Yes (France national) | No history; alternate ✓ 1 | No history | No history | No history | No history | N/A |
+| [TNT](../carriers/tnt/README.md) | Yes | No history; alternate ✓ 1 | No history | No history | No history | No history | N/A |
 | [Aramex](../carriers/aramex/README.md) | Yes | No history; alternate ✓ 26 | No history | No history | No history | ✓ 16 | N/A |
 | [YunExpress](../carriers/yunexpress/README.md) | Yes (browser) | ✓ 23 | ✓ 14 | ✓ 15 | ✓ 14 | ✓ 15 | N/A |
 | [4PX](../carriers/four-px/README.md) | Yes | ✓ 26 | ✓ 25 | ✓ 26 | ✓ 26 | ✓ 26 | N/A |

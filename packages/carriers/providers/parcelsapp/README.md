@@ -2,8 +2,7 @@
 
 Second universal provider. It often returns fuller histories than Ship24, especially
 destination legs, and is the only provider that uses the parcel's stored delivery
-postcode. It reports no usable courier name, so it never sets `discovered_carrier`.
-Persisted provider name: `ParcelsApp`. Link shown to users:
+postcode. Persisted provider name: `ParcelsApp`. Link shown to users:
 `https://parcelsapp.com/en/tracking/{number}`.
 
 ## How it works
@@ -79,6 +78,8 @@ step exists for future protocol changes.
   With no zone, an offset is taken as given and an offset-less date fails the direct
   result. Steps 3 and 4 choose a zone only: `carrierIdFromName` still treats these brands
   as ambiguous, so discovery and routing are unchanged.
+- TNT's international scans (9-digit numbers) skip these steps. tnt.com gives them
+  offsets, and ParcelsApp's `date` is already their UTC instant.
 - Brand zones: a bare brand does not say which network scanned. The DPD, GLS and Hermes
   carriers in the catalog all keep Central European time, which step 4 checks for each
   scan, DST changes included. A brand with a UTC carrier (DHL, through DHL eCommerce) gets
@@ -98,11 +99,13 @@ step exists for future protocol changes.
   India-to-France parcel listed La Poste scans under India Post).
 - Notices are skipped, not events: `require_fields` rows, postcode, sign-in and
   destination-country prompts, and rows rendered with a date but no time.
-- `carriers` and `services[].name` become `reported_carriers`, and `discovered_carrier`
-  when exactly one name maps to a catalog carrier. A bare brand ("DPD Group") maps only
-  when the number leaves one of its catalog networks (a DPD depot range picks DPD
-  Switzerland or France); routing then confirms it with that carrier's adapter. The
-  rendered page's per-scan carrier names give the same hints.
+- `carriers` and `services[].name` become `reported_carriers`. They include carriers
+  ParcelsApp asked without an answer, so `discovered_carrier` comes from the one name
+  they list, or else from the carrier every scan names (`states[].carrier`), when that
+  name maps to a catalog carrier. A bare brand ("DPD Group") maps only when the number
+  leaves one of its catalog networks (a DPD depot range picks DPD Switzerland or
+  France); routing then confirms it with that carrier's adapter. The rendered page's
+  per-scan carrier names give the same hints.
 - Sender, destination and estimate fields are not kept.
 
 ## Limitations

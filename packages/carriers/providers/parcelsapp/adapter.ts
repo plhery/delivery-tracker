@@ -57,16 +57,18 @@ export function parseParcelsAppResponse(payload: unknown, trackingNumber: string
  * carrier name ends with ("DPD UK"), else, for a scan with no location, the
  * clock that all catalog networks of a bare brand share at that moment ("DPD
  * Group": DPD Switzerland and France), else the zone routing passes for the
- * parcel. Without one it stays as labeled.
+ * parcel. Without one it stays as labeled. TNT's international scans stay as
+ * labeled too: tnt.com gives them offsets, and ParcelsApp's UTC matches them.
  */
 function stateCarrierName(payload: Record<string, unknown>, state: Record<string, unknown>): unknown {
   const carriers = Array.isArray(payload.carriers) ? payload.carriers : [];
   return typeof state.carrier === 'number' ? carriers[state.carrier] : undefined;
 }
 
-function scanZone(payload: Record<string, unknown>, state: Record<string, unknown>, fallback: string | null): string | null {
+function scanZone(payload: Record<string, unknown>, state: Record<string, unknown>, fallback: string | null, number: string): string | null {
   const name = stateCarrierName(payload, state);
   const carrier = typeof name === 'string' ? carrierIdFromName(name) : undefined;
+  if (carrier === 'tnt' && /^\d{9}$/.test(number)) return null;
   const zone = carrier ? carrierTimezone(carrier) : 'UTC';
   if (zone !== 'UTC') return zone;
   const location = typeof state.location === 'string' ? state.location.trim() : '';
@@ -90,16 +92,21 @@ function parseHistory(payload: unknown, trackingNumber: string, timezone: string
   if (!isRecord(payload) || payload.error || !Array.isArray(payload.states) || payload.states.length > MAX_EVENTS) {
     throw new SchemaError(SOURCE, 'ParcelsApp lookup unavailable');
   }
+  const number = numberOf(trackingNumber);
   const events: CarrierEvent[] = [];
   const scans: { event: CarrierEvent; scan: CarrierScan }[] = [];
+  const scanCarriers = new Set<unknown>();
   for (const raw of payload.states) {
     if (!isRecord(raw)) throw new SchemaError(SOURCE, 'ParcelsApp returned an invalid event');
     if (raw.require_fields || raw.error) continue;
-    const zone = scanZone(payload, raw, timezone);
+    const zone = scanZone(payload, raw, timezone, number);
     const name = stateCarrierName(payload, raw);
     const scan = carrierScan(typeof name === 'string' ? carrierIdFromName(name) : undefined, typeof raw.status === 'string' ? raw.status : '');
     const parsed = event((zone ? mislabeledLocalTime(raw.date, zone)?.iso : undefined) ?? raw.date, scan?.wording ?? raw.status);
-    if (parsed) events.push(parsed);
+    if (parsed) {
+      events.push(parsed);
+      scanCarriers.add(name);
+    }
     if (parsed && scan) scans.push({ event: Object.assign(parsed, { stage: scan.stage }), scan });
   }
   markReturnLeg(scans);
@@ -114,9 +121,14 @@ function parseHistory(payload: unknown, trackingNumber: string, timezone: string
   // discovery hints; routing confirms one with its own adapter before adopting it.
   const services = Array.isArray(payload.services) ? payload.services : [];
   const carriers = Array.isArray(payload.carriers) ? payload.carriers : [];
-  return { ...result(events, SOURCE), ...universalCarrierHints([
+  const hints = universalCarrierHints([
     ...carriers, ...services.map((service: unknown) => isRecord(service) ? service.name : undefined),
-  ].slice(0, 20), numberOf(trackingNumber)) };
+  ].slice(0, 20), number);
+  // The list also names carriers asked without an answer. When every scan
+  // names the same carrier, that carrier is the hint.
+  const discovered = hints.discovered_carrier
+    ?? (scanCarriers.size === 1 ? universalCarrierHints([...scanCarriers], number).discovered_carrier : undefined);
+  return { ...result(events, SOURCE), ...hints, ...(discovered ? { discovered_carrier: discovered } : {}) };
 }
 
 function browserCanRecover(error: unknown): boolean {
@@ -157,7 +169,7 @@ export function parseParcelsAppHtml(html: string, trackingNumber: string, timezo
     const name = row.find('.event-content .carrier').first().text().replace(/\s+/g, ' ').trim();
     if (name && !carriers.includes(name)) carriers.push(name);
     const state = { date: labeled.toISO(), ...(name ? { carrier: carriers.indexOf(name) } : {}) };
-    const zone = scanZone({ carriers }, state, timezone);
+    const zone = scanZone({ carriers }, state, timezone, numberOf(trackingNumber));
     const scan = carrierScan(name ? carrierIdFromName(name) : undefined, description);
     const parsed = event((zone ? mislabeledLocalTime(state.date, zone)?.iso : undefined) ?? state.date, scan?.wording ?? description);
     if (parsed) events.push(parsed);

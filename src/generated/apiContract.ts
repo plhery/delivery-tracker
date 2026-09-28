@@ -2959,7 +2959,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://www.tnt.com/express/en_gc/site/shipping-tools/track.html"
+    "trackingUrlTemplate": "https://www.tnt.com/express/en_gb/site/shipping-tools/tracking.html?searchType=con&cons={trackingNumber}"
   },
   "correos-spain": {
     "displayName": "Correos",
