@@ -12,19 +12,50 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "yunexpress",
+    "steps": [
+      "browser",
+      "trawl"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location"
+  ],
   "portal": {
-    "url": "https://track.yunexpress.com/",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
+    "url": "https://www.yuntrack.com/parcelTracking?id={trackingNumber}",
+    "canaryUrl": "https://www.yuntrack.com/",
+    "shows": [
+      "status",
+      "history",
+      "location"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location"
+    ],
     "discarded": [],
     "unavailable": []
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "www.yuntrack.com",
+        "yuntrack.com"
+      ],
+      "params": [
+        "id"
+      ]
+    },
+    {
+      "domains": [
+        "www.yuntrack.com",
+        "yuntrack.com"
+      ],
+      "path": "/Track/Detail/([A-Z0-9]+)"
+    }
+  ],
   "detection": [
     {
       "id": "yunexpress-1",

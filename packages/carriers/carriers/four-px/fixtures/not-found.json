@@ -1,0 +1,26 @@
+{
+  "result": 1,
+  "message": "\u64cd\u4f5c\u6210\u529f",
+  "data": [
+    {
+      "queryCode": "4PX0000000000001CN",
+      "serverCode": null,
+      "shipperCode": null,
+      "channelTrackCode": null,
+      "ctStartCode": null,
+      "ctEndCode": null,
+      "ctEndName": "\u672a\u77e5",
+      "ctStartName": "\u672a\u77e5",
+      "status": 7,
+      "duration": 0.0,
+      "tracks": null,
+      "hawbCodeSet": null,
+      "mutiPackage": null,
+      "masterOrderNum": null,
+      "returnStatusFlag": null,
+      "channelContact": null,
+      "consigneePostcode": ""
+    }
+  ],
+  "tag": "6"
+}

@@ -3,25 +3,39 @@
   "displayName": "Blue Dart",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "IN"
+    ]
   },
   "brand": {
     "color": "#0059a9"
   },
   "selectable": true,
-  "timezone": "UTC",
+  "timezone": "Asia/Kolkata",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "blue-dart",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history"
+  ],
   "portal": {
-    "url": "https://www.bluedart.com/web/guest/trackdartresult?trackFor=0&trackNo={trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "url": "https://www.bluedart.com/trackdartresultthirdparty?trackFor=0&trackNo={trackingNumber}",
+    "canaryUrl": "https://www.bluedart.com/trackdartresultthirdparty",
+    "shows": [
+      "status",
+      "history"
+    ],
+    "scraped": [
+      "status",
+      "history"
+    ],
+    "discarded": [
+      "recipient"
+    ],
     "unavailable": []
   },
   "links": [

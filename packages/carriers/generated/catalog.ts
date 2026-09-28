@@ -1511,12 +1511,12 @@ export const CARRIER_CATALOG = {
     "displayName": "Austrian Post",
     "color": "#ffdc00",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Europe/Vienna",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "austrian-post"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://www.post.at/en/s/track-and-trace-search",
     "linkRules": [],
     "detectionRules": [
       {
@@ -1962,9 +1962,9 @@ export const CARRIER_CATALOG = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "ontrac"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://www.ontrac.com/tracking/",
     "linkRules": [
       {
         "domains": [
@@ -2244,17 +2244,34 @@ export const CARRIER_CATALOG = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "yunexpress"
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://www.yuntrack.com/",
+    "linkRules": [
+      {
+        "domains": [
+          "www.yuntrack.com",
+          "yuntrack.com"
+        ],
+        "params": [
+          "id"
+        ]
+      },
+      {
+        "domains": [
+          "www.yuntrack.com",
+          "yuntrack.com"
+        ],
+        "path": "/Track/Detail/([A-Z0-9]+)"
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^YT\\d{16}$",
         "confidence": "high"
       }
     ],
-    "trackingUrlTemplate": "https://track.yunexpress.com/"
+    "trackingUrlTemplate": "https://www.yuntrack.com/parcelTracking?id={trackingNumber}"
   },
   "four-px": {
     "displayName": "4PX",
@@ -2263,28 +2280,36 @@ export const CARRIER_CATALOG = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "four-px"
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://track.4px.com/",
+    "linkRules": [
+      {
+        "domains": [
+          "track.4px.com"
+        ],
+        "pathPattern": "^/$",
+        "fragment": "^/result/0/([A-Z0-9]+)$"
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^4PX\\d{13}CN$",
         "confidence": "high"
       }
     ],
-    "trackingUrlTemplate": "https://track.4px.com/"
+    "trackingUrlTemplate": "https://track.4px.com/#/result/0/{trackingNumber}"
   },
   "blue-dart": {
     "displayName": "Blue Dart",
     "color": "#0059a9",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Asia/Kolkata",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "blue-dart"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://www.bluedart.com/trackdartresultthirdparty",
     "linkRules": [
       {
         "domains": [
@@ -2301,18 +2326,18 @@ export const CARRIER_CATALOG = {
         "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://www.bluedart.com/web/guest/trackdartresult?trackFor=0&trackNo={trackingNumber}"
+    "trackingUrlTemplate": "https://www.bluedart.com/trackdartresultthirdparty?trackFor=0&trackNo={trackingNumber}"
   },
   "delhivery": {
     "displayName": "Delhivery",
     "color": "#ed4136",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Asia/Kolkata",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "delhivery"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://www.delhivery.com/tracking",
     "linkRules": [],
     "detectionRules": [
       {
@@ -2349,10 +2374,20 @@ export const CARRIER_CATALOG = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "singapore-post"
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://www.singpost.com/track-items",
+    "linkRules": [
+      {
+        "domains": [
+          "www.singpost.com"
+        ],
+        "params": [
+          "tracknumber",
+          "trackingid"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^[A-Z]{2}\\d{9}SG$",
@@ -2360,7 +2395,7 @@ export const CARRIER_CATALOG = {
         "checksum": "s10"
       }
     ],
-    "trackingUrlTemplate": "https://www.singpost.com/track-items"
+    "trackingUrlTemplate": "https://www.singpost.com/track-items?tracknumber={trackingNumber}"
   },
   "japan-post": {
     "displayName": "Japan Post",
@@ -2532,20 +2567,31 @@ export const CARRIER_CATALOG = {
     "displayName": "Yamato Transport",
     "color": "#fccf00",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Asia/Tokyo",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "yamato"
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://toi.kuronekoyamato.co.jp/cgi-bin/tneko",
+    "linkRules": [
+      {
+        "domains": [
+          "toi.kuronekoyamato.co.jp",
+          "track.kuronekoyamato.co.jp"
+        ],
+        "params": [
+          "number01",
+          "no01"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^\\d{12}$",
         "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://track.kuronekoyamato.co.jp/english/tracking"
+    "trackingUrlTemplate": "https://toi.kuronekoyamato.co.jp/cgi-bin/tneko"
   },
   "korea-post": {
     "displayName": "Korea Post",
@@ -2554,10 +2600,18 @@ export const CARRIER_CATALOG = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "korea-post"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://trace.epost.go.kr/xtts/tt/epost/ems/ems_eng.jsp",
     "linkRules": [
+      {
+        "domains": [
+          "trace.epost.go.kr"
+        ],
+        "params": [
+          "POST_CODE"
+        ]
+      },
       {
         "domains": [
           "service.epost.go.kr"
@@ -2578,7 +2632,7 @@ export const CARRIER_CATALOG = {
         "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://trace.epost.go.kr/xtts/tt/epost/ems/ems_eng.jsp"
+    "trackingUrlTemplate": "https://trace.epost.go.kr/xtts/servlet/kpl.tts.common.svl.SttSVL?target_command=kpl.tts.tt.epost.cmd.RetrieveEmsTraceEngCmd&JspURI=%2Fxtts%2Ftt%2Fepost%2Fems%2FEmsSearchResultEng.jsp&POST_CODE={trackingNumber}"
   },
   "thailand-post": {
     "displayName": "Thailand Post",
@@ -2604,12 +2658,12 @@ export const CARRIER_CATALOG = {
     "displayName": "DTDC",
     "color": "#0d237d",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Asia/Kolkata",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "dtdc"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://web.mydtdc.in/",
     "linkRules": [
       {
         "domains": [
@@ -2634,7 +2688,7 @@ export const CARRIER_CATALOG = {
         "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://www.dtdc.com/track-your-shipment?trackingId={trackingNumber}"
+    "trackingUrlTemplate": "https://web.mydtdc.in/"
   },
   "australia-post": {
     "displayName": "Australia Post",
@@ -2853,28 +2907,37 @@ export const CARRIER_CATALOG = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "aramex"
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://www.aramex.com/us/en/track/shipments",
+    "linkRules": [
+      {
+        "domains": [
+          "aramex.com"
+        ],
+        "params": [
+          "ShipmentNumber"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^\\d{11}$",
         "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://www.aramex.com/track/shipments"
+    "trackingUrlTemplate": "https://www.aramex.com/us/en/track/shipments?ShipmentNumber={trackingNumber}"
   },
   "tnt": {
     "displayName": "TNT",
     "color": "#ff6600",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Europe/Paris",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "tnt"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://www.tnt.fr/public/suivi_colis/recherche/index.do",
     "linkRules": [],
     "detectionRules": [
       {
@@ -2932,10 +2995,19 @@ export const CARRIER_CATALOG = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "yanwen"
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://track.yw56.com.cn/en/index",
+    "linkRules": [
+      {
+        "domains": [
+          "track.yw56.com.cn"
+        ],
+        "params": [
+          "nums"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^BYS\\d{9}$",
@@ -2947,7 +3019,7 @@ export const CARRIER_CATALOG = {
         "checksum": "s10"
       }
     ],
-    "trackingUrlTemplate": "https://track.yanwenlogistics.com/tracking.php"
+    "trackingUrlTemplate": "https://track.yw56.com.cn/en/index"
   },
   "the-courier-guy": {
     "displayName": "The Courier Guy",

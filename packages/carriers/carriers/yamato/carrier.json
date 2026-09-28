@@ -3,7 +3,9 @@
   "displayName": "Yamato Transport",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "JP"
+    ]
   },
   "brand": {
     "color": "#fccf00",
@@ -13,22 +15,56 @@
     }
   },
   "selectable": true,
-  "timezone": "UTC",
+  "timezone": "Asia/Tokyo",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "yamato",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location"
+  ],
   "portal": {
-    "url": "https://track.kuronekoyamato.co.jp/english/tracking",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "url": "https://toi.kuronekoyamato.co.jp/cgi-bin/tneko",
+    "canaryUrl": "https://toi.kuronekoyamato.co.jp/cgi-bin/tneko",
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "eta"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location"
+    ],
+    "discarded": [
+      "yearless_eta",
+      "requested_delivery_window",
+      "service_name",
+      "office_contact_details"
+    ],
+    "unavailable": [
+      "weight",
+      "sender_name",
+      "pickup_point"
+    ]
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "toi.kuronekoyamato.co.jp",
+        "track.kuronekoyamato.co.jp"
+      ],
+      "params": [
+        "number01",
+        "no01"
+      ]
+    }
+  ],
   "detection": [
     {
       "id": "yamato-1",

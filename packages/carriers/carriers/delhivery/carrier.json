@@ -3,25 +3,39 @@
   "displayName": "Delhivery",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "IN"
+    ]
   },
   "brand": {
     "color": "#ed4136"
   },
   "selectable": true,
-  "timezone": "UTC",
+  "timezone": "Asia/Kolkata",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "delhivery",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history"
+  ],
   "portal": {
     "url": "https://www.delhivery.com/tracking",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "canaryUrl": "https://www.delhivery.com/tracking",
+    "shows": [
+      "status",
+      "history"
+    ],
+    "scraped": [
+      "status",
+      "history"
+    ],
+    "discarded": [
+      "recipient"
+    ],
     "unavailable": []
   },
   "links": [],

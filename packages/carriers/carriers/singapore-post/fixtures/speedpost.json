@@ -1,0 +1,124 @@
+{
+  "ok": true,
+  "trackingNumber": "CZ000000005SG",
+  "trackingNumbers": [
+    "CZ000000005SG"
+  ],
+  "source": "track-api",
+  "items": [
+    {
+      "trackingNumber": "CZ000000005SG",
+      "trackingNumberFound": "true",
+      "trackingNumberActive": "true",
+      "alternativeTrackingNumber": "PRIVATE_ALIAS",
+      "postingDate": "2026-03-01T09:00:00+08:00",
+      "originalCountry": "Singapore",
+      "destinationCountry": "China (Peoples Rep)",
+      "serviceType": "Speedpost Economy International - R",
+      "otherReferenceNo": "PRIVATE_REFERENCE",
+      "recipientName": "PRIVATE_RECIPIENT",
+      "originPostalCode": "PRIVATE_POSTCODE",
+      "itemType": "Speedpost",
+      "events": [
+        {
+          "statusDescription": "Held by Customs at Destination",
+          "date": "2026-03-12T14:30:03",
+          "location": "Example facility 0",
+          "beatNo": "",
+          "details": "PRIVATE_RECIPIENT",
+          "trackAndTraceTypeId": "",
+          "eventTransactionId": "",
+          "eventDescription": "",
+          "aceDate": "PRIVATE_DATE",
+          "aceReasonCode": "",
+          "aceReasonDescription": "PRIVATE_REASON",
+          "aceStatusCode": "HC"
+        },
+        {
+          "statusDescription": "Customs Inspection in Progress",
+          "date": "2026-03-11T14:30:03",
+          "location": "Example facility 1",
+          "beatNo": "",
+          "details": "PRIVATE_RECIPIENT",
+          "trackAndTraceTypeId": "",
+          "eventTransactionId": "",
+          "eventDescription": "",
+          "aceDate": "PRIVATE_DATE",
+          "aceReasonCode": "",
+          "aceReasonDescription": "PRIVATE_REASON",
+          "aceStatusCode": "CS"
+        },
+        {
+          "statusDescription": "Receive item at Destination Hub",
+          "date": "2026-03-10T14:30:03",
+          "location": "Example facility 2",
+          "beatNo": "",
+          "details": "PRIVATE_RECIPIENT",
+          "trackAndTraceTypeId": "",
+          "eventTransactionId": "",
+          "eventDescription": "",
+          "aceDate": "PRIVATE_DATE",
+          "aceReasonCode": "",
+          "aceReasonDescription": "PRIVATE_REASON",
+          "aceStatusCode": "DA"
+        },
+        {
+          "statusDescription": "Departed from Singapore Hub for Transit to Overseas Destination",
+          "date": "2026-03-09T14:30:03",
+          "location": "Example facility 3",
+          "beatNo": "",
+          "details": "PRIVATE_RECIPIENT",
+          "trackAndTraceTypeId": "",
+          "eventTransactionId": "",
+          "eventDescription": "",
+          "aceDate": "PRIVATE_DATE",
+          "aceReasonCode": "",
+          "aceReasonDescription": "PRIVATE_REASON",
+          "aceStatusCode": "DO"
+        },
+        {
+          "statusDescription": "Handed Over to SingPost Courier",
+          "date": "2026-03-08T14:30:03",
+          "location": "Example facility 4",
+          "beatNo": "",
+          "details": "PRIVATE_RECIPIENT",
+          "trackAndTraceTypeId": "",
+          "eventTransactionId": "",
+          "eventDescription": "",
+          "aceDate": "PRIVATE_DATE",
+          "aceReasonCode": "",
+          "aceReasonDescription": "PRIVATE_REASON",
+          "aceStatusCode": "PL"
+        },
+        {
+          "statusDescription": "Accepted at Drop-Off Point",
+          "date": "2026-03-07T14:30:03",
+          "location": "Example facility 5",
+          "beatNo": "",
+          "details": "PRIVATE_RECIPIENT",
+          "trackAndTraceTypeId": "",
+          "eventTransactionId": "",
+          "eventDescription": "",
+          "aceDate": "PRIVATE_DATE",
+          "aceReasonCode": "",
+          "aceReasonDescription": "PRIVATE_REASON",
+          "aceStatusCode": "DP"
+        },
+        {
+          "statusDescription": "SingPost has received your order information, but not your item yet",
+          "date": "2026-03-06T14:30:03",
+          "location": "Example facility 6",
+          "beatNo": "",
+          "details": "PRIVATE_RECIPIENT",
+          "trackAndTraceTypeId": "",
+          "eventTransactionId": "",
+          "eventDescription": "",
+          "aceDate": "PRIVATE_DATE",
+          "aceReasonCode": "",
+          "aceReasonDescription": "PRIVATE_REASON",
+          "aceStatusCode": "IR"
+        }
+      ]
+    }
+  ]
+}

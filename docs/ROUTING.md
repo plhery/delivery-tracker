@@ -162,6 +162,15 @@ direct lookup confirmed for the same number instead, if any. The freshness water
 offset-less times in the result's zone, exactly as the stored events are read, and so does
 the sync when it checks whether a returned summary is older than the watermark.
 
+## Direct histories without complete timestamps
+
+Some direct feeds omit scan offsets or the event year. The router keeps their bounded
+history separately and tries providers for dated progress. If providers cannot help,
+the direct current status remains available without advancing the freshness watermark.
+An unresolved direct lookup cannot displace a carrier already confirmed by dated progress.
+The sync preserves richer saved progress and records status changes as observations,
+keeping observation time distinct from a carrier scan time.
+
 ## Tracking links
 
 The link shown in the app follows `tracking_provider` of the result on screen: a 17TRACK,

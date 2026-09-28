@@ -3,26 +3,49 @@
   "displayName": "DTDC",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "IN"
+    ]
   },
   "brand": {
     "color": "#0d237d"
   },
   "selectable": true,
-  "timezone": "UTC",
+  "timezone": "Asia/Kolkata",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "dtdc",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location"
+  ],
   "portal": {
-    "url": "https://www.dtdc.com/track-your-shipment?trackingId={trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "url": "https://web.mydtdc.in/",
+    "canaryUrl": "https://web.mydtdc.in/",
+    "shows": [
+      "status",
+      "history",
+      "location"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location"
+    ],
+    "discarded": [
+      "addresses",
+      "contact_details",
+      "booking_details",
+      "unlabelled_weight"
+    ],
+    "unavailable": [
+      "eta",
+      "pickup_point"
+    ]
   },
   "links": [
     {

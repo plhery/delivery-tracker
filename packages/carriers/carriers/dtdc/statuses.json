@@ -1,0 +1,65 @@
+{
+  "carrier": "dtdc",
+  "entries": [
+    {
+      "wording": "Pickup Awaited",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Pickup Scheduled",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Booked",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Booked at Origin Branch",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Picked Up",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Pickup Completed",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "In Transit",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Out For Delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "RTO Booked",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "trackingNumber": "RR000000005SG",
+  "trackingNumbers": [
+    "RR000000005SG"
+  ],
+  "source": "track-api",
+  "items": [
+    {
+      "trackingNumber": "RR000000005SG",
+      "trackingNumberFound": "false",
+      "trackingNumberActive": "",
+      "alternativeTrackingNumber": "PRIVATE_ALIAS",
+      "postingDate": "2026-03-01T09:00:00+08:00",
+      "originalCountry": "-",
+      "destinationCountry": "-",
+      "serviceType": "",
+      "otherReferenceNo": "PRIVATE_REFERENCE",
+      "recipientName": "PRIVATE_RECIPIENT",
+      "originPostalCode": "PRIVATE_POSTCODE",
+      "itemType": "Mail",
+      "events": []
+    }
+  ]
+}

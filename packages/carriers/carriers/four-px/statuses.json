@@ -1,0 +1,141 @@
+{
+  "carrier": "four-px",
+  "entries": [
+    {
+      "code": "FPX_S_OK",
+      "wording": "Delivered, in/at mailbox",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "FPX_D_SD",
+      "wording": "Out for delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "FPX_D_HQ",
+      "wording": "Arrived at post office",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "FPX_O_RR",
+      "wording": "Arrived at usps facility",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "FPX_M_IT",
+      "wording": "In transit to next facility",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "FPX_D_STPP",
+      "wording": "In transit, it's progressing through post network",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "FPX_M_CRSD",
+      "wording": "Customs clearance agent received the shipment in destnation country.",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "FPX_M_ATA",
+      "wording": "Arrival to the destination airport",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "FPX_I_RCUK",
+      "wording": "Released from customs: customs cleared.",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "FPX_M_DFOA",
+      "wording": "Departure from the original airport",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "FPX_M_HA",
+      "wording": "Hand over to airline.",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "FPX_C_ADFF",
+      "wording": "Depart from facility to service provider.",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "FPX_C_AAF",
+      "wording": "Shipment arrived at facility and measured.",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "FPX_C_SPLS",
+      "wording": "Shipment picked up.",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "FPX_L_SC",
+      "wording": "Pickup scanned, in transit to warehouse",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "FPX_O_IRI",
+      "wording": "Shipping label created, usps awaiting item",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "FPX_L_RPIF",
+      "wording": "Parcel information received",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    }
+  ]
+}

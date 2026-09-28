@@ -1,0 +1,46 @@
+{
+  "data": {
+    "einzelsendung": {
+      "sendungsnummer": "1000000000000000000001",
+      "status": "ZU",
+      "weight": 0.45,
+      "sendungsEvents": [
+        {
+          "timestamp": "2026-03-27T12:00:00+00:00",
+          "status": "AV",
+          "reasontypecode": "SE",
+          "trackingDesc": "Versender*in bereitet die Sendung für den Versand vor",
+          "eventPlaceName": ""
+        },
+        {
+          "timestamp": "2026-03-28T11:00:00+00:00",
+          "status": "BEI",
+          "reasontypecode": "EZ",
+          "trackingDesc": "Sendung im Logistikzentrum in Bearbeitung",
+          "eventPlaceName": "Synthetic logistics centre"
+        },
+        {
+          "timestamp": "2026-03-28T12:00:00+00:00",
+          "status": "AZT",
+          "reasontypecode": "AT",
+          "trackingDesc": "Sendung in Zustellung",
+          "eventPlaceName": "Synthetic delivery base"
+        },
+        {
+          "timestamp": "2026-03-28T13:00:00+00:00",
+          "status": "RU",
+          "reasontypecode": "HB",
+          "trackingDesc": "Empfänger nicht angetroffen - brieflich benachrichtigt",
+          "eventPlaceName": ""
+        },
+        {
+          "timestamp": "2026-03-29T13:00:00.747+00:00",
+          "status": "IZ",
+          "reasontypecode": "ZA",
+          "trackingDesc": "Sendung wurde zugestellt",
+          "eventPlaceName": "Synthetic destination"
+        }
+      ]
+    }
+  }
+}

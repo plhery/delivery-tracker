@@ -1,0 +1,61 @@
+{
+  "carrier": "ontrac",
+  "entries": [
+    {
+      "wording": "Package Delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "code": "DLVD"
+    },
+    {
+      "wording": "Out for Delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "code": "OFDL"
+    },
+    {
+      "wording": "Loaded onto vehicle",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "code": "LOAD"
+    },
+    {
+      "wording": "Business closed. Please provide hours",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "code": "BCLD"
+    },
+    {
+      "wording": "Delivery Pending",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "code": "UTLV"
+    },
+    {
+      "wording": "Arrived at Final Servicing Facility",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "code": "SFCT"
+    },
+    {
+      "wording": "Origin Scan",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "code": "ORIG"
+    },
+    {
+      "wording": "On its way to OnTrac",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "code": "EXRL"
+    }
+  ]
+}

@@ -12,19 +12,42 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "singapore-post",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location"
+  ],
   "portal": {
-    "url": "https://www.singpost.com/track-items",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
+    "url": "https://www.singpost.com/track-items?tracknumber={trackingNumber}",
+    "canaryUrl": "https://www.singpost.com/track-items",
+    "shows": [
+      "status",
+      "history",
+      "location"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location"
+    ],
     "discarded": [],
     "unavailable": []
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "www.singpost.com"
+      ],
+      "params": [
+        "tracknumber",
+        "trackingid"
+      ]
+    }
+  ],
   "detection": [
     {
       "id": "singapore-post-1",

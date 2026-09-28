@@ -9,18 +9,31 @@
     "color": "#ff6600"
   },
   "selectable": true,
-  "timezone": "UTC",
+  "timezone": "Europe/Paris",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "tnt",
+    "steps": [
+      "direct"
+    ],
+    "recognition": {
+      "rank": 45
+    }
   },
-  "capabilities": [],
+  "capabilities": [
+    "history"
+  ],
   "portal": {
     "url": "https://www.tnt.com/express/en_gc/site/shipping-tools/track.html",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
+    "canaryUrl": "https://www.tnt.fr/public/suivi_colis/recherche/index.do",
+    "shows": [
+      "status",
+      "history"
+    ],
+    "scraped": [
+      "status",
+      "history"
+    ],
     "discarded": [],
     "unavailable": []
   },

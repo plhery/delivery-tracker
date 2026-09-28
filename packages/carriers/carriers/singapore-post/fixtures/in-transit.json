@@ -1,0 +1,152 @@
+{
+  "ok": true,
+  "trackingNumber": "RR000000005SG",
+  "trackingNumbers": [
+    "RR000000005SG"
+  ],
+  "source": "track-api",
+  "items": [
+    {
+      "trackingNumber": "RR000000005SG",
+      "trackingNumberFound": "true",
+      "trackingNumberActive": "true",
+      "alternativeTrackingNumber": "PRIVATE_ALIAS",
+      "postingDate": "2026-03-01T09:00:00+08:00",
+      "originalCountry": "-",
+      "destinationCountry": "CN",
+      "serviceType": "",
+      "otherReferenceNo": "PRIVATE_REFERENCE",
+      "recipientName": "PRIVATE_RECIPIENT",
+      "originPostalCode": "PRIVATE_POSTCODE",
+      "itemType": "Mail",
+      "events": [
+        {
+          "statusDescription": "Held by Custom",
+          "date": "2026-03-12T14:30:03+08:00",
+          "location": "Example facility 0",
+          "beatNo": "",
+          "details": "PRIVATE_RECIPIENT",
+          "trackAndTraceTypeId": "794",
+          "eventTransactionId": "100112",
+          "eventDescription": "HC",
+          "aceDate": "PRIVATE_DATE",
+          "aceReasonCode": "",
+          "aceReasonDescription": "PRIVATE_REASON",
+          "aceStatusCode": ""
+        },
+        {
+          "statusDescription": "Present to Import Customs",
+          "date": "2026-03-11T14:30:03+08:00",
+          "location": "Example facility 1",
+          "beatNo": "",
+          "details": "PRIVATE_RECIPIENT",
+          "trackAndTraceTypeId": "794",
+          "eventTransactionId": "100112",
+          "eventDescription": "DGS",
+          "aceDate": "PRIVATE_DATE",
+          "aceReasonCode": "",
+          "aceReasonDescription": "PRIVATE_REASON",
+          "aceStatusCode": ""
+        },
+        {
+          "statusDescription": "Hold item at office of exchange (Country: CN)",
+          "date": "2026-03-10T14:30:03+08:00",
+          "location": "Example facility 2",
+          "beatNo": "",
+          "details": "PRIVATE_RECIPIENT",
+          "trackAndTraceTypeId": "-",
+          "eventTransactionId": "-",
+          "eventDescription": "HE",
+          "aceDate": "PRIVATE_DATE",
+          "aceReasonCode": "",
+          "aceReasonDescription": "PRIVATE_REASON",
+          "aceStatusCode": ""
+        },
+        {
+          "statusDescription": "Arrival at Processing Center (Country code: CN)",
+          "date": "2026-03-09T14:30:03+08:00",
+          "location": "Example facility 3",
+          "beatNo": "",
+          "details": "PRIVATE_RECIPIENT",
+          "trackAndTraceTypeId": "794",
+          "eventTransactionId": "100103",
+          "eventDescription": "LL",
+          "aceDate": "PRIVATE_DATE",
+          "aceReasonCode": "",
+          "aceReasonDescription": "PRIVATE_REASON",
+          "aceStatusCode": ""
+        },
+        {
+          "statusDescription": "Arrival at Destination Post (Country: CN)",
+          "date": "2026-03-08T14:30:03+08:00",
+          "location": "Example facility 4",
+          "beatNo": "",
+          "details": "PRIVATE_RECIPIENT",
+          "trackAndTraceTypeId": "794",
+          "eventTransactionId": "100114",
+          "eventDescription": "AD",
+          "aceDate": "PRIVATE_DATE",
+          "aceReasonCode": "",
+          "aceReasonDescription": "PRIVATE_REASON",
+          "aceStatusCode": ""
+        },
+        {
+          "statusDescription": "Despatched to overseas (Country code: CN)",
+          "date": "2026-03-07T14:30:03+08:00",
+          "location": "Example facility 5",
+          "beatNo": "",
+          "details": "PRIVATE_RECIPIENT",
+          "trackAndTraceTypeId": "794",
+          "eventTransactionId": "100100",
+          "eventDescription": "DO",
+          "aceDate": "PRIVATE_DATE",
+          "aceReasonCode": "",
+          "aceReasonDescription": "PRIVATE_REASON",
+          "aceStatusCode": ""
+        },
+        {
+          "statusDescription": "Item received by SingPost",
+          "date": "2026-03-06T14:30:03+08:00",
+          "location": "Example facility 6",
+          "beatNo": "",
+          "details": "PRIVATE_RECIPIENT",
+          "trackAndTraceTypeId": "-",
+          "eventTransactionId": "-",
+          "eventDescription": "PO",
+          "aceDate": "PRIVATE_DATE",
+          "aceReasonCode": "",
+          "aceReasonDescription": "PRIVATE_REASON",
+          "aceStatusCode": ""
+        },
+        {
+          "statusDescription": "Further processing in progress (POPStop Siglap)",
+          "date": "2026-03-05T14:30:03+08:00",
+          "location": "Example facility 7",
+          "beatNo": "",
+          "details": "PRIVATE_RECIPIENT",
+          "trackAndTraceTypeId": "449",
+          "eventTransactionId": "-",
+          "eventDescription": "PL",
+          "aceDate": "PRIVATE_DATE",
+          "aceReasonCode": "",
+          "aceReasonDescription": "PRIVATE_REASON",
+          "aceStatusCode": ""
+        },
+        {
+          "statusDescription": "Accepted at Collection Point - Location: POPStop Siglap",
+          "date": "2026-03-04T14:30:03+08:00",
+          "location": "Example facility 8",
+          "beatNo": "",
+          "details": "PRIVATE_RECIPIENT",
+          "trackAndTraceTypeId": "399",
+          "eventTransactionId": "-",
+          "eventDescription": "PO",
+          "aceDate": "PRIVATE_DATE",
+          "aceReasonCode": "",
+          "aceReasonDescription": "PRIVATE_REASON",
+          "aceStatusCode": ""
+        }
+      ]
+    }
+  ]
+}

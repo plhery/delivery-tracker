@@ -3,7 +3,9 @@
   "displayName": "Austrian Post",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "AT"
+    ]
   },
   "brand": {
     "color": "#ffdc00",
@@ -13,18 +15,33 @@
     }
   },
   "selectable": true,
-  "timezone": "UTC",
+  "timezone": "Europe/Vienna",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "austrian-post",
+    "steps": [
+      "direct"
+    ],
+    "recognition": {
+      "rank": 40
+    }
   },
-  "capabilities": [],
+  "capabilities": [
+    "history"
+  ],
   "portal": {
     "url": "https://www.post.at/en/s/track-and-trace-search",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
+    "canaryUrl": "https://www.post.at/en/s/track-and-trace-search",
+    "shows": [
+      "status",
+      "history",
+      "weight"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "weight"
+    ],
     "discarded": [],
     "unavailable": []
   },

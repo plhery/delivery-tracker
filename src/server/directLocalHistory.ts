@@ -2,9 +2,9 @@ import { DateTime } from 'luxon';
 import type { CarrierResult } from '@carriers/core/result';
 import { isRecord, type JsonObject } from './types';
 
-const CARRIERS = new Set(['japan-post', 'evri', 'sf-express']);
+const CARRIERS = new Set(['japan-post', 'evri', 'sf-express', 'aramex', 'four-px', 'singapore-post', 'korea-post', 'yamato', 'ontrac', 'blue-dart', 'yunexpress']);
 const eventKey = (event: JsonObject): string => JSON.stringify([
-  event.local_time, event.time, event.description, event.location, event.provider_code,
+  event.local_time, event.provider_time_text, event.time, event.description, event.location, event.provider_code,
 ]);
 
 function instant(value: unknown): boolean {
@@ -12,10 +12,10 @@ function instant(value: unknown): boolean {
     && DateTime.fromISO(value, { setZone: true }).isValid;
 }
 
-/** These international sources preserve unresolved clocks separately from instants. */
+/** These direct sources preserve incomplete dates separately from instants. */
 export function hasUnresolvedDirectHistory(carrier: string, result: CarrierResult): boolean {
-  return CARRIERS.has(carrier) && Boolean(result.events?.some((event) => typeof event.local_time === 'string'))
-    && Boolean(result.events?.some((event) => typeof event.local_time === 'string' && !instant(event.time)));
+  return CARRIERS.has(carrier) && Boolean(result.events?.some((event) =>
+    (typeof event.local_time === 'string' || typeof event.provider_time_text === 'string') && !instant(event.time)));
 }
 
 export function hasUnresolvedDirectCurrent(carrier: string, result: CarrierResult): boolean {
@@ -24,7 +24,7 @@ export function hasUnresolvedDirectCurrent(carrier: string, result: CarrierResul
 
 export function captureDirectLocalHistory(carrier: string, number: string, result: CarrierResult): JsonObject {
   const events = (result.events ?? []).slice(0, 100).map((event) => Object.fromEntries(
-    ['time', 'local_time', 'description', 'location', 'stage', 'provider_code'].flatMap((key) => {
+    ['time', 'local_time', 'provider_time_text', 'description', 'location', 'stage', 'provider_code'].flatMap((key) => {
       const value = event[key];
       return typeof value === 'string' ? [[key, value.slice(0, key === 'description' ? 500 : 200)]] : [];
     }),

@@ -1,0 +1,112 @@
+{
+  "carrier": "yunexpress",
+  "entries": [
+    {
+      "wording": "Customs inspection - Import",
+      "stage": "customs",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Clearance processing completed - Import",
+      "stage": "in_transit",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Collected at Cargo Terminal",
+      "stage": "in_transit",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Start Customs Clearence",
+      "stage": "customs",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "International flight has arrived",
+      "stage": "in_transit",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "International flight has departed",
+      "stage": "in_transit",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Clearence processing completed - Export",
+      "stage": "in_transit",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Arrived at the origin international airport",
+      "stage": "in_transit",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "The country of origin commences customs declaration.",
+      "stage": "customs",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Shipment is in transit to next facility",
+      "stage": "in_transit",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Departed from sort facility",
+      "stage": "in_transit",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Arrived at origin facility",
+      "stage": "in_transit",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Shipment picked up",
+      "stage": "accepted",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Shipment information received",
+      "stage": "registered",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "50",
+      "wording": "Delivered by Mailbox",
+      "stage": "delivered",
+      "language": "en",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28",
+      "note": "The exact latest event declares delivered; variable partner delivery notes remain descriptive."
+    }
+  ]
+}

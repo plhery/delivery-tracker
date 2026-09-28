@@ -11,6 +11,9 @@ const time = new Date('2026-09-10T12:00:00Z');
 const history = (stamp = '2026-09-10T11:00:00Z'): CarrierResult => ({ status: 'in_transit', current_stage: 'in_transit',
   last_update: stamp, events: [{ time: stamp, description: 'In transit', stage: 'in_transit' }] });
 const directValue = (carrier = 'ups'): RoutedResult => ({ result: history(), sourceCarrierId: carrier, swissPostReady: null, handoffFallbackErrorType: null });
+const yearlessYamato = (): RoutedResult => ({ sourceCarrierId: 'yamato', swissPostReady: null, handoffFallbackErrorType: null,
+  result: { status: 'in_transit', current_stage: 'accepted', last_update: null,
+    events: [{ description: '荷物受付', stage: 'accepted', provider_time_text: '09月01日 10:00' }] } });
 const parcel = (overrides: JsonObject = {}): JsonObject => ({ id: 'parcel', carrier: 'unknown', tracking_number: 'TEST1234', ...overrides });
 const state = (extra: JsonObject = {}) => ({ version: 1, configured_carrier: 'unknown', failures: {}, probe_cursor: 0, discovery_cursor: 0, ...extra });
 function setup(now = time) {
@@ -192,9 +195,18 @@ describe('persistent tracking routing', () => {
       await hinted.router.fetch(parcel({ tracking_number: '12345678901',
         carrier_data: { routing: state({ discovered_carrier: 'gls-de' }) } }), false);
       expect(asked(hinted.recognize)).toEqual(['gls-de', 'gls-ch']);
+      // Newly supported number shapes follow the same popularity order.
+      const tnt = setup();
+      await tnt.router.fetch(parcel({ tracking_number: '1000000000000001' }), false);
+      expect(asked(tnt.recognize)).toEqual(['tnt', 'canada-post']);
+      expect(tnt.direct).not.toHaveBeenCalled();
+      const austria = setup();
+      await austria.router.fetch(parcel({ tracking_number: '1000000000000000000001' }), false);
+      expect(asked(austria.recognize)).toEqual(['austrian-post']);
+      expect(austria.direct).not.toHaveBeenCalled();
       // A number no recognizable carrier fits asks nobody.
       const other = setup();
-      await other.router.fetch(parcel({ tracking_number: '123456789' }), false);
+      await other.router.fetch(parcel({ tracking_number: 'ZZUNMATCHED0001' }), false);
       expect(other.recognize).not.toHaveBeenCalled();
     });
     it('asks again within hours, outside the carrier failures', async () => {
@@ -461,9 +473,11 @@ describe('persistent tracking routing', () => {
   });
   it('keeps a prior confirmed route when the new choice has no direct support', async () => {
     const { router, direct, universal } = setup();
-    await router.fetch(parcel({ carrier: 'tnt', carrier_data: { routing: state({ configured_carrier: 'ups', confirmed_carrier: 'ups', confirmed_number: 'TEST1234' }) } }), false);
+    const result = await router.fetch(parcel({ carrier: 'bpost', carrier_data: { routing: state({ configured_carrier: 'ups', confirmed_carrier: 'ups', confirmed_number: 'TEST1234' }) } }), false);
     expect(direct.mock.calls.map(([, carrier]) => carrier)).toEqual(['ups']);
     expect(universal).not.toHaveBeenCalled();
+    expect(result.correction?.carrier).toBe('ups');
+    expect(result.result.routing).toMatchObject({ configured_carrier: 'ups', confirmed_carrier: 'ups' });
   });
   it('does not adopt an old route for a different tracking number', async () => {
     const { router, direct } = setup();
@@ -563,11 +577,15 @@ describe('persistent tracking routing', () => {
   });
 
   it('ignores an older parcel of another carrier that a universal returns for a reused number', async () => {
-    const { router, universal } = setup();
+    const { router, direct, universal } = setup();
+    direct.mockResolvedValue(yearlessYamato());
     universal.mockResolvedValueOnce({ ...history('2026-01-09T13:19:00Z'), reported_carriers: ['FedEx', 'GLS'] });
     const result = await router.fetch(parcel({ carrier: 'yamato', tracking_number: '123456789012', created_at: '2026-09-01T00:00:00Z' }), false);
+    expect(direct).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ tracking_number: '123456789012' }), 'yamato');
     expect(universal.mock.calls.map(([source]) => source)).toEqual(['Ship24', 'ParcelsApp']);
     expect(result.result).toMatchObject({ tracking_provider: 'ParcelsApp', last_update: '2026-09-10T11:00:00Z' });
+    expect(result.result.direct_local_history).toMatchObject({ carrier: 'yamato', number: '123456789012',
+      events: [{ provider_time_text: '09月01日 10:00', stage: 'accepted' }] });
     expect(result.result.routing).toMatchObject({ failures: { Ship24: { kind: 'no_history' } } });
     expect(vi.mocked(monitoring.reportRoutingEvent)).toHaveBeenCalledWith('foreign_history_rejected', expect.objectContaining({ provider: 'Ship24' }));
   });
@@ -577,9 +595,14 @@ describe('persistent tracking routing', () => {
     ['no filed carrier', { carrier: 'unknown' }, ['FedEx'], '2026-01-09T13:19:00Z'],
     ['a recent history', { carrier: 'yamato' }, ['FedEx'], '2026-08-20T10:00:00Z'],
   ])('keeps a universal history with %s', async (_label, filed, reported, stamp) => {
-    const { router, universal } = setup();
+    const { router, direct, universal } = setup();
+    direct.mockResolvedValue(yearlessYamato());
     universal.mockResolvedValueOnce({ ...history(stamp), reported_carriers: reported });
     const result = await router.fetch(parcel({ ...filed, tracking_number: '123456789012', created_at: '2026-09-01T00:00:00Z' }), false);
+    if (filed.carrier === 'yamato') {
+      expect(direct).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ tracking_number: '123456789012' }), 'yamato');
+      expect(result.result.direct_local_history).toMatchObject({ carrier: 'yamato' });
+    } else expect(direct).not.toHaveBeenCalled();
     expect(universal).toHaveBeenCalledTimes(1);
     expect(result.result).toMatchObject({ tracking_provider: 'Ship24', last_update: stamp });
   });

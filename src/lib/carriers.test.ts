@@ -35,16 +35,23 @@ import { DEFAULT_CARRIER_COLOR } from './carrierBrand';
  * describes further down; they are a different axis from number detection.
  */
 
-/** The 65 universal-fallback carriers share one profile: selectable, automatic
- * tracking through the universal adapter, with independent brand colors. */
-function expectUniversalFallback(id: keyof typeof CARRIERS) {
+/** Automatic carriers share a selectable profile with independent brand colors. */
+function expectAutomaticProfile(id: keyof typeof CARRIERS, adapter: string) {
   const carrier = CARRIERS[id];
   expect(carrier.capabilities.selectable).toBe(true);
   expect(carrier.capabilities.tracking.mode).toBe('automatic');
-  expect(carrier.capabilities.tracking.adapter).toBe('universal');
+  expect(carrier.capabilities.tracking.adapter).toBe(adapter);
   expect(carrier.color).toMatch(/^#[\da-f]{6}$/);
   expect(carrier.color).not.toBe(DEFAULT_CARRIER_COLOR);
   expect(tracksAutomatically(id)).toBe(true);
+}
+
+function expectUniversalFallback(id: keyof typeof CARRIERS) {
+  expectAutomaticProfile(id, 'universal');
+}
+
+function expectDirectTracking(id: keyof typeof CARRIERS) {
+  expectAutomaticProfile(id, id);
 }
 
 describe('carrier detection', () => {
@@ -110,7 +117,7 @@ describe('carrier detection', () => {
     const match = detectCarrierMatch('30109165494');
     expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
     expect(match.candidates).toContain('aramex');
-    expectUniversalFallback('aramex');
+    expectDirectTracking('aramex');
   });
 
   it('asendia — Asendia', () => {
@@ -151,7 +158,7 @@ describe('carrier detection', () => {
     // Source: https://www.post.at/
     expect(isValidS10TrackingNumber('CA482156827DE')).toBe(false);
     expect(detectCarrier('CA482156827DE')).toBe('unknown');
-    expectUniversalFallback('austrian-post');
+    expectDirectTracking('austrian-post');
   });
 
   it('blue-dart — Blue Dart', () => {
@@ -163,7 +170,7 @@ describe('carrier detection', () => {
       expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
       expect(match.candidates).toContain('blue-dart');
     }
-    expectUniversalFallback('blue-dart');
+    expectDirectTracking('blue-dart');
   });
 
   it('bpost — bpost', () => {
@@ -404,7 +411,7 @@ describe('carrier detection', () => {
       expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
       expect(match.candidates).toContain('delhivery');
     }
-    expectUniversalFallback('delhivery');
+    expectDirectTracking('delhivery');
   });
 
   it('delivengo — Delivengo', () => {
@@ -489,7 +496,7 @@ describe('carrier detection', () => {
     // OSS EXAMPLE fixture (not asserted real).
     // Source: https://gist.github.com/zxp/e83a4a1b7294a5ed6207
     expect(detectCarrier('N95614372')).toBe('dtdc');
-    expectUniversalFallback('dtdc');
+    expectDirectTracking('dtdc');
   });
 
   it('ecoscooting — Ecoscooting', () => {
@@ -557,7 +564,7 @@ describe('carrier detection', () => {
     // OSS EXAMPLE (4PX + 13 digits + CN; not asserted real).
     // Source: https://github.com/rostis232/parcelstrackingservice
     expect(detectCarrier('4PX3001521662170CN')).toBe('four-px');
-    expectUniversalFallback('four-px');
+    expectDirectTracking('four-px');
   });
 
   it('geodis — GEODIS', () => {
@@ -726,7 +733,7 @@ describe('carrier detection', () => {
     // OSS EXAMPLE S10 fixture (not asserted real).
     // Source: https://gist.github.com/zxp/e83a4a1b7294a5ed6207
     expect(detectCarrier('EM385783825KR')).toBe('korea-post');
-    expectUniversalFallback('korea-post');
+    expectDirectTracking('korea-post');
   });
 
   it('la-poste — La Poste / Colissimo', () => {
@@ -875,7 +882,7 @@ describe('carrier detection', () => {
     // digits, so explicit carrier selection must win over number alone.
     // Source: https://www.ocu.org/reclamar/lista-reclamaciones-publicas/entrega-no-recibida/4d61e00924bdfeea75
     expect(detectCarrier('C25062001456003')).toBe('ontrac');
-    expectUniversalFallback('ontrac');
+    expectDirectTracking('ontrac');
   });
 
   it('paack — Paack', () => {
@@ -1099,7 +1106,7 @@ describe('carrier detection', () => {
     // Source: https://www.singpost.com/sending-within-singapore/registered-service
     expect(isValidS10TrackingNumber('RA123456789SG')).toBe(false);
     expect(detectCarrier('RA123456789SG')).toBe('unknown');
-    expectUniversalFallback('singapore-post');
+    expectDirectTracking('singapore-post');
   });
 
   it('spee-dee — Spee-Dee', () => {
@@ -1227,7 +1234,7 @@ describe('carrier detection', () => {
     // Source: https://gist.github.com/zxp/e83a4a1b7294a5ed6207
     expect(detectCarrierMatch('1158418300904').carrier).toBe('unknown');
     expect(detectCarrier('MY33217326')).toBe('unknown');
-    expectUniversalFallback('tnt');
+    expectDirectTracking('tnt');
   });
 
   it('ukrposhta — Ukrposhta', () => {
@@ -1314,7 +1321,7 @@ describe('carrier detection', () => {
     const match = detectCarrierMatch('410569991366');
     expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
     expect(match.candidates).toContain('yamato');
-    expectUniversalFallback('yamato');
+    expectDirectTracking('yamato');
   });
 
   it('yanwen — Yanwen', () => {
@@ -1322,7 +1329,7 @@ describe('carrier detection', () => {
     // Source: https://www.tracktry.com/api-nodejs.html
     expect(detectCarrier('BYS006086088')).toBe('yanwen');
     expect(detectCarrier('BYS006086077')).toBe('yanwen');
-    expectUniversalFallback('yanwen');
+    expectDirectTracking('yanwen');
   });
 
   it('yto — YTO Express', () => {
@@ -1346,7 +1353,7 @@ describe('carrier detection', () => {
     // last-mile number as separate references, never substitutes).
     // Source: https://www.reddit.com/r/AirReps/comments/1vfhh53/please_help_yunexpress_alibaba_tracking_stuck_on/
     expect(detectCarrier('YT2621200705470145')).toBe('yunexpress');
-    expectUniversalFallback('yunexpress');
+    expectDirectTracking('yunexpress');
   });
 
   it('zto — ZTO Express', () => {

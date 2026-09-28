@@ -1,0 +1,11 @@
+{
+  "carrier": "delhivery",
+  "entries": [
+    {
+      "wording": "Delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    }
+  ]
+}

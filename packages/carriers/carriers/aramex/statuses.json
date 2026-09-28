@@ -1,0 +1,41 @@
+{
+  "carrier": "aramex",
+  "entries": [
+    {
+      "wording": "The shipment has been delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "An Aramex Delivery Champion has the shipment and is expected to reach the customer's doorstep shortly",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Updated delivery address required from customer",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "The shipment is currently going through customs inspection",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "The shipment is on its way to our Aramex facility",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Shipment collected from the shipper",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live"
+    }
+  ]
+}

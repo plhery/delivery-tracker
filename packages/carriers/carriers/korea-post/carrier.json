@@ -12,19 +12,40 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "korea-post",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location"
+  ],
   "portal": {
-    "url": "https://trace.epost.go.kr/xtts/tt/epost/ems/ems_eng.jsp",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
+    "url": "https://trace.epost.go.kr/xtts/servlet/kpl.tts.common.svl.SttSVL?target_command=kpl.tts.tt.epost.cmd.RetrieveEmsTraceEngCmd&JspURI=%2Fxtts%2Ftt%2Fepost%2Fems%2FEmsSearchResultEng.jsp&POST_CODE={trackingNumber}",
+    "canaryUrl": "https://trace.epost.go.kr/xtts/tt/epost/ems/ems_eng.jsp",
+    "shows": [
+      "status",
+      "history",
+      "location"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location"
+    ],
     "discarded": [],
     "unavailable": []
   },
   "links": [
+    {
+      "domains": [
+        "trace.epost.go.kr"
+      ],
+      "params": [
+        "POST_CODE"
+      ]
+    },
     {
       "domains": [
         "service.epost.go.kr"

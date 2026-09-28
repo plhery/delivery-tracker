@@ -12,19 +12,42 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "yanwen",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "delivered_at"
+  ],
   "portal": {
-    "url": "https://track.yanwenlogistics.com/tracking.php",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
+    "url": "https://track.yw56.com.cn/en/index",
+    "canaryUrl": "https://track.yw56.com.cn/en/index",
+    "shows": [
+      "status",
+      "history",
+      "location"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location"
+    ],
     "discarded": [],
     "unavailable": []
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "track.yw56.com.cn"
+      ],
+      "params": [
+        "nums"
+      ]
+    }
+  ],
   "detection": [
     {
       "id": "yanwen-1",

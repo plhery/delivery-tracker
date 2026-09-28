@@ -1,0 +1,59 @@
+{
+  "carrier": "blue-dart",
+  "entries": [
+    {
+      "wording": "Shipment Delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Shipment Out For Delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Shipment Arrived",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Shipment Arrived At Hub",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Shipment Further Connected",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Clubbed Canvas Bag Scan",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Delivery Delayed",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Delay Caused Beyond Control",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Cnee Refused Id/Otp Not Shared-Incorrect",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "live"
+    }
+  ]
+}

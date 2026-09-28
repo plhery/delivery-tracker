@@ -70,7 +70,13 @@ describe('UI tracking links (rendered public pages)', () => {
       for (let attempt = 0; attempt < 10; attempt++) {
         await page.waitForTimeout(1000);
         // A body still being replaced is read again on the next pass.
-        const text = await page.locator('body').innerText({ timeout: 3000 }).catch(() => '');
+        const bodyText = await page.locator('body').innerText({ timeout: 3000 }).catch(() => '');
+        // Some trackers label their form with a placeholder and a graphical
+        // heading. Include visible placeholders without counting hidden forms.
+        const placeholders = await page.locator('input[placeholder], textarea[placeholder]').evaluateAll(elements =>
+          elements.filter(element => element.getClientRects().length > 0 && getComputedStyle(element).visibility !== 'hidden')
+            .map(element => element.getAttribute('placeholder')?.slice(0, 500) ?? '').join('\n'));
+        const text = `${bodyText}\n${placeholders}`;
         const { forwarding } = testCase;
         inputBound = forwarding === 'none' || lookupObserved || text.includes(testCase.number)
           || (typeof forwarding === 'object' && forwarding.notFound.test(text))

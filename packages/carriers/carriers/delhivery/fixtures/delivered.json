@@ -1,0 +1,12 @@
+{
+  "statusCode": 200, "message": "success", "data": [{
+    "awb": "0000000000001", "referenceNo": "private-reference",
+    "addressInfo": { "name": "Private Recipient", "address": "Example Address" },
+    "status": { "status": "DELIVERED", "statusType": "DL", "statusDateTime": "2026-01-03T14:00:00.000000", "instructions": "Private instruction" },
+    "trackingStates": [
+      { "label": "Delivered", "scans": [{ "scan": "Delivered", "scanDateTime": "", "cityLocation": "Example City", "scanNslRemark": "Private remark", "scanType": "DL" }] },
+      { "label": "In Transit", "scans": [{ "scan": "In Transit", "scanDateTime": "", "cityLocation": "Example City" }] },
+      { "label": "Out For Delivery" }
+    ]
+  }]
+}

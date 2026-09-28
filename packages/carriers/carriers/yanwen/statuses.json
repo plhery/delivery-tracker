@@ -1,0 +1,131 @@
+{
+  "carrier": "yanwen",
+  "entries": [
+    {
+      "wording": "Delivered.",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Shipment out for delivery.",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "<User not at home>",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "<wrong address>",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Arrived.",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Received.",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Batch delivery to carrier",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Pick up by local carrier at destination port",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "International shipment release - Import",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "International shipment release - Export",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Port of destination - Arrival",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Port of departure - Departure",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Port of departure - Received by carrier",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Arrived at domestic terminal station",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Yanwen facility - Outbound",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Yanwen Pickup Scan",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Order processed by shipper",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Order Submited.",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    }
+  ]
+}

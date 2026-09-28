@@ -12,19 +12,40 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "aramex",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history"
+  ],
   "portal": {
-    "url": "https://www.aramex.com/track/shipments",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "url": "https://www.aramex.com/us/en/track/shipments?ShipmentNumber={trackingNumber}",
+    "canaryUrl": "https://www.aramex.com/us/en/track/shipments",
+    "shows": [
+      "status",
+      "history"
+    ],
+    "scraped": [
+      "status",
+      "history"
+    ],
+    "discarded": [
+      "recipient"
+    ],
     "unavailable": []
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "aramex.com"
+      ],
+      "params": [
+        "ShipmentNumber"
+      ]
+    }
+  ],
   "detection": [
     {
       "id": "aramex-1",

@@ -82,8 +82,17 @@ it('does not ask carriers for selected shapes, formats without candidates or una
   expect((await request('06080000000043', false)).status).toBe(401);
   expect((await request('bad input!')).status).toBe(400);
   expect(await (await request('1Z999AA10123456784')).json()).toMatchObject({ carrier: 'ups' });
-  expect(await (await request('123456789')).json()).toMatchObject({ carrier: 'unknown' });
+  expect(await (await request('ZZUNMATCHED0001')).json()).toMatchObject({ carrier: 'unknown' });
   expect(recognize).not.toHaveBeenCalled();
+});
+
+it.each([
+  ['1000000000000001', 'tnt', ['tnt', 'canada-post']],
+  ['1000000000000000000001', 'austrian-post', ['austrian-post']],
+])('recognizes newly supported %s shapes only through carrier answers', async (number, carrier, candidates) => {
+  recognize.mockImplementation(knows(carrier as string));
+  expect(await (await request(number)).json()).toEqual({ trackingNumber: number, carrier });
+  expect(asked()).toEqual(candidates);
 });
 
 it('counts served detections by confidence, including a recognized carrier', async () => {

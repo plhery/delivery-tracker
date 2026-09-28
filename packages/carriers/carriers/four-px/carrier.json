@@ -12,19 +12,41 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "four-px",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "delivered_at"
+  ],
   "portal": {
-    "url": "https://track.4px.com/",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
+    "url": "https://track.4px.com/#/result/0/{trackingNumber}",
+    "canaryUrl": "https://track.4px.com/",
+    "shows": [
+      "status",
+      "history",
+      "location"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location"
+    ],
     "discarded": [],
     "unavailable": []
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "track.4px.com"
+      ],
+      "pathPattern": "^/$",
+      "fragment": "^/result/0/([A-Z0-9]+)$"
+    }
+  ],
   "detection": [
     {
       "id": "four-px-1",

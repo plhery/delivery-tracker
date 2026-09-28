@@ -1,0 +1,13 @@
+{
+  "Packages": [{
+    "Tracking": "1LS0000000000001", "Weight": 2, "WeightUnits": "lbs",
+    "UtcExpectedDeliveryDateTime": "2026-01-03T20:00:00-08:00",
+    "Consignee": { "Name": "Private Recipient", "Address": "Example Address" },
+    "PodText": "Private signature", "VpodImageUrl": "https://example.invalid/secret-image", "Reference1": "reference-secret",
+    "Events": [
+      { "EventCode": "DLVD", "Status": "Delivered", "EventShortDescription": "Package Delivered", "ZonedEventDateTime": "2026-01-03T14:00:00-08:00", "City": "Example City", "State": "CA", "PostalCode": "00000" },
+      { "EventCode": "OFDL", "Status": "Departed", "EventShortDescription": "Out for Delivery", "ZonedEventDateTime": "2026-01-03T08:00:00-08:00", "City": "Example City", "State": "CA" },
+      { "EventCode": "EXRL", "Status": "Created", "EventShortDescription": "On its way to OnTrac", "ZonedEventDateTime": "2026-01-01T12:00:00-08:00" }
+    ]
+  }]
+}

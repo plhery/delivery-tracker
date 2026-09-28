@@ -1,0 +1,159 @@
+{
+  "carrier": "yamato",
+  "entries": [
+    {
+      "wording": "荷物受付",
+      "language": "ja",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "note": "Exact label returned by the public Yamato domestic tracking form."
+    },
+    {
+      "wording": "発送済み",
+      "language": "ja",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "note": "Exact label returned by the public Yamato domestic tracking form."
+    },
+    {
+      "wording": "配達完了",
+      "language": "ja",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "note": "Exact label returned by the public Yamato domestic tracking form."
+    },
+    {
+      "wording": "持戻（宅配BOX不可）120以上",
+      "language": "ja",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "note": "Exact label returned by the public Yamato domestic tracking form."
+    },
+    {
+      "wording": "持戻（休業）",
+      "language": "ja",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "note": "Exact label returned by the public Yamato domestic tracking form."
+    },
+    {
+      "wording": "配達日・時間帯指定（保管中）",
+      "language": "ja",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "note": "Exact label returned by the public Yamato domestic tracking form."
+    },
+    {
+      "wording": "輸送中",
+      "language": "ja",
+      "stage": "in_transit",
+      "confirmedBy": "documentation",
+      "note": "Official tracking glossary: https://faq.kuronekoyamato.co.jp/app/answers/detail/a_id/3887/p/341"
+    },
+    {
+      "wording": "作業店通過",
+      "language": "ja",
+      "stage": "in_transit",
+      "confirmedBy": "documentation",
+      "note": "Official tracking glossary: https://faq.kuronekoyamato.co.jp/app/answers/detail/a_id/3887/p/341"
+    },
+    {
+      "wording": "配達店到着",
+      "language": "ja",
+      "stage": "in_transit",
+      "confirmedBy": "documentation",
+      "note": "Official tracking glossary: https://faq.kuronekoyamato.co.jp/app/answers/detail/a_id/3887/p/341"
+    },
+    {
+      "wording": "配達準備中",
+      "language": "ja",
+      "stage": "in_transit",
+      "confirmedBy": "documentation",
+      "note": "Official tracking glossary: https://faq.kuronekoyamato.co.jp/app/answers/detail/a_id/3887/p/341"
+    },
+    {
+      "wording": "配達中",
+      "language": "ja",
+      "stage": "out_for_delivery",
+      "confirmedBy": "documentation",
+      "note": "Official tracking glossary: https://faq.kuronekoyamato.co.jp/app/answers/detail/a_id/3887/p/341"
+    },
+    {
+      "wording": "持ち出し中",
+      "language": "ja",
+      "stage": "out_for_delivery",
+      "confirmedBy": "documentation",
+      "note": "Official tracking glossary: https://faq.kuronekoyamato.co.jp/app/answers/detail/a_id/3887/p/341"
+    },
+    {
+      "wording": "転送",
+      "language": "ja",
+      "stage": "in_transit",
+      "confirmedBy": "documentation",
+      "note": "Official tracking glossary: https://faq.kuronekoyamato.co.jp/app/answers/detail/a_id/3887/p/341"
+    },
+    {
+      "wording": "輸送経路修正",
+      "language": "ja",
+      "stage": "in_transit",
+      "confirmedBy": "documentation",
+      "note": "Official tracking glossary: https://faq.kuronekoyamato.co.jp/app/answers/detail/a_id/3887/p/341"
+    },
+    {
+      "wording": "調査中",
+      "language": "ja",
+      "stage": "exception",
+      "confirmedBy": "documentation",
+      "note": "Official tracking glossary: https://faq.kuronekoyamato.co.jp/app/answers/detail/a_id/3887/p/341"
+    },
+    {
+      "wording": "配達担当店保管中",
+      "language": "ja",
+      "stage": "in_transit",
+      "confirmedBy": "documentation",
+      "note": "Official tracking glossary: https://faq.kuronekoyamato.co.jp/app/answers/detail/a_id/3887/p/341"
+    },
+    {
+      "wording": "ご来店予定（保管中）",
+      "language": "ja",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "documentation",
+      "note": "Official tracking glossary: https://faq.kuronekoyamato.co.jp/app/answers/detail/a_id/3887/p/341"
+    },
+    {
+      "wording": "保管中（ご指定店）",
+      "language": "ja",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "documentation",
+      "note": "Official tracking glossary: https://faq.kuronekoyamato.co.jp/app/answers/detail/a_id/3887/p/341"
+    },
+    {
+      "wording": "引渡",
+      "language": "ja",
+      "stage": "in_transit",
+      "confirmedBy": "documentation",
+      "note": "Official tracking glossary: https://faq.kuronekoyamato.co.jp/app/answers/detail/a_id/3887/p/341"
+    },
+    {
+      "wording": "委託先引渡",
+      "language": "ja",
+      "stage": "in_transit",
+      "confirmedBy": "documentation",
+      "note": "Official tracking glossary: https://faq.kuronekoyamato.co.jp/app/answers/detail/a_id/3887/p/341"
+    },
+    {
+      "wording": "返品",
+      "language": "ja",
+      "stage": "returned",
+      "confirmedBy": "documentation",
+      "note": "Official tracking glossary: https://faq.kuronekoyamato.co.jp/app/answers/detail/a_id/3887/p/341"
+    },
+    {
+      "wording": "返品完了",
+      "language": "ja",
+      "stage": "returned",
+      "confirmedBy": "documentation",
+      "note": "Official tracking glossary: https://faq.kuronekoyamato.co.jp/app/answers/detail/a_id/3887/p/341"
+    }
+  ]
+}

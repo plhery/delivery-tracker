@@ -1,0 +1,101 @@
+{
+  "carrier": "singapore-post",
+  "entries": [
+    {
+      "code": "HC",
+      "wording": "Held by Custom",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "DGS",
+      "wording": "Present to Import Customs",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "HE",
+      "wording": "Hold item at office of exchange",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "LL",
+      "wording": "Arrival at Processing Center",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "AD",
+      "wording": "Arrival at Destination Post",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "DO",
+      "wording": "Despatched to overseas",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "PO",
+      "wording": "Item received by SingPost",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "PL",
+      "wording": "Further processing in progress",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "CS",
+      "wording": "Customs Inspection in Progress",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "DA",
+      "wording": "Receive item at Destination Hub",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "DP",
+      "wording": "Accepted at Drop-Off Point",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "code": "IR",
+      "wording": "SingPost has received your order information, but not your item yet",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    }
+  ]
+}

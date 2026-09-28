@@ -1,9 +1,9 @@
 # Carrier coverage by tracking source
 
-Checked in September 2026 with one public reference per carrier. Each reference was
-looked up through the carrier's direct adapter and through every universal provider
-separately. The first 60 carriers of the [carrier overview](../README.md) are in the
-matrix. Results describe these references, not every number from a carrier.
+The first 60 carriers of the [carrier overview](../README.md) are compared using public
+references, with each tracking source called separately. Results describe those
+references, not every number from a carrier. Alternate direct samples are labelled when
+the comparison reference is unavailable or outside the adapter's scope.
 
 Numbers are history rows after projection. Operators, translations and repeated reports
 often describe the same milestone more than once, so read the notes below before
@@ -60,33 +60,33 @@ statuses map correctly.
 | [Poste Italiane](../carriers/poste-italiane/README.md) | Yes | No history | No history | No history | No history | No history | N/A |
 | [Correos Spain](../carriers/correos-spain/README.md) | Yes | ✓ 12 | Error | ✓ 12 | ✓ 12 | No history | N/A |
 | [bpost](../carriers/bpost/carrier.json) | No adapter | Not tested | No history | Postcode prompt | No history | No history | N/A |
-| [Austrian Post](../carriers/austrian-post/carrier.json) | No adapter | Not tested | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 9 | N/A |
+| [Austrian Post](../carriers/austrian-post/README.md) | Yes | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 9 | N/A |
 | [PostNord](../carriers/postnord/carrier.json) | No adapter | Not tested | ✓ 6 | ✓ 6 | ✓ 6 | ✓ 7 | No history |
-| [TNT](../carriers/tnt/carrier.json) | No adapter | Not tested | No history | No history | No history | No history | N/A |
-| [Aramex](../carriers/aramex/carrier.json) | No adapter | Not tested | No history | No history | No history | ✓ 16 | N/A |
-| [YunExpress](../carriers/yunexpress/carrier.json) | No adapter | Not tested | ✓ 14 | ✓ 15 | ✓ 14 | ✓ 15 | N/A |
-| [4PX](../carriers/four-px/carrier.json) | No adapter | Not tested | ✓ 25 | ✓ 26 | ✓ 26 | ✓ 26 | N/A |
-| [Yanwen](../carriers/yanwen/carrier.json) | No adapter | Not tested | ✓ 1 | ✓ 29 | ✓ 29 | No history | No history |
+| [TNT](../carriers/tnt/README.md) | Yes (France national) | No history; alternate ✓ 1 | No history | No history | No history | No history | N/A |
+| [Aramex](../carriers/aramex/README.md) | Yes | No history; alternate ✓ 26 | No history | No history | No history | ✓ 16 | N/A |
+| [YunExpress](../carriers/yunexpress/README.md) | Yes (browser) | ✓ 23 | ✓ 14 | ✓ 15 | ✓ 14 | ✓ 15 | N/A |
+| [4PX](../carriers/four-px/README.md) | Yes | ✓ 26 | ✓ 25 | ✓ 26 | ✓ 26 | ✓ 26 | N/A |
+| [Yanwen](../carriers/yanwen/README.md) | Yes | ✓ 29 | ✓ 1 | ✓ 29 | ✓ 29 | No history | No history |
 | [J&T Express](../carriers/j-and-t/carrier.json) | No adapter | Not tested | No history | No history | No history | No history | N/A |
 | [JD Logistics](../carriers/jd-logistics/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Unverified | N/A |
 | [ZTO Express](../carriers/zto/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Unverified | N/A |
 | [YTO Express](../carriers/yto/carrier.json) | No adapter | Not tested | Error | ✓ 30 | ✓ 20 | No history | N/A |
 | [Yunda Express](../carriers/yunda/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Unverified | N/A |
 | [STO Express](../carriers/sto/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Unverified | N/A |
-| [Yamato Transport](../carriers/yamato/carrier.json) | No adapter | Not tested | Error | Wrong carrier | No history | No history | N/A |
+| [Yamato Transport](../carriers/yamato/README.md) | Yes | ✓ 7 (yearless dates) | Error | Wrong carrier | No history | No history | N/A |
 | [Correios Brazil](../carriers/correios-br/carrier.json) | No adapter | Not tested | ✓ 8 | No history | ✓ 8 | ✓ 8 | No history |
-| [Singapore Post](../carriers/singapore-post/carrier.json) | No adapter | Not tested | ✓ 4 | ✓ 12 | ✓ 18 | ✓ 11 | ✓ 4 |
+| [Singapore Post](../carriers/singapore-post/README.md) | Yes | ✓ 9 | ✓ 4 | ✓ 12 | ✓ 18 | ✓ 11 | ✓ 4 |
 | [Hongkong Post](../carriers/hongkong-post/carrier.json) | No adapter | Not tested | ✓ 26 | ✓ 35 | ✓ 17 | ✓ 35 | No history |
-| [Korea Post](../carriers/korea-post/carrier.json) | No adapter | Not tested | No history | No history | No history | No history | N/A |
+| [Korea Post](../carriers/korea-post/README.md) | Yes (international) | Domestic unsupported; alternate ✓ 20 | No history | No history | No history | No history | N/A |
 | [Planzer](../carriers/planzer/README.md) | Yes | ✓ 4 | No history | No history | No history | No history | N/A |
 | [Quickpac](../carriers/quickpac/README.md) | Yes (via Planzer) | No history | No history | No history | No history | No history | N/A |
 | [DPD France](../carriers/dpd-fr/README.md) | Yes | ✓ 10 | ✓ 10 | ✓ 5 | No history | No history | N/A |
 | [Parcelforce Worldwide](../carriers/parcelforce/carrier.json) | No adapter | Not tested | No history | No history | No history | ✓ 3 | No history |
 | [Purolator](../carriers/purolator/carrier.json) | No adapter | Not tested | No history | ✓ 12 | ✓ 12 | No history | N/A |
-| [OnTrac](../carriers/ontrac/carrier.json) | No adapter | Not tested | No history | ✓ 14 | No history | ✓ 14 | N/A |
-| [Delhivery](../carriers/delhivery/carrier.json) | No adapter | Not tested | No history | No history | No history | No history | N/A |
-| [Blue Dart](../carriers/blue-dart/carrier.json) | No adapter | Not tested | No history | No history | No history | No history | N/A |
-| [DTDC](../carriers/dtdc/carrier.json) | No adapter | Not tested | No history | ✓ 35 | No history | No history | N/A |
+| [OnTrac](../carriers/ontrac/README.md) | Yes | ✓ 14 | No history | ✓ 14 | No history | ✓ 14 | N/A |
+| [Delhivery](../carriers/delhivery/README.md) | Yes | No history; alternate summary + 1 undated scan | No history | No history | No history | No history | N/A |
+| [Blue Dart](../carriers/blue-dart/README.md) | Yes | ✓ 15 | No history | No history | No history | No history | N/A |
+| [DTDC](../carriers/dtdc/README.md) | Yes | No history; alternate ✓ 9 | No history | ✓ 35 | No history | No history | N/A |
 | [Ninja Van](../carriers/ninja-van/carrier.json) | No adapter | Not tested | No history | No history | No history | No history | N/A |
 | [Packeta](../carriers/packeta/README.md) | Yes | No history | No history | No history | No history | No history | N/A |
 
@@ -100,7 +100,9 @@ By source:
 - **Direct adapters** keep actionable rows the aggregators drop or mislabel: La Poste
   pickup-ready, InPost locker-ready, Swiss Post delivery method. Some return local wall
   times with no verified zone (SF Express, Evri International, overseas Japan Post
-  scans).
+  scans, Aramex, Korea Post and some 4PX, Singapore Post and YunExpress scans). Yamato
+  omits the year. These histories remain available without fabricated scan instants
+  ([ROUTING.md](../../../docs/ROUTING.md)).
 - **Ship24** is sparse for some references: label-only for UPS (a second UPS reference
   was complete), one old row for DPD, one row for Yanwen, and it stops before La Poste's
   final events. It had nothing for OnTrac, Purolator, Parcelforce or the Indian
@@ -147,35 +149,57 @@ By carrier:
 - **bpost, Korea Post:** domestic numbers (bpost's 24 digits, Korea Post's 13) had no
   history anywhere. S10 items did: a bpost `LD…BE` item through Landmark Global had 20
   rows in ParcelsApp and 14 in 17TRACK, and a Korea Post EMS item had 15 to 43 in every
-  feed but Postal Ninja.
+  feed but Postal Ninja. Korea Post's international direct form returns 20 local-time
+  scans; its domestic form is outside the adapter's scope. bpost's domestic portal
+  requires the recipient postcode.
 - **J&T Express, Delhivery, Blue Dart, TNT:** no aggregator had history for any of two or
   three recent references each (J&T in the Philippines and Indonesia, TNT France's
-  16-digit numbers). Ninja Van's newest public numbers, from February and April, had
-  none either.
+  16-digit numbers). Blue Dart directly returns a full history. Delhivery's alternate
+  direct sample has a dated current snapshot and one undated scan. TNT's alternate
+  national reference has a booking scan. Ninja Van's public references had none either.
 - **JD Logistics, ZTO, Yunda, STO:** public posts mask Chinese domestic numbers, so only
-  2015 examples were available. YTO's one public number had 30 rows in ParcelsApp,
+  old examples were available. YTO's one public number had 30 rows in ParcelsApp,
   which relays YTO's own scan labels in Chinese or in its English translation, and 20
   Chinese rows in 17TRACK. Both show the return
   ([YTO README](../carriers/yto/README.md)).
 - **Aramex:** a domestic delivery in the UAE had 16 undated rows in Postal Ninja only. An
   international shipment had the same 26 rows in Ship24, 17TRACK and Postal Ninja, and
-  none in ParcelsApp.
+  none in ParcelsApp. The direct portal returns those 26 rows as local wall times.
 - **Planzer:** the direct adapter reads the `reference.shipment` numbers Planzer prints,
   stored with or without the dot, and returns 4 to 6 rows for the three public
   references. No aggregator knows Planzer.
-- **Yamato:** ParcelsApp answered with a January FedEx parcel that shares the 12 digits
-  (it reported FedEx and GLS), not the July Yamato parcel. Routing ignores such a
-  history ([ROUTING.md](../../../docs/ROUTING.md)). Nothing else had history.
+- **Yamato:** ParcelsApp answered with an older FedEx parcel that shares the 12 digits
+  (it reported FedEx and GLS), rather than the Yamato parcel. Routing ignores such a
+  history ([ROUTING.md](../../../docs/ROUTING.md)). The direct form returns seven scans
+  with month and day but no year; no scan year or freshness watermark is inferred.
 - **DPD France:** direct and Ship24 return the same 10 rows, direct with depots and
   times. ParcelsApp condenses them into 5.
 - **Hongkong Post:** for an AliExpress item, Ship24, ParcelsApp and Postal Ninja include
   the Cainiao origin leg (26 to 35 rows); 17TRACK keeps the two postal legs (17).
 - **Singapore Post:** for an item to China, 17TRACK adds China Post's leg in Chinese;
-  Ship24 and UPU have only the four exchange-office scans.
+  Ship24 and UPU have only the four exchange-office scans. The direct feed returns nine
+  scans. Its Speedpost response uses local clocks rather than the mail feed's offsets.
 - **PostNord, 4PX, Austrian Post, Correios Brazil:** the successful feeds hold the same
   scans, give or take one. Postal Ninja adds a "last day to pickup" row after PostNord's
   delivery.
 - **Parcelforce:** only Postal Ninja had rows (booking and collection).
+- **DTDC:** MyDTDC's separate consumer feed returns forward and return history for
+  supported consignments. The alternate return sample has eight scans and a dated
+  return snapshot; a delivered sample has five scans. Legacy failures are inconclusive.
+- **YunExpress:** plain HTTP is challenged. Direct retrieval captures the official
+  browser request through Chromium or Trawl. Trawl must retain decoded API response
+  bodies. Interactive verification still requires provider fallback.
+
+## Direct retrieval gaps
+
+Universal providers remain the route where no anonymous, identity-bound carrier history
+is supported. J&T's Philippine portal uses interactive verification and its Indonesian
+portal asks for a phone suffix. JD Logistics, ZTO and Yunda gate reads with sessions or
+CAPTCHA; YTO's anonymous reply contains no scans, and STO's old form redirects away.
+Hongkong Post and Correios Brazil require CAPTCHA. PostNord's public references return
+no shipment even with the portal's request proof, so a positive response schema is
+unverified. Purolator challenges automated requests. Ninja Van's public endpoint returns
+no usable history. Parcelforce forwards to Royal Mail's disabled direct route.
 
 Mapping gaps seen in these samples: 17TRACK maps Swiss Post vehicle loading to in
 transit; PostNL direct maps out-for-delivery as accepted; EMS export cancellation has no

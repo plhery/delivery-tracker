@@ -11,6 +11,42 @@ afterEach(() => {
 });
 
 describe('bounded carrier request retries', () => {
+  it('accepts a fractional remaining lookup budget', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response('ok'));
+    await expect(fetchBounded(URL, {}, { provider: 'Tracking', timeoutMs: 999.5, fetcher }))
+      .resolves.toMatchObject({ response: { status: 200 } });
+  });
+
+  it('does not send a request after caller cancellation', async () => {
+    const controller = new AbortController(); controller.abort();
+    const fetcher = vi.fn<typeof fetch>();
+    await expect(fetchBounded(URL, { signal: controller.signal }, { ...OPTIONS, fetcher })).rejects.toThrow();
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it('aborts actual in-flight I/O when its caller is canceled without retrying', async () => {
+    const controller = new AbortController();
+    const fetcher = vi.fn<typeof fetch>().mockImplementation((_url, init) => new Promise((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => reject(init.signal?.reason), { once: true });
+    }));
+    const failure = expect(fetchBounded(URL, { signal: controller.signal }, { ...OPTIONS, fetcher })).rejects.toBeInstanceOf(UpstreamNetworkError);
+    controller.abort();
+    await failure;
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(fetcher.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
+  });
+
+  it('cancels a Retry-After wait without sending another request', async () => {
+    const controller = new AbortController();
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response('', { status: 503, headers: { 'Retry-After': '60' } }));
+    const failure = expect(fetchBounded(URL, { signal: controller.signal }, { ...OPTIONS, fetcher })).rejects.toThrow();
+    await vi.advanceTimersByTimeAsync(10);
+    controller.abort();
+    await failure;
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it.each(['headers', 'body'])('distinguishes interrupted %s from invalid carrier data', async (phase) => {
     const cause = new DOMException('Timed out', 'TimeoutError');
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => {

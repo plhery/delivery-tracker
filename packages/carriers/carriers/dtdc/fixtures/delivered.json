@@ -1,0 +1,91 @@
+{
+  "status": "OK",
+  "data": {
+    "status_external": "Delivered",
+    "current_event_description": "Delivered",
+    "location": "Example destination depot",
+    "status_internal": "delivered",
+    "timestamp": 1767445200000,
+    "type": "forward",
+    "rto_awb_num": "",
+    "extra_details": {},
+    "consignment": {
+      "AWBNo": "D0000000001",
+      "referenceNumber": "N00000001",
+      "clientNumber": "private-example-reference",
+      "srcAddress": {
+        "name": "Example sender",
+        "street": "Synthetic address"
+      },
+      "dstAddress": {
+        "name": "Example recipient",
+        "street": "Synthetic address"
+      },
+      "givenWeight": "250",
+      "correctWeight": "250",
+      "isInternational": false
+    },
+    "tracking": [
+      {
+        "event_description": "Delivered",
+        "status_external": "Delivered",
+        "status_internal": "delivered",
+        "timestamp": 1767445200000,
+        "location": "Example destination depot",
+        "type": "forward",
+        "awb_number": "",
+        "extra_details": {
+          "private_instruction": "Synthetic excluded instruction"
+        }
+      },
+      {
+        "event_description": "Out For Delivery",
+        "status_external": "Out For Delivery",
+        "status_internal": "outfordelivery",
+        "timestamp": 1767438000000,
+        "location": "Example destination depot",
+        "type": "forward",
+        "awb_number": "",
+        "extra_details": {
+          "private_instruction": "Synthetic excluded instruction"
+        }
+      },
+      {
+        "event_description": "In Transit",
+        "status_external": "In Transit",
+        "status_internal": "in_transit",
+        "timestamp": 1767358800000,
+        "location": "Example sorting depot",
+        "type": "forward",
+        "awb_number": "",
+        "extra_details": {
+          "private_instruction": "Synthetic excluded instruction"
+        }
+      },
+      {
+        "event_description": "Picked Up",
+        "status_external": "Pickup Completed",
+        "status_internal": "pickup_completed",
+        "timestamp": 1767272400000,
+        "location": "Example origin depot",
+        "type": "forward",
+        "awb_number": "",
+        "extra_details": {
+          "private_instruction": "Synthetic excluded instruction"
+        }
+      },
+      {
+        "event_description": "Booked",
+        "status_external": "Booked at Origin Branch",
+        "status_internal": "softdata_upload",
+        "timestamp": 1767265200000,
+        "location": "Example origin depot",
+        "type": "forward",
+        "awb_number": "",
+        "extra_details": {
+          "private_instruction": "Synthetic excluded instruction"
+        }
+      }
+    ]
+  }
+}

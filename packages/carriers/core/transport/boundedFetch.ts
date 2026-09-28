@@ -36,8 +36,20 @@ function retryDelay(header: string | null, status: number): number | null {
   return Math.max(DEFAULT_RETRY_DELAY_MS, delay);
 }
 
-async function waitBeforeRetry(delayMs: number): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, delayMs));
+async function waitBeforeRetry(delayMs: number, signal?: AbortSignal | null): Promise<void> {
+  signal?.throwIfAborted();
+  await new Promise<void>((resolve, reject) => {
+    const abort = () => {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', abort);
+      reject(signal?.reason);
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', abort);
+      resolve();
+    }, delayMs);
+    signal?.addEventListener('abort', abort, { once: true });
+  });
 }
 
 async function cancelQuietly(body: ReadableStream<Uint8Array> | null): Promise<void> {
@@ -65,16 +77,18 @@ export async function fetchBounded(
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
   let response: Response;
   for (let attempt = 0; ; attempt += 1) {
+    init.signal?.throwIfAborted();
     try {
+      const timeout = AbortSignal.timeout(Math.max(0, Math.floor(options.timeoutMs ?? 15_000)));
       response = await (options.fetcher ?? fetch)(url, {
         ...init,
         cache: 'no-store',
         redirect: options.redirect ?? 'error',
-        signal: AbortSignal.timeout(options.timeoutMs ?? 15_000),
+        signal: init.signal ? AbortSignal.any([init.signal, timeout]) : timeout,
       });
     } catch (error) {
-      if (options.retryTransient && attempt === 0) {
-        await waitBeforeRetry(DEFAULT_RETRY_DELAY_MS);
+      if (options.retryTransient && attempt === 0 && !init.signal?.aborted) {
+        await waitBeforeRetry(DEFAULT_RETRY_DELAY_MS, init.signal);
         continue;
       }
       throw new UpstreamNetworkError(options.provider, error, requestDiagnostics(url, init, options.timeoutMs ?? 15_000));
@@ -84,7 +98,7 @@ export async function fetchBounded(
     if (options.retryTransient && attempt === 0
       && TRANSIENT_HTTP_STATUSES.has(response.status) && delay !== null) {
       await cancelQuietly(response.body);
-      await waitBeforeRetry(delay);
+      await waitBeforeRetry(delay, init.signal);
       continue;
     }
     const retryHeader = response.headers.get('retry-after');

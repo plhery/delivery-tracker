@@ -1,0 +1,13 @@
+{
+  "carrier": "tnt",
+  "entries": [
+    {
+      "wording": "Colis chez l'expéditeur",
+      "language": "fr",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28",
+      "note": "National tracking history label; future rail labels are not events."
+    }
+  ]
+}

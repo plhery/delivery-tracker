@@ -12,16 +12,35 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "ontrac",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "estimated_delivery",
+    "weight"
+  ],
   "portal": {
     "url": "https://www.ontrac.com/tracking/?number={trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "canaryUrl": "https://www.ontrac.com/tracking/",
+    "shows": [
+      "status",
+      "history",
+      "estimated_delivery",
+      "weight"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "estimated_delivery",
+      "weight"
+    ],
+    "discarded": [
+      "recipient",
+      "signature"
+    ],
     "unavailable": []
   },
   "links": [

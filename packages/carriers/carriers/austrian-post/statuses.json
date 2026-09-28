@@ -1,0 +1,47 @@
+{
+  "carrier": "austrian-post",
+  "entries": [
+    {
+      "wording": "Versender*in bereitet die Sendung für den Versand vor",
+      "language": "de",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Sendung im Logistikzentrum in Bearbeitung",
+      "language": "de",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Sendung in Zustellung",
+      "language": "de",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Empfänger nicht angetroffen - brieflich benachrichtigt",
+      "language": "de",
+      "stage": "failed_attempt",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Übergabe an Zustellpartner",
+      "language": "de",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Sendung wurde zugestellt",
+      "language": "de",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    }
+  ]
+}
