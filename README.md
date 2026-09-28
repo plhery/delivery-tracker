@@ -57,10 +57,6 @@ npm run dev
 Open [localhost:3000](http://localhost:3000) and select **Explore the demo**.
 Refresh advances the sample parcels; **Reset demo data** in settings restores them.
 
-The [journey design study](http://localhost:3000/design/journey) compares three
-parcel map layouts with fictional scans. Try world, regional, local, and missing
-locations, switch between phone and desktop widths, or use the dark preview.
-
 For real accounts, copy [`.env.example`](.env.example) to `.env.local`, configure
 Supabase, and set `NEXT_PUBLIC_USE_API=true`. See [Authentication](docs/AUTHENTICATION.md).
 
