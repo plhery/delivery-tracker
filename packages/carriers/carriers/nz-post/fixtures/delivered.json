@@ -1,0 +1,59 @@
+{
+  "success": true,
+  "status_code": 1,
+  "message_id": "synthetic-response",
+  "results": [
+    {
+      "tracking_reference": "00000000000000000001",
+      "tracking_events": [
+        {
+          "date_time": "2026-01-04T08:00:00Z",
+          "status": "Tracking number allocated to parcel",
+          "edifact_code": "997",
+          "description": "PRIVATE DESCRIPTION",
+          "source": "CME",
+          "seqref": "1"
+        },
+        {
+          "date_time": "2026-01-05T09:00:00Z",
+          "status": "Collected from sender",
+          "edifact_code": "13",
+          "depot_name": "Example Depot",
+          "description": "PRIVATE DESCRIPTION",
+          "run_name": "PRIVATE RUN",
+          "source": "CME",
+          "seqref": "2"
+        },
+        {
+          "date_time": "2026-01-05T11:00:00Z",
+          "status": "Processed at depot",
+          "edifact_code": "8",
+          "depot_name": "Example Depot",
+          "source": "CME",
+          "seqref": "3"
+        },
+        {
+          "date_time": "2026-01-06T08:00:00Z",
+          "status": "With courier for delivery",
+          "edifact_code": "32",
+          "depot_name": "Example Depot",
+          "source": "CME",
+          "seqref": "4"
+        },
+        {
+          "date_time": "2026-01-06T12:00:00Z",
+          "status": "Delivered",
+          "edifact_code": "22",
+          "depot_name": "Example Depot",
+          "description": "Signed for by PRIVATE RECIPIENT",
+          "signed_by": {
+            "name": "PRIVATE RECIPIENT",
+            "signature": "PRIVATE ASSET"
+          },
+          "source": "CME",
+          "seqref": "5"
+        }
+      ]
+    }
+  ]
+}

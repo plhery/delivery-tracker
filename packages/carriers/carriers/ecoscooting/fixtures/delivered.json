@@ -1,0 +1,52 @@
+{
+  "success": "true",
+  "packageParam": {
+    "trackingNumber": "000000000000000001",
+    "dimWeight": {
+      "weight": "4301",
+      "weightUnit": "g"
+    },
+    "toCity": "Example City",
+    "toZipcode": "PRIVATE_SYNTHETIC_POSTCODE",
+    "outOrderId": "PRIVATE_SYNTHETIC_ORDER"
+  },
+  "feature": "PRIVATE_SYNTHETIC_FEATURE",
+  "statuses": [
+    {
+      "opTimestamp": "1767553200000",
+      "datetime": "2026-01-04 20:00:00 UTC+1",
+      "actionCode": "GTMS_SIGNED",
+      "statusGroup": "delivered",
+      "statusName": "Delivery Success",
+      "description": "Parcel has been delivered successfully",
+      "status": "finish",
+      "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
+      "deliveryLatitude": "PRIVATE_SYNTHETIC_LATITUDE"
+    },
+    {
+      "opTimestamp": "1767531600000",
+      "datetime": "2026-01-04 14:00:00 UTC+1",
+      "actionCode": "GTMS_DO_DEPART",
+      "statusGroup": "delivering",
+      "description": "Out for delivery",
+      "status": "finish"
+    },
+    {
+      "opTimestamp": "1767463200000",
+      "datetime": "2026-01-03 19:00:00 UTC+1",
+      "actionCode": "GTMS_DEL_FAILURE",
+      "statusGroup": "delivery_failed",
+      "description": "Package stolen",
+      "statusName": "Delivery Attempt Failure",
+      "status": "error"
+    },
+    {
+      "opTimestamp": "1767348000000",
+      "datetime": "2026-01-02 11:00:00 UTC+1",
+      "actionCode": "GTMS_ACCEPT",
+      "statusGroup": "in_transit",
+      "description": "Parcel has been accepted by last mile",
+      "status": "finish"
+    }
+  ]
+}

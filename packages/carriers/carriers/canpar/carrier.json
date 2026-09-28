@@ -3,7 +3,9 @@
   "displayName": "Canpar",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "CA"
+    ]
   },
   "brand": {
     "color": "#003b70"
@@ -12,16 +14,42 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "canpar",
+    "steps": [
+      "direct"
+    ],
+    "recognition": {
+      "rank": 35
+    }
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location"
+  ],
   "portal": {
-    "url": "https://www.canpar.com/en/track/tracking.jsp?reference={trackingNumber}&locale=en",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "url": "https://www.canpar.com/en/tracking/track.htm?barcode={trackingNumber}",
+    "canaryUrl": "https://www.canpar.com/en/tracking/track.htm",
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "estimated_delivery",
+      "proof_of_delivery"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location"
+    ],
+    "discarded": [
+      "estimated_delivery",
+      "proof_of_delivery",
+      "recipient",
+      "addresses",
+      "comments",
+      "contacts",
+      "references"
+    ],
     "unavailable": []
   },
   "links": [
@@ -30,6 +58,7 @@
         "canpar.com"
       ],
       "params": [
+        "barcode",
         "reference"
       ]
     }

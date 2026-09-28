@@ -88,7 +88,9 @@
     "confidence": "low",
     "candidates": [
       "postnord",
-      "usps"
+      "usps",
+      "nz-post",
+      "poczta-polska"
     ]
   },
   {
@@ -260,7 +262,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "usps"
+      "usps",
+      "nz-post",
+      "poczta-polska"
     ]
   },
   {
@@ -1546,7 +1550,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "usps"
+      "usps",
+      "nz-post",
+      "poczta-polska"
     ]
   },
   {
@@ -1576,7 +1582,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "usps"
+      "usps",
+      "nz-post",
+      "poczta-polska"
     ]
   },
   {
@@ -1584,7 +1592,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "usps"
+      "usps",
+      "nz-post",
+      "poczta-polska"
     ]
   },
   {

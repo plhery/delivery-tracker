@@ -1,0 +1,98 @@
+{
+  "number": "00000000000000000001",
+  "mailStatus": 0,
+  "mailInfo": {
+    "number": "00000000000000000001",
+    "dispatchDate": "2026-01-04T00:00:00",
+    "dispatchCountryCode": "PL",
+    "dispatchCountryName": "Poland",
+    "recipientCountryCode": "PL",
+    "recipientCountryName": "Poland",
+    "typeOfMailCode": "PRP",
+    "typeOfMailName": "Synthetic parcel",
+    "format": "S",
+    "weight": 0.35,
+    "finished": true,
+    "additionalServices": [
+      "PRIVATE SERVICE"
+    ],
+    "events": [
+      {
+        "code": "P_REJ_KN1",
+        "name": "Electronic item data received",
+        "time": "2026-01-04T08:00:00",
+        "postOffice": {
+          "name": "Electronic Sender"
+        },
+        "finished": false,
+        "canceled": false,
+        "state": {
+          "code": "PRZ",
+          "name": "PREPARED"
+        }
+      },
+      {
+        "code": "P_NAD",
+        "name": "Posting/collection",
+        "time": "2026-01-04T12:00:00",
+        "postOffice": {
+          "name": "Example Post Office"
+        },
+        "finished": false,
+        "canceled": false,
+        "state": {
+          "code": "NA",
+          "name": "SHIPPED"
+        }
+      },
+      {
+        "code": "P_ND",
+        "name": "In delivery",
+        "time": "2026-01-05T16:00:00",
+        "postOffice": {
+          "name": "Example Distribution Centre"
+        },
+        "finished": false,
+        "canceled": false,
+        "state": {
+          "code": "DOR",
+          "name": "IN DELIVERY"
+        }
+      },
+      {
+        "code": "P_WD",
+        "name": "In delivery",
+        "time": "2026-01-06T08:00:00",
+        "postOffice": {
+          "name": "Example Post Office"
+        },
+        "finished": false,
+        "canceled": false,
+        "state": {
+          "code": "DOR",
+          "name": "IN DELIVERY"
+        }
+      },
+      {
+        "code": "P_D",
+        "name": "Final delivery",
+        "time": "2026-01-06T12:00:00",
+        "postOffice": {
+          "code": "000001",
+          "name": "Example Post Office",
+          "description": {
+            "city": "PRIVATE CITY",
+            "street": "PRIVATE STREET",
+            "openingHours": {}
+          }
+        },
+        "finished": true,
+        "canceled": false,
+        "state": {
+          "code": "DO",
+          "name": "DELIVERED"
+        }
+      }
+    ]
+  }
+}

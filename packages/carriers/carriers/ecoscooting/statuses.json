@@ -1,0 +1,47 @@
+{
+  "carrier": "ecoscooting",
+  "entries": [
+    {
+      "code": "GTMS_SIGNED",
+      "wording": "Parcel has been delivered successfully",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "GTMS_DO_DEPART",
+      "wording": "Out for delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "GTMS_DEL_FAILURE",
+      "wording": "Delivery Attempt Failure",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "GTMS_ACCEPT",
+      "wording": "Parcel has been accepted by last mile",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "TD_TRANSWH_OUTBOUND",
+      "wording": "Parcels outbound from sorting center",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "TD_TRANS_ARRIVE_C",
+      "wording": "Parcel arrives at sorting center",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    }
+  ]
+}

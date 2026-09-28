@@ -198,7 +198,7 @@ describe('persistent tracking routing', () => {
       // Newly supported number shapes follow the same popularity order.
       const tnt = setup();
       await tnt.router.fetch(parcel({ tracking_number: '1000000000000001' }), false);
-      expect(asked(tnt.recognize)).toEqual(['tnt', 'canada-post']);
+      expect(asked(tnt.recognize)).toEqual(['tnt', 'correos-express', 'canada-post']);
       expect(tnt.direct).not.toHaveBeenCalled();
       const austria = setup();
       await austria.router.fetch(parcel({ tracking_number: '1000000000000000000001' }), false);

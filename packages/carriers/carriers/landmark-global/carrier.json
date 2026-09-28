@@ -12,16 +12,33 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "landmark-global",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location"
+  ],
   "portal": {
     "url": "https://track.landmarkglobal.com/?search={trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "canaryUrl": "https://track.landmarkglobal.com/",
+    "shows": [
+      "status",
+      "history",
+      "location"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location"
+    ],
+    "discarded": [
+      "order_references",
+      "package_references",
+      "payment_actions"
+    ],
     "unavailable": []
   },
   "links": [
@@ -31,14 +48,15 @@
         "landmarkglobal.com"
       ],
       "params": [
-        "search"
+        "search",
+        "trck"
       ]
     }
   ],
   "detection": [
     {
       "id": "landmark-global-1",
-      "pattern": "^LTN\\d{8}N1$",
+      "pattern": "^LTN\\d{8}(?:N1)?$",
       "confidence": "high"
     }
   ]

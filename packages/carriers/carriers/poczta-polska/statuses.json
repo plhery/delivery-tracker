@@ -1,0 +1,47 @@
+{
+  "carrier": "poczta-polska",
+  "entries": [
+    {
+      "code": "P_REJ_KN1",
+      "wording": "Electronic item data received",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "P_NAD",
+      "wording": "Posting/collection",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "P_WD",
+      "wording": "In delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "P_D",
+      "wording": "Final delivery",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "P_PZL",
+      "wording": "In transport",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "P_ND",
+      "wording": "In delivery",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "live"
+    }
+  ]
+}

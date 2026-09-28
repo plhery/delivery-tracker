@@ -12,7 +12,9 @@
         "carrier": "unknown",
         "confidence": "low",
         "candidates": [
-          "usps"
+          "usps",
+          "nz-post",
+          "poczta-polska"
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
@@ -28,7 +30,9 @@
         "carrier": "unknown",
         "confidence": "low",
         "candidates": [
-          "usps"
+          "usps",
+          "nz-post",
+          "poczta-polska"
         ]
       },
       "note": "Certified-mail number printed in an FCC order. The source attributes it to USPS, which stays one candidate among several."
@@ -44,7 +48,9 @@
         "carrier": "unknown",
         "confidence": "low",
         "candidates": [
-          "usps"
+          "usps",
+          "nz-post",
+          "poczta-polska"
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
@@ -60,7 +66,9 @@
         "carrier": "unknown",
         "confidence": "low",
         "candidates": [
-          "usps"
+          "usps",
+          "nz-post",
+          "poczta-polska"
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."

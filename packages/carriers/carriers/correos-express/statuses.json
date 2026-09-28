@@ -1,0 +1,16 @@
+{
+  "carrier": "correos-express",
+  "entries": [
+    { "wording": "INFORMADO", "language": "es", "stage": "registered", "confirmedBy": "live" },
+    { "wording": "ADMITIDO", "language": "es", "stage": "accepted", "confirmedBy": "live" },
+    { "wording": "ADMITIDO EN OFICINA DE CORREOS", "language": "es", "stage": "accepted", "confirmedBy": "live" },
+    { "wording": "EN RUTA A LOCALIDAD DE DESTINO", "language": "es", "stage": "in_transit", "confirmedBy": "live" },
+    { "wording": "EN DESTINO", "language": "es", "stage": "in_transit", "confirmedBy": "live" },
+    { "wording": "EN REPARTO", "language": "es", "stage": "out_for_delivery", "confirmedBy": "live" },
+    { "wording": "ENTREGADO", "language": "es", "stage": "delivered", "confirmedBy": "live" },
+    { "wording": "DEVUELTO", "language": "es", "stage": "returned", "confirmedBy": "live" },
+    { "wording": "EN ALMACÉN", "language": "es", "stage": "exception", "confirmedBy": "live" },
+    { "wording": "ESTACIONADO", "language": "es", "stage": "exception", "confirmedBy": "live" },
+    { "wording": "NUEVO REPARTO", "language": "es", "stage": "in_transit", "confirmedBy": "live" }
+  ]
+}

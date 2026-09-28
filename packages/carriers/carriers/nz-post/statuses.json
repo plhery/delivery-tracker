@@ -1,0 +1,68 @@
+{
+  "carrier": "nz-post",
+  "entries": [
+    {
+      "code": "997",
+      "wording": "Tracking number allocated to parcel",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "13",
+      "wording": "Collected from sender",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "8",
+      "wording": "Processed at depot",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "32",
+      "wording": "With courier for delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "22",
+      "wording": "Delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "205",
+      "wording": "Parcel pickup request received",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "206",
+      "wording": "Parcel pickup request allocated to driver",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "40",
+      "wording": "Delayed",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "58",
+      "wording": "Ready for courier",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    }
+  ]
+}

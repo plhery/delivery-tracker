@@ -237,10 +237,10 @@ and 17TRACK. Many samples are old, so "–" often just means the history expired
 | BRT | universal | – | – | – |
 | Ciblex | dedicated | – | postcode prompt | – |
 | Colis Privé | dedicated | – | – | – |
-| Correos Express | universal | – | – | – |
+| [Correos Express](../carriers/correos-express/README.md) | dedicated | – | – | – |
 | [CTT Express](../carriers/ctt-express/README.md) | dedicated | ✓ | ✓ | ✓ |
 | CTT Portugal | dedicated | – | ✓ | ✓ |
-| Ecoscooting | universal | – | – | – |
+| [Ecoscooting](../carriers/ecoscooting/README.md) | dedicated | – | – | – |
 | GEODIS | dedicated | – | postcode prompt | – |
 | MRW | universal | – | – | ✓ |
 | NACEX | universal | – | – | rejects the `agency/number` format |
@@ -261,6 +261,16 @@ separately and ask providers for dated progress.
 [Pos Malaysia](../carriers/pos-malaysia/README.md) also returns international history.
 Its offsetless scans remain unresolved unless both endpoints identify a domestic
 Malaysian route. An undated delivery summary cannot borrow a movement scan's clock.
+
+[Canpar](../carriers/canpar/README.md), [Landmark Global](../carriers/landmark-global/README.md),
+[GOFO US](../carriers/gofo/README.md), [NZ Post](../carriers/nz-post/README.md),
+[Poczta Polska](../carriers/poczta-polska/README.md), Correos Express and Ecoscooting
+also return matching history through official anonymous routes. Canpar's ambiguous
+clock shift, Landmark's shared clock and the offsetless Correos Express and
+Poczta Polska scans remain local history. Empty Canpar placeholders and Ecoscooting
+query errors are inconclusive.
+Landmark accepts its explicitly identified canonical parcel reference and retains
+the declared delivery partner for the host's independent handoff check.
 
 An Post's consumer query is challenged. SpeedX's anonymous endpoints require
 verification, and MRW's stateful result asks for recipient phone/SMS verification.

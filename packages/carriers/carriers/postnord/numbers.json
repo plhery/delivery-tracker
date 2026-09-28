@@ -14,7 +14,9 @@
         "confidence": "low",
         "candidates": [
           "postnord",
-          "usps"
+          "usps",
+          "nz-post",
+          "poczta-polska"
         ]
       },
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to PostNord, which stays one candidate among several."

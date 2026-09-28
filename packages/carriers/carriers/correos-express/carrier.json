@@ -16,17 +16,18 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "correos-express",
+    "steps": ["direct"],
+    "recognition": { "rank": 35 }
   },
-  "capabilities": [],
+  "capabilities": ["history", "location", "eta"],
   "portal": {
     "url": "https://s.correosexpress.com/",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "canaryUrl": "https://s.correosexpress.com/",
+    "shows": ["status", "history", "location", "estimated_delivery", "proof_of_delivery"],
+    "scraped": ["status", "history", "location", "estimated_delivery"],
+    "discarded": ["proof_of_delivery", "contact_details", "delivery_comments"],
+    "unavailable": ["offset_timestamps"]
   },
   "links": [],
   "detection": [

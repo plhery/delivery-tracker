@@ -11,10 +11,12 @@ import { adapter as blueDart } from '../carriers/blue-dart/adapter';
 import { adapter as bpost } from '../carriers/bpost/adapter';
 import { adapter as cChezVous } from '../carriers/c-chez-vous/adapter';
 import { adapter as canadaPost } from '../carriers/canada-post/adapter';
+import { adapter as canpar } from '../carriers/canpar/adapter';
 import { adapter as ciblex } from '../carriers/ciblex/adapter';
 import { adapter as colisPrive } from '../carriers/colis-prive/adapter';
 import { adapter as colisweb } from '../carriers/colisweb/adapter';
 import { adapter as correiosBr } from '../carriers/correios-br/adapter';
+import { adapter as correosExpress } from '../carriers/correos-express/adapter';
 import { adapter as correosSpain } from '../carriers/correos-spain/adapter';
 import { adapter as ctt } from '../carriers/ctt/adapter';
 import { adapter as cttExpress } from '../carriers/ctt-express/adapter';
@@ -25,6 +27,7 @@ import { adapter as dhlEcommerce } from '../carriers/dhl-ecommerce/adapter';
 import { adapter as dpd } from '../carriers/dpd/adapter';
 import { adapter as dpdFr } from '../carriers/dpd-fr/adapter';
 import { adapter as dtdc } from '../carriers/dtdc/adapter';
+import { adapter as ecoscooting } from '../carriers/ecoscooting/adapter';
 import { adapter as ems } from '../carriers/ems/adapter';
 import { adapter as evri } from '../carriers/evri/adapter';
 import { adapter as fedex } from '../carriers/fedex/adapter';
@@ -33,6 +36,7 @@ import { adapter as geodis } from '../carriers/geodis/adapter';
 import { adapter as glsCh } from '../carriers/gls-ch/adapter';
 import { adapter as glsDe } from '../carriers/gls-de/adapter';
 import { adapter as glsFr } from '../carriers/gls-fr/adapter';
+import { adapter as gofo } from '../carriers/gofo/adapter';
 import { adapter as heppner } from '../carriers/heppner/adapter';
 import { adapter as hermes } from '../carriers/hermes/adapter';
 import { adapter as hermesDe } from '../carriers/hermes-de/adapter';
@@ -41,11 +45,14 @@ import { adapter as inpost } from '../carriers/inpost/adapter';
 import { adapter as japanPost } from '../carriers/japan-post/adapter';
 import { adapter as koreaPost } from '../carriers/korea-post/adapter';
 import { adapter as laPoste } from '../carriers/la-poste/adapter';
+import { adapter as landmarkGlobal } from '../carriers/landmark-global/adapter';
 import { adapter as mondialRelay } from '../carriers/mondial-relay/adapter';
+import { adapter as nzPost } from '../carriers/nz-post/adapter';
 import { adapter as ontrac } from '../carriers/ontrac/adapter';
 import { adapter as paack } from '../carriers/paack/adapter';
 import { adapter as packeta } from '../carriers/packeta/adapter';
 import { adapter as planzer } from '../carriers/planzer/adapter';
+import { adapter as pocztaPolska } from '../carriers/poczta-polska/adapter';
 import { adapter as posMalaysia } from '../carriers/pos-malaysia/adapter';
 import { adapter as posteItaliane } from '../carriers/poste-italiane/adapter';
 import { adapter as posti } from '../carriers/posti/adapter';
@@ -82,10 +89,12 @@ export const REGISTRY: RegistryDefinition = {
     "bpost": bpost,
     "c-chez-vous": cChezVous,
     "canada-post": canadaPost,
+    "canpar": canpar,
     "ciblex": ciblex,
     "colis-prive": colisPrive,
     "colisweb": colisweb,
     "correios-br": correiosBr,
+    "correos-express": correosExpress,
     "correos-spain": correosSpain,
     "ctt": ctt,
     "ctt-express": cttExpress,
@@ -96,6 +105,7 @@ export const REGISTRY: RegistryDefinition = {
     "dpd": dpd,
     "dpd-fr": dpdFr,
     "dtdc": dtdc,
+    "ecoscooting": ecoscooting,
     "ems": ems,
     "evri": evri,
     "fedex": fedex,
@@ -104,6 +114,7 @@ export const REGISTRY: RegistryDefinition = {
     "gls-ch": glsCh,
     "gls-de": glsDe,
     "gls-fr": glsFr,
+    "gofo": gofo,
     "heppner": heppner,
     "hermes": hermes,
     "hermes-de": hermesDe,
@@ -112,11 +123,14 @@ export const REGISTRY: RegistryDefinition = {
     "japan-post": japanPost,
     "korea-post": koreaPost,
     "la-poste": laPoste,
+    "landmark-global": landmarkGlobal,
     "mondial-relay": mondialRelay,
+    "nz-post": nzPost,
     "ontrac": ontrac,
     "paack": paack,
     "packeta": packeta,
     "planzer": planzer,
+    "poczta-polska": pocztaPolska,
     "pos-malaysia": posMalaysia,
     "poste-italiane": posteItaliane,
     "posti": posti,
@@ -156,7 +170,7 @@ export const REGISTRY: RegistryDefinition = {
     "brt": "universal",
     "c-chez-vous": "c-chez-vous",
     "canada-post": "canada-post",
-    "canpar": "universal",
+    "canpar": "canpar",
     "china-post": "universal",
     "chronopost": "la-poste",
     "ciblex": "ciblex",
@@ -164,7 +178,7 @@ export const REGISTRY: RegistryDefinition = {
     "colisweb": "colisweb",
     "correios-br": "correios-br",
     "correos-chile": "universal",
-    "correos-express": "universal",
+    "correos-express": "correos-express",
     "correos-spain": "correos-spain",
     "ctt": "ctt",
     "ctt-express": "ctt-express",
@@ -176,7 +190,7 @@ export const REGISTRY: RegistryDefinition = {
     "dpd": "dpd",
     "dpd-fr": "dpd-fr",
     "dtdc": "dtdc",
-    "ecoscooting": "universal",
+    "ecoscooting": "ecoscooting",
     "ems": "ems",
     "estafeta": "universal",
     "evri": "evri",
@@ -186,7 +200,7 @@ export const REGISTRY: RegistryDefinition = {
     "gls-ch": "gls-ch",
     "gls-de": "gls-de",
     "gls-fr": "gls-fr",
-    "gofo": "universal",
+    "gofo": "gofo",
     "heppner": "heppner",
     "hermes": "hermes",
     "hermes-de": "hermes-de",
@@ -199,19 +213,19 @@ export const REGISTRY: RegistryDefinition = {
     "jd-logistics": "universal",
     "korea-post": "korea-post",
     "la-poste": "la-poste",
-    "landmark-global": "universal",
+    "landmark-global": "landmark-global",
     "mondial-relay": "mondial-relay",
     "mrw": "universal",
     "nacex": "universal",
     "ninja-van": "universal",
-    "nz-post": "universal",
+    "nz-post": "nz-post",
     "old-dominion": "universal",
     "ontrac": "ontrac",
     "paack": "paack",
     "packeta": "packeta",
     "parcelforce": "universal",
     "planzer": "planzer",
-    "poczta-polska": "universal",
+    "poczta-polska": "poczta-polska",
     "pos-malaysia": "pos-malaysia",
     "poste-italiane": "poste-italiane",
     "posti": "posti",

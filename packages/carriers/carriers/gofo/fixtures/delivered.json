@@ -1,0 +1,55 @@
+{
+  "success": 1,
+  "code": 200,
+  "data": {
+    "success": [
+      {
+        "waybillNo": "GFUS00000000000001",
+        "trackingNumber": "GFUS00000000000001",
+        "status": "Delivered",
+        "trackEventCount": 4,
+        "toCountry": "USA",
+        "weight": 0.5,
+        "estimatedArrivalTime": null,
+        "lastTrackEvent": {
+          "processCode": "205",
+          "processDate": "2026-01-04T12:00:00.000-0800",
+          "processContent": "Delivered, Door/Yard. PRIVATE_SYNTHETIC_DETAIL",
+          "processCity": "Example City",
+          "processProvince": "EX"
+        },
+        "trackEventList": [
+          {
+            "processCode": "205",
+            "processDate": "2026-01-04T12:00:00.000-0800",
+            "processContent": "Delivered, Door/Yard. PRIVATE_SYNTHETIC_DETAIL",
+            "processCity": "Example City",
+            "processProvince": "EX"
+          },
+          {
+            "processCode": "208",
+            "processDate": "2026-01-04T08:00:00.000-0800",
+            "processContent": "Out for Delivery",
+            "processCity": "Example City",
+            "processProvince": "EX"
+          },
+          {
+            "processCode": "202",
+            "processDate": "2026-01-03T18:00:00.000-0800",
+            "processContent": "Arrived at GOFO Regional Hub",
+            "processCity": "Example City",
+            "processProvince": "EX"
+          },
+          {
+            "processCode": "100",
+            "processDate": "2026-01-01T12:00:00.000-0800",
+            "processContent": "Shipping Label Created"
+          }
+        ]
+      }
+    ],
+    "error": {
+      "errorCount": 0
+    }
+  }
+}

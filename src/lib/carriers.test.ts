@@ -234,7 +234,7 @@ describe('carrier detection', () => {
     ]) {
       expect(detectCarrier(number)).toBe('canpar');
     }
-    expectUniversalFallback('canpar');
+    expectDirectTracking('canpar');
   });
 
   it('c-chez-vous — C Chez Vous', () => {
@@ -343,7 +343,7 @@ describe('carrier detection', () => {
     // QUARANTINED 23-digit user-supplied report, never carrier-validated: no oracle.
     // Source: https://www.ocu.org/reclamar/lista-reclamaciones-publicas/problema-con-el-repartidor/e30b27faaae7c53755
     expect(detectCarrier('93005001081690801339400')).toBe('unknown');
-    expectUniversalFallback('correos-express');
+    expectDirectTracking('correos-express');
   });
 
   it('correos-spain — Correos', () => {
@@ -513,7 +513,7 @@ describe('carrier detection', () => {
     // Foreign postal identifier from a handoff report stays with its issuer.
     // Source: https://www.ocu.org/reclamar/lista-reclamaciones-publicas/paquete-extraviado-cq34377077/a9305cbaea4cb4fa5a
     expect(detectCarrier('CQ343770772DE')).toBe('dhl');
-    expectUniversalFallback('ecoscooting');
+    expectDirectTracking('ecoscooting');
   });
 
   it('estafeta — Estafeta', () => {
@@ -619,7 +619,7 @@ describe('carrier detection', () => {
     for (const number of ['GFUS01011884214464', 'GFUS01011884214272']) {
       expect(detectCarrier(number)).toBe('gofo');
     }
-    expectUniversalFallback('gofo');
+    expectDirectTracking('gofo');
   });
 
   it('heppner — Heppner', () => {
@@ -761,7 +761,7 @@ describe('carrier detection', () => {
     for (const number of ['LTN74207623N1', 'LTN74209518N1', 'LTN74224021N1']) {
       expect(detectCarrier(number)).toBe('landmark-global');
     }
-    expectUniversalFallback('landmark-global');
+    expectDirectTracking('landmark-global');
   });
 
   it('mondial-relay — Mondial Relay', () => {
@@ -849,7 +849,7 @@ describe('carrier detection', () => {
     // Source: https://www.nzpost.co.nz/business/developer-centre/nz-post-legacy-apis/tracking-api/track-method
     expect(isValidS10TrackingNumber('XY123456789NZ')).toBe(false);
     expect(detectCarrier('XY123456789NZ')).toBe('unknown');
-    expectUniversalFallback('nz-post');
+    expectDirectTracking('nz-post');
   });
 
   it('old-dominion — Old Dominion', () => {
@@ -954,7 +954,7 @@ describe('carrier detection', () => {
       expect(isValidS10TrackingNumber(number)).toBe(false);
       expect(detectCarrier(number)).toBe('unknown');
     }
-    expectUniversalFallback('poczta-polska');
+    expectDirectTracking('poczta-polska');
   });
 
   it('pos-malaysia — Pos Malaysia', () => {
@@ -1369,16 +1369,16 @@ describe('carrier detection', () => {
 describe('ambiguous number shapes', () => {
   // Shared numeric lengths belong to no single carrier: they stay low-confidence
   // with exact candidate sets. Adding a detector must update these lists consciously.
-  it('keeps non-prefixed 20-digit numbers as USPS suggestions', () => {
+  it('keeps non-prefixed 20-digit numbers as postal carrier suggestions', () => {
     // Only the 91346097 (Planzer) and 00340434 (DHL) 20-digit ranges route by number;
     // everything else stays out of Planzer/DHL routing. OSS fixtures below.
     // Source: https://github.com/jkeen/tracking_number_data/blob/main/couriers/usps.json
     expect(detectCarrierMatch('03071790000523483741')).toEqual({
-      carrier: 'unknown', confidence: 'low', candidates: ['usps'], preferred: [],
+      carrier: 'unknown', confidence: 'low', candidates: ['usps', 'nz-post', 'poczta-polska'], preferred: [],
     });
     const second = detectCarrierMatch('71123456789123456787');
     expect(second).toMatchObject({ carrier: 'unknown', confidence: 'low' });
-    expect(second.candidates).toEqual(['usps']);
+    expect(second.candidates).toEqual(['usps', 'nz-post', 'poczta-polska']);
   });
 
   it('keeps 10-digit numbers ambiguous', () => {

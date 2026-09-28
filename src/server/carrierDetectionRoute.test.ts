@@ -87,7 +87,10 @@ it('does not ask carriers for selected shapes, formats without candidates or una
 });
 
 it.each([
-  ['1000000000000001', 'tnt', ['tnt', 'canada-post']],
+  ['1000000000000001', 'tnt', ['tnt', 'correos-express', 'canada-post']],
+  ['1000000000000002', 'correos-express', ['tnt', 'correos-express', 'canada-post']],
+  ['98765432109876543211', 'nz-post', ['nz-post', 'poczta-polska']],
+  ['98765432109876543212', 'poczta-polska', ['nz-post', 'poczta-polska']],
   ['1000000000000000000001', 'austrian-post', ['austrian-post']],
 ])('recognizes newly supported %s shapes only through carrier answers', async (number, carrier, candidates) => {
   recognize.mockImplementation(knows(carrier as string));

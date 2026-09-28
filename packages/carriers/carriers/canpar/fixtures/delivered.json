@@ -1,0 +1,138 @@
+{
+  "error": null,
+  "result": [
+    {
+      "barcode": "C000000000000000000001",
+      "events": [
+        {
+          "code": "DEL",
+          "code_description_en": "Our Package was Delivered",
+          "local_date_time": "20260105 100000",
+          "time_shift": 3,
+          "address": {
+            "city": "Example City",
+            "province": "EX",
+            "country": "CA",
+            "name": "PRIVATE",
+            "street1": "PRIVATE",
+            "postal_code": "PRIVATE",
+            "phone": "PRIVATE"
+          },
+          "comment": "PRIVATE",
+          "employee_num": "PRIVATE",
+          "route_num": "PRIVATE",
+          "web_description_en": "PRIVATE",
+          "image_url": "PRIVATE"
+        },
+        {
+          "code": "WC ",
+          "code_description_en": "Out for Delivery-Almost There!",
+          "local_date_time": "20260105 080000",
+          "time_shift": 3,
+          "address": {
+            "city": "Example City",
+            "province": "EX",
+            "country": "CA",
+            "name": "PRIVATE",
+            "street1": "PRIVATE",
+            "postal_code": "PRIVATE",
+            "phone": "PRIVATE"
+          },
+          "comment": "PRIVATE",
+          "employee_num": "PRIVATE",
+          "route_num": "PRIVATE",
+          "web_description_en": "PRIVATE",
+          "image_url": "PRIVATE"
+        },
+        {
+          "code": "ARR",
+          "code_description_en": "Package Has Arrived at Our Facility",
+          "local_date_time": "20260104 100000",
+          "time_shift": 3,
+          "address": {
+            "city": "Example City",
+            "province": "EX",
+            "country": "CA",
+            "name": "PRIVATE",
+            "street1": "PRIVATE",
+            "postal_code": "PRIVATE",
+            "phone": "PRIVATE"
+          },
+          "comment": "PRIVATE",
+          "employee_num": "PRIVATE",
+          "route_num": "PRIVATE",
+          "web_description_en": "PRIVATE",
+          "image_url": "PRIVATE"
+        },
+        {
+          "code": "RTN",
+          "code_description_en": "Returned to Sender",
+          "local_date_time": "20260103 100000",
+          "time_shift": 3,
+          "address": {
+            "city": "Example City",
+            "province": "EX",
+            "country": "CA",
+            "name": "PRIVATE",
+            "street1": "PRIVATE",
+            "postal_code": "PRIVATE",
+            "phone": "PRIVATE"
+          },
+          "comment": "PRIVATE",
+          "employee_num": "PRIVATE",
+          "route_num": "PRIVATE",
+          "web_description_en": "PRIVATE",
+          "image_url": "PRIVATE"
+        },
+        {
+          "code": "NL ",
+          "code_description_en": "Can't Find the Address-Checking Again!",
+          "local_date_time": "20260103 080000",
+          "time_shift": 3,
+          "address": {
+            "city": "Example City",
+            "province": "EX",
+            "country": "CA",
+            "name": "PRIVATE",
+            "street1": "PRIVATE",
+            "postal_code": "PRIVATE",
+            "phone": "PRIVATE"
+          },
+          "comment": "PRIVATE",
+          "employee_num": "PRIVATE",
+          "route_num": "PRIVATE",
+          "web_description_en": "PRIVATE",
+          "image_url": "PRIVATE"
+        },
+        {
+          "code": "PIC",
+          "code_description_en": "Picked Up and On the Move!",
+          "local_date_time": "20260101 100000",
+          "time_shift": 3,
+          "address": {
+            "city": "Example City",
+            "province": "EX",
+            "country": "CA",
+            "name": "PRIVATE",
+            "street1": "PRIVATE",
+            "postal_code": "PRIVATE",
+            "phone": "PRIVATE"
+          },
+          "comment": "PRIVATE",
+          "employee_num": "PRIVATE",
+          "route_num": "PRIVATE",
+          "web_description_en": "PRIVATE",
+          "image_url": "PRIVATE"
+        }
+      ],
+      "status": 2,
+      "delivered": true,
+      "shipping_date": "20260101",
+      "estimated_delivery_date": "20260105",
+      "signed_by": "PRIVATE",
+      "reference_num": "PRIVATE",
+      "signature_url": "PRIVATE",
+      "service_description_en": "GROUND"
+    }
+  ]
+}

@@ -3,7 +3,9 @@
   "displayName": "GOFO Express",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "US"
+    ]
   },
   "brand": {
     "color": "#fc4c02"
@@ -12,16 +14,40 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "gofo",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "delivered_at"
+  ],
   "portal": {
-    "url": "https://www.gofoexpress.com/tracking.html?searchID={trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "url": "https://www.gofo.com/us/track?searchID={trackingNumber}",
+    "canaryUrl": "https://www.gofo.com/us/track",
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "delivered_at",
+      "eta"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "delivered_at"
+    ],
+    "discarded": [
+      "delivery_detail",
+      "proof_images",
+      "coordinates",
+      "departments",
+      "unlabelled_weight",
+      "eta"
+    ],
     "unavailable": []
   },
   "links": [
@@ -29,6 +55,15 @@
       "domains": [
         "gofoexpress.com"
       ],
+      "params": [
+        "searchID"
+      ]
+    },
+    {
+      "domains": [
+        "gofo.com"
+      ],
+      "path": "^/us/track/?$",
       "params": [
         "searchID"
       ]

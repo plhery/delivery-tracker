@@ -12,25 +12,68 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "nz-post",
+    "steps": [
+      "direct"
+    ],
+    "recognition": {
+      "rank": 35
+    }
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "delivered_at"
+  ],
   "portal": {
-    "url": "https://www.nzpost.co.nz/tools/tracking",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "url": "https://www.nzpost.co.nz/tools/tracking?trackid={trackingNumber}",
+    "canaryUrl": "https://www.nzpost.co.nz/tools/tracking",
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "delivery_controls",
+      "proof_of_delivery",
+      "delivered_at"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "delivered_at"
+    ],
+    "discarded": [
+      "recipient",
+      "signatures",
+      "delivery_descriptions",
+      "delivery_assets"
+    ],
+    "unavailable": [
+      "eta",
+      "delivery_controls"
+    ]
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "www.nzpost.co.nz"
+      ],
+      "params": [
+        "trackid"
+      ]
+    }
+  ],
   "detection": [
     {
       "id": "nz-post-1",
       "pattern": "^[A-Z]{2}\\d{9}NZ$",
       "confidence": "high",
       "checksum": "s10"
+    },
+    {
+      "id": "nz-post-2",
+      "pattern": "^\\d{20}$",
+      "confidence": "low"
     }
   ]
 }

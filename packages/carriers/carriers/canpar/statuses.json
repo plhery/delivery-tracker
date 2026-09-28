@@ -1,0 +1,82 @@
+{
+  "carrier": "canpar",
+  "entries": [
+    {
+      "code": "DEL",
+      "wording": "Our Package was Delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "SRT",
+      "wording": "Sorting It Out-Stay Tuned!",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "MIS",
+      "wording": "Package was sorted to the incorrect terminal",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "ARR",
+      "wording": "Package Has Arrived at Our Facility",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "RTN",
+      "wording": "Returned to Sender",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "DPT",
+      "wording": "Departing sort facility",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "PIC",
+      "wording": "Picked Up and On the Move!",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "NSR",
+      "wording": "Your Package was Delivered with no Signature Required",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "WC",
+      "wording": "Out for Delivery-Almost There!",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "COA",
+      "wording": "Change of Address",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "NL",
+      "wording": "Can't Find the Address-Checking Again!",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "live"
+    }
+  ]
+}

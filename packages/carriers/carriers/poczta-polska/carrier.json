@@ -12,17 +12,44 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "poczta-polska",
+    "steps": [
+      "direct"
+    ],
+    "recognition": {
+      "rank": 35
+    }
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "weight"
+  ],
   "portal": {
     "url": "https://emonitoring.poczta-polska.pl/?lang=en&numer={trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "canaryUrl": "https://emonitoring.poczta-polska.pl/",
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "weight"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "weight"
+    ],
+    "discarded": [
+      "office_addresses",
+      "office_opening_hours",
+      "payment_documents",
+      "additional_services"
+    ],
+    "unavailable": [
+      "eta",
+      "offset_timestamps"
+    ]
   },
   "links": [
     {
@@ -37,7 +64,7 @@
   "detection": [
     {
       "id": "poczta-polska-1",
-      "pattern": "^\\d{19}$",
+      "pattern": "^\\d{19,20}$",
       "confidence": "low"
     },
     {

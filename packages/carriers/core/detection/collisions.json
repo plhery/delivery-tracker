@@ -683,5 +683,44 @@
       "usps"
     ],
     "reason": "SSCCs with a Nordic GS1 company prefix sit inside the 20-digit space USPS matches broadly; the number stays a low-confidence suggestion."
+  },
+  {
+    "shape": "9{20}",
+    "carriers": [
+      "dhl",
+      "nz-post",
+      "poczta-polska",
+      "usps"
+    ],
+    "reason": "DHL's high-confidence leading range overlaps the broad NZ Post, Poczta Polska and USPS 20-digit candidates; the specific DHL rule decides."
+  },
+  {
+    "shape": "9{20}",
+    "carriers": [
+      "nz-post",
+      "planzer",
+      "poczta-polska",
+      "usps"
+    ],
+    "reason": "Planzer's high-confidence leading range overlaps the broad NZ Post, Poczta Polska and USPS 20-digit candidates; the specific Planzer rule decides."
+  },
+  {
+    "shape": "9{20}",
+    "carriers": [
+      "nz-post",
+      "poczta-polska",
+      "postnord",
+      "usps"
+    ],
+    "reason": "Nordic SSCC prefixes overlap the broad NZ Post, Poczta Polska and USPS 20-digit candidates; the number stays a low-confidence suggestion."
+  },
+  {
+    "shape": "9{20}",
+    "carriers": [
+      "nz-post",
+      "poczta-polska",
+      "usps"
+    ],
+    "reason": "NZ Post, Poczta Polska and USPS share the broad 20-digit barcode space; anonymous recognition must establish the carrier."
   }
 ]

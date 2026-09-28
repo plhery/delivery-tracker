@@ -1,0 +1,54 @@
+{
+  "carrier": "gofo",
+  "entries": [
+    {
+      "code": "100",
+      "wording": "Shipping Label Created",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "202",
+      "wording": "Arrived at GOFO Regional Hub",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "200",
+      "wording": "Departed GOFO Regional Hub",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "201",
+      "wording": "Arrived at GOFO Delivery Station",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "203",
+      "wording": "Departed GOFO Delivery Station",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "208",
+      "wording": "Out for Delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "205",
+      "wording": "Delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    }
+  ]
+}

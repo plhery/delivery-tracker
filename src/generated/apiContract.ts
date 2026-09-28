@@ -1597,9 +1597,9 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "correos-express"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://s.correosexpress.com/",
     "linkRules": [],
     "detectionRules": [
       {
@@ -1791,9 +1791,9 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "ecoscooting"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://ecoscooting.com/tracking/1",
     "linkRules": [
       {
         "domains": [
@@ -1946,15 +1946,16 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "canpar"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://www.canpar.com/en/tracking/track.htm",
     "linkRules": [
       {
         "domains": [
           "canpar.com"
         ],
         "params": [
+          "barcode",
           "reference"
         ]
       }
@@ -1965,7 +1966,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       }
     ],
-    "trackingUrlTemplate": "https://www.canpar.com/en/track/tracking.jsp?reference={trackingNumber}&locale=en"
+    "trackingUrlTemplate": "https://www.canpar.com/en/tracking/track.htm?barcode={trackingNumber}"
   },
   "ontrac": {
     "displayName": "OnTrac",
@@ -2072,9 +2073,9 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "landmark-global"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://track.landmarkglobal.com/",
     "linkRules": [
       {
         "domains": [
@@ -2082,13 +2083,14 @@ export const CARRIER_CAPABILITIES = {
           "landmarkglobal.com"
         ],
         "params": [
-          "search"
+          "search",
+          "trck"
         ]
       }
     ],
     "detectionRules": [
       {
-        "pattern": "^LTN\\d{8}N1$",
+        "pattern": "^LTN\\d{8}(?:N1)?$",
         "confidence": "high"
       }
     ],
@@ -2161,14 +2163,23 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "gofo"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://www.gofo.com/us/track",
     "linkRules": [
       {
         "domains": [
           "gofoexpress.com"
         ],
+        "params": [
+          "searchID"
+        ]
+      },
+      {
+        "domains": [
+          "gofo.com"
+        ],
+        "path": "^/us/track/?$",
         "params": [
           "searchID"
         ]
@@ -2180,7 +2191,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       }
     ],
-    "trackingUrlTemplate": "https://www.gofoexpress.com/tracking.html?searchID={trackingNumber}"
+    "trackingUrlTemplate": "https://www.gofo.com/us/track?searchID={trackingNumber}"
   },
   "estafeta": {
     "displayName": "Estafeta",
@@ -2366,18 +2377,31 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "nz-post"
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://www.nzpost.co.nz/tools/tracking",
+    "linkRules": [
+      {
+        "domains": [
+          "www.nzpost.co.nz"
+        ],
+        "params": [
+          "trackid"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^[A-Z]{2}\\d{9}NZ$",
         "confidence": "high",
         "checksum": "s10"
+      },
+      {
+        "pattern": "^\\d{20}$",
+        "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://www.nzpost.co.nz/tools/tracking"
+    "trackingUrlTemplate": "https://www.nzpost.co.nz/tools/tracking?trackid={trackingNumber}"
   },
   "singapore-post": {
     "displayName": "Singapore Post",
@@ -2886,9 +2910,9 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "poczta-polska"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://emonitoring.poczta-polska.pl/",
     "linkRules": [
       {
         "domains": [
@@ -2901,7 +2925,7 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^\\d{19}$",
+        "pattern": "^\\d{19,20}$",
         "confidence": "low"
       },
       {

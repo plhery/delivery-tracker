@@ -12,16 +12,37 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "ecoscooting",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "weight",
+    "delivered_at"
+  ],
   "portal": {
     "url": "https://ecoscooting.com/tracking/{trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "canaryUrl": "https://ecoscooting.com/tracking/1",
+    "shows": [
+      "status",
+      "history",
+      "weight",
+      "delivered_at"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "weight",
+      "delivered_at"
+    ],
+    "discarded": [
+      "postcodes",
+      "coordinates",
+      "order_references",
+      "routing_features"
+    ],
     "unavailable": []
   },
   "links": [
