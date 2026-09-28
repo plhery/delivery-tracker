@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { Counter, Histogram, Registry, collectDefaultMetrics } from 'prom-client';
+import { Counter, Histogram, Registry, collectDefaultMetrics } from '@prometheus-io/client';
 import { METRICS, type LookupRecord, type StepRecord, type StepRecorder } from '@carriers/core/telemetry';
 
 /**

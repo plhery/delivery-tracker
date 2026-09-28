@@ -17,7 +17,6 @@ vi.mock('@sentry/node', async (importOriginal) => {
     ...sdk,
     init: vi.fn((options: Parameters<typeof sdk.init>[0]) => sdk.init({
       ...options,
-      registerEsmLoaderHooks: false,
       transport: () => ({
         send: async (envelope) => {
           for (const [header, payload] of envelope[1]) {
@@ -33,8 +32,6 @@ vi.mock('@sentry/node', async (importOriginal) => {
 
 afterEach(async () => {
   await Sentry.close();
-  Sentry.getCurrentScope().clear();
-  Sentry.getIsolationScope().clear();
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
 });
