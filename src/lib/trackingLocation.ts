@@ -7,6 +7,8 @@ const carrierSpellings = new Map([
   ['hong kong', 'HK'], ['macau', 'MO'], ['macao', 'MO'], ['turkey', 'TR'], ['russian federation', 'RU'],
   ['korea', 'KR'], ['republic of korea', 'KR'],
 ]);
+// Apple's ICU (Safari, iOS) calls CN "China mainland" in every language; carriers write "China".
+const chinaNames = new Map([['en', 'China'], ['de', 'China'], ['fr', 'Chine'], ['it', 'Cina'], ['es', 'China'], ['pt', 'China'], ['pl', 'Chiny']]);
 // "Mexico City" is a city, not Mexico followed by one.
 const settlementWords = new Set(['city', 'town', 'ville', 'stadt', 'ciudad', 'cidade', 'citta']);
 const normalized = (value: string) => value.trim().normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
@@ -20,6 +22,7 @@ function namedCountry(name: string, display: boolean): string | null {
       const names = new Intl.DisplayNames([language], { type: 'region' });
       for (const code of regionCodes) countryNames.set(normalized(names.of(code) ?? code), code);
     }
+    for (const name of chinaNames.values()) countryNames.set(normalized(name), 'CN');
   }
   const key = normalized(name);
   const code = countryNames.get(key);
@@ -80,6 +83,8 @@ export function countryFlag(code: string): string {
 
 /** The region's name, with the short "Hong Kong" and "Macao" iOS also uses. */
 export function countryName(code: string, languageTag: string): string {
+  const china = code === 'CN' ? chinaNames.get(languageTag.split('-')[0]) : undefined;
+  if (china) return china;
   const style = code === 'HK' || code === 'MO' ? 'short' : 'long';
   const key = `${languageTag}:${style}`;
   if (!displayNames.has(key)) displayNames.set(key, new Intl.DisplayNames([languageTag], { type: 'region', style }));

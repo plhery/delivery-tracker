@@ -25,22 +25,21 @@ describe('TrackingJournal', () => {
     expect(screen.getByText('08:42')).toHaveAttribute('dateTime', '2024-09-09T08:42:00');
   });
 
-  it('leads each place with its country flag and names a country that stands alone', () => {
+  it('leads each place with its flag and closes it with the country’s name', () => {
     const { container } = render(<TrackingJournal events={[
       event('city', '2024-09-09T10:00:00', 'With courier', 'ZUERICH, CH'),
       event('country', '2024-09-09T09:00:00', 'Departed', 'FR'),
       event('leading', '2024-09-09T08:00:00', 'Handed over', 'Germany Bielefeld'),
+      event('origin', '2024-09-09T07:30:00', 'Collected', 'Shenzhen, China'),
       event('facility', '2024-09-09T07:00:00', 'Sorted', 'Zürich Briefzentrum'),
     ]} />);
     const places = [...container.querySelectorAll('.tracking-journal__location')];
     expect(places.map(place => place.textContent)).toEqual([
-      '🇨🇭ZUERICH, Switzerland', '🇫🇷France', '🇩🇪Bielefeld, Germany', 'Zürich Briefzentrum',
+      '🇨🇭ZUERICH, Switzerland', '🇫🇷France', '🇩🇪Bielefeld, Germany', '🇨🇳Shenzhen, China', 'Zürich Briefzentrum',
     ]);
     const flag = places[0].firstElementChild!;
     expect(flag).toHaveClass('tracking-journal__flag');
     expect(flag).toHaveAttribute('aria-hidden', 'true');
-    expect(flag).toHaveAttribute('title', 'Switzerland');
-    expect(places[0].querySelector('.sr-only')).toHaveTextContent(', Switzerland');
   });
 
   it('handles missing descriptions, invalid scan times and empty syncing history', () => {

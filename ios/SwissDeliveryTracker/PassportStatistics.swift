@@ -182,6 +182,11 @@ enum TrackingLocation {
 
     private static let fieldPattern = try! NSRegularExpression(pattern: "[^,;|()]+")
 
+    // Apple calls CN "China mainland" in every language, never what carriers or the web write.
+    private static let chinaNames: [AppLanguage: String] = [
+        .en: "China", .de: "China", .fr: "Chine", .it: "Cina", .es: "China", .pt: "China", .pl: "Chiny",
+    ]
+
     private static let countryNames: [String: String] = {
         var names: [String: String] = [:]
         for code in regionCodes.sorted() {
@@ -193,6 +198,7 @@ enum TrackingLocation {
         }
         names["usa"] = "US"
         names["uk"] = "GB"
+        for name in chinaNames.values { names[normalized(name)] = "CN" }
         return names
     }()
 
@@ -270,6 +276,11 @@ enum TrackingLocation {
             }
         }
         return Place(country: nil, name: text)
+    }
+
+    static func countryName(_ code: String, language: AppLanguage) -> String {
+        if code == "CN", let name = chinaNames[language] { return name }
+        return language.locale.localizedString(forRegionCode: code) ?? code
     }
 
     static func flag(_ code: String) -> String {

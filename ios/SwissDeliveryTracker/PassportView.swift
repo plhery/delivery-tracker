@@ -196,7 +196,7 @@ struct PassportView: View {
             }
             VStack(spacing: 0) {
                 ForEach(Array(stats.originCountries.prefix(3).enumerated()), id: \.element.id) { index, country in
-                    let name = localizer.language.locale.localizedString(forRegionCode: country.code) ?? country.code
+                    let name = TrackingLocation.countryName(country.code, language: localizer.language)
                     if index > 0 { Divider() }
                     HStack(spacing: 11) {
                         Text(country.flag).font(.subheadline).accessibilityHidden(true)

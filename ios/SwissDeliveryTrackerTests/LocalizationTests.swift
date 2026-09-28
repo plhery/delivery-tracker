@@ -245,6 +245,7 @@ final class LocalizationTests: XCTestCase {
             "Hebron, KY, US, US": .init(country: "US", name: "Hebron, KY"),
             "Switzerland Haerkingen": .init(country: "CH", name: "Haerkingen"),
             "United Kingdom Coventry": .init(country: "GB", name: "Coventry"),
+            "Shenzhen-Futian, China": .init(country: "CN", name: "Shenzhen-Futian"), "Canton, Chine": .init(country: "CN", name: "Canton"),
             "France": .init(country: "FR", name: ""), "DE": .init(country: "DE", name: ""), "CH ": .init(country: "CH", name: ""),
             "THE NETHERLANDS": .init(country: "NL", name: ""), "Czech Republic": .init(country: "CZ", name: ""),
             "Hong Kong": .init(country: "HK", name: ""),
@@ -261,6 +262,11 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(TrackingLocation.countryCode(in: "Zürich, CH"), "CH")
         XCTAssertNil(TrackingLocation.countryCode(in: "Switzerland Haerkingen"))
         XCTAssertNil(TrackingLocation.countryCode(in: "Czech Republic"))
+        // Apple's own name for CN is "China mainland"; carriers, the web and Friends say "China".
+        XCTAssertEqual(TrackingLocation.countryCode(in: "Shenzhen, China"), "CN")
+        XCTAssertEqual(TrackingLocation.countryName("CN", language: .en), "China")
+        XCTAssertEqual(TrackingLocation.countryName("CN", language: .fr), "Chine")
+        XCTAssertEqual(TrackingLocation.countryName("CH", language: .de), "Schweiz")
     }
 
     private func localizationDictionaries() throws -> [String: [String: String]] {

@@ -828,7 +828,7 @@ private struct JournalEventRow: View {
     }
 }
 
-/// The flag leads; a location that only names its country shows that country's name.
+/// The flag leads and the country closes the place, named in the reader's language.
 private struct EventPlace: View {
     let location: String
     @EnvironmentObject private var localizer: Localizer
@@ -836,13 +836,14 @@ private struct EventPlace: View {
     var body: some View {
         let place = TrackingLocation.place(location)
         if let country = place.country {
-            let name = localizer.language.locale.localizedString(forRegionCode: country) ?? country
+            let name = TrackingLocation.countryName(country, language: localizer.language)
+            let text = place.name.isEmpty ? name : "\(place.name), \(name)"
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(TrackingLocation.flag(country)).font(.caption)
-                Text(place.name.nonEmpty ?? name).fixedSize(horizontal: false, vertical: true)
+                Text(text).fixedSize(horizontal: false, vertical: true)
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(place.name.isEmpty ? name : "\(place.name), \(name)")
+            .accessibilityLabel(text)
         } else {
             Text(place.name)
         }

@@ -47,14 +47,14 @@ export function TrackingJournal({ events, syncing = false }: { events: TrackingE
   </details>;
 }
 
-/** The flag leads; a location that only names its country shows that country's name. */
+/** The flag leads and the country closes the place, named in the reader's language. */
 function EventPlace({ location }: { location: string }) {
   const { languageTag } = useI18n();
   const { country, place } = trackingPlace(location);
   if (!country) return <span className="tracking-journal__location">{place}</span>;
   const name = countryName(country, languageTag);
   return <span className="tracking-journal__location">
-    <span className="tracking-journal__flag" aria-hidden="true" title={name}>{countryFlag(country)}</span>
-    {place || name}{place && <span className="sr-only">, {name}</span>}
+    <span className="tracking-journal__flag" aria-hidden="true">{countryFlag(country)}</span>
+    {place ? `${place}, ${name}` : name}
   </span>;
 }

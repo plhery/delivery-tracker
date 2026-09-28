@@ -12,11 +12,11 @@ translating it (not implemented).
   (`localizedEventDescription` in [`i18n.tsx`](../src/i18n.tsx)) and iOS
   (`eventDescription` in `Core.swift`). The [multilingual classifier](../packages/carriers/core/status/language.ts)
   reads wording to pick a stage. It doesn't translate.
-- Scan locations keep the carrier's text, except for a country it wrote out: that becomes
-  a flag before the place, and a location naming only a country shows that country in the
-  reader's language ([`trackingLocation.ts`](../src/lib/trackingLocation.ts), `TrackingLocation`
-  in `PassportStatistics.swift`). Passport and Friends stamps count only a final country
-  field, which `private.passport_country` mirrors in SQL.
+- Scan locations keep the carrier's text, except for a country it wrote out: a flag leads
+  the place and the country's name in the reader's language closes it, so "Zürich, CH"
+  reads "🇨🇭 Zürich, Switzerland" ([`trackingLocation.ts`](../src/lib/trackingLocation.ts),
+  `TrackingLocation` in `PassportStatistics.swift`). Passport and Friends stamps count only
+  a final country field, which `private.passport_country` mirrors in SQL.
 - `TrackingInput` has no locale. UPU, EMS, Ship24, ParcelsApp, 17TRACK and Swiss Post are
   asked for English; La Poste for French. That doesn't guarantee the language of every
   event.

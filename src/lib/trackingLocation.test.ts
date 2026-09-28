@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { countryFlag, countryName, trackingLocationCountry, trackingPlace } from './trackingLocation';
 
 describe('tracking places', () => {
@@ -7,6 +7,7 @@ describe('tracking places', () => {
     ['Paris; France', 'FR', 'Paris'], ['London, UK', 'GB', 'London'], ['ZUERICH, CH', 'CH', 'ZUERICH'],
     ['Zürich (Mülligen), CH', 'CH', 'Zürich (Mülligen)'], ['Hebron, KY, US, US', 'US', 'Hebron, KY'],
     ['Switzerland Haerkingen', 'CH', 'Haerkingen'], ['United Kingdom Coventry', 'GB', 'Coventry'],
+    ['Shenzhen-Futian, China', 'CN', 'Shenzhen-Futian'],
   ])('takes the country off %s', (location, country, place) => {
     expect(trackingPlace(location)).toEqual({ country, place });
   });
@@ -28,6 +29,21 @@ describe('tracking places', () => {
     expect(trackingLocationCountry('Zürich, CH')).toBe('CH');
     expect(trackingLocationCountry('Switzerland Haerkingen')).toBeNull();
     expect(trackingLocationCountry('Czech Republic')).toBeNull();
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('reads and names China where the runtime calls it “China mainland”, as Safari does', async () => {
+    const of = Intl.DisplayNames.prototype.of;
+    vi.spyOn(Intl.DisplayNames.prototype, 'of').mockImplementation(function (this: Intl.DisplayNames, code: string) {
+      return code === 'CN' ? 'China mainland' : of.call(this, code);
+    });
+    vi.resetModules();
+    const fresh = await import('./trackingLocation');
+    expect(fresh.trackingPlace('Shenzhen, China')).toEqual({ country: 'CN', place: 'Shenzhen' });
+    expect(fresh.trackingLocationCountry('Canton, Chine')).toBe('CN');
+    expect(fresh.countryName('CN', 'en-GB')).toBe('China');
+    expect(fresh.countryName('CN', 'fr')).toBe('Chine');
   });
 
   it('names the country in the reader’s language', () => {
