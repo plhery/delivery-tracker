@@ -40,6 +40,7 @@ import { carrierBrand } from '../lib/carrierBrand';
 import './ParcelDetail.css';
 import { Icon, PostageStamp } from './Icon';
 import { parcelIcon, parcelTone } from '../lib/parcelDesign';
+import { ParcelMapSheet, RouteEngraving, useParcelRoute } from './ParcelMap';
 import { ProgressTrack } from './ProgressTrack';
 import type { CardOrigin } from '../lib/cardTransition';
 import { useRefreshAnimation } from '../lib/useRefreshAnimation';
@@ -83,6 +84,8 @@ export function ParcelDetail({
   const amazonHistoryExpired = carrier.id === 'amazon-shipping' && parcel.syncError === AMAZON_HISTORY_EXPIRED;
   const automaticTracking = tracksAutomatically(carrier.id) && !amazonHistoryExpired;
   const current = currentEvent(parcel.events);
+  const { placed, route } = useParcelRoute(parcel, languageTag);
+  const [mapOpen, setMapOpen] = useState(false);
   // Recognition found the carrier, but it needs the postcode before it can track.
   const inputNeeded = parcel.inputNeeded?.field === 'dpdPostcode' && parcel.inputNeeded.carrier !== parcel.carrier
     && !parcel.archivedAt && !['delivered', 'returned'].includes(current?.stage ?? '') ? parcel.inputNeeded : undefined;
@@ -123,6 +126,12 @@ export function ParcelDetail({
   const backButton = useRef<HTMLButtonElement>(null);
   const actionsMenu = useRef<HTMLDetailsElement>(null);
   const [dialog, onBack] = useSheetDialog<HTMLDivElement>(true, onDismissed, backButton, openingOrigin);
+
+  function openMap() {
+    if (!route) return;
+    trackAction('parcel-map-open');
+    setMapOpen(true);
+  }
 
   function beginTitleEdit() {
     setTitle(parcel.label);
@@ -365,7 +374,8 @@ export function ParcelDetail({
       </header>
 
       {onExitDemo && <div className="demo-banner demo-banner--detail"><span>{t('app.demo')}</span><button type="button" onClick={onExitDemo}>{t('native.exitDemo')}<Icon name="close" /></button></div>}
-      <section className="detail__hero">
+      <section className={`detail__hero${placed ? ' detail__hero--map' : ''}`}>
+        {placed && <RouteEngraving route={route} stage={current?.stage} onOpen={openMap} />}
         <div className="detail__hero-meta">
           <button
             type="button"
@@ -375,6 +385,10 @@ export function ParcelDetail({
           >
             <CarrierMark carrier={displayedCarrier} />
           </button>
+          <span className="detail__hero-actions">
+          {placed && <button type="button" className="detail__map-button" disabled={!route} onClick={openMap} aria-label={t('map.open')}>
+            <Icon name="globe" />
+          </button>}
           <button type="button" className="detail__notification" disabled={savingNotifications}
             data-animated={notificationsAnimated || undefined}
             aria-label={parcel.notificationsMuted ? t('detail.unmute') : t('detail.mute')}
@@ -388,6 +402,7 @@ export function ParcelDetail({
               <g className="parcel-bell__waves"><path d="M1 6a10 10 0 0 0 0 8M23 6a10 10 0 0 1 0 8" /></g>
             </svg>
           </button>
+          </span>
         </div>
         <AutoCarrierNotice parcel={parcel} className="detail__sender" />
         {inputNeeded && (
@@ -592,6 +607,10 @@ export function ParcelDetail({
           }}
           onDelete={() => void deleteNow()}
         />
+      )}
+
+      {mapOpen && route && (
+        <ParcelMapSheet route={route} stage={current?.stage} brand={carrierBrand(displayedCarrier).style} onClose={() => setMapOpen(false)} />
       )}
     </div>
     </div>,

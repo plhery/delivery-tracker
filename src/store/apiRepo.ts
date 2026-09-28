@@ -101,6 +101,7 @@ function toEvent(row: ApiTrackingEventRow): TrackingEvent {
     stage: row.stage,
     description: row.description,
     location: row.location ?? undefined,
+    place: row.place ?? undefined,
     occurredAt: row.occurred_at,
   };
 }
@@ -138,6 +139,7 @@ function toParcel(row: ApiPackageRow): ParcelWithEvents {
     trackingSource: row.carrier_data?.active_tracking_carrier ?? undefined,
     activeTrackingNumber: row.carrier_data?.active_tracking_number ?? undefined,
     swissPostReady: row.carrier_data?.swiss_post_ready ?? undefined,
+    destinationCountry: row.carrier_data?.destination_country ?? undefined,
     archivedAt: row.archived_at ?? undefined,
     notificationsMuted: row.notifications_muted,
     events: (row.tracking_events ?? []).map(toEvent),

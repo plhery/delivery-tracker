@@ -8,7 +8,7 @@ import { parcelIcon } from '../../lib/parcelDesign';
 import { STAGE_META } from '../../lib/stages';
 import type { Stage } from '../../types';
 import type { Journey } from './journeys';
-import { buildRoute, defaultMode, flag, formatKm, type MapMode, type Route, type Scan } from './route';
+import { buildRoute, defaultMode, flag, formatKm, type MapMode, type Route, type Scan } from '../../components/map/route';
 import styles from './study.module.css';
 
 const ZONE = 'Europe/Zurich';

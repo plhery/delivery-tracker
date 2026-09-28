@@ -1,4 +1,5 @@
 import { startBackgroundServices } from './src/server/background';
+import { preloadPlaces } from './src/server/places';
 import { installShutdownHandlers } from './src/server/shutdown';
 
 // Invalid server-side credentials are a deployment failure. Let initialization
@@ -12,3 +13,11 @@ if (process.env.NODE_ENV === 'production' && !globalRuntime.__deliveryShutdownIn
   installShutdownHandlers();
   globalRuntime.__deliveryShutdownInstalled = true;
 }
+// Half a second of parsing belongs before the first parcel list, not in it.
+if (process.env.NODE_ENV === 'production') setTimeout(() => {
+  try {
+    preloadPlaces();
+  } catch {
+    // The first request retries, and parcels load without places if it fails again.
+  }
+}, 1_000).unref();

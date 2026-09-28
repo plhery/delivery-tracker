@@ -13,25 +13,53 @@
         "stage": "accepted",
         "hoursAgo": 60,
         "description": "Freshly roasted beans handed to Swiss Post",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       },
       {
         "stage": "in_transit",
         "hoursAgo": 40,
         "description": "Sorted at the parcel center",
-        "location": "Härkingen, Switzerland"
+        "location": "Härkingen, Switzerland",
+        "place": {
+          "latitude": 47.305,
+          "longitude": 7.821,
+          "precision": "city",
+          "country": "CH",
+          "name": "Härkingen"
+        }
       },
       {
         "stage": "out_for_delivery",
         "hoursAgo": 28,
         "description": "With your local delivery round",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       },
       {
         "stage": "delivered",
         "hoursAgo": 26,
         "description": "Delivered to your mailbox",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       }
     ]
   },
@@ -49,19 +77,40 @@
         "stage": "accepted",
         "hoursAgo": 20,
         "description": "Collected from the running shop",
-        "location": "Hamburg, Germany"
+        "location": "Hamburg, Germany",
+        "place": {
+          "latitude": 53.551,
+          "longitude": 9.993,
+          "precision": "city",
+          "country": "DE",
+          "name": "Hamburg"
+        }
       },
       {
         "stage": "in_transit",
         "hoursAgo": 10,
         "description": "Arrived at the destination depot",
-        "location": "Regensdorf, Switzerland"
+        "location": "Regensdorf, Switzerland",
+        "place": {
+          "latitude": 47.434,
+          "longitude": 8.469,
+          "precision": "city",
+          "country": "CH",
+          "name": "Regensdorf"
+        }
       },
       {
         "stage": "out_for_delivery",
         "hoursAgo": 2,
         "description": "With the courier for delivery today",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       }
     ],
     "expectedInDays": 0
@@ -80,13 +129,27 @@
         "stage": "accepted",
         "hoursAgo": 44,
         "description": "Accepted by the origin post",
-        "location": "Lyon, France"
+        "location": "Lyon, France",
+        "place": {
+          "latitude": 45.749,
+          "longitude": 4.848,
+          "precision": "city",
+          "country": "FR",
+          "name": "Lyon"
+        }
       },
       {
         "stage": "customs",
         "hoursAgo": 12,
         "description": "The parcel is being cleared for import",
-        "location": "Basel, Switzerland"
+        "location": "Basel, Switzerland",
+        "place": {
+          "latitude": 47.558,
+          "longitude": 7.573,
+          "precision": "city",
+          "country": "CH",
+          "name": "Basel"
+        }
       }
     ]
   },
@@ -104,13 +167,27 @@
         "stage": "accepted",
         "hoursAgo": 40,
         "description": "Collected from the design studio",
-        "location": "Berlin, Germany"
+        "location": "Berlin, Germany",
+        "place": {
+          "latitude": 52.524,
+          "longitude": 13.411,
+          "precision": "city",
+          "country": "DE",
+          "name": "Berlin"
+        }
       },
       {
         "stage": "in_transit",
         "hoursAgo": 5,
         "description": "Departed the sorting center",
-        "location": "Neuenstein, Germany"
+        "location": "Neuenstein, Germany",
+        "place": {
+          "latitude": 49.205,
+          "longitude": 9.58,
+          "precision": "city",
+          "country": "DE",
+          "name": "Neuenstein"
+        }
       }
     ],
     "expectedInDays": 1
@@ -129,13 +206,27 @@
         "stage": "accepted",
         "hoursAgo": 43,
         "description": "Collected from the record shop",
-        "location": "Amsterdam, Netherlands"
+        "location": "Amsterdam, Netherlands",
+        "place": {
+          "latitude": 52.374,
+          "longitude": 4.89,
+          "precision": "city",
+          "country": "NL",
+          "name": "Amsterdam"
+        }
       },
       {
         "stage": "in_transit",
         "hoursAgo": 6,
         "description": "Travelling to the Swiss delivery network",
-        "location": "Eindhoven, Netherlands"
+        "location": "Eindhoven, Netherlands",
+        "place": {
+          "latitude": 51.441,
+          "longitude": 5.478,
+          "precision": "city",
+          "country": "NL",
+          "name": "Eindhoven"
+        }
       }
     ]
   },
@@ -153,7 +244,14 @@
         "stage": "accepted",
         "hoursAgo": 8,
         "description": "Collected from the outdoor shop",
-        "location": "Buchs, Switzerland"
+        "location": "Buchs, Switzerland",
+        "place": {
+          "latitude": 47.167,
+          "longitude": 9.478,
+          "precision": "city",
+          "country": "CH",
+          "name": "Buchs"
+        }
       }
     ],
     "expectedInDays": 2
@@ -185,25 +283,53 @@
         "stage": "accepted",
         "hoursAgo": 170,
         "description": "Collected from the sender",
-        "location": "Kyoto, Japan"
+        "location": "Kyoto, Japan",
+        "place": {
+          "latitude": 35.021,
+          "longitude": 135.754,
+          "precision": "city",
+          "country": "JP",
+          "name": "Kyoto"
+        }
       },
       {
         "stage": "in_transit",
-        "hoursAgo": 110.0,
+        "hoursAgo": 110,
         "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland"
+        "location": "Härkingen, Switzerland",
+        "place": {
+          "latitude": 47.305,
+          "longitude": 7.821,
+          "precision": "city",
+          "country": "CH",
+          "name": "Härkingen"
+        }
       },
       {
         "stage": "out_for_delivery",
         "hoursAgo": 52,
         "description": "On the final stretch to your door",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       },
       {
         "stage": "delivered",
         "hoursAgo": 50,
         "description": "Delivered — enjoy your new arrival",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       }
     ]
   },
@@ -221,25 +347,53 @@
         "stage": "accepted",
         "hoursAgo": 110,
         "description": "Collected from the sender",
-        "location": "Paris, France"
+        "location": "Paris, France",
+        "place": {
+          "latitude": 48.853,
+          "longitude": 2.349,
+          "precision": "city",
+          "country": "FR",
+          "name": "Paris"
+        }
       },
       {
         "stage": "in_transit",
-        "hoursAgo": 92.0,
+        "hoursAgo": 92,
         "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland"
+        "location": "Härkingen, Switzerland",
+        "place": {
+          "latitude": 47.305,
+          "longitude": 7.821,
+          "precision": "city",
+          "country": "CH",
+          "name": "Härkingen"
+        }
       },
       {
         "stage": "out_for_delivery",
         "hoursAgo": 76,
         "description": "On the final stretch to your door",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       },
       {
         "stage": "delivered",
         "hoursAgo": 74,
         "description": "Delivered — enjoy your new arrival",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       }
     ]
   },
@@ -257,25 +411,53 @@
         "stage": "accepted",
         "hoursAgo": 140,
         "description": "Collected from the sender",
-        "location": "Berlin, Germany"
+        "location": "Berlin, Germany",
+        "place": {
+          "latitude": 52.524,
+          "longitude": 13.411,
+          "precision": "city",
+          "country": "DE",
+          "name": "Berlin"
+        }
       },
       {
         "stage": "in_transit",
-        "hoursAgo": 119.0,
+        "hoursAgo": 119,
         "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland"
+        "location": "Härkingen, Switzerland",
+        "place": {
+          "latitude": 47.305,
+          "longitude": 7.821,
+          "precision": "city",
+          "country": "CH",
+          "name": "Härkingen"
+        }
       },
       {
         "stage": "out_for_delivery",
         "hoursAgo": 100,
         "description": "On the final stretch to your door",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       },
       {
         "stage": "delivered",
         "hoursAgo": 98,
         "description": "Delivered — enjoy your new arrival",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       }
     ]
   },
@@ -293,25 +475,53 @@
         "stage": "accepted",
         "hoursAgo": 200,
         "description": "Collected from the sender",
-        "location": "Rotterdam, Netherlands"
+        "location": "Rotterdam, Netherlands",
+        "place": {
+          "latitude": 51.923,
+          "longitude": 4.479,
+          "precision": "city",
+          "country": "NL",
+          "name": "Rotterdam"
+        }
       },
       {
         "stage": "in_transit",
-        "hoursAgo": 173.0,
+        "hoursAgo": 173,
         "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland"
+        "location": "Härkingen, Switzerland",
+        "place": {
+          "latitude": 47.305,
+          "longitude": 7.821,
+          "precision": "city",
+          "country": "CH",
+          "name": "Härkingen"
+        }
       },
       {
         "stage": "out_for_delivery",
         "hoursAgo": 148,
         "description": "On the final stretch to your door",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       },
       {
         "stage": "delivered",
         "hoursAgo": 146,
         "description": "Delivered — enjoy your new arrival",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       }
     ]
   },
@@ -329,25 +539,53 @@
         "stage": "accepted",
         "hoursAgo": 278,
         "description": "Collected from the sender",
-        "location": "Lille, France"
+        "location": "Lille, France",
+        "place": {
+          "latitude": 50.634,
+          "longitude": 3.055,
+          "precision": "city",
+          "country": "FR",
+          "name": "Lille"
+        }
       },
       {
         "stage": "in_transit",
-        "hoursAgo": 248.0,
+        "hoursAgo": 248,
         "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland"
+        "location": "Härkingen, Switzerland",
+        "place": {
+          "latitude": 47.305,
+          "longitude": 7.821,
+          "precision": "city",
+          "country": "CH",
+          "name": "Härkingen"
+        }
       },
       {
         "stage": "out_for_delivery",
         "hoursAgo": 220,
         "description": "On the final stretch to your door",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       },
       {
         "stage": "delivered",
         "hoursAgo": 218,
         "description": "Delivered — enjoy your new arrival",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       }
     ],
     "archivedHoursAgo": 194
@@ -366,25 +604,53 @@
         "stage": "accepted",
         "hoursAgo": 360,
         "description": "Collected from the sender",
-        "location": "Milano, Italy"
+        "location": "Milano, Italy",
+        "place": {
+          "latitude": 45.464,
+          "longitude": 9.19,
+          "precision": "city",
+          "country": "IT",
+          "name": "Milano"
+        }
       },
       {
         "stage": "in_transit",
-        "hoursAgo": 337.0,
+        "hoursAgo": 337,
         "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland"
+        "location": "Härkingen, Switzerland",
+        "place": {
+          "latitude": 47.305,
+          "longitude": 7.821,
+          "precision": "city",
+          "country": "CH",
+          "name": "Härkingen"
+        }
       },
       {
         "stage": "out_for_delivery",
         "hoursAgo": 316,
         "description": "On the final stretch to your door",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       },
       {
         "stage": "delivered",
         "hoursAgo": 314,
         "description": "Delivered — enjoy your new arrival",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       }
     ],
     "archivedHoursAgo": 290
@@ -403,25 +669,53 @@
         "stage": "accepted",
         "hoursAgo": 428,
         "description": "Collected from the sender",
-        "location": "Bern, Switzerland"
+        "location": "Bern, Switzerland",
+        "place": {
+          "latitude": 46.948,
+          "longitude": 7.447,
+          "precision": "city",
+          "country": "CH",
+          "name": "Bern"
+        }
       },
       {
         "stage": "in_transit",
-        "hoursAgo": 419.0,
+        "hoursAgo": 419,
         "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland"
+        "location": "Härkingen, Switzerland",
+        "place": {
+          "latitude": 47.305,
+          "longitude": 7.821,
+          "precision": "city",
+          "country": "CH",
+          "name": "Härkingen"
+        }
       },
       {
         "stage": "out_for_delivery",
         "hoursAgo": 412,
         "description": "On the final stretch to your door",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       },
       {
         "stage": "delivered",
         "hoursAgo": 410,
         "description": "Delivered — enjoy your new arrival",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       }
     ],
     "archivedHoursAgo": 386
@@ -440,25 +734,53 @@
         "stage": "accepted",
         "hoursAgo": 1274,
         "description": "Collected from the sender",
-        "location": "Osaka, Japan"
+        "location": "Osaka, Japan",
+        "place": {
+          "latitude": 34.694,
+          "longitude": 135.501,
+          "precision": "city",
+          "country": "JP",
+          "name": "Osaka"
+        }
       },
       {
         "stage": "in_transit",
-        "hoursAgo": 890.0,
+        "hoursAgo": 890,
         "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland"
+        "location": "Härkingen, Switzerland",
+        "place": {
+          "latitude": 47.305,
+          "longitude": 7.821,
+          "precision": "city",
+          "country": "CH",
+          "name": "Härkingen"
+        }
       },
       {
         "stage": "out_for_delivery",
         "hoursAgo": 508,
         "description": "On the final stretch to your door",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       },
       {
         "stage": "delivered",
         "hoursAgo": 506,
         "description": "Delivered — enjoy your new arrival",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       }
     ],
     "archivedHoursAgo": 482
@@ -477,25 +799,53 @@
         "stage": "accepted",
         "hoursAgo": 674,
         "description": "Collected from the sender",
-        "location": "Lyon, France"
+        "location": "Lyon, France",
+        "place": {
+          "latitude": 45.749,
+          "longitude": 4.848,
+          "precision": "city",
+          "country": "FR",
+          "name": "Lyon"
+        }
       },
       {
         "stage": "in_transit",
-        "hoursAgo": 638.0,
+        "hoursAgo": 638,
         "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland"
+        "location": "Härkingen, Switzerland",
+        "place": {
+          "latitude": 47.305,
+          "longitude": 7.821,
+          "precision": "city",
+          "country": "CH",
+          "name": "Härkingen"
+        }
       },
       {
         "stage": "ready_for_pickup",
         "hoursAgo": 604,
         "description": "Ready at the neighbourhood parcel shop",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       },
       {
         "stage": "delivered",
         "hoursAgo": 602,
         "description": "Collected from the parcel shop",
-        "location": "Zürich, Switzerland"
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
       }
     ],
     "archivedHoursAgo": 578

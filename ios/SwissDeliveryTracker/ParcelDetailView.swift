@@ -813,7 +813,7 @@ private struct JournalEventRow: View {
                     .font(.footnote)
                     .fixedSize(horizontal: false, vertical: true)
                 if let location = event.location?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty {
-                    EventPlace(location: location)
+                    EventLocation(location: location)
                         .font(.caption2).foregroundStyle(.secondary)
                 }
             }
@@ -829,7 +829,7 @@ private struct JournalEventRow: View {
 }
 
 /// The flag leads and the country closes the place, named in the reader's language.
-private struct EventPlace: View {
+private struct EventLocation: View {
     let location: String
     @EnvironmentObject private var localizer: Localizer
 

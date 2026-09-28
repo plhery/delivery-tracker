@@ -1,5 +1,6 @@
 import type {
   ApiCarrierId,
+  ApiEventPlace,
   ApiStage,
   ApiSyncStatus,
 } from './generated/apiContract';
@@ -52,7 +53,12 @@ export interface Parcel {
   swissPostReady?: boolean;
   archivedAt?: string;
   notificationsMuted?: boolean;
+  /** Where the carrier says the parcel is heading, when it says. */
+  destinationCountry?: string;
 }
+
+/** Where a scan happened, located on the server from its free-text location. */
+export type EventPlace = ApiEventPlace;
 
 export interface TrackingEvent {
   id: string;
@@ -60,6 +66,7 @@ export interface TrackingEvent {
   stage: Stage;
   description: string;
   location?: string;
+  place?: EventPlace;
   occurredAt: string; // ISO timestamp
 }
 

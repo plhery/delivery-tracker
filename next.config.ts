@@ -47,6 +47,8 @@ const nextConfig: NextConfig = {
       './node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm',
       './node_modules/onnxruntime-common/package.json',
       './node_modules/onnxruntime-common/dist/{cjs,esm}/*.js',
+      // The gazetteer is read from disk when the first parcel list needs places.
+      './src/server/places/places.tsv.br',
     ],
   },
   poweredByHeader: false,

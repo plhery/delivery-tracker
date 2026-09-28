@@ -8,6 +8,7 @@ import { currentStage, isFinal, latestEvent } from '../lib/stages';
 import { uid } from '../lib/uid';
 import {
   ParcelAlreadyExistsError,
+  type EventPlace,
   type NewParcelInput,
   type ParcelCarrierInput,
   type ParcelRepo,
@@ -62,8 +63,8 @@ function defaultStorage(): Storage {
   return createMemoryStorage();
 }
 
-/** What the simulated carrier says at each stage. */
-const SIMULATED_UPDATES: Record<Stage, { description: string; location?: string }> = {
+/** What the simulated carrier says at each stage, and where the server would place it. */
+export const SIMULATED_UPDATES: Record<Stage, { description: string; location?: string; place?: EventPlace }> = {
   pending: {
     description: 'Tracking added; the carrier has not announced it yet',
   },
@@ -73,18 +74,22 @@ const SIMULATED_UPDATES: Record<Stage, { description: string; location?: string 
   accepted: {
     description: 'Parcel accepted at the counter',
     location: 'Zürich-Mülligen',
+    place: { latitude: 47.367, longitude: 8.55, precision: 'city', country: 'CH', name: 'Zürich' },
   },
   in_transit: {
     description: 'Sorted at the parcel center',
     location: 'Härkingen',
+    place: { latitude: 47.305, longitude: 7.821, precision: 'city', country: 'CH', name: 'Härkingen' },
   },
   customs: {
     description: 'Held for customs clearance',
     location: 'Basel',
+    place: { latitude: 47.558, longitude: 7.573, precision: 'city', country: 'CH', name: 'Basel' },
   },
   exception: {
     description: 'A problem is holding up the parcel',
     location: 'Härkingen',
+    place: { latitude: 47.305, longitude: 7.821, precision: 'city', country: 'CH', name: 'Härkingen' },
   },
   out_for_delivery: {
     description: 'With the courier for delivery today',
@@ -144,6 +149,7 @@ function event(
     stage,
     description: sim.description,
     location: sim.location,
+    place: sim.place,
     occurredAt,
   };
 }
@@ -169,6 +175,7 @@ export function seedParcels(now: number): ParcelWithEvents[] {
       events: sample.events.map((event) => ({
         id: uid(), parcelId: id, stage: event.stage as Stage,
         description: event.description, location: event.location, occurredAt: iso(event.hoursAgo),
+        place: event.place as EventPlace | undefined,
       })),
     };
   });
@@ -179,10 +186,22 @@ function load(storage: Storage): ParcelWithEvents[] | null {
     const raw = storage.getItem(DEMO_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as ParcelWithEvents[]) : null;
+    return Array.isArray(parsed) ? withDemoPlaces(parsed as ParcelWithEvents[]) : null;
   } catch {
     return null;
   }
+}
+
+/** Demo parcels saved before scans had places get them from the same sample data. */
+function withDemoPlaces(parcels: ParcelWithEvents[]): ParcelWithEvents[] {
+  const known = new Map<string, EventPlace>();
+  for (const event of [...demoCatalog.flatMap((sample) => sample.events), ...Object.values(SIMULATED_UPDATES)]) {
+    if (event.location && event.place) known.set(event.location, event.place as EventPlace);
+  }
+  return parcels.map((parcel) => parcel.events.every((event) => event.place || !event.location) ? parcel : {
+    ...parcel,
+    events: parcel.events.map((event) => event.place || !event.location ? event : { ...event, place: known.get(event.location) }),
+  });
 }
 
 function save(storage: Storage, parcels: ParcelWithEvents[]): void {

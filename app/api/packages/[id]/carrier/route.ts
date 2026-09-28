@@ -11,6 +11,7 @@ import {
   type RouteParameters,
 } from '../../../../../src/server/api';
 import { wakeSyncWorker } from '../../../../../src/server/background';
+import { withEventPlaces } from '../../../../../src/server/eventPlaces';
 import { logOperationalEvent } from '../../../../../src/server/observability';
 import { SupabaseError } from '../../../../../src/server/supabase';
 import { packageCarrierValues } from '../../../../../src/server/validation';
@@ -43,7 +44,7 @@ export const PATCH = apiRoute<PackageParameters>(async (context) => {
   const unchanged = original.carrier === values.carrier
     && nullableText(original.tracking_url) === values.trackingUrl
     && nullableText(original.dpd_postcode) === values.dpdPostcode;
-  if (unchanged) return json({ package: original, jobIds: [] });
+  if (unchanged) return json({ package: withEventPlaces(original), jobIds: [] });
 
   await verifyAmazonShippingAddition(values.carrier, original.tracking_number);
   if (!await client.changePackageCarrier(
@@ -80,5 +81,5 @@ export const PATCH = apiRoute<PackageParameters>(async (context) => {
 
   const parcel = await client.getPackage(packageId);
   if (!parcel) throw new HttpError(404, 'Package not found');
-  return json({ package: parcel, jobIds });
+  return json({ package: withEventPlaces(parcel), jobIds });
 }, { serviceRequired: true });

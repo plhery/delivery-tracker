@@ -64,11 +64,13 @@ describe('createApiRepo', () => {
       notificationsMuted: false,
       trackingSource: 'swiss-post',
       swissPostReady: true,
+      destinationCountry: 'CH',
     });
     expect(parcels[0].events[0]).toMatchObject({
       parcelId: packageRow.id,
       stage: 'in_transit',
       location: 'Härkingen',
+      place: { latitude: 47.305, longitude: 7.821, precision: 'city', country: 'CH', name: 'Härkingen' },
     });
     expect(JSON.parse(window.localStorage.getItem(API_CACHE_KEY) ?? 'null')).toHaveLength(1);
     expect(createApiRepo().cachedList?.()?.[0].id).toBe(packageRow.id);

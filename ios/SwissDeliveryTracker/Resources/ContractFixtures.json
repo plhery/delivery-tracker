@@ -16,7 +16,8 @@
         "dpd_postcode": null,
         "carrier_data": {
           "active_tracking_carrier": "swiss-post",
-          "swiss_post_ready": true
+          "swiss_post_ready": true,
+          "destination_country": "CH"
         },
         "archived_at": null,
         "notifications_muted": false,
@@ -27,7 +28,14 @@
             "stage": "in_transit",
             "description": "Sorted at the parcel center",
             "location": "Härkingen",
-            "occurred_at": "2026-07-15T01:00:00Z"
+            "occurred_at": "2026-07-15T01:00:00Z",
+            "place": {
+              "latitude": 47.305,
+              "longitude": 7.821,
+              "precision": "city",
+              "country": "CH",
+              "name": "Härkingen"
+            }
           }
         ]
       }

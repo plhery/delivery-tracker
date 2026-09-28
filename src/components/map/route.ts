@@ -1,10 +1,10 @@
 import { geoDistance } from 'd3-geo';
-import type { Stage } from '../../types';
+import type { EventPlace, Stage, TrackingEvent } from '../../types';
 import type { Coordinate } from './geography';
 
 export type Precision = 'city' | 'country';
 
-/** A geocoded location. Country-level places sit on the country's label point. */
+/** A located place. Country-level places sit on the country's label point. */
 export interface Place {
   id: string;
   name: string;
@@ -59,6 +59,22 @@ export const NEAR_KM = 400;
 
 export const distanceKm = (a: Coordinate, b: Coordinate) => geoDistance(a, b) * EARTH_KM;
 
+/** A server-located scan as a map place; scans a kilometre apart are the same stop. */
+export function placeFromEvent(place: EventPlace): Place {
+  return {
+    id: `${place.latitude.toFixed(2)},${place.longitude.toFixed(2)}`,
+    name: place.name,
+    country: place.country,
+    coordinate: [place.longitude, place.latitude],
+    precision: place.precision,
+  };
+}
+
+/** A country as a destination, drawn at its label point. */
+export function countryPlace(country: string, name: string, coordinate: Coordinate): Place {
+  return { id: country, name, country, coordinate, precision: 'country' };
+}
+
 export function buildRoute(scans: readonly Scan[], destination?: Place): Route {
   const stops: Stop[] = [];
   for (const scan of scans) {
@@ -89,7 +105,7 @@ export function buildRoute(scans: readonly Scan[], destination?: Place): Route {
     || (destination.precision === 'country' && current.place.country === destination.country)
     || distanceKm(current.place.coordinate, destination.coordinate) < 15);
   const remaining = current && destination && !arrived ? destination : undefined;
-  const points = [...stops.map(stop => stop.place.coordinate), ...(remaining ? [remaining.coordinate] : [])];
+  const points = [...stops.map((stop) => stop.place.coordinate), ...(remaining ? [remaining.coordinate] : [])];
   let extentKm = 0;
   for (const a of points) for (const b of points) extentKm = Math.max(extentKm, distanceKm(a, b));
   const near: Stop[] = [];
@@ -106,7 +122,7 @@ export function buildRoute(scans: readonly Scan[], destination?: Place): Route {
     destination: remaining,
     remainingKm: current && remaining ? distanceKm(current.place.coordinate, remaining.coordinate) : undefined,
     km: legs.reduce((sum, leg) => sum + leg.km, 0),
-    countries: [...new Set(stops.map(stop => stop.place.country))],
+    countries: [...new Set(stops.map((stop) => stop.place.country))],
     extentKm,
     scale: !points.length ? 'none'
       : points.length === 1 ? 'point'
@@ -115,6 +131,18 @@ export function buildRoute(scans: readonly Scan[], destination?: Place): Route {
             : extentKm > 30 ? 'local' : 'city',
     near,
   };
+}
+
+/** A parcel's scans, oldest first, as a route; country-only places take the reader's name for the country. */
+export function routeFromEvents(events: readonly TrackingEvent[], destination?: Place, countryName?: (code: string) => string): Route {
+  const scans = [...events]
+    .sort((a, b) => a.occurredAt.localeCompare(b.occurredAt))
+    .map((event) => {
+      const place = event.place ? placeFromEvent(event.place) : undefined;
+      if (place?.precision === 'country' && countryName) place.name = countryName(place.country);
+      return { at: event.occurredAt, description: event.description, stage: event.stage, place };
+    });
+  return buildRoute(scans, destination);
 }
 
 /** Both views only make sense when part of the journey lies outside the close-up. */
@@ -128,11 +156,12 @@ export function defaultMode(route: Route, stage?: Stage): MapMode {
   return stage === 'out_for_delivery' || stage === 'ready_for_pickup' || stage === 'failed_attempt' ? 'now' : 'journey';
 }
 
-export function formatKm(km: number): string {
+/** Kilometres, rounded as a journey is told: "8 km", "450 km", "9,300 km". */
+export function formatKm(km: number, languageTag = 'en'): string {
   const rounded = km < 100 ? Math.round(km) : km < 1000 ? Math.round(km / 10) * 10 : Math.round(km / 100) * 100;
-  return `${new Intl.NumberFormat('en').format(Math.max(rounded, 1))} km`;
+  return new Intl.NumberFormat(languageTag, { style: 'unit', unit: 'kilometer', maximumFractionDigits: 0 }).format(Math.max(rounded, 1));
 }
 
 export function flag(code: string): string {
-  return [...code].map(letter => String.fromCodePoint(letter.charCodeAt(0) + 127397)).join('');
+  return [...code].map((letter) => String.fromCodePoint(letter.charCodeAt(0) + 127397)).join('');
 }

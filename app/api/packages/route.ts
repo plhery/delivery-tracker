@@ -8,6 +8,7 @@ import {
   requireUser,
   requireUserClient,
 } from '../../../src/server/api';
+import { withEventPlaces } from '../../../src/server/eventPlaces';
 import { SupabaseError } from '../../../src/server/supabase';
 import { wakeSyncWorker } from '../../../src/server/background';
 import { newPackageValues } from '../../../src/server/validation';
@@ -18,7 +19,7 @@ export const runtime = 'nodejs';
 export const GET = apiRoute(async (context) => {
   const includeArchived = new URL(context.request.url).searchParams.get('includeArchived') === 'true';
   return json({
-    packages: await requireUserClient(context).listPackages(includeArchived),
+    packages: (await requireUserClient(context).listPackages(includeArchived)).map(withEventPlaces),
   });
 }, { serviceRequired: true });
 

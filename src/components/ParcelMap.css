@@ -1,0 +1,77 @@
+/* The route engraved in the parcel's card: the card's own ink on its own surface. */
+.detail--postcard .detail__hero--map { position: relative; overflow: hidden; isolation: isolate; }
+.detail__hero--map > :not(.detail__engraving) { position: relative; }
+.detail__hero--map .detail__hero-meta { pointer-events: none; }
+.detail__hero--map .detail__hero-meta button { pointer-events: auto; }
+.detail--postcard .detail__hero--map .detail__title-row { margin-top: 118px; }
+.detail__engraving { position: absolute; top: 0; right: 0; left: 0; z-index: 0; height: 176px; cursor: pointer; }
+.detail__hero .detail__engraving-map {
+  --map-space: transparent; --map-ocean: transparent; --map-land: color-mix(in srgb, var(--tone) 10%, transparent);
+  --map-visited: color-mix(in srgb, var(--tone) 17%, transparent); --map-border: color-mix(in srgb, var(--tone-surface) 80%, transparent);
+  --map-night: transparent; --map-grid: transparent; --map-shade: transparent; --map-limb: color-mix(in srgb, var(--tone) 16%, transparent);
+  --map-route: var(--tone); --map-route-muted: color-mix(in srgb, var(--tone) 45%, transparent); --map-accent: var(--tone);
+  --map-label: var(--tone); --map-label-strong: var(--tone); --map-label-bg: color-mix(in srgb, var(--tone-surface) 92%, transparent);
+  --map-dot-ring: var(--tone-surface);
+  position: absolute; inset: 0; animation: parcel-engraving-in .5s var(--ease-out) both;
+  -webkit-mask-image: linear-gradient(black 78%, transparent); mask-image: linear-gradient(black 78%, transparent);
+}
+.detail__hero .detail__engraving-map * { -webkit-backdrop-filter: none; backdrop-filter: none; }
+.detail--postcard .detail__map-button {
+  display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%;
+  background: transparent; color: var(--tone); opacity: .75; cursor: pointer;
+}
+.detail--postcard .detail__map-button svg { width: 18px; height: 18px; stroke-width: 1.2; }
+.detail__hero-actions { display: inline-flex; align-items: center; }
+@keyframes parcel-engraving-in { from { opacity: 0; } }
+
+/* The whole map, over the parcel. */
+.parcel-map {
+  --tone: light-dark(var(--carrier-ink-light), var(--carrier-ink-dark));
+  position: fixed; inset: 0; z-index: 80; overflow: hidden; background: var(--canvas); color: var(--ink);
+  animation: parcel-map-in .35s var(--spring) both;
+}
+.parcel-map:focus { outline: none; }
+.parcel-map__map { position: absolute; inset: 0; }
+.parcel-map__close {
+  position: absolute; top: max(14px, env(safe-area-inset-top)); right: 14px; z-index: 1; display: grid; place-items: center;
+  width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--paper) 82%, transparent);
+  color: var(--ink); box-shadow: 0 2px 10px rgb(20 30 20 / 12%); cursor: pointer; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+}
+.parcel-map__close svg { width: 16px; height: 16px; }
+.parcel-map__bar {
+  position: absolute; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; z-index: 1; display: grid; justify-items: start;
+  gap: 14px; padding: 16px 16px 12px; border-radius: 24px; background: color-mix(in srgb, var(--paper) 90%, transparent);
+  box-shadow: 0 8px 30px rgb(20 30 20 / 14%); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+}
+.parcel-map__summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 14px; width: 100%; }
+.parcel-map__summary[data-single] { grid-template-columns: minmax(0, 1fr); }
+.parcel-map__summary > div:not(.parcel-map__line) { display: grid; align-content: start; gap: 2px; min-width: 0; }
+.parcel-map__summary > div[data-end] { justify-items: end; text-align: right; }
+.parcel-map__summary[data-single] > div[data-end] { justify-items: start; text-align: left; }
+.parcel-map__summary > div > span { color: var(--ink-soft); font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; }
+.parcel-map__summary > div > strong { overflow: hidden; font-size: 24px; font-weight: 650; line-height: 1.15; letter-spacing: -.04em; text-overflow: ellipsis; white-space: nowrap; }
+.parcel-map__summary > div > small { color: var(--ink-soft); font-size: 12px; }
+.parcel-map__line { position: relative; grid-column: 1 / -1; height: 12px; margin: 2px 5px 0; }
+.parcel-map__line::before { content: ''; position: absolute; top: 50%; right: 0; left: 0; border-top: 1.5px dashed color-mix(in srgb, var(--ink) 28%, transparent); }
+.parcel-map__line::after {
+  content: ''; position: absolute; top: calc(50% - 4px); right: -4px; width: 8px; height: 8px; box-sizing: border-box; border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--ink) 40%, transparent); background: var(--paper);
+}
+.parcel-map__line span { position: absolute; top: calc(50% - 1px); left: 0; width: calc(var(--progress) * 100%); height: 2px; border-radius: 2px; background: var(--tone); }
+.parcel-map__line i { position: absolute; top: 50%; left: calc(var(--progress) * 100%); z-index: 1; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--tone); box-shadow: 0 0 0 3px var(--paper); }
+.parcel-map__facts { display: flex; flex-wrap: wrap; grid-column: 1 / -1; gap: 4px 16px; margin: 0; color: var(--ink-soft); font-size: 12px; font-variant-numeric: tabular-nums; }
+.parcel-map__views { display: inline-flex; gap: 2px; padding: 3px; border-radius: 17px; background: var(--control); }
+.parcel-map__views button {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 0; border-radius: 14px; background: transparent;
+  color: var(--ink-soft); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+}
+.parcel-map__views button[aria-pressed=true] { background: var(--ink); color: var(--paper); }
+.parcel-map__views svg { width: 14px; height: 14px; stroke-width: 1.6; }
+.parcel-map__credit { margin: 0; color: var(--ink-soft); font-size: 10px; }
+@media (min-width: 761px) {
+  .parcel-map__bar { right: auto; bottom: 24px; left: 24px; width: 360px; }
+}
+@keyframes parcel-map-in { from { opacity: 0; transform: translateY(16px) scale(.985); } }
+@media (prefers-reduced-motion: reduce) {
+  .parcel-map, .detail__hero .detail__engraving-map { animation: none; }
+}

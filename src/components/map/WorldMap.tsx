@@ -3,7 +3,7 @@
 import { geoCircle, geoDistance, geoGraticule, geoInterpolate, geoPath } from 'd3-geo';
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import { easeInOut, fitCamera, interpolateCamera, projection, subsolarPoint, type Box, type Camera } from './camera';
-import { cities, geography, type Coordinate, type Part } from './geography';
+import { cities, geography, useWorld, type Coordinate, type Part } from './geography';
 import { NEAR_KM, distanceKm, formatKm, type MapMode, type Route, type Scale } from './route';
 import styles from './map.module.css';
 
@@ -23,7 +23,7 @@ const RESTING_CENTER: Coordinate = [8.2, 42];
 
 export function WorldMap({
   route, mode, shape = 'rect', insets = NO_INSETS, look = 'map', labels = 'all', context = true, interactive = false, night = false,
-  time, redrawKey = '', recenter = 0, onFreeChange, className = '', style,
+  time, redrawKey = '', recenter = 0, onFreeChange, className = '', style, label, languageTag = 'en', live = true,
 }: {
   route: Route;
   mode: MapMode;
@@ -45,7 +45,14 @@ export function WorldMap({
   onFreeChange?: (free: boolean) => void;
   className?: string;
   style?: CSSProperties;
+  /** What the map shows, for screen readers. */
+  label?: string;
+  /** Formats the distances on edge pointers. */
+  languageTag?: string;
+  /** Pulses the parcel's current position. */
+  live?: boolean;
 }) {
+  const ready = useWorld();
   const root = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const probes = useRef<HTMLSpanElement>(null);
@@ -61,7 +68,7 @@ export function WorldMap({
 
   useLayoutEffect(() => {
     const element = root.current;
-    if (!element) return;
+    if (!element || typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
       if (width > 0 && height > 0) setSize(previous => previous?.width === width && previous.height === height ? previous : { width, height });
@@ -71,13 +78,13 @@ export function WorldMap({
   }, []);
 
   const { top, right, bottom, left } = insets;
-  const target = useMemo(() => size ? targetCamera(route, mode, size, { top, right, bottom, left }, shape) : null,
-    [route, mode, size, top, right, bottom, left, shape]);
+  const target = useMemo(() => ready && size ? targetCamera(route, mode, size, { top, right, bottom, left }, shape) : null,
+    [ready, route, mode, size, top, right, bottom, left, shape]);
 
   useEffect(() => {
     if (!target || !size) return;
     const from = current.current;
-    const interpolate = from && !matchMedia('(prefers-reduced-motion: reduce)').matches
+    const interpolate = from && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
       ? interpolateCamera(from, target, Math.max(size.width, size.height)) : null;
     const duration = from ? Math.min(1500, 700 + geoDistance(from.center, target.center) * 500
       + Math.abs(Math.log(target.scale / from.scale)) * 120) : 0;
@@ -107,7 +114,7 @@ export function WorldMap({
     draw(canvas.current, size, camera, readPalette(probes.current), route, night ? time : null, circle);
   }, [camera, size, route, time, night, shape, look, redrawKey, top, right, bottom, left]);
 
-  const overlay = camera && size ? layout(route, camera, size, insets, shape, labels, mode, context) : null;
+  const overlay = camera && size ? layout(route, camera, size, insets, shape, labels, mode, context, languageTag) : null;
   const circle = shape === 'circle' && size ? circleOf(size, insets) : null;
 
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
@@ -144,7 +151,7 @@ export function WorldMap({
   }
 
   return <div ref={root} className={`${styles.worldMap} ${className}`} style={style} data-shape={shape} data-look={look}
-    role="img" aria-label={describe(route)}
+    role="img" aria-label={label ?? describe(route)}
     data-interactive={interactive || undefined} data-scale={route.scale} data-mode={mode}
     onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd}>
     <span ref={probes} className={styles.probes} aria-hidden="true">
@@ -157,7 +164,7 @@ export function WorldMap({
         {overlay.legs.map(leg => <path key={leg.id} d={leg.d} className={styles.leg} data-kind={leg.kind}
           pathLength={leg.kind === 'travelled' ? 1 : undefined} />)}
         {overlay.dots.map(dot => <g key={dot.id} className={styles.dot} data-kind={dot.kind} transform={`translate(${dot.x} ${dot.y})`}>
-          {dot.kind === 'current' && <circle className={styles.halo} r="5" />}
+          {dot.kind === 'current' && live && <circle className={styles.halo} r="5" />}
           <circle r={dot.kind === 'current' ? 5 : dot.kind === 'origin' ? 3.5 : dot.kind === 'stop' ? 2.6 : 4.5} />
         </g>)}
       </g>
@@ -218,8 +225,11 @@ function targetCamera(route: Route, mode: MapMode, size: Size, insets: Insets, s
     ...(current && destination ? [[current, destination, route.remainingKm ?? 0] as const] : [])]
     .filter(([, , km]) => km > 300)
     .flatMap(([from, to]) => [.25, .5, .75].map(t => geoInterpolate(from, to)(t) as Coordinate));
+  // A route of countries only frames the countries, not a town-sized window on their label points.
+  const countriesOnly = route.stops.length > 0 && route.stops.every((stop) => stop.place.precision === 'country');
+  const minSpanKm = countriesOnly ? Math.max(MIN_SPAN[route.scale], 1500) : MIN_SPAN[route.scale];
   const camera = ends.length
-    ? fitCamera([...ends, ...arcs], box, { shape, minSpanKm: MIN_SPAN[route.scale], tilt: route.scale === 'world' })
+    ? fitCamera([...ends, ...arcs], box, { shape, minSpanKm, tilt: route.scale === 'world' })
     : fitCamera([RESTING_CENTER], box, { shape, minSpanKm: 1e5, globeAbove: -1 });
   if (shape === 'circle') {
     // A round window shows either the whole globe or a close-up, never a globe inside a circle.
@@ -373,7 +383,8 @@ function textWidth(text: string): number {
   return measure.measureText(text).width;
 }
 
-function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape: Shape, labels: 'all' | 'ends' | 'none', mode: MapMode, context: boolean): Overlay {
+function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape: Shape, labels: 'all' | 'ends' | 'none', mode: MapMode,
+  context: boolean, languageTag: string): Overlay {
   const project = projection(camera).clipExtent([[-400, -400], [size.width + 400, size.height + 400]]);
   const svgPath = geoPath(project);
   const visible = (point: Coordinate) => geoDistance(point, camera.center) < Math.PI / 2 - .02;
@@ -513,7 +524,7 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
         x = viewCenter[0] + dx * reach;
         y = viewCenter[1] + dy * reach;
       }
-      const detail = formatKm(distanceKm(route.current.place.coordinate, place.coordinate));
+      const detail = formatKm(distanceKm(route.current.place.coordinate, place.coordinate), languageTag);
       // Keep the whole chip inside the frame, whichever edge it points past.
       const half = (textWidth(`${place.name} ${detail}`) + 38) / 2;
       if (shape === 'circle') {
@@ -547,7 +558,7 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
   // In a close-up, a few big cities give bearings.
   const maxCityRank = !context || labels === 'none' || spanKm > 1600 ? -1 : spanKm > 800 ? 3 : spanKm > 400 ? 6 : 7;
   let shown = 0;
-  for (const city of maxCityRank < 0 ? [] : cities) {
+  for (const city of maxCityRank < 0 ? [] : cities()) {
     if (shown >= 7) break;
     if (city.rank > maxCityRank || !visible(city.coordinate)) continue;
     if (route.stops.some(stop => distanceKm(stop.place.coordinate, city.coordinate) < 12)

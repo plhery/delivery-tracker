@@ -3315,6 +3315,14 @@ export const SYNC_STATUSES = [
 ] as const;
 export type ApiSyncStatus = (typeof SYNC_STATUSES)[number];
 
+export interface ApiEventPlace {
+  "latitude": number;
+  "longitude": number;
+  "precision": "city" | "country";
+  "country": string;
+  "name": string;
+}
+
 export interface ApiTrackingEventRow {
   "id": string;
   "package_id": string;
@@ -3322,6 +3330,7 @@ export interface ApiTrackingEventRow {
   "description": string;
   "location": string | null;
   "occurred_at": string;
+  "place"?: ApiEventPlace | null;
 }
 
 export interface ApiPackageRow {
@@ -3356,6 +3365,7 @@ export interface ApiPackageRow {
   "dimensions_text"?: string | null;
   "weight_kg"?: number | null;
   "dpd_postcode_verified"?: boolean | null;
+  "destination_country"?: string | null;
   "routing"?: {
   "input_needed"?: {
   "carrier": ApiCarrierId;

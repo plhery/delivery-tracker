@@ -131,6 +131,12 @@ export function countryTimeZone(country: unknown): string | null {
   return code ? COUNTRY_ZONES[code]! : null;
 }
 
+/** The single-zone country keeping this civil time ("Europe/Zurich" is Switzerland's); null for UTC. */
+export function timeZoneCountry(zone: string): string | null {
+  const countries = Object.keys(COUNTRY_ZONES).filter((code) => COUNTRY_ZONES[code] === zone);
+  return countries.length === 1 ? countries[0]! : null;
+}
+
 /** Epoch milliseconds (numbers or numeric strings); zero and negatives are rejected. */
 export function epochMillisTime(value: unknown): ParsedTime | null {
   const millis = typeof value === 'number' ? value

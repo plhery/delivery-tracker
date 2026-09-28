@@ -7,6 +7,7 @@ import {
   requireUserClient,
   type RouteParameters,
 } from '../../../../../src/server/api';
+import { withEventPlaces } from '../../../../../src/server/eventPlaces';
 import { SupabaseError } from '../../../../../src/server/supabase';
 
 interface PackageParameters extends RouteParameters {
@@ -32,5 +33,5 @@ export const PATCH = apiRoute<PackageParameters>(async (context) => {
   }
   const parcel = await client.getPackage(packageId);
   if (!parcel) throw new HttpError(404, 'Package not found');
-  return json(parcel);
+  return json(withEventPlaces(parcel));
 }, { serviceRequired: true });

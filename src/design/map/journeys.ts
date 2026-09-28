@@ -1,10 +1,11 @@
 import type { CarrierId } from '../../types';
-import { countryLabel, type Coordinate } from './geography';
-import type { Place, Scan } from './route';
+import type { Coordinate } from '../../components/map/geography';
+import type { Place, Scan } from '../../components/map/route';
 
 // Fictional parcels at city centres, as a server-side gazetteer would resolve them.
 const city = (id: string, name: string, country: string, coordinate: Coordinate): Place => ({ id, name, country, coordinate, precision: 'city' });
-const country = (code: string, name: string): Place => ({ id: code, name, country: code, coordinate: countryLabel(code) ?? [0, 0], precision: 'country' });
+// Natural Earth label points, as the map draws countries.
+const country = (code: string, name: string, coordinate: Coordinate): Place => ({ id: code, name, country: code, coordinate, precision: 'country' });
 
 const places = {
   kyoto: city('kyoto', 'Kyoto', 'JP', [135.768, 35.012]),
@@ -22,9 +23,9 @@ const places = {
   anchorage: city('anchorage', 'Anchorage', 'US', [-149.9, 61.218]),
   louisville: city('louisville', 'Louisville', 'US', [-85.759, 38.253]),
   newYork: city('new-york', 'New York', 'US', [-73.99, 40.693]),
-  china: country('CN', 'China'),
-  france: country('FR', 'France'),
-  switzerland: country('CH', 'Switzerland'),
+  china: country('CN', 'China', [106.34, 32.5]),
+  france: country('FR', 'France', [2.55, 46.7]),
+  switzerland: country('CH', 'Switzerland', [7.46, 46.72]),
 };
 
 export type JourneyGroup = 'Far' | 'Near' | 'Sparse';

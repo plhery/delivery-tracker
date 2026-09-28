@@ -6,6 +6,7 @@ import {
   requireUserClient,
   type RouteParameters,
 } from '../../../../../src/server/api';
+import { withEventPlaces } from '../../../../../src/server/eventPlaces';
 import { SupabaseError } from '../../../../../src/server/supabase';
 
 interface PackageParameters extends RouteParameters {
@@ -31,5 +32,5 @@ export const POST = apiRoute<PackageParameters>(async (context) => {
     }
     throw error;
   }
-  return json(await client.getPackage(packageId) ?? { ...original, archived_at: null });
+  return json(withEventPlaces(await client.getPackage(packageId) ?? { ...original, archived_at: null }));
 }, { serviceRequired: true });

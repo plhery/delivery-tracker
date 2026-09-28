@@ -63,6 +63,9 @@ notification and Live Activity payloads through APNs. Those Apple payloads can
 contain a parcel label, carrier, status, location, and expected delivery text,
 but Delivery Tracker does not put the tracking number in them.
 
+The service places scan locations on its map itself, from offline map data; no mapping
+service receives them.
+
 Delivery Tracker does not sell personal data, serve advertising, or
 use advertising analytics.
 

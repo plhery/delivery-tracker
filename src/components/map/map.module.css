@@ -1,27 +1,24 @@
-/* The map. Every colour is a variable so each direction can tint it. */
+/* The map. Every colour is a variable, so a card can tint it; light-dark() follows the page's appearance. */
 .worldMap {
-  --map-space: #e9ece5; --map-ocean: #f4f6f1; --map-land: #dfe4d8; --map-border: #f4f6f1;
+  --map-space: light-dark(#e9ece5, #0e120e); --map-ocean: light-dark(#f4f6f1, #171c17);
+  --map-land: light-dark(#dfe4d8, #2d352b); --map-border: var(--map-ocean);
   --map-visited: color-mix(in srgb, var(--map-accent) 13%, var(--map-land));
-  --map-night: rgb(24 34 40 / 10%); --map-grid: rgb(32 37 30 / 6%); --map-limb: rgb(32 37 30 / 9%); --map-shade: rgb(32 45 32 / 7%);
+  --map-night: light-dark(rgb(24 34 40 / 10%), rgb(0 0 0 / 34%)); --map-grid: light-dark(rgb(32 37 30 / 6%), rgb(245 246 242 / 4%));
+  --map-limb: light-dark(rgb(32 37 30 / 9%), rgb(245 246 242 / 10%)); --map-shade: light-dark(rgb(32 45 32 / 7%), rgb(0 0 0 / 26%));
   --map-route: var(--ink); --map-route-muted: color-mix(in srgb, var(--ink) 38%, transparent);
   --map-accent: var(--tone, var(--ink)); --map-label: var(--ink-soft); --map-label-strong: var(--ink);
-  --map-label-bg: color-mix(in srgb, var(--paper) 84%, transparent); --map-dot-ring: var(--map-ocean);
+  --map-label-bg: light-dark(color-mix(in srgb, var(--paper) 84%, transparent), color-mix(in srgb, #20261f 82%, transparent));
+  --map-dot-ring: var(--map-ocean); --map-rim-shade: light-dark(rgb(20 30 20 / 7%), rgb(0 0 0 / 40%));
   user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
 }
 /* Layout without specificity, so a direction's own class always places the map. */
 :where(.worldMap) { position: relative; overflow: hidden; }
 :where(.worldMap[data-shape=circle]) { overflow: visible; }
-[data-theme=dark] .worldMap {
-  --map-space: #0e120e; --map-ocean: #171c17; --map-land: #2d352b; --map-border: #171c17;
-  --map-night: rgb(0 0 0 / 34%); --map-grid: rgb(245 246 242 / 4%); --map-limb: rgb(245 246 242 / 10%); --map-shade: rgb(0 0 0 / 26%);
-  --map-label-bg: color-mix(in srgb, #20261f 82%, transparent);
-}
 .worldMap[data-interactive] { cursor: grab; touch-action: none; }
 .worldMap[data-interactive][data-shape=circle] { touch-action: pan-y; }
 .worldMap[data-interactive]:active { cursor: grabbing; }
 .probes { position: absolute; width: 0; height: 0; overflow: hidden; visibility: hidden; }
-.rim { position: absolute; border-radius: 50%; pointer-events: none; box-shadow: inset 0 0 0 1px var(--map-limb), inset 0 3px 16px rgb(20 30 20 / 7%); }
-[data-theme=dark] .rim { box-shadow: inset 0 0 0 1px rgb(245 246 242 / 9%), inset 0 3px 20px rgb(0 0 0 / 40%); }
+.rim { position: absolute; border-radius: 50%; pointer-events: none; box-shadow: inset 0 0 0 1px var(--map-limb), inset 0 3px 18px var(--map-rim-shade); }
 .mapCanvas, .mapOverlay { position: absolute; inset: 0; width: 100%; height: 100%; }
 .mapOverlay { overflow: visible; pointer-events: none; }
 .leg { fill: none; stroke: var(--map-route); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }

@@ -25,6 +25,7 @@
 ## Features
 
 - Delivery estimates, tracking timelines, search, filters, and an archive.
+- A map of each parcel's journey, from the globe down to the last mile.
 - Add parcels from tracking numbers, carrier links, or shipping email text.
 - Optional notifications with quiet hours and per-parcel mute.
 - Passport stamps and statistics from delivery history. Share selected stats

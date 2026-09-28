@@ -41,6 +41,8 @@ Key server modules:
   or double-run work. This is the only code path with cross-account access.
 - `trackingSync.ts` runs one refresh through the adapter registry;
   `trackingRouting.ts` decides which source to ask ([ROUTING.md](ROUTING.md)).
+- `places/` places each scan's free-text location on the map with an offline gazetteer,
+  when the API returns a parcel ([README](../src/server/places/README.md)).
 - `push.ts` sends Web Push, APNs alerts and Live Activity updates, only to the parcel
   owner's devices. Each batch of new scans announces its newest one, and only when it is
   the parcel's newest scan: history a carrier change backfills, or a scan reported late,

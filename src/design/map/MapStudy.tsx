@@ -9,8 +9,8 @@ import type { CarrierId } from '../../types';
 import { Card, Deck, Lens, type Device, type Theme } from './directions';
 import { journeys, type JourneyGroup } from './journeys';
 import { dayLabel, snapshot, time } from './parts';
-import type { MapMode } from './route';
-import { WorldMap } from './WorldMap';
+import type { MapMode } from '../../components/map/route';
+import { WorldMap } from '../../components/map/WorldMap';
 import styles from './study.module.css';
 
 type Direction = 'deck' | 'card' | 'lens';
@@ -97,7 +97,6 @@ export function MapStudy() {
   return <main className={styles.study} data-ready={ready} inert={!ready}>
     <header className={styles.studyHeader}>
       <Link href="/" className={styles.brand}><Icon name="parcel" /><span>Delivery Tracker</span><span className={styles.badge}>Design study</span></Link>
-      <Link href="/design/journey" className={styles.crossLink}>First study: three layouts <Icon name="arrow" /></Link>
     </header>
     <section className={styles.intro}>
       <p className={styles.eyebrow}>Near and far</p>

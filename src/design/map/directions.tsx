@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { carrierInfo } from '../../lib/carriers';
 import { HeroCard, History, ModeToggle, NavBar, RouteSummary, Stats, TrackingNumber, type Snapshot } from './parts';
-import { hasNearView, type MapMode } from './route';
-import { WorldMap } from './WorldMap';
+import { hasNearView, type MapMode } from '../../components/map/route';
+import { WorldMap } from '../../components/map/WorldMap';
 import styles from './study.module.css';
 
 export type Device = 'phone' | 'desktop';

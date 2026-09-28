@@ -4623,6 +4623,47 @@
           "unsupported"
         ]
       },
+      "EventPlace": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Where a scan happened, located on the server from its free-text location.",
+        "required": [
+          "latitude",
+          "longitude",
+          "precision",
+          "country",
+          "name"
+        ],
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "precision": {
+            "type": "string",
+            "enum": [
+              "city",
+              "country"
+            ],
+            "description": "country when the scan names only its country; the point is then the country's label point."
+          },
+          "country": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The carrier's own spelling when it has one, else the gazetteer name."
+          }
+        }
+      },
       "TrackingEventRow": {
         "type": "object",
         "additionalProperties": false,
@@ -4658,6 +4699,17 @@
           "occurred_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "place": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventPlace"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when the location names no place the server can trust."
           }
         }
       },
@@ -4881,6 +4933,14 @@
                   "null"
                 ],
                 "description": "False when DPD rejected the stored delivery postcode and the lookup continued without it."
+              },
+              "destination_country": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[A-Z]{2}$",
+                "description": "Destination country the carrier reported, when it did."
               },
               "routing": {
                 "type": "object",

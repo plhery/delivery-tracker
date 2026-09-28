@@ -1,5 +1,5 @@
-// Builds world.json for the map design study from public-domain Natural Earth data.
-// Run: node src/design/map/build-world.mjs [cache directory]
+// Builds world.json for the parcel map from public-domain Natural Earth data.
+// Run: node src/components/map/build-world.mjs [cache directory]
 // Borders come from world-atlas, which keeps Natural Earth's shared arcs, so
 // simplifying an arc moves both neighbouring countries together.
 import { mkdir, readFile, writeFile } from 'node:fs/promises';

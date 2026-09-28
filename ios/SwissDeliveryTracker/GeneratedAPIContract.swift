@@ -285,6 +285,14 @@ enum SyncStatus: String, Codable, CaseIterable, Hashable, Sendable, Identifiable
     var id: String { rawValue }
 }
 
+struct EventPlace: Codable, Equatable, Hashable, Sendable {
+    var latitude: Double
+    var longitude: Double
+    var precision: EventPlacePrecision
+    var country: String
+    var name: String
+}
+
 struct TrackingEvent: Codable, Equatable, Hashable, Sendable, Identifiable {
     var id: UUID
     var packageID: UUID
@@ -292,6 +300,7 @@ struct TrackingEvent: Codable, Equatable, Hashable, Sendable, Identifiable {
     var description: String
     var location: String? = nil
     var occurredAt: String
+    var place: EventPlace? = nil
 
     private enum CodingKeys: String, CodingKey {
         case id
@@ -300,6 +309,7 @@ struct TrackingEvent: Codable, Equatable, Hashable, Sendable, Identifiable {
         case description
         case location
         case occurredAt
+        case place
     }
 }
 
@@ -775,6 +785,13 @@ struct AccountExportAccount: Codable, Equatable, Hashable, Sendable, Identifiabl
     var email: String? = nil
 }
 
+enum EventPlacePrecision: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case city
+    case country
+
+    var id: String { rawValue }
+}
+
 struct CarrierData: Codable, Equatable, Hashable, Sendable {
     var activeTrackingCarrier: CarrierID? = nil
     var activeTrackingNumber: String? = nil
@@ -794,6 +811,7 @@ struct CarrierData: Codable, Equatable, Hashable, Sendable {
     var dimensionsText: String? = nil
     var weightKg: Double? = nil
     var dpdPostcodeVerified: Bool? = nil
+    var destinationCountry: String? = nil
     var routing: CarrierDataRouting? = nil
 
     private enum CodingKeys: String, CodingKey {
@@ -815,6 +833,7 @@ struct CarrierData: Codable, Equatable, Hashable, Sendable {
         case dimensionsText
         case weightKg
         case dpdPostcodeVerified
+        case destinationCountry
         case routing
     }
 }
