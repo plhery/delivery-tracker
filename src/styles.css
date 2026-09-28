@@ -94,10 +94,14 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .delivery-next { position: relative; }
 .parcel-card-swipe { min-width: 0; display: grid; grid-template-rows: 1fr; }
 .parcel-card-swipe__clip { min-height: 0; position: relative; overflow: hidden; border-radius: 18px; background: transparent; isolation: isolate; }
+/* While a row moves, its clip is its own layer: Safari otherwise can drop the clip for a frame as the motion starts, showing the action beyond the row. */
+.parcel-card-swipe[data-swipe] .parcel-card-swipe__clip { will-change: transform; }
 .parcel-card-swipe { --tone: light-dark(var(--carrier-ink-light), var(--carrier-ink-dark)); --tone-surface: light-dark(var(--carrier-surface-light), var(--carrier-surface-dark)); --carrier-brand: light-dark(var(--carrier-brand-light), var(--carrier-brand-dark)); }
 .parcel-card { width: 100%; min-height: 117px; position: relative; z-index: 1; padding: 16px 18px; display: flex; flex-direction: column; align-items: stretch; gap: 7px; text-align: left; background: var(--tone-surface, var(--paper)); color: var(--ink); border-radius: 18px; touch-action: pan-y pinch-zoom; transition: scale .2s var(--spring); }
 .parcel-card-swipe[data-swipe="dragging"] .parcel-card { cursor: grabbing; -webkit-user-select: none; user-select: none; }
 .parcel-card-swipe:not([data-swipe]) .parcel-card:active:not(:disabled) { scale: .988; }
+/* A press that becomes a swipe drops its shrink at once; easing back would uncover the action around the card. */
+.parcel-card-swipe[data-swipe] .parcel-card { transition: none; }
 .parcel-card__top, .parcel-card__hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .parcel-card__top { margin-bottom: 5px; }
 .parcel-card__label { font-size: 18px; font-weight: 650; letter-spacing: -.4px; line-height: 1.3; overflow-wrap: anywhere; }

@@ -89,6 +89,21 @@ describe('bindSwipeRow', () => {
     pointer(card, 'pointerup', 150);
   });
 
+  it('fades the action in over its first points, so a card at rest shows no hairline of it', () => {
+    const { card } = setup();
+    const tray = document.getElementById('tray')!;
+    expect(tray.style.opacity).toBe('0');
+    pointer(card, 'pointerdown', 300);
+    pointer(card, 'pointermove', 291);
+    expect(card.style.transform).toBe('translateX(-1px)');
+    expect(tray.style.opacity).toBe('0.333');
+    pointer(card, 'pointermove', 240);
+    expect(tray.style.opacity).toBe('1');
+    pointer(card, 'pointermove', 292);
+    expect(tray.style.opacity).toBe('0');
+    pointer(card, 'pointerup', 292);
+  });
+
   it('leaves vertical drags to the page', () => {
     const { card, onOpenChange } = setup();
     swipe(card, 300, 294, 180);

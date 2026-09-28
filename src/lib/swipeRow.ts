@@ -3,6 +3,8 @@ import { springAt, springSettleTime, type Spring } from './spring';
 
 // The archive action's width, as in .parcel-card-swipe__block and __archive.
 const ACTION = 88;
+// The action fades in over its first points, so a card at rest or settling home leaves no hairline of it.
+const EMERGE = 3;
 const HYSTERESIS = 8;
 const RESISTANCE = 0.8;
 // Release speeds in px/s: a flick picks open or closed, a throw past the action archives.
@@ -96,6 +98,7 @@ export function bindSwipeRow({ row, card, tray, block, ears, action }: SwipeRowP
   let drag: { id: number; x: number; y: number; grab: number | null; touch: boolean; samples: { time: number; reveal: number }[] } | null = null;
 
   const px = (value: number) => `${Math.round(value * 100) / 100}px`;
+  const alpha = (value: number) => String(Math.round(Math.min(1, Math.max(0, value)) * 1000) / 1000);
   function styles({ reveal, spread, land }: Pose): Keyframe[] {
     const shown = Math.min(reveal, width);
     const shift = spread * Math.max(0, shown - ACTION);
@@ -103,11 +106,11 @@ export function bindSwipeRow({ row, card, tray, block, ears, action }: SwipeRowP
     return [
       { transform: `translateX(${px(-shown)})` },
       // The action rides on the card's edge until it is fully shown.
-      { transform: `translateX(${px(Math.max(0, ACTION - shown))})` },
+      { transform: `translateX(${px(Math.max(0, ACTION - shown))})`, opacity: alpha(shown / EMERGE) },
       { transform: `translateX(${px(-shift)})` },
       // Once a real gap opens, the tray shows there instead. The fill stays solid across the
       // last few points of a leap, which otherwise leave a hairline of tray beside the card.
-      { opacity: String(Math.round(Math.min(1, Math.max(0, 1 - (gap - 3) / 6)) * 1000) / 1000) },
+      { opacity: alpha(1 - (gap - 3) / 6) },
       { transform: `translateX(${px(land * (shift - (width - ACTION) / 2))})` },
     ];
   }
