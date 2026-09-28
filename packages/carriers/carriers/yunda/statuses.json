@@ -1,0 +1,40 @@
+{
+  "carrier": "yunda",
+  "entries": [
+    {
+      "wording": "已揽件",
+      "language": "zh",
+      "stage": "accepted",
+      "confirmedBy": "documentation",
+      "note": "Exact domestic status label in the official consumer website."
+    },
+    {
+      "wording": "运输中",
+      "language": "zh",
+      "stage": "in_transit",
+      "confirmedBy": "documentation",
+      "note": "Exact domestic status label in the official consumer website."
+    },
+    {
+      "wording": "派送中",
+      "language": "zh",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "note": "Exact domestic status label in the official consumer website."
+    },
+    {
+      "wording": "待取件",
+      "language": "zh",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "documentation",
+      "note": "Exact domestic status label in the official consumer website."
+    },
+    {
+      "wording": "已签收",
+      "language": "zh",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "note": "Exact domestic status label in the official consumer website."
+    }
+  ]
+}

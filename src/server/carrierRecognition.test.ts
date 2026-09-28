@@ -25,6 +25,12 @@ describe('recognition candidates', () => {
     // group-wide answer would file its parcel under the wrong network.
     expect(recognitionCandidates('10000000000001').map((candidate) => candidate.carrier)).toEqual(['ciblex']);
   });
+
+  it('can ask bpost about an ambiguous numeric barcode without a recipient postcode', () => {
+    expect(recognitionCandidates('000000000000000000000001')).toEqual(expect.arrayContaining([
+      { carrier: 'bpost', needsInput: null, preferred: false },
+    ]));
+  });
 });
 
 describe('asking carriers', () => {

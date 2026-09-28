@@ -350,9 +350,18 @@
     "shape": "9{15}",
     "carriers": [
       "dpd-fr",
-      "fedex"
+      "fedex",
+      "yunda"
     ],
-    "reason": "15-digit numbers are shared by DPD France and FedEx; the number stays a low-confidence suggestion."
+    "reason": "15-digit numbers starting with 0 or 1 are shared by DPD France, FedEx and Yunda; the number stays a low-confidence suggestion."
+  },
+  {
+    "shape": "9{15}",
+    "carriers": [
+      "fedex",
+      "yunda"
+    ],
+    "reason": "15-digit numbers outside DPD France's 0/1 prefixes are shared by FedEx and Yunda; the number stays a low-confidence suggestion."
   },
   {
     "shape": "A9{10}",

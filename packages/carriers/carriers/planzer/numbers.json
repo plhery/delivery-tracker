@@ -14,7 +14,8 @@
         "confidence": "low",
         "candidates": [
           "fedex",
-          "dpd-fr"
+          "dpd-fr",
+          "yunda"
         ]
       },
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Planzer, which no rule claims. Printed as reference.shipment."
@@ -66,7 +67,8 @@
         "carrier": "unknown",
         "confidence": "low",
         "candidates": [
-          "fedex"
+          "fedex",
+          "yunda"
         ]
       },
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Planzer, which no rule claims. Printed as reference.shipment."
@@ -94,7 +96,8 @@
         "carrier": "unknown",
         "confidence": "low",
         "candidates": [
-          "fedex"
+          "fedex",
+          "yunda"
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to Planzer, which no rule claims."

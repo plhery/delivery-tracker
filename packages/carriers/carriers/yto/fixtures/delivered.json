@@ -1,0 +1,15 @@
+[
+  {
+    "waybillNo": "YT0000000000001",
+    "personalOrder": false,
+    "signPic": true,
+    "waybillProcessInfo": [
+      { "waybillNo": "YT0000000000001", "opCode": "745", "opName": "PDA正常签收扫描", "opTime": "2026-01-03 18:00:00", "opOrgName": "Example destination depot", "description": "您的快件已投递，收件人: Example recipient。请联系快递员: 13000000000", "opEmpName": "Private synthetic courier", "weight": 250, "ioTypeName": "", "extTrack": {} },
+      { "waybillNo": "YT0000000000001", "opCode": "751", "opName": "入柜|入库", "opTime": "2026-01-03 12:00:00", "opOrgName": "Example destination depot", "description": "快件已到代收点 Synthetic address", "ioTypeName": "", "extTrack": { "signType": "2" } },
+      { "waybillNo": "YT0000000000001", "opCode": "710", "opName": "派件扫描", "opTime": "2026-01-03 11:00:00", "opOrgName": "Example destination depot", "description": "快递员 Private synthetic courier 正在派件 13000000000", "ioTypeName": "", "extTrack": {} },
+      { "waybillNo": "YT0000000000001", "opCode": "171", "opName": "下车扫描", "opTime": "2026-01-02 20:00:00", "opOrgName": "Example sorting depot", "description": "已到达 Example sorting depot", "ioTypeName": "正常", "extTrack": {} },
+      { "waybillNo": "YT0000000000001", "opCode": "131", "opName": "装件入车扫描", "opTime": "2026-01-02 18:00:00", "opOrgName": "Example origin depot", "description": "已发往 Example sorting depot", "ioTypeName": "正常", "extTrack": {} },
+      { "waybillNo": "YT0000000000001", "opCode": "310", "opName": "揽收扫描", "opTime": "2026-01-01 14:00:00", "opOrgName": "Example origin depot", "description": "已揽收，请联系 13000000000", "ioTypeName": "", "extTrack": {} }
+    ]
+  }
+]

@@ -1,0 +1,122 @@
+{
+  "items": [
+    {
+      "itemCode": "000000000000000000000001",
+      "searchCode": "000000000000000000000001",
+      "senderBarcode": "PRIVATE_SENDER_REFERENCE",
+      "retourOrBackToSender": false,
+      "minimizedDetails": true,
+      "matchSecurityLevel": false,
+      "activeStep": {
+        "name": "delivered_post_office",
+        "knownProcessStep": "PICKED_UP_IN_POST_OFFICE"
+      },
+      "weightInGrams": 320,
+      "dimensionsInCm": "26.1cm x 7.5cm x 38.4cm",
+      "receiver": {
+        "name": "PRIVATE_RECIPIENT",
+        "address": "PRIVATE_ADDRESS"
+      },
+      "sender": {
+        "name": "PRIVATE_SENDER"
+      },
+      "actualDeliveryTime": {
+        "day": "2026-01-04",
+        "time": "12:00"
+      },
+      "events": [
+        {
+          "date": "2026-01-04",
+          "time": "12:00",
+          "location": {
+            "locationName": "Example facility",
+            "countryCode": "BE"
+          },
+          "key": {
+            "EN": {
+              "description": "Item delivered"
+            },
+            "FR": {
+              "description": "PRIVATE_TRANSLATION"
+            }
+          },
+          "irregularity": false,
+          "private": "PRIVATE_SCAN_FIELD"
+        },
+        {
+          "date": "2026-01-03",
+          "time": "12:00",
+          "location": {
+            "locationName": "Example facility",
+            "countryCode": "BE"
+          },
+          "key": {
+            "EN": {
+              "description": "Item available at Pick-up point"
+            },
+            "FR": {
+              "description": "PRIVATE_TRANSLATION"
+            }
+          },
+          "irregularity": false,
+          "private": "PRIVATE_SCAN_FIELD"
+        },
+        {
+          "date": "2026-01-03",
+          "time": "10:00",
+          "location": {
+            "locationName": "Example facility",
+            "countryCode": "BE"
+          },
+          "key": {
+            "EN": {
+              "description": "The postman's delivery round for your item has started"
+            },
+            "FR": {
+              "description": "PRIVATE_TRANSLATION"
+            }
+          },
+          "irregularity": false,
+          "private": "PRIVATE_SCAN_FIELD"
+        },
+        {
+          "date": "2026-01-02",
+          "time": "12:00",
+          "location": {
+            "locationName": "Example facility",
+            "countryCode": "BE"
+          },
+          "key": {
+            "EN": {
+              "description": "Your item has been sorted"
+            },
+            "FR": {
+              "description": "PRIVATE_TRANSLATION"
+            }
+          },
+          "irregularity": false,
+          "private": "PRIVATE_SCAN_FIELD"
+        },
+        {
+          "date": "2026-01-01",
+          "time": "12:00",
+          "location": {
+            "locationName": "Example facility",
+            "countryCode": "BE"
+          },
+          "key": {
+            "EN": {
+              "description": "Item is announced / Landmark Global (bpost) received the information"
+            },
+            "FR": {
+              "description": "PRIVATE_TRANSLATION"
+            }
+          },
+          "irregularity": false,
+          "private": "PRIVATE_SCAN_FIELD"
+        }
+      ]
+    }
+  ],
+  "listOfParcelItemsByEmailIds": []
+}

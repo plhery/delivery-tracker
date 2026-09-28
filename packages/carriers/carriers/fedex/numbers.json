@@ -13,7 +13,8 @@
         "confidence": "low",
         "candidates": [
           "fedex",
-          "dpd-fr"
+          "dpd-fr",
+          "yunda"
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to FedEx, which stays one candidate among several."

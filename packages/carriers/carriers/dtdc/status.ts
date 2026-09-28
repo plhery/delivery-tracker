@@ -10,7 +10,7 @@ const STATUS = new Map<string, ClassifiedStatus>([
   ['In Transit', { status: 'in_transit', stage: 'in_transit' }],
   ['Out For Delivery', { status: 'out_for_delivery', stage: 'out_for_delivery' }],
   ['Delivered', { status: 'delivered', stage: 'delivered' }],
-  ['RTO Booked', { status: 'exception', stage: 'returned' }],
+  ['RTO Booked', { status: 'exception', stage: 'exception' }],
 ]);
 
 export function dtdcStatus(wording: string): ClassifiedStatus | undefined {

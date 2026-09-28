@@ -47,9 +47,9 @@ describe('DTDC parser', () => {
     Object.assign(payload.data, { type: 'rto', status_external: 'RTO Booked', current_event_description: 'RTO Booked',
       status_internal: 'rto_in_transit', timestamp: 1767531600000, rto_awb_num: NUMBER });
     const result = parseDtdc(payload, NUMBER);
-    expect(result).toMatchObject({ status: 'exception', current_stage: 'returned' });
+    expect(result).toMatchObject({ status: 'exception', current_stage: 'exception' });
     expect(result.events).toHaveLength(6);
-    expect(result.events?.[0]).toMatchObject({ description: 'RTO Booked', stage: 'returned', provider_leg: 'return' });
+    expect(result.events?.[0]).toMatchObject({ description: 'RTO Booked', stage: 'exception', provider_leg: 'return' });
     expect(result.events?.[1]).toMatchObject({ description: 'Delivered', stage: 'delivered' });
     expect(result.delivered_at).toBeUndefined();
   });
@@ -63,6 +63,26 @@ describe('DTDC parser', () => {
     expect(result.delivered_at).toBeUndefined();
   });
 
+  it.each([
+    ['Booked', 'pending', 'registered'],
+    ['Picked Up', 'in_transit', 'accepted'],
+    ['In Transit', 'in_transit', 'in_transit'],
+    ['Out For Delivery', 'out_for_delivery', 'out_for_delivery'],
+    ['RTO Booked', 'exception', 'exception'],
+  ])('keeps return %s active until delivery back to the sender', (wording, status, stage) => {
+    const payload = fixture();
+    Object.assign(payload.data, { type: 'rto', status_external: wording, current_event_description: wording,
+      status_internal: 'synthetic_return_movement', timestamp: 1767531600000, rto_awb_num: 'R00000001' });
+    payload.data.tracking.push({ ...payload.data.tracking[2], type: 'rto', awb_number: 'R00000001',
+      status_external: wording, event_description: wording, status_internal: 'synthetic_return_movement', timestamp: 1767531600000 });
+    const result = normalizeCarrierResult(parseDtdc(payload, NUMBER));
+    expect(result).toMatchObject({ status, current_stage: stage });
+    expect(result.events?.[0]).toMatchObject({ description: wording, stage, provider_leg: 'return' });
+    expect(result.events?.filter(event => event.provider_leg === 'return').every(event => event.stage !== 'returned')).toBe(true);
+    expect(result.events?.some(event => event.provider_leg !== 'return' && event.stage === 'delivered')).toBe(true);
+    expect(result.delivered_at).toBeUndefined();
+  });
+
   it('orders shuffled forward and return scans by their own instants and declared legs', () => {
     const payload = fixture();
     Object.assign(payload.data, { type: 'rto', status_external: 'Delivered', current_event_description: 'Delivered',
@@ -73,7 +93,7 @@ describe('DTDC parser', () => {
     const result = parseDtdc(payload, NUMBER);
     expect(result).toMatchObject({ status: 'exception', current_stage: 'returned' });
     expect(result.events?.slice(0, 3).map(event => [event.description, event.stage, event.provider_leg]))
-      .toEqual([['Delivered', 'returned', 'return'], ['In Transit', 'returned', 'return'], ['Delivered', 'delivered', undefined]]);
+      .toEqual([['Delivered', 'returned', 'return'], ['In Transit', 'in_transit', 'return'], ['Delivered', 'delivered', undefined]]);
     const times = result.events!.map(event => Date.parse(event.time!));
     expect(times).toEqual([...times].sort((a, b) => b - a));
     expect(result.delivered_at).toBeUndefined();

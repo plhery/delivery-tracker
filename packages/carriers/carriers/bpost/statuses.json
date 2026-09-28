@@ -1,0 +1,96 @@
+{
+  "carrier": "bpost",
+  "entries": [
+    {
+      "wording": "Item delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Item available at Pick-up point",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "The postman's delivery round for your item has started",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Your shipment has arrived at the postal operator of the country of destination and will be delivered in the coming days",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Your item has been sorted",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Item is ready for transport",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Shipment ready for transport",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Departure to country of destination",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Arrival at international depot",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Parcel is handled",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Landmark Global (bpost) has received the item",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Confirmation of preparation of the shipment received",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    },
+    {
+      "wording": "Item is announced / Landmark Global (bpost) received the information",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live",
+      "firstSeen": "2026-09-28"
+    }
+  ]
+}

@@ -3,6 +3,7 @@
 /** Carriers whose adapter can recognize a number, by popularity rank (carrier.json tracking.recognition). */
 export const CARRIER_RECOGNITION_RANKS: Readonly<Record<string, number>> = {
   "austrian-post": 40,
+  "bpost": 35,
   "canada-post": 15,
   "chronopost": 45,
   "ciblex": 20,

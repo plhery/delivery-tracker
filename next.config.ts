@@ -33,7 +33,22 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  serverExternalPackages: ['playwright-core'],
+  serverExternalPackages: ['playwright-core', 'onnxruntime-web'],
+  // OCR runs in a file-backed worker outside Next's import graph. Include its
+  // model and Node WASM runtime so the standalone server can start it locally.
+  outputFileTracingIncludes: {
+    '/*': [
+      './packages/carriers/carriers/correios-br/model/captcha.onnx',
+      './packages/carriers/carriers/correios-br/model/LICENSE',
+      './packages/carriers/carriers/correios-br/ocr-worker.mjs',
+      './node_modules/onnxruntime-web/package.json',
+      './node_modules/onnxruntime-web/dist/ort.node.min.{js,mjs}',
+      './node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.mjs',
+      './node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm',
+      './node_modules/onnxruntime-common/package.json',
+      './node_modules/onnxruntime-common/dist/{cjs,esm}/*.js',
+    ],
+  },
   poweredByHeader: false,
   reactStrictMode: true,
   // Link previews may use browser-like user agents and only inspect the head.

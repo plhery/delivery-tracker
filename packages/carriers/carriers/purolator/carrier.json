@@ -12,16 +12,16 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "purolator",
+    "steps": ["direct"]
   },
-  "capabilities": [],
+  "capabilities": ["history", "location", "weight"],
   "portal": {
-    "url": "https://www.purolator.com/en/shipping/tracker?searchValue={trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "url": "https://www.purolator.com/en/shipping/tracker?pins={trackingNumber}",
+    "canaryUrl": "https://www.purolator.com/en/shipping/tracker",
+    "shows": ["status", "history", "location", "estimated_delivery", "weight", "recipient"],
+    "scraped": ["status", "history", "location", "weight"],
+    "discarded": ["estimated_delivery", "recipient"],
     "unavailable": []
   },
   "links": [
@@ -30,7 +30,9 @@
         "purolator.com"
       ],
       "params": [
-        "searchValue"
+        "searchValue",
+        "pin",
+        "pins"
       ]
     }
   ],

@@ -3,7 +3,9 @@
   "displayName": "Yunda Express",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "CN"
+    ]
   },
   "brand": {
     "color": "#ffce00",
@@ -16,23 +18,54 @@
   "timezone": "Asia/Shanghai",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "yunda",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location"
+  ],
   "portal": {
-    "url": "https://www.yunda56.com/",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "url": "https://web.yundaex.com/infoInquiry?nav_id=262&cid=0&homeWaybill={trackingNumber}",
+    "canaryUrl": "https://web.yundaex.com/infoInquiry",
+    "shows": [
+      "status",
+      "history",
+      "location"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location"
+    ],
+    "discarded": [
+      "contact_details",
+      "recipient_details",
+      "collection_addresses",
+      "signature_images",
+      "unlabelled_weight"
+    ],
+    "unavailable": [
+      "eta",
+      "pickup_point"
+    ]
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "web.yundaex.com"
+      ],
+      "params": [
+        "homeWaybill"
+      ]
+    }
+  ],
   "detection": [
     {
       "id": "yunda-1",
-      "pattern": "^\\d{13}$",
+      "pattern": "^\\d{13}(?:\\d{2})?$",
       "confidence": "low"
     }
   ]

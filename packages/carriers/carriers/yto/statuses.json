@@ -7,7 +7,8 @@
       "stage": "accepted",
       "confirmedBy": "live",
       "firstSeen": "2026-09-27",
-      "note": "Relayed by ParcelsApp; stored as \"Picked up\"."
+      "note": "Relayed by ParcelsApp; stored as \"Picked up\".",
+      "code": "310"
     },
     {
       "wording": "Pickup scan",
@@ -23,7 +24,8 @@
       "stage": "in_transit",
       "confirmedBy": "live",
       "firstSeen": "2026-09-27",
-      "note": "Relayed by ParcelsApp; stored as \"Loaded for transport\"."
+      "note": "Relayed by ParcelsApp; stored as \"Loaded for transport\".",
+      "code": "131"
     },
     {
       "wording": "Load scan into vehicle",
@@ -39,7 +41,8 @@
       "stage": "in_transit",
       "confirmedBy": "live",
       "firstSeen": "2026-09-27",
-      "note": "Relayed by ParcelsApp; stored as \"Unloaded at a sorting centre\"."
+      "note": "Relayed by ParcelsApp; stored as \"Unloaded at a sorting centre\".",
+      "code": "171"
     },
     {
       "wording": "Get off scan",
@@ -55,7 +58,8 @@
       "stage": "in_transit",
       "confirmedBy": "live",
       "firstSeen": "2026-09-27",
-      "note": "Relayed by ParcelsApp; stored as \"In transit\"."
+      "note": "Relayed by ParcelsApp; stored as \"In transit\".",
+      "code": "123"
     },
     {
       "wording": "Package city information",
@@ -68,15 +72,16 @@
     {
       "wording": "退回件扫描",
       "language": "zh",
-      "stage": "returned",
+      "stage": "exception",
       "confirmedBy": "live",
       "firstSeen": "2026-09-27",
-      "note": "Relayed by ParcelsApp; stored as \"Return to the sender started\". Later delivery-side scans are stored as the trip back to the sender."
+      "note": "Relayed by ParcelsApp; stored as \"Return to the sender started\". Later delivery-side scans are stored as the trip back to the sender.",
+      "code": "835"
     },
     {
       "wording": "Return package scan",
       "language": "en",
-      "stage": "returned",
+      "stage": "exception",
       "confirmedBy": "live",
       "firstSeen": "2026-09-27",
       "note": "ParcelsApp's translation of 退回件扫描; stored as \"Return to the sender started\"."
@@ -87,7 +92,8 @@
       "stage": "out_for_delivery",
       "confirmedBy": "live",
       "firstSeen": "2026-09-27",
-      "note": "Relayed by ParcelsApp; stored as \"Out for delivery\". After a return scan: \"Out for delivery back to the sender\", stage returned."
+      "note": "Relayed by ParcelsApp; stored as \"Out for delivery\". After a return scan: \"Out for delivery back to the sender\"; the movement stage remains active.",
+      "code": "710"
     },
     {
       "wording": "Delivery scan",
@@ -103,7 +109,8 @@
       "stage": "ready_for_pickup",
       "confirmedBy": "live",
       "firstSeen": "2026-09-27",
-      "note": "Relayed by ParcelsApp; stored as \"In a parcel locker or pickup station\". After a return scan: \"In a parcel locker or station on its way back\", stage returned."
+      "note": "Relayed by ParcelsApp; stored as \"In a parcel locker or pickup station\". After a return scan: \"In a parcel locker or station on its way back\"; the pickup stage remains active.",
+      "code": "751"
     },
     {
       "wording": "In cabinet | In storage",
@@ -119,7 +126,8 @@
       "stage": "in_transit",
       "confirmedBy": "live",
       "firstSeen": "2026-09-27",
-      "note": "Relayed by ParcelsApp; stored as \"Taken out of the locker by the courier\". The courier took the parcel back out of the locker or station."
+      "note": "Relayed by ParcelsApp; stored as \"Taken out of the locker by the courier\". The courier took the parcel back out of the locker or station.",
+      "code": "756"
     },
     {
       "wording": "Small item handler takes out.",
@@ -135,7 +143,8 @@
       "stage": "delivered",
       "confirmedBy": "live",
       "firstSeen": "2026-09-27",
-      "note": "Relayed by ParcelsApp; stored as \"Delivered\". After a return scan it is the sender signing: \"Returned to the sender\", stage returned."
+      "note": "Relayed by ParcelsApp; stored as \"Delivered\". After a return scan it is the sender signing: \"Returned to the sender\", stage returned.",
+      "code": "745"
     },
     {
       "wording": "PDA normal delivery scan",
@@ -144,6 +153,54 @@
       "confirmedBy": "live",
       "firstSeen": "2026-09-27",
       "note": "ParcelsApp's translation of PDA正常签收扫描; stored as \"Delivered\"."
+    },
+    {
+      "wording": "已取件",
+      "code": "311",
+      "language": "zh",
+      "stage": "accepted",
+      "confirmedBy": "documentation",
+      "note": "Exact code mapping in the official domestic website tracking client."
+    },
+    {
+      "wording": "运输中",
+      "code": "111",
+      "language": "zh",
+      "stage": "in_transit",
+      "confirmedBy": "documentation",
+      "note": "Exact code mapping in the official domestic website tracking client."
+    },
+    {
+      "wording": "运输中",
+      "code": "136",
+      "language": "zh",
+      "stage": "in_transit",
+      "confirmedBy": "documentation",
+      "note": "Exact code mapping in the official domestic website tracking client."
+    },
+    {
+      "wording": "运输中",
+      "code": "176",
+      "language": "zh",
+      "stage": "in_transit",
+      "confirmedBy": "documentation",
+      "note": "Exact code mapping in the official domestic website tracking client."
+    },
+    {
+      "wording": "派件中",
+      "code": "741",
+      "language": "zh",
+      "stage": "out_for_delivery",
+      "confirmedBy": "documentation",
+      "note": "Exact code mapping in the official domestic website tracking client."
+    },
+    {
+      "wording": "派件中",
+      "code": "746",
+      "language": "zh",
+      "stage": "out_for_delivery",
+      "confirmedBy": "documentation",
+      "note": "Exact code mapping in the official domestic website tracking client."
     }
   ]
 }

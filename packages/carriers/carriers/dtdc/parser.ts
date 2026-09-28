@@ -30,10 +30,13 @@ function event(raw: Record<string, unknown>, summary = false): CarrierEvent {
   if (!description) throw new SchemaError(PROVIDER, 'DTDC returned an event with no description');
   const mapped = dtdcStatus(clean(raw.status_external, 200)) ?? dtdcStatus(description);
   const returning = raw.type === 'rto';
+  // The return leg still has ordinary pickup, transit and delivery movement.
+  // Only its completed delivery is a terminal return to the sender.
+  const stage = returning && mapped?.stage === 'delivered' ? 'returned' : mapped?.stage;
   const location = clean(raw.location, 200);
   const code = clean(raw.status_internal, 100);
   return { description, time: instant(raw.timestamp), ...(location ? { location } : {}),
-    ...(mapped ? { stage: returning ? 'returned' : mapped.stage } : {}),
+    ...(stage ? { stage } : {}),
     ...(code ? { provider_code: code } : {}), ...(returning ? { provider_leg: 'return' } : {}) };
 }
 
@@ -68,9 +71,10 @@ export function parseDtdc(payload: unknown, trackingNumber: string): CarrierResu
   events.sort((a, b) => Date.parse(b.time!) - Date.parse(a.time!));
   const wording = snapshot.description!;
   const mapped = dtdcStatus(clean(data.status_external, 200)) ?? dtdcStatus(wording);
-  const returning = data.type === 'rto' && mapped;
-  return { status: returning ? 'exception' : mapped?.status ?? 'unknown',
-    ...(mapped ? { current_stage: returning ? 'returned' : mapped.stage } : {}),
+  const returning = data.type === 'rto';
+  const returned = returning && mapped?.stage === 'delivered';
+  return { status: returned ? 'exception' : mapped?.status ?? 'unknown',
+    ...(mapped ? { current_stage: returned ? 'returned' : mapped.stage } : {}),
     last_status_text: wording, last_update: snapshot.time, timezone: 'Asia/Kolkata',
     ...(mapped?.stage === 'delivered' && !returning ? { delivered_at: snapshot.time } : {}),
     events: events.slice(0, 100) };

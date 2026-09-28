@@ -59,10 +59,17 @@ describe('ParcelsApp YTO scans', () => {
     expect(returned).toMatchObject({ status: 'exception', current_stage: 'returned', last_status_text: 'Returned to the sender' });
     expect(returned.events?.slice(0, 4).map((event) => [event.description, event.stage])).toEqual([
       ['Returned to the sender', 'returned'],
-      ['In a parcel locker or station on its way back', 'returned'],
-      ['Out for delivery back to the sender', 'returned'],
-      ['Return to the sender started', 'returned'],
+      ['In a parcel locker or station on its way back', 'ready_for_pickup'],
+      ['Out for delivery back to the sender', 'out_for_delivery'],
+      ['Return to the sender started', 'exception'],
     ]);
+  });
+
+  it.each(['chinese', 'english'] as const)('keeps return transit open before sender delivery (%s)', language => {
+    expect(history(language, [0, 1, 6])).toMatchObject({ status: 'exception', current_stage: 'exception' });
+    expect(history(language, [0, 1, 6, 3])).toMatchObject({ status: 'out_for_delivery', current_stage: 'out_for_delivery' });
+    expect(history(language, [0, 1, 6, 3, 4])).toMatchObject({ status: 'out_for_delivery', current_stage: 'ready_for_pickup' });
+    expect(history(language, [0, 1, 6, 3, 4]).events?.[0]).toMatchObject({ provider_leg: 'return' });
   });
 
   it('leaves labels of other carriers and unknown YTO labels to the shared rules', () => {

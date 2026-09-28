@@ -1,0 +1,40 @@
+{
+  "codObjeto": "AA000000005BR",
+  "situacao": "E",
+  "dtPrevista": "03/01/2026",
+  "token": "PRIVATE_SYNTHETIC_TOKEN",
+  "arImagem": "PRIVATE_SYNTHETIC_PROOF",
+  "eventos": [
+    {
+      "codigo": "BDE", "tipo": "01", "descricao": "Objeto entregue ao destinatário",
+      "dtHrCriado": { "date": "2026-01-05 16:10:47.000000", "timezone_type": 3, "timezone": "America/Sao_Paulo" },
+      "unidade": { "nome": "PRIVATE_SYNTHETIC_UNIT", "endereco": { "cidade": "Cidade Exemplo", "uf": "SP", "logradouro": "PRIVATE_SYNTHETIC_STREET", "codigoPostal": "PRIVATE_SYNTHETIC_POSTCODE" } },
+      "tokenBase64": "PRIVATE_SYNTHETIC_TOKEN", "destinatario": "PRIVATE_SYNTHETIC_PERSON"
+    },
+    {
+      "codigo": "OEC", "tipo": "01", "descricao": "Objeto saiu para entrega ao destinatário",
+      "dtHrCriado": { "date": "2026-01-05 13:54:24.000000", "timezone_type": 3, "timezone": "America/Sao_Paulo" },
+      "unidade": { "endereco": { "cidade": "Cidade Exemplo", "uf": "SP" } }
+    },
+    {
+      "codigo": "BDE", "tipo": "47", "descricao": "Saída para entrega cancelada",
+      "dtHrCriado": { "date": "2026-01-05 13:24:13.000000", "timezone_type": 3, "timezone": "America/Sao_Paulo" }
+    },
+    {
+      "codigo": "BDE", "tipo": "34", "descricao": "Inconsistências no endereçamento do objeto",
+      "dtHrCriado": { "date": "2026-01-04 13:16:48.000000", "timezone_type": 3, "timezone": "America/Sao_Paulo" }
+    },
+    {
+      "codigo": "RO", "tipo": "01", "descricao": "Objeto em transferência - por favor aguarde",
+      "dtHrCriado": { "date": "2026-01-03 13:39:43.000000", "timezone_type": 3, "timezone": "America/Sao_Paulo" }
+    },
+    {
+      "codigo": "PO", "tipo": "01", "descricao": "Objeto postado",
+      "dtHrCriado": { "date": "2026-01-02 18:40:01.000000", "timezone_type": 3, "timezone": "America/Sao_Paulo" }
+    },
+    {
+      "codigo": "PAR", "tipo": "21", "descricao": "Informações enviadas para análise da autoridade aduaneira/órgãos anuentes",
+      "dtHrCriado": { "date": "2026-01-01 21:09:45.000000", "timezone_type": 3, "timezone": "America/Sao_Paulo" }
+    }
+  ]
+}

@@ -124,7 +124,8 @@
         "confidence": "low",
         "candidates": [
           "fedex",
-          "dpd-fr"
+          "dpd-fr",
+          "yunda"
         ]
       },
       "note": "Shared numeric shape that must stay a suggestion rather than a carrier."

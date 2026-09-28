@@ -1,0 +1,67 @@
+{
+  "code": 200,
+  "msg": "请求成功",
+  "data": {
+    "order": {
+      "0000000000001": {
+        "barcode": "0000000000001",
+        "senderName": "Private synthetic sender",
+        "receiverMobile": "13000000000",
+        "receiverDetailAddress": "Synthetic address",
+        "weight": "250"
+      }
+    },
+    "logistic": {
+      "0000000000001": {
+        "gn": [
+          {
+            "mailNo": "0000000000001",
+            "scanTm": "2026-01-01 14:00:00",
+            "status": "已揽件",
+            "label": 0,
+            "kdydhjc": 1,
+            "trackRecord": "【示例市】Private synthetic courier 13000000000, recipient Private synthetic recipient, address Synthetic address"
+          },
+          {
+            "mailNo": "0000000000001",
+            "scanTm": "2026-01-02 18:00:00",
+            "status": "运输中",
+            "label": 0,
+            "kdydhjc": 1,
+            "trackRecord": "【示例市】Private synthetic courier 13000000000, recipient Private synthetic recipient, address Synthetic address"
+          },
+          {
+            "mailNo": "0000000000001",
+            "scanTm": "2026-01-03 11:00:00",
+            "status": "派送中",
+            "label": 0,
+            "kdydhjc": 1,
+            "trackRecord": "【示例市】Private synthetic courier 13000000000, recipient Private synthetic recipient, address Synthetic address"
+          },
+          {
+            "mailNo": "0000000000001",
+            "scanTm": "2026-01-03 12:00:00",
+            "status": "待取件",
+            "label": 0,
+            "kdydhjc": 1,
+            "trackRecord": "【示例市】Private synthetic courier 13000000000, recipient Private synthetic recipient, address Synthetic address"
+          },
+          {
+            "mailNo": "0000000000001",
+            "scanTm": "2026-01-03 18:00:00",
+            "status": "已签收",
+            "label": 0,
+            "kdydhjc": 1,
+            "trackRecord": "【示例市】Private synthetic courier 13000000000, recipient Private synthetic recipient, address Synthetic address"
+          }
+        ],
+        "gj": [],
+        "isCheck": false,
+        "senderCity": "示例市",
+        "receiverCity": "示例市",
+        "isLogin": false,
+        "qianshou_image_base64": ""
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "searchResult": [{ "sequenceId": 1, "trackingId": "100000000001", "status": "FOUND", "type": "PIN", "shipmentIndex": 0, "packageIndex": 0 }],
+  "shipment": [{
+    "id": 0,
+    "shipmentPin": "100000000001",
+    "status": { "code": "DEL", "description": "Delivered" },
+    "pieceTotalCount": 1,
+    "details": { "weight": { "unit": "LB", "value": 2 }, "receiverName": "Private Recipient", "receiverAddress": "Private Address", "postalCode": "Z0Z0Z0", "shipperReference": "Private Reference" },
+    "package": [{
+      "id": 0,
+      "pin": "100000000001",
+      "status": { "code": "DEL", "description": "Delivered" },
+      "estimatedDeliveryDate": "2026-01-03",
+      "details": { "deliveryDetails": { "deliveryDateTime": "2026-01-04 14:00:00", "signature": "Private Signature", "proofUrl": "https://example.test/private-proof" } },
+      "events": [
+        { "dateTime": "2026-01-04 14:00:00", "code": "9500", "description": "Shipment delivered", "location": { "city": "Example City", "provinceState": "QC", "countryCode": "CA", "street": "Private Street" } },
+        { "dateTime": "2026-01-03 16:00:00", "code": "9550", "reasonCode": "RETAIL", "description": "Available for pickup for 5 business days from arrival date at the counter", "location": { "city": "Example City", "provinceState": "QC", "countryCode": "CA" } },
+        { "dateTime": "2026-01-03 14:00:00", "code": "9260", "description": "Attempted delivery - receiver unavailable", "location": { "city": "Example City", "provinceState": "QC", "countryCode": "CA" } },
+        { "dateTime": "2026-01-03 08:00:00", "code": "4200", "reasonCode": "INFERRED", "description": "On vehicle for delivery", "location": { "city": "Example City", "provinceState": "QC", "countryCode": "CA" } },
+        { "dateTime": "2026-01-02 10:00:00", "code": "7220", "description": "Arrived at sort facility", "location": { "city": "Example City", "provinceState": "ON", "countryCode": "CA" } },
+        { "dateTime": "2026-01-01 18:00:00", "code": "2380", "description": "Picked up by Purolator", "location": { "city": "Example City", "provinceState": "ON", "countryCode": "CA" } },
+        { "dateTime": "2026-01-01 10:00:00", "code": "3010", "description": "Label information electronically submitted", "location": { "countryCode": "CA" } }
+      ]
+    }]
+  }]
+}

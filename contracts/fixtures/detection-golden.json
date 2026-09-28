@@ -15,6 +15,16 @@
     "candidates": []
   },
   {
+    "input": "000000000000001",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "dpd-fr",
+      "yunda"
+    ]
+  },
+  {
     "input": "000123450000000027",
     "carrier": "unknown",
     "confidence": "low",
@@ -232,7 +242,8 @@
     "confidence": "low",
     "candidates": [
       "fedex",
-      "dpd-fr"
+      "dpd-fr",
+      "yunda"
     ]
   },
   {
@@ -276,7 +287,8 @@
     "confidence": "low",
     "candidates": [
       "fedex",
-      "dpd-fr"
+      "dpd-fr",
+      "yunda"
     ]
   },
   {
@@ -499,7 +511,8 @@
     "confidence": "low",
     "candidates": [
       "fedex",
-      "dpd-fr"
+      "dpd-fr",
+      "yunda"
     ]
   },
   {
@@ -628,7 +641,8 @@
     "confidence": "low",
     "candidates": [
       "fedex",
-      "dpd-fr"
+      "dpd-fr",
+      "yunda"
     ]
   },
   {
@@ -1775,7 +1789,8 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "fedex"
+      "fedex",
+      "yunda"
     ]
   },
   {
@@ -2043,7 +2058,8 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
-      "fedex"
+      "fedex",
+      "yunda"
     ]
   },
   {

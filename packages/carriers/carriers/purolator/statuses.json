@@ -1,0 +1,15 @@
+{
+  "carrier": "purolator",
+  "entries": [
+    { "code": "3010", "wording": "Label information electronically submitted", "language": "en", "stage": "registered", "confirmedBy": "live" },
+    { "code": "2380", "wording": "Picked up by Purolator", "language": "en", "stage": "accepted", "confirmedBy": "live" },
+    { "code": "0300", "wording": "Arrived at sort facility", "language": "en", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "4060", "wording": "Arrived at sort facility", "language": "en", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "7220", "wording": "Arrived at sort facility", "language": "en", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "7525", "wording": "Departed sort facility", "language": "en", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "4200", "wording": "On vehicle for delivery", "language": "en", "stage": "out_for_delivery", "confirmedBy": "live" },
+    { "code": "9260", "wording": "Attempted delivery - receiver unavailable", "language": "en", "stage": "failed_attempt", "confirmedBy": "live" },
+    { "code": "9550", "wording": "Available for pickup for 5 business days from arrival date at the counter", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "live" },
+    { "code": "9500", "wording": "Shipment delivered", "language": "en", "stage": "delivered", "confirmedBy": "live" }
+  ]
+}

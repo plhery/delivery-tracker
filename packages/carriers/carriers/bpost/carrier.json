@@ -12,17 +12,47 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "bpost",
+    "steps": [
+      "direct"
+    ],
+    "recognition": { "rank": 35 }
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "weight",
+    "dimensions"
+  ],
   "portal": {
     "url": "https://track.bpost.cloud/",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "canaryUrl": "https://track.bpost.cloud/",
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "weight",
+      "dimensions"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "weight",
+      "dimensions"
+    ],
+    "discarded": [
+      "recipient",
+      "sender",
+      "addresses",
+      "contact_details",
+      "delivery_preferences",
+      "proof_of_delivery"
+    ],
+    "unavailable": [
+      "eta",
+      "offset_timestamps"
+    ]
   },
   "links": [],
   "detection": [

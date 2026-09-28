@@ -89,10 +89,12 @@ describe('general delivery handoff candidates', () => {
       .toEqual({ carrier: 'swiss-post', number: 'LX123456785CH', basis: 'reference' });
   });
   it('requires a dedicated adapter and never borrows another carrier’s credentials', () => {
-    for (const delivery_carrier of ['bpost', 'dpd', 'amazon-logistics', 'not-a-carrier', 'la-poste']) {
+    for (const delivery_carrier of ['dpd', 'amazon-logistics', 'not-a-carrier', 'la-poste']) {
       expect(deliveryHandoff('la-poste', 'CW123456785FR', { delivery_carrier, destination_country: 'FI' })).toBeNull();
     }
     expect(deliveryHandoff('la-poste', 'CW123456785FR', { delivery_carrier: 'posti', delivery_tracking_number: 'bad?number' })).toBeNull();
+    expect(deliveryHandoff('la-poste', 'CW123456785FR', { delivery_carrier: 'bpost' }))
+      .toEqual({ carrier: 'bpost', number: 'CW123456785FR', basis: 'partner' });
   });
 });
 

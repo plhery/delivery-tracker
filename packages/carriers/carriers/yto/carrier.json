@@ -3,7 +3,9 @@
   "displayName": "YTO Express",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "CN"
+    ]
   },
   "brand": {
     "color": "#4d148c"
@@ -12,19 +14,51 @@
   "timezone": "Asia/Shanghai",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "yto",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location"
+  ],
   "portal": {
-    "url": "https://www.ytoglobal.com/",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "url": "https://www.yto.net.cn/ytoExpress/waybill/search",
+    "canaryUrl": "https://www.yto.net.cn/ytoExpress/waybill/search",
+    "shows": [
+      "status",
+      "history",
+      "location"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location"
+    ],
+    "discarded": [
+      "contact_details",
+      "recipient_details",
+      "collection_addresses",
+      "signature_images",
+      "unlabelled_weight"
+    ],
+    "unavailable": [
+      "eta",
+      "pickup_point"
+    ]
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "yto.net.cn"
+      ],
+      "params": [
+        "mailNo",
+        "waybillNo"
+      ]
+    }
+  ],
   "detection": [
     {
       "id": "yto-1",

@@ -67,7 +67,8 @@ describe('UI tracking links (rendered public pages)', () => {
       let verdict: ReturnType<typeof trackingPageVerdict> = 'unverified';
       let inputBound = false;
       // Allow hydration and client redirects before inspecting the final page.
-      for (let attempt = 0; attempt < 10; attempt++) {
+      const attempts = Math.ceil((testCase.renderTimeoutMs ?? 10_000) / 1000);
+      for (let attempt = 0; attempt < attempts; attempt++) {
         await page.waitForTimeout(1000);
         // A body still being replaced is read again on the next pass.
         const bodyText = await page.locator('body').innerText({ timeout: 3000 }).catch(() => '');

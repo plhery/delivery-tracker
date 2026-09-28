@@ -58,7 +58,7 @@
     {
       "wording": "RTO Booked",
       "language": "en",
-      "stage": "returned",
+      "stage": "exception",
       "confirmedBy": "live"
     }
   ]

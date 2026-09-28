@@ -8,11 +8,13 @@ import { adapter as asendia } from '../carriers/asendia/adapter';
 import { adapter as australiaPost } from '../carriers/australia-post/adapter';
 import { adapter as austrianPost } from '../carriers/austrian-post/adapter';
 import { adapter as blueDart } from '../carriers/blue-dart/adapter';
+import { adapter as bpost } from '../carriers/bpost/adapter';
 import { adapter as cChezVous } from '../carriers/c-chez-vous/adapter';
 import { adapter as canadaPost } from '../carriers/canada-post/adapter';
 import { adapter as ciblex } from '../carriers/ciblex/adapter';
 import { adapter as colisPrive } from '../carriers/colis-prive/adapter';
 import { adapter as colisweb } from '../carriers/colisweb/adapter';
+import { adapter as correiosBr } from '../carriers/correios-br/adapter';
 import { adapter as correosSpain } from '../carriers/correos-spain/adapter';
 import { adapter as ctt } from '../carriers/ctt/adapter';
 import { adapter as dachser } from '../carriers/dachser/adapter';
@@ -48,6 +50,7 @@ import { adapter as posteItaliane } from '../carriers/poste-italiane/adapter';
 import { adapter as posti } from '../carriers/posti/adapter';
 import { adapter as postlogistics } from '../carriers/postlogistics/adapter';
 import { adapter as postnord } from '../carriers/postnord/adapter';
+import { adapter as purolator } from '../carriers/purolator/adapter';
 import { adapter as relaisColis } from '../carriers/relais-colis/adapter';
 import { adapter as royalMail } from '../carriers/royal-mail/adapter';
 import { adapter as sfExpress } from '../carriers/sf-express/adapter';
@@ -61,6 +64,8 @@ import { adapter as ups } from '../carriers/ups/adapter';
 import { adapter as usps } from '../carriers/usps/adapter';
 import { adapter as yamato } from '../carriers/yamato/adapter';
 import { adapter as yanwen } from '../carriers/yanwen/adapter';
+import { adapter as yto } from '../carriers/yto/adapter';
+import { adapter as yunda } from '../carriers/yunda/adapter';
 import { adapter as yunexpress } from '../carriers/yunexpress/adapter';
 
 export const REGISTRY: RegistryDefinition = {
@@ -72,11 +77,13 @@ export const REGISTRY: RegistryDefinition = {
     "australia-post": australiaPost,
     "austrian-post": austrianPost,
     "blue-dart": blueDart,
+    "bpost": bpost,
     "c-chez-vous": cChezVous,
     "canada-post": canadaPost,
     "ciblex": ciblex,
     "colis-prive": colisPrive,
     "colisweb": colisweb,
+    "correios-br": correiosBr,
     "correos-spain": correosSpain,
     "ctt": ctt,
     "dachser": dachser,
@@ -112,6 +119,7 @@ export const REGISTRY: RegistryDefinition = {
     "posti": posti,
     "postlogistics": postlogistics,
     "postnord": postnord,
+    "purolator": purolator,
     "relais-colis": relaisColis,
     "royal-mail": royalMail,
     "sf-express": sfExpress,
@@ -125,6 +133,8 @@ export const REGISTRY: RegistryDefinition = {
     "usps": usps,
     "yamato": yamato,
     "yanwen": yanwen,
+    "yto": yto,
+    "yunda": yunda,
     "yunexpress": yunexpress,
   },
   carriers: {
@@ -137,7 +147,7 @@ export const REGISTRY: RegistryDefinition = {
     "australia-post": "australia-post",
     "austrian-post": "austrian-post",
     "blue-dart": "blue-dart",
-    "bpost": "universal",
+    "bpost": "bpost",
     "bring-posten": "universal",
     "brt": "universal",
     "c-chez-vous": "c-chez-vous",
@@ -148,7 +158,7 @@ export const REGISTRY: RegistryDefinition = {
     "ciblex": "ciblex",
     "colis-prive": "colis-prive",
     "colisweb": "colisweb",
-    "correios-br": "universal",
+    "correios-br": "correios-br",
     "correos-chile": "universal",
     "correos-express": "universal",
     "correos-spain": "correos-spain",
@@ -203,7 +213,7 @@ export const REGISTRY: RegistryDefinition = {
     "posti": "posti",
     "postlogistics": "postlogistics",
     "postnord": "postnord",
-    "purolator": "universal",
+    "purolator": "purolator",
     "quickpac": "planzer",
     "relais-colis": "relais-colis",
     "royal-mail": "universal",
@@ -229,8 +239,8 @@ export const REGISTRY: RegistryDefinition = {
     "usps": "usps",
     "yamato": "yamato",
     "yanwen": "yanwen",
-    "yto": "universal",
-    "yunda": "universal",
+    "yto": "yto",
+    "yunda": "yunda",
     "yunexpress": "yunexpress",
     "zto": "universal",
   },

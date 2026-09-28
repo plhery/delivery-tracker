@@ -1486,9 +1486,9 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "bpost"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://track.bpost.cloud/",
     "linkRules": [],
     "detectionRules": [
       {
@@ -1912,16 +1912,18 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "purolator"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://www.purolator.com/en/shipping/tracker",
     "linkRules": [
       {
         "domains": [
           "purolator.com"
         ],
         "params": [
-          "searchValue"
+          "searchValue",
+          "pin",
+          "pins"
         ]
       }
     ],
@@ -1935,7 +1937,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       }
     ],
-    "trackingUrlTemplate": "https://www.purolator.com/en/shipping/tracker?searchValue={trackingNumber}"
+    "trackingUrlTemplate": "https://www.purolator.com/en/shipping/tracker?pins={trackingNumber}"
   },
   "canpar": {
     "displayName": "Canpar",
@@ -2206,9 +2208,9 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "correios-br"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://rastreamento.correios.com.br/app/index.php",
     "linkRules": [
       {
         "domains": [
@@ -2500,17 +2502,26 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Asia/Shanghai",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "yunda"
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://web.yundaex.com/infoInquiry",
+    "linkRules": [
+      {
+        "domains": [
+          "web.yundaex.com"
+        ],
+        "params": [
+          "homeWaybill"
+        ]
+      }
+    ],
     "detectionRules": [
       {
-        "pattern": "^\\d{13}$",
+        "pattern": "^\\d{13}(?:\\d{2})?$",
         "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://www.yunda56.com/"
+    "trackingUrlTemplate": "https://web.yundaex.com/infoInquiry?nav_id=262&cid=0&homeWaybill={trackingNumber}"
   },
   "yto": {
     "displayName": "YTO Express",
@@ -2519,10 +2530,20 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Asia/Shanghai",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "yto"
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://www.yto.net.cn/ytoExpress/waybill/search",
+    "linkRules": [
+      {
+        "domains": [
+          "yto.net.cn"
+        ],
+        "params": [
+          "mailNo",
+          "waybillNo"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^D\\d{11}$",
@@ -2533,7 +2554,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "high"
       }
     ],
-    "trackingUrlTemplate": "https://www.ytoglobal.com/"
+    "trackingUrlTemplate": "https://www.yto.net.cn/ytoExpress/waybill/search"
   },
   "zto": {
     "displayName": "ZTO Express",

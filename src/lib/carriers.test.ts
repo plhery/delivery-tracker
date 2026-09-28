@@ -187,7 +187,7 @@ describe('carrier detection', () => {
       expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
       expect(match.candidates).toContain('bpost');
     }
-    expectUniversalFallback('bpost');
+    expectDirectTracking('bpost');
   });
 
   it('bring-posten — Bring', () => {
@@ -319,7 +319,7 @@ describe('carrier detection', () => {
     // Sources: https://github.com/leandrotoledo/python-correios (CN) and https://github.com/FelipeMorandini/rastreador_correios (HK)
     expect(detectCarrier('RA222491899CN')).toBe('china-post');
     expect(detectCarrier('LB571181225HK')).toBe('hongkong-post');
-    expectUniversalFallback('correios-br');
+    expectDirectTracking('correios-br');
   });
 
   it('correos-chile — Correos de Chile', () => {
@@ -1033,7 +1033,7 @@ describe('carrier detection', () => {
       expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
       expect(match.candidates).toContain('purolator');
     }
-    expectUniversalFallback('purolator');
+    expectDirectTracking('purolator');
   });
 
   it('quickpac — Quickpac', () => {
@@ -1336,7 +1336,7 @@ describe('carrier detection', () => {
     // OSS EXAMPLE fixture, D + 11 digits (not asserted real).
     // Source: https://gist.github.com/zxp/e83a4a1b7294a5ed6207
     expect(detectCarrier('D00015070907')).toBe('yto');
-    expectUniversalFallback('yto');
+    expectDirectTracking('yto');
   });
 
   it('yunda — Yunda Express', () => {
@@ -1345,7 +1345,7 @@ describe('carrier detection', () => {
     const match = detectCarrierMatch('1000478495775');
     expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
     expect(match.candidates).toContain('yunda');
-    expectUniversalFallback('yunda');
+    expectDirectTracking('yunda');
   });
 
   it('yunexpress — YunExpress', () => {
@@ -1431,7 +1431,7 @@ describe('ambiguous number shapes', () => {
     expect(detectCarrierMatch('123456789012345')).toEqual({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['fedex', 'dpd-fr'],
+      candidates: ['fedex', 'dpd-fr', 'yunda'],
       preferred: [],
     });
   });

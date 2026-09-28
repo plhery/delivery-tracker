@@ -41,7 +41,7 @@ statuses map correctly.
 | [DPD](../carriers/dpd/README.md) | Yes (optional postcode) | ✓ 4 | ✓ 1 | ✓ 4 | ✓ 4 | ✓ 4 | N/A |
 | [DHL eCommerce](../carriers/dhl-ecommerce/README.md) | Yes | ✓ 16 | ✓ 11 | ✓ 36 | No history | ✓ 34 | N/A |
 | [AliExpress / Cainiao](../carriers/aliexpress/README.md) | Yes | ✓ 17 | No history | ✓ 17 | ✓ 17 | ✓ 17 | N/A |
-| [China Post](../carriers/china-post/README.md) | No adapter | Not tested | ✓ 1 | ✓ 1 | ✓ 39 | ✓ 17 | ✓ 1 |
+| [China Post](../carriers/china-post/README.md) | No adapter | Blocked | ✓ 1 | ✓ 1 | ✓ 39 | ✓ 17 | ✓ 1 |
 | [EMS](../carriers/ems/README.md) | Yes | ✓ 7 | ✓ 6 | ✓ 18 | ✓ 24 | ✓ 6 | ✓ 6 |
 | [SF Express](../carriers/sf-express/README.md) | Yes | ✓ 22 | No history | No history | ✓ 27 | No history | N/A |
 | [GLS Germany](../carriers/gls-de/README.md) | Yes (postcode) | Not tested (postcode) | No history | No history | No history | No history | N/A |
@@ -59,7 +59,7 @@ statuses map correctly.
 | [India Post](../carriers/india-post/README.md) | Yes | ✓ 21 | ✓ 21 | No history | ✓ 21 | No history | No history |
 | [Poste Italiane](../carriers/poste-italiane/README.md) | Yes | No history | No history | No history | No history | No history | N/A |
 | [Correos Spain](../carriers/correos-spain/README.md) | Yes | ✓ 12 | Error | ✓ 12 | ✓ 12 | No history | N/A |
-| [bpost](../carriers/bpost/carrier.json) | No adapter | Not tested | No history | Postcode prompt | No history | No history | N/A |
+| [bpost](../carriers/bpost/README.md) | Yes | No history; alternate ✓ 11 | No history | Postcode prompt | No history | No history | N/A |
 | [Austrian Post](../carriers/austrian-post/README.md) | Yes | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 9 | N/A |
 | [PostNord](../carriers/postnord/README.md) | Yes | ✓ 6 | ✓ 6 | ✓ 6 | ✓ 6 | ✓ 7 | No history |
 | [TNT](../carriers/tnt/README.md) | Yes | No history; alternate ✓ 1 | No history | No history | No history | No history | N/A |
@@ -67,27 +67,27 @@ statuses map correctly.
 | [YunExpress](../carriers/yunexpress/README.md) | Yes (browser) | ✓ 23 | ✓ 14 | ✓ 15 | ✓ 14 | ✓ 15 | N/A |
 | [4PX](../carriers/four-px/README.md) | Yes | ✓ 26 | ✓ 25 | ✓ 26 | ✓ 26 | ✓ 26 | N/A |
 | [Yanwen](../carriers/yanwen/README.md) | Yes | ✓ 29 | ✓ 1 | ✓ 29 | ✓ 29 | No history | No history |
-| [J&T Express](../carriers/j-and-t/carrier.json) | No adapter | Not tested | No history | No history | No history | No history | N/A |
+| [J&T Express](../carriers/j-and-t/carrier.json) | No adapter | Blocked (Philippines) | No history | No history | No history | No history | N/A |
 | [JD Logistics](../carriers/jd-logistics/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Unverified | N/A |
 | [ZTO Express](../carriers/zto/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Unverified | N/A |
-| [YTO Express](../carriers/yto/carrier.json) | No adapter | Not tested | Error | ✓ 30 | ✓ 20 | No history | N/A |
-| [Yunda Express](../carriers/yunda/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Unverified | N/A |
+| [YTO Express](../carriers/yto/README.md) | Yes (China domestic) | ✓ 30 | Error | ✓ 30 | ✓ 20 | No history | N/A |
+| [Yunda Express](../carriers/yunda/README.md) | Yes (China domestic) | Unverified; alternate ✓ 2 | Unverified | Unverified | Unverified | Unverified | N/A |
 | [STO Express](../carriers/sto/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Unverified | N/A |
 | [Yamato Transport](../carriers/yamato/README.md) | Yes | ✓ 7 (yearless dates) | Error | Wrong carrier | No history | No history | N/A |
-| [Correios Brazil](../carriers/correios-br/carrier.json) | No adapter | Not tested | ✓ 8 | No history | ✓ 8 | ✓ 8 | No history |
+| [Correios Brazil](../carriers/correios-br/README.md) | Yes (local OCR) | No history; alternate ✓ 14 | ✓ 8 | No history | ✓ 8 | ✓ 8 | No history |
 | [Singapore Post](../carriers/singapore-post/README.md) | Yes | ✓ 9 | ✓ 4 | ✓ 12 | ✓ 18 | ✓ 11 | ✓ 4 |
-| [Hongkong Post](../carriers/hongkong-post/carrier.json) | No adapter | Not tested | ✓ 26 | ✓ 35 | ✓ 17 | ✓ 35 | No history |
+| [Hongkong Post](../carriers/hongkong-post/carrier.json) | No adapter | Blocked | ✓ 26 | ✓ 35 | ✓ 17 | ✓ 35 | No history |
 | [Korea Post](../carriers/korea-post/README.md) | Yes (international) | Domestic unsupported; alternate ✓ 20 | No history | No history | No history | No history | N/A |
 | [Planzer](../carriers/planzer/README.md) | Yes | ✓ 4 | No history | No history | No history | No history | N/A |
 | [Quickpac](../carriers/quickpac/README.md) | Yes (via Planzer) | No history | No history | No history | No history | No history | N/A |
 | [DPD France](../carriers/dpd-fr/README.md) | Yes | ✓ 10 | ✓ 10 | ✓ 5 | No history | No history | N/A |
 | [Parcelforce Worldwide](../carriers/parcelforce/carrier.json) | No adapter | Not tested | No history | No history | No history | ✓ 3 | No history |
-| [Purolator](../carriers/purolator/carrier.json) | No adapter | Not tested | No history | ✓ 12 | ✓ 12 | No history | N/A |
+| [Purolator](../carriers/purolator/README.md) | Yes | ✓ 12, intermittent | No history | ✓ 12 | ✓ 12 | No history | N/A |
 | [OnTrac](../carriers/ontrac/README.md) | Yes | ✓ 14 | No history | ✓ 14 | No history | ✓ 14 | N/A |
 | [Delhivery](../carriers/delhivery/README.md) | Yes | No history; alternate summary + 1 undated scan | No history | No history | No history | No history | N/A |
 | [Blue Dart](../carriers/blue-dart/README.md) | Yes | ✓ 15 | No history | No history | No history | No history | N/A |
 | [DTDC](../carriers/dtdc/README.md) | Yes | No history; alternate ✓ 9 | No history | ✓ 35 | No history | No history | N/A |
-| [Ninja Van](../carriers/ninja-van/carrier.json) | No adapter | Not tested | No history | No history | No history | No history | N/A |
+| [Ninja Van](../carriers/ninja-van/carrier.json) | No adapter | No history | No history | No history | No history | No history | N/A |
 | [Packeta](../carriers/packeta/README.md) | Yes | No history | No history | No history | No history | No history | N/A |
 
 ## What the differences mean
@@ -100,8 +100,8 @@ By source:
 - **Direct adapters** keep actionable rows the aggregators drop or mislabel: La Poste
   pickup-ready, InPost locker-ready, Swiss Post delivery method. Some return local wall
   times with no verified zone (SF Express, Evri International, overseas Japan Post
-  scans, Aramex, Korea Post and some 4PX, Singapore Post and YunExpress scans). Yamato
-  omits the year. These histories remain available without fabricated scan instants
+  scans, Aramex, Korea Post, bpost, Purolator and some Correios, 4PX, Singapore Post
+  and YunExpress scans). Yamato omits the year. These histories remain available without fabricated scan instants
   ([ROUTING.md](../../../docs/ROUTING.md)).
 - **Ship24** is sparse for some references: label-only for UPS (a second UPS reference
   was complete), one old row for DPD, one row for Yanwen, and it stops before La Poste's
@@ -146,22 +146,30 @@ By carrier:
 - **Chronopost, Hermes Germany, Mondial Relay, Poste Italiane, GLS France direct,
   Quickpac, Packeta:** the public references are old, so the negatives say nothing about
   current coverage.
-- **bpost, Korea Post:** domestic numbers (bpost's 24 digits, Korea Post's 13) had no
-  history anywhere. S10 items did: a bpost `LD…BE` item through Landmark Global had 20
+- **bpost, Korea Post:** the older domestic references had no aggregator history.
+  bpost's anonymous batch feed returns domestic and S10 history without the postcode
+  required by its single-item lookup. S10 items also appeared in aggregators:
+  a bpost `LD…BE` item through Landmark Global had 20
   rows in ParcelsApp and 14 in 17TRACK, and a Korea Post EMS item had 15 to 43 in every
   feed but Postal Ninja. Korea Post's international direct form returns 20 local-time
-  scans; its domestic form is outside the adapter's scope. bpost's domestic portal
-  requires the recipient postcode.
+  scans; its domestic form is outside the adapter's scope.
 - **J&T Express, Delhivery, Blue Dart, TNT:** no aggregator had history for any of two or
   three recent references each (J&T in the Philippines and Indonesia, TNT France's
   16-digit numbers). Blue Dart directly returns a full history. Delhivery's alternate
   direct sample has a dated current snapshot and one undated scan. TNT's alternate
   national reference has a booking scan. Ninja Van's public references had none either.
-- **JD Logistics, ZTO, Yunda, STO:** public posts mask Chinese domestic numbers, so only
-  old examples were available. YTO's one public number had 30 rows in ParcelsApp,
+- **JD Logistics, ZTO, STO:** public posts mask Chinese domestic numbers, so only
+  old examples were available.
+- **YTO:** the direct feed and ParcelsApp have the same history;
+  the anonymous direct endpoint accepts reads without the website's slider token.
+  YTO's one public number had 30 rows in ParcelsApp,
   which relays YTO's own scan labels in Chinese or in its English translation, and 20
   Chinese rows in 17TRACK. Both show the return
   ([YTO README](../carriers/yto/README.md)).
+- **Yunda:** the current domestic portal returns matching history after its native
+  slider. The adapter matches a bounded PNG outline to a unique gap and submits once;
+  uncertain matches remain challenges. Anonymous history is partial; the full
+  timeline needs login. Empty identity maps are inconclusive.
 - **Aramex:** a domestic delivery in the UAE had 16 undated rows in Postal Ninja only. An
   international shipment had the same 26 rows in Ship24, 17TRACK and Postal Ninja, and
   none in ParcelsApp. The direct portal returns those 26 rows as local wall times.
@@ -179,7 +187,7 @@ By carrier:
 - **Singapore Post:** for an item to China, 17TRACK adds China Post's leg in Chinese;
   Ship24 and UPU have only the four exchange-office scans. The direct feed returns nine
   scans. Its Speedpost response uses local clocks rather than the mail feed's offsets.
-- **PostNord, 4PX, Austrian Post, Correios Brazil:** the successful feeds hold the same
+- **PostNord, 4PX, Austrian Post:** the successful feeds hold the same
   scans, give or take one. Postal Ninja adds a "last day to pickup" row after PostNord's
   delivery.
 - **Parcelforce:** only Postal Ninja had rows (booking and collection).
@@ -189,16 +197,22 @@ By carrier:
 - **YunExpress:** plain HTTP is challenged. Direct retrieval captures the official
   browser request through Chromium or Trawl. Trawl must retain decoded API response
   bodies. Interactive verification still requires provider fallback.
+- **Purolator:** the public widget's anonymous API returns matching package history
+  with its client key and browser user agent. AWS WAF can interrupt reads with an
+  image challenge. Scan clocks remain local; ambiguous search matches are inconclusive.
+- **Correios Brazil:** the anonymous portal returns identity-bound history after a
+  text CAPTCHA. A bundled MIT-licensed model reads it locally in a CPU worker, with
+  one fresh-image retry. Event codes and subtypes distinguish delivery from failed
+  dispatches. Only explicit valid scan zones become instants; unbound period errors
+  are inconclusive.
 
 ## Direct retrieval gaps
 
 Universal providers remain the route where no anonymous, identity-bound carrier history
 is supported. J&T's Philippine portal uses interactive verification and its Indonesian
-portal asks for a phone suffix. JD Logistics, ZTO and Yunda gate reads with sessions or
-CAPTCHA; YTO's anonymous reply contains no scans, and STO's old form redirects away.
-Hongkong Post and Correios Brazil require CAPTCHA. PostNord's public references return
-no shipment even with the portal's request proof, so a positive response schema is
-unverified. Purolator challenges automated requests. Ninja Van's public endpoint returns
+portal asks for a phone suffix. JD Logistics and ZTO gate reads with sessions or
+CAPTCHA; STO's old form redirects away. China Post's ordered-character challenge and
+Hongkong Post's CAPTCHA remain unsupported. Ninja Van's public endpoint returns
 no usable history. Parcelforce forwards to Royal Mail's disabled direct route.
 
 Mapping gaps seen in these samples: 17TRACK maps Swiss Post vehicle loading to in

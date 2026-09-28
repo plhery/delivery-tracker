@@ -1,0 +1,16 @@
+{
+  "carrier": "correios-br",
+  "entries": [
+    { "code": "BDE/01", "wording": "Objeto entregue ao destinatário", "language": "pt", "stage": "delivered", "confirmedBy": "live" },
+    { "code": "BDE/34", "wording": "Inconsistências no endereçamento do objeto", "language": "pt", "stage": "exception", "confirmedBy": "live" },
+    { "code": "BDE/47", "wording": "Saída para entrega cancelada", "language": "pt", "stage": "exception", "confirmedBy": "live" },
+    { "code": "OEC/01", "wording": "Objeto saiu para entrega ao destinatário", "language": "pt", "stage": "out_for_delivery", "confirmedBy": "live" },
+    { "code": "DO/01", "wording": "Objeto em transferência - por favor aguarde", "language": "pt", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "RO/01", "wording": "Objeto em transferência - por favor aguarde", "language": "pt", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "PAR/10", "wording": "Saída do Centro Internacional", "language": "pt", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "PAR/16", "wording": "Objeto recebido pelos Correios do Brasil", "language": "pt", "stage": "accepted", "confirmedBy": "live" },
+    { "code": "PO/01", "wording": "Objeto postado", "language": "pt", "stage": "accepted", "confirmedBy": "live" },
+    { "code": "PAR/07", "wording": "Análise concluída - importação autorizada", "language": "pt", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "PAR/21", "wording": "Informações enviadas para análise da autoridade aduaneira/órgãos anuentes", "language": "pt", "stage": "customs", "confirmedBy": "live" }
+  ]
+}

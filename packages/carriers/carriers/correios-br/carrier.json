@@ -16,16 +16,16 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "correios-br",
+    "steps": ["direct"]
   },
-  "capabilities": [],
+  "capabilities": ["history", "location"],
   "portal": {
     "url": "https://rastreamento.correios.com.br/app/index.php?objetos={trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "canaryUrl": "https://rastreamento.correios.com.br/app/index.php",
+    "shows": ["status", "history", "location", "estimated_delivery"],
+    "scraped": ["status", "history", "location"],
+    "discarded": ["estimated_delivery"],
     "unavailable": []
   },
   "links": [

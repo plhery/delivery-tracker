@@ -13,6 +13,7 @@ import { ytoScan } from '../../carriers/yto/status';
 export interface CarrierScan {
   stage: Stage;
   wording: string;
+  returnLeg?: true;
 }
 
 const VOCABULARIES: Readonly<Record<string, (label: string) => CarrierScan | undefined>> = {
@@ -34,11 +35,13 @@ const RETURN_LEG: Partial<Record<Stage, string>> = {
 
 /** Rewrites the delivery-side scans that follow a vocabulary return scan. */
 export function markReturnLeg(scans: ReadonlyArray<{ event: CarrierEvent; scan: CarrierScan }>): void {
-  const started = scans.filter(({ scan }) => scan.stage === 'returned')
+  const started = scans.filter(({ scan }) => scan.returnLeg || scan.stage === 'returned')
     .map(({ event }) => event.time ?? '').filter(Boolean).sort()[0];
   if (!started) return;
   for (const { event, scan } of scans) {
+    if ((event.time ?? '') < started) continue;
     const wording = RETURN_LEG[scan.stage];
-    if (wording && (event.time ?? '') > started) Object.assign(event, { description: wording, stage: 'returned' });
+    Object.assign(event, { provider_leg: 'return' }, wording ? { description: wording,
+      stage: scan.stage === 'delivered' ? 'returned' : scan.stage } : {});
   }
 }

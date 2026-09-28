@@ -59,7 +59,8 @@
         "confidence": "low",
         "candidates": [
           "fedex",
-          "dpd-fr"
+          "dpd-fr",
+          "yunda"
         ]
       },
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to BRT, which no rule claims."

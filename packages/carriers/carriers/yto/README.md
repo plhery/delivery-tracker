@@ -1,23 +1,30 @@
 # YTO Express
 
-A Chinese domestic express carrier with no adapter of its own: the universal providers
-track it. [`status.ts`](status.ts) reads YTO's own scan labels when a provider relays
-them.
+Tracks Chinese domestic waybills through the official website's consumer feed.
+
+## How it works
+
+One anonymous JSON POST returns an identity-bound scan list. The website displays
+a slider before querying; the feed accepts reads without cookies or a challenge token.
+The adapter uses each scan's operation code and preserves the feed's newest-first order.
 
 ## Notes
 
-- ParcelsApp relays YTO's scan-type labels (`揽收扫描`, `派件扫描`, …) and sometimes serves its
-  own English translation of the same scans ("Pickup scan", "Delivery scan", …). Both
-  forms map to one stage and one stored wording, so a language switch does not store
-  the history twice. Labels outside the list fall back to the shared wording rules.
-- After a return scan (`退回件扫描`), YTO's delivery-side scans are the trip back: the
-  final sign-for scan is the sender taking the parcel back. They are stored as the
-  return leg with the `returned` stage, never as a delivery.
-- ParcelsApp labels YTO's China wall clock as UTC. Mainland China has one clock, so the
-  catalog zone `Asia/Shanghai` re-reads it; ZTO, Yunda and STO use the same zone.
+Domestic scan clocks use China time. Invalid dates remain unresolved. Return dispatch
+keeps subsequent movement, collection and signature scans on the return to the sender.
+Return transit remains active; only a completed sender signature is terminal.
+Short operation labels and depot names are retained; expanded descriptions containing
+courier contacts, recipient details and collection addresses are excluded.
+
+Relayed Chinese labels and their ParcelsApp translations use the same vocabulary as
+direct scans. ParcelsApp's UTC-labelled China clocks are read in the catalog timezone.
 
 ## Limitations
 
-- Only the labels seen in a real history are mapped. A problem or refusal scan stays
-  pending until one is observed.
-- 17TRACK sends full Chinese sentences with its own status codes, which give its stages.
+An echoed number with no scans is inconclusive. Archived histories and international
+YTO Global shipments use separate website flows and are outside this adapter's scope.
+
+## Testing
+
+Set `YTO_TRACKING_NUMBER` outside the repository and run
+`npm run test:carriers:live -- packages/carriers/carriers/yto/adapter.live.test.ts`.

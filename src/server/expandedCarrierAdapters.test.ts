@@ -10,6 +10,8 @@ import { TrackingRouter } from './trackingRouting';
 import { captureDirectLocalHistory, directLocalHistory, hasUnresolvedDirectCurrent, hasUnresolvedDirectHistory } from './directLocalHistory';
 import type { UniversalTracker } from '@carriers/providers/universal';
 import * as observability from './observability';
+import { CorreiosOcr } from '@carriers/carriers/correios-br/ocr';
+import * as yundaChallenge from '@carriers/carriers/yunda/challenge';
 
 const cases = [
   { carrier: 'austrian-post', number: '1000000000000000000001', fixture: 'delivered.json' },
@@ -26,6 +28,11 @@ const cases = [
   { carrier: 'dtdc', number: 'N00000001', fixture: 'delivered.json' },
   { carrier: 'yunexpress', number: 'YT0000000000000001', fixture: 'in-transit.json', unresolved: true },
   { carrier: 'postnord', number: '00573000000000000001', fixture: 'delivered.json' },
+  { carrier: 'bpost', number: '000000000000000000000001', fixture: 'delivered.json', unresolved: true },
+  { carrier: 'purolator', number: '100000000001', fixture: 'delivered.json', unresolved: true },
+  { carrier: 'yto', number: 'YT0000000000001', fixture: 'delivered.json' },
+  { carrier: 'correios-br', number: 'AA000000005BR', fixture: 'delivered.json' },
+  { carrier: 'yunda', number: '0000000000001', fixture: 'delivered.json' },
 ];
 
 function setup(entry: typeof cases[number], transform = (body: string) => body) {
@@ -41,7 +48,17 @@ function setup(entry: typeof cases[number], transform = (body: string) => body) 
     body = JSON.stringify(value);
   }
   body = transform(body);
+  if (entry.carrier === 'correios-br') vi.spyOn(CorreiosOcr.prototype, 'solve').mockResolvedValue('abcd');
+  if (entry.carrier === 'yunda') vi.spyOn(yundaChallenge, 'solveYundaSlider').mockResolvedValue({ x: 100, y: 40 });
   const fetcher = vi.fn<typeof fetch>().mockImplementation(async url => {
+    if (entry.carrier === 'yunda') {
+      if (String(url).includes('/captcha_type?')) return Response.json({ code: 200, data: 1 });
+      if (String(url).includes('/captcha?')) return Response.json({ code: 200, data: {} });
+    }
+    if (entry.carrier === 'correios-br') {
+      if (String(url).includes('/app/index.php')) return new Response('<html>Tracking</html>');
+      if (String(url).includes('/securimage_show.php')) return new Response('synthetic image', { headers: { 'content-type': 'image/png' } });
+    }
     if (entry.carrier === 'aramex' && String(url).includes('/track/shipments')) {
       return new Response(`<a class="shipment-card" href="/track/details?q=synthetic"><div class="shipment-num"><h5>${entry.number}</h5></div></a>`);
     }
@@ -66,7 +83,7 @@ describe('expanded direct coverage through the host', () => {
     const result = await test.adapter.fetch(entry.carrier, entry.number, null);
     expect(result.events?.length).toBeGreaterThan(0);
     expect(result).not.toHaveProperty('tracking_provider');
-    expect(test.fetcher).toHaveBeenCalledTimes(entry.carrier === 'yunexpress' ? 0 : entry.carrier === 'aramex' ? 2 : 1);
+    expect(test.fetcher).toHaveBeenCalledTimes(entry.carrier === 'yunexpress' ? 0 : entry.carrier === 'aramex' ? 2 : ['correios-br', 'yunda'].includes(entry.carrier) ? 3 : 1);
   });
 
   it.each(cases.filter(entry => entry.unresolved))('$carrier saves unresolved direct dates while using dated provider progress', async entry => {
@@ -99,6 +116,30 @@ describe('expanded direct coverage through the host', () => {
     const parcel = { tracking_number: '123456789012', carrier_data: { direct_local_history: archive } };
     expect(directLocalHistory(parcel, { direct_local_history: captureDirectLocalHistory('yamato', '123456789012', { events: result.events?.slice(1) }) })?.events)
       .toEqual(archive.events);
+  });
+
+  it.each(['yto', 'correios-br', 'yunda'])('archives an unresolved %s current clock and asks providers for dated progress', async carrier => {
+    const entry = cases.find(entry => entry.carrier === carrier)!;
+    const test = setup(entry, (body) => {
+      const payload = JSON.parse(body);
+      if (carrier === 'yto') payload[0].waybillProcessInfo[0].opTime = '2026-02-30 18:00:00';
+      else if (carrier === 'correios-br') payload.eventos[0].dtHrCriado.date = '2026-02-30 18:00:00';
+      else payload.data.logistic[entry.number].gn.at(-1).scanTm = '2026-02-30 18:00:00';
+      return JSON.stringify(payload);
+    });
+    const direct = await test.adapter.fetch(entry.carrier, entry.number, null);
+    expect(hasUnresolvedDirectCurrent(entry.carrier, direct)).toBe(true);
+    expect(direct.events?.[0]).toMatchObject({ provider_time_text: '2026-02-30 18:00:00' });
+    const universal = vi.fn().mockResolvedValue({ status: 'delivered', current_stage: 'delivered', last_update: '2026-04-01T10:00:00Z' });
+    const router = new TrackingRouter({ direct: async () => ({ result: direct, sourceCarrierId: entry.carrier,
+      swissPostReady: null, handoffFallbackErrorType: null }), universal,
+      health: { acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'synthetic-lease' }), finishTrackingProvider: vi.fn() },
+      now: () => new Date('2026-04-02T10:00:00Z') });
+    const value = await router.fetch({ carrier: entry.carrier, tracking_number: entry.number }, false);
+    expect(universal).toHaveBeenCalledOnce();
+    expect(value.result).toMatchObject({ tracking_provider: 'Ship24', direct_local_history: {
+      carrier, events: expect.arrayContaining([expect.objectContaining({ provider_time_text: '2026-02-30 18:00:00' })]),
+    } });
   });
 
   it.each(['ontrac', 'aramex'])('%s asks providers when the current scan has no clock at all', async carrier => {
@@ -197,5 +238,22 @@ describe('expanded direct coverage through the host', () => {
     expect(rows.filter(row => row.stage === 'delivered')).toEqual([
       expect.objectContaining({ occurred_at: '2026-01-04T12:00:00Z', description: 'The shipment item has been delivered.' }),
     ]);
+  });
+
+  it('keeps a DTDC return active through the host until delivery back to the sender', async () => {
+    const entry = cases.find(entry => entry.carrier === 'dtdc')!;
+    for (const [wording, stage] of [['RTO Booked', 'exception'], ['In Transit', 'in_transit'], ['Out For Delivery', 'out_for_delivery'], ['Delivered', 'returned']]) {
+      const test = setup(entry, body => {
+        const payload = JSON.parse(body);
+        Object.assign(payload.data, { type: 'rto', status_external: wording, current_event_description: wording, timestamp: 1767790800000 });
+        return JSON.stringify(payload);
+      });
+      const result = await test.adapter.fetch(entry.carrier, entry.number, null);
+      expect(result.current_stage).toBe(stage);
+      expect(result).not.toHaveProperty('delivered_at');
+      expect(buildEvents({ carrier: entry.carrier }, result)).toEqual(expect.arrayContaining([
+        expect.objectContaining({ stage, raw_data: expect.objectContaining({ provider_leg: 'return' }) }),
+      ]));
+    }
   });
 });

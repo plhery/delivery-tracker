@@ -11,6 +11,8 @@ export interface TrackingLinkCase {
   marker: RegExp;
   /** A visible tracker rendered inside an open shadow root. */
   shadowHost?: string;
+  /** Extra hydration time for a tracker whose form loads in a separate client chunk. */
+  renderTimeoutMs?: number;
   /**
    * How the page proves it received the number. By default the number must be
    * looked up, displayed or prefilled. `notFound` is the carrier's specific
@@ -25,6 +27,21 @@ export interface TrackingLinkCase {
 // independently of the generated link templates, so a template that drifts
 // fails here instead of passing against itself.
 export const trackingLinkCases: TrackingLinkCase[] = [
+  { carrier: 'bpost', number: '000000000000000000000001',
+    route: /^https:\/\/track\.bpost\.cloud\//,
+    marker: /Track|barcode|postcode|postal code|Suivi|Code-barres/i, forwarding: 'none' },
+  { carrier: 'purolator', number: '100000000001',
+    route: /^https:\/\/www\.purolator\.com\/en\/shipping\/tracker/,
+    marker: /Track.*shipment|Tracking|Tracking number/i },
+  { carrier: 'yto', number: 'YT0000000000001',
+    route: /^https:\/\/www\.yto\.net\.cn\/ytoExpress\/waybill\/search/,
+    marker: /运单|快递|Waybill|Tracking/i, forwarding: 'none' },
+  { carrier: 'correios-br', number: 'AA000000005BR',
+    route: /^https:\/\/rastreamento\.correios\.com\.br\/app\/index\.php/,
+    marker: /Rastreamento|Objeto|Código|Captcha/i },
+  { carrier: 'yunda', number: '0000000000001',
+    route: /^https:\/\/web\.yundaex\.com\/infoInquiry/,
+    marker: /快件查询|请输入运单号/i, renderTimeoutMs: 20_000 },
   { carrier: 'postnord', number: 'RR000000005SE',
     route: /^https:\/\/tracking\.postnord\.com\/en\//,
     marker: /Track.*shipment|Tracking|shipment.*found/i, shadowHost: 'pn-widget' },

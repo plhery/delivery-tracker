@@ -18,7 +18,7 @@ describe('universal tracking dispatch', () => {
     }
     expect(spy).toHaveBeenCalledTimes(2);
     expect(spy).toHaveBeenCalledWith(number, null);
-    await adapter.fetch('bpost', number, null, '01234');
+    await adapter.fetch('j-and-t', number, null, '01234');
     expect(spy).toHaveBeenLastCalledWith(number, '01234');
   });
 
