@@ -61,7 +61,7 @@ statuses map correctly.
 | [Correos Spain](../carriers/correos-spain/README.md) | Yes | ✓ 12 | Error | ✓ 12 | ✓ 12 | No history | N/A |
 | [bpost](../carriers/bpost/carrier.json) | No adapter | Not tested | No history | Postcode prompt | No history | No history | N/A |
 | [Austrian Post](../carriers/austrian-post/README.md) | Yes | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 9 | N/A |
-| [PostNord](../carriers/postnord/carrier.json) | No adapter | Not tested | ✓ 6 | ✓ 6 | ✓ 6 | ✓ 7 | No history |
+| [PostNord](../carriers/postnord/README.md) | Yes | ✓ 6 | ✓ 6 | ✓ 6 | ✓ 6 | ✓ 7 | No history |
 | [TNT](../carriers/tnt/README.md) | Yes (France national) | No history; alternate ✓ 1 | No history | No history | No history | No history | N/A |
 | [Aramex](../carriers/aramex/README.md) | Yes | No history; alternate ✓ 26 | No history | No history | No history | ✓ 16 | N/A |
 | [YunExpress](../carriers/yunexpress/README.md) | Yes (browser) | ✓ 23 | ✓ 14 | ✓ 15 | ✓ 14 | ✓ 15 | N/A |

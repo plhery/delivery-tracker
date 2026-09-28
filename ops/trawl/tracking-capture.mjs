@@ -52,6 +52,27 @@ export async function requestAustraliaPostInPage({ number, budgetMs }) {
 
 const SITES = [
   {
+    api: 'https://services.yuntrack.com/Track/Query',
+    provider: 'YunExpress',
+    requestMethod: 'POST',
+    number(page) {
+      if (page.origin !== 'https://www.yuntrack.com' || page.pathname !== '/parcelTracking' || page.hash) return null;
+      const values = [...page.searchParams];
+      return values.length === 1 && values[0][0] === 'id' && /^YT\d{16}$/.test(values[0][1]) ? values[0][1] : null;
+    },
+    requestMatches(request, number) {
+      try {
+        const body = request.postDataJSON();
+        return Array.isArray(body?.NumberList) && body.NumberList.length === 1 && body.NumberList[0] === number;
+      } catch { return false; }
+    },
+    settled() {
+      // One posted parcel, one final envelope. The adapter binds both returned
+      // identities and validates even a decoded null, array or primitive root.
+      return true;
+    },
+  },
+  {
     api: 'https://digitalapi.auspost.com.au/shipments-gateway/v1/watchlist/shipments',
     queryNumber: true,
     number(page) {
@@ -232,7 +253,10 @@ export async function attachTrackingCapture(page, url, options) {
       })]);
     } finally { clearTimeout(timer); }
   };
-  const matchesRequest = request => accepting && request.url() === api && request.method() === 'GET';
+  const observesRequests = site.perNumber || site.queryNumber || site.requestMethod;
+  const matchesRequest = request => accepting && request.url() === api
+    && request.method() === (site.requestMethod ?? 'GET')
+    && (!site.requestMatches || site.requestMatches(request, number));
   const onRequest = request => { if (matchesRequest(request)) trackingRequested = true; };
   const onRequestFailed = request => {
     if (!matchesRequest(request)) return;
@@ -242,6 +266,7 @@ export async function attachTrackingCapture(page, url, options) {
   };
   const onResponse = async response => {
     if (!accepting || (response.url() !== api && response.url() !== site.checkApi)
+      || (site.requestMethod && !matchesRequest(response.request()))
       || (site.checkApi && response.request().method() !== 'POST')
       || ((site.perNumber || site.queryNumber) && response.request().method() !== 'GET') || ++count > 20) return;
     const headers = response.headers();
@@ -270,10 +295,13 @@ export async function attachTrackingCapture(page, url, options) {
       // Preserve intermediate replies for diagnosis, but let the website carry
       // on until it holds a final reply for exactly the requested number.
       if (site.settled(data, number, state, entry.status)) finish();
-    } catch { entry.error = 'tracking response could not be read'; }
+    } catch {
+      entry.error = 'tracking response could not be read';
+      if (site.requestMethod) finish();
+    }
   };
   page.on('response', onResponse);
-  if (site.perNumber || site.queryNumber) {
+  if (observesRequests) {
     page.on('request', onRequest);
     page.on('requestfailed', onRequestFailed);
   }
@@ -351,22 +379,22 @@ export async function attachTrackingCapture(page, url, options) {
       // sends the API request and resets the widget; do not click it again.
       await awaitReply();
     } } : {}),
-    hasResponse() { return Boolean(((site.checkApi || site.queryNumber) && terminal) || (site.perNumber && entries.some(entry => entry.body !== null || entry.status !== 200))); },
+    hasResponse() { return Boolean(((site.checkApi || site.queryNumber || site.requestMethod) && terminal) || (site.perNumber && entries.some(entry => entry.body !== null || entry.status !== 200))); },
     // Royal Mail can use an existing API session or a fresh CAPTCHA token.
     // Once the lookup starts, let its own refresh callback handle E0015.
-    hasTrackingRequest() { return Boolean((site.checkApi && state.handle) || ((site.perNumber || site.queryNumber) && trackingRequested)); },
+    hasTrackingRequest() { return Boolean((site.checkApi && state.handle) || (observesRequests && trackingRequested)); },
     settle,
     async drain() {
       accepting = false;
       page.off('response', onResponse);
-      if (site.perNumber || site.queryNumber) {
+      if (observesRequests) {
         page.off('request', onRequest);
         page.off('requestfailed', onRequestFailed);
       }
-      // A loaded app shell is not a successful Royal Mail session. Let the
+      // A loaded app shell is not a successful tracking session. Let the
       // orchestrator invalidate cached cookies and try its fresh browser tier.
-      if ((site.perNumber || site.queryNumber) && entries.length === 0) {
-        const provider = site.queryNumber ? 'Australia Post' : 'Royal Mail';
+      if (observesRequests && entries.length === 0) {
+        const provider = site.provider ?? (site.queryNumber ? 'Australia Post' : 'Royal Mail');
         if (networkError) throw new Error(`${provider} tracking request failed: ${networkError}`);
         throw new Error(`${provider} produced no tracking response after submission`);
       }

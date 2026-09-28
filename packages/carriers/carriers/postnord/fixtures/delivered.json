@@ -1,0 +1,30 @@
+{
+  "shipmentId": "00573000000000000001",
+  "actualReturnedId": "00573000000000000001",
+  "showSplitShipmentOverview": false,
+  "serviceName": "Parcel",
+  "serviceCode": "19",
+  "references": [{ "name": "Order", "value": "Private order reference" }],
+  "receiver": { "address": { "name": "Private Recipient", "street": "Example Private Address", "postCode": "99999" } },
+  "sender": { "name": "Private Sender", "address": { "street": "Private Sender Address" } },
+  "items": [{
+    "itemId": "00573000000000000001",
+    "deliveryInformation": { "deliveryTo": "Private delivery instructions", "deliveryToInfo": "Private destination" },
+    "senderReference": "Private sender reference",
+    "status": { "code": "DELIVERED", "header": "The shipment item has been delivered to the recipient", "description": "Private delivery detail" },
+    "events": [
+      { "eventDescription": "We have received a notification from your shipper that they are preparing an item for you. The tracking information will be updated when the parcel is handed over to PostNord.", "eventTime": "2026-01-01T12:00:00.000Z", "status": "INFORMED", "location": { "countryCode": "SE", "locationType": "UNKNOWN", "name": "" } },
+      { "eventDescription": "The shipment item is under transportation.", "eventTime": "2026-01-02T10:00:00.000Z", "status": "EN_ROUTE", "location": { "countryCode": "SE", "locationType": "TERMINAL", "name": "Example Terminal" } },
+      { "eventDescription": "The delivery of the shipment item is in progress.", "eventTime": "2026-01-03T08:00:00.000Z", "status": "EN_ROUTE", "location": { "countryCode": "SE", "locationType": "TERMINAL", "name": "Example Terminal" } },
+      { "eventDescription": "The shipment item has been delivered to a service point.", "eventTime": "2026-01-03T12:00:00.000Z", "status": "AVAILABLE_FOR_DELIVERY", "location": { "countryCode": "SE", "locationType": "SERVICE_POINT", "name": "Example Service Point", "address": "Private service address" } },
+      { "eventDescription": "The shipment item has been delivered.", "eventTime": "2026-01-04T12:00:00.000Z", "status": "DELIVERED", "location": { "countryCode": "SE", "locationType": "SERVICE_POINT", "name": "Example Service Point" } },
+      { "eventDescription": "A text message notification has been delivered to the recipient.", "eventTime": "2026-01-04T12:01:00.000Z", "status": "OTHER", "location": { "countryCode": "SE", "locationType": "UNKNOWN", "name": "" } }
+    ],
+    "measurements": [
+      { "name": "length", "unit": "cm", "value": 40 },
+      { "name": "height", "unit": "cm", "value": 20 },
+      { "name": "width", "unit": "cm", "value": 30 },
+      { "name": "weight", "unit": "g", "value": 1500 }
+    ]
+  }]
+}

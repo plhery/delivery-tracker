@@ -13,7 +13,8 @@ query must remain unchanged.
 ## Notes
 
 The parser reads actual history rows, excluding the progress rail and recipient details.
-Cross-border dates have no offsets, so they remain local wall times. The app archives this
+Cross-border dates have no offsets, so they remain local wall times. Invalid dates retain
+their text, and incomplete scan rows fail the lookup. The app archives this
 direct evidence and asks providers for a timestamped timeline before using it as a fallback.
 
 ## Limitations

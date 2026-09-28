@@ -70,6 +70,8 @@ export async function fetchBounded(
     redirect?: RequestRedirect;
     fetcher?: typeof fetch;
     allowHttpError?: boolean;
+    /** Inspect specific non-success replies without bypassing other HTTP errors. */
+    allowHttpStatuses?: readonly number[];
     /** One retry for replayable reads only; never retry parsing or validation. */
     retryTransient?: boolean;
   },
@@ -93,7 +95,7 @@ export async function fetchBounded(
       }
       throw new UpstreamNetworkError(options.provider, error, requestDiagnostics(url, init, options.timeoutMs ?? 15_000));
     }
-    if (response.ok || options.allowHttpError) break;
+    if (response.ok || options.allowHttpError || options.allowHttpStatuses?.includes(response.status)) break;
     const delay = retryDelay(response.headers.get('retry-after'), response.status);
     if (options.retryTransient && attempt === 0
       && TRANSIENT_HTTP_STATUSES.has(response.status) && delay !== null) {

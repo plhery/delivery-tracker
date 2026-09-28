@@ -63,6 +63,36 @@ describe('DTDC parser', () => {
     expect(result.delivered_at).toBeUndefined();
   });
 
+  it('orders shuffled forward and return scans by their own instants and declared legs', () => {
+    const payload = fixture();
+    Object.assign(payload.data, { type: 'rto', status_external: 'Delivered', current_event_description: 'Delivered',
+      status_internal: 'rto_delivered', timestamp: 1767704400000, rto_awb_num: 'R00000001' });
+    const returning = { ...payload.data.tracking[2], timestamp: 1767618000000, type: 'rto', awb_number: 'R00000001' };
+    payload.data.tracking = [payload.data.tracking[4], returning, payload.data.tracking[0],
+      payload.data.tracking[2], payload.data.tracking[1], payload.data.tracking[3]];
+    const result = parseDtdc(payload, NUMBER);
+    expect(result).toMatchObject({ status: 'exception', current_stage: 'returned' });
+    expect(result.events?.slice(0, 3).map(event => [event.description, event.stage, event.provider_leg]))
+      .toEqual([['Delivered', 'returned', 'return'], ['In Transit', 'returned', 'return'], ['Delivered', 'delivered', undefined]]);
+    const times = result.events!.map(event => Date.parse(event.time!));
+    expect(times).toEqual([...times].sort((a, b) => b - a));
+    expect(result.delivered_at).toBeUndefined();
+    returning.type = 'forward';
+    expect(() => parseDtdc(payload, NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
+  });
+
+  it('preserves an unknown return scan label without claiming recipient delivery', () => {
+    const payload = fixture();
+    Object.assign(payload.data, { type: 'rto', status_external: 'New return state', current_event_description: 'New return state' });
+    Object.assign(payload.data.tracking[0], { type: 'rto', status_external: 'New return state', event_description: 'New return state' });
+    const result = parseDtdc(payload, NUMBER);
+    expect(result).toMatchObject({ status: 'unknown', last_status_text: 'New return state' });
+    expect(result.current_stage).toBeUndefined();
+    expect(result.events?.[0]).toMatchObject({ provider_leg: 'return' });
+    expect(result.events?.[0].stage).toBeUndefined();
+    expect(result.delivered_at).toBeUndefined();
+  });
+
   it('preserves unmapped wording without letting an older delivered scan drive current state', () => {
     const payload = fixture();
     payload.data.status_external = 'New wording'; payload.data.current_event_description = 'New wording';

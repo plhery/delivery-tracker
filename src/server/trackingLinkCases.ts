@@ -9,6 +9,8 @@ export interface TrackingLinkCase {
   route: RegExp;
   /** Wording only the carrier's tracker shows. */
   marker: RegExp;
+  /** A visible tracker rendered inside an open shadow root. */
+  shadowHost?: string;
   /**
    * How the page proves it received the number. By default the number must be
    * looked up, displayed or prefilled. `notFound` is the carrier's specific
@@ -23,6 +25,9 @@ export interface TrackingLinkCase {
 // independently of the generated link templates, so a template that drifts
 // fails here instead of passing against itself.
 export const trackingLinkCases: TrackingLinkCase[] = [
+  { carrier: 'postnord', number: 'RR000000005SE',
+    route: /^https:\/\/tracking\.postnord\.com\/en\//,
+    marker: /Track.*shipment|Tracking|shipment.*found/i, shadowHost: 'pn-widget' },
   { carrier: 'yunexpress', number: 'YT0000000000000001',
     route: /^https:\/\/www\.yuntrack\.com\/parcelTracking\?id=/,
     marker: /Tracking|Track.*parcel|Tracking Number/i },

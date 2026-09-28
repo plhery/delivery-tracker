@@ -18,15 +18,175 @@ const fedexReply = (trackingNbr = fedexNumber) => JSON.stringify({ output: { pac
 async function fixture(url = `https://t.17track.net/en#nums=${number}`, endpoint = api, additional = []) {
   const handlers = {};
   let detached = false;
-  const page = { context: () => ({addCookies: async () => {}}), on: (event, fn) => { handlers[event] = fn; }, off: () => { detached = true; } };
+  const detachedEvents = [];
+  const page = { context: () => ({addCookies: async () => {}}), on: (event, fn) => { handlers[event] = fn; },
+    off: event => { detached = true; detachedEvents.push(event); } };
   const capture = await attachTrackingCapture(page, url, { captureResponses: [endpoint, ...additional] });
-  const respond = (body, { url = endpoint, headers = {}, status = 200, method = 'GET', read } = {}) => handlers.response({
-    url: () => url, status: () => status, request: () => ({method: () => method}),
+  const respond = (body, { url = endpoint, headers = {}, status = 200, method = 'GET', read, requestBody } = {}) => handlers.response({
+    url: () => url, status: () => status, request: () => ({url: () => url, method: () => method, postDataJSON: () => requestBody}),
     headers: () => ({ 'content-type': 'application/json', 'content-length': String(body.length), 'content-encoding': 'gzip', ...headers }),
     body: read ?? (async () => Buffer.from(body)),
   });
-  return { page, capture, respond, handlers, detached: () => detached };
+  return { page, capture, respond, handlers, detachedEvents, detached: () => detached };
 }
+
+const yunApi = 'https://services.yuntrack.com/Track/Query';
+const yunNumber = 'YT0000000000000001';
+const yunUrl = `https://www.yuntrack.com/parcelTracking?id=${yunNumber}`;
+const yunRequest = (values = [yunNumber]) => ({ NumberList: values });
+const yunReply = (id = yunNumber) => JSON.stringify({ ResultList: [{ Id: id, TrackInfo: { WaybillNumber: id } }] });
+
+test('YunExpress capture is restricted to the exact public page and one valid parcel', async () => {
+  for (const url of [yunUrl.replace('www.yuntrack.com', 'other.test'), yunUrl.replace('/parcelTracking', '/other'),
+    yunUrl + '&id=' + yunNumber, yunUrl + '&other=1', yunUrl + '#test', yunUrl.replace(yunNumber, 'YT000000000000000'),
+    yunUrl.replace(yunNumber, yunNumber + ',YT0000000000000002')]) {
+    assert.equal(await attachTrackingCapture({}, url, { captureResponses: [yunApi] }), undefined);
+  }
+  assert.equal(await attachTrackingCapture({}, yunUrl, { captureResponses: [yunApi + '?other=1'] }), undefined);
+});
+
+test('YunExpress captures only the browser POST for exactly the requested NumberList', async () => {
+  const { capture, respond, handlers } = await fixture(yunUrl, yunApi);
+  for (const [method, requestBody] of [['GET', yunRequest()], ['OPTIONS', yunRequest()], ['POST', null],
+    ['POST', yunRequest(['YT0000000000000002'])], ['POST', yunRequest([yunNumber, 'YT0000000000000002'])]]) {
+    await respond(yunReply(), { method, requestBody });
+  }
+  assert.equal(capture.hasResponse(), false);
+  assert.equal(capture.hasTrackingRequest(), false);
+  const request = { url: () => yunApi, method: () => 'POST', postDataJSON: () => yunRequest() };
+  handlers.request(request);
+  assert.equal(capture.hasTrackingRequest(), true);
+  await respond(yunReply(), { method: 'POST', requestBody: yunRequest(), headers: { 'set-cookie': 'PRIVATE_COOKIE' } });
+  assert.equal(capture.hasResponse(), true);
+  await capture.settle(100);
+  const rows = (await capture.drain()).capturedResponses;
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].body, yunReply());
+  assert.deepEqual(rows[0].headers, {});
+});
+
+test('YunExpress keeps returned identity failures for the adapter rather than waiting for an older success', async () => {
+  const { capture, respond } = await fixture(yunUrl, yunApi);
+  const body = yunReply('YT0000000000000002');
+  await respond(body, { method: 'POST', requestBody: yunRequest() });
+  assert.equal(capture.hasResponse(), true);
+  await capture.settle(100);
+  assert.equal((await capture.drain()).capturedResponses[0].body, body);
+});
+
+test('YunExpress ends on explicit negative and interactive-verification envelopes', async () => {
+  const negative = JSON.stringify({ ResultList: [{ Id: yunNumber, Status: 0, TrackInfo: { WaybillNumber: yunNumber,
+    TrackingStatus: 0, TrackEventCount: 0, TrackEventDetails: [], LastTrackEvent: { TrackingStatus: 0,
+      ProcessDate: '', ProcessContent: '', ProcessLocation: '' } }, TrackData: { ChildCount: 0, ProcessGroupList: [] } }] });
+  for (const body of [negative, JSON.stringify({ Code: 1003 }), JSON.stringify({ Code: 1004 }), '{}']) {
+    const { capture, respond } = await fixture(yunUrl, yunApi);
+    await respond(body, { method: 'POST', requestBody: yunRequest() });
+    assert.equal(capture.hasResponse(), true);
+    await capture.settle(100);
+    assert.equal((await capture.drain()).capturedResponses[0].body, body);
+  }
+});
+
+test('YunExpress finishes decoded invalid JSON roots without waiting for another reply', async () => {
+  for (const body of ['null', '[]', '17', 'true', '"invalid root"']) {
+    const { capture, respond } = await fixture(yunUrl, yunApi);
+    await respond(body, { method: 'POST', requestBody: yunRequest() });
+    assert.equal(capture.hasResponse(), true);
+    await capture.settle(100);
+    assert.equal((await capture.drain()).capturedResponses[0].body, body);
+  }
+});
+
+test('YunExpress preserves HTTP challenges and rate limits without reading their bodies', async () => {
+  for (const status of [401, 403, 405, 429]) {
+    const { capture, respond } = await fixture(yunUrl, yunApi);
+    await respond('', { method: 'POST', requestBody: yunRequest(), status, headers: { 'retry-after': '300' },
+      read: () => { throw new Error('must not read rejected body'); } });
+    assert.equal(capture.hasResponse(), true);
+    const row = (await capture.drain()).capturedResponses[0];
+    assert.equal(row.status, status);
+    assert.equal(row.body, null);
+    assert.equal(row.headers['retry-after'], '300');
+  }
+});
+
+test('YunExpress rejects malformed or excessive decoded bodies as incomplete capture', async () => {
+  for (const [body, headers] of [['invalid JSON', {}], [yunReply(), { 'content-length': '2000001' }]]) {
+    const { capture, respond } = await fixture(yunUrl, yunApi);
+    await respond(body, { method: 'POST', requestBody: yunRequest(), headers });
+    assert.equal(capture.hasResponse(), true);
+    assert.ok((await capture.drain()).capturedResponses[0].error);
+  }
+});
+
+test('YunExpress ends failed requests promptly and sanitizes their diagnostics', async () => {
+  const { capture, handlers, detachedEvents } = await fixture(yunUrl, yunApi);
+  const request = { url: () => yunApi, method: () => 'POST', postDataJSON: () => yunRequest(),
+    failure: () => ({ errorText: 'PRIVATE_TOKEN in unexpected network text' }) };
+  handlers.request(request);
+  handlers.requestfailed(request);
+  await capture.settle(100);
+  await assert.rejects(capture.drain(), { message: 'YunExpress tracking request failed: network failure' });
+  assert.deepEqual(detachedEvents, ['response', 'request', 'requestfailed']);
+});
+
+test('YunExpress cleanup detaches all observers and ignores late response bodies', async () => {
+  const { capture, respond, detachedEvents } = await fixture(yunUrl, yunApi);
+  let release;
+  const reading = respond(yunReply(), { method: 'POST', requestBody: yunRequest(), read: () => new Promise(resolve => { release = resolve; }) });
+  await capture.settle(1);
+  const snapshot = await capture.drain();
+  release(Buffer.from(yunReply()));
+  await reading;
+  await respond(yunReply(), { method: 'POST', requestBody: yunRequest() });
+  assert.equal(snapshot.capturedResponses.length, 1);
+  assert.equal(snapshot.capturedResponses[0].body, null);
+  assert.deepEqual(detachedEvents, ['response', 'request', 'requestfailed']);
+});
+
+for (const missing of [false, true]) test(`YunExpress live hook reads a fresh ${missing ? 'missing-item' : 'known-parcel'} response`, {
+  skip: !process.env.TRACKING_CHROMIUM_PATH || !process.env.YUNEXPRESS_TRACKING_NUMBER, timeout: 30_000,
+}, async () => {
+  const { chromium } = await import('playwright-core');
+  const requested = missing ? 'YT0000000000000000' : process.env.YUNEXPRESS_TRACKING_NUMBER;
+  assert.ok(/^YT\d{16}$/.test(requested));
+  const browser = await chromium.launch({ executablePath: process.env.TRACKING_CHROMIUM_PATH, headless: true, timeout: 10_000,
+    env: { PATH: process.env.PATH ?? '', HOME: process.env.HOME ?? '/tmp', LANG: 'en_US.UTF-8' } });
+  let capture;
+  try {
+    const page = await browser.newPage({ locale: 'en-US' });
+    const url = `https://www.yuntrack.com/parcelTracking?id=${requested}`;
+    capture = await attachTrackingCapture(page, url, { captureResponses: [yunApi], settleTimeout: 15_000 });
+    const navigation = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15_000 });
+    assert.equal(navigation.status(), 200);
+    await capture.settle(15_000);
+    const rows = (await capture.drain()).capturedResponses;
+    capture = undefined;
+    assert.ok(rows.length > 0);
+    const response = rows.at(-1);
+    assert.equal(response.status, 200);
+    assert.equal(response.error, undefined);
+    assert.equal(response.truncated, false);
+    const payload = JSON.parse(response.body);
+    assert.equal(payload.ResultList.length, 1);
+    const item = payload.ResultList[0];
+    assert.ok(item.Id === requested && item.TrackInfo.WaybillNumber === requested);
+    const scans = item.TrackData.ProcessGroupList.flatMap(group => group.ProcessDetailList);
+    if (missing) {
+      assert.equal(item.Status, 0);
+      assert.equal(item.TrackInfo.TrackingStatus, 0);
+      assert.equal(item.TrackInfo.TrackEventCount, 0);
+      assert.equal(scans.length, 0);
+      assert.deepEqual(item.TrackInfo.TrackEventDetails, []);
+    } else {
+      assert.ok(scans.length > 0);
+      assert.equal(scans.length, item.TrackInfo.TrackEventDetails.length);
+    }
+  } finally {
+    await capture?.drain().catch(() => {});
+    await browser.close();
+  }
+});
 
 const australiaNumber = '7T0000000000000000001';
 const australiaUrl = `https://auspost.com.au/mypost/track/details/${australiaNumber}`;

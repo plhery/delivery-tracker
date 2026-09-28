@@ -61,9 +61,34 @@ describe('Yamato parser', () => {
     $('.tracking-invoice-block-detail li').eq(2).find('.item').text('返品');
     const result = parse($.html(), NUMBER);
     expect(result).toMatchObject({ status: 'exception', current_stage: 'returned' });
-    expect(result.events?.[0].stage).toBe('returned');
+    expect(result.events?.[0]).toMatchObject({ stage: 'returned', provider_leg: 'return' });
     expect(result.events?.at(-1)?.stage).toBe('accepted');
     expect(result.delivered_at).toBeUndefined();
+  });
+
+  it.each([
+    ['New return wording', 'unknown', undefined],
+    ['持戻（休業）', 'exception', 'failed_attempt'],
+  ])('retains return-leg evidence independently from current wording %s', (wording, status, stage) => {
+    const $ = load(fixture());
+    $('.tracking-invoice-block-detail li').eq(2).find('.item').text('返品');
+    $('.tracking-invoice-block-detail li').last().find('.item').text(wording);
+    $('.tracking-invoice-block-state-title').text(wording);
+    const result = parse($.html(), NUMBER);
+    expect(result.status).toBe(status); expect(result.current_stage).toBe(stage);
+    expect(result.events?.[0]).toMatchObject({ description: wording, provider_leg: 'return' });
+    expect(result.events?.[0].stage).toBe(stage);
+    expect(result.delivered_at).toBeUndefined();
+  });
+
+  it('does not borrow an older dated scan for a yearless current return', () => {
+    const $ = load(fixture());
+    $('.tracking-invoice-block-detail li').first().find('.date').text('2025年12月31日 16:43');
+    $('.tracking-invoice-block-detail li').eq(2).find('.item').text('返品');
+    const result = parse($.html(), NUMBER);
+    expect(result).toMatchObject({ status: 'exception', current_stage: 'returned', last_update: null });
+    expect(result.events?.at(-1)?.time).toBe('2025-12-31T07:43:00Z');
+    expect(result.events?.[0].time).toBeUndefined();
   });
 
   it.each(['wrong', 'duplicate', 'missing', 'input-only'])('rejects %s detail identity', (mode) => {
@@ -82,6 +107,12 @@ describe('Yamato parser', () => {
     $('.tracking-invoice-block-state-title').text('伝票番号未登録');
     expect(() => parse($.html(), NUMBER)).toThrow(expect.objectContaining({ kind: 'not_found' }));
     $('.tracking-invoice-block-title').text('1件目：9999-9999-9999');
+    expect(() => parse($.html(), NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
+  });
+
+  it('rejects contradictory missing-shipment states with positive history', () => {
+    const $ = load(fixture());
+    $('.tracking-invoice-block-state-title').text('伝票番号未登録');
     expect(() => parse($.html(), NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
   });
 

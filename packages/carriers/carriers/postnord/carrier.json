@@ -12,19 +12,19 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "postnord",
+    "steps": ["direct"]
   },
-  "capabilities": [],
+  "capabilities": ["history", "weight", "dimensions"],
   "portal": {
-    "url": "https://www.postnord.se/en/our-tools/track-and-trace",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "url": "https://tracking.postnord.com/en/?id={trackingNumber}",
+    "canaryUrl": "https://tracking.postnord.com/en/",
+    "shows": ["status", "history", "weight", "dimensions", "recipient", "sender"],
+    "scraped": ["status", "history", "weight", "dimensions"],
+    "discarded": ["recipient", "sender"],
     "unavailable": []
   },
-  "links": [],
+  "links": [{ "domains": ["tracking.postnord.com"], "params": ["id", "ID"] }],
   "detection": [
     {
       "id": "postnord-1",

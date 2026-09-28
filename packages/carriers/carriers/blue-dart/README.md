@@ -12,7 +12,8 @@ page needs no session or challenge token.
 
 Only scan-table rows become events, in the portal's newest-first order. Domestic scans use
 India time; unresolved date labels stay separate from timestamps. Unknown wording keeps
-its text without inheriting the shipment's current status. Recipient and reference-number
+its text without inheriting the shipment's current status. An unresolved date retains
+its valid clock without creating an instant. Recipient and reference-number
 rows, feedback forms and page scripts are excluded.
 
 The no-information panel exists hidden in successful pages too. Only its server-provided

@@ -57,6 +57,13 @@ describe('OnTrac direct tracking', () => {
     expect(result.last_update).toBeNull();
     expect(result.last_update_local).toBeNull();
     expect(result.events?.[0]).not.toHaveProperty('local_time');
+    expect(result.events?.[0]).toHaveProperty('provider_time_text', '2026-02-30T14:00:00');
+  });
+  it('rejects malformed scans rather than presenting older delivery as current', () => {
+    for (const scan of [null, { EventCode: 'NEW' }]) {
+      const value = payload(); value.Packages[0].Events.unshift(scan);
+      expect(() => parseOntrac(value, NUMBER)).toThrowError(expect.objectContaining({ kind: 'schema' }));
+    }
   });
   it.each([
     ['PU', 'The package was picked up', 'in_transit', 'accepted'],
@@ -89,17 +96,28 @@ describe('OnTrac direct tracking', () => {
     expect(result.events).toHaveLength(3);
     expect(JSON.stringify(result)).not.toMatch(/Private Recipient|Example Address|Private signature|secret-image|reference-secret|PostalCode/);
   });
-  it('bounds requests, forwards cancellation and distinguishes structured negatives from failures', async () => {
+  it('bounds requests, forwards cancellation and keeps generic missing-resource replies inconclusive', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(payload())));
     const signal = new AbortController().signal;
     await new OntracTracker({ fetcher }).fetch(NUMBER, { signal, budgetMs: 1000 });
     expect(fetcher.mock.calls[0]?.[0]).toBe(`https://webtrack.ontrac.com/PackageServices/tracking/${NUMBER}`);
     expect(fetcher.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
     fetcher.mockResolvedValue(new Response(JSON.stringify({ Title: 'Not Found', Status: 404 }), { status: 404 }));
-    await expect(new OntracTracker({ fetcher }).fetch(NUMBER)).rejects.toMatchObject({ kind: 'not_found' });
+    await expect(new OntracTracker({ fetcher }).fetch(NUMBER)).rejects.toMatchObject({ kind: 'indeterminate' });
     fetcher.mockResolvedValue(new Response('{}', { status: 503 }));
     await expect(new OntracTracker({ fetcher }).fetch(NUMBER)).rejects.toMatchObject({ kind: 'maintenance' });
     expect(normalizeOntracNumber('1ls 0000000000001')).toBe(NUMBER);
     expect(() => normalizeOntracNumber('123')).toThrow(TypeError);
+  });
+  it('preserves the upstream throttle window and rejection diagnostics', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response('Too many requests', {
+      status: 429, headers: { 'Retry-After': '7200', 'Content-Type': 'text/plain' },
+    }));
+    await expect(new OntracTracker({ fetcher }).fetch(NUMBER)).rejects.toMatchObject({
+      kind: 'rate_limited', retryAfterMs: 7_200_000,
+      diagnostics: { body_signals: ['rate_limit_message'] },
+      request: { method: 'GET', url: `https://webtrack.ontrac.com/PackageServices/tracking/${NUMBER}` },
+    });
+    expect(fetcher).toHaveBeenCalledOnce();
   });
 });

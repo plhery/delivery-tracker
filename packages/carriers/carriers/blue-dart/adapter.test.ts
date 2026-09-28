@@ -31,14 +31,14 @@ describe('Blue Dart direct tracking', () => {
   it('does not classify new wording or create an instant from a malformed scan date', () => {
     const value = html.replace('Shipment Arrived At Hub', 'New status').replace('02 Jan 2026', 'invalid date');
     const event = parseBlueDart(value, NUMBER).events?.at(-1);
-    expect(event).toMatchObject({ description: 'New status', provider_time_text: 'invalid date' });
+    expect(event).toMatchObject({ description: 'New status', provider_time_text: 'invalid date 12:00' });
     expect(event).not.toHaveProperty('stage'); expect(event).not.toHaveProperty('time');
   });
   it('preserves the newest unresolved delivery without borrowing an older freshness time', () => {
     const value = html.replace('03 Jan 2026</td><td>14:00', 'date unavailable</td><td>14:00');
     const result = parseBlueDart(value, NUMBER);
     expect(result).toMatchObject({ status: 'delivered', last_update: null });
-    expect(result.events?.[0]).toMatchObject({ stage: 'delivered', provider_time_text: 'date unavailable' });
+    expect(result.events?.[0]).toMatchObject({ stage: 'delivered', provider_time_text: 'date unavailable 14:00' });
     expect(result).not.toHaveProperty('delivered_at');
     expect(result.events?.map(e => e.stage)).toEqual(['delivered', 'out_for_delivery', 'in_transit']);
     expect(result.events?.[0]).not.toHaveProperty('time');
@@ -50,6 +50,20 @@ describe('Blue Dart direct tracking', () => {
     const event = parseBlueDart(value, NUMBER).events?.[0];
     expect(event?.provider_time_text).toBe(date.trim().slice(0, 64));
     expect(JSON.stringify(event)).not.toMatch(/clock-secret|Private Recipient|private-reference/);
+  });
+  it('retains an isolated valid clock without creating an instant or freshness date', () => {
+    const result = parseBlueDart(html.replace('03 Jan 2026</td><td>14:00', '</td><td>14:00'), NUMBER);
+    expect(result.events?.[0]).toMatchObject({ provider_time_text: '14:00' });
+    expect(result.events?.[0]).not.toHaveProperty('time');
+    expect(result.last_update).toBeNull();
+    expect(result.delivered_at).toBeUndefined();
+  });
+  it('rejects contradictory identity fields and incomplete actual scans', () => {
+    const duplicate = html.replace('<tr><th>Status</th>', '<tr><th>Waybill No</th><td>00000000002</td></tr><tr><th>Status</th>');
+    const incomplete = html.replace('<td>02 Jan 2026</td><td>12:00</td>', '<td>02 Jan 2026</td>');
+    for (const value of [duplicate, incomplete]) {
+      expect(() => parseBlueDart(value, NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
+    }
   });
   it('uses the read-only result endpoint and passes a bounded abort signal', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(html));

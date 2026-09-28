@@ -1002,7 +1002,7 @@ describe('carrier detection', () => {
     // not a delivered fixture; never classify digit-SE as S10).
     // Source: https://github.com/apoex/postnord
     expect(detectCarrier('84971563697SE')).toBe('postnord');
-    expectUniversalFallback('postnord');
+    expectDirectTracking('postnord');
   });
 
   it('posti — Posti', () => {

@@ -1,10 +1,9 @@
 import 'server-only';
 import type { AdapterFactory, TrackingContext } from '../../core/adapter';
-import { IndeterminateError, NotFoundError, UpstreamHttpError } from '../../core/errors';
+import { IndeterminateError } from '../../core/errors';
 import { runSteps } from '../../core/runner';
 import { NOOP_RECORDER, type StepRecorder } from '../../core/telemetry';
 import { fetchBounded, parseJsonBytes } from '../../core/transport';
-import { isRecord } from '../../core/types';
 import { normalizeOntracNumber, parseOntrac } from './parser';
 
 // Endpoint and schema come from the current official portal client:
@@ -21,14 +20,12 @@ export class OntracTracker {
       const { response, bytes } = await fetchBounded(`${ENDPOINT}${encodeURIComponent(number)}`, {
         headers: { Accept: 'application/json' }, signal,
       }, { provider: 'OnTrac', timeoutMs: Math.max(1, Math.floor(remainingMs)), maxBytes: 1_000_000,
-        allowHttpError: true, fetcher: this.options.fetcher });
+        allowHttpStatuses: [404, 410], fetcher: this.options.fetcher });
       if (response.status === 404 || response.status === 410) {
-        let negative: unknown;
-        try { negative = parseJsonBytes(bytes, 'OnTrac'); } catch { /* A generic error page proves no parcel negative. */ }
-        if (response.status === 404 && isRecord(negative) && negative.Title === 'Not Found' && negative.Status === 404) throw new NotFoundError('OnTrac');
-        throw new IndeterminateError('OnTrac', 'OnTrac returned an unrecognized missing-resource response');
+        // The portal returns generic ProblemDetails for unknown numbers; the
+        // same envelope can mean a missing API route rather than no parcel.
+        throw new IndeterminateError('OnTrac', 'OnTrac could not return the tracking resource');
       }
-      if (!response.ok) throw new UpstreamHttpError('OnTrac', response.status);
       return parseOntrac(parseJsonBytes(bytes, 'OnTrac'), number);
     } }]);
   }

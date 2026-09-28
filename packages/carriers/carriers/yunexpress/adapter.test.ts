@@ -25,13 +25,14 @@ describe('YunExpress captured response projection', () => {
     expect(JSON.stringify(result)).not.toContain('PRIVATE');
   });
 
-  it('requires the latest offset record to match that exact scan', () => {
+  it.each(['description', 'location', 'clock', 'missing summary'])('rejects a latest %s mismatch instead of returning older progress', mode => {
     const payload = fixture();
-    payload.ResultList[0].TrackInfo.LastTrackEvent.ProcessContent = 'Different description';
-    const result = parse(payload, NUMBER);
-    expect(result.last_update).toBeNull();
-    expect(result.events?.[0]).toMatchObject({ local_time: '2026-03-20T13:39:00' });
-    expect(result.events?.[0].time).toBeUndefined();
+    const item = payload.ResultList[0];
+    if (mode === 'description') item.TrackInfo.LastTrackEvent.ProcessContent = 'Different description';
+    if (mode === 'location') item.TrackInfo.LastTrackEvent.ProcessLocation = 'Different facility';
+    if (mode === 'clock') item.TrackInfo.LastTrackEvent.ProcessDate = '2026-03-20T13:40:00';
+    if (mode === 'missing summary') delete item.TrackInfo.LastTrackEvent;
+    expect(() => parse(payload, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
   });
 
   it('maps an explicit delivered latest-event code without promoting earlier partner scans', () => {
@@ -44,7 +45,7 @@ describe('YunExpress captured response projection', () => {
     expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered', delivered_at: '2026-03-20T13:39:00-04:00' });
     expect(result.events?.[1].stage).toBe('in_transit');
     item.TrackInfo.LastTrackEvent.ProcessContent = 'Different description';
-    expect(parse(payload, NUMBER).status).toBe('unknown');
+    expect(() => parse(payload, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
   });
 
   it('requires a unique returned number and matching waybill identity', () => {
@@ -63,6 +64,41 @@ describe('YunExpress captured response projection', () => {
     expect(() => parse(payload, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
     expect(() => parse({ Code: 1003 }, NUMBER)).toThrow(expect.objectContaining({ kind: 'challenge' }));
     expect(() => parse({ ResultList: [] }, NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
+  });
+
+  it.each(['count absent', 'count positive', 'summary populated', 'child parcel', 'last status absent'])('keeps an incomplete negative %s indeterminate', mode => {
+    const payload = fixture('not-found');
+    const item = payload.ResultList[0];
+    if (mode === 'count absent') delete item.TrackInfo.TrackEventCount;
+    if (mode === 'count positive') item.TrackInfo.TrackEventCount = 1;
+    if (mode === 'summary populated') item.TrackInfo.LastTrackEvent.ProcessContent = 'Shipment information received';
+    if (mode === 'child parcel') item.TrackData.ChildCount = 1;
+    if (mode === 'last status absent') delete item.TrackInfo.LastTrackEvent.TrackingStatus;
+    expect(() => parse(payload, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
+  });
+
+  it('rejects mismatched history even when every scan already carries an explicit offset', () => {
+    const payload = fixture();
+    const item = payload.ResultList[0];
+    for (const group of item.TrackData.ProcessGroupList) for (const scan of group.ProcessDetailList) scan.ProcessDate += '-04:00';
+    item.TrackInfo.LastTrackEvent.ProcessDate += '-04:00';
+    item.TrackInfo.LastTrackEvent.ProcessLocation = 'Different facility';
+    expect(() => parseCaptured(captured(payload), NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
+  });
+
+  it('compares full latest text before applying output length limits', () => {
+    const payload = fixture();
+    const item = payload.ResultList[0];
+    const prefix = 'A'.repeat(520);
+    item.TrackData.ProcessGroupList[0].ProcessDetailList[0].ProcessContent = `${prefix}first----Example facility`;
+    item.TrackInfo.LastTrackEvent.ProcessContent = `${prefix}other`;
+    expect(() => parse(payload, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
+  });
+
+  it('rejects a projection that omits scans present in the raw history', () => {
+    const payload = fixture();
+    payload.ResultList[0].TrackData.ProcessGroupList.pop();
+    expect(() => parse(payload, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
   });
 
   it.each(['date', 'description', 'group'])('rejects invalid latest %s instead of promoting older progress', (mode) => {
@@ -106,7 +142,7 @@ describe('YunExpress captured response projection', () => {
 });
 
 describe('YunExpress browser execution', () => {
-  it('selects configured local Chromium without attempting incompatible Trawl capture', async () => {
+  it('selects configured local Chromium without an additional service attempt', async () => {
     const fetcher = vi.fn<typeof fetch>();
     const recorder = { ...NOOP_RECORDER, step: vi.fn(), lookup: vi.fn() };
     const launch = vi.spyOn(chromium, 'launch').mockRejectedValue(new Error('Synthetic browser launch failure'));

@@ -164,6 +164,24 @@ describe('bounded carrier request retries', () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
+  it('allows only selected HTTP statuses and keeps other failures with their retry window', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response('missing', { status: 404 }))
+      .mockResolvedValueOnce(new Response('limited', { status: 429, headers: { 'Retry-After': '7200' } }));
+    const options = { provider: 'Carrier tracking', allowHttpStatuses: [404], fetcher };
+    expect(decodeText((await fetchBounded(URL, {}, options)).bytes)).toBe('missing');
+    await expect(fetchBounded(URL, {}, options)).rejects.toMatchObject({ kind: 'rate_limited', retryAfterMs: 7_200_000 });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns a selected manual redirect without granting a pass to missing endpoints', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response(null, { status: 302, headers: { Location: '/regional' } }))
+      .mockResolvedValueOnce(new Response('unavailable', { status: 404 }));
+    const options = { provider: 'Carrier tracking', redirect: 'manual' as const, allowHttpStatuses: [302], fetcher };
+    await expect(fetchBounded(URL, {}, options)).resolves.toMatchObject({ response: { status: 302 } });
+    await expect(fetchBounded(URL, {}, options)).rejects.toMatchObject({ status: 404 });
+    expect(fetcher.mock.calls.every(([, init]) => init?.redirect === 'manual')).toBe(true);
+  });
+
   it('does not retry oversized or malformed successful responses', async () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response('invalid json'));
     await expect(fetchBounded(URL, {}, { ...OPTIONS, fetcher, maxBytes: 5 }))

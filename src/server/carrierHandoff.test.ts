@@ -32,7 +32,7 @@ describe('general delivery handoff candidates', () => {
       expect(deliveryHandoff('la-poste', number, { destination_country })).toBeNull();
     }
   });
-  it.each([['FI', 'posti'], ['CH', 'swiss-post'], ['FR', 'la-poste'], ['US', 'usps']])(
+  it.each([['FI', 'posti'], ['CH', 'swiss-post'], ['FR', 'la-poste'], ['US', 'usps'], ['SE', 'postnord'], ['Sweden', 'postnord']])(
     'proposes one national post for a checksum-valid postal reference going to %s', (destination_country, target) => {
       expect(deliveryHandoff('spring-gds', 'LX123456785NL', { destination_country }))
         .toEqual({ carrier: target, number: 'LX123456785NL', basis: 'destination' });
@@ -80,7 +80,8 @@ describe('general delivery handoff candidates', () => {
       .toEqual({ carrier: 'posti', number: 'LX123456785CH', basis: 'destination' });
     expect(deliveryHandoff('aliexpress', 'LX123456785CH', { destination_country_name: 'Finland' }))
       .toEqual({ carrier: 'posti', number: 'LX123456785CH', basis: 'destination' });
-    expect(deliveryHandoff('aliexpress', 'LX123456785CH', { delivery_carrier: 'postnord' })).toBeNull();
+    expect(deliveryHandoff('aliexpress', 'LX123456785CH', { delivery_carrier: 'postnord' }))
+      .toEqual({ carrier: 'postnord', number: 'LX123456785CH', basis: 'partner' });
   });
   it('ignores malformed persisted hints without throwing during origin recovery', () => {
     expect(deliveryHandoff('aliexpress', 'LX123456785CH', { delivery_tracking_number: 123 } as unknown as CarrierResult)).toBeNull();
@@ -88,7 +89,7 @@ describe('general delivery handoff candidates', () => {
       .toEqual({ carrier: 'swiss-post', number: 'LX123456785CH', basis: 'reference' });
   });
   it('requires a dedicated adapter and never borrows another carrier’s credentials', () => {
-    for (const delivery_carrier of ['postnord', 'dpd', 'amazon-logistics', 'not-a-carrier', 'la-poste']) {
+    for (const delivery_carrier of ['bpost', 'dpd', 'amazon-logistics', 'not-a-carrier', 'la-poste']) {
       expect(deliveryHandoff('la-poste', 'CW123456785FR', { delivery_carrier, destination_country: 'FI' })).toBeNull();
     }
     expect(deliveryHandoff('la-poste', 'CW123456785FR', { delivery_carrier: 'posti', delivery_tracking_number: 'bad?number' })).toBeNull();
@@ -118,6 +119,7 @@ describe('partner link handoff candidates', () => {
     ['aliexpress', 'https://service.post.ch/ekp-web/ui/list', 'swiss-post'],
     ['dhl', 'https://www.posti.fi/en/tracking', 'posti'],
     ['la-poste', 'https://tools.usps.com/go/TrackConfirmAction', 'usps'],
+    ['aliexpress', 'https://tracking.postnord.com/en/', 'postnord'],
   ])('uses the catalog to resolve %s partner link %s', (carrier, url, target) => {
     expect(deliveryHandoff(carrier, 'OTHER12345', {
       events: [{ description: `Delivery partner tracking: ${url}` }],

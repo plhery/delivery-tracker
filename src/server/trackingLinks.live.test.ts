@@ -76,7 +76,15 @@ describe('UI tracking links (rendered public pages)', () => {
         const placeholders = await page.locator('input[placeholder], textarea[placeholder]').evaluateAll(elements =>
           elements.filter(element => element.getClientRects().length > 0 && getComputedStyle(element).visibility !== 'hidden')
             .map(element => element.getAttribute('placeholder')?.slice(0, 500) ?? '').join('\n'));
-        const text = `${bodyText}\n${placeholders}`;
+        // Native body text omits open shadow trees, including PostNord's
+        // rendered result. Read visible contents from the known tracker host.
+        const shadowText = testCase.shadowHost ? await page.locator(testCase.shadowHost).evaluateAll(hosts => hosts.flatMap(host =>
+          Array.from(host.shadowRoot?.children ?? [])
+            .filter((element): element is HTMLElement => element instanceof HTMLElement && element.getClientRects().length > 0
+              && getComputedStyle(element).visibility !== 'hidden')
+            .map(element => element.innerText.slice(0, 10_000)),
+        ).join('\n')) : '';
+        const text = `${bodyText}\n${placeholders}\n${shadowText}`;
         const { forwarding } = testCase;
         inputBound = forwarding === 'none' || lookupObserved || text.includes(testCase.number)
           || (typeof forwarding === 'object' && forwarding.notFound.test(text))

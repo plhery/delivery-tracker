@@ -5,9 +5,9 @@ import { NOOP_RECORDER } from '@carriers/core/telemetry';
 import type { CarrierResult } from '@carriers/core/result';
 import type { TrawlClient } from '@carriers/core/transport';
 import { createAdapterRegistry } from './adapterRegistry';
-import { CarrierTrackingAdapter } from './trackingSync';
+import { buildEvents, CarrierTrackingAdapter } from './trackingSync';
 import { TrackingRouter } from './trackingRouting';
-import { captureDirectLocalHistory, directLocalHistory, hasUnresolvedDirectCurrent } from './directLocalHistory';
+import { captureDirectLocalHistory, directLocalHistory, hasUnresolvedDirectCurrent, hasUnresolvedDirectHistory } from './directLocalHistory';
 import type { UniversalTracker } from '@carriers/providers/universal';
 import * as observability from './observability';
 
@@ -25,9 +25,10 @@ const cases = [
   { carrier: 'yanwen', number: 'UK000000005YP', fixture: 'delivered.html' },
   { carrier: 'dtdc', number: 'N00000001', fixture: 'delivered.json' },
   { carrier: 'yunexpress', number: 'YT0000000000000001', fixture: 'in-transit.json', unresolved: true },
+  { carrier: 'postnord', number: '00573000000000000001', fixture: 'delivered.json' },
 ];
 
-function setup(entry: typeof cases[number]) {
+function setup(entry: typeof cases[number], transform = (body: string) => body) {
   let body = readFileSync(new URL(`../../packages/carriers/carriers/${entry.carrier}/fixtures/${entry.fixture}`, import.meta.url), 'utf8');
   if (entry.carrier === 'four-px') {
     const value = JSON.parse(body);
@@ -39,6 +40,7 @@ function setup(entry: typeof cases[number]) {
     value.ResultList[0].TrackInfo.LastTrackEvent.GmtProcessTimezone = '';
     body = JSON.stringify(value);
   }
+  body = transform(body);
   const fetcher = vi.fn<typeof fetch>().mockImplementation(async url => {
     if (entry.carrier === 'aramex' && String(url).includes('/track/shipments')) {
       return new Response(`<a class="shipment-card" href="/track/details?q=synthetic"><div class="shipment-num"><h5>${entry.number}</h5></div></a>`);
@@ -97,5 +99,103 @@ describe('expanded direct coverage through the host', () => {
     const parcel = { tracking_number: '123456789012', carrier_data: { direct_local_history: archive } };
     expect(directLocalHistory(parcel, { direct_local_history: captureDirectLocalHistory('yamato', '123456789012', { events: result.events?.slice(1) }) })?.events)
       .toEqual(archive.events);
+  });
+
+  it.each(['ontrac', 'aramex'])('%s asks providers when the current scan has no clock at all', async carrier => {
+    vi.spyOn(observability, 'reportRoutingEvent').mockImplementation(() => undefined);
+    const entry = cases.find(entry => entry.carrier === carrier)!;
+    const test = setup(entry, body => {
+      if (carrier === 'aramex') return body.replaceAll(/<span class="(?:date|time)">[^<]*<\/span>/g, '');
+      const payload = JSON.parse(body);
+      delete payload.Packages[0].Events[0].ZonedEventDateTime;
+      return JSON.stringify(payload);
+    });
+    const direct = await test.adapter.fetch(carrier, entry.number, null);
+    expect(hasUnresolvedDirectCurrent(carrier, direct)).toBe(true);
+    expect(direct.events?.[0]).not.toHaveProperty('time');
+    expect(direct.events?.[0]).not.toHaveProperty('local_time');
+    expect(direct.events?.[0]).not.toHaveProperty('provider_time_text');
+    const universal = vi.fn().mockResolvedValue({ status: 'delivered', last_update: '2026-01-03T22:00:00Z' });
+    const router = new TrackingRouter({ direct: async () => ({ result: direct, sourceCarrierId: carrier,
+      swissPostReady: null, handoffFallbackErrorType: null }), universal,
+      health: { acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'synthetic-lease' }), finishTrackingProvider: vi.fn() } });
+    const value = await router.fetch({ carrier, tracking_number: entry.number }, false);
+    expect(universal).toHaveBeenCalledOnce();
+    expect(value.result).toMatchObject({ tracking_provider: 'Ship24', direct_local_history: {
+      events: expect.arrayContaining([expect.objectContaining({ description: direct.events![0]!.description })]),
+    } });
+  });
+
+  it('archives undated Delhivery history while keeping its dated current status direct', async () => {
+    const entry = cases.find(entry => entry.carrier === 'delhivery')!;
+    const direct = await setup(entry).adapter.fetch(entry.carrier, entry.number, null);
+    expect(hasUnresolvedDirectHistory(entry.carrier, direct)).toBe(true);
+    expect(hasUnresolvedDirectCurrent(entry.carrier, direct)).toBe(false);
+    const universal = vi.fn();
+    const router = new TrackingRouter({ direct: async () => ({ result: direct, sourceCarrierId: entry.carrier,
+      swissPostReady: null, handoffFallbackErrorType: null }), universal,
+      health: { acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'synthetic-lease' }), finishTrackingProvider: vi.fn() } });
+    const parcel = { carrier: entry.carrier, tracking_number: entry.number };
+    const value = await router.fetch(parcel, false);
+    expect(universal).not.toHaveBeenCalled();
+    const archive = directLocalHistory(parcel, value.result)!;
+    expect(archive.events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ description: 'DELIVERED', summary_snapshot: true, time: direct.last_update }),
+      expect.objectContaining({ description: 'In Transit' }),
+    ]));
+    expect(buildEvents(parcel, value.result)).toHaveLength(1);
+  });
+
+  it('retains return-leg and summary evidence when otherwise identical scans are merged', () => {
+    const number = '123456789012';
+    const scan = { description: 'Arrived', provider_time_text: '01月02日 12:00' };
+    const old = captureDirectLocalHistory('yamato', number, { events: [scan] });
+    const incoming = captureDirectLocalHistory('yamato', number, { events: [
+      { ...scan, provider_leg: 'return' }, { ...scan, provider_leg: 'return', summary_snapshot: true },
+    ] });
+    expect(directLocalHistory({ tracking_number: number, carrier_data: { direct_local_history: old } },
+      { direct_local_history: incoming })?.events).toEqual([
+      { ...scan, provider_leg: 'return' }, { ...scan, provider_leg: 'return', summary_snapshot: true }, scan,
+    ]);
+  });
+
+  it('falls back from mismatched YunExpress latest history without consuming its dated scans', async () => {
+    vi.spyOn(observability, 'reportRoutingEvent').mockImplementation(() => undefined);
+    const entry = cases.find(entry => entry.carrier === 'yunexpress')!;
+    const test = setup(entry, body => {
+      const payload = JSON.parse(body);
+      const item = payload.ResultList[0];
+      for (const group of item.TrackData.ProcessGroupList) {
+        for (const scan of group.ProcessDetailList) scan.ProcessDate += '-04:00';
+      }
+      item.TrackInfo.LastTrackEvent.ProcessDate += '-04:00';
+      item.TrackInfo.LastTrackEvent.ProcessLocation = 'Different facility';
+      return JSON.stringify(payload);
+    });
+    await expect(test.adapter.fetch(entry.carrier, entry.number, null)).rejects.toMatchObject({ kind: 'indeterminate' });
+    const providerEvents = [{ time: '2026-04-01T10:00:00Z', description: 'Out for delivery', stage: 'out_for_delivery' }];
+    const universal = vi.fn().mockResolvedValue({ status: 'out_for_delivery', current_stage: 'out_for_delivery',
+      last_update: '2026-04-01T10:00:00Z', events: providerEvents });
+    const router = new TrackingRouter({ direct: async () => ({
+      result: await test.adapter.fetch(entry.carrier, entry.number, null), sourceCarrierId: entry.carrier,
+      swissPostReady: null, handoffFallbackErrorType: null }), universal,
+      health: { acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'synthetic-lease' }), finishTrackingProvider: vi.fn() },
+      now: () => new Date('2026-04-02T10:00:00Z') });
+    const value = await router.fetch({ carrier: entry.carrier, tracking_number: entry.number }, false);
+    expect(universal).toHaveBeenCalledOnce();
+    expect(value.result).toMatchObject({ tracking_provider: 'Ship24', events: providerEvents,
+      routing: { last_event_at: '2026-04-01T10:00:00.000Z' } });
+    expect(value.result).not.toHaveProperty('direct_local_history');
+    expect(value.result).not.toHaveProperty('direct_local_fallback');
+  });
+
+  it('does not turn a delivered PostNord notification into another parcel delivery', async () => {
+    const entry = cases.find(entry => entry.carrier === 'postnord')!;
+    const result = await setup(entry).adapter.fetch(entry.carrier, entry.number, null);
+    const rows = buildEvents({ id: 'synthetic-package', carrier: entry.carrier }, result);
+    expect(rows.some(row => row.description === 'A text message notification has been delivered to the recipient.')).toBe(false);
+    expect(rows.filter(row => row.stage === 'delivered')).toEqual([
+      expect.objectContaining({ occurred_at: '2026-01-04T12:00:00Z', description: 'The shipment item has been delivered.' }),
+    ]);
   });
 });

@@ -52,7 +52,10 @@ export function parse(html: string, trackingNumber: string): CarrierResult {
   if (summary.length !== 1 || !wording) throw new SchemaError(PROVIDER, 'Yamato returned no current shipment state');
   const history = block.find('.tracking-invoice-block-detail > ol');
   const rows = history.children('li');
-  if (['伝票番号未登録', '伝票番号誤り'].includes(wording) && !rows.length) throw new NotFoundError(PROVIDER);
+  if (['伝票番号未登録', '伝票番号誤り'].includes(wording)) {
+    if (rows.length) throw new SchemaError(PROVIDER, 'Yamato returned history alongside a missing-shipment state');
+    throw new NotFoundError(PROVIDER);
+  }
   if (history.length !== 1 || !rows.length || rows.length > 1000) {
     throw new SchemaError(PROVIDER, 'Yamato returned missing or excessive shipment history');
   }
@@ -74,7 +77,7 @@ export function parse(html: string, trackingNumber: string): CarrierResult {
     const stage = returning && mapped && ['accepted', 'in_transit', 'out_for_delivery', 'ready_for_pickup', 'delivered'].includes(mapped.stage)
       ? 'returned' : mapped?.stage;
     const event: CarrierEvent = { description, ...eventDate(clean(dates.text())),
-      ...(location ? { location } : {}), ...(stage ? { stage } : {}) };
+      ...(location ? { location } : {}), ...(stage ? { stage } : {}), ...(returning ? { provider_leg: 'return' } : {}) };
     const key = JSON.stringify(event);
     if (!seen.has(key)) { seen.add(key); events.push(event); }
   });

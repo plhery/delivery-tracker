@@ -47,6 +47,7 @@ import { adapter as posMalaysia } from '../carriers/pos-malaysia/adapter';
 import { adapter as posteItaliane } from '../carriers/poste-italiane/adapter';
 import { adapter as posti } from '../carriers/posti/adapter';
 import { adapter as postlogistics } from '../carriers/postlogistics/adapter';
+import { adapter as postnord } from '../carriers/postnord/adapter';
 import { adapter as relaisColis } from '../carriers/relais-colis/adapter';
 import { adapter as royalMail } from '../carriers/royal-mail/adapter';
 import { adapter as sfExpress } from '../carriers/sf-express/adapter';
@@ -110,6 +111,7 @@ export const REGISTRY: RegistryDefinition = {
     "poste-italiane": posteItaliane,
     "posti": posti,
     "postlogistics": postlogistics,
+    "postnord": postnord,
     "relais-colis": relaisColis,
     "royal-mail": royalMail,
     "sf-express": sfExpress,
@@ -200,7 +202,7 @@ export const REGISTRY: RegistryDefinition = {
     "poste-italiane": "poste-italiane",
     "posti": "posti",
     "postlogistics": "postlogistics",
-    "postnord": "universal",
+    "postnord": "postnord",
     "purolator": "universal",
     "quickpac": "planzer",
     "relais-colis": "relais-colis",

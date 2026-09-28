@@ -52,8 +52,11 @@ export function parse(payload: unknown, trackingNumber: string): CarrierResult {
   const groups = item.TrackData.ProcessGroupList;
   if (!Array.isArray(groups)) throw new SchemaError('YunExpress');
   if (item.Status === 0 && info.TrackingStatus === 0 && groups.length === 0
+    && info.TrackEventCount === 0 && item.TrackData.ChildCount === 0
     && Array.isArray(info.TrackEventDetails) && info.TrackEventDetails.length === 0
-    && isRecord(info.LastTrackEvent) && info.LastTrackEvent.ProcessDate === '') throw new NotFoundError('YunExpress');
+    && isRecord(info.LastTrackEvent) && info.LastTrackEvent.TrackingStatus === 0
+    && info.LastTrackEvent.ProcessDate === '' && info.LastTrackEvent.ProcessContent === ''
+    && info.LastTrackEvent.ProcessLocation === '') throw new NotFoundError('YunExpress');
   if (!groups.length) throw new IndeterminateError('YunExpress', 'YunExpress returned no parcel scans');
   if (groups.length > 500) throw new SchemaError('YunExpress');
   const last = isRecord(info.LastTrackEvent) ? info.LastTrackEvent : {};
@@ -66,16 +69,20 @@ export function parse(payload: unknown, trackingNumber: string): CarrierResult {
     if (!isRecord(group) || !Array.isArray(group.ProcessDetailList) || !group.ProcessDetailList.length) throw new SchemaError('YunExpress');
     for (const raw of group.ProcessDetailList) {
       if (!isRecord(raw) || ++scans > 500) throw new SchemaError('YunExpress');
-      const content = clean(raw.ProcessContent, 700);
+      const content = clean(raw.ProcessContent, MAX_BYTES);
       const divider = content.lastIndexOf('----');
-      const description = clean(divider < 0 ? content : content.slice(0, divider), 500);
-      const location = divider < 0 ? '' : clean(content.slice(divider + 4), 200);
+      const fullDescription = clean(divider < 0 ? content : content.slice(0, divider), MAX_BYTES);
+      const fullLocation = divider < 0 ? '' : clean(content.slice(divider + 4), MAX_BYTES);
+      const description = clean(fullDescription, 500);
+      const location = clean(fullLocation, 200);
       if (!description) throw new SchemaError('YunExpress', 'YunExpress returned an empty scan');
       const rawTime = clean(raw.ProcessDate, 64);
       // Only the separately described latest scan supplies a verified offset.
       // Storage/creation timezone fields say nothing about earlier scan clocks.
-      const exactLast = rawTime === last.ProcessDate && description === clean(last.ProcessContent, 500) && location === clean(last.ProcessLocation, 200);
+      const exactLast = rawTime === last.ProcessDate && fullDescription === clean(last.ProcessContent, MAX_BYTES)
+        && fullLocation === clean(last.ProcessLocation, MAX_BYTES);
       const clock = eventClock(rawTime, exactLast ? lastOffset : undefined);
+      if (events.length === 0 && !exactLast) throw new IndeterminateError('YunExpress', 'YunExpress latest summary does not match its first scan');
       const key = JSON.stringify([clock, description, location]);
       if (seen.has(key)) continue;
       seen.add(key);
@@ -85,6 +92,9 @@ export function parse(payload: unknown, trackingNumber: string): CarrierResult {
     }
   }
   if (!events.length) throw new IndeterminateError('YunExpress');
+  if (Array.isArray(info.TrackEventDetails) && info.TrackEventDetails.length > scans) {
+    throw new IndeterminateError('YunExpress', 'YunExpress returned incomplete parcel history');
+  }
   const latest = events[0]!;
   const classified = current;
   const deliveryNumber = clean(info.TrackingNumber, 64).toUpperCase();
@@ -170,8 +180,8 @@ export class YunExpressTracker {
     if (!this.options.trawl && !this.options.executablePath) throw new ChallengeError('YunExpress', 'YunExpress requires a configured tracking browser');
     return runSteps({ carrier: 'yunexpress', budgetMs, signal: context.signal, recorder: this.options.recorder ?? NOOP_RECORDER }, [
       { id: 'browser', enabled: Boolean(this.options.executablePath), run: ({ signal, remainingMs }) => localBrowser(number, this.options.executablePath!, signal, Math.max(1, Math.floor(remainingMs))) },
-      // Stock Trawl cannot decode this site's protected API response. Use its
-      // capture protocol only when no local Chromium runtime is configured.
+      // Keep the local runtime primary. Service capture needs the matching
+      // decoded-response hook and is used only without local Chromium.
       { id: 'trawl', enabled: !this.options.executablePath && Boolean(this.options.trawl), run: async ({ signal, remainingMs }) => {
         const timeoutMs = Math.max(1, Math.min(25_000, Math.floor(remainingMs)));
         const page = await this.options.trawl!.scrape({ url: yunExpressTrackingUrl(number), skipHttp: true, maxTier: 2,

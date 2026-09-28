@@ -30,23 +30,25 @@ export function parseOntrac(payload: unknown, number: string): CarrierResult {
   const matches = payload.Packages.filter(isRecord).filter((item) => clean(item.Tracking, 64).toUpperCase() === requested);
   if (matches.length !== 1) throw new SchemaError('OnTrac', 'OnTrac did not return one matching shipment');
   const item = matches[0]!;
-  if (!Array.isArray(item.Events)) throw new SchemaError('OnTrac');
+  if (!Array.isArray(item.Events) || item.Events.length > 500) throw new SchemaError('OnTrac');
   const events: CarrierEvent[] = [];
   const seen = new Set<string>();
-  item.Events.slice(0, 500).forEach((raw) => {
-    if (!isRecord(raw)) return;
+  item.Events.forEach((raw) => {
+    if (!isRecord(raw)) throw new SchemaError('OnTrac', 'OnTrac returned an incomplete scan row');
     const code = clean(raw.EventCode, 32);
     const description = clean(raw.EventShortDescription, 500);
-    if (!description) return;
+    if (!description) throw new SchemaError('OnTrac', 'OnTrac returned a scan with no description');
     const time = explicitOffsetTime(raw.ZonedEventDateTime) ?? explicitOffsetTime(raw.UtcEventDateTime);
     const local = time ? null : unresolvedWallTime(raw.ZonedEventDateTime) ?? unresolvedWallTime(raw.UtcEventDateTime);
     const location = [clean(raw.City, 100), clean(raw.State, 80)].filter(Boolean).join(', ');
-    const clock = time?.iso ?? local ?? (clean(raw.ZonedEventDateTime, 64) || clean(raw.UtcEventDateTime, 64));
+    const clockText = clean(raw.ZonedEventDateTime, 64) || clean(raw.UtcEventDateTime, 64);
+    const clock = time?.iso ?? local ?? clockText;
     const key = `${clock}\u0000${code}\u0000${description}\u0000${location}`;
     if (seen.has(key)) return;
     seen.add(key);
     const mapped = classifyOntracStatus(code);
     events.push({ description, ...(time ? { time: time.iso } : {}), ...(local ? { local_time: local } : {}),
+      ...(!time && !local && clockText ? { provider_time_text: clockText } : {}),
       ...(location ? { location } : {}), ...(code ? { provider_code: code } : {}), ...(mapped ? { stage: mapped.stage } : {}) });
   });
   if (!events.length) throw new IndeterminateError('OnTrac', 'OnTrac returned no tracking scans');

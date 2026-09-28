@@ -20,12 +20,11 @@ export class AramexTracker {
         try {
           const { response, bytes } = await fetchBounded(url, { signal, headers: { Accept: 'text/html' } }, {
             provider: 'Aramex', timeoutMs: Math.max(1, Math.floor(left)), maxBytes: 1_500_000,
-            fetcher: this.options.fetcher, ...(regionalRedirect ? { redirect: 'manual', allowHttpError: true } : {}),
+            fetcher: this.options.fetcher, ...(regionalRedirect ? { redirect: 'manual', allowHttpStatuses: [301, 302, 303, 307, 308] } : {}),
           });
           if (regionalRedirect && [301, 302, 303, 307, 308].includes(response.status)) {
             return await get(aramexDetailRedirect(response.headers.get('location') ?? '', url));
           }
-          if (!response.ok) throw new UpstreamHttpError('Aramex', response.status);
           return decodeText(bytes);
         } catch (error) {
           if (error instanceof UpstreamHttpError && [404, 410].includes(error.status)) throw new TransportError('Aramex', 'Aramex tracking endpoint is unavailable', { cause: error });

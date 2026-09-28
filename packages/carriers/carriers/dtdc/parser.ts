@@ -50,14 +50,16 @@ export function parseDtdc(payload: unknown, trackingNumber: string): CarrierResu
   if (!references.includes(requested)) throw new SchemaError(PROVIDER, 'DTDC returned a different shipment');
   // A verified consignment may expose both its booking reference and original
   // waybill. Empty history waybills are common; nonempty ones must match it.
-  const aliases = new Set([requested, ...references]);
-  if (typeof data.rto_awb_num === 'string' && data.rto_awb_num) aliases.add(normalizeTrackingNumber(data.rto_awb_num));
+  const forwardAliases = new Set([requested, ...references]);
+  const returnAliases = new Set(forwardAliases);
+  if (typeof data.rto_awb_num === 'string' && data.rto_awb_num) returnAliases.add(normalizeTrackingNumber(data.rto_awb_num));
   const snapshot = event(data, true);
   const events: CarrierEvent[] = [snapshot];
   const seen = new Set([JSON.stringify(snapshot)]);
   for (const scan of data.tracking) {
     if (!isRecord(scan)) throw new SchemaError(PROVIDER, 'DTDC returned an incomplete history row');
     const waybill = clean(scan.awb_number, 64);
+    const aliases = scan.type === 'rto' ? returnAliases : forwardAliases;
     if (waybill && !aliases.has(normalizeTrackingNumber(waybill))) throw new SchemaError(PROVIDER, 'DTDC returned mixed shipment history');
     const parsed = event(scan);
     const key = JSON.stringify(parsed);

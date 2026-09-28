@@ -164,8 +164,9 @@ the sync when it checks whether a returned summary is older than the watermark.
 
 ## Direct histories without complete timestamps
 
-Some direct feeds omit scan offsets or the event year. The router keeps their bounded
-history separately and tries providers for dated progress. If providers cannot help,
+Some direct feeds omit scan clocks, offsets or the event year. The router keeps their bounded
+history separately, including return-leg and summary markers. When the current status has no
+complete timestamp, it tries providers for dated progress. If providers cannot help,
 the direct current status remains available without advancing the freshness watermark.
 An unresolved direct lookup cannot displace a carrier already confirmed by dated progress.
 The sync preserves richer saved progress and records status changes as observations,

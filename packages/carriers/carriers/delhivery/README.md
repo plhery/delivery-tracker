@@ -10,8 +10,9 @@ not-found; other empty replies remain schema failures.
 
 ## Notes
 
-Future progress labels are excluded. The dated current status is a separate snapshot;
-its timestamp is never assigned to an undated historical scan.
+Future progress labels are excluded. Current status becomes a snapshot when no scan
+reports it at the same instant; its timestamp is never assigned to an undated scan.
+Calendar days and invalid date labels remain unresolved instead of becoming midnight scans.
 Scan remarks, recipient information, coordinates, references and phone fields are excluded.
 
 ## Limitations

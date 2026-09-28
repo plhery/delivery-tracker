@@ -1,0 +1,16 @@
+{
+  "carrier": "postnord",
+  "entries": [
+    { "code": "INFORMED", "wording": "We have received a notification from your shipper that they are preparing an item for you. The tracking information will be updated when the parcel is handed over to PostNord.", "language": "en", "stage": "registered", "confirmedBy": "live" },
+    { "code": "EN_ROUTE", "wording": "The shipment item is under transportation.", "language": "en", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "EN_ROUTE", "wording": "The shipment item has arrived at the distribution terminal.", "language": "en", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "EN_ROUTE", "wording": "The delivery of the shipment item is in progress.", "language": "en", "stage": "out_for_delivery", "confirmedBy": "live" },
+    { "code": "OTHER", "wording": "The shipment item is under transportation.", "language": "en", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "OTHER", "wording": "Your item is being processed at our sorting center.", "language": "en", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "OTHER", "wording": "The shipment item has been loaded.", "language": "en", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "DELIVERY_IMPOSSIBLE", "wording": "Delivery was not possible. The recipient will get a notification with information on where the shipment item will be available for collection.", "language": "en", "stage": "failed_attempt", "confirmedBy": "live" },
+    { "code": "AVAILABLE_FOR_DELIVERY", "wording": "The shipment item has been delivered to a service point.", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "live" },
+    { "code": "DELIVERED", "wording": "The shipment item has been delivered.", "language": "en", "stage": "delivered", "confirmedBy": "live" },
+    { "code": "DELIVERED", "wording": "The shipment item has been delivered to the recipient's mailbox.", "language": "en", "stage": "delivered", "confirmedBy": "live" }
+  ]
+}

@@ -46,23 +46,28 @@ export function parseAramex(html: string, number: string): CarrierResult {
   if (identifiers.length !== 1 || clean(identifiers.text(), 64) !== requested) throw new SchemaError('Aramex', 'Aramex returned a different shipment detail');
   const tables = $('table.collected');
   if (tables.length !== 1 || !tables.find('th.col-activity').length) throw new SchemaError('Aramex');
+  const rows = tables.find('tr');
+  if (rows.length > 500) throw new SchemaError('Aramex', 'Aramex returned excessive shipment history');
   const events: CarrierEvent[] = [];
   const seen = new Set<string>();
-  tables.find('tr').slice(0, 500).each((_, row) => {
+  rows.each((_, row) => {
+    if (!$(row).children('td').length) return;
+    if ($(row).find('td.activity').length !== 1) throw new SchemaError('Aramex', 'Aramex returned an incomplete scan row');
     const description = clean($(row).find('td.activity').text(), 500);
-    if (!description) return;
+    if (!description) throw new SchemaError('Aramex', 'Aramex returned a scan with no description');
     const day = clean($(row).find('.date-time .date').text(), 32);
     const clock = clean($(row).find('.date-time .time').text(), 16);
     // Parsing in UTC validates the calendar digits only. The resulting wall
     // time carries no offset because this cross-border portal does not give one.
-    const parsed = DateTime.fromFormat(`${day} ${clock}`, 'dd MMM yy HH:mm', { locale: 'en', zone: 'UTC' });
+    const clockText = [day, clock].filter(Boolean).join(' ');
+    const parsed = DateTime.fromFormat(clockText, 'dd MMM yy HH:mm', { locale: 'en', zone: 'UTC' });
     const local = parsed.isValid ? parsed.toISO({ includeOffset: false, suppressMilliseconds: true }) : null;
     const location = [clean($(row).find('.addr .city').text(), 120), clean($(row).find('.addr .country').text(), 80)].filter(Boolean).join(', ');
-    const key = `${local ?? ''}\u0000${description}\u0000${location}`;
+    const key = `${local ?? clockText}\u0000${description}\u0000${location}`;
     if (seen.has(key)) return;
     seen.add(key);
     const mapped = classifyAramexStatus(description);
-    events.push({ description, ...(location ? { location } : {}), ...(local ? { local_time: local } : {}), ...(mapped ? { stage: mapped.stage } : {}) });
+    events.push({ description, ...(location ? { location } : {}), ...(local ? { local_time: local } : clockText ? { provider_time_text: clockText } : {}), ...(mapped ? { stage: mapped.stage } : {}) });
   });
   if (!events.length) throw new IndeterminateError('Aramex', 'Aramex returned no shipment history');
   const latest = events[0]!;

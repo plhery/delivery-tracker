@@ -1538,10 +1538,20 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "postnord"
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://tracking.postnord.com/en/",
+    "linkRules": [
+      {
+        "domains": [
+          "tracking.postnord.com"
+        ],
+        "params": [
+          "id",
+          "ID"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^\\d{11}SE$",
@@ -1557,7 +1567,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://www.postnord.se/en/our-tools/track-and-trace"
+    "trackingUrlTemplate": "https://tracking.postnord.com/en/?id={trackingNumber}"
   },
   "posti": {
     "displayName": "Posti",

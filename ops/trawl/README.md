@@ -10,7 +10,7 @@ cached session, tier 3 a fresh browser that solves challenges. The pool runs Cam
 
 Stock 1.5.0 accepts `captureResponses` but:
 
-- drops compressed bodies, and 17TRACK, UPS, FedEx and Royal Mail all answer with gzip JSON;
+- drops compressed bodies from tracking APIs;
 - settles on the first reply, so a polling API (17TRACK code `100`) comes back "pending";
 - only navigates: it cannot fill a tracking form or run a carrier-specific flow.
 
@@ -24,7 +24,8 @@ runs stock TRAWL.
   build time. It fails the build if a source line it hooks into has changed, so an upstream bump
   cannot silently drop the integration.
 - [`tracking-capture.mjs`](tracking-capture.mjs) reads `response.body()`, which the browser has
-  already decompressed, and waits until a final reply names the requested number. Once the tracking
+  already decompressed, and waits for the source's final reply to the bound lookup. The adapter
+  validates the returned number. Once the tracking
   request has started, TRAWL's CAPTCHA solver is skipped.
 - Carrier runners take over matching plain GETs (no screenshot, body, extra headers or, at tier 3,
   proxy) before the tier's generic flow.
@@ -39,6 +40,7 @@ runs stock TRAWL.
 | --- | --- |
 | [17TRACK](../../packages/carriers/providers/seventeentrack/README.md) | Keeps reading `track/restapi` polls until the number's reply is no longer code `100`. |
 | [UPS](../../packages/carriers/carriers/ups/README.md) | Reads the single `GetStatus` reply in the page; Akamai stalls that call from any plain HTTP session, even with browser cookies. |
+| [YunExpress](../../packages/carriers/carriers/yunexpress/README.md) | Observes the page's `Track/Query` POST only when its `NumberList` contains the requested parcel, reads its decoded final envelope, and leaves request signing inside the page. |
 | [FedEx](../../packages/carriers/carriers/fedex/README.md) | Captures `track/v2/shipments` from a retained browser session, see below. |
 | [Royal Mail](../../packages/carriers/carriers/royal-mail/README.md) | Preloads TrustArc opt-out cookies, submits through the page's own handler (invisible hCaptcha), lets the page refresh its token once after `401 E0015`. |
 | [Postal Ninja](../../packages/carriers/providers/postal-ninja/README.md) | On `/en/tools#trawl-number=<n>` (our marker, not a real deep link), submits the widget so the page runs Turnstile and signs its requests, then opens `/en/track#/<handle>` for full history. |
@@ -49,7 +51,7 @@ Shared behaviour:
 
 - Australia Post and SF Express run in a fresh context on the leased browser with the normal outbound
   URL policy, closed on success, error or deadline; nothing is kept. A hung cleanup replaces the browser.
-- Royal Mail and Australia Post end capture at once on a failed tracking request (allowlisted network
+- Royal Mail, Australia Post and YunExpress end capture at once on a failed tracking request (allowlisted network
   error code). A page with no tracking reply fails the tier, so the cached session is dropped and tier 3 runs.
 - Camoufox's humanized clicks can stall, so the Royal Mail and FedEx flows call the page's own click
   handlers, which still run its validation and CAPTCHA callbacks.
@@ -120,6 +122,11 @@ node --test ops/trawl/*.test.mjs   # also in npm run test:scripts
 FLARESOLVERR_URL=http://<trawl-host>:8191 node ops/trawl/check-session-cache.mjs
 npm run test:carriers:live -- packages/carriers/carriers/<id>   # with FLARESOLVERR_URL set
 ```
+
+The capture-hook tests also check fresh Yuntrack pages when
+`TRACKING_CHROMIUM_PATH` and `YUNEXPRESS_TRACKING_NUMBER` are supplied outside the
+repository. These checks exercise the hook in local Chromium; service browser
+compatibility requires the carrier live test against that service.
 
 `check-session-cache.mjs` makes three Mondial Relay landing-page requests and requires the last two
 to reuse a tier 2 session. Run it with private network access or pipe it into the container

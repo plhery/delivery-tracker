@@ -30,6 +30,22 @@ describe('Aramex direct tracking', () => {
     expect(parseAramex(value, NUMBER).events?.[0]).not.toHaveProperty('stage');
     expect(parseAramex(value, NUMBER).status).toBe('unknown');
   });
+  it('preserves distinct invalid clock labels without inventing scan instants', () => {
+    const value = html.replaceAll('03 Jan 26', '31 Feb 26')
+      .replace("An Aramex Delivery Champion has the shipment and is expected to reach the customer's doorstep shortly", 'The shipment has been delivered');
+    const result = parseAramex(value, NUMBER);
+    expect(result.events?.map(event => event.provider_time_text)).toEqual(['31 Feb 26 14:00', '31 Feb 26 08:00']);
+    expect(result.events?.every(event => !event.time && !event.local_time)).toBe(true);
+    expect(result.last_update).toBeNull();
+    expect(result.last_update_local).toBeNull();
+  });
+  it('rejects incomplete or blank scans rather than presenting an older row as current', () => {
+    for (const replacement of ['', '<td>Unknown structure</td>']) {
+      const value = replacement ? html.replace('<td class="activity">The shipment has been delivered</td>', replacement)
+        : html.replace('The shipment has been delivered', '');
+      expect(() => parseAramex(value, NUMBER)).toThrowError(expect.objectContaining({ kind: 'schema' }));
+    }
+  });
   it('fetches exactly the bound detail with one cancellation budget', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response(overview())).mockResolvedValueOnce(new Response(html));
     await new AramexTracker({ fetcher }).fetch(NUMBER, { budgetMs: 1000 });
@@ -60,4 +76,18 @@ describe('Aramex direct tracking', () => {
       await expect(new AramexTracker({ fetcher }).fetch(NUMBER)).rejects.toMatchObject({ kind: 'schema' });
       expect(fetcher).toHaveBeenCalledTimes(2);
     });
+  it('preserves throttle and challenge evidence while inspecting detail redirects', async () => {
+    for (const status of [429, 403]) {
+      const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response(overview()))
+        .mockResolvedValueOnce(new Response('Access denied', {
+          status, headers: { 'Retry-After': '7200', 'Content-Type': 'text/plain' },
+        }));
+      await expect(new AramexTracker({ fetcher }).fetch(NUMBER)).rejects.toMatchObject({
+        kind: status === 429 ? 'rate_limited' : 'challenge', retryAfterMs: 7_200_000,
+        diagnostics: { body_signals: ['access_denied'] },
+        request: { url: 'https://www.aramex.com/track/details?q=synthetic' },
+      });
+      expect(fetcher).toHaveBeenCalledTimes(2);
+    }
+  });
 });
