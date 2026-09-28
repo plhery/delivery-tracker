@@ -60,6 +60,9 @@ Refresh advances the sample parcels; **Reset demo data** in settings restores th
 The [journey design study](http://localhost:3000/design/journey) compares three
 parcel map layouts with fictional scans. Try world, regional, local, and missing
 locations, switch between phone and desktop widths, or use the dark preview.
+The [near and far study](http://localhost:3000/design/map) shows three
+Flighty-style maps that turn from a globe into a close-up as a parcel arrives;
+press play to follow a journey scan by scan.
 
 For real accounts, copy [`.env.example`](.env.example) to `.env.local`, configure
 Supabase, and set `NEXT_PUBLIC_USE_API=true`. See [Authentication](docs/AUTHENTICATION.md).
