@@ -96,7 +96,9 @@
 .tracking-journal time { color: var(--ink-soft); font-size: 11px; padding-top: 1px; font-variant-numeric: tabular-nums; }
 .tracking-journal__current time { color: var(--tone); }
 .tracking-journal p { margin: 0; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
-.tracking-journal__location { display: block; margin-top: 3px; font-size: 11px; color: var(--ink-soft); }
+.tracking-journal__location { display: flex; align-items: baseline; gap: 4px; margin-top: 3px; font-size: 11px; color: var(--ink-soft); overflow-wrap: anywhere; }
+/* The nudge lines the flag up with the scan text above it. */
+.tracking-journal__flag { flex: none; margin-left: -1px; font-size: 12px; line-height: 1; }
 .tracking-journal .timeline-empty { margin-top: 12px; color: var(--ink-soft); }
 @media (max-width: 480px) {
   .detail--postcard .detail__hero { margin: 16px 16px 0; padding: 18px; }

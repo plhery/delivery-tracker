@@ -1,5 +1,5 @@
 import { localizedCalendarDate } from '../lib/format';
-import { trackingLocationLabel } from '../lib/trackingLocation';
+import { countryFlag, countryName, trackingPlace } from '../lib/trackingLocation';
 import { localizedEventDescription, stageLabel, useI18n } from '../i18n';
 import { currentEvent, sortEventsDesc } from '../lib/stages';
 import type { TrackingEvent } from '../types';
@@ -37,7 +37,7 @@ export function TrackingJournal({ events, syncing = false }: { events: TrackingE
               return <li key={event.id} className={isCurrent ? 'tracking-journal__current' : undefined} aria-current={isCurrent ? 'step' : undefined}>
                 <time dateTime={valid ? event.occurredAt : undefined}>{valid ? new Intl.DateTimeFormat(languageTag, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(date) : '—'}</time>
                 <div><p>{syncing && isCurrent && event.stage === 'pending' ? t('timeline.syncing') : localizedEventDescription(event.description, t) || stageLabel(t, event.stage)}</p>
-                  {event.location && <span className="tracking-journal__location" aria-label={event.location}>{trackingLocationLabel(event.location)}</span>}
+                  {event.location?.trim() && <EventPlace location={event.location} />}
                 </div>
               </li>;
             })}
@@ -45,4 +45,16 @@ export function TrackingJournal({ events, syncing = false }: { events: TrackingE
         </li>)}
       </ol>}
   </details>;
+}
+
+/** The flag leads; a location that only names its country shows that country's name. */
+function EventPlace({ location }: { location: string }) {
+  const { languageTag } = useI18n();
+  const { country, place } = trackingPlace(location);
+  if (!country) return <span className="tracking-journal__location">{place}</span>;
+  const name = countryName(country, languageTag);
+  return <span className="tracking-journal__location">
+    <span className="tracking-journal__flag" aria-hidden="true" title={name}>{countryFlag(country)}</span>
+    {place || name}{place && <span className="sr-only">, {name}</span>}
+  </span>;
 }

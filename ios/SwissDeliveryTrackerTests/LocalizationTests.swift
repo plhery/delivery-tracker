@@ -236,19 +236,31 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(localizer.expectedDelivery("2026-09-11", now: late), "Fri 11 sep")
     }
 
-    func testTrackingLocationFlagsPreserveCitiesAndAmbiguousAddresses() {
-        let cases = [
-            "France": "🇫🇷", "Germany": "🇩🇪", "Switzerland": "🇨🇭",
-            "Zürich, Schweiz": "Zürich, 🇨🇭", "Bâle (Suisse)": "Bâle (🇨🇭)",
-            "Milano, Italia": "Milano, 🇮🇹", "Paris; France": "Paris; 🇫🇷",
-            "DE": "🇩🇪", "London, UK": "London, 🇬🇧", "CH ": "🇨🇭 ",
-            "": "", "Warehouse": "Warehouse", "Paris": "Paris",
-            "Buchs AG": "Buchs AG", "Basel, BS": "Basel, BS",
-            "Wilmington, DE": "Wilmington, DE", "France distribution center": "France distribution center",
+    func testTrackingPlacesTakeOnlyExplicitCountries() {
+        let places: [String: TrackingLocation.Place] = [
+            "Zürich, Schweiz": .init(country: "CH", name: "Zürich"), "Bâle (Suisse)": .init(country: "CH", name: "Bâle"),
+            "Milano, Italia": .init(country: "IT", name: "Milano"), "Paris; France": .init(country: "FR", name: "Paris"),
+            "London, UK": .init(country: "GB", name: "London"), "ZUERICH, CH": .init(country: "CH", name: "ZUERICH"),
+            "Zürich (Mülligen), CH": .init(country: "CH", name: "Zürich (Mülligen)"),
+            "Hebron, KY, US, US": .init(country: "US", name: "Hebron, KY"),
+            "Switzerland Haerkingen": .init(country: "CH", name: "Haerkingen"),
+            "United Kingdom Coventry": .init(country: "GB", name: "Coventry"),
+            "France": .init(country: "FR", name: ""), "DE": .init(country: "DE", name: ""), "CH ": .init(country: "CH", name: ""),
+            "THE NETHERLANDS": .init(country: "NL", name: ""), "Czech Republic": .init(country: "CZ", name: ""),
+            "Hong Kong": .init(country: "HK", name: ""),
         ]
-        for (location, expected) in cases {
-            XCTAssertEqual(TrackingLocation.label(location), expected)
+        for (location, place) in places {
+            XCTAssertEqual(TrackingLocation.place(location), place, location)
         }
+        for location in ["", "Warehouse", "Paris", "Buchs AG", "Basel, BS", "Wilmington, DE", "France distribution center",
+                         "Zürich Briefzentrum", "Mexico City", "Andorra la Vella"] {
+            XCTAssertEqual(TrackingLocation.place(location), .init(country: nil, name: location), location)
+        }
+        XCTAssertEqual(TrackingLocation.flag("CH"), "🇨🇭")
+        // Passport evidence stays a final field that names a region.
+        XCTAssertEqual(TrackingLocation.countryCode(in: "Zürich, CH"), "CH")
+        XCTAssertNil(TrackingLocation.countryCode(in: "Switzerland Haerkingen"))
+        XCTAssertNil(TrackingLocation.countryCode(in: "Czech Republic"))
     }
 
     private func localizationDictionaries() throws -> [String: [String: String]] {

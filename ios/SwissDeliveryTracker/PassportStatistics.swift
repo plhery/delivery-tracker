@@ -15,11 +15,7 @@ struct PassportStatistics {
         let code: String
         let count: Int
         var id: String { code }
-        var flag: String {
-            String(String.UnicodeScalarView(code.unicodeScalars.compactMap {
-                UnicodeScalar(127_397 + $0.value)
-            }))
-        }
+        var flag: String { TrackingLocation.flag(code) }
     }
 
     let trackedCount: Int
@@ -173,6 +169,19 @@ enum TrackingLocation {
         "SK", "YT", "SA",
     ]
 
+    // Carrier spellings no region name matches. Display only: Passport evidence
+    // stays in step with private.passport_country, which Friends stamps use.
+    private static let carrierSpellings: [String: String] = [
+        "united states of america": "US", "great britain": "GB", "czech republic": "CZ", "holland": "NL",
+        "hong kong": "HK", "macau": "MO", "macao": "MO", "turkey": "TR", "russian federation": "RU",
+        "korea": "KR", "republic of korea": "KR",
+    ]
+
+    // "Mexico City" is a city, not Mexico followed by one.
+    private static let settlementWords: Set<String> = ["city", "town", "ville", "stadt", "ciudad", "cidade", "citta"]
+
+    private static let fieldPattern = try! NSRegularExpression(pattern: "[^,;|()]+")
+
     private static let countryNames: [String: String] = {
         var names: [String: String] = [:]
         for code in regionCodes.sorted() {
@@ -187,6 +196,13 @@ enum TrackingLocation {
         return names
     }()
 
+    /// A location split into the country its carrier wrote and the rest.
+    struct Place: Equatable {
+        let country: String?
+        /// Empty when the country was all of the location.
+        let name: String
+    }
+
     /// Builds the country-name table (about 1,700 localized names) ahead of first use.
     static func prepare() {
         _ = countryNames
@@ -197,6 +213,22 @@ enum TrackingLocation {
             .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
     }
 
+    private static func namedCountry(_ name: String, display: Bool) -> String? {
+        let key = normalized(name)
+        if let code = countryNames[key] { return code }
+        guard display else { return nil }
+        let bare = key.hasPrefix("the ") ? String(key.dropFirst(4)) : key
+        return countryNames[bare] ?? carrierSpellings[bare]
+    }
+
+    private static func fieldCountry(_ field: String, in location: String, display: Bool) -> String? {
+        if field.count == 2, field == field.uppercased(), regionCodes.contains(field) {
+            return location == field || !ambiguousAddressCodes.contains(field) ? field : nil
+        }
+        return namedCountry(field, display: display)
+    }
+
+    /// Passport evidence: only an explicit final country field; never a country inferred from a city.
     static func countryCode(in location: String?) -> String? {
         guard let location else { return nil }
         // Require a whole country field: "Milano, IT", "Paris, France", or
@@ -205,25 +237,44 @@ enum TrackingLocation {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
         guard let field = fields.last else { return nil }
-        if field.count == 2, field == field.uppercased(), regionCodes.contains(field) {
-            let standalone = location.trimmingCharacters(in: .whitespacesAndNewlines) == field
-            return standalone || !ambiguousAddressCodes.contains(field) ? field : nil
-        }
-        return countryNames[normalized(field)]
+        return fieldCountry(field, in: location.trimmingCharacters(in: .whitespacesAndNewlines), display: false)
     }
 
-    static func label(_ location: String) -> String {
-        guard let country = countryCode(in: location),
-              let expression = try? NSRegularExpression(pattern: "[^,;|()]+") else { return location }
-        let matches = expression.matches(in: location, range: NSRange(location.startIndex..., in: location))
-        guard let field = matches.compactMap({ Range($0.range, in: location) }).last(where: {
-            !location[$0].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        }) else { return location }
-        let name = location[field].trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let range = location.range(of: name, range: field) else { return location }
-        let flag = String(String.UnicodeScalarView(country.unicodeScalars.compactMap {
+    /// For display, takes an explicit country off a location: the final field ("Zürich, CH",
+    /// repeated in "Hebron, KY, US, US") or a leading name ("Switzerland Haerkingen").
+    static func place(_ location: String) -> Place {
+        let text = location.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fields = fieldPattern.matches(in: text, range: NSRange(text.startIndex..., in: text))
+            .compactMap { Range($0.range, in: text) }
+            .filter { !text[$0].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        var country: String?
+        var kept = fields.count
+        while kept > 0 {
+            let field = text[fields[kept - 1]].trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let code = fieldCountry(field, in: text, display: true), country == nil || code == country else { break }
+            country = code
+            kept -= 1
+        }
+        if let country {
+            let rest = kept > 0 ? String(text[..<fields[kept].lowerBound]) : ""
+            return Place(country: country, name: rest.replacingOccurrences(of: "[\\s,;|(]+$", with: "", options: .regularExpression))
+        }
+        if fields.count == 1, fields[0] == text.startIndex..<text.endIndex {
+            let words = text.split(whereSeparator: \.isWhitespace).map(String.init)
+            for count in stride(from: min(words.count - 1, 4), to: 0, by: -1) {
+                let name = words[count...].joined(separator: " ")
+                if let code = namedCountry(words[..<count].joined(separator: " "), display: true),
+                   name.first?.isUppercase == true, !settlementWords.contains(normalized(name)) {
+                    return Place(country: code, name: name)
+                }
+            }
+        }
+        return Place(country: nil, name: text)
+    }
+
+    static func flag(_ code: String) -> String {
+        String(String.UnicodeScalarView(code.unicodeScalars.compactMap {
             UnicodeScalar(127_397 + $0.value)
         }))
-        return location.replacingCharacters(in: range, with: flag)
     }
 }

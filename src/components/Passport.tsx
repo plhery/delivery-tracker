@@ -3,6 +3,7 @@ import { trackAction } from '../lib/analytics';
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useI18n, type MessageKey } from '../i18n';
 import { formatJourneyDuration, passportStatistics } from '../lib/passport';
+import { countryFlag, countryName } from '../lib/trackingLocation';
 import type { ParcelWithEvents } from '../types';
 import { Icon, type IconName } from './Icon';
 
@@ -108,13 +109,10 @@ export function Passport({ parcels, loading }: { parcels: ParcelWithEvents[]; lo
         {button('countries', 'passport-heading-button', t('passport.firstSeenIn'), t('passport.firstSeenIn'))}
       </h2></div>
       {detail('countries', t('passport.firstSeenIn'), t('passport.countryExplanation'))}
-      <div className="country-list">{stats.originCountries.slice(0, 3).map((country) => {
-        const name = new Intl.DisplayNames([languageTag], { type: 'region' }).of(country.code) ?? country.code;
-        return <div className="country-row" key={country.code}>
-          <span className="country-row__flag" aria-hidden="true">{[...country.code].map((letter) => String.fromCodePoint(letter.charCodeAt(0) + 127397)).join('')}</span>
-          <span>{name}</span><span className="country-row__count">{country.count.toLocaleString(languageTag)}</span>
-        </div>;
-      })}</div>
+      <div className="country-list">{stats.originCountries.slice(0, 3).map((country) => <div className="country-row" key={country.code}>
+        <span className="country-row__flag" aria-hidden="true">{countryFlag(country.code)}</span>
+        <span>{countryName(country.code, languageTag)}</span><span className="country-row__count">{country.count.toLocaleString(languageTag)}</span>
+      </div>)}</div>
     </section>}
   </div>;
 }

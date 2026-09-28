@@ -812,10 +812,9 @@ private struct JournalEventRow: View {
                      : localizer.eventDescription(event.description.nonEmpty ?? localizer.text(event.stage.localizationKey)))
                     .font(.footnote)
                     .fixedSize(horizontal: false, vertical: true)
-                if let location = event.location?.nonEmpty {
-                    Text(TrackingLocation.label(location))
+                if let location = event.location?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty {
+                    EventPlace(location: location)
                         .font(.caption2).foregroundStyle(.secondary)
-                        .accessibilityLabel(location)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -826,6 +825,27 @@ private struct JournalEventRow: View {
     private var time: String {
         guard let date = DateParser.date(event.occurredAt) else { return "—" }
         return localizer.clockTime(date)
+    }
+}
+
+/// The flag leads; a location that only names its country shows that country's name.
+private struct EventPlace: View {
+    let location: String
+    @EnvironmentObject private var localizer: Localizer
+
+    var body: some View {
+        let place = TrackingLocation.place(location)
+        if let country = place.country {
+            let name = localizer.language.locale.localizedString(forRegionCode: country) ?? country
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(TrackingLocation.flag(country)).font(.caption)
+                Text(place.name.nonEmpty ?? name).fixedSize(horizontal: false, vertical: true)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(place.name.isEmpty ? name : "\(place.name), \(name)")
+        } else {
+            Text(place.name)
+        }
     }
 }
 
