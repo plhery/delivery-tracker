@@ -153,7 +153,7 @@ describe('UniUni direct retrieval', () => {
     for (const [rawUrl, init] of fetcher.mock.calls) {
       const url = new URL(String(rawUrl));
       expect(url.origin + url.pathname).toBe('https://tracking-service-api.uniuni.ca/tracking/trackinguniuninew');
-      expect(Object.fromEntries(url.searchParams)).toEqual({ id: NUMBER, key: 'SMq45nJhQuNR3WHsJA6N', source: 'web' });
+      expect(Object.fromEntries(url.searchParams)).toEqual({ id: NUMBER, key: 'SMq45nJhQuNR3WHsJA6N', source: 'web' }); // gitleaks:allow
       expect(init).toMatchObject({ cache: 'no-store', redirect: 'error' });
       expect(init?.signal).toBeInstanceOf(AbortSignal);
       expect(new Headers(init?.headers).has('Authorization')).toBe(false);
