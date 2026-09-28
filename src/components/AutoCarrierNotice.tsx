@@ -15,7 +15,9 @@ export function AutoCarrierNotice({ parcel, className }: { parcel: Parcel; class
       ? setTimeout(() => setNow(Date.now()), expiresAt - Date.now()) : undefined;
     return () => { clearTimeout(timer); clearTimeout(expiry); };
   }, [expiresAt]);
+  // A parcel filed without a carrier found one: nothing was swapped.
   if (!parcel.autoChangedFrom || parcel.autoChangedFrom === parcel.carrier
+    || parcel.autoChangedFrom === 'unknown' || parcel.autoChangedFrom === 'intl-post'
     || parcel.autoChangedTo !== parcel.carrier || !Number.isFinite(changedAt)
     || now < changedAt || now >= expiresAt) return null;
   return <span className={className}>{t('parcel.autoChangedCarrier', {

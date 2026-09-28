@@ -21,3 +21,8 @@ it.each([
   render(<AutoCarrierNotice parcel={{ ...parcel, ...overrides } as Parcel} />);
   expect(screen.queryByText(/Swapped automatically/)).toBeNull();
 });
+it.each(['unknown', 'intl-post'] as const)('says nothing when a parcel filed as %s finds its carrier', (from) => {
+  vi.useFakeTimers(); vi.setSystemTime(now);
+  render(<AutoCarrierNotice parcel={{ ...parcel, autoChangedFrom: from }} />);
+  expect(screen.queryByText(/Swapped automatically/)).toBeNull();
+});

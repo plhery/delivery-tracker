@@ -17,6 +17,16 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertNil(parcel.automaticallyChangedFrom(at: at))
     }
 
+    func testAutomaticCarrierNoticeIgnoresParcelsFiledWithoutCarrier() {
+        let at = DateParser.date("2026-09-10T12:00:00Z")!
+        var parcel = DemoRepository.seed(now: at)[0]
+        parcel.carrier = .ups
+        for from in [CarrierID.unknown, .internationalPost] {
+            parcel.carrierData = CarrierData(autoChangedFrom: from, autoChangedTo: .ups, autoChangedAt: DateParser.isoString(at))
+            XCTAssertNil(parcel.automaticallyChangedFrom(at: at))
+        }
+    }
+
     func testSharedDemoCatalogHasVariedHistoriesAndRelativeDates() {
         let now = DateParser.date("2026-09-09T12:00:00Z")!
         let parcels = DemoRepository.seed(now: now)

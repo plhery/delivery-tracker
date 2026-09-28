@@ -73,8 +73,11 @@ extension TrackingStage {
 }
 
 extension Parcel {
+    /// The carrier an automatic correction replaced, for 12 hours. A parcel filed
+    /// without a carrier only found one: nothing was swapped.
     func automaticallyChangedFrom(at now: Date = Date()) -> CarrierID? {
         guard let from = carrierData?.autoChangedFrom, from != carrier,
+              from != .unknown, from != .internationalPost,
               carrierData?.autoChangedTo == carrier,
               let at = carrierData?.autoChangedAt.flatMap(DateParser.date),
               now >= at, now.timeIntervalSince(at) < 12 * 60 * 60 else { return nil }
