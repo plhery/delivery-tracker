@@ -116,6 +116,13 @@
       "confirmedBy": "fixture",
       "firstSeen": "2026-09-21",
       "note": "Conservative exact-wording case; synthetic fixture only, not observed in the live references."
+    },
+    {
+      "wording": "Export cancelled",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "live",
+      "note": "Observed Cooperative export cancellation; does not prove completed return."
     }
   ]
 }

@@ -1,6 +1,17 @@
 import type { Stage } from '../../generated/catalog';
 import type { CarrierStatus } from '../result';
 
+/** Instructions, uncertainty and a return in progress do not prove sender delivery. */
+export function nonterminalEnglishReturn(description: string): boolean {
+  const text = description.toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, ' ')
+    .replace(/\bwon't\b/g, 'will not').replace(/\bshan't\b/g, 'shall not')
+    .replace(/\bcan't\b|\bcannot\b/g, 'can not').replace(/\b([a-z]+)n't\b/g, '$1 not');
+  // Bind the negative or modal to this sender-delivery phrase. A previous
+  // failed recipient delivery does not negate an affirmative sender return.
+  if (/\b(?:will|would|should|shall|must|may|might|can|could|ought to|needs? to|to) (?:(?:not|never|yet|still|already|soon|shortly|eventually|possibly|probably) )*(?:be|have been) delivered (?:back )?to (?:the )?(?:sender|shipper)\b|\b(?:not|never)(?: yet| already| still)? (?:(?:have|has|be|been|being) )*delivered (?:back )?to (?:the )?(?:sender|shipper)\b|\bbeing delivered (?:back )?to (?:the )?(?:sender|shipper)\b/.test(text)) return true;
+  return /\breturn(?:ing)? to (?:the )?sender\b|\b(?:will|would|should|shall|must|may|might|can|could|ought to|needs? to|to) (?:(?:not|never|yet|still|already|soon|shortly|eventually|possibly|probably) )*(?:be|have been) returned to (?:the )?sender\b|\b(?:not|never)(?: yet| already| still)? (?:(?:have|has|be|been|being) )*returned to (?:the )?sender\b|\bbeing returned to (?:the )?sender\b|\breturn (?:has been )?(?:initiated|requested|started)\b/.test(text);
+}
+
 /**
  * INFERRED language rules, not captured carrier codes. EN/FR/DE/IT/ES/PT/PL equivalents
  * are intuitive and overridable: an adapter must resolve verified codes and
@@ -13,7 +24,8 @@ export function trackingLanguageStage(description: string): Stage | undefined {
   if (/^wird zugestellt$/.test(text)) return 'out_for_delivery';
 
   // Specific negatives, future steps and handoffs precede broad delivery words.
-  if (/return(?:ed|ing)? to (?:the )?sender|retour(?:ne)? a l'expediteur|zuruck an (?:den )?absender|an (?:den )?absender zuruck|retour a l'expediteur|reso al mittente|restituit[oa] al mittente|delivered (?:back )?to (?:the )?(?:sender|shipper)/.test(text)) return 'returned';
+  if (nonterminalEnglishReturn(text)) return 'exception';
+  if (/returned to (?:the )?sender|retour(?:ne)? a l'expediteur|zuruck an (?:den )?absender|an (?:den )?absender zuruck|retour a l'expediteur|reso al mittente|restituit[oa] al mittente|delivered (?:back )?to (?:the )?(?:sender|shipper)/.test(text)) return 'returned';
   if (/not (?:yet )?delivered|\bundelivered\b|could not.*deliver|unable to deliver|delivery (?:attempt|failed)|non livre|n'(?:a|avons) (?:pas )?pu.*(?:remis|remettre)|n'a pas pu etre (?:distribue|livre)|livraison (?:impossible|echouee)|tentative de livraison|nicht zugestellt|nicht zugestellt werden|zustellung.*(?:fehlgeschlagen|nicht moglich)|zustellversuch|non consegnat[oa]|non e stato possibile consegnare|consegna (?:fallita|non riuscita)|tentativo di consegna/.test(text)) return 'failed_attempt';
   // Missed rounds worded around the attempt, the absent recipient or a closed
   // business. A scheduled attempt is not a missed one, nor is a sender pickup.

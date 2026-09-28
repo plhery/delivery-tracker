@@ -1710,9 +1710,9 @@ export const CARRIER_CATALOG = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "ctt-express"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://shipping-tracking.production.cloud2.cttexpress.com/",
     "linkRules": [
       {
         "domains": [
@@ -2040,9 +2040,9 @@ export const CARRIER_CATALOG = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "uniuni"
     },
-    "canaryUrl": "https://t.17track.net/",
+    "canaryUrl": "https://www.uniuni.com/tracking/",
     "linkRules": [
       {
         "domains": [
@@ -2063,7 +2063,7 @@ export const CARRIER_CATALOG = {
         "confidence": "high"
       }
     ],
-    "trackingUrlTemplate": "https://www.uniuni.com/tracking?no={trackingNumber}"
+    "trackingUrlTemplate": "https://www.uniuni.com/tracking/?no={trackingNumber}"
   },
   "landmark-global": {
     "displayName": "Landmark Global",

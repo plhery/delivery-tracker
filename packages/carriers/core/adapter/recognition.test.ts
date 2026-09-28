@@ -10,6 +10,38 @@ import { AdapterRegistry, accepted, recognizeFromLookup } from '.';
 const carriersDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'carriers');
 
 describe('recognition from a plain lookup', () => {
+  it.each(['2026-09-09T08:00:00', '2026-02-30T08:00:00Z', '2026-09-09', 'broken',
+    '2026-09-09T08:00:00+99:00', '2026-09-09T08:00:00+02:99', '2026-09-09T08:00:00+24:00',
+    '2026-09-09T08:00:00-24:00', '2026-09-09T08:00:00+0299'])(
+    'does not infer activity from %s', async time => {
+      await expect(recognizeFromLookup(async () => ({ status: 'in_transit', last_update: time,
+        events: [{ time, description: 'Sorted' }] }))).resolves.toEqual({ known: true, lastActivityAt: null });
+    },
+  );
+
+  it.each([
+    ['2026-09-09T08:00:00+02:30', '2026-09-09T05:30:00.000Z'],
+    ['2026-09-09T08:00:00+0230', '2026-09-09T05:30:00.000Z'],
+    ['2026-09-09T08:00:00-04:00', '2026-09-09T12:00:00.000Z'],
+  ])('retains activity from a valid explicit offset: %s', async (time, expected) => {
+    await expect(recognizeFromLookup(async () => ({ status: 'in_transit', last_update: time,
+      events: [{ time, description: 'Sorted' }] }))).resolves.toEqual({ known: true, lastActivityAt: expected });
+  });
+
+  it('cannot promote a malformed newer clock over genuine activity', async () => {
+    await expect(recognizeFromLookup(async () => ({ status: 'in_transit', last_update: '2026-09-30T08:00:00+99:00',
+      events: [{ time: '2026-09-30T08:00:00+02:99', description: 'Malformed scan' },
+        { time: '2026-09-09T08:00:00+02:00', description: 'Dated scan' }] })))
+      .resolves.toEqual({ known: true, lastActivityAt: '2026-09-09T06:00:00.000Z' });
+  });
+
+  it('ignores a newer unresolved clock when a genuine activity instant is available', async () => {
+    await expect(recognizeFromLookup(async () => ({ status: 'in_transit',
+      events: [{ time: '2026-09-10T12:00:00', description: 'Local scan' },
+        { time: '2026-09-09T08:00:00+02:00', description: 'Dated scan' }] })))
+      .resolves.toEqual({ known: true, lastActivityAt: '2026-09-09T06:00:00.000Z' });
+  });
+
   it('reads a result as known, a positive not-found as unknown, and rethrows the rest', async () => {
     await expect(recognizeFromLookup(async () => ({
       status: 'in_transit', events: [

@@ -1,41 +1,23 @@
 # Pos Malaysia
 
-Pos Malaysia items, including Pos Laju, tracked through the keyless API behind the official
-[tracking app](https://tracking.pos.com.my/).
+Tracks Pos Malaysia and Pos Laju items through the anonymous API used by the official tracking app.
 
 ## How it works
 
-1. `direct`: one `POST https://ttu-svc.pos.com.my/api/trackandtrace/v1/request` with
-   `{ connote_ids: [number], culture: "en" }` and a client-generated `P-Request-ID` header. No
-   cookies, account, signature or browser. 15 s timeout.
+One bounded JSON request supplies the number and a fresh request identifier. No browser, account or cookie is needed. The response must contain exactly one matching consignment.
 
 ## Notes
 
-- HTTP is always 200 and the envelope always `S0000`, so only the item can say "unknown": an empty
-  `process_status` with `tracking_data: null` is not-found. Unknown and expired numbers look the
-  same. A non-delivered item with no events is also not-found.
-- The endpoint accepts several connotes, so the item is found by its echoed `connote_id`, never by
-  position.
-- `process_status: "DELIVERED"` is authoritative and wins over the event rows, even when there are
-  none. Otherwise the status comes from the latest event's `process_summary`.
-- An unmapped `process_summary` keeps an `in_transit` stage rather than none: every row is a physical
-  scan, and no terminal stage is invented.
-- Times like `22 Aug 2023, 05:34:58 PM` have no offset and are read as `Asia/Kuala_Lumpur`, which is
-  unambiguous (one zone, no DST).
-- Portal links must use the path form `/tracking/{number}`; `?id=` and `#trackingIds=` do not
-  prefill the lookup.
-- The 2020-era REST endpoint in community notes is gone; this flow comes from the tracking app's
-  bundle.
+Null or empty history is inconclusive: unavailable history does not prove shipment absence. Error rows and malformed scans cannot silently expose an older scan as current.
+
+The delivered summary is authoritative. If the latest scan does not establish delivery, an undated summary snapshot preserves that evidence without borrowing an older scan's time. Unknown scan summaries remain visible without an inferred stage.
+
+Offsetless clocks receive Malaysian time only when both route countries explicitly identify a domestic Malaysian journey. International or unlocated clocks and invalid dates remain provider text with no instant. The source supplies current scans first; that order is preserved whenever any clock is unresolved.
 
 ## Limitations
 
-- No ETA: `eta_data` exists but has always been empty.
-- Only the delivered-path wording (`Collected` to `Delivery completed`) is known, from the demo parcel
-  in the app bundle. Failure, return and pickup summaries are unknown and land on `in_transit`.
-- Sender and recipient blocks and the `epod` proof-of-delivery link are never read; the offline test
-  asserts it. `office` is kept as a coarse facility name. At most 20 events are kept.
+The adapter retains a bounded history and coarse facility names. It excludes personal contact blocks, addresses and proof-of-delivery material. It returns no ETA. Undated scans are archived as direct evidence; displaying them in a dated timeline requires another source with resolved clocks.
 
 ## Testing
 
-`npm run test:carriers:live -- packages/carriers/carriers/pos-malaysia` checks a synthetic not-found.
-Set `POS_MALAYSIA_DELIVERED_TRACKING_NUMBER` to also check a real delivered parcel.
+Run `npm run test:carriers:live -- packages/carriers/carriers/pos-malaysia`. Set `POS_MALAYSIA_TRACKING_NUMBER` for available history or `POS_MALAYSIA_DELIVERED_TRACKING_NUMBER` for a delivered item. Supply parcel inputs outside the repository.

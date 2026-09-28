@@ -9,6 +9,7 @@ const STATUS = new Map<string, ClassifiedStatus>([
   ['Released from export customs and security', { status: 'in_transit', stage: 'in_transit' }],
   ['Departed from export office', { status: 'in_transit', stage: 'in_transit' }],
   ['Held for export customs inspection', { status: 'in_transit', stage: 'customs' }],
+  ['Export cancelled', { status: 'exception', stage: 'exception' }],
   ['Arrived at destination import office', { status: 'in_transit', stage: 'in_transit' }],
   ['Held at destination import office', { status: 'in_transit', stage: 'customs' }],
   ['Presented to import customs', { status: 'in_transit', stage: 'customs' }],

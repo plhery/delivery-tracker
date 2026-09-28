@@ -11,6 +11,7 @@ import { carrierErrorKind } from '../errors';
 import type { CarrierResult } from '../result';
 import type { StepRecorder } from '../telemetry';
 import type { TrawlClient } from '../transport/trawl';
+import { explicitOffsetTime } from '../time';
 
 export interface TrackingInput {
   /** The tracking number as stored on the parcel, validated at the API boundary. */
@@ -99,8 +100,15 @@ export async function recognizeFromLookup(
     if (carrierErrorKind(error) === 'not_found') return { known: false };
     throw error;
   }
-  // Only ISO timestamps: some adapters keep a carrier's own day-first dates.
-  const iso = (value: string | null | undefined) => /^\d{4}-\d{2}-\d{2}T/.test(value ?? '') ? Date.parse(value!) : Number.NaN;
+  // Local clocks and malformed dates cannot rank reuse of a tracking number.
+  const iso = (value: string | null | undefined) => {
+    if (typeof value !== 'string') return Number.NaN;
+    const raw = value.trim();
+    // Luxon normalizes impossible offsets such as +02:99 or +99:00.
+    // Those are unresolved clocks, not instants that can rank a match.
+    return /^\d{4}-\d{2}-\d{2}T/.test(raw) && /(?:Z|[+-](?:[01]\d|2[0-3]):?[0-5]\d)$/i.test(raw)
+      ? explicitOffsetTime(raw)?.timestamp ?? Number.NaN : Number.NaN;
+  };
   const times = (result.events ?? []).map((event) => iso(event.time)).filter(Number.isFinite);
   // A pending status without a scan is no evidence: some carriers answer any number that way.
   const known = (result.events?.length ?? 0) > 0 || !['unknown', 'pending', undefined].includes(result.status);

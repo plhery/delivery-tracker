@@ -13,10 +13,13 @@ native catalog all carry it; everything user-facing says PostNL.
    - `postnl.post/api/v1/tracking-items` takes the barcode with that token. The answer echoes
      a batch; only the item whose `item` equals the requested number is read.
    - Each call replays once after a transport failure or HTTP 502/503/504, and after a 429
-     only when it carries a short, valid `Retry-After`. Other errors are not retried.
+     only when it carries a short, valid `Retry-After`. Both calls share a cancellable
+     deadline; other errors are not retried.
    - Unknown barcode: an ordinary item with no events and "barcode was not found" in
      `message`. That phrase is the only part of `message` read; the rest is provider prose
      that must not reach an error or log.
+   - An empty history without that message is inconclusive. Duplicate matching identities
+     are refused. HTTP 404/410 means the endpoint is unavailable, not the parcel missing.
 
 ## Notes
 
@@ -26,9 +29,14 @@ native catalog all carry it; everything user-facing says PostNL.
   path to get wrong.
 - `datetime_local` is the scan's local time even though PostNL appends `Z`. Each scan is
   re-read in the zone of its own `country_code`. Countries spanning several zones (US, CA,
-  BR…) keep the provider's text, which the host reads as UTC.
-- Only `category` is mapped; `status_description` is localized prose. An unknown category
-  leaves the event unstaged and the shipment `in_transit`, so the sync records it for review.
+  BR…), Spain and Portugal's mainland/island clocks, missing countries and ambiguous
+  daylight-saving clocks retain `local_time`.
+  Invalid date text and unexpected nonzero offsets remain separate. The host
+  archives these rows and asks providers for dated progress when the current clock
+  cannot be resolved.
+- Categories supply the status, with one precise English refinement: "The item is out
+  for delivery" distinguishes delivery from other `Processing` scans. Unknown categories
+  leave the event unstaged and the shipment status unknown.
 - `unsuccesfull` is PostNL's own spelling. The corrected spelling is mapped too, so an
   upstream fix loses nothing.
 - The item's `destination_code` becomes `destination_country`. The host uses it as a hint to

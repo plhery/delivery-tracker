@@ -12,16 +12,41 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "uniuni",
+    "steps": [
+      "direct"
+    ],
+    "recognition": { "rank": 35 }
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "delivered_at"
+  ],
   "portal": {
-    "url": "https://www.uniuni.com/tracking?no={trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "url": "https://www.uniuni.com/tracking/?no={trackingNumber}",
+    "canaryUrl": "https://www.uniuni.com/tracking/",
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "delivered_at",
+      "estimated_delivery"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "delivered_at"
+    ],
+    "discarded": [
+      "inactive_legacy_estimates",
+      "detailed_delivery_prose",
+      "addresses",
+      "coordinates",
+      "operators",
+      "proof_images"
+    ],
     "unavailable": []
   },
   "links": [

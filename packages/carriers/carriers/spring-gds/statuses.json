@@ -128,6 +128,13 @@
       "confirmedBy": "fixture",
       "firstSeen": "2026-09-12",
       "note": "Event category; matched case-insensitively after trimming. Reclassified to exception 2026-09-12."
+    },
+    {
+      "wording": "The item is out for delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live",
+      "note": "Exact English description refines the overloaded Processing category."
     }
   ]
 }

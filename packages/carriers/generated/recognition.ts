@@ -8,6 +8,7 @@ export const CARRIER_RECOGNITION_RANKS: Readonly<Record<string, number>> = {
   "chronopost": 45,
   "ciblex": 20,
   "colis-prive": 30,
+  "ctt-express": 35,
   "dpd": 70,
   "gls-ch": 60,
   "gls-de": 50,
@@ -16,4 +17,5 @@ export const CARRIER_RECOGNITION_RANKS: Readonly<Record<string, number>> = {
   "la-poste": 80,
   "relais-colis": 25,
   "tnt": 45,
+  "uniuni": 35,
 };

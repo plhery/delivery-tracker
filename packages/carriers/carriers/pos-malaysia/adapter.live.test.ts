@@ -1,18 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { NotFoundError } from '../../core/errors';
 import { PosMalaysiaTracker } from './adapter';
 
-// Live compatibility checks for the ttu-svc track-and-trace endpoint. Unknown
-// codes answer 200 with null tracking_data, which the adapter maps to a clean
-// 404. The real-parcel case additionally needs a parcel the operator is
-// authorized to query (never commit its number).
+// Supply authorized parcel references through the environment, never fixtures.
 describe('Pos Malaysia live anonymous tracking', () => {
-  it('maps a validly shaped wrong number to a clean 404', async () => {
+  it('keeps an empty synthetic lookup inconclusive', async () => {
     await expect(new PosMalaysiaTracker({ timeoutMs: 15_000 }).fetch('MYPM00000000099'))
       .rejects.toMatchObject({
-        name: 'NotFoundError',
-        status: 404,
-        message: 'Pos Malaysia could not locate the shipment',
+        name: 'IndeterminateError',
+        kind: 'indeterminate',
       });
   });
 
@@ -23,12 +18,15 @@ describe('Pos Malaysia live anonymous tracking', () => {
       const result = await new PosMalaysiaTracker({ timeoutMs: 15_000 }).fetch(trackingNumber);
       expect(result.status).toBe('delivered');
       expect(result.current_stage).toBe('delivered');
-      expect(result.timezone).toBe('Asia/Kuala_Lumpur');
       expect(result.events?.length).toBeGreaterThan(0);
     },
   );
 
-  it('pins the not-found error contract used by routing cooldowns', () => {
-    expect(new NotFoundError('Pos Malaysia').status).toBe(404);
+  it.skipIf(!process.env.POS_MALAYSIA_TRACKING_NUMBER)('returns identity-bound available history', async () => {
+    const result = await new PosMalaysiaTracker({ timeoutMs: 15_000 }).fetch(process.env.POS_MALAYSIA_TRACKING_NUMBER!);
+    expect(result.events?.length).toBeGreaterThan(0);
+    expect(result.events?.some(event => event.description)).toBe(true);
+    expect(result.events?.every(event => event.time || event.provider_time_text || event.summary_snapshot)).toBe(true);
+    if (result.last_update === null) expect(result.events?.[0]?.time).toBeUndefined();
   });
 });

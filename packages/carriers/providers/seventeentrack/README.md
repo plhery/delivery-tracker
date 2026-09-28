@@ -34,6 +34,9 @@ captured bodies instead.
 
 ## Provider codes
 
+Swiss Post's exact vehicle-loading label refines 17TRACK's generic transit bucket into
+out-for-delivery. The reported provider code is preserved.
+
 | Code | Meaning | Error |
 | --- | --- | --- |
 | -11, -13, -14 | interactive verification required | `SeventeenTrackVerificationError` (challenge) |

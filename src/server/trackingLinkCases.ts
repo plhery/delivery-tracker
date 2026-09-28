@@ -27,6 +27,12 @@ export interface TrackingLinkCase {
 // independently of the generated link templates, so a template that drifts
 // fails here instead of passing against itself.
 export const trackingLinkCases: TrackingLinkCase[] = [
+  { carrier: 'ctt-express', number: '0000000000000000000001',
+    route: /^https:\/\/shipping-tracking\.production\.cloud2\.cttexpress\.com\//,
+    marker: /Número de seguimiento|No hemos localizado el número de envío/i },
+  { carrier: 'uniuni', number: 'UUS0000000000000000',
+    route: /^https:\/\/www\.uniuni\.com\/tracking\//,
+    marker: /Track your UniUni Package/i },
   { carrier: 'bpost', number: '000000000000000000000001',
     route: /^https:\/\/track\.bpost\.cloud\//,
     marker: /Track|barcode|postcode|postal code|Suivi|Code-barres/i, forwarding: 'none' },

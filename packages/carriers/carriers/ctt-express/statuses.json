@@ -1,0 +1,15 @@
+{
+  "carrier": "ctt-express",
+  "entries": [
+    { "code": "0000", "wording": "Pendiente de recepción en CTT Express", "language": "es", "stage": "registered", "confirmedBy": "live" },
+    { "code": "0600", "wording": "Recogida fallida", "language": "es", "stage": "exception", "confirmedBy": "live" },
+    { "code": "1000", "wording": "Enviado", "language": "es", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "1500", "wording": "En reparto", "language": "es", "stage": "out_for_delivery", "confirmedBy": "live" },
+    { "code": "1600", "wording": "Incidencia en el reparto", "language": "es", "stage": "exception", "confirmedBy": "live" },
+    { "code": "2400", "wording": "Nuevo reparto", "language": "es", "stage": "out_for_delivery", "confirmedBy": "live" },
+    { "code": "2310", "wording": "Disponible en Punto Collectt Express", "language": "es", "stage": "ready_for_pickup", "confirmedBy": "live" },
+    { "code": "2500", "wording": "En devolución", "language": "es", "stage": "exception", "confirmedBy": "live" },
+    { "code": "2100", "wording": "El envío fue entregado correctamente", "language": "es", "stage": "delivered", "confirmedBy": "portal" },
+    { "code": "2110", "wording": "El envío fue entregado correctamente", "language": "es", "stage": "delivered", "confirmedBy": "portal" }
+  ]
+}

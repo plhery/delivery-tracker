@@ -6,7 +6,7 @@ describe('EMS live compatibility', () => {
     const result = await new EmsTracker().fetch(process.env.EMS_TRACKING_NUMBER!);
     expect(result.events?.length).toBeGreaterThan(0);
     expect(result.last_status_text).toEqual(expect.any(String));
-    expect(result.events?.every((event) => event.time && event.description)).toBe(true);
+    expect(result.events?.every((event) => event.local_time && event.description && !event.time)).toBe(true);
   });
 
   it('recognizes the synthetic empty lookup', async () => {

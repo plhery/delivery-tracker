@@ -36,6 +36,10 @@ export function seventeenTrackEvent(raw: JsonObject, operator: JsonObject): Carr
   // code otherwise supplies semantics that Chinese wording cannot provide.
   const genericTransit = code === 'InTransit_Other' && parsed.stage !== 'pending';
   if (mapped && !genericTransit && (mapped !== 'delivered' || parsed.stage === 'delivered')) parsed.stage = mapped;
+  // 17TRACK's generic transit bucket loses Swiss Post's delivery-round scan.
+  // Refine only that operator's precise native label; keep its original code.
+  if (code === 'InTransit_Other' && operator.reporting_carrier === 'Swiss Post'
+    && text(raw.description).toLowerCase() === 'loading into delivery vehicle') parsed.stage = 'out_for_delivery';
   if (parsed.stage === 'delivered') parsed.description = 'Delivered';
   const timeRaw = isRecord(raw.time_raw) ? raw.time_raw : null;
   return {

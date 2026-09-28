@@ -22,12 +22,13 @@ accepted. Ordinary postal items (e.g. `LZ…CN`) belong to the national operator
   endpoint is gone and raises a transport error, so routing never concludes the parcel is missing.
 - `does not denote an EMS item.` raises `InputRequiredError`: the service is unsupported, not the
   parcel unknown.
-- Times are local wall clocks with no zone and are emitted offset-less. The host stores them with the
-  catalog timezone (UTC); that is a storage convention, not what EMS means. Don't apply the origin
-  country's zone to the whole journey: legs are in different zones.
+- Times are local wall clocks with no zone. They remain in `local_time`, separate from instants;
+  the host archives this history and asks providers for dated progress. Legs can be in different
+  zones, so the origin country's zone cannot resolve the whole journey.
 - Rows arrive oldest first and are reversed rather than sorted, since clocks from different legs
   can't be compared.
 - Statuses are an exact-wording map. Customs release and "Arrived at post office" are not delivery.
+  Export cancellation is an exception, without implying a completed return.
   Unknown wording keeps the event with an unknown status.
 - Exact duplicate rows are dropped; at most 100 events are returned.
 

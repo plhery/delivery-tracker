@@ -1,13 +1,16 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { NotFoundError, SchemaError } from '../../core/errors';
+import { IndeterminateError, SchemaError } from '../../core/errors';
+import { normalizeCarrierResult } from '../../core/result';
 import {
   normalizePosMalaysiaTrackingNumber,
   parsePosMalaysiaTrackingResponse,
   posMalaysiaTrackingUrl,
   PosMalaysiaTracker,
+  adapter,
 } from './adapter';
-import { classifyPosMalaysiaStatus, isMappedPosMalaysiaSummary, POS_MALAYSIA_DEFAULT_STATUS } from './status';
+import { NOOP_RECORDER } from '../../core/telemetry';
+import { classifyPosMalaysiaStatus, isMappedPosMalaysiaSummary } from './status';
 
 // All identifiers, timestamps, offices and names below are synthetic. Event
 // wordings and process summaries reuse the vendor's fixed English texts found
@@ -16,6 +19,9 @@ import { classifyPosMalaysiaStatus, isMappedPosMalaysiaSummary, POS_MALAYSIA_DEF
 const TRACKING_NUMBER = 'MYPM00000000015';
 const DELIVERED = JSON.parse(
   readFileSync(new URL('./fixtures/delivered.json', import.meta.url), 'utf8'),
+) as Record<string, unknown>;
+const INTERNATIONAL = JSON.parse(
+  readFileSync(new URL('./fixtures/international.json', import.meta.url), 'utf8'),
 ) as Record<string, unknown>;
 const CAPABILITIES = (JSON.parse(
   readFileSync(new URL('./carrier.json', import.meta.url), 'utf8'),
@@ -74,7 +80,7 @@ describe('Pos Malaysia response parsing', () => {
     ]);
   });
 
-  it('maps every demo-parcel summary and falls back to a plain scan otherwise', () => {
+  it('maps explicit summaries and keeps unknown or inherited names unmapped', () => {
     const cases: Array<[string, string, string]> = [
       ['Collected', 'in_transit', 'accepted'],
       ['On the way', 'in_transit', 'in_transit'],
@@ -82,14 +88,27 @@ describe('Pos Malaysia response parsing', () => {
       ['Preparing for delivery', 'in_transit', 'in_transit'],
       ['Out for delivery', 'out_for_delivery', 'out_for_delivery'],
       ['Delivery completed', 'delivered', 'delivered'],
+      ['Item arrived at delivery office', 'in_transit', 'in_transit'],
+      ['Your parcel is being transported to the next facility', 'in_transit', 'in_transit'],
+      ['Your parcel has arrived at destination facility for Processing', 'in_transit', 'in_transit'],
+      ['Your parcel is being transported to destination country', 'in_transit', 'in_transit'],
+      ['Your parcel has arrived at our facility for sorting', 'in_transit', 'in_transit'],
     ];
     for (const [summary, status, stage] of cases) {
       expect(isMappedPosMalaysiaSummary(summary)).toBe(true);
       expect(classifyPosMalaysiaStatus(summary)).toEqual({ status, stage });
     }
-    expect(isMappedPosMalaysiaSummary('Something completely new')).toBe(false);
-    expect(classifyPosMalaysiaStatus('Something completely new')).toEqual(POS_MALAYSIA_DEFAULT_STATUS);
-    expect(POS_MALAYSIA_DEFAULT_STATUS).toEqual({ status: 'in_transit', stage: 'in_transit' });
+    for (const label of ['Something completely new', '__proto__', 'constructor', 'toString']) {
+      expect(isMappedPosMalaysiaSummary(label)).toBe(false);
+      expect(classifyPosMalaysiaStatus(label)).toBeNull();
+      const result = normalizeCarrierResult(parsePosMalaysiaTrackingResponse(payload([item({ process_status: '',
+        tracking_data: [detail(label, 'Visible unknown scan', '23 Feb 2026, 01:40:28 PM')],
+      })]), TRACKING_NUMBER));
+      expect(result.status).toBe('unknown');
+      expect(result).not.toHaveProperty('current_stage');
+      expect(result.events?.[0]).not.toHaveProperty('stage');
+      expect(result.events?.[0]?.description).toBe('Visible unknown scan');
+    }
   });
 
   it('derives non-delivered status from the latest event', () => {
@@ -105,19 +124,32 @@ describe('Pos Malaysia response parsing', () => {
     expect(pickup).toMatchObject({ status: 'out_for_delivery', current_stage: 'out_for_delivery' });
   });
 
-  it('binds the echoed connote id and treats null history as not-found', () => {
+  it('requires one exact identity and distinguishes absent schema from empty history', () => {
     expect(() => parsePosMalaysiaTrackingResponse(payload([item({ connote_id: 'MYPM00000000017' })]), TRACKING_NUMBER))
       .toThrow(SchemaError);
     expect(() => parsePosMalaysiaTrackingResponse(payload([item({ connote_id: undefined })]), TRACKING_NUMBER))
       .toThrow(SchemaError);
-    expect(() => parsePosMalaysiaTrackingResponse(payload([item({ tracking_data: null })]), TRACKING_NUMBER))
-      .toThrow(NotFoundError);
-    // An authoritative DELIVERED overall stands even without event rows, while a
-    // non-delivered item with no rows is the same unknown outcome as null history.
+    for (const connote_id of ['MYPM.00000000015', 'MYPM-00000000015', 'MYPM 00000000015']) {
+      expect(() => parsePosMalaysiaTrackingResponse(payload([item({ connote_id })]), TRACKING_NUMBER)).toThrow(SchemaError);
+    }
+    expect(parsePosMalaysiaTrackingResponse(payload([item({ connote_id: ` ${TRACKING_NUMBER.toLowerCase()} ` })]), TRACKING_NUMBER))
+      .toMatchObject({ status: 'delivered' });
+    for (const history of [null, []]) {
+      expect(() => parsePosMalaysiaTrackingResponse(payload([item({ process_status: '', tracking_data: history })]), TRACKING_NUMBER))
+        .toThrow(IndeterminateError);
+      expect(parsePosMalaysiaTrackingResponse(payload([item({ tracking_data: history })]), TRACKING_NUMBER))
+        .toMatchObject({ status: 'delivered', last_update: null, events: [{ stage: 'delivered', summary_snapshot: true }] });
+    }
+    expect(() => parsePosMalaysiaTrackingResponse(payload([item(), item()]), TRACKING_NUMBER)).toThrow(SchemaError);
+    expect(() => parsePosMalaysiaTrackingResponse(payload([item({ tracking_data: undefined })]), TRACKING_NUMBER)).toThrow(SchemaError);
+    const omitted = item();
+    delete omitted.tracking_data;
+    expect(() => parsePosMalaysiaTrackingResponse(payload([omitted]), TRACKING_NUMBER)).toThrow(SchemaError);
+    // An explicit delivered overall remains useful without a fabricated time.
     expect(parsePosMalaysiaTrackingResponse(payload([item({ tracking_data: [] })]), TRACKING_NUMBER))
-      .toMatchObject({ status: 'delivered', events: [] });
+      .toMatchObject({ status: 'delivered', events: [{ stage: 'delivered', summary_snapshot: true }] });
     expect(() => parsePosMalaysiaTrackingResponse(payload([item({ process_status: '', tracking_data: [] })]), TRACKING_NUMBER))
-      .toThrow(NotFoundError);
+      .toThrow(IndeterminateError);
     expect(() => parsePosMalaysiaTrackingResponse(payload([]), TRACKING_NUMBER))
       .toThrow(SchemaError);
     expect(() => parsePosMalaysiaTrackingResponse({ code: 'E9999', data: [] }, TRACKING_NUMBER))
@@ -125,19 +157,77 @@ describe('Pos Malaysia response parsing', () => {
     expect(() => parsePosMalaysiaTrackingResponse(null, TRACKING_NUMBER)).toThrow(SchemaError);
   });
 
-  it('skips unusable rows without losing the shipment', () => {
+  it('deduplicates the same evidence without dropping malformed clock scans', () => {
     const result = parsePosMalaysiaTrackingResponse(payload([item({
       process_status: '',
       tracking_data: [
         detail('Delivery completed', 'Done', '23 Feb 2026, 01:40:28 PM', 'EM053'),
         detail('Delivery completed', 'Done', '23 Feb 2026, 01:40:28 PM', 'EM053'),
-        detail('', '', '23 Feb 2026, 01:40:28 PM', 'EM053'),
         detail('Delivery completed', 'Done', 'not a date', 'EM053'),
-        'not a record',
       ],
     })]), TRACKING_NUMBER);
-    expect(result.events).toHaveLength(1);
+    expect(result.events).toHaveLength(2);
+    expect(result.events?.[1]).toMatchObject({ provider_time_text: 'not a date' });
     expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered' });
+  });
+
+  it('rejects malformed and Error rows rather than silently promoting older scans', () => {
+    for (const scan of ['not a record', null, detail('', '', '23 Feb 2026, 01:40:28 PM'), { type: 'Unexpected' },
+      { ...detail('On the way', 'Malformed clock', ''), date: 123 }]) {
+      expect(() => parsePosMalaysiaTrackingResponse(payload([item({ tracking_data: [scan,
+        detail('On the way', 'Older scan', '22 Feb 2026, 05:34:58 PM')],
+      })]), TRACKING_NUMBER)).toThrow(SchemaError);
+    }
+    expect(() => parsePosMalaysiaTrackingResponse(payload([item({ tracking_data: [{ type: 'Error', process: 'Try again' }] })]), TRACKING_NUMBER))
+      .toThrow(IndeterminateError);
+    expect(() => parsePosMalaysiaTrackingResponse(payload([item({ tracking_data: Array.from({ length: 501 }, () => detail('On the way', 'Moving', '22 Feb 2026, 05:34:58 PM')) })]), TRACKING_NUMBER))
+      .toThrow(SchemaError);
+  });
+
+  it.each(['not a date', '31 Feb 2026, 01:40:28 PM', '', undefined, null])('preserves source order and current uncertainty for clock %s', clock => {
+    const result = parsePosMalaysiaTrackingResponse(payload([item({ process_status: '', tracking_data: [
+      { ...detail('Out for delivery', 'Current courier scan', ''), date: clock },
+      detail('On the way', 'Older scan', '22 Feb 2026, 05:34:58 PM'),
+    ] })]), TRACKING_NUMBER);
+    expect(result).toMatchObject({ status: 'out_for_delivery', current_stage: 'out_for_delivery', last_update: null });
+    expect(result.events?.map(event => event.description)).toEqual(['Current courier scan', 'Older scan']);
+    expect(result.events?.[0]).not.toHaveProperty('time');
+    if (clock) expect(result.events?.[0]?.provider_time_text).toBe(clock);
+  });
+
+  it('does not apply Malaysian time to international or unlocated scans', () => {
+    for (const route of [
+      { sender_data: { sender_country: 'MY' }, recipient_data: { receipient_country: 'BD' } },
+      { sender_data: { sender_country: 'GB' }, recipient_data: { receipient_country: 'MY' } },
+      { sender_data: null, recipient_data: null },
+    ]) {
+      const result = parsePosMalaysiaTrackingResponse(payload([item({ ...route, process_status: '', tracking_data: [
+        detail('Item arrived at delivery office', 'Arrived at destination office', '23 Feb 2026, 01:40:28 PM', 'EMG', ''),
+        detail('On the way', 'Earlier international scan', '22 Feb 2026, 05:34:58 PM', 'TN035', ''),
+      ] })]), TRACKING_NUMBER);
+      expect(result).toMatchObject({ status: 'in_transit', last_update: null });
+      expect(result).not.toHaveProperty('timezone');
+      expect(result.events?.every(event => !event.time && typeof event.provider_time_text === 'string')).toBe(true);
+    }
+  });
+
+  it('keeps current international history identity-bound without guessed instants', () => {
+    const result = parsePosMalaysiaTrackingResponse(payload([INTERNATIONAL]), 'RR000000005MY');
+    expect(result).toMatchObject({ status: 'in_transit', current_stage: 'in_transit', last_update: null,
+      last_status_text: 'Item arrived at delivery office' });
+    expect(result.events).toHaveLength(5);
+    expect(result.events?.map(event => event.provider_code)).toEqual(['EMG', 'TN035', 'TN030', 'TN008', 'TN001']);
+    expect(result.events?.every(event => !event.time && event.provider_time_text)).toBe(true);
+  });
+
+  it('does not date a delivered summary from an older movement scan', () => {
+    const result = parsePosMalaysiaTrackingResponse(payload([item({ tracking_data: [
+      detail('Out for delivery', 'Courier scan', '23 Feb 2026, 09:52:32 AM'),
+    ] })]), TRACKING_NUMBER);
+    expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered', last_status_text: 'Delivered', last_update: null });
+    expect(result.events?.[0]).toEqual({ description: 'Delivered', stage: 'delivered', provider_code: 'DELIVERED', summary_snapshot: true });
+    expect(result.events?.[0]).not.toHaveProperty('time');
+    expect(result.events?.[1]?.stage).toBe('out_for_delivery');
   });
 
   it('never retains sender, recipient or proof-of-delivery data', () => {
@@ -177,7 +267,7 @@ describe('PosMalaysiaTracker fetch', () => {
 
   it('surfaces transport and schema failures distinctly', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(response({}, 503));
-    await expect(new PosMalaysiaTracker({ timeoutMs: 1_000 }).fetch(TRACKING_NUMBER))
+    await expect(new PosMalaysiaTracker({ timeoutMs: 3_000 }).fetch(TRACKING_NUMBER))
       .rejects.toMatchObject({ name: 'UpstreamHttpError', status: 503 });
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(response('not json', 200));
     await expect(new PosMalaysiaTracker({ timeoutMs: 1_000 }).fetch(TRACKING_NUMBER))
@@ -185,5 +275,33 @@ describe('PosMalaysiaTracker fetch', () => {
     expect(() => new PosMalaysiaTracker({ timeoutMs: 0 })).toThrow(TypeError);
     await expect(new PosMalaysiaTracker({ timeoutMs: 1_000 }).fetch('nope'))
       .rejects.toThrow(TypeError);
+  });
+
+  it('does not turn a missing HTTP endpoint into shipment absence or lose throttling', async () => {
+    for (const status of [404, 410]) {
+      await expect(new PosMalaysiaTracker({ fetcher: vi.fn().mockResolvedValue(response({}, status)) }).fetch(TRACKING_NUMBER))
+        .rejects.toMatchObject({ kind: 'transport' });
+    }
+    await expect(new PosMalaysiaTracker({ fetcher: vi.fn().mockResolvedValue(new Response('{}', {
+      status: 429, headers: { 'Retry-After': '120' },
+    })) }).fetch(TRACKING_NUMBER)).rejects.toMatchObject({ kind: 'rate_limited', retryAfterMs: 120_000 });
+  });
+
+  it('forwards caller cancellation and deadline through the exported adapter', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation((_input, init) => new Promise((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => reject(init.signal?.reason), { once: true });
+    }));
+    const instance = adapter({ fetcher, recorder: NOOP_RECORDER, trawl: null, browserExecutablePath: null, env: {} });
+    const started = performance.now();
+    await expect(instance.track({ number: TRACKING_NUMBER }, { budgetMs: 35 })).rejects.toMatchObject({ kind: 'transport' });
+    expect(performance.now() - started).toBeLessThan(1000);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
+    const controller = new AbortController();
+    const request = instance.track({ number: TRACKING_NUMBER }, { budgetMs: 5000, signal: controller.signal });
+    controller.abort(new Error('Synthetic caller cancellation'));
+    await expect(request).rejects.toMatchObject({ kind: 'transport' });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls[1]?.[1]?.signal?.aborted).toBe(true);
   });
 });

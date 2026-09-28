@@ -36,6 +36,8 @@ order, and [COVERAGE.md](COVERAGE.md) compares results carrier by carrier.
   fields are never read.
 - One wording-to-stage vocabulary serves all providers. Unmatched wording stays
   `pending` and never inherits the shipment's stage.
+- English return instructions and a return in progress remain exceptions. Completed
+  return wording can mark sender delivery; starting the return cannot complete it.
 - Reported carrier names are hints. Routing may try that carrier's adapter, but only that
   adapter confirming the shipment adopts the carrier.
 - Persisted names (`Ship24`, `ParcelsApp`, `17TRACK`, `Postal Ninja`, `UPU`) are stored

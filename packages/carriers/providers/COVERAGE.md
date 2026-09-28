@@ -100,8 +100,8 @@ By source:
 - **Direct adapters** keep actionable rows the aggregators drop or mislabel: La Poste
   pickup-ready, InPost locker-ready, Swiss Post delivery method. Some return local wall
   times with no verified zone (SF Express, Evri International, overseas Japan Post
-  scans, Aramex, Korea Post, bpost, Purolator and some Correios, 4PX, Singapore Post
-  and YunExpress scans). Yamato omits the year. These histories remain available without fabricated scan instants
+  scans, Aramex, Korea Post, bpost, Purolator, EMS and some PostNL, Pos Malaysia,
+  Correios, 4PX, Singapore Post and YunExpress scans). Yamato omits the year. These histories remain available without fabricated scan instants
   ([ROUTING.md](../../../docs/ROUTING.md)).
 - **Ship24** is sparse for some references: label-only for UPS (a second UPS reference
   was complete), one old row for DPD, one row for Yanwen, and it stops before La Poste's
@@ -215,9 +215,11 @@ CAPTCHA; STO's old form redirects away. China Post's ordered-character challenge
 Hongkong Post's CAPTCHA remain unsupported. Ninja Van's public endpoint returns
 no usable history. Parcelforce forwards to Royal Mail's disabled direct route.
 
-Mapping gaps seen in these samples: 17TRACK maps Swiss Post vehicle loading to in
-transit; PostNL direct maps out-for-delivery as accepted; EMS export cancellation has no
-dedicated stage.
+17TRACK's generic transit code is refined for Swiss Post's exact vehicle-loading
+label. PostNL direct refines its overloaded processing category for the exact
+out-for-delivery label. EMS export
+cancellation is an exception. Unresolved direct postal clocks remain local history
+rather than inferred scan instants.
 
 Detection selects or suggests the named carrier for the public numbers behind rows
 31–60, except Planzer composites, which stay undetected on purpose (see the
@@ -236,7 +238,7 @@ and 17TRACK. Many samples are old, so "–" often just means the history expired
 | Ciblex | dedicated | – | postcode prompt | – |
 | Colis Privé | dedicated | – | – | – |
 | Correos Express | universal | – | – | – |
-| CTT Express | universal | ✓ | ✓ | ✓ |
+| [CTT Express](../carriers/ctt-express/README.md) | dedicated | ✓ | ✓ | ✓ |
 | CTT Portugal | dedicated | – | ✓ | ✓ |
 | Ecoscooting | universal | – | – | – |
 | GEODIS | dedicated | – | postcode prompt | – |
@@ -248,7 +250,21 @@ and 17TRACK. Many samples are old, so "–" often just means the history expired
 | SpeedX | universal | – | – | – |
 | SunYou | dedicated | – | ✓ | ✓ |
 | TIPSA | universal | – | – | – |
-| UniUni | universal | – | ✓ | – |
+| [UniUni](../carriers/uniuni/README.md) | dedicated | – | ✓ | – |
+
+CTT Express's official anonymous feed returns matching single-piece Spanish history;
+empty histories and token errors remain inconclusive. UniUni's anonymous feed also
+returns parcel history, with corrected per-scan seconds rather than the older numeric
+local clock. Master shipments are inconclusive. Both preserve unresolved current clocks
+separately and ask providers for dated progress.
+
+[Pos Malaysia](../carriers/pos-malaysia/README.md) also returns international history.
+Its offsetless scans remain unresolved unless both endpoints identify a domestic
+Malaysian route. An undated delivery summary cannot borrow a movement scan's clock.
+
+An Post's consumer query is challenged. SpeedX's anonymous endpoints require
+verification, and MRW's stateful result asks for recipient phone/SMS verification.
+These routes have no verified anonymous history adapter.
 
 ## Method
 

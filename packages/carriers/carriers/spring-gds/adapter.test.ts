@@ -34,7 +34,7 @@ describe('PostNL transient failures', () => {
   it.each(['authentication', 'tracking'])('recovers from a rate-limited %s request', async (step) => {
     const responses = [
       jsonResponse({ access_token: 'visitor-token' }),
-      jsonResponse({ data: { items: [{ item: POSTNL_WRONG_NUMBER, events: [] }] } }),
+      jsonResponse({ data: { items: [{ item: POSTNL_WRONG_NUMBER, events: [{ category: 'Processing', datetime_local: '2026-08-30T12:00:00Z', country_code: 'NL' }] }] } }),
     ];
     responses.splice(step === 'authentication' ? 0 : 1, 0, new Response('', {
       status: 429, headers: { 'Retry-After': '6' },
@@ -44,7 +44,7 @@ describe('PostNL transient failures', () => {
     await vi.advanceTimersByTimeAsync(5_999);
     expect(fetcher).toHaveBeenCalledTimes(step === 'authentication' ? 1 : 2);
     await vi.advanceTimersByTimeAsync(1);
-    await expect(result).resolves.toMatchObject({ status: 'unknown', events: [] });
+    await expect(result).resolves.toMatchObject({ status: 'in_transit', events: [{ stage: 'accepted' }] });
     expect(fetcher).toHaveBeenCalledTimes(3);
     const trackingRequests = fetcher.mock.calls.filter(([url]) => String(url).endsWith('/tracking-items'));
     for (const [, init] of trackingRequests) {
@@ -92,7 +92,7 @@ describe('PostNL wrong-number handling', () => {
         data: { items: [{ item: 'LT111111111NL', events: [] }] },
       }));
 
-    await expect(fetchPostNL(POSTNL_WRONG_NUMBER)).rejects.toThrow('different shipment');
+    await expect(fetchPostNL(POSTNL_WRONG_NUMBER)).rejects.toThrow('different or ambiguous shipment');
   });
 
   it('refuses a visitor token that is missing or implausibly long', async () => {
@@ -108,12 +108,12 @@ describe('PostNL wrong-number handling', () => {
     const fetcher = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(jsonResponse({ access_token: 'visitor-token' }))
       .mockResolvedValueOnce(jsonResponse({
-        data: { items: [{ item: POSTNL_WRONG_NUMBER, events: [] }] },
+        data: { items: [{ item: POSTNL_WRONG_NUMBER, events: [{ category: 'Processing', datetime_local: '2026-08-30T12:00:00Z', country_code: 'NL' }] }] },
       }));
     const global = vi.spyOn(globalThis, 'fetch');
 
     await expect(new PostNLTracker({ fetcher }).fetch(POSTNL_WRONG_NUMBER))
-      .resolves.toMatchObject({ status: 'unknown' });
+      .resolves.toMatchObject({ status: 'in_transit' });
     expect(fetcher).toHaveBeenCalledTimes(2);
     expect(global).not.toHaveBeenCalled();
   });
@@ -162,7 +162,7 @@ describe('official PostNL status categories', () => {
     });
   });
 
-  it('leaves an unfamiliar category unmapped and the shipment moving', () => {
+  it('leaves an unfamiliar category and the shipment status unknown', () => {
     expect(postNLStatus('Handed to partner')).toBeUndefined();
     const result = parsePostNLTrackingResponse({
       data: {
@@ -172,7 +172,7 @@ describe('official PostNL status categories', () => {
         }],
       },
     }, POSTNL_WRONG_NUMBER);
-    expect(result.status).toBe('in_transit');
+    expect(result.status).toBe('unknown');
     expect(result.current_stage).toBeUndefined();
     expect(result.events?.[0]?.stage).toBeUndefined();
   });
@@ -239,7 +239,9 @@ describe('PostNL declared capabilities and privacy', () => {
       events: [{ category: 'Processing', datetime_local: '2026-09-02T08:00:00Z', country_code: 'US' }],
     }] } }, 'LX123456785NL');
     // A country with several zones cannot be resolved; the provider's text is kept.
-    expect(multiZone.events?.[0]?.time).toBe('2026-09-02T08:00:00Z');
+    expect(multiZone.events?.[0]).toMatchObject({ local_time: '2026-09-02T08:00:00' });
+    expect(multiZone.events?.[0]).not.toHaveProperty('time');
+    expect(multiZone.last_update).toBeNull();
   });
 
   it.each(carrier.capabilities)('declares %s and a fixture proves it', (capability) => {
@@ -253,5 +255,130 @@ describe('PostNL declared capabilities and privacy', () => {
     for (const value of ['Made Up Recipient', 'Example Street 1', 'proof-of-delivery']) {
       expect(projected).not.toContain(value);
     }
+  });
+});
+
+describe('PostNL ambiguity and clock safety', () => {
+  const number = 'LX123456785NL';
+  const payload = (events: Record<string, unknown>[]) => ({ data: { items: [{ item: number, events }] } });
+
+  it.each([
+    ['Processing', 'The item is out for delivery', 'out_for_delivery'],
+    ['Processing', 'The item is at the local sorting centre', 'accepted'],
+    ['Processing', 'The item will be out for delivery', 'accepted'],
+    ['Processing', 'Not out for delivery', 'accepted'],
+    ['Future category', 'The item is out for delivery', undefined],
+  ])('refines only the observed category and exact label: %s / %s', (category, description, stage) => {
+    const result = parsePostNLTrackingResponse(payload([{ category, status_description: description }]), number);
+    expect(result.events?.[0]?.stage).toBe(stage);
+    expect(result.current_stage).toBe(stage);
+  });
+
+  it('refuses duplicate matching identities and an echo with empty history', () => {
+    const value = payload([{ category: 'Processing' }]);
+    value.data.items.push(value.data.items[0]!);
+    expect(() => parsePostNLTrackingResponse(value, number)).toThrow('ambiguous shipment');
+    expect(() => parsePostNLTrackingResponse(payload([]), number)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
+    const unrelated = payload([{ category: 'Processing' }]);
+    unrelated.data.items.unshift({ item: 'LX000000005NL', events: [{ category: 'Delivered' }] });
+    expect(parsePostNLTrackingResponse(unrelated, number).status).toBe('in_transit');
+  });
+
+  it.each([
+    ['US', '2026-09-02T08:00:00Z', '2026-09-02T08:00:00'],
+    ['ES', '2026-09-02T08:00:00Z', '2026-09-02T08:00:00'],
+    ['PT', '2026-09-02T08:00:00Z', '2026-09-02T08:00:00'],
+    ['', '2026-09-02T08:00:00Z', '2026-09-02T08:00:00'],
+    ['NL', '2026-03-29T02:30:00Z', '2026-03-29T02:30:00'],
+    ['NL', '2026-10-25T02:30:00Z', '2026-10-25T02:30:00'],
+  ])('retains unresolved local digits for %s / %s without a delivery instant', (country_code, datetime_local, local_time) => {
+    const result = parsePostNLTrackingResponse(payload([
+      { category: 'Delivered', country_code, datetime_local },
+      { category: 'Delivered', country_code: 'NL', datetime_local: '2026-09-01T10:00:00Z' },
+    ]), number);
+    expect(result.events?.[0]).toMatchObject({ local_time, stage: 'delivered' });
+    expect(result.events?.[0]).not.toHaveProperty('time');
+    expect(result.events?.[1]?.time).toBe('2026-09-01T10:00:00+02:00');
+    expect(result.last_update).toBeNull();
+    expect(result.last_update_local).toBe(local_time);
+    expect(result.delivered_at).toBeUndefined();
+  });
+
+  it('keeps malformed current clock text separate from older dated scans', () => {
+    const result = parsePostNLTrackingResponse(payload([
+      { category: 'Delivered', country_code: 'NL', datetime_local: '2026-02-30T12:00:00Z' },
+      { category: 'Processing', country_code: 'NL', datetime_local: '2026-02-28T12:00:00Z' },
+    ]), number);
+    expect(result.events?.[0]).toMatchObject({ provider_time_text: '2026-02-30T12:00:00Z' });
+    expect(result.last_update).toBeNull();
+    expect(result.delivered_at).toBeUndefined();
+  });
+
+  it.each(['+02:00', '-05:00', '+0130'])('preserves an unexpected nonzero offset %s without reinterpreting its clock', offset => {
+    const datetime_local = `2026-09-02T08:00:00${offset}`;
+    const result = parsePostNLTrackingResponse(payload([
+      { category: 'Delivered', country_code: 'NL', datetime_local },
+      { category: 'Processing', country_code: 'NL', datetime_local: '2026-09-01T10:00:00Z' },
+    ]), number);
+    expect(result.events?.[0]).toMatchObject({ provider_time_text: datetime_local, stage: 'delivered' });
+    expect(result.events?.[0]).not.toHaveProperty('time');
+    expect(result.events?.[0]).not.toHaveProperty('local_time');
+    expect(result.events?.[1]?.time).toBe('2026-09-01T10:00:00+02:00');
+    expect(result.last_update).toBeNull();
+    expect(result.last_update_local).toBeUndefined();
+    expect(result.delivered_at).toBeUndefined();
+  });
+
+  it('does not manufacture midnight from a calendar day', () => {
+    const result = parsePostNLTrackingResponse(payload([{ category: 'Processing', country_code: 'NL', datetime_local: '2026-09-02' }]), number);
+    expect(result.events?.[0]).toMatchObject({ provider_time_text: '2026-09-02' });
+    expect(result.events?.[0]).not.toHaveProperty('time');
+    expect(result.events?.[0]).not.toHaveProperty('local_time');
+  });
+
+  it('does not use an inconsistent country label to resolve a multi-zone country code', () => {
+    const result = parsePostNLTrackingResponse(payload([{ category: 'Processing', country_code: 'US',
+      country_name: 'Netherlands', datetime_local: '2026-09-02T08:00:00Z' }]), number);
+    expect(result.events?.[0]).toMatchObject({ local_time: '2026-09-02T08:00:00' });
+    expect(result.events?.[0]).not.toHaveProperty('time');
+  });
+
+  it('bounds the projected history and refuses excessive input', () => {
+    const scans = Array.from({ length: 101 }, () => ({ category: 'Processing' }));
+    expect(parsePostNLTrackingResponse(payload(scans), number).events).toHaveLength(100);
+    expect(() => parsePostNLTrackingResponse(payload(Array(501).fill(scans[0])), number)).toThrow('excessive');
+  });
+});
+
+describe('PostNL complete lookup budget', () => {
+  it('stops on caller cancellation and on a deadline during authentication', async () => {
+    const unused = vi.fn<typeof fetch>();
+    await expect(new PostNLTracker({ fetcher: unused }).fetch(POSTNL_WRONG_NUMBER, { signal: AbortSignal.abort() })).rejects.toThrow();
+    expect(unused).not.toHaveBeenCalled();
+    const slow = vi.fn<typeof fetch>().mockImplementation(async (_url, init) => {
+      await new Promise<void>(resolve => init?.signal?.addEventListener('abort', () => resolve(), { once: true }));
+      init?.signal?.throwIfAborted();
+      return jsonResponse({ access_token: 'visitor-token' });
+    });
+    await expect(new PostNLTracker({ fetcher: slow }).fetch(POSTNL_WRONG_NUMBER, { budgetMs: 20.5 })).rejects.toMatchObject({ kind: 'transport' });
+    expect(slow).toHaveBeenCalledOnce();
+  });
+
+  it('cancels a rate-limit delay before starting another request', async () => {
+    vi.useFakeTimers();
+    const abort = new AbortController();
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response('', { status: 429, headers: { 'retry-after': '6' } }));
+    const pending = new PostNLTracker({ fetcher }).fetch(POSTNL_WRONG_NUMBER, { signal: abort.signal });
+    const rejected = expect(pending).rejects.toThrow();
+    await vi.advanceTimersByTimeAsync(1);
+    abort.abort();
+    await rejected;
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
+  it.each([404, 410])('treats HTTP %s as endpoint failure rather than parcel absence', async status => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response('Unavailable', { status }));
+    await expect(new PostNLTracker({ fetcher }).fetch(POSTNL_WRONG_NUMBER)).rejects.toMatchObject({ kind: 'transport' });
+    expect(fetcher).toHaveBeenCalledOnce();
   });
 });

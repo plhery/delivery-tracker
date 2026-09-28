@@ -1,7 +1,36 @@
 import { describe, expect, it } from 'vitest';
 import { classifyWording, wordingStage } from './wording';
+import { trackingLanguageStage } from './language';
 
 describe('classifyWording', () => {
+  it.each(['Not delivered to sender', 'Will be delivered back to sender', 'May have been delivered to the sender',
+    "Wasn't delivered back to shipper", 'To be delivered to the shipper', 'Being delivered back to sender', 'Will not be delivered to sender'])(
+    'does not complete sender delivery from %s', wording => {
+      expect(trackingLanguageStage(wording)).toBe('exception');
+      expect(wordingStage(wording)).toBe('exception');
+    },
+  );
+  it.each(['Returning to sender', 'Return to sender', 'The item will be returned to sender',
+    'To be returned to the sender', 'The item is being returned to the sender', 'Return initiated',
+    'Will soon be returned to sender', 'Not yet returned to sender', 'Could not be returned to sender',
+    'Cannot be returned to sender', 'Will not be returned to sender', "Hasn't been returned to sender",
+    'Hasn’t yet been returned to the sender', "Won't be returned to sender", "Wasn't returned to sender",
+    'May be returned to sender', 'Should be returned to sender', 'Might have been returned to sender',
+    'Will have been returned to sender', 'Could already have been returned to sender'])(
+    'keeps %s nonterminal', wording => {
+      expect(wordingStage(wording)).toBe('exception');
+    },
+  );
+
+  it.each(['Returned to sender', 'Has been returned to the sender', 'Delivered back to sender',
+    'Delivered to the shipper', 'Has been delivered back to the sender',
+    'Has already been returned to sender', 'The item was not delivered and has been returned to sender',
+    'Not delivered to recipient; delivered back to sender'])(
+    'recognizes completed sender delivery: %s', wording => {
+      expect(wordingStage(wording)).toBe('returned');
+    },
+  );
+
   it('names the rule that decided the stage', () => {
     expect(classifyWording('Delivery attempt failed')).toEqual({ stage: 'failed_attempt', source: 'wording:language' });
     expect(classifyWording('Confirmation of receipt')).toEqual({ stage: 'delivered', source: 'wording:delivered' });

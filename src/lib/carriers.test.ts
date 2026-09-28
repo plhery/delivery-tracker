@@ -393,7 +393,7 @@ describe('carrier detection', () => {
     for (const number of ['0082800011298638008391', '0082800082809771393048', '0082800082809771598159']) {
       expect(detectCarrier(number)).toBe('ctt-express');
     }
-    expectUniversalFallback('ctt-express');
+    expectDirectTracking('ctt-express');
   });
 
   it('dachser — Dachser', () => {
@@ -1251,7 +1251,7 @@ describe('carrier detection', () => {
     // Sources: https://www.bbb.org/scamtracker/lookupscam/1111994 (UUS) and https://www.bbb.org/scamtracker/lookupscam/1107364 (4C)
     expect(detectCarrier('UUS5B60564241706199')).toBe('uniuni');
     expect(detectCarrier('4C003925742US')).toBe('uniuni');
-    expectUniversalFallback('uniuni');
+    expectDirectTracking('uniuni');
   });
 
   it('unknown — Unknown carrier', () => {

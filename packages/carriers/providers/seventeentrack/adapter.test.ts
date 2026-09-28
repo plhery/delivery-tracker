@@ -36,6 +36,58 @@ function tracker(fetcher: typeof fetch, trawlUrl = 'http://browser.test') {
 }
 
 describe('17TRACK result parsing', () => {
+  it.each(['Not delivered to sender', 'Will be delivered back to sender', 'May have been delivered to the sender',
+    "Wasn't delivered back to shipper", 'To be delivered to the shipper', 'Being delivered back to sender', 'Will not be delivered to sender'])(
+    'does not complete sender delivery from %s without a provider status', description => {
+      const result = parse17TrackResponse(postalHistory([postalScan('', description)]), number);
+      expect(result).toMatchObject({ status: 'exception', current_stage: 'exception', events: [{ stage: 'exception' }] });
+      expect(result.delivered_at).toBeUndefined();
+    },
+  );
+
+  it.each(['Delivered back to sender', 'Delivered to the shipper', 'Has been delivered back to the sender',
+    'The item was not delivered and has been returned to sender'])(
+    'keeps affirmative completed sender delivery from %s without a provider status', description => {
+      const result = parse17TrackResponse(postalHistory([postalScan('', description)]), number);
+      expect(result).toMatchObject({ status: 'exception', current_stage: 'returned', events: [{ stage: 'returned' }] });
+    },
+  );
+  it('refines Swiss Post vehicle loading without reclassifying other operators or future wording', () => {
+    const payload = postalHistory([postalScan('InTransit_Other', 'Loading into delivery vehicle')]);
+    const shipment = payload.shipments[0]!.shipment as { tracking: { providers: Array<{ provider: { name: string }; events: unknown[] }> } };
+    shipment.tracking.providers[0]!.provider = { name: 'Swiss Post' };
+    expect(parse17TrackResponse(payload, number)).toMatchObject({ status: 'out_for_delivery', current_stage: 'out_for_delivery',
+      events: [{ stage: 'out_for_delivery', provider_code: 'InTransit_Other' }] });
+    shipment.tracking.providers[0]!.provider = { name: 'Other postal operator' };
+    expect(parse17TrackResponse(payload, number).current_stage).toBe('in_transit');
+    shipment.tracking.providers[0]!.provider = { name: 'Swiss Post' };
+    shipment.tracking.providers[0]!.events = [postalScan('InTransit_Other', 'Will be loaded into delivery vehicle')];
+    expect(parse17TrackResponse(payload, number).current_stage).toBe('in_transit');
+  });
+
+  it.each(['Returning to sender', 'Return to sender', 'Will be returned to sender',
+    'To be returned to the sender', 'Being returned to sender', 'Will soon be returned to sender',
+    'Not yet returned to sender', 'Could not be returned to sender', 'Cannot be returned to sender',
+    'Will not be returned to sender', "Hasn't been returned to sender", 'Hasn’t yet been returned to the sender',
+    "Won't be returned to sender", "Wasn't returned to sender", 'May be returned to sender',
+    'Should be returned to sender', 'Might have been returned to sender', 'Will have been returned to sender',
+    'Could already have been returned to sender', 'Return initiated'])(
+    'does not complete a return from generic transit and %s', description => {
+      const result = parse17TrackResponse(postalHistory([postalScan('InTransit_Other', description)]), number);
+      expect(result).toMatchObject({ status: 'exception', current_stage: 'exception' });
+      expect(result.events?.[0]?.stage).toBe('exception');
+      expect(result.delivered_at).toBeUndefined();
+    },
+  );
+
+  it.each(['Returned to sender', 'Has been returned to the sender', 'Has already been returned to sender',
+    'The item was not delivered and has been returned to sender'])(
+    'preserves completed sender return from generic transit and %s', description => {
+      const result = parse17TrackResponse(postalHistory([postalScan('InTransit_Other', description)]), number);
+      expect(result).toMatchObject({ status: 'exception', current_stage: 'returned', events: [{ stage: 'returned' }] });
+    },
+  );
+
   it.each([
     ['InTransit_TransportArrived', '飞机进港', 'in_transit'],
     ['InTransit_Other', '航空公司接收', 'in_transit'],

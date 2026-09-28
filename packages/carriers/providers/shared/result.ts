@@ -11,6 +11,7 @@
  */
 import { DateTime } from 'luxon';
 import { trackingLanguageStage } from '../../core/status';
+import { nonterminalEnglishReturn } from '../../core/status/language';
 import type { Stage } from '../../generated/catalog';
 import type { CarrierEvent, CarrierResult, CarrierStatus } from '../../core/result';
 
@@ -45,7 +46,8 @@ function sourceEventStage(description: string, includeBroadMovement = true): Sta
   const french = description.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
   if (/colis en preparation chez l'expediteur/.test(french)) return 'registered';
   if (/prise en charge de votre colis sur notre site logistique/.test(french)) return 'accepted';
-  if (/return(?:ed|ing)? to (?:the )?sender/i.test(description)) return 'returned';
+  if (nonterminalEnglishReturn(description)) return 'exception';
+  if (/returned to (?:the )?sender/i.test(description)) return 'returned';
   if (/not delivered|could not.*deliver|unable to deliver|delivery (?:attempt|failed)/i.test(description)) return 'failed_attempt';
   // Carrier-reported problems that are neither a missed attempt nor a return.
   if (/damaged|broken in transit|lost in transit|(?:package|parcel|shipment) (?:is )?lost|refused(?: by)?|rejected by (?:the )?recipient|(?:incorrect|incomplete|insufficient|unknown|invalid) address|address (?:incorrect|incomplete|insufficient|unknown|invalid)|addressee (?:unknown|cannot be located)|delivery exception|shipment exception|carrier exception|held (?:by|in|at) customs|customs (?:issue|problem)|action required|awaiting instructions|(?:shipment|parcel) (?:held|on hold)/i.test(description)) return 'exception';

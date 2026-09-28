@@ -1,0 +1,203 @@
+{
+  "status": "SUCCESS",
+  "ret_msg": "",
+  "err_code": 1,
+  "data": {
+    "invalid_tno": "",
+    "valid_tno": [
+      {
+        "tno": "UUS0000000000000001",
+        "state": 203,
+        "is_master": null,
+        "parent_id": null,
+        "delivered_count": null,
+        "estimate_time": "2026-01-06",
+        "country": "US",
+        "full_spath_info": "PRIVATE_SYNTHETIC_FULL_HISTORY",
+        "second_delivery_sn": "PRIVATE_SYNTHETIC_REFERENCE",
+        "spath_list": [
+          {
+            "state": 190,
+            "description_en": "Order received",
+            "code": "Order received PRIVATE_SYNTHETIC_DETAIL",
+            "pathInfo": "PRIVATE_SYNTHETIC_RECIPIENT_AND_ADDRESS",
+            "pathAddr": "PRIVATE_SYNTHETIC_PATH_ADDRESS",
+            "pathAddress": "PRIVATE_SYNTHETIC_ADDRESS",
+            "city": "",
+            "province": "",
+            "operator": "PRIVATE_SYNTHETIC_OPERATOR",
+            "lat": 1.123456,
+            "lng": 2.123456,
+            "pathTime": 1767277800,
+            "dateTime": {
+              "timezone": null,
+              "offsetByGMT": null,
+              "localTime": null,
+              "ts": 1767277800
+            }
+          },
+          {
+            "state": 199,
+            "description_en": "Gateway transit in",
+            "code": "Gateway transit in PRIVATE_SYNTHETIC_DETAIL",
+            "pathInfo": "PRIVATE_SYNTHETIC_RECIPIENT_AND_ADDRESS",
+            "pathAddr": "PRIVATE_SYNTHETIC_PATH_ADDRESS",
+            "pathAddress": "PRIVATE_SYNTHETIC_ADDRESS",
+            "city": "Example City",
+            "province": "EX",
+            "operator": "PRIVATE_SYNTHETIC_OPERATOR",
+            "lat": 1.123456,
+            "lng": 2.123456,
+            "pathTime": 1767344400,
+            "dateTime": {
+              "timezone": "America/Los_Angeles",
+              "offsetByGMT": -28800,
+              "localTime": "2026-01-02 09:00:00",
+              "ts": 1767373200
+            }
+          },
+          {
+            "state": 199,
+            "description_en": "Gateway transit in",
+            "code": "Gateway transit in PRIVATE_SYNTHETIC_DETAIL",
+            "pathInfo": "PRIVATE_SYNTHETIC_RECIPIENT_AND_ADDRESS",
+            "pathAddr": "PRIVATE_SYNTHETIC_PATH_ADDRESS",
+            "pathAddress": "PRIVATE_SYNTHETIC_ADDRESS",
+            "city": "Example City",
+            "province": "EX",
+            "operator": "PRIVATE_SYNTHETIC_OPERATOR",
+            "lat": 1.123456,
+            "lng": 2.123456,
+            "pathTime": 1767441600,
+            "dateTime": {
+              "timezone": "America/Chicago",
+              "offsetByGMT": -21600,
+              "localTime": "2026-01-03 12:00:00",
+              "ts": 1767463200
+            }
+          },
+          {
+            "state": 195,
+            "description_en": "Gateway transit out",
+            "code": "Gateway transit out PRIVATE_SYNTHETIC_DETAIL",
+            "pathInfo": "PRIVATE_SYNTHETIC_RECIPIENT_AND_ADDRESS",
+            "pathAddr": "PRIVATE_SYNTHETIC_PATH_ADDRESS",
+            "pathAddress": "PRIVATE_SYNTHETIC_ADDRESS",
+            "city": "Example City",
+            "province": "EX",
+            "operator": "PRIVATE_SYNTHETIC_OPERATOR",
+            "lat": 1.123456,
+            "lng": 2.123456,
+            "pathTime": 1767459600,
+            "dateTime": {
+              "timezone": "America/Chicago",
+              "offsetByGMT": -21600,
+              "localTime": "2026-01-03 17:00:00",
+              "ts": 1767481200
+            }
+          },
+          {
+            "state": 200,
+            "description_en": "Arrival scan",
+            "code": "Arrival scan PRIVATE_SYNTHETIC_DETAIL",
+            "pathInfo": "PRIVATE_SYNTHETIC_RECIPIENT_AND_ADDRESS",
+            "pathAddr": "PRIVATE_SYNTHETIC_PATH_ADDRESS",
+            "pathAddress": "PRIVATE_SYNTHETIC_ADDRESS",
+            "city": "Example City",
+            "province": "EX",
+            "operator": "PRIVATE_SYNTHETIC_OPERATOR",
+            "lat": 1.123456,
+            "lng": 2.123456,
+            "pathTime": 1767513600,
+            "dateTime": {
+              "timezone": "America/Chicago",
+              "offsetByGMT": -21600,
+              "localTime": "2026-01-04 08:00:00",
+              "ts": 1767535200
+            }
+          },
+          {
+            "state": 202,
+            "description_en": "Out for delivery",
+            "code": "Out for delivery PRIVATE_SYNTHETIC_DETAIL",
+            "pathInfo": "PRIVATE_SYNTHETIC_RECIPIENT_AND_ADDRESS",
+            "pathAddr": "PRIVATE_SYNTHETIC_PATH_ADDRESS",
+            "pathAddress": "PRIVATE_SYNTHETIC_ADDRESS",
+            "city": "Example City",
+            "province": "EX",
+            "operator": "PRIVATE_SYNTHETIC_OPERATOR",
+            "lat": 1.123456,
+            "lng": 2.123456,
+            "pathTime": 1767517200,
+            "dateTime": {
+              "timezone": "America/Chicago",
+              "offsetByGMT": -21600,
+              "localTime": "2026-01-04 09:00:00",
+              "ts": 1767538800
+            }
+          },
+          {
+            "state": 211,
+            "description_en": "Failed delivery attempt, returning to the warehouse",
+            "code": "Failed delivery attempt, returning to the warehouse PRIVATE_SYNTHETIC_DETAIL",
+            "pathInfo": "PRIVATE_SYNTHETIC_RECIPIENT_AND_ADDRESS",
+            "pathAddr": "PRIVATE_SYNTHETIC_PATH_ADDRESS",
+            "pathAddress": "PRIVATE_SYNTHETIC_ADDRESS",
+            "city": "Example City",
+            "province": "EX",
+            "operator": "PRIVATE_SYNTHETIC_OPERATOR",
+            "lat": 1.123456,
+            "lng": 2.123456,
+            "pathTime": 1767538800,
+            "dateTime": {
+              "timezone": "America/Chicago",
+              "offsetByGMT": -21600,
+              "localTime": "2026-01-04 15:00:00",
+              "ts": 1767560400
+            }
+          },
+          {
+            "state": 202,
+            "description_en": "Out for delivery",
+            "code": "Out for delivery PRIVATE_SYNTHETIC_DETAIL",
+            "pathInfo": "PRIVATE_SYNTHETIC_RECIPIENT_AND_ADDRESS",
+            "pathAddr": "PRIVATE_SYNTHETIC_PATH_ADDRESS",
+            "pathAddress": "PRIVATE_SYNTHETIC_ADDRESS",
+            "city": "Example City",
+            "province": "EX",
+            "operator": "PRIVATE_SYNTHETIC_OPERATOR",
+            "lat": 1.123456,
+            "lng": 2.123456,
+            "pathTime": 1767603600,
+            "dateTime": {
+              "timezone": "America/Chicago",
+              "offsetByGMT": -21600,
+              "localTime": "2026-01-05 09:00:00",
+              "ts": 1767625200
+            }
+          },
+          {
+            "state": 203,
+            "description_en": "Delivered",
+            "code": "Delivered PRIVATE_SYNTHETIC_DETAIL",
+            "pathInfo": "PRIVATE_SYNTHETIC_RECIPIENT_AND_ADDRESS",
+            "pathAddr": "PRIVATE_SYNTHETIC_PATH_ADDRESS",
+            "pathAddress": "PRIVATE_SYNTHETIC_ADDRESS",
+            "city": "Example City",
+            "province": "EX",
+            "operator": "PRIVATE_SYNTHETIC_OPERATOR",
+            "lat": 1.123456,
+            "lng": 2.123456,
+            "pathTime": 1767628800,
+            "dateTime": {
+              "timezone": "America/Chicago",
+              "offsetByGMT": -21600,
+              "localTime": "2026-01-05 16:00:00",
+              "ts": 1767650400
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -144,7 +144,8 @@ describe('tracking event normalization', () => {
 
   it('prioritizes exception and final-stage phrases before broad delivery words', () => {
     expect(inferStage('Delivery attempt failed')).toBe('failed_attempt');
-    expect(inferStage('Return to sender')).toBe('returned');
+    expect(inferStage('Return to sender')).toBe('exception');
+    expect(inferStage('Returned to sender')).toBe('returned');
     expect(inferStage('Parcel handed to DPD')).toBe('accepted');
     expect(inferStage('To be delivered')).toBe('in_transit');
   });
@@ -161,7 +162,7 @@ describe('tracking event normalization', () => {
     });
     expect(rows.map((row) => [row.stage, (row.raw_data as JsonObject).stage_source])).toEqual([
       ['delivered', 'carrier_map'],
-      ['returned', 'wording:language'],
+      ['exception', 'wording:language'],
       ['delivered', 'wording:delivered'],
       ['in_transit', 'none'],
     ]);
@@ -1112,7 +1113,7 @@ describe('TrackingSyncService', () => {
       const number = 'LX123456785NL';
       const origin = parsePostNLTrackingResponse({ data: { items: [{ item: number, destination_code: 'CH',
         events: [{ category: state === 'terminal_conflict' ? 'Delivered' : 'Departed',
-          datetime_local: '2026-03-04T10:00:00Z', status_description: 'Postal tracking update' }],
+          datetime_local: '2026-03-04T10:00:00Z', status_description: 'Postal tracking update', country_code: 'NL' }],
       }] } }, number);
       const delivery: CarrierResult = { status: 'out_for_delivery', last_update: '2026-03-05T10:00:00Z' };
       if (state === 'unknown') delivery.status = 'unknown';

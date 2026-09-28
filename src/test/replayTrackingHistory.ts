@@ -71,7 +71,7 @@ export async function replayAuditedScan(scan: AuditedScan, translatedDescription
       vi.spyOn(globalThis, 'fetch')
         .mockResolvedValueOnce(Response.json({ access_token: 'synthetic-visitor-token' }))
         .mockResolvedValueOnce(Response.json({ data: { items: [{ item: NUMBER, events: [{
-          datetime_local: TIME, status_description: description,
+          datetime_local: TIME, country_code: 'NL', status_description: description,
           category: /pre-advised|shippers warehouse/.test(scan.description) ? 'Pre-advised' : 'Transit',
         }] }] } }));
       return fetchPostNL(NUMBER);

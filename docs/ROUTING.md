@@ -110,8 +110,10 @@ are left to the universals.
   range), then the catalog's `recognition.rank`, a hand-set popularity order. At most five
   are asked at once.
 - **Settling.** Only an answer for a recent parcel counts; an old parcel can share a reused
-  number. One answer wins; with several, the one number evidence backs, else the most
-  common network of a single brand (GLS Switzerland and GLS Germany answer from one
+  number. Only valid scan instants with explicit offsets establish activity age;
+  unresolved local clocks cannot rank a match. One answer wins; with several, the one
+  number evidence backs, else the most common network of a single brand
+  (GLS Switzerland and GLS Germany answer from one
   overview). Unrelated carriers that all know the number are a choice for the user.
 - **In the Add sheet.** The detect route asks once the number is settled (the field loses
   focus, a paste, a shared number), within three seconds, and caches complete answers per

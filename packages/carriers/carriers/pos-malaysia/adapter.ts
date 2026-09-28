@@ -1,26 +1,24 @@
 import 'server-only';
 
 import { randomUUID } from 'node:crypto';
-import type { AdapterFactory } from '../../core/adapter';
-import { NotFoundError, SchemaError } from '../../core/errors';
+import type { AdapterFactory, TrackingContext } from '../../core/adapter';
+import { IndeterminateError, SchemaError, TransportError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import type { ClassifiedStatus } from '../../core/status';
+import { runSteps } from '../../core/runner';
+import { NOOP_RECORDER, type StepRecorder } from '../../core/telemetry';
 import { zonedTime } from '../../core/time';
 import { clean, fetchBounded, parseJsonBytes, UpstreamHttpError } from '../../core/transport';
 import { isRecord } from '../../core/types';
 import { classifyPosMalaysiaStatus } from './status';
 
 // Protocol provenance:
-// - The 2020-era REST endpoint from community notes is gone; the current
-//   consumer flow was recovered from the official tracking SPA bundle
-//   (https://tracking.pos.com.my, inspected 2026-09-10):
+// - The consumer request builder is shipped by https://tracking.pos.com.my:
 //   POST https://ttu-svc.pos.com.my/api/trackandtrace/v1/request with
 //   {connote_ids: [...], culture: "en"} and a client-generated P-Request-ID
 //   header. No cookies, account, signature or browser state.
-// - Live verification 2026-09-10: unknown codes return HTTP 200 {code:"S0000"}
-//   with a per-connote entry carrying empty process_status and
-//   tracking_data:null — unknown and expired are indistinguishable by design,
-//   and identity binds through the echoed connote_id.
+// - Empty process_status with tracking_data:null proves no available history,
+//   not absence of a shipment. Identity binds through the echoed connote_id.
 // - Event vocabulary from the vendor's own shipped demo parcel (delivered):
 //   six process_summary values with fixed English wordings, mapped in
 //   status.ts. Only process_status "DELIVERED" is a closed overall value;
@@ -31,9 +29,8 @@ const MAX_RESPONSE_BYTES = 1_000_000;
 const MAX_EVENTS_TO_RETURN = 20;
 
 function parsedTime(value: unknown): { iso: string; timestamp: number } | null {
-  // Observed shape: "22 Aug 2023, 05:34:58 PM", English abbreviations, 12-hour
-  // clock, no offset. Malaysia is a single UTC+8 zone with no DST, so the zone
-  // assignment is unambiguous (unlike multi-country lanes).
+  // English 12-hour wall clocks. Only a confirmed domestic route establishes
+  // this zone; relayed international scans can name another country's time.
   return zonedTime(value, 'dd MMM yyyy, hh:mm:ss a', 'Asia/Kuala_Lumpur', { locale: 'en-US' });
 }
 
@@ -61,66 +58,86 @@ export function parsePosMalaysiaTrackingResponse(payload: unknown, trackingNumbe
   if (items.length !== payload.data.length) {
     throw new SchemaError('Pos Malaysia', 'Pos Malaysia returned an invalid shipment entry');
   }
-  const item = items.find(
-    (candidate) => clean(candidate.connote_id, 64).toLocaleUpperCase('en-US').replace(/[\s.-]/g, '') === requested,
+  const matching = items.filter(
+    (candidate) => typeof candidate.connote_id === 'string' && candidate.connote_id.trim().toUpperCase() === requested,
   );
-  if (!item) throw new SchemaError('Pos Malaysia', 'Pos Malaysia returned a different shipment');
+  if (matching.length !== 1) throw new SchemaError('Pos Malaysia', 'Pos Malaysia returned a different or ambiguous shipment');
+  const item = matching[0]!;
+  const domestic = isRecord(item.sender_data) && isRecord(item.recipient_data)
+    && clean(item.sender_data.sender_country, 8).toUpperCase() === 'MY'
+    && clean(item.recipient_data.receipient_country, 8).toUpperCase() === 'MY';
+  if (!Object.hasOwn(item, 'tracking_data')) throw new SchemaError('Pos Malaysia', 'Pos Malaysia omitted tracking history');
   const rawDetails = item.tracking_data;
-  // Unknown or expired codes come back with empty process_status and null
-  // tracking_data: a domain outcome (clean 404), never a transport failure.
-  if (rawDetails == null) throw new NotFoundError('Pos Malaysia');
-  if (!Array.isArray(rawDetails)) throw new SchemaError('Pos Malaysia', 'Pos Malaysia returned invalid tracking history');
-  const parsed: Array<{ event: CarrierEvent; classified: ClassifiedStatus; timestamp: number; index: number }> = [];
+  if (rawDetails !== null && !Array.isArray(rawDetails)) throw new SchemaError('Pos Malaysia', 'Pos Malaysia returned invalid tracking history');
+  if (Array.isArray(rawDetails) && rawDetails.length > 500) throw new SchemaError('Pos Malaysia', 'Pos Malaysia returned oversized tracking history');
+  const parsed: Array<{ event: CarrierEvent; classified: ClassifiedStatus | null; timestamp: number | null; index: number }> = [];
   const seen = new Set<string>();
-  rawDetails.filter(isRecord).slice(0, 500).forEach((rawEvent, index) => {
+  (rawDetails ?? []).forEach((rawEvent, index) => {
+    if (!isRecord(rawEvent)) throw new SchemaError('Pos Malaysia', 'Pos Malaysia returned an invalid scan');
+    // The official client treats Error rows as response messages, not scans.
+    if (rawEvent.type === 'Error') throw new IndeterminateError('Pos Malaysia', 'Pos Malaysia returned a tracking error');
+    if (rawEvent.type !== 'Valid') throw new SchemaError('Pos Malaysia', 'Pos Malaysia returned an unknown scan type');
     const summary = clean(rawEvent.process_summary, 200);
-    const description = clean(rawEvent.process, 500);
-    const time = parsedTime(rawEvent.date);
-    if (!time || !description) return;
+    const description = clean(rawEvent.process, 500) || summary;
+    if (!description) throw new SchemaError('Pos Malaysia', 'Pos Malaysia returned a scan with no status');
+    if (rawEvent.date != null && typeof rawEvent.date !== 'string') throw new SchemaError('Pos Malaysia', 'Pos Malaysia returned an invalid scan clock');
+    const clock = clean(rawEvent.date, 100);
+    const time = domestic ? parsedTime(clock) : null;
     const eventType = clean(rawEvent.event_type, 32);
-    const identity = `${time.iso}\u0000${description}\u0000${eventType}`;
+    const location = clean(rawEvent.office, 160);
+    const identity = JSON.stringify([time?.iso ?? clock, summary, description, eventType, location]);
     if (seen.has(identity)) return;
     seen.add(identity);
-    // Unmapped summaries keep the scan default rather than guessing.
     const classified = classifyPosMalaysiaStatus(summary);
     parsed.push({
       event: {
-        time: time.iso,
+        ...(time ? { time: time.iso } : clock ? { provider_time_text: clock } : {}),
         // Offices are Pos Malaysia facility names (hubs, kiosks), kept coarse.
         // Sender/recipient blocks travel alongside the item but are deliberately
         // never retained; proof-of-delivery links and image fields are dropped.
-        location: clean(rawEvent.office, 160),
+        location,
         description,
-        stage: classified.stage,
+        ...(classified ? { stage: classified.stage } : {}),
         ...(eventType ? { provider_code: eventType } : {}),
       },
       classified,
-      timestamp: time.timestamp,
+      timestamp: time?.timestamp ?? null,
       index,
     });
   });
-  parsed.sort((left, right) => right.timestamp - left.timestamp || left.index - right.index);
+  // The source supplies current-first history. Sorting a malformed clock among
+  // valid rows would promote an older scan; keep source order in that case.
+  if (parsed.every(row => row.timestamp !== null)) {
+    parsed.sort((left, right) => right.timestamp! - left.timestamp! || left.index - right.index);
+  }
   const events = parsed.slice(0, MAX_EVENTS_TO_RETURN).map(({ event }) => event);
   if (clean(item.process_status, 32).toLocaleUpperCase('en-US') === 'DELIVERED') {
+    const latestIsDelivered = parsed[0]?.classified?.stage === 'delivered';
+    if (!latestIsDelivered) {
+      events.unshift({ description: 'Delivered', stage: 'delivered', provider_code: 'DELIVERED', summary_snapshot: true });
+      events.length = Math.min(events.length, MAX_EVENTS_TO_RETURN);
+    }
     return {
       status: 'delivered',
       current_stage: 'delivered',
-      last_status_text: events[0]?.description ?? 'Delivered',
-      last_update: events[0]?.time ?? null,
+      last_status_text: latestIsDelivered ? events[0]?.description ?? 'Delivered' : 'Delivered',
+      // The overall summary carries no clock. An older movement scan cannot
+      // date delivery; only a matching delivered row provides that timestamp.
+      last_update: latestIsDelivered ? events[0]?.time ?? null : null,
       expected_delivery: null,
-      timezone: 'Asia/Kuala_Lumpur',
+      ...(domestic ? { timezone: 'Asia/Kuala_Lumpur' } : {}),
       events,
     };
   }
-  if (events.length === 0) throw new NotFoundError('Pos Malaysia');
+  if (events.length === 0) throw new IndeterminateError('Pos Malaysia', 'Pos Malaysia returned no available tracking history');
   const latest = parsed[0]!;
   return {
-    status: latest.classified.status,
-    current_stage: latest.classified.stage,
+    status: latest.classified?.status ?? 'unknown',
+    ...(latest.classified ? { current_stage: latest.classified.stage } : {}),
     last_status_text: latest.event.description ?? 'Tracking information received',
     last_update: latest.event.time ?? null,
     expected_delivery: null,
-    timezone: 'Asia/Kuala_Lumpur',
+    ...(domestic ? { timezone: 'Asia/Kuala_Lumpur' } : {}),
     events,
   };
 }
@@ -128,45 +145,55 @@ export function parsePosMalaysiaTrackingResponse(payload: unknown, trackingNumbe
 export class PosMalaysiaTracker {
   readonly timeoutMs: number;
   readonly fetcher: typeof fetch | undefined;
+  readonly recorder: StepRecorder;
 
-  constructor(options: { timeoutMs?: number; fetcher?: typeof fetch } = {}) {
+  constructor(options: { timeoutMs?: number; fetcher?: typeof fetch; recorder?: StepRecorder } = {}) {
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.fetcher = options.fetcher;
+    this.recorder = options.recorder ?? NOOP_RECORDER;
     if (!Number.isFinite(this.timeoutMs) || this.timeoutMs <= 0) {
       throw new TypeError('Pos Malaysia timeout must be positive');
     }
   }
 
-  async fetch(rawTrackingNumber: string): Promise<CarrierResult> {
+  async fetch(rawTrackingNumber: string, context: TrackingContext = {}): Promise<CarrierResult> {
     const trackingNumber = normalizePosMalaysiaTrackingNumber(rawTrackingNumber);
-    const { response, bytes } = await fetchBounded(TRACKING_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json, text/plain, */*',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; DeliveryTracker/1.0)',
-        'P-Request-ID': randomUUID(),
+    const budgetMs = context.budgetMs ?? this.timeoutMs;
+    if (!Number.isFinite(budgetMs) || budgetMs <= 0) throw new TypeError('Pos Malaysia budget must be positive');
+    return runSteps({ carrier: 'pos-malaysia', budgetMs, signal: context.signal, recorder: this.recorder }, [{
+      id: 'direct', run: async ({ signal, remainingMs }) => {
+        try {
+          const { bytes } = await fetchBounded(TRACKING_ENDPOINT, {
+            method: 'POST', signal,
+            headers: {
+              Accept: 'application/json, text/plain, */*',
+              'Accept-Language': 'en-US,en;q=0.9',
+              'Content-Type': 'application/json',
+              'User-Agent': 'Mozilla/5.0 (compatible; DeliveryTracker/1.0)',
+              'P-Request-ID': randomUUID(),
+            },
+            body: JSON.stringify({ connote_ids: [trackingNumber], culture: 'en' }),
+          }, {
+            provider: 'Pos Malaysia tracking', timeoutMs: Math.max(1, Math.floor(remainingMs)),
+            maxBytes: MAX_RESPONSE_BYTES, retryTransient: true, fetcher: this.fetcher,
+          });
+          return parsePosMalaysiaTrackingResponse(parseJsonBytes(bytes, 'Pos Malaysia tracking'), trackingNumber);
+        } catch (error) {
+          if (error instanceof UpstreamHttpError && [404, 410].includes(error.status)) {
+            throw new TransportError('Pos Malaysia', 'Pos Malaysia tracking endpoint is unavailable', { cause: error });
+          }
+          throw error;
+        }
       },
-      body: JSON.stringify({ connote_ids: [trackingNumber], culture: 'en' }),
-    }, {
-      provider: 'Pos Malaysia tracking',
-      timeoutMs: this.timeoutMs,
-      maxBytes: MAX_RESPONSE_BYTES,
-      retryTransient: true,
-      allowHttpError: true,
-      fetcher: this.fetcher,
-    });
-    if (!response.ok) throw new UpstreamHttpError('Pos Malaysia tracking', response.status);
-    return parsePosMalaysiaTrackingResponse(parseJsonBytes(bytes, 'Pos Malaysia tracking'), trackingNumber);
+    }]);
   }
 }
 
 export const adapter: AdapterFactory = (environment) => {
-  const tracker = new PosMalaysiaTracker({ fetcher: environment.fetcher });
+  const tracker = new PosMalaysiaTracker({ fetcher: environment.fetcher, recorder: environment.recorder });
   return {
     id: 'pos-malaysia',
     steps: ['direct'],
-    track: (input) => tracker.fetch(input.number),
+    track: (input, context) => tracker.fetch(input.number, context),
   };
 };

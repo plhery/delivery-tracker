@@ -2,8 +2,9 @@
  * PostNL status vocabulary.
  *
  * Every event carries a `category` token next to its localized
- * `status_description`. The category is the stable signal and the only one
- * mapped; the free text is display prose and is never classified here.
+ * `status_description`. Categories are the primary signal. The English
+ * "The item is out for delivery" label refines the overloaded Processing
+ * category, which also covers sorting and acceptance.
  * Categories are matched case-insensitively after trimming, because the
  * international tracker has been seen returning them capitalized
  * ("Pre-advised") and lower case in the same history.
@@ -35,6 +36,11 @@ const CATEGORY_STATUS = new Map<string, ClassifiedStatus>([
 export { CATEGORY_STATUS as POSTNL_STATUS };
 
 /** The status and stage for one PostNL event category, or undefined when unmapped. */
-export function postNLStatus(category: unknown): ClassifiedStatus | undefined {
-  return CATEGORY_STATUS.get((typeof category === 'string' ? category : '').trim().toLocaleLowerCase('en-US'));
+export function postNLStatus(category: unknown, description?: unknown): ClassifiedStatus | undefined {
+  const code = (typeof category === 'string' ? category : '').trim().toLocaleLowerCase('en-US');
+  if (code === 'processing' && typeof description === 'string'
+    && description.trim().toLocaleLowerCase('en-US') === 'the item is out for delivery') {
+    return { status: 'out_for_delivery', stage: 'out_for_delivery' };
+  }
+  return CATEGORY_STATUS.get(code);
 }

@@ -72,7 +72,7 @@ export function parse(html: string, trackingNumber: string): CarrierResult {
     if (seen.has(key)) continue;
     seen.add(key);
     const status = emsStatus(description);
-    events.push({ time, description, location, ...(status ? { stage: status.stage } : {}) });
+    events.push({ local_time: time, description, location, ...(status ? { stage: status.stage } : {}) });
   }
   const latest = events[0]!;
   const status = emsStatus(latest.description!);
@@ -80,7 +80,8 @@ export function parse(html: string, trackingNumber: string): CarrierResult {
     status: status?.status ?? 'unknown',
     ...(status ? { current_stage: status.stage } : {}),
     last_status_text: latest.description,
-    last_update: latest.time,
+    last_update: null,
+    last_update_local: latest.local_time,
     expected_delivery: null,
     events: events.slice(0, 100),
   };

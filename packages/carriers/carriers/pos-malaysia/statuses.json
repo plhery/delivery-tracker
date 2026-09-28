@@ -7,6 +7,11 @@
     { "wording": "Preparing for delivery", "language": "en", "stage": "in_transit", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "process_summary on the vendor's own shipped demo parcel." },
     { "wording": "Out for delivery", "language": "en", "stage": "out_for_delivery", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "process_summary on the vendor's own shipped demo parcel." },
     { "wording": "Delivery completed", "language": "en", "stage": "delivered", "confirmedBy": "fixture", "firstSeen": "2026-09-10", "note": "process_summary on the vendor's own shipped demo parcel." },
-    { "code": "DELIVERED", "language": "en", "stage": "delivered", "confirmedBy": "live", "firstSeen": "2026-09-10", "note": "Parcel-level process_status, not an event summary: the only closed overall value; it wins even with no event rows." }
+    { "code": "DELIVERED", "language": "en", "stage": "delivered", "confirmedBy": "live", "firstSeen": "2026-09-10", "note": "Parcel-level process_status, not an event summary: the only closed overall value; it wins even with no event rows." },
+    { "wording": "Item arrived at delivery office", "language": "en", "stage": "in_transit", "confirmedBy": "live", "firstSeen": "2026-09-28" },
+    { "wording": "Your parcel is being transported to the next facility", "language": "en", "stage": "in_transit", "confirmedBy": "live", "firstSeen": "2026-09-28" },
+    { "wording": "Your parcel has arrived at destination facility for Processing", "language": "en", "stage": "in_transit", "confirmedBy": "live", "firstSeen": "2026-09-28" },
+    { "wording": "Your parcel is being transported to destination country", "language": "en", "stage": "in_transit", "confirmedBy": "live", "firstSeen": "2026-09-28" },
+    { "wording": "Your parcel has arrived at our facility for sorting", "language": "en", "stage": "in_transit", "confirmedBy": "live", "firstSeen": "2026-09-28" }
   ]
 }

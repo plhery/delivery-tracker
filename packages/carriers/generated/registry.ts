@@ -17,6 +17,7 @@ import { adapter as colisweb } from '../carriers/colisweb/adapter';
 import { adapter as correiosBr } from '../carriers/correios-br/adapter';
 import { adapter as correosSpain } from '../carriers/correos-spain/adapter';
 import { adapter as ctt } from '../carriers/ctt/adapter';
+import { adapter as cttExpress } from '../carriers/ctt-express/adapter';
 import { adapter as dachser } from '../carriers/dachser/adapter';
 import { adapter as delhivery } from '../carriers/delhivery/adapter';
 import { adapter as dhl } from '../carriers/dhl/adapter';
@@ -60,6 +61,7 @@ import { adapter as sunyou } from '../carriers/sunyou/adapter';
 import { adapter as swissPost } from '../carriers/swiss-post/adapter';
 import { adapter as swissPostCargo } from '../carriers/swiss-post-cargo/adapter';
 import { adapter as tnt } from '../carriers/tnt/adapter';
+import { adapter as uniuni } from '../carriers/uniuni/adapter';
 import { adapter as ups } from '../carriers/ups/adapter';
 import { adapter as usps } from '../carriers/usps/adapter';
 import { adapter as yamato } from '../carriers/yamato/adapter';
@@ -86,6 +88,7 @@ export const REGISTRY: RegistryDefinition = {
     "correios-br": correiosBr,
     "correos-spain": correosSpain,
     "ctt": ctt,
+    "ctt-express": cttExpress,
     "dachser": dachser,
     "delhivery": delhivery,
     "dhl": dhl,
@@ -129,6 +132,7 @@ export const REGISTRY: RegistryDefinition = {
     "swiss-post": swissPost,
     "swiss-post-cargo": swissPostCargo,
     "tnt": tnt,
+    "uniuni": uniuni,
     "ups": ups,
     "usps": usps,
     "yamato": yamato,
@@ -163,7 +167,7 @@ export const REGISTRY: RegistryDefinition = {
     "correos-express": "universal",
     "correos-spain": "correos-spain",
     "ctt": "ctt",
-    "ctt-express": "universal",
+    "ctt-express": "ctt-express",
     "dachser": "dachser",
     "delhivery": "delhivery",
     "delivengo": "la-poste",
@@ -233,7 +237,7 @@ export const REGISTRY: RegistryDefinition = {
     "tipsa": "universal",
     "tnt": "tnt",
     "ukrposhta": "universal",
-    "uniuni": "universal",
+    "uniuni": "uniuni",
     "unknown": "universal",
     "ups": "ups",
     "usps": "usps",

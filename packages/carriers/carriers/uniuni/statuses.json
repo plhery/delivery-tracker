@@ -1,0 +1,54 @@
+{
+  "carrier": "uniuni",
+  "entries": [
+    {
+      "code": "190",
+      "wording": "Order received",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "199",
+      "wording": "Gateway transit in",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "195",
+      "wording": "Gateway transit out",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "200",
+      "wording": "Arrival scan",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "202",
+      "wording": "Out for delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "211",
+      "wording": "Failed delivery attempt, returning to the warehouse",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "203",
+      "wording": "Delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    }
+  ]
+}

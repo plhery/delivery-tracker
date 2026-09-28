@@ -21,14 +21,14 @@ describe('EMS result projection', () => {
   it('returns identity-bound history in provider order with local wall times', () => {
     const result = normalizeCarrierResult(parse(fixture(), NUMBER));
     expect(result).toMatchObject({ status: 'in_transit', current_stage: 'customs',
-      last_status_text: 'Held for export customs inspection', last_update: '2026-09-03T22:23:00', expected_delivery: null });
+      last_status_text: 'Held for export customs inspection', last_update: null, last_update_local: '2026-09-03T22:23:00', expected_delivery: null });
     expect(result.events).toHaveLength(6);
     expect(result.events?.map((event) => event.stage)).toEqual([
       'customs', 'in_transit', 'in_transit', 'customs', 'in_transit', 'accepted',
     ]);
     expect(result.events?.[1].description).toBe('Departed from export office');
     expect(result.events?.[2].description).toBe('Released from export customs and security');
-    expect(result.events?.every((event) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00$/.test(event.time!))).toBe(true);
+    expect(result.events?.every((event) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00$/.test(String(event.local_time)))).toBe(true);
     expect(result.timezone).toBeUndefined();
   });
 
@@ -36,14 +36,16 @@ describe('EMS result projection', () => {
     const result = parse(fixture('international'), 'EW000000005FR');
     expect(result.events).toHaveLength(9);
     expect(result).toMatchObject({ status: 'in_transit', current_stage: 'in_transit',
-      last_status_text: 'Arrived at post office', last_update: '2026-08-06T07:51:00' });
+      last_status_text: 'Arrived at post office', last_update: null, last_update_local: '2026-08-06T07:51:00' });
   });
 
   it('keeps equal-time ordering and clock changes instead of guessing timezones', () => {
     const $ = load(fixture());
     $('tbody tr').last().find('td').first().text('Sep 1, 2026, 9:00 AM');
     const result = parse($.html(), NUMBER);
-    expect(result.last_update).toBe('2026-09-01T09:00:00');
+    expect(result.last_update).toBeNull();
+    expect(result.last_update_local).toBe('2026-09-01T09:00:00');
+    expect(result.events?.every(event => !event.time)).toBe(true);
     expect(result.last_status_text).toBe('Held for export customs inspection');
   });
 
@@ -66,7 +68,7 @@ describe('EMS result projection', () => {
     expect(result.events).toHaveLength(6);
     expect(JSON.stringify(result)).not.toContain('PRIVATE');
     expect(Object.keys(result).sort()).toEqual([
-      'current_stage', 'events', 'expected_delivery', 'last_status_text', 'last_update', 'status',
+      'current_stage', 'events', 'expected_delivery', 'last_status_text', 'last_update', 'last_update_local', 'status',
     ]);
   });
 
@@ -111,6 +113,7 @@ describe('EMS result projection', () => {
     ['Delivered', 'delivered', 'delivered'],
     ['Out for delivery', 'out_for_delivery', 'out_for_delivery'],
     ['Delivery attempted', 'exception', 'failed_attempt'],
+    ['Export cancelled', 'exception', 'exception'],
     ['Returned to sender', 'exception', 'returned'],
     ['Released from import customs', 'in_transit', 'in_transit'],
   ])('maps the exact wording %s without changing older stages', (wording, status, stage) => {

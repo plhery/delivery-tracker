@@ -1,0 +1,28 @@
+{
+  "data": {
+    "shipping_code": "0000000000000000000001",
+    "item_count": 1,
+    "committed_delivery_datetime": "2026-01-04",
+    "delivery_date": "2026-01-04",
+    "declared_weight": 0.4,
+    "final_weight": 0.5,
+    "destin_name": "Destination Example",
+    "client_reference": "PRIVATE_SYNTHETIC_REFERENCE",
+    "destin_contact_info": { "town_name": "Destination Example", "street": "PRIVATE_SYNTHETIC_STREET", "phone": "PRIVATE_SYNTHETIC_PHONE" },
+    "shipping_history": {
+      "item_code": "0000000000000000000001001",
+      "declared_weight": "0.4",
+      "item_length_declared": "0.0",
+      "events": [
+        { "code": "0000", "description": "Pendiente de recepción en CTT Express", "type": "STATUS", "source": "ITEM_STATUS_V2", "event_date": "2026-01-01T10:00:00.000+00:00", "detail": { "delivery_comments": "PRIVATE_SYNTHETIC_COMMENT" } },
+        { "code": "1000", "description": "Enviado", "type": "STATUS", "source": "ITEM_STATUS_V2", "event_date": "2026-01-02T10:00:00.000+00:00" },
+        { "code": "1500", "description": "En reparto", "type": "STATUS", "source": "ITEM_STATUS_V2", "event_date": "2026-01-03T10:00:00.000+00:00" },
+        { "code": "1600", "description": "Incidencia en el reparto", "type": "STATUS", "source": "ITEM_STATUS_V2", "event_date": "2026-01-03T11:00:00.000+00:00", "detail": { "incident_type_desc": "PRIVATE_SYNTHETIC_FREE_TEXT", "event_agency_code": "PRIVATE_SYNTHETIC_AGENCY" } },
+        { "code": "2400", "description": "Nuevo reparto", "type": "STATUS", "source": "ITEM_STATUS_V2", "event_date": "2026-01-03T12:00:00.970+00:00" },
+        { "code": "2400", "description": "Nuevo reparto", "type": "STATUS", "source": "ITEM_STATUS_V2", "event_date": "2026-01-03T12:00:01.017+00:00" },
+        { "code": "2310", "description": "Disponible en Punto Collectt Express", "type": "STATUS", "source": "ITEM_STATUS_V2", "event_date": "2026-01-04T10:00:00.000+00:00" }
+      ]
+    }
+  },
+  "error": null
+}
