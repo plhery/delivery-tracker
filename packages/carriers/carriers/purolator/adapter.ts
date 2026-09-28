@@ -9,7 +9,7 @@ import { normalizePurolatorNumber, parsePurolator } from './parser';
 const ENDPOINT = 'https://public-tracking.purolator.com/tracking/data';
 // Public anonymous client configuration, not an account/API credential:
 // https://web.purolator.com/app/tracker/js/app.tracker-drupal.js
-const PUBLIC_WIDGET_KEY = 'NneqHVQEJO5CkHcsiPXqJ8cTAngvBR1D3Rcu3baQ';
+const PUBLIC_WIDGET_KEY = 'NneqHVQEJO5CkHcsiPXqJ8cTAngvBR1D3Rcu3baQ'; // gitleaks:allow
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
 
 export class PurolatorTracker {

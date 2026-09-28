@@ -9,7 +9,7 @@ import { normalizeUniuniNumber, normalizeUniuniRecognitionNumber, parseUniuni } 
 const ENDPOINT = 'https://tracking-service-api.uniuni.ca/tracking/trackinguniuninew';
 // Fixed anonymous website configuration from the official tracking client;
 // this is neither an account credential nor an issued browser/session token.
-const WEB_KEY = 'SMq45nJhQuNR3WHsJA6N';
+const WEB_KEY = 'SMq45nJhQuNR3WHsJA6N'; // gitleaks:allow
 
 export class UniuniTracker {
   constructor(private readonly options: { fetcher?: typeof fetch; recorder?: StepRecorder } = {}) {}

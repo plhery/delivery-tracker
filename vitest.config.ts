@@ -32,6 +32,8 @@ export default defineConfig({
         'src/server/**',
         'src/ClientApplication.tsx',
         'src/types.ts',
+        // Design studies render fictional fixtures; their Playwright specs cover them.
+        'src/design/**',
       ],
       thresholds: {
         statements: 85,
