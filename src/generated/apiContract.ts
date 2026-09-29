@@ -261,7 +261,7 @@ export const CARRIER_CAPABILITIES = {
     "displayName": "PostNL",
     "color": "#ef7d00",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Europe/Amsterdam",
     "tracking": {
       "mode": "automatic",
       "adapter": "spring-gds"
@@ -4048,6 +4048,7 @@ export interface ApiPackageRow {
   "original_tracking_number"?: string | null;
   "original_tracking_url"?: string | null;
   "tracking_provider"?: string | null;
+  "carrier_answered"?: boolean | null;
   "auto_changed_from"?: ApiCarrierId | null;
   "auto_changed_to"?: ApiCarrierId | null;
   "auto_changed_at"?: string | null;

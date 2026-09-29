@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   calendarDay, countryTimeZone, epochMillisTime, epochSecondsTime, explicitOffsetTime, isoTime, mislabeledLocalTime,
-  mislabeledWallTime, sharedClockZone, zonedTime,
+  mislabeledWallTime, settleGuessedClocks, sharedClockZone, zonedTime,
 } from './index';
 
 describe('time policies', () => {
@@ -60,6 +60,26 @@ describe('time policies', () => {
     expect(sharedClockZone(['Europe/Zurich'], 'not a date')).toBeNull();
     // An instant is the same everywhere: that is not a shared clock.
     expect(sharedClockZone(['Europe/Zurich', 'Europe/London'], '2026-06-10T14:05:00Z')).toBeNull();
+  });
+
+  it('keeps a guessed clock only if it fits the feed order and the lookup time', () => {
+    const at = (iso: string) => explicitOffsetTime(iso)!;
+    const readAt = Date.parse('2026-09-10T12:00:00Z');
+    // Newest first: a known scan, a guess between two known scans, a guess below the last one.
+    const settled = settleGuessedClocks([
+      { known: at('2026-09-10T10:00:00Z') },
+      { guesses: [at('2026-09-10T11:00:00Z'), at('2026-09-10T09:00:00Z')] },
+      { known: at('2026-09-10T08:00:00Z') },
+      { guesses: [at('2026-09-10T07:00:00+02:00')] },
+      { guesses: [null] },
+    ], readAt);
+    // The first guess would be newer than the scan listed above it; the second fits.
+    expect(settled.map((time) => time?.iso ?? null)).toEqual([
+      '2026-09-10T10:00:00Z', '2026-09-10T09:00:00Z', '2026-09-10T08:00:00Z', '2026-09-10T07:00:00+02:00', null,
+    ]);
+    // Nothing known around it: only the lookup bounds a guess, with an hour of skew.
+    expect(settleGuessedClocks([{ guesses: [at('2026-09-10T13:00:00Z')] }], readAt)[0]?.iso).toBe('2026-09-10T13:00:00Z');
+    expect(settleGuessedClocks([{ guesses: [at('2026-09-10T13:00:01Z')] }], readAt)[0]).toBeNull();
   });
 
   it('maps single-zone countries by code or English name only', () => {

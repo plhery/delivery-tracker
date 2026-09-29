@@ -21,7 +21,7 @@ import type { AdapterFactory, TrackingContext } from '../../core/adapter';
 import { DateTime } from 'luxon';
 import { IndeterminateError, NotFoundError, SchemaError, TransportError, UpstreamHttpError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
-import { countryTimeZone, mislabeledWallTime } from '../../core/time';
+import { countryTimeZone, explicitOffsetTime, mislabeledWallTime, settleGuessedClocks, type FeedClock, type ParsedTime } from '../../core/time';
 import { fetchBounded, parseJsonBytes } from '../../core/transport';
 import { isRecord, type JsonObject } from '../../core/types';
 import { postNLStatus } from './status';
@@ -34,6 +34,11 @@ const TRACK_TIMEOUT_MS = 15_000;
 const LOOKUP_TIMEOUT_MS = 25_000;
 const MAX_TOKEN_LENGTH = 16_384;
 const NOT_FOUND_MESSAGE = /barcode was not found/i;
+// PostNL's own records (the pre-advice, the shipper's data) name no country and
+// keep Amsterdam time. See this folder's README for the evidence.
+const HOME_ZONE = 'Europe/Amsterdam';
+// Customs and bagging records carry seven fraction digits and a real "Z".
+const PRECISE_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{4,7}Z$/;
 const BASE_HEADERS = {
   Accept: 'application/json, text/plain, */*',
   'Accept-Language': 'en-US,en;q=0.9',
@@ -62,34 +67,40 @@ function comparableIdentifier(value: unknown): string {
   return text(value).trim().toLocaleUpperCase('en-US');
 }
 
+/** A wall clock read in `zone`, refusing DST gap shifts and repeated clocks rather than choosing an offset. */
+function wallInZone(wall: string, zone: string): ParsedTime | null {
+  const parsed = DateTime.fromISO(wall, { zone });
+  if (!parsed.isValid || parsed.toISO({ includeOffset: false }) !== wall || parsed.getPossibleOffsets().length !== 1) return null;
+  const iso = parsed.toISO({ suppressMilliseconds: true });
+  return iso ? { iso, timestamp: parsed.toMillis() } : null;
+}
+
+type ScanClock = FeedClock & { local_time?: string; provider_time_text?: string };
+
 /**
  * `datetime_local` is the scan's local time although PostNL appends "Z": a
- * Swiss scan at 09:15 local arrives as "09:15Z". Each event names its
- * country; unresolved clocks stay separate from scan instants.
+ * Swiss scan at 09:15 local arrives as "09:15Z". Each scan names its country,
+ * except PostNL's own records: their Amsterdam reading is a guess, kept only
+ * where it fits among the dated scans around it.
  */
-function eventTime(event: JsonObject): { time?: string; local_time?: string; provider_time_text?: string } {
+function scanClock(event: JsonObject): ScanClock {
   const raw = text(event.datetime_local).trim().slice(0, 64);
   if (!raw) return {};
+  if (PRECISE_UTC.test(raw)) return { known: explicitOffsetTime(raw), provider_time_text: raw };
   // The observed local-clock quirk uses Z. An unexpected nonzero offset
   // cannot be converted to UTC digits and assigned a second country offset.
   const wall = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]00:?00)?$/.test(raw) ? mislabeledWallTime(raw) : null;
   if (!wall) return { provider_time_text: raw };
-  const country = text(event.country_code).trim();
-  const zone = country ? countryTimeZone(country) : countryTimeZone(text(event.country_name));
+  const local = { local_time: wall.replace(/\.000$/, '') };
+  const country = text(event.country_code).trim() || text(event.country_name).trim();
+  if (!country) return { ...local, guesses: [wallInZone(wall, HOME_ZONE)] };
+  const zone = countryTimeZone(country);
   // A country alone cannot distinguish mainland clocks from island clocks.
-  if (zone && !['Europe/Madrid', 'Europe/Lisbon'].includes(zone)) {
-    const parsed = DateTime.fromISO(wall, { zone });
-    // Reject DST gap shifts and repeated clocks rather than choosing an offset.
-    if (parsed.isValid && parsed.toISO({ includeOffset: false }) === wall && parsed.getPossibleOffsets().length === 1) {
-      const time = parsed.toISO({ suppressMilliseconds: true });
-      if (time) return { time };
-    }
-  }
-  return { local_time: wall.replace(/\.000$/, '') };
+  return zone && !['Europe/Madrid', 'Europe/Lisbon'].includes(zone) ? { ...local, known: wallInZone(wall, zone) } : local;
 }
 
 /** Projects one `tracking-items` payload. Pure: the offline tests target this. */
-export function parsePostNLTrackingResponse(value: unknown, trackingNumber: string): CarrierResult {
+export function parsePostNLTrackingResponse(value: unknown, trackingNumber: string, readAt = new Date()): CarrierResult {
   const payload = record(value);
   const rawItems = record(payload.data).items;
   if (!Array.isArray(rawItems)) {
@@ -122,10 +133,13 @@ export function parsePostNLTrackingResponse(value: unknown, trackingNumber: stri
     throw new NotFoundError(PROVIDER);
   }
   if (rawEvents.length === 0) throw new IndeterminateError(PROVIDER);
-  const events = rawEvents.slice(0, 100).map((event): CarrierEvent => {
+  const clocks = rawEvents.slice(0, 100).map(scanClock);
+  const times = settleGuessedClocks(clocks, readAt.getTime());
+  const events = rawEvents.slice(0, 100).map((event, index): CarrierEvent => {
     const classified = postNLStatus(event.category, event.status_description);
+    const { local_time, provider_time_text } = clocks[index]!;
     return {
-      ...eventTime(event),
+      ...(times[index] ? { time: times[index]!.iso } : local_time ? { local_time } : provider_time_text ? { provider_time_text } : {}),
       location: (text(event.country_name) || text(event.country_code)).slice(0, 200),
       description: (text(event.status_description) || text(event.category)).slice(0, 500),
       ...(classified ? { stage: classified.stage } : {}),
@@ -154,9 +168,11 @@ export function parsePostNLTrackingResponse(value: unknown, trackingNumber: stri
 
 export class PostNLTracker {
   private readonly fetcher: typeof fetch | undefined;
+  private readonly now: () => Date;
 
-  constructor(options: { fetcher?: typeof fetch } = {}) {
+  constructor(options: { fetcher?: typeof fetch; now?: () => Date } = {}) {
     this.fetcher = options.fetcher;
+    this.now = options.now ?? (() => new Date());
   }
 
   /** A fresh visitor token per lookup: it is short-lived and keyless. */
@@ -203,7 +219,7 @@ export class PostNLTracker {
         },
       );
       signal.throwIfAborted();
-      return parsePostNLTrackingResponse(parseJsonBytes(bytes, 'PostNL tracking'), trackingNumber);
+      return parsePostNLTrackingResponse(parseJsonBytes(bytes, 'PostNL tracking'), trackingNumber, this.now());
     } catch (error) {
       if (error instanceof UpstreamHttpError && [404, 410].includes(error.status)) {
         throw new TransportError(PROVIDER, 'PostNL tracking endpoint is unavailable', { cause: error });

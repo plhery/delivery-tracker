@@ -266,7 +266,7 @@
       "displayName": "PostNL",
       "color": "#ef7d00",
       "selectable": true,
-      "timezone": "UTC",
+      "timezone": "Europe/Amsterdam",
       "tracking": {
         "mode": "automatic",
         "adapter": "spring-gds"
@@ -5563,6 +5563,13 @@
                   "null"
                 ],
                 "description": "Universal provider that supplied the displayed tracking result, cleared on direct recovery."
+              },
+              "carrier_answered": {
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "The parcel's own carrier answered the same check, but its newest scan had no time zone, so a universal provider supplied the result. Links still go to the carrier."
               },
               "auto_changed_from": {
                 "anyOf": [

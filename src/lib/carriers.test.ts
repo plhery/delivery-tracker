@@ -2038,6 +2038,12 @@ describe('links follow successful tracking retrieval', () => {
     expect(link.url).toBe(expected);
     expect(link.role).toBe('active');
   });
+  it('keeps the carrier link when the carrier answered the same check', () => {
+    const links = parcelTrackingLinks({ carrier: 'spring-gds', trackingNumber: 'LX123456785NL',
+      trackingProvider: 'Ship24', carrierAnswered: true }, 'fr');
+    expect(links.map(({ name, role }) => [name, role])).toEqual([['PostNL', 'active']]);
+    expect(links[0].url).toContain('postnl.post');
+  });
   it('uses the local number at the working universal and preserves the original journey', () => {
     const links = parcelTrackingLinks({ carrier: 'dhl', trackingNumber: 'ORIGIN1234',
       trackingSource: 'swiss-post', activeTrackingNumber: 'LOCAL1234', trackingProvider: 'Ship24',

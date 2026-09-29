@@ -551,7 +551,8 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         let lookupNumber = parcel.carrierData?.originalCarrier != nil && parcel.carrierData?.activeTrackingCarrier != nil
             ? parcel.carrierData?.activeTrackingNumber?.nonEmpty ?? parcel.trackingNumber : parcel.trackingNumber
         let number = Self.urlEncode(lookupNumber)
-        guard let provider = parcel.carrierData?.trackingProvider else { return links }
+        // A carrier that answered the same check keeps the link, even when its clock sent the result elsewhere.
+        guard let provider = parcel.carrierData?.trackingProvider, parcel.carrierData?.carrierAnswered != true else { return links }
         let raw: String
         switch provider {
         case "17TRACK": raw = "https://t.17track.net/en#nums=\(number)"

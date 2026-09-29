@@ -802,6 +802,7 @@ struct CarrierData: Codable, Equatable, Hashable, Sendable {
     var originalTrackingNumber: String? = nil
     var originalTrackingURL: String? = nil
     var trackingProvider: String? = nil
+    var carrierAnswered: Bool? = nil
     var autoChangedFrom: CarrierID? = nil
     var autoChangedTo: CarrierID? = nil
     var autoChangedAt: String? = nil
@@ -824,6 +825,7 @@ struct CarrierData: Codable, Equatable, Hashable, Sendable {
         case originalTrackingNumber
         case originalTrackingURL = "originalTrackingUrl"
         case trackingProvider
+        case carrierAnswered
         case autoChangedFrom
         case autoChangedTo
         case autoChangedAt

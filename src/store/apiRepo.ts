@@ -136,6 +136,7 @@ function toParcel(row: ApiPackageRow): ParcelWithEvents {
     dpdPostcode: row.dpd_postcode ?? undefined,
     dpdPostcodeVerified: row.carrier_data?.dpd_postcode_verified ?? undefined,
     trackingProvider: row.carrier_data?.tracking_provider ?? undefined,
+    carrierAnswered: row.carrier_data?.carrier_answered ?? undefined,
     trackingSource: row.carrier_data?.active_tracking_carrier ?? undefined,
     activeTrackingNumber: row.carrier_data?.active_tracking_number ?? undefined,
     swissPostReady: row.carrier_data?.swiss_post_ready ?? undefined,

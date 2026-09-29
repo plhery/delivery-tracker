@@ -102,6 +102,41 @@ export function sharedClockZone(zones: readonly string[], wallIso: string): stri
   return instants.every((instant) => instant.isValid && instant.toMillis() === first) ? zones[0]! : null;
 }
 
+/** A scan's instant when the feed states it, else the readings its clock may have, likeliest first. */
+export interface FeedClock {
+  known?: ParsedTime | null;
+  guesses?: readonly (ParsedTime | null)[];
+}
+
+// Some scanners run early; the host flags a scan only past the same hour.
+const CLOCK_SKEW_MS = 3_600_000;
+
+/**
+ * Settles guessed clocks against the feed itself, given newest first. A guess
+ * stands only if it is not after the lookup (`readAt`, give or take an hour of
+ * skew) and keeps the feed's order: not after the nearest newer scan with a
+ * known instant, not before the nearest older one. Each scan gets its known
+ * instant or its first guess that stands; null when none does.
+ */
+export function settleGuessedClocks(scans: readonly FeedClock[], readAt: number): (ParsedTime | null)[] {
+  const known = scans.map((scan) => scan.known ?? null);
+  const nearest = (from: number, step: number): number | undefined => {
+    for (let index = from; index >= 0 && index < known.length; index += step) {
+      if (known[index]) return known[index]!.timestamp;
+    }
+    return undefined;
+  };
+  return scans.map((scan, index) => {
+    if (scan.known) return scan.known;
+    const newer = nearest(index - 1, -1);
+    const older = nearest(index + 1, 1);
+    return scan.guesses?.find((guess): guess is ParsedTime => Boolean(guess)
+      && guess!.timestamp <= readAt + CLOCK_SKEW_MS
+      && (newer === undefined || guess!.timestamp <= newer)
+      && (older === undefined || guess!.timestamp >= older)) ?? null;
+  });
+}
+
 // Countries that keep one civil time. Spain and Portugal use their mainland
 // zone (their islands differ by an hour). Countries spanning several zones
 // (US, CA, BR, RU, AU, MX, ID...) are absent: they need a finer location.

@@ -163,7 +163,7 @@ export function parcelTrackingLinks(
   const links = carrierTrackingLinks(parcel, locale);
   const number = encodeURIComponent(parcel.originalCarrier && parcel.trackingSource
     ? parcel.activeTrackingNumber ?? parcel.trackingNumber : parcel.trackingNumber);
-  const provider = parcel.trackingProvider;
+  const provider = parcel.carrierAnswered ? undefined : parcel.trackingProvider;
   const url = provider === '17TRACK' ? `https://t.17track.net/en#nums=${number}`
     : provider === 'ParcelsApp' ? `https://parcelsapp.com/en/tracking/${number}`
     : provider === 'Ship24' ? `https://www.ship24.com/tracking?p=${number}`
@@ -185,6 +185,7 @@ function carrierTrackingLinks(
     | 'trackingUrl'
     | 'trackingSource'
     | 'trackingProvider'
+    | 'carrierAnswered'
     | 'activeTrackingNumber'
     | 'swissPostReady'
     | 'originalCarrier'

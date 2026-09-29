@@ -541,6 +541,8 @@ export class TrackingRouter {
       if (localDirectFallback || !state.direct_retry_at) state.direct_retry_at = iso(now().getTime() + 6 * HOUR);
       state.last_probe_at ??= now().toISOString();
       state.discovery_cursor = 0;
+      // The carrier answered too: only its clock sent the result elsewhere, so links stay with it.
+      if (localDirectFallback) value.result = { ...value.result, carrier_answered: true };
       return persistResult(value, chosen);
     }
     if (localDirectFallback) {

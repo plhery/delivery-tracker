@@ -261,7 +261,7 @@ export const CARRIER_CATALOG = {
     "displayName": "PostNL",
     "color": "#ef7d00",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Europe/Amsterdam",
     "tracking": {
       "mode": "automatic",
       "adapter": "spring-gds"

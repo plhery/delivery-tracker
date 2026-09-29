@@ -29,11 +29,17 @@ native catalog all carry it; everything user-facing says PostNL.
   path to get wrong.
 - `datetime_local` is the scan's local time even though PostNL appends `Z`. Each scan is
   re-read in the zone of its own `country_code`. Countries spanning several zones (US, CA,
-  BR…), Spain and Portugal's mainland/island clocks, missing countries and ambiguous
-  daylight-saving clocks retain `local_time`.
-  Invalid date text and unexpected nonzero offsets remain separate. The host
-  archives these rows and asks providers for dated progress when the current clock
+  BR…), Spain and Portugal's mainland/island clocks and ambiguous daylight-saving clocks
+  retain `local_time`. Invalid date text and unexpected nonzero offsets remain separate. The
+  host archives these rows and asks providers for dated progress when the current clock
   cannot be resolved.
+- Scans without a country are PostNL's own records (pre-advice, the shipper's data) and are
+  read on Amsterdam time. Only that reading keeps them in PostNL's newest-first order among
+  the customs stamps of a delivered parcel, and Swiss Post's copy of a pre-advice shows the
+  same clock as `+02:00`. It stays a guess: it is dropped when it breaks the order of the
+  dated scans around it or lands after the lookup.
+- Stamps with seven fraction digits (customs, bagging) carry a real `Z`: read as local
+  times, they would break the list's order.
 - Categories supply the status, with one precise English refinement: "The item is out
   for delivery" distinguishes delivery from other `Processing` scans. Unknown categories
   leave the event unstaged and the shipment status unknown.

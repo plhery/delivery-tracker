@@ -181,20 +181,25 @@ the sync when it checks whether a returned summary is older than the watermark.
 
 ## Direct histories without complete timestamps
 
-Some direct feeds omit scan clocks, offsets or the event year. The router keeps their bounded
-history separately, including return-leg and summary markers. When the current status has no
-complete timestamp, it tries providers for dated progress. If providers cannot help,
-the direct current status remains available without advancing the freshness watermark.
-An unresolved direct lookup cannot displace a carrier already confirmed by dated progress.
-The sync preserves richer saved progress and records status changes as observations,
-keeping observation time distinct from a carrier scan time.
+Some direct feeds omit scan clocks, offsets or the event year. An adapter may guess a clock
+it knows the feed uses, such as PostNL's own records on Amsterdam time. The guess stands
+only if it fits between the feed's dated scans and isn't after the lookup
+([`settleGuessedClocks`](../packages/carriers/core/time/index.ts)). The router keeps
+histories that are still incomplete separately, including return-leg and summary markers.
+When the current status has no complete timestamp, it tries providers for dated progress. If
+providers cannot help, the direct current status remains available without advancing the
+freshness watermark. An unresolved direct lookup cannot displace a carrier already confirmed
+by dated progress. The sync preserves richer saved progress and records status changes as
+observations, keeping observation time distinct from a carrier scan time.
 
 ## Tracking links
 
 The link shown in the app follows `tracking_provider` of the result on screen: a 17TRACK,
 ParcelsApp or Ship24 result links to that provider with the lookup number. Direct recovery
-restores the carrier link. Postal Ninja and UPU link to their public forms. No deep links
-are guessed.
+restores the carrier link. When the carrier's own lookup answered the same check and only its
+missing clock sent the result elsewhere, the result is marked `carrier_answered` and the link
+stays with the carrier. Postal Ninja and UPU link to their public forms. No deep links are
+guessed.
 
 ## Shared provider protection
 

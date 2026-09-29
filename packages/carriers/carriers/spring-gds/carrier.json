@@ -15,7 +15,7 @@
     "decal": "postnl"
   },
   "selectable": true,
-  "timezone": "UTC",
+  "timezone": "Europe/Amsterdam",
   "tracking": {
     "mode": "automatic",
     "adapter": "spring-gds",

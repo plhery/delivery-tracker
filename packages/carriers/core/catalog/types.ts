@@ -134,6 +134,8 @@ export interface TrackedParcel {
   /** Carrier currently supplying automatic updates for a multi-carrier journey. */
   trackingSource?: CarrierId;
   trackingProvider?: string;
+  /** The carrier answered the check the provider's result came from; links stay with the carrier. */
+  carrierAnswered?: boolean;
   activeTrackingNumber?: string;
   /** Whether Swiss Post has announced a Swiss-issued inbound shipment. */
   swissPostReady?: boolean;

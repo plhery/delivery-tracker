@@ -49,6 +49,12 @@ final class CarrierCatalogTests: XCTestCase {
         let recovered = try XCTUnwrap(catalog.trackingLinks(for: parcel, language: .fr).first)
         XCTAssertEqual(recovered.carrier, .ups)
         XCTAssertTrue(recovered.url.absoluteString.contains("ups.com"))
+        // The carrier answered the same check: its link stays, whoever supplied the result.
+        parcel.trackingURL = nil
+        parcel.carrierData = CarrierData(trackingProvider: "Ship24", carrierAnswered: true)
+        let answered = catalog.trackingLinks(for: parcel, language: .fr)
+        XCTAssertEqual(answered.map(\.carrier), [.dhl])
+        XCTAssertFalse(answered[0].url.absoluteString.contains("ship24"))
     }
 
     func testUniversalUsesLocalNumberAndKeepsOriginLink() throws {

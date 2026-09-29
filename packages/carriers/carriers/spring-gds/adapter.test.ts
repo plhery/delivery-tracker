@@ -288,7 +288,6 @@ describe('PostNL ambiguity and clock safety', () => {
     ['US', '2026-09-02T08:00:00Z', '2026-09-02T08:00:00'],
     ['ES', '2026-09-02T08:00:00Z', '2026-09-02T08:00:00'],
     ['PT', '2026-09-02T08:00:00Z', '2026-09-02T08:00:00'],
-    ['', '2026-09-02T08:00:00Z', '2026-09-02T08:00:00'],
     ['NL', '2026-03-29T02:30:00Z', '2026-03-29T02:30:00'],
     ['NL', '2026-10-25T02:30:00Z', '2026-10-25T02:30:00'],
   ])('retains unresolved local digits for %s / %s without a delivery instant', (country_code, datetime_local, local_time) => {
@@ -302,6 +301,38 @@ describe('PostNL ambiguity and clock safety', () => {
     expect(result.last_update).toBeNull();
     expect(result.last_update_local).toBe(local_time);
     expect(result.delivered_at).toBeUndefined();
+  });
+
+  it('reads PostNL\'s own records on Amsterdam time and precise customs stamps as UTC', () => {
+    // Newest first, as PostNL lists them: only these readings keep that order.
+    const result = parsePostNLTrackingResponse(payload([
+      { category: 'Transit', country_code: 'NL', datetime_local: '2026-03-11T19:29:53.2942876Z', status_description: 'Item is nested to commercial bag' },
+      { category: 'Transit', country_code: 'NL', datetime_local: '2026-03-11T19:49:00Z', status_description: 'Consignment received at the PostNL Acceptance Centre' },
+      { category: 'Transit', country_code: 'NL', datetime_local: '2026-03-05T11:14:24.1629877Z', status_description: 'Pre-declaration of the item has been received by customs' },
+      { category: 'Preparing', country_code: null, datetime_local: '2026-03-05T12:01:00Z', status_description: 'The item is ready for shipment' },
+      { category: 'Pre-advised', country_code: null, datetime_local: '2026-03-05T10:01:00Z', status_description: 'The item is pre-advised to PostNL' },
+    ]), number);
+    expect(result.events?.map((event) => event.time)).toEqual([
+      '2026-03-11T19:29:53.294Z', '2026-03-11T19:49:00+01:00', '2026-03-05T11:14:24.162Z',
+      '2026-03-05T12:01:00+01:00', '2026-03-05T10:01:00+01:00',
+    ]);
+    // Summer time, with nothing dated around it.
+    const summer = parsePostNLTrackingResponse(payload([
+      { category: 'Pre-advised', country_code: '', country_name: null, datetime_local: '2026-09-14T15:20:00Z' },
+    ]), number);
+    expect(summer).toMatchObject({ last_update: '2026-09-14T15:20:00+02:00', current_stage: 'registered' });
+  });
+
+  it.each([
+    ['one of its dated neighbours', '2026-03-05T12:30:00Z', new Date('2026-03-12T00:00:00Z')],
+    ['the lookup, beyond an hour of clock skew', '2026-03-05T12:01:00Z', new Date('2026-03-05T09:59:00Z')],
+  ])('keeps a record local when its Amsterdam reading contradicts %s', (_label, datetime_local, readAt) => {
+    const result = parsePostNLTrackingResponse(payload([
+      { category: 'Transit', country_code: 'NL', datetime_local: '2026-03-05T11:14:24.1629877Z' },
+      { category: 'Preparing', country_code: null, datetime_local },
+    ]), number, readAt);
+    expect(result.events?.[1]).toMatchObject({ local_time: datetime_local.slice(0, 19) });
+    expect(result.events?.[1]).not.toHaveProperty('time');
   });
 
   it('keeps malformed current clock text separate from older dated scans', () => {

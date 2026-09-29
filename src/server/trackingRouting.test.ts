@@ -610,6 +610,18 @@ describe('persistent tracking routing', () => {
     expect(coverage()).toEqual([]);
   });
 
+  it('marks a universal result the carrier answered too, without a time zone for its newest scan', async () => {
+    const { router, direct } = setup();
+    direct.mockResolvedValue(yearlessYamato());
+    const answered = await router.fetch(parcel({ carrier: 'yamato', tracking_number: '123456789012' }), false);
+    expect(answered.result).toMatchObject({ tracking_provider: 'Ship24', carrier_answered: true });
+    // A carrier that failed did not answer.
+    const failed = setup();
+    failed.direct.mockRejectedValue(new Error('down'));
+    const fallback = await failed.router.fetch(parcel({ carrier: 'yamato', tracking_number: '123456789012' }), false);
+    expect(fallback.result.tracking_provider).toBe('Ship24');
+    expect(fallback.result).not.toHaveProperty('carrier_answered');
+  });
   it('ignores an older parcel of another carrier that a universal returns for a reused number', async () => {
     const { router, direct, universal } = setup();
     direct.mockResolvedValue(yearlessYamato());
