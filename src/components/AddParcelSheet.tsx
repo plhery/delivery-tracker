@@ -11,10 +11,11 @@ import {
   formatTrackingNumber,
   normalizeTrackingNumber,
   parseTrackingInput,
+  recognitionAskedCarriers,
   requirementSatisfied,
-  SELECTABLE_CARRIERS,
   tracksAutomatically,
 } from '../lib/carriers';
+import { carrierCheck } from '../lib/carrierPicker';
 import {
   ParcelAlreadyExistsError,
   type CarrierId,
@@ -23,6 +24,8 @@ import {
 import { useSheetDialog } from '../lib/modal';
 import { useI18n } from '../i18n';
 import { Icon } from './Icon';
+import { CarrierTruck } from './CarrierMark';
+import { CarrierPickerSheet, type CarrierPickerSection, type CarrierPickerTag } from './CarrierPickerSheet';
 import './AddParcelSheet.css';
 import { lookupCarrier } from '../lib/carrierDetection';
 import type { ApiAuth } from '../lib/apiClient';
@@ -52,6 +55,7 @@ export function AddParcelSheet({
   onOpenParcel,
   onAdded,
   apiAuth,
+  usedCarriers = [],
 }: {
   onAdd: (input: NewParcelInput) => Promise<{ id: string } | void>;
   onClose: () => void;
@@ -61,8 +65,10 @@ export function AddParcelSheet({
   initialLabel?: string;
   initialTrackingInput?: string;
   apiAuth?: ApiAuth;
+  /** The carriers of the latest parcels, offered first in the picker. */
+  usedCarriers?: readonly CarrierId[];
 }) {
-  const { locale, t } = useI18n();
+  const { locale, languageTag, t } = useI18n();
   const [label, setLabel] = useState(initialLabel);
   const [trackingInputValue, setTrackingInputValue] = useState(initialTrackingInput);
   // The input as it stood when typing last paused, or right after a paste.
@@ -83,7 +89,7 @@ export function AddParcelSheet({
     normalizeTrackingNumber(parseTrackingInput(initialTrackingInput).trackingNumber));
   const [recognition, setRecognition] = useState<ApiCarrierDetectionResponse>();
   const [lookupAttempt, setLookupAttempt] = useState(0);
-  const [showCarrierPicker, setShowCarrierPicker] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [existingParcelId, setExistingParcelId] = useState<string | null>(null);
@@ -154,16 +160,21 @@ export function AddParcelSheet({
   const shouldLookup = Boolean(apiAuth) && amazonNumber;
   const lookingUp = shouldLookup && verifiedCarrier?.trackingNumber !== normalizedNumber;
   const currentVerification = verifiedCarrier?.trackingNumber === normalizedNumber ? verifiedCarrier : undefined;
-  // A carrier picked by hand that the number cannot belong to (a forwarder
-  // such as Asendia for a DPD number) gets the same question, as a hint only.
-  const pickedElsewhere = selectedCarrier !== 'auto' && !parsedTracking.candidates.includes(selectedCarrier);
+  // The check keeps running when a carrier is picked by hand meanwhile: its
+  // answer then only says when another carrier has the parcel.
   const recognizable = Boolean(apiAuth) && !amazonNumber && parsedTracking.confidence === 'low'
-    && parsedTracking.carrier === 'unknown' && (selectedCarrier === 'auto' || pickedElsewhere);
-  const recognizing = recognizable && recognitionNumber === normalizedNumber && recognition?.trackingNumber !== normalizedNumber;
+    && parsedTracking.carrier === 'unknown';
+  const askedCarriers = (recognizable ? recognitionAskedCarriers(normalizedNumber) : []) as CarrierId[];
   const currentRecognition = recognizable && recognition?.trackingNumber === normalizedNumber ? recognition : undefined;
+  const check = carrierCheck({
+    applies: recognizable,
+    settled: recognitionNumber === normalizedNumber,
+    asked: askedCarriers,
+    answer: currentRecognition,
+  });
+  const recognizing = check.status === 'asking';
   // In automatic mode the answer selects the carrier; for a picked one it stays a hint.
-  const recognizedCarrier = selectedCarrier === 'auto' && currentRecognition?.carrier !== 'unknown' ? currentRecognition?.carrier : undefined;
-  const recognizedChoices = selectedCarrier === 'auto' ? currentRecognition?.recognized ?? [] : [];
+  const recognizedCarrier = selectedCarrier === 'auto' && check.status === 'found' ? check.carrier : undefined;
   const shippingConfirmed = amazonNumber && currentVerification?.carrier === 'amazon-shipping'
     && ['available', 'expired'].includes(currentVerification.amazonShippingStatus ?? '');
   const accountRequired = amazonNumber ? !shippingConfirmed : requiresAmazonAccount(selectedCarrier);
@@ -193,13 +204,16 @@ export function AddParcelSheet({
         if (!controller.signal.aborted) setRecognition(result);
       }).catch(() => {
         // No answer keeps the number a suggestion; the first sync asks again.
-        if (!controller.signal.aborted) setRecognition({ trackingNumber: normalizedNumber, carrier: 'unknown' });
+        const asked = recognitionAskedCarriers(normalizedNumber) as CarrierId[];
+        if (!controller.signal.aborted) {
+          setRecognition({ trackingNumber: normalizedNumber, carrier: 'unknown', ...(asked.length ? { asked, unanswered: asked } : {}) });
+        }
       });
     }, 200);
     return () => { clearTimeout(timer); controller.abort(); };
   }, [recognizable, recognitionNumber, normalizedNumber, apiAuth, saving]);
-  const knownElsewhere = pickedElsewhere && currentRecognition && currentRecognition.carrier !== 'unknown'
-    && currentRecognition.carrier !== selectedCarrier ? carrierInfo(currentRecognition.carrier, locale) : null;
+  const knownElsewhere = selectedCarrier !== 'auto' && check.status === 'found' && check.carrier !== selectedCarrier
+    ? carrierInfo(check.carrier, locale) : null;
   const carrier = trackingNumber ? carrierInfo(resolvedCarrier, locale) : null;
   const requirements = carrier ? carrierRequirements(carrier.id, trackingNumber) : [];
   const requiresCarrierConfirmation =
@@ -224,15 +238,55 @@ export function AddParcelSheet({
       })
       : t(carrierTrackingHintKey(carrier.id), { carrier: carrier.name })
     : '';
-  const recognitionHint = recognizing && selectedCarrier === 'auto' ? t('add.recognizing')
-    : recognizedCarrier ? t('add.recognized', { carrier: carrierInfo(recognizedCarrier, locale).name })
-      : recognizedChoices.length > 1 ? t('add.recognizedSeveral', {
-        carriers: recognizedChoices.map((choice) => carrierInfo(choice, locale).name).join(` ${t('auth.or')} `),
-      }) : '';
-  const carrierPickerVisible = !amazonNumber && Boolean(trackingNumber) && (
-    showCarrierPicker || recognizedChoices.length > 1
-    || (Boolean(settledTrackingNumber) && (requiresCarrierConfirmation || carrier?.id === 'unknown'))
-  );
+  const carrierNames = (ids: readonly CarrierId[]) => new Intl.ListFormat(languageTag, { type: 'conjunction' })
+    .format(ids.map((id) => carrierInfo(id, locale).name));
+  const automatic = selectedCarrier === 'auto';
+  // The carrier line under the number: the carrier once one is known, and
+  // otherwise what the carrier check has found so far.
+  const lineCarrier = carrier && carrier.id !== 'unknown' ? carrier : null;
+  const numberCarrier = parsedTracking.confidence === 'high' && parsedTracking.carrier !== 'unknown'
+    && parsedTracking.carrier !== 'intl-post' ? parsedTracking.carrier : undefined;
+  const lineDetail = !automatic ? t('add.line.chosen')
+    : check.status === 'found' ? t('add.line.found')
+      : amazonNumber || (lineCarrier && lineCarrier.id !== 'intl-post') ? t('add.detectedCarrier')
+        : check.status === 'asking' ? t('add.line.asking', { carriers: carrierNames(check.asked) })
+          : check.status === 'several' ? t('add.line.several', { carriers: carrierNames(check.carriers) })
+            : check.status === 'none' ? t('add.line.none')
+              : check.status === 'failed' ? t('add.line.failed')
+                : check.status === 'unasked' ? t('add.line.later') : '';
+  const choosing = automatic && (check.status === 'several' || requiresCarrierConfirmation);
+  // The picker leads with the carriers that fit the number, then the ones used before.
+  const fittingCarriers = (numberCarrier ? [numberCarrier] : parsedTracking.candidates)
+    .filter((id) => carrierInfo(id).capabilities.selectable);
+  const knowingCarriers = check.status === 'several' ? check.carriers : [];
+  const pickerSections: CarrierPickerSection[] = [
+    { key: 'known', title: t('picker.section.known'), carriers: knowingCarriers },
+    {
+      key: 'fits',
+      title: t(numberCarrier ? 'picker.section.detected' : 'picker.section.fits'),
+      carriers: fittingCarriers.filter((id) => !knowingCarriers.includes(id)),
+    },
+    {
+      key: 'used',
+      title: t('picker.section.used'),
+      carriers: usedCarriers.filter((id) => !knowingCarriers.includes(id) && !fittingCarriers.includes(id)),
+    },
+  ].filter((section) => section.carriers.length > 0);
+  const pickerTags: Partial<Record<CarrierId, CarrierPickerTag>> = {};
+  if (check.status === 'asking') {
+    for (const id of check.asked) pickerTags[id] = { label: t('picker.tag.asking'), tone: 'quiet' };
+  } else if (check.status === 'found') {
+    pickerTags[check.carrier] = { label: t('picker.tag.found'), tone: 'found' };
+  } else if (check.status === 'several') {
+    for (const id of check.carriers) pickerTags[id] = { label: t('picker.tag.knows'), tone: 'found' };
+  }
+  const autoDescription = check.status === 'asking' ? t('add.recognizing')
+    : check.status === 'found' ? t('add.recognized', { carrier: carrierInfo(check.carrier, locale).name })
+      : check.status === 'several' ? t('picker.auto.several', { carriers: carrierNames(check.carriers) })
+        : check.status === 'none' ? t('picker.auto.none', { carriers: carrierNames(check.asked) })
+          : check.status === 'failed' ? t('picker.auto.failed', { carriers: carrierNames(check.asked) })
+            : numberCarrier ? t('picker.auto.detected', { carrier: carrierInfo(numberCarrier, locale).name })
+              : t('picker.auto.later');
 
   // iPhone Safari scrolls the page to center every newly focused field above
   // the keyboard. That animated scroll drags this fixed sheet away from the
@@ -302,7 +356,7 @@ export function AddParcelSheet({
     }
   }
 
-  return createPortal(
+  return <>{createPortal(
     <div ref={backdrop} className="sheet-backdrop add-parcel-backdrop" onClick={onClose}>
       <div
         ref={dialog}
@@ -389,36 +443,38 @@ export function AddParcelSheet({
               )}
               {carrier && trackingNumber && (
                 <div className={`add-parcel-carrier${amazonNumber ? ' add-parcel-carrier--account' : ''}`} aria-live="polite" aria-busy={lookingUp || recognizing}>
-                  <div className="add-parcel-carrier__row">
-                    <Icon name="truck" />
-                    <span className="add-parcel-carrier__identity">
-                      <strong>{carrier.name}</strong>
-                      <small>{selectedCarrier === 'auto' && carrier.id !== 'intl-post' && carrier.id !== 'unknown'
-                        ? t('add.detectedCarrier')
-                        : t('add.carrier')}</small>
-                    </span>
-                    {!amazonNumber && !requiresCarrierConfirmation
-                      && (selectedCarrier !== 'auto' || detectedCarrier !== 'unknown') && (
-                      <button
-                        type="button"
-                        aria-expanded={carrierPickerVisible}
-                        onClick={() => setShowCarrierPicker((visible) => !visible)}
-                      >
-                        {carrierPickerVisible
-                          ? selectedCarrier === 'auto'
-                            ? t('add.useDetectedCarrier')
-                            : t('common.close')
-                          : t('add.changeCarrier')}
-                      </button>
-                    )}
-                  </div>
-                  {(recognitionHint || shippingConfirmed || requiresCarrierConfirmation || !tracksAutomatically(carrier.id)) && (
-                    <p className="add-parcel-carrier__hint">{recognitionHint || carrierHint}</p>
+                  {amazonNumber ? (
+                    <div className="add-parcel-carrier__line">
+                      {lineCarrier ? <CarrierTruck carrier={lineCarrier} /> : <span className="add-parcel-carrier__detect"><Icon name="detect" /></span>}
+                      <span className="add-parcel-carrier__identity">
+                        <strong>{carrier.name}</strong>{' '}
+                        <small>{lineDetail}</small>
+                      </span>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="add-parcel-carrier__line"
+                      aria-haspopup="dialog"
+                      onClick={() => setPickerOpen(true)}
+                    >
+                      {lineCarrier ? <CarrierTruck carrier={lineCarrier} /> : (
+                        <span className={`add-parcel-carrier__detect${recognizing && automatic ? ' is-busy' : ''}`}><Icon name="detect" /></span>
+                      )}
+                      <span className="add-parcel-carrier__identity">
+                        <strong>{lineCarrier?.name ?? t('add.detect')}</strong>{' '}
+                        {lineDetail && <small className={choosing ? 'is-attention' : undefined}>{lineDetail}</small>}
+                      </span>{' '}
+                      <span className="add-parcel-carrier__change">{t(choosing ? 'add.line.choose' : 'add.line.change')}</span>
+                    </button>
+                  )}
+                  {(shippingConfirmed || requiresCarrierConfirmation || !tracksAutomatically(carrier.id)) && (
+                    <p className="add-parcel-carrier__hint">{carrierHint}</p>
                   )}
                   {knownElsewhere && (
                     <div>
                       <p className="add-parcel-carrier__hint">{t('add.carrierKnownElsewhere', { carrier: knownElsewhere.name })}</p>
-                      <button type="button" className="add-parcel-carrier__account-link" onClick={() => { setSelectedCarrier(knownElsewhere.id); setShowCarrierPicker(false); }}>
+                      <button type="button" className="add-parcel-carrier__account-link" onClick={() => setSelectedCarrier(knownElsewhere.id)}>
                         {t('add.useCarrier', { carrier: knownElsewhere.name })}
                       </button>
                     </div>
@@ -435,23 +491,6 @@ export function AddParcelSheet({
                     </a>
                   )}
                 </div>
-              )}
-              {carrierPickerVisible && (
-                <label className="field">
-                  <span className="field__label">{t('add.carrier')}</span>
-                  <select
-                    className="field__input"
-                    value={selectedCarrier}
-                    onChange={(e) => setSelectedCarrier(e.target.value as CarrierId | 'auto')}
-                  >
-                    <option value="auto">{t('add.detect')}</option>
-                    {SELECTABLE_CARRIERS.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.name}{tracksAutomatically(option.id) || requiresAmazonAccount(option.id) ? '' : ` (${t('add.linkOnly')})`}
-                      </option>
-                    ))}
-                  </select>
-                </label>
               )}
               {requirements
                 .filter(({ field }) => field !== 'trackingUrl' || !parsedCarrierTrackingUrl)
@@ -569,5 +608,17 @@ export function AddParcelSheet({
       </div>
     </div>,
     document.body,
-  );
+  )}
+  {/* Outside the backdrop: a click in the picker must not reach the sheet's dismiss handler. */}
+  {pickerOpen && (
+    <CarrierPickerSheet
+      selected={selectedCarrier}
+      auto={{ description: autoDescription, recommended: !choosing, busy: recognizing }}
+      sections={pickerSections}
+      tags={pickerTags}
+      onSelect={(choice) => { setSelectedCarrier(choice); setPickerOpen(false); }}
+      onClose={() => setPickerOpen(false)}
+    />
+  )}
+  </>;
 }

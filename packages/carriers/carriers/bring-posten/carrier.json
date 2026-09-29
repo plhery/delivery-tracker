@@ -1,9 +1,17 @@
 {
   "id": "bring-posten",
   "displayName": "Bring",
-  "aliases": [],
+  "aliases": [
+    "Posten Norge",
+    "Posten Bring"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "NO",
+      "SE",
+      "DK",
+      "FI"
+    ]
   },
   "brand": {
     "color": "#56b529"

@@ -1,15 +1,15 @@
 import { CARRIER_DEFINITIONS, carrierTimezone } from './definitions';
 import { matchesDomain } from './linkRules';
 import { countryTimeZone } from '../time';
+import { NETWORK_BRANDS, carrierBrand } from './networks';
 import type { CarrierId } from '../../generated/catalog';
+
+export { carrierBrand };
 
 const key = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 // These brands have several regional/service adapters.
 const AMBIGUOUS_BRANDS = ['dhl', 'dpd', 'gls', 'hermes', 'post'];
-// Brands whose other networks keep the brand in front ("DHL Express", "GLS
-// Italy"). "post" is left out: it also starts unrelated names.
-const NETWORK_BRANDS = ['dhl', 'dpd', 'gls', 'hermes'];
 const NAME_ALIASES: Readonly<Record<string, string>> = {
   ups: 'ups', swisspost: 'swiss-post', laposte: 'la-poste', colissimo: 'la-poste',
   dhlecommerce: 'dhl-ecommerce', cainiao: 'aliexpress', postnl: 'spring-gds',
@@ -113,11 +113,6 @@ export function carrierNameCountryZone(name: string): string | null {
  * it and a dash. Empty for other names. The name alone cannot say which
  * network it means; only the tracking number can narrow it.
  */
-/** The multi-network brand a catalog carrier belongs to ("dpd" for `dpd-fr`), if any. */
-export function carrierBrand(id: string): string | undefined {
-  return NETWORK_BRANDS.find((brand) => id === brand || id.startsWith(`${brand}-`));
-}
-
 export function brandCarrierIds(name: string): string[] {
   const normalized = key(name);
   const brand = NETWORK_BRANDS.find((candidate) => normalized === candidate || normalized === `${candidate}group`);

@@ -38,14 +38,14 @@ describe('Add parcel feedback while typing', () => {
     expect(screen.getByText(notFound)).toBeInTheDocument();
   });
 
-  it('offers the carrier picker for an unrecognized number once typing pauses', () => {
+  it('leaves an unrecognized number to automatic detection, with the picker one tap away', () => {
     const tracking = renderSheet();
 
     fireEvent.change(tracking, { target: { value: 'ZZ1234' } });
-    expect(screen.getByText('Unknown carrier')).toBeInTheDocument();
-    expect(screen.queryByRole('combobox', { name: 'Carrier' })).not.toBeInTheDocument();
+    const line = screen.getByRole('button', { name: /^Detect automatically/ });
+    expect(screen.queryByRole('dialog', { name: 'Carrier' })).not.toBeInTheDocument();
 
-    act(() => vi.advanceTimersByTime(800));
-    expect(screen.getByRole('combobox', { name: 'Carrier' })).toBeInTheDocument();
+    fireEvent.click(line);
+    expect(screen.getByRole('dialog', { name: 'Carrier' })).toBeInTheDocument();
   });
 });

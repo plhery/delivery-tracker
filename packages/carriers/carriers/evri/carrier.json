@@ -1,9 +1,13 @@
 {
   "id": "evri",
   "displayName": "Evri",
-  "aliases": [],
+  "aliases": [
+    "Hermes UK"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "GB"
+    ]
   },
   "brand": {
     "color": "#00014d",

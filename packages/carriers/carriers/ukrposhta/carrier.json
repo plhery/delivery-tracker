@@ -3,7 +3,9 @@
   "displayName": "Ukrposhta",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "UA"
+    ]
   },
   "brand": {
     "color": "#ffbe0c",

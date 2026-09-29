@@ -3,7 +3,9 @@
   "displayName": "Purolator",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "CA"
+    ]
   },
   "brand": {
     "color": "#da291c"

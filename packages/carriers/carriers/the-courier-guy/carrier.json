@@ -3,7 +3,9 @@
   "displayName": "The Courier Guy",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "ZA"
+    ]
   },
   "brand": {
     "color": "#264796"

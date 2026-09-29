@@ -5,7 +5,9 @@
     "Delivengo Easy"
   ],
   "region": {
-    "countries": []
+    "countries": [
+      "FR"
+    ]
   },
   "brand": {
     "color": "#ffcf00"

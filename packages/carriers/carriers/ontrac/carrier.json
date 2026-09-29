@@ -3,7 +3,9 @@
   "displayName": "OnTrac",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "US"
+    ]
   },
   "brand": {
     "color": "#cc2027"

@@ -3,7 +3,9 @@
   "displayName": "SpeedX",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "US"
+    ]
   },
   "brand": {
     "color": "#1aa3ff"

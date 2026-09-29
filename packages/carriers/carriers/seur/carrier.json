@@ -3,7 +3,10 @@
   "displayName": "SEUR",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "ES",
+      "PT"
+    ]
   },
   "brand": {
     "color": "#0063b3"

@@ -3,7 +3,9 @@
   "displayName": "ZTO Express",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "CN"
+    ]
   },
   "brand": {
     "color": "#0279ff"

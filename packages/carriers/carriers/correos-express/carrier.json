@@ -3,7 +3,10 @@
   "displayName": "Correos Express",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "ES",
+      "PT"
+    ]
   },
   "brand": {
     "color": "#ffcd00",

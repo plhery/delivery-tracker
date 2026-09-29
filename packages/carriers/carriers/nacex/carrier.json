@@ -3,7 +3,11 @@
   "displayName": "NACEX",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "ES",
+      "PT",
+      "AD"
+    ]
   },
   "brand": {
     "color": "#fe5000"

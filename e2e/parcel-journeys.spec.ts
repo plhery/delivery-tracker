@@ -118,12 +118,12 @@ test('adds a parcel from tracking text', async ({ page }) => {
   await expect(burst).toHaveCount(0);
 });
 
-test('accepts a Swiss postcode for GLS Germany and labels unknown carriers', async ({ page }) => {
+test('accepts a Swiss postcode for GLS Germany and leaves unknown carriers to detection', async ({ page }) => {
   await page.getByRole('button', { name: 'Add a parcel' }).click();
   const sheet = page.getByRole('dialog', { name: 'Add a parcel' });
   await sheet.getByLabel(/^Name/).fill('Cross-border GLS parcel');
   await sheet.getByLabel('Tracking number or link').fill('123456789018');
-  await expect(sheet.getByText('Unknown carrier', { exact: true })).toBeVisible();
+  await expect(sheet.getByRole('button', { name: /^Detect automatically/ })).toBeVisible();
   await sheet.getByLabel('Tracking number or link').fill('https://gls-group.eu/DE/de/paketverfolgung?match=123456789018');
   await expect(sheet.getByText('GLS Germany', { exact: true })).toBeVisible();
   const add = sheet.getByRole('button', { name: 'Add parcel' });
@@ -278,9 +278,16 @@ test('navigates nested carrier dialogs entirely by keyboard', async ({ page }) =
   const changeCarrier = detail.getByRole('button', { name: 'Change carrier from DHL' });
   await changeCarrier.click();
   const sheet = page.getByRole('dialog', { name: 'Change carrier' });
-  const carrier = sheet.getByRole('combobox', { name: 'Carrier' });
+  const carrier = sheet.getByRole('button', { name: /^Carrier / });
   await expect(carrier).toBeFocused();
-  await carrier.selectOption('dpd');
+  await expect(carrier).toHaveAccessibleName('Carrier DHL');
+  await page.keyboard.press('Enter');
+  const picker = page.getByRole('dialog', { name: 'Carrier', exact: true });
+  await picker.getByRole('combobox', { name: 'Search carriers' }).fill('DPD');
+  await picker.getByRole('option', { name: 'DPD', exact: true }).click();
+  await expect(picker).toBeHidden();
+  await expect(carrier).toBeFocused();
+  await expect(carrier).toHaveAccessibleName('Carrier DPD');
   await page.keyboard.press('Tab');
   const postcode = sheet.getByLabel(/postcode/i);
   await expect(postcode).toBeFocused();

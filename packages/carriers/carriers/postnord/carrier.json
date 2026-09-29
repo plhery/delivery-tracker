@@ -3,7 +3,12 @@
   "displayName": "PostNord",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "SE",
+      "DK",
+      "NO",
+      "FI"
+    ]
   },
   "brand": {
     "color": "#00a0d6"

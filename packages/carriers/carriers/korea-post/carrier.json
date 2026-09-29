@@ -3,7 +3,9 @@
   "displayName": "Korea Post",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "KR"
+    ]
   },
   "brand": {
     "color": "#da291c"

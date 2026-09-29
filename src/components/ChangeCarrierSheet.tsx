@@ -1,15 +1,14 @@
 import { userErrorMessage } from '../lib/userMessages';
-import { useRef, useState, type FormEvent } from 'react';
+import { useId, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import {
   type CarrierInputField,
   carrierInfo,
   carrierRequirements,
   carrierTrackingHintKey,
+  detectCarrierMatch,
   formatTrackingNumber,
   requirementSatisfied,
-  SELECTABLE_CARRIERS,
-  tracksAutomatically,
 } from '../lib/carriers';
 import { useI18n } from '../i18n';
 import { useSheetDialog } from '../lib/modal';
@@ -18,16 +17,22 @@ import type {
   ParcelCarrierInput,
   ParcelWithEvents,
 } from '../types';
+import { CarrierTruck } from './CarrierMark';
+import { CarrierPickerSheet, type CarrierPickerSection } from './CarrierPickerSheet';
+import { Icon } from './Icon';
 
 export function ChangeCarrierSheet({
   parcel,
   initialCarrier = parcel.carrier,
+  usedCarriers = [],
   onChange,
   onClose: onDismissed,
 }: {
   parcel: ParcelWithEvents;
   /** Preselected carrier, such as one that recognized the number and needs a postcode. */
   initialCarrier?: CarrierId;
+  /** The carriers of the latest parcels, offered first in the picker. */
+  usedCarriers?: readonly CarrierId[];
   onChange: (input: ParcelCarrierInput) => Promise<unknown>;
   onClose: () => void;
 }) {
@@ -37,9 +42,23 @@ export function ChangeCarrierSheet({
   const [dpdPostcode, setDpdPostcode] = useState(initialCarrier === parcel.carrier ? parcel.dpdPostcode ?? '' : '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const carrierSelect = useRef<HTMLSelectElement>(null);
-  const [dialog, onClose] = useSheetDialog<HTMLDivElement>(true, onDismissed, carrierSelect);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const carrierButton = useRef<HTMLButtonElement>(null);
+  const fieldId = useId();
+  const [dialog, onClose] = useSheetDialog<HTMLDivElement>(true, onDismissed, carrierButton);
   const carrier = carrierInfo(selectedCarrier, locale);
+  // The picker leads with the parcel's own carrier when no longer offered,
+  // then the carriers its number fits, then the ones used before.
+  const detected = detectCarrierMatch(parcel.trackingNumber);
+  const fitting = (detected.confidence === 'high' ? [detected.carrier] : detected.candidates)
+    .filter((id) => carrierInfo(id).capabilities.selectable);
+  const pickerSections: CarrierPickerSection[] = [
+    ...(carrierInfo(parcel.carrier).capabilities.selectable ? [] : [
+      { key: 'current', title: t('picker.section.current'), carriers: [parcel.carrier] },
+    ]),
+    { key: 'fits', title: t(detected.confidence === 'high' ? 'picker.section.detected' : 'picker.section.fits'), carriers: fitting },
+    { key: 'used', title: t('picker.section.used'), carriers: usedCarriers.filter((id) => !fitting.includes(id)) },
+  ].filter((section) => section.carriers.length > 0);
   const requirements = carrierRequirements(selectedCarrier, parcel.trackingNumber);
   const valueFor = (field: CarrierInputField) => field === 'trackingUrl'
     ? trackingUrl
@@ -81,7 +100,7 @@ export function ChangeCarrierSheet({
     }
   }
 
-  return createPortal(
+  return <>{createPortal(
     <div className="sheet-backdrop" onClick={onClose}>
       <div
         ref={dialog}
@@ -115,26 +134,21 @@ export function ChangeCarrierSheet({
           })}
         </p>
         <form className="sheet__form" onSubmit={submit}>
-          <label className="field">
-            <span className="field__label">{t('add.carrier')}</span>
-            <select
-              ref={carrierSelect}
-              className="field__input"
-              value={selectedCarrier}
-              onChange={(event) => selectCarrier(event.target.value as CarrierId)}
+          <div className="field">
+            <span className="field__label" id={`${fieldId}-label`}>{t('add.carrier')}</span>
+            <button
+              ref={carrierButton}
+              type="button"
+              className="field__input carrier-field"
+              aria-haspopup="dialog"
+              aria-labelledby={`${fieldId}-label ${fieldId}-value`}
+              onClick={() => setPickerOpen(true)}
             >
-              {!carrierInfo(parcel.carrier, locale).capabilities.selectable && (
-                <option value={parcel.carrier}>
-                  {carrierInfo(parcel.carrier, locale).name} ({t('add.linkOnly')})
-                </option>
-              )}
-              {SELECTABLE_CARRIERS.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.name}{tracksAutomatically(option.id) ? '' : ` (${t('add.linkOnly')})`}
-                </option>
-              ))}
-            </select>
-          </label>
+              <CarrierTruck carrier={carrier} />
+              <span className="carrier-field__name" id={`${fieldId}-value`}>{carrier.name}</span>
+              <Icon name="chevron" />
+            </button>
+          </div>
           <div className="sheet__carrier-card">
             <span className="sheet__carrier-mark" aria-hidden="true" />
             <span className="sheet__carrier-copy">
@@ -205,5 +219,18 @@ export function ChangeCarrierSheet({
       </div>
     </div>,
     document.body,
-  );
+  )}
+  {/* Outside the backdrop: a click in the picker must not reach the sheet's dismiss handler. */}
+  {pickerOpen && (
+    <CarrierPickerSheet
+      selected={selectedCarrier}
+      sections={pickerSections}
+      onSelect={(choice) => {
+        if (choice !== 'auto') selectCarrier(choice);
+        setPickerOpen(false);
+      }}
+      onClose={() => setPickerOpen(false)}
+    />
+  )}
+  </>;
 }

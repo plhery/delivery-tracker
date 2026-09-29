@@ -3,7 +3,9 @@
   "displayName": "JD Logistics",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "CN"
+    ]
   },
   "brand": {
     "color": "#e1251b"

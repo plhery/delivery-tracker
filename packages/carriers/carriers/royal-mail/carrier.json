@@ -3,7 +3,9 @@
   "displayName": "Royal Mail",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "GB"
+    ]
   },
   "brand": {
     "color": "#da202a"

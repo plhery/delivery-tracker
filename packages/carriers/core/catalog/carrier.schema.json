@@ -38,13 +38,13 @@
       "additionalProperties": { "type": "string", "minLength": 1 }
     },
     "aliases": {
-      "description": "Other names the carrier is known by. Reserved for a later enrichment phase.",
+      "description": "Other names the carrier is known by. The carrier pickers search them.",
       "type": "array",
       "items": { "type": "string", "minLength": 1 },
       "uniqueItems": true
     },
     "region": {
-      "description": "Where the carrier operates. Reserved for a later enrichment phase.",
+      "description": "Where the carrier delivers under its own name, home country first. The carrier pickers show and search these countries. Empty for networks without a home market (UPS, FedEx) and for platforms.",
       "type": "object",
       "additionalProperties": false,
       "required": ["countries"],

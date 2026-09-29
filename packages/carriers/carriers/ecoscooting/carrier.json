@@ -3,7 +3,9 @@
   "displayName": "Ecoscooting",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "ES"
+    ]
   },
   "brand": {
     "color": "#3fa7ff"

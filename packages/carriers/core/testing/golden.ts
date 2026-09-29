@@ -3,13 +3,14 @@
  *
  * What it is: the corpus replayed through the detection engine and frozen as
  * `contracts/fixtures/detection-golden.json`, so the Swift port can assert the
- * same answers without re-deriving them.
+ * same answers, and the same carriers recognition asks, without re-deriving them.
  * What it is not: a second detection implementation. Everything here comes from
  * `core/detection` and `numbers.json`.
  */
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { recognitionAskedCarriers } from '../catalog/recognition';
 import { detectCarrierMatch } from '../detection';
 import { loadNumberCorpus } from './corpus';
 
@@ -20,6 +21,8 @@ export interface DetectionGoldenEntry {
   readonly candidates: readonly string[];
   /** Only when a `preferred` rule backs a candidate with number evidence. */
   readonly preferred?: readonly string[];
+  /** Only when recognition asks carriers about the number, best first. */
+  readonly asked?: readonly string[];
 }
 
 const testingDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -47,6 +50,7 @@ export function buildDetectionGolden(): DetectionGoldenEntry[] {
       confidence: match.confidence,
       candidates: match.candidates,
       ...(match.preferred.length > 0 ? { preferred: match.preferred } : {}),
+      ...(recognitionAskedCarriers(record.number).length > 0 ? { asked: recognitionAskedCarriers(record.number) } : {}),
     });
   }
   return [...entries.values()].sort((left, right) => (left.input < right.input ? -1 : 1));

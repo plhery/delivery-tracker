@@ -46,7 +46,7 @@ describe('shipment details', () => {
     expect(prompt).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Add postcode' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByRole('combobox')).toHaveValue('gls-ch');
+    expect(screen.getByRole('button', { name: 'Carrier GLS Switzerland' })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: /^Delivery postcode/ })).toBeInTheDocument();
     view.unmount();
     // Nothing to ask once it is filed under that carrier, or when it is delivered.

@@ -3,7 +3,10 @@
   "displayName": "CTT Express",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "ES",
+      "PT"
+    ]
   },
   "brand": {
     "color": "#df0024"

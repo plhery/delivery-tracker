@@ -3,7 +3,9 @@
   "displayName": "An Post",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "IE"
+    ]
   },
   "brand": {
     "color": "#00a76a"

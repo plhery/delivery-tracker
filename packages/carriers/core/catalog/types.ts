@@ -60,6 +60,10 @@ export interface CarrierCapabilities {
 export interface CarrierInfo {
   id: CarrierId;
   name: string;
+  /** Other names the carrier is known by, searched by the carrier pickers. */
+  aliases: readonly string[];
+  /** ISO codes of the countries it delivers in under its own name, home first. */
+  countries: readonly string[];
   trackingSiteName?: string;
   /** Accent used for the carrier chip in the UI. */
   color: string;
@@ -90,6 +94,8 @@ export interface RawTrackingLinkRule {
 export interface CarrierDefinition {
   displayName: string;
   displayNames?: Record<string, string>;
+  aliases?: readonly string[];
+  countries?: readonly string[];
   trackingSiteName?: string;
   color: string;
   selectable: boolean;
@@ -100,6 +106,8 @@ export interface CarrierDefinition {
     adapter: string | null;
     upstreamName?: string;
     requirements?: readonly CarrierCatalogRequirement[];
+    /** Present when the adapter can recognize a number; higher is asked first. */
+    recognitionRank?: number;
   };
   trackingUrlTemplate?: string;
   linkRules: readonly RawTrackingLinkRule[];

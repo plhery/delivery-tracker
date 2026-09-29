@@ -35,7 +35,10 @@ test('keeps Add above a reduced visual viewport while required fields scroll', a
   test.skip(!isMobile, 'The full-screen keyboard layout is mobile only');
   const dialog = page.getByRole('dialog', { name: 'Add a parcel' });
   await dialog.getByLabel('Tracking number or link').fill('123456');
-  await dialog.getByRole('combobox').selectOption('gls-ch');
+  await dialog.getByRole('button', { name: /^Detect automatically/ }).click();
+  const picker = page.getByRole('dialog', { name: 'Carrier', exact: true });
+  await picker.getByRole('combobox', { name: 'Search carriers' }).fill('GLS Switzerland');
+  await picker.getByRole('option', { name: 'GLS Switzerland' }).click();
   await dialog.getByLabel(/Delivery postcode/).fill('');
 
   // Desktop browser runners do not open an OS keyboard. Model the visual

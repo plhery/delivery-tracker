@@ -3,7 +3,9 @@
   "displayName": "Singapore Post",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "SG"
+    ]
   },
   "brand": {
     "color": "#2e5da8"

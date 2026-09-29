@@ -1,9 +1,13 @@
 {
   "id": "usps",
   "displayName": "USPS",
-  "aliases": [],
+  "aliases": [
+    "United States Postal Service"
+  ],
   "region": {
-    "countries": []
+    "countries": [
+      "US"
+    ]
   },
   "brand": {
     "color": "#004b87"

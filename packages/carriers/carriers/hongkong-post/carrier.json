@@ -3,7 +3,9 @@
   "displayName": "Hongkong Post",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "HK"
+    ]
   },
   "brand": {
     "color": "#008965"

@@ -6,6 +6,9 @@
     "candidates": [
       "bpost",
       "ecoscooting"
+    ],
+    "asked": [
+      "bpost"
     ]
   },
   {
@@ -31,6 +34,9 @@
     "candidates": [
       "bpost",
       "ecoscooting"
+    ],
+    "asked": [
+      "bpost"
     ]
   },
   {
@@ -53,6 +59,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "poczta-polska"
+    ],
+    "asked": [
       "poczta-polska"
     ]
   },
@@ -91,6 +100,10 @@
       "usps",
       "nz-post",
       "poczta-polska"
+    ],
+    "asked": [
+      "nz-post",
+      "poczta-polska"
     ]
   },
   {
@@ -102,6 +115,11 @@
       "correos-express",
       "canada-post",
       "tnt"
+    ],
+    "asked": [
+      "tnt",
+      "correos-express",
+      "canada-post"
     ]
   },
   {
@@ -158,6 +176,9 @@
     "confidence": "low",
     "candidates": [
       "chronopost"
+    ],
+    "asked": [
+      "chronopost"
     ]
   },
   {
@@ -171,6 +192,10 @@
       "seur",
       "brt",
       "delhivery"
+    ],
+    "asked": [
+      "dpd",
+      "ciblex"
     ]
   },
   {
@@ -184,6 +209,10 @@
       "seur",
       "brt",
       "delhivery"
+    ],
+    "asked": [
+      "dpd",
+      "ciblex"
     ]
   },
   {
@@ -198,6 +227,11 @@
       "seur",
       "brt",
       "delhivery"
+    ],
+    "asked": [
+      "dpd",
+      "hermes-de",
+      "ciblex"
     ]
   },
   {
@@ -212,6 +246,11 @@
       "seur",
       "brt",
       "delhivery"
+    ],
+    "asked": [
+      "dpd",
+      "hermes-de",
+      "ciblex"
     ]
   },
   {
@@ -255,6 +294,9 @@
     "candidates": [
       "austrian-post",
       "usps"
+    ],
+    "asked": [
+      "austrian-post"
     ]
   },
   {
@@ -263,6 +305,10 @@
     "confidence": "low",
     "candidates": [
       "usps",
+      "nz-post",
+      "poczta-polska"
+    ],
+    "asked": [
       "nz-post",
       "poczta-polska"
     ]
@@ -283,6 +329,9 @@
       "zto",
       "yamato",
       "j-and-t"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -317,6 +366,10 @@
     ],
     "preferred": [
       "dpd"
+    ],
+    "asked": [
+      "dpd",
+      "ciblex"
     ]
   },
   {
@@ -334,6 +387,9 @@
     "candidates": [
       "bpost",
       "ecoscooting"
+    ],
+    "asked": [
+      "bpost"
     ]
   },
   {
@@ -351,6 +407,9 @@
     "candidates": [
       "bpost",
       "ecoscooting"
+    ],
+    "asked": [
+      "bpost"
     ]
   },
   {
@@ -364,6 +423,10 @@
       "seur",
       "brt",
       "delhivery"
+    ],
+    "asked": [
+      "dpd",
+      "ciblex"
     ]
   },
   {
@@ -385,6 +448,9 @@
       "correos-chile",
       "delhivery",
       "yunda"
+    ],
+    "asked": [
+      "la-poste"
     ]
   },
   {
@@ -407,6 +473,9 @@
     ],
     "preferred": [
       "dpd-fr"
+    ],
+    "asked": [
+      "ciblex"
     ]
   },
   {
@@ -416,6 +485,9 @@
     "candidates": [
       "austrian-post",
       "usps"
+    ],
+    "asked": [
+      "austrian-post"
     ]
   },
   {
@@ -428,6 +500,10 @@
       "gls-de",
       "blue-dart",
       "aramex"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
     ]
   },
   {
@@ -437,6 +513,9 @@
     "candidates": [
       "austrian-post",
       "usps"
+    ],
+    "asked": [
+      "austrian-post"
     ]
   },
   {
@@ -453,6 +532,9 @@
     ],
     "preferred": [
       "dpd-fr"
+    ],
+    "asked": [
+      "ciblex"
     ]
   },
   {
@@ -465,6 +547,9 @@
       "relais-colis",
       "tipsa",
       "estafeta"
+    ],
+    "asked": [
+      "relais-colis"
     ]
   },
   {
@@ -481,6 +566,9 @@
     ],
     "preferred": [
       "dpd-fr"
+    ],
+    "asked": [
+      "ciblex"
     ]
   },
   {
@@ -495,6 +583,11 @@
       "seur",
       "brt",
       "delhivery"
+    ],
+    "asked": [
+      "dpd",
+      "hermes-de",
+      "ciblex"
     ]
   },
   {
@@ -507,6 +600,9 @@
       "correos-chile",
       "delhivery",
       "yunda"
+    ],
+    "asked": [
+      "la-poste"
     ]
   },
   {
@@ -564,6 +660,11 @@
       "zto",
       "yamato",
       "j-and-t"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de",
+      "colis-prive"
     ]
   },
   {
@@ -585,6 +686,9 @@
       "relais-colis",
       "tipsa",
       "estafeta"
+    ],
+    "asked": [
+      "relais-colis"
     ]
   },
   {
@@ -606,6 +710,11 @@
       "zto",
       "yamato",
       "j-and-t"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de",
+      "colis-prive"
     ]
   },
   {
@@ -624,6 +733,9 @@
       "zto",
       "yamato",
       "j-and-t"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -637,6 +749,10 @@
       "seur",
       "brt",
       "delhivery"
+    ],
+    "asked": [
+      "dpd",
+      "ciblex"
     ]
   },
   {
@@ -655,6 +771,9 @@
     "confidence": "low",
     "candidates": [
       "chronopost"
+    ],
+    "asked": [
+      "chronopost"
     ]
   },
   {
@@ -666,6 +785,11 @@
       "correos-express",
       "canada-post",
       "tnt"
+    ],
+    "asked": [
+      "tnt",
+      "correos-express",
+      "canada-post"
     ]
   },
   {
@@ -677,6 +801,11 @@
       "correos-express",
       "canada-post",
       "tnt"
+    ],
+    "asked": [
+      "tnt",
+      "correos-express",
+      "canada-post"
     ]
   },
   {
@@ -695,6 +824,9 @@
       "zto",
       "yamato",
       "j-and-t"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -707,6 +839,9 @@
       "correos-chile",
       "delhivery",
       "yunda"
+    ],
+    "asked": [
+      "la-poste"
     ]
   },
   {
@@ -719,6 +854,9 @@
       "correos-chile",
       "delhivery",
       "yunda"
+    ],
+    "asked": [
+      "la-poste"
     ]
   },
   {
@@ -849,6 +987,10 @@
       "gls-de",
       "blue-dart",
       "aramex"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
     ]
   },
   {
@@ -864,6 +1006,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "tnt"
+    ],
+    "asked": [
       "tnt"
     ]
   },
@@ -887,6 +1032,10 @@
       "seur",
       "brt",
       "delhivery"
+    ],
+    "asked": [
+      "dpd",
+      "ciblex"
     ]
   },
   {
@@ -907,6 +1056,9 @@
       "relais-colis",
       "tipsa",
       "estafeta"
+    ],
+    "asked": [
+      "relais-colis"
     ]
   },
   {
@@ -918,6 +1070,9 @@
       "correos-chile",
       "delhivery",
       "yunda"
+    ],
+    "asked": [
+      "la-poste"
     ]
   },
   {
@@ -930,6 +1085,10 @@
       "gls-de",
       "blue-dart",
       "aramex"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
     ]
   },
   {
@@ -955,6 +1114,9 @@
       "zto",
       "yamato",
       "j-and-t"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -975,6 +1137,10 @@
       "gls-de",
       "blue-dart",
       "aramex"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
     ]
   },
   {
@@ -986,6 +1152,9 @@
       "correos-chile",
       "delhivery",
       "yunda"
+    ],
+    "asked": [
+      "la-poste"
     ]
   },
   {
@@ -1003,6 +1172,9 @@
       "zto",
       "yamato",
       "j-and-t"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -1015,6 +1187,10 @@
       "seur",
       "brt",
       "delhivery"
+    ],
+    "asked": [
+      "dpd",
+      "ciblex"
     ]
   },
   {
@@ -1026,6 +1202,11 @@
       "correos-express",
       "canada-post",
       "tnt"
+    ],
+    "asked": [
+      "tnt",
+      "correos-express",
+      "canada-post"
     ]
   },
   {
@@ -1033,6 +1214,10 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "inpost",
+      "bpost"
+    ],
+    "asked": [
       "inpost",
       "bpost"
     ]
@@ -1044,6 +1229,9 @@
     "candidates": [
       "bpost",
       "ecoscooting"
+    ],
+    "asked": [
+      "bpost"
     ]
   },
   {
@@ -1051,6 +1239,10 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "inpost",
+      "bpost"
+    ],
+    "asked": [
       "inpost",
       "bpost"
     ]
@@ -1076,6 +1268,9 @@
       "zto",
       "yamato",
       "j-and-t"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -1088,6 +1283,9 @@
       "relais-colis",
       "tipsa",
       "estafeta"
+    ],
+    "asked": [
+      "relais-colis"
     ]
   },
   {
@@ -1107,6 +1305,11 @@
       "correos-express",
       "canada-post",
       "tnt"
+    ],
+    "asked": [
+      "tnt",
+      "correos-express",
+      "canada-post"
     ]
   },
   {
@@ -1119,6 +1322,10 @@
       "gls-de",
       "blue-dart",
       "aramex"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
     ]
   },
   {
@@ -1131,6 +1338,10 @@
       "gls-de",
       "blue-dart",
       "aramex"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
     ]
   },
   {
@@ -1143,6 +1354,10 @@
       "gls-de",
       "blue-dart",
       "aramex"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
     ]
   },
   {
@@ -1152,6 +1367,9 @@
     "candidates": [
       "bpost",
       "ecoscooting"
+    ],
+    "asked": [
+      "bpost"
     ]
   },
   {
@@ -1161,6 +1379,9 @@
     "candidates": [
       "bpost",
       "ecoscooting"
+    ],
+    "asked": [
+      "bpost"
     ]
   },
   {
@@ -1174,6 +1395,11 @@
       "seur",
       "brt",
       "delhivery"
+    ],
+    "asked": [
+      "dpd",
+      "hermes-de",
+      "ciblex"
     ]
   },
   {
@@ -1241,6 +1467,11 @@
       "correos-express",
       "canada-post",
       "tnt"
+    ],
+    "asked": [
+      "tnt",
+      "correos-express",
+      "canada-post"
     ]
   },
   {
@@ -1258,6 +1489,9 @@
       "zto",
       "yamato",
       "j-and-t"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -1296,6 +1530,9 @@
     "confidence": "low",
     "candidates": [
       "tnt"
+    ],
+    "asked": [
+      "tnt"
     ]
   },
   {
@@ -1324,6 +1561,9 @@
       "relais-colis",
       "tipsa",
       "estafeta"
+    ],
+    "asked": [
+      "relais-colis"
     ]
   },
   {
@@ -1341,6 +1581,9 @@
       "zto",
       "yamato",
       "j-and-t"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -1358,6 +1601,9 @@
       "zto",
       "yamato",
       "j-and-t"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -1400,6 +1646,10 @@
       "gls-de",
       "blue-dart",
       "aramex"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
     ]
   },
   {
@@ -1412,6 +1662,10 @@
       "gls-de",
       "blue-dart",
       "aramex"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
     ]
   },
   {
@@ -1421,6 +1675,9 @@
     "candidates": [
       "bpost",
       "ecoscooting"
+    ],
+    "asked": [
+      "bpost"
     ]
   },
   {
@@ -1433,6 +1690,10 @@
       "seur",
       "brt",
       "delhivery"
+    ],
+    "asked": [
+      "dpd",
+      "ciblex"
     ]
   },
   {
@@ -1442,6 +1703,10 @@
     "candidates": [
       "inpost",
       "bpost"
+    ],
+    "asked": [
+      "inpost",
+      "bpost"
     ]
   },
   {
@@ -1449,6 +1714,10 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "inpost",
+      "bpost"
+    ],
+    "asked": [
       "inpost",
       "bpost"
     ]
@@ -1471,6 +1740,9 @@
       "delhivery",
       "yunda",
       "korea-post"
+    ],
+    "asked": [
+      "la-poste"
     ]
   },
   {
@@ -1487,6 +1759,10 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "inpost",
+      "bpost"
+    ],
+    "asked": [
       "inpost",
       "bpost"
     ]
@@ -1506,6 +1782,10 @@
     "candidates": [
       "inpost",
       "bpost"
+    ],
+    "asked": [
+      "inpost",
+      "bpost"
     ]
   },
   {
@@ -1513,6 +1793,10 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "inpost",
+      "bpost"
+    ],
+    "asked": [
       "inpost",
       "bpost"
     ]
@@ -1527,6 +1811,10 @@
       "seur",
       "brt",
       "delhivery"
+    ],
+    "asked": [
+      "dpd",
+      "ciblex"
     ]
   },
   {
@@ -1553,6 +1841,10 @@
       "usps",
       "nz-post",
       "poczta-polska"
+    ],
+    "asked": [
+      "nz-post",
+      "poczta-polska"
     ]
   },
   {
@@ -1564,6 +1856,11 @@
       "correos-express",
       "canada-post",
       "tnt"
+    ],
+    "asked": [
+      "tnt",
+      "correos-express",
+      "canada-post"
     ]
   },
   {
@@ -1575,6 +1872,11 @@
       "correos-express",
       "canada-post",
       "tnt"
+    ],
+    "asked": [
+      "tnt",
+      "correos-express",
+      "canada-post"
     ]
   },
   {
@@ -1585,6 +1887,10 @@
       "usps",
       "nz-post",
       "poczta-polska"
+    ],
+    "asked": [
+      "nz-post",
+      "poczta-polska"
     ]
   },
   {
@@ -1593,6 +1899,10 @@
     "confidence": "low",
     "candidates": [
       "usps",
+      "nz-post",
+      "poczta-polska"
+    ],
+    "asked": [
       "nz-post",
       "poczta-polska"
     ]
@@ -1644,6 +1954,9 @@
       "zto",
       "yamato",
       "j-and-t"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -1664,6 +1977,10 @@
       "gls-de",
       "blue-dart",
       "aramex"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
     ]
   },
   {
@@ -1676,6 +1993,10 @@
       "gls-de",
       "blue-dart",
       "aramex"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
     ]
   },
   {
@@ -1687,6 +2008,11 @@
       "correos-express",
       "canada-post",
       "tnt"
+    ],
+    "asked": [
+      "tnt",
+      "correos-express",
+      "canada-post"
     ]
   },
   {
@@ -1729,6 +2055,9 @@
       "relais-colis",
       "tipsa",
       "estafeta"
+    ],
+    "asked": [
+      "relais-colis"
     ]
   },
   {
@@ -1741,6 +2070,9 @@
       "relais-colis",
       "tipsa",
       "estafeta"
+    ],
+    "asked": [
+      "relais-colis"
     ]
   },
   {
@@ -1762,6 +2094,11 @@
       "seur",
       "brt",
       "delhivery"
+    ],
+    "asked": [
+      "dpd",
+      "hermes-de",
+      "ciblex"
     ]
   },
   {
@@ -1774,6 +2111,10 @@
       "seur",
       "brt",
       "delhivery"
+    ],
+    "asked": [
+      "dpd",
+      "ciblex"
     ]
   },
   {
@@ -1809,6 +2150,9 @@
     "confidence": "low",
     "candidates": [
       "chronopost"
+    ],
+    "asked": [
+      "chronopost"
     ]
   },
   {
@@ -1825,6 +2169,9 @@
       "zto",
       "yamato",
       "j-and-t"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -1868,6 +2215,9 @@
       "correos-chile",
       "delhivery",
       "yunda"
+    ],
+    "asked": [
+      "la-poste"
     ]
   },
   {
@@ -1880,6 +2230,10 @@
       "gls-de",
       "blue-dart",
       "aramex"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
     ]
   },
   {
@@ -1889,6 +2243,9 @@
     "candidates": [
       "austrian-post",
       "usps"
+    ],
+    "asked": [
+      "austrian-post"
     ]
   },
   {
@@ -1906,6 +2263,9 @@
     "candidates": [
       "austrian-post",
       "usps"
+    ],
+    "asked": [
+      "austrian-post"
     ]
   },
   {
@@ -1915,6 +2275,9 @@
     "candidates": [
       "austrian-post",
       "usps"
+    ],
+    "asked": [
+      "austrian-post"
     ]
   },
   {
@@ -1922,6 +2285,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "tnt"
+    ],
+    "asked": [
       "tnt"
     ]
   },
@@ -1938,6 +2304,9 @@
     "candidates": [
       "austrian-post",
       "usps"
+    ],
+    "asked": [
+      "austrian-post"
     ]
   },
   {
@@ -1947,6 +2316,9 @@
     "candidates": [
       "austrian-post",
       "usps"
+    ],
+    "asked": [
+      "austrian-post"
     ]
   },
   {
@@ -1956,6 +2328,9 @@
     "candidates": [
       "austrian-post",
       "usps"
+    ],
+    "asked": [
+      "austrian-post"
     ]
   },
   {
@@ -1965,6 +2340,9 @@
     "candidates": [
       "austrian-post",
       "usps"
+    ],
+    "asked": [
+      "austrian-post"
     ]
   },
   {
@@ -1974,6 +2352,9 @@
     "candidates": [
       "austrian-post",
       "usps"
+    ],
+    "asked": [
+      "austrian-post"
     ]
   },
   {
@@ -1985,6 +2366,11 @@
       "correos-express",
       "canada-post",
       "tnt"
+    ],
+    "asked": [
+      "tnt",
+      "correos-express",
+      "canada-post"
     ]
   },
   {
@@ -1994,6 +2380,9 @@
     "candidates": [
       "austrian-post",
       "usps"
+    ],
+    "asked": [
+      "austrian-post"
     ]
   },
   {
@@ -2003,6 +2392,9 @@
     "candidates": [
       "austrian-post",
       "usps"
+    ],
+    "asked": [
+      "austrian-post"
     ]
   },
   {
@@ -2012,6 +2404,9 @@
     "candidates": [
       "austrian-post",
       "usps"
+    ],
+    "asked": [
+      "austrian-post"
     ]
   },
   {
@@ -2037,6 +2432,11 @@
       "zto",
       "yamato",
       "j-and-t"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de",
+      "colis-prive"
     ]
   },
   {
@@ -2061,6 +2461,9 @@
       "zto",
       "yamato",
       "j-and-t"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -2104,6 +2507,9 @@
     "candidates": [
       "dhl-ecommerce",
       "colis-prive"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -2123,6 +2529,11 @@
       "zto",
       "yamato",
       "j-and-t"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de",
+      "colis-prive"
     ]
   },
   {
@@ -2140,6 +2551,10 @@
     "candidates": [
       "gls-ch",
       "gls-fr",
+      "gls-de"
+    ],
+    "asked": [
+      "gls-ch",
       "gls-de"
     ]
   },
@@ -2263,6 +2678,9 @@
     "confidence": "low",
     "candidates": [
       "chronopost"
+    ],
+    "asked": [
+      "chronopost"
     ]
   },
   {
@@ -2383,6 +2801,9 @@
     "confidence": "low",
     "candidates": [
       "colis-prive"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -2398,6 +2819,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "chronopost"
+    ],
+    "asked": [
       "chronopost"
     ]
   },
@@ -2422,6 +2846,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "chronopost"
+    ],
+    "asked": [
       "chronopost"
     ]
   },
@@ -2511,6 +2938,10 @@
       "gls-ch",
       "gls-fr",
       "gls-de"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
     ]
   },
   {
@@ -2550,6 +2981,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "chronopost"
+    ],
+    "asked": [
       "chronopost"
     ]
   },
@@ -2747,6 +3181,9 @@
     "confidence": "low",
     "candidates": [
       "colis-prive"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -2779,6 +3216,9 @@
     "confidence": "low",
     "candidates": [
       "inpost"
+    ],
+    "asked": [
+      "inpost"
     ]
   },
   {
@@ -2796,6 +3236,9 @@
     "candidates": [
       "colis-prive",
       "j-and-t"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -2843,6 +3286,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "chronopost"
+    ],
+    "asked": [
       "chronopost"
     ]
   },
@@ -2988,6 +3434,9 @@
     "confidence": "low",
     "candidates": [
       "chronopost"
+    ],
+    "asked": [
+      "chronopost"
     ]
   },
   {
@@ -3107,6 +3556,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "chronopost"
+    ],
+    "asked": [
       "chronopost"
     ]
   },
@@ -3320,6 +3772,9 @@
     "confidence": "low",
     "candidates": [
       "colis-prive"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {
@@ -3360,6 +3815,9 @@
     "confidence": "low",
     "candidates": [
       "chronopost"
+    ],
+    "asked": [
+      "chronopost"
     ]
   },
   {
@@ -3367,6 +3825,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "chronopost"
+    ],
+    "asked": [
       "chronopost"
     ]
   },
@@ -3408,6 +3869,9 @@
     "confidence": "low",
     "candidates": [
       "chronopost"
+    ],
+    "asked": [
+      "chronopost"
     ]
   },
   {
@@ -3439,6 +3903,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "chronopost"
+    ],
+    "asked": [
       "chronopost"
     ]
   },
@@ -3519,6 +3986,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "colis-prive"
+    ],
+    "asked": [
       "colis-prive"
     ]
   },
@@ -3676,6 +4146,9 @@
     "confidence": "low",
     "candidates": [
       "chronopost"
+    ],
+    "asked": [
+      "chronopost"
     ]
   },
   {
@@ -3731,6 +4204,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "chronopost"
+    ],
+    "asked": [
       "chronopost"
     ]
   },
@@ -3789,6 +4265,9 @@
     "confidence": "low",
     "candidates": [
       "chronopost"
+    ],
+    "asked": [
+      "chronopost"
     ]
   },
   {
@@ -3837,6 +4316,9 @@
     "confidence": "low",
     "candidates": [
       "chronopost"
+    ],
+    "asked": [
+      "chronopost"
     ]
   },
   {
@@ -3871,6 +4353,10 @@
       "gls-ch",
       "gls-fr",
       "gls-de"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
     ]
   },
   {
@@ -3896,6 +4382,10 @@
     "candidates": [
       "gls-ch",
       "gls-fr",
+      "gls-de"
+    ],
+    "asked": [
+      "gls-ch",
       "gls-de"
     ]
   },
@@ -3931,6 +4421,10 @@
       "gls-ch",
       "gls-fr",
       "gls-de"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
     ]
   },
   {
@@ -3938,6 +4432,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "colis-prive"
+    ],
+    "asked": [
       "colis-prive"
     ]
   },
@@ -3954,6 +4451,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "colis-prive"
+    ],
+    "asked": [
       "colis-prive"
     ]
   },

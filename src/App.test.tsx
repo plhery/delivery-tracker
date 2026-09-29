@@ -5,6 +5,7 @@ import App from './App';
 import { ApiAuthenticationError } from './lib/apiClient';
 import { createDemoRepo } from './store/demoRepo';
 import { ParcelsProvider } from './store/ParcelsContext';
+import { carrierPicker, pickCarrier } from './test/carrierPicker';
 import { RefreshTimeoutError, type ParcelRepo, type ParcelWithEvents } from './types';
 
 function renderApp(repo: ParcelRepo = createDemoRepo(window.localStorage)) {
@@ -160,15 +161,18 @@ describe('App', () => {
     const changeCarrier = within(detail).getByRole('button', { name: 'Change carrier from DHL' });
     await user.click(changeCarrier);
     const sheet = screen.getByRole('dialog', { name: 'Change carrier' });
-    const select = within(sheet).getByRole('combobox', { name: 'Carrier' });
+    const carrier = within(sheet).getByRole('button', { name: 'Carrier DHL' });
     expect(detail).toHaveAttribute('inert');
     expect(detail).toHaveAttribute('aria-hidden', 'true');
-    expect(select).toHaveFocus();
-    await user.selectOptions(select, 'dpd');
+    expect(carrier).toHaveFocus();
+    await pickCarrier(user, carrier, 'DPD');
+    // The picker hands focus back to the carrier field.
+    expect(carrier).toHaveFocus();
+    expect(carrier).toHaveAccessibleName('Carrier DPD');
     await user.tab();
     expect(within(sheet).getByLabelText(/postcode/i)).toHaveFocus();
     await user.tab({ shift: true });
-    expect(select).toHaveFocus();
+    expect(carrier).toHaveFocus();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog', { name: 'Change carrier' })).not.toBeInTheDocument();
     expect(detail).not.toHaveAttribute('inert');
@@ -190,10 +194,10 @@ describe('App', () => {
     await user.click(await screen.findByText('New sneakers 👟'));
     await user.click(screen.getByRole('button', { name: 'Change carrier from DHL' }));
     let sheet = screen.getByRole('dialog', { name: 'Change carrier' });
-    await user.selectOptions(within(sheet).getByLabelText('Carrier'), 'gls-ch');
+    await pickCarrier(user, within(sheet).getByRole('button', { name: /^Carrier / }), 'GLS Switzerland');
     expect(within(sheet).getByLabelText(/delivery postcode/i)).toBeRequired();
     expect(within(sheet).getByRole('button', { name: 'Save carrier' })).toBeDisabled();
-    await user.selectOptions(within(sheet).getByLabelText('Carrier'), 'dpd');
+    await pickCarrier(user, within(sheet).getByRole('button', { name: /^Carrier / }), 'DPD');
     expect(within(sheet).getByLabelText(/delivery postcode/i)).not.toBeRequired();
     await user.click(within(sheet).getByRole('button', { name: 'Save carrier' }));
     expect(changeCarrier).toHaveBeenLastCalledWith(expect.any(String), {
@@ -640,7 +644,7 @@ describe('App', () => {
       within(sheet).getByLabelText(/tracking number/i),
       '06080000000002',
     );
-    await user.selectOptions(await within(sheet).findByLabelText(/carrier/i, undefined, { timeout: 3000 }), 'dpd');
+    await pickCarrier(user, within(sheet).getByRole('button', { name: /^Detect automatically/ }), 'DPD');
 
     const postcode = within(sheet).getByLabelText(/delivery postcode/i);
     expect(postcode).not.toBeRequired();
@@ -675,7 +679,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /add a parcel/i }));
     const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
     await user.type(within(sheet).getByLabelText(/tracking number/i), '06080000000001');
-    await user.selectOptions(await within(sheet).findByLabelText(/carrier/i, undefined, { timeout: 3000 }), 'dpd');
+    await pickCarrier(user, within(sheet).getByRole('button', { name: /^Detect automatically/ }), 'DPD');
     await user.clear(within(sheet).getByLabelText(/delivery postcode/i));
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
 
@@ -706,7 +710,7 @@ describe('App', () => {
       within(sheet).getByLabelText(/tracking number/i),
       '06080000000003',
     );
-    await user.selectOptions(await within(sheet).findByLabelText(/carrier/i, undefined, { timeout: 3000 }), 'dpd');
+    await pickCarrier(user, within(sheet).getByRole('button', { name: /^Detect automatically/ }), 'DPD');
 
     const postcode = within(sheet).getByLabelText(/delivery postcode/i);
     expect(postcode).toHaveValue('');
@@ -732,7 +736,8 @@ describe('App', () => {
     const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
     await user.type(within(sheet).getByLabelText(/tracking number/i), '76434219');
 
-    const carrier = await within(sheet).findByLabelText('Carrier', undefined, { timeout: 3000 });
+    await user.click(within(sheet).getByRole('button', { name: /^Detect automatically/ }));
+    const carrier = within(carrierPicker()).getByRole('group', { name: 'All carriers' });
     for (const name of [
       'DPD France',
       'Mondial Relay',
@@ -754,7 +759,7 @@ describe('App', () => {
       expect(within(carrier).getByRole('option', { name })).toBeInTheDocument();
     }
 
-    await user.selectOptions(carrier, 'mondial-relay');
+    await user.click(within(carrier).getByRole('option', { name: 'Mondial Relay' }));
     const postcode = within(sheet).getByLabelText(/delivery postcode/i);
     expect(postcode).toHaveValue('');
     expect(postcode).toHaveAttribute('maxlength', '5');
@@ -839,8 +844,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /add a parcel/i }));
     const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
     await user.type(within(sheet).getByLabelText(/tracking number/i), 'ambiguous-123');
-    // The picker for an unrecognized number waits until typing pauses.
-    await user.selectOptions(await within(sheet).findByLabelText('Carrier', undefined, { timeout: 3000 }), 'planzer');
+    await pickCarrier(user, within(sheet).getByRole('button', { name: /^Detect automatically/ }), 'Planzer');
     expect(within(sheet).getByText(/Planzer/i, { selector: 'strong' })).toBeInTheDocument();
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
 
@@ -1437,7 +1441,7 @@ describe('App', () => {
     await user.click(await screen.findByRole('button', { name: /^(?:Next up: )?Wrong carrier —/ }));
     await user.click(screen.getByRole('button', { name: 'Change carrier from Swiss Post' }));
     const sheet = screen.getByRole('dialog', { name: 'Change carrier' });
-    await user.selectOptions(within(sheet).getByLabelText('Carrier'), 'ups');
+    await pickCarrier(user, within(sheet).getByRole('button', { name: /^Carrier / }), 'UPS');
     await user.click(within(sheet).getByRole('button', { name: 'Save carrier' }));
 
     expect(changeCarrier).toHaveBeenCalledWith(parcel.id, {

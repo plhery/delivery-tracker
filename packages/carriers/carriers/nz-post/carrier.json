@@ -3,7 +3,9 @@
   "displayName": "NZ Post",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "NZ"
+    ]
   },
   "brand": {
     "color": "#d8291c"

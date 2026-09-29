@@ -3,7 +3,9 @@
   "displayName": "STO Express",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "CN"
+    ]
   },
   "brand": {
     "color": "#ff6700"

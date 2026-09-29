@@ -3,7 +3,9 @@
   "displayName": "Thailand Post",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "TH"
+    ]
   },
   "brand": {
     "color": "#ef172f"

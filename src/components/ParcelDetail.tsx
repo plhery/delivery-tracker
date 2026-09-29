@@ -58,8 +58,11 @@ export function ParcelDetail({
   onDelete,
   onExitDemo,
   openingOrigin,
+  usedCarriers,
 }: {
   parcel: ParcelWithEvents;
+  /** The carriers of the latest parcels, offered first when changing the carrier. */
+  usedCarriers?: readonly CarrierId[];
   openingOrigin?: CardOrigin | null;
   onExitDemo?: () => void;
   onBack: () => void;
@@ -591,6 +594,7 @@ export function ParcelDetail({
         <ChangeCarrierSheet
           parcel={parcel}
           initialCarrier={carrierSheetInitial}
+          usedCarriers={usedCarriers}
           onChange={(input) => onChangeCarrier(parcel, input)}
           onClose={() => { setEditingCarrier(false); setCarrierSheetInitial(undefined); }}
         />

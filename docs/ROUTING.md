@@ -101,7 +101,10 @@ Post 17TRACK route skip shadow checks.
 A number whose shape fits several carriers is checked with the carriers that can answer
 cheaply ([`carrierRecognition.ts`](../src/server/carrierRecognition.ts)). A carrier
 qualifies when its `carrier.json` declares `tracking.recognition` and its adapter
-implements `recognize()`: plain HTTP, a clean not-found, no browser. Carriers that only
+implements `recognize()`: plain HTTP, a clean not-found, no browser. Which carriers are
+asked is shared code ([`recognition.ts`](../packages/carriers/core/catalog/recognition.ts));
+the web and iOS Add sheets name them while they answer, and the iOS port replays the
+detection golden file's `asked` lists. Carriers that only
 answer through a browser (DHL, FedEx, UPS, USPS, DPD France, Mondial Relay, SF Express)
 are left to the universals.
 
@@ -116,10 +119,14 @@ are left to the universals.
   (GLS Switzerland and GLS Germany answer from one
   overview). Unrelated carriers that all know the number are a choice for the user.
 - **In the Add sheet.** The detect route asks once the number is settled (the field loses
-  focus, a paste, a shared number), within three seconds, and caches complete answers per
-  number for ten minutes. A single answer selects the carrier, and its required inputs
-  (the GLS postcode) appear before saving; several answers ask the user to choose. It
-  never holds the Add button.
+  focus, which includes opening the carrier picker, a paste, a shared number), within
+  three seconds, and caches complete answers per number for ten minutes. The answer lists
+  the carriers asked (`asked`) and those that failed or ran out of time (`unanswered`), so
+  the sheet can tell "not found yet" from "could not check". With automatic detection a
+  single answer selects the carrier, and its required inputs (the GLS postcode) appear
+  before saving; for a carrier picked by hand it only points out the one that has the
+  parcel. Several answers ask the user to choose. Automatic detection stays a valid
+  choice throughout, and the check never holds the Add button.
 - **In routing.** When the filed carrier cannot track the number (no adapter of its own,
   or its adapter answered not-found; a transient failure does not count), the router asks
   before the universals, never another network of the filed carrier's brand, for open

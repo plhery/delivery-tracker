@@ -26,7 +26,7 @@ A carrier folder holds:
 
 | File | Purpose |
 | --- | --- |
-| `carrier.json` | Source of truth: name, brand, timezone, links, inputs, capabilities, detection rules, `tracking.steps` |
+| `carrier.json` | Source of truth: name, other names, countries, brand, timezone, links, inputs, capabilities, detection rules, `tracking.steps` |
 | `numbers.json` | Sample numbers with provenance ([CORPUS.md](CORPUS.md)) |
 | `statuses.json` | Observed status wording and codes, with evidence |
 | `adapter.ts`, `parser.ts`, `status.ts` | Retrieval, parsing and the status map (dedicated adapters only) |
@@ -52,7 +52,9 @@ replays the same golden file.
 1. `npm run carrier:new -- --id <id> --name "<Name>" --canary-url <https url>` scaffolds
    the folder.
 2. Fill `carrier.json`: detection rules (each with an `id` and a `source`), links, inputs,
-   `capabilities`, `tracking.steps`.
+   `capabilities`, `tracking.steps`. `aliases` (other names people know it by) and
+   `region.countries` (where it delivers under its own name, home country first) are what
+   the carrier pickers search and show under its name.
 3. Add sample numbers to `numbers.json` and run the sweep ([CORPUS.md](CORPUS.md)).
 4. For a dedicated adapter: `adapter.ts` with a pure `parse()` and the factory, `status.ts`,
    scrubbed `fixtures/`, `adapter.test.ts` (capability guard and privacy assertions) and an

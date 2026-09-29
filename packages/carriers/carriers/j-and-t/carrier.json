@@ -3,7 +3,14 @@
   "displayName": "J&T Express",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "PH",
+      "ID",
+      "MY",
+      "TH",
+      "VN",
+      "SG"
+    ]
   },
   "brand": {
     "color": "#ff0000"

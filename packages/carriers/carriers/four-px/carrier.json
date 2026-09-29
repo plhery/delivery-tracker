@@ -3,7 +3,9 @@
   "displayName": "4PX",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "CN"
+    ]
   },
   "brand": {
     "color": "#f58220"

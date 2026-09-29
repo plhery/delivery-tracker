@@ -5,7 +5,9 @@
     "SYPost"
   ],
   "region": {
-    "countries": []
+    "countries": [
+      "CN"
+    ]
   },
   "brand": {
     "color": "#f39800"

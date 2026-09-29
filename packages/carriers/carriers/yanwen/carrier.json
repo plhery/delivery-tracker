@@ -3,7 +3,9 @@
   "displayName": "Yanwen",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "CN"
+    ]
   },
   "brand": {
     "color": "#8cbe1e"

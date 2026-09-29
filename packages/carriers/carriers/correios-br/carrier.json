@@ -3,7 +3,9 @@
   "displayName": "Correios Brazil",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "BR"
+    ]
   },
   "brand": {
     "color": "#ffd500",

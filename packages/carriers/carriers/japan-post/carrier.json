@@ -3,7 +3,9 @@
   "displayName": "Japan Post",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "JP"
+    ]
   },
   "brand": {
     "color": "#cc0000",

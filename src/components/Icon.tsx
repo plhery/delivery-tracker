@@ -16,6 +16,7 @@ const paths = {
   close: 'm6 6 12 12M6 18 18 6',
   arrow: 'M6 18 18 6M6 6h12v12',
   chevron: 'm9 5 7 7-7 7',
+  detect: 'M12 3.5v3m0 11v3M3.5 12h3m11 0h3M6 6l2 2m8 8 2 2M6 18l2-2m8-8 2-2m-3.8 6a2.2 2.2 0 1 1-4.4 0 2.2 2.2 0 0 1 4.4 0Z',
   back: 'm15 5-7 7 7 7',
   refresh: 'M19 8a7.5 7.5 0 1 0 .2 7.6M19 4v4h-4',
   filter: 'M4 6h16M7 12h10M10 18h4',

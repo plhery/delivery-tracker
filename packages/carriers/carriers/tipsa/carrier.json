@@ -3,7 +3,11 @@
   "displayName": "TIPSA",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "ES",
+      "PT",
+      "AD"
+    ]
   },
   "brand": {
     "color": "#001e62",

@@ -3,7 +3,10 @@
   "displayName": "MRW",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "ES",
+      "PT"
+    ]
   },
   "brand": {
     "color": "#19133b"

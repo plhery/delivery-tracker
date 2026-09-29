@@ -21,21 +21,31 @@ function Decal({ shape }: { shape: TruckDecalShape }) {
   return <path d={shape.d} stroke={paint(shape.stroke)} strokeWidth={n(shape.strokeWidth)} />;
 }
 
+function Truck({ decal }: { decal: ReturnType<typeof carrierBrand>['decal'] }) {
+  const { viewBox, strokeWidth, body, cab, windshield, wheels, decals } = CARRIER_TRUCK;
+  return <svg className="carrier-mark__truck" viewBox={`0 0 ${n(viewBox.width)} ${n(viewBox.height)}`} fill="none" aria-hidden="true">
+    <rect x={n(body.x)} y={n(body.y)} width={n(body.width)} height={n(body.height)} rx={n(body.rx)} fill={paint(body.fill)} stroke={paint(body.stroke)} strokeWidth={n(strokeWidth)} />
+    <path d={cab.d} fill={paint(cab.fill)} stroke={paint(cab.stroke)} strokeWidth={n(strokeWidth)} />
+    <path d={windshield.d} fill={paint(windshield.fill)} />
+    {/* Decals have a fixed paint order, and concentric layers can share coordinates. */}
+    {decals[decal].map((shape, index) => <Decal key={`${decal}-${index}`} shape={shape} />)}
+    {wheels.centers.map(([x, y]) => <g key={x}>
+      <circle cx={n(x)} cy={n(y)} r={n(wheels.tire.r)} fill={paint(wheels.tire.fill)} />
+      <circle cx={n(x)} cy={n(y)} r={n(wheels.hub.r)} fill={paint(wheels.hub.fill)} />
+    </g>)}
+  </svg>;
+}
+
 export function CarrierMark({ carrier }: { carrier: CarrierInfo }) {
   const { family, name, decal } = carrierBrand(carrier);
-  const { viewBox, strokeWidth, body, cab, windshield, wheels, decals } = CARRIER_TRUCK;
   return <span className="carrier-mark" data-family={family} title={carrier.name} aria-label={carrier.name}>
-    <svg className="carrier-mark__truck" viewBox={`0 0 ${n(viewBox.width)} ${n(viewBox.height)}`} fill="none" aria-hidden="true">
-      <rect x={n(body.x)} y={n(body.y)} width={n(body.width)} height={n(body.height)} rx={n(body.rx)} fill={paint(body.fill)} stroke={paint(body.stroke)} strokeWidth={n(strokeWidth)} />
-      <path d={cab.d} fill={paint(cab.fill)} stroke={paint(cab.stroke)} strokeWidth={n(strokeWidth)} />
-      <path d={windshield.d} fill={paint(windshield.fill)} />
-      {/* Decals have a fixed paint order, and concentric layers can share coordinates. */}
-      {decals[decal].map((shape, index) => <Decal key={`${decal}-${index}`} shape={shape} />)}
-      {wheels.centers.map(([x, y]) => <g key={x}>
-        <circle cx={n(x)} cy={n(y)} r={n(wheels.tire.r)} fill={paint(wheels.tire.fill)} />
-        <circle cx={n(x)} cy={n(y)} r={n(wheels.hub.r)} fill={paint(wheels.hub.fill)} />
-      </g>)}
-    </svg>
+    <Truck decal={decal} />
     <span className="carrier-mark__name" aria-hidden="true">{name}{family === 'gls' && <span className="carrier-mark__dot">.</span>}</span>
   </span>;
+}
+
+/** The carrier's truck alone, in its own livery, beside a name written elsewhere. */
+export function CarrierTruck({ carrier }: { carrier: CarrierInfo }) {
+  const { decal, style } = carrierBrand(carrier);
+  return <span className="carrier-truck" style={style} aria-hidden="true"><Truck decal={decal} /></span>;
 }

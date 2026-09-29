@@ -3,7 +3,12 @@
   "displayName": "Aramex",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "AE",
+      "SA",
+      "EG",
+      "JO"
+    ]
   },
   "brand": {
     "color": "#dc291e"

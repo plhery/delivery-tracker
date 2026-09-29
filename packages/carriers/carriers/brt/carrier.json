@@ -3,7 +3,9 @@
   "displayName": "BRT",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "IT"
+    ]
   },
   "brand": {
     "color": "#dc0032"

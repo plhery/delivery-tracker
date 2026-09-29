@@ -32,9 +32,16 @@ async function recognize(trackingNumber: string): Promise<ApiCarrierDetectionRes
     return await adapter.recognize(trackingNumber);
   }, RECOGNITION_BUDGET_MS);
   const { carrier, choices } = settleRecognition(outcomes);
-  const answer: ApiCarrierDetectionResponse = carrier
-    ? { trackingNumber, carrier: carrier as ApiCarrierId }
-    : { trackingNumber, carrier: 'unknown', ...(choices.length > 1 ? { recognized: choices as ApiCarrierId[] } : {}) };
+  // Who was asked, and who could not answer, tells "nobody knows it yet" from "could not check".
+  const asked = candidates.map((candidate) => candidate.carrier as ApiCarrierId);
+  const unanswered = outcomes.filter((outcome) => outcome.status === 'failed').map((outcome) => outcome.carrier as ApiCarrierId);
+  const answer: ApiCarrierDetectionResponse = {
+    trackingNumber,
+    carrier: (carrier ?? 'unknown') as ApiCarrierId,
+    ...(!carrier && choices.length > 1 ? { recognized: choices as ApiCarrierId[] } : {}),
+    ...(asked.length ? { asked } : {}),
+    ...(unanswered.length ? { unanswered } : {}),
+  };
   if (candidates.length) {
     logOperationalEvent('carrier_recognition', {
       asked: candidates.length,

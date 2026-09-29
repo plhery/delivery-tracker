@@ -25,6 +25,8 @@ import {
   useI18n,
 } from './i18n';
 import type { ApiAuth } from './lib/apiClient';
+import { carrierInfo } from './lib/carriers';
+import { usedCarrierIds } from './lib/carrierPicker';
 import {
   isActiveParcel,
   nextPriorityParcel,
@@ -311,6 +313,10 @@ export default function App({
       visibleParcels.filter((parcel) => Boolean(parcel.archivedAt)),
     ),
     [visibleParcels],
+  );
+  const usedCarriers = useMemo(
+    () => usedCarrierIds(parcels, (carrier) => carrierInfo(carrier).capabilities.selectable),
+    [parcels],
   );
   const lastDpdPostcode = useMemo(
     () => [...parcels]
@@ -641,6 +647,7 @@ export default function App({
           }}
           onOpenParcel={(parcelId) => openParcelDetail(parcelId)}
           lastDpdPostcode={lastDpdPostcode}
+          usedCarriers={usedCarriers}
           initialLabel={sharedParcelInput?.label}
           initialTrackingInput={sharedParcelInput?.trackingInput}
         />
@@ -667,6 +674,7 @@ export default function App({
           onBack={closeParcelDetail}
           onRename={(p, label) => renameParcel(p.id, label)}
           onChangeCarrier={(p, input) => changeParcelCarrier(p.id, input)}
+          usedCarriers={usedCarriers}
           onSetNotificationsMuted={(p, muted) =>
             setParcelNotificationsMuted(p.id, muted)}
           onRefresh={(p) => refreshParcel(p.id)}

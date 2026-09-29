@@ -3,7 +3,9 @@
   "displayName": "China Post",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "CN"
+    ]
   },
   "brand": {
     "color": "#006d46"

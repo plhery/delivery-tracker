@@ -11,6 +11,8 @@ struct CarrierDetectionResponse: Codable, Equatable, Hashable, Sendable {
     var amazonShippingStatus: CarrierDetectionResponseAmazonShippingStatus? = nil
     var carrier: CarrierID
     var recognized: [CarrierID]? = nil
+    var asked: [CarrierID]? = nil
+    var unanswered: [CarrierID]? = nil
 }
 
 struct AccountExportResponse: Codable, Equatable, Hashable, Sendable {

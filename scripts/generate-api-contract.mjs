@@ -213,6 +213,8 @@ function validateDetectionRuleIds(documents) {
 const contractKeyOrder = [
   'displayName',
   'displayNames',
+  'aliases',
+  'countries',
   'color',
   'selectable',
   'timezone',
@@ -236,6 +238,8 @@ function contractTracking(tracking) {
   const contractValue = { mode: tracking.mode, adapter: tracking.adapter };
   if (tracking.upstreamName !== undefined) contractValue.upstreamName = tracking.upstreamName;
   if (tracking.requirements !== undefined) contractValue.requirements = tracking.requirements;
+  // Clients predict which carriers the Add sheet's recognition asks.
+  if (tracking.recognition !== undefined) contractValue.recognitionRank = tracking.recognition.rank;
   return contractValue;
 }
 
@@ -244,6 +248,9 @@ function contractEntry(carrier) {
   const entry = { displayName: carrier.displayName };
   if (carrier.displayNames !== undefined) entry.displayNames = carrier.displayNames;
   entry.color = carrier.brand.color;
+  // The carrier pickers search other names and show and search countries.
+  if (carrier.aliases.length) entry.aliases = carrier.aliases;
+  if (carrier.region.countries.length) entry.countries = carrier.region.countries;
   entry.selectable = carrier.selectable;
   entry.timezone = carrier.timezone;
   entry.tracking = contractTracking(carrier.tracking);

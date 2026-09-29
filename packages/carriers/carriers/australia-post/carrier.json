@@ -3,7 +3,9 @@
   "displayName": "Australia Post",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "AU"
+    ]
   },
   "brand": {
     "color": "#dc1928"

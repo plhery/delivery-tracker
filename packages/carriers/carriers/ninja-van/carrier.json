@@ -3,7 +3,14 @@
   "displayName": "Ninja Van",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "SG",
+      "MY",
+      "PH",
+      "ID",
+      "TH",
+      "VN"
+    ]
   },
   "brand": {
     "color": "#ed2d26"

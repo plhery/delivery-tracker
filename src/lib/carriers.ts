@@ -24,6 +24,10 @@ export {
   requirementSatisfied,
   tracksAutomatically,
 } from '@carriers/core/catalog';
+export {
+  MAX_RECOGNITIONS,
+  recognitionAskedCarriers,
+} from '@carriers/core/catalog/recognition';
 export type {
   CarrierDetection,
   DetectionConfidence,

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { POST } from '../../app/api/carriers/detect/route';
-import { detectCarrierMatch } from '../lib/carriers';
+import { detectCarrierMatch, recognitionAskedCarriers } from '../lib/carriers';
 import { SupabaseAuthenticator } from './auth';
 
 // The route asks carriers through the adapter registry; no test reaches a carrier.
@@ -35,7 +35,7 @@ it('returns the one carrier that knows an ambiguous number', async () => {
   const response = await request('0608 0000 0000 02');
   expect(response.status).toBe(200);
   expect(response.headers.get('cache-control')).toBe('no-store');
-  expect(await response.json()).toEqual({ trackingNumber: '06080000000002', carrier: 'dpd' });
+  expect(await response.json()).toEqual({ trackingNumber: '06080000000002', carrier: 'dpd', asked: ['dpd', 'ciblex'] });
   // Every carrier that can answer is asked at once, number evidence first.
   expect(asked()).toEqual(['dpd', 'ciblex']);
 });
@@ -43,13 +43,13 @@ it('returns the one carrier that knows an ambiguous number', async () => {
 it('offers a carrier that needs a postcode so the sheet can ask for it', async () => {
   // Both GLS networks answer from one overview: the more common one is returned.
   recognize.mockImplementation(knows('gls-ch', 'gls-de'));
-  expect(await (await request('12345678901')).json()).toEqual({ trackingNumber: '12345678901', carrier: 'gls-ch' });
+  expect(await (await request('12345678901')).json()).toMatchObject({ trackingNumber: '12345678901', carrier: 'gls-ch' });
 });
 
 it('lets the user choose between unrelated carriers that both know the number', async () => {
   recognize.mockImplementation(knows('dpd', 'hermes-de'));
   expect(await (await request('12345678901231')).json()).toEqual({
-    trackingNumber: '12345678901231', carrier: 'unknown', recognized: ['dpd', 'hermes-de'],
+    trackingNumber: '12345678901231', carrier: 'unknown', recognized: ['dpd', 'hermes-de'], asked: asked(),
   });
 });
 
@@ -57,7 +57,7 @@ it('ignores an answer about an old parcel that reused the number', async () => {
   recognize.mockImplementation(async (carrier: string) => ({ known: true, lastActivityAt: carrier === 'dpd' ? '2026-01-01T00:00:00Z' : null }));
   vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-09-10T12:00:00Z') });
   try {
-    expect(await (await request('06080000000019')).json()).toEqual({ trackingNumber: '06080000000019', carrier: 'ciblex' });
+    expect(await (await request('06080000000019')).json()).toEqual({ trackingNumber: '06080000000019', carrier: 'ciblex', asked: ['dpd', 'ciblex'] });
   } finally { vi.useRealTimers(); }
 });
 
@@ -66,14 +66,17 @@ it('answers unknown when no carrier knows the number or one fails, and asks agai
     if (carrier === 'dpd') throw new Error('guest API unreachable');
     return { known: false };
   });
-  expect(await (await request('06080000000027')).json()).toEqual({ trackingNumber: '06080000000027', carrier: 'unknown' });
+  // The sheet tells a carrier that could not answer from one that said no.
+  expect(await (await request('06080000000027')).json()).toEqual({
+    trackingNumber: '06080000000027', carrier: 'unknown', asked: ['dpd', 'ciblex'], unanswered: ['dpd'],
+  });
   recognize.mockClear();
   // A carrier that could not answer is asked again on the next focus-out.
   await request('06080000000027');
   expect(asked()).toEqual(['dpd', 'ciblex']);
   // A complete answer is reused.
   recognize.mockReset().mockImplementation(knows());
-  await request('06080000000035');
+  expect(await (await request('06080000000035')).json()).toEqual({ trackingNumber: '06080000000035', carrier: 'unknown', asked: ['dpd', 'ciblex'] });
   await request('06080000000035');
   expect(asked()).toEqual(['dpd', 'ciblex']);
 });
@@ -94,8 +97,14 @@ it.each([
   ['1000000000000000000001', 'austrian-post', ['austrian-post']],
 ])('recognizes newly supported %s shapes only through carrier answers', async (number, carrier, candidates) => {
   recognize.mockImplementation(knows(carrier as string));
-  expect(await (await request(number)).json()).toEqual({ trackingNumber: number, carrier });
+  expect(await (await request(number)).json()).toEqual({ trackingNumber: number, carrier, asked: candidates });
   expect(asked()).toEqual(candidates);
+});
+
+it.each(['06080000000076', '12345678901234', '12345678909', '1234567890', '12345678'])('asks the carriers the Add sheets name for %s', async (number) => {
+  const response = await (await request(number)).json();
+  expect(asked()).toEqual(recognitionAskedCarriers(number));
+  expect(response.asked ?? []).toEqual(recognitionAskedCarriers(number));
 });
 
 it('counts served detections by confidence, including a recognized carrier', async () => {

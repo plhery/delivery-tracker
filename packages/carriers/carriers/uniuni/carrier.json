@@ -3,7 +3,10 @@
   "displayName": "UniUni",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "CA",
+      "US"
+    ]
   },
   "brand": {
     "color": "#f68841"

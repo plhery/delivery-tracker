@@ -3,7 +3,9 @@
   "displayName": "Poczta Polska",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "PL"
+    ]
   },
   "brand": {
     "color": "#c43c2b"

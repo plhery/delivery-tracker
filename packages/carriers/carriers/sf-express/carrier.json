@@ -3,7 +3,10 @@
   "displayName": "SF Express",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "CN",
+      "HK"
+    ]
   },
   "brand": {
     "color": "#dc1e32"

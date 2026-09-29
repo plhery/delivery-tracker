@@ -53,6 +53,8 @@ function builtCarrierInfo(id: CarrierId, carrier: CarrierDefinition): CarrierInf
   return {
     id,
     name: carrier.displayName,
+    aliases: carrier.aliases ?? [],
+    countries: carrier.countries ?? [],
     trackingSiteName: carrier.trackingSiteName,
     color: carrier.color,
     trackingUrl: trackingLink(id, carrier.trackingUrlTemplate),

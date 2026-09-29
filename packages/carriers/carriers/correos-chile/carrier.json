@@ -3,7 +3,9 @@
   "displayName": "Correos de Chile",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "CL"
+    ]
   },
   "brand": {
     "color": "#d9232d"

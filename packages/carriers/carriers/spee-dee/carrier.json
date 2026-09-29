@@ -3,7 +3,9 @@
   "displayName": "Spee-Dee",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "US"
+    ]
   },
   "brand": {
     "color": "#ff4734"

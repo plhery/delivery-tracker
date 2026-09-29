@@ -16,12 +16,18 @@
 .add-parcel-notice > p { min-height: 0; overflow: hidden; margin: 0; padding-inline: 2px; color: var(--orange-text); font-size: 12px; line-height: 1.45; }
 @keyframes add-parcel-feedback-in { from { opacity: 0; translate: 0 -4px; } }
 @keyframes add-parcel-notice-open { from { grid-template-rows: 0fr; margin-top: -10px; opacity: 0; } }
-.add-parcel-carrier__row { display: flex; align-items: center; gap: 8px; min-height: 36px; }
-.add-parcel-carrier__row > svg { width: 17px; height: 17px; flex-shrink: 0; color: var(--ink-soft); }
-.add-parcel-carrier__identity { display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 8px; min-width: 0; }
-.add-parcel-carrier__identity strong { font-size: 13px; font-weight: 550; overflow-wrap: anywhere; }
+/* One quiet line: the carrier, or what the carrier check has found so far. */
+.add-parcel-carrier__line { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0; border-radius: 10px; background: transparent; color: inherit; text-align: left; }
+.add-parcel-carrier__detect { display: grid; place-items: center; width: 27px; flex-shrink: 0; color: var(--ochre); }
+.add-parcel-carrier__line .add-parcel-carrier__detect svg { width: 18px; height: 18px; }
+.add-parcel-carrier__detect.is-busy svg { animation: spin 1.1s linear infinite; }
+.add-parcel-carrier__identity { display: flex; flex: 1; align-items: baseline; flex-wrap: wrap; gap: 3px 8px; min-width: 0; }
+.add-parcel-carrier__identity strong { font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
 .add-parcel-carrier__identity small { color: var(--ink-soft); font-size: 12px; }
-.add-parcel-carrier__row > button { background: transparent; color: var(--ink-soft); font-size: 12px; min-height: 44px; padding: 5px 0 5px 8px; margin-left: auto; text-decoration: underline; text-underline-offset: 3px; flex-shrink: 0; max-width: 42%; }
+.add-parcel-carrier__identity small.is-attention { color: var(--ochre); }
+.add-parcel-carrier__change { flex-shrink: 0; max-width: 42%; padding-left: 8px; color: var(--ink-soft); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+@media (hover: hover) { .add-parcel-carrier__line:hover .add-parcel-carrier__change { color: var(--ink); } }
+@media (prefers-reduced-motion: reduce) { .add-parcel-carrier__detect.is-busy svg { animation: none; opacity: .6; } }
 .add-parcel-carrier__hint { font-size: 12px; color: var(--orange-text); margin: 4px 0 0; }
 .add-parcel-carrier--account .add-parcel-carrier__hint { color: var(--ink-soft); }
 .add-parcel-carrier__account-link { display: inline-flex; align-items: center; min-height: 44px; font-size: 13px; font-weight: 550; text-underline-offset: 3px; }

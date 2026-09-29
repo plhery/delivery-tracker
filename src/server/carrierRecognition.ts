@@ -1,74 +1,33 @@
 import 'server-only';
 
 import type { Recognition } from '@carriers/core/adapter';
-import { carrierBrand } from '@carriers/core/catalog/hints';
-import type { CarrierInputField } from '@carriers/core/catalog/types';
-import { detectCarrierMatch } from '@carriers/core/detection';
+import { carrierBrand } from '@carriers/core/catalog/networks';
+import type { RecognitionCandidate } from '@carriers/core/catalog/recognition';
 import { CARRIER_RECOGNITION_RANKS } from '@carriers/generated/recognition';
-import { AUTOMATIC_CARRIER_IDS, carrierAdapter, requiredRequirements } from './carriers';
+
+export {
+  MAX_RECOGNITIONS,
+  recognitionCandidates,
+  type RecognitionCandidate,
+} from '@carriers/core/catalog/recognition';
 
 /**
  * Carrier recognition: when a number's shape fits several carriers, ask the
  * ones that can answer cheaply whether they know it. The Add sheet runs it
  * while the user is still in the form, the first sync runs it again after
  * saving, and routing keeps retrying it while the filed carrier cannot track
- * the number.
+ * the number. Which carriers qualify is shared with the Add sheets
+ * (`@carriers/core/catalog/recognition`), which name them while they answer.
  */
 
-/** Carriers asked at once. */
-export const MAX_RECOGNITIONS = 5;
 /** An answer for a parcel quiet this long is taken for an older parcel that reused the number. */
 const RECENT_ACTIVITY_MS = 60 * 24 * 3_600_000;
-
-export interface RecognitionCandidate {
-  carrier: string;
-  /** The first input the carrier needs before it can track, if any. */
-  needsInput: CarrierInputField | null;
-  /** A preferred detection rule backs it with number evidence. */
-  preferred: boolean;
-}
 
 export type RecognitionStatus = 'known' | 'unknown' | 'failed';
 
 export interface RecognitionOutcome extends RecognitionCandidate {
   status: RecognitionStatus;
   lastActivityAt: string | null;
-}
-
-/**
- * The low-confidence candidates worth asking, best first: the carrier a
- * universal provider named, then the ones number evidence backs, then the
- * catalog's popularity rank. Only carriers that declare `tracking.recognition`
- * qualify. A high-confidence number needs no recognition.
- */
-export function recognitionCandidates(
-  number: string,
-  options: { hint?: string; skip?: (carrier: string) => boolean } = {},
-): RecognitionCandidate[] {
-  const detected = detectCarrierMatch(number);
-  if (detected.confidence !== 'low') return [];
-  // A carrier the number points to but that cannot be asked (DPD France) keeps
-  // its brand's other networks out: DPD's guest API also answers for DPD
-  // France parcels, and would file one under DPD Switzerland.
-  const shadowed = new Set(detected.preferred
-    .filter((carrier) => CARRIER_RECOGNITION_RANKS[carrier] === undefined)
-    .map((carrier) => carrierBrand(carrier)).filter(Boolean));
-  const score = (carrier: string) => [
-    carrier === options.hint ? 1 : 0,
-    detected.preferred.includes(carrier as never) ? 1 : 0,
-    CARRIER_RECOGNITION_RANKS[carrier] ?? 0,
-  ];
-  return detected.candidates
-    .filter((carrier) => CARRIER_RECOGNITION_RANKS[carrier] !== undefined && AUTOMATIC_CARRIER_IDS.has(carrier)
-      && carrierAdapter(carrier) !== 'universal' && !shadowed.has(carrierBrand(carrier)) && !options.skip?.(carrier))
-    .map((carrier) => ({ carrier, score: score(carrier) }))
-    // Array#sort is stable: equal scores keep the catalog order.
-    .sort((left, right) => right.score[0] - left.score[0] || right.score[1] - left.score[1] || right.score[2] - left.score[2])
-    .map(({ carrier }) => ({
-      carrier,
-      needsInput: requiredRequirements(carrier, number)[0]?.field ?? null,
-      preferred: detected.preferred.includes(carrier as never),
-    }));
 }
 
 /**

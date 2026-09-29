@@ -3,7 +3,9 @@
   "displayName": "YunExpress",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "CN"
+    ]
   },
   "brand": {
     "color": "#008284"

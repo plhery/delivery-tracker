@@ -3,7 +3,9 @@
   "displayName": "bpost",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "BE"
+    ]
   },
   "brand": {
     "color": "#ef2637"

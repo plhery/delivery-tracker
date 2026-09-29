@@ -3,7 +3,9 @@
   "displayName": "Estafeta",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "MX"
+    ]
   },
   "brand": {
     "color": "#e30613"

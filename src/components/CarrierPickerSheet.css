@@ -1,0 +1,58 @@
+/* The carrier picker stacks over the sheet that opened it. */
+.sheet-backdrop.carrier-picker-backdrop { z-index: 61; }
+.sheet.carrier-picker { display: flex; flex-direction: column; max-width: 440px; height: min(720px, calc(100dvh - 56px)); padding: 0; overflow: hidden; border-radius: 26px; }
+.carrier-picker__heading { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 56px; padding: 6px 12px 0; }
+.carrier-picker__cancel { justify-self: start; min-height: 44px; padding: 0 10px; background: transparent; color: var(--ink-soft); font-size: 15px; border-radius: 10px; }
+.carrier-picker__title { grid-column: 2; margin: 0; font-size: 17px; font-weight: 650; }
+.carrier-picker__search { display: flex; align-items: center; gap: 8px; margin: 4px 16px 8px; min-height: 42px; padding: 0 12px; border-radius: 12px; background: var(--control); color: var(--ink-soft); }
+.carrier-picker__search:focus-within { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ochre) 55%, transparent); }
+.carrier-picker__search > svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
+.carrier-picker__search input { flex: 1; min-width: 0; padding: 10px 0; border: 0; background: transparent; color: var(--ink); font-size: 16px; outline: none; }
+.carrier-picker__search input::placeholder { color: var(--ink-soft); opacity: .85; }
+.carrier-picker__search input::-webkit-search-cancel-button { appearance: none; }
+.carrier-picker__clear { display: grid; place-items: center; width: 32px; height: 32px; margin-right: -6px; padding: 0; border-radius: 50%; background: transparent; color: var(--ink-soft); }
+.carrier-picker__clear svg { width: 16px; height: 16px; }
+.carrier-picker__body { position: relative; flex: 1; min-height: 0; }
+.carrier-picker__list { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 26px 24px 8px; scrollbar-width: thin; }
+.carrier-picker__section-title { margin: 0; padding: 16px 12px 6px; color: var(--ink-soft); font-size: 11px; font-weight: 600; letter-spacing: 1.1px; text-transform: uppercase; }
+.carrier-picker__letter { position: sticky; top: 0; z-index: 1; padding: 6px 12px 4px; background: var(--canvas); color: var(--ink-soft); font-size: 13px; font-weight: 650; }
+.carrier-picker__option { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 8px 12px; border-radius: 12px; cursor: pointer; }
+.carrier-picker__option.is-active { background: var(--control); }
+.carrier-picker__option[aria-selected="true"] { background: var(--yellow-soft); }
+.carrier-picker__text { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.carrier-picker__name { font-size: 15px; font-weight: 500; line-height: 1.3; overflow-wrap: anywhere; }
+.carrier-picker__name mark { padding: 0 1px; border-radius: 3px; background: color-mix(in srgb, var(--yellow) 45%, transparent); color: inherit; font-weight: 650; }
+.carrier-picker__sub { color: var(--ink-soft); font-size: 12px; line-height: 1.35; }
+.carrier-picker__tag { flex: none; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 550; white-space: nowrap; }
+.carrier-picker__tag--quiet { background: var(--control); color: var(--ink-soft); }
+.carrier-picker__tag--found { background: var(--green-soft); color: var(--green); }
+.carrier-picker__option[aria-selected="true"] .carrier-picker__tag--quiet { background: var(--canvas); }
+.carrier-picker__sub .carrier-picker__tag { display: inline-block; margin: 2px 2px 2px 0; padding: 0 7px; font-size: 10.5px; line-height: 17px; }
+.carrier-picker__check { flex: none; width: 20px; height: 20px; color: var(--ochre); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.carrier-picker__detect { display: grid; place-items: center; width: 27px; flex: none; color: var(--ochre); }
+.carrier-picker__detect svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
+.carrier-picker__detect.is-busy svg { animation: spin 1.2s linear infinite; }
+.carrier-picker__empty { position: absolute; top: 12px; right: 20px; left: 20px; margin: 0; color: var(--ink-soft); font-size: 13px; }
+.carrier-picker__rail { position: absolute; top: 50%; right: 2px; display: flex; flex-direction: column; translate: 0 -50%; }
+.carrier-picker__rail button { width: 22px; min-height: 16px; padding: 0; background: transparent; color: var(--ochre); font-size: 10px; font-weight: 650; line-height: 16px; }
+.carrier-truck { display: inline-flex; flex: none; }
+.carrier-truck svg { display: block; width: 27px; height: 18px; overflow: visible; stroke: none; stroke-width: 0; }
+
+@media (hover: hover) {
+  .carrier-picker__option:hover { background: var(--control); }
+  .carrier-picker__option[aria-selected="true"]:hover { background: var(--yellow-soft); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carrier-picker__detect.is-busy svg { animation: none; opacity: .6; }
+}
+
+@media (max-width: 760px) {
+  .sheet.carrier-picker { max-width: none; height: calc(100dvh - max(12px, env(safe-area-inset-top))); padding: 0; border-radius: 22px 22px 0 0; }
+  .carrier-picker__list { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+}
+
+/* The carrier field that opens the picker in the Change carrier sheet. */
+.carrier-field { display: flex; align-items: center; gap: 10px; color: var(--ink); text-align: left; cursor: pointer; }
+.carrier-field__name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.carrier-field > svg:last-child { width: 18px; height: 18px; color: var(--ink-soft); }

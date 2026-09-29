@@ -3,7 +3,9 @@
   "displayName": "Parcelforce Worldwide",
   "aliases": [],
   "region": {
-    "countries": []
+    "countries": [
+      "GB"
+    ]
   },
   "brand": {
     "color": "#9d0f11"
