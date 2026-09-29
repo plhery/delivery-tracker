@@ -8,7 +8,7 @@
   --map-route: var(--ink); --map-route-muted: color-mix(in srgb, var(--ink) 38%, transparent);
   --map-accent: var(--tone, var(--ink)); --map-label: var(--ink-soft); --map-label-strong: var(--ink);
   --map-label-bg: light-dark(color-mix(in srgb, var(--paper) 84%, transparent), color-mix(in srgb, #20261f 82%, transparent));
-  --map-dot-ring: var(--map-ocean); --map-rim-shade: light-dark(rgb(20 30 20 / 7%), rgb(0 0 0 / 40%));
+  --map-dot-ring: var(--map-ocean); --map-rim-shade: light-dark(rgb(20 30 20 / 7%), rgb(0 0 0 / 40%)); --map-glow: transparent;
   user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
 }
 /* Layout without specificity, so a direction's own class always places the map. */
@@ -34,6 +34,7 @@
 .dot[data-kind=last-known] circle { fill: var(--paper); stroke: var(--map-accent); stroke-width: 2; }
 .dot[data-kind=destination] circle { fill: var(--map-dot-ring); stroke: var(--map-route-muted); stroke-width: 1.5; }
 .dot[data-kind=area] circle { fill: none; stroke: var(--map-route); stroke-width: 1.4; stroke-dasharray: 1.6 2.4; }
+.dot .ring { fill: none; stroke: var(--map-accent); stroke-width: 1.5; opacity: .7; }
 @keyframes pulse { from { transform: scale(1); opacity: .35; } to { transform: scale(3.4); opacity: 0; } }
 .placeLabel {
   position: absolute; left: 0; top: 0; display: flex; align-items: center; height: 22px; padding: 0 7px; border-radius: 7px;
