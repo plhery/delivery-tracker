@@ -2,6 +2,32 @@
   "carrier": "colis-prive",
   "records": [
     {
+      "number": "431 001 411 698",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6ab69eff549e166662e257d4",
+        "date": "2026-09-25"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "fedex",
+          "mondial-relay",
+          "colis-prive",
+          "mrw",
+          "purolator",
+          "sf-express",
+          "sto",
+          "zto",
+          "yamato",
+          "j-and-t"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Colis Privé, which stays one candidate among several."
+    },
+    {
       "number": "HS0000329755",
       "role": "shipment",
       "evidence": "public_shipment_report",
@@ -33,6 +59,23 @@
         ]
       },
       "note": "Published integration example, not a real shipment. The source attributes it to Colis Privé, which stays one candidate among several."
+    },
+    {
+      "number": "WT0004403087",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6ab3c577c2d2ef2146c930ae",
+        "date": "2026-09-23"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "colis-prive"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Colis Privé, which stays one candidate among several."
     },
     {
       "number": "ZE0000294369",

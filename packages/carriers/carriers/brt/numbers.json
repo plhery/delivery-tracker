@@ -2,6 +2,28 @@
   "carrier": "brt",
   "records": [
     {
+      "number": "04503190170072",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6aba3931d3ae76dee1ac45cf",
+        "date": "2026-09-28"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dpd",
+          "dpd-fr",
+          "ciblex",
+          "seur",
+          "brt",
+          "delhivery"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to BRT, which stays one candidate among several."
+    },
+    {
       "number": "08454077486990",
       "role": "shipment",
       "evidence": "public_shipment_report",

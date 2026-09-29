@@ -16,6 +16,20 @@
       "note": "Open-source project example, not a real shipment."
     },
     {
+      "number": "LX072774186NZ",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.chinapostaltracking.com/qa/package-stuck-160626/",
+        "date": "2026-08-31"
+      },
+      "expect": {
+        "carrier": "nz-post",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Sent from New Zealand to China."
+    },
+    {
       "number": "XY123456789NZ",
       "role": "negative",
       "evidence": "official_documentation_example",

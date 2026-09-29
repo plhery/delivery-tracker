@@ -18,6 +18,20 @@
       "note": "Official documentation example, not a real shipment. The source attributes it to Poczta Polska, which stays one candidate among several."
     },
     {
+      "number": "CP265970733PL",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.chinapostaltracking.com/qa/blocked-since-july-161167/",
+        "date": "2026-09-22"
+      },
+      "expect": {
+        "carrier": "intl-post",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Poczta Polska; detection selects the generic postal carrier. Sent from Poland to China; the page does not name the carrier."
+    },
+    {
       "number": "PX0000000013",
       "role": "shipment",
       "evidence": "official_documentation_example",
@@ -29,6 +43,20 @@
         "confidence": "high"
       },
       "note": "Official documentation example, not a real shipment."
+    },
+    {
+      "number": "PX7678676761",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6aa57c3bf5ad63b0c0d968f3",
+        "date": "2026-09-12"
+      },
+      "expect": {
+        "carrier": "poczta-polska",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Pocztex parcel."
     },
     {
       "number": "CP123456789PL",

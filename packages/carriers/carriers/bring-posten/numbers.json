@@ -14,6 +14,20 @@
         "confidence": "high"
       },
       "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "CJ949951125NO",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.chinapostaltracking.com/qa/missing-package-161210/",
+        "date": "2026-09-23"
+      },
+      "expect": {
+        "carrier": "bring-posten",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Sent from Norway to China."
     }
   ]
 }

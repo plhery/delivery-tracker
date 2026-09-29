@@ -51,6 +51,24 @@
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Paack, which no rule claims."
     },
     {
+      "number": "534000021265325582",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/dos-semanas-despues!!!!/3a0638ce2147eda441",
+        "date": "2026-09-22"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Paack, which no rule claims. Amazon order."
+    },
+    {
       "number": "9451162004086887",
       "role": "shipment",
       "evidence": "public_shipment_report",

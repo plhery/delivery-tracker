@@ -14,6 +14,20 @@
         "confidence": "high"
       },
       "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "WB371672691TH",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://pantip.com/topic/44231379",
+        "date": "2026-09-18"
+      },
+      "expect": {
+        "carrier": "thailand-post",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Domestic item."
     }
   ]
 }

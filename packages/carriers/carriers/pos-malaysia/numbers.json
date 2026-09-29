@@ -2,6 +2,20 @@
   "carrier": "pos-malaysia",
   "records": [
     {
+      "number": "LP661177776MY",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.chinapostaltracking.com/qa/item-not-delivered-157490/",
+        "date": "2026-03-23"
+      },
+      "expect": {
+        "carrier": "pos-malaysia",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
       "number": "MYPM00000000015",
       "role": "shipment",
       "evidence": "official_documentation_example",

@@ -2,6 +2,20 @@
   "carrier": "landmark-global",
   "records": [
     {
+      "number": "LTN480634985",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6ab3ef95f2b298d50182689a",
+        "date": "2026-09-23"
+      },
+      "expect": {
+        "carrier": "purolator",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Landmark Global; detection selects Purolator."
+    },
+    {
       "number": "LTN74207623N1",
       "role": "shipment",
       "evidence": "open_source_example",

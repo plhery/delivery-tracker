@@ -2,6 +2,20 @@
   "carrier": "ctt",
   "records": [
     {
+      "number": "LA136353435PT",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://portaldaqueixa.com/brands/ctt/complaints/ctt-atraso-na-entrega-377-163329926",
+        "date": "2026-09-28"
+      },
+      "expect": {
+        "carrier": "ctt",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
       "number": "RL402552798PT",
       "role": "shipment",
       "evidence": "public_shipment_report",

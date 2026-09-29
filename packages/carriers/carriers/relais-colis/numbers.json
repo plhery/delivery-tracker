@@ -23,6 +23,20 @@
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Relais Colis, which stays one candidate among several."
     },
     {
+      "number": "CC109000006501",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a0790884a72dd12fbe83e46",
+        "date": "2026-05-15"
+      },
+      "expect": {
+        "carrier": "relais-colis",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
       "number": "CC200000000401",
       "role": "shipment",
       "evidence": "synthetic",

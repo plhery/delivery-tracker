@@ -2,6 +2,41 @@
   "carrier": "ukrposhta",
   "records": [
     {
+      "number": "0505683900154",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.vidhuk.ua/uk/ukrposhta-ukrpochta/review-2374754",
+        "date": "2026-09-07"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dpd-fr",
+          "la-poste",
+          "correos-chile",
+          "delhivery",
+          "yunda"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ukrposhta, which no rule claims. Domestic parcel."
+    },
+    {
+      "number": "CA315000362UA",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6aae6849e25391667cb34f4b",
+        "date": "2026-09-19"
+      },
+      "expect": {
+        "carrier": "intl-post",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ukrposhta; detection selects the generic postal carrier. Return to China, reviewed on AliExpress's page."
+    },
+    {
       "number": "RF426331371SG",
       "role": "shipment",
       "evidence": "open_source_example",

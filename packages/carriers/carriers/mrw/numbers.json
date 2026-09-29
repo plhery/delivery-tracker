@@ -44,6 +44,20 @@
       "note": "Publicly reported shipment number; the attribution was not independently verified."
     },
     {
+      "number": "02692S094204",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6ab63070e0b0b4688bf95e67",
+        "date": "2026-09-25"
+      },
+      "expect": {
+        "carrier": "mrw",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
       "number": "038233020970",
       "role": "shipment",
       "evidence": "public_shipment_report",
@@ -69,6 +83,20 @@
         ]
       },
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to MRW, which stays one candidate among several."
+    },
+    {
+      "number": "04319F171575",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/demora-del-env-C3-ADo-sumado-a-malt/635ef0c643dc08ba3e",
+        "date": "2026-09-10"
+      },
+      "expect": {
+        "carrier": "mrw",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
     },
     {
       "number": "08203F557102",

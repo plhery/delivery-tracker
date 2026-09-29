@@ -40,6 +40,20 @@
         "confidence": "high"
       },
       "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
+      "number": "0082900082909841703487",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6ab578d8357bf7e8557625dc",
+        "date": "2026-09-24"
+      },
+      "expect": {
+        "carrier": "ctt-express",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
     }
   ]
 }

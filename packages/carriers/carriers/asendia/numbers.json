@@ -105,6 +105,20 @@
       "note": "Published integration example, not a real shipment. The source attributes it to Asendia; detection selects La Poste / Colissimo."
     },
     {
+      "number": "LS244428589CH",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6aa36fc3b355e35ecf1ef14e",
+        "date": "2026-09-11"
+      },
+      "expect": {
+        "carrier": "swiss-post",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Asendia; detection selects Swiss Post. Sent from the USA through Asendia."
+    },
+    {
       "number": "UX000352872CH",
       "role": "shipment",
       "evidence": "official_documentation_example",

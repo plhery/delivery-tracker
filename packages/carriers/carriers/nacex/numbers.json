@@ -2,6 +2,20 @@
   "carrier": "nacex",
   "records": [
     {
+      "number": "0833/11354347",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/desconocimiento-falta-de-info/f097c972cba9d3c984",
+        "date": "2026-09-25"
+      },
+      "expect": {
+        "carrier": "nacex",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
       "number": "2103/11207088",
       "role": "shipment",
       "evidence": "public_shipment_report",

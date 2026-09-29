@@ -2,6 +2,26 @@
   "carrier": "posti",
   "records": [
     {
+      "number": "00264300487130023858",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/ItellaPlugins/itella-shipping-woocommerce/issues/224",
+        "date": "2026-09-03"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "postnord",
+          "usps",
+          "nz-post",
+          "poczta-polska"
+        ]
+      },
+      "note": "Example Posti tracking link quoted in an open-source plugin's issue, not a confirmed shipment. The source attributes it to Posti, which no rule claims."
+    },
+    {
       "number": "LR288565359NL",
       "role": "shipment",
       "evidence": "open_source_example",
@@ -13,6 +33,20 @@
         "confidence": "high"
       },
       "note": "Published open-source tracking example. Posti returned history in a local live check on 2026-09-21 and in the canary until 2026-09-24; since 2026-09-25 it is past Posti's retention (zero hits, and Posti's tracker reports it as not found). Issuer-based number detection still selects PostNL."
+    },
+    {
+      "number": "LV679342632US",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6807896d85762edcd5ff538f",
+        "date": "2025-04-22"
+      },
+      "expect": {
+        "carrier": "intl-post",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Posti; detection selects the generic postal carrier. US item inbound to Finland."
     }
   ]
 }

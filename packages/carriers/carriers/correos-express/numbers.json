@@ -22,6 +22,26 @@
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Correos Express, which stays one candidate among several."
     },
     {
+      "number": "3230003401602989",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/error-al-visualizar-pin-probl/e22821af1ce1efd269",
+        "date": "2026-09-24"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl-ecommerce",
+          "correos-express",
+          "canada-post",
+          "tnt"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Correos Express, which stays one candidate among several."
+    },
+    {
       "number": "7983000739053141",
       "role": "shipment",
       "evidence": "public_shipment_report",

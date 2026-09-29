@@ -170,26 +170,26 @@ statuses, timings and network error codes.
 | `dtdc` | DTDC | dedicated | direct | 2 | 3 | 10 | [README](carriers/dtdc/README.md) |
 | `ninja-van` | Ninja Van | universal providers |  | 0 | 4 | 0 |  |
 | `packeta` | Packeta | dedicated | direct | 4 | 5 | 16 | [README](carriers/packeta/README.md) |
-| `poczta-polska` | Poczta Polska | dedicated | direct | 3 | 6 | 6 | [README](carriers/poczta-polska/README.md) |
-| `bring-posten` | Bring | universal providers |  | 0 | 1 | 0 |  |
-| `posti` | Posti | dedicated | direct → refresh | 5 | 1 | 13 | [README](carriers/posti/README.md) |
-| `an-post` | An Post | universal providers |  | 0 | 1 | 0 |  |
-| `ctt` | CTT Portugal | dedicated | direct | 3 | 1 | 10 | [README](carriers/ctt/README.md) |
-| `ctt-express` | CTT Express | dedicated | direct | 2 | 3 | 10 | [README](carriers/ctt-express/README.md) |
-| `brt` | BRT | universal providers |  | 0 | 3 | 0 |  |
-| `seur` | SEUR | universal providers |  | 0 | 3 | 0 |  |
-| `correos-express` | Correos Express | dedicated | direct | 3 | 3 | 11 | [README](carriers/correos-express/README.md) |
-| `mrw` | MRW | universal providers |  | 0 | 5 | 0 |  |
-| `nacex` | NACEX | universal providers |  | 0 | 2 | 0 |  |
-| `colis-prive` | Colis Privé | dedicated | direct | 1 | 3 | 34 | [README](carriers/colis-prive/README.md) |
-| `relais-colis` | Relais Colis | dedicated | direct | 1 | 3 | 42 | [README](carriers/relais-colis/README.md) |
-| `paack` | Paack | dedicated | direct | 2 | 5 | 44 | [README](carriers/paack/README.md) |
-| `asendia` | Asendia | dedicated | direct | 4 | 10 | 109 | [README](carriers/asendia/README.md) |
-| `landmark-global` | Landmark Global | dedicated | direct | 2 | 3 | 14 | [README](carriers/landmark-global/README.md) |
-| `nz-post` | NZ Post | dedicated | direct | 3 | 2 | 9 | [README](carriers/nz-post/README.md) |
-| `pos-malaysia` | Pos Malaysia | dedicated | direct | 3 | 4 | 12 | [README](carriers/pos-malaysia/README.md) |
-| `thailand-post` | Thailand Post | universal providers |  | 0 | 1 | 0 |  |
-| `ukrposhta` | Ukrposhta | universal providers |  | 0 | 1 | 0 |  |
+| `poczta-polska` | Poczta Polska | dedicated | direct | 3 | 8 | 6 | [README](carriers/poczta-polska/README.md) |
+| `bring-posten` | Bring | universal providers |  | 0 | 2 | 0 |  |
+| `posti` | Posti | dedicated | direct → refresh | 5 | 3 | 13 | [README](carriers/posti/README.md) |
+| `an-post` | An Post | universal providers |  | 0 | 2 | 0 |  |
+| `ctt` | CTT Portugal | dedicated | direct | 3 | 2 | 10 | [README](carriers/ctt/README.md) |
+| `ctt-express` | CTT Express | dedicated | direct | 2 | 4 | 10 | [README](carriers/ctt-express/README.md) |
+| `brt` | BRT | universal providers |  | 0 | 4 | 0 |  |
+| `seur` | SEUR | universal providers |  | 0 | 4 | 0 |  |
+| `correos-express` | Correos Express | dedicated | direct | 3 | 4 | 11 | [README](carriers/correos-express/README.md) |
+| `mrw` | MRW | universal providers |  | 0 | 7 | 0 |  |
+| `nacex` | NACEX | universal providers |  | 0 | 3 | 0 |  |
+| `colis-prive` | Colis Privé | dedicated | direct | 1 | 5 | 34 | [README](carriers/colis-prive/README.md) |
+| `relais-colis` | Relais Colis | dedicated | direct | 1 | 4 | 42 | [README](carriers/relais-colis/README.md) |
+| `paack` | Paack | dedicated | direct | 2 | 6 | 44 | [README](carriers/paack/README.md) |
+| `asendia` | Asendia | dedicated | direct | 4 | 11 | 109 | [README](carriers/asendia/README.md) |
+| `landmark-global` | Landmark Global | dedicated | direct | 2 | 4 | 14 | [README](carriers/landmark-global/README.md) |
+| `nz-post` | NZ Post | dedicated | direct | 3 | 3 | 9 | [README](carriers/nz-post/README.md) |
+| `pos-malaysia` | Pos Malaysia | dedicated | direct | 3 | 5 | 12 | [README](carriers/pos-malaysia/README.md) |
+| `thailand-post` | Thailand Post | universal providers |  | 0 | 2 | 0 |  |
+| `ukrposhta` | Ukrposhta | universal providers |  | 0 | 3 | 0 |  |
 | `estafeta` | Estafeta | universal providers |  | 0 | 1 | 0 |  |
 | `correos-chile` | Correos de Chile | universal providers |  | 0 | 1 | 0 |  |
 | `the-courier-guy` | The Courier Guy | universal providers |  | 0 | 1 | 0 |  |
