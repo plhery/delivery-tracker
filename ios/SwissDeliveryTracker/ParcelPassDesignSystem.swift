@@ -393,45 +393,37 @@ enum CarrierTruckGeometry {
 
 }
 
-struct CarrierFleetMark: View {
+/// The carrier's truck alone, in its livery, beside a name written elsewhere.
+struct CarrierTruckMark: View {
     let identity: CarrierVisualIdentity
 
     var body: some View {
-        HStack(spacing: 7) {
-            Canvas { context, size in
-                let truck = CarrierTruckGeometry.self
-                context.scaleBy(x: size.width / truck.viewBox.width, y: size.height / truck.viewBox.height)
-                let body = Path(roundedRect: truck.body, cornerRadius: truck.bodyCornerRadius)
-                context.fill(body, with: .color(identity.truck))
-                context.stroke(body, with: .color(identity.edge), lineWidth: truck.strokeWidth)
-                let cab = polygon(truck.cab)
-                context.fill(cab, with: .color(identity.truck))
-                context.stroke(cab, with: .color(identity.edge), lineWidth: truck.strokeWidth)
-                context.fill(polygon(truck.windshield), with: .color(Color(hex: truck.windshieldColor)))
-                let decals = CarrierBrandAssets.shared.truck.decals
-                for shape in decals[identity.decal] ?? decals["default"]! {
-                    let paint = GraphicsContext.Shading.color(identity.paint(shape.paint))
-                    if shape.type == .line {
-                        context.stroke(shape.path, with: paint, lineWidth: shape.strokeWidth!)
-                    } else {
-                        context.fill(shape.path, with: paint)
-                    }
-                }
-                for center in truck.wheelCenters {
-                    context.fill(disc(center, truck.tireRadius), with: .color(Color(hex: truck.tireColor)))
-                    context.fill(disc(center, truck.hubRadius), with: .color(Color(hex: truck.hubColor)))
+        Canvas { context, size in
+            let truck = CarrierTruckGeometry.self
+            context.scaleBy(x: size.width / truck.viewBox.width, y: size.height / truck.viewBox.height)
+            let body = Path(roundedRect: truck.body, cornerRadius: truck.bodyCornerRadius)
+            context.fill(body, with: .color(identity.truck))
+            context.stroke(body, with: .color(identity.edge), lineWidth: truck.strokeWidth)
+            let cab = polygon(truck.cab)
+            context.fill(cab, with: .color(identity.truck))
+            context.stroke(cab, with: .color(identity.edge), lineWidth: truck.strokeWidth)
+            context.fill(polygon(truck.windshield), with: .color(Color(hex: truck.windshieldColor)))
+            let decals = CarrierBrandAssets.shared.truck.decals
+            for shape in decals[identity.decal] ?? decals["default"]! {
+                let paint = GraphicsContext.Shading.color(identity.paint(shape.paint))
+                if shape.type == .line {
+                    context.stroke(shape.path, with: paint, lineWidth: shape.strokeWidth!)
+                } else {
+                    context.fill(shape.path, with: paint)
                 }
             }
-            .frame(width: 27, height: 18)
-            .accessibilityHidden(true)
-            Text(identity.name + (identity.family == "gls" ? "." : ""))
-                .font(.caption.weight(.bold))
-                .italic(identity.family == "dhl")
-                .fixedSize(horizontal: false, vertical: true)
+            for center in truck.wheelCenters {
+                context.fill(disc(center, truck.tireRadius), with: .color(Color(hex: truck.tireColor)))
+                context.fill(disc(center, truck.hubRadius), with: .color(Color(hex: truck.hubColor)))
+            }
         }
-        .foregroundStyle(identity.brand)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(identity.fullName)
+        .frame(width: 27, height: 18)
+        .accessibilityHidden(true)
     }
 
     private func polygon(_ points: [CGPoint]) -> Path {
@@ -445,5 +437,22 @@ struct CarrierFleetMark: View {
 
     private func disc(_ center: CGPoint, _ radius: CGFloat) -> Path {
         Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
+    }
+}
+
+struct CarrierFleetMark: View {
+    let identity: CarrierVisualIdentity
+
+    var body: some View {
+        HStack(spacing: 7) {
+            CarrierTruckMark(identity: identity)
+            Text(identity.name + (identity.family == "gls" ? "." : ""))
+                .font(.caption.weight(.bold))
+                .italic(identity.family == "dhl")
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .foregroundStyle(identity.brand)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(identity.fullName)
     }
 }

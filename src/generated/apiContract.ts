@@ -1752,7 +1752,7 @@ export const CARRIER_CAPABILITIES = {
     "tracking": {
       "mode": "automatic",
       "adapter": "inpost",
-      "recognitionRank": 35
+      "recognitionRank": 38
     },
     "canaryUrl": "https://inposteasy.com/",
     "linkRules": [],
@@ -1818,7 +1818,7 @@ export const CARRIER_CAPABILITIES = {
     "tracking": {
       "mode": "automatic",
       "adapter": "bpost",
-      "recognitionRank": 35
+      "recognitionRank": 37
     },
     "canaryUrl": "https://track.bpost.cloud/",
     "linkRules": [],
@@ -1850,7 +1850,7 @@ export const CARRIER_CAPABILITIES = {
     "tracking": {
       "mode": "automatic",
       "adapter": "austrian-post",
-      "recognitionRank": 40
+      "recognitionRank": 39
     },
     "canaryUrl": "https://www.post.at/en/s/track-and-trace-search",
     "linkRules": [],
@@ -1946,7 +1946,7 @@ export const CARRIER_CAPABILITIES = {
     "tracking": {
       "mode": "automatic",
       "adapter": "correos-express",
-      "recognitionRank": 35
+      "recognitionRank": 36
     },
     "canaryUrl": "https://s.correosexpress.com/",
     "linkRules": [],
@@ -2360,7 +2360,7 @@ export const CARRIER_CAPABILITIES = {
     "tracking": {
       "mode": "automatic",
       "adapter": "canpar",
-      "recognitionRank": 35
+      "recognitionRank": 34
     },
     "canaryUrl": "https://www.canpar.com/en/tracking/track.htm",
     "linkRules": [
@@ -2465,7 +2465,7 @@ export const CARRIER_CAPABILITIES = {
     "tracking": {
       "mode": "automatic",
       "adapter": "uniuni",
-      "recognitionRank": 35
+      "recognitionRank": 33
     },
     "canaryUrl": "https://www.uniuni.com/tracking/",
     "linkRules": [
@@ -2836,7 +2836,7 @@ export const CARRIER_CAPABILITIES = {
     "tracking": {
       "mode": "automatic",
       "adapter": "nz-post",
-      "recognitionRank": 35
+      "recognitionRank": 32
     },
     "canaryUrl": "https://www.nzpost.co.nz/tools/tracking",
     "linkRules": [
@@ -3447,7 +3447,7 @@ export const CARRIER_CAPABILITIES = {
     "tracking": {
       "mode": "automatic",
       "adapter": "poczta-polska",
-      "recognitionRank": 35
+      "recognitionRank": 31
     },
     "canaryUrl": "https://emonitoring.poczta-polska.pl/",
     "linkRules": [
@@ -3547,7 +3547,7 @@ export const CARRIER_CAPABILITIES = {
     "tracking": {
       "mode": "automatic",
       "adapter": "tnt",
-      "recognitionRank": 45
+      "recognitionRank": 44
     },
     "canaryUrl": "https://www.tnt.fr/public/suivi_colis/recherche/index.do",
     "linkRules": [],

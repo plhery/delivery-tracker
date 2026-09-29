@@ -110,7 +110,8 @@ are left to the universals.
 
 - **Which and in what order.** Low-confidence detection candidates that qualify: the
   carrier a universal named first, then those a `preferred` rule backs (a DPD depot
-  range), then the catalog's `recognition.rank`, a hand-set popularity order. At most five
+  range), then the catalog's `recognition.rank`, a hand-set popularity order in which no
+  two carriers share a rank, so the server and both apps order them alike. At most five
   are asked at once.
 - **Settling.** Only an answer for a recent parcel counts; an old parcel can share a reused
   number. Only valid scan instants with explicit offsets establish activity age;

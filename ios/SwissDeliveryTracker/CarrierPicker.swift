@@ -1,0 +1,390 @@
+import SwiftUI
+
+/// What the carrier pickers show: search over names, other names and countries,
+/// the A–Z sections, and the carriers someone used before. Mirrors
+/// `src/lib/carrierPicker.ts`.
+enum CarrierPickerSearch {
+    struct Result: Equatable {
+        let carrier: CarrierID
+        let score: Double
+        /// Character offsets of the query in the name, when the name itself matched.
+        let highlight: Range<Int>?
+        /// The other name that matched, when only that name did.
+        let alias: String?
+    }
+
+    struct LetterSection: Equatable {
+        let letter: String
+        let carriers: [CarrierID]
+    }
+
+    /// Lower case without accents, one character for each character, so a match can be highlighted.
+    static func fold(_ value: String) -> String {
+        String(value.map { character in
+            let folded = String(character).folding(options: [.diacriticInsensitive, .caseInsensitive], locale: nil)
+            return folded.count == 1 ? folded.first! : character
+        })
+    }
+
+    private static func isLetterOrDigit(_ character: Character) -> Bool {
+        character.isLetter || character.isNumber
+    }
+
+    private static func compact(_ value: String) -> String {
+        String(fold(value).filter(isLetterOrDigit))
+    }
+
+    /// The first match of `query` in `text`, as a character offset; only one that starts a word when asked.
+    private static func offset(of query: String, in text: String, startingWord: Bool) -> Int? {
+        let characters = Array(text)
+        let needle = Array(query)
+        guard !needle.isEmpty, needle.count <= characters.count else { return nil }
+        for index in 0...(characters.count - needle.count) where Array(characters[index..<index + needle.count]) == needle {
+            if !startingWord || index == 0 || !isLetterOrDigit(characters[index - 1]) { return index }
+        }
+        return nil
+    }
+
+    static func match(
+        _ carrier: CarrierID,
+        definition: CarrierDefinition,
+        query: String,
+        countryNames: (String) -> [String]
+    ) -> Result? {
+        let folded = fold(query.trimmingCharacters(in: .whitespacesAndNewlines))
+        guard !folded.isEmpty else { return nil }
+        let squeezed = compact(query)
+        let name = fold(definition.displayName)
+        let aliases = definition.aliases ?? []
+        func lit(_ start: Int, _ score: Double) -> Result {
+            Result(carrier: carrier, score: score, highlight: start..<start + folded.count, alias: nil)
+        }
+        func plain(_ score: Double, alias: String? = nil) -> Result {
+            Result(carrier: carrier, score: score, highlight: nil, alias: alias)
+        }
+        if name.hasPrefix(folded) { return lit(0, 0) }
+        if let word = offset(of: folded, in: name, startingWord: true), word > 0 { return lit(word, 1) }
+        if !squeezed.isEmpty, compact(definition.displayName).hasPrefix(squeezed) { return plain(1.5) }
+        if let alias = aliases.first(where: {
+            offset(of: folded, in: fold($0), startingWord: true) != nil || (!squeezed.isEmpty && compact($0).hasPrefix(squeezed))
+        }) {
+            return plain(2, alias: alias)
+        }
+        if let inside = offset(of: folded, in: name, startingWord: false), inside > 0 { return lit(inside, 3) }
+        if squeezed.count > 1, compact(definition.displayName).contains(squeezed) { return plain(3.5) }
+        if let alias = aliases.first(where: { fold($0).contains(folded) }) { return plain(4, alias: alias) }
+        let inCountry = (definition.countries ?? []).contains { code in
+            countryNames(code).contains { offset(of: folded, in: fold($0), startingWord: true) != nil }
+        }
+        return inCountry ? plain(5) : nil
+    }
+
+    /// Carriers matching a query, best first: the name's start, a word in it, an
+    /// other name ("Colissimo", "Hugger"), anywhere in the name, then a country.
+    /// The carriers that fit the number rank a little higher.
+    static func search(
+        _ query: String,
+        catalog: CarrierCatalog,
+        language: AppLanguage,
+        preferred: Set<CarrierID> = []
+    ) -> [Result] {
+        let names = countryNames(language)
+        return catalog.selectableCarriers.compactMap { carrier -> Result? in
+            let definition = catalog.info(for: carrier, language: language)
+            guard let found = match(carrier, definition: definition, query: query, countryNames: names) else { return nil }
+            return Result(carrier: carrier, score: found.score - (preferred.contains(carrier) ? 0.3 : 0),
+                          highlight: found.highlight, alias: found.alias)
+        }
+        .sorted { left, right in
+            if left.score != right.score { return left.score < right.score }
+            return compare(catalog.info(for: left.carrier, language: language).displayName,
+                           catalog.info(for: right.carrier, language: language).displayName, language) == .orderedAscending
+        }
+    }
+
+    /// Every name a country is searched by: the reader's and the English one.
+    static func countryNames(_ language: AppLanguage) -> (String) -> [String] {
+        { code in
+            let local = TrackingLocation.countryName(code, language: language)
+            let english = TrackingLocation.countryName(code, language: .en)
+            return local == english ? [local] : [local, english]
+        }
+    }
+
+    private static func compare(_ left: String, _ right: String, _ language: AppLanguage) -> ComparisonResult {
+        left.compare(right, options: [.caseInsensitive, .diacriticInsensitive, .numeric], locale: language.locale)
+    }
+
+    /// Carriers by initial, in the reader's alphabet; names starting with a digit come last under "#".
+    static func letterSections(catalog: CarrierCatalog, language: AppLanguage) -> [LetterSection] {
+        let sorted = catalog.selectableCarriers.sorted {
+            compare(catalog.info(for: $0, language: language).displayName,
+                    catalog.info(for: $1, language: language).displayName, language) == .orderedAscending
+        }
+        var sections: [LetterSection] = []
+        var other: [CarrierID] = []
+        for carrier in sorted {
+            let letter = fold(String(catalog.info(for: carrier, language: language).displayName.prefix(1)))
+                .uppercased(with: language.locale)
+            guard letter.count == 1, letter.first?.isLetter == true else {
+                other.append(carrier)
+                continue
+            }
+            if sections.last?.letter == letter {
+                sections[sections.count - 1] = LetterSection(letter: letter, carriers: sections[sections.count - 1].carriers + [carrier])
+            } else {
+                sections.append(LetterSection(letter: letter, carriers: [carrier]))
+            }
+        }
+        return other.isEmpty ? sections : sections + [LetterSection(letter: "#", carriers: other)]
+    }
+
+    /// The countries line under a carrier: its first two countries, with how many
+    /// more. Networks across many countries (Amazon) show none; the line would not
+    /// tell them apart.
+    static func countryLine(_ countries: [String], name: (String) -> String) -> String {
+        guard !countries.isEmpty, countries.count <= 5 else { return "" }
+        let names = countries.prefix(2).map(name).joined(separator: " · ")
+        return countries.count > 2 ? "\(names) +\(countries.count - 2)" : names
+    }
+
+    /// The carriers of someone's latest parcels, newest first, each once.
+    static func usedCarriers(_ parcels: [Parcel], catalog: CarrierCatalog, limit: Int = 3) -> [CarrierID] {
+        var used: [CarrierID] = []
+        for parcel in parcels.sorted(by: { $0.createdAt > $1.createdAt }) where used.count < limit {
+            if catalog.info(for: parcel.carrier).selectable, !used.contains(parcel.carrier) { used.append(parcel.carrier) }
+        }
+        return used
+    }
+}
+
+/// Choose one of the catalog's carriers: automatic detection first when it is
+/// offered, then the sections the caller passes (the carriers that fit the
+/// number, the ones used before), then every carrier from A to Z with a letter
+/// index. Searching covers names, other names and countries.
+///
+/// The sections keep the order they opened with: an answer that arrives while
+/// the list is open only changes tags and the automatic row's text, so nothing
+/// moves under the reader's finger.
+struct CarrierPickerView: View {
+    struct PickerSection: Identifiable, Equatable {
+        let id: String
+        let title: String
+        let carriers: [CarrierID]
+    }
+
+    struct Tag: Equatable {
+        let label: String
+        /// A carrier that knows the number, rather than one still being asked.
+        let found: Bool
+    }
+
+    struct Automatic: Equatable {
+        let description: String
+        let recommended: Bool
+        let busy: Bool
+    }
+
+    /// Nil while automatic detection is chosen.
+    let selection: CarrierID?
+    let automatic: Automatic?
+    let tags: [CarrierID: Tag]
+    let onSelect: (CarrierID?) -> Void
+
+    @EnvironmentObject private var localizer: Localizer
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var catalog = CarrierCatalog.shared
+    @State private var query = ""
+    @State private var openingSections: [PickerSection]
+
+    init(
+        selection: CarrierID?,
+        automatic: Automatic? = nil,
+        sections: [PickerSection],
+        tags: [CarrierID: Tag] = [:],
+        onSelect: @escaping (CarrierID?) -> Void
+    ) {
+        self.selection = selection
+        self.automatic = automatic
+        self.tags = tags
+        self.onSelect = onSelect
+        _openingSections = State(initialValue: sections.filter { !$0.carriers.isEmpty })
+    }
+
+    var body: some View {
+        List {
+            if trimmedQuery.isEmpty {
+                if let automatic {
+                    Section { automaticRow(automatic) }
+                }
+                ForEach(openingSections) { section in
+                    Section(section.title) {
+                        ForEach(section.carriers) { carrier in row(carrier) }
+                    }
+                }
+                ForEach(letterSections, id: \.letter) { section in
+                    Section {
+                        ForEach(section.carriers) { carrier in row(carrier) }
+                    } header: {
+                        Text(section.letter)
+                    }
+                    .modifier(SectionIndexLabel(label: section.letter))
+                }
+            } else if results.isEmpty {
+                Section {
+                    Text(localizer.text("picker.empty", ["query": trimmedQuery]))
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Section(localizer.text("picker.results.many", ["count": results.count])) {
+                    ForEach(results, id: \.carrier) { result in
+                        row(result.carrier, highlight: result.highlight, alias: result.alias)
+                    }
+                }
+            }
+        }
+        .modifier(SectionIndexVisible())
+        .searchable(
+            text: $query,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: localizer.text("picker.search", ["count": catalog.selectableCarriers.count])
+        )
+        .autocorrectionDisabled()
+        .textInputAutocapitalization(.never)
+        .navigationTitle(localizer.text("add.carrier"))
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    private var results: [CarrierPickerSearch.Result] {
+        CarrierPickerSearch.search(trimmedQuery, catalog: catalog, language: localizer.language,
+                                   preferred: Set(openingSections.first?.carriers ?? []))
+    }
+
+    private var letterSections: [CarrierPickerSearch.LetterSection] {
+        CarrierPickerSearch.letterSections(catalog: catalog, language: localizer.language)
+    }
+
+    private func choose(_ carrier: CarrierID?) {
+        onSelect(carrier)
+        dismiss()
+    }
+
+    private func automaticRow(_ automatic: Automatic) -> some View {
+        Button { choose(nil) } label: {
+            HStack(spacing: 12) {
+                Group {
+                    if automatic.busy {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Image(systemName: "wand.and.sparkles")
+                            .foregroundStyle(ExperimentalPalette.ochre)
+                    }
+                }
+                .frame(width: 27)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(localizer.text("add.detect"))
+                        .foregroundStyle(Brand.ink)
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        if automatic.recommended {
+                            tag(localizer.text("picker.recommended"), found: false)
+                        }
+                        Text(automatic.description)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer(minLength: 8)
+                if selection == nil { checkmark }
+            }
+            .contentShape(Rectangle())
+        }
+        .listRowBackground(selection == nil ? ExperimentalPalette.ochreSurface : nil)
+        .accessibilityAddTraits(selection == nil ? .isSelected : [])
+        .accessibilityIdentifier("carrierPicker.automatic")
+    }
+
+    private func row(_ carrier: CarrierID, highlight: Range<Int>? = nil, alias: String? = nil) -> some View {
+        let definition = catalog.info(for: carrier, language: localizer.language)
+        let subtitle = alias.map { localizer.text("picker.alias", ["name": $0]) }
+            ?? CarrierPickerSearch.countryLine(definition.countries ?? []) {
+                TrackingLocation.countryName($0, language: localizer.language)
+            }
+        let selected = selection == carrier
+        return Button { choose(carrier) } label: {
+            HStack(spacing: 12) {
+                CarrierTruckMark(identity: CarrierVisualIdentity.of(carrier, language: localizer.language))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(highlighted(definition.displayName, highlight))
+                        .foregroundStyle(Brand.ink)
+                    if !subtitle.isEmpty {
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer(minLength: 8)
+                if let tag = tags[carrier] { self.tag(tag.label, found: tag.found) }
+                if selected { checkmark }
+            }
+            .contentShape(Rectangle())
+        }
+        .listRowBackground(selected ? ExperimentalPalette.ochreSurface : nil)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(definition.displayName)
+        .accessibilityValue([subtitle, tags[carrier]?.label ?? ""].filter { !$0.isEmpty }.joined(separator: ", "))
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    private var checkmark: some View {
+        Image(systemName: "checkmark")
+            .font(.body.weight(.semibold))
+            .foregroundStyle(ExperimentalPalette.ochre)
+            .accessibilityHidden(true)
+    }
+
+    private func tag(_ label: String, found: Bool) -> some View {
+        Text(label)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(found ? ExperimentalPalette.delivered : Color.secondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 2)
+            .background(found ? ExperimentalPalette.deliveredSurface : Brand.cream, in: Capsule())
+            .fixedSize()
+    }
+
+    private func highlighted(_ name: String, _ range: Range<Int>?) -> AttributedString {
+        var attributed = AttributedString(name)
+        guard let range, range.upperBound <= name.count else { return attributed }
+        let start = attributed.characters.index(attributed.startIndex, offsetBy: range.lowerBound)
+        let end = attributed.characters.index(start, offsetBy: range.count)
+        attributed[start..<end].backgroundColor = Brand.accent.opacity(0.45)
+        attributed[start..<end].font = .body.weight(.semibold)
+        return attributed
+    }
+}
+
+/// The A–Z index beside the list, where the system offers one.
+private struct SectionIndexVisible: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.listSectionIndexVisibility(.visible)
+        } else {
+            content
+        }
+    }
+}
+
+private struct SectionIndexLabel: ViewModifier {
+    let label: String
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.sectionIndexLabel(label)
+        } else {
+            content
+        }
+    }
+}

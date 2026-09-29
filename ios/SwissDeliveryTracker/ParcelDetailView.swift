@@ -665,15 +665,20 @@ private struct ChangeCarrierView: View {
                 }
 
                 Section(localizer.text("add.carrier")) {
-                    Picker(localizer.text("add.carrier"), selection: $selectedCarrier) {
-                        if !catalog.info(for: parcel.carrier, language: localizer.language).selectable {
-                            Text(catalog.info(for: parcel.carrier, language: localizer.language).displayName).tag(parcel.carrier)
+                    NavigationLink {
+                        CarrierPickerView(selection: selectedCarrier, sections: pickerSections) { carrier in
+                            if let carrier { selectedCarrier = carrier }
                         }
-                        ForEach(catalog.selectableCarriers) { carrier in
-                            Text(catalog.info(for: carrier, language: localizer.language).displayName).tag(carrier)
+                    } label: {
+                        HStack(spacing: 10) {
+                            CarrierTruckMark(identity: CarrierVisualIdentity.of(selectedCarrier, language: localizer.language))
+                            Text(catalog.info(for: selectedCarrier, language: localizer.language).displayName)
                         }
                     }
-                    .pickerStyle(.navigationLink)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(localizer.text("add.carrier"))
+                    .accessibilityValue(catalog.info(for: selectedCarrier, language: localizer.language).displayName)
+                    .accessibilityAddTraits(.isButton)
                     .onChange(of: selectedCarrier) { _, carrier in
                         trackingURL = carrier == parcel.carrier ? parcel.trackingURL ?? "" : ""
                         deliveryPostcode = carrier == parcel.carrier ? parcel.dpdPostcode ?? "" : ""
@@ -736,6 +741,22 @@ private struct ChangeCarrierView: View {
 
     private var requirements: [CarrierRequirement] {
         catalog.requirements(for: selectedCarrier, trackingNumber: parcel.trackingNumber)
+    }
+
+    /// The parcel's own carrier when no longer offered, then the carriers its
+    /// number fits, then the ones used before.
+    private var pickerSections: [CarrierPickerView.PickerSection] {
+        let match = catalog.detect(parcel.trackingNumber)
+        let fitting = (match.confidence == .high ? [match.carrier] : match.candidates)
+            .filter { catalog.info(for: $0).selectable }
+        return [
+            .init(id: "current", title: localizer.text("picker.section.current"),
+                  carriers: catalog.info(for: parcel.carrier).selectable ? [] : [parcel.carrier]),
+            .init(id: "fits", title: localizer.text(match.confidence == .high ? "picker.section.detected" : "picker.section.fits"),
+                  carriers: fitting),
+            .init(id: "used", title: localizer.text("picker.section.used"),
+                  carriers: CarrierPickerSearch.usedCarriers(store.parcels, catalog: catalog).filter { !fitting.contains($0) }),
+        ]
     }
 
     private var trackingURLRequirement: CarrierRequirement? {

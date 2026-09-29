@@ -19,7 +19,7 @@
     "steps": [
       "direct"
     ],
-    "recognition": { "rank": 35 }
+    "recognition": { "rank": 33 }
   },
   "capabilities": [
     "history",

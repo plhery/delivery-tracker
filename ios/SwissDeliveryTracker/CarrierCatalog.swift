@@ -58,6 +58,8 @@ struct CarrierDefinition: Codable, Sendable {
         let mode: String
         let adapter: String?
         let requirements: [CarrierRequirement]?
+        /// Present when the carrier can recognize a number; no two carriers share a rank.
+        var recognitionRank: Int? = nil
     }
 
     struct LinkRule: Codable, Sendable {
@@ -85,6 +87,10 @@ struct CarrierDefinition: Codable, Sendable {
 
     var displayName: String
     let displayNames: [String: String]?
+    /// Other names the carrier is known by, searched by the carrier picker.
+    var aliases: [String]? = nil
+    /// Where it delivers under its own name, home country first.
+    var countries: [String]? = nil
     let trackingSiteName: String?
     let color: String
     let selectable: Bool
@@ -95,7 +101,8 @@ struct CarrierDefinition: Codable, Sendable {
     let detectionRules: [DetectionRule]
 
     enum CodingKeys: String, CodingKey {
-        case displayName, displayNames, trackingSiteName, color, selectable, timezone, tracking, linkRules, detectionRules
+        case displayName, displayNames, aliases, countries, trackingSiteName, color, selectable, timezone, tracking
+        case linkRules, detectionRules
         case trackingURLTemplate = "trackingUrlTemplate"
     }
 }
@@ -129,14 +136,23 @@ struct TrackingInputMatch: Equatable, Sendable {
 /// checked with them once the number is settled (the field loses focus, a
 /// paste, a scan, a shared number), never on each keystroke. It never holds
 /// the Add button: after saving, the first sync asks the same carriers again.
+/// Mirrors `carrierCheck` in `src/lib/carrierPicker.ts`.
 struct CarrierRecognition: Equatable, Sendable {
     enum Status: Equatable, Sendable {
+        /// Nothing to report: the number is not settled, or needs no check.
         case idle
-        case recognizing
+        /// No carrier can be asked about this shape; routing looks it up after saving.
+        case unasked
+        /// The carriers being asked, while they answer.
+        case asking([CarrierID])
         /// One carrier knows the number.
         case recognized(CarrierID)
         /// Unrelated carriers all know it: the user chooses.
         case several([CarrierID])
+        /// Every carrier answered and none knows it yet, which is normal for a new label.
+        case notFound([CarrierID])
+        /// No carrier could answer; the first sync asks again.
+        case failed([CarrierID])
     }
 
     /// The normalized number as it stood when it was last settled.
@@ -144,30 +160,33 @@ struct CarrierRecognition: Equatable, Sendable {
     /// The server's answer for a settled number.
     var answer: CarrierDetectionResponse?
 
-    /// Only a number no carrier claims with confidence is worth asking about: while
-    /// the carrier is still detected, or when a carrier picked by hand cannot own
-    /// the number (a forwarder such as Asendia), as a hint only.
-    static func applies(to input: TrackingInputMatch, amazon: Bool, demo: Bool, carrierOverride: CarrierID?) -> Bool {
-        guard !demo, !amazon, input.confidence == .low, input.carrier == .unknown else { return false }
-        guard let carrierOverride else { return true }
-        return !input.candidates.contains(carrierOverride)
+    /// Only a number no carrier claims with confidence is worth asking about. The
+    /// check keeps running when a carrier is picked by hand meanwhile: its answer
+    /// then only says when another carrier has the parcel.
+    static func applies(to input: TrackingInputMatch, amazon: Bool, demo: Bool) -> Bool {
+        !demo && !amazon && input.confidence == .low && input.carrier == .unknown
     }
 
     /// The number to ask about: the settled one, while it is still the number in
     /// the field and has no answer yet.
     func request(for number: String, applies: Bool) -> String? {
-        status(for: number, applies: applies) == .recognizing ? number : nil
+        guard applies, !number.isEmpty, settledNumber == number, answer?.trackingNumber != number else { return nil }
+        return number
     }
 
-    func status(for number: String, applies: Bool) -> Status {
+    /// `asked` is the carriers the check asks, predicted before the answer arrives.
+    func status(for number: String, applies: Bool, asked: [CarrierID]) -> Status {
         guard applies, !number.isEmpty else { return .idle }
         guard let answer, answer.trackingNumber == number else {
-            return settledNumber == number ? .recognizing : .idle
+            guard settledNumber == number else { return .idle }
+            return asked.isEmpty ? .unasked : .asking(asked)
         }
         if answer.carrier != .unknown { return .recognized(answer.carrier) }
-        let choices = answer.recognized ?? []
-        // No carrier knows it, or the answer failed: the number stays a suggestion.
-        return choices.count > 1 ? .several(choices) : .idle
+        if let choices = answer.recognized, choices.count > 1 { return .several(choices) }
+        let answered = answer.asked ?? []
+        if answered.isEmpty { return .unasked }
+        if (answer.unanswered?.count ?? 0) >= answered.count { return .failed(answered) }
+        return .notFound(answered)
     }
 }
 
@@ -319,6 +338,40 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
 
     func tracksAutomatically(_ carrier: CarrierID) -> Bool {
         info(for: carrier).tracking.mode == "automatic"
+    }
+
+    /// Carriers the detect route asks at once.
+    static let maximumRecognitions = 5
+    /// Brands with several catalog networks ("DPD" is `dpd` and `dpd-fr`), as in
+    /// `packages/carriers/core/catalog/networks.ts`.
+    private static let networkBrands = ["dhl", "dpd", "gls", "hermes"]
+
+    static func networkBrand(_ carrier: CarrierID) -> String? {
+        networkBrands.first { carrier.rawValue == $0 || carrier.rawValue.hasPrefix("\($0)-") }
+    }
+
+    /// The carriers the detect route asks about an ambiguous number, best first:
+    /// number evidence, then the catalog's recognition rank. Mirrors
+    /// `recognitionAskedCarriers`; the detection golden file keeps them in step.
+    func recognitionCandidates(for raw: String) -> [CarrierID] {
+        let match = detect(raw)
+        guard match.confidence == .low else { return [] }
+        func rank(_ carrier: CarrierID) -> Int? { definitions[carrier]?.tracking.recognitionRank }
+        // A preferred carrier that cannot be asked (DPD France) keeps its brand's
+        // other networks out: DPD's guest API also answers for DPD France parcels.
+        let shadowed = Set(match.preferred.filter { rank($0) == nil }.compactMap(Self.networkBrand))
+        let eligible = match.candidates.filter { carrier in
+            guard let definition = definitions[carrier], rank(carrier) != nil,
+                  definition.tracking.mode == "automatic", definition.tracking.adapter != "universal" else { return false }
+            return Self.networkBrand(carrier).map { !shadowed.contains($0) } ?? true
+        }
+        // Ranks are unique, so the order does not depend on the catalog's key order.
+        let ordered = eligible.sorted { left, right in
+            let leftPreferred = match.preferred.contains(left)
+            if leftPreferred != match.preferred.contains(right) { return leftPreferred }
+            return (rank(left) ?? 0) > (rank(right) ?? 0)
+        }
+        return Array(ordered.prefix(Self.maximumRecognitions))
     }
 
     func isAmazonTrackingNumber(_ raw: String) -> Bool {
@@ -825,7 +878,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     private static func defaultCacheURL() -> URL? {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
             .appending(path: "delivery-tracker", directoryHint: .isDirectory)
-            .appending(path: "carrier-catalog-v3.json")
+            .appending(path: "carrier-catalog-v4.json")
     }
 
     private static let emptyMatch = TrackingInputMatch(

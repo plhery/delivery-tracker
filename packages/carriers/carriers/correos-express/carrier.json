@@ -21,7 +21,7 @@
     "mode": "automatic",
     "adapter": "correos-express",
     "steps": ["direct"],
-    "recognition": { "rank": 35 }
+    "recognition": { "rank": 36 }
   },
   "capabilities": ["history", "location", "eta"],
   "portal": {

@@ -16,6 +16,7 @@ struct AddParcelView: View {
     @State private var trackingURL = ""
     @State private var deliveryPostcode = ""
     @State private var showingScanner = false
+    @State private var showingCarrierPicker = false
     @State private var didFocusTracking = false
     @State private var saving = false
     @State private var errorMessage: String?
@@ -96,6 +97,23 @@ struct AddParcelView: View {
             .sensoryFeedback(.selection, trigger: resolvedCarrier) { oldValue, newValue in
                 oldValue != newValue && newValue != .unknown
             }
+            .sheet(isPresented: $showingCarrierPicker) {
+                NavigationStack {
+                    CarrierPickerView(
+                        selection: carrierOverride,
+                        automatic: .init(description: automaticDescription, recommended: !choosingCarrier, busy: checking),
+                        sections: pickerSections,
+                        tags: pickerTags,
+                        onSelect: selectCarrier
+                    )
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(localizer.text("common.cancel")) { showingCarrierPicker = false }
+                        }
+                    }
+                }
+                .environmentObject(localizer)
+            }
             .fullScreenCover(isPresented: $showingScanner) {
                 TrackingScannerView { value in
                     withAnimation(reduceMotion ? nil : .snappy(duration: 0.34)) {
@@ -145,7 +163,11 @@ struct AddParcelView: View {
                 } catch {
                     guard !Task.isCancelled else { return }
                     // No answer keeps the number a suggestion; the first sync asks again.
-                    recognition.answer = CarrierDetectionResponse(trackingNumber: number, carrier: .unknown)
+                    let asked = catalog.recognitionCandidates(for: number)
+                    recognition.answer = CarrierDetectionResponse(
+                        trackingNumber: number, carrier: .unknown,
+                        asked: asked.isEmpty ? nil : asked, unanswered: asked.isEmpty ? nil : asked
+                    )
                 }
             }
         }
@@ -296,47 +318,7 @@ struct AddParcelView: View {
         let automatic = catalog.tracksAutomatically(resolvedCarrier)
 
         return VStack(alignment: .leading, spacing: 10) {
-            Menu {
-                Picker(localizer.text("add.carrier"), selection: Binding(
-                    get: { carrierOverride },
-                    set: selectCarrier
-                )) {
-                    Text(localizer.text("add.detect")).tag(Optional<CarrierID>.none)
-                    ForEach(catalog.selectableCarriers) { carrier in
-                        Text(catalog.info(for: carrier, language: localizer.language).displayName)
-                            .tag(Optional(carrier))
-                    }
-                }
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "truck.box")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    ViewThatFits(in: .horizontal) {
-                        HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text(definition.displayName).font(.subheadline.weight(.medium))
-                            carrierDetectionLabel
-                        }
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(definition.displayName).font(.subheadline.weight(.medium))
-                            carrierDetectionLabel
-                        }
-                    }
-                    Spacer(minLength: 0)
-                    Text(localizer.text("add.changeCarrier"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .underline()
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(TactileButtonStyle())
-            .accessibilityLabel(localizer.text("add.changeCarrier"))
-            .accessibilityValue(definition.displayName)
-            .accessibilityIdentifier("addParcel.carrier")
-            .disabled(catalog.requiresAmazonAccount(.unknown, trackingNumber: parsed.trackingNumber))
+            carrierLine
 
             if parsed.source == .link || parsed.source == .text {
                 Label(CarrierCatalog.format(parsed.trackingNumber), systemImage: "barcode")
@@ -347,12 +329,7 @@ struct AddParcelView: View {
                     ]))
             }
 
-            if let recognitionHint {
-                Text(recognitionHint)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            } else if !automatic || shippingConfirmed {
+            if !automatic || shippingConfirmed {
                 Text(localizer.text(shippingConfirmed ? (currentVerification?.amazonShippingStatus == .expired ? "add.amazonHistoryExpired" : "add.amazonShippingConfirmed") : catalog.trackingHintKey(for: resolvedCarrier), ["carrier": definition.displayName]))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -369,12 +346,6 @@ struct AddParcelView: View {
                 }
                 .font(.subheadline)
             }
-            if carrierOverride == nil, case .several(let carriers) = recognitionStatus {
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 8) { recognizedChoices(carriers) }
-                    VStack(alignment: .leading, spacing: 0) { recognizedChoices(carriers) }
-                }
-            }
             if amazonNumber && currentVerification?.amazonShippingStatus == .unavailable {
                 Text(localizer.text("add.amazonCheckUnavailable")).font(.caption).foregroundStyle(.secondary)
                 Button(localizer.text("add.amazonRetry")) {
@@ -390,26 +361,67 @@ struct AddParcelView: View {
         .foregroundStyle(Brand.ink)
     }
 
-    private var carrierDetectionLabel: some View {
-        Text(localizer.text(carrierOverride == nil && resolvedCarrier != .unknown ? "add.detectedCarrier" : "add.carrier"))
-            .font(.caption)
-            .foregroundStyle(.secondary)
+    /// One quiet line under the number: the carrier once one is known, and
+    /// otherwise what the carrier check has found so far. It opens the picker.
+    private var carrierLine: some View {
+        let carrier = lineCarrier
+        let name = carrier.map { catalog.info(for: $0, language: localizer.language).displayName }
+            ?? localizer.text("add.detect")
+        let detail = lineDetail
+        return Button {
+            // Leaving the field settles the number, so the check starts as the picker opens.
+            focusedField = nil
+            showingCarrierPicker = true
+        } label: {
+            HStack(spacing: 8) {
+                Group {
+                    if let carrier {
+                        CarrierTruckMark(identity: CarrierVisualIdentity.of(carrier, language: localizer.language))
+                    } else if checking {
+                        ProgressView().controlSize(.mini)
+                    } else {
+                        Image(systemName: "wand.and.sparkles")
+                            .font(.caption)
+                            .foregroundStyle(ExperimentalPalette.ochre)
+                    }
+                }
+                .frame(width: 27)
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(name).font(.subheadline.weight(.medium))
+                        lineDetailText(detail)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(name).font(.subheadline.weight(.medium))
+                        lineDetailText(detail)
+                    }
+                }
+                Spacer(minLength: 0)
+                if !amazonNumber {
+                    Text(localizer.text(choosingCarrier ? "add.line.choose" : "add.line.change"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .underline()
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(TactileButtonStyle())
+        .accessibilityLabel([name, detail].compactMap { $0 }.joined(separator: ", "))
+        .accessibilityHint(localizer.text(choosingCarrier ? "add.line.choose" : "add.line.change"))
+        .accessibilityIdentifier("addParcel.carrier")
+        .disabled(amazonNumber)
     }
 
-    /// The carriers that all know the number, one tap each instead of the full list.
-    private func recognizedChoices(_ carriers: [CarrierID]) -> some View {
-        ForEach(carriers) { carrier in
-            Button { selectCarrier(carrier) } label: {
-                Text(catalog.info(for: carrier, language: localizer.language).displayName)
-                    .font(.subheadline.weight(.medium))
-                    .padding(.horizontal, 14)
-                    .frame(minHeight: 36)
-                    .background(Brand.paper, in: Capsule())
-                    .overlay(Capsule().strokeBorder(Brand.separator.opacity(0.3), lineWidth: 1))
-                    .padding(.vertical, 4)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(TactileButtonStyle())
+    @ViewBuilder
+    private func lineDetailText(_ detail: String?) -> some View {
+        if let detail {
+            Text(detail)
+                .font(.caption)
+                .foregroundStyle(choosingCarrier ? ExperimentalPalette.ochre : Color.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -579,7 +591,7 @@ struct AddParcelView: View {
     }
 
     private var recognizable: Bool {
-        CarrierRecognition.applies(to: parsed, amazon: amazonNumber, demo: store.isDemo, carrierOverride: carrierOverride)
+        CarrierRecognition.applies(to: parsed, amazon: amazonNumber, demo: store.isDemo)
     }
 
     private var recognitionRequest: String? {
@@ -587,26 +599,94 @@ struct AddParcelView: View {
     }
 
     private var recognitionStatus: CarrierRecognition.Status {
-        recognition.status(for: normalizedNumber, applies: recognizable)
+        recognition.status(
+            for: normalizedNumber, applies: recognizable,
+            asked: recognizable ? catalog.recognitionCandidates(for: normalizedNumber) : []
+        )
     }
 
-    private var recognitionHint: String? {
-        // For a carrier picked by hand, only the hint below the carrier says anything.
-        guard carrierOverride == nil else { return nil }
+    private var checking: Bool {
+        guard carrierOverride == nil, case .asking = recognitionStatus else { return false }
+        return true
+    }
+
+    /// Unrelated carriers all know the number: automatic detection can still save it, but the user should choose.
+    private var choosingCarrier: Bool {
+        guard carrierOverride == nil, case .several = recognitionStatus else { return false }
+        return true
+    }
+
+    private var lineCarrier: CarrierID? {
+        resolvedCarrier == .unknown ? nil : resolvedCarrier
+    }
+
+    /// The carrier a high-confidence rule gives the number, before any check.
+    private var numberCarrier: CarrierID? {
+        parsed.confidence == .high && parsed.carrier != .unknown && parsed.carrier != .internationalPost ? parsed.carrier : nil
+    }
+
+    private var lineDetail: String? {
+        if carrierOverride != nil { return localizer.text("add.line.chosen") }
+        if case .recognized = recognitionStatus { return localizer.text("add.line.found") }
+        if amazonNumber || (lineCarrier != nil && lineCarrier != .internationalPost) { return localizer.text("add.detectedCarrier") }
         return switch recognitionStatus {
-        case .idle:
-            nil
-        case .recognizing:
-            localizer.text("add.recognizing")
-        case .recognized(let carrier):
-            localizer.text("add.recognized", ["carrier": catalog.info(for: carrier, language: localizer.language).displayName])
-        case .several(let carriers):
-            localizer.text("add.recognizedSeveral", [
-                "carriers": carriers
-                    .map { catalog.info(for: $0, language: localizer.language).displayName }
-                    .joined(separator: " \(localizer.text("auth.or")) "),
-            ])
+        case .asking(let carriers): localizer.text("add.line.asking", ["carriers": carrierNames(carriers)])
+        case .several(let carriers): localizer.text("add.line.several", ["carriers": carrierNames(carriers)])
+        case .notFound: localizer.text("add.line.none")
+        case .failed: localizer.text("add.line.failed")
+        case .unasked: localizer.text("add.line.later")
+        case .idle, .recognized: nil
         }
+    }
+
+    private var automaticDescription: String {
+        switch recognitionStatus {
+        case .asking: return localizer.text("add.recognizing")
+        case .recognized(let carrier):
+            return localizer.text("add.recognized", ["carrier": catalog.info(for: carrier, language: localizer.language).displayName])
+        case .several(let carriers): return localizer.text("picker.auto.several", ["carriers": carrierNames(carriers)])
+        case .notFound(let carriers): return localizer.text("picker.auto.none", ["carriers": carrierNames(carriers)])
+        case .failed(let carriers): return localizer.text("picker.auto.failed", ["carriers": carrierNames(carriers)])
+        case .idle, .unasked:
+            if let numberCarrier {
+                return localizer.text("picker.auto.detected", ["carrier": catalog.info(for: numberCarrier, language: localizer.language).displayName])
+            }
+            return localizer.text("picker.auto.later")
+        }
+    }
+
+    /// The picker leads with the carriers that fit the number, then the ones used before.
+    private var pickerSections: [CarrierPickerView.PickerSection] {
+        let knowing: [CarrierID] = if case .several(let carriers) = recognitionStatus { carriers } else { [] }
+        let fitting = (numberCarrier.map { [$0] } ?? parsed.candidates).filter { catalog.info(for: $0).selectable }
+        return [
+            .init(id: "known", title: localizer.text("picker.section.known"), carriers: knowing),
+            .init(id: "fits", title: localizer.text(numberCarrier == nil ? "picker.section.fits" : "picker.section.detected"),
+                  carriers: fitting.filter { !knowing.contains($0) }),
+            .init(id: "used", title: localizer.text("picker.section.used"),
+                  carriers: CarrierPickerSearch.usedCarriers(store.parcels, catalog: catalog)
+                    .filter { !knowing.contains($0) && !fitting.contains($0) }),
+        ]
+    }
+
+    private var pickerTags: [CarrierID: CarrierPickerView.Tag] {
+        switch recognitionStatus {
+        case .asking(let carriers):
+            return Dictionary(uniqueKeysWithValues: carriers.map { ($0, .init(label: localizer.text("picker.tag.asking"), found: false)) })
+        case .recognized(let carrier):
+            return [carrier: .init(label: localizer.text("picker.tag.found"), found: true)]
+        case .several(let carriers):
+            return Dictionary(uniqueKeysWithValues: carriers.map { ($0, .init(label: localizer.text("picker.tag.knows"), found: true)) })
+        default:
+            return [:]
+        }
+    }
+
+    private func carrierNames(_ carriers: [CarrierID]) -> String {
+        let formatter = ListFormatter()
+        formatter.locale = localizer.language.locale
+        let names = carriers.map { catalog.info(for: $0, language: localizer.language).displayName }
+        return formatter.string(from: names) ?? names.joined(separator: ", ")
     }
 
     private var shippingConfirmed: Bool {
