@@ -4,7 +4,7 @@ import { SchemaError, TransportError, UpstreamHttpError } from '../../core/error
 import { runSteps } from '../../core/runner';
 import { NOOP_RECORDER, type StepRecorder } from '../../core/telemetry';
 import { fetchBounded, parseJsonBytes } from '../../core/transport';
-import { normalizeGofoNumber, parseGofo } from './parser';
+import { GOFO_CLOCK_ZONE, normalizeGofoNumber, parseGofo } from './parser';
 
 const ENDPOINT = 'https://www.gofo.com/us/cnee-api/consignee/track/query/page';
 
@@ -16,7 +16,7 @@ export class GofoTracker {
       recorder: this.options.recorder ?? NOOP_RECORDER }, [{ id: 'direct', run: async ({ signal, remainingMs }) => {
       try {
         const { bytes } = await fetchBounded(ENDPOINT, { method: 'POST', signal,
-          headers: { Accept: 'application/json', 'Content-Type': 'application/json', lang: 'en', 'User-Time-Zone': 'Local Time' },
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json', lang: 'en', 'User-Time-Zone': GOFO_CLOCK_ZONE },
           body: JSON.stringify({ numberList: [number] }) }, { provider: 'GOFO', timeoutMs: Math.max(1, Math.floor(remainingMs)),
           maxBytes: 1_000_000, fetcher: this.options.fetcher });
         let payload: unknown;

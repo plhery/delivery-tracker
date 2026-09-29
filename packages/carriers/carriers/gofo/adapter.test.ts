@@ -98,6 +98,27 @@ describe('GOFO US history', () => {
     expect(() => parseGofo(value, NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
   });
 
+  it('reads the requested Pacific clocks and expresses each scan in its own zone', () => {
+    const value = fixture();
+    item(value).trackEventList[0].processTimeZone = 'America/New_York';
+    item(value).trackEventList[1].processTimeZone = 'America/Denver';
+    item(value).trackEventList[2].processTimeZone = 'PT';
+    item(value).trackEventList[3].processTimeZone = 'US/Pacific'; bind(value);
+    const result = parseGofo(value, NUMBER);
+    expect(result).toMatchObject({ last_update: '2026-01-04T15:00:00-05:00', delivered_at: '2026-01-04T15:00:00-05:00' });
+    expect(result.events?.map(event => event.time)).toEqual(['2026-01-04T15:00:00-05:00', '2026-01-04T09:00:00-07:00', '2026-01-03T18:00:00-08:00', '2026-01-01T12:00:00-08:00']);
+    const summer = fixture(); Object.assign(item(summer).trackEventList[0], { processDate: '2026-08-10T13:58:30.000-0700', processTimeZone: 'America/Chicago' }); bind(summer);
+    expect(parseGofo(summer, NUMBER).delivered_at).toBe('2026-08-10T15:58:30-05:00');
+    for (const [processDate, time] of [['2026-11-01T01:30:00.000-0700', '2026-11-01T01:30:00-07:00'], ['2026-11-01T01:30:00.000-0800', '2026-11-01T01:30:00-08:00']]) {
+      const repeated = fixture(); item(repeated).trackEventList[1].processDate = processDate;
+      expect(parseGofo(repeated, NUMBER).events?.[1].time).toBe(time);
+    }
+    for (const processDate of ['2026-01-04T12:00:00.000-0700', '2026-08-10T16:58:30.000-0400', '2026-01-04T20:00:00Z']) {
+      const shifted = fixture(); item(shifted).trackEventList[0].processDate = processDate; bind(shifted);
+      expect(() => parseGofo(shifted, NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
+    }
+  });
+
   it('retains an unresolved newest clock without borrowing an older delivery or using a summary estimate', () => {
     const value = fixture(); item(value).trackEventList[0].processDate = '2026-01-04T12:00:00.000'; item(value).estimatedArrivalTime = '2026-01-08'; bind(value);
     const result = parseGofo(value, NUMBER);
@@ -133,7 +154,7 @@ describe('GOFO direct retrieval', () => {
       expect(url).toBe('https://www.gofo.com/us/cnee-api/consignee/track/query/page');
       expect(init).toMatchObject({ method: 'POST', cache: 'no-store', redirect: 'error' });
       expect(JSON.parse(String(init?.body))).toEqual({ numberList: [NUMBER] });
-      const headers = new Headers(init?.headers); expect(headers.get('User-Time-Zone')).toBe('Local Time');
+      const headers = new Headers(init?.headers); expect(headers.get('User-Time-Zone')).toBe('America/Los_Angeles');
       expect(headers.has('Cookie') || headers.has('Authorization')).toBe(false); expect(init?.signal).toBeInstanceOf(AbortSignal);
     }
     expect(normalizeGofoNumber('gfus00000000000001')).toBe(NUMBER);

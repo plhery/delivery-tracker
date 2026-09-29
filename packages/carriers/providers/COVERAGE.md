@@ -363,7 +363,10 @@ By carrier:
 - **GOFO Express:** GOFO counts 15 scans for this reference but lists 14, the same 14
   the aggregators hold; its page shows the list and ignores the counter. The adapter
   accepts a larger counter only when the list runs from label creation to the current
-  summary.
+  summary. GOFO's default clocks pair each scan's local time with Pacific's offset:
+  Ship24 relays that offset, putting Mountain, Central and Eastern scans one to three
+  hours late, and ParcelsApp's rows carry the local digits as UTC. The adapter requests
+  Pacific clocks, whose offsets are real.
 - **Ecoscooting:** the direct feed returns six last-mile scans for the Portuguese `CNPRT`
   reference, with identity-bound completion wording. Postal Ninja adds SunYou's origin
   leg; Ship24 and ParcelsApp hold the same last-mile history. Spanish numeric references

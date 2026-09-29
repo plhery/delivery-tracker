@@ -1,4 +1,4 @@
-import { DateTime } from 'luxon';
+import { DateTime, IANAZone } from 'luxon';
 import { normalizeTrackingNumber } from '../../core/detection';
 import { IndeterminateError, NotFoundError, SchemaError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
@@ -8,6 +8,8 @@ import { isRecord } from '../../core/types';
 import { gofoStatus } from './status';
 
 const LABEL_CREATED = '100';
+/** The clock the adapter requests: GOFO prints Pacific clocks with their real offset. */
+export const GOFO_CLOCK_ZONE = 'America/Los_Angeles';
 
 export function normalizeGofoNumber(raw: string): string {
   const number = normalizeTrackingNumber(raw);
@@ -15,7 +17,7 @@ export function normalizeGofoNumber(raw: string): string {
   return number;
 }
 
-function scanClock(value: unknown): Pick<CarrierEvent, 'time'> & { local_time?: string; provider_time_text?: string } {
+function scanClock(value: unknown, scanZone: unknown): Pick<CarrierEvent, 'time'> & { local_time?: string; provider_time_text?: string } {
   const raw = clean(value, 64);
   const match = /^(\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,3})?)(Z|[+-](?:0\d|1[0-4]):?[0-5]\d)?$/.exec(raw);
   if (!match) {
@@ -30,7 +32,13 @@ function scanClock(value: unknown): Pick<CarrierEvent, 'time'> & { local_time?: 
   if (offset !== 'Z' && Number(offset.slice(1, 3)) * 60 + Number(offset.slice(3)) > 840) throw new SchemaError('GOFO', 'GOFO returned an invalid scan offset');
   const time = explicitOffsetTime(raw);
   if (!time) throw new SchemaError('GOFO', 'GOFO returned an invalid scan timestamp');
-  return { time: time.iso };
+  // GOFO's "Local Time" setting pairs each scan's local clock with Pacific's
+  // offset. A requested Pacific clock must carry Pacific's offset at that time;
+  // the instant is then expressed in the scan's own zone when it has a valid one.
+  const instant = DateTime.fromMillis(time.timestamp, { zone: GOFO_CLOCK_ZONE });
+  if (instant.toFormat("yyyy-MM-dd'T'HH:mm:ss") !== match[1]!.slice(0, 19)) throw new SchemaError('GOFO', 'GOFO returned a clock outside Pacific time');
+  const zone = clean(scanZone, 64);
+  return { time: (IANAZone.isValidZone(zone) ? instant.setZone(zone) : instant).toISO({ suppressMilliseconds: true })! };
 }
 
 export function parseGofo(payload: unknown, rawNumber: string): CarrierResult {
@@ -82,7 +90,7 @@ export function parseGofo(payload: unknown, rawNumber: string): CarrierResult {
     if ((row.waybillNo != null && row.waybillNo !== number) || (row.trackingNumber != null && row.trackingNumber !== reference)) {
       throw new SchemaError('GOFO', 'GOFO returned a scan for a different parcel');
     }
-    const timestamp = scanClock(row.processDate);
+    const timestamp = scanClock(row.processDate, row.processTimeZone);
     const location = [clean(row.processCity, 100), clean(row.processProvince, 20)].filter(Boolean).join(', ');
     const description = mapped?.stage === 'delivered' ? 'Delivered' : rawDescription;
     const event: CarrierEvent = { ...timestamp, description, provider_code: code,
