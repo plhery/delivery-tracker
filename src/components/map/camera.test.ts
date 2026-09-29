@@ -1,6 +1,6 @@
 import { geoInterpolate } from 'd3-geo';
 import { describe, expect, it } from 'vitest';
-import { angularExtent, easeInOut, fitCamera, interpolateCamera, projection, subsolarPoint, type Box } from './camera';
+import { angularExtent, easeInOut, fitCamera, interpolateCamera, projection, subsolarPoint, zoomCamera, type Box, type Camera } from './camera';
 import type { Coordinate } from './geography';
 
 const box: Box = { x: 20, y: 20, width: 360, height: 260 };
@@ -66,6 +66,26 @@ describe('camera motion', () => {
     expect(near(.5).scale).toBeCloseTo(from.scale, 5);
     expect([easeInOut(0), easeInOut(.25), easeInOut(.5), easeInOut(1)]).toEqual([0, .0625, .5, 1]);
     expect(angularExtent([zurich, kyoto])).toBeGreaterThan(1.4);
+  });
+});
+
+describe('zoomCamera', () => {
+  const camera: Camera = { center: zurich, scale: 2000, offset: [200, 150] };
+
+  it('keeps the place under the fingers where it is', () => {
+    const closer = zoomCamera(camera, 2, [100, 100], [200, 150], 300);
+    expect(closer.scale).toBe(4000);
+    const place = projection(camera).invert!([100, 100]) as Coordinate;
+    const [x, y] = projection(closer)(place)!;
+    expect(x).toBeCloseTo(100, 6);
+    expect(y).toBeCloseTo(100, 6);
+  });
+
+  it('stops at a town and at the whole globe, which it brings back to the middle', () => {
+    expect(zoomCamera(camera, 1e6, [100, 100], [200, 150], 300).scale).toBeCloseTo(300 / (20 / 6371), 6);
+    const globe = zoomCamera(camera, 1e-6, [20, 20], [200, 150], 300);
+    expect(globe.scale).toBe(135);
+    expect(globe.offset).toEqual([200, 150]);
   });
 });
 

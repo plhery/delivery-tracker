@@ -39,6 +39,56 @@ test('engraves the route in the card and opens it as a full map', async ({ page 
   expect(errors).toEqual([]);
 });
 
+test('zooms the full map with the wheel, and returns to the parcel', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Wheels and trackpads are for desktops.');
+  await page.getByRole('button', { name: /^(?:Next up: )?New sneakers 👟 —/ }).click();
+  await page.locator('.detail--postcard').getByRole('button', { name: 'Open the map' }).click();
+  const map = page.getByRole('dialog', { name: /^Map of the journey/ });
+  const nearby = map.getByRole('button', { name: 'Nearby' });
+  await expect(nearby).toHaveAttribute('aria-pressed', 'true');
+  const box = (await map.locator('[data-scale]').boundingBox())!;
+  await page.mouse.move(box.x + box.width * .6, box.y + box.height / 3);
+  await page.mouse.wheel(0, -400);
+  await expect(nearby).toHaveAttribute('aria-pressed', 'false');
+  await nearby.click();
+  await expect(nearby).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('pinches the full map, and lets the card peek closer', async ({ page, browserName, isMobile }) => {
+  test.skip(!isMobile || browserName !== 'chromium', 'Two-finger touches go through Chromium’s DevTools protocol.');
+  const client = await page.context().newCDPSession(page);
+  const pinch = async (x: number, y: number, from: number, to: number, lift = true) => {
+    await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x - from, y, id: 1 }, { x: x + from, y, id: 2 }] });
+    for (let step = 1; step <= 6; step += 1) {
+      const spread = from + (to - from) * step / 6;
+      await client.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x - spread, y, id: 1 }, { x: x + spread, y, id: 2 }] });
+    }
+    if (lift) await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  };
+  await page.getByRole('button', { name: /^(?:Next up: )?New sneakers 👟 —/ }).click();
+  const detail = page.locator('.detail--postcard');
+  const engraving = detail.locator('.detail__engraving');
+  const leg = engraving.locator('path[data-kind="travelled"]').first();
+  await expect(leg).toBeAttached();
+  const resting = await leg.getAttribute('d');
+  const card = (await engraving.boundingBox())!;
+  await pinch(card.x + card.width / 2, card.y + card.height / 2, 30, 90, false);
+  await expect.poll(() => leg.getAttribute('d')).not.toBe(resting);
+  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  // Lifting the fingers settles the card back without opening the map.
+  await expect.poll(() => leg.getAttribute('d')).toBe(resting);
+  await expect(page.getByRole('dialog', { name: /^Map of the journey/ })).toHaveCount(0);
+
+  await detail.getByRole('button', { name: 'Open the map' }).click();
+  const map = page.getByRole('dialog', { name: /^Map of the journey/ });
+  const nearby = map.getByRole('button', { name: 'Nearby' });
+  await expect(nearby).toHaveAttribute('aria-pressed', 'true');
+  const box = (await map.locator('[data-scale]').boundingBox())!;
+  await pinch(box.x + box.width / 2, box.y + box.height / 3, 80, 20);
+  await expect(nearby).toHaveAttribute('aria-pressed', 'false');
+  await expect(map).toBeVisible();
+});
+
 test('keeps the card plain for a parcel with no places yet', async ({ page }) => {
   await page.getByRole('button', { name: /^(?:Next up: )?35mm film rolls 🎞️ —/ }).click();
   const detail = page.locator('.detail--postcard');

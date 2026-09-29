@@ -176,6 +176,57 @@ describe('WorldMap', () => {
     delete (HTMLElement.prototype as Partial<HTMLElement>).setPointerCapture;
   });
 
+  it('zooms the full map with a pinch or a wheel', async () => {
+    Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', { configurable: true, value: vi.fn() });
+    const onFreeChange = vi.fn();
+    const route = buildRoute([scan(kyoto), scan(leipzig), scan(zurich)]);
+    const { container } = render(<WorldMap route={route} mode="journey" time={time} interactive onFreeChange={onFreeChange} />);
+    await waitFor(() => expect(container.querySelector('path[data-kind="travelled"]')).not.toBeNull());
+    const map = screen.getByRole('img');
+    const leg = () => container.querySelector('path[data-kind="travelled"]')!.getAttribute('d');
+    const before = leg();
+    fireEvent.pointerDown(map, { pointerId: 1, button: 0, clientX: 150, clientY: 150 });
+    fireEvent.pointerDown(map, { pointerId: 2, button: 0, clientX: 250, clientY: 150 });
+    fireEvent.pointerMove(map, { pointerId: 2, clientX: 350, clientY: 150 });
+    expect(onFreeChange).toHaveBeenCalledWith(true);
+    expect(leg()).not.toBe(before);
+    fireEvent.pointerUp(map, { pointerId: 2 });
+    fireEvent.pointerUp(map, { pointerId: 1 });
+    const pinched = leg();
+    fireEvent.wheel(map, { deltaY: -120, clientX: 200, clientY: 150 });
+    expect(leg()).not.toBe(pinched);
+    delete (HTMLElement.prototype as Partial<HTMLElement>).setPointerCapture;
+  });
+
+  it('lets a card peek closer with a pinch, then settles back', async () => {
+    Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', { configurable: true, value: vi.fn() });
+    const onOpen = vi.fn();
+    const route = buildRoute([scan(kyoto), scan(leipzig), scan(zurich)]);
+    const { container } = render(<div onClick={onOpen}><WorldMap route={route} mode="journey" time={time} peek /></div>);
+    await waitFor(() => expect(container.querySelector('path[data-kind="travelled"]')).not.toBeNull());
+    const map = screen.getByRole('img');
+    const leg = () => container.querySelector('path[data-kind="travelled"]')!.getAttribute('d');
+    const resting = leg();
+    // One finger is left to the page: no drag, and a tap opens the map.
+    fireEvent.pointerDown(map, { pointerId: 1, button: 0, clientX: 150, clientY: 150 });
+    fireEvent.pointerMove(map, { pointerId: 1, clientX: 250, clientY: 150 });
+    expect(leg()).toBe(resting);
+    fireEvent.pointerUp(map, { pointerId: 1 });
+    fireEvent.click(map);
+    expect(onOpen).toHaveBeenCalledTimes(1);
+    fireEvent.pointerDown(map, { pointerId: 1, button: 0, clientX: 150, clientY: 150 });
+    fireEvent.pointerDown(map, { pointerId: 2, button: 0, clientX: 250, clientY: 150 });
+    fireEvent.pointerMove(map, { pointerId: 2, clientX: 350, clientY: 150 });
+    expect(leg()).not.toBe(resting);
+    fireEvent.pointerUp(map, { pointerId: 2 });
+    // Lifting the fingers is not a tap, and the map settles back.
+    fireEvent.click(map);
+    expect(onOpen).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(leg()).toBe(resting));
+    fireEvent.pointerUp(map, { pointerId: 1 });
+    delete (HTMLElement.prototype as Partial<HTMLElement>).setPointerCapture;
+  });
+
   it('waits for a size before drawing', async () => {
     vi.stubGlobal('ResizeObserver', undefined);
     const route = buildRoute([scan(kyoto), scan(zurich)]);

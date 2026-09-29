@@ -1,8 +1,8 @@
 'use client';
 
 import { geoCircle, geoDistance, geoGraticule, geoInterpolate, geoPath } from 'd3-geo';
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
-import { easeInOut, fitCamera, interpolateCamera, projection, subsolarPoint, type Box, type Camera } from './camera';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent } from 'react';
+import { easeInOut, fitCamera, interpolateCamera, projection, subsolarPoint, zoomCamera, type Box, type Camera } from './camera';
 import { cities, geography, useWorld, type Coordinate, type Part } from './geography';
 import { NEAR_KM, distanceKm, formatKm, type MapMode, type Route, type Scale } from './route';
 import styles from './map.module.css';
@@ -23,7 +23,7 @@ const RESTING_CENTER: Coordinate = [8.2, 42];
 
 export function WorldMap({
   route, mode, shape = 'rect', insets = NO_INSETS, look = 'map', labels = 'all', context = true, interactive = false, night = false,
-  time, redrawKey = '', recenter = 0, onFreeChange, className = '', style, label, languageTag = 'en', live = true,
+  time, redrawKey = '', recenter = 0, onFreeChange, className = '', style, label, languageTag = 'en', live = true, peek = false,
 }: {
   route: Route;
   mode: MapMode;
@@ -51,6 +51,8 @@ export function WorldMap({
   languageTag?: string;
   /** Pulses the parcel's current position. */
   live?: boolean;
+  /** Pinching zooms for a moment; the map settles back when the fingers lift. */
+  peek?: boolean;
 }) {
   const ready = useWorld();
   const root = useRef<HTMLDivElement>(null);
@@ -58,12 +60,18 @@ export function WorldMap({
   const probes = useRef<HTMLSpanElement>(null);
   const [size, setSize] = useState<Size | null>(null);
   const [camera, setCamera] = useState<Camera | null>(null);
-  const [free, setFree] = useState(false);
+  // Whether the map was moved away from the parcel; read in handlers, so a ref.
+  const free = useRef(false);
+  const [settle, setSettle] = useState(0);
   // Pointers and faint names wait for the camera to land instead of jittering in flight.
   const [moving, setMoving] = useState(false);
   const current = useRef<Camera | null>(null);
   const frame = useRef(0);
   const drag = useRef<{ x: number; y: number; camera: Camera; id: number } | null>(null);
+  // Fingers on the map, relative to it, and the pinch they make.
+  const touches = useRef(new Map<number, [number, number]>());
+  const pinch = useRef<{ distance: number; anchor: [number, number]; camera: Camera } | null>(null);
+  const pinchedAt = useRef(-Infinity);
   const clip = `map${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
 
   useLayoutEffect(() => {
@@ -93,7 +101,7 @@ export function WorldMap({
     const step = (now: number) => {
       if (!start) {
         start = now;
-        setFree(false);
+        free.current = false;
         onFreeChange?.(false);
       }
       const t = interpolate ? Math.min(1, (now - start) / duration) : 1;
@@ -106,7 +114,33 @@ export function WorldMap({
     cancelAnimationFrame(frame.current);
     frame.current = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame.current);
-  }, [target, recenter, size, onFreeChange]);
+  }, [target, recenter, settle, size, onFreeChange]);
+
+  // A wheel or a trackpad pinch zooms about the pointer.
+  useEffect(() => {
+    const element = root.current;
+    if (!element || !interactive || !size) return;
+    const view = zoomArea(size, { top, right, bottom, left }, shape);
+    const onWheel = (event: WheelEvent) => {
+      const from = current.current;
+      if (!from) return;
+      event.preventDefault();
+      const box = element.getBoundingClientRect();
+      // Trackpad pinches arrive as small ctrl-wheel steps, mouse wheels as larger ones.
+      const next = zoomCamera(from, Math.exp(-event.deltaY * (event.ctrlKey ? .01 : .002)),
+        [event.clientX - box.left, event.clientY - box.top], view.middle, view.viewport);
+      cancelAnimationFrame(frame.current);
+      setMoving(false);
+      current.current = next;
+      setCamera(next);
+      if (!free.current) {
+        free.current = true;
+        onFreeChange?.(true);
+      }
+    };
+    element.addEventListener('wheel', onWheel, { passive: false });
+    return () => element.removeEventListener('wheel', onWheel);
+  }, [interactive, size, top, right, bottom, left, shape, onFreeChange]);
 
   useLayoutEffect(() => {
     if (!camera || !size || !canvas.current || !probes.current) return;
@@ -117,22 +151,59 @@ export function WorldMap({
   const overlay = camera && size ? layout(route, camera, size, insets, shape, labels, mode, context, languageTag) : null;
   const circle = shape === 'circle' && size ? circleOf(size, insets) : null;
 
+  function local(event: PointerEvent<HTMLDivElement>): [number, number] {
+    const box = event.currentTarget.getBoundingClientRect();
+    return [event.clientX - box.left, event.clientY - box.top];
+  }
+
+  function markFree() {
+    if (free.current) return;
+    free.current = true;
+    onFreeChange?.(true);
+  }
+
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
-    if (!interactive || !current.current || event.button > 0) return;
+    if ((!interactive && !peek) || !current.current || event.button > 0) return;
+    touches.current.set(event.pointerId, local(event));
+    if (touches.current.size === 2) {
+      // A second finger turns a drag into a pinch.
+      const [a, b] = [...touches.current.values()];
+      pinch.current = { distance: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1, anchor: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], camera: current.current };
+      drag.current = null;
+      for (const id of touches.current.keys()) event.currentTarget.setPointerCapture(id);
+    } else if (interactive) {
+      drag.current = { x: event.clientX, y: event.clientY, camera: current.current, id: event.pointerId };
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } else {
+      // One finger on a card still scrolls the page or taps the map open.
+      return;
+    }
     // Keep the parcel sheet's edge swipe from treating a pan as "back".
     event.stopPropagation();
     cancelAnimationFrame(frame.current);
     setMoving(false);
-    drag.current = { x: event.clientX, y: event.clientY, camera: current.current, id: event.pointerId };
-    event.currentTarget.setPointerCapture(event.pointerId);
   }
 
   function onPointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (touches.current.has(event.pointerId)) touches.current.set(event.pointerId, local(event));
+    const zoom = pinch.current;
+    if (zoom && size) {
+      event.stopPropagation();
+      const [a, b] = [...touches.current.values()];
+      const view = zoomArea(size, insets, shape);
+      const zoomed = zoomCamera(zoom.camera, Math.hypot(a[0] - b[0], a[1] - b[1]) / zoom.distance, zoom.anchor, view.middle, view.viewport);
+      // The fingers carry the map along as they spread.
+      const next: Camera = { ...zoomed, offset: [zoomed.offset[0] + (a[0] + b[0]) / 2 - zoom.anchor[0], zoomed.offset[1] + (a[1] + b[1]) / 2 - zoom.anchor[1]] };
+      current.current = next;
+      setCamera(next);
+      if (interactive) markFree();
+      return;
+    }
     const start = drag.current;
     if (!start || start.id !== event.pointerId) return;
     const dx = event.clientX - start.x;
     const dy = event.clientY - start.y;
-    if (!free && Math.hypot(dx, dy) < 4) return;
+    if (!free.current && Math.hypot(dx, dy) < 4) return;
     const degrees = 180 / Math.PI / start.camera.scale;
     const next: Camera = {
       ...start.camera,
@@ -140,20 +211,30 @@ export function WorldMap({
     };
     current.current = next;
     setCamera(next);
-    if (!free) {
-      setFree(true);
-      onFreeChange?.(true);
-    }
+    markFree();
   }
 
   function onPointerEnd(event: PointerEvent<HTMLDivElement>) {
+    touches.current.delete(event.pointerId);
     if (drag.current?.id === event.pointerId) drag.current = null;
+    if (pinch.current && touches.current.size < 2) {
+      pinch.current = null;
+      pinchedAt.current = event.timeStamp;
+      // A card's map settles back once the fingers lift.
+      if (!interactive) setSettle((count) => count + 1);
+    }
+  }
+
+  function onClickCapture(event: MouseEvent<HTMLDivElement>) {
+    // Lifting the fingers from a pinch is not a tap.
+    if (event.timeStamp - pinchedAt.current < 400) event.stopPropagation();
   }
 
   return <div ref={root} className={`${styles.worldMap} ${className}`} style={style} data-shape={shape} data-look={look}
     role="img" aria-label={label ?? describe(route)}
-    data-interactive={interactive || undefined} data-scale={route.scale} data-mode={mode}
-    onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd}>
+    data-interactive={interactive || undefined} data-peek={peek || undefined} data-scale={route.scale} data-mode={mode}
+    onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd}
+    onClickCapture={onClickCapture}>
     <span ref={probes} className={styles.probes} aria-hidden="true">
       {COLORS.map(name => <span key={name} data-color={name} style={{ color: `var(--map-${name})` }} />)}
     </span>
@@ -187,6 +268,18 @@ function describe(route: Route): string {
   const end = route.destination ?? route.current!.place;
   if (end === route.origin.place) return `Map: ${end.name}`;
   return `Map: from ${route.origin.place.name} to ${end.name}${route.km >= 1 ? `, ${formatKm(route.km)} so far` : ''}`;
+}
+
+/** Where zooming settles a globe that no longer fills the view, and how much view there is. */
+function zoomArea(size: Size, insets: Insets, shape: Shape): { middle: [number, number]; viewport: number } {
+  if (shape === 'circle') {
+    const { x, y, radius } = circleOf(size, insets);
+    return { middle: [x, y], viewport: radius * 2 };
+  }
+  return {
+    middle: [(insets.left + size.width - insets.right) / 2, (insets.top + size.height - insets.bottom) / 2],
+    viewport: Math.min(size.width - insets.left - insets.right, size.height - insets.top - insets.bottom),
+  };
 }
 
 /** A round map sits in the middle of its box, inset so rim pointers fit. */
@@ -326,15 +419,18 @@ function draw(canvas: HTMLCanvasElement, size: Size, camera: Camera, palette: Pa
     context.globalCompositeOperation = 'source-over';
   }
   if (time && globe > 0 && !transparent(palette.night)) {
-    // Twenty thin bands fade the night side in over 24°, like dusk.
+    // The night side darkens over 24° past the terminator, like dusk: twenty rings, each drawn
+    // once at its own depth, since stacking twenty faint fills rounds them away.
     const sun = subsolarPoint(time);
     const antipode: Coordinate = [sun[0] + 180, -sun[1]];
     context.fillStyle = palette.night;
-    context.globalAlpha = globe / 20;
-    for (let radius = 92; radius > 68; radius -= 1.2) {
+    for (let band = 0; band < 20; band += 1) {
+      const outer = 92 - band * 1.2;
       context.beginPath();
-      path(geoCircle().center(antipode).radius(radius)());
-      context.fill();
+      path(geoCircle().center(antipode).radius(outer)());
+      if (band < 19) path(geoCircle().center(antipode).radius(outer - 1.2)());
+      context.globalAlpha = globe * (band + 1) / 20;
+      context.fill('evenodd');
     }
     context.globalAlpha = 1;
   }

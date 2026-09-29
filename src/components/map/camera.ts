@@ -142,6 +142,20 @@ export function interpolateCamera(from: Camera, to: Camera, viewport: number) {
 
 export const easeInOut = (t: number) => t < .5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
 
+/**
+ * Zooms by `ratio` about a point on screen, from the whole globe down to a town. A globe
+ * that no longer fills the view drifts back to `middle`, so zooming out never loses it.
+ */
+export function zoomCamera(camera: Camera, ratio: number, anchor: [number, number], middle: [number, number], viewport: number): Camera {
+  const whole = viewport / 2;
+  const scale = Math.max(whole * .9, Math.min(viewport / (20 / EARTH_KM), camera.scale * ratio));
+  const k = scale / camera.scale;
+  const settle = Math.max(0, Math.min(1, (whole * 2.5 - scale) / (whole * 1.5)));
+  const x = anchor[0] + (camera.offset[0] - anchor[0]) * k;
+  const y = anchor[1] + (camera.offset[1] - anchor[1]) * k;
+  return { center: camera.center, scale, offset: [x + (middle[0] - x) * settle, y + (middle[1] - y) * settle] };
+}
+
 /** Where the sun is overhead, accurate to a degree or so: enough for a soft night side. */
 export function subsolarPoint(date: Date): Coordinate {
   const start = Date.UTC(date.getUTCFullYear(), 0, 0);
