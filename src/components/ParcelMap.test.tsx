@@ -91,8 +91,9 @@ describe('map summary', () => {
     expect(screen.getByRole('dialog', { name: 'Map of the journey from Tokyo to Switzerland' })).toBeInTheDocument();
     expect(screen.getByText('To').nextElementSibling).toHaveTextContent('Switzerland');
     expect(screen.getByText(`${formatKm(route.remainingKm!, 'en-CH')} to go`)).toBeInTheDocument();
-    // One stop and no close-up: nothing to switch between.
-    expect(screen.queryByRole('group', { name: 'Map view' })).not.toBeInTheDocument();
+    // The way still to go leads far from the parcel: both views, the whole journey first.
+    const views = screen.getByRole('group', { name: 'Map view' });
+    expect(within(views).getByRole('button', { name: 'Journey' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('says delivered, or last seen when the newest scan has no place', () => {

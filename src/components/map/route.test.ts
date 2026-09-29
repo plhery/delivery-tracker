@@ -63,6 +63,9 @@ describe('camera views', () => {
     const world = buildRoute([scan(kyoto), scan(basel), scan(zurich)]);
     expect(hasNearView(world)).toBe(true);
     expect(hasNearView(buildRoute([scan(bern), scan(zurich)]))).toBe(false);
+    // The way still to go counts too, when it leads out of the close-up.
+    expect(hasNearView(buildRoute([scan(kyoto)], countryPlace('CH', 'Switzerland', [7.46, 46.72])))).toBe(true);
+    expect(hasNearView(buildRoute([scan(bern)], zurich))).toBe(false);
     expect(defaultMode(world, 'in_transit')).toBe('journey');
     expect(defaultMode(world, 'out_for_delivery')).toBe('now');
     expect(defaultMode(world, 'ready_for_pickup')).toBe('now');

@@ -964,7 +964,8 @@ struct WorldMapView: View {
         if mode == .now, let current = route.current?.place.point {
             var points = route.near.map(\.place.point)
             if let destination, destination.kilometres(to: current) < ParcelRoute.nearKilometres { points.append(destination) }
-            return .fit(points, in: box, minimumKilometres: 260)
+            // Like the journey below, a close-up of countries is no town-sized window on their label points.
+            return .fit(points, in: box, minimumKilometres: route.near.allSatisfy(\.place.isCountry) ? 1_500 : 260)
         }
         let ends = route.stops.map(\.place.point) + (destination.map { [$0] } ?? [])
         // Frame the arcs as well as their ends, so a bowed route never leaves the view.

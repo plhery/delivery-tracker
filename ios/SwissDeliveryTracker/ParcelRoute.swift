@@ -102,7 +102,7 @@ struct ParcelRoute: Sendable {
         var isApproximate: Bool { from.isCountry || to.isCountry }
     }
 
-    /// Stops closer than this to the current one belong to the close-up.
+    /// Places closer than this to the current one belong to the close-up.
     static let nearKilometres = 400.0
 
     let stops: [Stop]
@@ -192,8 +192,8 @@ struct ParcelRoute: Sendable {
         }, destination: destination)
     }
 
-    /// Both views only make sense when part of the journey lies outside the close-up.
-    var hasNearView: Bool { (scale == .world || scale == .region) && near.count < stops.count }
+    /// Both views only make sense when part of the journey, travelled or still to go, lies outside the close-up.
+    var hasNearView: Bool { near.count < stops.count || (remainingKilometres ?? 0) >= Self.nearKilometres }
 
     /// The camera follows the parcel: the whole trip while it travels, a close-up for the last mile.
     func defaultMode(for stage: TrackingStage?) -> Mode {

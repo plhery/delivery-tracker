@@ -57,6 +57,9 @@ final class ParcelRouteTests: XCTestCase {
         let world = ParcelRoute(places: [kyoto, basel, zurich])
         XCTAssertTrue(world.hasNearView)
         XCTAssertFalse(ParcelRoute(places: [bern, zurich]).hasNearView)
+        // The way still to go counts too, when it leads out of the close-up.
+        XCTAssertTrue(ParcelRoute(places: [kyoto], destination: switzerland).hasNearView)
+        XCTAssertFalse(ParcelRoute(places: [bern], destination: zurich).hasNearView)
         // The camera follows the parcel: a close-up for the last mile, the whole trip otherwise.
         XCTAssertEqual(world.defaultMode(for: .inTransit), .journey)
         XCTAssertEqual(world.defaultMode(for: .outForDelivery), .now)

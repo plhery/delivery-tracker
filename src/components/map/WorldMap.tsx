@@ -307,7 +307,7 @@ export function circleOf(size: Size, insets: Insets) {
   return { x: insets.left + width / 2, y: insets.top + height / 2, radius: Math.min(width, height) / 2 };
 }
 
-function targetCamera(route: Route, mode: MapMode, size: Size, insets: Insets, shape: Shape, focus?: readonly Coordinate[]): Camera {
+export function targetCamera(route: Route, mode: MapMode, size: Size, insets: Insets, shape: Shape, focus?: readonly Coordinate[]): Camera {
   let box: Box;
   if (shape === 'circle') {
     const { x, y, radius } = circleOf(size, insets);
@@ -333,7 +333,9 @@ function targetCamera(route: Route, mode: MapMode, size: Size, insets: Insets, s
   if (mode === 'now' && current) {
     const points = [...route.near.map(stop => stop.place.coordinate)];
     if (destination && distanceKm(destination, current) < NEAR_KM) points.push(destination);
-    return fitCamera(points, box, { shape, minSpanKm: 260 });
+    // Like the journey below, a close-up of countries is no town-sized window on their label points.
+    const countriesOnly = route.near.every((stop) => stop.place.precision === 'country');
+    return fitCamera(points, box, { shape, minSpanKm: countriesOnly ? 1500 : 260 });
   }
   const ends = [...route.stops.map(stop => stop.place.coordinate), ...(destination ? [destination] : [])];
   // Frame the arcs as well as their ends, so a bowed route never leaves the view.

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { countryPlace, buildRoute, distanceKm, formatKm, type Place, type Scan } from './route';
-import { circleOf, WorldMap } from './WorldMap';
+import { countryPlace, buildRoute, distanceKm, formatKm, type Place, type Route, type Scan } from './route';
+import { circleOf, targetCamera, WorldMap } from './WorldMap';
 
 const city = (name: string, country: string, longitude: number, latitude: number): Place => ({
   id: name, name, country, coordinate: [longitude, latitude], precision: 'city',
@@ -91,6 +91,14 @@ describe('WorldMap', () => {
     rerender(<WorldMap route={route} mode="now" time={time} />);
     // The edge pointer waits for the camera to land.
     await waitFor(() => expect(screen.getByText('Kyoto').parentElement?.textContent).toContain('km'), { timeout: 4000 });
+  });
+
+  it('keeps a close-up of a country wider than a town', () => {
+    const size = { width: 400, height: 300 };
+    const spanKm = (route: Route) => size.height / targetCamera(route, 'now', size, { top: 0, right: 0, bottom: 0, left: 0 }, 'rect').scale * 6371;
+    // A town-sized window on China's label point would claim to know where in China the parcel is.
+    expect(spanKm(buildRoute([scan(kyoto), scan(countryPlace('CN', 'China', [106.34, 32.5]))]))).toBeGreaterThan(1500);
+    expect(spanKm(buildRoute([scan(kyoto), scan(zurich)]))).toBeLessThan(500);
   });
 
   it('shows countries as areas and the leg still to go', async () => {

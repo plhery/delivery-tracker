@@ -54,7 +54,7 @@ export interface Route {
 }
 
 const EARTH_KM = 6371;
-/** Stops closer than this to the current one belong to the "now" view. */
+/** Places closer than this to the current one belong to the "now" view. */
 export const NEAR_KM = 400;
 
 export const distanceKm = (a: Coordinate, b: Coordinate) => geoDistance(a, b) * EARTH_KM;
@@ -145,9 +145,9 @@ export function routeFromEvents(events: readonly TrackingEvent[], destination?: 
   return buildRoute(scans, destination);
 }
 
-/** Both views only make sense when part of the journey lies outside the close-up. */
+/** Both views only make sense when part of the journey, travelled or still to go, lies outside the close-up. */
 export function hasNearView(route: Route): boolean {
-  return (route.scale === 'world' || route.scale === 'region') && route.near.length < route.stops.length;
+  return route.near.length < route.stops.length || (route.remainingKm ?? 0) >= NEAR_KM;
 }
 
 /** The camera follows the parcel: the whole trip while it travels, a close-up for the last mile. */
