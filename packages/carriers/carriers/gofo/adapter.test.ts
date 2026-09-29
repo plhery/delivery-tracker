@@ -28,6 +28,22 @@ describe('GOFO US history', () => {
     const wrongIdentity = counterFixture(); item(wrongIdentity).trackEventList.at(-1).trackingNumber = OTHER;
     expect(() => parseGofo(wrongIdentity, NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
   });
+  it('drops the support line GOFO appends to a scan, as its public page does, and keeps any other wording', () => {
+    const description = (processContent: string) => {
+      const value = counterFixture(); item(value).trackEventList[2].processContent = processContent;
+      return parseGofo(value, NUMBER).events?.[2].description;
+    };
+    for (const line of ['For Delivery Issues & Tracking Support, Contact GOFO at +1 949 688-6032 or cs@mail.gofoexpress.com',
+      'for delivery issues & tracking support, contact gofo at +1 000 000-0000 or support@example.com',
+      'FOR DELIVERY ISSUES AND TRACKING SUPPORT, CONTACT GOFO AT support@example.com OR (000) 000-0000.',
+      'Para problemas de entrega y soporte de seguimiento, comuníquese con GOFO al +1 000 000-0000 o support@example.com']) {
+      expect(description(`Delivery Exception, Business Closed.\n ${line}`)).toBe('Delivery Exception, Business Closed.');
+    }
+    const line = 'For Delivery Issues & Tracking Support, Contact GOFO at +1 000 000-0000 or support@example.com';
+    for (const kept of [line, `${line}. Held at the station.`, 'Delivery Exception, Business Closed. Contact the sender at support@example.com']) {
+      expect(description(kept)).toBe(kept);
+    }
+  });
   it('keeps a larger counter inconclusive when the list is cut at either end', () => {
     const oldest = counterFixture(); item(oldest).trackEventList.pop();
     const older = counterFixture(); item(older).trackEventList.splice(-5);

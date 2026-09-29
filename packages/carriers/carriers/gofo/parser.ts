@@ -10,6 +10,10 @@ import { gofoStatus } from './status';
 const LABEL_CREATED = '100';
 /** The clock the adapter requests: GOFO prints Pacific clocks with their real offset. */
 export const GOFO_CLOCK_ZONE = 'America/Los_Angeles';
+// GOFO appends its support phone and email to some scans, in English or
+// Spanish; the public page removes that line before display.
+const CONTACT = String.raw`(?:\+?\(?\d[\d ().-]*\d|[\w.+-]+@[\w-]+(?:\.[\w-]+)+)`;
+const SUPPORT_LINE = new RegExp(String.raw`\s*(?:For delivery issues (?:&|and) tracking support, contact GOFO at|Para problemas de entrega y soporte de seguimiento, comun[ií]quese con GOFO al) ${CONTACT}(?:,? (?:or|and|o|y) ${CONTACT})*\.?$`, 'iu');
 
 export function normalizeGofoNumber(raw: string): string {
   const number = normalizeTrackingNumber(raw);
@@ -39,6 +43,12 @@ function scanClock(value: unknown, scanZone: unknown): Pick<CarrierEvent, 'time'
   if (instant.toFormat("yyyy-MM-dd'T'HH:mm:ss") !== match[1]!.slice(0, 19)) throw new SchemaError('GOFO', 'GOFO returned a clock outside Pacific time');
   const zone = clean(scanZone, 64);
   return { time: (IANAZone.isValidZone(zone) ? instant.setZone(zone) : instant).toISO({ suppressMilliseconds: true })! };
+}
+
+/** Scan wording without a trailing support line; a scan worded only by that line keeps it. */
+function scanText(value: unknown): string {
+  const text = clean(value, 1_000);
+  return (text.replace(SUPPORT_LINE, '') || text).slice(0, 500);
 }
 
 export function parseGofo(payload: unknown, rawNumber: string): CarrierResult {
@@ -83,7 +93,7 @@ export function parseGofo(payload: unknown, rawNumber: string): CarrierResult {
   const seen = new Set<string>();
   for (const row of item.trackEventList) {
     const code = clean(row.processCode, 32);
-    const rawDescription = clean(row.processContent, 500);
+    const rawDescription = scanText(row.processContent);
     if (!code || !rawDescription) throw new SchemaError('GOFO', 'GOFO returned an incomplete scan');
     const mapped = gofoStatus(code);
     if (mapped?.stage === 'delivered' && !/^Delivered(?:,|$)/.test(rawDescription)) throw new IndeterminateError('GOFO', 'GOFO returned inconsistent delivery evidence');
