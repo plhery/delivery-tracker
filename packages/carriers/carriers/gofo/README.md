@@ -5,8 +5,10 @@ Other regional services are outside this adapter's scope.
 
 ## How it works
 
-One bounded JSON POST uses the public page's local-time setting. Both parcel
-identifiers must match, and the latest summary must agree with the first scan.
+One bounded JSON POST uses the public page's local-time setting. The waybill
+must be the requested GFUS number; the tracking number repeats it or is the
+shipper's own reference, never another GOFO number. The latest summary must
+agree with the first scan.
 The public page renders the whole list without paging and ignores the event
 counter, which can count scans the list omits. A larger counter is accepted only
 while the list still starts at label creation, so a list cut at either end stays

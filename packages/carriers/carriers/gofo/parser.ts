@@ -44,7 +44,12 @@ export function parseGofo(payload: unknown, rawNumber: string): CarrierResult {
   if (!entries.length && error.errorCount === 1 && Array.isArray(error.us) && error.us.length === 1 && error.us[0] === number
     && Object.keys(error).every(key => ['errorCount', 'us'].includes(key))) throw new NotFoundError('GOFO');
   if (!entries.length) throw new IndeterminateError('GOFO', 'GOFO returned no matching history');
-  if (entries.length !== 1 || entries[0].waybillNo !== number || entries[0].trackingNumber !== number || error.errorCount !== 0) {
+  // The GFUS number is the waybill. The tracking number repeats it or is the
+  // shipper's own reference, which must not name another GOFO parcel.
+  const reference = entries[0].trackingNumber;
+  const ownReference = reference === number || (typeof reference === 'string' && clean(reference, 100) !== ''
+    && !/^GFUS\d{14}$/.test(normalizeTrackingNumber(reference)));
+  if (entries.length !== 1 || entries[0].waybillNo !== number || !ownReference || error.errorCount !== 0) {
     throw new SchemaError('GOFO', 'GOFO returned a different or ambiguous parcel');
   }
   const item = entries[0]!;
@@ -74,7 +79,9 @@ export function parseGofo(payload: unknown, rawNumber: string): CarrierResult {
     if (!code || !rawDescription) throw new SchemaError('GOFO', 'GOFO returned an incomplete scan');
     const mapped = gofoStatus(code);
     if (mapped?.stage === 'delivered' && !/^Delivered(?:,|$)/.test(rawDescription)) throw new IndeterminateError('GOFO', 'GOFO returned inconsistent delivery evidence');
-    if (['trackingNumber', 'waybillNo'].some(key => row[key] != null && row[key] !== number)) throw new SchemaError('GOFO', 'GOFO returned a scan for a different parcel');
+    if ((row.waybillNo != null && row.waybillNo !== number) || (row.trackingNumber != null && row.trackingNumber !== reference)) {
+      throw new SchemaError('GOFO', 'GOFO returned a scan for a different parcel');
+    }
     const timestamp = scanClock(row.processDate);
     const location = [clean(row.processCity, 100), clean(row.processProvince, 20)].filter(Boolean).join(', ');
     const description = mapped?.stage === 'delivered' ? 'Delivered' : rawDescription;

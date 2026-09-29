@@ -8,6 +8,7 @@ import { gofoStatus } from './status';
 
 const NUMBER = 'GFUS00000000000001';
 const OTHER = 'GFUS00000000000002';
+const SHIPPER = 'AA-0000000000000000000-0';
 const fixture = () => JSON.parse(readFileSync(new URL('./fixtures/delivered.json', import.meta.url), 'utf8'));
 const counterFixture = () => JSON.parse(readFileSync(new URL('./fixtures/public-counter.json', import.meta.url), 'utf8'));
 const item = (value: ReturnType<typeof fixture>) => value.data.success[0];
@@ -56,6 +57,19 @@ describe('GOFO US history', () => {
     const duplicate = fixture(); duplicate.data.success.push(item(duplicate));
     const scan = fixture(); item(scan).trackEventList[1].trackingNumber = OTHER;
     for (const value of [null, {}, waybill, tracking, duplicate, scan]) expect(() => parseGofo(value, NUMBER)).toThrow();
+  });
+
+  it('binds the waybill when GOFO shows the shipper reference as the tracking number', () => {
+    const value = fixture(); item(value).trackingNumber = SHIPPER; item(value).trackEventList[1].trackingNumber = SHIPPER;
+    const result = parseGofo(value, NUMBER);
+    expect(result).toMatchObject({ status: 'delivered', delivered_at: '2026-01-04T12:00:00-08:00' });
+    expect(JSON.stringify(result)).not.toContain(SHIPPER);
+    for (const reference of [OTHER, 'gfus-0000 0000 0000 02', '', ' ', null, 42]) {
+      const other = fixture(); item(other).trackingNumber = reference;
+      expect(() => parseGofo(other, NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
+    }
+    const scan = fixture(); item(scan).trackingNumber = SHIPPER; item(scan).trackEventList[1].trackingNumber = NUMBER;
+    expect(() => parseGofo(scan, NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
   });
 
   it('requires the observed numeric envelope and exact US absence, keeping reroutes and empty replies uncertain', () => {
