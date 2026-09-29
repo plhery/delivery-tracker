@@ -360,10 +360,10 @@ By carrier:
 - **SpeedX:** only 17TRACK knew the reference: a label, then "Parcel Void", which it files
   under its generic transit code, so a voided label reads as in transit. A 24-character
   `SPX…` number in another report matches no rule.
-- **GOFO Express:** the native client displays the returned event list, whose counter
-  can be larger than its row count. The adapter accepts the 14 listed scans while
-  checking parcel identity, rows and the matching current summary. The aggregators
-  hold the same history.
+- **GOFO Express:** GOFO counts 15 scans for this reference but lists 14, the same 14
+  the aggregators hold; its page shows the list and ignores the counter. The adapter
+  accepts a larger counter only when the list runs from label creation to the current
+  summary.
 - **Ecoscooting:** the direct feed supports Portuguese references and returns six
   last-mile scans with identity-bound completion wording. Postal Ninja adds SunYou's
   origin leg; Ship24 and ParcelsApp hold the same last-mile history. Spanish numeric

@@ -7,6 +7,8 @@ import { clean } from '../../core/transport';
 import { isRecord } from '../../core/types';
 import { gofoStatus } from './status';
 
+const LABEL_CREATED = '100';
+
 export function normalizeGofoNumber(raw: string): string {
   const number = normalizeTrackingNumber(raw);
   if (!/^GFUS\d{14}$/.test(number)) throw new TypeError('GOFO US requires a GFUS parcel reference');
@@ -48,11 +50,16 @@ export function parseGofo(payload: unknown, rawNumber: string): CarrierResult {
   const item = entries[0]!;
   if (!Array.isArray(item.trackEventList) || item.trackEventList.length > 500 || !item.trackEventList.every(isRecord)) throw new SchemaError('GOFO');
   if (!item.trackEventList.length) throw new IndeterminateError('GOFO', 'GOFO returned no parcel scans');
-  // The public client renders this entire list without paging and does not
-  // use the counter. It can exceed the number of publicly returned scans.
+  // The public client renders this entire list without paging and ignores the
+  // counter, which can also count scans the list omits. A larger counter is
+  // accepted only while the list still reaches label creation; the summary
+  // check below binds its newest end.
   if (!Number.isInteger(item.trackEventCount) || Number(item.trackEventCount) < item.trackEventList.length
     || Number(item.trackEventCount) > 500) {
     throw new IndeterminateError('GOFO', 'GOFO returned an inconsistent parcel event count');
+  }
+  if (Number(item.trackEventCount) > item.trackEventList.length && clean(item.trackEventList.at(-1)!.processCode, 32) !== LABEL_CREATED) {
+    throw new IndeterminateError('GOFO', 'GOFO returned incomplete parcel history');
   }
   const first = item.trackEventList[0]!;
   const summary = item.lastTrackEvent;

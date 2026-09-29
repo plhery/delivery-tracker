@@ -14,15 +14,26 @@ const item = (value: ReturnType<typeof fixture>) => value.data.success[0];
 const bind = (value: ReturnType<typeof fixture>) => { item(value).lastTrackEvent = { ...item(value).trackEventList[0] }; item(value).trackEventCount = item(value).trackEventList.length; };
 
 describe('GOFO US history', () => {
-  it('retains the complete public list when the separate event counter exceeds its length', () => {
+  it('accepts a larger counter while the public list runs from label creation to the current summary', () => {
     const result = parseGofo(counterFixture(), NUMBER);
     expect(result.events).toHaveLength(14);
-    expect(result).toMatchObject({ status: 'delivered', last_update: '2026-01-20T12:00:00-08:00' });
-    expect(result.events?.at(-1)).toMatchObject({ stage: 'registered', time: '2026-01-07T12:00:00-08:00' });
-    const wrongSummary = counterFixture(); item(wrongSummary).lastTrackEvent.processContent = 'Different';
-    expect(() => parseGofo(wrongSummary, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
+    expect(result).toMatchObject({ status: 'delivered', last_update: '2026-01-20T15:00:00-08:00', delivered_at: '2026-01-20T15:00:00-08:00' });
+    expect(result.events?.[2]).toMatchObject({ description: 'Delivery Exception, Business Closed.', provider_code: '206' });
+    expect(result.events?.at(-1)).toMatchObject({ stage: 'registered', time: '2026-01-14T04:30:00-08:00' });
+    for (const field of ['processContent', 'processDeptId', 'processSecondCode', 'processTimeZone']) {
+      const wrongSummary = counterFixture(); item(wrongSummary).lastTrackEvent[field] = 'Different';
+      expect(() => parseGofo(wrongSummary, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
+    }
     const wrongIdentity = counterFixture(); item(wrongIdentity).trackEventList.at(-1).trackingNumber = OTHER;
     expect(() => parseGofo(wrongIdentity, NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
+  });
+  it('keeps a larger counter inconclusive when the list is cut at either end', () => {
+    const oldest = counterFixture(); item(oldest).trackEventList.pop();
+    const older = counterFixture(); item(older).trackEventList.splice(-5);
+    const newest = counterFixture(); item(newest).trackEventList.splice(0, 2);
+    for (const value of [oldest, older, newest]) expect(() => parseGofo(value, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
+    const counted = counterFixture(); item(counted).trackEventList.pop(); item(counted).trackEventCount = 13;
+    expect(parseGofo(counted, NUMBER).events).toHaveLength(13);
   });
   it.each([undefined, '15', 3, 0, -1, 4.5, Number.NaN, Number.POSITIVE_INFINITY, 501])('rejects contradictory or unbounded public counter %s', count => {
     const value = fixture(); item(value).trackEventCount = count;

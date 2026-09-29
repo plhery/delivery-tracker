@@ -7,10 +7,11 @@ Other regional services are outside this adapter's scope.
 
 One bounded JSON POST uses the public page's local-time setting. Both parcel
 identifiers must match, and the latest summary must agree with the first scan.
-The event counter can exceed the public list's length; the website renders and
-exports that list directly without paging. Contradictory counts, regional
-reroutes and empty responses remain inconclusive; only the explicit US error
-list proves absence.
+The public page renders the whole list without paging and ignores the event
+counter, which can count scans the list omits. A larger counter is accepted only
+while the list still starts at label creation, so a list cut at either end stays
+inconclusive, as do contradictory counts, regional reroutes and empty responses.
+Only the explicit US error list proves absence.
 
 ## Notes
 

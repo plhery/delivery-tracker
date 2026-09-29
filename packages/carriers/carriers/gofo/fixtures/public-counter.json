@@ -13,109 +13,184 @@
         "estimatedArrivalTime": null,
         "lastTrackEvent": {
           "processCode": "205",
-          "processDate": "2026-01-20T12:00:00.000-0800",
+          "processSecondCode": null,
+          "processDate": "2026-01-20T15:00:00.000-0800",
           "processContent": "Delivered, Door/Yard. PRIVATE_SYNTHETIC_DETAIL",
           "processCity": "Example City",
-          "processProvince": "EX"
+          "processProvince": "EX",
+          "processLocation": "Example City",
+          "processDeptId": 1003,
+          "processTimeZone": "America/Los_Angeles",
+          "processTimeZoneMapping": "PT"
         },
         "trackEventList": [
           {
             "processCode": "205",
-            "processDate": "2026-01-20T12:00:00.000-0800",
+            "processSecondCode": null,
+            "processDate": "2026-01-20T15:00:00.000-0800",
             "processContent": "Delivered, Door/Yard. PRIVATE_SYNTHETIC_DETAIL",
             "processCity": "Example City",
-            "processProvince": "EX"
+            "processProvince": "EX",
+            "processLocation": "Example City",
+            "processDeptId": 1003,
+            "processTimeZone": "America/Los_Angeles",
+            "processTimeZoneMapping": "PT"
+          },
+          {
+            "processCode": "208",
+            "processSecondCode": null,
+            "processDate": "2026-01-20T07:00:00.000-0800",
+            "processContent": "Out for Delivery",
+            "processCity": "Station City",
+            "processProvince": "EX",
+            "processLocation": "Station City",
+            "processDeptId": 1002,
+            "processTimeZone": "America/Los_Angeles",
+            "processTimeZoneMapping": "PT"
+          },
+          {
+            "processCode": "206",
+            "processSecondCode": "2022",
+            "processDate": "2026-01-18T16:00:00.000-0800",
+            "processContent": "Delivery Exception, Business Closed.",
+            "processCity": "Example City",
+            "processProvince": "EX",
+            "processLocation": "Example City",
+            "processDeptId": 1003,
+            "processTimeZone": "America/Los_Angeles",
+            "processTimeZoneMapping": "PT"
+          },
+          {
+            "processCode": "208",
+            "processSecondCode": null,
+            "processDate": "2026-01-18T07:00:00.000-0800",
+            "processContent": "Out for Delivery",
+            "processCity": "Station City",
+            "processProvince": "EX",
+            "processLocation": "Station City",
+            "processDeptId": 1002,
+            "processTimeZone": "America/Los_Angeles",
+            "processTimeZoneMapping": "PT"
+          },
+          {
+            "processCode": "201",
+            "processSecondCode": null,
+            "processDate": "2026-01-18T06:50:00.000-0800",
+            "processContent": "Arrived at GOFO Delivery Station",
+            "processCity": "Station City",
+            "processProvince": "EX",
+            "processLocation": "Station City",
+            "processDeptId": 1002,
+            "processTimeZone": "America/Los_Angeles",
+            "processTimeZoneMapping": "PT"
+          },
+          {
+            "processCode": "200",
+            "processSecondCode": null,
+            "processDate": "2026-01-18T00:30:00.000-0800",
+            "processContent": "Loaded on Vehicle",
+            "processCity": "Hub City",
+            "processProvince": "EX",
+            "processLocation": "Hub City",
+            "processDeptId": 1001,
+            "processTimeZone": "America/Los_Angeles",
+            "processTimeZoneMapping": "PT"
           },
           {
             "processCode": "202",
-            "processDate": "2026-01-19T12:00:00.000-0800",
-            "processContent": "Arrived at example facility 1",
-            "processCity": "Example City",
-            "processProvince": "EX"
+            "processSecondCode": null,
+            "processDate": "2026-01-17T02:00:00.000-0800",
+            "processContent": "Arrived at GOFO Regional Hub",
+            "processCity": "Hub City",
+            "processProvince": "EX",
+            "processLocation": "Hub City",
+            "processDeptId": 1001,
+            "processTimeZone": "America/Los_Angeles",
+            "processTimeZoneMapping": "PT"
+          },
+          {
+            "processCode": "412",
+            "processSecondCode": null,
+            "processDate": "2026-01-16T23:50:00.000-0800",
+            "processContent": "In Transit to Next Facility",
+            "processCity": "Hub City",
+            "processProvince": "EX",
+            "processLocation": "Hub City",
+            "processDeptId": 1001,
+            "processTimeZone": "America/Los_Angeles",
+            "processTimeZoneMapping": "PT"
+          },
+          {
+            "processCode": "411",
+            "processSecondCode": null,
+            "processDate": "2026-01-15T10:20:00.000-0800",
+            "processContent": "Departed GOFO Regional Hub",
+            "processCity": "Origin City",
+            "processProvince": "EX",
+            "processLocation": "Origin City",
+            "processDeptId": 1000,
+            "processTimeZone": "America/Los_Angeles",
+            "processTimeZoneMapping": "PT"
+          },
+          {
+            "processCode": "200",
+            "processSecondCode": "2122",
+            "processDate": "2026-01-15T10:10:00.000-0800",
+            "processContent": "Loaded on Vehicle at GOFO Regional Origin Hub",
+            "processCity": "Origin City",
+            "processProvince": "EX",
+            "processLocation": "Origin City",
+            "processDeptId": 1000,
+            "processTimeZone": "America/Los_Angeles",
+            "processTimeZoneMapping": "PT"
           },
           {
             "processCode": "202",
-            "processDate": "2026-01-18T12:00:00.000-0800",
-            "processContent": "Arrived at example facility 2",
-            "processCity": "Example City",
-            "processProvince": "EX"
+            "processSecondCode": "2120",
+            "processDate": "2026-01-15T02:20:00.000-0800",
+            "processContent": "Arrived at GOFO Regional Origin Hub",
+            "processCity": "Origin City",
+            "processProvince": "EX",
+            "processLocation": "Origin City",
+            "processDeptId": 1000,
+            "processTimeZone": "America/Los_Angeles",
+            "processTimeZoneMapping": "PT"
           },
           {
-            "processCode": "202",
-            "processDate": "2026-01-17T12:00:00.000-0800",
-            "processContent": "Arrived at example facility 3",
-            "processCity": "Example City",
-            "processProvince": "EX"
+            "processCode": "801",
+            "processSecondCode": null,
+            "processDate": "2026-01-14T18:00:00.000-0800",
+            "processContent": "Pick Up Success",
+            "processCity": "Origin City",
+            "processProvince": "EX",
+            "processLocation": "Origin City",
+            "processDeptId": 1000,
+            "processTimeZone": "America/Los_Angeles",
+            "processTimeZoneMapping": "PT"
           },
           {
-            "processCode": "202",
-            "processDate": "2026-01-16T12:00:00.000-0800",
-            "processContent": "Arrived at example facility 4",
-            "processCity": "Example City",
-            "processProvince": "EX"
-          },
-          {
-            "processCode": "202",
-            "processDate": "2026-01-15T12:00:00.000-0800",
-            "processContent": "Arrived at example facility 5",
-            "processCity": "Example City",
-            "processProvince": "EX"
-          },
-          {
-            "processCode": "202",
-            "processDate": "2026-01-14T12:00:00.000-0800",
-            "processContent": "Arrived at example facility 6",
-            "processCity": "Example City",
-            "processProvince": "EX"
-          },
-          {
-            "processCode": "202",
-            "processDate": "2026-01-13T12:00:00.000-0800",
-            "processContent": "Arrived at example facility 7",
-            "processCity": "Example City",
-            "processProvince": "EX"
-          },
-          {
-            "processCode": "202",
-            "processDate": "2026-01-12T12:00:00.000-0800",
-            "processContent": "Arrived at example facility 8",
-            "processCity": "Example City",
-            "processProvince": "EX"
-          },
-          {
-            "processCode": "202",
-            "processDate": "2026-01-11T12:00:00.000-0800",
-            "processContent": "Arrived at example facility 9",
-            "processCity": "Example City",
-            "processProvince": "EX"
-          },
-          {
-            "processCode": "202",
-            "processDate": "2026-01-10T12:00:00.000-0800",
-            "processContent": "Arrived at example facility 10",
-            "processCity": "Example City",
-            "processProvince": "EX"
-          },
-          {
-            "processCode": "202",
-            "processDate": "2026-01-09T12:00:00.000-0800",
-            "processContent": "Arrived at example facility 11",
-            "processCity": "Example City",
-            "processProvince": "EX"
-          },
-          {
-            "processCode": "202",
-            "processDate": "2026-01-08T12:00:00.000-0800",
-            "processContent": "Arrived at example facility 12",
-            "processCity": "Example City",
-            "processProvince": "EX"
+            "processCode": "216",
+            "processSecondCode": null,
+            "processDate": "2026-01-14T16:00:00.000-0800",
+            "processContent": "Pick Up Start",
+            "processCity": "Seller City",
+            "processProvince": "EX",
+            "processLocation": "Seller City",
+            "processDeptId": 1000,
+            "processTimeZone": "America/Los_Angeles",
+            "processTimeZoneMapping": "PT"
           },
           {
             "processCode": "100",
-            "processDate": "2026-01-07T12:00:00.000-0800",
+            "processSecondCode": null,
+            "processDate": "2026-01-14T04:30:00.000-0800",
             "processContent": "Shipping Label Created",
-            "processCity": "Example City",
-            "processProvince": "EX"
+            "processCity": null,
+            "processProvince": null,
+            "processLocation": null,
+            "processDeptId": null,
+            "processTimeZone": "US/Pacific",
+            "processTimeZoneMapping": "PT"
           }
         ]
       }
