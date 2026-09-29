@@ -53,7 +53,7 @@ statuses map correctly.
 | [Mondial Relay](../carriers/mondial-relay/README.md) | Yes (postcode for short numbers) | No history | No history | No history | No history | No history | N/A |
 | [InPost](../carriers/inpost/README.md) | Yes | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 8 | No history | N/A |
 | [PostNL](../carriers/spring-gds/README.md) | Yes | ✓ 16 | ✓ 16 | No history | No history | ✓ 16 | No history |
-| [Canada Post](../carriers/canada-post/README.md) | Yes | Summary only | ✓ 12 | ✓ 11 | ✓ 25 | Error | ✓ 1 |
+| [Canada Post](../carriers/canada-post/README.md) | Yes | No history; alternate ✓ 11 | ✓ 12 | ✓ 11 | ✓ 25 | Error | ✓ 1 |
 | [Australia Post](../carriers/australia-post/README.md) | Yes | ✓ 12 | No history | No history | No history | ✓ 12 | N/A |
 | [Japan Post](../carriers/japan-post/README.md) | Yes | ✓ 13 | ✓ 13 | ✓ 27 | ✓ 27 | ✓ 28 | ✓ 1 |
 | [India Post](../carriers/india-post/README.md) | Yes | ✓ 21 | ✓ 21 | No history | ✓ 21 | No history | No history |
@@ -90,7 +90,7 @@ statuses map correctly.
 | [Ninja Van](../carriers/ninja-van/carrier.json) | No adapter | No history | No history | No history | No history | No history | N/A |
 | [Packeta](../carriers/packeta/README.md) | Yes | No history | No history | No history | No history | No history | N/A |
 | [Poczta Polska](../carriers/poczta-polska/README.md) | Yes | ✓ 5 | ✓ 10 | ✓ 19 | ✓ 21 | ✓ 18 | ✓ 6 |
-| [Bring](../carriers/bring-posten/carrier.json) | No adapter | Not tested | ✓ 12 | ✓ 15 | ✓ 19 | ✓ 16 | ✓ 3 |
+| [Bring](../carriers/bring-posten/README.md) | Yes | Not tested; alternate ✓ 3 | ✓ 12 | ✓ 15 | ✓ 19 | ✓ 16 | ✓ 3 |
 | [Posti](../carriers/posti/README.md) | Yes | Unverified | Unverified | Unverified | Unverified | Unverified | N/A |
 | [An Post](../carriers/an-post/carrier.json) | No adapter | Not tested | ✓ 4 | ✓ 4 | ✓ 4 | ✓ 4 | No history |
 | [CTT Portugal](../carriers/ctt/README.md) | Yes | ✓ 4 | ✓ 4 | ✓ 5 | ✓ 5 | ✓ 3 | ✓ 2 |
@@ -99,7 +99,7 @@ statuses map correctly.
 | [SEUR](../carriers/seur/carrier.json) | No adapter | Not tested | No history | ✓ 4 | ✓ 4 | ✓ 4 | N/A |
 | [Correos Express](../carriers/correos-express/README.md) | Yes | Error | ✓ 9 | ✓ 9 | No history | No history | N/A |
 | [MRW](../carriers/mrw/carrier.json) | No adapter | Not tested | No history | No history | ✓ 1 | No history | N/A |
-| [NACEX](../carriers/nacex/carrier.json) | No adapter | Not tested | Error | Error | Error | Error | N/A |
+| [NACEX](../carriers/nacex/README.md) | Yes | Not tested; alternate ✓ 14 | Error | Error | Error | Error | N/A |
 | [Colis Privé](../carriers/colis-prive/README.md) | Yes (postcode) | Not tested (postcode) | No history | No history | No history | No history | N/A |
 | [Relais Colis](../carriers/relais-colis/README.md) | Yes | Error | No history | ✓ 4 | No history | No history | N/A |
 | [Paack](../carriers/paack/README.md) | Yes (postcode) | Not tested (postcode) | No history | No history | No history | No history | N/A |
@@ -307,16 +307,19 @@ is recorded in the carrier's `numbers.json`.
 
 ## Other carriers
 
-Carriers beyond the first 80, one public sample each, probed through Ship24, ParcelsApp
-and 17TRACK. Many samples are old, so "–" often just means the history expired.
+Carriers beyond the first 80. Provider comparisons use one public sample each through
+Ship24, ParcelsApp and 17TRACK. Some dedicated additions have no provider comparison.
+Many samples are old, so "–" often just means the history expired.
 
 | Carrier | Route | Ship24 | ParcelsApp | 17TRACK |
 | --- | --- | --- | --- | --- |
 | Ciblex | dedicated | – | postcode prompt | – |
 | [Ecoscooting](../carriers/ecoscooting/README.md) | dedicated | – | – | – |
+| [Estafeta](../carriers/estafeta/README.md) | dedicated | Not tested | Not tested | Not tested |
 | GEODIS | dedicated | – | postcode prompt | – |
 | SpeedX | universal | – | – | – |
 | SunYou | dedicated | – | ✓ | ✓ |
+| [The Courier Guy](../carriers/the-courier-guy/README.md) | dedicated | Not tested | Not tested | Not tested |
 | TIPSA | universal | – | – | – |
 | [UniUni](../carriers/uniuni/README.md) | dedicated | – | ✓ | – |
 
@@ -328,6 +331,22 @@ unresolved current clocks separately and asks providers for dated progress.
 Ecoscooting also return matching history through official anonymous routes. Canpar's
 ambiguous clock shift remains local history. Empty Canpar placeholders and Ecoscooting
 query errors are inconclusive.
+
+[Bring / Posten Norway](../carriers/bring-posten/README.md),
+[Estafeta](../carriers/estafeta/README.md), [NACEX](../carriers/nacex/README.md) and
+[The Courier Guy](../carriers/the-courier-guy/README.md) return matching histories
+through anonymous consumer services. Bring supports single-piece consignments and
+Norwegian postal parcels. Estafeta binds its short code to one full guide and rejects
+colliding codes and master-piece lists. Its Mexican clocks remain local. The Courier
+Guy keeps shipment-level scans without promoting one delivered piece to completion.
+NACEX submits the agency/shipment pair in a fresh anonymous session and preserves
+date-only scans without inventing a delivery time.
+
+[Canada Post](../carriers/canada-post/README.md) uses the full detail feed rather than
+its summary feed. Delivery-notice cards and numeric references first need one exact
+reference-to-PIN match. Explicit scan offsets establish instants; return transport
+remains separate from completed return. Expired and unknown references share an
+inconclusive response.
 
 SpeedX's anonymous endpoints require verification, so it has no verified anonymous
 history adapter.

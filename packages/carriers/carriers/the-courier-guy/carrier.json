@@ -14,18 +14,50 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "the-courier-guy",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "delivered_at"
+  ],
   "portal": {
-    "url": "https://portal.thecourierguy.co.za/track",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "url": "https://portal.thecourierguy.co.za/track?ref={trackingNumber}",
+    "canaryUrl": "https://portal.thecourierguy.co.za/track",
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "eta"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "delivered_at"
+    ],
+    "discarded": [
+      "messages",
+      "contact_details",
+      "proof_images",
+      "eta"
+    ],
     "unavailable": []
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "portal.thecourierguy.co.za",
+        "track.thecourierguy.co.za"
+      ],
+      "path": "^/track/?$",
+      "params": [
+        "ref"
+      ]
+    }
+  ],
   "detection": []
 }

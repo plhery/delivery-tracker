@@ -1,0 +1,33 @@
+{
+  "carrier": "bring-posten",
+  "entries": [
+    {
+      "code": "PRE_NOTIFIED",
+      "wording": "PRE_NOTIFIED",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "HANDED_IN",
+      "wording": "HANDED_IN",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "IN_TRANSIT",
+      "wording": "IN_TRANSIT",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "DELIVERED",
+      "wording": "DELIVERED",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    }
+  ]
+}

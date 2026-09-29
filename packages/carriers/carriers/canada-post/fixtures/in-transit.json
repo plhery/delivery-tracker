@@ -1,24 +1,44 @@
 {
-  "items": [
+  "pin": "0073938000888888",
+  "status": "InTransit",
+  "expectedDlvryDateTime": {
+    "dlvryDate": "2026-03-20",
+    "revisedDate": null
+  },
+  "events": [
     {
-      "pin": "0073938000888888",
-      "status": "5",
-      "expectedDlvryDateTime": { "dlvryDate": "2026-03-20", "revisedDate": null },
-      "productNmEn": "PRIVATE SERVICE",
-      "events": [
-        {
-          "cd": "T1",
-          "datetime": { "date": "2026-03-15", "time": "22:41" },
-          "descEn": "In transit",
-          "locationEn": "MONTREAL, QC"
-        },
-        {
-          "cd": "A1",
-          "datetime": { "date": "2026-03-12", "time": "09:30" },
-          "descEn": "Accepted at the post office",
-          "locationEn": "TORONTO, ON"
-        }
-      ]
+      "cd": "0175",
+      "webCd": "CODE-SYNTHETIC",
+      "datetime": {
+        "date": "2026-03-15",
+        "time": "22:41:00",
+        "zoneOffset": "-05:00"
+      },
+      "locationAddr": {
+        "city": "EXAMPLE CITY",
+        "regionCd": "ON",
+        "postCd": "PRIVATE POSTCODE",
+        "addressLine1": "PRIVATE ADDRESS"
+      },
+      "descEn": "Item in transit",
+      "type": "Info"
+    },
+    {
+      "cd": "1302",
+      "webCd": "CODE-SYNTHETIC",
+      "datetime": {
+        "date": "2026-03-12",
+        "time": "09:30:00",
+        "zoneOffset": "-05:00"
+      },
+      "locationAddr": {
+        "city": "EXAMPLE CITY",
+        "regionCd": "ON",
+        "postCd": "PRIVATE POSTCODE",
+        "addressLine1": "PRIVATE ADDRESS"
+      },
+      "descEn": "Item accepted at the Post Office",
+      "type": "Induction"
     }
   ]
 }

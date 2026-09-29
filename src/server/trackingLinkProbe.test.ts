@@ -13,6 +13,13 @@ describe('tracking link page validation', () => {
   it.each([404, 410, 500, 503])('rejects HTTP %s even with a tracking marker', (status) => {
     expect(trackingPageVerdict({ ...page, status }, route, marker)).toBe('broken');
   });
+  it('accepts an observed shipment-absence status only with its specific message on the tracker route', () => {
+    const absence = { status: 404 as const, marker: /Shipment not found/ };
+    expect(trackingPageVerdict({ ...page, status: 404 }, route, marker, absence)).toBe('tracking-page');
+    expect(trackingPageVerdict({ ...page, status: 404, text: 'Track your parcel' }, route, marker, absence)).toBe('broken');
+    expect(trackingPageVerdict({ ...page, status: 404, url: 'https://carrier.example/' }, route, marker, absence)).toBe('broken');
+    expect(trackingPageVerdict({ ...page, status: 410 }, route, marker, absence)).toBe('broken');
+  });
   it('does not mistake an ordinary reCAPTCHA footer for a challenge', () => {
     expect(trackingPageVerdict({ ...page, text: page.text + ' Protected by reCAPTCHA.' }, route, marker))
       .toBe('tracking-page');

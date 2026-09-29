@@ -85,7 +85,8 @@
         "confidence": "low",
         "candidates": [
           "austrian-post",
-          "usps"
+          "usps",
+          "estafeta"
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
@@ -102,7 +103,8 @@
         "confidence": "low",
         "candidates": [
           "austrian-post",
-          "usps"
+          "usps",
+          "estafeta"
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
@@ -119,7 +121,8 @@
         "confidence": "low",
         "candidates": [
           "austrian-post",
-          "usps"
+          "usps",
+          "estafeta"
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
@@ -136,7 +139,8 @@
         "confidence": "low",
         "candidates": [
           "austrian-post",
-          "usps"
+          "usps",
+          "estafeta"
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
@@ -153,7 +157,8 @@
         "confidence": "low",
         "candidates": [
           "austrian-post",
-          "usps"
+          "usps",
+          "estafeta"
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
@@ -170,7 +175,8 @@
         "confidence": "low",
         "candidates": [
           "austrian-post",
-          "usps"
+          "usps",
+          "estafeta"
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to USPS, which stays one candidate among several."
@@ -187,7 +193,8 @@
         "confidence": "low",
         "candidates": [
           "austrian-post",
-          "usps"
+          "usps",
+          "estafeta"
         ]
       },
       "note": "Tracking number quoted in a public court record. The source attributes it to USPS, which stays one candidate among several."
@@ -204,7 +211,8 @@
         "confidence": "low",
         "candidates": [
           "austrian-post",
-          "usps"
+          "usps",
+          "estafeta"
         ]
       },
       "note": "Tracking number quoted in a public court record. The source attributes it to USPS, which stays one candidate among several."

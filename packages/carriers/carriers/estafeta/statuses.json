@@ -1,0 +1,47 @@
+{
+  "carrier": "estafeta",
+  "entries": [
+    {
+      "wording": "Entregado",
+      "language": "es",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "En proceso de entrega a domicilio",
+      "language": "es",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "En tránsito",
+      "language": "es",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Recibido por estafeta",
+      "language": "es",
+      "stage": "accepted",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "CARGA DEMORADA POR BLOQUEO O ACCIDENTE EXTERNO EN VIA FEDERAL",
+      "language": "es",
+      "stage": "exception",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Guadalajara Centro Llegada a centro Operativo plaza Destino",
+      "language": "es",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Pendiente programacion para salida a ruta (Ver fecha programada de entrega )",
+      "language": "es",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    }
+  ]
+}

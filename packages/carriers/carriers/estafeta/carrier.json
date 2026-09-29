@@ -14,23 +14,59 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "estafeta",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location"
+  ],
   "portal": {
-    "url": "https://www.estafeta.com/en/rastrear-envio?{trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "url": "https://cs.estafeta.com/es/Tracking/searchByGet?wayBill={trackingNumber}&isShipmentDetail=True",
+    "canaryUrl": "https://cs.estafeta.com/",
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "eta"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location"
+    ],
+    "discarded": [
+      "recipient_names",
+      "postcodes",
+      "signatures",
+      "proof_images",
+      "shipment_reports",
+      "scheduled_delivery"
+    ],
     "unavailable": []
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "cs.estafeta.com"
+      ],
+      "path": "^/es/Tracking/searchByGet/?$",
+      "params": [
+        "wayBill"
+      ]
+    }
+  ],
   "detection": [
     {
       "id": "estafeta-1",
       "pattern": "^\\d{10}$",
+      "confidence": "low"
+    },
+    {
+      "id": "estafeta-full-guide",
+      "pattern": "^(?:\\d{22}|\\d{15}[A-Z0-9]{7})$",
       "confidence": "low"
     }
   ]

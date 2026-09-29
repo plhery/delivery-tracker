@@ -56,7 +56,7 @@ describe('UI tracking links (rendered public pages)', () => {
         const http = await fetch(link.url, { signal: AbortSignal.timeout(10_000) });
         const html = await http.text();
         const verdict = trackingPageVerdict({ status: http.status, url: http.url,
-          title: '', text: html.replace(/<[^>]*>/g, ' ') }, testCase.route, testCase.marker);
+          title: '', text: html.replace(/<[^>]*>/g, ' ') }, testCase.route, testCase.marker, testCase.shipmentNotFound);
         if (verdict !== 'broken' && testCase.route.test(http.url) && process.env.TRACKING_LINKS_STRICT !== '1') {
           console.warn(testCase.carrier + ': HTTP endpoint reachable; browser transport unverified');
           context.skip('HTTP endpoint reachable; browser transport failed, rendered link remains unverified');
@@ -96,7 +96,7 @@ describe('UI tracking links (rendered public pages)', () => {
         verdict = trackingPageVerdict({
           status: documentStatus ?? response!.status(), url: page.url(), title: await page.title(),
           text,
-        }, testCase.route, testCase.marker);
+        }, testCase.route, testCase.marker, testCase.shipmentNotFound);
         if (verdict === 'broken' || (attempt >= 2 && verdict === 'tracking-page' && inputBound)) break;
       }
       // Skipped is deliberately not a pass: bot protection cannot prove the

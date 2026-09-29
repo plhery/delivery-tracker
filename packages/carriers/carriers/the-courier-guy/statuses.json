@@ -1,0 +1,61 @@
+{
+  "carrier": "the-courier-guy",
+  "entries": [
+    {
+      "code": "submitted",
+      "wording": "submitted",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "collection-assigned",
+      "wording": "collection-assigned",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "collected",
+      "wording": "collected",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "at-hub",
+      "wording": "at-hub",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "in-transit",
+      "wording": "in-transit",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "at-destination-hub",
+      "wording": "at-destination-hub",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "ready-for-pickup",
+      "wording": "ready-for-pickup",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "delivered",
+      "wording": "delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    }
+  ]
+}

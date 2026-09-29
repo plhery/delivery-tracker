@@ -29,24 +29,29 @@
     "delivered_at"
   ],
   "portal": {
-    "url": "https://www.canadapost-postescanada.ca/track-reperage/en#/search?searchFor={trackingNumber}",
+    "url": "https://www.canadapost-postescanada.ca/track-reperage/en/search?searchFor={trackingNumber}",
     "canaryUrl": "https://www.canadapost-postescanada.ca/track-reperage/en/home",
     "shows": [
       "status",
       "history",
       "eta",
-      "location"
+      "location",
+      "delivered_at"
     ],
     "scraped": [
       "status",
       "history",
       "eta",
-      "location"
+      "location",
+      "delivered_at"
     ],
     "discarded": [
       "service type",
       "delivery options",
-      "recipient details"
+      "recipient details",
+      "postal addresses",
+      "signatures",
+      "delivery images"
     ],
     "unavailable": []
   },

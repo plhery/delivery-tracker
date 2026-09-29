@@ -1,0 +1,132 @@
+{
+  "pin": "0073938000777777",
+  "status": "FullProgressAlert",
+  "returnedToSender": true,
+  "returnPinIndicator": true,
+  "attemptedDlvryDate": "2026-03-18",
+  "expectedDlvryDateTime": {
+    "revisedDate": "2026-03-14",
+    "dlvryDate": "2026-03-14"
+  },
+  "events": [
+    {
+      "cd": "2600",
+      "webCd": "CODE-SYNTHETIC",
+      "datetime": {
+        "date": "2026-03-18",
+        "time": "10:22:46",
+        "zoneOffset": "-05:00"
+      },
+      "locationAddr": {
+        "city": "EXAMPLE CITY",
+        "regionCd": "ON",
+        "postCd": "PRIVATE POSTCODE",
+        "addressLine1": "PRIVATE ADDRESS"
+      },
+      "descEn": "Item has been returned and is enroute to the Sender",
+      "type": "RtsLabelProc"
+    },
+    {
+      "cd": "1481",
+      "webCd": "CODE-SYNTHETIC",
+      "datetime": {
+        "date": "2026-03-18",
+        "time": "10:22:46",
+        "zoneOffset": "-05:00"
+      },
+      "locationAddr": {
+        "city": "EXAMPLE CITY",
+        "regionCd": "ON",
+        "postCd": "PRIVATE POSTCODE",
+        "addressLine1": "PRIVATE ADDRESS"
+      },
+      "descEn": "Recipient not located at address provided. Item being returned to sender.",
+      "type": "Attempted"
+    },
+    {
+      "cd": "0156",
+      "webCd": "CODE-SYNTHETIC",
+      "datetime": {
+        "date": "2026-03-17",
+        "time": "11:33:47",
+        "zoneOffset": "-05:00"
+      },
+      "locationAddr": {
+        "city": "EXAMPLE CITY",
+        "regionCd": "ON",
+        "postCd": "PRIVATE POSTCODE",
+        "addressLine1": "PRIVATE ADDRESS"
+      },
+      "descEn": "Final Notice; Item will be returned to sender if not collected within 10 days",
+      "type": "Info"
+    },
+    {
+      "cd": "1701",
+      "webCd": "CODE-SYNTHETIC",
+      "datetime": {
+        "date": "2026-03-12",
+        "time": "10:48:55",
+        "zoneOffset": "-05:00"
+      },
+      "locationAddr": {
+        "city": "EXAMPLE CITY",
+        "regionCd": "ON",
+        "postCd": "PRIVATE POSTCODE",
+        "addressLine1": "PRIVATE ADDRESS"
+      },
+      "descEn": "Item available for pickup at Post Office",
+      "type": "ToRetail"
+    },
+    {
+      "cd": "1703",
+      "webCd": "CODE-SYNTHETIC",
+      "datetime": {
+        "date": "2026-03-12",
+        "time": "09:11:16",
+        "zoneOffset": "-05:00"
+      },
+      "locationAddr": {
+        "city": "EXAMPLE CITY",
+        "regionCd": "ON",
+        "postCd": "PRIVATE POSTCODE",
+        "addressLine1": "PRIVATE ADDRESS"
+      },
+      "descEn": "Item in transit to Post Office",
+      "type": "ToRetail"
+    },
+    {
+      "cd": "0174",
+      "webCd": "CODE-SYNTHETIC",
+      "datetime": {
+        "date": "2026-03-12",
+        "time": "08:54:47",
+        "zoneOffset": "-05:00"
+      },
+      "locationAddr": {
+        "city": "EXAMPLE CITY",
+        "regionCd": "ON",
+        "postCd": "PRIVATE POSTCODE",
+        "addressLine1": "PRIVATE ADDRESS"
+      },
+      "descEn": "Item out for delivery",
+      "type": "Out"
+    },
+    {
+      "cd": "1301",
+      "webCd": "CODE-SYNTHETIC",
+      "datetime": {
+        "date": "2026-03-09",
+        "time": "11:52:51",
+        "zoneOffset": "-05:00"
+      },
+      "locationAddr": {
+        "city": "EXAMPLE CITY",
+        "regionCd": "ON",
+        "postCd": "PRIVATE POSTCODE",
+        "addressLine1": "PRIVATE ADDRESS"
+      },
+      "descEn": "Item accepted at the Post Office",
+      "type": "Induction"
+    }
+  ]
+}

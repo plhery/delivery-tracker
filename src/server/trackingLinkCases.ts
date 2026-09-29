@@ -9,6 +9,8 @@ export interface TrackingLinkCase {
   route: RegExp;
   /** Wording only the carrier's tracker shows. */
   marker: RegExp;
+  /** An observed shipment-absence response on the working tracker route. */
+  shipmentNotFound?: { status: 404 | 410; marker: RegExp };
   /** A visible tracker rendered inside an open shadow root. */
   shadowHost?: string;
   /** Extra hydration time for a tracker whose form loads in a separate client chunk. */
@@ -27,6 +29,21 @@ export interface TrackingLinkCase {
 // independently of the generated link templates, so a template that drifts
 // fails here instead of passing against itself.
 export const trackingLinkCases: TrackingLinkCase[] = [
+  { carrier: 'the-courier-guy', number: 'TESTA1',
+    route: /^https:\/\/portal\.thecourierguy\.co\.za\/track/,
+    marker: /Track your parcel|Waybill not found|Enter tracking reference/i },
+  { carrier: 'bring-posten', number: 'RR000000005NO',
+    route: /^https:\/\/sporing\.bring\.no\/sporing\//,
+    marker: /Track.*item|Tracking number|didn.t find a shipment|Sporingsnummer|Spor pakken|vi fant ingen sending/i,
+    shipmentNotFound: { status: 404, marker: /Sorry, we didn.t find a shipment associated with RR000000005NO/ } },
+  { carrier: 'estafeta', number: '9000000001',
+    route: /^https:\/\/cs\.estafeta\.com\/es\/Tracking\/searchByGet/,
+    marker: /Código de rastreo|Número de guía|no se encontró información|Rastrear Envío/i,
+    forwarding: { notFound: /Lo sentimos, no se encontró información/i } },
+  { carrier: 'nacex', number: '9900/99000002',
+    route: /^https:\/\/www\.nacex\.es\/seguimientoFormularioExterno\.do(?:\?|$)/,
+    marker: /Formulario de Seguimiento|Formulaire de Suivi|Track and trace form/,
+    forwarding: { notFound: /No existe ningún albarán introducido en el sistema cumpliendo los criterios especificados|Il n.y a aucun bordereau introduit dans le système correspondant aux critères indiqués|There are no delivery notes entered into the system that comply with the specified criteria/ } },
   { carrier: 'landmark-global', number: 'LTN00000000N1',
     route: /^https:\/\/track\.landmarkglobal\.com\//,
     marker: /Track your shipment|couldn't find a match/i },

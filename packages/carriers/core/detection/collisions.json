@@ -43,9 +43,10 @@
     "shape": "9{22}",
     "carriers": [
       "austrian-post",
+      "estafeta",
       "usps"
     ],
-    "reason": "22-digit numbers are shared by Austrian Post and USPS; the number stays a low-confidence suggestion."
+    "reason": "22-digit numbers are shared by Austrian Post, Estafeta full guides and USPS; the number stays a low-confidence suggestion."
   },
   {
     "shape": "AA9{9}AA",
@@ -416,9 +417,10 @@
     "carriers": [
       "austrian-post",
       "ctt-express",
+      "estafeta",
       "usps"
     ],
-    "reason": "CTT Express claims 22-digit numbers starting with 00, a range Austrian Post and USPS also match; the CTT Express rule decides."
+    "reason": "Spanish CTT Express numbers share 22 digits with Austrian Post, Estafeta full guides and USPS; the CTT Express prefix is the only high-confidence rule."
   },
   {
     "shape": "9{18}",

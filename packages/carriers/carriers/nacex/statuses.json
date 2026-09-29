@@ -1,0 +1,11 @@
+{
+  "carrier": "nacex",
+  "entries": [
+    { "wording": "Aceptada", "language": "es", "stage": "accepted", "confirmedBy": "live" },
+    { "wording": "En tránsito", "language": "es", "stage": "in_transit", "confirmedBy": "live" },
+    { "wording": "En reparto", "language": "es", "stage": "out_for_delivery", "confirmedBy": "live" },
+    { "wording": "Disponible en punto NACEX", "language": "es", "stage": "ready_for_pickup", "confirmedBy": "live" },
+    { "wording": "Ausente", "language": "es", "stage": "failed_attempt", "confirmedBy": "live" },
+    { "wording": "Entregado", "language": "es", "stage": "delivered", "confirmedBy": "live" }
+  ]
+}

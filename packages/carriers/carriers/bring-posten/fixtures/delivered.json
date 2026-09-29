@@ -1,0 +1,32 @@
+{
+  "rawResponseFromTrackingInternalApi": "PRIVATE raw response",
+  "consignmentWithDomainAsync": {
+    "consignmentId": "00000000000000001",
+    "numberOfConsignmentItems": 1,
+    "domain": {"isMultiParcel": false},
+    "senderName": "PRIVATE sender",
+    "recipientAddress": {"addressLine1": "PRIVATE address"},
+    "packageSet": [{
+      "brand": "POSTEN",
+      "packageNumber": "RR000000005NO",
+      "weightInKgs": 0.5,
+      "lengthInCm": 20,
+      "widthInCm": 15,
+      "heightInCm": 4,
+      "dateOfEstimatedDeliveryIso": "2026-01-01T12:00:00+01:00",
+      "domain": {
+        "currentStatus": "DELIVERED",
+        "latestSignificantEvent": {"status": "DELIVERED", "dateIso": "2026-01-06T12:00:00+01:00", "insignificant": false, "lmEventCode": "I9", "city": "Example City"},
+        "returnData": {"isReturned": false},
+        "eta": {"status": "NOT_AVAILABLE"}
+      },
+      "eventSet": [
+        {"status": "DELIVERED", "description": "PRIVATE signature", "dateIso": "2026-01-06T12:00:00+01:00", "insignificant": false, "lmEventCode": "I9", "city": "Example City"},
+        {"status": "TRANSPORT_TO_RECIPIENT", "description": "PRIVATE driver", "dateIso": "2026-01-06T10:00:00+01:00", "insignificant": false, "lmEventCode": "D", "city": "Example City"},
+        {"status": "READY_FOR_PICKUP", "description": "PRIVATE pickup code", "dateIso": "2026-01-05T12:00:00+01:00", "insignificant": false, "lmEventCode": "H", "city": "Example City"},
+        {"status": "HANDED_IN", "description": "PRIVATE sender", "dateIso": "2026-01-04T12:00:00+01:00", "insignificant": false, "lmEventCode": "P", "city": "Example City"},
+        {"status": "PRE_NOTIFIED", "description": "Shipment information received", "dateIso": "2026-01-03T12:00:00+01:00", "insignificant": false, "lmEventCode": "T", "city": ""}
+      ]
+    }]
+  }
+}

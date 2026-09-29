@@ -39,7 +39,7 @@ describe('rendered tracking link coverage', () => {
         carrier: item.carrier, trackingNumber: item.number, trackingProvider: item.provider,
       }, 'en');
       expect(link, item.carrier).toBeDefined();
-      if (item.forwarding !== 'none') expect(link!.url, item.carrier).toContain(item.number);
+      if (item.forwarding !== 'none') expect(decodeURIComponent(link!.url), item.carrier).toContain(item.number);
     }
   });
 });

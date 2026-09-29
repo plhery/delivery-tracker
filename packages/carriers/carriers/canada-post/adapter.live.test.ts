@@ -1,49 +1,33 @@
 import { describe, expect, it } from 'vitest';
-import { CanadaPostTracker } from './adapter';
+import { adapter } from './adapter';
+import { carrierErrorKind } from '../../core/errors';
+import { NOOP_RECORDER } from '../../core/telemetry';
 
-// A real shipment supplied outside the repository, e.g.
-// CANADA_POST_LIVE_TRACKING_NUMBER=0073938000549297 npm run test:carriers:live
-// Open-source rule: never commit the number, a response, or any private
-// field it returns.
-const LIVE_TRACKING_NUMBER = (process.env.CANADA_POST_LIVE_TRACKING_NUMBER ?? '').trim();
-// An expired open-source example: the endpoint answers, but knows no history.
-const EXPIRED_NUMBER = '0073938000549297';
+const NUMBER = process.env.CANADA_POST_LIVE_TRACKING_NUMBER?.trim();
+const NOTICE = process.env.CANADA_POST_LIVE_NOTICE_NUMBER?.trim();
+const native = () => adapter({ trawl: null, browserExecutablePath: null, recorder: NOOP_RECORDER, env: {} });
 
-describe('Canada Post live anonymous tracking', () => {
-  it('maps an expired number to the unlocated unknown result', async () => {
-    const result = await new CanadaPostTracker({ timeoutMs: 20_000 }).fetch(EXPIRED_NUMBER);
-    expect(result).toMatchObject({ status: 'unknown', events: [] });
+describe('Canada Post anonymous native history', () => {
+  it.runIf(Boolean(NUMBER))('retrieves an identity-bound caller-supplied parcel with projected history', async () => {
+    const result = await native().track({ number: NUMBER! }, { budgetMs: 20_000 });
+    expect(result.events?.length).toBeGreaterThan(0);
+    expect(result.last_status_text).toEqual(expect.any(String));
+    for (const key of Object.keys(result)) expect(['status', 'current_stage', 'last_status_text', 'last_update', 'last_update_local',
+      'expected_delivery', 'delivered_at', 'events', 'canonical_tracking_number', 'tracking_url', 'tracking_source']).toContain(key);
+    for (const event of result.events ?? []) {
+      expect(Object.keys(event).every(key => ['description', 'location', 'provider_code', 'stage', 'time', 'local_time',
+        'provider_time_text', 'provider_leg', 'summary_snapshot'].includes(key))).toBe(true);
+    }
   });
 
-  it.runIf(Boolean(LIVE_TRACKING_NUMBER))(
-    'normalizes a caller-supplied real shipment without retaining private response fields',
-    async () => {
-      const result = await new CanadaPostTracker({ timeoutMs: 20_000 }).fetch(LIVE_TRACKING_NUMBER);
-      expect(result.status).not.toBe('unknown');
-      expect(result.last_status_text).toEqual(expect.any(String));
-      expect((result.events ?? []).length).toBeGreaterThan(0);
-      for (const key of Object.keys(result)) {
-        expect([
-          'status',
-          'current_stage',
-          'last_status_text',
-          'last_update',
-          'expected_delivery',
-          'delivered_at',
-          'events',
-          'tracking_source',
-          'tracking_url',
-        ]).toContain(key);
-      }
-      for (const event of result.events ?? []) {
-        expect(Object.keys(event).every((key) => [
-          'description',
-          'location',
-          'provider_code',
-          'stage',
-          'time',
-        ].includes(key))).toBe(true);
-      }
-    },
-  );
+  it.runIf(Boolean(NOTICE))('resolves a caller-supplied delivery notice to exact native detail', async () => {
+    const result = await native().track({ number: NOTICE! }, { budgetMs: 20_000 });
+    expect(result.canonical_tracking_number).toEqual(expect.any(String));
+    expect(result.events?.length).toBeGreaterThan(0);
+  });
+
+  it.each(['0000000000000000', '000000000000000', '0000000000000'])('keeps no-history control %s inconclusive', async number => {
+    try { await native().track({ number }, { budgetMs: 20_000 }); expect.fail('expected inconclusive history'); }
+    catch (error) { expect(carrierErrorKind(error)).toBe('indeterminate'); }
+  });
 });

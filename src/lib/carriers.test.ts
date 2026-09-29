@@ -194,7 +194,10 @@ describe('carrier detection', () => {
     // OSS EXAMPLE S10 fixture (not asserted real).
     // Source: https://gist.github.com/zxp/e83a4a1b7294a5ed6207
     expect(detectCarrier('CD656914836NO')).toBe('bring-posten');
-    expectUniversalFallback('bring-posten');
+    expectDirectTracking('bring-posten');
+    expect(parseTrackingInput('https://sporing.bring.no/sporing/RR000000005NO')).toMatchObject({
+      trackingNumber: 'RR000000005NO', carrier: 'bring-posten', source: 'link',
+    });
   });
 
   it('brt — BRT', () => {
@@ -522,7 +525,13 @@ describe('carrier detection', () => {
     const match = detectCarrierMatch('2806075762');
     expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
     expect(match.candidates).toContain('estafeta');
-    expectUniversalFallback('estafeta');
+    expectDirectTracking('estafeta');
+    expect(detectCarrierMatch('100000000000000A00TEST')).toMatchObject({
+      carrier: 'unknown', confidence: 'low', candidates: ['estafeta'],
+    });
+    expect(parseTrackingInput('https://cs.estafeta.com/es/Tracking/searchByGet?wayBill=9000000001')).toMatchObject({
+      trackingNumber: '9000000001', carrier: 'estafeta', source: 'link',
+    });
   });
 
   it('evri — Evri', () => {
@@ -828,7 +837,10 @@ describe('carrier detection', () => {
     expect(parseTrackingInput('Where is my parcel?')).toMatchObject({
       trackingNumber: '', carrier: 'unknown', source: 'none',
     });
-    expectUniversalFallback('nacex');
+    expectDirectTracking('nacex');
+    expect(parseTrackingInput('https://www.nacex.es/seguimientoFormularioExterno.do?intcli=9900%2F99000002')).toMatchObject({
+      trackingNumber: '9900/99000002', carrier: 'nacex', source: 'link',
+    });
   });
 
   it('ninja-van — Ninja Van', () => {
@@ -1210,7 +1222,10 @@ describe('carrier detection', () => {
     // exclusive detector, so no oracle is built from it.
     // Source: https://www.consumercomplaints.in/bycompany/the-courier-guy-south-africa-a266527.html
     expect(detectCarrier('QGB8C')).toBe('unknown');
-    expectUniversalFallback('the-courier-guy');
+    expectDirectTracking('the-courier-guy');
+    expect(parseTrackingInput('https://portal.thecourierguy.co.za/track?ref=TESTA1')).toMatchObject({
+      trackingNumber: 'TESTA1', carrier: 'the-courier-guy', source: 'link',
+    });
   });
 
   it('tipsa — TIPSA', () => {

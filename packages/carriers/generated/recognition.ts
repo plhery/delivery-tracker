@@ -17,6 +17,7 @@ export const CARRIER_RECOGNITION_RANKS: Readonly<Record<string, number>> = {
   "hermes-de": 40,
   "inpost": 38,
   "la-poste": 80,
+  "nacex": 41,
   "nz-post": 32,
   "poczta-polska": 31,
   "relais-colis": 25,

@@ -1,20 +1,171 @@
 {
   "carrier": "canada-post",
   "entries": [
-    { "code": "8", "language": "en", "stage": "delivered", "confirmedBy": "bundle", "firstSeen": "2026-09-20", "note": "Package status Delivered." },
-    { "code": "7", "language": "en", "stage": "ready_for_pickup", "confirmedBy": "bundle", "firstSeen": "2026-09-20", "note": "Package status ReadyPickup. Adapter result status: out_for_delivery." },
-    { "code": "6", "language": "en", "stage": "in_transit", "confirmedBy": "bundle", "firstSeen": "2026-09-20", "note": "Package status HalfDelivered (multi-piece partial delivery); still moving. Confirm against a live parcel." },
-    { "code": "5", "language": "en", "stage": "in_transit", "confirmedBy": "bundle", "firstSeen": "2026-09-20", "note": "Package status FullProgress." },
-    { "code": "4", "language": "en", "stage": "exception", "confirmedBy": "bundle", "firstSeen": "2026-09-20", "note": "Package status FullProgressAlert. Confirm against a live parcel." },
-    { "code": "3", "language": "en", "stage": "exception", "confirmedBy": "bundle", "firstSeen": "2026-09-20", "note": "Package status InTransitAlert. Confirm against a live parcel." },
-    { "code": "2", "language": "en", "stage": "in_transit", "confirmedBy": "bundle", "firstSeen": "2026-09-20", "note": "Package status InTransit." },
-    { "code": "1", "language": "en", "stage": "accepted", "confirmedBy": "bundle", "firstSeen": "2026-09-20", "note": "Package status FullAccepted. Adapter result status: in_transit." },
-    { "code": "0", "language": "en", "stage": "accepted", "confirmedBy": "bundle", "firstSeen": "2026-09-20", "note": "Package status HalfAccepted. Adapter result status: in_transit. Confirm against a live parcel." },
-    { "wording": "Delivered", "language": "en", "stage": "delivered", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "" },
-    { "wording": "Out for delivery", "language": "en", "stage": "out_for_delivery", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "" },
-    { "wording": "Notice left", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: exception." },
-    { "wording": "Available for pickup", "language": "en", "stage": "failed_attempt", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Held at the post office after an attempt. Adapter result status: exception." },
-    { "wording": "Accepted at the post office", "language": "en", "stage": "accepted", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "Adapter result status: in_transit." },
-    { "wording": "In transit", "language": "en", "stage": "in_transit", "confirmedBy": "prior-art", "firstSeen": "2026-09-20", "note": "" }
+    {
+      "code": "HalfAccepted",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "bundle"
+    },
+    {
+      "code": "FullAccepted",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "bundle"
+    },
+    {
+      "code": "InTransit",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "bundle"
+    },
+    {
+      "code": "InTransitAlert",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "bundle"
+    },
+    {
+      "code": "FullProgressAlert",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "FullProgress",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "bundle"
+    },
+    {
+      "code": "HalfDelivered",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "bundle"
+    },
+    {
+      "code": "ReadyPickup",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "bundle"
+    },
+    {
+      "code": "Delivered",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "2600",
+      "wording": "Item has been returned and is enroute to the Sender",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "1481",
+      "wording": "Recipient not located at address provided. Item being returned to sender.",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "0156",
+      "wording": "Final Notice; Item will be returned to sender if not collected within 10 days",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "0172",
+      "wording": "Item re-routed due to processing error; Possible delay",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "1701",
+      "wording": "Item available for pickup at Post Office",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "1703",
+      "wording": "Item in transit to Post Office",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "0174",
+      "wording": "Item out for delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "0170",
+      "wording": "Item processed",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "1301",
+      "wording": "Item accepted at the Post Office",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "1466",
+      "wording": "Delivered to mailroom",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "0500",
+      "wording": "Out for delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "2407",
+      "wording": "Item available for pick-up",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "0405",
+      "wording": "Item arrived",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "0175",
+      "wording": "Item in transit",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "0100",
+      "wording": "Item processed",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "1302",
+      "wording": "Item accepted at the Post Office",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live"
+    }
   ]
 }

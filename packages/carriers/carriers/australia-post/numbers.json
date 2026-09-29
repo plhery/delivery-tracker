@@ -28,7 +28,8 @@
         "confidence": "low",
         "candidates": [
           "austrian-post",
-          "usps"
+          "usps",
+          "estafeta"
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to Australia Post, which no rule claims."

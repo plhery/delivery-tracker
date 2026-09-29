@@ -101,7 +101,8 @@
         "confidence": "low",
         "candidates": [
           "austrian-post",
-          "usps"
+          "usps",
+          "estafeta"
         ]
       },
       "note": "Official documentation example, not a real shipment. The source attributes it to DHL eCommerce, which no rule claims."
@@ -119,7 +120,8 @@
         "confidence": "low",
         "candidates": [
           "austrian-post",
-          "usps"
+          "usps",
+          "estafeta"
         ]
       },
       "note": "Official documentation example, not a real shipment. The source attributes it to DHL eCommerce, which no rule claims."

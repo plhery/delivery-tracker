@@ -20,19 +20,65 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "bring-posten",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "delivered_at",
+    "weight",
+    "dimensions"
+  ],
   "portal": {
-    "url": "https://tracking.bring.com/tracking",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "url": "https://sporing.bring.no/sporing/{trackingNumber}?lang=en",
+    "canaryUrl": "https://sporing.bring.no/sporing/",
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "eta",
+      "weight",
+      "dimensions"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "delivered_at",
+      "weight",
+      "dimensions"
+    ],
+    "discarded": [
+      "descriptions",
+      "addresses",
+      "contact_details",
+      "proof_images",
+      "pickup_code",
+      "eta"
+    ],
     "unavailable": []
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "sporing.bring.no",
+        "sporing.posten.no"
+      ],
+      "path": "^/sporing/([A-Z0-9]{13,18})/?$"
+    },
+    {
+      "domains": [
+        "sporing.bring.no",
+        "sporing.posten.no"
+      ],
+      "params": [
+        "q"
+      ]
+    }
+  ],
   "detection": [
     {
       "id": "bring-posten-1",

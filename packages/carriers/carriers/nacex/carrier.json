@@ -16,19 +16,57 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "nacex",
+    "steps": [
+      "direct"
+    ],
+    "recognition": {
+      "rank": 41
+    }
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location"
+  ],
   "portal": {
-    "url": "https://www.nacex.es/irSeguimiento.do",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "url": "https://www.nacex.es/seguimientoFormularioExterno.do?intcli={trackingNumber}",
+    "canaryUrl": "https://www.nacex.es/irSeguimiento.do",
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "recipient",
+      "proof_of_delivery"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location"
+    ],
+    "discarded": [
+      "recipient",
+      "proof_of_delivery",
+      "delivery_comments",
+      "contact_details",
+      "merchant_reference"
+    ],
+    "unavailable": [
+      "scan_times",
+      "offset_timestamps"
+    ]
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "www.nacex.es",
+        "nacex.es"
+      ],
+      "path": "^/seguimientoFormularioExterno\\.do$",
+      "params": [
+        "intcli"
+      ]
+    }
+  ],
   "detection": [
     {
       "id": "nacex-1",

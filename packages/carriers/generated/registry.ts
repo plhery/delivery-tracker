@@ -9,6 +9,7 @@ import { adapter as australiaPost } from '../carriers/australia-post/adapter';
 import { adapter as austrianPost } from '../carriers/austrian-post/adapter';
 import { adapter as blueDart } from '../carriers/blue-dart/adapter';
 import { adapter as bpost } from '../carriers/bpost/adapter';
+import { adapter as bringPosten } from '../carriers/bring-posten/adapter';
 import { adapter as cChezVous } from '../carriers/c-chez-vous/adapter';
 import { adapter as canadaPost } from '../carriers/canada-post/adapter';
 import { adapter as canpar } from '../carriers/canpar/adapter';
@@ -29,6 +30,7 @@ import { adapter as dpdFr } from '../carriers/dpd-fr/adapter';
 import { adapter as dtdc } from '../carriers/dtdc/adapter';
 import { adapter as ecoscooting } from '../carriers/ecoscooting/adapter';
 import { adapter as ems } from '../carriers/ems/adapter';
+import { adapter as estafeta } from '../carriers/estafeta/adapter';
 import { adapter as evri } from '../carriers/evri/adapter';
 import { adapter as fedex } from '../carriers/fedex/adapter';
 import { adapter as fourPx } from '../carriers/four-px/adapter';
@@ -47,6 +49,7 @@ import { adapter as koreaPost } from '../carriers/korea-post/adapter';
 import { adapter as laPoste } from '../carriers/la-poste/adapter';
 import { adapter as landmarkGlobal } from '../carriers/landmark-global/adapter';
 import { adapter as mondialRelay } from '../carriers/mondial-relay/adapter';
+import { adapter as nacex } from '../carriers/nacex/adapter';
 import { adapter as nzPost } from '../carriers/nz-post/adapter';
 import { adapter as ontrac } from '../carriers/ontrac/adapter';
 import { adapter as paack } from '../carriers/paack/adapter';
@@ -67,6 +70,7 @@ import { adapter as springGds } from '../carriers/spring-gds/adapter';
 import { adapter as sunyou } from '../carriers/sunyou/adapter';
 import { adapter as swissPost } from '../carriers/swiss-post/adapter';
 import { adapter as swissPostCargo } from '../carriers/swiss-post-cargo/adapter';
+import { adapter as theCourierGuy } from '../carriers/the-courier-guy/adapter';
 import { adapter as tnt } from '../carriers/tnt/adapter';
 import { adapter as uniuni } from '../carriers/uniuni/adapter';
 import { adapter as ups } from '../carriers/ups/adapter';
@@ -87,6 +91,7 @@ export const REGISTRY: RegistryDefinition = {
     "austrian-post": austrianPost,
     "blue-dart": blueDart,
     "bpost": bpost,
+    "bring-posten": bringPosten,
     "c-chez-vous": cChezVous,
     "canada-post": canadaPost,
     "canpar": canpar,
@@ -107,6 +112,7 @@ export const REGISTRY: RegistryDefinition = {
     "dtdc": dtdc,
     "ecoscooting": ecoscooting,
     "ems": ems,
+    "estafeta": estafeta,
     "evri": evri,
     "fedex": fedex,
     "four-px": fourPx,
@@ -125,6 +131,7 @@ export const REGISTRY: RegistryDefinition = {
     "la-poste": laPoste,
     "landmark-global": landmarkGlobal,
     "mondial-relay": mondialRelay,
+    "nacex": nacex,
     "nz-post": nzPost,
     "ontrac": ontrac,
     "paack": paack,
@@ -145,6 +152,7 @@ export const REGISTRY: RegistryDefinition = {
     "sunyou": sunyou,
     "swiss-post": swissPost,
     "swiss-post-cargo": swissPostCargo,
+    "the-courier-guy": theCourierGuy,
     "tnt": tnt,
     "uniuni": uniuni,
     "ups": ups,
@@ -166,7 +174,7 @@ export const REGISTRY: RegistryDefinition = {
     "austrian-post": "austrian-post",
     "blue-dart": "blue-dart",
     "bpost": "bpost",
-    "bring-posten": "universal",
+    "bring-posten": "bring-posten",
     "brt": "universal",
     "c-chez-vous": "c-chez-vous",
     "canada-post": "canada-post",
@@ -192,7 +200,7 @@ export const REGISTRY: RegistryDefinition = {
     "dtdc": "dtdc",
     "ecoscooting": "ecoscooting",
     "ems": "ems",
-    "estafeta": "universal",
+    "estafeta": "estafeta",
     "evri": "evri",
     "fedex": "fedex",
     "four-px": "four-px",
@@ -216,7 +224,7 @@ export const REGISTRY: RegistryDefinition = {
     "landmark-global": "landmark-global",
     "mondial-relay": "mondial-relay",
     "mrw": "universal",
-    "nacex": "universal",
+    "nacex": "nacex",
     "ninja-van": "universal",
     "nz-post": "nz-post",
     "old-dominion": "universal",
@@ -247,7 +255,7 @@ export const REGISTRY: RegistryDefinition = {
     "swiss-post": "swiss-post",
     "swiss-post-cargo": "swiss-post-cargo",
     "thailand-post": "universal",
-    "the-courier-guy": "universal",
+    "the-courier-guy": "the-courier-guy",
     "tipsa": "universal",
     "tnt": "tnt",
     "ukrposhta": "universal",

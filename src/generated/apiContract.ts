@@ -2023,17 +2023,29 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "nacex",
+      "recognitionRank": 41
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://www.nacex.es/irSeguimiento.do",
+    "linkRules": [
+      {
+        "domains": [
+          "www.nacex.es",
+          "nacex.es"
+        ],
+        "path": "^/seguimientoFormularioExterno\\.do$",
+        "params": [
+          "intcli"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^\\d{4}/\\d{8}$",
         "confidence": "high"
       }
     ],
-    "trackingUrlTemplate": "https://www.nacex.es/irSeguimiento.do",
+    "trackingUrlTemplate": "https://www.nacex.es/seguimientoFormularioExterno.do?intcli={trackingNumber}",
     "countries": [
       "ES",
       "PT",
@@ -2310,7 +2322,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://www.canadapost-postescanada.ca/track-reperage/en#/search?searchFor={trackingNumber}",
+    "trackingUrlTemplate": "https://www.canadapost-postescanada.ca/track-reperage/en/search?searchFor={trackingNumber}",
     "countries": [
       "CA"
     ]
@@ -2637,17 +2649,31 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "estafeta"
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://cs.estafeta.com/",
+    "linkRules": [
+      {
+        "domains": [
+          "cs.estafeta.com"
+        ],
+        "path": "^/es/Tracking/searchByGet/?$",
+        "params": [
+          "wayBill"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^\\d{10}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^(?:\\d{22}|\\d{15}[A-Z0-9]{7})$",
+        "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://www.estafeta.com/en/rastrear-envio?{trackingNumber}",
+    "trackingUrlTemplate": "https://cs.estafeta.com/es/Tracking/searchByGet?wayBill={trackingNumber}&isShipmentDetail=True",
     "countries": [
       "MX"
     ]
@@ -3482,10 +3508,27 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "bring-posten"
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://sporing.bring.no/sporing/",
+    "linkRules": [
+      {
+        "domains": [
+          "sporing.bring.no",
+          "sporing.posten.no"
+        ],
+        "path": "^/sporing/([A-Z0-9]{13,18})/?$"
+      },
+      {
+        "domains": [
+          "sporing.bring.no",
+          "sporing.posten.no"
+        ],
+        "params": [
+          "q"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^[A-Z]{2}\\d{9}NO$",
@@ -3493,7 +3536,7 @@ export const CARRIER_CAPABILITIES = {
         "checksum": "s10"
       }
     ],
-    "trackingUrlTemplate": "https://tracking.bring.com/tracking",
+    "trackingUrlTemplate": "https://sporing.bring.no/sporing/{trackingNumber}?lang=en",
     "aliases": [
       "Posten Norge",
       "Posten Bring"
@@ -3651,12 +3694,23 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "the-courier-guy"
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://portal.thecourierguy.co.za/track",
+    "linkRules": [
+      {
+        "domains": [
+          "portal.thecourierguy.co.za",
+          "track.thecourierguy.co.za"
+        ],
+        "path": "^/track/?$",
+        "params": [
+          "ref"
+        ]
+      }
+    ],
     "detectionRules": [],
-    "trackingUrlTemplate": "https://portal.thecourierguy.co.za/track",
+    "trackingUrlTemplate": "https://portal.thecourierguy.co.za/track?ref={trackingNumber}",
     "countries": [
       "ZA"
     ]
