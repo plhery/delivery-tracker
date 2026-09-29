@@ -1,0 +1,47 @@
+{
+  "carrier": "seur",
+  "entries": [
+    {
+      "code": "LL020",
+      "wording": "EL ENVÍO HA SIDO ENTREGADO A UN VECINO.",
+      "language": "es",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "LC003",
+      "wording": "EL ENVÍO ESTÁ EN REPARTO.",
+      "language": "es",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "LI300",
+      "wording": "EL ENVÍO HA SUFRIDO UN RETRASO Y ES POSIBLE QUE SE DEMORE LA ENTREGA. DISCULPA LAS MOLESTIAS.",
+      "language": "es",
+      "stage": "exception",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "LI567",
+      "wording": "EL ENVÍO ESTÁ EN TRÁNSITO. PRÓXIMAMENTE LLEGARÁ A LAS INSTALACIONES DE DESTINO.",
+      "language": "es",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "SX001",
+      "wording": "EL ENVÍO HA SIDO RECEPCIONADO EN LAS INSTALACIONES DE ORIGEN DE SEUR. COMIENZA EL TRÁNSITO A DESTINO",
+      "language": "es",
+      "stage": "accepted",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "SX010",
+      "wording": "EL ENVÍO HA SIDO REGISTRADO.",
+      "language": "es",
+      "stage": "registered",
+      "confirmedBy": "live"
+    }
+  ]
+}

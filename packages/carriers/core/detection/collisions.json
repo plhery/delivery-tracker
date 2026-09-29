@@ -305,6 +305,14 @@
     "reason": "Colis Privé accepts any 12-character alphanumeric, so it overlaps Purolator three-letter numbers; the specific high-confidence rule decides."
   },
   {
+    "shape": "LTN9{9}",
+    "carriers": [
+      "colis-prive",
+      "landmark-global"
+    ],
+    "reason": "Landmark's nine-digit LTN references overlap Colis Privé's broad twelve-character rule; the specific Landmark rule decides, and Purolator excludes the LTN prefix."
+  },
+  {
     "shape": "A{3}9{9}",
     "carriers": [
       "colis-prive",

@@ -5,7 +5,7 @@ including the portal's canonical identity for references ending in N1.
 
 ## How it works
 
-One bounded GET retrieves the server-rendered history. The canonical parcel
+One bounded GET retrieves the complete server-rendered event table. The canonical parcel
 identity must match, and the latest summary must agree with the first scan.
 Multi-parcel pages are rejected. An exact absence message is accepted only when
 the requested reference is retained in the page's search field.
@@ -25,3 +25,4 @@ excluded.
 Set `LANDMARK_GLOBAL_TRACKING_NUMBER` outside the repository and run
 `npm run test:carriers:live -- packages/carriers/carriers/landmark-global/adapter.live.test.ts`.
 Optionally set `LANDMARK_GLOBAL_UNKNOWN_NUMBER` to check explicit absence.
+Set `LANDMARK_GLOBAL_ALIAS_NUMBER` to check an N1 reference against its canonical parcel.

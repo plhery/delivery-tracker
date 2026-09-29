@@ -11,6 +11,8 @@ import { captureDirectLocalHistory, directLocalHistory, hasUnresolvedDirectCurre
 import type { UniversalTracker } from '@carriers/providers/universal';
 import * as observability from './observability';
 import { CorreiosOcr } from '@carriers/carriers/correios-br/ocr';
+import { UkrposhtaTracker } from '@carriers/carriers/ukrposhta/adapter';
+import { parseUkrposhtaHistory, parseUkrposhtaOverview } from '@carriers/carriers/ukrposhta/parser';
 import * as yundaChallenge from '@carriers/carriers/yunda/challenge';
 
 const cases = [
@@ -50,6 +52,10 @@ const cases = [
   { carrier: 'estafeta', number: '9000000001', fixture: 'delivered-lookup.html', unresolved: true },
   { carrier: 'canada-post', number: '0073938000999999', fixture: 'delivered.json', unresolved: true },
   { carrier: 'nacex', number: '9900/99000002', fixture: 'history.html', unresolved: true },
+  { carrier: 'ukrposhta', number: 'RR000000005UA', fixture: 'delivered.json', unresolved: true },
+  { carrier: 'seur', number: '9900002', fixture: 'history.json', unresolved: true },
+  { carrier: 'brt', number: '99000000000002', fixture: 'history.html', unresolved: true },
+  { carrier: 'landmark-global', number: 'LTN000000009', fixture: 'in-transit-nine-digit.html', unresolved: true },
 ];
 
 function setup(entry: typeof cases[number], transform = (body: string) => body) {
@@ -82,6 +88,11 @@ function setup(entry: typeof cases[number], transform = (body: string) => body) 
   }
   if (entry.carrier === 'pos-malaysia') {
     body = JSON.stringify({ code: 'S0000', message: 'Success', data: [JSON.parse(body)] });
+  }
+  if (entry.carrier === 'seur') {
+    const value = JSON.parse(body);
+    value.situaciones[0].fecha = '2026-01-23T13:13:05';
+    body = JSON.stringify(value);
   }
   if (entry.carrier === 'landmark-global') body = body.replace(/<input id="utc_server_offset"[^>]*>/, '');
   if (entry.carrier === 'nz-post') {
@@ -117,6 +128,11 @@ function setup(entry: typeof cases[number], transform = (body: string) => body) 
     body = JSON.stringify(value);
   }
   body = transform(body);
+  if (entry.carrier === 'ukrposhta') {
+    const payload = JSON.parse(body);
+    vi.spyOn(UkrposhtaTracker.prototype, 'fetch').mockResolvedValue(
+      parseUkrposhtaHistory(payload.history, parseUkrposhtaOverview(payload.overview, entry.number)));
+  }
   if (entry.carrier === 'correios-br') vi.spyOn(CorreiosOcr.prototype, 'solve').mockResolvedValue('abcd');
   if (entry.carrier === 'yunda') vi.spyOn(yundaChallenge, 'solveYundaSlider').mockResolvedValue({ x: 100, y: 40 });
   const fetcher = vi.fn<typeof fetch>().mockImplementation(async url => {
@@ -150,7 +166,7 @@ function setup(entry: typeof cases[number], transform = (body: string) => body) 
     if (entry.carrier === 'aramex' && String(url).includes('/track/shipments')) {
       return new Response(`<a class="shipment-card" href="/track/details?q=synthetic"><div class="shipment-num"><h5>${entry.number}</h5></div></a>`);
     }
-    return new Response(body);
+    return new Response(body, { headers: { 'content-type': entry.carrier === 'brt' ? 'text/html; charset=utf-8' : 'text/plain; charset=utf-8' } });
   });
   const trawl = entry.carrier === 'yunexpress' ? { scrape: vi.fn().mockResolvedValue({
     capturedResponses: [{ url: 'https://services.yuntrack.com/Track/Query', status: 200,
@@ -171,7 +187,7 @@ describe('expanded direct coverage through the host', () => {
     const result = await test.adapter.fetch(entry.carrier, entry.number, null);
     expect(result.events?.length).toBeGreaterThan(0);
     expect(result).not.toHaveProperty('tracking_provider');
-    expect(test.fetcher).toHaveBeenCalledTimes(entry.carrier === 'yunexpress' ? 0 : ['aramex', 'spring-gds', 'poczta-polska', 'estafeta'].includes(entry.carrier) ? 2 : ['correios-br', 'yunda', 'nacex'].includes(entry.carrier) ? 3 : 1);
+    expect(test.fetcher).toHaveBeenCalledTimes(['yunexpress', 'ukrposhta'].includes(entry.carrier) ? 0 : ['aramex', 'spring-gds', 'poczta-polska', 'estafeta'].includes(entry.carrier) ? 2 : ['correios-br', 'yunda', 'nacex'].includes(entry.carrier) ? 3 : 1);
   });
 
   it.each(cases.filter(entry => entry.unresolved))('$carrier saves unresolved direct dates while using dated provider progress', async entry => {

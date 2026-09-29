@@ -1,0 +1,84 @@
+{
+  "overview": {
+    "result": [
+      {
+        "barcode": "RR000000005UA",
+        "step": 4,
+        "date": "2026-03-29T16:03:37",
+        "index": "PRIVATE POSTCODE",
+        "name": "Example facility",
+        "event": "48000",
+        "eventName": "Final delivery",
+        "country": "EXAMPLE COUNTRY",
+        "eventReason": "PRIVATE DETAILS",
+        "eventReason_id": "1",
+        "mailType": 4096,
+        "indexOrder": 5
+      }
+    ],
+    "result_time": "2026-03-30 12:00"
+  },
+  "history": {
+    "from_to": {
+      "city_from": "PRIVATE SENDER",
+      "city_to": "PRIVATE RECIPIENT",
+      "lang": "en",
+      "RDDDATE": "2026-03-29",
+      "ISSEVERALPLACES": 0
+    },
+    "result": [
+      {
+        "gtt_date": "29.03.2026 16:03",
+        "gtt_index": "PRIVATE POSTCODE",
+        "gtt_name": "Example facility",
+        "gtt_event": "48000",
+        "gtt_event_name": "Final delivery",
+        "gtt_country": "EXAMPLE COUNTRY",
+        "gtt_eventreason": "PRIVATE DETAILS",
+        "gtt_eventreason_id": "1",
+        "nod_barcode": null,
+        "nod_regdate": null
+      },
+      {
+        "gtt_date": "29.03.2026 13:32",
+        "gtt_index": "PRIVATE POSTCODE",
+        "gtt_name": "Example facility",
+        "gtt_event": "29500",
+        "gtt_event_name": "Item out for physical delivery",
+        "gtt_country": "EXAMPLE COUNTRY",
+        "gtt_eventreason": "PRIVATE DETAILS",
+        "gtt_eventreason_id": "1",
+        "nod_barcode": null,
+        "nod_regdate": null
+      },
+      {
+        "gtt_date": "28.03.2026 11:27",
+        "gtt_index": "PRIVATE POSTCODE",
+        "gtt_name": "Example facility",
+        "gtt_event": "27900",
+        "gtt_event_name": "Arrival at the delivery office",
+        "gtt_country": "EXAMPLE COUNTRY",
+        "gtt_eventreason": "PRIVATE DETAILS",
+        "gtt_eventreason_id": "1",
+        "nod_barcode": null,
+        "nod_regdate": null
+      },
+      {
+        "gtt_date": "25.03.2026 18:11",
+        "gtt_index": "PRIVATE POSTCODE",
+        "gtt_name": "Example facility",
+        "gtt_event": "10100",
+        "gtt_event_name": "Registered",
+        "gtt_country": "EXAMPLE COUNTRY",
+        "gtt_eventreason": "PRIVATE DETAILS",
+        "gtt_eventreason_id": "1",
+        "nod_barcode": null,
+        "nod_regdate": null
+      }
+    ],
+    "nod_barcode": null,
+    "nod_regdate": null,
+    "result_time": "2026-03-30 12:00",
+    "date_by_barcode": false
+  }
+}

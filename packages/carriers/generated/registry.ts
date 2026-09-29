@@ -10,6 +10,7 @@ import { adapter as austrianPost } from '../carriers/austrian-post/adapter';
 import { adapter as blueDart } from '../carriers/blue-dart/adapter';
 import { adapter as bpost } from '../carriers/bpost/adapter';
 import { adapter as bringPosten } from '../carriers/bring-posten/adapter';
+import { adapter as brt } from '../carriers/brt/adapter';
 import { adapter as cChezVous } from '../carriers/c-chez-vous/adapter';
 import { adapter as canadaPost } from '../carriers/canada-post/adapter';
 import { adapter as canpar } from '../carriers/canpar/adapter';
@@ -64,6 +65,7 @@ import { adapter as postnord } from '../carriers/postnord/adapter';
 import { adapter as purolator } from '../carriers/purolator/adapter';
 import { adapter as relaisColis } from '../carriers/relais-colis/adapter';
 import { adapter as royalMail } from '../carriers/royal-mail/adapter';
+import { adapter as seur } from '../carriers/seur/adapter';
 import { adapter as sfExpress } from '../carriers/sf-express/adapter';
 import { adapter as singaporePost } from '../carriers/singapore-post/adapter';
 import { adapter as springGds } from '../carriers/spring-gds/adapter';
@@ -72,6 +74,7 @@ import { adapter as swissPost } from '../carriers/swiss-post/adapter';
 import { adapter as swissPostCargo } from '../carriers/swiss-post-cargo/adapter';
 import { adapter as theCourierGuy } from '../carriers/the-courier-guy/adapter';
 import { adapter as tnt } from '../carriers/tnt/adapter';
+import { adapter as ukrposhta } from '../carriers/ukrposhta/adapter';
 import { adapter as uniuni } from '../carriers/uniuni/adapter';
 import { adapter as ups } from '../carriers/ups/adapter';
 import { adapter as usps } from '../carriers/usps/adapter';
@@ -92,6 +95,7 @@ export const REGISTRY: RegistryDefinition = {
     "blue-dart": blueDart,
     "bpost": bpost,
     "bring-posten": bringPosten,
+    "brt": brt,
     "c-chez-vous": cChezVous,
     "canada-post": canadaPost,
     "canpar": canpar,
@@ -146,6 +150,7 @@ export const REGISTRY: RegistryDefinition = {
     "purolator": purolator,
     "relais-colis": relaisColis,
     "royal-mail": royalMail,
+    "seur": seur,
     "sf-express": sfExpress,
     "singapore-post": singaporePost,
     "spring-gds": springGds,
@@ -154,6 +159,7 @@ export const REGISTRY: RegistryDefinition = {
     "swiss-post-cargo": swissPostCargo,
     "the-courier-guy": theCourierGuy,
     "tnt": tnt,
+    "ukrposhta": ukrposhta,
     "uniuni": uniuni,
     "ups": ups,
     "usps": usps,
@@ -175,7 +181,7 @@ export const REGISTRY: RegistryDefinition = {
     "blue-dart": "blue-dart",
     "bpost": "bpost",
     "bring-posten": "bring-posten",
-    "brt": "universal",
+    "brt": "brt",
     "c-chez-vous": "c-chez-vous",
     "canada-post": "canada-post",
     "canpar": "canpar",
@@ -243,7 +249,7 @@ export const REGISTRY: RegistryDefinition = {
     "quickpac": "planzer",
     "relais-colis": "relais-colis",
     "royal-mail": "universal",
-    "seur": "universal",
+    "seur": "seur",
     "sf-express": "sf-express",
     "shipup": "universal",
     "singapore-post": "singapore-post",
@@ -258,7 +264,7 @@ export const REGISTRY: RegistryDefinition = {
     "the-courier-guy": "the-courier-guy",
     "tipsa": "universal",
     "tnt": "tnt",
-    "ukrposhta": "universal",
+    "ukrposhta": "ukrposhta",
     "uniuni": "uniuni",
     "unknown": "universal",
     "ups": "ups",

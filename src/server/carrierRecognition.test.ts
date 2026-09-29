@@ -8,9 +8,11 @@ const now = new Date('2026-09-10T12:00:00Z');
 
 describe('recognition candidates', () => {
   it('keeps the carriers that can answer, hint first, then number evidence, then popularity', () => {
-    expect(recognitionCandidates('12345678901231').map((candidate) => candidate.carrier)).toEqual(['dpd', 'hermes-de', 'ciblex']);
+    expect(recognitionCandidates('12345678901231').map((candidate) => candidate.carrier)).toEqual(['dpd', 'seur', 'brt', 'hermes-de', 'ciblex']);
     expect(recognitionCandidates('06080000000002')).toEqual([
       { carrier: 'dpd', needsInput: null, preferred: true },
+      { carrier: 'seur', needsInput: null, preferred: false },
+      { carrier: 'brt', needsInput: null, preferred: false },
       { carrier: 'ciblex', needsInput: null, preferred: false },
     ]);
     expect(recognitionCandidates('12345678901', { hint: 'gls-de' })).toEqual([
@@ -18,12 +20,12 @@ describe('recognition candidates', () => {
       { carrier: 'gls-ch', needsInput: 'dpdPostcode', preferred: false },
     ]);
     expect(recognitionCandidates('06080000000002', { skip: (carrier) => carrier === 'dpd' }).map((candidate) => candidate.carrier))
-      .toEqual(['ciblex']);
+      .toEqual(['seur', 'brt', 'ciblex']);
     // A selected carrier needs no recognition.
     expect(recognitionCandidates('1Z999AA10123456784')).toEqual([]);
     // A DPD France depot: DPD France cannot be asked, and DPD Switzerland's
     // group-wide answer would file its parcel under the wrong network.
-    expect(recognitionCandidates('10000000000001').map((candidate) => candidate.carrier)).toEqual(['ciblex']);
+    expect(recognitionCandidates('10000000000001').map((candidate) => candidate.carrier)).toEqual(['seur', 'brt', 'ciblex']);
   });
 
   it('can ask bpost about an ambiguous numeric barcode without a recipient postcode', () => {
@@ -40,10 +42,13 @@ describe('asking carriers', () => {
       started.push(carrier);
       if (carrier === 'dpd') return { known: true, lastActivityAt: '2026-09-09T08:00:00Z' };
       if (carrier === 'hermes-de') throw new Error('upstream down');
+      if (carrier === 'seur' || carrier === 'brt') return { known: false };
       return new Promise(() => undefined);
     }, 20);
-    expect(started).toEqual(['dpd', 'hermes-de', 'ciblex']);
-    expect(outcomes.map(({ carrier, status }) => [carrier, status])).toEqual([['dpd', 'known'], ['hermes-de', 'failed'], ['ciblex', 'failed']]);
+    expect(started).toEqual(['dpd', 'seur', 'brt', 'hermes-de', 'ciblex']);
+    expect(outcomes.map(({ carrier, status }) => [carrier, status])).toEqual([
+      ['dpd', 'known'], ['seur', 'unknown'], ['brt', 'unknown'], ['hermes-de', 'failed'], ['ciblex', 'failed'],
+    ]);
     expect(outcomes[0].lastActivityAt).toBe('2026-09-09T08:00:00Z');
   });
 });
@@ -63,5 +68,7 @@ describe('settling on a carrier', () => {
       .toEqual({ carrier: 'gls-ch', choices: [] });
     expect(settleRecognition([outcome('dpd', 'known'), outcome('hermes-de', 'known')], now))
       .toEqual({ choices: ['dpd', 'hermes-de'] });
+    expect(settleRecognition([outcome('seur', 'known'), outcome('brt', 'known')], now))
+      .toEqual({ choices: ['seur', 'brt'] });
   });
 });

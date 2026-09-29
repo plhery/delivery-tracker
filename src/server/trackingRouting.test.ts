@@ -175,7 +175,7 @@ describe('persistent tracking routing', () => {
       });
       const result = await router.fetch(parcel({ carrier: 'asendia', tracking_number: swissDpd, dpd_postcode: null }), false);
       // Asked at once, number evidence first, then by popularity.
-      expect(asked(recognize)).toEqual(['dpd', 'ciblex']);
+      expect(asked(recognize)).toEqual(['dpd', 'seur', 'brt', 'ciblex']);
       // Only the carrier that knows the number gets a full lookup, without borrowed inputs.
       expect(direct.mock.calls.map(([, carrier]) => carrier)).toEqual(['asendia', 'dpd']);
       expect(direct.mock.calls[1][0]).toMatchObject({ carrier: 'dpd', dpd_postcode: null, tracking_url: null });
@@ -188,7 +188,7 @@ describe('persistent tracking routing', () => {
       const hermesShape = '12345678901231';
       const first = setup();
       await first.router.fetch(parcel({ tracking_number: hermesShape }), false);
-      expect(asked(first.recognize)).toEqual(['dpd', 'hermes-de', 'ciblex']);
+      expect(asked(first.recognize)).toEqual(['dpd', 'seur', 'brt', 'hermes-de', 'ciblex']);
       // A universal that named a carrier needing a postcode puts it first; one
       // needing nothing was already looked up by the correction step.
       const hinted = setup();
@@ -212,11 +212,12 @@ describe('persistent tracking routing', () => {
     it('asks again within hours, outside the carrier failures', async () => {
       const { router, universal, recognize } = setup();
       const result = await router.fetch(parcel({ tracking_number: swissDpd }), false);
-      expect(asked(recognize)).toEqual(['dpd', 'ciblex']);
+      expect(asked(recognize)).toEqual(['dpd', 'seur', 'brt', 'ciblex']);
       expect(universal).toHaveBeenCalled();
       const routing = result.result.routing as JsonObject & { failures: JsonObject; candidate_probes: JsonObject };
       expect(routing.candidate_probes).toEqual({
-        dpd: { count: 1, retry_at: '2026-09-10T13:00:00.000Z' }, ciblex: { count: 1, retry_at: '2026-09-10T13:00:00.000Z' },
+        dpd: { count: 1, retry_at: '2026-09-10T13:00:00.000Z' }, seur: { count: 1, retry_at: '2026-09-10T13:00:00.000Z' },
+        brt: { count: 1, retry_at: '2026-09-10T13:00:00.000Z' }, ciblex: { count: 1, retry_at: '2026-09-10T13:00:00.000Z' },
       });
       // The answers decide neither the parcel's status nor a carrier cooldown.
       expect(routing.failures).toEqual({});
@@ -293,7 +294,8 @@ describe('persistent tracking routing', () => {
       universal.mockResolvedValue({ ...history(), ...universalCarrierHints(['DPD Group'], swissDpd) });
       direct.mockResolvedValue(directValue('dpd'));
       const saved = { routing: state({ candidate_probes: {
-        dpd: { count: 7, retry_at: '2026-09-11T11:00:00Z' }, ciblex: { count: 7, retry_at: '2026-09-11T11:00:00Z' },
+        dpd: { count: 7, retry_at: '2026-09-11T11:00:00Z' }, seur: { count: 7, retry_at: '2026-09-11T11:00:00Z' },
+        brt: { count: 7, retry_at: '2026-09-11T11:00:00Z' }, ciblex: { count: 7, retry_at: '2026-09-11T11:00:00Z' },
       } }) };
       const result = await router.fetch(parcel({ tracking_number: swissDpd, carrier_data: saved }), false);
       expect(recognize).not.toHaveBeenCalled();

@@ -8,7 +8,9 @@ const WORDINGS = new Map<string, ClassifiedStatus>([
   ['Transmitted customs information', { status: 'in_transit', stage: 'customs' }],
   ...['Customs cleared', 'Item processed at facility', 'Item processed', 'Received in destination country',
     'Crossing border and in transit to carrier hub', 'Scanned at Landmark crossdock facility', 'Processed',
-    'Shipment received at originating postal facility'].map(wording => [wording, { status: 'in_transit', stage: 'in_transit' }] as [string, ClassifiedStatus]),
+    'Shipment received at originating postal facility', 'Departure to country of destination', 'Shipment has arrived at depot',
+    'Received at international processing center', 'Incoming scan at facility', 'Shipment has departed from airport',
+    'Shipment has departed from depot'].map(wording => [wording, { status: 'in_transit', stage: 'in_transit' }] as [string, ClassifiedStatus]),
 ]);
 
 export function landmarkStatus(wording: string): ClassifiedStatus | undefined { return WORDINGS.get(wording); }

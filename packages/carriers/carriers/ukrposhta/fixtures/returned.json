@@ -1,0 +1,96 @@
+{
+  "overview": {
+    "result": [
+      {
+        "barcode": "0000000000091",
+        "step": 5,
+        "date": "2026-03-29T16:03:37",
+        "index": "PRIVATE POSTCODE",
+        "name": "Example facility",
+        "event": "41000",
+        "eventName": "Return: Delivered to Sender",
+        "country": "EXAMPLE COUNTRY",
+        "eventReason": "PRIVATE DETAILS",
+        "eventReason_id": "1",
+        "mailType": 4096,
+        "indexOrder": 5
+      }
+    ],
+    "result_time": "2026-03-30 12:00"
+  },
+  "history": {
+    "from_to": {
+      "city_from": "PRIVATE SENDER",
+      "city_to": "PRIVATE RECIPIENT",
+      "lang": "en",
+      "RDDDATE": "2026-03-29",
+      "ISSEVERALPLACES": 0
+    },
+    "result": [
+      {
+        "gtt_date": "29.03.2026 16:03",
+        "gtt_index": "PRIVATE POSTCODE",
+        "gtt_name": "Example facility",
+        "gtt_event": "41000",
+        "gtt_event_name": "Return: Delivered to Sender",
+        "gtt_country": "EXAMPLE COUNTRY",
+        "gtt_eventreason": "PRIVATE DETAILS",
+        "gtt_eventreason_id": "1",
+        "nod_barcode": null,
+        "nod_regdate": null
+      },
+      {
+        "gtt_date": "28.03.2026 13:32",
+        "gtt_index": "PRIVATE POSTCODE",
+        "gtt_name": "Example facility",
+        "gtt_event": "21700",
+        "gtt_event_name": "Return: Arrived to the Branch",
+        "gtt_country": "EXAMPLE COUNTRY",
+        "gtt_eventreason": "PRIVATE DETAILS",
+        "gtt_eventreason_id": "1",
+        "nod_barcode": null,
+        "nod_regdate": null
+      },
+      {
+        "gtt_date": "28.03.2026 11:27",
+        "gtt_index": "PRIVATE POSTCODE",
+        "gtt_name": "Example facility",
+        "gtt_event": "20800",
+        "gtt_event_name": "Return: Departed from the Logistics Center",
+        "gtt_country": "EXAMPLE COUNTRY",
+        "gtt_eventreason": "PRIVATE DETAILS",
+        "gtt_eventreason_id": "1",
+        "nod_barcode": null,
+        "nod_regdate": null
+      },
+      {
+        "gtt_date": "27.03.2026 10:34",
+        "gtt_index": "PRIVATE POSTCODE",
+        "gtt_name": "Example facility",
+        "gtt_event": "31200",
+        "gtt_event_name": "Returned to Sender (Due to Recipient's Refusal)",
+        "gtt_country": "EXAMPLE COUNTRY",
+        "gtt_eventreason": "PRIVATE DETAILS",
+        "gtt_eventreason_id": "1",
+        "nod_barcode": null,
+        "nod_regdate": null
+      },
+      {
+        "gtt_date": "25.03.2026 18:11",
+        "gtt_index": "PRIVATE POSTCODE",
+        "gtt_name": "Example facility",
+        "gtt_event": "10601",
+        "gtt_event_name": "Created online. Waiting acceptance",
+        "gtt_country": "EXAMPLE COUNTRY",
+        "gtt_eventreason": "PRIVATE DETAILS",
+        "gtt_eventreason_id": "1",
+        "nod_barcode": null,
+        "nod_regdate": null
+      }
+    ],
+    "nod_barcode": null,
+    "nod_regdate": null,
+    "result_time": "2026-03-30 12:00",
+    "date_by_barcode": false
+  }
+}

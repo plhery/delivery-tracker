@@ -4,6 +4,7 @@
 export const CARRIER_RECOGNITION_RANKS: Readonly<Record<string, number>> = {
   "austrian-post": 39,
   "bpost": 37,
+  "brt": 42,
   "canada-post": 15,
   "canpar": 34,
   "chronopost": 45,
@@ -21,6 +22,7 @@ export const CARRIER_RECOGNITION_RANKS: Readonly<Record<string, number>> = {
   "nz-post": 32,
   "poczta-polska": 31,
   "relais-colis": 25,
+  "seur": 43,
   "tnt": 44,
   "uniuni": 33,
 };

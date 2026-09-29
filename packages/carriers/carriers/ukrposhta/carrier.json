@@ -18,18 +18,48 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "ukrposhta",
+    "steps": [
+      "browser"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location"
+  ],
   "portal": {
-    "url": "https://track.ukrposhta.ua/tracking_EN.html",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "url": "https://track.ukrposhta.ua/en/?barcode={trackingNumber}",
+    "canaryUrl": "https://track.ukrposhta.ua/en/",
+    "shows": [
+      "status",
+      "history",
+      "location"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location"
+    ],
+    "discarded": [
+      "postcodes",
+      "query_time",
+      "free_form_details",
+      "delivery_date"
+    ],
+    "unavailable": [
+      "eta",
+      "delivered_at"
+    ]
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "track.ukrposhta.ua"
+      ],
+      "params": [
+        "barcode"
+      ]
+    }
+  ],
   "detection": []
 }

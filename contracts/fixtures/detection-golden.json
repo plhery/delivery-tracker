@@ -218,6 +218,8 @@
     ],
     "asked": [
       "dpd",
+      "seur",
+      "brt",
       "ciblex"
     ]
   },
@@ -235,6 +237,8 @@
     ],
     "asked": [
       "dpd",
+      "seur",
+      "brt",
       "ciblex"
     ]
   },
@@ -253,6 +257,8 @@
     ],
     "asked": [
       "dpd",
+      "seur",
+      "brt",
       "hermes-de",
       "ciblex"
     ]
@@ -272,6 +278,8 @@
     ],
     "asked": [
       "dpd",
+      "seur",
+      "brt",
       "hermes-de",
       "ciblex"
     ]
@@ -398,6 +406,8 @@
     ],
     "asked": [
       "dpd",
+      "seur",
+      "brt",
       "ciblex"
     ]
   },
@@ -406,6 +416,9 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "seur"
+    ],
+    "asked": [
       "seur"
     ]
   },
@@ -441,6 +454,8 @@
     ],
     "asked": [
       "dpd",
+      "seur",
+      "brt",
       "ciblex"
     ]
   },
@@ -466,6 +481,8 @@
     ],
     "asked": [
       "dpd",
+      "seur",
+      "brt",
       "ciblex"
     ]
   },
@@ -523,6 +540,8 @@
     ],
     "asked": [
       "dpd",
+      "seur",
+      "brt",
       "ciblex"
     ]
   },
@@ -572,6 +591,8 @@
       "dpd-fr"
     ],
     "asked": [
+      "seur",
+      "brt",
       "ciblex"
     ]
   },
@@ -633,6 +654,8 @@
       "dpd-fr"
     ],
     "asked": [
+      "seur",
+      "brt",
       "ciblex"
     ]
   },
@@ -667,6 +690,8 @@
       "dpd-fr"
     ],
     "asked": [
+      "seur",
+      "brt",
       "ciblex"
     ]
   },
@@ -685,6 +710,8 @@
     ],
     "asked": [
       "dpd",
+      "seur",
+      "brt",
       "hermes-de",
       "ciblex"
     ]
@@ -851,6 +878,8 @@
     ],
     "asked": [
       "dpd",
+      "seur",
+      "brt",
       "ciblex"
     ]
   },
@@ -961,8 +990,13 @@
   {
     "input": "1796295",
     "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "confidence": "low",
+    "candidates": [
+      "seur"
+    ],
+    "asked": [
+      "seur"
+    ]
   },
   {
     "input": "1G123GEODIS0",
@@ -1134,6 +1168,8 @@
     ],
     "asked": [
       "dpd",
+      "seur",
+      "brt",
       "ciblex"
     ]
   },
@@ -1289,6 +1325,8 @@
     ],
     "asked": [
       "dpd",
+      "seur",
+      "brt",
       "ciblex"
     ]
   },
@@ -1513,6 +1551,8 @@
     ],
     "asked": [
       "dpd",
+      "seur",
+      "brt",
       "hermes-de",
       "ciblex"
     ]
@@ -1840,6 +1880,8 @@
     ],
     "asked": [
       "dpd",
+      "seur",
+      "brt",
       "ciblex"
     ]
   },
@@ -1961,6 +2003,8 @@
     ],
     "asked": [
       "dpd",
+      "seur",
+      "brt",
       "ciblex"
     ]
   },
@@ -2244,6 +2288,8 @@
     ],
     "asked": [
       "dpd",
+      "seur",
+      "brt",
       "hermes-de",
       "ciblex"
     ]
@@ -2261,6 +2307,8 @@
     ],
     "asked": [
       "dpd",
+      "seur",
+      "brt",
       "ciblex"
     ]
   },
@@ -3735,10 +3783,10 @@
   },
   {
     "input": "LTN480634985",
-    "carrier": "purolator",
+    "carrier": "landmark-global",
     "confidence": "high",
     "candidates": [
-      "purolator"
+      "landmark-global"
     ]
   },
   {

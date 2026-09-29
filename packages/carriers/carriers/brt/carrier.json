@@ -14,19 +14,61 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "brt",
+    "steps": [
+      "direct"
+    ],
+    "recognition": {
+      "rank": 42
+    }
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "weight"
+  ],
   "portal": {
-    "url": "https://services.brt.it/en/tracking",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "url": "https://vas.brt.it/vas/sped_det_new.htm?brtCode={trackingNumber}&lang=en",
+    "canaryUrl": "https://services.brt.it/en/tracking",
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "weight",
+      "merchant_reference",
+      "sender",
+      "recipient",
+      "parcel_count",
+      "volume"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "weight"
+    ],
+    "discarded": [
+      "merchant_reference",
+      "sender",
+      "recipient",
+      "parcel_count",
+      "volume"
+    ],
+    "unavailable": [
+      "offset_timestamps"
+    ]
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "vas.brt.it"
+      ],
+      "path": "^/vas/sped_det_new\\.htm$",
+      "params": [
+        "brtCode"
+      ]
+    }
+  ],
   "detection": [
     {
       "id": "brt-1",

@@ -46,7 +46,7 @@
     },
     {
       "id": "purolator-2",
-      "pattern": "^(?!BYS)[A-Z]{3}\\d{9}$",
+      "pattern": "^(?!(?:BYS|LTN))[A-Z]{3}\\d{9}$",
       "confidence": "high"
     }
   ]

@@ -10,7 +10,7 @@ const ABSENT = "We couldn't find a match for this value. Please try a different 
 
 export function normalizeLandmarkNumber(raw: string): string {
   const number = normalizeTrackingNumber(raw);
-  if (!/^LTN\d{8}(?:N1)?$/.test(number)) throw new TypeError('Landmark requires an LTN parcel reference');
+  if (!/^LTN\d{8,9}(?:N1)?$/.test(number)) throw new TypeError('Landmark requires an LTN parcel reference');
   return number;
 }
 

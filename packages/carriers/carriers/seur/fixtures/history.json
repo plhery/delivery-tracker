@@ -1,0 +1,23 @@
+{
+  "codigo_error": null,
+  "msg_error": null,
+  "identificador_busqueda": "9900002",
+  "clave_envio": "990000000000000000002",
+  "peso": 1.2,
+  "num_bultos": 1,
+  "situaciones": [
+    { "fecha": "2026-01-23T13:13:05Z", "id_grupo_situacion": "1", "grupo_situacion": "ENTREGADO", "descripcion_situacion": "EL ENVÍO HA SIDO ENTREGADO A UN VECINO.", "cod_situacion": "LL020", "nombre_comunicacion": "PRIVATE_SYNTHETIC", "comentario": "PRIVATE_SYNTHETIC_NAME", "comentario_bbdd": "PRIVATE_SYNTHETIC_PHONE" },
+    { "fecha": "2026-01-23T08:15:00Z", "id_grupo_situacion": "9", "grupo_situacion": "EN REPARTO", "descripcion_situacion": "EL ENVÍO ESTÁ EN REPARTO.", "cod_situacion": "LC003" },
+    { "fecha": "2026-01-23T07:45:29Z", "id_grupo_situacion": "10", "grupo_situacion": "EN DEMORA", "descripcion_situacion": "EL ENVÍO HA SUFRIDO UN RETRASO Y ES POSIBLE QUE SE DEMORE LA ENTREGA. DISCULPA LAS MOLESTIAS.", "cod_situacion": "LI300" },
+    { "fecha": "2026-01-22T20:16:54Z", "id_grupo_situacion": "2", "grupo_situacion": "EN TRÁNSITO", "descripcion_situacion": "EL ENVÍO ESTÁ EN TRÁNSITO. PRÓXIMAMENTE LLEGARÁ A LAS INSTALACIONES DE DESTINO.", "cod_situacion": "LI567" },
+    { "fecha": "2026-01-22T19:43:00Z", "id_grupo_situacion": "2", "grupo_situacion": "EN TRÁNSITO", "descripcion_situacion": "EL ENVÍO HA SIDO RECEPCIONADO EN LAS INSTALACIONES DE ORIGEN DE SEUR. COMIENZA EL TRÁNSITO A DESTINO", "cod_situacion": "SX001" },
+    { "fecha": "2026-01-21T19:06:31Z", "id_grupo_situacion": "11", "grupo_situacion": "NOTIFICADO", "descripcion_situacion": "EL ENVÍO HA SIDO REGISTRADO.", "cod_situacion": "SX010" }
+  ],
+  "remitente": { "nombre": "PRIVATE_SYNTHETIC_SENDER", "direccion": "PRIVATE_SYNTHETIC_ADDRESS" },
+  "destinatario": { "nombre": "PRIVATE_SYNTHETIC_RECEIVER" },
+  "pin_entrega": "PRIVATE_SYNTHETIC_PIN",
+  "pin_locker": "PRIVATE_SYNTHETIC_LOCKER_PIN",
+  "qr": "PRIVATE_SYNTHETIC_QR",
+  "receptor": "PRIVATE_SYNTHETIC_RECEPTOR",
+  "delivery": { "deliverer_latitude": "PRIVATE_SYNTHETIC_DRIVER" }
+}

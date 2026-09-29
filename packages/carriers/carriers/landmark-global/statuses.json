@@ -84,6 +84,42 @@
       "language": "en",
       "stage": "in_transit",
       "confirmedBy": "live"
+    },
+    {
+      "wording": "Departure to country of destination",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Shipment has arrived at depot",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Received at international processing center",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Incoming scan at facility",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Shipment has departed from airport",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "Shipment has departed from depot",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
     }
   ]
 }

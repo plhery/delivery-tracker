@@ -69,9 +69,12 @@
       },
       "expect": {
         "carrier": "unknown",
-        "confidence": "none"
+        "confidence": "low",
+        "candidates": [
+          "seur"
+        ]
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. Short reference from the source; standalone tracking is unconfirmed. The source attributes it to SEUR; no rule matches this shape."
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Seven-digit references are ambiguous and require a matching native lookup."
     }
   ]
 }

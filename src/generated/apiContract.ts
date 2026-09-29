@@ -1969,10 +1969,22 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "seur",
+      "recognitionRank": 43
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://www.seur.com/miseur/mis-envios",
+    "linkRules": [
+      {
+        "domains": [
+          "www.seur.com",
+          "seur.com"
+        ],
+        "path": "^/miseur/mis-envios(?:/.*)?$",
+        "params": [
+          "tracking"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^\\d{14}$",
@@ -1981,9 +1993,13 @@ export const CARRIER_CAPABILITIES = {
       {
         "pattern": "^\\d{21}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{7}$",
+        "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://www.seur.com/miseur/mis-envios",
+    "trackingUrlTemplate": "https://www.seur.com/miseur/mis-envios?tracking={trackingNumber}",
     "countries": [
       "ES",
       "PT"
@@ -2170,17 +2186,28 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "brt",
+      "recognitionRank": 42
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://services.brt.it/en/tracking",
+    "linkRules": [
+      {
+        "domains": [
+          "vas.brt.it"
+        ],
+        "path": "^/vas/sped_det_new\\.htm$",
+        "params": [
+          "brtCode"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^\\d{14}$",
         "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://services.brt.it/en/tracking",
+    "trackingUrlTemplate": "https://vas.brt.it/vas/sped_det_new.htm?brtCode={trackingNumber}&lang=en",
     "countries": [
       "IT"
     ]
@@ -2245,12 +2272,21 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "ukrposhta"
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://track.ukrposhta.ua/en/",
+    "linkRules": [
+      {
+        "domains": [
+          "track.ukrposhta.ua"
+        ],
+        "params": [
+          "barcode"
+        ]
+      }
+    ],
     "detectionRules": [],
-    "trackingUrlTemplate": "https://track.ukrposhta.ua/tracking_EN.html",
+    "trackingUrlTemplate": "https://track.ukrposhta.ua/en/?barcode={trackingNumber}",
     "countries": [
       "UA"
     ]
@@ -2355,7 +2391,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low"
       },
       {
-        "pattern": "^(?!BYS)[A-Z]{3}\\d{9}$",
+        "pattern": "^(?!(?:BYS|LTN))[A-Z]{3}\\d{9}$",
         "confidence": "high"
       }
     ],
@@ -2530,7 +2566,7 @@ export const CARRIER_CAPABILITIES = {
     ],
     "detectionRules": [
       {
-        "pattern": "^LTN\\d{8}(?:N1)?$",
+        "pattern": "^LTN\\d{8,9}(?:N1)?$",
         "confidence": "high"
       }
     ],

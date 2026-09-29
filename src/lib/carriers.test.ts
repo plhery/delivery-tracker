@@ -211,7 +211,10 @@ describe('carrier detection', () => {
     // QUARANTINED 15-digit user correction, not carrier-confirmed: never a BRT oracle.
     // Source: https://www.altroconsumo.it/reclamare/bacheca-dei-reclami/firma-falsificata-e-pacco-mai-/f6a66bc9986923ffcf
     expect(detectCarrier('027280011093919')).toBe('unknown');
-    expectUniversalFallback('brt');
+    expectDirectTracking('brt');
+    expect(parseTrackingInput('https://vas.brt.it/vas/sped_det_new.htm?brtCode=99000000000002&lang=en')).toMatchObject({
+      trackingNumber: '99000000000002', carrier: 'brt', source: 'link',
+    });
   });
 
   it('canada-post — Canada Post', () => {
@@ -771,6 +774,9 @@ describe('carrier detection', () => {
       expect(detectCarrier(number)).toBe('landmark-global');
     }
     expectDirectTracking('landmark-global');
+    for (const number of ['LTN000000009', 'LTN000000009N1']) {
+      expect(detectCarrierMatch(number)).toMatchObject({ carrier: 'landmark-global', confidence: 'high' });
+    }
   });
 
   it('mondial-relay — Mondial Relay', () => {
@@ -1084,7 +1090,11 @@ describe('carrier detection', () => {
     // 7-digit shipment reference, not a parcel barcode: no standalone lookup promised.
     // Source: https://www.ocu.org/reclamar/empresas/seur/500000075
     expect(detectCarrier('1796295')).toBe('unknown');
-    expectUniversalFallback('seur');
+    expect(detectCarrierMatch('9900002')).toMatchObject({ carrier: 'unknown', confidence: 'low', candidates: ['seur'] });
+    expectDirectTracking('seur');
+    expect(parseTrackingInput('https://www.seur.com/miseur/mis-envios?tracking=9900002')).toMatchObject({
+      trackingNumber: '9900002', carrier: 'seur', source: 'link',
+    });
   });
 
   it('sf-express — SF Express', () => {
@@ -1257,7 +1267,10 @@ describe('carrier detection', () => {
     // fixture, never number-only Ukrposhta detection (native S10 UA unsampled).
     // Source: https://github.com/kolyabres/ukrposhta-api
     expect(detectCarrier('RF426331371SG')).toBe('singapore-post');
-    expectUniversalFallback('ukrposhta');
+    expectDirectTracking('ukrposhta');
+    expect(parseTrackingInput('https://track.ukrposhta.ua/en/?barcode=EE000000005UA')).toMatchObject({
+      trackingNumber: 'EE000000005UA', carrier: 'ukrposhta', source: 'link',
+    });
   });
 
   it('uniuni — UniUni', () => {

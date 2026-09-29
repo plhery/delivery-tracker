@@ -1,0 +1,53 @@
+{
+  "carrier": "brt",
+  "entries": [
+    {
+      "wording": "SHIPPING INFO SENT TO BRT",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "COLLECTED",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "DEPARTED",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "ARRIVED AT DEPOT",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "FOR DELIVERY",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "ARRIVED AT BRT LOCKER",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "COLLECTED AT BRT LOCKER",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    },
+    {
+      "wording": "DELIVERED",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    }
+  ]
+}

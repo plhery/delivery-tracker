@@ -6,12 +6,28 @@ import { NOOP_RECORDER } from '../../core/telemetry';
 import { adapter, LandmarkTracker } from './adapter';
 import { normalizeLandmarkNumber, parseLandmark } from './parser';
 import { landmarkStatus } from './status';
+import metadata from './carrier.json';
+import statuses from './statuses.json';
 
 const NUMBER = 'LTN00000001N1';
 const fixture = () => readFileSync(new URL('./fixtures/delivered.html', import.meta.url), 'utf8');
+const nineDigitFixture = () => readFileSync(new URL('./fixtures/in-transit-nine-digit.html', import.meta.url), 'utf8');
 const negative = (number = NUMBER) => `<html><head><title>Landmark Global | Landmark Tracking</title></head><body><input id="search" value="${number}"><div class="error-text">We couldn't find a match for this value. Please try a different value.</div></body></html>`;
 
 describe('Landmark Global history', () => {
+  it('binds current nine-digit references and aliases while retaining the full native movement history', () => {
+    const result = parseLandmark(nineDigitFixture(), 'LTN000000009');
+    expect(result).toMatchObject({ status: 'in_transit', current_stage: 'in_transit', last_update: null,
+      last_update_local: '2026-01-20T12:00:00', last_status_text: 'Departure to country of destination' });
+    expect(result.events).toHaveLength(14);
+    expect(result.events?.[0]).toMatchObject({ stage: 'in_transit', local_time: '2026-01-20T12:00:00' });
+    expect(result.events?.every(event => !event.time)).toBe(true);
+    expect(result).not.toHaveProperty('canonical_tracking_number'); expect(result).not.toHaveProperty('delivered_at');
+    expect(parseLandmark(nineDigitFixture(), 'LTN000000009N1')).toMatchObject({ ...result, canonical_tracking_number: 'LTN000000009' });
+    for (const entry of statuses.entries) expect(landmarkStatus(entry.wording)?.stage, entry.wording).toBe(entry.stage);
+    const different = load(nineDigitFixture()); different('.delivery-details-col h6').last().next('div').text('LTN000000008');
+    expect(() => parseLandmark(different.html(), 'LTN000000009')).toThrow(expect.objectContaining({ kind: 'schema' }));
+  });
   it('binds canonical parcel identity and retains local clocks without applying the current display offset', () => {
     const result = normalizeCarrierResult(parseLandmark(fixture(), NUMBER));
     expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered', canonical_tracking_number: 'LTN00000001', last_update: null, last_update_local: '2026-01-04T12:00:00', expected_delivery: null, delivery_tracking_number: 'AA000000005AU', delivery_carrier: 'australia-post' });
@@ -39,6 +55,7 @@ describe('Landmark Global history', () => {
       expect(() => parseLandmark(html, NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
     }
     expect(() => parseLandmark(negative().replace('Landmark Global | Landmark Tracking', 'Verify you are human'), NUMBER)).toThrow(expect.objectContaining({ kind: 'challenge' }));
+    expect(() => parseLandmark(negative('LTN000000009'), 'LTN000000009')).toThrow(expect.objectContaining({ kind: 'not_found' }));
   });
   it('rejects latest-summary mismatches and malformed, absent or excessive history', () => {
     const wording = load(fixture()); wording('.current-status h3').text('Different');
@@ -78,6 +95,27 @@ describe('Landmark Global history', () => {
 });
 
 describe('Landmark direct retrieval', () => {
+  it('keeps detection and normalization aligned for eight- and nine-digit canonical references and aliases', () => {
+    const patterns = metadata.detection.map(rule => new RegExp(rule.pattern));
+    for (const number of ['LTN00000001', 'LTN00000001N1', 'LTN000000009', 'LTN000000009N1']) {
+      expect(patterns.some(pattern => pattern.test(number)), number).toBe(true);
+      expect(normalizeLandmarkNumber(number)).toBe(number);
+    }
+    for (const number of ['LTN0000000', 'LTN0000000000', 'LTN000000009N2', 'LTN000000009N11']) {
+      expect(patterns.some(pattern => pattern.test(number)), number).toBe(false);
+      expect(() => normalizeLandmarkNumber(number)).toThrow(TypeError);
+    }
+  });
+  it('forwards the full nine-digit reference and alias without truncating routing digits', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(nineDigitFixture()));
+    for (const number of ['LTN000000009', 'LTN000000009N1']) {
+      await new LandmarkTracker({ fetcher }).fetch(number);
+      expect(new URL(String(fetcher.mock.lastCall?.[0])).searchParams.get('search')).toBe(number);
+    }
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    for (const number of ['LTN0000000', 'LTN0000000000', 'LTN000000009N2', 'LTN000000009N11']) expect(() => normalizeLandmarkNumber(number)).toThrow(TypeError);
+    expect(normalizeLandmarkNumber('ltn-000000009 n1')).toBe('LTN000000009N1');
+  });
   it('uses one fresh anonymous GET without a bootstrap or API credentials', async () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(fixture()));
     const instance = adapter({ fetcher, trawl: null, browserExecutablePath: null, recorder: NOOP_RECORDER, env: {} });

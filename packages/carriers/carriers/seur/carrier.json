@@ -15,19 +15,59 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "seur",
+    "steps": [
+      "direct"
+    ],
+    "recognition": {
+      "rank": 43
+    }
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "weight"
+  ],
   "portal": {
-    "url": "https://www.seur.com/miseur/mis-envios",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "url": "https://www.seur.com/miseur/mis-envios?tracking={trackingNumber}",
+    "canaryUrl": "https://www.seur.com/miseur/mis-envios",
+    "shows": [
+      "status",
+      "history",
+      "weight",
+      "parcel_count",
+      "sender",
+      "recipient",
+      "delivery_pin",
+      "qr"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "weight"
+    ],
+    "discarded": [
+      "parcel_count",
+      "sender",
+      "recipient",
+      "delivery_pin",
+      "qr"
+    ],
+    "unavailable": [
+      "location"
+    ]
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "www.seur.com",
+        "seur.com"
+      ],
+      "path": "^/miseur/mis-envios(?:/.*)?$",
+      "params": [
+        "tracking"
+      ]
+    }
+  ],
   "detection": [
     {
       "id": "seur-1",
@@ -37,6 +77,11 @@
     {
       "id": "seur-2",
       "pattern": "^\\d{21}$",
+      "confidence": "low"
+    },
+    {
+      "id": "seur-3",
+      "pattern": "^\\d{7}$",
       "confidence": "low"
     }
   ]

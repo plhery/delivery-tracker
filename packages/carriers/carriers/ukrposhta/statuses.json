@@ -1,0 +1,208 @@
+{
+  "carrier": "ukrposhta",
+  "entries": [
+    {
+      "code": "41000",
+      "wording": "Return: Delivered to Sender",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "21700",
+      "wording": "Return: Arrived to the Branch",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "20800",
+      "wording": "Return: Departed from the Logistics Center",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "20700",
+      "wording": "Return: Arrived to the Logistics Center",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "20800",
+      "wording": "Return: Departed from the Branch",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "31200",
+      "wording": "Returned to Sender (Due to Recipient's Refusal)",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "21700",
+      "wording": "Arrived to the Branch",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "20800",
+      "wording": "Departed from the Branch",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "10100",
+      "wording": "Registered",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "10601",
+      "wording": "Created online. Waiting acceptance",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "48000",
+      "wording": "Final delivery",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "29500",
+      "wording": "Item out for physical delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "27900",
+      "wording": "Arrival at the delivery office",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "97700",
+      "wording": "Departure from inward office of exchange",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "89100",
+      "wording": "Released from customs for further delivery",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "89000",
+      "wording": "Item presented to customs",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "24300",
+      "wording": "Held at inward office of exchange",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "67300",
+      "wording": "Arrival at inward office of exchange",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "2201",
+      "wording": "Accepted by destination post for processing",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "4021",
+      "wording": "Сonsignment with your postal item has arrived to the airport of destination country",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "4024",
+      "wording": "Consignment with your postal item has been sent from the airport",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "4006",
+      "wording": "Consignment with your postal item is being prepared for the flight to be sent from the airport.",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "4074",
+      "wording": "Consignment with your postal item has been received by carrier for further transportation",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "70800",
+      "wording": "The postal item has been processed at the office of exchange and handed over for further transportation to the destination country",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "82800",
+      "wording": "Released from customs for further delivery",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "82700",
+      "wording": "Item presented to customs",
+      "language": "en",
+      "stage": "customs",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "21600",
+      "wording": "Arrival at outward office of exchange",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "20700",
+      "wording": "Arrived to the Logistics Center",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "20800",
+      "wording": "Departed from the Logistics Center",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    }
+  ]
+}

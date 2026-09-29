@@ -95,8 +95,8 @@ statuses map correctly.
 | [An Post](../carriers/an-post/carrier.json) | No adapter | Not tested | ✓ 4 | ✓ 4 | ✓ 4 | ✓ 4 | No history |
 | [CTT Portugal](../carriers/ctt/README.md) | Yes | ✓ 4 | ✓ 4 | ✓ 5 | ✓ 5 | ✓ 3 | ✓ 2 |
 | [CTT Express](../carriers/ctt-express/README.md) | Yes | ✓ 5 | ✓ 5 | ✓ 5 | ✓ 4 | ✓ 6 | N/A |
-| [BRT](../carriers/brt/carrier.json) | No adapter | Not tested | No history | ✓ 23 | No history | ✓ 5 | N/A |
-| [SEUR](../carriers/seur/carrier.json) | No adapter | Not tested | No history | ✓ 4 | ✓ 4 | ✓ 4 | N/A |
+| [BRT](../carriers/brt/README.md) | Yes | Not tested; alternate ✓ 7 | No history | ✓ 23 | No history | ✓ 5 | N/A |
+| [SEUR](../carriers/seur/README.md) | Yes | No history; alternate ✓ 6 | No history | ✓ 4 | ✓ 4 | ✓ 4 | N/A |
 | [Correos Express](../carriers/correos-express/README.md) | Yes | Error | ✓ 9 | ✓ 9 | No history | No history | N/A |
 | [MRW](../carriers/mrw/carrier.json) | No adapter | Not tested | No history | No history | ✓ 1 | No history | N/A |
 | [NACEX](../carriers/nacex/README.md) | Yes | Not tested; alternate ✓ 14 | Error | Error | Error | Error | N/A |
@@ -104,11 +104,11 @@ statuses map correctly.
 | [Relais Colis](../carriers/relais-colis/README.md) | Yes | Error | No history | ✓ 4 | No history | No history | N/A |
 | [Paack](../carriers/paack/README.md) | Yes (postcode) | Not tested (postcode) | No history | No history | No history | No history | N/A |
 | [Asendia](../carriers/asendia/README.md) | Yes (Asendia USA) | ✓ 5 | ✓ 2 | Error | Error | ✓ 3 | ✓ 2 |
-| [Landmark Global](../carriers/landmark-global/README.md) | Yes | Error | ✓ 14 | ✓ 21 | No history | ✓ 21 | N/A |
+| [Landmark Global](../carriers/landmark-global/README.md) | Yes | ✓ 14 | ✓ 14 | ✓ 21 | No history | ✓ 21 | N/A |
 | [NZ Post](../carriers/nz-post/README.md) | Yes | ✓ 16 | ✓ 20 | ✓ 20 | ✓ 16 | ✓ 20 | ✓ 4 |
 | [Pos Malaysia](../carriers/pos-malaysia/README.md) | Yes | ✓ 2 | Error | ✓ 2 | ✓ 2 | No history | No history |
 | [Thailand Post](../carriers/thailand-post/carrier.json) | No adapter | Not tested | ✓ 8 | ✓ 8 | No history | ✓ 8 | No history |
-| [Ukrposhta](../carriers/ukrposhta/carrier.json) | No adapter | Not tested | ✓ 30 | ✓ 33 | ✓ 45 | ✓ 33 | Error |
+| [Ukrposhta](../carriers/ukrposhta/README.md) | Yes | ✓ 22; alternate ✓ 14 | ✓ 30 | ✓ 33 | ✓ 45 | ✓ 33 | Error |
 
 ## What the differences mean
 
@@ -249,7 +249,11 @@ By carrier:
 - **BRT, SEUR:** the references are DPD-group parcel numbers, and Ship24 had neither. For
   SEUR, ParcelsApp, 17TRACK and Postal Ninja name DPD and hold the same four rows. For
   BRT, ParcelsApp's 23 rows add Chronopost's French delivery scans to four DPD rows dated
-  1 January and repeat the delivery; Postal Ninja keeps five DPD milestones.
+  1 January and repeat the delivery; Postal Ninja keeps five DPD milestones. The direct
+  BRT adapter supports fourteen-digit BRTcodes through the linked detailed event portal;
+  the comparison reference is a different DPD-group identifier. SEUR's simplified
+  lookup returns single-piece history without recipient verification; absent, recent
+  and out-of-range histories share an inconclusive response.
 - **Correos Express:** Ship24 and ParcelsApp hold the same nine scans. The direct form
   printed a failed delivery without a status label, and the adapter rejects a scan
   without one, so the whole history fails.
@@ -268,11 +272,10 @@ By carrier:
   Ship24, UPU and Postal Ninja have two or three postal rows. ParcelsApp's reply includes
   an undated scan, which fails the parse. Detection selects Swiss Post, which does not
   know the item.
-- **Landmark Global:** current references have nine digits after `LTN`. The adapter
-  accepts eight, and detection selects Purolator, whose rule takes three letters and nine
-  digits. Ship24 has Landmark's scans; ParcelsApp and Postal Ninja add bpost's. The adapter
-  accepts its explicitly identified canonical parcel reference and retains the declared
-  delivery partner for the host's independent handoff check.
+- **Landmark Global:** the direct adapter and detection support eight or nine digits
+  after `LTN`, including the `N1` alias. Ship24 has Landmark's scans; ParcelsApp and
+  Postal Ninja add bpost's. The adapter binds the canonical parcel reference and retains
+  the declared delivery partner for the host's independent handoff check.
 - **Pos Malaysia:** direct, ParcelsApp and 17TRACK hold the same two scans of a March
   item. The adapter also returns international history. Its offsetless scans remain
   unresolved unless both endpoints identify a domestic Malaysian route. An undated
@@ -300,10 +303,9 @@ rather than inferred scan instants.
 Detection selects or suggests the named carrier for the public numbers behind rows
 31–80, with these exceptions. Planzer composites stay undetected on purpose (see the
 [Planzer README](../carriers/planzer/README.md)), and DTDC's `Z` numbers share Packeta's
-shape and stay with Packeta. Landmark's nine-digit `LTN` references are selected as
-Purolator. S10 items from Poland and Ukraine go to the generic postal carrier, Paack and
-Ukrposhta have no rule for their own numbers, and Posti has none by design. Each answer
-is recorded in the carrier's `numbers.json`.
+shape and stay with Packeta. S10 items from Poland and Ukraine go to the generic postal
+carrier, Paack and Ukrposhta have no rule for their own numbers, and Posti has none
+by design. Each answer is recorded in the carrier's `numbers.json`.
 
 ## Other carriers
 
@@ -341,6 +343,11 @@ colliding codes and master-piece lists. Its Mexican clocks remain local. The Cou
 Guy keeps shipment-level scans without promoting one delivered piece to completion.
 NACEX submits the agency/shipment pair in a fresh anonymous session and preserves
 date-only scans without inventing a delivery time.
+
+[Ukrposhta](../carriers/ukrposhta/README.md) uses the native anonymous browser flow.
+A barcode-bound overview must agree with the full history's current scan and row count.
+Return completion stays separate from recipient delivery, and scans keep their local
+clocks across countries. Empty or unbound replies remain inconclusive.
 
 [Canada Post](../carriers/canada-post/README.md) uses the full detail feed rather than
 its summary feed. Delivery-notice cards and numeric references first need one exact

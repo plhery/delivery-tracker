@@ -56,7 +56,7 @@
   "detection": [
     {
       "id": "landmark-global-1",
-      "pattern": "^LTN\\d{8}(?:N1)?$",
+      "pattern": "^LTN\\d{8,9}(?:N1)?$",
       "confidence": "high"
     }
   ]

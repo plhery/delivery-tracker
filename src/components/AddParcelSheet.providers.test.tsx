@@ -127,7 +127,7 @@ describe('DPD carrier lookup', () => {
     const user = userEvent.setup();
     render(<AddParcelSheet apiAuth={apiAuth} onAdd={onAdd} onClose={vi.fn()} initialTrackingInput="06080000000002" />);
     // The line names the carriers being asked while they answer.
-    expect(await screen.findByText('asking DPD and Ciblex…')).toBeInTheDocument();
+    expect(await screen.findByText('asking DPD, SEUR, BRT and Ciblex…')).toBeInTheDocument();
     const button = screen.getByRole('button', { name: /^add parcel$/i });
     expect(button).toBeEnabled();
     await user.click(button);
