@@ -76,3 +76,34 @@ test('explains Amazon Logistics account tracking and blocks addition', async ({ 
   await expect(dialog.getByRole('button', { name: 'Add parcel', exact: true })).toBeDisabled();
   await page.screenshot({ path: testInfo.outputPath('amazon-logistics.png') });
 });
+
+test('jumps through the carrier letters while the rail is held, before any release', async ({ page }) => {
+  const dialog = page.getByRole('dialog', { name: 'Add a parcel' });
+  await dialog.getByLabel('Tracking number or link').fill('12345678901234');
+  await dialog.getByRole('button', { name: /^Detect automatically/ }).click();
+  const picker = page.getByRole('dialog', { name: 'Carrier', exact: true });
+  const rail = picker.getByRole('navigation', { name: 'Jump to a letter' });
+  const list = picker.getByRole('listbox', { name: 'Carrier' });
+  // How far, in whole pixels, the letter's section sits from the top of the list.
+  const offset = (letter: string) => list.evaluate((element, value) => {
+    const section = element.querySelector(`[data-letter="${value}"]`)!;
+    return Math.round(Math.abs(section.getBoundingClientRect().top - element.getBoundingClientRect().top));
+  }, letter);
+  const centre = async (letter: string) => {
+    const box = (await rail.getByRole('button', { name: letter, exact: true }).boundingBox())!;
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  };
+
+  const c = await centre('C');
+  await page.mouse.move(c.x, c.y);
+  await page.mouse.down();
+  await expect.poll(() => offset('C')).toBeLessThanOrEqual(1);
+  await expect(picker.locator('.carrier-picker__bubble')).toHaveText('C');
+  const p = await centre('P');
+  await page.mouse.move(p.x, p.y, { steps: 8 });
+  await expect.poll(() => offset('P')).toBeLessThanOrEqual(1);
+  await expect(picker.locator('.carrier-picker__bubble')).toHaveText('P');
+  await page.mouse.up();
+  await expect(picker.locator('.carrier-picker__bubble')).toBeHidden();
+  expect(await offset('P')).toBeLessThanOrEqual(1);
+});

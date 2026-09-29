@@ -1,6 +1,6 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { CarrierPickerSheet, type CarrierPickerSection } from './CarrierPickerSheet';
 
 const sections: CarrierPickerSection[] = [
@@ -16,6 +16,8 @@ function renderPicker(props: Partial<Parameters<typeof CarrierPickerSheet>[0]> =
   const picker = screen.getByRole('dialog', { name: 'Carrier' });
   return { ...view, picker, onSelect, onClose, search: within(picker).getByRole('combobox', { name: 'Search carriers' }) };
 }
+
+afterEach(() => vi.restoreAllMocks());
 
 describe('carrier picker', () => {
   it('leads with automatic detection, then the sections, then every carrier from A to Z', () => {
@@ -88,5 +90,39 @@ describe('carrier picker', () => {
     expect(onSelect).toHaveBeenCalledWith('ciblex');
     await user.click(within(picker).getByRole('button', { name: 'Cancel' }));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('jumps to a letter as soon as the rail is pressed, and follows a finger sliding along it', () => {
+    const { picker } = renderPicker();
+    const rail = within(picker).getByRole('navigation', { name: 'Jump to a letter' });
+    const letters = within(rail).getAllByRole('button').map((button) => button.textContent);
+    // jsdom has no layout: give each letter a 16 px band, top to bottom.
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const index = letters.indexOf(this.dataset.letter ?? '');
+      return { top: 100 + index * 16, bottom: 116 + index * 16, left: 0, right: 22, width: 22, height: 16, x: 0, y: 100 + index * 16, toJSON: () => ({}) } as DOMRect;
+    });
+    const jumped: string[] = [];
+    const scrollIntoView = Element.prototype.scrollIntoView;
+    onTestFinished(() => { Element.prototype.scrollIntoView = scrollIntoView; });
+    Element.prototype.scrollIntoView = vi.fn(function (this: Element) { jumped.push((this as HTMLElement).dataset.letter ?? ''); });
+    const at = (letter: string) => 108 + letters.indexOf(letter) * 16;
+
+    fireEvent.pointerDown(rail, { pointerId: 1, pointerType: 'touch', clientY: at('C') });
+    // The press alone jumps, before any release.
+    expect(jumped).toEqual(['C']);
+    expect(within(rail).getByRole('button', { name: 'C' })).toHaveClass('is-current');
+    expect(rail.querySelector('.carrier-picker__bubble')).toHaveTextContent('C');
+
+    fireEvent.pointerMove(rail, { pointerId: 1, pointerType: 'touch', clientY: at('C') + 3 });
+    fireEvent.pointerMove(rail, { pointerId: 1, pointerType: 'touch', clientY: at('D') });
+    fireEvent.pointerMove(rail, { pointerId: 1, pointerType: 'touch', clientY: at('P') });
+    // Past the end the last letter holds.
+    fireEvent.pointerMove(rail, { pointerId: 1, pointerType: 'touch', clientY: 2000 });
+    expect(jumped).toEqual(['C', 'D', 'P', '#']);
+
+    fireEvent.pointerUp(rail, { pointerId: 1, pointerType: 'touch', clientY: 2000 });
+    expect(rail.querySelector('.carrier-picker__bubble')).not.toBeInTheDocument();
+    fireEvent.pointerMove(rail, { pointerId: 1, pointerType: 'mouse', clientY: at('A') });
+    expect(jumped).toEqual(['C', 'D', 'P', '#']);
   });
 });

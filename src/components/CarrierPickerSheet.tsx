@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useI18n } from '../i18n';
 import { carrierInfo, SELECTABLE_CARRIERS, type CarrierInfo } from '../lib/carriers';
@@ -78,6 +78,10 @@ export function CarrierPickerSheet({
   const [openingSections] = useState(sections);
   const search = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLDivElement>(null);
+  const rail = useRef<HTMLElement>(null);
+  // The letter under a finger held on the rail, and where its bubble sits.
+  const [scrub, setScrub] = useState<{ letter: string; y: number } | null>(null);
+  const scrubbing = useRef<string | null>(null);
   const scrollToActive = useRef(false);
   const baseId = useId();
   const titleId = `${baseId}-title`;
@@ -152,6 +156,41 @@ export function CarrierPickerSheet({
 
   function jump(letter: string) {
     list.current?.querySelector(`[data-letter="${CSS.escape(letter)}"]`)?.scrollIntoView?.({ block: 'start' });
+  }
+
+  /**
+   * The rail answers the finger, not the release: pressing a letter jumps to
+   * it, and sliding jumps to each letter it crosses. Past either end the first
+   * or last letter holds, as in the iPhone's section index.
+   */
+  function scrubTo(clientY: number) {
+    const buttons = Array.from(rail.current?.querySelectorAll<HTMLButtonElement>('button') ?? []);
+    let nearest: HTMLButtonElement | undefined;
+    let distance = Infinity;
+    for (const button of buttons) {
+      const { top, bottom } = button.getBoundingClientRect();
+      const gap = clientY < top ? top - clientY : clientY > bottom ? clientY - bottom : 0;
+      if (gap < distance) { distance = gap; nearest = button; }
+    }
+    const letter = nearest?.dataset.letter;
+    if (!nearest || !letter || letter === scrubbing.current) return;
+    scrubbing.current = letter;
+    setScrub({ letter, y: nearest.offsetTop + nearest.offsetHeight / 2 });
+    jump(letter);
+  }
+
+  function startScrub(event: PointerEvent<HTMLElement>) {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    // No text selection, focus change or page scroll while the finger is down.
+    event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    scrubbing.current = null;
+    scrubTo(event.clientY);
+  }
+
+  function endScrub() {
+    scrubbing.current = null;
+    setScrub(null);
   }
 
   const renderOption = (item: Option) => {
@@ -259,10 +298,30 @@ export function CarrierPickerSheet({
           </div>
           {results?.length === 0 && <p className="carrier-picker__empty" role="status">{t('picker.empty', { query: trimmed })}</p>}
           {!results && (
-            <nav className="carrier-picker__rail" aria-label={t('picker.jump')}>
+            <nav
+              ref={rail}
+              className="carrier-picker__rail"
+              aria-label={t('picker.jump')}
+              onPointerDown={startScrub}
+              onPointerMove={(event) => { if (scrub) scrubTo(event.clientY); }}
+              onPointerUp={endScrub}
+              onPointerCancel={endScrub}
+              onLostPointerCapture={endScrub}
+            >
               {letters.map((section) => (
-                <button key={section.letter} type="button" tabIndex={-1} onClick={() => jump(section.letter)}>{section.letter}</button>
+                <button
+                  key={section.letter}
+                  type="button"
+                  tabIndex={-1}
+                  data-letter={section.letter}
+                  className={scrub?.letter === section.letter ? 'is-current' : undefined}
+                  // A press already jumped; this click is an assistive technology's activation.
+                  onClick={(event) => { if (event.detail === 0) jump(section.letter); }}
+                >
+                  {section.letter}
+                </button>
               ))}
+              {scrub && <span className="carrier-picker__bubble" style={{ top: scrub.y }} aria-hidden="true">{scrub.letter}</span>}
             </nav>
           )}
         </div>
