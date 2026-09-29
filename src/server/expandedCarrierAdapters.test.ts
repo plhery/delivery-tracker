@@ -21,7 +21,6 @@ const cases = [
   { carrier: 'ontrac', number: '1LS0000000000001', fixture: 'delivered.json' },
   { carrier: 'blue-dart', number: '00000000001', fixture: 'delivered.html' },
   { carrier: 'delhivery', number: '0000000000001', fixture: 'delivered.json' },
-  { carrier: 'aramex', number: '00000000001', fixture: 'delivered.html', unresolved: true },
   { carrier: 'four-px', number: '4PX0000000000001CN', fixture: 'delivered.json', unresolved: true },
   { carrier: 'singapore-post', number: 'CZ000000005SG', fixture: 'speedpost.json', unresolved: true },
   { carrier: 'korea-post', number: 'EE000000005KR', fixture: 'delivered.html', unresolved: true },
@@ -177,9 +176,6 @@ function setup(entry: typeof cases[number], transform = (body: string) => body) 
       if (String(url).includes('/app/index.php')) return new Response('<html>Tracking</html>');
       if (String(url).includes('/securimage_show.php')) return new Response('synthetic image', { headers: { 'content-type': 'image/png' } });
     }
-    if (entry.carrier === 'aramex' && String(url).includes('/track/shipments')) {
-      return new Response(`<a class="shipment-card" href="/track/details?q=synthetic"><div class="shipment-num"><h5>${entry.number}</h5></div></a>`);
-    }
     return new Response(body, { headers: { 'content-type': entry.carrier === 'brt' ? 'text/html; charset=utf-8' : 'text/plain; charset=utf-8' } });
   });
   const trawl = entry.carrier === 'yunexpress' ? { scrape: vi.fn().mockResolvedValue({
@@ -201,7 +197,7 @@ describe('expanded direct coverage through the host', () => {
     const result = await test.adapter.fetch(entry.carrier, entry.number, null);
     expect(result.events?.length).toBeGreaterThan(0);
     expect(result).not.toHaveProperty('tracking_provider');
-    expect(test.fetcher).toHaveBeenCalledTimes(['yunexpress', 'ukrposhta'].includes(entry.carrier) ? 0 : ['aramex', 'spring-gds', 'poczta-polska', 'estafeta', 'relais-colis'].includes(entry.carrier) ? 2 : ['correios-br', 'yunda', 'nacex'].includes(entry.carrier) ? 3 : 1);
+    expect(test.fetcher).toHaveBeenCalledTimes(['yunexpress', 'ukrposhta'].includes(entry.carrier) ? 0 : ['spring-gds', 'poczta-polska', 'estafeta', 'relais-colis'].includes(entry.carrier) ? 2 : ['correios-br', 'yunda', 'nacex'].includes(entry.carrier) ? 3 : 1);
   });
 
   it.each(cases.filter(entry => entry.unresolved))('$carrier saves unresolved direct dates while using dated provider progress', async entry => {
@@ -272,11 +268,11 @@ describe('expanded direct coverage through the host', () => {
     } });
   });
 
-  it.each(['ontrac', 'aramex'])('%s asks providers when the current scan has no clock at all', async carrier => {
+  it('OnTrac asks providers when the current scan has no clock at all', async () => {
     vi.spyOn(observability, 'reportRoutingEvent').mockImplementation(() => undefined);
+    const carrier = 'ontrac';
     const entry = cases.find(entry => entry.carrier === carrier)!;
     const test = setup(entry, body => {
-      if (carrier === 'aramex') return body.replaceAll(/<span class="(?:date|time)">[^<]*<\/span>/g, '');
       const payload = JSON.parse(body);
       delete payload.Packages[0].Events[0].ZonedEventDateTime;
       return JSON.stringify(payload);

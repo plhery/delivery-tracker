@@ -1,28 +1,23 @@
 # Aramex
 
-Reads domestic and international shipment histories from the official tracking portal.
+Automatic lookups use the universal providers. The official portal returns HTTP 403 to
+the production server and GitHub runners, so the direct adapter is available only for
+explicit tests. See [routing](../../../../docs/ROUTING.md) for provider selection.
 
-## How it works
+## Direct adapter
 
-An anonymous overview request returns a shipment card. Its matching number binds a signed
-detail link, which is followed once on the same host. The detail page must independently
-return the requested shipment number. No account, cookie bootstrap or browser is needed.
-The portal may redirect that link once to a regional English tracking page; the signed
-query must remain unchanged.
-
-## Notes
-
-The parser reads actual history rows, excluding the progress rail and recipient details.
-Cross-border dates have no offsets, so they remain local wall times. Invalid dates retain
-their text, and incomplete scan rows fail the lookup. The app archives this
-direct evidence and asks providers for a timestamped timeline before using it as a fallback.
+An anonymous overview page binds a signed detail link to the requested number. The
+detail page must return that number again. The parser reads history rows without the
+progress rail or recipient details. Cross-border dates have no offsets, so they remain
+local wall times; incomplete rows fail the lookup.
 
 ## Limitations
 
-The portal's local dates cannot establish freshness against another source. Signed links
-are obtained anew for each lookup and are not stored in the result.
+Universal providers may lack domestic Aramex history. Postal Ninja is an opt-in
+alternative, described in the [provider README](../../providers/postal-ninja/README.md).
 
 ## Testing
 
-`npm run test:carriers:live -- packages/carriers/carriers/aramex`. Set
-`ARAMEX_TRACKING_NUMBER` to check an authorized real shipment.
+Run `npm run test:carriers:live -- packages/carriers/carriers/aramex` with
+`ARAMEX_DIRECT_LIVE=1` from a network that can reach the official portal. Set
+`ARAMEX_TRACKING_NUMBER` to also check an authorized real shipment.

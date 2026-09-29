@@ -174,7 +174,7 @@ export const REGISTRY: RegistryDefinition = {
     "amazon-logistics": null,
     "amazon-shipping": "amazon-shipping",
     "an-post": "universal",
-    "aramex": "aramex",
+    "aramex": "universal",
     "asendia": "asendia",
     "australia-post": "australia-post",
     "austrian-post": "austrian-post",

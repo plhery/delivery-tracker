@@ -3604,7 +3604,7 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "aramex"
+      "adapter": "universal"
     },
     "canaryUrl": "https://www.aramex.com/us/en/track/shipments",
     "linkRules": [

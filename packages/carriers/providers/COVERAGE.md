@@ -64,7 +64,7 @@ statuses map correctly.
 | [Austrian Post](../carriers/austrian-post/README.md) | Yes | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 9 | N/A |
 | [PostNord](../carriers/postnord/README.md) | Yes | ✓ 6 | ✓ 6 | ✓ 6 | ✓ 6 | ✓ 7 | No history |
 | [TNT](../carriers/tnt/README.md) | Yes | No history; alternate ✓ 1 | No history | No history | No history | No history | N/A |
-| [Aramex](../carriers/aramex/README.md) | Yes | No history; alternate ✓ 26 | No history | No history | No history | ✓ 16 | N/A |
+| [Aramex](../carriers/aramex/README.md) | Disabled | Blocked | No history | No history | No history | ✓ 16 | N/A |
 | [YunExpress](../carriers/yunexpress/README.md) | Yes (browser) | ✓ 23 | ✓ 14 | ✓ 15 | ✓ 14 | ✓ 15 | N/A |
 | [4PX](../carriers/four-px/README.md) | Yes | ✓ 26 | ✓ 25 | ✓ 26 | ✓ 26 | ✓ 26 | N/A |
 | [Yanwen](../carriers/yanwen/README.md) | Yes | ✓ 29 | ✓ 1 | ✓ 29 | ✓ 29 | No history | No history |
@@ -229,9 +229,9 @@ By carrier:
   slider. The adapter matches a bounded PNG outline to a unique gap and submits once;
   uncertain matches remain challenges. Anonymous history is partial; the full
   timeline needs login. Empty identity maps are inconclusive.
-- **Aramex:** a domestic delivery in the UAE had 16 undated rows in Postal Ninja only. An
-  international shipment had the same 26 rows in Ship24, 17TRACK and Postal Ninja, and
-  none in ParcelsApp. The direct portal returns those 26 rows as local wall times.
+- **Aramex:** the direct portal blocks unattended requests from the production server.
+  An international shipment appeared in Ship24, 17TRACK and Postal Ninja, while a
+  domestic delivery in the UAE appeared only in Postal Ninja.
 - **Planzer:** the direct adapter reads the `reference.shipment` numbers Planzer prints,
   stored with or without the dot, and returns 4 to 6 rows for the three public
   references. No aggregator knows Planzer.
