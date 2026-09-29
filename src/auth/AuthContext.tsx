@@ -66,6 +66,12 @@ function configuredClient(config: AuthConfig | null, storage: SessionStorage | n
   };
 }
 
+/** A page opened by a sign-in link or a Google/Apple return, which the SDK exchanges for a session. */
+function signInRedirect(): boolean {
+  return typeof window !== 'undefined' && (/[?&](code|error)=/.test(window.location.search)
+    || /(access_token|error)=/.test(window.location.hash));
+}
+
 /** The saved sign-in, read without the network; the SDK verifies and refreshes it separately. */
 function savedSession(storage: SessionStorage | null): Session | null {
   if (!storage) return null;
@@ -122,6 +128,9 @@ export function AuthProvider({
   const logout = useRef<Promise<void> | null>(null);
   const { locale } = useI18n();
   const savedLocale = useRef<string | null>(null);
+  // The SDK also says SIGNED_IN when it restores a saved session. A sign-in is
+  // complete only after a code entered here or a sign-in redirect.
+  const signingIn = useRef(signInRedirect());
   const [state, setState] = useState<Pick<AuthState, 'status' | 'user' | 'accessToken' | 'signal'>>(
     () => ({ ...(client ? { status: 'loading' as const, user: null, accessToken: null }
       : sessionState(null, null)), signal: initialController.signal }),
@@ -142,8 +151,7 @@ export function AuthProvider({
   // hold the first screen on a token refresh, or on its retries while offline.
   // Sign-in redirects exchange a new session and must not show the previous one.
   useLayoutEffect(() => {
-    if (!client || /[?&](code|error)=/.test(window.location.search)
-      || /(access_token|error)=/.test(window.location.hash)) return;
+    if (!client || signInRedirect()) return;
     const session = savedSession(storage);
     if (session) acceptSession(session);
   }, [client, storage, acceptSession]);
@@ -164,7 +172,10 @@ export function AuthProvider({
     });
     let signedIn = false;
     const { data: listener } = client.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session && !signedIn) trackAction('sign-in-complete', 'success');
+      if (event === 'SIGNED_IN' && session && !signedIn && signingIn.current) {
+        signingIn.current = false;
+        trackAction('sign-in-complete', 'success');
+      }
       signedIn = Boolean(session);
       observedSession = true;
       if (active && !logout.current) accept(session, event);
@@ -225,12 +236,13 @@ export function AuthProvider({
     if (!client) throw new Error('Authentication is not configured');
     await logout.current;
     storage?.allowSignIn();
+    signingIn.current = true;
     const { data, error } = await client.auth.verifyOtp({
       email,
       token: code,
       type: 'email',
     });
-    if (error) { trackAction('sign-in-code-verify', 'error'); throw error; }
+    if (error) { signingIn.current = false; trackAction('sign-in-code-verify', 'error'); throw error; }
     trackAction('sign-in-code-verify', 'success');
     if (!data.session) throw new Error('The sign-in code did not create a session');
     acceptSession(data.session);
