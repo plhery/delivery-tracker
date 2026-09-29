@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import timers from 'node:timers/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TrawlClient } from '../../core/transport';
-import { carrierErrorKind } from '../../core/errors';
+import { carrierErrorKind, NoHistoryError } from '../../core/errors';
 import type { LookupRecord, StepRecord, StepRecorder } from '../../core/telemetry';
 import { ParcelsAppTracker, parseParcelsAppHtml, parseParcelsAppResponse } from './adapter';
 
@@ -405,6 +405,7 @@ describe('ParcelsApp direct lookup', () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(reply(payload));
     const error = await new ParcelsAppTracker({ fetcher, trawl: new TrawlClient('http://browser.test', fetcher) }).fetch(number).catch((error: unknown) => error);
     expect(carrierErrorKind(error)).toBe('indeterminate');
+    expect(error).toBeInstanceOf(NoHistoryError);
     expect(fetcher).toHaveBeenCalledOnce();
   });
 

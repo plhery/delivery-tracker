@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BudgetExceededError, CarrierError, ChallengeError, IndeterminateError, InputRequiredError, MaintenanceError,
-  NotFoundError, RateLimitedError, SchemaError, TransportError, UpstreamHttpError, UpstreamNetworkError,
+  NoHistoryError, NotFoundError, RateLimitedError, SchemaError, TransportError, UpstreamHttpError, UpstreamNetworkError,
   carrierErrorKind, errorTypeOf, retryAfterMsOf,
 } from './index';
 
@@ -9,6 +9,9 @@ describe('carrier error taxonomy', () => {
   it('gives every kind a stable name, kind and HTTP-like status', () => {
     expect(new NotFoundError('CTT')).toMatchObject({ name: 'NotFoundError', kind: 'not_found', status: 404, provider: 'CTT' });
     expect(new IndeterminateError('Colisweb')).toMatchObject({ kind: 'indeterminate', status: 502 });
+    // Routing reads no history as an indeterminate answer; only the health samples tell it apart.
+    expect(new NoHistoryError('ParcelsApp')).toMatchObject({ name: 'NoHistoryError', kind: 'indeterminate', status: 502 });
+    expect(new NoHistoryError('ParcelsApp')).toBeInstanceOf(IndeterminateError);
     expect(new ChallengeError('UPS')).toMatchObject({ kind: 'challenge', status: 403 });
     expect(new RateLimitedError('Ship24', 30_000)).toMatchObject({ kind: 'rate_limited', status: 429, retryAfterMs: 30_000 });
     expect(new MaintenanceError('CTT')).toMatchObject({ kind: 'maintenance', status: 503 });

@@ -104,9 +104,9 @@ describe('Postal Ninja TRAWL capture', () => {
     const noInfo = { ...found, track: { ...found.track, state: 'NO_INFO', events: [] } };
     for (const [entries, expected] of [
       [[entry({status: 'CHLNG_REQ', tc: number}, check)], {kind: 'challenge'}],
-      [[entry({status: 'UNTRACEABLE', tc: number}, check)], {kind: 'indeterminate'}],
+      [[entry({status: 'UNTRACEABLE', tc: number}, check)], {kind: 'indeterminate', name: 'NoHistoryError'}],
       [[entry({status: 'PROCESSING', tc: number, hid: found.hid}, check), entry({status: 'CHLNG_REQ', hid: found.hid})], {kind: 'challenge'}],
-      [[entry({...noInfo, inProgress: true}), entry(noInfo)], {kind: 'indeterminate'}],
+      [[entry({...noInfo, inProgress: true}), entry(noInfo)], {kind: 'indeterminate', name: 'NoHistoryError'}],
       [[entry(null, check, 429)], {status: 429, retryAfterMs: 60_000}],
     ] as const) {
       await expect(setup(captured([...entries])).tracker.fetch(number)).rejects.toMatchObject(expected);

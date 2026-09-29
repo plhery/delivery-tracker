@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import { NoHistoryError } from '@carriers/core/errors';
+import { TrackingCaptureError } from '@carriers/providers/shared/capture';
 import { healthMessage, healthStepRecorder, observeTrackingHealth, type HealthSample } from './trackingHealth';
 import { TrackingSyncAudit } from './trackingAudit';
 import type { SupabaseServiceClient } from './supabase';
@@ -37,6 +39,22 @@ describe('tracking health evidence', () => {
     expect([...samples.values()]).toEqual([
       expect.objectContaining({ kind: 'direct', healthy: true, details: expect.objectContaining({ category: 'input_required' }) }),
       expect.objectContaining({ kind: 'provider', healthy: true, details: expect.objectContaining({ category: 'not_found' }) }),
+    ]);
+  });
+
+  it('counts a provider with no history for a new parcel as an answer, and a capture failure as a failure', async () => {
+    const samples = new Map<string, HealthSample>();
+    const noHistory = new NoHistoryError('Postal Ninja', 'Postal Ninja has no available tracking history');
+    await observeTrackingHealth(samples, async () => {
+      healthStepRecorder.lookup({ carrier: 'Postal Ninja', finalStep: 'trawl', outcome: 'indeterminate',
+        errorType: 'NoHistoryError', durationMs: 900, attempts: 1, error: new Error('lookup failed', { cause: noHistory }) });
+      healthStepRecorder.lookup({ carrier: '17TRACK', finalStep: 'trawl', outcome: 'indeterminate',
+        errorType: 'TrackingCaptureError', durationMs: 900, attempts: 1, error: new TrackingCaptureError('capture_missing', '17TRACK') });
+    });
+    expect([...samples.values()]).toEqual([
+      expect.objectContaining({ subject: 'Postal Ninja', healthy: true,
+        details: expect.objectContaining({ category: 'not_found', error_type: 'NoHistoryError' }) }),
+      expect.objectContaining({ subject: '17TRACK', healthy: false, details: expect.objectContaining({ category: 'indeterminate' }) }),
     ]);
   });
 

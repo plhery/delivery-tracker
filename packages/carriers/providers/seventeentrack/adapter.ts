@@ -11,7 +11,7 @@ import 'server-only';
  * verification wall from an outage.
  */
 import type { AdapterFactory } from '../../core/adapter';
-import { ChallengeError, IndeterminateError, NotFoundError, SchemaError, TransportError } from '../../core/errors';
+import { ChallengeError, NoHistoryError, NotFoundError, SchemaError, TransportError } from '../../core/errors';
 import { runSteps } from '../../core/runner';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import type { StepRecorder } from '../../core/telemetry';
@@ -42,7 +42,7 @@ export class SeventeenTrackLookupError extends TransportError {
 }
 
 /** A matching code-400/null-shipment reply supplies no history, not a network failure or a proven invalid number. */
-export class SeventeenTrackNoHistoryError extends IndeterminateError {
+export class SeventeenTrackNoHistoryError extends NoHistoryError {
   readonly reason = 'no_history';
   readonly providerCode = 400;
 

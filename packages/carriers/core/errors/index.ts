@@ -75,6 +75,17 @@ export class IndeterminateError extends CarrierError {
   }
 }
 
+/**
+ * A universal provider looked the number up and has no history for it yet (not
+ * announced, not handed over). An answer about the parcel, not an outage.
+ */
+export class NoHistoryError extends IndeterminateError {
+  constructor(provider: string, message = `${provider} has no history for the shipment`, options?: CarrierErrorOptions) {
+    super(provider, message, options);
+    this.name = 'NoHistoryError';
+  }
+}
+
 export class ChallengeError extends CarrierError {
   constructor(provider: string, message = `${provider} requires a browser challenge`, options?: CarrierErrorOptions) {
     super('challenge', provider, message, options);

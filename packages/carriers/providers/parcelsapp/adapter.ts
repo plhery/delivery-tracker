@@ -15,7 +15,7 @@ import timers from 'node:timers/promises';
 import type { AdapterFactory } from '../../core/adapter';
 import { carrierTimezone } from '../../core/catalog';
 import { brandTimeZones, carrierIdFromName, carrierNameCountryZone } from '../../core/catalog/hints';
-import { carrierErrorKind, ChallengeError, IndeterminateError, InputRequiredError, SchemaError, UpstreamHttpError, UpstreamNetworkError } from '../../core/errors';
+import { carrierErrorKind, ChallengeError, IndeterminateError, InputRequiredError, NoHistoryError, SchemaError, UpstreamHttpError, UpstreamNetworkError } from '../../core/errors';
 import { runSteps } from '../../core/runner';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import type { StepRecorder } from '../../core/telemetry';
@@ -87,7 +87,7 @@ function scanZone(payload: Record<string, unknown>, state: Record<string, unknow
 function parseHistory(payload: unknown, trackingNumber: string, timezone: string | null = null): CarrierResult {
   if (isRecord(payload) && payload.error === 'RELOAD') throw new ChallengeError(SOURCE);
   if (isRecord(payload) && (payload.error === 'NO_DATA' || payload.error === 'NO_TRACKER')) {
-    throw new IndeterminateError(SOURCE, 'ParcelsApp has no usable shipment history');
+    throw new NoHistoryError(SOURCE, 'ParcelsApp has no usable shipment history');
   }
   if (!isRecord(payload) || payload.error || !Array.isArray(payload.states) || payload.states.length > MAX_EVENTS) {
     throw new SchemaError(SOURCE, 'ParcelsApp lookup unavailable');
@@ -115,6 +115,8 @@ function parseHistory(payload: unknown, trackingNumber: string, timezone: string
     if (fields.some((field: unknown) => isRecord(field) && field.name === 'zipcode')) {
       throw new InputRequiredError(SOURCE, 'postcode', 'ParcelsApp requires a valid delivery postcode or further recipient information');
     }
+    // An empty history is the NO_DATA answer; states that don't parse are not an answer.
+    if (!payload.states.length) throw new NoHistoryError(SOURCE, 'ParcelsApp has no usable shipment history');
     throw new IndeterminateError(SOURCE, 'No usable tracking events');
   }
   // The carriers ParcelsApp aggregated for this number ("DPD Group"), as

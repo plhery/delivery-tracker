@@ -1,5 +1,6 @@
 import 'server-only';
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { CarrierError, NoHistoryError } from '@carriers/core/errors';
 import type { LookupRecord, StepRecord } from '@carriers/core/telemetry';
 import type { JsonObject } from './types';
 
@@ -17,14 +18,26 @@ const observations = new AsyncLocalStorage<Map<string, HealthSample>>();
  */
 const answered = new Set(['ok', 'not_found', 'input_required']);
 
-function details(record: StepRecord | LookupRecord): JsonObject {
+/**
+ * A provider with no history for a number yet has answered, like not-found
+ * (routing treats it the same way). Counted as a failure, every parcel added
+ * before its first scan looked like a provider outage.
+ */
+function category(record: StepRecord | LookupRecord): string {
+  let current = record.error;
+  for (let depth = 0; current instanceof Error && depth < 8; depth++, current = current.cause) {
+    if (current instanceof CarrierError) return current instanceof NoHistoryError ? 'not_found' : record.outcome;
+  }
+  return record.outcome;
+}
+function details(record: StepRecord | LookupRecord, outcome: string): JsonObject {
   let status: number | null = null;
   let current = record.error;
   for (let depth = 0; current instanceof Error && depth < 8; depth++, current = current.cause) {
     const value = (current as Error & { status?: unknown }).status;
     if (typeof value === 'number' && value >= 100 && value <= 599) status = value;
   }
-  return { error_type: record.errorType, category: record.outcome, http_status: status,
+  return { error_type: record.errorType, category: outcome, http_status: status,
     step: 'step' in record ? record.step : record.finalStep };
 }
 function save(kind: 'provider' | 'direct', record: StepRecord | LookupRecord): void {
@@ -34,7 +47,8 @@ function save(kind: 'provider' | 'direct', record: StepRecord | LookupRecord): v
   const previous = store.get(key);
   // A retry cannot count as another lookup or erase the original failed direct attempt.
   if (previous && !previous.healthy) return;
-  store.set(key, { kind, subject: record.carrier.slice(0, 100), healthy: answered.has(record.outcome), details: details(record) });
+  const outcome = category(record);
+  store.set(key, { kind, subject: record.carrier.slice(0, 100), healthy: answered.has(outcome), details: details(record, outcome) });
 }
 export const healthStepRecorder = {
   step(record: StepRecord) { if (record.step === 'direct') save('direct', record); },

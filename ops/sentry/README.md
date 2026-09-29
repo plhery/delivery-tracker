@@ -20,8 +20,9 @@ failure that recovers never opens an issue. See [OBSERVABILITY.md](../../docs/OB
 - A direct failure rescued by the browser counts as a failed *direct* sample and a
   successful *provider* sample. A carrier with only a direct step records the provider
   sample alone, so one outage opens one incident.
-- Missing input and genuine not-found are healthy. They count toward recovery, never toward
-  an outage.
+- Missing input, genuine not-found and a provider's answer that it has no history for the
+  number yet are healthy. They count toward recovery, never toward an outage, so a parcel
+  added before its first scan can't open a provider incident.
 - A step skipped during a cooldown is not a success. A check that contacted nobody because
   everything was cooling down records nothing.
 - A parcel whose own carrier says not-found stays `waiting` even if every fallback fails.

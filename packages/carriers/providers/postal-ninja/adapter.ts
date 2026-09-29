@@ -12,7 +12,7 @@ import 'server-only';
  */
 import { DateTime } from 'luxon';
 import type { AdapterFactory } from '../../core/adapter';
-import { ChallengeError, IndeterminateError, SchemaError } from '../../core/errors';
+import { ChallengeError, NoHistoryError, SchemaError } from '../../core/errors';
 import { runSteps } from '../../core/runner';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import type { StepRecorder } from '../../core/telemetry';
@@ -101,12 +101,12 @@ export class PostalNinjaTracker {
         return new ChallengeError(SOURCE, 'Postal Ninja browser verification did not complete');
       }
       if (payload.status === 'UNTRACEABLE' && payload.tc === number) {
-        return new IndeterminateError(SOURCE, 'Postal Ninja cannot track this number');
+        return new NoHistoryError(SOURCE, 'Postal Ninja cannot track this number');
       }
       if (payload.status === 'FOUND' && isRecord(payload.track) && payload.track.tc === number
         && typeof payload.hid === 'string' && payload.hid && payload.track.hid === payload.hid
         && payload.track.state === 'NO_INFO' && !payload.inProgress) {
-        return new IndeterminateError(SOURCE, 'Postal Ninja has no available tracking history');
+        return new NoHistoryError(SOURCE, 'Postal Ninja has no available tracking history');
       }
     };
     return runSteps({ carrier: SOURCE, budgetMs: timeoutMs, recorder: this.options.recorder }, [{
