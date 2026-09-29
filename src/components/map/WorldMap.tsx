@@ -13,7 +13,7 @@ type Shape = 'rect' | 'circle';
 type Look = 'map' | 'tint';
 
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
-const COLORS = ['space', 'ocean', 'land', 'visited', 'border', 'night', 'grid', 'limb', 'shade', 'glow'] as const;
+const COLORS = ['space', 'ocean', 'land', 'visited', 'border', 'night', 'grid', 'limb', 'shade'] as const;
 type Palette = Record<(typeof COLORS)[number], string>;
 const graticule = geoGraticule().step([30, 30])();
 const LABEL_FONT = '500 11.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
@@ -24,7 +24,6 @@ const RESTING_CENTER: Coordinate = [8.2, 42];
 export function WorldMap({
   route, mode, shape = 'rect', insets = NO_INSETS, look = 'map', labels = 'all', context = true, interactive = false, night = false,
   time, redrawKey = '', recenter = 0, onFreeChange, className = '', style, label, languageTag = 'en', live = true, peek = false,
-  focus, selected,
 }: {
   route: Route;
   mode: MapMode;
@@ -54,10 +53,6 @@ export function WorldMap({
   live?: boolean;
   /** Pinching zooms for a moment; the map settles back when the fingers lift. */
   peek?: boolean;
-  /** Frames these places instead of the journey or the close-up. */
-  focus?: readonly Coordinate[];
-  /** A stop to single out, by id: ringed, and always named. */
-  selected?: string;
 }) {
   const ready = useWorld();
   const root = useRef<HTMLDivElement>(null);
@@ -91,8 +86,8 @@ export function WorldMap({
   }, []);
 
   const { top, right, bottom, left } = insets;
-  const target = useMemo(() => ready && size ? targetCamera(route, mode, size, { top, right, bottom, left }, shape, focus) : null,
-    [ready, route, mode, size, top, right, bottom, left, shape, focus]);
+  const target = useMemo(() => ready && size ? targetCamera(route, mode, size, { top, right, bottom, left }, shape) : null,
+    [ready, route, mode, size, top, right, bottom, left, shape]);
 
   // Only a change of view, or recentering, brings a moved map back; a new frame or scan leaves it where it was put.
   useEffect(() => {
@@ -102,7 +97,7 @@ export function WorldMap({
   useEffect(() => {
     if (!target || !size || free.current) return;
     const from = current.current;
-    // A new route framed the same way, such as a replay drawing itself, needs no flight.
+    // A new scan that frames the map the same way needs no flight, which would hide the names while it runs.
     if (from && sameCamera(from, target)) return;
     const interpolate = from && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
       ? interpolateCamera(from, target, Math.max(size.width, size.height)) : null;
@@ -160,7 +155,7 @@ export function WorldMap({
     draw(canvas.current, size, camera, readPalette(probes.current), route, night ? time : null, circle);
   }, [camera, size, route, time, night, shape, look, redrawKey, top, right, bottom, left]);
 
-  const overlay = camera && size ? layout(route, camera, size, insets, shape, labels, mode, context, languageTag, selected) : null;
+  const overlay = camera && size ? layout(route, camera, size, insets, shape, labels, mode, context, languageTag) : null;
   const circle = shape === 'circle' && size ? circleOf(size, insets) : null;
 
   function local(event: PointerEvent<HTMLDivElement>): [number, number] {
@@ -258,7 +253,6 @@ export function WorldMap({
           pathLength={leg.kind === 'travelled' ? 1 : undefined} />)}
         {overlay.dots.map(dot => <g key={dot.id} className={styles.dot} data-kind={dot.kind} transform={`translate(${dot.x} ${dot.y})`}>
           {dot.kind === 'current' && live && <circle className={styles.halo} r="5" />}
-          {dot.selected && <circle className={styles.ring} r="9" />}
           <circle r={dot.kind === 'current' ? 5 : dot.kind === 'origin' ? 3.5 : dot.kind === 'stop' ? 2.6 : 4.5} />
         </g>)}
       </g>
@@ -307,7 +301,7 @@ export function circleOf(size: Size, insets: Insets) {
   return { x: insets.left + width / 2, y: insets.top + height / 2, radius: Math.min(width, height) / 2 };
 }
 
-export function targetCamera(route: Route, mode: MapMode, size: Size, insets: Insets, shape: Shape, focus?: readonly Coordinate[]): Camera {
+export function targetCamera(route: Route, mode: MapMode, size: Size, insets: Insets, shape: Shape): Camera {
   let box: Box;
   if (shape === 'circle') {
     const { x, y, radius } = circleOf(size, insets);
@@ -325,11 +319,6 @@ export function targetCamera(route: Route, mode: MapMode, size: Size, insets: In
   }
   const current = route.current?.place.coordinate;
   const destination = route.destination?.coordinate;
-  if (focus?.length) {
-    let extent = 0;
-    for (const a of focus) for (const b of focus) extent = Math.max(extent, distanceKm(a, b));
-    return fitCamera(focus, box, { shape, minSpanKm: focus.length === 1 ? 260 : extent > 2500 ? 400 : 300, tilt: extent > 2500 });
-  }
   if (mode === 'now' && current) {
     const points = [...route.near.map(stop => stop.place.coordinate)];
     if (destination && distanceKm(destination, current) < NEAR_KM) points.push(destination);
@@ -400,19 +389,6 @@ function draw(canvas: HTMLCanvasElement, size: Size, camera: Camera, palette: Pa
   }
   context.fillStyle = palette.space;
   context.fillRect(0, 0, size.width, size.height);
-  if (globe > 0 && !transparent(palette.glow)) {
-    // An atmosphere: light that fades out just past the rim.
-    const [x, y] = camera.offset;
-    const gradient = context.createRadialGradient(x, y, camera.scale * .96, x, y, camera.scale * 1.22);
-    gradient.addColorStop(0, palette.glow);
-    gradient.addColorStop(1, 'transparent');
-    context.globalAlpha = globe;
-    context.fillStyle = gradient;
-    context.beginPath();
-    context.arc(x, y, camera.scale * 1.22, 0, Math.PI * 2);
-    context.fill();
-    context.globalAlpha = 1;
-  }
   context.beginPath();
   path({ type: 'Sphere' });
   context.fillStyle = palette.ocean;
@@ -504,7 +480,7 @@ function draw(canvas: HTMLCanvasElement, size: Size, camera: Camera, palette: Pa
 
 interface Overlay {
   legs: { id: string; d: string; kind: 'travelled' | 'approximate' | 'remaining' }[];
-  dots: { id: string; x: number; y: number; kind: 'origin' | 'stop' | 'current' | 'last-known' | 'area' | 'destination'; selected?: boolean }[];
+  dots: { id: string; x: number; y: number; kind: 'origin' | 'stop' | 'current' | 'last-known' | 'area' | 'destination' }[];
   labels: { id: string; x: number; y: number; text: string; kind: 'current' | 'end' | 'stop' | 'area' | 'context' | 'city' }[];
   pointers: { id: string; x: number; y: number; angle: number; text: string; detail: string }[];
 }
@@ -518,7 +494,7 @@ function textWidth(text: string): number {
 }
 
 function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape: Shape, labels: 'all' | 'ends' | 'none', mode: MapMode,
-  context: boolean, languageTag: string, selected?: string): Overlay {
+  context: boolean, languageTag: string): Overlay {
   const project = projection(camera).clipExtent([[-400, -400], [size.width + 400, size.height + 400]]);
   const svgPath = geoPath(project);
   const visible = (point: Coordinate) => geoDistance(point, camera.center) < Math.PI / 2 - .02;
@@ -562,8 +538,7 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
     const kind = last ? (route.latestLocated ? 'current' : 'last-known')
       : stop.place.precision === 'country' ? 'area'
         : index === 0 ? 'origin' : 'stop';
-    dots.push({ id: stop.id, x, y, kind: last && stop.place.precision === 'country' && !route.latestLocated ? 'area' : kind,
-      selected: stop.id === selected || undefined });
+    dots.push({ id: stop.id, x, y, kind: last && stop.place.precision === 'country' && !route.latestLocated ? 'area' : kind });
   });
   if (route.destination && visible(route.destination.coordinate)) {
     const [x, y] = at(route.destination.coordinate);
@@ -578,12 +553,8 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
     ...(route.current ? [{ id: route.current.id, place: route.current.place, kind: 'current' as const, priority: 0 }] : []),
     ...(route.destination ? [{ id: 'destination', place: route.destination, kind: 'end' as const, priority: 1 }] : []),
     ...(route.origin && route.origin !== route.current ? [{ id: route.origin.id, place: route.origin.place, kind: 'end' as const, priority: 2 }] : []),
-    ...route.stops.slice(1, -1).map(stop => ({ id: stop.id, place: stop.place, kind: 'stop' as const, priority: stop.id === selected ? 1.5 : 3 })),
-  ].filter(candidate => labels === 'all' || (labels === 'ends' && candidate.priority < 3))
-    // A selected stop is named before the ends; an unnamed place, such as a line's moving tip, never is.
-    .map(candidate => candidate.id === selected ? { ...candidate, priority: .5 } : candidate)
-    .filter(candidate => candidate.place.name)
-    .sort((a, b) => a.priority - b.priority);
+    ...route.stops.slice(1, -1).map(stop => ({ id: stop.id, place: stop.place, kind: 'stop' as const, priority: 3 })),
+  ].filter(candidate => labels === 'all' || (labels === 'ends' && candidate.priority < 3));
   const neighbours = new Map<string, Coordinate[]>(route.stops.map((stop, index) => [stop.id,
     [route.stops[index - 1], route.stops[index + 1]].flatMap(other => other ? [other.place.coordinate] : [])]));
   if (route.current && route.destination) {
@@ -626,7 +597,7 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
       const box = { ...option, width, height };
       return !overlaps(box) && inside([box.x, box.y], 2) && inside([box.x + width, box.y + height], 2)
         && inside([box.x + width, box.y], 2) && inside([box.x, box.y + height], 2);
-    }) ?? (candidate.priority < 1 ? options[0] : null);
+    }) ?? (candidate.priority === 0 ? options[0] : null);
     if (!choice) continue;
     placed.push({ ...choice, width, height });
     labelBoxes.push({ id: candidate.id, x: choice.x, y: choice.y, text, kind: area ? 'area' : candidate.kind });

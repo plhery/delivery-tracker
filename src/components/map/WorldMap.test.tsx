@@ -262,42 +262,15 @@ describe('WorldMap', () => {
     delete (HTMLElement.prototype as Partial<HTMLElement>).setPointerCapture;
   });
 
-  it('frames chosen places, singles out a selected stop and leaves an unnamed tip unlabelled', async () => {
-    const tip = { ...zurich, id: 'tip', name: '' };
-    const route = buildRoute([scan(kyoto), scan(leipzig), scan(tip)]);
-    const { container, rerender } = render(<WorldMap route={route} mode="journey" time={time} labels="ends" />);
-    await waitFor(() => expect(container.querySelectorAll('path[data-kind="travelled"]')).toHaveLength(2));
-    // The moving tip of a line is drawn, but never named.
-    expect(container.querySelector('g[data-kind="current"]')).not.toBeNull();
-    expect(container.querySelector('span[data-kind="current"]')).toBeNull();
-    expect(screen.queryByText('Leipzig')).not.toBeInTheDocument();
-    const leipzigStop = route.stops[1].id;
-    rerender(<WorldMap route={route} mode="journey" time={time} labels="ends" selected={leipzigStop} focus={[leipzig.coordinate]} />);
-    // Selected: ringed and named, even though only the ends are named; framed in the middle.
-    await waitFor(() => expect(screen.getByText('Leipzig')).toBeInTheDocument());
-    const dot = container.querySelector('g[data-kind="stop"]')!;
-    expect(dot.querySelectorAll('circle')).toHaveLength(2);
-    await waitFor(() => {
-      const [x, y] = dot.getAttribute('transform')!.match(/-?[\d.]+/g)!.map(Number);
-      expect(x).toBeCloseTo(200, 0);
-      expect(y).toBeCloseTo(150, 0);
-    });
-  });
-
-  it('glows around the globe only when the look asks for it', async () => {
-    const glow: { color: string } = { color: 'transparent' };
-    const original = window.getComputedStyle.bind(window);
-    vi.spyOn(window, 'getComputedStyle').mockImplementation((element, pseudo) => element instanceof HTMLElement && element.dataset.color
-      ? { color: element.dataset.color === 'glow' ? glow.color : 'rgb(10, 20, 30)' } as CSSStyleDeclaration
-      : original(element, pseudo));
-    const route = buildRoute([scan(kyoto), scan(zurich)]);
-    const { container, rerender } = render(<WorldMap route={route} mode="journey" time={time} redrawKey="plain" />);
-    await waitFor(() => expect(container.querySelector('path[data-kind="travelled"]')).not.toBeNull());
-    const shadeOnly = calls.filter((call) => call === 'createRadialGradient').length;
-    glow.color = 'rgb(80, 140, 255)';
-    calls = [];
-    rerender(<WorldMap route={route} mode="journey" time={time} redrawKey="glow" />);
-    expect(calls.filter((call) => call === 'createRadialGradient').length).toBe(shadeOnly + 1);
+  it('keeps the names in view when a new scan frames the map the same way', async () => {
+    reducedMotion(false);
+    const scans = [scan(kyoto), scan(basel), scan(zurich)];
+    const { rerender } = render(<WorldMap route={buildRoute(scans)} mode="now" time={time} />);
+    expect((await screen.findByText('Kyoto')).parentElement?.textContent).toContain('km');
+    // Another scan at the same place: a new route, the same view, so no flight hides the pointer.
+    rerender(<WorldMap route={buildRoute([...scans, scan(zurich)])} mode="now" time={time} />);
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    expect(screen.getByText('Kyoto').parentElement?.textContent).toContain('km');
   });
 
   it('waits for a size before drawing', async () => {
