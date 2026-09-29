@@ -1,0 +1,58 @@
+{
+  "shipments": [
+    {
+      "provider_id": 7,
+      "shipment_id": 1,
+      "short_tracking_reference": "TESTA1",
+      "parcel_tracking_references": [
+        "DD-000001/1"
+      ],
+      "status": "cancelled",
+      "shipment_time_modified": "2026-01-06T16:00:00Z",
+      "shipment_delivered_date": "2026-01-06T12:00:00Z",
+      "shipment_estimated_delivery_from": "2026-01-01T08:00:00Z",
+      "shipment_estimated_delivery_to": "2026-01-02T16:00:00Z",
+      "recipient_name": "PRIVATE recipient",
+      "tracking_events": [
+        {
+          "parcel_id": 0,
+          "date": "2026-01-06T12:00:00.123456Z",
+          "status": "cancelled",
+          "location": "Example Hub",
+          "message": "PRIVATE cancelled booking"
+        },
+        {
+          "parcel_id": 0,
+          "date": "2026-01-05T10:00:00.123456Z",
+          "status": "collection-failed-attempt",
+          "location": "Example Hub"
+        },
+        {
+          "parcel_id": 0,
+          "date": "2026-01-04T12:00:00.123456Z",
+          "status": "collection-assigned",
+          "location": "Example Hub"
+        },
+        {
+          "parcel_id": 0,
+          "date": "2026-01-03T12:00:00.123456Z",
+          "status": "submitted",
+          "location": "Example Hub"
+        }
+      ],
+      "custom_tracking_reference": "DD-000001"
+    }
+  ],
+  "tracking_steps": [
+    {
+      "step_number": 1,
+      "label": "created",
+      "progress": "done"
+    },
+    {
+      "step_number": 2,
+      "label": "cancelled",
+      "progress": "current"
+    }
+  ]
+}

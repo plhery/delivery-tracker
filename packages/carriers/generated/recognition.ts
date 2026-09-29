@@ -23,6 +23,7 @@ export const CARRIER_RECOGNITION_RANKS: Readonly<Record<string, number>> = {
   "poczta-polska": 31,
   "relais-colis": 25,
   "seur": 43,
+  "the-courier-guy": 29,
   "tnt": 44,
   "uniuni": 33,
 };

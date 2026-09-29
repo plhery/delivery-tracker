@@ -48,8 +48,11 @@ export function parseGofo(payload: unknown, rawNumber: string): CarrierResult {
   const item = entries[0]!;
   if (!Array.isArray(item.trackEventList) || item.trackEventList.length > 500 || !item.trackEventList.every(isRecord)) throw new SchemaError('GOFO');
   if (!item.trackEventList.length) throw new IndeterminateError('GOFO', 'GOFO returned no parcel scans');
-  if (typeof item.trackEventCount !== 'number' || item.trackEventCount !== item.trackEventList.length) {
-    throw new IndeterminateError('GOFO', 'GOFO returned incomplete parcel history');
+  // The public client renders this entire list without paging and does not
+  // use the counter. It can exceed the number of publicly returned scans.
+  if (!Number.isInteger(item.trackEventCount) || Number(item.trackEventCount) < item.trackEventList.length
+    || Number(item.trackEventCount) > 500) {
+    throw new IndeterminateError('GOFO', 'GOFO returned an inconsistent parcel event count');
   }
   const first = item.trackEventList[0]!;
   const summary = item.lastTrackEvent;

@@ -1,5 +1,5 @@
 # Fixtures
 
-`delivered.json` is a synthetic response using the official feed's structure and
-scan vocabulary. Identifiers, clocks, places and private-detail placeholders are
-fictitious.
+The delivered fixtures use the official feed's structure and scan vocabulary for
+the supported parcel formats. Identifiers, clocks, places and private-detail
+placeholders are fictitious.

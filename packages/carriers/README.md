@@ -207,7 +207,7 @@ statuses, timings and network error codes.
 | `uniuni` | UniUni | dedicated | direct | 3 | 3 | 7 | [README](carriers/uniuni/README.md) |
 | `speedx` | SpeedX | universal providers |  | 0 | 5 | 0 |  |
 | `gofo` | GOFO Express | dedicated | direct | 3 | 4 | 7 | [README](carriers/gofo/README.md) |
-| `ecoscooting` | Ecoscooting | dedicated | direct | 3 | 7 | 6 | [README](carriers/ecoscooting/README.md) |
+| `ecoscooting` | Ecoscooting | dedicated | direct | 3 | 7 | 12 | [README](carriers/ecoscooting/README.md) |
 | `tipsa` | TIPSA | universal providers |  | 0 | 2 | 0 |  |
 | `canpar` | Canpar | dedicated | direct | 2 | 5 | 11 | [README](carriers/canpar/README.md) |
 | `spee-dee` | Spee-Dee | universal providers |  | 0 | 3 | 0 |  |

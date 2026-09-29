@@ -18,6 +18,16 @@ final class CarrierCatalogTests: XCTestCase {
             "https://www.mondialrelay.fr/suivi-de-colis/?numeroExpedition=121234567801")
     }
 
+    func testCourierGuyProductTrackingLinks() throws {
+        for (number, native) in [("LD000001", "LD-000001"), ("DD000001", "DD-000001")] {
+            let parcel = Parcel(id: UUID(), trackingNumber: number, label: "Example", carrier: .theCourierGuy,
+                createdAt: "2026-09-10T12:00:00Z", syncStatus: .ok, notificationsMuted: false)
+            let link = try XCTUnwrap(catalog.trackingLinks(for: parcel, language: .en).first)
+            let query = URLComponents(url: link.url, resolvingAgainstBaseURL: false)?.queryItems
+            XCTAssertEqual(query?.first(where: { $0.name == "ref" })?.value, native)
+        }
+    }
+
     func testLinksFollowWorkingUniversalAndReturnToDirectOnRecovery() throws {
         var parcel = Parcel(id: UUID(), trackingNumber: "TEST1234", label: "Test", carrier: .dhl,
             createdAt: "2026-09-10T12:00:00Z", syncStatus: .ok, notificationsMuted: false)

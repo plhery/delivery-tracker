@@ -100,10 +100,10 @@
         "date": "2026-09-29"
       },
       "expect": {
-        "carrier": "unknown",
-        "confidence": "none"
+        "carrier": "ecoscooting",
+        "confidence": "high"
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ecoscooting; no rule matches this shape. Portuguese reference format."
+      "note": "The anonymous native gateway identifies this Portuguese reference as an Ecoscooting parcel."
     },
     {
       "number": "CQ343770772DE",

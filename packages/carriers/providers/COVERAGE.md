@@ -102,7 +102,7 @@ statuses map correctly.
 | [MRW](../carriers/mrw/carrier.json) | No adapter | Not tested | No history | No history | ✓ 1 | No history | N/A |
 | [NACEX](../carriers/nacex/README.md) | Yes | Not tested; alternate ✓ 14 | Error | Error | Error | Error | N/A |
 | [Colis Privé](../carriers/colis-prive/README.md) | Yes (postcode) | Not tested (postcode) | No history | No history | No history | No history | N/A |
-| [Relais Colis](../carriers/relais-colis/README.md) | Yes | Error | No history | ✓ 4 | No history | No history | N/A |
+| [Relais Colis](../carriers/relais-colis/README.md) | Yes | ✓ 4 | No history | ✓ 4 | No history | No history | N/A |
 | [Paack](../carriers/paack/README.md) | Yes (postcode) | Not tested (postcode) | No history | No history | No history | No history | N/A |
 | [Asendia](../carriers/asendia/README.md) | Yes (Asendia USA) | ✓ 5 | ✓ 2 | Error | Error | ✓ 3 | ✓ 2 |
 | [Landmark Global](../carriers/landmark-global/README.md) | Yes | ✓ 14 | ✓ 14 | ✓ 21 | No history | ✓ 21 | N/A |
@@ -112,7 +112,7 @@ statuses map correctly.
 | [Ukrposhta](../carriers/ukrposhta/README.md) | Yes | ✓ 22; alternate ✓ 14 | ✓ 30 | ✓ 33 | ✓ 45 | ✓ 33 | Error |
 | [Estafeta](../carriers/estafeta/README.md) | Yes | ✓ 4 | No history | No history | No history | No history | N/A |
 | [Correos de Chile](../carriers/correos-chile/carrier.json) | No adapter | Not tested | No history | No history | ✓ 13 | No history | No history |
-| [The Courier Guy](../carriers/the-courier-guy/README.md) | Yes | No history; alternate ✓ 13 | No history | No history | No history | No history | N/A |
+| [The Courier Guy](../carriers/the-courier-guy/README.md) | Yes | ✓ 14; alternate ✓ 13 | No history | No history | No history | No history | N/A |
 | [GEODIS](../carriers/geodis/README.md) | Yes | Summary only | No history | Postcode prompt | ✓ 4 | ✓ 2 | N/A |
 | [Dachser](../carriers/dachser/README.md) | Yes (tracking link) | Not tested (link) | No history | No history | No history | No history | N/A |
 | [Old Dominion](../carriers/old-dominion/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Unverified | N/A |
@@ -120,14 +120,14 @@ statuses map correctly.
 | [PostLogistics](../carriers/postlogistics/README.md) | Yes | Unverified | Unverified | Unverified | Unverified | Unverified | N/A |
 | [Hermes Einrichtungs-Service](../carriers/hermes/README.md) | Yes | ✓ 10 | No history | No history | No history | No history | N/A |
 | [Heppner](../carriers/heppner/README.md) | Yes (postcode) | Not tested (postcode) | No history | Wrong carrier | No history | No history | N/A |
-| [Ciblex](../carriers/ciblex/README.md) | Yes | Full barcode unsupported | No history | Postcode prompt | No history | No history | N/A |
+| [Ciblex](../carriers/ciblex/README.md) | Yes | ✓ 7 | No history | Postcode prompt | No history | No history | N/A |
 | [C Chez Vous](../carriers/c-chez-vous/README.md) | Yes | No history | No history | No history | No history | No history | N/A |
 | [Colisweb](../carriers/colisweb/README.md) | Yes | ✓ 2 | Wrong carrier | No history | No history | No history | N/A |
 | [Delivengo](../carriers/delivengo/README.md) | Yes (via La Poste) | No history | No history | No history | No history | No history | No history |
 | [UniUni](../carriers/uniuni/README.md) | Yes | ✓ 6 | ✓ 6 | ✓ 19 | ✓ 6 | ✓ 21 | N/A |
 | [SpeedX](../carriers/speedx/carrier.json) | No adapter | Not tested | No history | No history | ✓ 2 | No history | N/A |
-| [GOFO Express](../carriers/gofo/README.md) | Yes | Error; alternate ✓ 13 | ✓ 14 | ✓ 14 | ✓ 14 | ✓ 14 | N/A |
-| [Ecoscooting](../carriers/ecoscooting/README.md) | Yes | Error; alternate ✓ 14 | ✓ 6 | ✓ 6 | No history | ✓ 22 | N/A |
+| [GOFO Express](../carriers/gofo/README.md) | Yes | ✓ 14 | ✓ 14 | ✓ 14 | ✓ 14 | ✓ 14 | N/A |
+| [Ecoscooting](../carriers/ecoscooting/README.md) | Yes | ✓ 6 | ✓ 6 | ✓ 6 | No history | ✓ 22 | N/A |
 | [TIPSA](../carriers/tipsa/carrier.json) | No adapter | Not tested | No history | ✓ 13 | No history | No history | N/A |
 | [Canpar](../carriers/canpar/README.md) | Yes | ✓ 11 | No history | ✓ 11 | No history | ✓ 11 | N/A |
 
@@ -302,9 +302,9 @@ By carrier:
 - **Colis Privé, Paack:** direct history needs the recipient postcode, which no public
   reference had (Colis Privé stores it after the number). No aggregator knew two current
   references each.
-- **Relais Colis:** the result page for a known parcel does not repeat the number in its
-  search field, which the adapter's identity check requires, so the lookup fails.
-  ParcelsApp had four rows for the newest public reference, an April parcel.
+- **Relais Colis:** the direct adapter binds the result banner and expands grouped scans
+  into the same four rows as ParcelsApp. Invalid sessions and generic endpoint errors do
+  not prove parcel absence; unresolved clocks remain local history.
 - **Asendia:** the A1 feed has the US hub scans of an item with a Swiss postal number;
   Ship24, UPU and Postal Ninja have two or three postal rows. ParcelsApp's reply includes
   an undated scan, which fails the parse. Detection selects Swiss Post, which does not
@@ -321,16 +321,16 @@ By carrier:
   Postal Ninja, and none in 17TRACK or UPU.
 - **Estafeta:** the adapter binds the ten-digit code to one full guide and rejects
   colliding codes and master-piece lists; Mexican clocks remain local. Both forms of the
-  public reference return the same four scans, and no aggregator knew them. Detection's
-  full-guide rule expects fifteen leading digits; the public guide has a letter after
-  twelve.
+  public reference return the same four scans, and no aggregator knew them. Detection
+  also accepts the full guide with a letter after twelve digits.
 - **Correos de Chile:** an item to China had 13 rows in 17TRACK, after one recheck, and
   none elsewhere.
-- **The Courier Guy:** the adapter keeps shipment-level scans without promoting one
-  delivered piece to completion. A Priority Regional waybill returns 13 scans; the
-  newest public waybill, a collection that never happened, and a Pudo locker-to-door
-  waybill are unknown to it. No aggregator knew any of the three, and no detection rule
-  matches the waybills.
+- **The Courier Guy:** native product references preserve their printed separator and
+  bind the exact custom reference to one canonical shipment. The direct feed returns
+  14 scans for the cancelled collection and 13 for the Pudo delivery. Missing piece
+  counts are accepted only for a single-piece cancelled precollection timeline; one
+  delivered piece cannot complete the shipment. Product formats stay low-confidence
+  candidates until native recognition confirms them.
 - **GEODIS:** the anonymous lookup keeps a delivered May parcel's state and departure
   date after its scan list is gone. 17TRACK stamps four milestones with the delivery
   time, and Postal Ninja keeps the departure date.
@@ -345,8 +345,10 @@ By carrier:
   public references stay out of the repository. The Hermes service returns ten
   appointment updates for a September delivery that no aggregator knows; C Chez Vous
   knew neither public reference.
-- **Ciblex:** public reports print the 24-digit label barcode, and the adapter takes the
-  14-digit label number.
+- **Ciblex:** the direct adapter submits the full 24-digit barcode unchanged and binds
+  its exact result banner. It returns seven distinct scans, excludes private annotation and
+  address fields, and preserves unresolved clocks. Shared numeric formats remain
+  low-confidence candidates.
 - **Colisweb:** the direct feed returns an April delivery's confirmation and an undated
   incident.
 - **Delivengo:** the newest public number is a 2024 parcel; no source still has it.
@@ -354,19 +356,20 @@ By carrier:
   rather than the older numeric local clock; unresolved current clocks are kept apart and
   providers are asked for dated progress. Master shipments are inconclusive. Every
   feed holds the same six scans; ParcelsApp and Postal Ninja add translated or repeated
-  rows. Detection misses 16-character numbers such as `UUSC…`.
+  rows. The compact `UUSC` family is supported by detection and native recognition.
 - **SpeedX:** only 17TRACK knew the reference: a label, then "Parcel Void", which it files
   under its generic transit code, so a voided label reads as in transit. A 24-character
   `SPX…` number in another report matches no rule.
-- **GOFO Express:** every aggregator holds the same 14 scans. GOFO's own reply lists those
-  14 but counts 15, and the adapter treats any count mismatch as incomplete; a parcel
-  whose count matches returns 13 scans directly.
-- **Ecoscooting:** current Portuguese references are `CNPRT` plus 20 digits. The adapter
-  accepts only the Spanish 18 digits, although the carrier's gateway returns history for
-  both, and no detection rule claims them. Postal Ninja has the whole journey from
-  SunYou's origin leg (22 rows); Ship24 and ParcelsApp have the six last-mile scans. A
-  Spanish reference returns 14 scans directly. Query errors are inconclusive.
-- **TIPSA:** only ParcelsApp had the Portuguese reference, and it relays TIPSA's Spanish
+- **GOFO Express:** the native client displays the returned event list, whose counter
+  can be larger than its row count. The adapter accepts the 14 listed scans while
+  checking parcel identity, rows and the matching current summary. The aggregators
+  hold the same history.
+- **Ecoscooting:** the direct feed supports Portuguese references and returns six
+  last-mile scans with identity-bound completion wording. Postal Ninja adds SunYou's
+  origin leg; Ship24 and ParcelsApp hold the same last-mile history. Spanish numeric
+  references remain supported. Query errors are inconclusive.
+- **TIPSA:** the native recipient form requires the destination postcode even for a
+  full 22-digit reference. Only ParcelsApp had the Portuguese reference, and it relays TIPSA's Spanish
   labels doubled (`ENTREGADOENTREGADO`). The shared wording rules cover no Spanish or
   Portuguese, so even single labels stay pending and the delivered parcel reads as in
   transit.
@@ -382,8 +385,9 @@ CAPTCHA; STO's old form redirects away. China Post's ordered-character challenge
 Hongkong Post's CAPTCHA remain unsupported. Ninja Van's public endpoint returns
 no usable history. Parcelforce forwards to Royal Mail's disabled direct route. An Post's
 consumer query is challenged, MRW's stateful result asks for recipient phone or SMS
-verification, and SpeedX's anonymous endpoints require verification. Correos de Chile,
-Old Dominion and TIPSA have no adapter yet.
+verification, and SpeedX's anonymous endpoints require verification. Correos de Chile and
+Old Dominion have no adapter yet. TIPSA requires the destination postcode, which
+no public reference supplies.
 
 17TRACK's generic transit code is refined for Swiss Post's exact vehicle-loading
 label. PostNL direct refines its overloaded processing category for the exact
@@ -395,11 +399,10 @@ Detection selects or suggests the named carrier for the public numbers behind ro
 31–100, with these exceptions. Planzer composites stay undetected on purpose (see the
 [Planzer README](../carriers/planzer/README.md)), and DTDC's `Z` numbers share Packeta's
 shape and stay with Packeta. S10 items from Poland, Ukraine and Chile go to the generic
-postal carrier. Paack, Ukrposhta and The Courier Guy have no rule for their own
+postal carrier. Paack and Ukrposhta have no rule for their own
 numbers; Posti, Dachser, Hermes Einrichtungs-Service, Swiss Post Cargo, PostLogistics,
-Colisweb and Delivengo have none by design. Estafeta guides with a letter after
-twelve digits, UniUni's 16-character numbers, SpeedX's 24-character form and
-Ecoscooting's Portuguese numbers match no rule. Each answer is recorded in the
+Colisweb and Delivengo have none by design. SpeedX's 24-character form matches
+no rule. Each answer is recorded in the
 carrier's `numbers.json`.
 
 ## Other carriers

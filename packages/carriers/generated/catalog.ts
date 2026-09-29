@@ -1288,6 +1288,10 @@ export const CARRIER_CATALOG = {
       {
         "pattern": "^\\d{14}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{24}$",
+        "confidence": "low"
       }
     ],
     "aliases": [
@@ -2234,11 +2238,16 @@ export const CARRIER_CATALOG = {
       {
         "pattern": "^\\d{18}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^CNPRT\\d{20}$",
+        "confidence": "high"
       }
     ],
     "trackingUrlTemplate": "https://ecoscooting.com/tracking/{trackingNumber}",
     "countries": [
-      "ES"
+      "ES",
+      "PT"
     ]
   },
   "tipsa": {
@@ -2534,6 +2543,10 @@ export const CARRIER_CATALOG = {
       {
         "pattern": "^4C\\d{9}US$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^UUSC\\d{12}$",
+        "confidence": "high"
       }
     ],
     "trackingUrlTemplate": "https://www.uniuni.com/tracking/?no={trackingNumber}",
@@ -2705,7 +2718,7 @@ export const CARRIER_CATALOG = {
         "confidence": "low"
       },
       {
-        "pattern": "^(?:\\d{22}|\\d{15}[A-Z0-9]{7})$",
+        "pattern": "^(?:\\d{22}|\\d{12}[A-Z]\\d{9}|\\d{15}[A-Z0-9]{7})$",
         "confidence": "low"
       }
     ],
@@ -3730,7 +3743,8 @@ export const CARRIER_CATALOG = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "the-courier-guy"
+      "adapter": "the-courier-guy",
+      "recognitionRank": 29
     },
     "canaryUrl": "https://portal.thecourierguy.co.za/track",
     "linkRules": [
@@ -3745,7 +3759,12 @@ export const CARRIER_CATALOG = {
         ]
       }
     ],
-    "detectionRules": [],
+    "detectionRules": [
+      {
+        "pattern": "^(?:DD|LD)[A-Z0-9]{6}$",
+        "confidence": "low"
+      }
+    ],
     "trackingUrlTemplate": "https://portal.thecourierguy.co.za/track?ref={trackingNumber}",
     "countries": [
       "ZA"

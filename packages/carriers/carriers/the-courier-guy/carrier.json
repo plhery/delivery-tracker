@@ -17,7 +17,8 @@
     "adapter": "the-courier-guy",
     "steps": [
       "direct"
-    ]
+    ],
+    "recognition": { "rank": 29 }
   },
   "capabilities": [
     "history",
@@ -59,5 +60,11 @@
       ]
     }
   ],
-  "detection": []
+  "detection": [
+    {
+      "id": "the-courier-guy-1",
+      "pattern": "^(?:DD|LD)[A-Z0-9]{6}$",
+      "confidence": "low"
+    }
+  ]
 }

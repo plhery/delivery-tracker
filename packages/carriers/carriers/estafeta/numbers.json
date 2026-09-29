@@ -20,7 +20,7 @@
           "estafeta"
         ]
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Estafeta, which stays one candidate among several. Short tracking code of the full guide 502553526650A704483512."
+      "note": "Publicly reported short tracking code; the native single-parcel response pairs it with its full guide. The shape remains ambiguous pending a matching lookup."
     },
     {
       "number": "2806075762",
@@ -52,9 +52,12 @@
       },
       "expect": {
         "carrier": "unknown",
-        "confidence": "none"
+        "confidence": "low",
+        "candidates": [
+          "estafeta"
+        ]
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Estafeta; no rule matches this shape. Full guide behind the tracking code 1172614482."
+      "note": "Publicly reported full guide; the native single-parcel response pairs it with its short tracking code. The shape remains ambiguous pending a matching lookup."
     }
   ]
 }

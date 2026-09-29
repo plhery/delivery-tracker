@@ -39,6 +39,10 @@ function includesAny(value: string, phrases: string[]): boolean {
 
 export function classifyCiblexStatus(rawDescription: string): ClassifiedCiblexStatus {
   const value = comparableText(rawDescription);
+  if (/\b(?:prevu|prevue|demain|prochainement|sera|seront|doit|doivent)\b/.test(value)
+    || /\b(?:pas|jamais)\b/.test(value)) {
+    return { status: 'unknown', stage: 'in_transit', description: 'Ciblex tracking update' };
+  }
   if (includesAny(value, ['retour expediteur', 'retourne a l expediteur', 'retour a l expediteur'])) {
     return { status: 'exception', stage: 'returned', description: 'Returned to sender' };
   }

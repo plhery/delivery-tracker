@@ -7,6 +7,7 @@
  * What it is not: no provider I/O, no HTTP, no application or framework code.
  * Everything here is a pure function of the catalog and its arguments.
  */
+import { normalizeCourierGuyNumber } from '../../carriers/the-courier-guy/number';
 import type { CarrierId } from '../../generated/catalog';
 import { isValidMondialRelayBarcode } from '../detection/mondialRelay';
 import { normalizeTrackingNumber } from '../detection/normalize';
@@ -26,13 +27,17 @@ export * from './definitions';
 export * from './linkRules';
 export * from './amazon';
 
-/** Carriers that print a composite or padded number link to a shorter form. */
+/** Carrier-specific printed identifiers expected by the official portal. */
 export function trackingNumberForLink(carrierId: CarrierId, raw: string): string {
   const normalized = normalizeTrackingNumber(raw);
   if (carrierId === 'mondial-relay' && isValidMondialRelayBarcode(normalized)) return normalized.slice(0, 12);
   if (carrierId === 'c-chez-vous') {
     const composite = /^([A-Z0-9]{11})(\d{5})$/.exec(normalized);
     if (composite) return `${composite[1]}--${composite[2]}`;
+  }
+  if (carrierId === 'the-courier-guy') {
+    const product = /^(DD|LD)([A-Z0-9]{6})$/.exec(normalized);
+    if (product) return normalizeCourierGuyNumber(normalized);
   }
   return raw;
 }

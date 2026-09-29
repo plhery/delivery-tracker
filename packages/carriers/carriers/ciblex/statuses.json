@@ -29,9 +29,9 @@
       "wording": "colis livre",
       "language": "fr",
       "stage": "delivered",
-      "confirmedBy": "fixture",
+      "confirmedBy": "live",
       "firstSeen": "2026-09-12",
-      "note": "Matched on the fixture row \"Colis Livré\"; the portal alternates accented and unaccented spellings."
+      "note": "Native event-table wording."
     },
     {
       "wording": "livraison effectuee",
@@ -53,9 +53,9 @@
       "wording": "mis en livraison",
       "language": "fr",
       "stage": "out_for_delivery",
-      "confirmedBy": "fixture",
+      "confirmedBy": "live",
       "firstSeen": "2026-09-12",
-      "note": "Matched on the fixture row \"Mis en livraison\"."
+      "note": "Native event-table wording."
     },
     {
       "wording": "mise en livraison",
@@ -157,9 +157,9 @@
       "wording": "colis controle",
       "language": "fr",
       "stage": "in_transit",
-      "confirmedBy": "fixture",
+      "confirmedBy": "live",
       "firstSeen": "2026-09-12",
-      "note": "Matched on the fixture row \"Colis Contrôle\"."
+      "note": "Native event-table wording."
     },
     {
       "wording": "colis en transit",

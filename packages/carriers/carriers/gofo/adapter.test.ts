@@ -9,10 +9,25 @@ import { gofoStatus } from './status';
 const NUMBER = 'GFUS00000000000001';
 const OTHER = 'GFUS00000000000002';
 const fixture = () => JSON.parse(readFileSync(new URL('./fixtures/delivered.json', import.meta.url), 'utf8'));
+const counterFixture = () => JSON.parse(readFileSync(new URL('./fixtures/public-counter.json', import.meta.url), 'utf8'));
 const item = (value: ReturnType<typeof fixture>) => value.data.success[0];
 const bind = (value: ReturnType<typeof fixture>) => { item(value).lastTrackEvent = { ...item(value).trackEventList[0] }; item(value).trackEventCount = item(value).trackEventList.length; };
 
 describe('GOFO US history', () => {
+  it('retains the complete public list when the separate event counter exceeds its length', () => {
+    const result = parseGofo(counterFixture(), NUMBER);
+    expect(result.events).toHaveLength(14);
+    expect(result).toMatchObject({ status: 'delivered', last_update: '2026-01-20T12:00:00-08:00' });
+    expect(result.events?.at(-1)).toMatchObject({ stage: 'registered', time: '2026-01-07T12:00:00-08:00' });
+    const wrongSummary = counterFixture(); item(wrongSummary).lastTrackEvent.processContent = 'Different';
+    expect(() => parseGofo(wrongSummary, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
+    const wrongIdentity = counterFixture(); item(wrongIdentity).trackEventList.at(-1).trackingNumber = OTHER;
+    expect(() => parseGofo(wrongIdentity, NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
+  });
+  it.each([undefined, '15', 3, 0, -1, 4.5, Number.NaN, Number.POSITIVE_INFINITY, 501])('rejects contradictory or unbounded public counter %s', count => {
+    const value = fixture(); item(value).trackEventCount = count;
+    expect(() => parseGofo(value, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
+  });
   it('binds both identities and uses per-scan offsets without projecting private delivery text or unlabelled weight', () => {
     const result = normalizeCarrierResult(parseGofo(fixture(), NUMBER));
     expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered', last_update: '2026-01-04T12:00:00-08:00', delivered_at: '2026-01-04T12:00:00-08:00', expected_delivery: null, destination_country: 'US' });
@@ -46,7 +61,7 @@ describe('GOFO US history', () => {
       const value = fixture(); item(value).lastTrackEvent[field] = 'Different';
       expect(() => parseGofo(value, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
     }
-    const count = fixture(); item(count).trackEventCount++;
+    const count = fixture(); item(count).trackEventCount--;
     const empty = fixture(); item(empty).trackEventList = []; bind(empty);
     for (const value of [count, empty]) expect(() => parseGofo(value, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
     const excessive = fixture(); item(excessive).trackEventList = Array(501).fill(item(excessive).trackEventList[0]); bind(excessive);

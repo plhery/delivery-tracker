@@ -29,6 +29,7 @@
         "carrier": "unknown",
         "confidence": "low",
         "candidates": [
+          "ciblex",
           "inpost",
           "bpost"
         ]
@@ -45,6 +46,7 @@
         "carrier": "unknown",
         "confidence": "low",
         "candidates": [
+          "ciblex",
           "inpost",
           "bpost"
         ]
@@ -62,6 +64,7 @@
         "carrier": "unknown",
         "confidence": "low",
         "candidates": [
+          "ciblex",
           "inpost",
           "bpost"
         ]

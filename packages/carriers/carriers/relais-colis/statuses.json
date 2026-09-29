@@ -7,7 +7,7 @@
       "stage": "returned",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+      "note": "Return fragments apply only after excluding planned or ongoing return wording."
     },
     {
       "wording": "retourne a l expediteur",
@@ -15,7 +15,7 @@
       "stage": "returned",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+      "note": "Return fragments apply only after excluding planned or ongoing return wording."
     },
     {
       "wording": "retourne a votre vendeur",
@@ -23,7 +23,7 @@
       "stage": "returned",
       "confirmedBy": "fixture",
       "firstSeen": "2026-09-12",
-      "note": "Matched on the fixture step \"VOTRE COLIS A ÉTÉ RETOURNÉ À VOTRE VENDEUR\"."
+      "note": "Return fragments apply only after excluding planned or ongoing return wording."
     },
     {
       "wording": "retour a votre vendeur",
@@ -31,7 +31,7 @@
       "stage": "returned",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+      "note": "Return fragments apply only after excluding planned or ongoing return wording."
     },
     {
       "wording": "retour vendeur",
@@ -39,7 +39,7 @@
       "stage": "returned",
       "confirmedBy": "prior-art",
       "firstSeen": "2026-09-12",
-      "note": "Sentence fragment inherited from the pre-package adapter; source not recorded."
+      "note": "Return fragments apply only after excluding planned or ongoing return wording."
     },
     {
       "wording": "livraison impossible",

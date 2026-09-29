@@ -11,6 +11,8 @@ anonymous form POST retrieves history for that guide. Every date group must
 identify the same guide, and the first scan must match the latest summary.
 No cookies, account bootstrap or API credentials are needed. Colliding codes
 and multiple-piece guides require disambiguation and remain inconclusive.
+Full guides retain their complete alphanumeric identity. The short-code alias
+is accepted only when the single-parcel response explicitly pairs both values.
 
 ## Notes
 

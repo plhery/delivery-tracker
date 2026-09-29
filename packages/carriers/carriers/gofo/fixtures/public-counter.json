@@ -1,0 +1,127 @@
+{
+  "success": 1,
+  "code": 200,
+  "data": {
+    "success": [
+      {
+        "waybillNo": "GFUS00000000000001",
+        "trackingNumber": "GFUS00000000000001",
+        "status": "Delivered",
+        "trackEventCount": 15,
+        "toCountry": "USA",
+        "weight": 0.5,
+        "estimatedArrivalTime": null,
+        "lastTrackEvent": {
+          "processCode": "205",
+          "processDate": "2026-01-20T12:00:00.000-0800",
+          "processContent": "Delivered, Door/Yard. PRIVATE_SYNTHETIC_DETAIL",
+          "processCity": "Example City",
+          "processProvince": "EX"
+        },
+        "trackEventList": [
+          {
+            "processCode": "205",
+            "processDate": "2026-01-20T12:00:00.000-0800",
+            "processContent": "Delivered, Door/Yard. PRIVATE_SYNTHETIC_DETAIL",
+            "processCity": "Example City",
+            "processProvince": "EX"
+          },
+          {
+            "processCode": "202",
+            "processDate": "2026-01-19T12:00:00.000-0800",
+            "processContent": "Arrived at example facility 1",
+            "processCity": "Example City",
+            "processProvince": "EX"
+          },
+          {
+            "processCode": "202",
+            "processDate": "2026-01-18T12:00:00.000-0800",
+            "processContent": "Arrived at example facility 2",
+            "processCity": "Example City",
+            "processProvince": "EX"
+          },
+          {
+            "processCode": "202",
+            "processDate": "2026-01-17T12:00:00.000-0800",
+            "processContent": "Arrived at example facility 3",
+            "processCity": "Example City",
+            "processProvince": "EX"
+          },
+          {
+            "processCode": "202",
+            "processDate": "2026-01-16T12:00:00.000-0800",
+            "processContent": "Arrived at example facility 4",
+            "processCity": "Example City",
+            "processProvince": "EX"
+          },
+          {
+            "processCode": "202",
+            "processDate": "2026-01-15T12:00:00.000-0800",
+            "processContent": "Arrived at example facility 5",
+            "processCity": "Example City",
+            "processProvince": "EX"
+          },
+          {
+            "processCode": "202",
+            "processDate": "2026-01-14T12:00:00.000-0800",
+            "processContent": "Arrived at example facility 6",
+            "processCity": "Example City",
+            "processProvince": "EX"
+          },
+          {
+            "processCode": "202",
+            "processDate": "2026-01-13T12:00:00.000-0800",
+            "processContent": "Arrived at example facility 7",
+            "processCity": "Example City",
+            "processProvince": "EX"
+          },
+          {
+            "processCode": "202",
+            "processDate": "2026-01-12T12:00:00.000-0800",
+            "processContent": "Arrived at example facility 8",
+            "processCity": "Example City",
+            "processProvince": "EX"
+          },
+          {
+            "processCode": "202",
+            "processDate": "2026-01-11T12:00:00.000-0800",
+            "processContent": "Arrived at example facility 9",
+            "processCity": "Example City",
+            "processProvince": "EX"
+          },
+          {
+            "processCode": "202",
+            "processDate": "2026-01-10T12:00:00.000-0800",
+            "processContent": "Arrived at example facility 10",
+            "processCity": "Example City",
+            "processProvince": "EX"
+          },
+          {
+            "processCode": "202",
+            "processDate": "2026-01-09T12:00:00.000-0800",
+            "processContent": "Arrived at example facility 11",
+            "processCity": "Example City",
+            "processProvince": "EX"
+          },
+          {
+            "processCode": "202",
+            "processDate": "2026-01-08T12:00:00.000-0800",
+            "processContent": "Arrived at example facility 12",
+            "processCity": "Example City",
+            "processProvince": "EX"
+          },
+          {
+            "processCode": "100",
+            "processDate": "2026-01-07T12:00:00.000-0800",
+            "processContent": "Shipping Label Created",
+            "processCity": "Example City",
+            "processProvince": "EX"
+          }
+        ]
+      }
+    ],
+    "error": {
+      "errorCount": 0
+    }
+  }
+}

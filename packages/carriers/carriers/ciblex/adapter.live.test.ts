@@ -1,29 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { CiblexTracker } from './adapter';
+import { adapter } from './adapter';
+import { NOOP_RECORDER } from '../../core/telemetry';
+
+const instance = () => adapter({ fetcher: fetch, env: {}, recorder: NOOP_RECORDER, trawl: null, browserExecutablePath: null });
 
 describe('Ciblex live anonymous tracking', () => {
-  it('recognizes the official empty-table response without mislabeling an empty 200', async () => {
-    let error: unknown;
-    try {
-      await new CiblexTracker().fetch('12345678901234');
-    } catch (caught) {
-      error = caught;
-    }
-    expect(error).toBeInstanceOf(Error);
-    if (error instanceof Error && error.name === 'NotFoundError') {
-      expect(error).toMatchObject({
-        kind: 'not_found',
-        status: 404,
-        provider: 'Ciblex',
-        message: 'Ciblex could not locate the shipment',
-      });
-    } else {
-      expect(error).toMatchObject({
-        name: 'IndeterminateError',
-        kind: 'indeterminate',
-        status: 502,
-        message: 'Ciblex returned an empty tracking response',
-      });
-    }
+  it.skipIf(!process.env.CIBLEX_TRACKING_NUMBER)('retrieves identity-bound history through the full factory', async () => {
+    const result = await instance().track({ number: process.env.CIBLEX_TRACKING_NUMBER! });
+    expect(result.events?.length).toBeGreaterThan(0);
+    expect(result.events?.some(event => event.time)).toBe(true);
+  });
+  it.skipIf(!process.env.CIBLEX_UNKNOWN_NUMBER)('keeps an empty table or empty200 inconclusive', async () => {
+    await expect(instance().track({ number: process.env.CIBLEX_UNKNOWN_NUMBER! })).rejects.toMatchObject({ kind: 'indeterminate' });
   });
 });

@@ -16,6 +16,23 @@ const lookup = () => parseEstafetaLookup(lookupHtml(), NUMBER);
 const negative = '<html><head><title>Resultado</title></head><body><div class="TimeLineErrorRow"><div class="fontWaybill">Numero de Guia:<span class="fontWaybillBold"></span></div><h4>Lo sentimos, no se encontró información</h4></div></body></html>';
 
 describe('Estafeta bound history', () => {
+  it('accepts the full guide with a letter after twelve digits without extracting a short code', () => {
+    const guide = '900000000001A000000002';
+    const html = readFileSync(new URL('./fixtures/full-guide-lookup.html', import.meta.url), 'utf8');
+    const history = readFileSync(new URL('./fixtures/full-guide-history.html', import.meta.url), 'utf8');
+    expect(normalizeEstafetaNumber('900000000001a000000002')).toBe(guide);
+    const full = parseEstafetaLookup(html, guide);
+    const short = parseEstafetaLookup(html, NUMBER);
+    expect(full).toMatchObject({ number: guide, guide });
+    expect(short.guide).toBe(guide);
+    expect(parseEstafetaHistory(history, full).canonical_tracking_number).toBeUndefined();
+    expect(parseEstafetaHistory(history, short).canonical_tracking_number).toBe(guide);
+    for (const number of ['A'.repeat(22), '900000000001AA00000002', '900000000001A00000000?', '90000000000A1000000002']) {
+      expect(() => normalizeEstafetaNumber(number)).toThrow(TypeError);
+    }
+    const pieces = load(html); pieces('.shipmentInfoDiv').append('<ul class="multiplesWaybillList"><li><a class="MultipleLink">900000000001A000000003</a></li></ul>');
+    expect(() => parseEstafetaLookup(pieces.html(), guide)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
+  });
   it('binds the short-code alias to the canonical guide and retains local clocks without projecting private details', () => {
     const result = normalizeCarrierResult(parseEstafetaHistory(historyHtml(), lookup()));
     expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered', canonical_tracking_number: GUIDE, last_update: null, last_update_local: '2026-01-04T12:00:00', expected_delivery: null });
@@ -99,6 +116,22 @@ describe('Estafeta bound history', () => {
 });
 
 describe('Estafeta direct retrieval', () => {
+  it('sends the full guide unchanged with the official full-guide search type through the factory', async () => {
+    const guide = '900000000001A000000002';
+    const fetcher = vi.fn<typeof fetch>(async (url, init) => {
+      const address = new URL(String(url));
+      if (address.pathname.endsWith('/searchByGet')) {
+        expect(Object.fromEntries(address.searchParams)).toEqual({ wayBill: guide, wayBillType: '1', isShipmentDetail: 'True' });
+        return new Response(lookupHtml().replaceAll(GUIDE, guide));
+      }
+      expect(init?.body).toBe(`waybill=${guide}`);
+      return new Response(historyHtml().replaceAll(GUIDE, guide));
+    });
+    const instance = adapter({ fetcher, env: {}, recorder: NOOP_RECORDER, trawl: null, browserExecutablePath: null });
+    const result = await instance.track({ number: guide });
+    expect(result.status).toBe('delivered'); expect(result.canonical_tracking_number).toBeUndefined();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
   it('uses a fresh identity-bound GET and form history POST without reusing session cookies', async () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async url => new Response(String(url).includes('GetTrackingItemHistory') ? historyHtml() : lookupHtml(), { headers: { 'Set-Cookie': 'session=PRIVATE_SYNTHETIC_TOKEN' } }));
     const instance = adapter({ fetcher, trawl: null, browserExecutablePath: null, recorder: NOOP_RECORDER, env: {} });

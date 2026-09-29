@@ -3,12 +3,40 @@ import { describe, expect, it, vi } from 'vitest';
 import { normalizeCarrierResult } from '../../core/result';
 import { NOOP_RECORDER } from '../../core/telemetry';
 import { adapter, UniuniTracker } from './adapter';
-import { normalizeUniuniNumber, parseUniuni } from './parser';
+import { normalizeUniuniNumber, normalizeUniuniRecognitionNumber, parseUniuni } from './parser';
 import { uniuniStatus } from './status';
 
 const NUMBER = 'UUS0000000000000001';
 const OTHER = 'UUS0000000000000002';
+const UUSC_NUMBER = 'UUSC000000000001';
 const fixture = () => JSON.parse(readFileSync(new URL('./fixtures/delivered.json', import.meta.url), 'utf8'));
+const uuscFixture = () => JSON.parse(readFileSync(new URL('./fixtures/uusc-delivered.json', import.meta.url), 'utf8'));
+
+describe('UniUni confirmed parcel formats', () => {
+  const metadata = JSON.parse(readFileSync(new URL('./carrier.json', import.meta.url), 'utf8'));
+  const uuscRule = metadata.detection.find((rule: { id: string }) => rule.id === 'uniuni-3');
+
+  it('detects the complete UUSC numeric reference without broadening adjacent formats', () => {
+    expect(uuscRule.confidence).toBe('high');
+    expect(new RegExp(uuscRule.pattern).test(UUSC_NUMBER)).toBe(true);
+    expect(normalizeUniuniRecognitionNumber('uusc-000000 000001')).toBe(UUSC_NUMBER);
+    for (const number of ['UUSC00000000001', 'UUSC0000000000001', 'UUSX000000000001', 'UUSC00000000000A',
+      `X${UUSC_NUMBER}`, `${UUSC_NUMBER}X`]) {
+      expect(new RegExp(uuscRule.pattern).test(number), number).toBe(false);
+      expect(() => normalizeUniuniRecognitionNumber(number), number).toThrow(TypeError);
+    }
+    expect(normalizeUniuniRecognitionNumber(NUMBER)).toBe(NUMBER);
+    expect(normalizeUniuniRecognitionNumber('4C000000001US')).toBe('4C000000001US');
+  });
+
+  it('keeps full identity-bound history for the compact format', () => {
+    const result = normalizeCarrierResult(parseUniuni(uuscFixture(), UUSC_NUMBER));
+    expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered', delivered_at: result.last_update });
+    expect(result.events).toHaveLength(6);
+    const wrong = uuscFixture(); wrong.data.valid_tno[0].tno = 'UUSC000000000002';
+    expect(() => parseUniuni(wrong, UUSC_NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
+  });
+});
 
 describe('UniUni parcel history', () => {
   it('binds the parcel and uses corrected seconds, excluding private detail and day estimates', () => {
@@ -96,6 +124,21 @@ describe('UniUni parcel history', () => {
     expect(() => parseUniuni(value, NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
   });
 
+  it.each(['2026-01-05 24:00:00', '2026-02-30 16:00:00'])('retains impossible local digits %s without calendar rollover', localTime => {
+    const value = uuscFixture(), latest = value.data.valid_tno[0].spath_list.at(-1);
+    latest.dateTime = { localTime };
+    const result = parseUniuni(value, UUSC_NUMBER);
+    expect(result).toMatchObject({ status: 'delivered', last_update: null, last_update_local: null });
+    expect(result.events?.[0]).toMatchObject({ provider_time_text: localTime });
+    expect(result.events?.[0]).not.toHaveProperty('local_time');
+    expect(result).not.toHaveProperty('delivered_at');
+  });
+
+  it.each(['clock', 1, [], { localTime: 123 }])('rejects malformed latest clock envelopes %s', dateTime => {
+    const value = uuscFixture(); value.data.valid_tno[0].spath_list.at(-1).dateTime = dateTime;
+    expect(() => parseUniuni(value, UUSC_NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
+  });
+
   it('uses the actual latest scan instead of a terminal summary and keeps failed attempts nonterminal', () => {
     const value = fixture(); value.data.valid_tno[0].spath_list.pop();
     expect(parseUniuni(value, NUMBER)).toMatchObject({ status: 'out_for_delivery', current_stage: 'out_for_delivery' });
@@ -121,6 +164,16 @@ describe('UniUni parcel history', () => {
 });
 
 describe('UniUni direct retrieval', () => {
+  it('probes normalized compact references and rejects neighboring shapes before I/O', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json(uuscFixture()));
+    const instance = adapter({ fetcher, trawl: null, browserExecutablePath: null, recorder: NOOP_RECORDER, env: {} });
+    await expect(instance.recognize!('uusc-000000 000001')).resolves.toEqual({ known: true, lastActivityAt: '2026-01-05T22:00:00.000Z' });
+    expect(new URL(String(fetcher.mock.calls[0][0])).searchParams.get('id')).toBe(UUSC_NUMBER);
+    await expect(instance.recognize!('UUSC00000000000A')).resolves.toEqual({ known: false });
+    await expect(instance.recognize!('UUSC00000000001')).resolves.toEqual({ known: false });
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
   it('recognizes only supported formats, exact absence and dated activity while preserving uncertain failures', async () => {
     const fetcher = vi.fn<typeof fetch>();
     const instance = adapter({ fetcher, trawl: null, browserExecutablePath: null, recorder: NOOP_RECORDER, env: {} });

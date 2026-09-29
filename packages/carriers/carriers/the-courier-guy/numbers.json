@@ -29,10 +29,11 @@
         "candidates": [
           "gls-ch",
           "gls-fr",
-          "gls-de"
+          "gls-de",
+          "the-courier-guy"
         ]
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to The Courier Guy, which no rule claims. Booked collection that was never made."
+      "note": "Publicly reported cancelled collection reference with identity-bound history in the official anonymous feed."
     },
     {
       "number": "LD-2C7WLM",
@@ -48,10 +49,11 @@
         "candidates": [
           "gls-ch",
           "gls-fr",
-          "gls-de"
+          "gls-de",
+          "the-courier-guy"
         ]
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to The Courier Guy, which no rule claims. Pudo locker-to-door waybill."
+      "note": "Publicly reported Pudo locker-to-door reference with identity-bound history in the official anonymous feed."
     },
     {
       "number": "QGB8C",

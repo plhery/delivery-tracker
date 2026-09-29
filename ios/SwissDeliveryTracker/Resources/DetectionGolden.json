@@ -1449,12 +1449,14 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "ciblex",
       "inpost",
       "bpost"
     ],
     "asked": [
       "inpost",
-      "bpost"
+      "bpost",
+      "ciblex"
     ]
   },
   {
@@ -1474,12 +1476,14 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "ciblex",
       "inpost",
       "bpost"
     ],
     "asked": [
       "inpost",
-      "bpost"
+      "bpost",
+      "ciblex"
     ]
   },
   {
@@ -1917,8 +1921,10 @@
   {
     "input": "502553526650A704483512",
     "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "confidence": "low",
+    "candidates": [
+      "estafeta"
+    ]
   },
   {
     "input": "51963160653",
@@ -1999,12 +2005,14 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "ciblex",
       "inpost",
       "bpost"
     ],
     "asked": [
       "inpost",
-      "bpost"
+      "bpost",
+      "ciblex"
     ]
   },
   {
@@ -2012,12 +2020,14 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "ciblex",
       "inpost",
       "bpost"
     ],
     "asked": [
       "inpost",
-      "bpost"
+      "bpost",
+      "ciblex"
     ]
   },
   {
@@ -2057,12 +2067,14 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "ciblex",
       "inpost",
       "bpost"
     ],
     "asked": [
       "inpost",
-      "bpost"
+      "bpost",
+      "ciblex"
     ]
   },
   {
@@ -2078,12 +2090,14 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "ciblex",
       "inpost",
       "bpost"
     ],
     "asked": [
       "inpost",
-      "bpost"
+      "bpost",
+      "ciblex"
     ]
   },
   {
@@ -2091,12 +2105,14 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "ciblex",
       "inpost",
       "bpost"
     ],
     "asked": [
       "inpost",
-      "bpost"
+      "bpost",
+      "ciblex"
     ]
   },
   {
@@ -3155,9 +3171,11 @@
   },
   {
     "input": "CNPRT19501971234009605248",
-    "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "carrier": "ecoscooting",
+    "confidence": "high",
+    "candidates": [
+      "ecoscooting"
+    ]
   },
   {
     "input": "CP112251335NL",
@@ -3284,11 +3302,13 @@
     "candidates": [
       "gls-ch",
       "gls-fr",
-      "gls-de"
+      "gls-de",
+      "the-courier-guy"
     ],
     "asked": [
       "gls-ch",
-      "gls-de"
+      "gls-de",
+      "the-courier-guy"
     ]
   },
   {
@@ -3794,11 +3814,13 @@
     "candidates": [
       "gls-ch",
       "gls-fr",
-      "gls-de"
+      "gls-de",
+      "the-courier-guy"
     ],
     "asked": [
       "gls-ch",
-      "gls-de"
+      "gls-de",
+      "the-courier-guy"
     ]
   },
   {
@@ -4721,9 +4743,11 @@
   },
   {
     "input": "UUSC000019638703",
-    "carrier": "unknown",
-    "confidence": "none",
-    "candidates": []
+    "carrier": "uniuni",
+    "confidence": "high",
+    "candidates": [
+      "uniuni"
+    ]
   },
   {
     "input": "UX000352872CH",

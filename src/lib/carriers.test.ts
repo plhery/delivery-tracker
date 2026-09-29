@@ -290,11 +290,11 @@ describe('carrier detection', () => {
     const match = detectCarrierMatch('12345678901234');
     expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
     expect(match.candidates).toContain('ciblex');
-    // REPORTED REAL 24-digit customer label IDs are rejected as-is; a documented
-    // barcode-to-waybill conversion is unresolved, so never widen the regex for them.
+    // Full label barcodes are sent unchanged and bound to the exact native banner;
+    // their numeric format also belongs to bpost and InPost.
     // Source: https://fr.trustpilot.com/review/www.ciblex.fr
     for (const number of ['560815852502035603344150', '560815852502035613344150']) {
-      expect(detectCarrierMatch(number).candidates).not.toContain('ciblex');
+      expect(detectCarrierMatch(number).candidates).toContain('ciblex');
     }
   });
 
@@ -1235,6 +1235,22 @@ describe('carrier detection', () => {
     expectDirectTracking('the-courier-guy');
     expect(parseTrackingInput('https://portal.thecourierguy.co.za/track?ref=TESTA1')).toMatchObject({
       trackingNumber: 'TESTA1', carrier: 'the-courier-guy', source: 'link',
+    });
+  });
+
+  it('supports the expanded native tracking formats without claiming shared numeric barcodes', () => {
+    expect(detectCarrier('CNPRT00000000000000000001')).toBe('ecoscooting');
+    expect(detectCarrier('UUSC000000000001')).toBe('uniuni');
+    expect(detectCarrierMatch('900000000001A000000002').candidates).toContain('estafeta');
+    expect(detectCarrierMatch('000000000000000000000001')).toMatchObject({
+      carrier: 'unknown', confidence: 'low', candidates: ['ciblex', 'inpost', 'bpost'],
+    });
+    const pudo = detectCarrierMatch('LD-000001');
+    expect(pudo).toMatchObject({ carrier: 'unknown', confidence: 'low' });
+    expect(pudo.candidates).toContain('the-courier-guy');
+    expect(CARRIERS['the-courier-guy'].trackingUrl?.('LD000001')).toBe('https://portal.thecourierguy.co.za/track?ref=LD-000001');
+    expect(parseTrackingInput('https://portal.thecourierguy.co.za/track?ref=LD-000001')).toMatchObject({
+      trackingNumber: 'LD-000001', carrier: 'the-courier-guy', source: 'link',
     });
   });
 

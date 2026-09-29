@@ -56,6 +56,15 @@ const cases = [
   { carrier: 'seur', number: '9900002', fixture: 'history.json', unresolved: true },
   { carrier: 'brt', number: '99000000000002', fixture: 'history.html', unresolved: true },
   { carrier: 'landmark-global', number: 'LTN000000009', fixture: 'in-transit-nine-digit.html', unresolved: true },
+  { carrier: 'gofo', number: 'GFUS00000000000001', fixture: 'public-counter.json', unresolved: true },
+  { carrier: 'ecoscooting', number: 'CNPRT00000000000000000001', fixture: 'delivered-portugal.json', unresolved: true },
+  { carrier: 'uniuni', number: 'UUSC000000000001', fixture: 'uusc-delivered.json', unresolved: true },
+  { carrier: 'estafeta', number: '900000000001A000000002', fixture: 'full-guide-lookup.html', unresolved: true },
+  { carrier: 'the-courier-guy', number: 'LD000001', fixture: 'pudo-delivered.json', unresolved: true },
+  { carrier: 'the-courier-guy', number: 'DD000001', fixture: 'collection-cancelled.json', unresolved: true },
+  { carrier: 'relais-colis', number: 'CC200000000401', fixture: 'grouped-history.html', unresolved: true },
+  { carrier: 'ciblex', number: '000000000000000000000001', fixture: 'full-barcode.html', unresolved: true },
+
 ];
 
 function setup(entry: typeof cases[number], transform = (body: string) => body) {
@@ -127,6 +136,8 @@ function setup(entry: typeof cases[number], transform = (body: string) => body) 
     delete value.events[0].datetime.zoneOffset;
     body = JSON.stringify(value);
   }
+  if (entry.carrier === 'relais-colis') body = body.replace('28-04-2026 à 15h21', '28-04-2026');
+  if (entry.carrier === 'ciblex') body = body.replace('10:01:23', 'invalid clock');
   body = transform(body);
   if (entry.carrier === 'ukrposhta') {
     const payload = JSON.parse(body);
@@ -135,7 +146,10 @@ function setup(entry: typeof cases[number], transform = (body: string) => body) 
   }
   if (entry.carrier === 'correios-br') vi.spyOn(CorreiosOcr.prototype, 'solve').mockResolvedValue('abcd');
   if (entry.carrier === 'yunda') vi.spyOn(yundaChallenge, 'solveYundaSlider').mockResolvedValue({ x: 100, y: 40 });
-  const fetcher = vi.fn<typeof fetch>().mockImplementation(async url => {
+  const fetcher = vi.fn<typeof fetch>().mockImplementation(async (url, init) => {
+    if (entry.carrier === 'relais-colis' && init?.method !== 'POST') {
+      return new Response('<input id="track_package__token" value="synthetic-csrf-token">');
+    }
     if (entry.carrier === 'nacex') {
       if (String(url).endsWith('/irSeguimiento.do')) {
         return new Response('<form name="seguimientoFormulario" method="post" action="/seguimientoFormulario.do"><input name="agencia_origen"><input name="numero_albaran"></form>',
@@ -149,7 +163,7 @@ function setup(entry: typeof cases[number], transform = (body: string) => body) 
       return new Response(body, { headers: { 'content-type': 'text/html; charset=utf-8' } });
     }
     if (entry.carrier === 'estafeta' && String(url).endsWith('/GetTrackingItemHistory')) {
-      return new Response(readFileSync(new URL('../../packages/carriers/carriers/estafeta/fixtures/delivered-history.html', import.meta.url), 'utf8'));
+      return new Response(readFileSync(new URL(`../../packages/carriers/carriers/estafeta/fixtures/${entry.fixture === 'full-guide-lookup.html' ? 'full-guide-history.html' : 'delivered-history.html'}`, import.meta.url), 'utf8'));
     }
     if (entry.carrier === 'poczta-polska' && String(url) === 'https://emonitoring.poczta-polska.pl/') {
       return new Response(readFileSync(new URL('../../packages/carriers/carriers/poczta-polska/fixtures/bootstrap.html', import.meta.url), 'utf8'));
@@ -187,7 +201,7 @@ describe('expanded direct coverage through the host', () => {
     const result = await test.adapter.fetch(entry.carrier, entry.number, null);
     expect(result.events?.length).toBeGreaterThan(0);
     expect(result).not.toHaveProperty('tracking_provider');
-    expect(test.fetcher).toHaveBeenCalledTimes(['yunexpress', 'ukrposhta'].includes(entry.carrier) ? 0 : ['aramex', 'spring-gds', 'poczta-polska', 'estafeta'].includes(entry.carrier) ? 2 : ['correios-br', 'yunda', 'nacex'].includes(entry.carrier) ? 3 : 1);
+    expect(test.fetcher).toHaveBeenCalledTimes(['yunexpress', 'ukrposhta'].includes(entry.carrier) ? 0 : ['aramex', 'spring-gds', 'poczta-polska', 'estafeta', 'relais-colis'].includes(entry.carrier) ? 2 : ['correios-br', 'yunda', 'nacex'].includes(entry.carrier) ? 3 : 1);
   });
 
   it.each(cases.filter(entry => entry.unresolved))('$carrier saves unresolved direct dates while using dated provider progress', async entry => {
@@ -209,6 +223,18 @@ describe('expanded direct coverage through the host', () => {
     const archive = directLocalHistory(parcel, value.result)!;
     expect((archive.events as unknown[]).length).toBe(direct.events?.length);
     if (entry.carrier === 'yamato') expect(JSON.stringify(archive)).toContain('provider_time_text');
+  });
+
+  it('keeps Ciblex current unknown wording separate from an older delivery', async () => {
+    const entry = cases.find(entry => entry.carrier === 'ciblex')!;
+    const test = setup(entry, body => body.replace('Colis Livré', 'Nouvelle formulation inconnue')
+      .replace('Mis en livraison', 'Colis Livré'));
+    const result = await test.adapter.fetch(entry.carrier, entry.number, null);
+    expect(result.status).toBe('unknown');
+    expect(result.current_stage).toBeUndefined();
+    expect(result.last_update).toBeNull();
+    expect(result.events?.[0]?.provider_status).toBe('Nouvelle formulation inconnue');
+    expect(hasUnresolvedDirectCurrent('ciblex', result)).toBe(true);
   });
 
   it('keeps yearless scans distinct across successive direct snapshots', () => {

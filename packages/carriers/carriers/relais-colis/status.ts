@@ -42,6 +42,13 @@ function includesAny(value: string, phrases: string[]): boolean {
 export function classifyRelaisColisStatus(description: string): ClassifiedRelaisColisStatus {
   const value = comparableText(description);
 
+  if (/\bretour/.test(value)) {
+    if (/\b(?:en cours de|en cours d acheminement|achemine vers)\b/.test(value)) {
+      return { status: 'in_transit', stage: 'in_transit' };
+    }
+    if (/\b(?:sera|va etre|doit etre)\b/.test(value)) return { status: 'unknown', stage: 'in_transit' };
+  }
+
   if (includesAny(value, [
     'retour a l expediteur',
     'retourne a l expediteur',

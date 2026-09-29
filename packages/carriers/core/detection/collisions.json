@@ -732,5 +732,24 @@
       "usps"
     ],
     "reason": "NZ Post, Poczta Polska and USPS share the broad 20-digit barcode space; anonymous recognition must establish the carrier."
+  },
+  {
+    "shape": "9{24}",
+    "carriers": [
+      "bpost",
+      "ciblex",
+      "inpost"
+    ],
+    "reason": "Ciblex full label barcodes share the 24-digit space with bpost and InPost; native recognition must establish the carrier."
+  },
+  {
+    "shape": "DD or LD followed by six letters or digits",
+    "carriers": [
+      "gls-ch",
+      "gls-de",
+      "gls-fr",
+      "the-courier-guy"
+    ],
+    "reason": "Courier Guy product references share the eight-character format with the three GLS networks; native recognition must establish the carrier."
   }
 ]

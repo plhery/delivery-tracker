@@ -14,9 +14,11 @@ export interface EstafetaLookup {
   state: string;
 }
 
+const FULL_GUIDE = /^(?:\d{22}|\d{12}[A-Z]\d{9}|\d{15}[A-Z0-9]{7})$/;
+
 export function normalizeEstafetaNumber(raw: string): string {
   const number = normalizeTrackingNumber(raw);
-  if (!/^(?:\d{10}|[A-Z0-9]{22})$/.test(number)) throw new TypeError('Estafeta requires a tracking code or full guide');
+  if (!/^\d{10}$/.test(number) && !FULL_GUIDE.test(number)) throw new TypeError('Estafeta requires a tracking code or full guide');
   return number;
 }
 
@@ -48,7 +50,7 @@ export function parseEstafetaLookup(html: string, rawNumber: string): EstafetaLo
   };
   const guide = field('Número de guía:');
   const code = field('Código de rastreo:');
-  if (!/^[A-Z0-9]{22}$/.test(guide) || !/^\d{10}$/.test(code) || (number.length === 10 ? code !== number : guide !== number)) {
+  if (!FULL_GUIDE.test(guide) || !/^\d{10}$/.test(code) || (number.length === 10 ? code !== number : guide !== number)) {
     throw new SchemaError('Estafeta', 'Estafeta returned a different parcel');
   }
   const controls = cards.find('.showHistory');

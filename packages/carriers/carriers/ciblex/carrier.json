@@ -60,6 +60,11 @@
       "id": "ciblex-1",
       "pattern": "^\\d{14}$",
       "confidence": "low"
+    },
+    {
+      "id": "ciblex-full-barcode",
+      "pattern": "^\\d{24}$",
+      "confidence": "low"
     }
   ]
 }

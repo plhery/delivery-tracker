@@ -12,7 +12,8 @@ parcel; master shipments with multiple pieces remain inconclusive.
 
 Corrected per-scan seconds provide instants. The older numeric clock field
 encodes local wall time and is excluded. Missing corrected seconds retain local
-clocks in provider order without advancing freshness. Current status comes from
+clocks in provider order without advancing freshness. Impossible local dates retain
+their original text. Current status comes from
 the latest actual scan. The legacy estimate field is excluded because the
 current page uses a separate service with an explicit enabled flag. That
 optional estimate service is not queried. Detailed delivery prose, addresses,

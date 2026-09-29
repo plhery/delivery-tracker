@@ -1,10 +1,10 @@
 import 'server-only';
-import type { AdapterFactory, TrackingContext } from '../../core/adapter';
+import { accepted, recognizeFromLookup, type AdapterFactory, type TrackingContext } from '../../core/adapter';
 import { IndeterminateError, NotFoundError, SchemaError } from '../../core/errors';
 import { runSteps } from '../../core/runner';
 import { NOOP_RECORDER, type StepRecorder } from '../../core/telemetry';
 import { decodeText, fetchBounded } from '../../core/transport';
-import { normalizeCourierGuyNumber, parseCourierGuy } from './parser';
+import { normalizeCourierGuyNumber, normalizeCourierGuyRecognitionNumber, parseCourierGuy } from './parser';
 
 const ENDPOINT = 'https://api.portal.thecourierguy.co.za/tracking/shipments';
 
@@ -39,5 +39,7 @@ export class CourierGuyTracker {
 
 export const adapter: AdapterFactory = environment => {
   const tracker = new CourierGuyTracker({ fetcher: environment.fetcher, recorder: environment.recorder });
-  return { id: 'the-courier-guy', steps: ['direct'], track: (input, context) => tracker.fetch(input.number, context) };
+  return { id: 'the-courier-guy', steps: ['direct'], track: (input, context) => tracker.fetch(input.number, context),
+    recognize: (number, context) => recognizeFromLookup(() => tracker.fetch(number, context),
+      () => accepted(() => normalizeCourierGuyRecognitionNumber(number))) };
 };

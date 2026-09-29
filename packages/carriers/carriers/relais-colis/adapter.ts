@@ -1,59 +1,43 @@
 import 'server-only';
 
-/**
- * Relais Colis recipient tracking.
- *
- * The public form is a Symfony page with a per-session CSRF token, so one
- * lookup is two bounded requests over a private cookie jar: GET the form to
- * pick up the session cookie and the `track_package[_token]` value, then POST
- * the number back to the same URL. The jar lives for that lookup only, so two
- * concurrent lookups can never share or refresh one another's token and no
- * single-flight gate is needed.
- *
- * The rendered page echoes the number it searched in the form field; that value
- * is verified before any step is read. A redirect or an error block without
- * steps is the network's way of saying it does not know the parcel.
- *
- * Privacy: the same page shows the recipient's name, delivery address and the
- * pickup point's details. Those blocks are removed from the document before any
- * text is read, and each event keeps only the step's own sentence, its date and
- * the mapped stage.
- */
 import { load } from 'cheerio';
+import { DateTime } from 'luxon';
 import makeFetchCookie from 'fetch-cookie';
 import { CookieJar } from 'tough-cookie';
-import { recognizeFromLookup, type AdapterFactory } from '../../core/adapter';
-import { IndeterminateError, NotFoundError, SchemaError } from '../../core/errors';
+import { accepted, recognizeFromLookup, type AdapterFactory, type TrackingContext } from '../../core/adapter';
+import { IndeterminateError, NotFoundError, SchemaError, TransportError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult, CarrierStatus } from '../../core/result';
-import { clean, decodeText, fetchBounded, UpstreamHttpError } from '../../core/transport';
-import { zonedTime, type ParsedTime } from '../../core/time';
-import { classifyRelaisColisStatus } from './status';
+import { clean, decodeText, fetchBounded, UpstreamHttpError, UpstreamNetworkError } from '../../core/transport';
+import { calendarDay, zonedTime, type ParsedTime } from '../../core/time';
+import { runSteps } from '../../core/runner';
+import { NOOP_RECORDER, type StepRecorder } from '../../core/telemetry';
+import { classifyRelaisColisStatus, comparableText } from './status';
 
 const TRACKING_PAGE = 'https://www.relaiscolis.com/colis/suivre';
 const DEFAULT_TIMEOUT_MS = 15_000;
 const MAX_RESPONSE_BYTES = 750_000;
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:147.0) Gecko/20100101 Firefox/147.0';
-const EVENT_TIME_FORMATS = ['dd/MM/yyyy HH:mm', 'dd/MM/yyyy'];
 
-interface ParsedEvent {
-  event: CarrierEvent;
-  status: CarrierStatus;
-  timestamp: number;
-  index: number;
+interface EventClock {
+  instant: ParsedTime | null;
+  local: string | null;
 }
 
-/**
- * The page prints "29/08/2026 à 14:20" or "29/08/2026 14h20"; both are naive
- * French wall-clock values, so they are read in Europe/Paris.
- */
-function parsedEventTime(value: string): ParsedTime | null {
-  const normalized = value.replace(/\s+(?:a|à)\s+/i, ' ').replace(/(\d{1,2})h(\d{2})/i, '$1:$2');
-  for (const format of EVENT_TIME_FORMATS) {
-    const parsed = zonedTime(normalized, format, 'Europe/Paris');
-    if (parsed) return parsed;
-  }
-  return null;
+function eventClock(value: string): EventClock {
+  const match = /^(\d{2})[/-](\d{2})[/-](\d{4})(?:\s+(?:à\s+)?(\d{1,2})[:h](\d{2}))?$/.exec(value);
+  if (!match) return { instant: null, local: null };
+  const day = calendarDay(Number(match[3]), Number(match[2]), Number(match[1]));
+  if (!day) return { instant: null, local: null };
+  if (!match[4]) return { instant: null, local: day };
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+  if (hour > 23 || minute > 59) return { instant: null, local: null };
+  const local = `${day}T${String(hour).padStart(2, '0')}:${match[5]}:00`;
+  const instant = zonedTime(local, "yyyy-MM-dd'T'HH:mm:ss", 'Europe/Paris');
+  // A nonexistent civil clock can be normalized across a DST transition.
+  const uniqueOffset = DateTime.fromISO(local, { zone: 'Europe/Paris' }).getPossibleOffsets().length === 1;
+  return { instant: instant?.iso.startsWith(local) && uniqueOffset ? instant : null, local };
 }
 
 /**
@@ -80,94 +64,87 @@ export function relaisColisTrackingUrl(): string {
 }
 
 function responseTrackingNumber(page: ReturnType<typeof load>): string {
-  const value = clean(page('#track_package_trackingNumber').first().attr('value'), 32);
-  if (!value) return '';
-  try {
-    return normalizeRelaisColisTrackingNumber(value);
-  } catch {
-    return '';
-  }
+  const banners = page('.back-subedtext--sub').filter((_, element) => (
+    page(element).siblings('.back-subedtext').toArray().some((label) => comparableText(page(label).text()) === 'votre colis')
+  )).map((_, element) => clean(page(element).text(), 32)).get();
+  // A prefilled form alone cannot bind history from a successful response.
+  if (page('.follow-step').length && banners.length !== 1) return '';
+  if (banners.length > 1) return '';
+  // Successful pages clear the search field and identify the parcel in a banner.
+  const fields = [clean(page('#track_package_trackingNumber').first().attr('value'), 32)];
+  const values = [...new Set([...banners, ...fields].filter(Boolean))];
+  if (values.length !== 1) return '';
+  try { return normalizeRelaisColisTrackingNumber(values[0]!); } catch { return ''; }
 }
 
-export function parseRelaisColisTrackingHtml(
-  html: string,
-  rawTrackingNumber: string,
-): CarrierResult {
+export function parseRelaisColisTrackingHtml(html: string, rawTrackingNumber: string): CarrierResult {
   const trackingNumber = normalizeRelaisColisTrackingNumber(rawTrackingNumber);
-  // An empty body proves nothing about the shipment, so it stays indeterminate.
-  if (!html.trim()) {
-    throw new IndeterminateError('Relais Colis', 'Relais Colis returned an empty tracking response');
-  }
-
+  if (!html.trim()) throw new IndeterminateError('Relais Colis', 'Relais Colis returned an empty tracking response');
   const $ = load(html);
+  $('.follow-address, .follow-address-box, [data-recipient], [data-delivery-address], script, style, noscript').remove();
+  const errorText = comparableText($('.field-error, .follow-text--error, .error').text());
+  if (errorText.includes('jeton csrf est invalide')) {
+    throw new IndeterminateError('Relais Colis', 'Relais Colis rejected the tracking session');
+  }
   const returnedNumber = responseTrackingNumber($);
-  if (!returnedNumber) {
-    throw new SchemaError('Relais Colis', 'Relais Colis did not return a shipment identifier');
+  if (!returnedNumber) throw new SchemaError('Relais Colis', 'Relais Colis did not return a shipment identifier');
+  if (returnedNumber !== trackingNumber) throw new SchemaError('Relais Colis', 'Relais Colis returned a different shipment');
+  if (errorText && !$('.follow-step').length) {
+    if (errorText === 'aucune donnee de suivi pour votre colis veuillez reessayer plus tard') throw new RelaisColisTrackingError();
+    throw new IndeterminateError('Relais Colis', 'Relais Colis returned an unrecognized form error');
   }
-  if (returnedNumber !== trackingNumber) {
-    throw new SchemaError('Relais Colis', 'Relais Colis returned a different shipment');
-  }
 
-  // These blocks can contain the recipient, delivery address, phone number and
-  // pickup-point details. Remove them before reading any response text, and emit
-  // only the provider's status/date fields below.
-  $('.follow-address, .follow-address-box, [data-recipient], [data-delivery-address]').remove();
-  $('script, style, noscript').remove();
-
-  const errorText = clean(
-    $('.field-error, .follow-text--error, .error').first().text(),
-  );
-  if (errorText && $('.follow-step').length === 0) throw new RelaisColisTrackingError();
-
-  const parsedEvents: ParsedEvent[] = [];
+  const parsed: Array<{ event: CarrierEvent; status: CarrierStatus; local: string | null }> = [];
   const seen = new Set<string>();
-  $('.follow-step').slice(0, 250).each((index, element) => {
-    const row = $(element);
-    const description = clean(row.find('.follow-step-text').first().text());
-    const time = clean(row.find('.follow-step-date').first().text(), 64);
-    const parsedTime = parsedEventTime(time);
-    if (!description || !parsedTime) return;
+  const add = (description: string, time: string) => {
+    if (!description) throw new SchemaError('Relais Colis', 'Relais Colis returned a scan without a status');
     const identity = `${time}\u0000${description}`;
     if (seen.has(identity)) return;
     seen.add(identity);
+    const clock = eventClock(time);
     const classified = classifyRelaisColisStatus(description);
-    parsedEvents.push({
-      event: {
-        time: parsedTime.iso,
-        location: '',
-        description,
-        stage: classified.stage,
-      },
-      status: classified.status,
-      timestamp: parsedTime.timestamp,
-      index,
-    });
-  });
-  parsedEvents.sort((left, right) => (
-    right.timestamp - left.timestamp || left.index - right.index
-  ));
-  const limitedEvents = parsedEvents.slice(0, 100);
-  const events = limitedEvents.map(({ event }) => event);
-  if (events.length === 0) {
-    throw new SchemaError('Relais Colis', 'Relais Colis did not return tracking history');
-  }
-
-  const latest = limitedEvents[0]!;
-  const latestKnown = limitedEvents.find((item) => item.status !== 'unknown');
-  return {
-    status: latest.status !== 'unknown' ? latest.status : latestKnown?.status ?? 'unknown',
-    last_status_text: latest.event.description ?? 'Tracking information received',
-    last_update: latest.event.time ?? null,
-    expected_delivery: null,
-    timezone: 'Europe/Paris',
-    events,
+    if (parsed.length >= 500) throw new SchemaError('Relais Colis', 'Relais Colis returned excessive tracking history');
+    parsed.push({ event: {
+      ...(clock.instant ? { time: clock.instant.iso } : clock.local ? { local_time: clock.local } : {}),
+      ...(!clock.instant && time ? { provider_time_text: time } : {}),
+      location: '', description, stage: classified.stage,
+    }, status: classified.status, local: clock.instant ? null : clock.local });
   };
+  if ($('.follow-step').length > 250) throw new SchemaError('Relais Colis', 'Relais Colis returned excessive tracking history');
+  $('.follow-step').each((_, element) => {
+    const row = $(element);
+    const heading = clean(row.find('.follow-step-text').first().text());
+    const groups = row.find('.box').filter((_, box) => $(box).children('.follow-step-date').length > 0);
+    if (groups.length) {
+      groups.each((_, box) => {
+        const values = $(box).children('.follow-step-date');
+        if (values.length !== 2 || !clean(values.eq(1).text())) throw new SchemaError('Relais Colis', 'Relais Colis returned an ambiguous scan group');
+        add(clean(values.eq(1).text()), clean(values.eq(0).text(), 64));
+      });
+    } else {
+      add(heading, clean(row.find('.follow-step-date').first().text(), 64));
+    }
+  });
+  const limited = parsed.slice(0, 100);
+  const latest = limited[0];
+  if (!latest) throw new SchemaError('Relais Colis', 'Relais Colis did not return tracking history');
+  // Both groups and scans are displayed newest first. Unresolved current clocks
+  // and unfamiliar current wording must not borrow an older delivery's state.
+  return { status: latest.status, last_status_text: latest.event.description,
+    last_update: latest.event.time ?? null, ...(latest.local ? { last_update_local: latest.local } : {}),
+    expected_delivery: null, timezone: 'Europe/Paris', events: limited.map(({ event }) => event) };
 }
 
 function csrfToken(html: string): string {
   const token = clean(load(html)('#track_package__token').first().attr('value'), 512);
   if (!token) throw new SchemaError('Relais Colis', 'Relais Colis did not return a CSRF token');
   return token;
+}
+
+function responseError(provider: string, status: number): Error {
+  const cause = new UpstreamHttpError(provider, status);
+  return [404, 410].includes(status)
+    ? new TransportError('Relais Colis', 'Relais Colis tracking page is unavailable', { status, cause }) : cause;
 }
 
 function pageHeaders(): Record<string, string> {
@@ -182,81 +159,90 @@ export interface RelaisColisTrackerOptions {
   timeoutMs?: number;
   /** Test seam; production uses the global fetch. */
   fetcher?: typeof fetch;
+  recorder?: StepRecorder;
 }
 
 export class RelaisColisTracker {
   readonly timeoutMs: number;
   readonly fetcher?: typeof fetch;
+  readonly recorder: StepRecorder;
 
   constructor(options: RelaisColisTrackerOptions = {}) {
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.fetcher = options.fetcher;
+    this.recorder = options.recorder ?? NOOP_RECORDER;
     if (!Number.isFinite(this.timeoutMs) || this.timeoutMs <= 0) {
       throw new TypeError('Relais Colis timeout must be positive');
     }
   }
 
-  async fetch(rawTrackingNumber: string): Promise<CarrierResult> {
+  async fetch(rawTrackingNumber: string, context: TrackingContext = {}): Promise<CarrierResult> {
     const trackingNumber = normalizeRelaisColisTrackingNumber(rawTrackingNumber);
-    // One cookie jar per lookup: the CSRF token is bound to the session it was
-    // issued for, and nothing is shared between concurrent lookups.
-    const sessionFetch = makeFetchCookie(this.fetcher ?? fetch, new CookieJar());
-    const bootstrap = await fetchBounded(TRACKING_PAGE, {
-      headers: pageHeaders(),
-    }, {
-      provider: 'Relais Colis tracking page',
-      timeoutMs: this.timeoutMs,
-      maxBytes: MAX_RESPONSE_BYTES,
-      redirect: 'manual',
-      fetcher: sessionFetch,
-      allowHttpError: true,
-    });
-    if (!bootstrap.response.ok) {
-      throw new UpstreamHttpError('Relais Colis tracking page', bootstrap.response.status);
-    }
+    return runSteps({ carrier: 'relais-colis', budgetMs: context.budgetMs ?? this.timeoutMs,
+      signal: context.signal, recorder: this.recorder }, [{ id: 'direct', run: async ({ signal, remainingMs }) => {
+      try {
+        // One cookie jar per lookup: the CSRF token is bound to the session it was
+        // issued for, and nothing is shared between concurrent lookups.
+        const sessionFetch = makeFetchCookie(this.fetcher ?? fetch, new CookieJar());
+        const bootstrap = await fetchBounded(TRACKING_PAGE, {
+          headers: pageHeaders(), signal,
+        }, {
+          provider: 'Relais Colis tracking page',
+          timeoutMs: Math.max(1, Math.floor(remainingMs)),
+          maxBytes: MAX_RESPONSE_BYTES,
+          redirect: 'manual',
+          fetcher: sessionFetch,
+          allowHttpError: true,
+        });
+        if (!bootstrap.response.ok) {
+          throw responseError('Relais Colis tracking page', bootstrap.response.status);
+        }
 
-    const body = new URLSearchParams({
-      'track_package[trackingNumber]': trackingNumber,
-      'track_package[searchPackage]': '',
-      'track_package[_token]': csrfToken(decodeText(bootstrap.bytes)),
-    });
-    const result = await fetchBounded(TRACKING_PAGE, {
-      method: 'POST',
-      headers: {
-        ...pageHeaders(),
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Origin: 'https://www.relaiscolis.com',
-        Referer: TRACKING_PAGE,
-      },
-      body,
-    }, {
-      provider: 'Relais Colis tracking',
-      timeoutMs: this.timeoutMs,
-      maxBytes: MAX_RESPONSE_BYTES,
-      redirect: 'manual',
-      fetcher: sessionFetch,
-      allowHttpError: true,
-    });
+        const body = new URLSearchParams({
+          'track_package[trackingNumber]': trackingNumber,
+          'track_package[searchPackage]': '',
+          'track_package[_token]': csrfToken(decodeText(bootstrap.bytes)),
+        });
+        const result = await fetchBounded(TRACKING_PAGE, {
+          method: 'POST', signal,
+          headers: {
+            ...pageHeaders(),
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Origin: 'https://www.relaiscolis.com',
+            Referer: TRACKING_PAGE,
+          },
+          body,
+        }, {
+          provider: 'Relais Colis tracking',
+          timeoutMs: Math.max(1, Math.floor(remainingMs)),
+          maxBytes: MAX_RESPONSE_BYTES,
+          redirect: 'manual',
+          fetcher: sessionFetch,
+          allowHttpError: true,
+        });
 
-    if ([301, 302, 303, 307, 308, 404].includes(result.response.status)) {
-      throw new RelaisColisTrackingError();
-    }
-    if (!result.response.ok) {
-      throw new UpstreamHttpError('Relais Colis tracking', result.response.status);
-    }
-    const parsed = parseRelaisColisTrackingHtml(decodeText(result.bytes), trackingNumber);
-    parsed.tracking_url = TRACKING_PAGE;
-    parsed.tracking_source = 'rendered-page';
-    return parsed;
+        if (!result.response.ok) {
+          throw responseError('Relais Colis tracking', result.response.status);
+        }
+        const parsed = parseRelaisColisTrackingHtml(decodeText(result.bytes), trackingNumber);
+        parsed.tracking_url = TRACKING_PAGE;
+        parsed.tracking_source = 'rendered-page';
+        return parsed;
+      } catch (error) {
+        // Session cookies and the posted token must not survive as diagnostics.
+        if (error instanceof UpstreamNetworkError) throw new UpstreamNetworkError(error.provider, error.cause);
+        throw error;
+      }
+    } }]);
   }
 }
 
 export const adapter: AdapterFactory = (environment) => {
-  const tracker = new RelaisColisTracker({ fetcher: environment.fetcher });
+  const tracker = new RelaisColisTracker({ fetcher: environment.fetcher, recorder: environment.recorder });
   return {
     id: 'relais-colis',
     steps: ['direct'],
-    track: (input) => tracker.fetch(input.number),
-    recognize: (number) => recognizeFromLookup(() => tracker.fetch(number)),
+    track: (input, context) => tracker.fetch(input.number, context),
+    recognize: (number, context) => recognizeFromLookup(() => tracker.fetch(number, context), () => accepted(() => normalizeRelaisColisTrackingNumber(number))),
   };
 };

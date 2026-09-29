@@ -121,13 +121,13 @@ describe('dedicated carrier dispatch', () => {
     expect(geodis).toHaveBeenCalledWith('1G123GEODIS0');
     expect(dpdFrance).toHaveBeenCalledWith('250123456789012');
     expect(mondialRelay).toHaveBeenCalledWith('76434219', '59650');
-    expect(relaisColis).toHaveBeenCalledWith('CC200000000401');
+    expect(relaisColis).toHaveBeenCalledWith('CC200000000401', undefined);
     expect(swissPostCargo).toHaveBeenCalledWith('1234ABC789');
     expect(glsSwitzerland).toHaveBeenCalledWith('993990103198', '8000');
     expect(colisweb).toHaveBeenCalledWith('12345678');
     expect(cChezVous).toHaveBeenCalledWith('FGRC45BKLM');
     expect(heppner).toHaveBeenCalledWith('23456789', '75001');
-    expect(ciblex).toHaveBeenCalledWith('12345678901234');
+    expect(ciblex).toHaveBeenCalledWith('12345678901234', undefined);
     expect(paack).toHaveBeenCalledWith('ORDER1234', '75001');
     expect(indiaPost).toHaveBeenCalledWith('JN067614884IN');
   });

@@ -46,6 +46,9 @@ describe('the derived CARRIERS record', () => {
   it('shortens the numbers whose portal expects a different form', () => {
     expect(trackingNumberForLink('mondial-relay', '12123456780101006623123454')).toBe('121234567801');
     expect(trackingNumberForLink('c-chez-vous', 'ABC12345678-75001')).toBe('ABC12345678--75001');
+    expect(trackingNumberForLink('the-courier-guy', 'ld 000001')).toBe('LD-000001');
+    expect(trackingNumberForLink('the-courier-guy', 'DD-000001')).toBe('DD-000001');
+    expect(trackingNumberForLink('the-courier-guy', 'TESTA1')).toBe('TESTA1');
     expect(trackingNumberForLink('swiss-post', 'RA123456785CH')).toBe('RA123456785CH');
   });
 });

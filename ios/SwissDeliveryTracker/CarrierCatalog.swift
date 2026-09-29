@@ -819,6 +819,11 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             let split = normalized.index(normalized.startIndex, offsetBy: 11)
             linkNumber = "\(normalized[..<split])--\(normalized[split...])"
         }
+        if carrier == .theCourierGuy,
+           normalized.range(of: "^(DD|LD)[A-Z0-9]{6}$", options: .regularExpression) != nil {
+            let split = normalized.index(normalized.startIndex, offsetBy: 2)
+            linkNumber = "\(normalized[..<split])-\(normalized[split...])"
+        }
         return template.replacingOccurrences(
             of: "{trackingNumber}",
             with: urlEncode(linkNumber)

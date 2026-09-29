@@ -4,7 +4,8 @@
   "aliases": [],
   "region": {
     "countries": [
-      "ES"
+      "ES",
+      "PT"
     ]
   },
   "brand": {
@@ -60,6 +61,11 @@
       "id": "ecoscooting-1",
       "pattern": "^\\d{18}$",
       "confidence": "low"
+    },
+    {
+      "id": "ecoscooting-2",
+      "pattern": "^CNPRT\\d{20}$",
+      "confidence": "high"
     }
   ]
 }

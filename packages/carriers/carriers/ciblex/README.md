@@ -1,44 +1,33 @@
 # Ciblex
 
-French express network for time-critical and pharmaceutical deliveries. Tracked through the
-public extranet parcel page, keyed by the 14-digit label number.
+Tracks parcel labels and full barcodes through Ciblex's public extranet.
+Each identifier is sent unchanged; routing digits are never extracted or used
+as recipient verification.
 
 ## How it works
 
-1. `direct`: one bounded `GET corps.php?module=colis&colis={number}` on
-   `secure.extranet.ciblex.fr`, parsed with Cheerio.
-   - `.t_bandeau_detail td` must echo `SUIVI COLIS : <14 digits>` matching the request;
-     a different number is a `SchemaError`. Nothing else is read before this check, so a page
-     answering for another parcel can never become this parcel's history.
-   - Each 4-cell row of `table[border="2"]` is a scan (header row skipped). Rows are
-     de-duplicated on time, stage and place, sorted newest first and capped at 100.
-   - Not-found: HTTP 404, an echoed banner with an empty table (the portal's normal
-     wrong-number answer), or `.f_erreur` with no banner.
-   - An empty HTTP 200 is `IndeterminateError`: it has appeared transiently and proves nothing.
-     Treating it as not-found would mark live parcels unknown during an outage and trigger the
-     router's back-off.
+One bounded HTTP request retrieves the parcel page without session state.
+Exactly one shipment banner must match the complete requested identifier before
+its scan table is read. The official consumer form also forwards the full
+barcode unchanged. Distinct parcel histories remain separate.
 
 ## Notes
 
-- The 14-digit shape is shared with other European carriers, so detection is low-confidence
-  and the user confirms. The 24-digit full label barcodes are not claimed.
-- Status is phrase-based: the page prints French action labels and no codes. Labels are
-  compared without case or diacritics (the portal alternates "Colis Livré" / "COLIS LIVRE").
-  Return and delivery phrases are tested before the broader transit ones.
-- Descriptions are our own English wording, not the provider's label. Unmapped wording gets a
-  neutral description and is left to the sync's classifier; the current status falls back to
-  the latest mapped row.
-- Dates are naive `dd/MM/yyyy [HH:mm[:ss]]` wall-clock values, read in Europe/Paris via
-  `zonedTime`.
-- The place cell is free text and carries the recipient's address on failure rows. A place is
-  kept only when it matches the depot shape `CITY 68 (68)` (same department inside the
-  parentheses), and never on an exception row. The customer and order block is never read.
+The HTTP encoding takes precedence over the older HTML charset declaration.
+Fully dated scans use the French portal clock and sort by instant with stable
+ties. If a clock is unresolved, native position remains authoritative and its
+text is preserved. Unknown current wording cannot inherit older delivery.
 
-## Limitations
+The place column can contain recipient addresses. Only the established depot
+label with a repeated department code is retained, and exception places are
+excluded. Customer and order blocks are ignored. Distinct native places remain
+separate scans even when privacy rules suppress both.
 
-- No delivery estimate on the page.
+Empty tables and form errors do not prove parcel absence. They remain
+inconclusive, as do blank responses, redirects and generic HTTP errors.
 
 ## Testing
 
-`npm run test:carriers:live -- packages/carriers/carriers/ciblex` (no env vars). It accepts
-either the empty-table not-found or the empty-200 indeterminate answer for a synthetic number.
+Set `CIBLEX_TRACKING_NUMBER` outside the repository and optionally
+`CIBLEX_UNKNOWN_NUMBER`, then run
+`npm run test:carriers:live -- packages/carriers/carriers/ciblex`.

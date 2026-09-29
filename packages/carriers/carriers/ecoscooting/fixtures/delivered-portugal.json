@@ -1,0 +1,87 @@
+{
+  "success": "true",
+  "packageParam": {
+    "trackingNumber": "CNPRT00000000000000000001",
+    "dimWeight": {
+      "weight": "4301",
+      "weightUnit": "g"
+    },
+    "outOrderId": "PRIVATE_SYNTHETIC_ORDER",
+    "toZipcode": "PRIVATE_SYNTHETIC_POSTCODE"
+  },
+  "feature": "PRIVATE_SYNTHETIC_FEATURE",
+  "statuses": [
+    {
+      "opTimestamp": "1768046400000",
+      "datetime": "2026-01-10 12:00:00 UTC+0",
+      "actionCode": "LM_SIGN_SUCCESS",
+      "statusName": "Delivery Success",
+      "description": "Your shipment has been delivered successfully",
+      "timezone": "+0",
+      "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
+      "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
+      "deliveryLatitude": "PRIVATE_SYNTHETIC_LATITUDE",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1767960000000",
+      "datetime": "2026-01-09 12:00:00 UTC+0",
+      "actionCode": "LM_DELIVERY_DEPART",
+      "statusName": "Out for Delivery",
+      "description": "Out for delivery",
+      "timezone": "+0",
+      "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
+      "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
+      "deliveryLatitude": "PRIVATE_SYNTHETIC_LATITUDE",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1767873600000",
+      "datetime": "2026-01-08 12:00:00 UTC+0",
+      "actionCode": "SL_ACCEPT",
+      "statusName": "Accepted by Last Mile",
+      "description": "Accepted by Last Mile",
+      "timezone": "+0",
+      "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
+      "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
+      "deliveryLatitude": "PRIVATE_SYNTHETIC_LATITUDE",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1767787200000",
+      "datetime": "2026-01-07 12:00:00 UTC+0",
+      "actionCode": "SC_OUTBOUND",
+      "statusName": "Sorting Center Outbound",
+      "description": "Sorting Center Outbound",
+      "timezone": "+0",
+      "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
+      "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
+      "deliveryLatitude": "PRIVATE_SYNTHETIC_LATITUDE",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1767700800000",
+      "datetime": "2026-01-06 12:00:00 UTC+0",
+      "actionCode": "SC_INBOUND",
+      "statusName": "Sorting Center Inbound",
+      "description": "Sorting Center Inbound",
+      "timezone": "+0",
+      "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
+      "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
+      "deliveryLatitude": "PRIVATE_SYNTHETIC_LATITUDE",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1767614400000",
+      "datetime": "2026-01-05 12:00:00 UTC+0",
+      "actionCode": "CREATE_ORDER_CES",
+      "statusName": "create",
+      "description": "create",
+      "timezone": "+0",
+      "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
+      "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
+      "deliveryLatitude": "PRIVATE_SYNTHETIC_LATITUDE",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    }
+  ]
+}

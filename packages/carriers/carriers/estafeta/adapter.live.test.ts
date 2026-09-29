@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { EstafetaTracker } from './adapter';
+import { NOOP_RECORDER } from '../../core/telemetry';
+import { adapter, EstafetaTracker } from './adapter';
 
 describe('Estafeta live tracking', () => {
   it.skipIf(!process.env.ESTAFETA_TRACKING_NUMBER)('returns exact single-piece local history', async () => {
-    const result = await new EstafetaTracker().fetch(process.env.ESTAFETA_TRACKING_NUMBER!);
+    const instance = adapter({ fetcher: fetch, env: {}, recorder: NOOP_RECORDER, trawl: null, browserExecutablePath: null });
+    const result = await instance.track({ number: process.env.ESTAFETA_TRACKING_NUMBER! });
     expect(result.events?.length).toBeGreaterThan(0);
     expect(result.events?.some(event => event.local_time)).toBe(true);
     expect(result.last_update).toBeNull();

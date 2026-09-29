@@ -42,6 +42,48 @@
       "language": "en",
       "stage": "in_transit",
       "confirmedBy": "live"
+    },
+    {
+      "code": "LM_SIGN_SUCCESS",
+      "wording": "Your shipment has been delivered successfully",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "LM_DELIVERY_DEPART",
+      "wording": "Out for Delivery",
+      "language": "en",
+      "stage": "out_for_delivery",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "SL_ACCEPT",
+      "wording": "Accepted by Last Mile",
+      "language": "en",
+      "stage": "accepted",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "SC_OUTBOUND",
+      "wording": "Sorting Center Outbound",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "SC_INBOUND",
+      "wording": "Sorting Center Inbound",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "CREATE_ORDER_CES",
+      "wording": "create",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
     }
   ]
 }

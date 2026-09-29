@@ -37,10 +37,10 @@
         "date": "2026-09-06"
       },
       "expect": {
-        "carrier": "unknown",
-        "confidence": "none"
+        "carrier": "uniuni",
+        "confidence": "high"
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to UniUni; no rule matches this shape."
+      "note": "Publicly reported shipment number with identity-bound history in the official anonymous feed."
     }
   ]
 }

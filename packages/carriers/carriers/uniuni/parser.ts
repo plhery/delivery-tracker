@@ -18,12 +18,13 @@ export function normalizeUniuniNumber(raw: string): string {
 /** Discovery only probes formats confirmed for individual parcels. */
 export function normalizeUniuniRecognitionNumber(raw: string): string {
   const number = normalizeUniuniNumber(raw);
-  if (!/^(?:UUS[A-Z0-9]{16}|4C\d{9}US)$/.test(number)) throw new TypeError('UniUni recognition requires a supported parcel format');
+  if (!/^(?:UUS[A-Z0-9]{16}|UUSC\d{12}|4C\d{9}US)$/.test(number)) throw new TypeError('UniUni recognition requires a supported parcel format');
   return number;
 }
 
 function clock(raw: unknown): Pick<CarrierEvent, 'time'> & { local_time?: string; provider_time_text?: string } {
-  if (!isRecord(raw)) return {};
+  if (raw == null) return {};
+  if (!isRecord(raw)) throw new SchemaError(PROVIDER, 'UniUni returned an invalid scan clock');
   // dateTime.ts is corrected epoch seconds. pathTime encodes local wall-clock
   // digits as UTC seconds and is not an instant, despite its numeric shape.
   if (raw.ts != null) {
@@ -34,13 +35,15 @@ function clock(raw: unknown): Pick<CarrierEvent, 'time'> & { local_time?: string
     if (!time) throw new SchemaError(PROVIDER, 'UniUni returned an invalid corrected scan time');
     return { time: time.iso };
   }
+  if (raw.localTime != null && typeof raw.localTime !== 'string') throw new SchemaError(PROVIDER, 'UniUni returned an invalid local scan clock');
   const text = clean(raw.localTime, 64);
   if (!text) return {};
   const parsed = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(text)
     ? DateTime.fromFormat(text, 'yyyy-MM-dd HH:mm:ss', { zone: 'UTC' }) : null;
   // UTC validates calendar digits only. Without corrected seconds, preserve
   // the provider's clock instead of choosing an offset or borrowing a scan.
-  return parsed?.isValid ? { local_time: parsed.toISO({ includeOffset: false, suppressMilliseconds: true })! }
+  return parsed?.isValid && parsed.toFormat('yyyy-MM-dd HH:mm:ss') === text
+    ? { local_time: parsed.toISO({ includeOffset: false, suppressMilliseconds: true })! }
     : { provider_time_text: text };
 }
 

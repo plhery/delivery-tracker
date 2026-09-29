@@ -33,11 +33,12 @@
         "carrier": "unknown",
         "confidence": "low",
         "candidates": [
+          "ciblex",
           "inpost",
           "bpost"
         ]
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. Full label barcode rather than the number a user types. The source attributes it to Ciblex, which no rule claims."
+      "note": "Publicly reported full label barcode; the native parcel lookup accepts it unchanged. The shape remains ambiguous pending matching history."
     },
     {
       "number": "560815852502035613344150",
@@ -51,11 +52,12 @@
         "carrier": "unknown",
         "confidence": "low",
         "candidates": [
+          "ciblex",
           "inpost",
           "bpost"
         ]
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. Full label barcode rather than the number a user types. The source attributes it to Ciblex, which no rule claims."
+      "note": "Publicly reported full label barcode; the native parcel lookup accepts it unchanged. The shape remains ambiguous pending matching history."
     }
   ]
 }
