@@ -307,11 +307,18 @@ export function buildEvents(
   const carrierId = sourceCarrierId ?? String(parcel.carrier ?? '');
   const timezone = resultTimezone(carrierId, result);
   const rows: JsonObject[] = [];
+  // Carriers repeat a scan word for word (Chronopost logs one sort up to three
+  // times in the same minute). A repeat has the same identity, and a batch that
+  // holds an identity twice cannot be saved, so each scan is kept once.
+  const identities = new Set<string>();
   for (const raw of result.events ?? []) {
     const description = String(raw.description ?? 'Tracking update').trim();
     const location = String(raw.location ?? '').trim();
     const occurredAt = eventTimestamp(raw.time, timezone);
     if (!occurredAt) continue;
+    const identity = providerEventId(carrierId, raw.time, location, description);
+    if (identities.has(identity)) continue;
+    identities.add(identity);
     const declaredStage = String(raw.stage ?? '');
     rows.push({
       package_id: parcel.id,
@@ -320,7 +327,7 @@ export function buildEvents(
       description,
       location: location || null,
       occurred_at: occurredAt,
-      provider_event_id: providerEventId(carrierId, raw.time, location, description),
+      provider_event_id: identity,
       raw_data: { ...raw, stage_source: stageSource(declaredStage, description) },
     });
   }

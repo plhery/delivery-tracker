@@ -172,6 +172,21 @@ describe('tracking event normalization', () => {
     });
   });
 
+  it('keeps a scan the carrier repeats word for word once', () => {
+    const sort = { time: '2026-09-29T06:07:00+02:00', description: 'Tri effectué dans l’agence de distribution' };
+    const rows = buildEvents({ id: 'package-1', carrier: 'chronopost' }, {
+      status: 'in_transit',
+      events: [sort, { ...sort }, { ...sort, location: 'Agence' }, { ...sort, time: '2026-09-29T06:08:00+02:00' }, { ...sort }],
+    });
+    // Saving the same identity twice in one batch fails the whole refresh.
+    expect(rows.map((row) => [row.occurred_at, row.location])).toEqual([
+      ['2026-09-29T04:07:00Z', null],
+      ['2026-09-29T04:07:00Z', 'Agence'],
+      ['2026-09-29T04:08:00Z', null],
+    ]);
+    expect(new Set(rows.map((row) => row.provider_event_id)).size).toBe(rows.length);
+  });
+
   it('keeps the classifier stage and its rule id in step', () => {
     expect(classifyStage('Delivery attempt failed'))
       .toEqual({ stage: 'failed_attempt', source: 'wording:language' });
