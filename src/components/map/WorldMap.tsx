@@ -89,8 +89,14 @@ export function WorldMap({
   const target = useMemo(() => ready && size ? targetCamera(route, mode, size, { top, right, bottom, left }, shape) : null,
     [ready, route, mode, size, top, right, bottom, left, shape]);
 
+  // Only a change of view, or recentering, brings a moved map back; a new frame or scan leaves it where it was put.
+  // Otherwise the view buttons that appear when it moves would resize the frame, pull it back and vanish.
   useEffect(() => {
-    if (!target || !size) return;
+    free.current = false;
+  }, [mode, recenter]);
+
+  useEffect(() => {
+    if (!target || !size || free.current) return;
     const from = current.current;
     const interpolate = from && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
       ? interpolateCamera(from, target, Math.max(size.width, size.height)) : null;

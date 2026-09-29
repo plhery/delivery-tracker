@@ -54,6 +54,33 @@ test('zooms the full map with the wheel, and returns to the parcel', async ({ pa
   await expect(nearby).toHaveAttribute('aria-pressed', 'true');
 });
 
+test('leaves a moved map of one place where it is until a view is chosen', async ({ page }) => {
+  await page.getByRole('button', { name: /^(?:Next up: )?Trail weekend kit/ }).click();
+  await page.locator('.detail--postcard').getByRole('button', { name: 'Open the map' }).click();
+  const map = page.getByRole('dialog', { name: 'Map showing Buchs' });
+  const views = map.getByRole('group', { name: 'Map view' });
+  const dot = map.locator('g[data-kind="current"]');
+  await expect(dot).toBeAttached();
+  // With no close-up to switch to, the view buttons only appear as a way back.
+  await expect(views).toHaveCount(0);
+  const resting = await dot.getAttribute('transform');
+  const box = (await map.locator('[data-scale]').boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 3);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 90, box.y + box.height / 3 + 40, { steps: 12 });
+  await page.mouse.up();
+  await expect(views).toBeVisible();
+  const moved = await dot.getAttribute('transform');
+  expect(moved).not.toBe(resting);
+  // Longer than any flight back to the parcel.
+  await page.waitForTimeout(1600);
+  await expect(views).toBeVisible();
+  expect(await dot.getAttribute('transform')).toBe(moved);
+  await views.getByRole('button', { name: 'Journey' }).click();
+  await expect(views).toHaveCount(0);
+  await expect.poll(() => dot.getAttribute('transform')).toBe(resting);
+});
+
 test('pinches the full map, and lets the card peek closer', async ({ page, browserName, isMobile }) => {
   test.skip(!isMobile || browserName !== 'chromium', 'Two-finger touches go through Chromium’s DevTools protocol.');
   const client = await page.context().newCDPSession(page);

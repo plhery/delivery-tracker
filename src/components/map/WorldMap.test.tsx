@@ -176,6 +176,33 @@ describe('WorldMap', () => {
     delete (HTMLElement.prototype as Partial<HTMLElement>).setPointerCapture;
   });
 
+  it('leaves a moved map where it was put when its frame changes, until a view is chosen', async () => {
+    Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', { configurable: true, value: vi.fn() });
+    const onFreeChange = vi.fn();
+    const route = buildRoute([scan(zurich)]);
+    const map = (bottom: number, mode: 'journey' | 'now' = 'journey') => <WorldMap route={route} mode={mode} time={time} interactive
+      insets={{ top: 0, right: 0, bottom, left: 0 }} onFreeChange={onFreeChange} />;
+    const { container, rerender } = render(map(60));
+    const dot = () => container.querySelector('g[data-kind="current"]')?.getAttribute('transform');
+    await waitFor(() => expect(dot()).toBeTruthy());
+    onFreeChange.mockClear();
+    const view = screen.getByRole('img');
+    fireEvent.pointerDown(view, { pointerId: 1, button: 0, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(view, { pointerId: 1, clientX: 160, clientY: 120 });
+    fireEvent.pointerUp(view, { pointerId: 1 });
+    expect(onFreeChange).toHaveBeenLastCalledWith(true);
+    const moved = dot();
+    // The view buttons that appear once the map moves take room from its frame.
+    rerender(map(120));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(dot()).toBe(moved);
+    expect(onFreeChange).not.toHaveBeenCalledWith(false);
+    rerender(map(120, 'now'));
+    await waitFor(() => expect(onFreeChange).toHaveBeenLastCalledWith(false));
+    expect(dot()).not.toBe(moved);
+    delete (HTMLElement.prototype as Partial<HTMLElement>).setPointerCapture;
+  });
+
   it('zooms the full map with a pinch or a wheel', async () => {
     Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', { configurable: true, value: vi.fn() });
     const onFreeChange = vi.fn();
