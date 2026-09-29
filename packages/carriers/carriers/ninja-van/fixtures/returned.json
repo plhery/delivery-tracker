@@ -1,0 +1,20 @@
+{
+  "id": 12345,
+  "created_at": "2026-04-01T08:00:00Z",
+  "tracking_id": "NLMYA00000000",
+  "instructions_received": false,
+  "delivery_start_date": "2026-04-02",
+  "delivery_end_date": "2026-04-04",
+  "granular_status": "Returned to Sender",
+  "status": "Completed",
+  "events": [
+    { "order_id": 12345, "type": "RTS", "time": "2026-04-01T08:15:00Z", "data": {}, "tags": ["MANUAL_ACTION"] },
+    { "order_id": 12345, "type": "DRIVER_PICKUP_SCAN", "time": "2026-04-01T10:30:00Z", "data": { "hub_name": "Example Hub" }, "tags": ["SCAN"] },
+    { "order_id": 12345, "type": "HUB_INBOUND_SCAN", "time": "2026-04-01T11:00:00Z", "data": { "hub_name": "Example Sorting Centre" }, "tags": ["SCAN"] },
+    { "order_id": 12345, "type": "ADDED_TO_SHIPMENT", "time": "2026-04-01T12:00:00Z", "data": {}, "tags": ["SORT"] },
+    { "order_id": 12345, "type": "PARCEL_ROUTING_SCAN", "time": "2026-04-02T07:00:00Z", "data": { "hub_name": "Example Station" }, "tags": ["SORT"] },
+    { "order_id": 12345, "type": "DRIVER_INBOUND_SCAN", "time": "2026-04-02T08:00:00Z", "data": { "hub_name": "Example Station" }, "tags": ["DELIVERY"] },
+    { "order_id": 12345, "type": "DELIVERY_SUCCESS", "time": "2026-04-02T09:00:00Z", "data": { "is_rts": true }, "tags": ["DELIVERY"] },
+    { "order_id": 12345, "type": "PARCEL_ROUTING_SCAN", "time": "2026-04-02T10:00:00Z", "data": { "hub_name": "Example Station" }, "tags": ["SORT"] }
+  ]
+}

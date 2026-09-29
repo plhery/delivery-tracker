@@ -15,8 +15,10 @@ Scans retain the carrier's newest-first order. Their clocks have no stated zone,
 so valid digits remain local time and unresolved labels remain provider text.
 Calendar estimates retain date-only precision while the delivery is active;
 estimates older than the latest scan are omitted. A rescheduled round does not establish dispatch.
-Only status labels and the locality column are retained; free-form explanations,
-contact fields and proof of delivery are excluded.
+Only recognized status labels and the locality column are retained. Scans with
+missing or unrecognized labels remain neutral tracking updates, so an older
+delivery does not become current. Free-form explanations, contact fields and
+proof of delivery are excluded.
 
 The initial page contains every error message hidden in its markup. A negative
 requires the server-selected no-history code and the matching request echo;

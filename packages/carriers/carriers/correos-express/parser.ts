@@ -62,20 +62,20 @@ export function parseCorreosExpress(html: string, raw: string): CarrierResult {
   for (const row of rows.toArray()) {
     const cells = $(row).children('td');
     if (cells.length !== 3) throw new SchemaError('Correos Express', 'Correos Express returned an incomplete scan');
-    const label = clean(cells.eq(2).text(), 500).split('.')[0]!.trim();
-    // Keep the carrier's status label. The sentence after it can contain
-    // delivery comments or recipient information and is not retained.
-    if (!/^[\p{L}][\p{L}\s-]{1,100}$/u.test(label) || /firmad|tel[eé]fono|nif|cif|correo electr[oó]nico/i.test(label)) {
-      throw new SchemaError('Correos Express', 'Correos Express returned an invalid status label');
-    }
+    const rawStatus = clean(cells.eq(2).text(), 500);
+    if (!rawStatus) throw new SchemaError('Correos Express', 'Correos Express returned an empty scan');
+    const label = rawStatus.split('.')[0]!.trim();
+    // The carrier sometimes leaves the label blank and puts a free-form
+    // incident note after the first period. Only known labels are retained.
     const clock = scanClock(cells.eq(0).text());
     const location = clean(cells.eq(1).text(), 200);
     const mapped = classifyCorreosExpressStatus(label);
-    const description = mapped?.status === 'delivered' ? 'Delivered' : label;
-    const key = `${clock.local_time ?? clock.provider_time_text ?? ''}\u0000${label}\u0000${location}`;
+    const description = mapped ? (mapped.status === 'delivered' ? 'Delivered' : label) : 'Tracking update';
+    const key = `${clock.local_time ?? clock.provider_time_text ?? ''}\u0000${rawStatus}\u0000${location}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    events.push({ description, provider_status: label, ...clock, ...(location ? { location } : {}), ...(mapped ? { stage: mapped.stage } : {}) });
+    events.push({ description, ...(mapped ? { provider_status: label, stage: mapped.stage } : {}),
+      ...clock, ...(location ? { location } : {}) });
   }
   const latest = events[0]!;
   const mapped = classifyCorreosExpressStatus(String(latest.provider_status));

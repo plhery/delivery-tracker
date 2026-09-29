@@ -4177,6 +4177,9 @@
     "confidence": "low",
     "candidates": [
       "ninja-van"
+    ],
+    "asked": [
+      "ninja-van"
     ]
   },
   {
@@ -4450,10 +4453,10 @@
   },
   {
     "input": "RR400244295CL",
-    "carrier": "intl-post",
+    "carrier": "correos-chile",
     "confidence": "high",
     "candidates": [
-      "intl-post"
+      "correos-chile"
     ]
   },
   {

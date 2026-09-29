@@ -88,7 +88,7 @@ statuses map correctly.
 | [Delhivery](../carriers/delhivery/README.md) | Yes | No history; alternate summary + 1 undated scan | No history | No history | No history | No history | N/A |
 | [Blue Dart](../carriers/blue-dart/README.md) | Yes | ✓ 15 | No history | No history | No history | No history | N/A |
 | [DTDC](../carriers/dtdc/README.md) | Yes | No history; alternate ✓ 9 | No history | ✓ 35 | No history | No history | N/A |
-| [Ninja Van](../carriers/ninja-van/carrier.json) | No adapter | No history | No history | No history | No history | No history | N/A |
+| [Ninja Van](../carriers/ninja-van/README.md) | Yes (Malaysia NLMY) | No history; alternate ✓ 5 | No history | No history | No history | No history | N/A |
 | [Packeta](../carriers/packeta/README.md) | Yes | No history | No history | No history | No history | No history | N/A |
 | [Poczta Polska](../carriers/poczta-polska/README.md) | Yes | ✓ 5 | ✓ 10 | ✓ 19 | ✓ 21 | ✓ 18 | ✓ 6 |
 | [Bring](../carriers/bring-posten/README.md) | Yes | Not tested; alternate ✓ 3 | ✓ 12 | ✓ 15 | ✓ 19 | ✓ 16 | ✓ 3 |
@@ -98,7 +98,7 @@ statuses map correctly.
 | [CTT Express](../carriers/ctt-express/README.md) | Yes | ✓ 5 | ✓ 5 | ✓ 5 | ✓ 4 | ✓ 6 | N/A |
 | [BRT](../carriers/brt/README.md) | Yes | Not tested; alternate ✓ 7 | No history | ✓ 23 | No history | ✓ 5 | N/A |
 | [SEUR](../carriers/seur/README.md) | Yes | No history; alternate ✓ 6 | No history | ✓ 4 | ✓ 4 | ✓ 4 | N/A |
-| [Correos Express](../carriers/correos-express/README.md) | Yes | Error | ✓ 9 | ✓ 9 | No history | No history | N/A |
+| [Correos Express](../carriers/correos-express/README.md) | Yes | ✓ 9 | ✓ 9 | ✓ 9 | No history | No history | N/A |
 | [MRW](../carriers/mrw/carrier.json) | No adapter | Not tested | No history | No history | ✓ 1 | No history | N/A |
 | [NACEX](../carriers/nacex/README.md) | Yes | Not tested; alternate ✓ 14 | Error | Error | Error | Error | N/A |
 | [Colis Privé](../carriers/colis-prive/README.md) | Yes (postcode) | Not tested (postcode) | No history | No history | No history | No history | N/A |
@@ -111,7 +111,7 @@ statuses map correctly.
 | [Thailand Post](../carriers/thailand-post/carrier.json) | No adapter | Not tested | ✓ 8 | ✓ 8 | No history | ✓ 8 | No history |
 | [Ukrposhta](../carriers/ukrposhta/README.md) | Yes | ✓ 22; alternate ✓ 14 | ✓ 30 | ✓ 33 | ✓ 45 | ✓ 33 | Error |
 | [Estafeta](../carriers/estafeta/README.md) | Yes | ✓ 4 | No history | No history | No history | No history | N/A |
-| [Correos de Chile](../carriers/correos-chile/carrier.json) | No adapter | Not tested | No history | No history | ✓ 13 | No history | No history |
+| [Correos de Chile](../carriers/correos-chile/README.md) | Yes | No history; alternate ✓ 1 | No history | No history | ✓ 13 | No history | No history |
 | [The Courier Guy](../carriers/the-courier-guy/README.md) | Yes | ✓ 14; alternate ✓ 13 | No history | No history | No history | No history | N/A |
 | [GEODIS](../carriers/geodis/README.md) | Yes | Summary only | No history | Postcode prompt | ✓ 4 | ✓ 2 | N/A |
 | [Dachser](../carriers/dachser/README.md) | Yes (tracking link) | Not tested (link) | No history | No history | No history | No history | N/A |
@@ -217,7 +217,10 @@ By carrier:
   three recent references each (J&T in the Philippines and Indonesia, TNT France's
   16-digit numbers). Blue Dart directly returns a full history. Delhivery's alternate
   direct sample has a dated current snapshot and one undated scan. TNT's alternate
-  national reference has a booking scan. Ninja Van's public references had none either.
+  national reference has a booking scan.
+- **Ninja Van:** the original public references had no provider history. A newer
+  Malaysian reference has native history; the public timeline omits internal routing
+  rows and marks a completed return separately from recipient delivery.
 - **JD Logistics, ZTO, STO:** public posts mask Chinese domestic numbers, so only
   old examples were available.
 - **YTO:** the direct feed and ParcelsApp have the same history;
@@ -290,9 +293,9 @@ By carrier:
   the comparison reference is a different DPD-group identifier. SEUR's simplified
   lookup returns single-piece history without recipient verification; absent, recent
   and out-of-range histories share an inconclusive response.
-- **Correos Express:** Ship24 and ParcelsApp hold the same nine scans. The direct form
-  printed a failed delivery without a status label, and the adapter rejects a scan
-  without one, so the whole history fails.
+- **Correos Express:** Ship24, ParcelsApp and the direct form hold the same nine scans.
+  A failed-delivery row lacks a status label; the adapter keeps it as a neutral update
+  without exposing the free-form incident note or promoting an older delivery.
 - **MRW:** the newest reference is a June parcel reviewed in September; only 17TRACK
   still had it, as a single delivery row. A September parcel had 14 rows in Ship24,
   ParcelsApp and Postal Ninja and none in 17TRACK.
@@ -324,8 +327,9 @@ By carrier:
   colliding codes and master-piece lists; Mexican clocks remain local. Both forms of the
   public reference return the same four scans, and no aggregator knew them. Detection
   also accepts the full guide with a letter after twelve digits.
-- **Correos de Chile:** an item to China had 13 rows in 17TRACK, after one recheck, and
-  none elsewhere.
+- **Correos de Chile:** an older item to China had 13 rows in 17TRACK and none
+  elsewhere. Recent public references return a bound native scan. The adapter keeps
+  wall clocks local and excludes recipient details and the branch directory.
 - **The Courier Guy:** native product references preserve their printed separator and
   bind the exact custom reference to one canonical shipment. The direct feed returns
   14 scans for the cancelled collection and 13 for the Pudo delivery. Missing piece
@@ -386,11 +390,10 @@ Universal providers remain the route where no anonymous, identity-bound carrier 
 is supported. J&T's Philippine portal uses interactive verification and its Indonesian
 portal asks for a phone suffix. JD Logistics and ZTO gate reads with sessions or
 CAPTCHA; STO's old form redirects away. China Post's ordered-character challenge and
-Hongkong Post's CAPTCHA remain unsupported. Ninja Van's public endpoint returns
-no usable history. Parcelforce forwards to Royal Mail's disabled direct route. An Post's
-consumer query is challenged, MRW's stateful result asks for recipient phone or SMS
-verification, and SpeedX's anonymous endpoints require verification. Correos de Chile and
-Old Dominion have no adapter yet. TIPSA requires the destination postcode, which
+Hongkong Post's CAPTCHA remain unsupported. Parcelforce forwards to Royal Mail's
+disabled direct route. An Post's consumer query is challenged, MRW's stateful result
+has no usable history, and SpeedX's anonymous endpoints require verification. Old
+Dominion has no adapter yet. TIPSA requires the destination postcode, which
 no public reference supplies.
 
 17TRACK's generic transit code is refined for Swiss Post's exact vehicle-loading
@@ -402,7 +405,7 @@ rather than inferred scan instants.
 Detection selects or suggests the named carrier for the public numbers behind rows
 31–100, with these exceptions. Planzer composites stay undetected on purpose (see the
 [Planzer README](../carriers/planzer/README.md)), and DTDC's `Z` numbers share Packeta's
-shape and stay with Packeta. S10 items from Poland, Ukraine and Chile go to the generic
+shape and stay with Packeta. S10 items from Poland and Ukraine go to the generic
 postal carrier. Paack and Ukrposhta have no rule for their own
 numbers; Posti, Dachser, Hermes Einrichtungs-Service, Swiss Post Cargo, PostLogistics,
 Colisweb and Delivengo have none by design. SpeedX's 24-character form matches

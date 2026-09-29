@@ -55,10 +55,34 @@ describe('Correos Express direct tracking', () => {
   it('rejects incomplete, ambiguous or oversized histories instead of inventing progress', () => {
     expect(() => parseCorreosExpress(edit($ => $('tbody tr').remove()), NUMBER)).toThrowError(expect.objectContaining({ kind: 'indeterminate' }));
     for (const changed of [edit($ => $('thead th').first().text('Different column')), edit($ => $('tbody tr').first().find('td').last().remove()),
-      edit($ => $('tbody tr').first().find('td').last().text('')), edit($ => $('tbody tr').first().find('td').last().text('FIRMADO POR PRIVATE SYNTHETIC NAME')),
+      edit($ => $('tbody tr').first().find('td').last().text('')),
       edit($ => $('table.miyazaki tbody').html($('table.miyazaki tbody tr').first().toString().repeat(501)))]) {
       expect(() => parseCorreosExpress(changed, NUMBER)).toThrowError(expect.objectContaining({ kind: 'schema' }));
     }
+  });
+
+  it('retains label-free and unrecognized native scans without exposing incident details', () => {
+    const changed = edit($ => {
+      const first = $('tbody tr').first();
+      first.find('td').last().text('. PRIVATE_SYNTHETIC_INCIDENT');
+      const unknown = first.clone();
+      unknown.find('td').first().text('05/01/2026 18:20');
+      unknown.find('td').last().text('FIRMADO POR PRIVATE_SYNTHETIC_NAME');
+      first.after(unknown);
+      $('tbody tr').eq(2).find('td').last().text('ENTREGADO. PRIVATE_SYNTHETIC_SIGNATURE');
+    });
+    const result = parseCorreosExpress(changed, NUMBER);
+    expect(result).toMatchObject({ status: 'unknown', last_status_text: 'Tracking update', expected_delivery: null });
+    expect(result.current_stage).toBeUndefined();
+    expect(result.events).toHaveLength(8);
+    expect(result.events?.slice(0, 2)).toEqual([
+      expect.objectContaining({ description: 'Tracking update', local_time: '2026-01-05T18:27:00' }),
+      expect.objectContaining({ description: 'Tracking update', local_time: '2026-01-05T18:20:00' }),
+    ]);
+    expect(result.events?.[0].provider_status).toBeUndefined();
+    expect(result.events?.[1].provider_status).toBeUndefined();
+    expect(result.events?.[2].stage).toBe('delivered');
+    expect(JSON.stringify(result)).not.toContain('PRIVATE_SYNTHETIC');
   });
 
   it('keeps newest unknown or malformed-clock rows ahead of older delivery and preserves unresolved digits', () => {
@@ -69,10 +93,12 @@ describe('Correos Express direct tracking', () => {
         $('tbody tr').eq(1).find('td').eq(2).text('ENTREGADO. PRIVATE_SYNTHETIC_SIGNATURE');
       });
       const result = parseCorreosExpress(changed, NUMBER);
-      expect(result).toMatchObject({ status: 'unknown', last_status_text: 'NUEVO ESTADO', last_update: null, expected_delivery: null });
+      expect(result).toMatchObject({ status: 'unknown', last_status_text: 'Tracking update', last_update: null, expected_delivery: null });
       expect(result.current_stage).toBeUndefined();
       expect(result.delivered_at).toBeUndefined();
       expect(result.events?.[0].local_time).toBeUndefined();
+      expect(result.events?.[0].provider_status).toBeUndefined();
+      expect(JSON.stringify(result)).not.toContain('PRIVATE_SYNTHETIC');
       if (clock) expect(result.events?.[0].provider_time_text).toBe(clock);
     }
   });

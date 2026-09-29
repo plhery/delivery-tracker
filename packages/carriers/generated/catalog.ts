@@ -1609,7 +1609,7 @@ export const CARRIER_CATALOG = {
     "linkRules": [],
     "detectionRules": [
       {
-        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!AS\\d{9}US$)(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}(?!CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$|ES$|SE$|DK$|AT$|YP$)[A-Z]{2}$",
+        "pattern": "^(?![CL][A-Z]\\d{9}DE$)(?!AS\\d{9}US$)(?!(?:PZ|XU|XW|XY))[A-Z]{2}\\d{9}(?!CH$|FR$|IN$|NL$|GB$|IE$|BE$|PT$|NZ$|SG$|JP$|KR$|TH$|HK$|MY$|CN$|NO$|BR$|ES$|SE$|DK$|AT$|YP$|CL$)[A-Z]{2}$",
         "confidence": "high",
         "checksum": "s10"
       }
@@ -2766,7 +2766,7 @@ export const CARRIER_CATALOG = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "correos-chile"
     },
     "canaryUrl": "https://t.17track.net/",
     "linkRules": [],
@@ -2774,6 +2774,11 @@ export const CARRIER_CATALOG = {
       {
         "pattern": "^\\d{13}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^[A-Z]{2}\\d{9}CL$",
+        "confidence": "high",
+        "checksum": "s10"
       }
     ],
     "trackingUrlTemplate": "https://www.correos.cl/seguimiento-en-linea",
@@ -3419,10 +3424,20 @@ export const CARRIER_CATALOG = {
     "timezone": "UTC",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "ninja-van",
+      "recognitionRank": 28
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://www.ninjavan.co/en-my/tracking",
+    "linkRules": [
+      {
+        "domains": [
+          "ninjavan.co"
+        ],
+        "params": [
+          "id"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^NL(?:MY|SG|ID|PH|TH|VN)[A-Z]{1,2}\\d{8,10}$",
@@ -3433,7 +3448,7 @@ export const CARRIER_CATALOG = {
         "confidence": "low"
       }
     ],
-    "trackingUrlTemplate": "https://www.ninjavan.co/en-my/tracking",
+    "trackingUrlTemplate": "https://www.ninjavan.co/en-my/tracking?id={trackingNumber}",
     "countries": [
       "SG",
       "MY",

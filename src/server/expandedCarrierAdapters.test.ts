@@ -41,6 +41,8 @@ const cases = [
   { carrier: 'ctt-express', number: '0000000000000000000001', fixture: 'pickup.json', unresolved: true },
   { carrier: 'pos-malaysia', number: 'RR000000005MY', fixture: 'international.json', unresolved: true },
   { carrier: 'canpar', number: 'C000000000000000000001', fixture: 'delivered.json', unresolved: true },
+  { carrier: 'ninja-van', number: 'NLMYA00000000', fixture: 'returned.json', unresolved: true },
+  { carrier: 'correos-chile', number: 'SX000000005CL', fixture: 'customs.json', unresolved: true },
   { carrier: 'gofo', number: 'GFUS00000000000001', fixture: 'delivered.json', unresolved: true },
   { carrier: 'ecoscooting', number: '000000000000000001', fixture: 'delivered.json', unresolved: true },
   { carrier: 'landmark-global', number: 'LTN00000001N1', fixture: 'delivered.html', unresolved: true },
@@ -98,6 +100,11 @@ function setup(entry: typeof cases[number], transform = (body: string) => body) 
   if (entry.carrier === 'pos-malaysia') {
     body = JSON.stringify({ code: 'S0000', message: 'Success', data: [JSON.parse(body)] });
   }
+  if (entry.carrier === 'ninja-van') {
+    const value = JSON.parse(body);
+    value.events.at(-2).time = '2026-02-30T09:00:00Z';
+    body = JSON.stringify(value);
+  }
   if (entry.carrier === 'seur') {
     const value = JSON.parse(body);
     value.situaciones[0].fecha = '2026-01-23T13:13:05';
@@ -147,6 +154,13 @@ function setup(entry: typeof cases[number], transform = (body: string) => body) 
   if (entry.carrier === 'correios-br') vi.spyOn(CorreiosOcr.prototype, 'solve').mockResolvedValue('abcd');
   if (entry.carrier === 'yunda') vi.spyOn(yundaChallenge, 'solveYundaSlider').mockResolvedValue({ x: 100, y: 40 });
   const fetcher = vi.fn<typeof fetch>().mockImplementation(async (url, init) => {
+    if (entry.carrier === 'correos-chile' && init?.method !== 'POST') {
+      const page = readFileSync(new URL('../../packages/carriers/carriers/correos-chile/fixtures/bootstrap.html', import.meta.url), 'utf8');
+      return new Response(page, { headers: [
+        ['set-cookie', 'JSESSIONID=syntheticSession123; Path=/; Secure; HttpOnly'],
+        ['set-cookie', 'SERVER_ID=syntheticServer123; Path=/; Secure'],
+      ] });
+    }
     if (entry.carrier === 'relais-colis' && init?.method !== 'POST') {
       return new Response('<input id="track_package__token" value="synthetic-csrf-token">');
     }
@@ -201,7 +215,7 @@ describe('expanded direct coverage through the host', () => {
     const result = await test.adapter.fetch(entry.carrier, entry.number, null);
     expect(result.events?.length).toBeGreaterThan(0);
     expect(result).not.toHaveProperty('tracking_provider');
-    expect(test.fetcher).toHaveBeenCalledTimes(['yunexpress', 'ukrposhta'].includes(entry.carrier) ? 0 : ['aramex', 'spring-gds', 'poczta-polska', 'estafeta', 'relais-colis'].includes(entry.carrier) ? 2 : ['correios-br', 'yunda', 'nacex'].includes(entry.carrier) ? 3 : 1);
+    expect(test.fetcher).toHaveBeenCalledTimes(['yunexpress', 'ukrposhta'].includes(entry.carrier) ? 0 : ['aramex', 'spring-gds', 'poczta-polska', 'estafeta', 'relais-colis', 'correos-chile'].includes(entry.carrier) ? 2 : ['correios-br', 'yunda', 'nacex'].includes(entry.carrier) ? 3 : 1);
   });
 
   it.each(cases.filter(entry => entry.unresolved))('$carrier saves unresolved direct dates while using dated provider progress', async entry => {

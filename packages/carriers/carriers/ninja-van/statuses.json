@@ -1,0 +1,11 @@
+{
+  "carrier": "ninja-van",
+  "entries": [
+    { "code": "RTS", "wording": "RTS", "language": "en", "stage": "exception", "confirmedBy": "live" },
+    { "code": "DRIVER_PICKUP_SCAN", "wording": "DRIVER_PICKUP_SCAN", "language": "en", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "HUB_INBOUND_SCAN", "wording": "HUB_INBOUND_SCAN", "language": "en", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "ADDED_TO_SHIPMENT", "wording": "ADDED_TO_SHIPMENT", "language": "en", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "PARCEL_ROUTING_SCAN", "wording": "PARCEL_ROUTING_SCAN", "language": "en", "stage": "in_transit", "confirmedBy": "live" },
+    { "code": "DRIVER_INBOUND_SCAN", "wording": "DRIVER_INBOUND_SCAN", "language": "en", "stage": "in_transit", "confirmedBy": "live" }
+  ]
+}

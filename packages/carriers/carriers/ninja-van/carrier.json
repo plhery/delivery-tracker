@@ -19,19 +19,50 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "ninja-van",
+    "steps": [
+      "direct"
+    ],
+    "recognition": {
+      "rank": 28
+    }
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "delivered_at"
+  ],
   "portal": {
-    "url": "https://www.ninjavan.co/en-my/tracking",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "url": "https://www.ninjavan.co/en-my/tracking?id={trackingNumber}",
+    "canaryUrl": "https://www.ninjavan.co/en-my/tracking",
+    "shows": [
+      "status",
+      "history",
+      "location"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "delivered_at"
+    ],
+    "discarded": [
+      "internal_events",
+      "inactive_estimates",
+      "shipper_details"
+    ],
     "unavailable": []
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "ninjavan.co"
+      ],
+      "params": [
+        "id"
+      ]
+    }
+  ],
   "detection": [
     {
       "id": "ninja-van-1",

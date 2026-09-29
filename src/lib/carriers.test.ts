@@ -334,7 +334,7 @@ describe('carrier detection', () => {
     const match = detectCarrierMatch('3072708247886');
     expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
     expect(match.candidates).toContain('correos-chile');
-    expectUniversalFallback('correos-chile');
+    expectDirectTracking('correos-chile');
   });
 
   it('correos-express — Correos Express', () => {
@@ -856,7 +856,7 @@ describe('carrier detection', () => {
     expect(detectCarrier('NVSGBEDBP03784ADPL')).toBe('unknown');
     const short = detectCarrierMatch('DX149431');
     expect(short).toMatchObject({ carrier: 'unknown', confidence: 'low' });
-    expectUniversalFallback('ninja-van');
+    expectDirectTracking('ninja-van');
   });
 
   it('nz-post — NZ Post', () => {

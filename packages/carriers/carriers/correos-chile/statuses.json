@@ -1,0 +1,12 @@
+{
+  "carrier": "correos-chile",
+  "entries": [
+    {
+      "code": "003",
+      "wording": "ENVÍO EN PROCESO DE INTERNACIÓN AL PAÍS",
+      "language": "es",
+      "stage": "customs",
+      "confirmedBy": "live"
+    }
+  ]
+}

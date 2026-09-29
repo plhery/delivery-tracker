@@ -14,16 +14,34 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "correos-chile",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location",
+    "provider_code"
+  ],
   "portal": {
     "url": "https://www.correos.cl/seguimiento-en-linea",
     "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "recipient_name"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location",
+      "provider_code"
+    ],
+    "discarded": [
+      "recipient_name"
+    ],
     "unavailable": []
   },
   "links": [],
@@ -32,6 +50,12 @@
       "id": "correos-chile-1",
       "pattern": "^\\d{13}$",
       "confidence": "low"
+    },
+    {
+      "id": "correos-chile-2",
+      "pattern": "^[A-Z]{2}\\d{9}CL$",
+      "confidence": "high",
+      "checksum": "s10"
     }
   ]
 }

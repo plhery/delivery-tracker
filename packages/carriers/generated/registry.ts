@@ -18,6 +18,7 @@ import { adapter as ciblex } from '../carriers/ciblex/adapter';
 import { adapter as colisPrive } from '../carriers/colis-prive/adapter';
 import { adapter as colisweb } from '../carriers/colisweb/adapter';
 import { adapter as correiosBr } from '../carriers/correios-br/adapter';
+import { adapter as correosChile } from '../carriers/correos-chile/adapter';
 import { adapter as correosExpress } from '../carriers/correos-express/adapter';
 import { adapter as correosSpain } from '../carriers/correos-spain/adapter';
 import { adapter as ctt } from '../carriers/ctt/adapter';
@@ -51,6 +52,7 @@ import { adapter as laPoste } from '../carriers/la-poste/adapter';
 import { adapter as landmarkGlobal } from '../carriers/landmark-global/adapter';
 import { adapter as mondialRelay } from '../carriers/mondial-relay/adapter';
 import { adapter as nacex } from '../carriers/nacex/adapter';
+import { adapter as ninjaVan } from '../carriers/ninja-van/adapter';
 import { adapter as nzPost } from '../carriers/nz-post/adapter';
 import { adapter as ontrac } from '../carriers/ontrac/adapter';
 import { adapter as paack } from '../carriers/paack/adapter';
@@ -103,6 +105,7 @@ export const REGISTRY: RegistryDefinition = {
     "colis-prive": colisPrive,
     "colisweb": colisweb,
     "correios-br": correiosBr,
+    "correos-chile": correosChile,
     "correos-express": correosExpress,
     "correos-spain": correosSpain,
     "ctt": ctt,
@@ -136,6 +139,7 @@ export const REGISTRY: RegistryDefinition = {
     "landmark-global": landmarkGlobal,
     "mondial-relay": mondialRelay,
     "nacex": nacex,
+    "ninja-van": ninjaVan,
     "nz-post": nzPost,
     "ontrac": ontrac,
     "paack": paack,
@@ -191,7 +195,7 @@ export const REGISTRY: RegistryDefinition = {
     "colis-prive": "colis-prive",
     "colisweb": "colisweb",
     "correios-br": "correios-br",
-    "correos-chile": "universal",
+    "correos-chile": "correos-chile",
     "correos-express": "correos-express",
     "correos-spain": "correos-spain",
     "ctt": "ctt",
@@ -231,7 +235,7 @@ export const REGISTRY: RegistryDefinition = {
     "mondial-relay": "mondial-relay",
     "mrw": "universal",
     "nacex": "nacex",
-    "ninja-van": "universal",
+    "ninja-van": "ninja-van",
     "nz-post": "nz-post",
     "old-dominion": "universal",
     "ontrac": "ontrac",

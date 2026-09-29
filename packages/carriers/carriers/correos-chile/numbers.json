@@ -29,10 +29,10 @@
         "date": "2026-02-24"
       },
       "expect": {
-        "carrier": "intl-post",
+        "carrier": "correos-chile",
         "confidence": "high"
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Correos de Chile; detection selects the generic postal carrier. Sent from Chile to China."
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Sent from Chile to China."
     }
   ]
 }

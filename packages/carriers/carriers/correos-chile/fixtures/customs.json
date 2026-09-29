@@ -1,0 +1,11 @@
+{
+  "error": false,
+  "existe_seg": true,
+  "descUltimoEstado": "En Internación",
+  "seguimiento": "{\"MainCodigo\":\"SX000000005CL\",\"Referencia\":\"SX000000005CL\",\"Codigo\":\"990000000001\",\"NombreEntrega\":\"PRIVATE_SYNTHETIC_RECIPIENT\",\"RutEntrega\":\"PRIVATE_SYNTHETIC_IDENTITY\",\"Avisos\":[{\"mensaje\":\"PRIVATE_SYNTHETIC_NOTICE\"}],\"Errores\":[{\"mensaje\":\"PRIVATE_SYNTHETIC_ERROR\"}],\"Iconos\":[{\"Id\":\"006\",\"Estado\":\"ENVÍO ENTREGADO\",\"Marcar\":\"N\"}],\"historial\":[{\"FechaDate\":\"2026-09-05T01:24:00\",\"Fecha\":\"05/09/2026. - 01:24\",\"Estado\":\"ENVÍO EN PROCESO DE INTERNACIÓN AL PAÍS\",\"Oficina\":\"AEROPUERTO\",\"Icono\":\"003\",\"Orden\":\"3\"},{\"FechaDate\":\"2026-08-31T19:20:00\",\"Fecha\":\"31/08/2026. - 19:20\",\"Estado\":\"ENVÍO ADMITIDO\",\"Oficina\":\"PLANTA CENTRAL\",\"Icono\":\"001\",\"Orden\":\"2\"}]}",
+  "sucursales": [
+    {
+      "nombre": "PRIVATE_SYNTHETIC_BRANCH"
+    }
+  ]
+}
