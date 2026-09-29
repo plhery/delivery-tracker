@@ -92,6 +92,30 @@
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ecoscooting, which stays one candidate among several."
     },
     {
+      "number": "CNESP00000123400000000001",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-29",
+      "expect": {
+        "carrier": "ecoscooting",
+        "confidence": "high"
+      },
+      "note": "Made-up Spanish reference in the public CNESP layout, with zeros for the postcode digits."
+    },
+    {
+      "number": "CNPRT00000001234000000001",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-29",
+      "expect": {
+        "carrier": "ecoscooting",
+        "confidence": "high"
+      },
+      "note": "Made-up Portuguese reference in the public CNPRT layout, with zeros for the postcode digits."
+    },
+    {
       "number": "CNPRT19501971234009605248",
       "role": "shipment",
       "evidence": "public_shipment_report",

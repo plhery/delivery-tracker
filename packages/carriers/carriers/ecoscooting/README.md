@@ -14,16 +14,21 @@ orders and remains inconclusive rather than proving absence.
 
 Per-scan epoch milliseconds establish instants. Missing epochs retain display
 text without borrowing its timezone or an older delivery timestamp. Status
-comes from the latest scan. Spanish delivery requires its completion flags;
-the Portuguese schema instead requires its success code and both affirmative
-delivery labels. Conflicting flags remain inconclusive.
+comes from the latest scan. Numeric references require their completion flags.
+`CN` references (Portuguese `CNPRT`, older Spanish `CNESP`) are read with the
+last-mile schema, which instead requires its success code and both affirmative
+delivery labels. Conflicting flags remain inconclusive. The gateway no longer
+answers the published `CNESP` references.
 The labelled gram weight is converted to kilograms. Destination addresses,
-postcodes, coordinates, order identifiers and routing features are excluded.
+postcodes, coordinates, delivery photos, order identifiers and routing features
+are excluded. References start with the destination postcode, after any `CN`
+country prefix, so samples and fixtures use zeros there.
 ICP references use a separate client normalization and are not supported.
+Cainiao's other `CN` families, such as `CNUSUP`, belong to other networks.
 
 ## Live test
 
 Set `ECOSCOOTING_TRACKING_NUMBER` outside the repository and run
 `npm run test:carriers:live -- packages/carriers/carriers/ecoscooting/adapter.live.test.ts`.
 Optionally set `ECOSCOOTING_UNKNOWN_NUMBER` to check an inconclusive query error.
-Set `ECOSCOOTING_PORTUGAL_NUMBER` to check the Portuguese completion schema.
+Set `ECOSCOOTING_PORTUGAL_NUMBER` to check the `CN` reference completion schema.

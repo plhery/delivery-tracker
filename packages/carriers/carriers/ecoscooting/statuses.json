@@ -52,35 +52,35 @@
     },
     {
       "code": "LM_DELIVERY_DEPART",
-      "wording": "Out for Delivery",
+      "wording": "Your shipment is out for delivery",
       "language": "en",
       "stage": "out_for_delivery",
       "confirmedBy": "live"
     },
     {
       "code": "SL_ACCEPT",
-      "wording": "Accepted by Last Mile",
+      "wording": "Your shipment has been accepted by delivery carrier",
       "language": "en",
       "stage": "accepted",
       "confirmedBy": "live"
     },
     {
       "code": "SC_OUTBOUND",
-      "wording": "Sorting Center Outbound",
+      "wording": "Your shipment has been processed at sorting center and ready for shipping",
       "language": "en",
       "stage": "in_transit",
       "confirmedBy": "live"
     },
     {
       "code": "SC_INBOUND",
-      "wording": "Sorting Center Inbound",
+      "wording": "Your shipment has arrived at sorting center",
       "language": "en",
       "stage": "in_transit",
       "confirmedBy": "live"
     },
     {
       "code": "CREATE_ORDER_CES",
-      "wording": "create",
+      "wording": "Shipment order created",
       "language": "en",
       "stage": "registered",
       "confirmedBy": "live"

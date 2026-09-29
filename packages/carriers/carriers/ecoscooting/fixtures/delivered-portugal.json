@@ -1,5 +1,6 @@
 {
   "success": "true",
+  "cainiaoId": "PRIVATE_SYNTHETIC_CAINIAO_ID",
   "packageParam": {
     "trackingNumber": "CNPRT00000000000000000001",
     "dimWeight": {
@@ -9,6 +10,11 @@
     "outOrderId": "PRIVATE_SYNTHETIC_ORDER",
     "toZipcode": "PRIVATE_SYNTHETIC_POSTCODE"
   },
+  "solutionParam": {
+    "bizSource": "other",
+    "logisticsMode": "other",
+    "solutionCode": "PES012"
+  },
   "feature": "PRIVATE_SYNTHETIC_FEATURE",
   "statuses": [
     {
@@ -17,7 +23,7 @@
       "actionCode": "LM_SIGN_SUCCESS",
       "statusName": "Delivery Success",
       "description": "Your shipment has been delivered successfully",
-      "timezone": "+0",
+      "timezone": "0",
       "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
       "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
       "deliveryLatitude": "PRIVATE_SYNTHETIC_LATITUDE",
@@ -28,11 +34,8 @@
       "datetime": "2026-01-09 12:00:00 UTC+0",
       "actionCode": "LM_DELIVERY_DEPART",
       "statusName": "Out for Delivery",
-      "description": "Out for delivery",
-      "timezone": "+0",
-      "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
-      "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
-      "deliveryLatitude": "PRIVATE_SYNTHETIC_LATITUDE",
+      "description": "Your shipment is out for delivery",
+      "timezone": "0",
       "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
     },
     {
@@ -40,47 +43,35 @@
       "datetime": "2026-01-08 12:00:00 UTC+0",
       "actionCode": "SL_ACCEPT",
       "statusName": "Accepted by Last Mile",
-      "description": "Accepted by Last Mile",
-      "timezone": "+0",
-      "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
-      "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
-      "deliveryLatitude": "PRIVATE_SYNTHETIC_LATITUDE",
+      "description": "Your shipment has been accepted by delivery carrier",
+      "timezone": "0",
       "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
     },
     {
       "opTimestamp": "1767787200000",
-      "datetime": "2026-01-07 12:00:00 UTC+0",
+      "datetime": "2026-01-07 13:00:00 UTC+1",
       "actionCode": "SC_OUTBOUND",
       "statusName": "Sorting Center Outbound",
-      "description": "Sorting Center Outbound",
-      "timezone": "+0",
-      "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
-      "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
-      "deliveryLatitude": "PRIVATE_SYNTHETIC_LATITUDE",
+      "description": "Your shipment has been processed at sorting center and ready for shipping",
+      "timezone": "1",
       "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
     },
     {
       "opTimestamp": "1767700800000",
-      "datetime": "2026-01-06 12:00:00 UTC+0",
+      "datetime": "2026-01-06 13:00:00 UTC+1",
       "actionCode": "SC_INBOUND",
       "statusName": "Sorting Center Inbound",
-      "description": "Sorting Center Inbound",
-      "timezone": "+0",
-      "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
-      "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
-      "deliveryLatitude": "PRIVATE_SYNTHETIC_LATITUDE",
+      "description": "Your shipment has arrived at sorting center",
+      "timezone": "1",
       "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
     },
     {
       "opTimestamp": "1767614400000",
-      "datetime": "2026-01-05 12:00:00 UTC+0",
+      "datetime": "2026-01-05 13:00:00 UTC+1",
       "actionCode": "CREATE_ORDER_CES",
       "statusName": "create",
-      "description": "create",
-      "timezone": "+0",
-      "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
-      "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
-      "deliveryLatitude": "PRIVATE_SYNTHETIC_LATITUDE",
+      "description": "Shipment order created",
+      "timezone": "1",
       "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
     }
   ]

@@ -12,32 +12,36 @@ const NUMBER = '000000000000000001';
 const OTHER = '000000000000000002';
 const fixture = () => JSON.parse(readFileSync(new URL('./fixtures/delivered.json', import.meta.url), 'utf8'));
 const PORTUGAL_NUMBER = 'CNPRT00000000000000000001';
+const SPAIN_NUMBER = 'CNESP00000000000000000001';
 const portugalFixture = () => JSON.parse(readFileSync(new URL('./fixtures/delivered-portugal.json', import.meta.url), 'utf8'));
+const referenceFixture = (number: string) => { const value = portugalFixture(); value.packageParam.trackingNumber = number; return value; };
 
 describe('Ecoscooting parcel history', () => {
-  it('binds Portuguese parcel history and its separate affirmative completion schema', () => {
-    const result = normalizeCarrierResult(parseEcoscooting(portugalFixture(), PORTUGAL_NUMBER));
-    expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered', last_update: '2026-01-10T12:00:00Z',
-      delivered_at: '2026-01-10T12:00:00Z', weight_kg: 4.301 });
+  it.each([PORTUGAL_NUMBER, SPAIN_NUMBER])('binds %s history and its separate affirmative completion schema', number => {
+    const result = normalizeCarrierResult(parseEcoscooting(referenceFixture(number), number));
+    expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered', last_status_text: 'Your shipment has been delivered successfully',
+      last_update: '2026-01-10T12:00:00Z', delivered_at: '2026-01-10T12:00:00Z', weight_kg: 4.301 });
     expect(result.events?.map(event => event.stage)).toEqual(['delivered', 'out_for_delivery', 'accepted', 'in_transit', 'in_transit', 'registered']);
-    expect(JSON.stringify(result)).not.toMatch(/PRIVATE|imgUrl|opCode|Latitude|Longitude|outOrder|toZip|feature/);
+    // Sorting scans carry another local offset than last-mile scans; epochs keep them in order.
+    expect(result.events?.slice(2, 4).map(event => event.time)).toEqual(['2026-01-08T12:00:00Z', '2026-01-07T12:00:00Z']);
+    expect(JSON.stringify(result)).not.toMatch(/PRIVATE|imgUrl|opCode|Latitude|Longitude|outOrder|toZip|feature|cainiaoId|solution/);
     for (const entry of statuses.entries) expect(ecoscootingStatus(entry.code)?.stage, entry.code).toBe(entry.stage);
-    const wrong = portugalFixture(); wrong.packageParam.trackingNumber = 'CNPRT00000000000000000002';
-    expect(() => parseEcoscooting(wrong, PORTUGAL_NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
-    const wrongScan = portugalFixture(); wrongScan.statuses[1].mailNo = NUMBER;
-    expect(() => parseEcoscooting(wrongScan, PORTUGAL_NUMBER)).toThrow(expect.objectContaining({ kind: 'schema' }));
+    const wrong = referenceFixture(number.replace(/1$/, '2'));
+    expect(() => parseEcoscooting(wrong, number)).toThrow(expect.objectContaining({ kind: 'schema' }));
+    const wrongScan = referenceFixture(number); wrongScan.statuses[1].mailNo = NUMBER;
+    expect(() => parseEcoscooting(wrongScan, number)).toThrow(expect.objectContaining({ kind: 'schema' }));
   });
-  it('does not borrow missing completion flags from the Portuguese schema for numeric parcels', () => {
+  it('does not borrow missing completion flags from the CN reference schema for numeric parcels', () => {
     const value = portugalFixture(); value.packageParam.trackingNumber = NUMBER;
     expect(() => parseEcoscooting(value, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
     const numeric = fixture(); delete numeric.statuses[0].status; delete numeric.statuses[0].statusGroup;
     expect(() => parseEcoscooting(numeric, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
   });
-  it.each(['status', 'statusGroup', 'description', 'statusName'])('rejects contradictory Portuguese completion %s', field => {
+  it.each(['status', 'statusGroup', 'description', 'statusName'])('rejects contradictory CN reference completion %s', field => {
     const value = portugalFixture(); value.statuses[0][field] = field === 'description' ? 'Not delivered' : 'Different';
     expect(() => parseEcoscooting(value, PORTUGAL_NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
   });
-  it('keeps Portuguese movement active and retains missing epochs without inferring display instants', () => {
+  it('keeps CN reference movement active and retains missing epochs without inferring display instants', () => {
     const value = portugalFixture(); delete value.statuses[0].opTimestamp;
     const result = parseEcoscooting(value, PORTUGAL_NUMBER);
     expect(result).toMatchObject({ status: 'delivered', last_update: null });
@@ -107,25 +111,30 @@ describe('Ecoscooting parcel history', () => {
 });
 
 describe('Ecoscooting direct retrieval', () => {
-  it('preserves the full Portuguese reference in each fresh factory request and aligns detection boundaries', async () => {
-    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify(portugalFixture())));
+  it('preserves full CN references in each fresh factory request and aligns detection boundaries', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async (_url, init) =>
+      new Response(JSON.stringify(referenceFixture(JSON.parse(new URLSearchParams(String(init?.body)).get('logistics_interface')!).mailNo))));
     const instance = adapter({ fetcher, trawl: null, browserExecutablePath: null, recorder: NOOP_RECORDER, env: {} });
-    for (const input of [PORTUGAL_NUMBER, 'cnprt-00000000000000000001']) {
+    for (const [input, number] of [[PORTUGAL_NUMBER, PORTUGAL_NUMBER], ['cnprt-00000000000000000001', PORTUGAL_NUMBER],
+      [SPAIN_NUMBER, SPAIN_NUMBER], ['cnesp 00000000000000000001', SPAIN_NUMBER]]) {
       await expect(instance.track({ number: input })).resolves.toMatchObject({ status: 'delivered' });
       const form = new URLSearchParams(String(fetcher.mock.lastCall?.[1]?.body));
-      expect(JSON.parse(form.get('logistics_interface')!).mailNo).toBe(PORTUGAL_NUMBER);
+      expect(JSON.parse(form.get('logistics_interface')!).mailNo).toBe(number);
     }
-    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher).toHaveBeenCalledTimes(4);
     const patterns = metadata.detection.map(rule => new RegExp(rule.pattern));
-    for (const number of [NUMBER, PORTUGAL_NUMBER]) {
+    for (const number of [NUMBER, PORTUGAL_NUMBER, SPAIN_NUMBER]) {
       expect(patterns.some(pattern => pattern.test(number)), number).toBe(true);
       expect(normalizeEcoscootingNumber(number)).toBe(number);
     }
-    for (const number of ['CNPRT0000000000000000001', 'CNPRT000000000000000000001', 'CNESP00000000000000000001', 'CNPRT00000000000000000001&x=1']) {
+    // Cainiao issues other CN families elsewhere (CNUSUP in the US, CNFR…HD in
+    // France); only the Spanish and Portuguese references belong to Ecoscooting.
+    for (const number of ['CNPRT0000000000000000001', 'CNPRT000000000000000000001', 'CNESP0000000000000000001', 'CNFRA00000000000000000001',
+      'CNUSUP00000000001', 'CNPRT00000000000000000001&x=1']) {
       expect(patterns.some(pattern => pattern.test(number)), number).toBe(false);
       await expect(instance.track({ number })).rejects.toThrow(TypeError);
     }
-    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher).toHaveBeenCalledTimes(4);
   });
   it('sends one fresh anonymous form using exact public client configuration and identity', async () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => new Response(JSON.stringify(fixture())));

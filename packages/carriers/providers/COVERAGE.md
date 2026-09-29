@@ -364,10 +364,11 @@ By carrier:
   the aggregators hold; its page shows the list and ignores the counter. The adapter
   accepts a larger counter only when the list runs from label creation to the current
   summary.
-- **Ecoscooting:** the direct feed supports Portuguese references and returns six
-  last-mile scans with identity-bound completion wording. Postal Ninja adds SunYou's
-  origin leg; Ship24 and ParcelsApp hold the same last-mile history. Spanish numeric
-  references remain supported. Query errors are inconclusive.
+- **Ecoscooting:** the direct feed returns six last-mile scans for the Portuguese `CNPRT`
+  reference, with identity-bound completion wording. Postal Ninja adds SunYou's origin
+  leg; Ship24 and ParcelsApp hold the same last-mile history. Spanish numeric references
+  and the older Spanish `CNESP` form are supported too; the published `CNESP` references
+  now get the gateway's inconclusive query error.
 - **TIPSA:** the native recipient form requires the destination postcode even for a
   full 22-digit reference. Only ParcelsApp had the Portuguese reference, and it relays TIPSA's Spanish
   labels doubled (`ENTREGADOENTREGADO`). The shared wording rules cover no Spanish or

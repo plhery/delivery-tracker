@@ -3159,6 +3159,14 @@
     ]
   },
   {
+    "input": "CNESP00000123400000000001",
+    "carrier": "ecoscooting",
+    "confidence": "high",
+    "candidates": [
+      "ecoscooting"
+    ]
+  },
+  {
     "input": "CNG00798678939847",
     "carrier": "unknown",
     "confidence": "low",
@@ -3167,6 +3175,14 @@
     ],
     "asked": [
       "colis-prive"
+    ]
+  },
+  {
+    "input": "CNPRT00000001234000000001",
+    "carrier": "ecoscooting",
+    "confidence": "high",
+    "candidates": [
+      "ecoscooting"
     ]
   },
   {

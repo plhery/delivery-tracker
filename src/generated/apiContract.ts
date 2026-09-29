@@ -2240,7 +2240,7 @@ export const CARRIER_CAPABILITIES = {
         "confidence": "low"
       },
       {
-        "pattern": "^CNPRT\\d{20}$",
+        "pattern": "^CN(?:ESP|PRT)\\d{20}$",
         "confidence": "high"
       }
     ],
