@@ -182,6 +182,9 @@ the recovery step completes. An interrupted recovery may never send it.
 
 **Prometheus** metrics are served at `GET /api/metrics` when `METRICS_TOKEN` (16+ chars) is
 set, sent as a bearer token. Labels never contain tracking data.
+Every deploy restarts the counters, so a new series is served at 0 on its first scrape and
+counts from the next one. `increase()` then still sees an event that happens once per
+container.
 
 | Series | Answers |
 | --- | --- |

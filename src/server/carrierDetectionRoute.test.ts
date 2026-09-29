@@ -119,7 +119,8 @@ it.each(['06080000000076', '12345678901234', '12345678909', '1234567890', '12345
 
 it('counts served detections by confidence, including a recognized carrier', async () => {
   const { metricsText } = await import('./metrics');
-  const served = async (result: string) => Number(new RegExp(`carrier_detection_total\\{result="${result}"\\} (\\d+)`).exec(await metricsText())?.[1] ?? 0);
+  // A new series reads 0 until a scrape has shown it; the second scrape carries its count.
+  const served = async (result: string) => { await metricsText(); return Number(new RegExp(`carrier_detection_total\\{result="${result}"\\} (\\d+)`).exec(await metricsText())?.[1] ?? 0); };
   const unverified = detectCarrierMatch('06080000000050').confidence;
   expect(unverified).not.toBe('high');
   const [high, other] = [await served('high'), await served(unverified)];

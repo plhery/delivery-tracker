@@ -104,6 +104,8 @@ it('counts every finished attempt by who served it', async () => {
   await finish({ outcome: 'updated', sourceCarrier: 'chronopost' });
   await finish({ outcome: 'updated', sourceCarrier: 'unknown' });
   await finish({ outcome: 'error' });
+  // New series read 0 on their first scrape; the second carries the counts.
+  await metricsText();
   const text = await metricsText();
   expect(text).toContain('carrier_refresh_total{carrier="chronopost",served_by="adapter",outcome="updated"} 1');
   expect(text).toContain('carrier_refresh_total{carrier="chronopost",served_by="provider",outcome="updated"} 1');

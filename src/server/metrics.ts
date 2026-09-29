@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { Counter, Histogram, Registry, collectDefaultMetrics } from '@prometheus-io/client';
+import { Counter, Histogram, Registry, collectDefaultMetrics, type LabelValues } from '@prometheus-io/client';
 import { METRICS, type LookupRecord, type StepRecord, type StepRecorder } from '@carriers/core/telemetry';
 
 /**
@@ -18,7 +18,7 @@ import { METRICS, type LookupRecord, type StepRecord, type StepRecorder } from '
  */
 
 /** Bump when the series or their labels change, so a hot-reloaded copy does not reuse an older shape. */
-const RUNTIME_VERSION = 2;
+const RUNTIME_VERSION = 3;
 
 interface PrometheusRuntime {
   version: number;
@@ -30,6 +30,10 @@ interface PrometheusRuntime {
   statusMappingTotal: Counter<'carrier' | 'stage_source'>;
   detectionTotal: Counter<'result'>;
   refreshTotal: Counter<'carrier' | 'served_by' | 'outcome'>;
+  /** Series a scrape has shown; they count at once. */
+  scraped: Set<string>;
+  /** Series created at 0 since the last scrape, with the updates they wait to apply. */
+  held: Map<string, Array<() => void>>;
 }
 
 // Next compiles instrumentation, the route handlers and the scrape endpoint
@@ -89,6 +93,8 @@ function createRuntime(): PrometheusRuntime {
       labelNames: ['carrier', 'served_by', 'outcome'] as const,
       registers: [registry],
     }),
+    scraped: new Set(),
+    held: new Map(),
   };
 }
 
@@ -98,18 +104,40 @@ const runtime = globalMetrics.__deliveryPrometheus?.version === RUNTIME_VERSION
 
 export const registry = runtime.registry;
 
+/**
+ * Every deploy restarts the counters, and a series whose first scrape already
+ * shows 1 gives `increase()` nothing to count from, so an error seen once per
+ * container never reached a dashboard. A new series is created at 0 and its
+ * updates wait until a scrape has shown it; later updates apply at once.
+ */
+function afterFirstScrape(key: string, create: () => void, update: () => void): void {
+  const held = runtime.held.get(key);
+  if (held) held.push(update);
+  else if (runtime.scraped.has(key)) update();
+  else {
+    create();
+    runtime.held.set(key, [update]);
+  }
+}
+
+function count<L extends string>(counter: Counter<L>, name: string, labels: LabelValues<L>): void {
+  afterFirstScrape(name + JSON.stringify(labels), () => counter.inc(labels, 0), () => counter.inc(labels));
+}
+
 export const prometheusStepRecorder: StepRecorder = {
   step(record: StepRecord) {
-    runtime.stepDuration.observe({ carrier: record.carrier, step: record.step, outcome: record.outcome }, record.durationMs / 1000);
-    runtime.stepTotal.inc({ carrier: record.carrier, step: record.step, outcome: record.outcome, error_type: record.errorType ?? 'none' });
+    const timing = { carrier: record.carrier, step: record.step, outcome: record.outcome };
+    afterFirstScrape(METRICS.stepDuration + JSON.stringify(timing), () => runtime.stepDuration.zero(timing),
+      () => runtime.stepDuration.observe(timing, record.durationMs / 1000));
+    count(runtime.stepTotal, METRICS.stepTotal, { ...timing, error_type: record.errorType ?? 'none' });
     if (record.fallbackFrom) {
-      runtime.fallbackTotal.inc({
+      count(runtime.fallbackTotal, METRICS.fallbackTotal, {
         carrier: record.carrier, from_step: record.fallbackFrom, to_step: record.step, reason: record.fallbackReason ?? 'error',
       });
     }
   },
   lookup(record: LookupRecord) {
-    runtime.lookupTotal.inc({
+    count(runtime.lookupTotal, METRICS.lookupTotal, {
       carrier: record.carrier, final_step: record.finalStep ?? 'none', outcome: record.outcome,
       attempts: String(Math.min(Math.max(Math.trunc(record.attempts) || 0, 0), 9)),
     });
@@ -127,22 +155,31 @@ export function refreshSource(carrier: string, source: string | null | undefined
 
 /** Called once per finished sync attempt; carrier ids and outcome names only. */
 export function recordRefresh(carrier: string, source: string | null | undefined, outcome: string): void {
-  runtime.refreshTotal.inc({ carrier, served_by: refreshSource(carrier, source), outcome });
+  count(runtime.refreshTotal, METRICS.refreshTotal, { carrier, served_by: refreshSource(carrier, source), outcome });
 }
 
 /** Called by the sync for every persisted event; the source family keeps cardinality small. */
 export function recordStatusMapping(carrier: string, stageSource: string): void {
   const family = stageSource === 'carrier_map' || stageSource === 'none' ? stageSource
     : stageSource.startsWith('wording:') ? 'wording' : 'other';
-  runtime.statusMappingTotal.inc({ carrier, stage_source: family });
+  count(runtime.statusMappingTotal, METRICS.statusMappingTotal, { carrier, stage_source: family });
 }
 
 export function recordDetection(result: 'high' | 'low' | 'none'): void {
-  runtime.detectionTotal.inc({ result });
+  count(runtime.detectionTotal, METRICS.detectionTotal, { result });
 }
 
+/** Renders the registry for Prometheus, then releases what the series it showed at 0 held back. */
 export async function metricsText(): Promise<string> {
-  return registry.metrics();
+  // A series created while this reply renders may be missing from it: it waits for the next.
+  const shown = [...runtime.held.keys()];
+  const text = await registry.metrics();
+  for (const key of shown) {
+    for (const update of runtime.held.get(key) ?? []) update();
+    runtime.held.delete(key);
+    runtime.scraped.add(key);
+  }
+  return text;
 }
 
 export const metricsContentType = registry.contentType;

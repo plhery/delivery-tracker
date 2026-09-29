@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 const metrics = await import('./metrics');
+/** Prometheus sees a new series at 0 first; the next scrape carries its count. */
+const scraped = async (source = metrics) => { await source.metricsText(); return source.metricsText(); };
 
 describe('prometheus carrier metrics', () => {
   it('records steps, fallbacks and lookups with low-cardinality labels', async () => {
@@ -16,7 +18,7 @@ describe('prometheus carrier metrics', () => {
     metrics.recordStatusMapping('ups', 'wording:delivered');
     metrics.recordStatusMapping('ups', 'carrier_map');
     metrics.recordDetection('high');
-    const text = await metrics.metricsText();
+    const text = await scraped();
     expect(text).toContain('carrier_step_total{carrier="ups",step="direct",outcome="challenge",error_type="ChallengeError"} 1');
     expect(text).toContain('carrier_fallback_total{carrier="ups",from_step="direct",to_step="trawl",reason="challenge"} 1');
     expect(text).toContain('carrier_lookup_total{carrier="ups",final_step="trawl",outcome="ok",attempts="2"} 1');
@@ -37,7 +39,7 @@ describe('prometheus carrier metrics', () => {
 
     recording.prometheusStepRecorder.lookup({ carrier: 'dpd', finalStep: 'direct', outcome: 'ok', errorType: null, durationMs: 400, attempts: 1 });
     recording.recordStatusMapping('dpd', 'none');
-    const text = await scraping.metricsText();
+    const text = await scraped(scraping);
     expect(text).toContain('carrier_lookup_total{carrier="dpd",final_step="direct",outcome="ok",attempts="1"} 1');
     expect(text).toContain('carrier_status_mapping_total{carrier="dpd",stage_source="none"} 1');
     expect(scraping.registry).toBe(recording.registry);
@@ -53,7 +55,7 @@ describe('prometheus carrier metrics', () => {
     metrics.recordRefresh('la-poste', 'la-poste', 'updated');
     metrics.recordRefresh('la-poste', 'unknown', 'updated');
     metrics.recordRefresh('la-poste', null, 'error');
-    const text = await metrics.metricsText();
+    const text = await scraped();
     expect(text).toContain('carrier_refresh_total{carrier="la-poste",served_by="adapter",outcome="updated"} 2');
     expect(text).toContain('carrier_refresh_total{carrier="la-poste",served_by="provider",outcome="updated"} 1');
     expect(text).toContain('carrier_refresh_total{carrier="la-poste",served_by="none",outcome="error"} 1');
@@ -62,9 +64,29 @@ describe('prometheus carrier metrics', () => {
   it('labels a lookup with the attempts it took, capped to keep the label set small', async () => {
     metrics.prometheusStepRecorder.lookup({ carrier: 'la-poste', finalStep: 'retry', outcome: 'ok', errorType: null, durationMs: 3200, attempts: 3 });
     metrics.prometheusStepRecorder.lookup({ carrier: 'la-poste', finalStep: 'retry', outcome: 'challenge', errorType: 'UpstreamHttpError', durationMs: 6000, attempts: 40 });
-    const text = await metrics.metricsText();
+    const text = await scraped();
     expect(text).toContain('carrier_lookup_total{carrier="la-poste",final_step="retry",outcome="ok",attempts="3"} 1');
     expect(text).toContain('carrier_lookup_total{carrier="la-poste",final_step="retry",outcome="challenge",attempts="9"} 1');
+  });
+
+  it('shows a new series at 0 before counting it, so a restart cannot hide its first update', async () => {
+    // Prometheus's increase() needs a sample before the first update: a series
+    // that first appears already at 1 counts nothing, after every deploy.
+    const series = 'carrier_refresh_total{carrier="bpost",served_by="adapter",outcome="updated"}';
+    const duration = 'carrier_step_duration_seconds_count{carrier="bpost",step="direct",outcome="ok"}';
+    metrics.recordRefresh('bpost', 'bpost', 'updated');
+    metrics.recordRefresh('bpost', 'bpost', 'updated');
+    metrics.prometheusStepRecorder.step({ carrier: 'bpost', step: 'direct', attempt: 1, outcome: 'ok', errorType: null,
+      durationMs: 300, fallbackFrom: null, fallbackReason: null, fallbackErrorType: null });
+    const first = await metrics.metricsText();
+    expect(first).toContain(`${series} 0`);
+    expect(first).toContain(`${duration} 0`);
+    const second = await metrics.metricsText();
+    expect(second).toContain(`${series} 2`);
+    expect(second).toContain(`${duration} 1`);
+    // Once shown, a series counts at once.
+    metrics.recordRefresh('bpost', 'bpost', 'updated');
+    expect(await metrics.metricsText()).toContain(`${series} 3`);
   });
 
   it('only exposes the endpoint with a reasonably long token', () => {
