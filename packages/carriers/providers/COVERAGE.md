@@ -156,8 +156,9 @@ By source:
 - **ParcelsApp** often has the richest destination leg (DHL eCommerce, Canada Post,
   Japan Post), and was the only aggregator with GLS France, Evri, DTDC, Relais Colis and
   TIPSA history. It exposes internal labels (`swa_rex_*` for Amazon Shipping pickup),
-  shows Amazon sign-in notices (excluded from counts), and repeats a delivery as
-  `Final delivery`. It asks for a postcode for bpost's 24-digit numbers and for GEODIS
+  shows Amazon sign-in notices (excluded from counts), repeats a delivery as
+  `Final delivery`, and writes TIPSA's labels twice (`ENTREGADOENTREGADO`), which the
+  parser reads once. It asks for a postcode for bpost's 24-digit numbers and for GEODIS
   and Ciblex numbers, and answered a Yamato number with a FedEx parcel and a Heppner
   number with another carrier's older parcel. Scans it sends without a date (one in its
   Asendia reply) are left out of the history.
@@ -373,10 +374,9 @@ By carrier:
   and the older Spanish `CNESP` form are supported too; the published `CNESP` references
   now get the gateway's inconclusive query error.
 - **TIPSA:** the native recipient form requires the destination postcode even for a
-  full 22-digit reference. Only ParcelsApp had the Portuguese reference, and it relays TIPSA's Spanish
-  labels doubled (`ENTREGADOENTREGADO`). The shared wording rules cover no Spanish or
-  Portuguese, so even single labels stay pending and the delivered parcel reads as in
-  transit.
+  full 22-digit reference. Only ParcelsApp had the Portuguese reference. Its rows carry
+  TIPSA's Spanish labels (`REPARTO`, `Ausente`, `ENTREGADO`); with no TIPSA status map,
+  the shared Spanish wording rules give them their stages.
 - **Canpar:** direct, ParcelsApp and Postal Ninja hold the same 11 scans. The ambiguous
   clock shift remains local history; empty placeholder packages are inconclusive.
 

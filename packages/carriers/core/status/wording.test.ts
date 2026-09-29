@@ -197,6 +197,80 @@ describe('classifyWording', () => {
     expect(wordingStage('Delivered, left at front door')).toBe('delivered');
   });
 
+  it('reads the Spanish and Portuguese labels carriers send', () => {
+    // Labels from the carrier vocabularies (statuses.json) and TIPSA's history on ParcelsApp.
+    for (const [wording, stage] of [
+      ['ENTREGADO', 'delivered'],
+      ['EL ENVÍO HA SIDO ENTREGADO A UN VECINO.', 'delivered'],
+      ['Entregue', 'delivered'],
+      ['Objeto entregue ao destinatário', 'delivered'],
+      ['REPARTO', 'out_for_delivery'],
+      ['EL ENVÍO ESTÁ EN REPARTO.', 'out_for_delivery'],
+      ['En proceso de entrega a domicilio', 'out_for_delivery'],
+      ['Objeto saiu para entrega ao destinatário', 'out_for_delivery'],
+      ['Ausente', 'failed_attempt'],
+      ['Intento de entrega. Ausente', 'failed_attempt'],
+      ['Realizado intento de entrega', 'failed_attempt'],
+      ['Disponible en punto NACEX', 'ready_for_pickup'],
+      ['Disponible en Punto Collectt Express', 'ready_for_pickup'],
+      ['DEVUELTO', 'returned'],
+      ['En devolución', 'exception'],
+      ['LECTURA EN AGENCIA DESTINO [location]', 'in_transit'],
+      ['LEIDO EN DESTINO', 'in_transit'],
+      ['Clasificado', 'in_transit'],
+      ['Alta en la unidad de reparto', 'in_transit'],
+      ['EN RUTA A LOCALIDAD DE DESTINO', 'in_transit'],
+      ['Objeto em transferência - por favor aguarde', 'in_transit'],
+      ['Saída do Centro Internacional', 'in_transit'],
+      ['PENDIENTE DE ENTREGAR A TIPSA', 'registered'],
+      ['Pendiente de recepción en CTT Express', 'registered'],
+    ] as const) expect(classifyWording(wording)).toEqual({ stage, source: 'wording:language' });
+    // Carriers disagree on a new round, and a failed pickup or a cancelled round is
+    // not a missed delivery: the carrier maps decide these.
+    for (const wording of ['NUEVO REPARTO', 'Recogida fallida', 'Saída para entrega cancelada']) {
+      expect(trackingLanguageStage(wording)).toBeUndefined();
+    }
+  });
+
+  it('keeps Spanish and Portuguese negations, handoffs, returns and forecasts apart from delivery', () => {
+    for (const [wording, stage] of [
+      ['No entregado', 'failed_attempt'],
+      ['No se ha podido entregar', 'failed_attempt'],
+      ['Não entregue', 'failed_attempt'],
+      ['Não foi possível efetuar a entrega', 'failed_attempt'],
+      ['Objeto não entregue - carteiro não atendido', 'failed_attempt'],
+      ['Estabelecimento fechado', 'failed_attempt'],
+      ['Em distribuição', 'out_for_delivery'],
+      ['Está a ser entregue', 'out_for_delivery'],
+      ['Chegada ao centro de distribuição', 'in_transit'],
+      ['Entregado al transportista', 'in_transit'],
+      ['Entregue à transportadora', 'in_transit'],
+      ['Entregado en el punto de recogida', 'ready_for_pickup'],
+      ['Entregue no cacifo', 'ready_for_pickup'],
+      ['Disponível para levantamento', 'ready_for_pickup'],
+      ['Entregado al remitente', 'returned'],
+      ['Devolvido ao remetente', 'returned'],
+      ['Será devuelto al remitente', 'exception'],
+      ['O envio está a ser devolvido ao remetente', 'exception'],
+      ['Não foi devolvido', 'exception'],
+      ['Será entregado mañana', 'registered'],
+      ['Será entregue amanhã', 'registered'],
+      ['Pendiente de entrega', 'in_transit'],
+      ['Estará disponible para recoger mañana', 'in_transit'],
+    ] as const) expect(classifyWording(wording)).toEqual({ stage, source: 'wording:language' });
+    // A condition, a scheduled attempt, a sender pickup or a delivery still to come.
+    for (const wording of [
+      'Si el destinatario está ausente, el paquete irá al punto de recogida',
+      'Em caso de ausência, o envio fica no ponto de recolha',
+      'Intento de entrega programado para mañana',
+      'Intento de recogida, cliente ausente',
+      'Recibirás un SMS una vez entregado',
+      'Quando for entregue, receberá um SMS',
+      'Fecha de entrega modificada',
+      'No disponible para recoger',
+    ]) expect(['delivered', 'failed_attempt', 'ready_for_pickup']).not.toContain(wordingStage(wording, 'pending'));
+  });
+
   it('falls back without a rule id when nothing matches', () => {
     expect(classifyWording('Estado interno 99', 'pending')).toEqual({ stage: 'pending', source: 'none' });
     expect(wordingStage('Estado interno 99')).toBe('in_transit');

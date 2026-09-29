@@ -84,6 +84,16 @@ function scanZone(payload: Record<string, unknown>, state: Record<string, unknow
   return (wall ? sharedClockZone(brand, wall) : null) ?? fallback;
 }
 
+/**
+ * ParcelsApp relays some carriers' labels twice over, TIPSA's as
+ * "ENTREGADOENTREGADO". Only a label made of two identical halves is collapsed.
+ */
+function relayedLabel(value: unknown): string {
+  const label = typeof value === 'string' ? value.trim() : '';
+  const half = label.length / 2;
+  return Number.isInteger(half) && label.slice(0, half) === label.slice(half) ? label.slice(0, half) : label;
+}
+
 function parseHistory(payload: unknown, trackingNumber: string, timezone: string | null = null): CarrierResult {
   if (isRecord(payload) && payload.error === 'RELOAD') throw new ChallengeError(SOURCE);
   if (isRecord(payload) && (payload.error === 'NO_DATA' || payload.error === 'NO_TRACKER')) {
@@ -108,8 +118,9 @@ function parseHistory(payload: unknown, trackingNumber: string, timezone: string
     }
     const zone = scanZone(payload, raw, timezone, number);
     const name = stateCarrierName(payload, raw);
-    const scan = carrierScan(typeof name === 'string' ? carrierIdFromName(name) : undefined, typeof raw.status === 'string' ? raw.status : '');
-    const parsed = localEvent((zone ? mislabeledLocalTime(raw.date, zone)?.iso : undefined) ?? raw.date, scan?.wording ?? raw.status);
+    const status = relayedLabel(raw.status);
+    const scan = carrierScan(typeof name === 'string' ? carrierIdFromName(name) : undefined, status);
+    const parsed = localEvent((zone ? mislabeledLocalTime(raw.date, zone)?.iso : undefined) ?? raw.date, scan?.wording ?? status);
     // Nor has an offset-less date that no zone resolves: a wall time, not an instant.
     if (parsed && !parsed.time) {
       undated++;
@@ -171,7 +182,7 @@ export function parseParcelsAppHtml(html: string, trackingNumber: string, timezo
   nodes.each((_, node) => {
     const row = $(node);
     if (row.find('input, select, form').length) return;
-    const description = row.find('.event-content > strong').first().text();
+    const description = relayedLabel(row.find('.event-content > strong').first().text());
     if (isNotice(description)) return;
     const date = row.find('.event-time > strong').text().trim();
     const time = row.find('.event-time > span').text().trim();

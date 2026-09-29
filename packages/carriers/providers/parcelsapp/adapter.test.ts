@@ -118,6 +118,44 @@ describe('ParcelsApp result parsing', () => {
     expect(preparationOnly).toMatchObject({ status: 'pending', current_stage: 'registered' });
   });
 
+  it.each(['json', 'html'])('reads the TIPSA labels it relays twice over (%s)', (transport) => {
+    // TIPSA's wording, written twice as ParcelsApp relays it; synthetic dates and agency.
+    const scans = [
+      ['08', '18:50', 'ENTREGADO'],
+      ['07', '08:30', 'REPARTO'],
+      ['06', '15:00', 'Ausente'],
+      ['06', '08:30', 'REPARTO'],
+      ['05', '17:20', 'LECTURA EN AGENCIA DESTINO EJEMPLO 01'],
+      ['05', '17:10', 'LEIDO EN DESTINO'],
+      ['02', '22:20', 'TRANSITO'],
+      ['02', '17:50', 'PENDIENTE DE ENTREGAR A TIPSA'],
+    ];
+    const parsed = transport === 'json'
+      ? parseParcelsAppResponse({ carriers: ['TIPSA'], states: scans.map(([day, time, label]) => ({
+        date: `2026-05-${day}T${time}:00Z`, status: label + label, carrier: 0,
+      })) }, number, identity())
+      : parseParcelsAppHtml(rendered(scans.map(([day, time, label]) => row(`${day} May 2026`, time, label + label)).join('')), number);
+    expect(parsed).toMatchObject({ status: 'delivered', current_stage: 'delivered', last_status_text: 'Delivered' });
+    expect(parsed.events?.map(({ description, stage }) => [description, stage])).toEqual([
+      ['Delivered', 'delivered'],
+      ['REPARTO', 'out_for_delivery'],
+      ['Ausente', 'failed_attempt'],
+      ['REPARTO', 'out_for_delivery'],
+      ['LECTURA EN AGENCIA DESTINO EJEMPLO 01', 'in_transit'],
+      ['LEIDO EN DESTINO', 'in_transit'],
+      ['TRANSITO', 'in_transit'],
+      ['PENDIENTE DE ENTREGAR A TIPSA', 'registered'],
+    ]);
+  });
+
+  it('collapses only a label made of two identical halves', () => {
+    const parsed = parseParcelsAppResponse({ states: [
+      { date: '2026-05-02T10:00:00Z', status: 'ENTREGADOENTREGADA' },
+      { date: '2026-05-01T10:00:00Z', status: 'REPARTO REPARTO' },
+    ] }, number, identity());
+    expect(parsed.events?.map(({ description }) => description)).toEqual(['ENTREGADOENTREGADA', 'REPARTO REPARTO']);
+  });
+
   it('binds a numberless response to its rendered result', () => {
     for (const html of [identity('OTHER123'), `<input value="${number}">`, identity() + identity()]) {
       expect(() => parseParcelsAppResponse(announced, number, html)).toThrow('identity missing');

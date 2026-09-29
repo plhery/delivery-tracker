@@ -1,12 +1,12 @@
 // OBSERVED wording is kept verbatim in auditedTrackingHistory.json.
 // GENERATED: every translation below is intuitive, not a captured carrier label.
-// derivedFrom + sourceLanguage preserve direction (including FR/DE -> EN).
+// derivedFrom + sourceLanguage preserve direction (including FR/DE/ES -> EN).
 // Real carrier evidence overrides these expectations: update the affected row
 // and explain the evidence; never rewrite the observed source to satisfy a guess.
 export interface IntuitiveHistoryTranslation {
   provenance: 'intuitive-translation';
   derivedFrom: string;
-  sourceLanguage: 'en' | 'fr' | 'de';
+  sourceLanguage: 'en' | 'fr' | 'de' | 'es';
   translations: Partial<Record<'en' | 'fr' | 'de' | 'it', string>>;
   note?: string;
 }
@@ -1223,6 +1223,90 @@ export const intuitiveHistoryTranslations: IntuitiveHistoryTranslation[] = [
       fr: "Départ du centre de distribution local.",
       de: "Lokales Verteilzentrum verlassen.",
       it: "Partenza dal centro di distribuzione locale.",
+    },
+  },
+  // GENERATED from the observed ES description; overridable by carrier evidence.
+  {
+    provenance: "intuitive-translation",
+    derivedFrom: "PENDIENTE DE ENTREGAR A TIPSA",
+    sourceLanguage: "es",
+    translations: {
+      en: "Will shortly be handed over to TIPSA",
+      fr: "Sera bientôt confié à TIPSA",
+      de: "Wird in Kürze an TIPSA übergeben",
+      it: "Sarà a breve affidato a TIPSA",
+    },
+  },
+  // GENERATED from the observed ES description; overridable by carrier evidence.
+  {
+    provenance: "intuitive-translation",
+    derivedFrom: "TRANSITO",
+    sourceLanguage: "es",
+    translations: {
+      en: "In transit",
+      fr: "En transit",
+      de: "Unterwegs",
+      it: "In transito",
+    },
+  },
+  // GENERATED from the observed ES description; overridable by carrier evidence.
+  {
+    provenance: "intuitive-translation",
+    derivedFrom: "LEIDO EN DESTINO",
+    sourceLanguage: "es",
+    translations: {
+      en: "Arrival scan at destination",
+      fr: "Arrivé à destination",
+      de: "Am Zielort eingescannt",
+      it: "Arrivato a destinazione",
+    },
+  },
+  // GENERATED from the observed ES description; overridable by carrier evidence.
+  {
+    provenance: "intuitive-translation",
+    derivedFrom: "LECTURA EN AGENCIA DESTINO [location]",
+    sourceLanguage: "es",
+    translations: {
+      en: "Scanned at the destination depot [location]",
+      fr: "Scanné au dépôt de destination [location]",
+      de: "Im Zieldepot [location] gescannt",
+      it: "Scansionato nel deposito di destinazione [location]",
+    },
+  },
+  // GENERATED from the observed ES description; overridable by carrier evidence.
+  {
+    provenance: "intuitive-translation",
+    derivedFrom: "REPARTO",
+    sourceLanguage: "es",
+    translations: {
+      en: "Out for delivery",
+      fr: "En cours de livraison",
+      de: "In Zustellung",
+      it: "In consegna",
+    },
+  },
+  // GENERATED from the observed ES description; overridable by carrier evidence.
+  {
+    provenance: "intuitive-translation",
+    derivedFrom: "Ausente",
+    sourceLanguage: "es",
+    translations: {
+      en: "Recipient absent",
+      fr: "Destinataire absent",
+      de: "Empfänger nicht angetroffen",
+      it: "Destinatario assente",
+    },
+  },
+  // GENERATED from the observed ES description; overridable by carrier evidence.
+  {
+    provenance: "intuitive-translation",
+    derivedFrom: "ENTREGADO",
+    sourceLanguage: "es",
+    translations: {
+      en: "Delivered",
+      fr: "Livré",
+      de: "Zugestellt",
+      it: "Consegnato",
     },
   },
 ];

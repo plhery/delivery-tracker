@@ -692,5 +692,40 @@
     "provider": "ParcelsApp",
     "description": "Departed from local distribution center",
     "expected": "in_transit"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "PENDIENTE DE ENTREGAR A TIPSA",
+    "expected": "registered"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "TRANSITO",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "LEIDO EN DESTINO",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "LECTURA EN AGENCIA DESTINO [location]",
+    "expected": "in_transit"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "REPARTO",
+    "expected": "out_for_delivery"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "Ausente",
+    "expected": "failed_attempt"
+  },
+  {
+    "provider": "ParcelsApp",
+    "description": "ENTREGADO",
+    "expected": "delivered"
   }
 ]

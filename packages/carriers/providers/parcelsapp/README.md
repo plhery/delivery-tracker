@@ -104,6 +104,9 @@ step exists for future protocol changes.
   India-to-France parcel listed La Poste scans under India Post).
 - Notices are skipped, not events: `require_fields` rows, postcode, sign-in and
   destination-country prompts, and rows rendered with a date but no time.
+- Some carriers' labels arrive written twice (TIPSA's `ENTREGADOENTREGADO`). A label made
+  of two identical halves is read once, in the JSON reply and on the rendered page; any
+  other label is kept as sent.
 - `carriers` and `services[].name` become `reported_carriers`. They include carriers
   ParcelsApp asked without an answer, so `discovered_carrier` comes from the one name
   they list, or else from the carrier every scan names (`states[].carrier`), when that
@@ -120,7 +123,6 @@ step exists for future protocol changes.
   HTTP. Verifying the unlock needs a known valid number and postcode pair.
 - Email, phone, house-number, sign-in and destination-country forms are not supported.
 - `Estimated delivery` forecast rows are projected as events and can set `last_update`.
-- `Final delivery` wording (on UPU-relayed postal legs) maps to pending.
 
 ## Rejected approaches
 

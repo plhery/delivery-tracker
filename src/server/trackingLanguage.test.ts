@@ -8,25 +8,30 @@ import { parseDHLTrackingResponse } from '@carriers/carriers/dhl/adapter';
 
 // GENERATED contrasts, not observed carrier scans. These intuitive equivalents
 // test the semantic boundaries around the real histories and remain overridable.
-const contrasts: { expected: Stage; en: string; fr: string; de: string; it: string }[] = [
+// Spanish and Portuguese cover the delivery-side milestones only.
+const contrasts: { expected: Stage; en: string; fr: string; de: string; it: string; es?: string; pt?: string }[] = [
   { expected: 'returned', en: 'Returned to sender', fr: "Retourné à l'expéditeur",
-    de: 'Zurück an den Absender', it: 'Restituito al mittente' },
+    de: 'Zurück an den Absender', it: 'Restituito al mittente', es: 'Devuelto al remitente', pt: 'Devolvido ao remetente' },
   { expected: 'failed_attempt', en: 'Delivery attempt failed', fr: 'Échec de la tentative de livraison',
-    de: 'Zustellversuch fehlgeschlagen', it: 'Tentativo di consegna non riuscito' },
+    de: 'Zustellversuch fehlgeschlagen', it: 'Tentativo di consegna non riuscito',
+    es: 'Intento de entrega fallido', pt: 'Tentativa de entrega falhada' },
   { expected: 'failed_attempt', en: 'Attempted delivery, recipient not available', fr: 'Destinataire absent',
-    de: 'Empfänger nicht angetroffen', it: 'Destinatario assente' },
+    de: 'Empfänger nicht angetroffen', it: 'Destinatario assente', es: 'Destinatario ausente', pt: 'Destinatário ausente' },
   { expected: 'failed_attempt', en: 'Business closed', fr: 'Entreprise fermée',
-    de: 'Geschäft geschlossen', it: 'Attività chiusa' },
+    de: 'Geschäft geschlossen', it: 'Attività chiusa', es: 'Establecimiento cerrado', pt: 'Estabelecimento fechado' },
   { expected: 'in_transit', en: 'Delivered to the local carrier', fr: 'Livré au transporteur local',
-    de: 'An den lokalen Zusteller übergeben', it: 'Consegnato al corriere locale' },
+    de: 'An den lokalen Zusteller übergeben', it: 'Consegnato al corriere locale',
+    es: 'Entregado al transportista local', pt: 'Entregue à transportadora local' },
   { expected: 'ready_for_pickup', en: 'Ready for collection', fr: 'Disponible au point de retrait',
-    de: 'Zur Abholung bereit', it: 'Disponibile per il ritiro' },
+    de: 'Zur Abholung bereit', it: 'Disponibile per il ritiro', es: 'Disponible para recoger', pt: 'Disponível para levantamento' },
   { expected: 'in_transit', en: 'Will be available for pickup tomorrow', fr: 'Sera disponible au point de retrait demain',
-    de: 'Wird morgen zur Abholung verfügbar sein', it: 'Sarà disponibile per il ritiro domani' },
+    de: 'Wird morgen zur Abholung verfügbar sein', it: 'Sarà disponibile per il ritiro domani',
+    es: 'Estará disponible para recoger mañana', pt: 'Estará disponível para levantamento amanhã' },
   { expected: 'registered', en: 'Will be delivered tomorrow', fr: 'Sera livré demain',
-    de: 'Wird morgen zugestellt', it: 'Sarà consegnato domani' },
+    de: 'Wird morgen zugestellt', it: 'Sarà consegnato domani', es: 'Será entregado mañana', pt: 'Será entregue amanhã' },
   { expected: 'out_for_delivery', en: 'Loaded into the delivery vehicle', fr: 'Chargé dans le véhicule de livraison',
-    de: 'In das Zustellfahrzeug geladen', it: 'Caricato nel veicolo di consegna' },
+    de: 'In das Zustellfahrzeug geladen', it: 'Caricato nel veicolo di consegna',
+    es: 'Cargado en el vehículo de reparto', pt: 'Carregado no veículo de entrega' },
   { expected: 'in_transit', en: 'Customs clearance completed', fr: 'Dédouanement terminé',
     de: 'Zollabfertigung abgeschlossen', it: 'Sdoganamento completato' },
   { expected: 'customs', en: 'Customs clearance has not been completed', fr: "Le dédouanement n'est pas terminé",
@@ -37,7 +42,7 @@ const contrasts: { expected: Stage; en: string; fr: string; de: string; it: stri
     it: 'Etichetta creata; il corriere non ha ancora ricevuto il pacco' },
   { expected: 'accepted', en: 'Parcel handed to DPD', fr: 'Colis remis à DPD',
     de: 'Paket an DPD übergeben', it: 'Pacco affidato a DPD' },
-  { expected: 'delivered', en: 'Delivered', fr: 'Livré', de: 'Zugestellt', it: 'Consegnato' },
+  { expected: 'delivered', en: 'Delivered', fr: 'Livré', de: 'Zugestellt', it: 'Consegnato', es: 'Entregado', pt: 'Entregue' },
 ];
 
 describe('intuitive language contrasts', () => {
@@ -50,7 +55,7 @@ describe('intuitive language contrasts', () => {
   });
 
   it.each(['Un livre dans notre boutique', 'Carrier-specific wording', 'Texte non reconnu',
-    'Unbekannter Wortlaut', 'Testo sconosciuto',
+    'Unbekannter Wortlaut', 'Testo sconosciuto', 'Texto desconocido', 'Texto desconhecido',
   ])('[generated unknown] does not invent progress for %s', (description) => {
     expect(trackingLanguageStage(description)).toBeUndefined();
     expect(event('2026-01-01T12:00:00Z', description)?.stage).toBe('pending');
@@ -64,7 +69,7 @@ describe('intuitive language contrasts', () => {
   });
 
   it('keeps verified structured stages ahead of inferred translations', () => {
-    for (const description of ['Livré', 'Zugestellt', 'Consegnato']) {
+    for (const description of ['Livré', 'Zugestellt', 'Consegnato', 'Entregado', 'Entregue']) {
       expect(buildEvents({ id: 'synthetic', carrier: 'swiss-post' }, {
         events: [{ time: '2026-01-01T12:00:00Z', description, stage: 'ready_for_pickup' }],
       })[0].stage).toBe('ready_for_pickup');
@@ -171,6 +176,8 @@ describe('intuitive language contrasts', () => {
     'Livré, signé par [recipient]',
     'Zugestellt, unterschrieben von [recipient]',
     'Consegnato, firmato da [recipient]',
+    'Entregado, firmado por [recipient]',
+    'Entregue, assinado por [recipient]',
   ])('[generated privacy] reduces delivery wording to a safe description: %s', (description) => {
     expect(event('2026-01-01T12:00:00Z', description)?.description).toBe('Delivered');
   });
