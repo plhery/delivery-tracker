@@ -641,6 +641,21 @@ describe('persistent tracking routing', () => {
     expect(result.result).toMatchObject({ tracking_provider: 'Ship24', last_update: stamp });
   });
 
+  it('asks a carrier whose answer has only local clocks again in 6 h, not on every check', async () => {
+    const { router, direct } = setup();
+    direct.mockResolvedValue(yearlessYamato());
+    // A rate limit's cooldown that ended an hour ago must not keep the carrier due.
+    const saved = state({ configured_carrier: 'yamato', preferred_provider: 'Ship24', direct_retry_at: '2026-09-10T11:00:00.000Z' });
+    const filed = (routing: JsonObject) => parcel({ carrier: 'yamato', tracking_number: '123456789012', carrier_data: { routing } });
+    const first = await router.fetch(filed(saved), true);
+    expect(direct).toHaveBeenCalledOnce();
+    expect(first.result).toMatchObject({ tracking_provider: 'Ship24', routing: { direct_retry_at: '2026-09-10T18:00:00.000Z' } });
+    const later = setup(new Date('2026-09-10T12:30:00Z'));
+    await later.router.fetch(filed(first.result.routing as JsonObject), true);
+    expect(later.direct).not.toHaveBeenCalled();
+    expect(later.universal).toHaveBeenCalledOnce();
+  });
+
   it('keeps the origin watermark when a verified delivery partner confirms the same completion', async () => {
     const { router, direct, universal } = setup();
     direct.mockResolvedValue({ sourceCarrierId: 'posti', swissPostReady: null, handoffFallbackErrorType: null,

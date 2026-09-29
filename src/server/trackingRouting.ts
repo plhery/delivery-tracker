@@ -535,7 +535,10 @@ export class TrackingRouter {
         }
         state.reported_carriers_seen = [...new Set([...seen, ...value.result.reported_carriers])].slice(-20);
       }
-      state.direct_retry_at ??= iso(now().getTime() + 6 * HOUR);
+      // The carrier's own answer had only local clocks, so this provider dates the
+      // timeline: ask the carrier again in 6 h. A retry time left over from an
+      // earlier failure has expired and would otherwise keep it due on every check.
+      if (localDirectFallback || !state.direct_retry_at) state.direct_retry_at = iso(now().getTime() + 6 * HOUR);
       state.last_probe_at ??= now().toISOString();
       state.discovery_cursor = 0;
       return persistResult(value, chosen);

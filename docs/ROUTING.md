@@ -55,6 +55,10 @@ asked again in the same check. A pending parcel whose failures are all not-found
 `no_history` shows as waiting, not as an outage. When a failed direct adapter recovers, it
 takes over from the universal provider again.
 
+An adapter whose answer has only local clocks (no instant for its latest scan) keeps that
+history as evidence while a universal provider dates the timeline. It is asked again
+6 h later, not on every check.
+
 **Rate limits (429).** If the last successful retrieval is recent (under 1 h by day, 3 h
 overnight), the parcel keeps its progress and skips fallback until that window or the
 retry time runs out. Otherwise the router tries another provider. It never retries the
