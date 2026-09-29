@@ -60,7 +60,8 @@ Refresh advances the sample parcels; **Reset demo data** in settings restores th
 
 The [near and far study](http://localhost:3000/design/map) shows three
 Flighty-style maps that turn from a globe into a close-up as a parcel arrives;
-press play to follow a journey scan by scan.
+press play to follow a journey scan by scan. The [stamp study](http://localhost:3000/design/stamp)
+compares ways to remake, replace or drop the stamp on the parcel card.
 
 For real accounts, copy [`.env.example`](.env.example) to `.env.local`, configure
 Supabase, and set `NEXT_PUBLIC_USE_API=true`. See [Authentication](docs/AUTHENTICATION.md).
