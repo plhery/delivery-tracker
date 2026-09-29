@@ -45,12 +45,15 @@ A failed source waits before it is retried for that parcel:
 | Failure | First wait | Backs off to |
 | --- | --- | --- |
 | Transport, and `no_history` (provider answered but has nothing) | 15 min | 6 h |
-| Verification or schema | 1 h | 6 h |
-| Not found | 24 h | 24 h |
+| Verification or schema; not found by a carrier's own adapter | 1 h | 6 h |
+| Not found by a universal provider | 24 h | 24 h |
 
-A longer `Retry-After` is honoured, up to 7 days. A pending parcel whose failures are all
-not-found or `no_history` shows as waiting, not as an outage. When a failed direct adapter
-recovers, it takes over from the universal provider again.
+A longer `Retry-After` is honoured, up to 7 days. A carrier often doesn't know a label
+before its first scan, hence its shorter not-found wait. When a universal provider shows
+progress the parcel hasn't had yet and names a carrier that said not found, that carrier is
+asked again in the same check. A pending parcel whose failures are all not-found or
+`no_history` shows as waiting, not as an outage. When a failed direct adapter recovers, it
+takes over from the universal provider again.
 
 **Rate limits (429).** If the last successful retrieval is recent (under 1 h by day, 3 h
 overnight), the parcel keeps its progress and skips fallback until that window or the

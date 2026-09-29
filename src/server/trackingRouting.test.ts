@@ -160,6 +160,38 @@ describe('persistent tracking routing', () => {
     expect(direct).toHaveBeenCalledWith(expect.objectContaining({ carrier: 'ups' }), 'ups');
     expect(result.result.routing).toMatchObject({ confirmed_carrier: 'ups' });
   });
+  it('asks a carrier that does not know the number yet again within hours, a provider after a day', async () => {
+    const { router, direct, universal } = setup();
+    direct.mockRejectedValue(new NotFoundError('Swiss Post'));
+    universal.mockRejectedValue(new NotFoundError('Ship24'));
+    await expect(router.fetch(parcel({ carrier: 'swiss-post' }), false)).rejects.toMatchObject({ routing: { failures: {
+      'swiss-post': { count: 1, kind: 'not_found', retry_at: '2026-09-10T13:00:00.000Z' },
+      Ship24: { count: 1, kind: 'not_found', retry_at: '2026-09-11T12:00:00.000Z' },
+    } } });
+    // Each further miss doubles the carrier's wait, up to six hours.
+    const later = setup(new Date('2026-09-10T19:00:00Z'));
+    later.direct.mockRejectedValue(new NotFoundError('Swiss Post'));
+    const result = await later.router.fetch(parcel({ carrier: 'swiss-post', carrier_data: { routing: state({ configured_carrier: 'swiss-post',
+      failures: { 'swiss-post': { count: 3, kind: 'not_found', retry_at: '2026-09-10T19:00:00.000Z' } } }) } }), false);
+    expect(result.result.routing).toMatchObject({ failures: { 'swiss-post': { count: 4, retry_at: '2026-09-11T01:00:00.000Z' } } });
+  });
+  it('asks a carrier that said not found again at once when a provider shows new progress for it', async () => {
+    const filed = (extra: JsonObject = {}) => parcel({ carrier: 'swiss-post', carrier_data: { routing: state({ configured_carrier: 'swiss-post',
+      failures: { 'swiss-post': { count: 1, kind: 'not_found', retry_at: '2026-09-11T00:00:00.000Z' } }, ...extra }) } });
+    const { router, direct, universal } = setup();
+    universal.mockResolvedValue({ ...history(), discovered_carrier: 'swiss-post' });
+    direct.mockResolvedValue(directValue('swiss-post'));
+    const result = await router.fetch(filed(), false);
+    expect(direct).toHaveBeenCalledOnce();
+    expect(result.result).not.toHaveProperty('tracking_provider');
+    expect(result.result.routing).toMatchObject({ confirmed_carrier: 'swiss-post', failures: {} });
+    // Progress the parcel already had is no news: the carrier keeps its wait.
+    const again = setup();
+    again.universal.mockResolvedValue({ ...history(), discovered_carrier: 'swiss-post' });
+    const kept = await again.router.fetch(filed({ last_event_at: '2026-09-10T11:00:00.000Z' }), false);
+    expect(again.direct).not.toHaveBeenCalled();
+    expect(kept.result.tracking_provider).toBe('Ship24');
+  });
   describe('recognition of the carriers a number could belong to', () => {
     // A Swiss DPD depot prefix; the number is only a suggestion by shape.
     const swissDpd = '06080000000002';

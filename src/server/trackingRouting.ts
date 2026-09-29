@@ -211,9 +211,12 @@ export class TrackingRouter {
         ? 'no_history' : classified.kind;
       const { retryAfterMs } = classified;
       const count = Math.min(20, (state.failures[provider]?.count ?? 0) + 1);
-      const base = kind === 'not_found' ? DAY : kind === 'verification' || kind === 'schema' ? HOUR : 15 * 60_000;
+      // A provider's "not found" holds for a day. A carrier often doesn't know a
+      // label before its first scan, so its own "not found" is asked again within hours.
+      const daily = kind === 'not_found' && universalSource;
+      const base = daily ? DAY : kind === 'verification' || kind === 'schema' || kind === 'not_found' ? HOUR : 15 * 60_000;
       const userError = trackingFailureCode(error);
-      const failure = { count, kind, ...(userError ? { user_error: userError } : {}), retry_at: iso(now().getTime() + Math.max(retryAfterMs, Math.min(kind === 'not_found' ? DAY : 6 * HOUR, base * 2 ** (count - 1)))) };
+      const failure = { count, kind, ...(userError ? { user_error: userError } : {}), retry_at: iso(now().getTime() + Math.max(retryAfterMs, Math.min(daily ? DAY : 6 * HOUR, base * 2 ** (count - 1)))) };
       state.failures[provider] = failure;
       // Called before another provider is attempted, including recovered failures.
       report('provider_failed', provider, kind, error);
@@ -508,6 +511,12 @@ export class TrackingRouter {
       // confirmation fails, needs credentials, or only returned older history.
       if (state.discovered_carrier && universalNumber === number && !metadata.original_carrier) {
         const watermark = state.last_event_at;
+        // Progress the parcel hasn't had yet: a carrier that said "not found"
+        // may know the parcel now, so it is asked without waiting its turn.
+        const missed = state.failures[state.discovered_carrier];
+        if (missed?.kind === 'not_found' && !attemptedDirect.has(state.discovered_carrier) && latest(value) > millis(watermark)) {
+          missed.retry_at = now().toISOString();
+        }
         state.last_event_at = iso(Math.max(millis(watermark), latest(value)));
         const direct = await tryDirect(state.discovered_carrier, state.discovered_carrier !== declared,
           value.result.current_stage ?? value.result.status).catch((error: unknown) => {
