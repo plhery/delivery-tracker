@@ -64,17 +64,22 @@ export function relaisColisTrackingUrl(): string {
 }
 
 function responseTrackingNumber(page: ReturnType<typeof load>): string {
-  const banners = page('.back-subedtext--sub').filter((_, element) => (
+  // History pages name the parcel once, in a "Votre colis" banner, and have no
+  // search form. Pages without history re-render the form with the searched number.
+  const banners = page('.back-subedtext--sub');
+  const fields = page('#track_package_trackingNumber');
+  if (banners.length > 1 || fields.length > 1) return '';
+  const labelled = banners.filter((_, element) => (
     page(element).siblings('.back-subedtext').toArray().some((label) => comparableText(page(label).text()) === 'votre colis')
-  )).map((_, element) => clean(page(element).text(), 32)).get();
-  // A prefilled form alone cannot bind history from a successful response.
-  if (page('.follow-step').length && banners.length !== 1) return '';
-  if (banners.length > 1) return '';
-  // Successful pages clear the search field and identify the parcel in a banner.
-  const fields = [clean(page('#track_package_trackingNumber').first().attr('value'), 32)];
-  const values = [...new Set([...banners, ...fields].filter(Boolean))];
-  if (values.length !== 1) return '';
-  try { return normalizeRelaisColisTrackingNumber(values[0]!); } catch { return ''; }
+  ));
+  if (labelled.length !== banners.length) return '';
+  // The form value only echoes the request, so it cannot vouch for history alone.
+  if (page('.follow-step').length && !labelled.length) return '';
+  const values = [labelled.text(), fields.attr('value') ?? ''].filter((value) => value.trim());
+  try {
+    const numbers = new Set(values.map(normalizeRelaisColisTrackingNumber));
+    return numbers.size === 1 ? [...numbers][0]! : '';
+  } catch { return ''; }
 }
 
 export function parseRelaisColisTrackingHtml(html: string, rawTrackingNumber: string): CarrierResult {

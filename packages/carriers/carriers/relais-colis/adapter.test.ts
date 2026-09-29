@@ -23,8 +23,20 @@ function json(relativePath: string): unknown {
   return JSON.parse(readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), 'utf8'));
 }
 
+function html(relativePath: string): string {
+  return readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), 'utf8');
+}
+
 const carrier = json('./carrier.json') as { capabilities: readonly string[] };
 const timeline = json('./fixtures/returned-timeline.json') as { steps: Step[] };
+const groupedHistory = html('./fixtures/grouped-history.html');
+const noHistory = html('./fixtures/no-history.html');
+
+function searchForm(trackingNumber: string): string {
+  return `<form name="track_package" method="post">
+    <input id="track_package_trackingNumber" name="track_package[trackingNumber]" value="${trackingNumber}">
+  </form>`;
+}
 
 function responseAt(body: BodyInit | null, init: ResponseInit = {}): Response {
   const response = new Response(body, init);
@@ -48,14 +60,16 @@ function trackingPage(options: {
 } = {}): string {
   const trackingNumber = options.trackingNumber ?? OFFICIAL_EXAMPLE;
   const rows = options.rows ?? timeline.steps;
+  // As on the live pages: history is named by a banner, while a reply without
+  // history re-renders the search form with the searched number.
   return `<!doctype html><html><body>
+    ${rows.length ? `<div class="back"><p class="back-subedtext">Votre colis</p>
+      <p class="back-subedtext back-subedtext--sub">${trackingNumber}</p></div>` : `
     <form name="track_package" method="post">
       <input id="track_package_trackingNumber" name="track_package[trackingNumber]"
         value="${trackingNumber}">
       ${options.error ? `<div class="error field-error">${options.error}</div>` : ''}
-    </form>
-    ${rows.length ? `<div><p class="back-subedtext">Votre colis</p>
-      <p class="back-subedtext back-subedtext--sub">${trackingNumber}</p></div>` : ''}
+    </form>`}
     <section class="follow">
       <div class="follow-address-box">
         <p class="follow-address follow-address--bold">PRIVATE RECIPIENT</p>
@@ -233,8 +247,7 @@ describe('Relais Colis HTML normalization', () => {
   });
 
   it('binds the native parcel banner and expands every grouped scan', () => {
-    const html = readFileSync(new URL('./fixtures/grouped-history.html', import.meta.url), 'utf8');
-    const result = parseRelaisColisTrackingHtml(html, OFFICIAL_EXAMPLE);
+    const result = parseRelaisColisTrackingHtml(groupedHistory, OFFICIAL_EXAMPLE);
     expect(result).toMatchObject({ status: 'in_transit', last_update: '2026-04-28T15:21:00+02:00' });
     expect(result.events?.map(event => event.time)).toEqual([
       '2026-04-28T15:21:00+02:00', '2026-04-21T19:07:00+02:00',
@@ -242,25 +255,39 @@ describe('Relais Colis HTML normalization', () => {
     ]);
     expect(result.events?.at(-1)?.stage).toBe('registered');
     expect(JSON.stringify(result)).not.toContain('SYNTHETIC RECIPIENT');
-    expect(() => parseRelaisColisTrackingHtml(html.replace(OFFICIAL_EXAMPLE, 'CC999999999901'), OFFICIAL_EXAMPLE))
-      .toThrow('different shipment');
-    expect(() => parseRelaisColisTrackingHtml(html.replace('name="track_package[trackingNumber]"',
-      'name="track_package[trackingNumber]" value="CC999999999901"'), OFFICIAL_EXAMPLE)).toThrow('shipment identifier');
-    expect(() => parseRelaisColisTrackingHtml(html.replace('Votre colis</p>', 'Autre information</p>'), OFFICIAL_EXAMPLE))
-      .toThrow('shipment identifier');
-    const prefilled = html.replace('name="track_package[trackingNumber]"', `name="track_package[trackingNumber]" value="${OFFICIAL_EXAMPLE}"`);
-    expect(() => parseRelaisColisTrackingHtml(prefilled.replace('Votre colis</p>', 'Autre information</p>'), OFFICIAL_EXAMPLE))
-      .toThrow('shipment identifier');
-    expect(() => parseRelaisColisTrackingHtml(html.replace('</body>', `<div><p class="back-subedtext">Votre colis</p>
-      <p class="back-subedtext--sub">${OFFICIAL_EXAMPLE}</p></div></body>`), OFFICIAL_EXAMPLE)).toThrow('shipment identifier');
+  });
 
+  it('binds history only to one labelled banner holding exactly the requested number', () => {
+    const withForm = (trackingNumber: string, page = groupedHistory) => page.replace('<div class="container">',
+      `<div class="container">${searchForm(trackingNumber)}`);
+    expect(parseRelaisColisTrackingHtml(withForm(OFFICIAL_EXAMPLE), OFFICIAL_EXAMPLE).events).toHaveLength(4);
+    expect(() => parseRelaisColisTrackingHtml(groupedHistory.replace(OFFICIAL_EXAMPLE, 'CC999999999901'), OFFICIAL_EXAMPLE))
+      .toThrow('different shipment');
+    for (const page of [
+      // Separators the normalizer strips must not hide a second number past a length cap.
+      groupedHistory.replace(OFFICIAL_EXAMPLE, `${OFFICIAL_EXAMPLE} - - - - - - - - - CC999999999901`),
+      groupedHistory.replace('>Votre colis</p>', '>Colis retour</p>'),
+      groupedHistory.replace('</a>', `<p class="back-subedtext back-subedtext--sub">${OFFICIAL_EXAMPLE}</p></a>`),
+      groupedHistory.replace('</body>', '<p class="back-subedtext back-subedtext--sub">CC999999999901</p></body>'),
+      withForm('CC999999999901'),
+      withForm(OFFICIAL_EXAMPLE, groupedHistory.replace(/<div class="back">[\s\S]*?<\/div>/, '')),
+    ]) expect(() => parseRelaisColisTrackingHtml(page, OFFICIAL_EXAMPLE)).toThrow('shipment identifier');
+  });
+
+  it('reports absence only for the echoed number beside the explicit no-history message', () => {
+    expect(() => parseRelaisColisTrackingHtml(noHistory, OFFICIAL_EXAMPLE)).toThrow(RelaisColisTrackingError);
+    expect(() => parseRelaisColisTrackingHtml(noHistory.replace(`value="${OFFICIAL_EXAMPLE}"`, 'value="CC999999999901"'), OFFICIAL_EXAMPLE))
+      .toThrow('different shipment');
+    const field = /<input type="text"[^>]*>/.exec(noHistory)![0];
+    for (const page of [noHistory.replace(`value="${OFFICIAL_EXAMPLE}"`, ''), noHistory.replace(field, field + field)]) {
+      expect(() => parseRelaisColisTrackingHtml(page, OFFICIAL_EXAMPLE)).toThrow('shipment identifier');
+    }
   });
 
   it('rejects malformed grouped scans instead of borrowing a stage heading', () => {
-    const html = readFileSync(new URL('./fixtures/grouped-history.html', import.meta.url), 'utf8');
     for (const replacement of ['', '<p class="follow-step-date"></p>',
       '<p class="follow-step-date">Moving</p><p class="follow-step-date">Unexpected</p>']) {
-      const malformed = html.replace('<p class="follow-step-date">Colis en transit sur notre plateforme parisienne.</p>', replacement);
+      const malformed = groupedHistory.replace('<p class="follow-step-date">Colis en transit sur notre plateforme parisienne.</p>', replacement);
       expect(() => parseRelaisColisTrackingHtml(malformed, OFFICIAL_EXAMPLE)).toThrow('ambiguous scan group');
     }
     expect(() => parseRelaisColisTrackingHtml(trackingPage({ rows: Array.from({ length: 251 }, () => timeline.steps[0]!) }), OFFICIAL_EXAMPLE))

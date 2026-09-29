@@ -1,0 +1,25 @@
+<!doctype html><html><body>
+<div class="row row-flex">
+  <div class="col-xs-12 col-ml-8 tracking">
+    <div class="box tracking-flex full box--small full box--fill bandeau-step bandeau-step--repeat">
+      <div class="box-input send-input">
+        <form name="track_package" method="post" class="box-input">
+          <div class="row row-flex full">
+            <div class="col-xs-12 col-md-12">
+              <div class=" input-box">
+                <input type="text" placeholder="Exemple N° de colis : CC200000000401" class="input-text " id="track_package_trackingNumber" name="track_package[trackingNumber]" value="CC200000000401" />
+                <div class="input-text-valid"></div>
+              </div>
+            </div>
+          </div>
+          <div class="error field-error ui red label" style="margin-bottom: 10px;">
+            Aucune donnée de suivi pour votre colis, veuillez réessayer plus tard
+          </div>
+          <input type="hidden" id="track_package_searchPackage" name="track_package[searchPackage]" />
+          <input type="hidden" id="track_package__token" name="track_package[_token]" value="synthetic-csrf-token" />
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>

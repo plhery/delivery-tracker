@@ -5,13 +5,18 @@ Tracks French pickup-point parcels through the public recipient form.
 ## Retrieval
 
 Each lookup opens the form in its own cookie session, then posts its CSRF token
-and the requested number. The successful page identifies the parcel in its
-"Votre colis" banner and clears the search field. Each stage can contain several
-scan boxes; every box becomes an event in the displayed order.
+and the requested number. A reply with history has no search form and names the
+parcel once, in its "Votre colis" banner. Each stage can contain several scan
+boxes; every box becomes an event in the displayed order.
 
-Only the matching form's explicit no-history message proves absence. Redirects,
+A reply without history re-renders the form with the searched number beside an
+explicit no-history message; only that message proves absence. Redirects,
 endpoint errors and invalid sessions remain inconclusive. Both requests share
 one lookup budget and caller cancellation.
+
+The number shown must equal the requested one after normalization. Pages with a
+second or unlabelled banner or a conflicting form value are rejected, and so is
+history without a banner: the form value only echoes the request.
 
 ## Normalization
 
