@@ -52,6 +52,8 @@ const outputs = new Map([
   // Read by BrandParityTests so the SwiftUI livery and truck cannot drift from
   // packages/carriers/core/brand, which the web renders.
   ['Brand.json', renderBrandJson(readBrandData())],
+  // The parcel map draws the same Natural Earth countries as the web map.
+  ['World.json', fs.readFileSync(path.join(root, 'src', 'components', 'map', 'world.json'), 'utf8')],
 ]);
 
 if (process.argv.includes('--check')) {

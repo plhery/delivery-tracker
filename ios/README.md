@@ -61,7 +61,7 @@ After changing the API contract, carriers or copy:
 
 ```bash
 npm run contract:generate   # Swift models and catalog from contracts/openapi.json
-npm run ios:resources       # translations, message map, analytics catalog
+npm run ios:resources       # translations, message map, analytics catalog, map data
 ```
 
 Build from `ios/`:

@@ -1,0 +1,230 @@
+import SwiftUI
+
+extension ParcelRoute {
+    /// A parcel's route, with its destination country when the carrier gave one.
+    init(parcel: Parcel, atlas: WorldAtlas, language: AppLanguage) {
+        let name = { (code: String) in TrackingLocation.countryName(code, language: language) }
+        let destination = parcel.carrierData?.destinationCountry.flatMap { code in
+            atlas.label(of: code).map { RoutePlace.country(code, name: name(code), at: $0) }
+        }
+        self.init(events: parcel.trackingEvents, destination: destination, countryName: name)
+    }
+}
+
+/// The route, drawn in the card's own ink across the top of the parcel's card.
+struct RouteEngraving: View {
+    let atlas: WorldAtlas
+    let route: ParcelRoute
+    let stage: TrackingStage?
+    let identity: CarrierVisualIdentity
+    @EnvironmentObject private var localizer: Localizer
+
+    var body: some View {
+        WorldMapView(
+            atlas: atlas, route: route, mode: route.defaultMode(for: stage),
+            palette: .tint(ink: identity.ink, surface: identity.surface), labels: .ends, showsContext: false, peek: true,
+            insets: EdgeInsets(top: 40, leading: 16, bottom: 44, trailing: 16), language: localizer.language
+        )
+        .mask(LinearGradient(stops: [.init(color: .black, location: 0.78), .init(color: .clear, location: 1)],
+                             startPoint: .top, endPoint: .bottom))
+        // The globe button beside the bell is the accessible way in.
+        .accessibilityHidden(true)
+    }
+}
+
+/// The whole map over the parcel: the journey on a globe, or the last mile up close.
+struct ParcelMapScreen: View {
+    let atlas: WorldAtlas
+    let route: ParcelRoute
+    let stage: TrackingStage?
+    /// The carrier's colour marks where the parcel is now.
+    let accent: Color
+
+    @EnvironmentObject private var localizer: Localizer
+    @Environment(\.dismiss) private var dismiss
+    @State private var chosen: ParcelRoute.Mode?
+    @State private var free = false
+    @State private var recenter = 0
+    @State private var barHeight: CGFloat = 220
+    @State private var time = Date()
+
+    private var mode: ParcelRoute.Mode { chosen ?? route.defaultMode(for: stage) }
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .bottom) {
+                // The route is framed in the space the summary leaves.
+                WorldMapView(
+                    atlas: atlas, route: route, mode: mode, palette: .map(accent: accent), interactive: true, night: time,
+                    live: stage != .delivered && stage != .returned,
+                    insets: EdgeInsets(top: proxy.safeAreaInsets.top + 52, leading: 0,
+                                       bottom: proxy.safeAreaInsets.bottom + barHeight + 24, trailing: 0),
+                    recenter: recenter, language: localizer.language, onFreeChange: { free = $0 }
+                )
+                .ignoresSafeArea()
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(label)
+                .accessibilityAddTraits(.isImage)
+
+                bar
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { barHeight = $0 }
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 12)
+            }
+            .overlay(alignment: .topTrailing) {
+                Button { dismiss() } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 15, weight: .semibold))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .glassSurface(in: Circle())
+                .padding(.trailing, 14)
+                .padding(.top, 4)
+                .accessibilityLabel(localizer.text("map.close"))
+            }
+        }
+        .background(Brand.background)
+    }
+
+    private var label: String {
+        let origin = route.origin?.place.name ?? ""
+        let end = (route.destination ?? route.current?.place)?.name ?? origin
+        return end == origin ? localizer.text("map.labelOne", ["place": origin]) : localizer.text("map.label", ["from": origin, "to": end])
+    }
+
+    private var bar: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            summary
+            if route.hasNearView || free {
+                HStack(spacing: 2) {
+                    viewButton(.journey, key: "map.journey", symbol: "globe")
+                    viewButton(.now, key: "map.nearby", symbol: "location")
+                }
+                .padding(3)
+                .background(Color.primary.opacity(0.06), in: Capsule())
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel(localizer.text("map.view"))
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassSurface(in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+    }
+
+    @ViewBuilder private var summary: some View {
+        if let origin = route.origin, let current = route.current {
+            let delivered = stage == .delivered
+            // A finished journey has a length, not a distance "so far".
+            let finished = delivered || stage == .returned
+            let end = route.destination ?? current.place
+            let endLabel = delivered ? "map.delivered" : route.destination != nil ? "map.to" : route.latestLocated ? "map.now" : "map.lastSeen"
+            let single = route.stops.count == 1 && route.destination == nil
+            let total = route.kilometres + (route.remainingKilometres ?? 0)
+            let progress = delivered || route.destination == nil ? 1 : total > 0 ? route.kilometres / total : 0
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 14) {
+                    if !single { endpoint(localizer.text("map.from"), origin.place, alignment: .leading) }
+                    endpoint(localizer.text(endLabel), end, alignment: single ? .leading : .trailing)
+                }
+                if !single {
+                    RouteProgress(progress: progress, tint: accent)
+                    HStack(spacing: 16) {
+                        if route.kilometres >= 1 {
+                            let distance = kilometres(route.kilometres)
+                            Text(finished ? distance : localizer.text("map.soFar", ["distance": distance]))
+                        }
+                        if !finished, let remaining = route.remainingKilometres {
+                            Text(localizer.text("map.toGo", ["distance": kilometres(remaining)]))
+                        }
+                        if route.countries.count > 1 {
+                            Text(localizer.text("map.countries.many", ["count": route.countries.count]))
+                        }
+                    }
+                    .font(.caption)
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    private func kilometres(_ value: Double) -> String {
+        ParcelRoute.formattedKilometres(value, locale: localizer.language.locale)
+    }
+
+    private func endpoint(_ title: String, _ place: RoutePlace, alignment: HorizontalAlignment) -> some View {
+        let country = TrackingLocation.countryName(place.country, language: localizer.language)
+        return VStack(alignment: alignment, spacing: 2) {
+            Text(title)
+                .font(.caption2.weight(.medium))
+                .textCase(.uppercase)
+                .tracking(1.4)
+                .foregroundStyle(.secondary)
+            Text(place.name)
+                .font(.title2.weight(.semibold))
+                .lineLimit(1)
+            Text("\(TrackingLocation.flag(place.country)) \(country)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: alignment == .leading ? .leading : .trailing)
+        .multilineTextAlignment(alignment == .leading ? .leading : .trailing)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(place.name == country ? "\(title), \(country)" : "\(title), \(place.name), \(country)")
+    }
+
+    private func viewButton(_ target: ParcelRoute.Mode, key: String, symbol: String) -> some View {
+        let selected = mode == target && !free
+        return Button {
+            if target == mode { recenter += 1 }
+            chosen = target
+        } label: {
+            Label(localizer.text(key), systemImage: symbol)
+                .font(.caption.weight(.medium))
+                .padding(.horizontal, 12)
+                .frame(minHeight: 36)
+                .foregroundStyle(selected ? Brand.paper : Color.secondary)
+                .background(selected ? Brand.ink : Color.clear, in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+/// How far along the parcel is, from the first place to the last or to its destination.
+private struct RouteProgress: View {
+    let progress: Double
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            ZStack(alignment: .topLeading) {
+                Path { path in
+                    path.move(to: CGPoint(x: 0, y: 6))
+                    path.addLine(to: CGPoint(x: width, y: 6))
+                }
+                .stroke(Color.primary.opacity(0.28), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                Capsule().fill(tint).frame(width: width * progress, height: 2).offset(y: 5)
+                Circle()
+                    .fill(Brand.paper)
+                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.4), lineWidth: 1.5))
+                    .frame(width: 8, height: 8)
+                    .position(x: width, y: 6)
+                Circle()
+                    .fill(tint)
+                    .overlay(Circle().stroke(Brand.paper, lineWidth: 3))
+                    .frame(width: 10, height: 10)
+                    .position(x: width * progress, y: 6)
+            }
+            .frame(width: width, height: 12)
+        }
+        .frame(height: 12)
+        .padding(.horizontal, 5)
+        .accessibilityHidden(true)
+    }
+}

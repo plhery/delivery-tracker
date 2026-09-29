@@ -1309,6 +1309,7 @@ private final class ParcelCache: @unchecked Sendable {
 
 final class DemoRepository {
     private let catalogKey = "sdt.native.demo.catalog.v2"
+    private let placesKey = "sdt.native.demo.places.v1"
     private let key = "sdt.native.demo.parcels.v1"
     private let preferencesKey = "sdt.native.demo.preferences.v1"
     private let defaults: UserDefaults
@@ -1446,11 +1447,17 @@ final class DemoRepository {
                 let legacyNumbers = ["12345678901234", "993412345678901234", "1Z999AA10123456784", "RR123456785DE", "443412345678901234"]
                 if parcels.contains(where: { legacyNumbers.contains($0.trackingNumber) }) {
                     let existing = Set(parcels.map(\.trackingNumber))
-                    let upgraded = parcels + Self.seed().filter { !existing.contains($0.trackingNumber) }
+                    let upgraded = Self.withPlaces(parcels) + Self.seed().filter { !existing.contains($0.trackingNumber) }
                     save(upgraded)
                     return upgraded
                 }
                 defaults.set(true, forKey: catalogKey)
+            }
+            if !defaults.bool(forKey: placesKey) {
+                // Demo parcels saved before scans had places get them from the same samples.
+                let located = Self.withPlaces(parcels)
+                save(located)
+                return located
             }
             return parcels
         }
@@ -1462,6 +1469,27 @@ final class DemoRepository {
     private func save(_ parcels: [Parcel]) {
         defaults.set(try? JSONEncoder.deliveryTracker.encode(parcels), forKey: key)
         defaults.set(true, forKey: catalogKey)
+        defaults.set(true, forKey: placesKey)
+    }
+
+    private static func withPlaces(_ parcels: [Parcel]) -> [Parcel] {
+        var known: [String: EventPlace] = [:]
+        for event in seed().flatMap(\.trackingEvents) {
+            if let location = event.location, let place = event.place { known[location] = place }
+        }
+        for update in updates.values {
+            if let location = update.location, let place = update.place { known[location] = place }
+        }
+        return parcels.map { parcel in
+            var located = parcel
+            located.trackingEvents = parcel.trackingEvents.map { event in
+                guard event.place == nil, let location = event.location, let place = known[location] else { return event }
+                var placed = event
+                placed.place = place
+                return placed
+            }
+            return located
+        }
     }
 
     private func update(id: UUID, change: (inout Parcel) -> Void) throws -> Parcel {
@@ -1477,29 +1505,35 @@ final class DemoRepository {
     private func advance(_ parcel: Parcel) -> Parcel {
         guard parcel.isActive, let stage = parcel.currentStage, let next = Self.next(stage) else { return parcel }
         var copy = parcel
-        let updates: [TrackingStage: (String, String?)] = [
-            .registered: ("The sender announced the parcel", nil),
-            .accepted: ("Parcel accepted at the counter", "Zürich-Mülligen"),
-            .inTransit: ("Sorted at the parcel center", "Härkingen"),
-            .outForDelivery: ("With the courier for delivery today", "Your neighbourhood"),
-            .delivered: ("Delivered to your mailbox", "Home"),
-            .readyForPickup: ("Ready for pickup at your branch", "Post branch"),
-            .exception: ("A problem is holding up the parcel", "Härkingen"),
-        ]
-        let update = updates[next] ?? ("Tracking updated", nil)
+        let update = Self.updates[next] ?? ("Tracking updated", nil, nil)
         let timestamp = DateParser.isoString(Date())
         copy.trackingEvents.append(TrackingEvent(
             id: UUID(), packageID: copy.id, stage: next,
-            description: update.0, location: update.1, occurredAt: timestamp
+            description: update.description, location: update.location, occurredAt: timestamp, place: update.place
         ))
         copy.lastSyncedAt = timestamp
-        copy.lastStatusText = update.0
+        copy.lastStatusText = update.description
         if CarrierCatalog.supportsSwissPostHandoff(copy.trackingNumber),
            [.inTransit, .customs, .outForDelivery, .delivered].contains(next) {
             copy.carrierData = CarrierData(activeTrackingCarrier: .swissPost, swissPostReady: true)
         }
         return copy
     }
+
+    /// The scan each simulated refresh adds, placed where the server would place it.
+    private static let updates: [TrackingStage: (description: String, location: String?, place: EventPlace?)] = {
+        let zurich = EventPlace(latitude: 47.367, longitude: 8.55, precision: .city, country: "CH", name: "Zürich")
+        let harkingen = EventPlace(latitude: 47.305, longitude: 7.821, precision: .city, country: "CH", name: "Härkingen")
+        return [
+            .registered: ("The sender announced the parcel", nil, nil),
+            .accepted: ("Parcel accepted at the counter", "Zürich-Mülligen", zurich),
+            .inTransit: ("Sorted at the parcel center", "Härkingen", harkingen),
+            .outForDelivery: ("With the courier for delivery today", "Your neighbourhood", nil),
+            .delivered: ("Delivered to your mailbox", "Home", nil),
+            .readyForPickup: ("Ready for pickup at your branch", "Post branch", nil),
+            .exception: ("A problem is holding up the parcel", "Härkingen", harkingen),
+        ]
+    }()
 
     private static func next(_ stage: TrackingStage) -> TrackingStage? {
         switch stage {
@@ -1528,6 +1562,7 @@ final class DemoRepository {
                 let hoursAgo: Double
                 let description: String
                 let location: String?
+                let place: EventPlace?
             }
             let label: String
             let trackingNumber: String
@@ -1544,7 +1579,8 @@ final class DemoRepository {
             let id = UUID()
             let history = sample.events.map { event in
                 TrackingEvent(id: UUID(), packageID: id, stage: event.stage,
-                    description: event.description, location: event.location, occurredAt: iso(event.hoursAgo))
+                    description: event.description, location: event.location, occurredAt: iso(event.hoursAgo),
+                    place: event.place)
             }
             let expected = sample.expectedInDays.flatMap { days in
                 Calendar.current.date(byAdding: .day, value: days, to: now).map { ParcelOrganizer.dayKey($0) }

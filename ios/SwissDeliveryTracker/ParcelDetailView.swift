@@ -19,6 +19,8 @@ struct ParcelDetailView: View {
     @State private var carrierEditor: CarrierEditorRequest?
     @State private var showingDeleteConfirmation = false
     @State private var notificationAnimation = 0
+    @State private var showingMap = false
+    @State private var atlas: WorldAtlas?
 
     @ObservedObject private var catalog = CarrierCatalog.shared
 
@@ -98,6 +100,20 @@ struct ParcelDetailView: View {
         } message: {
             Text(errorMessage ?? "")
         }
+        .task(id: needsMap) {
+            guard needsMap, atlas == nil else { return }
+            let loaded = await WorldAtlas.bundled.value
+            withAnimation(.easeOut(duration: 0.5)) { atlas = loaded }
+        }
+        .fullScreenCover(isPresented: $showingMap) {
+            if let parcel, let atlas {
+                ParcelMapScreen(
+                    atlas: atlas, route: ParcelRoute(parcel: parcel, atlas: atlas, language: localizer.language),
+                    stage: parcel.currentStage, accent: identity(parcel).ink
+                )
+                .environmentObject(localizer)
+            }
+        }
         .sheet(item: $carrierEditor) { request in
             if let parcel {
                 ChangeCarrierView(parcel: parcel, initialCarrier: request.initialCarrier)
@@ -131,6 +147,14 @@ struct ParcelDetailView: View {
 
     private var parcel: Parcel? { store.parcels.first { $0.id == parcelID || $0.carrierData?.originalPackageID == parcelID } }
 
+    /// A scan has a place, so the card shows the route once the map data has loaded.
+    private var needsMap: Bool { parcel?.trackingEvents.contains { $0.place != nil } ?? false }
+
+    private func openMap() {
+        DeliveryAnalytics.shared.action("parcel-map-open")
+        showingMap = true
+    }
+
     private func identity(_ parcel: Parcel) -> CarrierVisualIdentity {
         CarrierVisualIdentity.of(parcel.displayedCarrier, catalog: catalog, language: localizer.language)
     }
@@ -139,6 +163,8 @@ struct ParcelDetailView: View {
         let branding = identity(parcel)
         let carrier = catalog.info(for: parcel.activeTrackingCarrier, language: localizer.language)
         let trackingLinks = catalog.trackingLinks(for: parcel, language: localizer.language)
+        let placed = parcel.trackingEvents.contains { $0.place != nil }
+        let route = placed ? atlas.map { ParcelRoute(parcel: parcel, atlas: $0, language: localizer.language) } : nil
 
         return VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 16) {
@@ -149,6 +175,18 @@ struct ParcelDetailView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel(localizer.text("detail.changeCarrierFrom", ["carrier": carrier.displayName]))
                     Spacer(minLength: 8)
+                    if placed {
+                        Button(action: openMap) {
+                            Image(systemName: "globe")
+                                .font(.system(size: 17))
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(branding.ink.opacity(0.75))
+                        .disabled(route == nil)
+                        .accessibilityLabel(localizer.text("map.open"))
+                    }
                     Button {
                         run {
                             try await store.setMuted(parcel, muted: !parcel.notificationsMuted)
@@ -164,6 +202,10 @@ struct ParcelDetailView: View {
                     .foregroundStyle(branding.ink.opacity(0.75))
                     .disabled(working)
                     .accessibilityLabel(localizer.text(parcel.notificationsMuted ? "detail.unmute" : "detail.mute"))
+                }
+                if placed {
+                    // Room for the route engraved behind this part of the card.
+                    Color.clear.frame(height: 68).allowsHitTesting(false)
                 }
                 AutomaticCarrierNotice(parcel: parcel)
                 if let needed = parcel.inputNeededPrompt {
@@ -208,6 +250,16 @@ struct ParcelDetailView: View {
                 ExperimentalJourneyRail(stage: parcel.currentStage, tint: branding.ink.opacity(0.45), compact: true)
             }
             .padding(18)
+            .background(alignment: .top) {
+                if let atlas, let route {
+                    RouteEngraving(atlas: atlas, route: route, stage: parcel.currentStage, identity: branding)
+                        .frame(height: 176)
+                        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 18, topTrailingRadius: 18))
+                        .contentShape(Rectangle())
+                        .onTapGesture(perform: openMap)
+                        .transition(.opacity)
+                }
+            }
             .background(branding.surface, in: RoundedRectangle(cornerRadius: 18))
 
             shipmentIdentity(parcel, links: trackingLinks, tint: branding.ink)
