@@ -1,14 +1,26 @@
 /* The study around the cards. */
 .study { max-width: 1220px; margin: 0 auto; padding: 26px 32px 72px; color: var(--ink); }
-.study[data-ready=false] .columns { visibility: hidden; }
+.study[data-ready=false] :is(.columns, .sheets) { visibility: hidden; }
 .studyHeader { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .brand { display: inline-flex; align-items: center; gap: 9px; color: inherit; font-size: 13px; font-weight: 600; text-decoration: none; }
 .brand > svg { width: 20px; height: 20px; color: var(--ink-soft); stroke-width: 1.3; }
 .badge { margin-left: 6px; padding-left: 14px; border-left: 1px solid var(--line); color: var(--ink-soft); font-size: 11px; font-weight: 400; }
-.intro { max-width: 600px; margin: 54px 0 30px; }
+.intro { max-width: 600px; margin: 54px 0 26px; }
 .eyebrow { margin: 0; color: var(--ink-soft); font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; }
 .intro h1 { margin: 10px 0 12px; font-size: clamp(34px, 5vw, 54px); font-weight: 650; line-height: 1.04; letter-spacing: -.045em; }
 .intro > p:last-child { margin: 0; color: var(--ink-soft); font-size: 15px; line-height: 1.55; text-wrap: pretty; }
+.sectionTitle { margin: 46px 0 14px; font-size: 22px; font-weight: 650; letter-spacing: -.5px; }
+
+.picker { display: grid; gap: 10px; }
+.pickerRow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.pickerLabel { width: 76px; color: var(--ink-soft); font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button {
+  min-height: 34px; padding: 0 14px; border: 1px solid var(--line); border-radius: 17px; background: transparent;
+  color: var(--ink-soft); font: inherit; font-size: 13px; cursor: pointer;
+}
+.chips button[aria-pressed=true] { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+
 .directions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .directions button {
   display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 3px 10px; padding: 15px 18px; border: 1px solid var(--line);
@@ -19,17 +31,17 @@
 .directionNumber { font-size: 10px; font-variant-numeric: tabular-nums; }
 .directions strong { color: var(--ink); font-size: 15px; font-weight: 600; }
 .directions button > span:last-child { grid-column: 2; font-size: 12px; line-height: 1.45; }
-.bench { display: grid; grid-template-columns: 250px minmax(0, 1fr); align-items: start; gap: 34px; margin-top: 28px; }
+.bench { display: grid; grid-template-columns: 250px minmax(0, 1fr); align-items: start; gap: 34px; margin-top: 24px; }
 .controls { position: sticky; top: 20px; display: grid; gap: 22px; }
-.notes { display: grid; gap: 10px; }
-.notes p:not(.eyebrow) { margin: 0; color: var(--ink-soft); font-size: 12.5px; line-height: 1.65; text-wrap: pretty; }
+.notes { display: grid; gap: 8px; }
+.notes p:not(.eyebrow) { margin: 0 0 8px; color: var(--ink-soft); font-size: 12.5px; line-height: 1.65; text-wrap: pretty; }
 .toggles { display: grid; gap: 14px; padding-top: 20px; border-top: 1px solid var(--line); }
-.themeToggle { display: none; gap: 2px; justify-self: start; padding: 3px; border-radius: 12px; background: var(--control); }
-.themeToggle button { min-height: 32px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent; color: var(--ink-soft); font: inherit; font-size: 12px; cursor: pointer; }
-.themeToggle button[aria-pressed=true] { background: var(--paper); color: var(--ink); box-shadow: var(--shadow); }
+/* Light and dark sit side by side on wide screens; narrow ones switch between them. */
+.themeRow { display: none; }
 .check { display: flex; align-items: flex-start; gap: 10px; color: var(--ink-soft); font-size: 12.5px; line-height: 1.5; cursor: pointer; }
 .check input { flex-shrink: 0; width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--ink); }
-.columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; min-width: 0; }
+.columns, .sheets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; min-width: 0; }
+.sheets { margin-top: 20px; }
 
 /* Each column carries its own theme, so light and dark sit side by side. */
 .theme { min-width: 0; padding: 22px 20px 26px; border-radius: 26px; background: var(--paper); color: var(--ink); }
@@ -47,58 +59,155 @@
   --lilac: #d1b5ff; --lilac-soft: #382d4c; --ochre: #ffd65f; --ochre-soft: #443918; --shadow: 0 3px 16px rgb(0 0 0 / 10%);
 }
 .shelfTitle { margin: 26px 0 12px; color: var(--ink-soft); font-size: 12px; font-weight: 600; }
-.shelf { display: grid; gap: 12px; }
+.shelf { display: grid; gap: 14px; }
+
+/* The stamp sheet: every stamp for every sample parcel. */
+.sheet { display: grid; gap: 8px; margin-top: 12px; }
+.sheetRow { display: grid; grid-template-columns: 84px repeat(4, minmax(0, 1fr)); align-items: center; gap: 6px; }
+.sheetHead { overflow: hidden; color: var(--ink-soft); font-size: 10.5px; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.sheetName button {
+  width: 100%; min-height: 32px; padding: 0 8px; border: 0; border-radius: 10px; background: transparent;
+  color: var(--ink-soft); font: inherit; font-size: 12px; text-align: left; cursor: pointer;
+}
+.sheetRow[data-active] .sheetName button { background: var(--control); color: var(--ink); font-weight: 600; }
+.sheetTile, .opened, .nextUp {
+  --tone: light-dark(var(--carrier-ink-light), var(--carrier-ink-dark));
+  --tone-surface: light-dark(var(--carrier-surface-light), var(--carrier-surface-dark));
+  --carrier-brand: light-dark(var(--carrier-brand-light), var(--carrier-brand-dark));
+}
+.sheetTile { display: grid; place-items: center; height: 108px; overflow: hidden; border-radius: 14px; background: var(--tone-surface); }
+.sheetStamp { display: grid; place-items: center; zoom: 1.5; }
+.sheetStamp :global(.postage-stamp) { width: 45px; height: 56px; padding: 7px; }
+.sheetStamp :global(.postage-stamp svg) { width: 22px; height: 22px; stroke-width: 1.1; }
 
 /* The app's parcel page is a fixed sheet; here its top sits in the column. */
 :global(.detail).opened {
   position: relative; inset: auto; z-index: auto; width: 100%; max-width: none; height: auto; padding: 0;
   overflow: visible; animation: none; box-shadow: none; background: transparent;
 }
-.opened.opened :global(.detail__hero) { margin: 0; }
+.opened.opened :global(.detail__hero) { position: relative; margin: 0; overflow: hidden; }
 
-.specimens { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.specimen {
-  --tone: light-dark(var(--carrier-ink-light), var(--carrier-ink-dark));
-  --tone-surface: light-dark(var(--carrier-surface-light), var(--carrier-surface-dark));
-  display: grid; justify-items: center; gap: 10px; margin: 0; padding: 26px 8px 12px; border-radius: 18px; background: var(--tone-surface);
+/* The stamps. Paper, inks and scene tones follow the card and the theme. */
+.stamp, .printedPicture, .cardPaper {
+  --stamp-paper: #fffefa;
+  --scene-sky: color-mix(in srgb, var(--tone-surface) 70%, #fff);
+  --scene-mid: color-mix(in srgb, var(--tone) 24%, var(--tone-surface));
+  --scene-deep: color-mix(in srgb, var(--tone) 48%, var(--tone-surface));
+  --scene-light: #fffefa;
 }
-.specimenMark { display: grid; place-items: center; height: 64px; zoom: 2; }
-/* The production stamp at the size the opened card gives it. */
-.specimenMark :global(.postage-stamp) { width: 45px; height: 56px; padding: 7px; }
-.specimenMark :global(.postage-stamp svg) { width: 22px; height: 22px; stroke-width: 1.1; }
-.specimen figcaption { color: var(--tone); font-size: 10.5px; text-align: center; }
-.specimenEmpty { margin: 0; color: var(--ink-soft); font-size: 12.5px; }
+/* A stamp-shaped card on a white page needs a tinted paper for its holes to show. */
+.cardPaper { --stamp-paper: color-mix(in srgb, var(--tone-surface) 30%, #fff); }
+.theme[data-theme=dark] :is(.stamp, .printedPicture, .cardPaper) {
+  --stamp-paper: color-mix(in srgb, var(--tone) 22%, var(--tone-surface));
+  --scene-sky: color-mix(in srgb, var(--tone-surface) 80%, #000);
+  --scene-mid: color-mix(in srgb, var(--tone) 22%, var(--tone-surface));
+  --scene-deep: color-mix(in srgb, var(--tone) 40%, var(--tone-surface));
+  --scene-light: color-mix(in srgb, var(--tone) 70%, var(--tone-surface));
+}
+.stamp { flex: 0 0 auto; width: 44px; height: 56px; overflow: visible; fill: none; stroke: none; rotate: -2deg; }
+/* Printed pictures need room: the paper stamps grow on the cards. */
+.opened .stamp { width: 54px; height: 69px; }
+.nextUp .stamp { width: 48px; height: 61px; }
+.paper { fill: var(--stamp-paper); stroke: none; }
+.print { fill: var(--tone-surface); stroke: none; }
+.frame { fill: none; stroke: var(--tone); stroke-opacity: .28; stroke-width: .6; }
+.code { fill: var(--tone); stroke: none; font-size: 5.4px; font-weight: 700; letter-spacing: .5px; text-anchor: middle; }
+.glyph { color: var(--tone); stroke-width: 1.75; }
+.cancel { fill: none; stroke: var(--tone); stroke-width: .9; opacity: .8; }
+.cancelThin { stroke-width: .55; }
+.cancelDate { fill: var(--tone); stroke: none; font-size: 5.2px; font-weight: 750; letter-spacing: .2px; text-anchor: middle; font-variant-numeric: tabular-nums; }
+.waves { fill: none; stroke: var(--tone); stroke-width: .8; stroke-linecap: round; }
 
-/* 01. Re-cut: one perforation pitch, the card's ink, paper that follows the theme. */
-.recut { --stamp-paper: #fffefa; flex: 0 0 auto; width: 44px; height: 56px; overflow: visible; fill: none; stroke: none; rotate: -2deg; }
-.theme[data-theme=dark] .recut { --stamp-paper: color-mix(in srgb, var(--tone) 22%, var(--tone-surface)); }
-.recutPaper { fill: var(--stamp-paper); stroke: none; }
-.recutPrint { fill: var(--tone-surface); stroke: none; }
-.recutFrame { fill: none; stroke: var(--tone); stroke-opacity: .28; stroke-width: .6; }
-.recutGlyph { color: var(--tone); stroke-width: 1.75; }
-.recutValue { fill: var(--tone); stroke: none; font-size: 5.4px; font-weight: 700; letter-spacing: .5px; text-anchor: middle; }
-.recutCancel { fill: none; stroke: var(--tone); stroke-width: .9; opacity: .8; }
-.recutCancelThin { stroke-width: .55; }
-.recutCancel text { fill: var(--tone); stroke: none; font-size: 5.2px; font-weight: 750; letter-spacing: .2px; text-anchor: middle; font-variant-numeric: tabular-nums; }
+.engravedTitle { fill: var(--tone); stroke: none; font-weight: 750; letter-spacing: .55px; text-anchor: middle; }
+.hatch { fill: none; stroke: var(--tone); stroke-opacity: .34; stroke-width: .32; }
+.engravedFrame { fill: none; stroke: var(--tone); stroke-width: .5; }
+.land { fill: var(--stamp-paper); stroke: var(--tone); stroke-width: .55; stroke-linejoin: round; }
+.valueGlyph { color: var(--tone); stroke-width: 2.6; }
+.value { fill: var(--tone); stroke: none; font-size: 6.4px; font-weight: 750; letter-spacing: .1px; text-anchor: end; font-variant-numeric: tabular-nums; }
+.valueUnit { font-size: 3px; font-weight: 700; letter-spacing: .3px; }
+.emoji { fill: #000; font-size: 21px; text-anchor: middle; dominant-baseline: central; }
 
-/* 02. Postmark: a round date stamp in the card's ink. */
-.postmark { flex: 0 0 auto; width: 56px; height: 56px; overflow: visible; color: var(--tone); rotate: -9deg; opacity: .92; }
-.postmarkRing { fill: none; stroke: currentColor; stroke-width: 1.3; }
-.postmarkRingThin { fill: none; stroke: currentColor; stroke-width: .8; }
-.postmarkBridge { fill: none; stroke: currentColor; stroke-width: .8; }
-.postmarkArc { fill: currentColor; stroke: none; font-size: 6.6px; font-weight: 650; letter-spacing: .9px; text-anchor: middle; }
-.postmarkDate { fill: currentColor; stroke: none; font-size: 7px; font-weight: 700; letter-spacing: .2px; text-anchor: middle; font-variant-numeric: tabular-nums; }
-.postmarkTime { fill: currentColor; stroke: none; font-size: 5.4px; font-weight: 600; letter-spacing: .4px; text-anchor: middle; font-variant-numeric: tabular-nums; }
+.sky { fill: var(--scene-sky); }
+.mid { fill: var(--scene-mid); }
+.deep { fill: var(--scene-deep); }
+.ink { fill: var(--tone); }
+.light { fill: var(--scene-light); }
+.outline { stroke: var(--tone); stroke-width: .5; stroke-linejoin: round; }
+.inkLine { fill: none; stroke: var(--tone); stroke-width: .6; stroke-linecap: round; }
+.speed { fill: none; stroke: var(--tone); stroke-width: .6; stroke-linecap: round; opacity: .5; }
+.lane { fill: none; stroke: var(--scene-light); stroke-width: .7; }
+.laneInk { fill: none; stroke: var(--tone); stroke-width: .5; }
+
+/* A post office's round date stamp. */
+.roundPostmark { display: block; width: 100%; height: 100%; overflow: visible; fill: none; stroke: none; color: var(--tone); opacity: .9; }
+.ring { fill: none; stroke: currentColor; stroke-width: 1.3; }
+.ringThin { fill: none; stroke: currentColor; stroke-width: .8; }
+.ringText { fill: currentColor; font-size: 6.6px; font-weight: 650; letter-spacing: .9px; text-anchor: middle; }
+.ringDate { fill: currentColor; font-size: 7px; font-weight: 700; letter-spacing: .2px; text-anchor: middle; font-variant-numeric: tabular-nums; }
+.ringTime { fill: currentColor; font-size: 5.4px; font-weight: 600; letter-spacing: .4px; text-anchor: middle; font-variant-numeric: tabular-nums; }
+
+/* B. Envelope: the stamp in the top right corner, the carrier as the return address. */
+.envelopeTop { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.sender { display: grid; justify-items: start; gap: 12px; }
+.cornerStamp { display: flex; flex-shrink: 0; }
+.opened .cornerStamp .stamp { width: 58px; height: 74px; }
+.nextUp .cornerStamp .stamp { width: 52px; height: 66px; }
+.nextUp[data-design=envelope] :global(.parcel-card__label) { margin-top: 8px; }
+.nextUp[data-design=envelope] :global(.parcel-card__summary) { margin-top: 8px; }
+.opened[data-design=envelope] :global(.detail__hero-meta) { align-items: flex-start; }
+.opened[data-design=envelope] :global(.detail__title-row) { margin-top: 10px; }
+.opened[data-design=envelope] :global(.detail__hero--map .detail__title-row) { margin-top: 100px; }
+.envelopeFoot { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.envelopeFoot :global(.detail__hero-actions) { margin: 0 -10px -8px 0; }
+.nextUp[data-design=envelope][data-airmail] :global(.parcel-card)::after,
+.opened[data-design=envelope][data-airmail] :global(.detail__hero)::after {
+  --air-red: light-dark(#c9473d, #d9776e); --air-blue: light-dark(#2f5b9e, #7f9fd6);
+  content: ''; position: absolute; inset: 0; z-index: 2; padding: 5px; border-radius: inherit; pointer-events: none;
+  background: repeating-linear-gradient(135deg, var(--air-red) 0 8px, transparent 8px 13px, var(--air-blue) 13px 21px, transparent 21px 26px);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+
+/* C. Postcard: a message on the left, the stamp and the address on the right. */
+.postcardBack { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); margin-top: 16px; }
+.note { display: grid; align-content: start; gap: 8px; min-width: 0; padding: 4px 14px 0 0; }
+.noteText { margin: 0; color: var(--ink); font-family: ui-serif, "New York", Georgia, serif; font-size: 15px; font-style: italic; line-height: 1.45; overflow-wrap: anywhere; }
+.noteMeta { margin: 0; color: var(--tone); font-size: 11px; line-height: 1.4; }
+.address { display: grid; align-content: start; min-width: 0; padding-left: 14px; border-left: 1px solid color-mix(in srgb, var(--tone) 28%, transparent); }
+.addressStamp { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+.address :global(.detail__title), .address :global(.parcel-card__label) {
+  padding-bottom: 6px; border-bottom: 1px solid color-mix(in srgb, var(--tone) 28%, transparent); font-size: 21px; line-height: 1.2; letter-spacing: -.5px;
+}
+.addressLine { display: block; margin: 0; padding: 7px 0 5px; border-bottom: 1px solid color-mix(in srgb, var(--tone) 28%, transparent); color: var(--tone); font-size: 12.5px; line-height: 1.4; }
+.nextUp[data-design=postcard] .postcardBack { margin-top: 12px; }
+.nextUp[data-design=postcard] .noteText { font-size: 13.5px; }
+.nextUp[data-design=postcard] .address :global(.parcel-card__label) { font-size: 19px; }
+
+/* D. Stamp card: the card is cut like a stamp, with the picture printed on it. */
+/* The map card positions its children; the paper must stay out of the flow it measures. */
+.cardPaper, .opened :global(.detail__hero) > .cardPaper { position: absolute; top: 0; left: 0; z-index: -1; overflow: visible; pointer-events: none; }
+.picturePlate { position: relative; display: block; flex: 0 0 auto; }
+.printedPicture { display: block; width: 44px; height: 59px; overflow: visible; fill: none; stroke: none; }
+.opened .printedPicture { width: 52px; height: 70px; }
+.cardPostmark, .opened :global(.detail__hero) .cardPostmark { position: absolute; right: -26px; bottom: -24px; z-index: 1; display: block; width: 58px; height: 58px; rotate: -11deg; pointer-events: none; }
+.nextUp[data-design=stamp] :global(.parcel-card-swipe__clip) { overflow: visible; border-radius: 0; }
+.nextUp[data-design=stamp] :global(.parcel-card) { isolation: isolate; padding: 24px 26px 26px; border-radius: 0; background: transparent; }
+.opened[data-design=stamp] :global(.detail__hero) { isolation: isolate; overflow: visible; padding: 28px; border-radius: 0; background: transparent; }
+.opened[data-design=stamp] :global(.detail__engraving) { top: 9px; right: 9px; left: 9px; }
 
 @media (max-width: 1000px) {
   .study { padding: 20px 16px 56px; }
-  .intro { margin: 36px 0 24px; }
+  .intro { margin: 36px 0 22px; }
   .directions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .directions button { padding: 13px 14px; }
   .bench { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .controls { position: static; }
-  .themeToggle { display: flex; }
-  .columns { grid-template-columns: minmax(0, 1fr); }
-  .columns[data-theme=light] > [data-theme=dark], .columns[data-theme=dark] > [data-theme=light] { display: none; }
+  .themeRow { display: flex; }
+  .columns, .sheets { grid-template-columns: minmax(0, 1fr); }
+  :is(.columns, .sheets)[data-theme=light] > [data-theme=dark], :is(.columns, .sheets)[data-theme=dark] > [data-theme=light] { display: none; }
   .theme { padding: 18px 12px 22px; border-radius: 22px; }
+  .sheetRow { grid-template-columns: 62px repeat(4, minmax(0, 1fr)); gap: 5px; }
+  .sheetTile { height: 84px; }
+  .sheetStamp { zoom: 1.12; }
+  .sheetName button { padding: 0 4px; font-size: 11px; }
 }
