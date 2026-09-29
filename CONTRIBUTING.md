@@ -11,7 +11,7 @@ captures and diagnostic exports before sharing them.
 ## Setup
 
 ```bash
-nvm use        # Node 24
+nvm use        # Node 26
 npm install
 npm run dev    # self-contained demo, no account or database needed
 ```

@@ -8,10 +8,8 @@ export function installShutdownHandlers(
   host: Pick<NodeJS.Process, 'listeners' | 'removeListener' | 'on' | 'exit'> = process,
 ): void {
   let stopping = false;
-  const prior = new Map<NodeJS.Signals, NodeJS.SignalsListener[]>();
   for (const signal of ['SIGTERM', 'SIGINT'] as const) {
     const listeners = host.listeners(signal);
-    prior.set(signal, listeners);
     for (const listener of listeners) host.removeListener(signal, listener);
     host.on(signal, () => {
       if (stopping) return;
@@ -35,7 +33,6 @@ export function installShutdownHandlers(
         } finally {
           clearTimeout(timer);
           await flushObservability(500).catch(() => false);
-          const listeners = prior.get(signal)!;
           if (listeners.length) for (const listener of listeners) listener.call(host, signal);
           else host.exit(0);
         }
