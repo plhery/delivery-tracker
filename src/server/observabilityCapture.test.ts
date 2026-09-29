@@ -133,6 +133,8 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   const swap = captured.events.find((event) => event.message === 'Tracking routing: carrier_auto_swapped')!;
   expect(swap.level).toBe('info');
   expect(swap.tags).toMatchObject({ carrier: 'dhl', provider: 'ups', tracking_number: 'TEST-first' });
+  // With an exception attached, Sentry titles the issue after its top frame, not the message.
+  expect(swap.exception).toBeUndefined();
   expect(rateLimit).toBeUndefined();
   expect(captured.events.some((event) => event.message === 'Tracking routing: provider_recovered')).toBe(false);
   // Routing reports only names the catalog does not know, so each is worth an issue.
@@ -171,6 +173,7 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   await flushObservability();
   const incident = captured.events.find(event => event.event_id === incidentId)!;
   expect(incident.message).toBe('Direct tracking repeatedly failing: la-poste (8/12 in 24h)');
+  expect(incident.exception).toBeUndefined();
   expect(incident.tags).toMatchObject({ component: 'tracking-health', incident_state: 'open' });
   expect(incident.contexts?.tracking_health?.next_steps).toContain('maintenance');
   expect(incident.fingerprint).toEqual(['delivery-tracker', 'tracking-health', 'direct', 'la-poste']);

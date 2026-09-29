@@ -142,6 +142,9 @@ export function initObservability(): boolean {
     environment: process.env.SENTRY_ENVIRONMENT?.trim() || process.env.NODE_ENV || 'development',
     release: resolveSentryRelease(),
     dataCollection: { userInfo: true },
+    // Sentry 11 turns on stack traces for messages. A message then arrives as an
+    // untyped exception, and its issue is titled after a minified frame ("Object.l").
+    attachStacktrace: false,
     tracesSampleRate: parseSampleRate(process.env.SENTRY_TRACES_SAMPLE_RATE),
     integrations: [
       ...Sentry.getDefaultIntegrationsWithoutPerformance(),

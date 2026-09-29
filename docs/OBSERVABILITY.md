@@ -135,6 +135,8 @@ off by default, and there is no `beforeSend` scrubber. Sentry's own limits and p
 scrubbing still apply. Automatic lookups wrap each provider failure in an `AggregateError`
 so every cause is visible.
 
+- **Titles**: messages are sent without a stack trace (`attachStacktrace: false`), so an
+  issue is titled by its message rather than by a minified function name.
 - **Grouping**: by component, operation, carrier and error/anomaly type. `attempt_id`,
   `job_id`, `request_id`, `tracking_number`, `upstream_status` and `database_code` are
   searchable tags.
