@@ -75,9 +75,13 @@ step exists for future protocol changes.
      digits as the same instant;
   5. the zone routing passes for the parcel.
 
-  With no zone, an offset is taken as given and an offset-less date fails the direct
-  result. Steps 3 and 4 choose a zone only: `carrierIdFromName` still treats these brands
-  as ambiguous, so discovery and routing are unchanged.
+  With no zone, an offset is taken as given. Steps 3 and 4 choose a zone only:
+  `carrierIdFromName` still treats these brands as ambiguous, so discovery and routing
+  are unchanged.
+- A state with no `date` (an Asendia Spain leg listed after dated US scans), or with an
+  offset-less date that no zone resolves, has no instant. It is skipped and counted in
+  `undated_event_count`, so it never becomes the latest scan, sets the stage or
+  `last_update`, or moves the freshness watermark. A malformed date still fails the reply.
 - TNT's international scans (9-digit numbers) skip these steps. tnt.com gives them
   offsets, and ParcelsApp's `date` is already their UTC instant.
 - Brand zones: a bare brand does not say which network scanned. The DPD, GLS and Hermes
@@ -94,7 +98,8 @@ step exists for future protocol changes.
 - The rendered page prints the same UTC digits (`dd LLL yyyy HH:mm`) and names each
   scan's carrier under its wording (`.event-content .carrier`), so it goes through the
   same steps and gives the same instants, and event ids, as the JSON reply. It shows no
-  scan location, so step 2 never applies there. The server's timezone is never used.
+  scan location, so step 2 never applies there. The server's timezone is never used. It
+  prints a state with no date as `aN Inv NaN` at `aN:aN`, which is counted the same way.
 - Cross-border replies stay uncertain: scans can be filed under the wrong operator (an
   India-to-France parcel listed La Poste scans under India Post).
 - Notices are skipped, not events: `require_fields` rows, postcode, sign-in and

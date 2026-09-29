@@ -1,0 +1,11 @@
+{
+  "carriers": ["WNDirect", "Asendia United States", "Asendia Spain"],
+  "states": [
+    { "location": "EXAMPLE CITY, CA, United States", "date": "2026-03-10T18:10:00Z", "carrier": 1, "status": "Dispatched by Asendia" },
+    { "location": "EXAMPLE CITY, CA, United States", "date": "2026-03-10T15:40:00Z", "carrier": 1, "status": "Sorted by Asendia" },
+    { "location": "EXAMPLE CITY, CA, United States", "date": "2026-03-10T06:15:00Z", "carrier": 1, "status": "Check-in Asendia facility" },
+    { "date": "2026-03-10T01:00:00Z", "carrier": 0, "status": "Manifest received" },
+    { "location": "EXAMPLE CITY, CA, United States", "date": "2026-03-09T21:30:00Z", "carrier": 1, "status": "Processed by Asendia" },
+    { "carrier": 2, "status": "Departed from Asendia" }
+  ]
+}

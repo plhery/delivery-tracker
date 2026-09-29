@@ -104,7 +104,7 @@ statuses map correctly.
 | [Colis Privé](../carriers/colis-prive/README.md) | Yes (postcode) | Not tested (postcode) | No history | No history | No history | No history | N/A |
 | [Relais Colis](../carriers/relais-colis/README.md) | Yes | ✓ 4 | No history | ✓ 4 | No history | No history | N/A |
 | [Paack](../carriers/paack/README.md) | Yes (postcode) | Not tested (postcode) | No history | No history | No history | No history | N/A |
-| [Asendia](../carriers/asendia/README.md) | Yes (Asendia USA) | ✓ 5 | ✓ 2 | Error | Error | ✓ 3 | ✓ 2 |
+| [Asendia](../carriers/asendia/README.md) | Yes (Asendia USA) | ✓ 5 | ✓ 2 | ✓ 6 | Error | ✓ 3 | ✓ 2 |
 | [Landmark Global](../carriers/landmark-global/README.md) | Yes | ✓ 14 | ✓ 14 | ✓ 21 | No history | ✓ 21 | N/A |
 | [NZ Post](../carriers/nz-post/README.md) | Yes | ✓ 16 | ✓ 20 | ✓ 20 | ✓ 16 | ✓ 20 | ✓ 4 |
 | [Pos Malaysia](../carriers/pos-malaysia/README.md) | Yes | ✓ 2 | Error | ✓ 2 | ✓ 2 | No history | No history |
@@ -159,8 +159,8 @@ By source:
   shows Amazon sign-in notices (excluded from counts), and repeats a delivery as
   `Final delivery`. It asks for a postcode for bpost's 24-digit numbers and for GEODIS
   and Ciblex numbers, and answered a Yamato number with a FedEx parcel and a Heppner
-  number with another carrier's older parcel. One undated scan in its Asendia reply
-  makes the parser reject the whole reply.
+  number with another carrier's older parcel. Scans it sends without a date (one in its
+  Asendia reply) are left out of the history.
 - **17TRACK** gives the best multi-operator journeys, naming each operator: China Post
   plus Correios, Canada Post plus USPS, Japan Post plus Malta Post, and China Post after
   Singapore Post, Poczta Polska, Bring or Ukrposhta. It was the only aggregator with USPS,
@@ -306,9 +306,9 @@ By carrier:
   into the same four rows as ParcelsApp. Invalid sessions and generic endpoint errors do
   not prove parcel absence; unresolved clocks remain local history.
 - **Asendia:** the A1 feed has the US hub scans of an item with a Swiss postal number;
-  Ship24, UPU and Postal Ninja have two or three postal rows. ParcelsApp's reply includes
-  an undated scan, which fails the parse. Detection selects Swiss Post, which does not
-  know the item.
+  Ship24, UPU and Postal Ninja have two or three postal rows. ParcelsApp has the same
+  scans as A1 plus WNDirect's manifest, and leaves out an Asendia Spain departure it
+  lists without a date. Detection selects Swiss Post, which does not know the item.
 - **Landmark Global:** the direct adapter and detection support eight or nine digits
   after `LTN`, including the `N1` alias. Ship24 has Landmark's scans; ParcelsApp and
   Postal Ninja add bpost's. The adapter binds the canonical parcel reference and retains

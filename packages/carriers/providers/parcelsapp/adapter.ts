@@ -24,7 +24,7 @@ import type { TrawlClient } from '../../core/transport';
 import { isRecord } from '../../core/types';
 import { capturedBodies, loadCapture, type CaptureSpec } from '../shared/capture';
 import { universalCarrierHints } from '../shared/hints';
-import { event, isNotice, numberOf, result, type UniversalSource } from '../shared/result';
+import { event, isNotice, localEvent, numberOf, result, type UniversalSource } from '../shared/result';
 import { carrierScan, markReturnLeg, type CarrierScan } from '../shared/scans';
 import { PARCELSAPP_API, ParcelsAppHttpClient } from './http';
 
@@ -96,13 +96,25 @@ function parseHistory(payload: unknown, trackingNumber: string, timezone: string
   const events: CarrierEvent[] = [];
   const scans: { event: CarrierEvent; scan: CarrierScan }[] = [];
   const scanCarriers = new Set<unknown>();
+  let undated = 0;
   for (const raw of payload.states) {
     if (!isRecord(raw)) throw new SchemaError(SOURCE, 'ParcelsApp returned an invalid event');
     if (raw.require_fields || raw.error) continue;
+    // A state can come without a date (an Asendia Spain leg). It has no place
+    // among the dated scans, so it is counted instead of read as the latest.
+    if (raw.date == null || raw.date === '') {
+      undated++;
+      continue;
+    }
     const zone = scanZone(payload, raw, timezone, number);
     const name = stateCarrierName(payload, raw);
     const scan = carrierScan(typeof name === 'string' ? carrierIdFromName(name) : undefined, typeof raw.status === 'string' ? raw.status : '');
-    const parsed = event((zone ? mislabeledLocalTime(raw.date, zone)?.iso : undefined) ?? raw.date, scan?.wording ?? raw.status);
+    const parsed = localEvent((zone ? mislabeledLocalTime(raw.date, zone)?.iso : undefined) ?? raw.date, scan?.wording ?? raw.status);
+    // Nor has an offset-less date that no zone resolves: a wall time, not an instant.
+    if (parsed && !parsed.time) {
+      undated++;
+      continue;
+    }
     if (parsed) {
       events.push(parsed);
       scanCarriers.add(name);
@@ -130,7 +142,8 @@ function parseHistory(payload: unknown, trackingNumber: string, timezone: string
   // names the same carrier, that carrier is the hint.
   const discovered = hints.discovered_carrier
     ?? (scanCarriers.size === 1 ? universalCarrierHints([...scanCarriers], number).discovered_carrier : undefined);
-  return { ...result(events, SOURCE), ...hints, ...(discovered ? { discovered_carrier: discovered } : {}) };
+  return { ...result(events, SOURCE), ...(undated ? { undated_event_count: undated } : {}),
+    ...hints, ...(discovered ? { discovered_carrier: discovered } : {}) };
 }
 
 function browserCanRecover(error: unknown): boolean {
@@ -154,6 +167,7 @@ export function parseParcelsAppHtml(html: string, trackingNumber: string, timezo
   // instants, and so the same event ids, whichever tier answered.
   const carriers: string[] = [];
   const scans: { event: CarrierEvent; scan: CarrierScan }[] = [];
+  let undated = 0;
   nodes.each((_, node) => {
     const row = $(node);
     if (row.find('input, select, form').length) return;
@@ -164,12 +178,18 @@ export function parseParcelsAppHtml(html: string, trackingNumber: string, timezo
     // Notice rows ("No information about your package...") render a date with
     // an empty time. Skip them instead of failing the whole history.
     if (!time) return;
+    const name = row.find('.event-content .carrier').first().text().replace(/\s+/g, ' ').trim();
+    if (name && !carriers.includes(name)) carriers.push(name);
+    // The page prints a state without a date as "aN Inv NaN" at "aN:aN":
+    // counted, as in the JSON reply.
+    if (date.includes('NaN')) {
+      undated++;
+      return;
+    }
     // The English web app renders the UTC digits of its API, which are the
     // scan's local clock.
     const labeled = DateTime.fromFormat(`${date} ${time}`, 'dd LLL yyyy HH:mm', { locale: 'en', zone: 'UTC' });
     if (!labeled.isValid) throw new SchemaError(SOURCE, 'ParcelsApp returned an invalid event date');
-    const name = row.find('.event-content .carrier').first().text().replace(/\s+/g, ' ').trim();
-    if (name && !carriers.includes(name)) carriers.push(name);
     const state = { date: labeled.toISO(), ...(name ? { carrier: carriers.indexOf(name) } : {}) };
     const zone = scanZone({ carriers }, state, timezone, numberOf(trackingNumber));
     const scan = carrierScan(name ? carrierIdFromName(name) : undefined, description);
@@ -178,7 +198,8 @@ export function parseParcelsAppHtml(html: string, trackingNumber: string, timezo
     if (parsed && scan) scans.push({ event: Object.assign(parsed, { stage: scan.stage }), scan });
   });
   markReturnLeg(scans);
-  return { ...result(events, SOURCE), ...universalCarrierHints(carriers.slice(0, 20), numberOf(trackingNumber)) };
+  return { ...result(events, SOURCE), ...(undated ? { undated_event_count: undated } : {}),
+    ...universalCarrierHints(carriers.slice(0, 20), numberOf(trackingNumber)) };
 }
 
 export interface ParcelsAppOptions {

@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs';
 import timers from 'node:timers/promises';
+import { DateTime } from 'luxon';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TrawlClient } from '../../core/transport';
 import { carrierErrorKind, NoHistoryError } from '../../core/errors';
@@ -10,12 +11,15 @@ import { ParcelsAppTracker, parseParcelsAppHtml, parseParcelsAppResponse } from 
 const number = 'ZZ12345678900';
 const API = 'https://parcelsapp.com/api/v2/parcels';
 const announced = JSON.parse(readFileSync(new URL('./fixtures/announced.json', import.meta.url), 'utf8')) as { states: unknown[] };
+const undatedLeg = JSON.parse(readFileSync(new URL('./fixtures/undated-leg.json', import.meta.url), 'utf8')) as { carriers: string[]; states: Record<string, unknown>[] };
 
 /** The result table the page renders; the API reply itself carries no number. */
 const identity = (value = number) => `<div class="tracking-info"><div class="parcel"><table class="parcel-attributes"><tr><td>Tracking number</td><td>${value}</td></tr></table></div></div>`;
 const rendered = (rows: string) => identity().replace('</table>', `</table><ul class="events">${rows}</ul>`);
 const row = (date: string, time: string, description: string) =>
   `<li class="event"><div class="event-time"><strong>${date}</strong><span>${time}</span></div><div class="event-content"><strong>${description}</strong></div></li>`;
+const carrierRow = (date: string, time: string, description: string, carrier: string) =>
+  `<li class="event"><div class="event-time"><strong>${date}</strong><span>${time}</span></div><div class="event-content"><strong>${description}</strong><div class="carrier"><div class="courier-icon"></div> ${carrier} </div></div></li>`;
 
 const captured = (data: unknown, overrides: Record<string, unknown> = {}) => new Response(JSON.stringify({
   url: `https://parcelsapp.com/en/tracking/${number}`, html: identity(), statusCode: 200, tier: 3,
@@ -121,10 +125,54 @@ describe('ParcelsApp result parsing', () => {
   });
 
   it('rejects malformed timestamps and error-only responses', () => {
-    for (const date of ['today', '2026-08-18T03:04:00', '2026-02-31T03:04:00Z']) {
-      expect(() => parseParcelsAppResponse({ states: [{ date, status: 'Delivered' }] }, number, identity())).toThrow();
+    // Unlike a missing date, a malformed one fails the reply, even beside dated scans.
+    for (const date of ['today', '2026-02-31T03:04:00', '2026-02-31T03:04:00Z']) {
+      const states = [{ date, status: 'Delivered' }, { date: '2026-08-17T03:04:00Z', status: 'In transit' }];
+      expect(() => parseParcelsAppResponse({ states }, number, identity())).toThrow();
     }
     expect(() => parseParcelsAppResponse({ error: 'NO_TRACKER', states: [] }, number, identity())).toThrow();
+  });
+
+  it('counts a state without a date instead of failing the reply or reading it as the latest scan', () => {
+    // Live shape (2026-09-29): an Asendia Spain leg with no date after dated US scans.
+    const undated = undatedLeg.states.find((state) => !('date' in state))!;
+    const dated = undatedLeg.states.filter((state) => state !== undated);
+    for (const states of [undatedLeg.states, [{ ...undated, date: null, status: 'Delivered' }, ...dated]]) {
+      const parsed = parseParcelsAppResponse({ ...undatedLeg, states }, number, identity());
+      expect(parsed).toMatchObject({ status: 'in_transit', current_stage: 'in_transit', last_status_text: 'Dispatched by Asendia',
+        last_update: '2026-03-10T18:10:00.000Z', undated_event_count: 1 });
+      expect(parsed.events?.map((scan) => scan.time)).toEqual(dated.map((state) => DateTime.fromISO(String(state.date)).toUTC().toISO()));
+    }
+    expect(() => parseParcelsAppResponse({ ...undatedLeg, states: [undated] }, number, identity())).toThrow('No usable tracking events');
+  });
+
+  it('counts an offset-less date that no zone resolves, and places one that a zone resolves', () => {
+    const states = [
+      { date: '2026-03-11T09:00:00', status: 'Out for delivery' },
+      { date: '2026-03-10T18:10:00Z', status: 'Departed from the sorting centre' },
+    ];
+    // A later wall time with no zone is no instant, so it cannot become the newest scan.
+    expect(parseParcelsAppResponse({ states }, number, identity())).toMatchObject({ current_stage: 'in_transit',
+      last_update: '2026-03-10T18:10:00.000Z', undated_event_count: 1, events: [{ description: 'Departed from the sorting centre' }] });
+    const placed = parseParcelsAppResponse({ states }, number, identity(), 'Europe/Zurich');
+    expect(placed).toMatchObject({ current_stage: 'out_for_delivery', last_update: '2026-03-11T08:00:00.000Z' });
+    expect(placed.undated_event_count).toBeUndefined();
+  });
+
+  it('reads the undated state the page prints as "aN Inv NaN" as the JSON reply does', () => {
+    // The page formats a missing date through Date.parse, so every field is NaN.
+    const page = rendered(undatedLeg.states.map((state) => {
+      const date = typeof state.date === 'string' ? DateTime.fromISO(state.date, { zone: 'UTC', locale: 'en' }) : null;
+      return carrierRow(date?.toFormat('dd LLL yyyy') ?? 'aN Inv NaN', date?.toFormat('HH:mm') ?? 'aN:aN',
+        String(state.status), undatedLeg.carriers[Number(state.carrier)]);
+    }).join(''));
+    const html = parseParcelsAppHtml(page, number);
+    const json = parseParcelsAppResponse(undatedLeg, number, identity());
+    expect(html).toMatchObject({ undated_event_count: 1, last_update: json.last_update, current_stage: json.current_stage });
+    expect(html.events).toEqual(json.events);
+    expect(new Set(html.reported_carriers as string[])).toEqual(new Set(json.reported_carriers as string[]));
+    expect(() => parseParcelsAppHtml(rendered(carrierRow('aN Inv NaN', 'aN:aN', 'Departed from Asendia', 'Asendia Spain')), number))
+      .toThrow('No usable tracking events');
   });
 
   it('keeps unknown historical wording pending rather than inheriting delivered', () => {
@@ -273,8 +321,6 @@ describe('ParcelsApp result parsing', () => {
 
   it('reads rendered scans in the clock of the carrier each one names, as the JSON reply does', () => {
     const swiss = '06080000000002';
-    const carrierRow = (date: string, time: string, description: string, carrier: string) =>
-      `<li class="event"><div class="event-time"><strong>${date}</strong><span>${time}</span></div><div class="event-content"><strong>${description}</strong><div class="carrier"><div class="courier-icon"></div> ${carrier} </div></div></li>`;
     const page = identity(swiss).replace('</table>', `</table><ul class="events">${
       carrierRow('02 Jul 2026', '10:37', 'Delivered', 'DPD Group')}${carrierRow('14 Jan 2026', '09:15', 'Parcel handed', 'DPD Group')}</ul>`);
     const rendered = parseParcelsAppHtml(page, swiss);
@@ -371,6 +417,13 @@ describe('ParcelsApp direct lookup', () => {
       expect(error).toMatchObject({ kind: 'input_required', field: 'postcode' });
     }
     expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns the dated history of a reply with an undated state, without a browser retry', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(reply(undatedLeg));
+    await expect(new ParcelsAppTracker({ fetcher, trawl: new TrawlClient('http://browser.test', fetcher) }).fetch(number))
+      .resolves.toMatchObject({ tracking_source: 'structured-web-response', undated_event_count: 1 });
+    expect(fetcher).toHaveBeenCalledOnce();
   });
 
   it('retains actual scans alongside a postcode gate', async () => {
