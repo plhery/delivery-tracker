@@ -1,0 +1,95 @@
+{
+  "success": "true",
+  "cainiaoId": "PRIVATE_SYNTHETIC_CAINIAO_ID",
+  "packageParam": {
+    "trackingNumber": "000000000000000001",
+    "dimWeight": {
+      "weight": "1250",
+      "weightUnit": "g"
+    },
+    "outOrderId": "PRIVATE_SYNTHETIC_ORDER",
+    "toZipcode": "PRIVATE_SYNTHETIC_POSTCODE"
+  },
+  "popStationParam": {
+    "popStationId": "PRIVATE_SYNTHETIC_STATION_ID",
+    "stationName": "PRIVATE_SYNTHETIC_STATION_NAME",
+    "detailAddress": "PRIVATE_SYNTHETIC_STATION_ADDRESS",
+    "phone": "PRIVATE_SYNTHETIC_STATION_PHONE",
+    "officeTime": "PRIVATE_SYNTHETIC_OPENING_HOURS",
+    "pinCode": "PRIVATE_SYNTHETIC_PICKUP_PIN"
+  },
+  "feature": "PRIVATE_SYNTHETIC_FEATURE",
+  "statuses": [
+    {
+      "opTimestamp": "1770399000000",
+      "datetime": "2026-02-06 18:30:00 UTC+1",
+      "actionCode": "GTMS_PUDO_SIGNED",
+      "statusName": "PUDO Sign Success",
+      "description": "Your shipment has been collected by consignee at the parcelshop",
+      "timezone": "1",
+      "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1770285900000",
+      "datetime": "2026-02-05 11:05:00 UTC+1",
+      "actionCode": "GTMS_STA_SIGNED",
+      "statusName": "Delivered to PUDO",
+      "description": "Your package has been processed by the courier. Example will notify you when it is ready for pickup at the point.",
+      "timezone": "1",
+      "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
+      "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
+      "deliveryLatitude": "PRIVATE_SYNTHETIC_LATITUDE",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1770285600000",
+      "datetime": "2026-02-05 11:00:00 UTC+1",
+      "actionCode": "GTMS_PUDO_INBOUND",
+      "statusName": "PUDO Inbound Success",
+      "description": "Your shipment has arrived at parcelshop and you‘ll receive pickup instructions shortly",
+      "timezone": "1",
+      "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1770217200000",
+      "datetime": "2026-02-04 16:00:00 UTC+1",
+      "actionCode": "GTMS_DEL_FAILURE",
+      "statusName": "Delivery Attempt Failure",
+      "description": "Your shipment delivery attempt failed [Recipient not at home]",
+      "timezone": "1",
+      "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
+      "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
+      "deliveryLatitude": "PRIVATE_SYNTHETIC_LATITUDE",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1770192000000",
+      "datetime": "2026-02-04 09:00:00 UTC+1",
+      "actionCode": "GTMS_DO_DEPART",
+      "statusName": "Out for Delivery",
+      "description": "Your shipment is out for delivery",
+      "timezone": "1",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1770120000000",
+      "datetime": "2026-02-03 13:00:00 UTC+1",
+      "actionCode": "GTMS_ACCEPT",
+      "statusName": "Accepted by Last Mile",
+      "description": "Your shipment has been accepted by delivery carrier",
+      "timezone": "1",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1769947200000",
+      "datetime": "2026-02-01 13:00:00 UTC+1",
+      "actionCode": "create",
+      "statusName": "create",
+      "description": "Shipment order created",
+      "timezone": "1",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    }
+  ]
+}

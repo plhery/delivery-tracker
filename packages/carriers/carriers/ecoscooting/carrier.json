@@ -44,7 +44,8 @@
       "postcodes",
       "coordinates",
       "order_references",
-      "routing_features"
+      "routing_features",
+      "pickup_point"
     ],
     "unavailable": []
   },

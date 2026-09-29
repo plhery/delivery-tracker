@@ -9,6 +9,28 @@
       "confirmedBy": "live"
     },
     {
+      "code": "GTMS_PUDO_SIGNED",
+      "wording": "Your shipment has been collected by consignee at the parcelshop",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "GTMS_STA_SIGNED",
+      "wording": "Delivered to PUDO",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live",
+      "note": "The pickup point signed for the parcel, not the recipient."
+    },
+    {
+      "code": "GTMS_PUDO_INBOUND",
+      "wording": "Your shipment has arrived at parcelshop and you‘ll receive pickup instructions shortly",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live"
+    },
+    {
       "code": "GTMS_DO_DEPART",
       "wording": "Out for delivery",
       "language": "en",

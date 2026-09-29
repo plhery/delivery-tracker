@@ -15,6 +15,7 @@ const PORTUGAL_NUMBER = 'CNPRT00000000000000000001';
 const SPAIN_NUMBER = 'CNESP00000000000000000001';
 const portugalFixture = () => JSON.parse(readFileSync(new URL('./fixtures/delivered-portugal.json', import.meta.url), 'utf8'));
 const referenceFixture = (number: string) => { const value = portugalFixture(); value.packageParam.trackingNumber = number; return value; };
+const pickupFixture = () => JSON.parse(readFileSync(new URL('./fixtures/collected-pickup-point.json', import.meta.url), 'utf8'));
 
 describe('Ecoscooting parcel history', () => {
   it.each([PORTUGAL_NUMBER, SPAIN_NUMBER])('binds %s history and its separate affirmative completion schema', number => {
@@ -40,6 +41,23 @@ describe('Ecoscooting parcel history', () => {
   it.each(['status', 'statusGroup', 'description', 'statusName'])('rejects contradictory CN reference completion %s', field => {
     const value = portugalFixture(); value.statuses[0][field] = field === 'description' ? 'Not delivered' : 'Different';
     expect(() => parseEcoscooting(value, PORTUGAL_NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
+  });
+  it('reads a pickup-point collection as delivered and the earlier pickup-point scans as waiting there', () => {
+    const result = normalizeCarrierResult(parseEcoscooting(pickupFixture(), NUMBER));
+    expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered', last_status_text: 'Your shipment has been collected by consignee at the parcelshop',
+      last_update: '2026-02-06T17:30:00Z', delivered_at: '2026-02-06T17:30:00Z', weight_kg: 1.25 });
+    expect(result.events?.map(event => event.stage)).toEqual(['delivered', 'ready_for_pickup', 'ready_for_pickup', 'failed_attempt', 'out_for_delivery', 'accepted', undefined]);
+    expect(JSON.stringify(result)).not.toMatch(/PRIVATE|imgUrl|opCode|Latitude|Longitude|outOrder|toZip|feature|cainiaoId|popStation|pinCode/);
+    // "Delivered to PUDO" is the pickup point's signature, not the recipient's.
+    const waiting = pickupFixture(); waiting.statuses.shift();
+    expect(parseEcoscooting(waiting, NUMBER)).toMatchObject({ status: 'out_for_delivery', current_stage: 'ready_for_pickup' });
+    expect(parseEcoscooting(waiting, NUMBER)).not.toHaveProperty('delivered_at');
+    waiting.statuses.shift();
+    expect(parseEcoscooting(waiting, NUMBER)).toMatchObject({ status: 'out_for_delivery', current_stage: 'ready_for_pickup' });
+  });
+  it.each([['statusName', 'Different'], ['description', 'Not collected'], ['status', 'finish'], ['statusGroup', 'delivered']])('keeps a pickup-point collection inconclusive when %s changes or a flag appears', (field, value) => {
+    const collected = pickupFixture(); collected.statuses[0][field] = value;
+    expect(() => parseEcoscooting(collected, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
   });
   it('keeps CN reference movement active and retains missing epochs without inferring display instants', () => {
     const value = portugalFixture(); delete value.statuses[0].opTimestamp;
