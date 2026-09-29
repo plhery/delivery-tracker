@@ -28,5 +28,5 @@ and Liechtenstein postcodes, and Natural Earth country label points. Decisions a
 what to include are commented in the script.
 
 GeoNames data is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-([geonames.org](https://www.geonames.org)). Natural Earth is public domain. The map credits
-both.
+([geonames.org](https://www.geonames.org)); the privacy notice, linked from the app, credits
+it. Natural Earth is public domain and needs no credit.

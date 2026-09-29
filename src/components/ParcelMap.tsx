@@ -51,6 +51,8 @@ function RouteSummary({ route, stage }: { route: Route; stage?: Stage }) {
   const current = route.current;
   if (!origin || !current) return null;
   const delivered = stage === 'delivered';
+  // A finished journey has a length, not a distance "so far".
+  const finished = delivered || stage === 'returned';
   const end = route.destination ?? current.place;
   const endLabel = delivered ? t('map.delivered') : route.destination ? t('map.to') : route.latestLocated ? t('map.now') : t('map.lastSeen');
   const total = route.km + (route.remainingKm ?? 0);
@@ -69,8 +71,8 @@ function RouteSummary({ route, stage }: { route: Route; stage?: Stage }) {
     </div>
     {!single && <div className="parcel-map__line" style={{ '--progress': progress } as CSSProperties} aria-hidden="true"><span /><i /></div>}
     {!single && <p className="parcel-map__facts">
-      {route.km >= 1 && <span>{t('map.soFar', { distance: formatKm(route.km, languageTag) })}</span>}
-      {route.remainingKm !== undefined && <span>{t('map.toGo', { distance: formatKm(route.remainingKm, languageTag) })}</span>}
+      {route.km >= 1 && <span>{finished ? formatKm(route.km, languageTag) : t('map.soFar', { distance: formatKm(route.km, languageTag) })}</span>}
+      {!finished && route.remainingKm !== undefined && <span>{t('map.toGo', { distance: formatKm(route.remainingKm, languageTag) })}</span>}
       {route.countries.length > 1 && <span>{t('map.countries.many', { count: route.countries.length })}</span>}
     </p>}
   </div>;
@@ -137,7 +139,6 @@ export function ParcelMapSheet({ route, stage, brand, onClose }: {
           <Icon name="location" /><span>{t('map.nearby')}</span>
         </button>
       </div>}
-      <p className="parcel-map__credit">{t('map.attribution')}</p>
     </div>
   </div>, document.body);
 }

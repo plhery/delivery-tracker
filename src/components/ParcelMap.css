@@ -67,7 +67,6 @@
 }
 .parcel-map__views button[aria-pressed=true] { background: var(--ink); color: var(--paper); }
 .parcel-map__views svg { width: 14px; height: 14px; stroke-width: 1.6; }
-.parcel-map__credit { margin: 0; color: var(--ink-soft); font-size: 10px; }
 @media (min-width: 761px) {
   .parcel-map__bar { right: auto; bottom: 24px; left: 24px; width: 360px; }
 }

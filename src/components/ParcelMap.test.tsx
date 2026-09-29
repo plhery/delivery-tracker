@@ -44,7 +44,6 @@ describe('parcel map', () => {
     expect(within(map).getByText('Now').nextElementSibling).toHaveTextContent('Härkingen');
     expect(within(map).getByText('3 countries')).toBeInTheDocument();
     expect(within(map).getByText(/ so far$/)).toBeInTheDocument();
-    expect(within(map).getByText('Map data: Natural Earth, GeoNames')).toBeInTheDocument();
     // Out for delivery, the camera follows the parcel to its last mile.
     const nearby = within(map).getByRole('button', { name: 'Nearby' });
     const journey = within(map).getByRole('button', { name: 'Journey' });
@@ -97,9 +96,16 @@ describe('map summary', () => {
   });
 
   it('says delivered, or last seen when the newest scan has no place', () => {
-    const view = sheet(buildRoute([scan(tokyo), scan(bern)]), 'delivered');
+    const route = buildRoute([scan(tokyo), scan(bern)]);
+    const view = sheet(route, 'delivered');
     expect(screen.getByText('Delivered').nextElementSibling).toHaveTextContent('Bern');
+    // A finished journey states its length, not a distance so far.
+    expect(screen.getByText(formatKm(route.km, 'en-CH'))).toBeInTheDocument();
+    expect(screen.queryByText(/so far/)).not.toBeInTheDocument();
     view.unmount();
+    const returned = sheet(buildRoute([scan(tokyo)], countryPlace('CH', 'Switzerland', [7.46, 46.72])), 'returned');
+    expect(screen.queryByText(/to go/)).not.toBeInTheDocument();
+    returned.unmount();
     sheet(buildRoute([scan(tokyo), scan(bern), scan()]));
     expect(screen.getByText('Last seen').nextElementSibling).toHaveTextContent('Bern');
   });

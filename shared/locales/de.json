@@ -655,6 +655,5 @@
   "map.countries.few": "{{count}} Länder",
   "map.countries.many": "{{count}} Länder",
   "map.label": "Karte der Reise von {{from}} nach {{to}}",
-  "map.labelOne": "Karte: {{place}}",
-  "map.attribution": "Kartendaten: Natural Earth, GeoNames"
+  "map.labelOne": "Karte: {{place}}"
 }
