@@ -192,7 +192,7 @@ describe('WorldMap', () => {
     fireEvent.pointerUp(view, { pointerId: 1 });
     expect(onFreeChange).toHaveBeenLastCalledWith(true);
     const moved = dot();
-    // The view buttons that appear once the map moves take room from its frame.
+    // The summary beside the map grows and takes room from its frame.
     rerender(map(120));
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(dot()).toBe(moved);

@@ -945,7 +945,6 @@ struct WorldMapView: View {
             }
             .onAppear { if camera == nil { camera = target } }
             // Only a change of view, or recentering, brings a moved map back; a new frame or scan leaves it where it was put.
-            // Otherwise the view buttons that appear when it moves would resize the frame, pull it back and vanish.
             .onChange(of: target) { _, next in if !free { fly(to: next, size: size) } }
             .onChange(of: mode) { _, _ in fly(to: target, size: size) }
             .onChange(of: recenter) { _, _ in fly(to: target, size: size) }

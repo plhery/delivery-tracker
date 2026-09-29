@@ -131,7 +131,8 @@ export function ParcelMapSheet({ route, stage, brand, onClose }: {
     </button>
     <div className="parcel-map__bar" ref={bar}>
       <RouteSummary route={route} stage={stage} />
-      {(hasNearView(route) || free) && <div className="parcel-map__views" role="group" aria-label={t('map.view')}>
+      {/* With every place close by there is only one view: no buttons, even once the map is moved. */}
+      {hasNearView(route) && <div className="parcel-map__views" role="group" aria-label={t('map.view')}>
         <button type="button" aria-pressed={mode === 'journey' && !free} onClick={() => change('journey')}>
           <Icon name="globe" /><span>{t('map.journey')}</span>
         </button>

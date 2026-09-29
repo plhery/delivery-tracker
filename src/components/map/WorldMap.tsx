@@ -90,7 +90,6 @@ export function WorldMap({
     [ready, route, mode, size, top, right, bottom, left, shape]);
 
   // Only a change of view, or recentering, brings a moved map back; a new frame or scan leaves it where it was put.
-  // Otherwise the view buttons that appear when it moves would resize the frame, pull it back and vanish.
   useEffect(() => {
     free.current = false;
   }, [mode, recenter]);

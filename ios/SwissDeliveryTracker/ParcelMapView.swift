@@ -97,7 +97,8 @@ struct ParcelMapScreen: View {
     private var bar: some View {
         VStack(alignment: .leading, spacing: 14) {
             summary
-            if route.hasNearView || free {
+            // With every place close by there is only one view: no buttons, even once the map is moved.
+            if route.hasNearView {
                 HStack(spacing: 2) {
                     viewButton(.journey, key: "map.journey", symbol: "globe")
                     viewButton(.now, key: "map.nearby", symbol: "location")
