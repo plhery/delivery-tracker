@@ -65,7 +65,8 @@ step exists for future protocol changes.
   wrong offset (a DPD scan at 14:05+02:00 comes back as `14:05+00:00`). The adapter
   keeps the UTC digits and re-reads them in the first zone it finds:
   1. the catalog zone of the scan's carrier (`carriers[state.carrier]`), unless it is UTC;
-  2. the country at the end of `location`;
+  2. the country at the end of `location`, if `COUNTRY_ZONES` ([core/time](../../core/time/index.ts))
+     gives it a single clock;
   3. the country that name ends with, after a catalog carrier or brand ("DPD UK",
      "GLS Italy", "DHL Parcel Netherlands"), if that country has a single clock. It comes
      after the location because the name can be a branch, not the scan's place
@@ -74,6 +75,14 @@ step exists for future protocol changes.
      location, the zone of that brand's catalog carriers, if every one of them reads the
      digits as the same instant;
   5. the zone routing passes for the parcel.
+
+  Steps 3 and 5 only guess where the scan was. A `location` ending with any other
+  country, by ISO code or English name ("Example City, CA, US", "Example City, South
+  Africa"), rules them out and the scan stays as labeled; Asendia USA's own feed gives
+  such scans the same instants. A location that names no country ("Example Hub",
+  "Toronto, ON") rules nothing out, and step 4 only reads scans without a location. A
+  country added to `COUNTRY_ZONES` therefore moves the stored scans located in it, and so
+  their event ids: plan a re-key of stored ParcelsApp rows with such a change.
 
   With no zone, an offset is taken as given. Steps 3 and 4 choose a zone only:
   `carrierIdFromName` still treats these brands as ambiguous, so discovery and routing
@@ -98,8 +107,9 @@ step exists for future protocol changes.
 - The rendered page prints the same UTC digits (`dd LLL yyyy HH:mm`) and names each
   scan's carrier under its wording (`.event-content .carrier`), so it goes through the
   same steps and gives the same instants, and event ids, as the JSON reply. It shows no
-  scan location, so step 2 never applies there. The server's timezone is never used. It
-  prints a state with no date as `aN Inv NaN` at `aN:aN`, which is counted the same way.
+  scan location, so step 2 never applies there and nothing rules out steps 3 and 5. The
+  server's timezone is never used. It prints a state with no date as `aN Inv NaN` at
+  `aN:aN`, which is counted the same way.
 - Cross-border replies stay uncertain: scans can be filed under the wrong operator (an
   India-to-France parcel listed La Poste scans under India Post).
 - Notices are skipped, not events: `require_fields` rows, postcode, sign-in and

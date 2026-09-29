@@ -260,6 +260,33 @@ describe('ParcelsApp result parsing', () => {
       .toBe('2026-06-10T12:05:00.000Z');
   });
 
+  it('keeps a scan located in another country as labeled instead of reading it in the parcel carrier\'s zone', () => {
+    // Live shape (2026-09-29): Asendia USA scans on a number filed under Swiss
+    // Post, labeled with the UTC instants of Asendia's own feed.
+    const times = (payload: Record<string, unknown>) =>
+      parseParcelsAppResponse(payload, number, identity(), 'Europe/Zurich').events?.map((scan) => scan.time);
+    expect(times(undatedLeg)).toEqual([
+      '2026-03-10T18:10:00.000Z', '2026-03-10T15:40:00.000Z', '2026-03-10T06:15:00.000Z',
+      '2026-03-10T00:00:00.000Z', // WNDirect, with no location, on Zurich time
+      '2026-03-09T21:30:00.000Z',
+    ]);
+    const scan = (location: string, carriers = ['Example Parcel Co']) => times({
+      carriers, states: [{ date: '2026-07-02T18:30:00+00:00', status: 'In transit', carrier: 0, location }],
+    })?.[0];
+    // A country with several clocks, by name or code, or one with no listed zone.
+    for (const location of ['EXAMPLE CITY, CA, United States', 'EXAMPLE CITY, CA, US', 'EXAMPLE CITY, South Africa']) {
+      expect(scan(location)).toBe('2026-07-02T18:30:00.000Z');
+    }
+    // The parcel carrier's country, or a place with no country it can tell.
+    for (const location of ['Example Hub, Switzerland', 'Example Hub', 'Example City, ON']) {
+      expect(scan(location)).toBe('2026-07-02T16:30:00.000Z');
+    }
+    // The country a carrier name ends with is a guess too: it can be a branch.
+    expect(scan('EXAMPLE CITY, United States', ['Cainiao (China)'])).toBe('2026-07-02T18:30:00.000Z');
+    expect(times({ states: [{ date: '2026-07-02T18:30:00+00:00', status: 'In transit', location: 'EXAMPLE CITY, South Africa' }] }))
+      .toEqual(['2026-07-02T18:30:00.000Z']);
+  });
+
   it('reads a bare brand in the clock all of its catalog networks keep', () => {
     // Live shape (2026-09-26): scans named only "DPD Group", without a location,
     // on a parcel filed under a carrier with no local clock.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  calendarDay, countryTimeZone, epochMillisTime, epochSecondsTime, explicitOffsetTime, isoTime, mislabeledLocalTime,
-  mislabeledWallTime, settleGuessedClocks, sharedClockZone, zonedTime,
+  calendarDay, countryCode, countryTimeZone, epochMillisTime, epochSecondsTime, explicitOffsetTime, isoTime, mislabeledLocalTime,
+  mislabeledWallTime, settleGuessedClocks, sharedClockZone, timeZoneCountry, zonedTime,
 } from './index';
 
 describe('time policies', () => {
@@ -88,7 +88,24 @@ describe('time policies', () => {
     expect(countryTimeZone('India')).toBe('Asia/Kolkata');
     expect(countryTimeZone('US')).toBeNull();
     expect(countryTimeZone('Canada')).toBeNull();
+    expect(countryTimeZone('South Africa')).toBeNull();
     expect(countryTimeZone(undefined)).toBeNull();
+  });
+
+  it('names any country by code or English name, whatever its clocks', () => {
+    expect(countryCode(' United States ')).toBe('US');
+    expect(countryCode('south africa')).toBe('ZA');
+    expect(countryCode('us')).toBe('US');
+    expect(countryCode('Switzerland')).toBe('CH');
+    // Retired codes, subdivisions and places are not countries.
+    for (const value of ['UK', 'FX', 'ON', 'Example Hub', 'EXAMPLE CITY, CA', '', undefined]) expect(countryCode(value)).toBeNull();
+  });
+
+  it('maps a zone back to its single-zone country only', () => {
+    expect(timeZoneCountry('Europe/Zurich')).toBe('CH');
+    expect(timeZoneCountry('Asia/Kolkata')).toBe('IN');
+    expect(timeZoneCountry('America/New_York')).toBeNull();
+    expect(timeZoneCountry('UTC')).toBeNull();
   });
 
   it('accepts epoch values only when positive and finite', () => {

@@ -19,7 +19,7 @@ import { carrierErrorKind, ChallengeError, IndeterminateError, InputRequiredErro
 import { runSteps } from '../../core/runner';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import type { StepRecorder } from '../../core/telemetry';
-import { countryTimeZone, mislabeledLocalTime, mislabeledWallTime, sharedClockZone } from '../../core/time';
+import { countryCode, countryTimeZone, mislabeledLocalTime, mislabeledWallTime, sharedClockZone, timeZoneCountry } from '../../core/time';
 import type { TrawlClient } from '../../core/transport';
 import { isRecord } from '../../core/types';
 import { capturedBodies, loadCapture, type CaptureSpec } from '../shared/capture';
@@ -57,8 +57,10 @@ export function parseParcelsAppResponse(payload: unknown, trackingNumber: string
  * carrier name ends with ("DPD UK"), else, for a scan with no location, the
  * clock that all catalog networks of a bare brand share at that moment ("DPD
  * Group": DPD Switzerland and France), else the zone routing passes for the
- * parcel. Without one it stays as labeled. TNT's international scans stay as
- * labeled too: tnt.com gives them offsets, and ParcelsApp's UTC matches them.
+ * parcel. Without one it stays as labeled, as it does when the name's
+ * country or the parcel's zone meets a location in another country. TNT's
+ * international scans stay as labeled too: tnt.com gives them offsets, and
+ * ParcelsApp's UTC matches them.
  */
 function stateCarrierName(payload: Record<string, unknown>, state: Record<string, unknown>): unknown {
   const carriers = Array.isArray(payload.carriers) ? payload.carriers : [];
@@ -72,16 +74,25 @@ function scanZone(payload: Record<string, unknown>, state: Record<string, unknow
   const zone = carrier ? carrierTimezone(carrier) : 'UTC';
   if (zone !== 'UTC') return zone;
   const location = typeof state.location === 'string' ? state.location.trim() : '';
-  const located = countryTimeZone(location.split(',').at(-1));
+  const place = location.split(',').at(-1);
+  const located = countryTimeZone(place);
   if (located) return located;
-  if (typeof name !== 'string') return fallback;
-  const named = carrierNameCountryZone(name);
+  // The zones below only guess where the scan was. A location in another
+  // country, one with several clocks or none listed ("Example City, CA,
+  // United States", "Example City, South Africa"), rules a guess out: the scan
+  // keeps its labeled instant, which Asendia USA's own feed gives such scans
+  // too (checked 2026-09-29).
+  const country = countryCode(place);
+  const guess = (candidate: string | null) =>
+    candidate && (!country || timeZoneCountry(candidate) === country) ? candidate : null;
+  if (typeof name !== 'string') return guess(fallback);
+  const named = guess(carrierNameCountryZone(name));
   if (named) return named;
   // A location with no single-clock country ("Toronto, ON", "Chicago, US")
   // can be a network of the brand outside the catalog, on another clock.
   const brand = location ? [] : brandTimeZones(name);
   const wall = brand.length ? mislabeledWallTime(state.date) : null;
-  return (wall ? sharedClockZone(brand, wall) : null) ?? fallback;
+  return (wall ? sharedClockZone(brand, wall) : null) ?? guess(fallback);
 }
 
 /**
