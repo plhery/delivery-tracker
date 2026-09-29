@@ -111,6 +111,13 @@ from public.tracking_sync_attempts where outcome = 'running' order by started_at
 
 ## Logs
 
+Every deploy replaces the app container, and Docker deletes a container's logs with it.
+Production therefore keeps them in Loki for 30 days: the Coolify service
+`delivery-tracker-logs` runs Loki beside Grafana and Alloy, which follows the app's
+containers. Query them in Grafana through the "Loki (delivery tracker logs)" data source.
+Lines carry `app`, `container`, `event` and `level` labels, for example
+`{app="delivery-tracker", event="tracking_scrape"} | json | outcome != "success"`.
+
 Key JSON events:
 
 - `tracking_sync_started`, `tracking_sync_step`, `tracking_sync_completed` (by `attempt_id`);
