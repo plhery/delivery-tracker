@@ -14,6 +14,20 @@
       "note": "Made-up number that follows the published format."
     },
     {
+      "number": "1G25S92Z3AW7",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a114cf1ee0c53c0f1aec420",
+        "date": "2026-05-23"
+      },
+      "expect": {
+        "carrier": "geodis",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
       "number": "1GWSKFLSKX4Y",
       "role": "shipment",
       "evidence": "public_shipment_report",

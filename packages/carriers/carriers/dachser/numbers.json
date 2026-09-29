@@ -2,6 +2,48 @@
   "carrier": "dachser",
   "records": [
     {
+      "number": "04610654186",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a21b9515f37085b8ae3d11d",
+        "date": "2026-06-04"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "gls-fr",
+          "gls-de",
+          "blue-dart",
+          "aramex"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Dachser, which no rule claims. Consignment within Spain."
+    },
+    {
+      "number": "4966085731",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://portaldaqueixa.com/brands/dachser-portugal/complaints/dachser-portugal-rececao-de-mensagens-de-encomenda-nao-solicitada-157557926",
+        "date": "2026-06-24"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "dhl",
+          "mondial-relay",
+          "relais-colis",
+          "tipsa",
+          "estafeta"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Dachser, which no rule claims. Consignment number from a delivery SMS the recipient did not expect."
+    },
+    {
       "number": "9010000001234",
       "role": "shipment",
       "evidence": "synthetic",

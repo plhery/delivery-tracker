@@ -2,6 +2,20 @@
   "carrier": "speedx",
   "records": [
     {
+      "number": "SPXIND126901671914",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6aac80890d392f062ac1088b",
+        "date": "2026-09-18"
+      },
+      "expect": {
+        "carrier": "speedx",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
       "number": "SPXMIA056745759994",
       "role": "shipment",
       "evidence": "public_shipment_report",

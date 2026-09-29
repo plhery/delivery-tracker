@@ -38,6 +38,24 @@
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ecoscooting, which stays one candidate among several."
     },
     {
+      "number": "289700000110328320",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6aba48d1c0ccd119e8896bf1",
+        "date": "2026-09-28"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ecoscooting, which stays one candidate among several."
+    },
+    {
       "number": "380030000066362966",
       "role": "shipment",
       "evidence": "public_shipment_report",
@@ -72,6 +90,20 @@
         ]
       },
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ecoscooting, which stays one candidate among several."
+    },
+    {
+      "number": "CNPRT19501971234009605248",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.deco.proteste.pt/reclamar/todas-as-reclamacoes/falsa-entrega/70a3a590891f3a8160",
+        "date": "2026-09-29"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ecoscooting; no rule matches this shape. Portuguese reference format."
     },
     {
       "number": "CQ343770772DE",

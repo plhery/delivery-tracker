@@ -327,6 +327,19 @@
     ]
   },
   {
+    "input": "0280010280017024953690",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "austrian-post",
+      "usps",
+      "estafeta"
+    ],
+    "asked": [
+      "austrian-post"
+    ]
+  },
+  {
     "input": "0301006785462006320995",
     "carrier": "unknown",
     "confidence": "low",
@@ -409,6 +422,22 @@
       "seur",
       "brt",
       "ciblex"
+    ]
+  },
+  {
+    "input": "04610654186",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "blue-dart",
+      "aramex"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
     ]
   },
   {
@@ -742,6 +771,30 @@
     ]
   },
   {
+    "input": "1172614482",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dhl",
+      "mondial-relay",
+      "relais-colis",
+      "tipsa",
+      "estafeta"
+    ],
+    "asked": [
+      "relais-colis"
+    ]
+  },
+  {
+    "input": "11854362",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "mondial-relay",
+      "heppner"
+    ]
+  },
+  {
     "input": "12123456780101006623123454",
     "carrier": "mondial-relay",
     "confidence": "high",
@@ -1007,6 +1060,14 @@
     ]
   },
   {
+    "input": "1G25S92Z3AW7",
+    "carrier": "geodis",
+    "confidence": "high",
+    "candidates": [
+      "geodis"
+    ]
+  },
+  {
     "input": "1GWSKFLSKX4Y",
     "carrier": "geodis",
     "confidence": "high",
@@ -1182,6 +1243,15 @@
     ]
   },
   {
+    "input": "25631818",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "mondial-relay",
+      "heppner"
+    ]
+  },
+  {
     "input": "2806075762",
     "carrier": "unknown",
     "confidence": "low",
@@ -1252,6 +1322,18 @@
     ],
     "asked": [
       "colis-prive"
+    ]
+  },
+  {
+    "input": "289700000110328320",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "bpost",
+      "ecoscooting"
+    ],
+    "asked": [
+      "bpost"
     ]
   },
   {
@@ -1512,6 +1594,12 @@
       "gls-ch",
       "gls-de"
     ]
+  },
+  {
+    "input": "37DDNQ",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
   },
   {
     "input": "380030000066362966",
@@ -1782,6 +1870,21 @@
     ]
   },
   {
+    "input": "4966085731",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "dhl",
+      "mondial-relay",
+      "relais-colis",
+      "tipsa",
+      "estafeta"
+    ],
+    "asked": [
+      "relais-colis"
+    ]
+  },
+  {
     "input": "4C003925742US",
     "carrier": "uniuni",
     "confidence": "high",
@@ -1807,6 +1910,12 @@
   },
   {
     "input": "4TZKO156790--59600",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
+  },
+  {
+    "input": "502553526650A704483512",
     "carrier": "unknown",
     "confidence": "none",
     "candidates": []
@@ -3045,6 +3154,12 @@
     ]
   },
   {
+    "input": "CNPRT19501971234009605248",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
+  },
+  {
     "input": "CP112251335NL",
     "carrier": "spring-gds",
     "confidence": "high",
@@ -3139,6 +3254,14 @@
     ]
   },
   {
+    "input": "D434031340000025200001",
+    "carrier": "canpar",
+    "confidence": "high",
+    "candidates": [
+      "canpar"
+    ]
+  },
+  {
     "input": "D576002440000001428004",
     "carrier": "canpar",
     "confidence": "high",
@@ -3152,6 +3275,20 @@
     "confidence": "high",
     "candidates": [
       "canpar"
+    ]
+  },
+  {
+    "input": "DD-KBA6JL",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "gls-ch",
+      "gls-fr",
+      "gls-de"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
     ]
   },
   {
@@ -3359,6 +3496,22 @@
   },
   {
     "input": "GFUS01011884214464",
+    "carrier": "gofo",
+    "confidence": "high",
+    "candidates": [
+      "gofo"
+    ]
+  },
+  {
+    "input": "GFUS01066030373313",
+    "carrier": "gofo",
+    "confidence": "high",
+    "candidates": [
+      "gofo"
+    ]
+  },
+  {
+    "input": "GFUS01068091652674",
     "carrier": "gofo",
     "confidence": "high",
     "candidates": [
@@ -3635,6 +3788,20 @@
     ]
   },
   {
+    "input": "LD-2C7WLM",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "gls-ch",
+      "gls-fr",
+      "gls-de"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de"
+    ]
+  },
+  {
     "input": "LD156008025FR",
     "carrier": "la-poste",
     "confidence": "high",
@@ -3723,6 +3890,14 @@
     "confidence": "high",
     "candidates": [
       "intl-post"
+    ]
+  },
+  {
+    "input": "LL016042860FR",
+    "carrier": "la-poste",
+    "confidence": "high",
+    "candidates": [
+      "la-poste"
     ]
   },
   {
@@ -4236,6 +4411,14 @@
     ]
   },
   {
+    "input": "RR400244295CL",
+    "carrier": "intl-post",
+    "confidence": "high",
+    "candidates": [
+      "intl-post"
+    ]
+  },
+  {
     "input": "RS908247336CH",
     "carrier": "swiss-post",
     "confidence": "high",
@@ -4316,6 +4499,14 @@
     "confidence": "high",
     "candidates": [
       "spee-dee"
+    ]
+  },
+  {
+    "input": "SPXIND126901671914",
+    "carrier": "speedx",
+    "confidence": "high",
+    "candidates": [
+      "speedx"
     ]
   },
   {
@@ -4527,6 +4718,12 @@
     "candidates": [
       "uniuni"
     ]
+  },
+  {
+    "input": "UUSC000019638703",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
   },
   {
     "input": "UX000352872CH",

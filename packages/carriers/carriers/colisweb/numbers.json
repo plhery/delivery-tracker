@@ -2,6 +2,24 @@
   "carrier": "colisweb",
   "records": [
     {
+      "number": "11854362",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/69d652f26c2dbef5f8ee61fb",
+        "date": "2026-04-08"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "mondial-relay",
+          "heppner"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Colisweb, which no rule claims."
+    },
+    {
       "number": "87654321",
       "role": "shipment",
       "evidence": "synthetic",

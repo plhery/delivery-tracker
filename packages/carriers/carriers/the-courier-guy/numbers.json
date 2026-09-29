@@ -2,6 +2,58 @@
   "carrier": "the-courier-guy",
   "records": [
     {
+      "number": "37DDNQ",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.hellopeter.com/the-courier-guy/reviews/this-company-has-lost-its-way-i-am-done-6589583",
+        "date": "2026-09-09"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to The Courier Guy; no rule matches this shape."
+    },
+    {
+      "number": "DD-KBA6JL",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.hellopeter.com/the-courier-guy/reviews/no-collection-no-call-refusing-refund-dd-kba6jl-6597318",
+        "date": "2026-09-14"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "gls-fr",
+          "gls-de"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to The Courier Guy, which no rule claims. Booked collection that was never made."
+    },
+    {
+      "number": "LD-2C7WLM",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.hellopeter.com/the-courier-guy/reviews/courier-guy-is-the-worst-service-provider-6590204",
+        "date": "2026-09-10"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "gls-ch",
+          "gls-fr",
+          "gls-de"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to The Courier Guy, which no rule claims. Pudo locker-to-door waybill."
+    },
+    {
       "number": "QGB8C",
       "role": "order_reference",
       "evidence": "public_shipment_report",

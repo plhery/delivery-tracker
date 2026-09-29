@@ -2,6 +2,20 @@
   "carrier": "canpar",
   "records": [
     {
+      "number": "D434031340000025200001",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/69f1217925267d3e588981cf",
+        "date": "2026-04-28"
+      },
+      "expect": {
+        "carrier": "canpar",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
       "number": "D576002440000001428004",
       "role": "shipment",
       "evidence": "open_source_example",

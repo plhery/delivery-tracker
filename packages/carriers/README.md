@@ -190,26 +190,26 @@ statuses, timings and network error codes.
 | `pos-malaysia` | Pos Malaysia | dedicated | direct | 3 | 5 | 12 | [README](carriers/pos-malaysia/README.md) |
 | `thailand-post` | Thailand Post | universal providers |  | 0 | 2 | 0 |  |
 | `ukrposhta` | Ukrposhta | dedicated | browser | 2 | 3 | 29 | [README](carriers/ukrposhta/README.md) |
-| `estafeta` | Estafeta | dedicated | direct | 2 | 1 | 7 | [README](carriers/estafeta/README.md) |
-| `correos-chile` | Correos de Chile | universal providers |  | 0 | 1 | 0 |  |
-| `the-courier-guy` | The Courier Guy | dedicated | direct | 3 | 1 | 8 | [README](carriers/the-courier-guy/README.md) |
-| `geodis` | GEODIS | dedicated | direct | 3 | 2 | 46 | [README](carriers/geodis/README.md) |
-| `dachser` | Dachser | dedicated | direct | 2 | 1 | 13 | [README](carriers/dachser/README.md) |
+| `estafeta` | Estafeta | dedicated | direct | 2 | 3 | 7 | [README](carriers/estafeta/README.md) |
+| `correos-chile` | Correos de Chile | universal providers |  | 0 | 2 | 0 |  |
+| `the-courier-guy` | The Courier Guy | dedicated | direct | 3 | 4 | 8 | [README](carriers/the-courier-guy/README.md) |
+| `geodis` | GEODIS | dedicated | direct | 3 | 3 | 46 | [README](carriers/geodis/README.md) |
+| `dachser` | Dachser | dedicated | direct | 2 | 3 | 13 | [README](carriers/dachser/README.md) |
 | `old-dominion` | Old Dominion | universal providers |  | 0 | 6 | 0 |  |
 | `swiss-post-cargo` | Swiss Post Cargo | dedicated | direct | 3 | 1 | 14 | [README](carriers/swiss-post-cargo/README.md) |
 | `postlogistics` | PostLogistics | dedicated | direct | 3 | 1 | 5 | [README](carriers/postlogistics/README.md) |
 | `hermes` | Hermes Einrichtungs-Service | dedicated | direct | 2 | 1 | 26 | [README](carriers/hermes/README.md) |
-| `heppner` | Heppner | dedicated | direct | 2 | 1 | 8 | [README](carriers/heppner/README.md) |
+| `heppner` | Heppner | dedicated | direct | 2 | 2 | 8 | [README](carriers/heppner/README.md) |
 | `ciblex` | Ciblex | dedicated | direct | 2 | 3 | 27 | [README](carriers/ciblex/README.md) |
 | `c-chez-vous` | C Chez Vous | dedicated | direct | 1 | 2 | 5 | [README](carriers/c-chez-vous/README.md) |
-| `colisweb` | Colisweb | dedicated | direct | 2 | 1 | 20 | [README](carriers/colisweb/README.md) |
-| `delivengo` | Delivengo | via la-poste | direct → retry | 4 | 1 | 0 | [README](carriers/delivengo/README.md) |
-| `uniuni` | UniUni | dedicated | direct | 3 | 2 | 7 | [README](carriers/uniuni/README.md) |
-| `speedx` | SpeedX | universal providers |  | 0 | 4 | 0 |  |
-| `gofo` | GOFO Express | dedicated | direct | 3 | 2 | 7 | [README](carriers/gofo/README.md) |
-| `ecoscooting` | Ecoscooting | dedicated | direct | 3 | 5 | 6 | [README](carriers/ecoscooting/README.md) |
-| `tipsa` | TIPSA | universal providers |  | 0 | 1 | 0 |  |
-| `canpar` | Canpar | dedicated | direct | 2 | 4 | 11 | [README](carriers/canpar/README.md) |
+| `colisweb` | Colisweb | dedicated | direct | 2 | 2 | 20 | [README](carriers/colisweb/README.md) |
+| `delivengo` | Delivengo | via la-poste | direct → retry | 4 | 2 | 0 | [README](carriers/delivengo/README.md) |
+| `uniuni` | UniUni | dedicated | direct | 3 | 3 | 7 | [README](carriers/uniuni/README.md) |
+| `speedx` | SpeedX | universal providers |  | 0 | 5 | 0 |  |
+| `gofo` | GOFO Express | dedicated | direct | 3 | 4 | 7 | [README](carriers/gofo/README.md) |
+| `ecoscooting` | Ecoscooting | dedicated | direct | 3 | 7 | 6 | [README](carriers/ecoscooting/README.md) |
+| `tipsa` | TIPSA | universal providers |  | 0 | 2 | 0 |  |
+| `canpar` | Canpar | dedicated | direct | 2 | 5 | 11 | [README](carriers/canpar/README.md) |
 | `spee-dee` | Spee-Dee | universal providers |  | 0 | 3 | 0 |  |
 | `sunyou` | SunYou | dedicated | direct | 1 | 3 | 7 | [README](carriers/sunyou/README.md) |
 | `shipup` | ShipUp | universal providers |  | 0 | 1 | 0 |  |

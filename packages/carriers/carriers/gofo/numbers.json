@@ -26,6 +26,34 @@
         "confidence": "high"
       },
       "note": "Open-source project example, not a real shipment."
+    },
+    {
+      "number": "GFUS01066030373313",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a9585f1402196fa26d71560",
+        "date": "2026-08-31"
+      },
+      "expect": {
+        "carrier": "gofo",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
+      "number": "GFUS01068091652674",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.courtlistener.com/docket/74763247/1/tikbooks-inc-v-chriss-sports-llc/",
+        "date": "2026-09-09"
+      },
+      "expect": {
+        "carrier": "gofo",
+        "confidence": "high"
+      },
+      "note": "Tracking number in a public court complaint that does not name the carrier; the GFUS prefix is GOFO's."
     }
   ]
 }

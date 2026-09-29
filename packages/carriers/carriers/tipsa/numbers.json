@@ -2,6 +2,25 @@
   "carrier": "tipsa",
   "records": [
     {
+      "number": "0280010280017024953690",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.deco.proteste.pt/reclamar/todas-as-reclamacoes/encomenda-n-C3-A3o-recebida/0e56c354319eb7d720",
+        "date": "2026-08-25"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "austrian-post",
+          "usps",
+          "estafeta"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to TIPSA, which no rule claims. Portuguese shipment."
+    },
+    {
       "number": "8104405448",
       "role": "shipment",
       "evidence": "public_shipment_report",

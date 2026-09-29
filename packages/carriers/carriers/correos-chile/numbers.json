@@ -19,6 +19,20 @@
         ]
       },
       "note": "Open-source project example, not a real shipment. The source attributes it to Correos de Chile, which stays one candidate among several."
+    },
+    {
+      "number": "RR400244295CL",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.chinapostaltracking.com/qa/i-sent-a-book-from-chile-to-a-printing-company-in-china-157068/",
+        "date": "2026-02-24"
+      },
+      "expect": {
+        "carrier": "intl-post",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Correos de Chile; detection selects the generic postal carrier. Sent from Chile to China."
     }
   ]
 }

@@ -12,6 +12,20 @@
         "confidence": "high"
       },
       "note": "Made-up number that follows the published format. Filed under Delivengo; detection selects La Poste / Colissimo."
+    },
+    {
+      "number": "LL016042860FR",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/66fbba757cd91d06a7aef774",
+        "date": "2024-10-01"
+      },
+      "expect": {
+        "carrier": "la-poste",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Delivengo; detection selects La Poste. Parcel to Sweden."
     }
   ]
 }

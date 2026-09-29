@@ -26,7 +26,7 @@
       "role": "full_barcode",
       "evidence": "public_shipment_report",
       "source": {
-        "url": "https://fr.trustpilot.com/review/www.ciblex.fr",
+        "url": "https://www.trustpilot.com/reviews/6a59fcabc3cc32055663b748",
         "date": "2026-07-17"
       },
       "expect": {
@@ -44,7 +44,7 @@
       "role": "full_barcode",
       "evidence": "public_shipment_report",
       "source": {
-        "url": "https://fr.trustpilot.com/review/www.ciblex.fr",
+        "url": "https://www.trustpilot.com/reviews/6a59fcabc3cc32055663b748",
         "date": "2026-07-17"
       },
       "expect": {
