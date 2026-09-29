@@ -51,6 +51,8 @@ describe('Aramex direct tracking', () => {
     await new AramexTracker({ fetcher }).fetch(NUMBER, { budgetMs: 1000 });
     expect(fetcher.mock.calls.map(c => c[0])).toEqual([`https://www.aramex.com/us/en/track/shipments?ShipmentNumber=${NUMBER}`, 'https://www.aramex.com/track/details?q=synthetic']);
     expect(fetcher.mock.calls.every(c => c[1]?.signal instanceof AbortSignal)).toBe(true);
+    expect(fetcher.mock.calls.map(c => new Headers(c[1]?.headers).get('user-agent')))
+      .toEqual(['SwissDeliveryTracker/1.0', 'SwissDeliveryTracker/1.0']);
   });
   it('does not start a detail request after cancellation during the overview', async () => {
     const controller = new AbortController();
@@ -68,6 +70,8 @@ describe('Aramex direct tracking', () => {
     expect((await new AramexTracker({ fetcher }).fetch(NUMBER)).status).toBe('delivered');
     expect(fetcher.mock.calls[2]?.[0]).toBe(regional);
     expect(fetcher.mock.calls[2]?.[1]?.redirect).toBe('error');
+    expect(fetcher.mock.calls.map(c => new Headers(c[1]?.headers).get('user-agent')))
+      .toEqual(['SwissDeliveryTracker/1.0', 'SwissDeliveryTracker/1.0', 'SwissDeliveryTracker/1.0']);
   });
   it.each(['https://example.invalid/ae/en/track/details?q=synthetic', '/ae/en/track/details?q=other', '/ae/en/login?q=synthetic'])
     ('rejects an unbound detail redirect: %s', async location => {

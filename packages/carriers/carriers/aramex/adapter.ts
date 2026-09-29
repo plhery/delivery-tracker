@@ -18,7 +18,10 @@ export class AramexTracker {
         const left = remainingMs - (performance.now() - started);
         if (left <= 0) throw new BudgetExceededError('Aramex', context.budgetMs ?? 20_000);
         try {
-          const { response, bytes } = await fetchBounded(url, { signal, headers: { Accept: 'text/html' } }, {
+          // The edge rejects Node's default user agent on server networks.
+          const { response, bytes } = await fetchBounded(url, { signal, headers: {
+            Accept: 'text/html', 'User-Agent': 'SwissDeliveryTracker/1.0',
+          } }, {
             provider: 'Aramex', timeoutMs: Math.max(1, Math.floor(left)), maxBytes: 1_500_000,
             fetcher: this.options.fetcher, ...(regionalRedirect ? { redirect: 'manual', allowHttpStatuses: [301, 302, 303, 307, 308] } : {}),
           });

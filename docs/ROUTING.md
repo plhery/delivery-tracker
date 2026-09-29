@@ -28,10 +28,8 @@ provider.
 `carrier_data.routing`. The next check starts there, whatever its place in the default
 order, as long as it isn't cooling down.
 
-**Royal Mail and Aramex** use the universal providers. Their own adapters remain
-available for explicit tests, but neither reliably retrieves data from the production server
-(see their [Royal Mail](../packages/carriers/carriers/royal-mail/README.md) and
-[Aramex](../packages/carriers/carriers/aramex/README.md) READMEs).
+**Royal Mail** uses the universal providers. Its browser adapter exists but isn't an active
+route (see its [README](../packages/carriers/carriers/royal-mail/README.md)).
 
 ## When a source fails
 

@@ -17,8 +17,10 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "aramex",
+    "steps": [
+      "direct"
+    ]
   },
   "capabilities": [
     "history"
@@ -30,7 +32,10 @@
       "status",
       "history"
     ],
-    "scraped": [],
+    "scraped": [
+      "status",
+      "history"
+    ],
     "discarded": [
       "recipient"
     ],
