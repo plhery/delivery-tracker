@@ -19,7 +19,9 @@ import { carrierErrorKind, ChallengeError, IndeterminateError, InputRequiredErro
 import { runSteps } from '../../core/runner';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import type { StepRecorder } from '../../core/telemetry';
-import { countryCode, countryTimeZone, mislabeledLocalTime, mislabeledWallTime, sharedClockZone, timeZoneCountry } from '../../core/time';
+import {
+  countryCode, countryTimeZone, mislabeledLocalTime, mislabeledWallTime, sharedClockZone, timeZoneCountry, usStateTimeZone,
+} from '../../core/time';
 import type { TrawlClient } from '../../core/transport';
 import { isRecord } from '../../core/types';
 import { capturedBodies, loadCapture, type CaptureSpec } from '../shared/capture';
@@ -71,8 +73,45 @@ function stateCarrierName(payload: Record<string, unknown>, state: Record<string
 
 // The names ParcelsApp gives Asendia USA's scans.
 const ASENDIA_USA = /^asendia\s+(?:usa|united\s+states)$/i;
+// Carriers whose ParcelsApp dates are a US scan's local clock: UPS's own
+// instants, FedEx's own page, UniUni's own feed and Ship24's offsets agree
+// once they are read that way (checked 2026-09-30). OnTrac's are UTC and
+// Landmark's keep one clock everywhere, so no other carrier gets this step.
+const US_LOCAL_CLOCKS = /^(?:ups|fedex|uniuni|uni express|easyship)$/i;
+const UNITED_STATES = /^(?:us|usa|united states(?: of america)?)$/i;
+const ZIP_CODE = /\s*\b\d{5}(?:-\d{4})?$/;
 
-function scanZone(payload: Record<string, unknown>, state: Record<string, unknown>, fallback: string | null, number: string): string | null {
+/**
+ * The zone of the US state a location names ("Riverside, CA, US", "Charlotte,
+ * NC", "Linden, NJ 07036", "Scranton PA"). It is `certain` when the location
+ * also names the country or the code is no country's: "Atlanta, GA" could be
+ * in Gabon.
+ */
+function usStateZone(location: string): { zone: string; certain: boolean } | null {
+  const parts = location.split(',').map((part) => part.trim()).filter(Boolean);
+  const named = parts.length > 1 && UNITED_STATES.test(parts.at(-1)!);
+  if (named) parts.pop();
+  if (parts.length > 1 && !parts.at(-1)!.replace(ZIP_CODE, '')) parts.pop();
+  // "Mississauga, ON, CA": a region then a country other than the US.
+  if (!named && parts.length > 2 && parts.slice(-2).every((part) => /^[A-Z]{2}$/i.test(part))) return null;
+  const words = (parts.at(-1) ?? '').replace(ZIP_CODE, '').split(/\s+/);
+  const state = parts.length > 1 || words.length > 1 ? words.at(-1)! : '';
+  const zone = usStateTimeZone(state);
+  return zone ? { zone, certain: named || !countryCode(state) } : null;
+}
+
+/**
+ * The state zone of a US scan from a carrier whose ParcelsApp dates are local
+ * clocks. A state code that is also a country's counts only in a reply that is
+ * in the US; the four that name a single-clock country (DE, IL, IN, MT) are
+ * read as that country before this step.
+ */
+function usScanZone(name: unknown, location: string, inUnitedStates: boolean): string | null {
+  const us = typeof name === 'string' && US_LOCAL_CLOCKS.test(name.trim()) ? usStateZone(location) : null;
+  return us && (us.certain || inUnitedStates) ? us.zone : null;
+}
+
+function scanZone(payload: Record<string, unknown>, state: Record<string, unknown>, fallback: string | null, number: string, inUnitedStates = false): string | null {
   const name = stateCarrierName(payload, state);
   const carrier = typeof name === 'string' ? carrierIdFromName(name) : undefined;
   if (carrier === 'tnt' && /^\d{9}$/.test(number)) return null;
@@ -83,6 +122,8 @@ function scanZone(payload: Record<string, unknown>, state: Record<string, unknow
   const place = location.split(',').at(-1);
   const located = countryTimeZone(place);
   if (located) return located;
+  const us = usScanZone(name, location, inUnitedStates);
+  if (us) return us;
   // The zones below only guess where the scan was. A location in another
   // country, one with several clocks or none listed ("Example City, CA,
   // United States", "Example City, South Africa"), rules a guess out, and the
@@ -123,6 +164,12 @@ function parseHistory(payload: unknown, trackingNumber: string, timezone: string
   const scans: { event: CarrierEvent; scan: CarrierScan }[] = [];
   const scanCarriers = new Set<unknown>();
   let undated = 0;
+  // The reply is in the US when a scan is certainly there, or when every
+  // located scan names a US state ("Charlotte, NC", "Atlanta, GA").
+  const states = payload.states.flatMap((raw: unknown) =>
+    isRecord(raw) && typeof raw.location === 'string' && raw.location.trim() ? [usStateZone(raw.location)] : []);
+  const inUnitedStates = states.some((us) => us?.certain) || (states.length > 0 && states.every(Boolean));
+  const entries: { raw: Record<string, unknown>; name: unknown; scan: CarrierScan | undefined; wording: string; zone: string | null; us: boolean }[] = [];
   for (const raw of payload.states) {
     if (!isRecord(raw)) throw new SchemaError(SOURCE, 'ParcelsApp returned an invalid event');
     if (raw.require_fields || raw.error) continue;
@@ -132,11 +179,27 @@ function parseHistory(payload: unknown, trackingNumber: string, timezone: string
       undated++;
       continue;
     }
-    const zone = scanZone(payload, raw, timezone, number);
     const name = stateCarrierName(payload, raw);
     const status = relayedLabel(raw.status);
     const scan = carrierScan(typeof name === 'string' ? carrierIdFromName(name) : undefined, status);
-    const parsed = localEvent((zone ? mislabeledLocalTime(raw.date, zone)?.iso : undefined) ?? raw.date, scan?.wording ?? status);
+    const zone = scanZone(payload, raw, timezone, number, inUnitedStates);
+    const location = typeof raw.location === 'string' ? raw.location.trim() : '';
+    entries.push({ raw, name, scan, wording: scan?.wording ?? status, zone,
+      us: zone !== null && zone === usScanZone(name, location, inUnitedStates) });
+  }
+  // Another carrier's copy of a US scan (Cainiao relaying UniUni's "Delivered"
+  // at the same minute, with no place) takes that scan's zone, so the two stay
+  // one scan.
+  const copyKey = ({ raw, wording }: typeof entries[number]) => {
+    const wall = mislabeledWallTime(raw.date);
+    const text = wall ? localEvent(raw.date, wording)?.description : undefined;
+    return wall && text ? `${wall}|${text}` : '';
+  };
+  const usClocks = new Map(entries.filter((entry) => entry.us).map((entry) => [copyKey(entry), entry.zone!] as const).filter(([key]) => key));
+  for (const entry of entries) {
+    const { raw, name, scan } = entry;
+    const zone = (usClocks.size && !entry.us ? usClocks.get(copyKey(entry)) : undefined) ?? entry.zone;
+    const parsed = localEvent((zone ? mislabeledLocalTime(raw.date, zone)?.iso : undefined) ?? raw.date, entry.wording);
     // Nor has an offset-less date that no zone resolves: a wall time, not an instant.
     if (parsed && !parsed.time) {
       undated++;

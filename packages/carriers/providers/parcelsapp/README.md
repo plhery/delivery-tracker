@@ -66,7 +66,8 @@ step exists for future protocol changes.
   keeps the UTC digits and re-reads them in the first zone it finds:
   1. the catalog zone of the scan's carrier (`carriers[state.carrier]`), unless it is UTC;
   2. the country at the end of `location`, if `COUNTRY_ZONES` ([core/time](../../core/time/index.ts))
-     gives it a single clock;
+     gives it a single clock, else, for the US scans of a few carriers, their state's zone
+     (see US scans below);
   3. the country that name ends with, after a catalog carrier or brand ("DPD UK",
      "GLS Italy", "DHL Parcel Netherlands"), if that country has a single clock. It comes
      after the location because the name can be a branch, not the scan's place
@@ -99,8 +100,21 @@ step exists for future protocol changes.
   [numbers.json](../../carriers/asendia/numbers.json)). The same A1 scans filed under
   another name are not UTC: an eBay shipment's, under "EasyShip", carry local clocks
   (Ship24's instants and Swiss Post's own scan agree once they are read that way), so
-  they go through the steps like any other scan. Their US scans name no single-clock
-  country and stay as labeled, hours early.
+  they go through the steps like any other scan, US ones included (below). Those that
+  name only the country stay as labeled, hours early.
+- US scans: the dates of UPS, FedEx, UniUni and EasyShip are the scan's local clock, as
+  UPS's own instants, FedEx's own page, UniUni's own feed and Ship24's offsets show. Step 2
+  reads them in the zone of the state the location names ("Riverside, CA, US", "Charlotte,
+  NC", "Linden, NJ 07036", "Scranton PA"); a state with several zones gets its majority
+  zone, as in the USPS adapter. A code that is also a country's ("GA" is Gabon) counts only
+  in a reply that is in the US: one scan names the country or a code no country has, or
+  every located scan names a US state. DE, IL, IN and MT are read as Germany, Israel, India
+  and Malta before that, because UPS writes German scans as "Koeln, DE", so "Chicago, IL"
+  is misread unless it ends with "US". Another carrier's copy of such a scan, at the same
+  minute with the same wording (Cainiao relaying UniUni), takes the same zone. Other
+  carriers keep their readings: OnTrac's dates are UTC, Landmark's keep one clock in
+  every country, and GOFO's carry real offsets. Adding a carrier to this list moves its
+  stored US scans: plan a re-key.
 - TIPSA's `date` has the digits of TIPSA's own shipment page, which keeps Madrid time for
   every agency ([TIPSA](../../carriers/tipsa/README.md)), so step 1 reads its Portuguese
   scans on Madrid time too.

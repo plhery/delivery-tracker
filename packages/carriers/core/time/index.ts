@@ -185,6 +185,35 @@ export function timeZoneCountry(zone: string): string | null {
   return countries.length === 1 ? countries[0]! : null;
 }
 
+// US states and territories by postal code. A state with several zones keeps its
+// majority zone.
+const US_STATE_ZONES: Readonly<Record<string, string>> = {
+  AL: 'America/Chicago', AK: 'America/Anchorage', AZ: 'America/Phoenix', AR: 'America/Chicago',
+  CA: 'America/Los_Angeles', CO: 'America/Denver', CT: 'America/New_York', DE: 'America/New_York',
+  DC: 'America/New_York', FL: 'America/New_York', GA: 'America/New_York', HI: 'Pacific/Honolulu',
+  ID: 'America/Boise', IL: 'America/Chicago', IN: 'America/New_York', IA: 'America/Chicago',
+  KS: 'America/Chicago', KY: 'America/New_York', LA: 'America/Chicago', ME: 'America/New_York',
+  MD: 'America/New_York', MA: 'America/New_York', MI: 'America/Detroit', MN: 'America/Chicago',
+  MS: 'America/Chicago', MO: 'America/Chicago', MT: 'America/Denver', NE: 'America/Chicago',
+  NV: 'America/Los_Angeles', NH: 'America/New_York', NJ: 'America/New_York', NM: 'America/Denver',
+  NY: 'America/New_York', NC: 'America/New_York', ND: 'America/Chicago', OH: 'America/New_York',
+  OK: 'America/Chicago', OR: 'America/Los_Angeles', PA: 'America/New_York', RI: 'America/New_York',
+  SC: 'America/New_York', SD: 'America/Chicago', TN: 'America/Chicago', TX: 'America/Chicago',
+  UT: 'America/Denver', VT: 'America/New_York', VA: 'America/New_York', WA: 'America/Los_Angeles',
+  WV: 'America/New_York', WI: 'America/Chicago', WY: 'America/Denver', PR: 'America/Puerto_Rico',
+  GU: 'Pacific/Guam', VI: 'America/St_Thomas', AS: 'Pacific/Pago_Pago', MP: 'Pacific/Saipan',
+};
+
+/**
+ * The zone of a US state or territory from its postal code ("IL"): its
+ * majority zone when it has several; null otherwise.
+ */
+export function usStateTimeZone(state: unknown): string | null {
+  if (typeof state !== 'string') return null;
+  const code = state.trim().toUpperCase();
+  return Object.hasOwn(US_STATE_ZONES, code) ? US_STATE_ZONES[code]! : null;
+}
+
 /** Epoch milliseconds (numbers or numeric strings); zero and negatives are rejected. */
 export function epochMillisTime(value: unknown): ParsedTime | null {
   const millis = typeof value === 'number' ? value

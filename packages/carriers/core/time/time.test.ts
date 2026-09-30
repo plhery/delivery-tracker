@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   calendarDay, countryCode, countryTimeZone, epochMillisTime, epochSecondsTime, explicitOffsetTime, isoTime, mislabeledLocalTime,
-  mislabeledWallTime, settleGuessedClocks, sharedClockZone, timeZoneCountry, zonedTime,
+  mislabeledWallTime, settleGuessedClocks, sharedClockZone, timeZoneCountry, usStateTimeZone, zonedTime,
 } from './index';
 
 describe('time policies', () => {
@@ -99,6 +99,13 @@ describe('time policies', () => {
     expect(countryCode('Switzerland')).toBe('CH');
     // Retired codes, subdivisions and places are not countries.
     for (const value of ['UK', 'FX', 'ON', 'Example Hub', 'EXAMPLE CITY, CA', '', undefined]) expect(countryCode(value)).toBeNull();
+  });
+
+  it('maps US states and territories to their majority zone', () => {
+    expect(usStateTimeZone('IL')).toBe('America/Chicago');
+    expect(usStateTimeZone(' ny ')).toBe('America/New_York');
+    expect(usStateTimeZone('PR')).toBe('America/Puerto_Rico');
+    for (const value of ['ON', 'US', '', undefined]) expect(usStateTimeZone(value)).toBeNull();
   });
 
   it('maps a zone back to its single-zone country only', () => {

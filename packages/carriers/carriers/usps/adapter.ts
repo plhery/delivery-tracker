@@ -8,6 +8,7 @@ import { ChallengeError, SchemaError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
 import { runSteps } from '../../core/runner';
 import { NOOP_RECORDER, type StepRecorder } from '../../core/telemetry';
+import { usStateTimeZone } from '../../core/time';
 import { clean, TrawlClient } from '../../core/transport';
 import { uspsStage, uspsStatus } from './status';
 
@@ -49,28 +50,6 @@ export function uspsTrackingUrl(trackingNumber: string): string {
   return url.toString();
 }
 
-/**
- * Facility-local wall time lives in the event's own state. Multi-zone states
- * resolve to their majority zone; a scan whose state maps to nothing keeps
- * the provider's own text rather than being stamped with a guessed zone.
- */
-const STATE_ZONES: Readonly<Record<string, string>> = {
-  AL: 'America/Chicago', AK: 'America/Anchorage', AZ: 'America/Phoenix', AR: 'America/Chicago',
-  CA: 'America/Los_Angeles', CO: 'America/Denver', CT: 'America/New_York', DE: 'America/New_York',
-  DC: 'America/New_York', FL: 'America/New_York', GA: 'America/New_York', HI: 'Pacific/Honolulu',
-  ID: 'America/Boise', IL: 'America/Chicago', IN: 'America/New_York', IA: 'America/Chicago',
-  KS: 'America/Chicago', KY: 'America/New_York', LA: 'America/Chicago', ME: 'America/New_York',
-  MD: 'America/New_York', MA: 'America/New_York', MI: 'America/Detroit', MN: 'America/Chicago',
-  MS: 'America/Chicago', MO: 'America/Chicago', MT: 'America/Denver', NE: 'America/Chicago',
-  NV: 'America/Los_Angeles', NH: 'America/New_York', NJ: 'America/New_York', NM: 'America/Denver',
-  NY: 'America/New_York', NC: 'America/New_York', ND: 'America/Chicago', OH: 'America/New_York',
-  OK: 'America/Chicago', OR: 'America/Los_Angeles', PA: 'America/New_York', RI: 'America/New_York',
-  SC: 'America/New_York', SD: 'America/Chicago', TN: 'America/Chicago', TX: 'America/Chicago',
-  UT: 'America/Denver', VT: 'America/New_York', VA: 'America/New_York', WA: 'America/Los_Angeles',
-  WV: 'America/New_York', WI: 'America/Chicago', WY: 'America/Denver', PR: 'America/Puerto_Rico',
-  GU: 'Pacific/Guam', VI: 'America/St_Thomas', AS: 'Pacific/Pago_Pago', MP: 'Pacific/Saipan',
-};
-
 const MONTHS = '(January|February|March|April|May|June|July|August|September|October|November|December)';
 const DATE_PATTERN = new RegExp(`${MONTHS}\\s+\\d{1,2},?\\s+\\d{4}`, 'i');
 const TIME_PATTERN = /\d{1,2}:\d{2}(?::\d{2})?\s*[ap]\.?m\.?/i;
@@ -80,7 +59,8 @@ function eventTime(dateText: string, timeText: string, location: string): { iso:
   const dateMatch = DATE_PATTERN.exec(dateText);
   const timeMatch = TIME_PATTERN.exec(timeText);
   if (!dateMatch || !timeMatch) return null;
-  const zone = STATE_ZONES[STATE_PATTERN.exec(location)?.[1] ?? ''];
+  // Facility-local wall time lives in the event's own state.
+  const zone = usStateTimeZone(STATE_PATTERN.exec(location)?.[1]);
   if (!zone) return null;
   const date = DateTime.fromFormat(dateMatch[0], 'MMMM d, yyyy', { locale: 'en-US', zone });
   const time = DateTime.fromFormat(timeMatch[0].replace(/\./g, '').toLowerCase(), 'h:mm a', { locale: 'en-US', zone })

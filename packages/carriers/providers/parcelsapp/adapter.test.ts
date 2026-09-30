@@ -372,12 +372,54 @@ describe('ParcelsApp result parsing', () => {
         { date: '2026-03-20T06:40:00Z', status: 'Arrived at delivery centre', carrier: 1, location: 'Japan, Japan' },
         { date: '2026-03-12T05:20:00Z', status: 'Departure transit facility', carrier: 1, location: 'Switzerland, Switzerland' },
         { date: '2026-03-05T18:45:10Z', status: 'Dispatched by Asendia', carrier: 1, location: 'United States, United States' },
+        { date: '2026-03-04T22:30:00Z', status: 'Check-in Asendia facility', carrier: 1, location: 'EXAMPLE CITY, IL, United States' },
       ],
     }, number, identity());
     expect(result.events?.map((scan) => scan.time)).toEqual([
       '2026-03-19T21:40:00.000Z', // 06:40 in Tokyo
       '2026-03-12T04:20:00.000Z', // 05:20 in Zurich
-      '2026-03-05T18:45:10.000Z', // a US local clock no step can place: as labeled
+      '2026-03-05T18:45:10.000Z', // a US local clock with no state: as labeled
+      '2026-03-05T04:30:00.000Z', // 22:30 in Illinois
+    ]);
+  });
+
+  it('reads the US scans of carriers that relay local clocks in their state\'s zone', () => {
+    // Live shapes (2026-09-30): UPS's own instants, FedEx's own page and
+    // UniUni's own feed agree with these readings.
+    const times = (carriers: string[], states: Record<string, unknown>[]) =>
+      parseParcelsAppResponse({ carriers, states }, number, identity()).events?.map((scan) => scan.time);
+    const scan = (date: string, location: string, status = 'In transit', carrier = 0) => ({ date, status, carrier, location });
+    expect(times(['UPS'], [
+      scan('2026-07-02T14:05:00Z', 'Example City, CA, US'),
+      scan('2026-07-01T09:30:00Z', 'Example City, NY 10001'),
+      scan('2026-06-30T20:15:00Z', 'Example City, GA'),
+      scan('2026-06-29T08:00:00Z', 'Example City, DE'),
+      scan('2026-01-15T09:30:00Z', 'Example City, NY'),
+    ])).toEqual([
+      '2026-07-02T21:05:00.000Z', // Pacific
+      '2026-07-01T13:30:00.000Z', // Eastern
+      '2026-07-01T00:15:00.000Z', // Georgia, as the reply is in the US
+      '2026-06-29T06:00:00.000Z', // DE names Germany first, as UPS writes it for German scans
+      '2026-01-15T14:30:00.000Z', // Eastern, in winter
+    ]);
+    // Every located scan in a US state places the reply in the US; one abroad does not.
+    expect(times(['FedEx'], [scan('2026-09-08T10:09:00Z', 'Example City, KY'), scan('2026-09-07T23:37:00Z', 'Example City, TN')]))
+      .toEqual(['2026-09-08T14:09:00.000Z', '2026-09-08T04:37:00.000Z']);
+    expect(times(['FedEx'], [scan('2026-09-08T10:09:00Z', 'Example City, GA'), scan('2026-09-07T08:00:00Z', 'Example Hub, France')]))
+      .toEqual(['2026-09-08T10:09:00.000Z', '2026-09-07T06:00:00.000Z']);
+    // Canada, OnTrac's UTC dates and other carriers keep their readings.
+    expect(times(['UPS'], [scan('2026-07-02T14:05:00Z', 'Example City, ON, CA'), scan('2026-07-01T09:30:00Z', 'Example City, NY')]))
+      .toEqual(['2026-07-02T14:05:00.000Z', '2026-07-01T13:30:00.000Z']);
+    expect(times(['OnTrac'], [scan('2026-09-25T21:49:19Z', 'EXAMPLE CITY, CA, 92000'), scan('2026-09-24T02:25:10Z', 'EXAMPLE CITY, NY, 10001')]))
+      .toEqual(['2026-09-25T21:49:19.000Z', '2026-09-24T02:25:10.000Z']);
+    // UniUni writes "City ST"; a copy of the same scan from another carrier moves with it.
+    expect(parseParcelsAppResponse({ carriers: ['UNI Express', 'Cainiao'], states: [
+      scan('2026-09-05T15:10:54Z', 'Example Township PA', 'Delivered. (Recipient\'s front door)'),
+      scan('2026-09-05T15:10:54Z', '', 'Package delivered,front door/porch', 1),
+      scan('2026-09-04T21:31:33Z', 'Example City NY', 'Gateway transit out'),
+    ] }, number, identity()).events?.map((event) => [event.time, event.description])).toEqual([
+      ['2026-09-05T19:10:54.000Z', 'Delivered'],
+      ['2026-09-05T01:31:33.000Z', 'Gateway transit out'],
     ]);
   });
 
