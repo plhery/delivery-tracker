@@ -46,8 +46,8 @@ describe('Ecoscooting parcel history', () => {
     const result = normalizeCarrierResult(parseEcoscooting(pickupFixture(), NUMBER));
     expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered', last_status_text: 'Your shipment has been collected by consignee at the parcelshop',
       last_update: '2026-02-06T17:30:00Z', delivered_at: '2026-02-06T17:30:00Z', weight_kg: 1.25 });
-    expect(result.events?.map(event => event.stage)).toEqual(['delivered', 'ready_for_pickup', 'ready_for_pickup', 'failed_attempt', 'out_for_delivery', 'accepted', undefined]);
-    expect(JSON.stringify(result)).not.toMatch(/PRIVATE|imgUrl|opCode|Latitude|Longitude|outOrder|toZip|feature|cainiaoId|popStation|pinCode/);
+    expect(result.events?.map(event => event.stage)).toEqual(['delivered', 'ready_for_pickup', 'ready_for_pickup', 'failed_attempt', 'out_for_delivery', 'accepted', 'registered', 'registered']);
+    expect(JSON.stringify(result)).not.toMatch(/PRIVATE|imgUrl|opCode|opRemark|Latitude|Longitude|outOrder|toZip|feature|cainiaoId|popStation|pinCode/);
     // "Delivered to PUDO" is the pickup point's signature, not the recipient's.
     const waiting = pickupFixture(); waiting.statuses.shift();
     expect(parseEcoscooting(waiting, NUMBER)).toMatchObject({ status: 'out_for_delivery', current_stage: 'ready_for_pickup' });
@@ -58,6 +58,10 @@ describe('Ecoscooting parcel history', () => {
   it.each([['statusName', 'Different'], ['description', 'Not collected'], ['status', 'finish'], ['statusGroup', 'delivered']])('keeps a pickup-point collection inconclusive when %s changes or a flag appears', (field, value) => {
     const collected = pickupFixture(); collected.statuses[0][field] = value;
     expect(() => parseEcoscooting(collected, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
+  });
+  it('reads the first-mile order scans as registered rather than in transit', () => {
+    const value = pickupFixture(); value.statuses = value.statuses.slice(-2);
+    expect(parseEcoscooting(value, NUMBER)).toMatchObject({ status: 'pending', current_stage: 'registered', last_status_text: 'Shipment order created' });
   });
   it('keeps CN reference movement active and retains missing epochs without inferring display instants', () => {
     const value = portugalFixture(); delete value.statuses[0].opTimestamp;

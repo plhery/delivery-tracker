@@ -90,6 +90,16 @@
       "description": "Shipment order created",
       "timezone": "1",
       "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1769940000000",
+      "datetime": "2026-02-01 11:00:00 UTC+1",
+      "actionCode": "Label_created",
+      "statusName": "Shipment data information received",
+      "description": "Shipment data information received",
+      "timezone": "1",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR",
+      "opRemark": "PRIVATE_SYNTHETIC_REMARK"
     }
   ]
 }

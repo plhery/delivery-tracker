@@ -66,6 +66,30 @@
       "confirmedBy": "live"
     },
     {
+      "code": "In_transit",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "Partner_outbound",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "create",
+      "wording": "Shipment order created",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "Label_created",
+      "wording": "Shipment data information received",
+      "language": "en",
+      "stage": "registered",
+      "confirmedBy": "live"
+    },
+    {
       "code": "LM_SIGN_SUCCESS",
       "wording": "Your shipment has been delivered successfully",
       "language": "en",
