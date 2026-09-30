@@ -212,38 +212,48 @@ struct CarrierPickerView: View {
     }
 
     var body: some View {
-        List {
-            if trimmedQuery.isEmpty {
-                if let automatic {
-                    Section { automaticRow(automatic) }
-                }
-                ForEach(openingSections) { section in
-                    Section(section.title) {
-                        ForEach(section.carriers) { carrier in row(carrier) }
+        ScrollViewReader { proxy in
+            List {
+                if trimmedQuery.isEmpty {
+                    if let automatic {
+                        Section { automaticRow(automatic) }
                     }
-                }
-                ForEach(letterSections, id: \.letter) { section in
+                    ForEach(openingSections) { section in
+                        Section(section.title) {
+                            ForEach(section.carriers) { carrier in row(carrier) }
+                        }
+                    }
+                    ForEach(letterSections, id: \.letter) { section in
+                        Section {
+                            ForEach(section.carriers) { carrier in row(carrier) }
+                        } header: {
+                            Text(section.letter)
+                        }
+                        .id(Self.letterID(section.letter))
+                    }
+                } else if results.isEmpty {
                     Section {
-                        ForEach(section.carriers) { carrier in row(carrier) }
-                    } header: {
-                        Text(section.letter)
+                        Text(localizer.text("picker.empty", ["query": trimmedQuery]))
+                            .foregroundStyle(.secondary)
                     }
-                    .modifier(SectionIndexLabel(label: section.letter))
+                } else {
+                    Section(localizer.text("picker.results.many", ["count": results.count])) {
+                        ForEach(results, id: \.carrier) { result in
+                            row(result.carrier, highlight: result.highlight, alias: result.alias)
+                        }
+                    }
                 }
-            } else if results.isEmpty {
-                Section {
-                    Text(localizer.text("picker.empty", ["query": trimmedQuery]))
-                        .foregroundStyle(.secondary)
-                }
-            } else {
-                Section(localizer.text("picker.results.many", ["count": results.count])) {
-                    ForEach(results, id: \.carrier) { result in
-                        row(result.carrier, highlight: result.highlight, alias: result.alias)
+            }
+            // Rows keep clear of the letter rail's touch strip.
+            .contentMargins(.trailing, trimmedQuery.isEmpty ? LetterRail.width : 20, for: .scrollContent)
+            .overlay(alignment: .trailing) {
+                if trimmedQuery.isEmpty {
+                    LetterRail(letters: letterSections.map(\.letter), label: localizer.text("picker.jump")) { letter in
+                        proxy.scrollTo(Self.letterID(letter), anchor: .top)
                     }
                 }
             }
         }
-        .modifier(SectionIndexVisible())
         .searchable(
             text: $query,
             placement: .navigationBarDrawer(displayMode: .always),
@@ -254,6 +264,8 @@ struct CarrierPickerView: View {
         .navigationTitle(localizer.text("add.carrier"))
         .navigationBarTitleDisplayMode(.inline)
     }
+
+    private static func letterID(_ letter: String) -> String { "letter:\(letter)" }
 
     private var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
 
@@ -366,25 +378,86 @@ struct CarrierPickerView: View {
     }
 }
 
-/// The A–Z index beside the list, where the system offers one.
-private struct SectionIndexVisible: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.listSectionIndexVisibility(.visible)
-        } else {
-            content
+/// The A–Z beside the list. The system's section index answers only a thin
+/// strip at the screen's edge; this one takes a thumb-wide strip, jumps as soon
+/// as it is pressed and follows a finger sliding along it, one tick per letter,
+/// with the letter shown beside the finger.
+struct LetterRail: View {
+    let letters: [String]
+    let label: String
+    let onLetter: (String) -> Void
+
+    @State private var current: String?
+    @State private var announced = 0
+
+    /// Apple's minimum touch target; the letters sit near the edge inside it.
+    static let width: CGFloat = 44
+    private static let padding: CGFloat = 12
+
+    var body: some View {
+        GeometryReader { geometry in
+            let available = geometry.size.height - Self.padding * 2
+            let rowHeight = min(16, max(8, available / CGFloat(max(letters.count, 1))))
+            VStack(spacing: 0) {
+                ForEach(letters, id: \.self) { letter in
+                    Text(letter)
+                        .font(.system(size: min(11, rowHeight * 0.72), weight: .semibold))
+                        .foregroundStyle(letter == current ? Brand.background : ExperimentalPalette.ochre)
+                        .frame(width: 20, height: rowHeight)
+                        .background {
+                            if letter == current {
+                                RoundedRectangle(cornerRadius: 5).fill(ExperimentalPalette.ochre)
+                            }
+                        }
+                }
+            }
+            .padding(.trailing, 4)
+            .padding(.vertical, Self.padding)
+            .frame(width: Self.width, alignment: .trailing)
+            .contentShape(Rectangle())
+            .overlay(alignment: .topLeading) { bubble(rowHeight: rowHeight) }
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in select(Int(((value.location.y - Self.padding) / rowHeight).rounded(.down))) }
+                    .onEnded { _ in current = nil }
+            )
+            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .trailing)
+        }
+        .frame(width: Self.width)
+        .sensoryFeedback(.selection, trigger: current) { _, letter in letter != nil }
+        .accessibilityElement()
+        .accessibilityLabel(label)
+        .accessibilityValue(letters.indices.contains(announced) ? letters[announced] : "")
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: announced = min(announced + 1, letters.count - 1)
+            case .decrement: announced = max(announced - 1, 0)
+            @unknown default: return
+            }
+            if letters.indices.contains(announced) { onLetter(letters[announced]) }
         }
     }
-}
 
-private struct SectionIndexLabel: ViewModifier {
-    let label: String
+    private func select(_ index: Int) {
+        guard !letters.isEmpty else { return }
+        // Past either end the first or last letter holds.
+        let letter = letters[min(max(index, 0), letters.count - 1)]
+        guard letter != current else { return }
+        current = letter
+        onLetter(letter)
+    }
 
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.sectionIndexLabel(label)
-        } else {
-            content
+    @ViewBuilder
+    private func bubble(rowHeight: CGFloat) -> some View {
+        if let current, let index = letters.firstIndex(of: current) {
+            Text(current)
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(Brand.background)
+                .frame(width: 52, height: 52)
+                .background(Brand.ink, in: Circle())
+                .offset(x: -64, y: Self.padding + CGFloat(index) * rowHeight + rowHeight / 2 - 26)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
         }
     }
 }

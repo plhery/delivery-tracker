@@ -669,6 +669,8 @@ private struct ChangeCarrierView: View {
                         CarrierPickerView(selection: selectedCarrier, sections: pickerSections) { carrier in
                             if let carrier { selectedCarrier = carrier }
                         }
+                        // The full list, and room for its letter rail.
+                        .onAppear { detent = .large }
                     } label: {
                         HStack(spacing: 10) {
                             CarrierTruckMark(identity: CarrierVisualIdentity.of(selectedCarrier, language: localizer.language))

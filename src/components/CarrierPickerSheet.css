@@ -13,7 +13,7 @@
 .carrier-picker__clear { display: grid; place-items: center; width: 32px; height: 32px; margin-right: -6px; padding: 0; border-radius: 50%; background: transparent; color: var(--ink-soft); }
 .carrier-picker__clear svg { width: 16px; height: 16px; }
 .carrier-picker__body { position: relative; flex: 1; min-height: 0; }
-.carrier-picker__list { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 34px 24px 8px; scrollbar-width: thin; }
+.carrier-picker__list { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 42px 24px 8px; scrollbar-width: thin; }
 .carrier-picker__section-title { margin: 0; padding: 16px 12px 6px; color: var(--ink-soft); font-size: 11px; font-weight: 600; letter-spacing: 1.1px; text-transform: uppercase; }
 .carrier-picker__letter { position: sticky; top: 0; z-index: 1; padding: 6px 12px 4px; background: var(--canvas); color: var(--ink-soft); font-size: 13px; font-weight: 650; }
 .carrier-picker__option { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 8px 12px; border-radius: 12px; cursor: pointer; }
@@ -33,11 +33,11 @@
 .carrier-picker__detect svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
 .carrier-picker__detect.is-busy svg { animation: spin 1.2s linear infinite; }
 .carrier-picker__empty { position: absolute; top: 12px; right: 20px; left: 20px; margin: 0; color: var(--ink-soft); font-size: 13px; }
-/* A finger on the rail scrubs the letters: it neither scrolls the list nor selects text. */
-.carrier-picker__rail { position: absolute; top: 50%; right: 0; display: flex; flex-direction: column; padding: 8px 2px 8px 12px; translate: 0 -50%; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+/* A 44 px strip at the edge scrubs the letters: it neither scrolls the list nor selects text. */
+.carrier-picker__rail { position: absolute; top: 50%; right: 0; display: flex; flex-direction: column; padding: 8px 2px 8px 20px; translate: 0 -50%; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .carrier-picker__rail button { width: 22px; min-height: 16px; padding: 0; border-radius: 6px; background: transparent; color: var(--ochre); font-size: 10px; font-weight: 650; line-height: 16px; }
 .carrier-picker__rail button.is-current { background: var(--ochre); color: var(--canvas); }
-.carrier-picker__bubble { position: absolute; right: 44px; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--ink); color: var(--canvas); font-size: 24px; font-weight: 650; translate: 0 -50%; box-shadow: var(--shadow); pointer-events: none; }
+.carrier-picker__bubble { position: absolute; right: 52px; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--ink); color: var(--canvas); font-size: 24px; font-weight: 650; translate: 0 -50%; box-shadow: var(--shadow); pointer-events: none; }
 .carrier-truck { display: inline-flex; flex: none; }
 .carrier-truck svg { display: block; width: 27px; height: 18px; overflow: visible; stroke: none; stroke-width: 0; }
 
