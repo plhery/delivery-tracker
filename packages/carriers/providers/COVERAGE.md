@@ -3,21 +3,26 @@
 The first 100 carriers of the [carrier overview](../README.md) are compared using public
 references, with each tracking source called separately. Results describe those
 references, not every number from a carrier. Alternate direct samples are labelled when
-the comparison reference is unavailable or outside the adapter's scope.
+the comparison reference is unavailable or outside the adapter's scope. The results live
+in [coverage.json](coverage.json), and routing orders the universal providers by them
+(see Lookup order below).
 
 Numbers are history rows after projection. Operators, translations and repeated reports
 often describe the same milestone more than once, so read the notes below before
 preferring the largest count. A check mark means history was retrieved, not that its
 statuses map correctly.
 
-- **✓ n**: matching history with n rows. **Intermittent**: retrieved, but other sessions
-  were challenged.
+- **✓ n**: matching history with n rows. **Partial**: history that lacks rows or legs
+  another source has (label only, stops early, no origin or destination leg, condensed)
+  or is mostly undated; the notes below say which. **Intermittent**: retrieved, but other
+  sessions were challenged.
 - **No history**: nothing usable for this reference. **Summary only**: a response with
   no rows. **Sign-in**: only an account notice. **Postcode prompt**: only a request for
   the recipient postcode.
 - **Error**: request, capture or identity check failed, so coverage is inconclusive.
   **Blocked**: the session was challenged. **Wrong carrier**: history of another
-  carrier's parcel with the same number.
+  carrier's parcel with the same number. **Refused**: the provider rejects the carrier's
+  number format.
 - **N/A**: not an S10 number, so UPU is ineligible. **Unverified**: only an illustrative
   or years-old example exists.
 - Direct support: **Yes**; **Yes (postcode)** needs the recipient postcode (**Not tested
@@ -28,21 +33,22 @@ statuses map correctly.
 
 ## Coverage and history size
 
+<!-- GENERATED:coverage -->
 | Carrier | Direct support | Direct sample | Ship24 | ParcelsApp | 17TRACK | Postal Ninja | UPU |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [DHL](../carriers/dhl/README.md) | Yes | Blocked | ✓ 10 | ✓ 14 | No history | ✓ 14 | ✓ 1 |
-| [UPS](../carriers/ups/README.md) | Yes | ✓ 11 | ✓ 1 | ✓ 11 | ✓ 11 | ✓ 11 | N/A |
+| [UPS](../carriers/ups/README.md) | Yes | ✓ 11 | ✓ 1, partial | ✓ 11 | ✓ 11 | ✓ 11 | N/A |
 | [FedEx](../carriers/fedex/README.md) | Yes | ✓ 14, intermittent | ✓ 14 | ✓ 14 | ✓ 14 | ✓ 14 | N/A |
 | [USPS](../carriers/usps/README.md) | Yes | ✓ 11 | No history | No history | ✓ 11 | No history | N/A |
 | [Amazon Logistics](../carriers/amazon-logistics/README.md) | Link only | Not tested | No history | Sign-in | No history | No history | N/A |
 | [Amazon Shipping](../carriers/amazon-shipping/README.md) | Yes | ✓ 12 | ✓ 12 | ✓ 12 | No history | ✓ 12 | N/A |
 | [Royal Mail](../carriers/royal-mail/README.md) | Disabled | Error | No history | ✓ 1 | No history | ✓ 4 | No history |
 | [Swiss Post](../carriers/swiss-post/README.md) | Yes | ✓ 8 | ✓ 8 | ✓ 8 | ✓ 8 | No history | N/A |
-| [La Poste / Colissimo](../carriers/la-poste/README.md) | Yes | ✓ 15 | ✓ 11 | ✓ 16 | ✓ 14 | ✓ 26 | No history |
-| [DPD](../carriers/dpd/README.md) | Yes (optional postcode) | ✓ 4 | ✓ 1 | ✓ 4 | ✓ 4 | ✓ 4 | N/A |
-| [DHL eCommerce](../carriers/dhl-ecommerce/README.md) | Yes | ✓ 16 | ✓ 11 | ✓ 36 | No history | ✓ 34 | N/A |
+| [La Poste / Colissimo](../carriers/la-poste/README.md) | Yes | ✓ 15 | ✓ 11, partial | ✓ 16 | ✓ 14 | ✓ 26 | No history |
+| [DPD](../carriers/dpd/README.md) | Yes (optional postcode) | ✓ 4 | ✓ 1, partial | ✓ 4 | ✓ 4 | ✓ 4 | N/A |
+| [DHL eCommerce](../carriers/dhl-ecommerce/README.md) | Yes | ✓ 16 | ✓ 11, partial | ✓ 36 | No history | ✓ 34 | N/A |
 | [AliExpress / Cainiao](../carriers/aliexpress/README.md) | Yes | ✓ 17 | No history | ✓ 17 | ✓ 17 | ✓ 17 | N/A |
-| [China Post](../carriers/china-post/README.md) | No adapter | Blocked | ✓ 1 | ✓ 1 | ✓ 39 | ✓ 17 | ✓ 1 |
+| [China Post](../carriers/china-post/README.md) | No adapter | Blocked | ✓ 1, partial | ✓ 1, partial | ✓ 39 | ✓ 17 | ✓ 1 |
 | [EMS](../carriers/ems/README.md) | Yes | ✓ 7 | ✓ 6 | ✓ 18 | ✓ 24 | ✓ 6 | ✓ 6 |
 | [SF Express](../carriers/sf-express/README.md) | Yes | ✓ 22 | No history | No history | ✓ 27 | No history | N/A |
 | [GLS Germany](../carriers/gls-de/README.md) | Yes (postcode) | Not tested (postcode) | No history | No history | No history | No history | N/A |
@@ -53,41 +59,41 @@ statuses map correctly.
 | [Chronopost](../carriers/chronopost/README.md) | Yes (via La Poste) | No history | No history | No history | No history | No history | No history |
 | [Mondial Relay](../carriers/mondial-relay/README.md) | Yes (postcode for short numbers) | No history | No history | No history | No history | No history | N/A |
 | [InPost](../carriers/inpost/README.md) | Yes | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 8 | No history | N/A |
-| [PostNL](../carriers/spring-gds/README.md) | Yes | ✓ 16 | ✓ 16 | No history | No history | ✓ 16 | No history |
+| [PostNL](../carriers/spring-gds/README.md) | Yes | ✓ 16 | ✓ 16 | No history | No history | ✓ 16, partial | No history |
 | [Canada Post](../carriers/canada-post/README.md) | Yes | No history; alternate ✓ 11 | ✓ 12 | ✓ 11 | ✓ 25 | Error | ✓ 1 |
-| [Australia Post](../carriers/australia-post/README.md) | Yes | ✓ 12 | No history | No history | No history | ✓ 12 | N/A |
-| [Japan Post](../carriers/japan-post/README.md) | Yes | ✓ 13 | ✓ 13 | ✓ 27 | ✓ 27 | ✓ 28 | ✓ 1 |
-| [India Post](../carriers/india-post/README.md) | Yes | ✓ 21 | ✓ 21 | No history | ✓ 21 | No history | No history |
+| [Australia Post](../carriers/australia-post/README.md) | Yes | ✓ 12 | No history | No history | No history | ✓ 12, partial | N/A |
+| [Japan Post](../carriers/japan-post/README.md) | Yes | ✓ 13 | ✓ 13, partial | ✓ 27 | ✓ 27 | ✓ 28, partial | ✓ 1 |
+| [India Post](../carriers/india-post/README.md) | Yes | ✓ 21 | ✓ 21, partial | No history | ✓ 21 | No history | No history |
 | [Poste Italiane](../carriers/poste-italiane/README.md) | Yes | No history | No history | No history | No history | No history | N/A |
-| [Correos Spain](../carriers/correos-spain/README.md) | Yes | ✓ 12 | Error | ✓ 12 | ✓ 12 | No history | N/A |
+| [Correos Spain](../carriers/correos-spain/README.md) | Yes | ✓ 12 | Error | ✓ 12, partial | ✓ 12 | No history | N/A |
 | [bpost](../carriers/bpost/README.md) | Yes | No history; alternate ✓ 11 | No history | Postcode prompt | No history | No history | N/A |
-| [Austrian Post](../carriers/austrian-post/README.md) | Yes | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 9 | ✓ 9 | N/A |
-| [PostNord](../carriers/postnord/README.md) | Yes | ✓ 6 | ✓ 6 | ✓ 6 | ✓ 6 | ✓ 7 | No history |
+| [Austrian Post](../carriers/austrian-post/README.md) | Yes | ✓ 9 | ✓ 9, partial | ✓ 9 | ✓ 9 | ✓ 9 | N/A |
+| [PostNord](../carriers/postnord/README.md) | Yes | ✓ 6 | ✓ 6, partial | ✓ 6 | ✓ 6 | ✓ 7 | No history |
 | [TNT](../carriers/tnt/README.md) | Yes | No history; alternate ✓ 1 | No history | No history | No history | No history | N/A |
-| [Aramex](../carriers/aramex/README.md) | Yes | No history; alternate ✓ 26 | No history | No history | No history | ✓ 16 | N/A |
+| [Aramex](../carriers/aramex/README.md) | Yes | No history; alternate ✓ 26 | No history | No history | No history | ✓ 16, partial | N/A |
 | [YunExpress](../carriers/yunexpress/README.md) | Yes (browser) | ✓ 23 | ✓ 14 | ✓ 15 | ✓ 14 | ✓ 15 | N/A |
 | [4PX](../carriers/four-px/README.md) | Yes | ✓ 26 | ✓ 25 | ✓ 26 | ✓ 26 | ✓ 26 | N/A |
-| [Yanwen](../carriers/yanwen/README.md) | Yes | ✓ 29 | ✓ 1 | ✓ 29 | ✓ 29 | No history | No history |
+| [Yanwen](../carriers/yanwen/README.md) | Yes | ✓ 29 | ✓ 1, partial | ✓ 29 | ✓ 29 | No history | No history |
 | [J&T Express](../carriers/j-and-t/carrier.json) | No adapter | Blocked (Philippines) | No history | No history | No history | No history | N/A |
-| [JD Logistics](../carriers/jd-logistics/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Unverified | N/A |
+| [JD Logistics](../carriers/jd-logistics/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Refused | N/A |
 | [ZTO Express](../carriers/zto/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Unverified | N/A |
 | [YTO Express](../carriers/yto/README.md) | Yes (China domestic) | ✓ 30 | Error | ✓ 30 | ✓ 20 | No history | N/A |
 | [Yunda Express](../carriers/yunda/README.md) | Yes (China domestic) | Unverified; alternate ✓ 2 | Unverified | Unverified | Unverified | Unverified | N/A |
 | [STO Express](../carriers/sto/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Unverified | N/A |
 | [Yamato Transport](../carriers/yamato/README.md) | Yes | ✓ 7 (yearless dates) | Error | Wrong carrier | No history | No history | N/A |
 | [Correios Brazil](../carriers/correios-br/README.md) | Yes (local OCR) | No history; alternate ✓ 14 | ✓ 8 | No history | ✓ 8 | ✓ 8 | No history |
-| [Singapore Post](../carriers/singapore-post/README.md) | Yes | ✓ 9 | ✓ 4 | ✓ 12 | ✓ 18 | ✓ 11 | ✓ 4 |
-| [Hongkong Post](../carriers/hongkong-post/carrier.json) | No adapter | Blocked | ✓ 26 | ✓ 35 | ✓ 17 | ✓ 35 | No history |
+| [Singapore Post](../carriers/singapore-post/README.md) | Yes | ✓ 9 | ✓ 4, partial | ✓ 12 | ✓ 18 | ✓ 11 | ✓ 4 |
+| [Hongkong Post](../carriers/hongkong-post/carrier.json) | No adapter | Blocked | ✓ 26 | ✓ 35 | ✓ 17, partial | ✓ 35 | No history |
 | [Korea Post](../carriers/korea-post/README.md) | Yes (international) | Domestic unsupported; alternate ✓ 20 | No history | No history | No history | No history | N/A |
 | [Planzer](../carriers/planzer/README.md) | Yes | ✓ 4 | No history | No history | No history | No history | N/A |
 | [Quickpac](../carriers/quickpac/README.md) | Yes (via Planzer) | No history | No history | No history | No history | No history | N/A |
-| [DPD France](../carriers/dpd-fr/README.md) | Yes | ✓ 10 | ✓ 10 | ✓ 5 | No history | No history | N/A |
+| [DPD France](../carriers/dpd-fr/README.md) | Yes | ✓ 10 | ✓ 10, partial | ✓ 5, partial | No history | No history | N/A |
 | [Parcelforce Worldwide](../carriers/parcelforce/carrier.json) | No adapter | Not tested | No history | No history | No history | ✓ 3 | No history |
-| [Purolator](../carriers/purolator/README.md) | Yes | ✓ 12, intermittent | No history | ✓ 12 | ✓ 12 | No history | N/A |
+| [Purolator](../carriers/purolator/README.md) | Yes | ✓ 12, intermittent | No history | ✓ 12 | ✓ 12 | Refused | N/A |
 | [OnTrac](../carriers/ontrac/README.md) | Yes | ✓ 14 | No history | ✓ 14 | No history | ✓ 14 | N/A |
 | [Delhivery](../carriers/delhivery/README.md) | Yes | No history; alternate summary + 1 undated scan | No history | No history | No history | No history | N/A |
 | [Blue Dart](../carriers/blue-dart/README.md) | Yes | ✓ 15 | No history | No history | No history | No history | N/A |
-| [DTDC](../carriers/dtdc/README.md) | Yes | No history; alternate ✓ 9 | No history | ✓ 35 | No history | No history | N/A |
+| [DTDC](../carriers/dtdc/README.md) | Yes | No history; alternate ✓ 9 | No history | ✓ 35 | No history | Refused | N/A |
 | [Ninja Van](../carriers/ninja-van/README.md) | Yes (Malaysia NLMY) | No history; alternate ✓ 5 | No history | No history | No history | No history | N/A |
 | [Packeta](../carriers/packeta/README.md) | Yes | No history | No history | No history | No history | No history | N/A |
 | [Poczta Polska](../carriers/poczta-polska/README.md) | Yes | ✓ 5 | ✓ 10 | ✓ 19 | ✓ 21 | ✓ 18 | ✓ 6 |
@@ -102,9 +108,9 @@ statuses map correctly.
 | [MRW](../carriers/mrw/carrier.json) | No adapter | Not tested | No history | No history | ✓ 1 | No history | N/A |
 | [NACEX](../carriers/nacex/README.md) | Yes | Not tested; alternate ✓ 14 | Error | Error | Error | Error | N/A |
 | [Colis Privé](../carriers/colis-prive/README.md) | Yes (postcode) | Not tested (postcode) | No history | No history | No history | No history | N/A |
-| [Relais Colis](../carriers/relais-colis/README.md) | Yes | ✓ 4 | No history | ✓ 4 | No history | No history | N/A |
+| [Relais Colis](../carriers/relais-colis/README.md) | Yes | ✓ 4 | No history | ✓ 4 | No history | Refused | N/A |
 | [Paack](../carriers/paack/README.md) | Yes (postcode) | Not tested (postcode) | No history | No history | No history | No history | N/A |
-| [Asendia](../carriers/asendia/README.md) | Yes (Asendia USA) | ✓ 5 | ✓ 2 | ✓ 6 | Error | ✓ 3 | ✓ 2 |
+| [Asendia](../carriers/asendia/README.md) | Yes (Asendia USA) | ✓ 5 | ✓ 2, partial | ✓ 6 | Error | ✓ 3, partial | ✓ 2 |
 | [Landmark Global](../carriers/landmark-global/README.md) | Yes | ✓ 14 | ✓ 14 | ✓ 21 | No history | ✓ 21 | N/A |
 | [NZ Post](../carriers/nz-post/README.md) | Yes | ✓ 16 | ✓ 20 | ✓ 20 | ✓ 16 | ✓ 20 | ✓ 4 |
 | [Pos Malaysia](../carriers/pos-malaysia/README.md) | Yes | ✓ 2 | Error | ✓ 2 | ✓ 2 | No history | No history |
@@ -112,24 +118,104 @@ statuses map correctly.
 | [Ukrposhta](../carriers/ukrposhta/README.md) | Yes | ✓ 22; alternate ✓ 14 | ✓ 30 | ✓ 33 | ✓ 45 | ✓ 33 | Error |
 | [Estafeta](../carriers/estafeta/README.md) | Yes | ✓ 4 | No history | No history | No history | No history | N/A |
 | [Correos de Chile](../carriers/correos-chile/README.md) | Yes | No history; alternate ✓ 1 | No history | No history | ✓ 13 | No history | No history |
-| [The Courier Guy](../carriers/the-courier-guy/README.md) | Yes | ✓ 14; alternate ✓ 13 | No history | No history | No history | No history | N/A |
-| [GEODIS](../carriers/geodis/README.md) | Yes | Summary only | No history | Postcode prompt | ✓ 4 | ✓ 2 | N/A |
+| [The Courier Guy](../carriers/the-courier-guy/README.md) | Yes | ✓ 14; alternate ✓ 13 | No history | No history | No history | Refused | N/A |
+| [GEODIS](../carriers/geodis/README.md) | Yes | Summary only | No history | Postcode prompt | ✓ 4, partial | ✓ 2 | N/A |
 | [Dachser](../carriers/dachser/README.md) | Yes (tracking link) | Not tested (link) | No history | No history | No history | No history | N/A |
 | [Old Dominion](../carriers/old-dominion/carrier.json) | No adapter | Not tested | Unverified | Unverified | Unverified | Unverified | N/A |
 | [Swiss Post Cargo](../carriers/swiss-post-cargo/README.md) | Yes | Unverified | Unverified | Unverified | Unverified | Unverified | N/A |
 | [PostLogistics](../carriers/postlogistics/README.md) | Yes | Unverified | Unverified | Unverified | Unverified | Unverified | N/A |
 | [Hermes Einrichtungs-Service](../carriers/hermes/README.md) | Yes | ✓ 10 | No history | No history | No history | No history | N/A |
-| [Heppner](../carriers/heppner/README.md) | Yes (postcode) | Not tested (postcode) | No history | Wrong carrier | No history | No history | N/A |
+| [Heppner](../carriers/heppner/README.md) | Yes (postcode) | Not tested (postcode) | No history | Wrong carrier | No history | Refused | N/A |
 | [Ciblex](../carriers/ciblex/README.md) | Yes | ✓ 7 | No history | Postcode prompt | No history | No history | N/A |
-| [C Chez Vous](../carriers/c-chez-vous/README.md) | Yes | No history | No history | No history | No history | No history | N/A |
-| [Colisweb](../carriers/colisweb/README.md) | Yes | ✓ 2 | Wrong carrier | No history | No history | No history | N/A |
+| [C Chez Vous](../carriers/c-chez-vous/README.md) | Yes | No history | No history | No history | No history | Refused | N/A |
+| [Colisweb](../carriers/colisweb/README.md) | Yes | ✓ 2 | Wrong carrier | No history | No history | Refused | N/A |
 | [Delivengo](../carriers/delivengo/README.md) | Yes (via La Poste) | No history | No history | No history | No history | No history | No history |
 | [UniUni](../carriers/uniuni/README.md) | Yes | ✓ 6 | ✓ 6 | ✓ 19 | ✓ 6 | ✓ 21 | N/A |
 | [SpeedX](../carriers/speedx/carrier.json) | No adapter | Not tested | No history | No history | ✓ 2 | No history | N/A |
 | [GOFO Express](../carriers/gofo/README.md) | Yes | ✓ 14 | ✓ 14 | ✓ 14 | ✓ 14 | ✓ 14 | N/A |
-| [Ecoscooting](../carriers/ecoscooting/README.md) | Yes | ✓ 6 | ✓ 6 | ✓ 6 | No history | ✓ 22 | N/A |
+| [Ecoscooting](../carriers/ecoscooting/README.md) | Yes | ✓ 6 | ✓ 6, partial | ✓ 6, partial | No history | ✓ 22 | N/A |
 | [TIPSA](../carriers/tipsa/README.md) | Yes | ✓ 13 | No history | ✓ 13 | No history | No history | N/A |
 | [Canpar](../carriers/canpar/README.md) | Yes | ✓ 11 | No history | ✓ 11 | No history | ✓ 11 | N/A |
+<!-- /GENERATED:coverage -->
+
+## Lookup order
+
+Routing asks the universal providers in an order derived from these results
+([ROUTING.md](../../../docs/ROUTING.md)). All of a carrier's references count, including
+the extra ones in coverage.json that the notes below describe. Each provider gets one
+tier, asked in this order, HTTP providers first within a tier:
+
+- **Full**: history, never partial, and no reference missed that another provider knew.
+- **Partial**: history, but partial, or a reference missed that another provider knew.
+- **Unknown**: nothing conclusive (errors, challenges, unverified, or negatives only on a
+  reference too old to say anything).
+- **Empty**: answered without history (no history, summary only, a sign-in or postcode
+  prompt).
+- Left out: never had history, and answered with another carrier's parcel or refused the
+  format, unless no other provider would remain.
+
+These tables and the one above are generated from coverage.json with
+`node packages/carriers/scripts/coverage-tables.mjs`.
+
+<!-- GENERATED:lookup-order -->
+| Source | Carriers with history | Full | Partial | Only source |
+| --- | ---: | ---: | ---: | ---: |
+| Ship24 | 41 | 26 | 15 | 0 |
+| ParcelsApp | 53 | 48 | 5 | 5 |
+| 17TRACK | 43 | 39 | 4 | 4 |
+| Postal Ninja | 42 | 37 | 5 | 2 |
+
+With Postal Ninja enabled, carriers without their own order use ParcelsApp → Ship24 → Postal Ninja → 17TRACK. These carriers have their own:
+
+| Carrier | Order |
+| --- | --- |
+| UPS | ParcelsApp → Postal Ninja → 17TRACK → Ship24 |
+| USPS | 17TRACK → ParcelsApp → Ship24 → Postal Ninja |
+| Royal Mail | ParcelsApp → Postal Ninja → Ship24 → 17TRACK |
+| Swiss Post | ParcelsApp → Ship24 → 17TRACK → Postal Ninja |
+| La Poste / Colissimo | ParcelsApp → Postal Ninja → 17TRACK → Ship24 |
+| DPD | ParcelsApp → Postal Ninja → 17TRACK → Ship24 |
+| DHL eCommerce | ParcelsApp → Postal Ninja → Ship24 → 17TRACK |
+| AliExpress / Cainiao | ParcelsApp → Postal Ninja → 17TRACK → Ship24 |
+| China Post | Postal Ninja → 17TRACK → ParcelsApp → Ship24 |
+| SF Express | 17TRACK → ParcelsApp → Ship24 → Postal Ninja |
+| InPost | ParcelsApp → Ship24 → 17TRACK → Postal Ninja |
+| PostNL | Ship24 → Postal Ninja → ParcelsApp → 17TRACK |
+| Canada Post | ParcelsApp → Ship24 → 17TRACK → Postal Ninja |
+| Australia Post | Postal Ninja → ParcelsApp → Ship24 → 17TRACK |
+| Japan Post | ParcelsApp → 17TRACK → Ship24 → Postal Ninja |
+| India Post | 17TRACK → Ship24 → ParcelsApp → Postal Ninja |
+| Correos Spain | 17TRACK → ParcelsApp → Ship24 → Postal Ninja |
+| bpost | ParcelsApp → 17TRACK → Ship24 → Postal Ninja |
+| Austrian Post | ParcelsApp → Postal Ninja → 17TRACK → Ship24 |
+| PostNord | ParcelsApp → Postal Ninja → 17TRACK → Ship24 |
+| Aramex | Ship24 → Postal Ninja → 17TRACK → ParcelsApp |
+| Yanwen | ParcelsApp → 17TRACK → Ship24 → Postal Ninja |
+| JD Logistics | ParcelsApp → Ship24 → 17TRACK |
+| YTO Express | ParcelsApp → 17TRACK → Ship24 → Postal Ninja |
+| Yamato Transport | Ship24 → Postal Ninja → 17TRACK |
+| Correios Brazil | Ship24 → Postal Ninja → 17TRACK → ParcelsApp |
+| Singapore Post | ParcelsApp → Postal Ninja → 17TRACK → Ship24 |
+| Korea Post | ParcelsApp → Ship24 → 17TRACK → Postal Ninja |
+| Parcelforce Worldwide | Postal Ninja → ParcelsApp → Ship24 → 17TRACK |
+| Purolator | ParcelsApp → 17TRACK → Ship24 |
+| OnTrac | ParcelsApp → Postal Ninja → Ship24 → 17TRACK |
+| DTDC | ParcelsApp → Ship24 → 17TRACK |
+| BRT | ParcelsApp → Postal Ninja → Ship24 → 17TRACK |
+| SEUR | ParcelsApp → Postal Ninja → 17TRACK → Ship24 |
+| Relais Colis | ParcelsApp → Ship24 → 17TRACK |
+| Pos Malaysia | ParcelsApp → 17TRACK → Ship24 → Postal Ninja |
+| Ukrposhta | Ship24 → Postal Ninja → 17TRACK → ParcelsApp |
+| Correos de Chile | 17TRACK → ParcelsApp → Ship24 → Postal Ninja |
+| The Courier Guy | ParcelsApp → Ship24 → 17TRACK |
+| GEODIS | Postal Ninja → 17TRACK → ParcelsApp → Ship24 |
+| Heppner | Ship24 → 17TRACK |
+| C Chez Vous | ParcelsApp → Ship24 → 17TRACK |
+| Colisweb | ParcelsApp → 17TRACK |
+| SpeedX | 17TRACK → ParcelsApp → Ship24 → Postal Ninja |
+| Ecoscooting | Postal Ninja → ParcelsApp → Ship24 → 17TRACK |
+| Canpar | ParcelsApp → Postal Ninja → Ship24 → 17TRACK |
+<!-- /GENERATED:lookup-order -->
 
 ## What the differences mean
 
@@ -426,11 +512,18 @@ one, had history in ParcelsApp and 17TRACK and none in Ship24.
 - Each source was called on its own through `UniversalTracker.fetchSource()` (45 s
   budget, UPU 8 s), with no stop at the first success. Dedicated adapters kept their own
   deadlines. Browser lookups ran one at a time, and TRAWL-based sources used the shared
-  browser service.
+  browser service. [coverage-probe.mjs](../scripts/coverage-probe.mjs) reruns these
+  lookups for a list of references and stores the results in coverage.json; its header
+  lists the inputs.
 - References are public (customer reports, complaints, documentation examples). Private
   numbers and postcodes were withheld, and no account was signed into.
 - One reference per row. Extra references and bounded rechecks only investigated
-  failures and are not averaged in.
+  failures and are not averaged in. The extra references the notes describe are kept in
+  coverage.json after the row's reference, and count for the lookup order only; a
+  reference marked `stale` is too old for its negatives to count.
+- Partial grades come from the notes below: rows or legs another source has, or mostly
+  undated rows. The probe suggests them from row counts, undated rows and the newest
+  scan, for review.
 - Rows 31–100 each use the newest public post found that ties a number to the carrier
   (Trustpilot reviews, complaint letters, Q&A threads, review sites, court filings, shop
   pull requests), skipping pages that print the author's contact details. The numbers

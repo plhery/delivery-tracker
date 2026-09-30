@@ -7,10 +7,10 @@ Why the sources have different roles. The runtime policy is in
 | Source | Why use it | Limits and cost | Role |
 | --- | --- | --- | --- |
 | Dedicated carrier | Direct identity and carrier-specific detail; can confirm the delivery partner | Coverage and anti-bot protection vary; some need a postcode or capability URL | First when available |
-| [Ship24](ship24/README.md) | Fast signed anonymous HTTP; broad coverage; carrier hints | Website protocol can change; browser recovery is slower; some histories are sparse | First universal; keeps affinity |
-| [ParcelsApp](parcelsapp/README.md) | Often fuller history; accepts a delivery postcode | Cold lookups are slow; TRAWL recovery; duplicate or translated scans; forecast rows projected | Second universal; keeps affinity |
-| [17TRACK](seventeentrack/README.md) | Broad coverage; structured per-leg history | Needs the browser service and its compatibility build; verification and polling add seconds | First for China Post `C`/`L`; otherwise after the HTTP providers |
-| [Postal Ninja](postal-ninja/README.md) | Alternative aggregator with full history through TRAWL | Browser verification; local Chromium is compact-only; direct HTTP is challenged | Opt-in, before 17TRACK |
+| [Ship24](ship24/README.md) | Fast signed anonymous HTTP; carrier hints | Website protocol can change; browser recovery is slower; history for the fewest carriers, the most often partial | Second universal; keeps affinity |
+| [ParcelsApp](parcelsapp/README.md) | History for the most carriers, most often the fullest; accepts a delivery postcode | Cold lookups are slow; TRAWL recovery; duplicate or translated scans; forecast rows projected | First universal; keeps affinity |
+| [17TRACK](seventeentrack/README.md) | Broad coverage; structured per-leg history | Needs the browser service and its compatibility build; verification and polling add seconds | First for China Post `C`/`L` and where only it has full history; otherwise after the HTTP providers |
+| [Postal Ninja](postal-ninja/README.md) | Alternative aggregator with full history through TRAWL | Browser verification; local Chromium is compact-only; direct HTTP is challenged | Opt-in, before 17TRACK; first where only it has full history |
 | [UPU](upu/README.md) | Official documented anonymous API; one cheap GET, no CAPTCHA | Postal S10 only; sparse, sometimes stale; unreliable offsets; no known quota or SLA | Last; never sticky, never a shadow replacement |
 | [EMS Cooperative](../carriers/ems/README.md) | Official express-post route; had a scan UPU lacked | EMS only; its own session protections | Service-specific source |
 | [China Post website](../carriers/china-post/README.md) | Operator's own site | Ordered Chinese-character click CAPTCHA; only two events without login | Not used unattended |
@@ -22,13 +22,20 @@ nothing about API usage rights.
 
 - **Dedicated adapters first:** they confirm identity and carry details aggregators lose,
   such as pickup-ready and locker-ready rows and the delivery method.
-- **Ship24 first among universals:** its signed POST usually answers in under a second,
-  with broad coverage. Its histories can be sparse for a given parcel, so a richer
-  provider that has succeeded keeps affinity.
-- **ParcelsApp second:** often the fullest destination leg, and the only provider that
-  uses a postcode. Cold lookups can take tens of seconds.
-- **17TRACK third:** a browser capture costs seconds and depends on the TRAWL build. It
-  also offers the best multi-operator histories.
+- **ParcelsApp first among universals:** in the [coverage comparison](COVERAGE.md) it
+  has history for the most carriers and is the fullest source most often, over plain
+  HTTP. It is also the only provider that uses a postcode. Cold lookups can take tens of
+  seconds, which a background check can afford.
+- **Ship24 second:** its signed POST usually answers in under a second, but it has
+  history for the fewest carriers, and its history is the one most often partial (label
+  only, stopping early, missing a leg). First-success-wins would pin that partial
+  history.
+- **17TRACK and Postal Ninja after the HTTP providers:** a browser capture costs seconds
+  and a turn of the shared TRAWL service. 17TRACK also offers the best multi-operator
+  histories.
+- **Per carrier:** where the comparison shows fuller history elsewhere, the carrier's own
+  order wins, TRAWL providers included (USPS starts with 17TRACK, Australia Post with
+  Postal Ninja). The rules are in [ROUTING.md](../../../docs/ROUTING.md).
 - **Postal Ninja opt-in:** it works only while the widget's browser check passes.
 
 ## Why UPU stays last

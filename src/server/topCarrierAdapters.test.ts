@@ -112,7 +112,7 @@ describe('new direct adapters through the host', () => {
     expect(value.correction).toBeUndefined();
     expect(value.result).toMatchObject({ last_update: stamp, current_stage: 'out_for_delivery',
       direct_local_history: { carrier: entry.carrier, number: entry.number, events: expect.any(Array) },
-      routing: { last_event_at: new Date(stamp).toISOString(), preferred_provider: 'Ship24' } });
+      routing: { last_event_at: new Date(stamp).toISOString(), preferred_provider: universal.mock.calls[0][0] } });
     expect(value.result.direct_local_fallback).toBeUndefined();
   });
 
@@ -172,7 +172,7 @@ describe('new direct adapters through the host', () => {
     });
     const value = await router.fetch({ carrier: 'japan-post', tracking_number: 'CN000000005JP' }, false);
     expect(universal).toHaveBeenCalledOnce();
-    expect(value.result).toMatchObject({ tracking_provider: 'Ship24', direct_local_history: { events: expect.any(Array) } });
+    expect(value.result).toMatchObject({ tracking_provider: universal.mock.calls[0][0], direct_local_history: { events: expect.any(Array) } });
     expect(value.result.direct_local_fallback).toBeUndefined();
   });
 
@@ -189,7 +189,7 @@ describe('new direct adapters through the host', () => {
     });
     const value = await router.fetch({ carrier: 'unknown', tracking_number: 'H000000000000001' }, false);
     expect(value.correction).toBeUndefined();
-    expect(value.result).toMatchObject({ tracking_provider: 'Ship24', current_stage: 'out_for_delivery',
+    expect(value.result).toMatchObject({ tracking_provider: 'ParcelsApp', current_stage: 'out_for_delivery',
       direct_local_history: { carrier: 'evri', number: 'H000000000000001' } });
   });
 

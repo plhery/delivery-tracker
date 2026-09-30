@@ -232,7 +232,7 @@ describe('expanded direct coverage through the host', () => {
     const parcel = { carrier: entry.carrier, tracking_number: entry.number };
     const value = await router.fetch(parcel, false);
     expect(universal).toHaveBeenCalledOnce();
-    expect(value.result).toMatchObject({ last_update: '2026-04-01T10:00:00Z', tracking_provider: 'Ship24',
+    expect(value.result).toMatchObject({ last_update: '2026-04-01T10:00:00Z', tracking_provider: universal.mock.calls[0][0],
       direct_local_history: { carrier: entry.carrier, number: entry.number, events: expect.any(Array) } });
     const archive = directLocalHistory(parcel, value.result)!;
     expect((archive.events as unknown[]).length).toBe(direct.events?.length);
@@ -281,7 +281,7 @@ describe('expanded direct coverage through the host', () => {
       now: () => new Date('2026-04-02T10:00:00Z') });
     const value = await router.fetch({ carrier: entry.carrier, tracking_number: entry.number }, false);
     expect(universal).toHaveBeenCalledOnce();
-    expect(value.result).toMatchObject({ tracking_provider: 'Ship24', direct_local_history: {
+    expect(value.result).toMatchObject({ tracking_provider: universal.mock.calls[0][0], direct_local_history: {
       carrier, events: expect.arrayContaining([expect.objectContaining({ provider_time_text: '2026-02-30 18:00:00' })]),
     } });
   });
@@ -306,7 +306,7 @@ describe('expanded direct coverage through the host', () => {
       health: { acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'synthetic-lease' }), finishTrackingProvider: vi.fn() } });
     const value = await router.fetch({ carrier, tracking_number: entry.number }, false);
     expect(universal).toHaveBeenCalledOnce();
-    expect(value.result).toMatchObject({ tracking_provider: 'Ship24', direct_local_history: {
+    expect(value.result).toMatchObject({ tracking_provider: universal.mock.calls[0][0], direct_local_history: {
       events: expect.arrayContaining([expect.objectContaining({ description: direct.events![0]!.description })]),
     } });
   });
@@ -393,7 +393,7 @@ describe('expanded direct coverage through the host', () => {
       now: () => new Date('2026-04-02T10:00:00Z') });
     const value = await router.fetch({ carrier: entry.carrier, tracking_number: entry.number }, false);
     expect(universal).toHaveBeenCalledOnce();
-    expect(value.result).toMatchObject({ tracking_provider: 'Ship24', events: providerEvents,
+    expect(value.result).toMatchObject({ tracking_provider: universal.mock.calls[0][0], events: providerEvents,
       routing: { last_event_at: '2026-04-01T10:00:00.000Z' } });
     expect(value.result).not.toHaveProperty('direct_local_history');
     expect(value.result).not.toHaveProperty('direct_local_fallback');

@@ -12,12 +12,13 @@ factories, the order and the persisted names.
 | [Postal Ninja](postal-ninja/README.md) | TRAWL widget, then results page. Local Chromium is compact-only | `trawl` or `browser` | Alternative full histories (opt-in) |
 | [UPU](upu/README.md) | Anonymous JSON GET | `direct` | Cheap last-resort postal history |
 
-Default order: **Ship24 → ParcelsApp → 17TRACK → UPU**.
-`TRACKING_ENABLE_POSTAL_NINJA=true` adds Postal Ninja before 17TRACK. UPU needs a
-checksum-valid S10 number and always stays last. Checksum-valid China Post `C…CN` and
-`L…CN` numbers start with 17TRACK. Affinity, cooldowns and budgets are in
-[docs/ROUTING.md](../../../docs/ROUTING.md). [COMPARISON.md](COMPARISON.md) explains the
-order, and [COVERAGE.md](COVERAGE.md) compares results carrier by carrier.
+Default order: **ParcelsApp → Ship24 → 17TRACK → UPU**.
+`TRACKING_ENABLE_POSTAL_NINJA=true` adds Postal Ninja before 17TRACK. A carrier with
+results in [coverage.json](coverage.json) gets its own order ([coverage.ts](coverage.ts)
+grades them). UPU needs a checksum-valid S10 number and always stays last. Checksum-valid
+China Post `C…CN` and `L…CN` numbers start with 17TRACK. Affinity, cooldowns and budgets
+are in [docs/ROUTING.md](../../../docs/ROUTING.md). [COMPARISON.md](COMPARISON.md) explains
+the order, and [COVERAGE.md](COVERAGE.md) compares results carrier by carrier.
 
 ## Shared behaviour
 
@@ -66,9 +67,13 @@ TRAWL build and session-cache settings live in [ops/trawl](../../../ops/trawl/RE
 ## Adding or changing a provider
 
 - Keep the adapter, parser tests, synthetic fixtures and one README in its folder.
-- Add the name to `UniversalSource` in `shared/result.ts` and register the factory in
-  `universal.ts`. Add the name to the `tracking_provider_health` provider check
-  constraint with a Supabase migration.
+- Add the name to `UniversalSource` in `shared/result.ts` and to `COVERAGE_SOURCES` in
+  `coverage.ts`, and register the factory in `universal.ts` (in `BROWSER_SOURCES` too
+  when it needs the browser service). Add the name to the `tracking_provider_health`
+  provider check constraint with a Supabase migration.
 - Change the default order only with evidence, and record it in
   [COMPARISON.md](COMPARISON.md).
+- Add the provider's results to [coverage.json](coverage.json) with
+  `packages/carriers/scripts/coverage-probe.mjs`, then regenerate the COVERAGE.md tables
+  with `coverage-tables.mjs`.
 - Run the package checks and routing tests.

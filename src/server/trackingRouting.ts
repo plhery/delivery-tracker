@@ -6,7 +6,7 @@ import { detectCarrierMatch } from '../lib/carriers';
 import { AUTOMATIC_CARRIER_IDS, carrierAdapter, carrierTimezone, requiredRequirements } from './carriers';
 import { normalizeCarrierResult, type CarrierResult } from '@carriers/core/result';
 import { isRecord, type JsonObject } from './types';
-import { priorityUniversalSource, universalSourceBudget, universalSources } from '@carriers/providers/universal';
+import { priorityUniversalSource, universalPlan, universalSourceBudget } from '@carriers/providers/universal';
 import type { UniversalSource } from '@carriers/providers/shared/result';
 import { isKnownCarrierName } from '@carriers/providers/shared/hints';
 import { brandCarrierIds, carrierBrand, carrierIdFromName } from '@carriers/core/catalog/hints';
@@ -197,7 +197,16 @@ export class TrackingRouter {
     const universalNumber = metadata.original_carrier && metadata.active_tracking_carrier
       && typeof metadata.active_tracking_number === 'string' ? metadata.active_tracking_number : number;
     if (state.preferred_number && state.preferred_number !== universalNumber) state.preferred_provider = undefined;
-    const sources = universalSources(this.options.enablePostalNinja, universalNumber);
+    // The delivery leg's own carrier when its number is the one looked up.
+    const universalCarrier = universalNumber !== number && typeof metadata.active_tracking_carrier === 'string'
+      ? metadata.active_tracking_carrier : declared;
+    // Ordered by that carrier's coverage evidence, else by the carrier confirmed
+    // or discovered for the number, else the default order.
+    const plan = universalPlan({
+      carriers: [universalCarrier, state.confirmed_number === universalNumber ? state.confirmed_carrier : undefined, state.discovered_carrier],
+      trackingNumber: universalNumber, enablePostalNinja: this.options.enablePostalNinja,
+    });
+    const sources = plan.sources;
     // Sparse postal fallback must never become sticky, including saved state.
     if (state.preferred_provider === 'UPU') state.preferred_provider = undefined;
     const recent = () => millis(state.last_success_at) > 0 && now().getTime() - millis(state.last_success_at) < freshnessWindow(now());
@@ -412,20 +421,21 @@ export class TrackingRouter {
     const preferred = richerSources.includes(state.preferred_provider!) ? state.preferred_provider : undefined;
     // A cheaper fallback must not stay pinned after the richer route recovers.
     const priority = priorityUniversalSource(universalNumber);
+    // Providers with fuller history for this carrier come before the one the parcel stays with.
+    const fuller = preferred ? richerSources.filter((source) => plan.rank(source) < plan.rank(preferred)) : [];
     const offset = state.discovery_cursor % richerSources.length;
-    const ordered = [...new Set<UniversalSource>([...(priority ? [priority] : []), ...(preferred ? [preferred] : []), ...richerSources.slice(offset), ...richerSources.slice(0, offset),
+    const ordered = [...new Set<UniversalSource>([...(priority ? [priority] : []), ...fuller, ...(preferred ? [preferred] : []), ...richerSources.slice(offset), ...richerSources.slice(0, offset),
       ...sources.filter((source) => source === 'UPU')])];
     // Reserve each source’s lookup budget plus transport allowance (UPU needs only 8s).
     // Start after direct attempts so a slow carrier cannot starve discovery.
     const universalDeadline = performance.now() + sources.reduce((sum, source) => sum + universalSourceBudget(source) + 5_000, 0);
-    // The delivery leg's own carrier when its number is the one looked up. A
-    // label without a local clock (asendia, unknown) defers to the carrier a
+    // A label without a local clock (asendia, unknown) defers to the carrier a
     // direct lookup confirmed for this same number.
-    const universalCarrier = universalNumber !== number && typeof metadata.active_tracking_carrier === 'string'
-      ? metadata.active_tracking_carrier : declared;
     const zone = carrierZone(universalCarrier)
       ?? (state.confirmed_carrier && state.confirmed_number === universalNumber ? carrierZone(state.confirmed_carrier) : null);
     const attemptedUniversal = new Set<UniversalSource>();
+    // Providers that answered without history for this number in this check.
+    const answeredEmpty: UniversalSource[] = [];
     const universal = async (source: UniversalSource): Promise<RoutedResult | null> => {
       signal?.throwIfAborted();
       // Node's AbortSignal.timeout requires integer milliseconds.
@@ -462,6 +472,7 @@ export class TrackingRouter {
       } catch (error) {
         const failure = fail(source, error, true);
         kind = failure.kind;
+        if (kind === 'not_found' || kind === 'no_history') answeredEmpty.push(source);
         retryAfterMs = millis(failure.retry_at) - now().getTime();
         if (kind === 'rate_limited' && recent() && !localDirectFallback) {
           state.next_check_at = iso(Math.min(millis(failure.retry_at), millis(state.last_success_at) + freshnessWindow(now())));
@@ -482,7 +493,8 @@ export class TrackingRouter {
       // Scheduled-only shadow check. Keep affinity unless the alternative has
       // strictly newer progress; never merge contradictory provider summaries.
       if (scheduled && source !== priority && preferred === source && now().getTime() - millis(state.last_probe_at) >= DAY && attempts < 2) {
-        const alternatives = richerSources.filter((item) => item !== source);
+        // Only providers with at least as full a history for the carrier are worth the comparison.
+        const alternatives = richerSources.filter((item) => item !== source && plan.rank(item) <= plan.rank(source));
         const alternative = alternatives[state.probe_cursor % alternatives.length];
         state.probe_cursor++;
         state.last_probe_at = now().toISOString();
@@ -497,6 +509,15 @@ export class TrackingRouter {
         }
       }
       if (preferred !== chosen) report('provider_selected', chosen);
+      // Evidence to refresh the coverage comparison: a provider it found empty for
+      // the carrier has this parcel, or one it found with history does not.
+      // UPU is ordered by its role, not by evidence.
+      if (plan.carrier) {
+        if (chosen !== 'UPU' && plan.tier(chosen) === 'empty') report('coverage_contradicted', chosen, 'history');
+        for (const source of answeredEmpty) {
+          if (source !== 'UPU' && ['full', 'partial'].includes(plan.tier(source))) report('coverage_contradicted', source, 'no_history');
+        }
+      }
       if (!directCarrier(declared) && declared !== 'unknown' && declared !== 'intl-post' && !preferred) report('direct_support_opportunity', declared);
       state.preferred_provider = chosen === 'UPU' ? preferred : chosen;
       state.preferred_number = state.preferred_provider ? universalNumber : undefined;

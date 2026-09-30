@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { LookupRecord, StepRecord, StepRecorder } from '../core/telemetry';
 import { TrawlClient } from '../core/transport';
-import { UniversalTracker, UniversalTrackingError, universalSources, UNIVERSAL_SOURCES } from './universal';
+import { UniversalTracker, UniversalTrackingError, universalPlan, universalSources, UNIVERSAL_SOURCES } from './universal';
 
 const number = 'ZZ12345678900';
 const identity = (value = number) => `<div class="tracking-info"><div class="parcel"><table class="parcel-attributes"><tr><td>Tracking number</td><td>${value}</td></tr></table></div></div>`;
@@ -24,28 +24,32 @@ const browserResponse = (source: '17TRACK' | 'ParcelsApp', data: unknown, overri
 describe('universal discovery chain', () => {
   it('prefers 17TRACK only for validated China Post C/L families', () => {
     for (const postal of ['LZ000000005CN', 'CY000000005CN', 'lz 0000 0000 5 cn']) {
-      expect(universalSources(false, postal)).toEqual(['17TRACK', 'Ship24', 'ParcelsApp', 'UPU']);
-      expect(universalSources(true, postal)).toEqual(['17TRACK', 'Ship24', 'ParcelsApp', 'Postal Ninja', 'UPU']);
+      expect(universalSources(false, postal)).toEqual(['17TRACK', 'ParcelsApp', 'Ship24', 'UPU']);
+      expect(universalSources(true, postal)).toEqual(['17TRACK', 'ParcelsApp', 'Ship24', 'Postal Ninja', 'UPU']);
     }
     for (const other of ['EB000000005CN', 'RR000000005CN', 'LZ000000005NL', 'LZ000000006CN', '1234/12345678']) {
-      expect(universalSources(false, other)[0]).toBe('Ship24');
+      expect(universalSources(false, other)[0]).toBe('ParcelsApp');
     }
   });
 
   it('keeps the persisted provider names and the opt-in position of Postal Ninja', () => {
-    expect(UNIVERSAL_SOURCES).toEqual(['Ship24', 'ParcelsApp', '17TRACK', 'UPU']);
-    expect(universalSources()).toEqual(['Ship24', 'ParcelsApp', '17TRACK', 'UPU']);
-    expect(universalSources(true)).toEqual(['Ship24', 'ParcelsApp', 'Postal Ninja', '17TRACK', 'UPU']);
-    expect(universalSources(false, number)).toEqual(['Ship24', 'ParcelsApp', '17TRACK']);
-    expect(universalSources(false, 'EB000000005CN')).toEqual(['Ship24', 'ParcelsApp', '17TRACK', 'UPU']);
+    expect(UNIVERSAL_SOURCES).toEqual(['ParcelsApp', 'Ship24', '17TRACK', 'UPU']);
+    expect(universalSources()).toEqual(['ParcelsApp', 'Ship24', '17TRACK', 'UPU']);
+    expect(universalSources(true)).toEqual(['ParcelsApp', 'Ship24', 'Postal Ninja', '17TRACK', 'UPU']);
+    expect(universalSources(false, number)).toEqual(['ParcelsApp', 'Ship24', '17TRACK']);
+    expect(universalSources(false, 'EB000000005CN')).toEqual(['ParcelsApp', 'Ship24', '17TRACK', 'UPU']);
+    // A carrier's coverage evidence reorders them.
+    expect(universalPlan({ carriers: ['usps'], trackingNumber: number }).sources).toEqual(['17TRACK', 'ParcelsApp', 'Ship24']);
   });
 
-  it('uses ParcelsApp after Ship24 fails and stops after success', async () => {
+  it('starts with ParcelsApp and stops after success', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(reply(parcels));
-    const result = await new UniversalTracker({ trawlUrl: 'http://browser.test/v1', fetcher, browserLookup: vi.fn().mockRejectedValue(new Error('Unavailable')) }).fetch(number);
+    const browserLookup = vi.fn().mockRejectedValue(new Error('Unavailable'));
+    const result = await new UniversalTracker({ trawlUrl: 'http://browser.test/v1', fetcher, browserLookup }).fetch(number);
     expect(result.current_stage).toBe('registered');
     expect(result.tracking_provider).toBe('ParcelsApp');
     expect(fetcher).toHaveBeenCalledOnce();
+    expect(browserLookup).not.toHaveBeenCalled();
     const [url, options] = fetcher.mock.calls[0];
     expect(String(url)).toBe('https://parcelsapp.com/api/v2/parcels');
     expect(new URLSearchParams(String(options!.body)).get('carrier')).toBe('Auto-Detect');
@@ -53,13 +57,14 @@ describe('universal discovery chain', () => {
 
   it('continues to another provider when prioritized 17TRACK returns no history', async () => {
     const postalNumber = 'LZ000000005CN';
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(browserResponse('17TRACK', {
-      meta: { code: 200 }, shipments: [{ number: postalNumber, code: 400, shipment: null }],
-    }, { url: `https://t.17track.net/en#nums=${postalNumber}` }));
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async (url) => String(url).startsWith('https://parcelsapp.com/')
+      ? new Response('', { status: 503 })
+      : browserResponse('17TRACK', { meta: { code: 200 }, shipments: [{ number: postalNumber, code: 400, shipment: null }] },
+        { url: `https://t.17track.net/en#nums=${postalNumber}` }));
     const browserLookup = vi.fn().mockResolvedValue({ tracking_provider: 'Ship24', current_stage: 'delivered' });
     await expect(new UniversalTracker({ trawlUrl: 'http://browser.test', fetcher, browserLookup }).fetch(postalNumber))
       .resolves.toMatchObject({ tracking_provider: 'Ship24', current_stage: 'delivered' });
-    expect(fetcher).toHaveBeenCalledOnce();
+    expect(fetcher.mock.calls.map(([url]) => new URL(String(url)).hostname)).toEqual(['browser.test', 'parcelsapp.com']);
     expect(browserLookup.mock.calls).toEqual([['Ship24', postalNumber]]);
   });
 
@@ -72,7 +77,7 @@ describe('universal discovery chain', () => {
     const tracker = new UniversalTracker({ fetcher, trawlUrl: '' });
     await expect(tracker.fetch(postalNumber)).resolves.toMatchObject({ tracking_provider: 'UPU', current_stage: 'accepted' });
     expect(fetcher.mock.calls.map(([url]) => new URL(String(url)).hostname))
-      .toEqual(['api.ship24.com', 'parcelsapp.com', 'globaltracktrace.ptc.post']);
+      .toEqual(['parcelsapp.com', 'api.ship24.com', 'globaltracktrace.ptc.post']);
   });
 
   it('falls through an unrelated ParcelsApp result to 17TRACK', async () => {
@@ -92,8 +97,10 @@ describe('universal discovery chain', () => {
     expect(String(error)).not.toContain('SECRET');
     expect(error).toBeInstanceOf(AggregateError);
     expect(error).toBeInstanceOf(UniversalTrackingError);
-    expect((error as AggregateError).errors).toHaveLength(3);
-    for (const providerError of (error as AggregateError).errors.slice(1)) {
+    const errors = (error as AggregateError).errors;
+    expect(errors).toHaveLength(3);
+    // ParcelsApp and 17TRACK went through the fetcher; Ship24 through the browser lookup.
+    for (const providerError of [errors[0], errors[2]]) {
       expect(providerError.cause).toBe(originalError);
     }
     expect(fetcher).toHaveBeenCalledTimes(3);
@@ -110,8 +117,10 @@ describe('universal discovery chain', () => {
   });
 
   it('can use the form scrapers without TRAWL and stops on Ship24 success', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response('', { status: 503 }));
     const browserLookup = vi.fn().mockResolvedValue({ tracking_provider: 'Ship24', current_stage: 'in_transit' });
-    await expect(new UniversalTracker({ trawlUrl: '', browserLookup }).fetch(number)).resolves.toMatchObject({ tracking_provider: 'Ship24' });
+    await expect(new UniversalTracker({ trawlUrl: '', fetcher, browserLookup }).fetch(number)).resolves.toMatchObject({ tracking_provider: 'Ship24' });
+    expect(fetcher).toHaveBeenCalledOnce();
     expect(browserLookup).toHaveBeenCalledOnce();
   });
 
@@ -152,7 +161,8 @@ describe('universal discovery chain', () => {
   it('forwards a stored delivery postcode into the provider track input', async () => {
     const ship24History = { data: { tracking_number: number,
       events: [{ timestamp: '2026-09-10T10:00:00+02:00', status: 'Delivered', dispatch_code_id: 7 }] } };
-    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => reply(ship24History));
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async (url) => String(url).startsWith('https://parcelsapp.com/')
+      ? new Response('', { status: 503 }) : reply(ship24History));
     const tracker = new UniversalTracker({ fetcher });
     await expect(tracker.fetchSource('Ship24', number, 20_000, '8000')).resolves.toMatchObject({
       current_stage: 'delivered', tracking_provider: 'Ship24',
@@ -160,6 +170,6 @@ describe('universal discovery chain', () => {
     await expect(tracker.fetch(number, '8000')).resolves.toMatchObject({
       current_stage: 'delivered', tracking_provider: 'Ship24',
     });
-    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls.map(([url]) => new URL(String(url)).hostname)).toEqual(['api.ship24.com', 'parcelsapp.com', 'api.ship24.com']);
   });
 });

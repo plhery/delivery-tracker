@@ -1,0 +1,1744 @@
+{
+  "carriers": [
+    {
+      "carrier": "dhl",
+      "direct": "Yes",
+      "sample": "Blocked",
+      "references": [
+        {
+          "results": {
+            "Ship24": 10,
+            "ParcelsApp": 14,
+            "17TRACK": "no_history",
+            "Postal Ninja": 14,
+            "UPU": 1
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "ups",
+      "direct": "Yes",
+      "sample": "✓ 11",
+      "references": [
+        {
+          "results": {
+            "Ship24": {
+              "rows": 1,
+              "partial": "label only"
+            },
+            "ParcelsApp": 11,
+            "17TRACK": 11,
+            "Postal Ninja": 11,
+            "UPU": "n/a"
+          }
+        },
+        {
+          "note": "A second reference",
+          "results": {
+            "Ship24": "history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "fedex",
+      "direct": "Yes",
+      "sample": "✓ 14, intermittent",
+      "references": [
+        {
+          "results": {
+            "Ship24": 14,
+            "ParcelsApp": 14,
+            "17TRACK": 14,
+            "Postal Ninja": 14,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "usps",
+      "direct": "Yes",
+      "sample": "✓ 11",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": 11,
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "amazon-logistics",
+      "direct": "Link only",
+      "sample": "Not tested",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "sign_in",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "amazon-shipping",
+      "direct": "Yes",
+      "sample": "✓ 12",
+      "references": [
+        {
+          "results": {
+            "Ship24": 12,
+            "ParcelsApp": 12,
+            "17TRACK": "no_history",
+            "Postal Ninja": 12,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "royal-mail",
+      "direct": "Disabled",
+      "sample": "Error",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": 1,
+            "17TRACK": "no_history",
+            "Postal Ninja": 4,
+            "UPU": "no_history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "swiss-post",
+      "direct": "Yes",
+      "sample": "✓ 8",
+      "references": [
+        {
+          "results": {
+            "Ship24": 8,
+            "ParcelsApp": 8,
+            "17TRACK": 8,
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "la-poste",
+      "direct": "Yes",
+      "sample": "✓ 15",
+      "references": [
+        {
+          "results": {
+            "Ship24": {
+              "rows": 11,
+              "partial": "stops before the final events"
+            },
+            "ParcelsApp": 16,
+            "17TRACK": 14,
+            "Postal Ninja": 26,
+            "UPU": "no_history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "dpd",
+      "direct": "Yes (optional postcode)",
+      "sample": "✓ 4",
+      "references": [
+        {
+          "results": {
+            "Ship24": {
+              "rows": 1,
+              "partial": "one old row"
+            },
+            "ParcelsApp": 4,
+            "17TRACK": 4,
+            "Postal Ninja": 4,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "dhl-ecommerce",
+      "direct": "Yes",
+      "sample": "✓ 16",
+      "references": [
+        {
+          "results": {
+            "Ship24": {
+              "rows": 11,
+              "partial": "no destination leg"
+            },
+            "ParcelsApp": 36,
+            "17TRACK": "no_history",
+            "Postal Ninja": 34,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "aliexpress",
+      "direct": "Yes",
+      "sample": "✓ 17",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": 17,
+            "17TRACK": 17,
+            "Postal Ninja": 17,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "china-post",
+      "direct": "No adapter",
+      "sample": "Blocked",
+      "references": [
+        {
+          "results": {
+            "Ship24": {
+              "rows": 1,
+              "partial": "a few scans"
+            },
+            "ParcelsApp": {
+              "rows": 1,
+              "partial": "a few scans"
+            },
+            "17TRACK": 39,
+            "Postal Ninja": 17,
+            "UPU": 1
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "ems",
+      "direct": "Yes",
+      "sample": "✓ 7",
+      "references": [
+        {
+          "results": {
+            "Ship24": 6,
+            "ParcelsApp": 18,
+            "17TRACK": 24,
+            "Postal Ninja": 6,
+            "UPU": 6
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "sf-express",
+      "direct": "Yes",
+      "sample": "✓ 22",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": 27,
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "gls-de",
+      "direct": "Yes (postcode)",
+      "sample": "Not tested (postcode)",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "gls-fr",
+      "direct": "Yes",
+      "sample": "No history",
+      "references": [
+        {
+          "stale": true,
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": 4,
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "gls-ch",
+      "direct": "Yes (postcode)",
+      "sample": "Unverified",
+      "references": [
+        {
+          "results": {
+            "Ship24": "unverified",
+            "ParcelsApp": "unverified",
+            "17TRACK": "unverified",
+            "Postal Ninja": "unverified",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "hermes-de",
+      "direct": "Yes",
+      "sample": "No history",
+      "references": [
+        {
+          "stale": true,
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "evri",
+      "direct": "Yes (international)",
+      "sample": "✓ 20",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": 21,
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "chronopost",
+      "direct": "Yes (via La Poste)",
+      "sample": "No history",
+      "references": [
+        {
+          "stale": true,
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "no_history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "mondial-relay",
+      "direct": "Yes (postcode for short numbers)",
+      "sample": "No history",
+      "references": [
+        {
+          "stale": true,
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "inpost",
+      "direct": "Yes",
+      "sample": "✓ 9",
+      "references": [
+        {
+          "results": {
+            "Ship24": 9,
+            "ParcelsApp": 9,
+            "17TRACK": 8,
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "spring-gds",
+      "direct": "Yes",
+      "sample": "✓ 16",
+      "references": [
+        {
+          "results": {
+            "Ship24": 16,
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": {
+              "rows": 16,
+              "partial": "undated rows"
+            },
+            "UPU": "no_history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "canada-post",
+      "direct": "Yes",
+      "sample": "No history; alternate ✓ 11",
+      "references": [
+        {
+          "results": {
+            "Ship24": 12,
+            "ParcelsApp": 11,
+            "17TRACK": 25,
+            "Postal Ninja": "error",
+            "UPU": 1
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "australia-post",
+      "direct": "Yes",
+      "sample": "✓ 12",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": {
+              "rows": 12,
+              "partial": "undated rows"
+            },
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "japan-post",
+      "direct": "Yes",
+      "sample": "✓ 13",
+      "references": [
+        {
+          "results": {
+            "Ship24": {
+              "rows": 13,
+              "partial": "undated rows"
+            },
+            "ParcelsApp": 27,
+            "17TRACK": 27,
+            "Postal Ninja": {
+              "rows": 28,
+              "partial": "undated rows"
+            },
+            "UPU": 1
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "india-post",
+      "direct": "Yes",
+      "sample": "✓ 21",
+      "references": [
+        {
+          "results": {
+            "Ship24": {
+              "rows": 21,
+              "partial": "undated rows"
+            },
+            "ParcelsApp": "no_history",
+            "17TRACK": 21,
+            "Postal Ninja": "no_history",
+            "UPU": "no_history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "poste-italiane",
+      "direct": "Yes",
+      "sample": "No history",
+      "references": [
+        {
+          "stale": true,
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "correos-spain",
+      "name": "Correos Spain",
+      "direct": "Yes",
+      "sample": "✓ 12",
+      "references": [
+        {
+          "results": {
+            "Ship24": "error",
+            "ParcelsApp": {
+              "rows": 12,
+              "partial": "misses the final scan"
+            },
+            "17TRACK": 12,
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "bpost",
+      "direct": "Yes",
+      "sample": "No history; alternate ✓ 11",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "postcode_prompt",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        },
+        {
+          "note": "An S10 item through Landmark Global",
+          "results": {
+            "ParcelsApp": 20,
+            "17TRACK": 14
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "austrian-post",
+      "direct": "Yes",
+      "sample": "✓ 9",
+      "references": [
+        {
+          "results": {
+            "Ship24": {
+              "rows": 9,
+              "partial": "undated rows"
+            },
+            "ParcelsApp": 9,
+            "17TRACK": 9,
+            "Postal Ninja": 9,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "postnord",
+      "direct": "Yes",
+      "sample": "✓ 6",
+      "references": [
+        {
+          "results": {
+            "Ship24": {
+              "rows": 6,
+              "partial": "undated rows"
+            },
+            "ParcelsApp": 6,
+            "17TRACK": 6,
+            "Postal Ninja": 7,
+            "UPU": "no_history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "tnt",
+      "direct": "Yes",
+      "sample": "No history; alternate ✓ 1",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "aramex",
+      "direct": "Yes",
+      "sample": "No history; alternate ✓ 26",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": {
+              "rows": 16,
+              "partial": "undated rows"
+            },
+            "UPU": "n/a"
+          }
+        },
+        {
+          "note": "An international shipment",
+          "results": {
+            "Ship24": 26,
+            "ParcelsApp": "no_history",
+            "17TRACK": 26,
+            "Postal Ninja": 26
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "yunexpress",
+      "direct": "Yes (browser)",
+      "sample": "✓ 23",
+      "references": [
+        {
+          "results": {
+            "Ship24": 14,
+            "ParcelsApp": 15,
+            "17TRACK": 14,
+            "Postal Ninja": 15,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "four-px",
+      "direct": "Yes",
+      "sample": "✓ 26",
+      "references": [
+        {
+          "results": {
+            "Ship24": 25,
+            "ParcelsApp": 26,
+            "17TRACK": 26,
+            "Postal Ninja": 26,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "yanwen",
+      "direct": "Yes",
+      "sample": "✓ 29",
+      "references": [
+        {
+          "results": {
+            "Ship24": {
+              "rows": 1,
+              "partial": "one row"
+            },
+            "ParcelsApp": 29,
+            "17TRACK": 29,
+            "Postal Ninja": "no_history",
+            "UPU": "no_history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "j-and-t",
+      "direct": "No adapter",
+      "sample": "Blocked (Philippines)",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "jd-logistics",
+      "direct": "No adapter",
+      "sample": "Not tested",
+      "references": [
+        {
+          "results": {
+            "Ship24": "unverified",
+            "ParcelsApp": "unverified",
+            "17TRACK": "unverified",
+            "Postal Ninja": "refused",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "zto",
+      "direct": "No adapter",
+      "sample": "Not tested",
+      "references": [
+        {
+          "results": {
+            "Ship24": "unverified",
+            "ParcelsApp": "unverified",
+            "17TRACK": "unverified",
+            "Postal Ninja": "unverified",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "yto",
+      "direct": "Yes (China domestic)",
+      "sample": "✓ 30",
+      "references": [
+        {
+          "results": {
+            "Ship24": "error",
+            "ParcelsApp": 30,
+            "17TRACK": 20,
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "yunda",
+      "direct": "Yes (China domestic)",
+      "sample": "Unverified; alternate ✓ 2",
+      "references": [
+        {
+          "results": {
+            "Ship24": "unverified",
+            "ParcelsApp": "unverified",
+            "17TRACK": "unverified",
+            "Postal Ninja": "unverified",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "sto",
+      "direct": "No adapter",
+      "sample": "Not tested",
+      "references": [
+        {
+          "results": {
+            "Ship24": "unverified",
+            "ParcelsApp": "unverified",
+            "17TRACK": "unverified",
+            "Postal Ninja": "unverified",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "yamato",
+      "direct": "Yes",
+      "sample": "✓ 7 (yearless dates)",
+      "references": [
+        {
+          "results": {
+            "Ship24": "error",
+            "ParcelsApp": "wrong_carrier",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "correios-br",
+      "direct": "Yes (local OCR)",
+      "sample": "No history; alternate ✓ 14",
+      "references": [
+        {
+          "results": {
+            "Ship24": 8,
+            "ParcelsApp": "no_history",
+            "17TRACK": 8,
+            "Postal Ninja": 8,
+            "UPU": "no_history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "singapore-post",
+      "direct": "Yes",
+      "sample": "✓ 9",
+      "references": [
+        {
+          "results": {
+            "Ship24": {
+              "rows": 4,
+              "partial": "exchange-office scans only"
+            },
+            "ParcelsApp": 12,
+            "17TRACK": 18,
+            "Postal Ninja": 11,
+            "UPU": 4
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "hongkong-post",
+      "direct": "No adapter",
+      "sample": "Blocked",
+      "references": [
+        {
+          "results": {
+            "Ship24": 26,
+            "ParcelsApp": 35,
+            "17TRACK": {
+              "rows": 17,
+              "partial": "no origin leg"
+            },
+            "Postal Ninja": 35,
+            "UPU": "no_history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "korea-post",
+      "direct": "Yes (international)",
+      "sample": "Domestic unsupported; alternate ✓ 20",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        },
+        {
+          "note": "An EMS item",
+          "results": {
+            "Ship24": "history",
+            "ParcelsApp": "history",
+            "17TRACK": "history",
+            "Postal Ninja": "no_history",
+            "UPU": "history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "planzer",
+      "direct": "Yes",
+      "sample": "✓ 4",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "quickpac",
+      "direct": "Yes (via Planzer)",
+      "sample": "No history",
+      "references": [
+        {
+          "stale": true,
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "dpd-fr",
+      "direct": "Yes",
+      "sample": "✓ 10",
+      "references": [
+        {
+          "results": {
+            "Ship24": {
+              "rows": 10,
+              "partial": "undated rows"
+            },
+            "ParcelsApp": {
+              "rows": 5,
+              "partial": "condensed"
+            },
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "parcelforce",
+      "direct": "No adapter",
+      "sample": "Not tested",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": 3,
+            "UPU": "no_history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "purolator",
+      "direct": "Yes",
+      "sample": "✓ 12, intermittent",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": 12,
+            "17TRACK": 12,
+            "Postal Ninja": "refused",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "ontrac",
+      "direct": "Yes",
+      "sample": "✓ 14",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": 14,
+            "17TRACK": "no_history",
+            "Postal Ninja": 14,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "delhivery",
+      "direct": "Yes",
+      "sample": "No history; alternate summary + 1 undated scan",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "blue-dart",
+      "direct": "Yes",
+      "sample": "✓ 15",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "dtdc",
+      "direct": "Yes",
+      "sample": "No history; alternate ✓ 9",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": 35,
+            "17TRACK": "no_history",
+            "Postal Ninja": "refused",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "ninja-van",
+      "direct": "Yes (Malaysia NLMY)",
+      "sample": "No history; alternate ✓ 5",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "packeta",
+      "direct": "Yes",
+      "sample": "No history",
+      "references": [
+        {
+          "stale": true,
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "poczta-polska",
+      "direct": "Yes",
+      "sample": "✓ 5",
+      "references": [
+        {
+          "results": {
+            "Ship24": 10,
+            "ParcelsApp": 19,
+            "17TRACK": 21,
+            "Postal Ninja": 18,
+            "UPU": 6
+          }
+        },
+        {
+          "note": "A domestic Pocztex parcel",
+          "results": {
+            "Ship24": 10,
+            "ParcelsApp": 18
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "bring-posten",
+      "direct": "Yes",
+      "sample": "Not tested; alternate ✓ 3",
+      "references": [
+        {
+          "results": {
+            "Ship24": 12,
+            "ParcelsApp": 15,
+            "17TRACK": 19,
+            "Postal Ninja": 16,
+            "UPU": 3
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "posti",
+      "direct": "Yes",
+      "sample": "Unverified",
+      "references": [
+        {
+          "results": {
+            "Ship24": "unverified",
+            "ParcelsApp": "unverified",
+            "17TRACK": "unverified",
+            "Postal Ninja": "unverified",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "an-post",
+      "direct": "No adapter",
+      "sample": "Not tested",
+      "references": [
+        {
+          "results": {
+            "Ship24": 4,
+            "ParcelsApp": 4,
+            "17TRACK": 4,
+            "Postal Ninja": 4,
+            "UPU": "no_history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "ctt",
+      "direct": "Yes",
+      "sample": "✓ 4",
+      "references": [
+        {
+          "results": {
+            "Ship24": 4,
+            "ParcelsApp": 5,
+            "17TRACK": 5,
+            "Postal Ninja": 3,
+            "UPU": 2
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "ctt-express",
+      "direct": "Yes",
+      "sample": "✓ 5",
+      "references": [
+        {
+          "results": {
+            "Ship24": 5,
+            "ParcelsApp": 5,
+            "17TRACK": 4,
+            "Postal Ninja": 6,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "brt",
+      "direct": "Yes",
+      "sample": "Not tested; alternate ✓ 7",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": 23,
+            "17TRACK": "no_history",
+            "Postal Ninja": 5,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "seur",
+      "direct": "Yes",
+      "sample": "No history; alternate ✓ 6",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": 4,
+            "17TRACK": 4,
+            "Postal Ninja": 4,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "correos-express",
+      "direct": "Yes",
+      "sample": "✓ 9",
+      "references": [
+        {
+          "results": {
+            "Ship24": 9,
+            "ParcelsApp": 9,
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "mrw",
+      "direct": "No adapter",
+      "sample": "Not tested",
+      "references": [
+        {
+          "stale": true,
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": 1,
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        },
+        {
+          "note": "A September parcel",
+          "results": {
+            "Ship24": 14,
+            "ParcelsApp": 14,
+            "17TRACK": "no_history",
+            "Postal Ninja": 14
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "nacex",
+      "direct": "Yes",
+      "sample": "Not tested; alternate ✓ 14",
+      "references": [
+        {
+          "results": {
+            "Ship24": "error",
+            "ParcelsApp": "error",
+            "17TRACK": "error",
+            "Postal Ninja": "error",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "colis-prive",
+      "direct": "Yes (postcode)",
+      "sample": "Not tested (postcode)",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "relais-colis",
+      "direct": "Yes",
+      "sample": "✓ 4",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": 4,
+            "17TRACK": "no_history",
+            "Postal Ninja": "refused",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "paack",
+      "direct": "Yes (postcode)",
+      "sample": "Not tested (postcode)",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "asendia",
+      "direct": "Yes (Asendia USA)",
+      "sample": "✓ 5",
+      "references": [
+        {
+          "results": {
+            "Ship24": {
+              "rows": 2,
+              "partial": "postal rows only"
+            },
+            "ParcelsApp": 6,
+            "17TRACK": "error",
+            "Postal Ninja": {
+              "rows": 3,
+              "partial": "postal rows only"
+            },
+            "UPU": 2
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "landmark-global",
+      "direct": "Yes",
+      "sample": "✓ 14",
+      "references": [
+        {
+          "results": {
+            "Ship24": 14,
+            "ParcelsApp": 21,
+            "17TRACK": "no_history",
+            "Postal Ninja": 21,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "nz-post",
+      "direct": "Yes",
+      "sample": "✓ 16",
+      "references": [
+        {
+          "results": {
+            "Ship24": 20,
+            "ParcelsApp": 20,
+            "17TRACK": 16,
+            "Postal Ninja": 20,
+            "UPU": 4
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "pos-malaysia",
+      "direct": "Yes",
+      "sample": "✓ 2",
+      "references": [
+        {
+          "results": {
+            "Ship24": "error",
+            "ParcelsApp": 2,
+            "17TRACK": 2,
+            "Postal Ninja": "no_history",
+            "UPU": "no_history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "thailand-post",
+      "direct": "No adapter",
+      "sample": "Not tested",
+      "references": [
+        {
+          "results": {
+            "Ship24": 8,
+            "ParcelsApp": 8,
+            "17TRACK": "no_history",
+            "Postal Ninja": 8,
+            "UPU": "no_history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "ukrposhta",
+      "direct": "Yes",
+      "sample": "✓ 22; alternate ✓ 14",
+      "references": [
+        {
+          "results": {
+            "Ship24": 30,
+            "ParcelsApp": 33,
+            "17TRACK": 45,
+            "Postal Ninja": 33,
+            "UPU": "error"
+          }
+        },
+        {
+          "note": "A domestic parcel",
+          "results": {
+            "Ship24": 14,
+            "ParcelsApp": "no_history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "estafeta",
+      "direct": "Yes",
+      "sample": "✓ 4",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "correos-chile",
+      "direct": "Yes",
+      "sample": "No history; alternate ✓ 1",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": 13,
+            "Postal Ninja": "no_history",
+            "UPU": "no_history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "the-courier-guy",
+      "direct": "Yes",
+      "sample": "✓ 14; alternate ✓ 13",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "refused",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "geodis",
+      "direct": "Yes",
+      "sample": "Summary only",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "postcode_prompt",
+            "17TRACK": {
+              "rows": 4,
+              "partial": "delivery time on every milestone"
+            },
+            "Postal Ninja": 2,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "dachser",
+      "direct": "Yes (tracking link)",
+      "sample": "Not tested (link)",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "old-dominion",
+      "direct": "No adapter",
+      "sample": "Not tested",
+      "references": [
+        {
+          "results": {
+            "Ship24": "unverified",
+            "ParcelsApp": "unverified",
+            "17TRACK": "unverified",
+            "Postal Ninja": "unverified",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "swiss-post-cargo",
+      "direct": "Yes",
+      "sample": "Unverified",
+      "references": [
+        {
+          "results": {
+            "Ship24": "unverified",
+            "ParcelsApp": "unverified",
+            "17TRACK": "unverified",
+            "Postal Ninja": "unverified",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "postlogistics",
+      "direct": "Yes",
+      "sample": "Unverified",
+      "references": [
+        {
+          "results": {
+            "Ship24": "unverified",
+            "ParcelsApp": "unverified",
+            "17TRACK": "unverified",
+            "Postal Ninja": "unverified",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "hermes",
+      "direct": "Yes",
+      "sample": "✓ 10",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "heppner",
+      "direct": "Yes (postcode)",
+      "sample": "Not tested (postcode)",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "wrong_carrier",
+            "17TRACK": "no_history",
+            "Postal Ninja": "refused",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "ciblex",
+      "direct": "Yes",
+      "sample": "✓ 7",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "postcode_prompt",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "c-chez-vous",
+      "direct": "Yes",
+      "sample": "No history",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "refused",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "colisweb",
+      "direct": "Yes",
+      "sample": "✓ 2",
+      "references": [
+        {
+          "results": {
+            "Ship24": "wrong_carrier",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "refused",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "delivengo",
+      "direct": "Yes (via La Poste)",
+      "sample": "No history",
+      "references": [
+        {
+          "stale": true,
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "no_history"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "uniuni",
+      "direct": "Yes",
+      "sample": "✓ 6",
+      "references": [
+        {
+          "results": {
+            "Ship24": 6,
+            "ParcelsApp": 19,
+            "17TRACK": 6,
+            "Postal Ninja": 21,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "speedx",
+      "direct": "No adapter",
+      "sample": "Not tested",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": "no_history",
+            "17TRACK": 2,
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "gofo",
+      "direct": "Yes",
+      "sample": "✓ 14",
+      "references": [
+        {
+          "results": {
+            "Ship24": 14,
+            "ParcelsApp": 14,
+            "17TRACK": 14,
+            "Postal Ninja": 14,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "ecoscooting",
+      "direct": "Yes",
+      "sample": "✓ 6",
+      "references": [
+        {
+          "results": {
+            "Ship24": {
+              "rows": 6,
+              "partial": "no origin leg"
+            },
+            "ParcelsApp": {
+              "rows": 6,
+              "partial": "no origin leg"
+            },
+            "17TRACK": "no_history",
+            "Postal Ninja": 22,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "tipsa",
+      "direct": "Yes",
+      "sample": "✓ 13",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": 13,
+            "17TRACK": "no_history",
+            "Postal Ninja": "no_history",
+            "UPU": "n/a"
+          }
+        }
+      ]
+    },
+    {
+      "carrier": "canpar",
+      "direct": "Yes",
+      "sample": "✓ 11",
+      "references": [
+        {
+          "results": {
+            "Ship24": "no_history",
+            "ParcelsApp": 11,
+            "17TRACK": "no_history",
+            "Postal Ninja": 11,
+            "UPU": "n/a"
+          }
+        }
+      ]
+    }
+  ]
+}

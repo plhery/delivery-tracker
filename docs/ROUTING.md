@@ -14,7 +14,18 @@ provider.
    too, but it is only queried for AliExpress-style numbers and the Swiss Post handoff.
 2. **Carriers that recognize the number**, when the filed carrier cannot track it (see
    Carrier recognition below).
-3. **Universal providers**: Ship24 → ParcelsApp → 17TRACK → UPU.
+3. **Universal providers**, by default ParcelsApp → Ship24 → 17TRACK → UPU.
+   - A carrier with results in [coverage.json](../packages/carriers/providers/coverage.json)
+     gets its own order, listed in [COVERAGE.md](../packages/carriers/providers/COVERAGE.md):
+     providers by the tier its results give them (full history, partial history, nothing
+     conclusive, answered without history), HTTP providers (ParcelsApp, Ship24) before the
+     browser-service ones (Postal Ninja, 17TRACK) within a tier, then the default order. A
+     full history outranks a cheaper partial one because a parcel keeps the provider that
+     answers first. A provider that never had history and answered with another carrier's
+     parcel or refused the number format is not asked, unless no other would remain.
+   - The order is the one of the carrier the lookup is for (the delivery leg's carrier for
+     its number), else of the carrier confirmed or discovered for the number, else the
+     default.
    - UPU is only for checksum-valid postal S10 numbers, always last, never remembered as
      the preferred source and never used for shadow checks.
    - Postal Ninja is off by default. `TRACKING_ENABLE_POSTAL_NINJA=true` inserts it before
@@ -25,8 +36,10 @@ provider.
      as EMS still go first.
 
 **Affinity.** A provider that returns history is saved with its lookup number in
-`carrier_data.routing`. The next check starts there, whatever its place in the default
-order, as long as it isn't cooling down.
+`carrier_data.routing`. The next check starts there, whatever its place in the order, as
+long as it isn't cooling down. Providers in a better tier for the carrier are asked before
+it, each within its own backoff, so a parcel moves up to a fuller history and never back
+down.
 
 **Royal Mail** uses the universal providers. Its browser adapter exists but isn't an active
 route (see its [README](../packages/carriers/carriers/royal-mail/README.md)).
@@ -36,7 +49,7 @@ route (see its [README](../packages/carriers/carriers/royal-mail/README.md)).
 In one check, every eligible universal provider is tried once, stopping at the first
 usable answer. Budgets per provider: 45 s for ParcelsApp (slow first lookups, one network
 retry), 30 s for the others, plus 5 s transport allowance each. That's 120 s in total by
-default, 155 s with Postal Ninja. Postal S10 lookups get 13 s more for UPU. A slow direct
+default, 155 s with Postal Ninja, less when a carrier's order leaves a provider out. Postal S10 lookups get 13 s more for UPU. A slow direct
 attempt doesn't eat into this budget. If the budget runs out first, the discovery cursor
 moves on so the next check starts elsewhere.
 
@@ -85,7 +98,7 @@ HTTP 429 without `Retry-After` is not retried immediately. Adapters that allow o
 transient retry honour a `Retry-After` of up to one minute; longer windows fail the attempt.
 
 **Shadow checks.** Once a day, a scheduled successful universal check may compare one other
-provider, rotating through them. Its result is adopted only if it has strictly newer
+provider, rotating through those in the same or a better tier for the carrier. Its result is adopted only if it has strictly newer
 timestamped history and doesn't overturn a terminal state. Direct successes and the China
 Post 17TRACK route skip shadow checks.
 
@@ -95,7 +108,7 @@ Post 17TRACK route skip shadow checks.
 | --- | --- |
 | Wrong carrier selected, right one supported | On failure, try the detected carrier, then a saved confirmed route, then the carriers that recognize the number, then universals. When a universal names a supported carrier, the router asks that carrier's adapter directly. A bare brand ("DPD Group") counts only when the number leaves one of the brand's catalog networks, by shape or a preferred rule such as a DPD depot range. It swaps only after that adapter returns real progress on the same number, at least as recent as what we have. The UI shows "Swapped automatically from X" for 12 h. |
 | Carrier needs a postcode or capability URL | Report `carrier_input_required` and continue with universals. Inputs are never borrowed from another carrier. An optional input (DPD's postcode) does not block a lookup; the lookup runs without it. |
-| Only one or two universals know the carrier | Discovery finds one and pins it. No fan-out on normal successful checks. |
+| Only one or two universals know the carrier | The carrier's order asks them first, and the one that answers is pinned. No fan-out on normal successful checks. |
 | Unknown carrier | Try one strong direct candidate if there is one, then the carriers that recognize the number, otherwise discover a universal. Never invent a carrier from a number's shape: a probe adopts a carrier only on its own real progress. Once found, the carrier replaces it without the "Swapped automatically" notice, as it does an unknown postal carrier: no carrier was chosen. |
 | A universal returns another parcel | Numbers are reused and carriers' number spaces overlap. For a parcel filed under a specific carrier, a universal history counts as no history when every carrier it names is a different catalog carrier and its newest scan is more than 30 days older than the parcel. The next provider is asked. |
 | Everything fails | Keep progress, store the next check time, keep affinity until a replacement works. |
@@ -237,6 +250,7 @@ parcel.
 | `direct_support_opportunity` | Candidate for a dedicated adapter |
 | `carrier_coverage_discovered` | A provider named a carrier the catalog doesn't know |
 | `fresher_provider_found` | Evidence to revisit the default order |
+| `coverage_contradicted` | A provider disagreed with the carrier's coverage results: `failure_category:history` when one that answered without history has the parcel, `no_history` when one with history does not while another has it (logs and breadcrumbs only). Evidence to rerun the coverage probe |
 | `provider_recovered` | Recovery signal (doesn't auto-resolve issues) |
 
 `carrier_coverage_discovered` fires once per parcel, only for names that are neither a

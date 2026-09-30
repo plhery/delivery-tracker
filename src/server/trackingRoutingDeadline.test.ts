@@ -76,7 +76,7 @@ it('reserves ParcelsApp retry time without reducing the budgets of later provide
   });
   await expect(router.fetch({ carrier: 'unknown', tracking_number: number }, false)).rejects.toMatchObject({ attempted: 3 });
   expect(universal.mock.calls.map(([source, , budget]) => [source, budget])).toEqual([
-    ['Ship24', 30_000], ['ParcelsApp', 45_000], ['17TRACK', 30_000],
+    ['ParcelsApp', 45_000], ['Ship24', 30_000], ['17TRACK', 30_000],
   ]);
   expect(elapsed).toBe(120_000);
 });

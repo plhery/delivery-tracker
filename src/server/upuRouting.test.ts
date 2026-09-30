@@ -59,7 +59,7 @@ describe('UPU fallback routing', () => {
   it.each(['12345678901234', 'EB000000006CN'])('skips UPU and its lease for ineligible %s', async (tracking_number) => {
     const { router, health, universal } = setup();
     await expect(router.fetch({ carrier: 'unknown', tracking_number }, false)).rejects.toThrow();
-    expect(universal.mock.calls.map(([source]) => source)).toEqual(['Ship24', 'ParcelsApp', '17TRACK']);
+    expect(universal.mock.calls.map(([source]) => source)).toEqual(['ParcelsApp', 'Ship24', '17TRACK']);
     expect(health.acquireTrackingProvider).not.toHaveBeenCalledWith('UPU');
   });
 });
