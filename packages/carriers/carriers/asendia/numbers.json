@@ -76,7 +76,7 @@
         "carrier": "unknown",
         "confidence": "none"
       },
-      "note": "Published eBay International Shipping number attributed to Asendia; A1 had no data for it on 2026-09-22."
+      "note": "Published eBay International Shipping number attributed to Asendia; A1 had no data for it on 2026-09-22. On 2026-09-30 ParcelsApp filed its Asendia scans under EasyShip on local clocks, matching Ship24's instants and Swiss Post's own scan when read in each place's zone."
     },
     {
       "number": "EEUS027988469JP0",

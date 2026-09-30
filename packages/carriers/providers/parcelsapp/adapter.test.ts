@@ -363,6 +363,24 @@ describe('ParcelsApp result parsing', () => {
     expect(scan('1000000000000001')).toBe('2026-07-02T09:20:00.000Z');
   });
 
+  it('reads Asendia scans filed under another name in their place\'s clock, not as UTC', () => {
+    // Live shape (2026-09-30): an eBay shipment whose Asendia scans ParcelsApp
+    // files under "EasyShip", on local clocks. Ship24's instants agree.
+    const result = parseParcelsAppResponse({
+      carriers: ['Asendia United States', 'EasyShip'],
+      states: [
+        { date: '2026-03-20T06:40:00Z', status: 'Arrived at delivery centre', carrier: 1, location: 'Japan, Japan' },
+        { date: '2026-03-12T05:20:00Z', status: 'Departure transit facility', carrier: 1, location: 'Switzerland, Switzerland' },
+        { date: '2026-03-05T18:45:10Z', status: 'Dispatched by Asendia', carrier: 1, location: 'United States, United States' },
+      ],
+    }, number, identity());
+    expect(result.events?.map((scan) => scan.time)).toEqual([
+      '2026-03-19T21:40:00.000Z', // 06:40 in Tokyo
+      '2026-03-12T04:20:00.000Z', // 05:20 in Zurich
+      '2026-03-05T18:45:10.000Z', // a US local clock no step can place: as labeled
+    ]);
+  });
+
   it('keeps the UTC instants ParcelsApp gives Asendia USA scans wherever they happened', () => {
     // Live shape (2026-09-30): an Asendia USA return through Switzerland, filed
     // under Swiss Post. Asendia's A1 feed has the same instants, and Swiss

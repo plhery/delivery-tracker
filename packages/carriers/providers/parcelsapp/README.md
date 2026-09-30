@@ -96,9 +96,11 @@ step exists for future protocol changes.
 - So do scans named "Asendia United States" or "Asendia USA", wherever they happened.
   Their dates are the UTC instants of Asendia's A1 feed, and Swiss Post's own scans of
   the same item agree (the Asendia USA references in
-  [numbers.json](../../carriers/asendia/numbers.json)). ParcelsApp can list A1's scans
-  under another name (an eBay shipment's under "EasyShip"); those still go through the
-  steps.
+  [numbers.json](../../carriers/asendia/numbers.json)). The same A1 scans filed under
+  another name are not UTC: an eBay shipment's, under "EasyShip", carry local clocks
+  (Ship24's instants and Swiss Post's own scan agree once they are read that way), so
+  they go through the steps like any other scan. Their US scans name no single-clock
+  country and stay as labeled, hours early.
 - TIPSA's `date` has the digits of TIPSA's own tracking page, which keeps Madrid time for
   every agency, so step 1 reads its Portuguese scans on Madrid time too. On a delivery in
   Portugal the page's proof of delivery shows the local time, an hour before the history's.
