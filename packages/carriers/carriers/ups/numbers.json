@@ -2,6 +2,34 @@
   "carrier": "ups",
   "records": [
     {
+      "number": "1Z035CX1YN17845128",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a91747b611979ef4d93e78a",
+        "date": "2026-08-28"
+      },
+      "expect": {
+        "carrier": "ups",
+        "confidence": "high"
+      },
+      "note": "Publicly reported UPS shipment. On 2026-09-30 ParcelsApp listed its US scans (\"City, ST, US\") on local clocks: read in each state's zone they matched Ship24's offsets."
+    },
+    {
+      "number": "1Z54V8630394427740",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6aad469800b96d1f86d26113",
+        "date": "2026-09-18"
+      },
+      "expect": {
+        "carrier": "ups",
+        "confidence": "high"
+      },
+      "note": "Publicly reported UPS shipment. On 2026-09-30 ParcelsApp listed its US scans (\"City, ST\") on local clocks: read in each state's zone they matched the UPS adapter's instants."
+    },
+    {
       "number": "1Z5R89390357567127",
       "role": "shipment",
       "evidence": "open_source_example",
@@ -25,6 +53,20 @@
         "confidence": "high"
       },
       "note": "Made-up number that follows the published format."
+    },
+    {
+      "number": "1ZG2242W6822298280",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a99a15c2c01a602f74c07d6",
+        "date": "2026-09-03"
+      },
+      "expect": {
+        "carrier": "ups",
+        "confidence": "high"
+      },
+      "note": "Publicly reported UPS shipment within Europe. On 2026-09-30 ParcelsApp listed its German scans as \"City, DE\" on local clocks, which the UPS adapter's instants confirm."
     },
     {
       "number": "1ZXX3150YW44070023",

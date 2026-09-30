@@ -1314,6 +1314,22 @@
     ]
   },
   {
+    "input": "1Z035CX1YN17845128",
+    "carrier": "ups",
+    "confidence": "high",
+    "candidates": [
+      "ups"
+    ]
+  },
+  {
+    "input": "1Z54V8630394427740",
+    "carrier": "ups",
+    "confidence": "high",
+    "candidates": [
+      "ups"
+    ]
+  },
+  {
     "input": "1Z5R89390357567127",
     "carrier": "ups",
     "confidence": "high",
@@ -1323,6 +1339,14 @@
   },
   {
     "input": "1Z999AA10123456784",
+    "carrier": "ups",
+    "confidence": "high",
+    "candidates": [
+      "ups"
+    ]
+  },
+  {
+    "input": "1ZG2242W6822298280",
     "carrier": "ups",
     "confidence": "high",
     "candidates": [
@@ -2157,6 +2181,26 @@
     ]
   },
   {
+    "input": "532981649667",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "mondial-relay",
+      "colis-prive",
+      "mrw",
+      "purolator",
+      "sf-express",
+      "sto",
+      "zto",
+      "yamato",
+      "j-and-t"
+    ],
+    "asked": [
+      "colis-prive"
+    ]
+  },
+  {
     "input": "534000021250958171",
     "carrier": "unknown",
     "confidence": "low",
@@ -2196,6 +2240,26 @@
       "seur",
       "brt",
       "ciblex"
+    ]
+  },
+  {
+    "input": "541270563758",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "fedex",
+      "mondial-relay",
+      "colis-prive",
+      "mrw",
+      "purolator",
+      "sf-express",
+      "sto",
+      "zto",
+      "yamato",
+      "j-and-t"
+    ],
+    "asked": [
+      "colis-prive"
     ]
   },
   {

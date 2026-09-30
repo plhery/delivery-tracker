@@ -111,8 +111,8 @@ statuses, timings and network error codes.
 | Id | Name | Route | Steps | Capabilities | Sample numbers | Known statuses | Docs |
 | --- | --- | --- | --- | ---: | ---: | ---: | --- |
 | `dhl` | DHL | dedicated | direct → trawl | 3 | 11 | 22 | [README](carriers/dhl/README.md) |
-| `ups` | UPS | dedicated | direct → trawl | 3 | 6 | 30 | [README](carriers/ups/README.md) |
-| `fedex` | FedEx | dedicated | trawl | 4 | 8 | 29 | [README](carriers/fedex/README.md) |
+| `ups` | UPS | dedicated | direct → trawl | 3 | 9 | 30 | [README](carriers/ups/README.md) |
+| `fedex` | FedEx | dedicated | trawl | 4 | 10 | 29 | [README](carriers/fedex/README.md) |
 | `usps` | USPS | dedicated | trawl | 3 | 17 | 19 | [README](carriers/usps/README.md) |
 | `amazon-logistics` | Amazon Logistics | link only |  | 0 | 24 | 0 | [README](carriers/amazon-logistics/README.md) |
 | `amazon-shipping` | Amazon Shipping | dedicated | direct | 4 | 5 | 14 | [README](carriers/amazon-shipping/README.md) |
@@ -197,7 +197,7 @@ statuses, timings and network error codes.
 | `dachser` | Dachser | dedicated | direct | 2 | 3 | 13 | [README](carriers/dachser/README.md) |
 | `old-dominion` | Old Dominion | universal providers |  | 0 | 6 | 0 |  |
 | `swiss-post-cargo` | Swiss Post Cargo | dedicated | direct | 3 | 1 | 14 | [README](carriers/swiss-post-cargo/README.md) |
-| `postlogistics` | PostLogistics | dedicated | direct | 3 | 1 | 5 | [README](carriers/postlogistics/README.md) |
+| `postlogistics` | PostLogistics | dedicated | direct | 3 | 3 | 5 | [README](carriers/postlogistics/README.md) |
 | `hermes` | Hermes Einrichtungs-Service | dedicated | direct | 2 | 1 | 26 | [README](carriers/hermes/README.md) |
 | `heppner` | Heppner | dedicated | direct | 2 | 2 | 8 | [README](carriers/heppner/README.md) |
 | `ciblex` | Ciblex | dedicated | direct | 2 | 3 | 27 | [README](carriers/ciblex/README.md) |
