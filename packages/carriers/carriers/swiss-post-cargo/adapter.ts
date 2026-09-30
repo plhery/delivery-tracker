@@ -6,6 +6,7 @@ import type { CarrierEvent, CarrierResult, CarrierStatus } from '../../core/resu
 import { isoTime, zonedTime, type ParsedTime } from '../../core/time';
 import { cleanScalar, fetchBounded, parseJsonBytes } from '../../core/transport';
 import { isRecord } from '../../core/types';
+import { referenceConsignment } from './reference';
 import { statusFor } from './status';
 
 // Protocol provenance (inspected 2026-08-30): the source map published by the
@@ -23,6 +24,8 @@ export interface SwissPostCargoOptions {
   timeoutMs?: number;
   /** Test seam; production uses the global fetch. */
   fetcher?: typeof fetch;
+  /** Test seam for the clock that decides which reference shipments are current. */
+  now?: () => number;
 }
 
 /**
@@ -53,6 +56,7 @@ export function swissPostCargoTrackingUrl(raw: string): string {
 export function parseSwissPostCargoResponse(
   payload: unknown,
   rawTrackingNumber: string,
+  now = Date.now(),
 ): CarrierResult {
   const trackingNumber = normalizeSwissPostCargoTrackingNumber(rawTrackingNumber);
   if (!isRecord(payload) || !Object.hasOwn(payload, 'Data')) {
@@ -90,6 +94,11 @@ export function parseSwissPostCargoResponse(
   // here and routing asks the Swiss Post adapter instead.
   if (responseType === 3) {
     throw new NotFoundError(PROVIDER, 'Swiss Post Cargo only relays Swiss Post tracking for this barcode');
+  }
+  if (responseType === 2) {
+    shipments = referenceConsignment(shipments, (shipment) => (
+      Array.isArray(shipment.History) ? shipment.History.filter(isRecord) : []
+    ).map((row) => eventTimestamp(row.TimeStamp)?.timestamp ?? Number.NaN), PROVIDER, now);
   }
 
   const parsedEvents: Array<{
@@ -149,14 +158,16 @@ export function parseSwissPostCargoResponse(
 export class SwissPostCargoTracker {
   readonly timeoutMs: number;
   readonly #fetcher: typeof fetch | undefined;
+  readonly #now: () => number;
 
   constructor(options: number | SwissPostCargoOptions = {}) {
-    const { timeoutMs = DEFAULT_TIMEOUT_MS, fetcher } = typeof options === 'number' ? { timeoutMs: options, fetcher: undefined } : options;
+    const { timeoutMs = DEFAULT_TIMEOUT_MS, fetcher, now = Date.now }: SwissPostCargoOptions = typeof options === 'number' ? { timeoutMs: options } : options;
     if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
       throw new TypeError('Swiss Post Cargo timeout must be positive');
     }
     this.timeoutMs = timeoutMs;
     this.#fetcher = fetcher;
+    this.#now = now;
   }
 
   async fetch(rawTrackingNumber: string): Promise<CarrierResult> {
@@ -178,7 +189,7 @@ export class SwissPostCargoTracker {
       maxBytes: MAX_RESPONSE_BYTES,
       ...(this.#fetcher ? { fetcher: this.#fetcher } : {}),
     });
-    return parseSwissPostCargoResponse(parseJsonBytes(bytes, PROVIDER), trackingNumber);
+    return parseSwissPostCargoResponse(parseJsonBytes(bytes, PROVIDER), trackingNumber, this.#now());
   }
 }
 

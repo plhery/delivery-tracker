@@ -184,7 +184,7 @@ describe('PostLogistics response types and event ordering', () => {
   });
 
   it('allows Type 2 references to resolve returned barcodes and selects the latest instant', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
       Type: 2,
       Data: [
         {
@@ -206,7 +206,9 @@ describe('PostLogistics response types and event ordering', () => {
       ],
     }));
 
-    await expect(fetchPostlogistics('CUSTOMER-REFERENCE')).resolves.toMatchObject({
+    const tracker = new PostlogisticsTracker({ fetcher, now: () => Date.parse('2026-09-01T00:00:00Z') });
+
+    await expect(tracker.fetch('CUSTOMER-REFERENCE')).resolves.toMatchObject({
       status: 'delivered',
       last_status_text: 'Latest by absolute time',
       last_update: '2026-08-30T23:30:00-02:00',
@@ -262,6 +264,45 @@ describe('PostLogistics response types and event ordering', () => {
 
     await expect(fetchPostlogistics('CUSTOMER-REFERENCE'))
       .rejects.toThrow('did not return a shipment identifier');
+  });
+});
+
+describe('PostLogistics shared customer references', () => {
+  // A week after the fixture's current consignment was delivered.
+  const NOW = Date.parse('2026-09-01T12:00:00Z');
+
+  it('merges only the consignment a shared reference still names', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(fixture('shared-reference.json')));
+    const result = await new PostlogisticsTracker({ fetcher, now: () => NOW }).fetch('12345678');
+
+    expect(result).toMatchObject({
+      status: 'delivered',
+      last_status_text: 'Signature captured',
+      last_update: '2026-08-25T09:49:40.12',
+      expected_delivery: null,
+    });
+    expect(result.events?.map((event) => event.time)).toEqual([
+      '2026-08-25T09:49:40.12', '2026-08-25T09:49:22.18', '2026-08-25T09:47:30', '2026-08-25T09:47:15.3',
+      '2026-08-25T06:11:48.5', '2026-08-25T06:10:09.66', '2026-08-24T19:03:10.04', '2026-08-24T19:02:37.853',
+      '2026-08-24T18:21:02.9', '2026-08-24T18:20:11.2', '2026-08-24T05:58:03.41', '2026-08-24T05:58:03.41',
+    ]);
+    const projected = JSON.stringify(result);
+    for (const excluded of ['Olten', 'Chur', 'Sion', 'Privatdorf', '0999', 'Private operational detail']) {
+      expect(projected).not.toContain(excluded);
+    }
+  });
+
+  it('treats a reference with only older shipments as unknown, recognition included', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => jsonResponse(fixture('shared-reference.json')));
+    const tracker = new PostlogisticsTracker({ fetcher, now: () => Date.parse('2026-11-30T12:00:00Z') });
+
+    await expect(tracker.fetch('12345678')).rejects.toMatchObject({
+      name: 'NotFoundError',
+      status: 404,
+      kind: 'not_found',
+      message: 'PostLogistics only has older shipments for this reference',
+    });
+    await expect(tracker.recognizes('12345678')).resolves.toEqual({ known: false });
   });
 });
 

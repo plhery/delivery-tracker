@@ -1,0 +1,62 @@
+{
+  "Type": 2,
+  "Data": [
+    {
+      "Identifier": "00312345670000000031",
+      "DriveAndArrive": null,
+      "History": [
+        { "Id": 5101, "Status": "NTF", "NextStatus": "TOV", "TimeStamp": "2026-08-24T05:58:03.41", "Description": "Shipment data received", "FullDescription": "", "GeoLocation": null, "City": "" },
+        { "Id": 5102, "Status": "TOV", "NextStatus": "RFS", "TimeStamp": "2026-08-24T18:20:11.2", "Description": "Shipment in transit", "FullDescription": "", "GeoLocation": { "City": "Privatdorf", "State": "XZ", "Zip": "0999" }, "City": "" },
+        { "Id": 5103, "Status": "RFS", "NextStatus": "SCA", "TimeStamp": "2026-08-24T19:02:37.853", "Description": "Shipment accepted", "FullDescription": "", "GeoLocation": null, "City": "Dintikon" },
+        { "Id": 5104, "Status": "SCA", "NextStatus": "POD", "TimeStamp": "2026-08-25T06:10:09.66", "Description": "Loaded for the delivery round", "FullDescription": "", "GeoLocation": null, "City": "" },
+        { "Id": 5105, "Status": "POD", "NextStatus": "SIG", "TimeStamp": "2026-08-25T09:47:15.3", "Description": "Delivered", "FullDescription": "Private operational detail", "GeoLocation": { "City": "Privatdorf", "State": "XZ", "Zip": "0999" }, "City": "Zürich" },
+        { "Id": 5106, "Status": "SIG", "NextStatus": "", "TimeStamp": "2026-08-25T09:47:30", "Description": "Signature captured", "FullDescription": "", "GeoLocation": null, "City": "Zürich" }
+      ]
+    },
+    {
+      "Identifier": "00312345670000000017",
+      "DriveAndArrive": null,
+      "History": [
+        { "Id": 1101, "Status": "NTF", "NextStatus": "RFS", "TimeStamp": "2022-02-10T07:04:12.37", "Description": "Shipment data received", "FullDescription": "", "GeoLocation": null, "City": "" },
+        { "Id": 1102, "Status": "RFS", "NextStatus": "SCA", "TimeStamp": "2022-02-10T16:40:05.1", "Description": "Shipment accepted", "FullDescription": "", "GeoLocation": null, "City": "Olten" },
+        { "Id": 1103, "Status": "SCA", "NextStatus": "POD", "TimeStamp": "2022-02-11T06:15:44", "Description": "Loaded for the delivery round", "FullDescription": "", "GeoLocation": { "City": "Privatdorf", "State": "XZ", "Zip": "0999" }, "City": "Olten" },
+        { "Id": 1104, "Status": "POD", "NextStatus": "SIG", "TimeStamp": "2022-02-11T10:02:31.552", "Description": "Delivered", "FullDescription": "", "GeoLocation": { "City": "Privatdorf", "State": "XZ", "Zip": "0999" }, "City": "Olten" },
+        { "Id": 1105, "Status": "SIG", "NextStatus": "", "TimeStamp": "2022-02-11T10:02:48.9", "Description": "Signature captured", "FullDescription": "", "GeoLocation": null, "City": "Olten" }
+      ]
+    },
+    {
+      "Identifier": "7100000/00001234",
+      "DriveAndArrive": null,
+      "History": [
+        { "Id": 3101, "Status": "PRE", "NextStatus": "TOV", "TimeStamp": "2023-10-03T11:30:00.5", "Description": "Shipment pre-advised", "FullDescription": "", "GeoLocation": null, "City": "" },
+        { "Id": 3102, "Status": "TOV", "NextStatus": "SCA", "TimeStamp": "2023-10-04T17:45:21.07", "Description": "Shipment in transit", "FullDescription": "", "GeoLocation": { "City": "Privatdorf", "State": "XZ", "Zip": "0999" }, "City": "" },
+        { "Id": 3103, "Status": "SCA", "NextStatus": "POD", "TimeStamp": "2023-10-05T07:02:13.8", "Description": "Loaded for the delivery round", "FullDescription": "", "GeoLocation": null, "City": "" },
+        { "Id": 3104, "Status": "POD", "NextStatus": "", "TimeStamp": "2023-10-05T13:26:40.31", "Description": "Delivered", "FullDescription": "", "GeoLocation": { "City": "Privatdorf", "State": "XZ", "Zip": "0999" }, "City": "Chur" }
+      ]
+    },
+    {
+      "Identifier": "00312345670000000048",
+      "DriveAndArrive": null,
+      "History": [
+        { "Id": 5111, "Status": "NTF", "NextStatus": "TOV", "TimeStamp": "2026-08-24T05:58:03.41", "Description": "Shipment data received", "FullDescription": "", "GeoLocation": null, "City": "" },
+        { "Id": 5112, "Status": "TOV", "NextStatus": "RFS", "TimeStamp": "2026-08-24T18:21:02.9", "Description": "Shipment in transit", "FullDescription": "", "GeoLocation": { "City": "Privatdorf", "State": "XZ", "Zip": "0999" }, "City": "" },
+        { "Id": 5113, "Status": "RFS", "NextStatus": "SCA", "TimeStamp": "2026-08-24T19:03:10.04", "Description": "Shipment accepted", "FullDescription": "", "GeoLocation": null, "City": "Dintikon" },
+        { "Id": 5114, "Status": "SCA", "NextStatus": "POD", "TimeStamp": "2026-08-25T06:11:48.5", "Description": "Loaded for the delivery round", "FullDescription": "", "GeoLocation": null, "City": "" },
+        { "Id": 5115, "Status": "POD", "NextStatus": "SIG", "TimeStamp": "2026-08-25T09:49:22.18", "Description": "Delivered", "FullDescription": "", "GeoLocation": { "City": "Privatdorf", "State": "XZ", "Zip": "0999" }, "City": "Zürich" },
+        { "Id": 5116, "Status": "SIG", "NextStatus": "", "TimeStamp": "2026-08-25T09:49:40.12", "Description": "Signature captured", "FullDescription": "", "GeoLocation": null, "City": "Zürich" }
+      ]
+    },
+    {
+      "Identifier": "00312345670000000024",
+      "DriveAndArrive": null,
+      "History": [
+        { "Id": 4101, "Status": "NTF", "NextStatus": "TOV", "TimeStamp": "2025-04-08T06:12:55.2", "Description": "Shipment data received", "FullDescription": "", "GeoLocation": null, "City": "" },
+        { "Id": 4102, "Status": "TOV", "NextStatus": "RFS", "TimeStamp": "2025-04-08T17:58:30.61", "Description": "Shipment in transit", "FullDescription": "", "GeoLocation": { "City": "Privatdorf", "State": "XZ", "Zip": "0999" }, "City": "" },
+        { "Id": 4103, "Status": "RFS", "NextStatus": "SCA", "TimeStamp": "2025-04-08T18:44:02", "Description": "Shipment accepted", "FullDescription": "", "GeoLocation": null, "City": "Sion" },
+        { "Id": 4104, "Status": "SCA", "NextStatus": "POD", "TimeStamp": "2025-04-09T05:55:19.44", "Description": "Loaded for the delivery round", "FullDescription": "", "GeoLocation": null, "City": "" },
+        { "Id": 4105, "Status": "POD", "NextStatus": "SIG", "TimeStamp": "2025-04-09T11:08:07.3", "Description": "Delivered", "FullDescription": "", "GeoLocation": { "City": "Privatdorf", "State": "XZ", "Zip": "0999" }, "City": "Sion" },
+        { "Id": 4106, "Status": "SIG", "NextStatus": "", "TimeStamp": "2025-04-09T11:08:21.75", "Description": "Signature captured", "FullDescription": "", "GeoLocation": null, "City": "Sion" }
+      ]
+    }
+  ]
+}

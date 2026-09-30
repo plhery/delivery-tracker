@@ -16,16 +16,25 @@ its published source map).
 - `Data: null` is the not-found answer. The endpoint returns HTTP 200 for
   unknown identifiers, so the status code cannot tell them apart; any other
   unexpected shape is a `SchemaError`.
-- `Type: 1` is an identifier lookup: rows must echo the requested identifier and
-  other rows are dropped. `Type: 2` is a reference lookup: the echo is not
-  guaranteed and every row belongs to the query.
+- `Type: 1` is a barcode lookup: rows must echo the requested barcode and other
+  rows are dropped.
+- `Type: 2` is a customer reference, and references are not unique: the
+  carrier's tracking form pairs its example `12345678` with a Betriebsnummer,
+  and alone eos answers it with delivered shipments years apart. The official
+  tracker lists each barcode behind a filter; a parcel needs one consignment,
+  taken as the barcodes first scanned within a day of the newest one. It is read
+  only while it has a scan from the last 60 days (carrier recognition's window)
+  and no other barcode does ([reference.ts](reference.ts), shared with
+  PostLogistics). Any other answer names no single current shipment: a 404,
+  which routing treats like an unknown number rather than an outage.
 - `Type: 3`, which the source map does not name, is a Swiss Post parcel barcode
   the eos system does not hold. The endpoint relays Swiss Post's own scans, each
   coded `PST`, with no place. Once the echo matches the barcode, it is a 404 and
   routing moves the parcel to [swiss-post](../swiss-post/README.md), which returns
   the same scans with their codes and places. Any other `Type` is a schema error.
-- Consignments can span several rows; histories are merged, deduplicated on
-  (time, location, description, code), sorted newest first and capped at 100.
+- A consignment can span several barcodes; their histories are merged,
+  deduplicated on (time, location, description, code), sorted newest first and
+  capped at 100.
 - Rows with no usable event are a schema error, not an empty success, so a
   broken shape never looks like a parcel with no news yet.
 
@@ -48,11 +57,13 @@ its published source map).
 ## Limitations
 
 - No delivery estimate: `expected_delivery` is always `null`.
+- A reference whose one current consignment belongs to someone else still
+  resolves to it; nothing in the answer tells them apart.
 
 ## Testing
 
-`npm run test:carriers:live -- packages/carriers/carriers/swiss-post-cargo` (no
-env vars). It tracks the example number printed on the carrier's own
-tracking form, and checks the clean 404 for an unknown number. Set
-`SWISS_POST_TRACKING_NUMBER` to a current Swiss Post parcel barcode to also check
-the `Type: 3` relay's 404.
+`npm run test:carriers:live -- packages/carriers/carriers/swiss-post-cargo` checks
+the clean 404 for an unknown number. Set `SWISS_POST_CARGO_TRACKING_NUMBER`
+outside the repository to a current barcode or reference to check a shipment, or
+`SWISS_POST_TRACKING_NUMBER` to a current Swiss Post parcel barcode to check the
+`Type: 3` relay's 404.

@@ -9,9 +9,9 @@ import 'server-only';
  *
  * - `Type` 1: a barcode. The answer may contain several shipments, so only the
  *   one whose `Identifier` equals the requested barcode is read.
- * - `Type` 2: a customer reference that resolved to one or more barcodes. The
- *   requested string is not a barcode, so every returned shipment belongs to
- *   this lookup and all of them are merged.
+ * - `Type` 2: a customer reference that resolved to one or more barcodes.
+ *   Shippers reuse references, so only the one current consignment among them
+ *   is merged; an answer without one is a not-found (`referenceConsignment`).
  * - `Type` 3: a Swiss Post parcel barcode PostLogistics does not hold. The
  *   endpoint relays Swiss Post's own scans (placeholder `PST` codes, no place),
  *   so the parcel is Swiss Post's: once the echo matches, this is a not-found
@@ -26,6 +26,7 @@ import type { CarrierEvent, CarrierResult } from '../../core/result';
 import { explicitOffsetTime } from '../../core/time';
 import { fetchBounded, parseJsonBytes } from '../../core/transport';
 import { isRecord, type JsonObject } from '../../core/types';
+import { referenceConsignment } from '../swiss-post-cargo/reference';
 import { postlogisticsIdentifier } from './number';
 import { postlogisticsStatus } from './status';
 
@@ -56,7 +57,7 @@ function comparableIdentifier(value: unknown): string {
 }
 
 /** Projects one track-and-trace payload. Pure: the offline tests target this. */
-export function parsePostlogisticsTrackingResponse(value: unknown, trackingNumber: string): CarrierResult {
+export function parsePostlogisticsTrackingResponse(value: unknown, trackingNumber: string, now = Date.now()): CarrierResult {
   const payload = record(value);
   if (payload.Data === null) throw new NotFoundError(PROVIDER);
   if (!Array.isArray(payload.Data)) {
@@ -87,6 +88,10 @@ export function parsePostlogisticsTrackingResponse(value: unknown, trackingNumbe
   }
   if (responseType === 3) {
     throw new NotFoundError(PROVIDER, 'PostLogistics only relays Swiss Post tracking for this barcode');
+  }
+  if (responseType === 2) {
+    shipments = referenceConsignment(shipments, (shipment) => recordArray(shipment.History)
+      .map((event) => Date.parse(text(event.TimeStamp))), PROVIDER, now);
   }
   const history = shipments.flatMap((shipment) => recordArray(shipment.History));
   // Merged references interleave several barcodes, so order by absolute
@@ -122,10 +127,12 @@ export function parsePostlogisticsTrackingResponse(value: unknown, trackingNumbe
 export class PostlogisticsTracker {
   private readonly fetcher: typeof fetch | undefined;
   private readonly timeoutMs: number;
+  private readonly now: () => number;
 
-  constructor(options: { fetcher?: typeof fetch; timeoutMs?: number } = {}) {
+  constructor(options: { fetcher?: typeof fetch; timeoutMs?: number; now?: () => number } = {}) {
     this.fetcher = options.fetcher;
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    this.now = options.now ?? Date.now;
   }
 
   async fetch(trackingNumber: string): Promise<CarrierResult> {
@@ -149,7 +156,7 @@ export class PostlogisticsTracker {
         { provider: UPSTREAM, timeoutMs: this.timeoutMs, fetcher: this.fetcher },
       );
       try {
-        return parsePostlogisticsTrackingResponse(parseJsonBytes(bytes, UPSTREAM), trackingNumber);
+        return parsePostlogisticsTrackingResponse(parseJsonBytes(bytes, UPSTREAM), trackingNumber, this.now());
       } catch (error) {
         if (!(error instanceof NotFoundError) || index === identifiers.length - 1) throw error;
       }

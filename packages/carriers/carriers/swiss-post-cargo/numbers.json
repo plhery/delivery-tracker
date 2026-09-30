@@ -4,9 +4,11 @@
     {
       "number": "12345678",
       "role": "shipment",
-      "evidence": "synthetic",
-      "derivedFrom": "official_shape",
-      "shapeConfirmed": "2026-09-10",
+      "evidence": "official_documentation_example",
+      "source": {
+        "url": "https://portal-de1.swisspost-cargo.com/Track",
+        "date": "2026-09-30"
+      },
       "expect": {
         "carrier": "unknown",
         "confidence": "low",
@@ -15,7 +17,7 @@
           "heppner"
         ]
       },
-      "note": "Made-up number that follows the published format. Filed under Swiss Post Cargo, which no rule claims."
+      "note": "Example Sendungsnummer from the carrier's tracking form, where it goes with a Betriebsnummer; on its own eos matches it to unrelated shipments. The source attributes it to Swiss Post Cargo, which no rule claims."
     }
   ]
 }

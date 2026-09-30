@@ -75,21 +75,19 @@ describe('Swiss Post Cargo tracking', () => {
     // Swiss time must not pass for it.
     Settings.defaultZone = 'UTC';
     const scan = (TimeStamp: string, Description: string) => ({ TimeStamp, City: 'Dintikon', Status: 'TRN', Description });
-    // A reference covering a winter and a summer shipment.
+    // One barcode with a winter and a summer scan.
     const result = parseSwissPostCargoResponse({
-      Type: 2,
-      Data: [
-        { Identifier: '1234ABC789', History: [scan('2026-01-15T09:30:00.1', 'Loaded')] },
-        {
-          Identifier: '1234ABC790',
-          History: [
-            scan('2026-08-30T12:30:00.777', 'Unloaded'),
-            scan('2026-08-30T11:00:00+01:00', 'Sorted'),
-            scan('2026-08-30T08:00:00Z', 'Shipment accepted'),
-          ],
-        },
-      ],
-    }, 'REF12345');
+      Type: 1,
+      Data: [{
+        Identifier: '1234ABC789',
+        History: [
+          scan('2026-01-15T09:30:00.1', 'Loaded'),
+          scan('2026-08-30T12:30:00.777', 'Unloaded'),
+          scan('2026-08-30T11:00:00+01:00', 'Sorted'),
+          scan('2026-08-30T08:00:00Z', 'Shipment accepted'),
+        ],
+      }],
+    }, '1234ABC789');
     expect(result.events?.map((event) => event.time)).toEqual([
       '2026-08-30T12:30:00.777+02:00',
       '2026-08-30T11:00:00+01:00',
@@ -186,5 +184,59 @@ describe('Swiss Post Cargo tracking', () => {
         body: JSON.stringify({ Identifier: '1234ABC789' }),
       }),
     );
+  });
+});
+
+describe('Swiss Post Cargo customer references', () => {
+  // A week after the fixture's current consignment was delivered.
+  const NOW = Date.parse('2026-09-01T12:00:00Z');
+  const sharedReference = () => fixture('shared-reference');
+
+  it('reads a shared reference as the one consignment it still names', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(sharedReference()), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    }));
+    const result = await new SwissPostCargoTracker({ fetcher, now: () => NOW }).fetch('12345678');
+
+    expect(result).toMatchObject({
+      status: 'delivered',
+      current_stage: 'delivered',
+      last_status_text: 'Signature captured',
+      tracking_url: 'https://apv.swisspost-cargo.com/public/trackandtrace/12345678',
+    });
+    // Both barcodes of the current consignment; their shared announcement once.
+    expect(result.events?.map((event) => [event.provider_code, event.location])).toEqual([
+      ['SIG', 'Zürich'], ['POD', 'Zürich'], ['SIG', 'Zürich'], ['POD', 'Zürich'],
+      ['SCA', ''], ['SCA', ''], ['RFS', 'Dintikon'], ['RFS', 'Dintikon'],
+      ['TOV', ''], ['TOV', ''], ['NTF', ''],
+    ]);
+    const serialized = JSON.stringify(result);
+    for (const excluded of ['Olten', 'Chur', 'Sion', 'Privatdorf', '0999', 'Private operational detail']) {
+      expect(serialized).not.toContain(excluded);
+    }
+  });
+
+  it('refuses the form example once every shipment behind it is older than 60 days', () => {
+    expect(() => parseSwissPostCargoResponse(sharedReference(), '12345678', Date.parse('2026-11-30T12:00:00Z')))
+      .toThrow(expect.objectContaining({
+        name: 'NotFoundError',
+        status: 404,
+        message: 'Swiss Post Cargo only has older shipments for this reference',
+      }));
+  });
+
+  it('refuses a reference that names two current consignments', () => {
+    const payload = sharedReference();
+    (payload.Data as unknown[]).push({
+      Identifier: '00312345670000000055',
+      History: [
+        { TimeStamp: '2026-08-18T06:00:00', Status: 'NTF', Description: 'Shipment data received' },
+        { TimeStamp: '2026-08-19T10:00:00', Status: 'POD', Description: 'Delivered', City: 'Bern' },
+      ],
+    });
+    expect(() => parseSwissPostCargoResponse(payload, '12345678', NOW)).toThrow(expect.objectContaining({
+      name: 'NotFoundError',
+      message: 'Swiss Post Cargo has several shipments for this reference',
+    }));
   });
 });

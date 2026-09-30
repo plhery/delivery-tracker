@@ -20,9 +20,11 @@ Recognition uses the same lookup and requires a scan before claiming a match.
 - `Data: null` is the explicit unknown-identifier answer and becomes a 404.
 - `Type: 1` is a barcode lookup: only the shipment whose `Identifier` equals the
   requested barcode is read, because the answer can include neighbouring shipments.
-- `Type: 2` is a customer reference: every returned shipment belongs to the
-  lookup and their histories are merged. A `Type: 2` answer with no resolved
-  barcode is refused — nothing ties the history to the reference.
+- `Type: 2` is a customer reference. References are shared, so only the one
+  current consignment among the returned barcodes is merged, and an answer
+  without one is a 404. The rule and its reason are in
+  [swiss-post-cargo](../swiss-post-cargo/README.md). A `Type: 2` answer with no
+  resolved barcode is refused — nothing ties the history to the reference.
 - `Type: 3`, which the tracker's published source map does not name, is a Swiss
   Post parcel barcode PostLogistics does not hold. The endpoint relays Swiss Post's
   own scans, each coded `PST`, with no place and in German whatever the culture.
@@ -53,6 +55,6 @@ Recognition uses the same lookup and requires a scan before claiming a match.
 
 `npm run test:carriers:live -- packages/carriers/carriers/postlogistics` checks
 that an unissued barcode returns a clean 404. Set
-`POSTLOGISTICS_LIVE_TRACKING_NUMBER` outside the repository to check a shipment,
-or `SWISS_POST_TRACKING_NUMBER` to check that a relayed Swiss Post parcel returns
-404 so routing can select Swiss Post.
+`POSTLOGISTICS_LIVE_TRACKING_NUMBER` outside the repository to a current barcode
+or reference to check a shipment, or `SWISS_POST_TRACKING_NUMBER` to check that a
+relayed Swiss Post parcel returns 404 so routing can select Swiss Post.
