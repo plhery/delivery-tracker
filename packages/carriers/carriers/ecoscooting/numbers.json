@@ -56,6 +56,24 @@
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ecoscooting, which stays one candidate among several."
     },
     {
+      "number": "081980000095765434",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a33fb70972ddd0b68268042",
+        "date": "2026-06-18"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "The anonymous native gateway identifies this reference as an Ecoscooting parcel."
+    },
+    {
       "number": "083030000063547779",
       "role": "shipment",
       "evidence": "public_shipment_report",
@@ -80,6 +98,60 @@
       "source": {
         "url": "https://www.trustpilot.com/reviews/6ab4e2956837367f1f188fb5",
         "date": "2026-09-24"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "The anonymous native gateway identifies this reference as an Ecoscooting parcel."
+    },
+    {
+      "number": "083920000098172383",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a47a16090acdf482c93b61b",
+        "date": "2026-07-03"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "The anonymous native gateway identifies this reference as an Ecoscooting parcel."
+    },
+    {
+      "number": "084700000100323091",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a53935f5e2987b1e2b40ce9",
+        "date": "2026-07-12"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "The anonymous native gateway identifies this reference as an Ecoscooting parcel."
+    },
+    {
+      "number": "174570000102955436",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a78466a8aaf5ffaf828e312",
+        "date": "2026-08-09"
       },
       "expect": {
         "carrier": "unknown",
@@ -144,6 +216,24 @@
         ]
       },
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ecoscooting, which stays one candidate among several."
+    },
+    {
+      "number": "460150000103706789",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a834c5986b128939ce798fb",
+        "date": "2026-08-17"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "The anonymous native gateway identifies this reference as an Ecoscooting parcel."
     },
     {
       "number": "CNESP00000123400000000001",

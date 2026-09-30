@@ -14,15 +14,18 @@ orders and remains inconclusive rather than proving absence.
 
 Per-scan epoch milliseconds establish instants. Missing epochs retain display
 text without borrowing its timezone or an older delivery timestamp. Status
-comes from the latest scan. Numeric references arrive either with completion
-flags or, like every `CN` reference (Portuguese `CNPRT`, older Spanish
-`CNESP`), without them. A flagged delivery needs `GTMS_SIGNED` with its flags.
-Without flags, a delivery (`LM_SIGN_SUCCESS`) or a collection at a pickup point
-(`GTMS_PUDO_SIGNED`) needs its exact code and both affirmative labels, and a
-flagless `GTMS_SIGNED` stays inconclusive. Conflicting flags remain
-inconclusive. Arrival at a pickup point and the pickup point's own signature
-(`GTMS_STA_SIGNED`, "Delivered to PUDO") read as ready for pickup. The gateway
-no longer answers the published `CNESP` references.
+comes from the latest scan. Numeric references use one of two code families:
+`GTMS_*`/`TD_*`, or the last-mile `LM_*`/`SL_*`/`SC_*` family that every `CN`
+reference (Portuguese `CNPRT`, older Spanish `CNESP`) uses. Either may come
+with or without completion flags. A delivery or a collection at a pickup point
+needs its exact code and both affirmative labels, and flags, when present, must
+both affirm it; anything else stays inconclusive. Arrival at a pickup point and
+the pickup point's own signature ("Delivered to PUDO") read as ready for
+pickup. A parcel left at a pickup point past its deadline, and its whole
+journey back to the sender, read as returned. The web client names the GTMS
+code for that deadline (`GTMS_PUDO_OVERDUE`); only the last-mile one
+(`PUDO_OVERDUE`) has been seen in a reply. The gateway no longer answers the
+published `CNESP` references.
 The labelled gram weight is converted to kilograms. Destination addresses,
 postcodes, coordinates, delivery photos, order identifiers, routing features
 and pickup-point details, including the pickup PIN, are excluded. References

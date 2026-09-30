@@ -6,6 +6,15 @@ import { clean } from '../../core/transport';
 import { isRecord } from '../../core/types';
 import { ecoscootingStatus } from './status';
 
+const COLLECTED = ['PUDO Sign Success', 'Your shipment has been collected by consignee at the parcelshop'] as const;
+/** Status name and description that confirm each completion code. */
+const COMPLETION_LABELS = new Map<string, readonly [string, string]>([
+  ['GTMS_SIGNED', ['Delivery Success', 'Parcel has been delivered successfully']],
+  ['LM_SIGN_SUCCESS', ['Delivery Success', 'Your shipment has been delivered successfully']],
+  ['GTMS_PUDO_SIGNED', COLLECTED],
+  ['PUDO_SIGN_SUCCESS', COLLECTED],
+]);
+
 export function normalizeEcoscootingNumber(raw: string): string {
   const number = normalizeTrackingNumber(raw);
   if (!/^(?:\d{18}|CN(?:ESP|PRT)\d{20})$/.test(number)) throw new TypeError('Ecoscooting requires a numeric, CNESP or CNPRT parcel reference');
@@ -33,18 +42,14 @@ export function parseEcoscooting(payload: unknown, rawNumber: string): CarrierRe
     if (row.opTimestamp != null && !time) throw new SchemaError('Ecoscooting', 'Ecoscooting returned an invalid scan timestamp');
     const display = clean(row.datetime, 64);
     const mapped = ecoscootingStatus(code);
-    // Numeric references arrive either with completion flags or, like every CN
-    // reference (CNESP, CNPRT), without them. Without flags, a delivery or a
-    // collection at a pickup point needs its exact success code and both
-    // affirmative labels; a flagless GTMS_SIGNED stays inconclusive.
-    const flaggedCompletion = code === 'GTMS_SIGNED' && row.statusGroup === 'delivered' && row.status === 'finish'
-      && description === 'Parcel has been delivered successfully';
-    const flagless = !Object.hasOwn(row, 'statusGroup') && !Object.hasOwn(row, 'status');
-    const deliveryCompletion = flagless && code === 'LM_SIGN_SUCCESS'
-      && row.statusName === 'Delivery Success' && description === 'Your shipment has been delivered successfully';
-    const pickupCompletion = flagless && code === 'GTMS_PUDO_SIGNED'
-      && row.statusName === 'PUDO Sign Success' && description === 'Your shipment has been collected by consignee at the parcelshop';
-    if (mapped?.stage === 'delivered' && !flaggedCompletion && !deliveryCompletion && !pickupCompletion) throw new IndeterminateError('Ecoscooting', 'Ecoscooting returned inconsistent delivery evidence');
+    // Either code family may come with or without completion flags. A delivery
+    // or a collection needs its exact code and both affirmative labels, and
+    // flags, when present, must both affirm it.
+    const labels = COMPLETION_LABELS.get(code);
+    const flagsAgree = (!Object.hasOwn(row, 'statusGroup') && !Object.hasOwn(row, 'status'))
+      || (row.statusGroup === 'delivered' && row.status === 'finish');
+    const completed = !!labels && row.statusName === labels[0] && description === labels[1] && flagsAgree;
+    if (mapped?.stage === 'delivered' && !completed) throw new IndeterminateError('Ecoscooting', 'Ecoscooting returned inconsistent delivery evidence');
     const event: CarrierEvent = { ...(time ? { time: time.iso } : display ? { provider_time_text: display } : {}), description, provider_code: code, ...(mapped ? { stage: mapped.stage } : {}) };
     const key = JSON.stringify(event);
     if (!seen.has(key)) { seen.add(key); events.push(event); }

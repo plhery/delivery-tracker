@@ -1,0 +1,150 @@
+{
+  "success": "true",
+  "cainiaoId": "PRIVATE_SYNTHETIC_CAINIAO_ID",
+  "packageParam": {
+    "trackingNumber": "000000000000000001",
+    "dimWeight": {
+      "weight": "800",
+      "weightUnit": "g"
+    },
+    "outOrderId": "PRIVATE_SYNTHETIC_ORDER",
+    "toZipcode": "PRIVATE_SYNTHETIC_POSTCODE"
+  },
+  "feature": "PRIVATE_SYNTHETIC_FEATURE",
+  "statuses": [
+    {
+      "opTimestamp": "1774004400000",
+      "datetime": "2026-03-20 12:00:00 UTC+1",
+      "actionCode": "RT_LM_SIGN_SUCCESS",
+      "statusName": "Return Success",
+      "description": "Your shipment has been returned successfully to sender",
+      "timezone": "1",
+      "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
+      "deliveryLatitude": "PRIVATE_SYNTHETIC_LATITUDE",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1773918000000",
+      "datetime": "2026-03-19 12:00:00 UTC+1",
+      "actionCode": "RT_LM_DELIVERY_DEPART",
+      "statusName": "Return Outbound",
+      "description": "Your return shipment is out for delivery",
+      "timezone": "1",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1773831600000",
+      "datetime": "2026-03-18 12:00:00 UTC+1",
+      "actionCode": "RT_LM_DELIVERY_ARRIVE",
+      "statusName": "Return Inbound",
+      "description": "Your return shipment arrived at last mile station",
+      "timezone": "1",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1773745200000",
+      "datetime": "2026-03-17 12:00:00 UTC+1",
+      "actionCode": "RT_SC_OUTBOUND",
+      "statusName": "Return Outbound from Sorting Center",
+      "description": "Your return shipment has been processed at sorting center and ready for shipping",
+      "timezone": "1",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1773658800000",
+      "datetime": "2026-03-16 12:00:00 UTC+1",
+      "actionCode": "RT_SC_INBOUND",
+      "statusName": "Return Inbound at Sorting Center",
+      "description": "Your return shipment arrived at sorting center",
+      "timezone": "1",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1773572400000",
+      "datetime": "2026-03-15 12:00:00 UTC+1",
+      "actionCode": "LM_UNREACHABLE_RETURN",
+      "statusName": "Return to Example",
+      "description": "Your shipment will be returned to its origin",
+      "timezone": "1",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR",
+      "opRemark": "PRIVATE_SYNTHETIC_REMARK"
+    },
+    {
+      "opTimestamp": "1773486000000",
+      "datetime": "2026-03-14 12:00:00 UTC+1",
+      "actionCode": "PUDO_OVERDUE",
+      "statusName": "Parcel Expired at PUDO",
+      "description": "Your shipment has expired at the parcelshop, and will be returned to sender",
+      "timezone": "1",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR",
+      "opRemark": "PRIVATE_SYNTHETIC_REMARK"
+    },
+    {
+      "opTimestamp": "1773399600000",
+      "datetime": "2026-03-13 12:00:00 UTC+1",
+      "actionCode": "PUDO_INBOUND",
+      "statusName": "PUDO Inbound Success",
+      "description": "Your shipment has arrived at parcelshop and you‘ll receive pickup instructions shortly",
+      "timezone": "1",
+      "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1773313200000",
+      "datetime": "2026-03-12 12:00:00 UTC+1",
+      "actionCode": "PUDO_DELIVERY",
+      "statusName": "Delivered to PUDO",
+      "description": "Your package has been processed by the courier. We will notify you when it is ready for pickup at the point.",
+      "timezone": "1",
+      "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
+      "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
+      "deliveryLatitude": "PRIVATE_SYNTHETIC_LATITUDE",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1773226800000",
+      "datetime": "2026-03-11 12:00:00 UTC+1",
+      "actionCode": "LM_DELIVERY_DEPART",
+      "statusName": "Out for Delivery",
+      "description": "Your shipment is out for delivery",
+      "timezone": "1",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1773140400000",
+      "datetime": "2026-03-10 12:00:00 UTC+1",
+      "actionCode": "SL_ACCEPT",
+      "statusName": "Accepted by Last Mile",
+      "description": "Your shipment has been accepted by delivery carrier",
+      "timezone": "1",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1773054000000",
+      "datetime": "2026-03-09 12:00:00 UTC+1",
+      "actionCode": "SC_OUTBOUND",
+      "statusName": "Sorting Center Outbound",
+      "description": "Your shipment has been processed at sorting center and ready for shipping",
+      "timezone": "1",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1772967600000",
+      "datetime": "2026-03-08 12:00:00 UTC+1",
+      "actionCode": "SC_INBOUND",
+      "statusName": "Sorting Center Inbound",
+      "description": "Your shipment has arrived at sorting center",
+      "timezone": "1",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    },
+    {
+      "opTimestamp": "1772881200000",
+      "datetime": "2026-03-07 12:00:00 UTC+1",
+      "actionCode": "CREATE_ORDER_CES",
+      "statusName": "create",
+      "description": "Shipment order created",
+      "timezone": "1",
+      "opCode": "PRIVATE_SYNTHETIC_OPERATOR"
+    }
+  ]
+}

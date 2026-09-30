@@ -31,6 +31,56 @@
       "confirmedBy": "live"
     },
     {
+      "code": "GTMS_PUDO_OVERDUE",
+      "wording": "Exceeded pickup time",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "bundle",
+      "note": "Ecoscooting's web client shows this headline for the code; the reply's own wording was not seen."
+    },
+    {
+      "code": "GTMS_SIGN_FAILURE",
+      "wording": "Parcel will be returned to the origin",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "RT_SIGNIN_SUCCESS",
+      "wording": "Parcel has been returned back to the sender",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "RT_DO_DEPART",
+      "wording": "Return Outbound",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "RT_DO_ARRIVE",
+      "wording": "Return Inbound",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "RT_WH_OUTBOUND",
+      "wording": "Return outbound: parcel outbound from sorting center",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "RT_WH_INBOUND",
+      "wording": "Return inbound: parcel received in sorting center",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live"
+    },
+    {
       "code": "GTMS_DO_DEPART",
       "wording": "Out for delivery",
       "language": "en",
@@ -67,11 +117,15 @@
     },
     {
       "code": "In_transit",
+      "wording": "Shipment is in transit to Cainiao Express",
+      "language": "en",
       "stage": "in_transit",
       "confirmedBy": "live"
     },
     {
       "code": "Partner_outbound",
+      "wording": "Shipment has left Cainiao Express's partner facility",
+      "language": "en",
       "stage": "in_transit",
       "confirmedBy": "live"
     },
@@ -97,6 +151,77 @@
       "confirmedBy": "live"
     },
     {
+      "code": "PUDO_SIGN_SUCCESS",
+      "wording": "Your shipment has been collected by consignee at the parcelshop",
+      "language": "en",
+      "stage": "delivered",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "PUDO_DELIVERY",
+      "wording": "Delivered to PUDO",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live",
+      "note": "The pickup point signed for the parcel, not the recipient."
+    },
+    {
+      "code": "PUDO_INBOUND",
+      "wording": "Your shipment has arrived at parcelshop and you‘ll receive pickup instructions shortly",
+      "language": "en",
+      "stage": "ready_for_pickup",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "PUDO_OVERDUE",
+      "wording": "Your shipment has expired at the parcelshop, and will be returned to sender",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "LM_UNREACHABLE_RETURN",
+      "wording": "Your shipment will be returned to its origin",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "RT_LM_SIGN_SUCCESS",
+      "wording": "Your shipment has been returned successfully to sender",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "RT_LM_DELIVERY_DEPART",
+      "wording": "Your return shipment is out for delivery",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "RT_LM_DELIVERY_ARRIVE",
+      "wording": "Your return shipment arrived at last mile station",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "RT_SC_OUTBOUND",
+      "wording": "Your return shipment has been processed at sorting center and ready for shipping",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "RT_SC_INBOUND",
+      "wording": "Your return shipment arrived at sorting center",
+      "language": "en",
+      "stage": "returned",
+      "confirmedBy": "live"
+    },
+    {
       "code": "LM_DELIVERY_DEPART",
       "wording": "Your shipment is out for delivery",
       "language": "en",
@@ -111,10 +236,31 @@
       "confirmedBy": "live"
     },
     {
+      "code": "LM_PARCEL_EXCEPTION",
+      "wording": "Your shipment has encountered an exception at last mile station",
+      "language": "en",
+      "stage": "exception",
+      "confirmedBy": "live"
+    },
+    {
       "code": "SL_ACCEPT",
       "wording": "Your shipment has been accepted by delivery carrier",
       "language": "en",
       "stage": "accepted",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "TRANSFER_ARRIVE",
+      "wording": "Your shipment has arrived at the transit destination",
+      "language": "en",
+      "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "TRANSFER_DEPART",
+      "wording": "Your shipment has departed from the transit origin",
+      "language": "en",
+      "stage": "in_transit",
       "confirmedBy": "live"
     },
     {
@@ -129,6 +275,13 @@
       "wording": "Your shipment has arrived at sorting center",
       "language": "en",
       "stage": "in_transit",
+      "confirmedBy": "live"
+    },
+    {
+      "code": "PU_PICKUP_SUCCESS",
+      "wording": "Shipment picked up by carrier",
+      "language": "en",
+      "stage": "accepted",
       "confirmedBy": "live"
     },
     {

@@ -552,6 +552,18 @@
     ]
   },
   {
+    "input": "081980000095765434",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "bpost",
+      "ecoscooting"
+    ],
+    "asked": [
+      "bpost"
+    ]
+  },
+  {
     "input": "08203F557102",
     "carrier": "mrw",
     "confidence": "high",
@@ -592,6 +604,18 @@
     ]
   },
   {
+    "input": "083920000098172383",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "bpost",
+      "ecoscooting"
+    ],
+    "asked": [
+      "bpost"
+    ]
+  },
+  {
     "input": "08454077486990",
     "carrier": "unknown",
     "confidence": "low",
@@ -608,6 +632,18 @@
       "seur",
       "brt",
       "ciblex"
+    ]
+  },
+  {
+    "input": "084700000100323091",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "bpost",
+      "ecoscooting"
+    ],
+    "asked": [
+      "bpost"
     ]
   },
   {
@@ -1074,6 +1110,18 @@
     ],
     "asked": [
       "la-poste"
+    ]
+  },
+  {
+    "input": "174570000102955436",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "bpost",
+      "ecoscooting"
+    ],
+    "asked": [
+      "bpost"
     ]
   },
   {
@@ -1852,6 +1900,18 @@
     "confidence": "high",
     "candidates": [
       "quickpac"
+    ]
+  },
+  {
+    "input": "460150000103706789",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "bpost",
+      "ecoscooting"
+    ],
+    "asked": [
+      "bpost"
     ]
   },
   {

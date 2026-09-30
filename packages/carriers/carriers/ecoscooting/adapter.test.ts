@@ -16,6 +16,7 @@ const SPAIN_NUMBER = 'CNESP00000000000000000001';
 const portugalFixture = () => JSON.parse(readFileSync(new URL('./fixtures/delivered-portugal.json', import.meta.url), 'utf8'));
 const referenceFixture = (number: string) => { const value = portugalFixture(); value.packageParam.trackingNumber = number; return value; };
 const pickupFixture = () => JSON.parse(readFileSync(new URL('./fixtures/collected-pickup-point.json', import.meta.url), 'utf8'));
+const returnedFixture = () => JSON.parse(readFileSync(new URL('./fixtures/returned-pickup-point.json', import.meta.url), 'utf8'));
 
 describe('Ecoscooting parcel history', () => {
   it.each([PORTUGAL_NUMBER, SPAIN_NUMBER])('binds %s history and its separate affirmative completion schema', number => {
@@ -32,16 +33,26 @@ describe('Ecoscooting parcel history', () => {
     const wrongScan = referenceFixture(number); wrongScan.statuses[1].mailNo = NUMBER;
     expect(() => parseEcoscooting(wrongScan, number)).toThrow(expect.objectContaining({ kind: 'schema' }));
   });
-  it('reads numeric parcels in the flagless last-mile schema but never a flagless GTMS_SIGNED', () => {
+  it('reads either code family as delivered with or without affirmative flags', () => {
     const value = referenceFixture(NUMBER);
     value.statuses.splice(1, 0, { ...value.statuses[1], actionCode: 'LM_DELIVERY_FAILURE', statusName: 'Delivery Attempt Failure',
       description: 'Your shipment delivery attempt failed [Recipient not at home]' });
     const result = normalizeCarrierResult(parseEcoscooting(value, NUMBER));
     expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered', delivered_at: '2026-01-10T12:00:00Z' });
     expect(result.events?.slice(0, 3).map(event => event.stage)).toEqual(['delivered', 'failed_attempt', 'out_for_delivery']);
+    Object.assign(value.statuses[0], { status: 'finish', statusGroup: 'delivered' });
+    expect(parseEcoscooting(value, NUMBER)).toMatchObject({ status: 'delivered' });
     const numeric = fixture(); delete numeric.statuses[0].status; delete numeric.statuses[0].statusGroup;
-    expect(() => parseEcoscooting(numeric, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
-    numeric.statuses[0] = { ...numeric.statuses[0], description: 'Your shipment has been delivered successfully' };
+    expect(parseEcoscooting(numeric, NUMBER)).toMatchObject({ status: 'delivered', delivered_at: '2026-01-04T19:00:00Z' });
+  });
+  it.each([
+    ['the other family\'s description', { description: 'Your shipment has been delivered successfully' }],
+    ['another status name', { statusName: 'Different' }],
+    ['one flag alone', { statusGroup: 'delivered' }],
+    ['a failure flag', { status: 'error', statusGroup: 'delivered' }],
+  ])('keeps GTMS_SIGNED without flags inconclusive with %s', (_label, change) => {
+    const numeric = fixture(); delete numeric.statuses[0].status; delete numeric.statuses[0].statusGroup;
+    Object.assign(numeric.statuses[0], change);
     expect(() => parseEcoscooting(numeric, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
   });
   it.each(['status', 'statusGroup', 'description', 'statusName'])('rejects contradictory CN reference completion %s', field => {
@@ -64,6 +75,30 @@ describe('Ecoscooting parcel history', () => {
   it.each([['statusName', 'Different'], ['description', 'Not collected'], ['status', 'finish'], ['statusGroup', 'delivered']])('keeps a pickup-point collection inconclusive when %s changes or a flag appears', (field, value) => {
     const collected = pickupFixture(); collected.statuses[0][field] = value;
     expect(() => parseEcoscooting(collected, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
+  });
+  it('reads the last-mile family\'s pickup-point codes like the GTMS ones', () => {
+    const value = pickupFixture();
+    const codes: Record<string, string> = { GTMS_PUDO_SIGNED: 'PUDO_SIGN_SUCCESS', GTMS_STA_SIGNED: 'PUDO_DELIVERY', GTMS_PUDO_INBOUND: 'PUDO_INBOUND' };
+    for (const row of value.statuses) row.actionCode = codes[row.actionCode] ?? row.actionCode;
+    expect(parseEcoscooting(value, NUMBER)).toMatchObject({ status: 'delivered', current_stage: 'delivered', delivered_at: '2026-02-06T17:30:00Z' });
+    value.statuses.shift();
+    expect(parseEcoscooting(value, NUMBER)).toMatchObject({ status: 'out_for_delivery', current_stage: 'ready_for_pickup' });
+    const flagged = pickupFixture(); flagged.statuses[0].actionCode = 'PUDO_SIGN_SUCCESS'; flagged.statuses[0].status = 'error';
+    expect(() => parseEcoscooting(flagged, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
+  });
+  it('reads an uncollected pickup-point parcel and its whole journey back as returned', () => {
+    const result = normalizeCarrierResult(parseEcoscooting(returnedFixture(), NUMBER));
+    expect(result).toMatchObject({ status: 'exception', current_stage: 'returned', last_status_text: 'Your shipment has been returned successfully to sender', weight_kg: 0.8 });
+    expect(result).not.toHaveProperty('delivered_at');
+    expect(result.events?.map(event => event.stage)).toEqual([...Array(7).fill('returned'), 'ready_for_pickup', 'ready_for_pickup', 'out_for_delivery',
+      'accepted', 'in_transit', 'in_transit', 'registered']);
+    expect(JSON.stringify(result)).not.toMatch(/PRIVATE|imgUrl|opCode|opRemark|Latitude|Longitude|outOrder|toZip|feature|cainiaoId/);
+    const expired = returnedFixture(); expired.statuses = expired.statuses.slice(6);
+    expect(parseEcoscooting(expired, NUMBER)).toMatchObject({ status: 'exception', current_stage: 'returned',
+      last_status_text: 'Your shipment has expired at the parcelshop, and will be returned to sender' });
+    const numeric = fixture(); numeric.statuses.unshift({ ...numeric.statuses[1], actionCode: 'RT_SIGNIN_SUCCESS', statusName: 'Return Success',
+      description: 'Parcel has been returned back to the sender', opTimestamp: '1767900000000' });
+    expect(parseEcoscooting(numeric, NUMBER)).toMatchObject({ status: 'exception', current_stage: 'returned' });
   });
   it('reads the first-mile order scans as registered rather than in transit', () => {
     const value = pickupFixture(); value.statuses = value.statuses.slice(-2);

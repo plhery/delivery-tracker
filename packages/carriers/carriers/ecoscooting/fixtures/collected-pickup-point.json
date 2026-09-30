@@ -35,7 +35,7 @@
       "datetime": "2026-02-05 11:05:00 UTC+1",
       "actionCode": "GTMS_STA_SIGNED",
       "statusName": "Delivered to PUDO",
-      "description": "Your package has been processed by the courier. Example will notify you when it is ready for pickup at the point.",
+      "description": "Your package has been processed by the courier. We will notify you when it is ready for pickup at the point.",
       "timezone": "1",
       "imgUrl": "PRIVATE_SYNTHETIC_IMAGE",
       "deliveryLongitude": "PRIVATE_SYNTHETIC_LONGITUDE",
