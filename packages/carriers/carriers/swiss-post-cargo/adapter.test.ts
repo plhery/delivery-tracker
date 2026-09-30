@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { Settings } from 'luxon';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NotFoundError } from '../../core/errors';
 import {
@@ -15,7 +16,10 @@ const fixture = (name: string): Record<string, unknown> => JSON.parse(
 const delivered = () => fixture('delivered');
 const deliveredShipment = () => (delivered().Data as Record<string, unknown>[])[0]!;
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  Settings.defaultZone = 'system';
+});
 
 describe('Swiss Post Cargo tracking', () => {
   it('normalizes public barcodes and builds the official result URL', () => {
@@ -30,19 +34,19 @@ describe('Swiss Post Cargo tracking', () => {
       status: 'delivered',
       current_stage: 'delivered',
       last_status_text: 'Delivered',
-      last_update: '2026-08-30T12:30:00+02:00',
+      last_update: '2026-08-30T12:30:00.777+02:00',
       expected_delivery: null,
       timezone: 'Europe/Zurich',
       events: [
         {
-          time: '2026-08-30T12:30:00+02:00',
+          time: '2026-08-30T12:30:00.777+02:00',
           location: 'Zürich',
           description: 'Delivered',
           stage: 'delivered',
           provider_code: 'DLV',
         },
         {
-          time: '2026-08-29T07:15:00+02:00',
+          time: '2026-08-29T07:15:00.100+02:00',
           location: 'Dintikon',
           description: 'Shipment accepted',
           stage: 'accepted',
@@ -64,6 +68,34 @@ describe('Swiss Post Cargo tracking', () => {
       .toThrow('invalid tracking response type');
     expect(() => parseSwissPostCargoResponse({ Data: delivered().Data }, '1234ABC789'))
       .toThrow('invalid tracking response type');
+  });
+
+  it('reads offset-less times on Swiss time in any server zone and keeps sent offsets', () => {
+    // Stands in for the server's zone: production runs in UTC, and a machine on
+    // Swiss time must not pass for it.
+    Settings.defaultZone = 'UTC';
+    const scan = (TimeStamp: string, Description: string) => ({ TimeStamp, City: 'Dintikon', Status: 'TRN', Description });
+    // A reference covering a winter and a summer shipment.
+    const result = parseSwissPostCargoResponse({
+      Type: 2,
+      Data: [
+        { Identifier: '1234ABC789', History: [scan('2026-01-15T09:30:00.1', 'Loaded')] },
+        {
+          Identifier: '1234ABC790',
+          History: [
+            scan('2026-08-30T12:30:00.777', 'Unloaded'),
+            scan('2026-08-30T11:00:00+01:00', 'Sorted'),
+            scan('2026-08-30T08:00:00Z', 'Shipment accepted'),
+          ],
+        },
+      ],
+    }, 'REF12345');
+    expect(result.events?.map((event) => event.time)).toEqual([
+      '2026-08-30T12:30:00.777+02:00',
+      '2026-08-30T11:00:00+01:00',
+      '2026-08-30T08:00:00Z',
+      '2026-01-15T09:30:00.100+01:00',
+    ]);
   });
 
   it('never retains the consignee or the internal full description', () => {

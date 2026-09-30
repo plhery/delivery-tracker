@@ -10,7 +10,7 @@
       "History": [
         {
           "Id": 2,
-          "TimeStamp": "2026-08-30T12:30:00+02:00",
+          "TimeStamp": "2026-08-30T12:30:00.777",
           "City": "Zürich",
           "Status": "DLV",
           "Description": "Delivered",
@@ -18,7 +18,7 @@
         },
         {
           "Id": 1,
-          "TimeStamp": "2026-08-29T07:15:00+02:00",
+          "TimeStamp": "2026-08-29T07:15:00.1",
           "City": "Dintikon",
           "Status": "RFS",
           "Description": "Shipment accepted"

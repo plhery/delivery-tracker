@@ -1,9 +1,9 @@
 import 'server-only';
 
-import { DateTime } from 'luxon';
 import type { AdapterFactory } from '../../core/adapter';
 import { InputRequiredError, NotFoundError, SchemaError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult, CarrierStatus } from '../../core/result';
+import { isoTime, zonedTime, type ParsedTime } from '../../core/time';
 import { cleanScalar, fetchBounded, parseJsonBytes } from '../../core/transport';
 import { isRecord } from '../../core/types';
 import { statusFor } from './status';
@@ -15,6 +15,7 @@ import { statusFor } from './status';
 const TRACKING_API = 'https://eosapi.swisspost-cargo.com/api/trackandtrace/public';
 const TRACKING_PAGE = 'https://apv.swisspost-cargo.com/public/trackandtrace';
 const PROVIDER = 'Swiss Post Cargo';
+const ZONE = 'Europe/Zurich';
 const DEFAULT_TIMEOUT_MS = 15_000;
 const MAX_RESPONSE_BYTES = 2_000_000;
 
@@ -25,27 +26,16 @@ export interface SwissPostCargoOptions {
 }
 
 /**
- * Local time policy, deliberately not `isoTime()`: the endpoint sends ISO-8601
- * with an explicit offset, and the dotted/slashed fallbacks are wall-clock
- * strings in Europe/Zurich. An ISO value without an offset keeps luxon's
- * `setZone` reading rather than being stamped, so an unexpected shape is never
- * silently relabelled as Swiss local time.
+ * The endpoint sends Swiss wall-clock ISO-8601 without an offset
+ * (`2026-08-30T12:30:00.777`). It is read in Europe/Zurich, never in the
+ * server's zone, and so are the dotted and slashed fallbacks. An explicit
+ * offset or `Z` is kept as sent.
  */
-function eventTimestamp(value: unknown): { value: string; timestamp: number } | null {
-  const raw = cleanScalar(value, 64);
-  if (!raw) return null;
-  let parsed = DateTime.fromISO(raw, { setZone: true });
-  if (!parsed.isValid) {
-    for (const format of ['dd.MM.yyyy HH:mm:ss', 'dd.MM.yyyy HH:mm', 'dd/MM/yyyy HH:mm:ss']) {
-      parsed = DateTime.fromFormat(raw, format, { zone: 'Europe/Zurich' });
-      if (parsed.isValid) break;
-    }
-  }
-  if (!parsed.isValid) return null;
-  return {
-    value: parsed.toISO({ suppressMilliseconds: true }) ?? raw,
-    timestamp: parsed.toMillis(),
-  };
+function eventTimestamp(value: unknown): ParsedTime | null {
+  return isoTime(value, ZONE)
+    ?? zonedTime(value, 'dd.MM.yyyy HH:mm:ss', ZONE)
+    ?? zonedTime(value, 'dd.MM.yyyy HH:mm', ZONE)
+    ?? zonedTime(value, 'dd/MM/yyyy HH:mm:ss', ZONE);
 }
 
 export function normalizeSwissPostCargoTrackingNumber(raw: string): string {
@@ -119,13 +109,13 @@ export function parseSwissPostCargoResponse(
       if (!time || !description) continue;
       const location = cleanScalar(candidate.City, 120);
       const code = cleanScalar(candidate.Status, 32).toLocaleUpperCase('en-US');
-      const identity = JSON.stringify([time.value, location, description, code]);
+      const identity = JSON.stringify([time.iso, location, description, code]);
       if (seen.has(identity)) continue;
       seen.add(identity);
       const classified = statusFor(code, description);
       parsedEvents.push({
         event: {
-          time: time.value,
+          time: time.iso,
           location,
           description,
           stage: classified.stage,
@@ -150,7 +140,7 @@ export function parseSwissPostCargoResponse(
     last_status_text: latest.event.description,
     last_update: latest.event.time,
     expected_delivery: null,
-    timezone: 'Europe/Zurich',
+    timezone: ZONE,
     events: events.map(({ event }) => event),
     tracking_url: swissPostCargoTrackingUrl(trackingNumber),
   };

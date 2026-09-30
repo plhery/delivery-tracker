@@ -36,9 +36,10 @@ its published source map).
   tracking.
 - Only `DLV` is confirmed from a capture; `POD`, `P40`, `IMG` and `SIG` are
   carried over from the original map as delivery codes.
-- Timestamps normally carry an explicit offset. `dd.MM.yyyy HH:mm[:ss]` and
-  `dd/MM/yyyy HH:mm:ss` fallbacks are read in `Europe/Zurich`. `core/time`'s
-  `isoTime()` is not used: it would stamp an offset-less ISO value as Swiss time.
+- Times arrive as Swiss wall-clock without an offset. They are read in
+  `Europe/Zurich` (`isoTime`), never in the server's zone, and so are the
+  `dd.MM.yyyy HH:mm[:ss]` and `dd/MM/yyyy HH:mm:ss` fallbacks. An explicit offset
+  or `Z` is kept as sent.
 - Not used: scraping the page HTML — it renders client-side, so it would need a
   browser for data the endpoint returns directly.
 - The consignee block and `FullDescription` (internal operational detail) are
