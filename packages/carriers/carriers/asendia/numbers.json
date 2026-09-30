@@ -105,6 +105,20 @@
       "note": "Published integration example, not a real shipment. The source attributes it to Asendia; detection selects La Poste / Colissimo."
     },
     {
+      "number": "LS232735825CH",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a680c8b8a48f47256b888b9",
+        "date": "2026-07-28"
+      },
+      "expect": {
+        "carrier": "swiss-post",
+        "confidence": "high"
+      },
+      "note": "Publicly reported Asendia USA shipment returned from Germany through Switzerland; detection selects Swiss Post. On 2026-09-30 ParcelsApp listed its Asendia USA scans in both countries at the UTC instants A1 returned."
+    },
+    {
       "number": "LS244428589CH",
       "role": "shipment",
       "evidence": "public_shipment_report",
@@ -116,7 +130,7 @@
         "carrier": "swiss-post",
         "confidence": "high"
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Asendia; detection selects Swiss Post. Sent from the USA through Asendia."
+      "note": "Publicly reported shipment sent from the USA through Asendia; detection selects Swiss Post. Asendia USA's A1 tracking returned its history on 2026-09-29."
     },
     {
       "number": "UX000352872CH",
@@ -130,6 +144,20 @@
         "confidence": "high"
       },
       "note": "Example value of the trackingNumber field in Asendia USA's Parcel API reference, not a real shipment; detection selects Swiss Post for this S10 shape."
+    },
+    {
+      "number": "UX911572560FR",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a064349008e8e5d4cf776a3",
+        "date": "2026-05-14"
+      },
+      "expect": {
+        "carrier": "la-poste",
+        "confidence": "high"
+      },
+      "note": "Publicly reported Asendia USA shipment; detection selects La Poste / Colissimo. On 2026-09-30 ParcelsApp listed its Asendia USA scans at the UTC instants A1 returned."
     },
     {
       "number": "LN242142606US",
