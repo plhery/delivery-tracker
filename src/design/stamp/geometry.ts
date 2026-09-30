@@ -28,3 +28,23 @@ export function waves(from: number, to: number, rows: readonly number[], length 
   const steps = Math.ceil((to - from) / length);
   return rows.map((y) => `M${f(from)} ${f(y)}q${f(length / 4)} ${f(-height * 2)} ${f(length / 2)} 0${`t${f(length / 2)} 0`.repeat(steps * 2 - 1)}`).join('');
 }
+
+/**
+ * A self-adhesive stamp's serpentine die cut: every edge dips into the paper in
+ * even waves that meet at the corners, where each edge starts and ends at full width.
+ */
+export function dieCutOutline(width: number, height: number, wavelength: number, depth: number): string {
+  const edge = (fromX: number, fromY: number, toX: number, toY: number, inX: number, inY: number) => {
+    const length = Math.hypot(toX - fromX, toY - fromY);
+    const waves = Math.max(1, Math.round(length / wavelength));
+    const steps = waves * 10;
+    let d = '';
+    for (let step = 1; step <= steps; step++) {
+      const t = step / steps;
+      const dip = depth * (1 - Math.cos(2 * Math.PI * waves * t)) / 2;
+      d += `L${f(fromX + (toX - fromX) * t + inX * dip)} ${f(fromY + (toY - fromY) * t + inY * dip)}`;
+    }
+    return d;
+  };
+  return `M0 0${edge(0, 0, width, 0, 0, 1)}${edge(width, 0, width, height, -1, 0)}${edge(width, height, 0, height, 0, -1)}${edge(0, height, 0, 0, 1, 0)}Z`;
+}

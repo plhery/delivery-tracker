@@ -2,27 +2,27 @@ import { expect, test, type Page } from '@playwright/test';
 
 const light = (page: Page) => page.getByRole('region', { name: 'Cards' }).locator('[data-theme=light]');
 const opened = (page: Page) => light(page).locator('.detail--postcard');
-const pick = (page: Page, group: string, name: string) => page.getByRole('group', { name: group, exact: true }).getByRole('button', { name, exact: true });
+const pick = (page: Page, group: string, name: string) => page.getByRole('group', { name: group, exact: true }).getByRole('button', { name, exact: true }).click();
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/design/stamp');
   await expect(page.locator('main[data-ready="true"]')).toBeVisible();
 });
 
-test('mixes each stamp with each postmark on the cards', async ({ page }) => {
+test('draws every motif, and postmarks only delivered parcels', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  // The sheet shows every stamp; the engraved one names the country the sneakers left from.
-  await expect(page.getByRole('region', { name: 'Stamp sheet' }).locator('[data-theme=light] [data-mark=picture]')).toHaveCount(4);
-  await expect(opened(page).first().locator('[data-mark=engraved]')).toContainText('DEUTSCHLAND');
+  // One row per motif, one stamp per sample parcel.
+  await expect(page.getByRole('region', { name: 'Stamp sheet' }).locator('[data-theme=light] [data-mark=globe]')).toHaveCount(5);
+  // The sneakers are still on their way; the matcha has arrived and carries the date it did.
+  await expect(opened(page).first().locator('[data-mark=globe]')).toBeVisible();
+  await expect(opened(page).first().locator('[data-mark]')).not.toContainText(/\d{2}\.\d{2}/);
+  await expect(opened(page).nth(1).locator('[data-mark]')).toContainText(/\d{2}\.\d{2}/);
 
-  await pick(page, 'Stamp', 'Inside').click();
-  // The emoji leaves the name for the stamp.
-  await expect(opened(page).first().getByRole('heading', { level: 2 })).toHaveText('New sneakers');
-  await expect(opened(page).first().locator('[data-mark=inside]')).toContainText('👟');
-
-  await pick(page, 'Stamp', 'Today').click();
-  await expect(opened(page).first().locator('.postage-stamp')).toBeVisible();
+  await pick(page, 'Motif', 'Letters');
+  await expect(opened(page).first().locator('[data-mark=letters]')).toContainText('DE');
+  await pick(page, 'Print', 'Engraved');
+  await expect(opened(page).first().locator('[data-print=engraved]')).toBeVisible();
   expect(errors).toEqual([]);
 });
 

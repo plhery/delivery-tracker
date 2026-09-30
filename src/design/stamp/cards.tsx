@@ -13,8 +13,8 @@ import { currentEvent } from '../../lib/stages';
 import type { ParcelWithEvents } from '../../types';
 import { stampFacts } from './facts';
 import { perforatedOutline } from './geometry';
-import { PRINT } from './pictures';
-import { RoundPostmark, Stamp, StampPicture, type PostmarkMode, type StampKind } from './stamps';
+import { PRINT } from './motifs';
+import { RoundPostmark, Stamp, StampPrint, type StampDesign } from './stamps';
 import styles from './study.module.css';
 
 export type CardDesign = 'today' | 'envelope' | 'postcard' | 'stamp';
@@ -22,24 +22,22 @@ export type CardDesign = 'today' | 'envelope' | 'postcard' | 'stamp';
 export interface CardProps {
   parcel: ParcelWithEvents;
   design: CardDesign;
-  kind: StampKind;
-  postmark: PostmarkMode;
+  stamp: StampDesign;
   world: boolean;
   dropBesideMap?: boolean;
 }
 
-function useCardText(parcel: ParcelWithEvents, kind: StampKind) {
+function useCardText(parcel: ParcelWithEvents) {
   const { locale, languageTag, t } = useI18n();
   const carrier = carrierInfo(displayedCarrierId(parcel), locale);
   const current = currentEvent(parcel.events);
   const estimate = parcelDeliveryEstimate(parcel);
   const completion = localizedParcelCompletionDate(parcel, languageTag, t);
   const name = parcel.label || t('common.parcel');
-  const facts = stampFacts(parcel, name, carrier.name, languageTag, t);
+  const facts = stampFacts(parcel, carrier.name, languageTag, t);
   return {
     carrier, current, languageTag, facts,
-    // The emoji moves onto the stamp that shows what is inside.
-    name: kind === 'inside' && facts.emoji ? facts.title : name,
+    name,
     nextUp: t('app.nextUp'),
     status: t(parcelDisplayStatusKey(parcel)),
     expected: estimate ? localizedExpectedDelivery(estimate, t, languageTag) : null,
@@ -73,21 +71,21 @@ function PerforatedPaper({ margin }: { margin: number }) {
         </filter>
       </defs>
       <path d={perforatedOutline(size.width, size.height, 11.5, 3.3)} className={styles.paper} filter={`url(#${id}-shadow)`} />
-      <rect x={margin} y={margin} width={size.width - margin * 2} height={size.height - margin * 2} className={styles.print} />
-      <rect x={margin + 3} y={margin + 3} width={size.width - margin * 2 - 6} height={size.height - margin * 2 - 6} className={styles.frame} />
+      <rect x={margin} y={margin} width={size.width - margin * 2} height={size.height - margin * 2} className={styles.cardPrint} />
+      <rect x={margin + 3} y={margin + 3} width={size.width - margin * 2 - 6} height={size.height - margin * 2 - 6} className={styles.cardFrame} />
     </>}
   </svg>;
 }
 
-/** The picture a stamp would carry, printed flat onto the stamp-shaped card, cancelled on its corner. */
-function PrintedPicture({ kind, text, world, postmark }: { kind: StampKind; text: CardText; world: boolean; postmark: PostmarkMode }) {
-  const cancelled = postmark === 'always' || (postmark === 'delivered' && text.facts.delivered);
+/** The stamp's print, set flat onto the stamp-shaped card and cancelled on its corner once delivered. */
+function PrintedPicture({ stamp, text, world }: { stamp: StampDesign; text: CardText; world: boolean }) {
+  const clip = useId();
   return <span className={styles.picturePlate}>
-    <svg className={styles.printedPicture} viewBox={`0 0 ${PRINT.width} ${PRINT.height}`} aria-hidden="true">
-      <StampPicture kind={kind === 'today' ? 'clean' : kind} facts={text.facts} world={world} />
-      <rect x=".3" y=".3" width={PRINT.width - .6} height={PRINT.height - .6} className={styles.frame} />
+    <svg className={styles.printedPicture} data-print={stamp.print} viewBox={`0 0 ${PRINT.width} ${PRINT.height}`} aria-hidden="true">
+      <defs><clipPath id={clip}><rect width={PRINT.width} height={PRINT.height} /></clipPath></defs>
+      <StampPrint design={stamp} motif={stamp.motif === 'today' ? 'globe' : stamp.motif} facts={text.facts} world={world} clip={clip} />
     </svg>
-    {cancelled && <span className={styles.cardPostmark}><RoundPostmark facts={text.facts} /></span>}
+    {text.facts.delivered && <span className={styles.cardPostmark}><RoundPostmark facts={text.facts} /></span>}
   </span>;
 }
 
@@ -104,9 +102,9 @@ function Summary({ text }: { text: CardText }) {
 }
 
 /** The list's Next up card, with the app's markup and classes, laid out by `design`. */
-export function NextUpCard({ parcel, design, kind, postmark, world }: CardProps) {
-  const text = useCardText(parcel, kind);
-  const stamp = <Stamp kind={kind} facts={text.facts} postmark={postmark} world={world} />;
+export function NextUpCard({ parcel, design, stamp: stampDesign, world }: CardProps) {
+  const text = useCardText(parcel);
+  const stamp = <Stamp design={stampDesign} facts={text.facts} world={world} />;
   const top = <span className="parcel-card__hero-top"><CarrierMark carrier={text.carrier} /><span className="parcel-card__next-label">{text.nextUp}</span></span>;
   let body: ReactNode;
   if (design === 'envelope') {
@@ -138,7 +136,7 @@ export function NextUpCard({ parcel, design, kind, postmark, world }: CardProps)
     body = <>
       <PerforatedPaper margin={8} />
       {top}
-      <span className="parcel-card__hero-main"><strong className="parcel-card__label">{text.name}</strong><PrintedPicture kind={kind} text={text} world={world} postmark={postmark} /></span>
+      <span className="parcel-card__hero-main"><strong className="parcel-card__label">{text.name}</strong><PrintedPicture stamp={stampDesign} text={text} world={world} /></span>
       <Summary text={text} />
     </>;
   } else {
@@ -157,13 +155,13 @@ export function NextUpCard({ parcel, design, kind, postmark, world }: CardProps)
 }
 
 /** The top of the opened parcel, with the app's markup and classes, laid out by `design`. */
-export function OpenedCard({ parcel, design, kind, postmark, world, dropBesideMap = false }: CardProps) {
-  const text = useCardText(parcel, kind);
+export function OpenedCard({ parcel, design, stamp: stampDesign, world, dropBesideMap = false }: CardProps) {
+  const text = useCardText(parcel);
   const { placed, route } = useParcelRoute(parcel, text.languageTag);
   const stage = text.current?.stage;
   // The postcard keeps the route behind the globe button.
   const mapped = placed && design !== 'postcard';
-  const stamp = <Stamp kind={kind} facts={text.facts} postmark={postmark} world={world} />;
+  const stamp = <Stamp design={stampDesign} facts={text.facts} world={world} />;
   const carrier = <button type="button" className="detail__carrier"><CarrierMark carrier={text.carrier} /></button>;
   const progress = <div className="detail__progress"><ProgressTrack stage={stage ?? null} /></div>;
   const status = <>
@@ -202,7 +200,7 @@ export function OpenedCard({ parcel, design, kind, postmark, world, dropBesideMa
       {mapped && <RouteEngraving route={route} stage={stage} onOpen={() => {}} />}
       <div className="detail__hero-meta">{carrier}<Actions placed={placed} /></div>
       <div className="detail__title-row"><h2 className="detail__title">{text.name}</h2>
-        {!(mapped && dropBesideMap) && <PrintedPicture kind={kind} text={text} world={world} postmark={postmark} />}</div>
+        {!(mapped && dropBesideMap) && <PrintedPicture stamp={stampDesign} text={text} world={world} />}</div>
       {status}
       {progress}
     </>;

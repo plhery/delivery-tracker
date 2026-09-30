@@ -1,4 +1,3 @@
-import { geoDistance } from 'd3-geo';
 import type { IconName } from '../../components/Icon';
 import { localizedEventDescription, type Translate } from '../../i18n';
 import { parcelIcon } from '../../lib/parcelDesign';
@@ -21,11 +20,6 @@ export interface StampFacts {
   originName: string;
   /** Whether the parcel has crossed a border. */
   international: boolean;
-  /** Kilometres between the scans so far, when at least two have places. */
-  km: number | null;
-  /** The name without a trailing emoji, and that emoji. */
-  title: string;
-  emoji: string | null;
   /** The last scan, as the carrier worded it, and where. */
   message: string;
   messagePlace: string;
@@ -41,31 +35,15 @@ const STAMP_NAMES: Record<string, string> = {
   NL: 'NEDERLAND', NO: 'NORGE', PL: 'POLSKA', PT: 'PORTUGAL', SE: 'SVERIGE', US: 'USA',
 };
 
-const EARTH_KM = 6371;
-
-/** A name whose last character is an emoji gives that emoji up for the stamp. */
-export function splitEmoji(label: string): { title: string; emoji: string | null } {
-  const graphemes = [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(label.trim())].map((part) => part.segment);
-  const last = graphemes.at(-1);
-  if (!last || !/\p{Extended_Pictographic}/u.test(last)) return { title: label, emoji: null };
-  return { title: graphemes.slice(0, -1).join('').trim(), emoji: last };
-}
-
-export function stampFacts(parcel: ParcelWithEvents, name: string, carrierName: string, languageTag: string, t: Translate): StampFacts {
+export function stampFacts(parcel: ParcelWithEvents, carrierName: string, languageTag: string, t: Translate): StampFacts {
   const current = currentEvent(parcel.events);
   const newest = sortEventsDesc(parcel.events);
   const placed = newest.filter((event) => event.place);
   const latest = placed[0];
   const origin = placed.at(-1)?.place?.country ?? '';
-  let km = 0;
-  for (let index = 1; index < placed.length; index++) {
-    const [a, b] = [placed[index].place!, placed[index - 1].place!];
-    km += geoDistance([a.longitude, a.latitude], [b.longitude, b.latitude]) * EARTH_KM;
-  }
   const at = new Date(current?.occurredAt ?? parcel.createdAt);
   const country = latest?.place ? countryName(latest.place.country, languageTag) : '';
   const upper = (text: string) => text.toLocaleUpperCase(languageTag);
-  const { title, emoji } = splitEmoji(name);
   return {
     stage: current?.stage ?? null,
     icon: parcelIcon(current?.stage),
@@ -75,8 +53,6 @@ export function stampFacts(parcel: ParcelWithEvents, name: string, carrierName: 
     origin,
     originName: STAMP_NAMES[origin] ?? origin,
     international: new Set(placed.map((event) => event.place!.country)).size > 1,
-    km: km >= 5 ? Math.round(km / 10) * 10 : null,
-    title, emoji,
     message: current ? localizedEventDescription(current.description, t) : '',
     messagePlace: current?.place?.precision === 'city' ? current.place.name : current?.location ?? '',
     date: new Intl.DateTimeFormat(languageTag, { day: '2-digit', month: '2-digit', year: '2-digit' }).format(at),

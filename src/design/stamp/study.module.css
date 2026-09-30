@@ -63,8 +63,11 @@
 
 /* The stamp sheet: every stamp for every sample parcel. */
 .sheet { display: grid; gap: 8px; margin-top: 12px; }
-.sheetRow { display: grid; grid-template-columns: 84px repeat(4, minmax(0, 1fr)); align-items: center; gap: 6px; }
-.sheetHead { overflow: hidden; color: var(--ink-soft); font-size: 10.5px; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.sheetRow { display: grid; grid-template-columns: 92px repeat(5, minmax(0, 1fr)); align-items: center; gap: 6px; }
+.sheetHead { display: grid; min-width: 0; color: var(--ink-soft); font-size: 10px; line-height: 1.35; text-align: center; }
+.sheetHead strong { overflow: hidden; color: var(--ink); font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
+.sheetGroup { margin: 14px 0 2px; color: var(--ink-soft); font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; }
+.sheetName > span { display: block; padding: 0 8px; color: var(--ink-soft); font-size: 12px; }
 .sheetName button {
   width: 100%; min-height: 32px; padding: 0 8px; border: 0; border-radius: 10px; background: transparent;
   color: var(--ink-soft); font: inherit; font-size: 12px; text-align: left; cursor: pointer;
@@ -75,7 +78,7 @@
   --tone-surface: light-dark(var(--carrier-surface-light), var(--carrier-surface-dark));
   --carrier-brand: light-dark(var(--carrier-brand-light), var(--carrier-brand-dark));
 }
-.sheetTile { display: grid; place-items: center; height: 108px; overflow: hidden; border-radius: 14px; background: var(--tone-surface); }
+.sheetTile { display: grid; place-items: center; height: 104px; overflow: hidden; border-radius: 14px; background: var(--tone-surface); }
 .sheetStamp { display: grid; place-items: center; zoom: 1.5; }
 .sheetStamp :global(.postage-stamp) { width: 45px; height: 56px; padding: 7px; }
 .sheetStamp :global(.postage-stamp svg) { width: 22px; height: 22px; stroke-width: 1.1; }
@@ -87,56 +90,61 @@
 }
 .opened.opened :global(.detail__hero) { position: relative; margin: 0; overflow: hidden; }
 
-/* The stamps. Paper, inks and scene tones follow the card and the theme. */
-.stamp, .printedPicture, .cardPaper {
-  --stamp-paper: #fffefa;
-  --scene-sky: color-mix(in srgb, var(--tone-surface) 70%, #fff);
-  --scene-mid: color-mix(in srgb, var(--tone) 24%, var(--tone-surface));
-  --scene-deep: color-mix(in srgb, var(--tone) 48%, var(--tone-surface));
-  --scene-light: #fffefa;
-}
+/* The stamps. The paper follows the theme; the print style decides which inks draw the motif. */
+.stamp, .printedPicture, .cardPaper { --stamp-paper: #fffefa; }
 /* A stamp-shaped card on a white page needs a tinted paper for its holes to show. */
 .cardPaper { --stamp-paper: color-mix(in srgb, var(--tone-surface) 30%, #fff); }
-.theme[data-theme=dark] :is(.stamp, .printedPicture, .cardPaper) {
-  --stamp-paper: color-mix(in srgb, var(--tone) 22%, var(--tone-surface));
-  --scene-sky: color-mix(in srgb, var(--tone-surface) 80%, #000);
-  --scene-mid: color-mix(in srgb, var(--tone) 22%, var(--tone-surface));
-  --scene-deep: color-mix(in srgb, var(--tone) 40%, var(--tone-surface));
-  --scene-light: color-mix(in srgb, var(--tone) 70%, var(--tone-surface));
+.theme[data-theme=dark] :is(.stamp, .printedPicture, .cardPaper) { --stamp-paper: color-mix(in srgb, var(--tone) 22%, var(--tone-surface)); }
+.stamp, .printedPicture {
+  --m-ground: var(--tone-surface); --m-line: var(--tone); --m-shape: var(--tone);
+  --m-body: color-mix(in srgb, var(--tone) 14%, var(--tone-surface)); --m-snow: var(--stamp-paper);
+  --m-land: color-mix(in srgb, var(--tone) 34%, var(--tone-surface)); --m-frame: .28;
+}
+:is(.stamp, .printedPicture)[data-print=engraved] {
+  --m-shape: var(--stamp-paper); --m-body: var(--stamp-paper); --m-land: color-mix(in srgb, var(--tone) 30%, var(--stamp-paper)); --m-frame: .9;
+}
+:is(.stamp, .printedPicture)[data-print=ink] {
+  --m-ground: var(--tone); --m-line: var(--stamp-paper); --m-shape: var(--stamp-paper); --m-snow: var(--tone);
+  --m-body: color-mix(in srgb, var(--stamp-paper) 24%, var(--tone)); --m-land: color-mix(in srgb, var(--stamp-paper) 48%, var(--tone)); --m-frame: .4;
+}
+/* At night an ink print would glare: it darkens to a mid tone with the motif cut out of it. */
+.theme[data-theme=dark] :is(.stamp, .printedPicture)[data-print=ink] {
+  --m-ground: color-mix(in srgb, var(--tone) 52%, var(--tone-surface)); --m-line: var(--tone-surface); --m-shape: var(--tone-surface);
+  --m-body: color-mix(in srgb, var(--tone) 34%, var(--tone-surface)); --m-land: color-mix(in srgb, var(--tone) 22%, var(--tone-surface));
+}
+:is(.stamp, .printedPicture)[data-print=paper] {
+  --m-ground: var(--stamp-paper); --m-body: var(--tone-surface); --m-land: color-mix(in srgb, var(--tone) 34%, var(--tone-surface)); --m-frame: .35;
 }
 .stamp { flex: 0 0 auto; width: 44px; height: 56px; overflow: visible; fill: none; stroke: none; rotate: -2deg; }
-/* Printed pictures need room: the paper stamps grow on the cards. */
-.opened .stamp { width: 54px; height: 69px; }
-.nextUp .stamp { width: 48px; height: 61px; }
+/* The stamps grow a little on the cards, so their motifs read. */
+.opened .stamp { width: 50px; height: 64px; }
+.nextUp .stamp { width: 46px; height: 58px; }
 .paper { fill: var(--stamp-paper); stroke: none; }
-.print { fill: var(--tone-surface); stroke: none; }
-.frame { fill: none; stroke: var(--tone); stroke-opacity: .28; stroke-width: .6; }
-.code { fill: var(--tone); stroke: none; font-size: 5.4px; font-weight: 700; letter-spacing: .5px; text-anchor: middle; }
-.glyph { color: var(--tone); stroke-width: 1.75; }
+.printGround { fill: var(--m-ground); stroke: none; }
+.hatch { fill: none; stroke: var(--m-line); stroke-opacity: .32; stroke-width: .3; }
+.frame { fill: none; stroke: var(--m-line); stroke-opacity: var(--m-frame); stroke-width: .6; }
+.caption { fill: var(--m-line); stroke: none; font-weight: 700; letter-spacing: .5px; text-anchor: middle; }
 .cancel { fill: none; stroke: var(--tone); stroke-width: .9; opacity: .8; }
 .cancelThin { stroke-width: .55; }
 .cancelDate { fill: var(--tone); stroke: none; font-size: 5.2px; font-weight: 750; letter-spacing: .2px; text-anchor: middle; font-variant-numeric: tabular-nums; }
 .waves { fill: none; stroke: var(--tone); stroke-width: .8; stroke-linecap: round; }
 
-.engravedTitle { fill: var(--tone); stroke: none; font-weight: 750; letter-spacing: .55px; text-anchor: middle; }
-.hatch { fill: none; stroke: var(--tone); stroke-opacity: .34; stroke-width: .32; }
-.engravedFrame { fill: none; stroke: var(--tone); stroke-width: .5; }
-.land { fill: var(--stamp-paper); stroke: var(--tone); stroke-width: .55; stroke-linejoin: round; }
-.valueGlyph { color: var(--tone); stroke-width: 2.6; }
-.value { fill: var(--tone); stroke: none; font-size: 6.4px; font-weight: 750; letter-spacing: .1px; text-anchor: end; font-variant-numeric: tabular-nums; }
-.valueUnit { font-size: 3px; font-weight: 700; letter-spacing: .3px; }
-.emoji { fill: #000; font-size: 21px; text-anchor: middle; dominant-baseline: central; }
-
-.sky { fill: var(--scene-sky); }
-.mid { fill: var(--scene-mid); }
-.deep { fill: var(--scene-deep); }
-.ink { fill: var(--tone); }
-.light { fill: var(--scene-light); }
-.outline { stroke: var(--tone); stroke-width: .5; stroke-linejoin: round; }
-.inkLine { fill: none; stroke: var(--tone); stroke-width: .6; stroke-linecap: round; }
-.speed { fill: none; stroke: var(--tone); stroke-width: .6; stroke-linecap: round; opacity: .5; }
-.lane { fill: none; stroke: var(--scene-light); stroke-width: .7; }
-.laneInk { fill: none; stroke: var(--tone); stroke-width: .5; }
+/* The motifs' parts: ground-coloured bodies, ink lines and shapes. */
+.body { fill: var(--m-body); stroke: none; }
+.shape { fill: var(--m-shape); stroke: none; }
+.land { fill: var(--m-land); stroke: none; }
+.snow { fill: var(--m-snow); stroke: none; }
+.line { fill: none; stroke: var(--m-line); stroke-width: .7; stroke-linecap: round; }
+.lineThin { fill: none; stroke: var(--m-line); stroke-width: .5; stroke-linecap: round; }
+.rim { fill: none; stroke: var(--m-line); stroke-width: .9; }
+.faint { fill: none; stroke: var(--m-line); stroke-width: .3; stroke-opacity: .5; }
+.outline { stroke: var(--m-line); stroke-width: .5; stroke-linejoin: round; }
+.tube { fill: none; stroke: var(--m-line); stroke-width: 1.7; stroke-linecap: round; }
+.tubeInner { fill: none; stroke: var(--m-line); stroke-width: .5; }
+.trail { fill: none; stroke: var(--m-line); stroke-width: .6; stroke-dasharray: 1.2 1.3; stroke-linecap: round; }
+.letters { fill: var(--m-shape); stroke: var(--m-line); stroke-width: .4; font-family: ui-serif, "New York", Georgia, serif; font-size: 15px; font-weight: 700; letter-spacing: .4px; text-anchor: middle; paint-order: stroke; }
+:is(.stamp, .printedPicture):not([data-print=engraved]) .letters { stroke: none; }
+.flag { fill: #000; font-size: 17px; text-anchor: middle; dominant-baseline: central; }
 
 /* A post office's round date stamp. */
 .roundPostmark { display: block; width: 100%; height: 100%; overflow: visible; fill: none; stroke: none; color: var(--tone); opacity: .9; }
@@ -188,7 +196,9 @@
 .cardPaper, .opened :global(.detail__hero) > .cardPaper { position: absolute; top: 0; left: 0; z-index: -1; overflow: visible; pointer-events: none; }
 .picturePlate { position: relative; display: block; flex: 0 0 auto; }
 .printedPicture { display: block; width: 44px; height: 59px; overflow: visible; fill: none; stroke: none; }
-.opened .printedPicture { width: 52px; height: 70px; }
+.opened .printedPicture { width: 50px; height: 67px; }
+.cardPrint { fill: var(--tone-surface); stroke: none; }
+.cardFrame { fill: none; stroke: var(--tone); stroke-opacity: .28; stroke-width: .6; }
 .cardPostmark, .opened :global(.detail__hero) .cardPostmark { position: absolute; right: -26px; bottom: -24px; z-index: 1; display: block; width: 58px; height: 58px; rotate: -11deg; pointer-events: none; }
 .nextUp[data-design=stamp] :global(.parcel-card-swipe__clip) { overflow: visible; border-radius: 0; }
 .nextUp[data-design=stamp] :global(.parcel-card) { isolation: isolate; padding: 24px 26px 26px; border-radius: 0; background: transparent; }
@@ -206,8 +216,11 @@
   .columns, .sheets { grid-template-columns: minmax(0, 1fr); }
   :is(.columns, .sheets)[data-theme=light] > [data-theme=dark], :is(.columns, .sheets)[data-theme=dark] > [data-theme=light] { display: none; }
   .theme { padding: 18px 12px 22px; border-radius: 22px; }
-  .sheetRow { grid-template-columns: 62px repeat(4, minmax(0, 1fr)); gap: 5px; }
-  .sheetTile { height: 84px; }
-  .sheetStamp { zoom: 1.12; }
-  .sheetName button { padding: 0 4px; font-size: 11px; }
+  .sheetRow { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+  .sheetRow > [role=rowheader], .sheetRow > [role=columnheader]:first-child { grid-column: 1 / -1; }
+  .sheetRow > [role=columnheader]:first-child { display: none; }
+  .sheetTile { height: 74px; border-radius: 10px; }
+  .sheetStamp { zoom: 1; }
+  .sheetName button, .sheetName > span { padding: 0 4px; font-size: 11px; }
+  .sheetName button { min-height: 26px; }
 }
