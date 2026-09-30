@@ -321,11 +321,11 @@ struct AddParcelView: View {
             carrierLine
 
             if parsed.source == .link || parsed.source == .text {
-                Label(CarrierCatalog.format(parsed.trackingNumber), systemImage: "barcode")
+                Label(CarrierCatalog.format(parsed.trackingNumber, carrier: resolvedCarrier), systemImage: "barcode")
                     .font(.caption.monospaced())
                     .textSelection(.enabled)
                     .accessibilityLabel(localizer.text(parsed.source == .link ? "add.foundLink" : "add.foundText", [
-                        "number": CarrierCatalog.format(parsed.trackingNumber),
+                        "number": CarrierCatalog.format(parsed.trackingNumber, carrier: resolvedCarrier),
                     ]))
             }
 

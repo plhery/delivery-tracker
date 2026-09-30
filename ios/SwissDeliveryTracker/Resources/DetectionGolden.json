@@ -502,6 +502,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "postlogistics",
       "gls-ch",
       "gls-fr",
       "gls-de",
@@ -510,7 +511,8 @@
     ],
     "asked": [
       "gls-ch",
-      "gls-de"
+      "gls-de",
+      "postlogistics"
     ]
   },
   {
@@ -764,6 +766,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "postlogistics",
       "gls-ch",
       "gls-fr",
       "gls-de",
@@ -772,7 +775,8 @@
     ],
     "asked": [
       "gls-ch",
-      "gls-de"
+      "gls-de",
+      "postlogistics"
     ]
   },
   {
@@ -976,6 +980,32 @@
     "candidates": [
       "mondial-relay",
       "heppner"
+    ]
+  },
+  {
+    "input": "12345678-001",
+    "carrier": "postlogistics",
+    "confidence": "high",
+    "candidates": [
+      "postlogistics"
+    ]
+  },
+  {
+    "input": "12345678002",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "postlogistics",
+      "gls-ch",
+      "gls-fr",
+      "gls-de",
+      "blue-dart",
+      "aramex"
+    ],
+    "asked": [
+      "gls-ch",
+      "gls-de",
+      "postlogistics"
     ]
   },
   {
@@ -1312,6 +1342,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "postlogistics",
       "gls-ch",
       "gls-fr",
       "gls-de",
@@ -1320,7 +1351,8 @@
     ],
     "asked": [
       "gls-ch",
-      "gls-de"
+      "gls-de",
+      "postlogistics"
     ]
   },
   {
@@ -1422,6 +1454,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "postlogistics",
       "gls-ch",
       "gls-fr",
       "gls-de",
@@ -1430,7 +1463,8 @@
     ],
     "asked": [
       "gls-ch",
-      "gls-de"
+      "gls-de",
+      "postlogistics"
     ]
   },
   {
@@ -1486,6 +1520,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "postlogistics",
       "gls-ch",
       "gls-fr",
       "gls-de",
@@ -1494,7 +1529,8 @@
     ],
     "asked": [
       "gls-ch",
-      "gls-de"
+      "gls-de",
+      "postlogistics"
     ]
   },
   {
@@ -1694,6 +1730,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "postlogistics",
       "gls-ch",
       "gls-fr",
       "gls-de",
@@ -1702,7 +1739,8 @@
     ],
     "asked": [
       "gls-ch",
-      "gls-de"
+      "gls-de",
+      "postlogistics"
     ]
   },
   {
@@ -1710,6 +1748,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "postlogistics",
       "gls-ch",
       "gls-fr",
       "gls-de",
@@ -1718,7 +1757,8 @@
     ],
     "asked": [
       "gls-ch",
-      "gls-de"
+      "gls-de",
+      "postlogistics"
     ]
   },
   {
@@ -1726,6 +1766,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "postlogistics",
       "gls-ch",
       "gls-fr",
       "gls-de",
@@ -1734,7 +1775,8 @@
     ],
     "asked": [
       "gls-ch",
-      "gls-de"
+      "gls-de",
+      "postlogistics"
     ]
   },
   {
@@ -2083,6 +2125,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "postlogistics",
       "gls-ch",
       "gls-fr",
       "gls-de",
@@ -2091,7 +2134,8 @@
     ],
     "asked": [
       "gls-ch",
-      "gls-de"
+      "gls-de",
+      "postlogistics"
     ]
   },
   {
@@ -2099,6 +2143,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "postlogistics",
       "gls-ch",
       "gls-fr",
       "gls-de",
@@ -2107,7 +2152,8 @@
     ],
     "asked": [
       "gls-ch",
-      "gls-de"
+      "gls-de",
+      "postlogistics"
     ]
   },
   {
@@ -2440,6 +2486,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "postlogistics",
       "gls-ch",
       "gls-fr",
       "gls-de",
@@ -2448,7 +2495,8 @@
     ],
     "asked": [
       "gls-ch",
-      "gls-de"
+      "gls-de",
+      "postlogistics"
     ]
   },
   {
@@ -2456,6 +2504,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "postlogistics",
       "gls-ch",
       "gls-fr",
       "gls-de",
@@ -2464,7 +2513,8 @@
     ],
     "asked": [
       "gls-ch",
-      "gls-de"
+      "gls-de",
+      "postlogistics"
     ]
   },
   {
@@ -2715,6 +2765,7 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "postlogistics",
       "gls-ch",
       "gls-fr",
       "gls-de",
@@ -2723,7 +2774,8 @@
     ],
     "asked": [
       "gls-ch",
-      "gls-de"
+      "gls-de",
+      "postlogistics"
     ]
   },
   {

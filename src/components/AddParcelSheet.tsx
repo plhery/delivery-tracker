@@ -435,7 +435,7 @@ export function AddParcelSheet({
               {parsedTracking.source !== 'number' && trackingNumber && (
                 <p className="sheet__carrier-hint">
                   {t('add.foundPrefix')}{t('add.foundPrefix') ? ' ' : ''}
-                  <strong>{formatTrackingNumber(trackingNumber)}</strong>{' '}
+                  <strong>{formatTrackingNumber(trackingNumber, resolvedCarrier)}</strong>{' '}
                   {t(parsedTracking.source === 'link'
                     ? 'add.foundLinkSuffix'
                     : 'add.foundTextSuffix')}

@@ -1,17 +1,21 @@
 # PostLogistics
 
 Swiss Post's logistics arm, tracked through the keyless endpoint behind
-`tracking.postlogistics.ch`. It accepts barcodes and customer references. No
-detection rule claims its identifiers, so parcels arrive here only when the
-carrier is picked. Ordinary Swiss Post parcels go to
+`tracking.postlogistics.ch`. It accepts barcodes and customer references. A
+printed eight-digit reference with a dashed three-digit suffix identifies this
+carrier. Compact 11-digit numbers are ambiguous; carrier recognition checks
+them when tracking has no confirmed carrier. Other identifier shapes need the
+carrier to be picked. Ordinary Swiss Post parcels go to
 [swiss-post](../swiss-post/README.md).
 
 ## How it works
 
-`direct`: one `POST https://eosapi.postlogistics.ch/api/trackandtrace/public?culture=fr-FR`
-with `{"Identifier": "…"}`. No session, cookie or token; 15 s timeout, no retry
-(nothing to rebuild, and the next scheduled check retries anyway). Same protocol
-as [swiss-post-cargo](../swiss-post-cargo/README.md).
+`direct`: `POST https://eosapi.postlogistics.ch/api/trackandtrace/public?culture=fr-FR`
+with `{"Identifier": "…"}`. No session, cookie or token; 15 s total timeout.
+Stored numbers omit punctuation, so an unknown 11-digit lookup tries the dashed
+eight-plus-three spelling before returning 404. A successful undashed lookup
+is kept. Same protocol as [swiss-post-cargo](../swiss-post-cargo/README.md).
+Recognition uses the same lookup and requires a scan before claiming a match.
 
 - `Data: null` is the explicit unknown-identifier answer and becomes a 404.
 - `Type: 1` is a barcode lookup: only the shipment whose `Identifier` equals the
@@ -47,7 +51,8 @@ as [swiss-post-cargo](../swiss-post-cargo/README.md).
 
 ## Testing
 
-`npm run test:carriers:live -- packages/carriers/carriers/postlogistics` (no env
-vars; checks that an unissued barcode returns a clean 404). Set
-`SWISS_POST_TRACKING_NUMBER` to a current Swiss Post parcel barcode to also check
-the `Type: 3` relay's 404.
+`npm run test:carriers:live -- packages/carriers/carriers/postlogistics` checks
+that an unissued barcode returns a clean 404. Set
+`POSTLOGISTICS_LIVE_TRACKING_NUMBER` outside the repository to check a shipment,
+or `SWISS_POST_TRACKING_NUMBER` to check that a relayed Swiss Post parcel returns
+404 so routing can select Swiss Post.

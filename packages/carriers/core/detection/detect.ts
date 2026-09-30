@@ -29,6 +29,7 @@ function checksumPasses(rule: DetectionRule, trackingNumber: string): boolean {
 
 /** Return only a high-confidence carrier; preserve ambiguous candidates for the UI. */
 export function detectCarrierMatch(raw: string): CarrierDetection {
+  const printed = raw.trim().toUpperCase();
   const trackingNumber = normalizeTrackingNumber(raw);
   if (!trackingNumber) {
     return { carrier: 'unknown', confidence: 'none', candidates: [], preferred: [] };
@@ -38,7 +39,9 @@ export function detectCarrierMatch(raw: string): CarrierDetection {
   for (const [carrier, definition] of Object.entries(CARRIER_DEFINITIONS)) {
     // A carrier's first matching rule decides its confidence and preference.
     const rule = definition.detectionRules.find((candidate) =>
-      new RegExp(candidate.pattern).test(trackingNumber) && checksumPasses(candidate, trackingNumber));
+      new RegExp(candidate.pattern).test(trackingNumber)
+      && (!candidate.rawPattern || new RegExp(candidate.rawPattern).test(printed))
+      && checksumPasses(candidate, trackingNumber));
     if (rule) matches.push({ carrier: carrier as CarrierId, confidence: rule.confidence, preferred: rule.preferred === true });
   }
 

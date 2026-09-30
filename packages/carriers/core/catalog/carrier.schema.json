@@ -271,6 +271,7 @@
           "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
         },
         "pattern": { "type": "string", "minLength": 1 },
+        "rawPattern": { "type": "string", "minLength": 1 },
         "confidence": { "enum": ["high", "low"] },
         "checksum": { "enum": ["s10", "mondial-relay", "hermes", "gls"] },
         "preferred": {

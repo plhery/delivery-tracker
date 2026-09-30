@@ -79,6 +79,7 @@ struct CarrierDefinition: Codable, Sendable {
 
     struct DetectionRule: Codable, Sendable {
         let pattern: String
+        let rawPattern: String?
         let confidence: String
         let checksum: String?
         /// Low-confidence number evidence: the carrier is listed first among suggestions.
@@ -418,17 +419,19 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         guard !number.isEmpty else {
             return CarrierMatch(carrier: .unknown, confidence: .none, candidates: [])
         }
-        if let memo = detections.object(forKey: number as NSString) { return memo.value }
-        let match = detectNormalized(number)
-        detections.setObject(Memo(match), forKey: number as NSString)
+        let printed = raw.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        if let memo = detections.object(forKey: printed as NSString) { return memo.value }
+        let match = detectNormalized(number, printed: printed)
+        detections.setObject(Memo(match), forKey: printed as NSString)
         return match
     }
 
-    private func detectNormalized(_ number: String) -> CarrierMatch {
+    private func detectNormalized(_ number: String, printed: String) -> CarrierMatch {
         var matches: [(carrier: CarrierID, confidence: CarrierMatch.Confidence, preferred: Bool)] = []
         for (carrier, definition) in definitions {
             for rule in definition.detectionRules {
                 guard Self.matches(number, pattern: rule.pattern) else { continue }
+                if let rawPattern = rule.rawPattern, !Self.matches(printed, pattern: rawPattern) { continue }
                 if rule.checksum == "mondial-relay" && !Self.isValidMondialRelayBarcode(number) { continue }
                 if rule.checksum == "s10" && !Self.isValidS10(number) { continue }
                 if rule.checksum == "hermes" && !Self.isValidHermesParcelNumber(number) { continue }
@@ -690,8 +693,15 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
         )
     }
 
-    static func format(_ raw: String) -> String {
+    static func format(_ raw: String, carrier: CarrierID? = nil) -> String {
         let value = normalize(raw)
+        if carrier == .postlogistics {
+            let printed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            if matches(printed, pattern: "^[0-9]{11}$") {
+                return "\(printed.prefix(8))-\(printed.suffix(3))"
+            }
+            return printed
+        }
         if matches(value, pattern: "^99990\\d{8}$") {
             return "\(value.prefix(3)).\(value.dropFirst(3).prefix(2)).\(value.dropFirst(5))"
         }
@@ -825,6 +835,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
             let split = normalized.index(normalized.startIndex, offsetBy: 2)
             linkNumber = "\(normalized[..<split])-\(normalized[split...])"
         }
+        if carrier == .postlogistics { linkNumber = format(trackingNumber, carrier: carrier) }
         return template.replacingOccurrences(
             of: "{trackingNumber}",
             with: urlEncode(linkNumber)

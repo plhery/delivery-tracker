@@ -8,6 +8,7 @@
  * Everything here is a pure function of the catalog and its arguments.
  */
 import { normalizeCourierGuyNumber } from '../../carriers/the-courier-guy/number';
+import { postlogisticsIdentifier } from '../../carriers/postlogistics/number';
 import type { CarrierId } from '../../generated/catalog';
 import { isValidMondialRelayBarcode } from '../detection/mondialRelay';
 import { normalizeTrackingNumber } from '../detection/normalize';
@@ -39,6 +40,7 @@ export function trackingNumberForLink(carrierId: CarrierId, raw: string): string
     const product = /^(DD|LD)([A-Z0-9]{6})$/.exec(normalized);
     if (product) return normalizeCourierGuyNumber(normalized);
   }
+  if (carrierId === 'postlogistics') return postlogisticsIdentifier(raw);
   return raw;
 }
 

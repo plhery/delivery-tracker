@@ -73,6 +73,8 @@ export interface CarrierInfo {
 
 export interface DetectionRule {
   pattern: string;
+  /** Additional condition on the input before separators are removed. */
+  rawPattern?: string;
   confidence: Exclude<DetectionConfidence, 'none'>;
   checksum?: 's10' | 'mondial-relay' | 'hermes' | 'gls';
   /** Low confidence only: number evidence that lists this carrier first among suggestions. */

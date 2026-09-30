@@ -219,10 +219,11 @@ export function ParcelDetail({
     }
   }
 
-  async function copyTrackingNumber(number: string) {
+  async function copyTrackingNumber(number: string, numberCarrier: CarrierId) {
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
-      await navigator.clipboard.writeText(number);
+      await navigator.clipboard.writeText(numberCarrier === 'postlogistics'
+        ? formatTrackingNumber(number, numberCarrier) : number);
       trackAction('parcel-copy-tracking', 'success');
       setCopiedNumber(number);
       setCopyStatus('copied');
@@ -490,11 +491,11 @@ export function ParcelDetail({
         <div className="detail__shipment">
           {trackingNumbers.map(({ carrier: numberCarrier, number }) => <div className="detail__tracking-ticket" key={number}>
             <span className="detail__tracking-label">{trackingNumbers.length > 1 ? carrierInfo(numberCarrier, locale).name : t('detail.trackingNumber')}</span>
-            <strong>{formatTrackingNumber(number)}</strong>
+            <strong>{formatTrackingNumber(number, numberCarrier)}</strong>
             <button
               type="button"
               className="detail__tracking-copy"
-              onClick={() => void copyTrackingNumber(number)}
+              onClick={() => void copyTrackingNumber(number, numberCarrier)}
               aria-label={trackingNumbers.length > 1 ? `${t('detail.copyTracking')} — ${carrierInfo(numberCarrier, locale).name}` : t('detail.copyTracking')}
             >
               <svg aria-hidden="true" viewBox="0 0 24 24"><path d={copyStatus === 'copied' && copiedNumber === number ? 'm5 12 4 4L19 6' : 'M9 9h11v12H9V9ZM5 15H3V3h12v2'} /></svg>

@@ -12,6 +12,17 @@ const apiAuth = { userId: 'test-user', getAccessToken: async () => 'test-token' 
 const carrierLine = (name: RegExp) => screen.getByRole('button', { name });
 
 describe('automatic unknown-carrier lookup', () => {
+  it('files a printed PostLogistics reference under its carrier', async () => {
+    const onAdd = vi.fn().mockResolvedValue(undefined);
+    render(<AddParcelSheet onAdd={onAdd} onClose={vi.fn()} initialTrackingInput="12345678-001" />);
+
+    expect(screen.getByText('PostLogistics')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /^add parcel$/i }));
+    expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({
+      trackingNumber: '12345678-001', carrier: 'postlogistics',
+    }));
+  });
+
   it.each(['12345678901234'])('saves %s without requiring a guessed carrier', async (number) => {
     const onAdd = vi.fn().mockResolvedValue(undefined);
     const user = userEvent.setup();

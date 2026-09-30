@@ -20,11 +20,13 @@ import 'server-only';
  * Any other type is refused rather than guessed at. A `Data: null` answer is
  * PostLogistics' explicit "unknown identifier".
  */
-import type { AdapterFactory } from '../../core/adapter';
+import type { AdapterFactory, Recognition } from '../../core/adapter';
 import { NotFoundError, SchemaError } from '../../core/errors';
 import type { CarrierEvent, CarrierResult } from '../../core/result';
+import { explicitOffsetTime } from '../../core/time';
 import { fetchBounded, parseJsonBytes } from '../../core/transport';
 import { isRecord, type JsonObject } from '../../core/types';
+import { postlogisticsIdentifier } from './number';
 import { postlogisticsStatus } from './status';
 
 const PROVIDER = 'PostLogistics';
@@ -127,21 +129,48 @@ export class PostlogisticsTracker {
   }
 
   async fetch(trackingNumber: string): Promise<CarrierResult> {
-    const { bytes } = await fetchBounded(
-      TRACK_URL,
-      {
-        method: 'POST',
-        headers: {
-          ...BASE_HEADERS,
-          'Content-Type': 'application/json',
-          Origin: 'https://tracking.postlogistics.ch',
-          Referer: 'https://tracking.postlogistics.ch/',
+    const dashed = postlogisticsIdentifier(trackingNumber);
+    const identifiers = dashed === trackingNumber ? [trackingNumber] : [trackingNumber, dashed];
+    const signal = AbortSignal.timeout(this.timeoutMs);
+    for (const [index, identifier] of identifiers.entries()) {
+      const { bytes } = await fetchBounded(
+        TRACK_URL,
+        {
+          method: 'POST',
+          headers: {
+            ...BASE_HEADERS,
+            'Content-Type': 'application/json',
+            Origin: 'https://tracking.postlogistics.ch',
+            Referer: 'https://tracking.postlogistics.ch/',
+          },
+          body: JSON.stringify({ Identifier: identifier }),
+          signal,
         },
-        body: JSON.stringify({ Identifier: trackingNumber }),
-      },
-      { provider: UPSTREAM, timeoutMs: this.timeoutMs, fetcher: this.fetcher },
-    );
-    return parsePostlogisticsTrackingResponse(parseJsonBytes(bytes, UPSTREAM), trackingNumber);
+        { provider: UPSTREAM, timeoutMs: this.timeoutMs, fetcher: this.fetcher },
+      );
+      try {
+        return parsePostlogisticsTrackingResponse(parseJsonBytes(bytes, UPSTREAM), trackingNumber);
+      } catch (error) {
+        if (!(error instanceof NotFoundError) || index === identifiers.length - 1) throw error;
+      }
+    }
+    throw new NotFoundError(PROVIDER);
+  }
+
+  async recognizes(trackingNumber: string): Promise<Recognition> {
+    try {
+      const result = await this.fetch(trackingNumber);
+      const events = (result.events ?? []).filter((event) => event.description && event.time);
+      const times = events.map((event) => explicitOffsetTime(event.time)?.timestamp)
+        .filter((value): value is number => value !== undefined);
+      return {
+        known: events.length > 0,
+        lastActivityAt: times.length ? new Date(Math.max(...times)).toISOString() : null,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundError) return { known: false };
+      throw error;
+    }
   }
 }
 
@@ -154,8 +183,9 @@ export const adapter: AdapterFactory = (environment) => {
   const tracker = new PostlogisticsTracker({ fetcher: environment.fetcher });
   return {
     id: 'postlogistics',
-    // One keyless POST; there is no second tier to fall back to.
+    // Keyless POST, with one alternate spelling after a compact not-found.
     steps: ['direct'],
     track: (input) => tracker.fetch(input.number),
+    recognize: (number) => tracker.recognizes(number),
   };
 };

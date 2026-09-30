@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fetchPostlogistics } from './adapter';
+import { fetchPostlogistics, PostlogisticsTracker } from './adapter';
 
 // A validly shaped barcode that was never issued: the endpoint answers
 // `Data: null`, which is PostLogistics' "unknown identifier".
@@ -23,5 +23,16 @@ describe('PostLogistics live wrong-number handling', () => {
       status: 404,
       message: 'PostLogistics only relays Swiss Post tracking for this barcode',
     });
+  });
+});
+
+describe.runIf(process.env.POSTLOGISTICS_LIVE_TRACKING_NUMBER)('PostLogistics live shipment', () => {
+  it('resolves a private reference without putting it in repository fixtures', async () => {
+    const number = process.env.POSTLOGISTICS_LIVE_TRACKING_NUMBER!;
+    await expect(fetchPostlogistics(number.replace('-', ''))).resolves.toMatchObject({
+      events: expect.arrayContaining([expect.objectContaining({ time: expect.any(String) })]),
+    });
+    await expect(new PostlogisticsTracker().recognizes(number.replace('-', '')))
+      .resolves.toMatchObject({ known: true });
   });
 });

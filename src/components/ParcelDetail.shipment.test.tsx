@@ -10,6 +10,14 @@ function show(values: Partial<ParcelWithEvents> = {}) {
 }
 
 describe('shipment details', () => {
+  it('shows the PostLogistics dash after the stored number has been normalized', () => {
+    show({ carrier: 'postlogistics', trackingNumber: '12345678001' });
+    expect(screen.getByText('12345678-001')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /PostLogistics/ })).toHaveAttribute(
+      'href', 'https://tracking.postlogistics.ch/public/trackandtrace/12345678-001',
+    );
+  });
+
   it('shows available facts and omits unknown or invalid measurements', () => {
     const view = show({ pickupPoint: 'Corner shop\n12 Main Street', receiverName: 'Alex', weightKg: 1.25, dimensionsText: '20 × 30 × 10 cm' });
     expect(screen.getByText('Pickup location')).toBeInTheDocument();

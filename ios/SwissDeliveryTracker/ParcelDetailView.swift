@@ -64,7 +64,8 @@ struct ParcelDetailView: View {
                             showingTitleEditor = true
                         }
                         Button(localizer.text("detail.copyTracking"), systemImage: "doc.on.doc") {
-                            copy(parcel.trackingNumbers[0].number)
+                            let entry = parcel.trackingNumbers[0]
+                            copy(entry.number, carrier: entry.carrier)
                         }
                         Button(localizer.text("detail.changeCarrier"), systemImage: "truck.box") {
                             carrierEditor = CarrierEditorRequest()
@@ -340,13 +341,13 @@ struct ParcelDetailView: View {
                             ? catalog.info(for: entry.carrier, language: localizer.language).displayName
                             : localizer.text("detail.trackingNumber"))
                             .font(.caption2).foregroundStyle(.secondary)
-                        Text(CarrierCatalog.format(entry.number))
+                        Text(CarrierCatalog.format(entry.number, carrier: entry.carrier))
                             .font(.system(.caption, design: .monospaced))
                             .fixedSize(horizontal: false, vertical: true)
                             .textSelection(.enabled)
                     }
                     Spacer(minLength: 0)
-                    Button { copy(entry.number) } label: {
+                    Button { copy(entry.number, carrier: entry.carrier) } label: {
                         Image(systemName: copiedNumber == entry.number ? "checkmark" : "doc.on.doc")
                             .font(.system(size: 14, weight: .regular))
                             .frame(width: 44, height: 44).contentShape(Rectangle())
@@ -511,9 +512,10 @@ struct ParcelDetailView: View {
         return groups
     }
 
-    private func copy(_ value: String) {
+    private func copy(_ value: String, carrier: CarrierID) {
         DeliveryAnalytics.shared.action("parcel-copy-tracking")
-        UIPasteboard.general.string = value
+        UIPasteboard.general.string = carrier == .postlogistics
+            ? CarrierCatalog.format(value, carrier: carrier) : value
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         copiedNumber = value
         Task {
@@ -655,10 +657,10 @@ private struct ChangeCarrierView: View {
         NavigationStack {
             Form {
                 Section {
-                    Text(CarrierCatalog.format(parcel.trackingNumber))
+                    Text(CarrierCatalog.format(parcel.trackingNumber, carrier: parcel.carrier))
                         .font(.system(.body, design: .monospaced, weight: .semibold))
                     Text(localizer.text("detail.changeCarrierDescription", [
-                        "number": CarrierCatalog.format(parcel.trackingNumber),
+                        "number": CarrierCatalog.format(parcel.trackingNumber, carrier: parcel.carrier),
                     ]))
                     .font(.footnote)
                     .foregroundStyle(.secondary)

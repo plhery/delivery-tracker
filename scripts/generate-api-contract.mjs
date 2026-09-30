@@ -176,6 +176,7 @@ function validateCarrierSemantics(carrier, adapterFolders) {
   }
   for (const rule of carrier.detection) {
     new RegExp(rule.pattern);
+    if (rule.rawPattern) new RegExp(rule.rawPattern);
     // Preference orders suggestions; a high-confidence rule already selects.
     if (rule.preferred !== undefined && (rule.preferred !== true || rule.confidence !== 'low')) {
       throw new Error(`${where} detection rule ${rule.id} may only prefer a low-confidence match`);
@@ -229,6 +230,7 @@ const contractKeyOrder = [
 function contractDetectionRule(rule) {
   // `id` stays a folder-side concept: the published contract keeps the old shape.
   const contractRule = { pattern: rule.pattern, confidence: rule.confidence };
+  if (rule.rawPattern !== undefined) contractRule.rawPattern = rule.rawPattern;
   if (rule.checksum !== undefined) contractRule.checksum = rule.checksum;
   if (rule.preferred !== undefined) contractRule.preferred = rule.preferred;
   return contractRule;

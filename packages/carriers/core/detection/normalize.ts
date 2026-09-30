@@ -1,3 +1,5 @@
+import { postlogisticsIdentifier } from '../../carriers/postlogistics/number';
+
 /**
  * Tracking-number normalization and display formatting.
  *
@@ -17,7 +19,8 @@ export function isPlanzerSharedTrackingNumber(raw: string): boolean {
 }
 
 /** Swiss carriers show 18-digit barcodes as 99.34.123456.12345678. */
-export function formatTrackingNumber(raw: string): string {
+export function formatTrackingNumber(raw: string, carrier?: string): string {
+  if (carrier === 'postlogistics') return postlogisticsIdentifier(raw);
   const value = normalizeTrackingNumber(raw);
   if (isPlanzerSharedTrackingNumber(value)) {
     return `${value.slice(0, 3)}.${value.slice(3, 5)}.${value.slice(5)}`;

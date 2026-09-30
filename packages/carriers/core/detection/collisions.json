@@ -476,15 +476,16 @@
     "reason": "The three GLS countries share one 8-character format; the number stays a low-confidence suggestion."
   },
   {
-    "shape": "9{11}",
+    "shape": "9{11} or 9{8}-9{3}",
     "carriers": [
       "aramex",
       "blue-dart",
       "gls-ch",
       "gls-de",
-      "gls-fr"
+      "gls-fr",
+      "postlogistics"
     ],
-    "reason": "11-digit numbers are shared by five carriers; the number stays a low-confidence suggestion."
+    "reason": "Compact 11-digit numbers are ambiguous; the printed eight-plus-three dash is high-confidence evidence for PostLogistics."
   },
   {
     "shape": "9{10}",
@@ -498,16 +499,17 @@
     "reason": "10-digit numbers are shared by five carriers; the number stays a low-confidence suggestion."
   },
   {
-    "shape": "9{11}",
+    "shape": "9{11} with an Old Dominion prefix",
     "carriers": [
       "aramex",
       "blue-dart",
       "gls-ch",
       "gls-de",
       "gls-fr",
-      "old-dominion"
+      "old-dominion",
+      "postlogistics"
     ],
-    "reason": "Old Dominion claims specific 11-digit prefixes inside the range five other carriers match broadly; the Old Dominion rule decides."
+    "reason": "Old Dominion's prefix still decides when its number also fits the broad PostLogistics compact shape."
   },
   {
     "shape": "9{13}",

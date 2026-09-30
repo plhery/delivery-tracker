@@ -73,6 +73,83 @@ describe('PostLogistics wrong-number handling', () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
     expect(global).not.toHaveBeenCalled();
   });
+
+  it('tries the printed 8-3 identifier after a stored compact number is unknown', async () => {
+    const compact = '12345678001';
+    const dashed = '12345678-001';
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ Type: 1, Data: null }))
+      .mockResolvedValueOnce(jsonResponse({
+        Type: 1,
+        Data: [{ Identifier: dashed, History: [{
+          TimeStamp: '2026-09-01T09:00:00+02:00', Status: 'TRN',
+          Description: 'Shipment in transit', City: 'Zurich',
+        }] }],
+      }));
+
+    await expect(new PostlogisticsTracker({ fetcher }).fetch(compact)).resolves.toMatchObject({
+      status: 'in_transit',
+      events: [{ description: 'Shipment in transit' }],
+    });
+    expect(fetcher.mock.calls.map(([, init]) => JSON.parse(String(init?.body)))).toEqual([
+      { Identifier: compact }, { Identifier: dashed },
+    ]);
+  });
+
+  it('queries an already dashed identifier only once', async () => {
+    const dashed = '12345678-001';
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
+      Type: 1, Data: [{ Identifier: dashed, History: [] }],
+    }));
+
+    await expect(new PostlogisticsTracker({ fetcher }).fetch(dashed)).resolves.toMatchObject({ events: [] });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toEqual({ Identifier: dashed });
+  });
+
+  it('does not reinterpret a differently punctuated reference', async () => {
+    const reference = '1234567-8001';
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({ Type: 1, Data: null }));
+
+    await expect(new PostlogisticsTracker({ fetcher }).fetch(reference))
+      .rejects.toMatchObject({ name: 'NotFoundError' });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps an undashed match and never falls through to a different shipment', async () => {
+    const compact = '12345678001';
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
+      Type: 1, Data: [{ Identifier: compact, History: [] }],
+    }));
+
+    await expect(new PostlogisticsTracker({ fetcher }).fetch(compact)).resolves.toMatchObject({ events: [] });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it('recognizes only a reference with scans and reports its dated activity', async () => {
+    const compact = '12345678001';
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ Type: 1, Data: null }))
+      .mockResolvedValueOnce(jsonResponse({ Type: 1, Data: [{ Identifier: '12345678-001', History: [{
+        TimeStamp: '2026-09-01T09:00:00+02:00', Status: 'TRN',
+        Description: 'Shipment in transit', City: 'Zurich',
+      }] }] }));
+
+    await expect(new PostlogisticsTracker({ fetcher }).recognizes(compact)).resolves.toEqual({
+      known: true, lastActivityAt: '2026-09-01T07:00:00.000Z',
+    });
+  });
+
+  it('does not claim an unknown or empty-history reference', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ Type: 1, Data: null }))
+      .mockResolvedValueOnce(jsonResponse({ Type: 1, Data: null }))
+      .mockResolvedValueOnce(jsonResponse({ Type: 1, Data: [{ Identifier: '12345678001', History: [] }] }));
+    const tracker = new PostlogisticsTracker({ fetcher });
+
+    await expect(tracker.recognizes('12345678001')).resolves.toEqual({ known: false });
+    await expect(tracker.recognizes('12345678001')).resolves.toEqual({ known: false, lastActivityAt: null });
+  });
 });
 
 describe('PostLogistics response types and event ordering', () => {

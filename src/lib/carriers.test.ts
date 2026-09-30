@@ -1451,7 +1451,7 @@ describe('ambiguous number shapes', () => {
     expect(detectCarrierMatch('36631000001')).toEqual({
       carrier: 'unknown',
       confidence: 'low',
-      candidates: ['gls-ch', 'gls-fr', 'gls-de', 'blue-dart', 'aramex'],
+      candidates: ['postlogistics', 'gls-ch', 'gls-fr', 'gls-de', 'blue-dart', 'aramex'],
       preferred: [],
     });
   });

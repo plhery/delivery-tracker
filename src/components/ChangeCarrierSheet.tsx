@@ -130,7 +130,7 @@ export function ChangeCarrierSheet({
         </div>
         <p className="sheet__intro">
           {t('detail.changeCarrierDescription', {
-            number: formatTrackingNumber(parcel.trackingNumber),
+            number: formatTrackingNumber(parcel.trackingNumber, parcel.carrier),
           })}
         </p>
         <form className="sheet__form" onSubmit={submit}>

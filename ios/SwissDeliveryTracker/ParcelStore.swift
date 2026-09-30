@@ -763,7 +763,7 @@ final class ParcelStore: ObservableObject {
                     id: parcel.id,
                     label: parcel.label.nonEmpty ?? localizer.text("common.parcel"),
                     carrier: CarrierCatalog.shared.info(for: parcel.carrier, language: localizer.language).displayName,
-                    trackingNumber: CarrierCatalog.format(parcel.trackingNumber),
+                    trackingNumber: CarrierCatalog.format(parcel.trackingNumber, carrier: parcel.carrier),
                     detail: localizer.parcelDeliveryEstimate(parcel)
                         ?? localizer.text(parcel.displayStatus.key),
                     isOutForDelivery: parcel.currentStage == .outForDelivery

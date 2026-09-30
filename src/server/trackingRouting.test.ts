@@ -198,6 +198,18 @@ describe('persistent tracking routing', () => {
     const notFound = (carrier: string) => new NotFoundError(carrier);
     const knows = (...carriers: string[]) => async (carrier: string) => ({ known: carriers.includes(carrier) });
     const asked = (recognize: ReturnType<typeof vi.fn>) => recognize.mock.calls.map(([carrier]) => carrier);
+    it('recovers an already saved compact PostLogistics number filed as unknown', async () => {
+      const { router, direct, universal, recognize } = setup();
+      recognize.mockImplementation(knows('postlogistics'));
+      direct.mockResolvedValue(directValue('postlogistics'));
+
+      const result = await router.fetch(parcel({ tracking_number: '12345678002' }), false);
+
+      expect(asked(recognize)).toContain('postlogistics');
+      expect(direct).toHaveBeenCalledWith(expect.objectContaining({ tracking_number: '12345678002' }), 'postlogistics');
+      expect(result.correction?.carrier).toBe('postlogistics');
+      expect(universal).not.toHaveBeenCalled();
+    });
     it('asks before the universals and adopts a carrier that tracks the parcel', async () => {
       const { router, direct, universal, recognize } = setup();
       recognize.mockImplementation(knows('dpd'));
@@ -226,7 +238,7 @@ describe('persistent tracking routing', () => {
       const hinted = setup();
       await hinted.router.fetch(parcel({ tracking_number: '12345678901',
         carrier_data: { routing: state({ discovered_carrier: 'gls-de' }) } }), false);
-      expect(asked(hinted.recognize)).toEqual(['gls-de', 'gls-ch']);
+      expect(asked(hinted.recognize)).toEqual(['gls-de', 'gls-ch', 'postlogistics']);
       // Newly supported number shapes follow the same popularity order.
       const tnt = setup();
       await tnt.router.fetch(parcel({ tracking_number: '1000000000000001' }), false);
@@ -282,7 +294,7 @@ describe('persistent tracking routing', () => {
       // Both GLS networks answer from the same overview: the more common one is offered.
       recognize.mockImplementation(knows('gls-ch', 'gls-de'));
       const result = await router.fetch(parcel({ tracking_number: '12345678901' }), false);
-      expect(asked(recognize)).toEqual(['gls-ch', 'gls-de']);
+      expect(asked(recognize)).toEqual(['gls-ch', 'gls-de', 'postlogistics']);
       expect(direct).not.toHaveBeenCalled();
       expect(result.result.routing).toMatchObject({ input_needed: { carrier: 'gls-ch', field: 'dpdPostcode' } });
       expect(monitoring.reportRoutingEvent).toHaveBeenCalledWith('carrier_input_needed', expect.objectContaining({ provider: 'gls-ch' }));

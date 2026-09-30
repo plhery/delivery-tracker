@@ -22,6 +22,7 @@ export const CARRIER_RECOGNITION_RANKS: Readonly<Record<string, number>> = {
   "ninja-van": 28,
   "nz-post": 32,
   "poczta-polska": 31,
+  "postlogistics": 26,
   "relais-colis": 25,
   "seur": 43,
   "the-courier-guy": 29,

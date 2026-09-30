@@ -320,12 +320,30 @@ export const CARRIER_CAPABILITIES = {
     "timezone": "Europe/Zurich",
     "tracking": {
       "mode": "automatic",
-      "adapter": "postlogistics"
+      "adapter": "postlogistics",
+      "recognitionRank": 26
     },
-    "canaryUrl": "https://service.post.ch/",
-    "linkRules": [],
-    "detectionRules": [],
-    "trackingUrlTemplate": "https://www.swisspost.ch/swisspost-tracking?formattedParcelCodes={trackingNumber}",
+    "canaryUrl": "https://tracking.postlogistics.ch/public/trackandtrace",
+    "linkRules": [
+      {
+        "domains": [
+          "tracking.postlogistics.ch"
+        ],
+        "path": "^/public/trackandtrace/([^/?#]+)/?$"
+      }
+    ],
+    "detectionRules": [
+      {
+        "pattern": "^\\d{11}$",
+        "confidence": "high",
+        "rawPattern": "^\\d{8}-\\d{3}$"
+      },
+      {
+        "pattern": "^\\d{11}$",
+        "confidence": "low"
+      }
+    ],
+    "trackingUrlTemplate": "https://tracking.postlogistics.ch/public/trackandtrace/{trackingNumber}",
     "countries": [
       "CH"
     ]

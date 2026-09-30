@@ -18,7 +18,8 @@
     "adapter": "postlogistics",
     "steps": [
       "direct"
-    ]
+    ],
+    "recognition": { "rank": 26 }
   },
   "capabilities": [
     "history",
@@ -26,8 +27,8 @@
     "eta"
   ],
   "portal": {
-    "url": "https://www.swisspost.ch/swisspost-tracking?formattedParcelCodes={trackingNumber}",
-    "canaryUrl": "https://service.post.ch/",
+    "url": "https://tracking.postlogistics.ch/public/trackandtrace/{trackingNumber}",
+    "canaryUrl": "https://tracking.postlogistics.ch/public/trackandtrace",
     "shows": [
       "status",
       "history",
@@ -41,6 +42,23 @@
     "discarded": [],
     "unavailable": []
   },
-  "links": [],
-  "detection": []
+  "links": [
+    {
+      "domains": ["tracking.postlogistics.ch"],
+      "path": "^/public/trackandtrace/([^/?#]+)/?$"
+    }
+  ],
+  "detection": [
+    {
+      "id": "postlogistics-dashed-reference",
+      "pattern": "^\\d{11}$",
+      "rawPattern": "^\\d{8}-\\d{3}$",
+      "confidence": "high"
+    },
+    {
+      "id": "postlogistics-compact-reference",
+      "pattern": "^\\d{11}$",
+      "confidence": "low"
+    }
+  ]
 }

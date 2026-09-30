@@ -36,6 +36,7 @@ import { buildDetectionGolden, readDetectionGolden, writeDetectionGolden } from 
 interface DetectionRule {
   readonly id: string;
   readonly pattern: string;
+  readonly rawPattern?: string;
   readonly confidence: 'high' | 'low';
   readonly checksum?: 's10' | 'mondial-relay' | 'hermes' | 'gls';
   readonly preferred?: true;
@@ -62,8 +63,9 @@ const RULES: CarrierRule[] = carrierFolders().flatMap((carrier) => {
 });
 
 /** The engine's own gate, rule by rule: pattern first, then the checksum. */
-function ruleMatches(rule: DetectionRule, value: string): boolean {
+function ruleMatches(rule: DetectionRule, value: string, raw: string): boolean {
   if (!new RegExp(rule.pattern).test(value)) return false;
+  if (rule.rawPattern && !new RegExp(rule.rawPattern).test(raw.trim().toUpperCase())) return false;
   if (rule.checksum === 's10') return isValidS10TrackingNumber(value);
   if (rule.checksum === 'mondial-relay') return isValidMondialRelayBarcode(value);
   if (rule.checksum === 'hermes') return isValidHermesParcelNumber(value);
@@ -73,7 +75,7 @@ function ruleMatches(rule: DetectionRule, value: string): boolean {
 
 function matchingRules(input: string): CarrierRule[] {
   const value = normalizeTrackingNumber(input);
-  return RULES.filter(({ rule }) => ruleMatches(rule, value));
+  return RULES.filter(({ rule }) => ruleMatches(rule, value, input));
 }
 
 /** Carriers with at least one matching rule, in catalog order. */

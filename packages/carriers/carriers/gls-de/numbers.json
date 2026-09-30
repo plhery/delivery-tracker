@@ -12,6 +12,7 @@
         "carrier": "unknown",
         "confidence": "low",
         "candidates": [
+          "postlogistics",
           "gls-ch",
           "gls-fr",
           "gls-de",
@@ -60,6 +61,7 @@
         "carrier": "unknown",
         "confidence": "low",
         "candidates": [
+          "postlogistics",
           "gls-ch",
           "gls-fr",
           "gls-de",

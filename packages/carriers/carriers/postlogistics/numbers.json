@@ -2,6 +2,39 @@
   "carrier": "postlogistics",
   "records": [
     {
+      "number": "12345678-001",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "observed_request",
+      "shapeConfirmed": "2026-09-30",
+      "expect": {
+        "carrier": "postlogistics",
+        "confidence": "high"
+      },
+      "note": "Invented reference showing the portal's eight-digit and three-digit segments."
+    },
+    {
+      "number": "12345678002",
+      "role": "quarantined",
+      "evidence": "synthetic",
+      "derivedFrom": "observed_request",
+      "shapeConfirmed": "2026-09-30",
+      "quarantine": true,
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "postlogistics",
+          "gls-ch",
+          "gls-fr",
+          "gls-de",
+          "blue-dart",
+          "aramex"
+        ]
+      },
+      "note": "Invented compact shape for the recognition route; not a known shipment."
+    },
+    {
       "number": "000000000000000000",
       "role": "negative",
       "evidence": "synthetic",

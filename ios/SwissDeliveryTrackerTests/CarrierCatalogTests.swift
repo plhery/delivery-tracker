@@ -179,7 +179,7 @@ final class CarrierCatalogTests: XCTestCase {
         let asked = catalog.recognitionCandidates(for: number)
         XCTAssertEqual(ambiguous.confidence, .low)
         XCTAssertEqual(ambiguous.carrier, .unknown)
-        XCTAssertEqual(asked, [.glsCh, .glsDe])
+        XCTAssertEqual(asked, [.glsCh, .glsDe, .postlogistics])
         XCTAssertTrue(CarrierRecognition.applies(to: ambiguous, amazon: false, demo: false))
         XCTAssertFalse(CarrierRecognition.applies(to: ambiguous, amazon: false, demo: true))
         XCTAssertFalse(CarrierRecognition.applies(to: ambiguous, amazon: true, demo: false))
@@ -194,7 +194,7 @@ final class CarrierCatalogTests: XCTestCase {
         recognition.settledNumber = number
         XCTAssertEqual(recognition.request(for: number, applies: true), number)
         // The line names the carriers being asked while they answer.
-        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .asking([.glsCh, .glsDe]))
+        XCTAssertEqual(recognition.status(for: number, applies: true, asked: asked), .asking([.glsCh, .glsDe, .postlogistics]))
         // A shape no carrier can be asked about is left to routing after saving.
         XCTAssertEqual(recognition.status(for: number, applies: true, asked: []), .unasked)
         XCTAssertNil(recognition.request(for: number, applies: false))
@@ -593,6 +593,20 @@ final class CarrierCatalogTests: XCTestCase {
         XCTAssertEqual(CarrierCatalog.format("993412345678901234"), "99.34.123456.78901234")
         XCTAssertTrue(CarrierCatalog.isValidS10("RA123456785CH"))
         XCTAssertFalse(CarrierCatalog.isValidS10("RA123456789CH"))
+    }
+
+    func testPostlogisticsPrintedReferenceAndTrackingLink() throws {
+        let printed = "12345678-001"
+        let compact = "12345678001"
+        XCTAssertEqual(catalog.parse(printed).carrier, .postlogistics)
+        XCTAssertEqual(catalog.detect(compact).carrier, .unknown)
+        XCTAssertEqual(catalog.parse("https://tracking.postlogistics.ch/public/trackandtrace/\(printed)").carrier,
+            .postlogistics)
+        XCTAssertEqual(CarrierCatalog.format(compact, carrier: .postlogistics), printed)
+        let parcel = Parcel(id: UUID(), trackingNumber: compact, label: "Example", carrier: .postlogistics,
+            createdAt: "2026-09-10T12:00:00Z", syncStatus: .ok, notificationsMuted: false)
+        XCTAssertEqual(try XCTUnwrap(catalog.trackingLinks(for: parcel, language: .en).first).url.absoluteString,
+            "https://tracking.postlogistics.ch/public/trackandtrace/\(printed)")
     }
 
     func testHermesCheckDigitAndDepotPreferenceMatchTheWebEngine() {

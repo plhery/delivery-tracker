@@ -98,4 +98,15 @@ describe('the detection engine', () => {
     expect(parseTrackingInput('https://service.post.ch/ekp-web/ui/entry/search/RA123456785CH'))
       .toMatchObject({ trackingNumber: 'RA123456785CH', carrier: 'swiss-post', source: 'link' });
   });
+
+  it('recognizes the PostLogistics printed reference without claiming every 11-digit number', () => {
+    expect(parseTrackingInput('12345678-001')).toMatchObject({
+      trackingNumber: '12345678-001', carrier: 'postlogistics', confidence: 'high', source: 'number',
+    });
+    expect(detectCarrier('12345678001')).not.toBe('postlogistics');
+    expect(parseTrackingInput('https://tracking.postlogistics.ch/public/trackandtrace/12345678-001'))
+      .toMatchObject({ trackingNumber: '12345678-001', carrier: 'postlogistics', source: 'link' });
+    expect(formatTrackingNumber('12345678001', 'postlogistics')).toBe('12345678-001');
+    expect(formatTrackingNumber('12345678001')).toBe('12345678001');
+  });
 });
