@@ -28,7 +28,7 @@ import {
 } from './observability';
 import { PushDispatchError, type CompositePushNotificationService } from './push';
 import { STORED_EVENT_IDENTITIES, type SupabaseServiceClient } from './supabase';
-import { sameInstantIdentities, withIdentities } from './eventIdentity';
+import { sameInstantIdentities, sharedScans, withIdentities } from './eventIdentity';
 import {
   TrackingSyncAudit,
   type SyncAnomalyCode,
@@ -964,11 +964,18 @@ export class TrackingSyncService {
       }
       const outcome = progressDisappeared ? 'error' : knownUpdate ? 'updated' : 'waiting';
       const eventsToPersist = progressDisappeared || (preserveSummary && (result.tracking_provider === 'UPU' || localOnlyFallback)) ? [] : events;
-      // A reworded scan (DPD with and without the postcode) updates its stored row in place.
-      const reusedIdentities = sameInstantIdentities(eventsToPersist, storedEventIdentities(parcel), sourceCarrierId);
+      // A reworded scan (DPD with and without the postcode) updates its stored row in place,
+      // and a scan both a carrier and a universal provider reported is stored once.
+      const stored = storedEventIdentities(parcel);
+      const reworded = sameInstantIdentities(eventsToPersist, stored, sourceCarrierId);
+      const shared = sharedScans(eventsToPersist, stored, reworded);
+      const reusedIdentities = new Map([...reworded, ...shared.reused]);
+      const persistedEvents = withIdentities(
+        eventsToPersist.filter((event) => !shared.skipped.has(String(event.provider_event_id))), reusedIdentities,
+      );
       operation = 'persist_package';
       await audit.step('persist_package', async () => {
-        await persist(values, withIdentities(eventsToPersist, reusedIdentities), progressDisappeared ? [] : deleteDescriptions);
+        await persist(values, persistedEvents, progressDisappeared ? [] : deleteDescriptions);
       }, () => ({
         outcome,
         selected_stage: selectedStage,
@@ -977,11 +984,12 @@ export class TrackingSyncService {
         carrier: carrierId, provider: String(values.carrier), trackingNumber: String(parcel.tracking_number ?? ''),
       });
       audit.record('persist_events', 'succeeded', 0, {
-        events_persisted: eventsToPersist.length,
+        events_persisted: persistedEvents.length,
         identities_reused: reusedIdentities.size,
+        copies_skipped: shared.skipped.size,
         atomic_with_package: true,
       });
-      await this.recordStatusObservations(eventsToPersist, sourceCarrierId, context, reusedIdentities);
+      await this.recordStatusObservations(eventsToPersist, sourceCarrierId, context, new Map([...reusedIdentities, ...shared.skipped]));
       const completion = {
         outcome,
         sourceCarrier: sourceCarrierId,

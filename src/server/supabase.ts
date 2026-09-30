@@ -24,13 +24,14 @@ const PACKAGE_COLUMNS = [
 const PACKAGE_SELECT = `${PACKAGE_COLUMNS},tracking_events(id,package_id,stage,description,location,occurred_at)`;
 const ACTIVE_PACKAGE_SELECT = 'id,user_id,tracking_number,label,carrier,current_stage,tracking_url,dpd_postcode,created_at,last_synced_at,sync_status,carrier_data,tracking_generation';
 /**
- * Where the sync loaders put each stored event's identity and instant, so a
- * reworded scan can update its row in place (see eventIdentity.ts). Only the
- * service client's sync loaders embed it, under this alias: no API response
- * or mapper reads it, and provider_event_id never reaches a client.
+ * Where the sync loaders put each stored event's identity, instant, stage and
+ * wording, so a reworded scan can update its row in place and another source's
+ * copy of a stored scan is not stored again (see eventIdentity.ts). Only the
+ * service client's sync loaders embed it, under this alias: no API response or
+ * mapper reads it, and provider_event_id never reaches a client.
  */
 export const STORED_EVENT_IDENTITIES = 'stored_event_identities';
-const SYNC_EVENT_IDENTITIES = `${STORED_EVENT_IDENTITIES}:tracking_events(provider_event_id,occurred_at)`;
+const SYNC_EVENT_IDENTITIES = `${STORED_EVENT_IDENTITIES}:tracking_events(provider_event_id,occurred_at,stage,description)`;
 
 export class SupabaseError extends Error {
   constructor(

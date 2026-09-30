@@ -1991,10 +1991,12 @@ function eventStore() {
   return {
     client,
     rows,
-    /** What the sync loaders embed: each stored identity and its instant, spelled as PostgREST returns it. */
+    /** What the sync loaders embed: each stored identity, its instant spelled as PostgREST returns it, its stage and wording. */
     identities: () => [...rows.values()].map((row) => ({
       provider_event_id: row.provider_event_id,
       occurred_at: new Date(String(row.occurred_at)).toISOString().replace('.000Z', '+00:00'),
+      stage: row.stage,
+      description: row.description,
     })),
     batch: () => (client.applyTrackingSync.mock.calls.at(-1)?.[2] ?? []) as JsonObject[],
   };
@@ -2106,5 +2108,65 @@ describe('reworded DPD scans', () => {
     expect(adapter.fetchUniversal).toHaveBeenCalledTimes(3);
     expect(store.rows.size).toBe(5);
     expect(universalIds.map((id) => store.rows.get(id)?.id)).toEqual(rowIds);
+  });
+});
+
+describe('scans a carrier and a universal provider both report', () => {
+  type Scan = { time: string; description: string; stage: string; location?: string };
+  const now = () => new Date('2026-01-05T12:00:00Z');
+  const parcel = { id: 'gofo-fallback', user_id: 'owner', carrier: 'gofo', tracking_number: 'GFUS00000000000001' };
+  const ids = (events: JsonObject[]) => events.map((event) => String(event.provider_event_id));
+  // GOFO's own lookup gives Eastern scans their real offset.
+  const label: Scan = { time: '2026-01-02T04:30:00-08:00', description: 'Shipping Label Created', stage: 'registered' };
+  const hub: Scan = { time: '2026-01-03T08:15:42-05:00', location: 'Hub City, EX', description: 'Arrived at GOFO Regional Hub', stage: 'in_transit' };
+  const out: Scan = { time: '2026-01-04T07:59:03-05:00', location: 'Station City, EX', description: 'Out for Delivery', stage: 'out_for_delivery' };
+  const delivered: Scan = { time: '2026-01-04T16:58:30-05:00', location: 'Example City, EX', description: 'Delivered', stage: 'delivered' };
+  const result = (scans: Scan[]): CarrierResult => ({
+    status: scans[0]!.stage as CarrierResult['status'], current_stage: scans[0]!.stage,
+    last_status_text: scans[0]!.description, last_update: scans[0]!.time, events: scans,
+  });
+  // A universal copy keeps the local clock with a Pacific offset and no place: Eastern scans read three hours late.
+  const copied = (scan: Scan): Scan => ({ time: scan.time.replace('-05:00', '-08:00'), description: scan.description, stage: scan.stage });
+  const own = (scan: Scan) => providerEventId('gofo', scan.time, scan.location ?? '', scan.description);
+  const copy = (scan: Scan) => providerEventId('unknown', copied(scan).time, '', scan.description);
+
+  it('stores each scan once and keeps the carrier clock across a fallback', async () => {
+    vi.spyOn(observability, 'reportRoutingEvent').mockImplementation(() => undefined);
+    const store = eventStore();
+    const client = { ...store.client,
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-01-05T12:01:30Z' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
+    };
+    const down = new Error('GOFO tracking endpoint is unavailable');
+    const adapter = {
+      fetch: vi.fn()
+        .mockResolvedValueOnce(result([hub, label]))
+        .mockRejectedValueOnce(down)
+        .mockResolvedValueOnce(result([delivered, out, hub, label]))
+        .mockRejectedValueOnce(down),
+      fetchUniversal: vi.fn()
+        .mockResolvedValueOnce(result([out, hub, label].map(copied)))
+        .mockResolvedValueOnce(result([delivered, out, hub, label].map(copied))),
+    };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, now);
+    // Each check starts from a fresh snapshot, so the router asks GOFO first every time.
+    const sync = async (stage: string) => {
+      await service.syncPackage({ ...parcel, current_stage: stage, [STORED_EVENT_IDENTITIES]: store.identities() });
+      return ids(store.batch());
+    };
+
+    expect(await sync('pending')).toEqual([own(hub), own(label)]);
+    // GOFO is down: the copy adds only the scan GOFO has not reported yet.
+    expect(await sync('in_transit')).toEqual([copy(out)]);
+    const copiedRow = store.rows.get(copy(out))!.id;
+    // GOFO is back: its scan takes that row over and sets its clock and place.
+    expect(await sync('out_for_delivery')).toEqual([own(delivered), copy(out), own(hub), own(label)]);
+    expect(store.rows.get(copy(out))).toMatchObject({ id: copiedRow, occurred_at: '2026-01-04T12:59:03Z', location: 'Station City, EX' });
+    // Down again: the copy stores and moves nothing.
+    expect(await sync('delivered')).toEqual([]);
+    expect(store.rows.size).toBe(4);
+    expect(store.rows.get(copy(out))).toMatchObject({ id: copiedRow, occurred_at: '2026-01-04T12:59:03Z' });
+    expect(store.rows.get(own(delivered))).toMatchObject({ occurred_at: '2026-01-04T21:58:30Z' });
+    expect(adapter.fetchUniversal).toHaveBeenCalledTimes(2);
   });
 });
