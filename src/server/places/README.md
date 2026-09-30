@@ -26,6 +26,8 @@ anything fails, parcels are served without places.
 or more, the postal localities of Switzerland, Liechtenstein and their neighbours, Swiss
 and Liechtenstein postcodes, and Natural Earth country label points. Decisions about
 what to include are commented in the script.
+Then run `node packages/carriers/scripts/generate-region-towns.mjs`: the carriers package keeps
+the towns of a few US states and Canadian provinces from it (`npm run test:contract` checks).
 
 GeoNames data is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
 ([geonames.org](https://www.geonames.org)); the privacy notice, linked from the app, credits

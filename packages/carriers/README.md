@@ -19,7 +19,8 @@ core/          detection, catalog, status vocabulary, result contract, errors, t
 carriers/<id>/ one folder per carrier (below)
 providers/     universal providers and the shared discovery chain
 generated/     catalog, adapter registry and brand assets (never edit by hand)
-scripts/       new-carrier, generate-registry, generate-readme, generate-brand, detection-golden
+scripts/       new-carrier, generate-registry, generate-readme, generate-brand, generate-region-towns,
+               detection-golden
 ```
 
 A carrier folder holds:

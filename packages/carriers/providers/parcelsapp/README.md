@@ -66,8 +66,8 @@ step exists for future protocol changes.
   keeps the UTC digits and re-reads them in the first zone it finds:
   1. the catalog zone of the scan's carrier (`carriers[state.carrier]`), unless it is UTC;
   2. the country at the end of `location`, if `COUNTRY_ZONES` ([core/time](../../core/time/index.ts))
-     gives it a single clock, else, for the US scans of a few carriers, their state's zone
-     (see US scans below);
+     gives it a single clock, else, for the North American scans of a few carriers, their
+     state's or province's zone (see North American scans below);
   3. the country that name ends with, after a catalog carrier or brand ("DPD UK",
      "GLS Italy", "DHL Parcel Netherlands"), if that country has a single clock. It comes
      after the location because the name can be a branch, not the scan's place
@@ -102,19 +102,23 @@ step exists for future protocol changes.
   (Ship24's instants and Swiss Post's own scan agree once they are read that way), so
   they go through the steps like any other scan, US ones included (below). Those that
   name only the country stay as labeled, hours early.
-- US scans: the dates of UPS, FedEx, UniUni and EasyShip are the scan's local clock, as
-  UPS's own instants, FedEx's own page, UniUni's own feed and Ship24's offsets show. Step 2
-  reads them in the zone of the state the location names ("Riverside, CA, US", "Charlotte,
-  NC", "Linden, NJ 07036", "Scranton PA"); a state with several zones gets its majority
-  zone, as in the USPS adapter. A code that is also a country's ("GA" is Gabon) counts only
-  in a reply that is in the US: one scan names the country or a code no country has, or
-  every located scan names a US state. DE, IL, IN and MT are read as Germany, Israel, India
-  and Malta before that, because UPS writes German scans as "Koeln, DE", so "Chicago, IL"
-  is misread unless it ends with "US". Another carrier's copy of such a scan, at the same
-  minute with the same wording (Cainiao relaying UniUni), takes the same zone. Other
-  carriers keep their readings: OnTrac's dates are UTC, Landmark's keep one clock in
-  every country, and GOFO's carry real offsets. Adding a carrier to this list moves its
-  stored US scans: plan a re-key.
+- North American scans: the dates of UPS, FedEx, UniUni and EasyShip are the scan's local
+  clock, as UPS's own instants, FedEx's own page, UniUni's own feed and Ship24's offsets
+  show on US scans (UPS's also in Germany, the Netherlands and Spain; no public Canadian
+  reference was found). Step 2 reads them in the zone of the US state or Canadian province
+  the location names ("Riverside, CA, US", "Charlotte, NC", "Linden, NJ 07036", "Scranton
+  PA", "Mississauga, ON, CA"), the majority zone where there are several, as in the USPS
+  adapter. A code shared with a single-clock country (DE, IL, IN, MT, NL, SK) counts, before
+  that country, only for a town of the state or province: UPS writes both "Chicago, IL" and
+  "Koeln, DE". The town lists come from the server's GeoNames gazetteer, and a name the
+  country also has for more people stays the country's ("Salem, IN").
+  [generate-region-towns.mjs](../../scripts/generate-region-towns.mjs) writes them. Another
+  shared code ("GA" is Gabon) counts only in a reply that is in North America: one scan
+  certainly is, or one names a state or province and none names another country. A copy
+  of such a scan from another carrier, at the same minute with the same wording (Cainiao
+  relaying UniUni), takes the same zone. Other carriers keep their readings: OnTrac's dates
+  are UTC, Landmark's keep one clock in every country, and GOFO's carry real offsets.
+  Adding a carrier, a town or a province moves stored scans: plan a re-key.
 - TIPSA's `date` has the digits of TIPSA's own shipment page, which keeps Madrid time for
   every agency ([TIPSA](../../carriers/tipsa/README.md)), so step 1 reads its Portuguese
   scans on Madrid time too.

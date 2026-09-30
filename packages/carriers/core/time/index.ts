@@ -8,6 +8,7 @@
  * Every helper returns `null` rather than guessing.
  */
 import { DateTime } from 'luxon';
+import { REGION_TOWNS } from '../../generated/regionTowns';
 import { clean } from '../transport/text';
 
 export interface ParsedTime {
@@ -212,6 +213,40 @@ export function usStateTimeZone(state: unknown): string | null {
   if (typeof state !== 'string') return null;
   const code = state.trim().toUpperCase();
   return Object.hasOwn(US_STATE_ZONES, code) ? US_STATE_ZONES[code]! : null;
+}
+
+// Canadian provinces and territories by postal code, each in its majority zone.
+const CANADA_PROVINCE_ZONES: Readonly<Record<string, string>> = {
+  AB: 'America/Edmonton', BC: 'America/Vancouver', MB: 'America/Winnipeg', NB: 'America/Moncton',
+  NL: 'America/St_Johns', NS: 'America/Halifax', NT: 'America/Edmonton', NU: 'America/Iqaluit',
+  ON: 'America/Toronto', PE: 'America/Halifax', QC: 'America/Toronto', SK: 'America/Regina',
+  YT: 'America/Whitehorse',
+};
+
+/** The zone of a Canadian province or territory from its postal code ("ON"): its majority zone; null otherwise. */
+export function canadaProvinceTimeZone(province: unknown): string | null {
+  if (typeof province !== 'string') return null;
+  const code = province.trim().toUpperCase();
+  return Object.hasOwn(CANADA_PROVINCE_ZONES, code) ? CANADA_PROVINCE_ZONES[code]! : null;
+}
+
+/** A town name as the region town lists key it: "St. John's" and "SAINT JOHNS" are both "stjohns". */
+export function townKey(name: string): string {
+  return name.normalize('NFD').replace(/\p{Mn}/gu, '').toLowerCase()
+    .replace(/\bsaint\b/g, 'st').replace(/\bsainte\b/g, 'ste').replace(/\bmount\b/g, 'mt').replace(/\bfort\b/g, 'ft')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+const REGION_TOWN_SETS = new Map(Object.entries(REGION_TOWNS).map(([code, towns]) => [code, new Set(towns.split('|'))]));
+
+/**
+ * Whether a town of this name lies in the US state or Canadian province whose
+ * code also names a single-clock country: Chicago is in Illinois, not Israel,
+ * and Koeln is not in Delaware. Only DE, IL, IN, MT, NL and SK have town lists
+ * (generated from GeoNames); false for any other code.
+ */
+export function regionHasTown(code: string, town: string): boolean {
+  return REGION_TOWN_SETS.get(code.trim().toUpperCase())?.has(townKey(town)) ?? false;
 }
 
 /** Epoch milliseconds (numbers or numeric strings); zero and negatives are rejected. */

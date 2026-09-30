@@ -383,6 +383,47 @@ describe('ParcelsApp result parsing', () => {
     ]);
   });
 
+  it('tells a state or province from the country its code also names by the town', () => {
+    // UPS writes US scans as "City, IL" and German ones as "City, DE": only the town tells.
+    const times = (carriers: string[], states: Record<string, unknown>[]) =>
+      parseParcelsAppResponse({ carriers, states }, number, identity()).events?.map((scan) => scan.time);
+    const scan = (date: string, location: string) => ({ date, status: 'In transit', carrier: 0, location });
+    expect(times(['UPS'], [
+      scan('2026-07-02T09:00:00Z', 'Wilmington, DE'),
+      scan('2026-07-02T14:05:00Z', 'Example Hub, DE'),
+      scan('2026-07-01T22:10:00Z', 'Hodgkins, IL'),
+      scan('2026-07-01T08:00:00Z', 'Tel Aviv, IL'),
+      scan('2026-06-30T06:00:00Z', 'Indianapolis, IN'),
+      scan('2026-06-30T02:00:00Z', 'Salem, IN'),
+    ])).toEqual([
+      '2026-07-02T13:00:00.000Z', // Delaware
+      '2026-07-02T12:05:00.000Z', // no Delaware town: Germany
+      '2026-07-02T03:10:00.000Z', // Illinois
+      '2026-07-01T05:00:00.000Z', // Israel
+      '2026-06-30T10:00:00.000Z', // Indiana
+      '2026-06-29T20:30:00.000Z', // India's Salem is far bigger than Indiana's
+    ]);
+    // Canada's provinces, NL and SK included; "Mississauga, ON, CA" is not California.
+    expect(times(['FedEx'], [
+      scan('2026-07-02T14:05:00Z', 'Mississauga, ON, CA'),
+      scan('2026-07-02T09:00:00Z', 'Regina, SK'),
+      scan('2026-07-01T09:00:00Z', 'Example City, BC V6B 1A1'),
+      scan('2026-07-01T08:00:00Z', "St. John's, NL"),
+      scan('2026-06-30T08:00:00Z', 'Eindhoven, NL'),
+      scan('2026-06-30T07:00:00Z', 'Bratislava, SK'),
+    ])).toEqual([
+      '2026-07-02T18:05:00.000Z', // Ontario
+      '2026-07-02T15:00:00.000Z', // Saskatchewan, no summer time
+      '2026-07-01T16:00:00.000Z', // British Columbia
+      '2026-07-01T10:30:00.000Z', // Newfoundland
+      '2026-06-30T06:00:00.000Z', // the Netherlands
+      '2026-06-30T05:00:00.000Z', // Slovakia
+    ]);
+    // A location that names no place leaves the reply in North America.
+    expect(times(['UNI Express'], [scan('2026-11-11T20:34:39Z', 'Example Town IL'), scan('2026-11-06T16:50:03Z', 'UNI DATA CENTER')]))
+      .toEqual(['2026-11-12T02:34:39.000Z', '2026-11-06T16:50:03.000Z']);
+  });
+
   it('reads the US scans of carriers that relay local clocks in their state\'s zone', () => {
     // Live shapes (2026-09-30): UPS's own instants, FedEx's own page and
     // UniUni's own feed agree with these readings.
@@ -407,9 +448,7 @@ describe('ParcelsApp result parsing', () => {
       .toEqual(['2026-09-08T14:09:00.000Z', '2026-09-08T04:37:00.000Z']);
     expect(times(['FedEx'], [scan('2026-09-08T10:09:00Z', 'Example City, GA'), scan('2026-09-07T08:00:00Z', 'Example Hub, France')]))
       .toEqual(['2026-09-08T10:09:00.000Z', '2026-09-07T06:00:00.000Z']);
-    // Canada, OnTrac's UTC dates and other carriers keep their readings.
-    expect(times(['UPS'], [scan('2026-07-02T14:05:00Z', 'Example City, ON, CA'), scan('2026-07-01T09:30:00Z', 'Example City, NY')]))
-      .toEqual(['2026-07-02T14:05:00.000Z', '2026-07-01T13:30:00.000Z']);
+    // OnTrac's dates are already UTC.
     expect(times(['OnTrac'], [scan('2026-09-25T21:49:19Z', 'EXAMPLE CITY, CA, 92000'), scan('2026-09-24T02:25:10Z', 'EXAMPLE CITY, NY, 10001')]))
       .toEqual(['2026-09-25T21:49:19.000Z', '2026-09-24T02:25:10.000Z']);
     // UniUni writes "City ST"; a copy of the same scan from another carrier moves with it.

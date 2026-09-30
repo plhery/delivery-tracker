@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   calendarDay, countryCode, countryTimeZone, epochMillisTime, epochSecondsTime, explicitOffsetTime, isoTime, mislabeledLocalTime,
-  mislabeledWallTime, settleGuessedClocks, sharedClockZone, timeZoneCountry, usStateTimeZone, zonedTime,
+  mislabeledWallTime, canadaProvinceTimeZone, regionHasTown, settleGuessedClocks, sharedClockZone, timeZoneCountry, townKey,
+  usStateTimeZone, zonedTime,
 } from './index';
 
 describe('time policies', () => {
@@ -106,6 +107,23 @@ describe('time policies', () => {
     expect(usStateTimeZone(' ny ')).toBe('America/New_York');
     expect(usStateTimeZone('PR')).toBe('America/Puerto_Rico');
     for (const value of ['ON', 'US', '', undefined]) expect(usStateTimeZone(value)).toBeNull();
+  });
+
+  it('maps Canadian provinces and territories to their majority zone', () => {
+    expect(canadaProvinceTimeZone('on')).toBe('America/Toronto');
+    expect(canadaProvinceTimeZone('SK')).toBe('America/Regina');
+    for (const value of ['IL', 'CA', '', undefined]) expect(canadaProvinceTimeZone(value)).toBeNull();
+  });
+
+  it('tells the towns of states and provinces from the countries their codes also name', () => {
+    expect(townKey("St. John's")).toBe(townKey('SAINT JOHNS'));
+    expect(regionHasTown('IL', 'CHICAGO')).toBe(true);
+    expect(regionHasTown('il', 'Elk Grove Village')).toBe(true);
+    expect(regionHasTown('IL', 'Tel Aviv')).toBe(false);
+    expect(regionHasTown('DE', 'Koeln')).toBe(false);
+    expect(regionHasTown('NL', "St. John's")).toBe(true);
+    // Only the codes shared with a single-clock country have lists.
+    expect(regionHasTown('NY', 'New York')).toBe(false);
   });
 
   it('maps a zone back to its single-zone country only', () => {
