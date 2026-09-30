@@ -184,7 +184,7 @@ statuses, timings and network error codes.
 | `colis-prive` | Colis Privé | dedicated | direct | 1 | 5 | 34 | [README](carriers/colis-prive/README.md) |
 | `relais-colis` | Relais Colis | dedicated | direct | 1 | 4 | 42 | [README](carriers/relais-colis/README.md) |
 | `paack` | Paack | dedicated | direct | 2 | 6 | 44 | [README](carriers/paack/README.md) |
-| `asendia` | Asendia | dedicated | direct | 4 | 11 | 109 | [README](carriers/asendia/README.md) |
+| `asendia` | Asendia | dedicated | direct | 4 | 13 | 109 | [README](carriers/asendia/README.md) |
 | `landmark-global` | Landmark Global | dedicated | direct | 2 | 4 | 20 | [README](carriers/landmark-global/README.md) |
 | `nz-post` | NZ Post | dedicated | direct | 3 | 3 | 9 | [README](carriers/nz-post/README.md) |
 | `pos-malaysia` | Pos Malaysia | dedicated | direct | 3 | 5 | 12 | [README](carriers/pos-malaysia/README.md) |
