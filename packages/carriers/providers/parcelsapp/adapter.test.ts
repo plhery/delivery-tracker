@@ -362,6 +362,29 @@ describe('ParcelsApp result parsing', () => {
     expect(scan('1000000000000001')).toBe('2026-07-02T09:20:00.000Z');
   });
 
+  it('keeps the UTC instants ParcelsApp gives Asendia USA scans wherever they happened', () => {
+    // Live shape (2026-09-30): an Asendia USA return through Switzerland, filed
+    // under Swiss Post. Asendia's A1 feed has the same instants, and Swiss
+    // Post's own scan (its local clock shifted into "+02:00") agrees.
+    const result = parseParcelsAppResponse({
+      carriers: ['Swiss Post', 'Asendia United States', 'Asendia USA'],
+      states: [
+        { date: '2026-05-06T19:40:30+02:00', status: 'Arrival in destination country', carrier: 0, location: 'Example Centre, Switzerland, 100000' },
+        { date: '2026-05-06T15:40:00Z', status: 'Arrived at destination', carrier: 1, location: 'EXAMPLE CITY, Switzerland' },
+        { date: '2026-04-21T06:10:00Z', status: 'Out for delivery', carrier: 1, location: 'Germany' },
+        { date: '2026-04-20T09:30:00Z', status: 'Arrived at destination', carrier: 2, location: 'EXAMPLE CITY, Germany' },
+        { date: '2026-04-10T14:05:12Z', status: 'Shipment Information Received', carrier: 1 },
+      ],
+    }, number, identity(), 'Europe/Zurich');
+    expect(result.events?.map((scan) => scan.time)).toEqual([
+      '2026-05-06T15:40:30.000Z', // Swiss Post: 17:40:30 in Zurich
+      '2026-05-06T15:40:00.000Z',
+      '2026-04-21T06:10:00.000Z',
+      '2026-04-20T09:30:00.000Z',
+      '2026-04-10T14:05:12.000Z',
+    ]);
+  });
+
   it('keeps the instants of scans whose carrier resolved before brand and country names did', () => {
     // A Chronopost + DHL Parcel Netherlands handoff: the DHL scans carry no
     // location and were read in the parcel carrier's zone (Berlin). Their name

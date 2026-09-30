@@ -78,11 +78,11 @@ step exists for future protocol changes.
 
   Steps 3 and 5 only guess where the scan was. A `location` ending with any other
   country, by ISO code or English name ("Example City, CA, US", "Example City, South
-  Africa"), rules them out and the scan stays as labeled; Asendia USA's own feed gives
-  such scans the same instants. A location that names no country ("Example Hub",
-  "Toronto, ON") rules nothing out, and step 4 only reads scans without a location. A
-  country added to `COUNTRY_ZONES` therefore moves the stored scans located in it, and so
-  their event ids: plan a re-key of stored ParcelsApp rows with such a change.
+  Africa"), rules them out and the scan stays as labeled. A location that names no
+  country ("Example Hub", "Toronto, ON") rules nothing out, and step 4 only reads scans
+  without a location. A country added to `COUNTRY_ZONES` therefore moves the stored scans
+  located in it, and so their event ids: plan a re-key of stored ParcelsApp rows with
+  such a change.
 
   With no zone, an offset is taken as given. Steps 3 and 4 choose a zone only:
   `carrierIdFromName` still treats these brands as ambiguous, so discovery and routing
@@ -93,6 +93,12 @@ step exists for future protocol changes.
   `last_update`, or moves the freshness watermark. A malformed date still fails the reply.
 - TNT's international scans (9-digit numbers) skip these steps. tnt.com gives them
   offsets, and ParcelsApp's `date` is already their UTC instant.
+- So do scans named "Asendia United States" or "Asendia USA", wherever they happened.
+  Their dates are the UTC instants of Asendia's A1 feed, and Swiss Post's own scans of
+  the same item agree (the Asendia USA references in
+  [numbers.json](../../carriers/asendia/numbers.json)). ParcelsApp can list A1's scans
+  under another name (an eBay shipment's under "EasyShip"); those still go through the
+  steps.
 - Brand zones: a bare brand does not say which network scanned. The DPD, GLS and Hermes
   carriers in the catalog all keep Central European time, which step 4 checks for each
   scan, DST changes included. A brand with a UTC carrier (DHL, through DHL eCommerce) gets

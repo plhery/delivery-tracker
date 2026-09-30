@@ -60,17 +60,23 @@ export function parseParcelsAppResponse(payload: unknown, trackingNumber: string
  * parcel. Without one it stays as labeled, as it does when the name's
  * country or the parcel's zone meets a location in another country. TNT's
  * international scans stay as labeled too: tnt.com gives them offsets, and
- * ParcelsApp's UTC matches them.
+ * ParcelsApp's UTC matches them. So do Asendia USA's, wherever they happened:
+ * their dates are the UTC instants of Asendia's A1 feed, and Swiss Post's own
+ * scans of the same item agree (checked 2026-09-30).
  */
 function stateCarrierName(payload: Record<string, unknown>, state: Record<string, unknown>): unknown {
   const carriers = Array.isArray(payload.carriers) ? payload.carriers : [];
   return typeof state.carrier === 'number' ? carriers[state.carrier] : undefined;
 }
 
+// The names ParcelsApp gives Asendia USA's scans.
+const ASENDIA_USA = /^asendia\s+(?:usa|united\s+states)$/i;
+
 function scanZone(payload: Record<string, unknown>, state: Record<string, unknown>, fallback: string | null, number: string): string | null {
   const name = stateCarrierName(payload, state);
   const carrier = typeof name === 'string' ? carrierIdFromName(name) : undefined;
   if (carrier === 'tnt' && /^\d{9}$/.test(number)) return null;
+  if (typeof name === 'string' && ASENDIA_USA.test(name.trim())) return null;
   const zone = carrier ? carrierTimezone(carrier) : 'UTC';
   if (zone !== 'UTC') return zone;
   const location = typeof state.location === 'string' ? state.location.trim() : '';
@@ -79,9 +85,8 @@ function scanZone(payload: Record<string, unknown>, state: Record<string, unknow
   if (located) return located;
   // The zones below only guess where the scan was. A location in another
   // country, one with several clocks or none listed ("Example City, CA,
-  // United States", "Example City, South Africa"), rules a guess out: the scan
-  // keeps its labeled instant, which Asendia USA's own feed gives such scans
-  // too (checked 2026-09-29).
+  // United States", "Example City, South Africa"), rules a guess out, and the
+  // scan keeps its labeled instant.
   const country = countryCode(place);
   const guess = (candidate: string | null) =>
     candidate && (!country || timeZoneCountry(candidate) === country) ? candidate : null;
