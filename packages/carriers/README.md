@@ -190,7 +190,7 @@ statuses, timings and network error codes.
 | `pos-malaysia` | Pos Malaysia | dedicated | direct | 3 | 5 | 12 | [README](carriers/pos-malaysia/README.md) |
 | `thailand-post` | Thailand Post | universal providers |  | 0 | 2 | 0 |  |
 | `ukrposhta` | Ukrposhta | dedicated | browser | 2 | 3 | 29 | [README](carriers/ukrposhta/README.md) |
-| `estafeta` | Estafeta | dedicated | direct | 2 | 3 | 7 | [README](carriers/estafeta/README.md) |
+| `estafeta` | Estafeta | dedicated | direct | 2 | 5 | 7 | [README](carriers/estafeta/README.md) |
 | `correos-chile` | Correos de Chile | dedicated | direct | 3 | 2 | 1 | [README](carriers/correos-chile/README.md) |
 | `the-courier-guy` | The Courier Guy | dedicated | direct | 3 | 4 | 8 | [README](carriers/the-courier-guy/README.md) |
 | `geodis` | GEODIS | dedicated | direct | 3 | 3 | 46 | [README](carriers/geodis/README.md) |
@@ -204,8 +204,8 @@ statuses, timings and network error codes.
 | `c-chez-vous` | C Chez Vous | dedicated | direct | 1 | 2 | 5 | [README](carriers/c-chez-vous/README.md) |
 | `colisweb` | Colisweb | dedicated | direct | 2 | 2 | 20 | [README](carriers/colisweb/README.md) |
 | `delivengo` | Delivengo | via la-poste | direct → retry | 4 | 2 | 0 | [README](carriers/delivengo/README.md) |
-| `uniuni` | UniUni | dedicated | direct | 3 | 3 | 7 | [README](carriers/uniuni/README.md) |
-| `speedx` | SpeedX | universal providers |  | 0 | 5 | 0 |  |
+| `uniuni` | UniUni | dedicated | direct | 3 | 5 | 7 | [README](carriers/uniuni/README.md) |
+| `speedx` | SpeedX | universal providers |  | 0 | 8 | 0 |  |
 | `gofo` | GOFO Express | dedicated | direct | 3 | 4 | 7 | [README](carriers/gofo/README.md) |
 | `ecoscooting` | Ecoscooting | dedicated | direct | 4 | 17 | 41 | [README](carriers/ecoscooting/README.md) |
 | `tipsa` | TIPSA | universal providers |  | 0 | 2 | 0 |  |

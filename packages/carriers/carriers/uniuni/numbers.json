@@ -16,6 +16,32 @@
       "note": "Publicly reported shipment number; the attribution was not independently verified."
     },
     {
+      "number": "U999900000000001",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-30",
+      "expect": {
+        "carrier": "uniuni",
+        "confidence": "high"
+      },
+      "note": "Made-up number in the public U9999 layout: U9999 and 11 digits."
+    },
+    {
+      "number": "U999902043194518",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6a377f54201c02cc2070d830",
+        "date": "2026-06-21"
+      },
+      "expect": {
+        "carrier": "uniuni",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number with identity-bound history in the official anonymous feed."
+    },
+    {
       "number": "UUS5B60564241706199",
       "role": "shipment",
       "evidence": "public_shipment_report",

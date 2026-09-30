@@ -33,6 +33,17 @@ describe('Estafeta bound history', () => {
     const pieces = load(html); pieces('.shipmentInfoDiv').append('<ul class="multiplesWaybillList"><li><a class="MultipleLink">900000000001A000000003</a></li></ul>');
     expect(() => parseEstafetaLookup(pieces.html(), guide)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
   });
+  it('binds a two-day guide whose service letter takes the 14th place', () => {
+    const guide = '9000000000001D00000002';
+    const fixture = (name: string) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8').replaceAll('900000000001A000000002', guide);
+    const history = fixture('full-guide-history.html');
+    expect(normalizeEstafetaNumber('9000000000001d00000002')).toBe(guide);
+    expect(parseEstafetaHistory(history, parseEstafetaLookup(fixture('full-guide-lookup.html'), guide)).canonical_tracking_number).toBeUndefined();
+    expect(parseEstafetaHistory(history, parseEstafetaLookup(fixture('full-guide-lookup.html'), NUMBER)).canonical_tracking_number).toBe(guide);
+    for (const number of ['9000000000001DD0000002', '90000000000001D0000002']) {
+      expect(() => normalizeEstafetaNumber(number)).toThrow(TypeError);
+    }
+  });
   it('binds the short-code alias to the canonical guide and retains local clocks without projecting private details', () => {
     const result = normalizeCarrierResult(parseEstafetaHistory(historyHtml(), lookup()));
     expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered', canonical_tracking_number: GUIDE, last_update: null, last_update_local: '2026-01-04T12:00:00', expected_delivery: null });

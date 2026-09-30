@@ -39,6 +39,11 @@
       "id": "speedx-1",
       "pattern": "^SPX[A-Z]{3}\\d{12}$",
       "confidence": "high"
+    },
+    {
+      "id": "speedx-2",
+      "pattern": "^SPX[A-Z]{3}\\d{18}$",
+      "confidence": "high"
     }
   ]
 }

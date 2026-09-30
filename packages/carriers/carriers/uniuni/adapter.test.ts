@@ -9,6 +9,7 @@ import { uniuniStatus } from './status';
 const NUMBER = 'UUS0000000000000001';
 const OTHER = 'UUS0000000000000002';
 const UUSC_NUMBER = 'UUSC000000000001';
+const U9999_NUMBER = 'U999900000000001';
 const fixture = () => JSON.parse(readFileSync(new URL('./fixtures/delivered.json', import.meta.url), 'utf8'));
 const uuscFixture = () => JSON.parse(readFileSync(new URL('./fixtures/uusc-delivered.json', import.meta.url), 'utf8'));
 
@@ -27,6 +28,17 @@ describe('UniUni confirmed parcel formats', () => {
     }
     expect(normalizeUniuniRecognitionNumber(NUMBER)).toBe(NUMBER);
     expect(normalizeUniuniRecognitionNumber('4C000000001US')).toBe('4C000000001US');
+  });
+
+  it('detects the U9999 numeric reference without claiming neighboring U shapes', () => {
+    const rule = metadata.detection.find((candidate: { id: string }) => candidate.id === 'uniuni-4');
+    expect(rule.confidence).toBe('high');
+    expect(new RegExp(rule.pattern).test(U9999_NUMBER)).toBe(true);
+    expect(normalizeUniuniRecognitionNumber('u9999-00000 000001')).toBe(U9999_NUMBER);
+    for (const number of ['U99990000000001', 'U9999000000000001', 'U999800000000001', 'U99990000000000A', `X${U9999_NUMBER}`]) {
+      expect(new RegExp(rule.pattern).test(number), number).toBe(false);
+      expect(() => normalizeUniuniRecognitionNumber(number), number).toThrow(TypeError);
+    }
   });
 
   it('keeps full identity-bound history for the compact format', () => {
@@ -172,6 +184,14 @@ describe('UniUni direct retrieval', () => {
     await expect(instance.recognize!('UUSC00000000000A')).resolves.toEqual({ known: false });
     await expect(instance.recognize!('UUSC00000000001')).resolves.toEqual({ known: false });
     expect(fetcher).toHaveBeenCalledOnce();
+  });
+
+  it('probes normalized U9999 references against the exact returned parcel', async () => {
+    const value = uuscFixture(); value.data.valid_tno[0].tno = U9999_NUMBER;
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json(value));
+    const instance = adapter({ fetcher, trawl: null, browserExecutablePath: null, recorder: NOOP_RECORDER, env: {} });
+    await expect(instance.recognize!('u9999 00000000001')).resolves.toEqual({ known: true, lastActivityAt: '2026-01-05T22:00:00.000Z' });
+    expect(new URL(String(fetcher.mock.calls[0][0])).searchParams.get('id')).toBe(U9999_NUMBER);
   });
 
   it('recognizes only supported formats, exact absence and dated activity while preserving uncertain failures', async () => {

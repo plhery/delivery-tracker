@@ -51,13 +51,35 @@
         "date": "2026-08-26"
       },
       "expect": {
-        "carrier": "unknown",
-        "confidence": "low",
-        "candidates": [
-          "estafeta"
-        ]
+        "carrier": "estafeta",
+        "confidence": "high"
       },
-      "note": "Publicly reported full guide; the native single-parcel response pairs it with its short tracking code. The shape remains ambiguous pending a matching lookup."
+      "note": "Publicly reported full guide with a letter in the 13th place; the native single-parcel response pairs it with its short tracking code."
+    },
+    {
+      "number": "805590979741C700931121",
+      "role": "shipment",
+      "evidence": "open_source_example",
+      "source": {
+        "url": "https://github.com/albertollopez92-dev/bitacora-envios/blob/main/index.html"
+      },
+      "expect": {
+        "carrier": "estafeta",
+        "confidence": "high"
+      },
+      "note": "Full-guide placeholder in an open-source shipment log, with a letter in the 13th place."
+    },
+    {
+      "number": "9000000000001D00000002",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-30",
+      "expect": {
+        "carrier": "estafeta",
+        "confidence": "high"
+      },
+      "note": "Made-up two-day guide with the service letter D in the 14th place, as on older Estafeta result pages."
     }
   ]
 }

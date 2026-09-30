@@ -2016,8 +2016,8 @@
   },
   {
     "input": "502553526650A704483512",
-    "carrier": "unknown",
-    "confidence": "low",
+    "carrier": "estafeta",
+    "confidence": "high",
     "candidates": [
       "estafeta"
     ]
@@ -2450,6 +2450,14 @@
     ]
   },
   {
+    "input": "805590979741C700931121",
+    "carrier": "estafeta",
+    "confidence": "high",
+    "candidates": [
+      "estafeta"
+    ]
+  },
+  {
     "input": "80993847369",
     "carrier": "old-dominion",
     "confidence": "high",
@@ -2620,6 +2628,14 @@
     "confidence": "high",
     "candidates": [
       "inpost"
+    ]
+  },
+  {
+    "input": "9000000000001D00000002",
+    "carrier": "estafeta",
+    "confidence": "high",
+    "candidates": [
+      "estafeta"
     ]
   },
   {
@@ -4647,7 +4663,29 @@
     ]
   },
   {
+    "input": "SPX000000000000000000001",
+    "carrier": "unknown",
+    "confidence": "none",
+    "candidates": []
+  },
+  {
     "input": "SPXIND126901671914",
+    "carrier": "speedx",
+    "confidence": "high",
+    "candidates": [
+      "speedx"
+    ]
+  },
+  {
+    "input": "SPXLAX000002601010000001",
+    "carrier": "speedx",
+    "confidence": "high",
+    "candidates": [
+      "speedx"
+    ]
+  },
+  {
+    "input": "SPXMIA008952609060000499",
     "carrier": "speedx",
     "confidence": "high",
     "candidates": [
@@ -4768,6 +4806,22 @@
     "confidence": "high",
     "candidates": [
       "purolator"
+    ]
+  },
+  {
+    "input": "U999900000000001",
+    "carrier": "uniuni",
+    "confidence": "high",
+    "candidates": [
+      "uniuni"
+    ]
+  },
+  {
+    "input": "U999902043194518",
+    "carrier": "uniuni",
+    "confidence": "high",
+    "candidates": [
+      "uniuni"
     ]
   },
   {

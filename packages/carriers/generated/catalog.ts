@@ -2507,6 +2507,10 @@ export const CARRIER_CATALOG = {
       {
         "pattern": "^SPX[A-Z]{3}\\d{12}$",
         "confidence": "high"
+      },
+      {
+        "pattern": "^SPX[A-Z]{3}\\d{18}$",
+        "confidence": "high"
       }
     ],
     "trackingUrlTemplate": "https://tracking.speedx.io/{trackingNumber}",
@@ -2546,6 +2550,10 @@ export const CARRIER_CATALOG = {
       },
       {
         "pattern": "^UUSC\\d{12}$",
+        "confidence": "high"
+      },
+      {
+        "pattern": "^U9999\\d{11}$",
         "confidence": "high"
       }
     ],
@@ -2718,8 +2726,12 @@ export const CARRIER_CATALOG = {
         "confidence": "low"
       },
       {
-        "pattern": "^(?:\\d{22}|\\d{12}[A-Z]\\d{9}|\\d{15}[A-Z0-9]{7})$",
+        "pattern": "^(?:\\d{22}|\\d{15}[A-Z0-9]{7})$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^\\d{12}(?:[A-Z]\\d|\\d[A-Z])\\d{8}$",
+        "confidence": "high"
       }
     ],
     "trackingUrlTemplate": "https://cs.estafeta.com/es/Tracking/searchByGet?wayBill={trackingNumber}&isShipmentDetail=True",

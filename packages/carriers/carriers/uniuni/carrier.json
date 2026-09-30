@@ -77,6 +77,11 @@
       "id": "uniuni-3",
       "pattern": "^UUSC\\d{12}$",
       "confidence": "high"
+    },
+    {
+      "id": "uniuni-4",
+      "pattern": "^U9999\\d{11}$",
+      "confidence": "high"
     }
   ]
 }

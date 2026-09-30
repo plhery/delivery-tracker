@@ -328,7 +328,8 @@ By carrier:
 - **Estafeta:** the adapter binds the ten-digit code to one full guide and rejects
   colliding codes and master-piece lists; Mexican clocks remain local. Both forms of the
   public reference return the same four scans, and no aggregator knew them. Detection
-  also accepts the full guide with a letter after twelve digits.
+  selects full guides with a letter in the 13th or 14th place (two-day guides carry a
+  `D` in the 14th); all-digit guides stay a suggestion shared with USPS and Austrian Post.
 - **Correos de Chile:** an older item to China had 13 rows in 17TRACK and none
   elsewhere. Recent public references return a bound native scan. The adapter keeps
   wall clocks local and excludes recipient details and the branch directory.
@@ -365,10 +366,12 @@ By carrier:
   rather than the older numeric local clock; unresolved current clocks are kept apart and
   providers are asked for dated progress. Master shipments are inconclusive. Every
   feed holds the same six scans; ParcelsApp and Postal Ninja add translated or repeated
-  rows. The compact `UUSC` family is supported by detection and native recognition.
+  rows. The compact `UUSC` and `U9999` families are supported by detection and native
+  recognition.
 - **SpeedX:** only 17TRACK knew the reference: a label, then "Parcel Void", which reads
   as an exception rather than transit because the label was cancelled before shipping.
-  A 24-character `SPX…` number in another report matches no rule.
+  Detection selects both the 18- and the 24-character form: `SPX`, a three-letter hub,
+  then 12 or 18 digits.
 - **GOFO Express:** GOFO counts 15 scans for this reference but lists 14, the same 14
   the aggregators hold; its page shows the list and ignores the counter. The adapter
   accepts a larger counter only when the list runs from label creation to the current
@@ -415,8 +418,7 @@ Detection selects or suggests the named carrier for the public numbers behind ro
 shape and stay with Packeta. S10 items from Poland and Ukraine go to the generic
 postal carrier. Paack and Ukrposhta have no rule for their own
 numbers; Posti, Dachser, Hermes Einrichtungs-Service, Swiss Post Cargo, PostLogistics,
-Colisweb and Delivengo have none by design. SpeedX's 24-character form matches
-no rule. Each answer is recorded in the
+Colisweb and Delivengo have none by design. Each answer is recorded in the
 carrier's `numbers.json`.
 
 ## Other carriers

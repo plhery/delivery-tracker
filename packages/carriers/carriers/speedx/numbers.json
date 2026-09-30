@@ -16,6 +16,32 @@
       "note": "Publicly reported shipment number; the attribution was not independently verified."
     },
     {
+      "number": "SPXLAX000002601010000001",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "shapeConfirmed": "2026-09-30",
+      "expect": {
+        "carrier": "speedx",
+        "confidence": "high"
+      },
+      "note": "Made-up 24-character number: SPX, a three-letter hub and 18 digits."
+    },
+    {
+      "number": "SPXMIA008952609060000499",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6aa98f8a65d38563d593e09f",
+        "date": "2026-09-15"
+      },
+      "expect": {
+        "carrier": "speedx",
+        "confidence": "high"
+      },
+      "note": "Publicly reported 24-character shipment number; the attribution was not independently verified."
+    },
+    {
       "number": "SPXMIA056745759994",
       "role": "shipment",
       "evidence": "public_shipment_report",
@@ -66,6 +92,21 @@
         "confidence": "high"
       },
       "note": "Publicly reported shipment number; the attribution was not independently verified."
+    },
+    {
+      "number": "SPX000000000000000000001",
+      "role": "negative",
+      "evidence": "synthetic",
+      "derivedFrom": "invented",
+      "shapeConfirmed": "2026-09-30",
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "none",
+        "not": [
+          "speedx"
+        ]
+      },
+      "note": "SPX followed only by digits, without the hub letters, must not resolve to SpeedX."
     }
   ]
 }

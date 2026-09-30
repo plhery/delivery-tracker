@@ -14,7 +14,8 @@ export interface EstafetaLookup {
   state: string;
 }
 
-const FULL_GUIDE = /^(?:\d{22}|\d{12}[A-Z]\d{9}|\d{15}[A-Z0-9]{7})$/;
+// A letter can take the 13th or 14th place (two-day guides carry a D in the 14th).
+const FULL_GUIDE = /^(?:\d{22}|\d{12}(?:[A-Z]\d|\d[A-Z])\d{8}|\d{15}[A-Z0-9]{7})$/;
 
 export function normalizeEstafetaNumber(raw: string): string {
   const number = normalizeTrackingNumber(raw);

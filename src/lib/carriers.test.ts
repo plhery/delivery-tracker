@@ -1241,7 +1241,10 @@ describe('carrier detection', () => {
   it('supports the expanded native tracking formats without claiming shared numeric barcodes', () => {
     expect(detectCarrier('CNPRT00000000000000000001')).toBe('ecoscooting');
     expect(detectCarrier('UUSC000000000001')).toBe('uniuni');
-    expect(detectCarrierMatch('900000000001A000000002').candidates).toContain('estafeta');
+    expect(detectCarrier('U999900000000001')).toBe('uniuni');
+    expect(detectCarrier('900000000001A000000002')).toBe('estafeta');
+    expect(detectCarrier('9000000000001D00000002')).toBe('estafeta');
+    expect(detectCarrier('SPXLAX000002601010000001')).toBe('speedx');
     expect(detectCarrierMatch('000000000000000000000001')).toMatchObject({
       carrier: 'unknown', confidence: 'low', candidates: ['ciblex', 'inpost', 'bpost'],
     });
