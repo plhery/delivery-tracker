@@ -4,6 +4,20 @@ import UIKit
 @testable import SwissDeliveryTracker
 
 final class ParcelLogicTests: XCTestCase {
+    func testPickupPointSplitsNameFromAddressAndOpensAppleMaps() {
+        let shop = PickupPoint(" Corner shop & café \n12 Main Street\n\n1000 Town ")
+        XCTAssertEqual(shop?.name, "Corner shop & café")
+        XCTAssertEqual(shop?.address, "12 Main Street, 1000 Town")
+        XCTAssertEqual(shop?.query, "Corner shop & café, 12 Main Street, 1000 Town")
+        XCTAssertEqual(shop?.mapsURL?.absoluteString,
+                       "https://maps.apple.com/?daddr=Corner%20shop%20%26%20caf%C3%A9,%2012%20Main%20Street,%201000%20Town")
+        let office = PickupPoint("Post office 42")
+        XCTAssertNil(office?.address)
+        XCTAssertEqual(office?.mapsURL?.absoluteString, "https://maps.apple.com/?q=Post%20office%2042")
+        XCTAssertNil(PickupPoint(nil))
+        XCTAssertNil(PickupPoint(" \n "))
+    }
+
     func testAutomaticCarrierNoticeExpiresAndDoesNotSurviveManualSelection() {
         let at = DateParser.date("2026-09-10T12:00:00Z")!
         var parcel = DemoRepository.seed(now: at)[0]

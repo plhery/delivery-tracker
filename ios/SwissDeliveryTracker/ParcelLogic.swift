@@ -13,6 +13,32 @@ enum ParcelTone: Sendable {
     }
 }
 
+/// A carrier's pickup point: the first line names it, any further lines give its address.
+struct PickupPoint: Equatable, Sendable {
+    let name: String
+    let address: String?
+
+    init?(_ text: String?) {
+        let lines = (text ?? "").components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        guard let first = lines.first else { return nil }
+        name = first
+        address = lines.count > 1 ? lines.dropFirst().joined(separator: ", ") : nil
+    }
+
+    /// Name and address on one line, for a maps search or the clipboard.
+    var query: String { [name, address].compactMap { $0 }.joined(separator: ", ") }
+
+    /// Directions when the carrier gives an address; a search when it only
+    /// names the place, so the person can check which one it is.
+    var mapsURL: URL? {
+        let allowed = CharacterSet.urlQueryAllowed.subtracting(CharacterSet(charactersIn: "&=+?#"))
+        guard let value = query.addingPercentEncoding(withAllowedCharacters: allowed) else { return nil }
+        return URL(string: "https://maps.apple.com/?\(address == nil ? "q" : "daddr")=\(value)")
+    }
+}
+
 struct StageMetadata: Sendable {
     let symbol: String
     let tone: ParcelTone

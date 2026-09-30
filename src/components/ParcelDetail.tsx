@@ -42,6 +42,8 @@ import { Icon, PostageStamp } from './Icon';
 import { parcelIcon, parcelTone } from '../lib/parcelDesign';
 import { ParcelMapSheet, RouteEngraving, useParcelRoute } from './ParcelMap';
 import { ProgressTrack } from './ProgressTrack';
+import { PickupPointCard } from './PickupPointCard';
+import { pickupPoint } from '../lib/pickupPoint';
 import type { CardOrigin } from '../lib/cardTransition';
 import { useRefreshAnimation } from '../lib/useRefreshAnimation';
 import './Refresh.css';
@@ -87,6 +89,9 @@ export function ParcelDetail({
   const amazonHistoryExpired = carrier.id === 'amazon-shipping' && parcel.syncError === AMAZON_HISTORY_EXPIRED;
   const automaticTracking = tracksAutomatically(carrier.id) && !amazonHistoryExpired;
   const current = currentEvent(parcel.events);
+  // While the parcel waits, its pickup point gets a card; afterwards it is a plain fact.
+  const waitingAt = current?.stage === 'ready_for_pickup' ? pickupPoint(parcel.pickupPoint) : null;
+  const pickupFact = waitingAt ? undefined : parcel.pickupPoint?.trim();
   const { placed, route } = useParcelRoute(parcel, languageTag);
   const [mapOpen, setMapOpen] = useState(false);
   // Recognition found the carrier, but it needs the postcode before it can track.
@@ -479,10 +484,11 @@ export function ParcelDetail({
         )}
         <div className="detail__progress"><ProgressTrack stage={current?.stage ?? null} /></div>
       </section>
+      {waitingAt && <PickupPointCard point={waitingAt} />}
       <section className="detail__information">
-        {(parcel.pickupPoint || parcel.receiverName || parcel.dimensionsText || (Number.isFinite(parcel.weightKg) && parcel.weightKg! > 0)) && (
+        {(pickupFact || parcel.receiverName || parcel.dimensionsText || (Number.isFinite(parcel.weightKg) && parcel.weightKg! > 0)) && (
           <dl className="detail__shipment-facts">
-            {parcel.pickupPoint && <div><dt>{t('detail.pickupPoint')}</dt><dd>{parcel.pickupPoint}</dd></div>}
+            {pickupFact && <div><dt>{t(current?.stage === 'delivered' ? 'detail.collectedAt' : 'detail.pickupPoint')}</dt><dd>{pickupFact}</dd></div>}
             {parcel.receiverName && <div><dt>{t('detail.recipient')}</dt><dd>{parcel.receiverName}</dd></div>}
             {Number.isFinite(parcel.weightKg) && parcel.weightKg! > 0 && <div><dt>{t('detail.weight')}</dt><dd>{new Intl.NumberFormat(languageTag, { style: 'unit', unit: 'kilogram', maximumFractionDigits: 3 }).format(parcel.weightKg!)}</dd></div>}
             {parcel.dimensionsText && <div><dt>{t('detail.dimensions')}</dt><dd>{parcel.dimensionsText}</dd></div>}

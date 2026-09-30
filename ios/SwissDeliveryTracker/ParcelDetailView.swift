@@ -9,11 +9,13 @@ struct ParcelDetailView: View {
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.openURL) private var openURL
 
     @State private var showingFullJourney = true
     @State private var showingTitleEditor = false
     @State private var editedTitle = ""
     @State private var copiedNumber: String?
+    @State private var copiedPickupPoint = false
     @State private var working = false
     @State private var errorMessage: String?
     @State private var carrierEditor: CarrierEditorRequest?
@@ -263,11 +265,16 @@ struct ParcelDetailView: View {
             }
             .background(branding.surface, in: RoundedRectangle(cornerRadius: 18))
 
+            // While the parcel waits, its pickup point gets a card; afterwards it is a plain fact.
+            let waitingAt = parcel.currentStage == .readyForPickup ? PickupPoint(parcel.carrierData?.pickupPoint) : nil
+            if let waitingAt {
+                pickupPointCard(waitingAt, identity: branding)
+            }
             shipmentIdentity(parcel, links: trackingLinks, tint: branding.ink)
             if let details = parcel.carrierData {
                 VStack(alignment: .leading, spacing: 10) {
-                    if let value = details.pickupPoint?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty {
-                        shipmentFact("detail.pickupPoint", value: value)
+                    if waitingAt == nil, let value = details.pickupPoint?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty {
+                        shipmentFact(parcel.currentStage == .delivered ? "detail.collectedAt" : "detail.pickupPoint", value: value)
                     }
                     if let value = details.receiverName?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty {
                         shipmentFact("detail.recipient", value: value)
@@ -323,6 +330,70 @@ struct ParcelDetailView: View {
         }
         .foregroundStyle(tint)
         .accessibilityElement(children: .contain)
+    }
+
+    /// Where the parcel waits for collection, with a way to get there.
+    private func pickupPointCard(_ point: PickupPoint, identity: CarrierVisualIdentity) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "storefront")
+                    .font(.system(size: 17))
+                    .foregroundStyle(identity.ink)
+                    .frame(width: 40, height: 40)
+                    .background(identity.surface, in: RoundedRectangle(cornerRadius: 12))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(localizer.text("detail.pickupPoint")).font(.caption).foregroundStyle(.secondary)
+                    Text(point.name).font(.callout.weight(.semibold))
+                    if let address = point.address {
+                        Text(address).font(.footnote)
+                    }
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityElement(children: .combine)
+            }
+            HStack(spacing: 8) {
+                Button {
+                    DeliveryAnalytics.shared.action("parcel-pickup-directions")
+                    if let url = point.mapsURL { openURL(url) }
+                } label: {
+                    Label(localizer.text(point.address == nil ? "detail.pickupShowOnMap" : "detail.pickupDirections"),
+                          systemImage: point.address == nil ? "magnifyingglass" : "location.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .foregroundStyle(identity.surface)
+                        .background(identity.ink, in: RoundedRectangle(cornerRadius: 12))
+                        .contentShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(TactileButtonStyle())
+                if point.address != nil {
+                    Button { copyPickupPoint(point) } label: {
+                        Label(localizer.text(copiedPickupPoint ? "detail.copied" : "detail.pickupCopyAddress"),
+                              systemImage: copiedPickupPoint ? "checkmark" : "doc.on.doc")
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .foregroundStyle(.primary)
+                            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.secondary.opacity(0.3)))
+                            .contentShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(TactileButtonStyle())
+                }
+            }
+        }
+        .padding(16)
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(identity.ink.opacity(0.18)))
+        .accessibilityElement(children: .contain)
+    }
+
+    private func copyPickupPoint(_ point: PickupPoint) {
+        DeliveryAnalytics.shared.action("parcel-pickup-copy", .success)
+        UIPasteboard.general.string = point.query
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        copiedPickupPoint = true
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            copiedPickupPoint = false
+        }
     }
 
     private func shipmentFact(_ key: String, value: String) -> some View {

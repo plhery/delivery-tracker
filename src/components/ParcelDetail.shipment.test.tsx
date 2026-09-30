@@ -31,6 +31,32 @@ describe('shipment details', () => {
     expect(screen.queryByText('Pickup location')).not.toBeInTheDocument();
   });
 
+  it('shows a waiting parcel\'s pickup point as a card and a collected one as a fact', async () => {
+    const at = (stage: 'ready_for_pickup' | 'delivered') => [{ id: stage, parcelId: 'parcel', stage, description: 'Scan', occurredAt: '2026-09-11T12:00:00Z' }];
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    const view = show({ pickupPoint: 'Corner shop\n12 Main Street', events: at('ready_for_pickup') });
+    const card = screen.getByRole('region', { name: 'Pickup location' });
+    expect(card).toHaveTextContent('Corner shop12 Main Street');
+    expect(screen.getByRole('link', { name: 'Directions' })).toHaveAttribute('href', expect.stringContaining('Corner%20shop%2C%2012%20Main%20Street'));
+    expect(screen.getByRole('link', { name: 'Directions' })).toHaveAttribute('rel', 'noopener noreferrer');
+    await userEvent.click(screen.getByRole('button', { name: 'Copy address' }));
+    expect(writeText).toHaveBeenCalledWith('Corner shop, 12 Main Street');
+    expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument();
+    expect(screen.getAllByText('Pickup location')).toHaveLength(1);
+    view.unmount();
+
+    const office = show({ pickupPoint: 'Post office 42', events: at('ready_for_pickup') });
+    expect(screen.getByRole('link', { name: 'Show on map' })).toHaveAttribute('href', expect.stringContaining('Post%20office%2042'));
+    expect(screen.queryByRole('button', { name: 'Copy address' })).not.toBeInTheDocument();
+    office.unmount();
+
+    show({ pickupPoint: 'Corner shop\n12 Main Street', events: at('delivered') });
+    expect(screen.queryByRole('region', { name: 'Pickup location' })).not.toBeInTheDocument();
+    expect(screen.getByText('Collected at')).toBeInTheDocument();
+    expect(screen.getByText(/Corner shop/)).toHaveTextContent('12 Main Street');
+  });
+
   it('opens the existing tracking editor for missing input', async () => {
     show({ syncStatus: 'error', syncError: 'carrier:input_required' });
     await userEvent.click(screen.getByRole('button', { name: 'Update tracking details' }));

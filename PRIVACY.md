@@ -65,6 +65,8 @@ but Delivery Tracker does not put the tracking number in them.
 
 The service places scan locations on its map itself, with GeoNames place data
 (CC BY 4.0, geonames.org) kept on its own servers; no mapping service receives them.
+When you tap Directions or Show on map for a pickup point, Apple Maps or Google
+Maps receives that pickup point's name and address, and nothing else about the parcel.
 
 Delivery Tracker does not sell personal data, serve advertising, or
 use advertising analytics.
