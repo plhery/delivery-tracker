@@ -8,6 +8,7 @@ import { classifyCorreosExpressStatus } from './status';
 
 const MONTHS: Record<string, number> = { ene: 1, feb: 2, mar: 3, abr: 4, may: 5, jun: 6, jul: 7, ago: 8, sep: 9, oct: 10, nov: 11, dic: 12 };
 const NO_HISTORY = 'Lo sentimos, no se ha encontrado ningún envío con el número indicado.';
+const FAILED_ROUND = 'Su envío no ha podido ser entregado';
 
 export function normalizeCorreosExpressNumber(raw: string): string {
   const number = raw.replace(/[\s.-]/g, '');
@@ -64,9 +65,11 @@ export function parseCorreosExpress(html: string, raw: string): CarrierResult {
     if (cells.length !== 3) throw new SchemaError('Correos Express', 'Correos Express returned an incomplete scan');
     const rawStatus = clean(cells.eq(2).text(), 500);
     if (!rawStatus) throw new SchemaError('Correos Express', 'Correos Express returned an empty scan');
-    const label = rawStatus.split('.')[0]!.trim();
     // The carrier sometimes leaves the label blank and puts a free-form
     // incident note after the first period. Only known labels are retained.
+    // A failed round's note opens with a fixed phrase and then gives the
+    // reason, which can name the recipient; only the phrase is kept.
+    const label = /^\.?\s*Su env[ií]o no ha podido ser entregado\b/iu.test(rawStatus) ? FAILED_ROUND : rawStatus.split('.')[0]!.trim();
     const clock = scanClock(cells.eq(0).text());
     const location = clean(cells.eq(1).text(), 200);
     const mapped = classifyCorreosExpressStatus(label);

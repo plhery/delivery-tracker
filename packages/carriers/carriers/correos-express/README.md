@@ -15,8 +15,11 @@ Scans retain the carrier's newest-first order. Their clocks have no stated zone,
 so valid digits remain local time and unresolved labels remain provider text.
 Calendar estimates retain date-only precision while the delivery is active;
 estimates older than the latest scan are omitted. A rescheduled round does not establish dispatch.
-Only recognized status labels and the locality column are retained. Scans with
-missing or unrecognized labels remain neutral tracking updates, so an older
+Only recognized status labels and the locality column are retained. A failed
+delivery round has no label, only a note that opens with "Su envío no ha podido
+ser entregado" and then gives the reason; that opening is kept as a failed
+attempt and the reason is dropped, since it can name the recipient. Other scans
+with missing or unrecognized labels remain neutral tracking updates, so an older
 delivery does not become current. Free-form explanations, contact fields and
 proof of delivery are excluded.
 

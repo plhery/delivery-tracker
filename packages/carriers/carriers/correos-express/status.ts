@@ -7,6 +7,12 @@ const labels: Record<string, ClassifiedStatus> = {
   'EN RUTA A LOCALIDAD DE DESTINO': { status: 'in_transit', stage: 'in_transit' },
   'EN DESTINO': { status: 'in_transit', stage: 'in_transit' },
   'EN REPARTO': { status: 'out_for_delivery', stage: 'out_for_delivery' },
+  // The fixed opening the parser keeps from an unlabelled failed round.
+  'SU ENVIO NO HA PODIDO SER ENTREGADO': { status: 'exception', stage: 'failed_attempt' },
+  // At the chosen pickup point, but the carrier says the collection
+  // instructions are still to come; the next scan makes it available.
+  'ENTREGADO EN PUNTO DE CONVENIENCIA': { status: 'in_transit', stage: 'in_transit' },
+  'DISPONIBLE EN PUNTO DE CONVENIENCIA': { status: 'in_transit', stage: 'ready_for_pickup' },
   ENTREGADO: { status: 'delivered', stage: 'delivered' },
   DEVUELTO: { status: 'exception', stage: 'returned' },
   'EN ALMACEN': { status: 'exception', stage: 'exception' },

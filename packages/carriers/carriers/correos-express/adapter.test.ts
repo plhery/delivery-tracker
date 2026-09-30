@@ -9,9 +9,11 @@ import statuses from './statuses.json';
 
 const NUMBER = '9900000000000002';
 const OTHER = '9900000000000003';
+const FAILED_ROUND = 'Su envío no ha podido ser entregado';
 const html = readFileSync(new URL('./fixtures/history.html', import.meta.url), 'utf8');
+const failedRound = readFileSync(new URL('./fixtures/failed-round.html', import.meta.url), 'utf8');
 const response = (body = html) => new Response(body, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
-const edit = (change: (document: ReturnType<typeof load>) => void) => { const $ = load(html); change($); return $.html(); };
+const edit = (change: (document: ReturnType<typeof load>) => void, source = html) => { const $ = load(source); change($); return $.html(); };
 const negative = (number = NUMBER, code = '2') => `<html><head><title>Sigue tu envío- correosexpress.com</title></head><body>
   <form id="desktopHomeForm"><input name="shippingNumber" value="${number}"><input name="errorCode" value="${code}"></form>
   <form id="mobileHomeForm"><input name="shippingNumber" value="${number}"><input name="errorCode" value="${code}"></form>
@@ -83,6 +85,25 @@ describe('Correos Express direct tracking', () => {
     expect(result.events?.[1].provider_status).toBeUndefined();
     expect(result.events?.[2].stage).toBe('delivered');
     expect(JSON.stringify(result)).not.toContain('PRIVATE_SYNTHETIC');
+  });
+
+  it('keeps only the fixed wording of a label-free failed round and reads pickup-point scans', () => {
+    const result = normalizeCarrierResult(parseCorreosExpress(failedRound, NUMBER));
+    expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered', last_status_text: 'Delivered',
+      last_update_local: '2026-01-16T17:40:00', expected_delivery: null });
+    expect(result.events?.map(event => event.stage)).toEqual(['delivered', 'ready_for_pickup', 'in_transit', 'failed_attempt',
+      'out_for_delivery', 'in_transit', 'in_transit', 'accepted', 'registered']);
+    expect(result.events?.[3]).toEqual({ description: FAILED_ROUND, provider_status: FAILED_ROUND, stage: 'failed_attempt',
+      local_time: '2026-01-15T09:45:00', location: 'VALENCIA' });
+    expect(JSON.stringify(result)).not.toContain('PRIVATE_SYNTHETIC');
+    for (const note of ['. Su envío no ha podido ser entregado por PRIVATE_SYNTHETIC_REASON.',
+      'Su envío no ha podido ser entregado por PRIVATE_SYNTHETIC_REASON', '. SU ENVIO NO HA PODIDO SER ENTREGADO POR PRIVATE_SYNTHETIC_REASON']) {
+      const newest = parseCorreosExpress(edit($ => { $('tbody tr').slice(0, 3).remove(); $('tbody tr').first().find('td').last().text(note); }, failedRound), NUMBER);
+      expect(newest).toMatchObject({ status: 'exception', current_stage: 'failed_attempt', last_status_text: FAILED_ROUND, expected_delivery: null });
+      expect(JSON.stringify(newest)).not.toContain('PRIVATE_SYNTHETIC');
+    }
+    const waiting = parseCorreosExpress(edit($ => $('tbody tr').first().remove(), failedRound), NUMBER);
+    expect(waiting).toMatchObject({ status: 'in_transit', current_stage: 'ready_for_pickup', last_status_text: 'DISPONIBLE EN PUNTO DE CONVENIENCIA' });
   });
 
   it('keeps newest unknown or malformed-clock rows ahead of older delivery and preserves unresolved digits', () => {

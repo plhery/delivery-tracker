@@ -178,7 +178,7 @@ statuses, timings and network error codes.
 | `ctt-express` | CTT Express | dedicated | direct | 2 | 4 | 10 | [README](carriers/ctt-express/README.md) |
 | `brt` | BRT | dedicated | direct | 3 | 4 | 8 | [README](carriers/brt/README.md) |
 | `seur` | SEUR | dedicated | direct | 2 | 4 | 6 | [README](carriers/seur/README.md) |
-| `correos-express` | Correos Express | dedicated | direct | 3 | 4 | 11 | [README](carriers/correos-express/README.md) |
+| `correos-express` | Correos Express | dedicated | direct | 3 | 4 | 14 | [README](carriers/correos-express/README.md) |
 | `mrw` | MRW | universal providers |  | 0 | 7 | 0 |  |
 | `nacex` | NACEX | dedicated | direct | 2 | 3 | 6 | [README](carriers/nacex/README.md) |
 | `colis-prive` | Colis Privé | dedicated | direct | 1 | 5 | 34 | [README](carriers/colis-prive/README.md) |
