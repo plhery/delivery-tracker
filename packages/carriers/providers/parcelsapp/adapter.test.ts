@@ -119,7 +119,7 @@ describe('ParcelsApp result parsing', () => {
   });
 
   it.each(['json', 'html'])('reads the TIPSA labels it relays twice over (%s)', (transport) => {
-    // TIPSA's wording, written twice as ParcelsApp relays it; synthetic dates and agency.
+    // TIPSA's wording, written twice as its own page shows it; synthetic dates and agency.
     const scans = [
       ['08', '18:50', 'ENTREGADO'],
       ['07', '08:30', 'REPARTO'],
@@ -134,17 +134,18 @@ describe('ParcelsApp result parsing', () => {
       ? parseParcelsAppResponse({ carriers: ['TIPSA'], states: scans.map(([day, time, label]) => ({
         date: `2026-05-${day}T${time}:00Z`, status: label + label, carrier: 0,
       })) }, number, identity())
-      : parseParcelsAppHtml(rendered(scans.map(([day, time, label]) => row(`${day} May 2026`, time, label + label)).join('')), number);
+      : parseParcelsAppHtml(rendered(scans.map(([day, time, label]) => carrierRow(`${day} May 2026`, time, label + label, 'TIPSA')).join('')), number);
     expect(parsed).toMatchObject({ status: 'delivered', current_stage: 'delivered', last_status_text: 'Delivered' });
-    expect(parsed.events?.map(({ description, stage }) => [description, stage])).toEqual([
-      ['Delivered', 'delivered'],
-      ['REPARTO', 'out_for_delivery'],
-      ['Ausente', 'failed_attempt'],
-      ['REPARTO', 'out_for_delivery'],
-      ['LECTURA EN AGENCIA DESTINO EJEMPLO 01', 'in_transit'],
-      ['LEIDO EN DESTINO', 'in_transit'],
-      ['TRANSITO', 'in_transit'],
-      ['PENDIENTE DE ENTREGAR A TIPSA', 'registered'],
+    // TIPSA's history is on Madrid time, Portuguese agencies included.
+    expect(parsed.events?.map(({ time, description, stage }) => [time, description, stage])).toEqual([
+      ['2026-05-08T16:50:00.000Z', 'Delivered', 'delivered'],
+      ['2026-05-07T06:30:00.000Z', 'REPARTO', 'out_for_delivery'],
+      ['2026-05-06T13:00:00.000Z', 'Ausente', 'failed_attempt'],
+      ['2026-05-06T06:30:00.000Z', 'REPARTO', 'out_for_delivery'],
+      ['2026-05-05T15:20:00.000Z', 'LECTURA EN AGENCIA DESTINO EJEMPLO 01', 'in_transit'],
+      ['2026-05-05T15:10:00.000Z', 'LEIDO EN DESTINO', 'in_transit'],
+      ['2026-05-02T20:20:00.000Z', 'TRANSITO', 'in_transit'],
+      ['2026-05-02T15:50:00.000Z', 'PENDIENTE DE ENTREGAR A TIPSA', 'registered'],
     ]);
   });
 

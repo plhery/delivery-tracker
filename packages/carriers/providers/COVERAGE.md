@@ -157,8 +157,8 @@ By source:
   Japan Post), and was the only aggregator with GLS France, Evri, DTDC, Relais Colis and
   TIPSA history. It exposes internal labels (`swa_rex_*` for Amazon Shipping pickup),
   shows Amazon sign-in notices (excluded from counts), repeats a delivery as
-  `Final delivery`, and writes TIPSA's labels twice (`ENTREGADOENTREGADO`), which the
-  parser reads once. It asks for a postcode for bpost's 24-digit numbers and for GEODIS
+  `Final delivery`, and relays TIPSA's labels written twice (`ENTREGADOENTREGADO`), as
+  TIPSA's own page shows them; the parser reads them once. It asks for a postcode for bpost's 24-digit numbers and for GEODIS
   and Ciblex numbers, and answered a Yamato number with a FedEx parcel and a Heppner
   number with another carrier's older parcel. Scans it sends without a date (one in its
   Asendia reply) are left out of the history.
@@ -378,9 +378,14 @@ By carrier:
   and the older Spanish `CNESP` form are supported too; the published `CNESP` references
   now get the gateway's inconclusive query error.
 - **TIPSA:** the native recipient form requires the destination postcode even for a
-  full 22-digit reference. Only ParcelsApp had the Portuguese reference. Its rows carry
-  TIPSA's Spanish labels (`REPARTO`, `Ausente`, `ENTREGADO`); with no TIPSA status map,
-  the shared Spanish wording rules give them their stages.
+  full 22-digit reference, but the shop link ParcelsApp cites
+  (`www.tip-sa.com/cliente/datos_prestashop.php?id={number}`) opens the history with the
+  reference alone, beside the recipient's masked name and address. Of the aggregators
+  only ParcelsApp had the Portuguese reference, with the same rows and clock digits as
+  that page. The digits are Madrid time, Portuguese agencies included
+  ([ParcelsApp](parcelsapp/README.md)). The rows carry TIPSA's Spanish labels (`REPARTO`,
+  `Ausente`, `ENTREGADO`); with no TIPSA status map, the shared Spanish wording rules give
+  them their stages.
 - **Canpar:** direct, ParcelsApp and Postal Ninja hold the same 11 scans. The ambiguous
   clock shift remains local history; empty placeholder packages are inconclusive.
 
@@ -393,8 +398,8 @@ CAPTCHA; STO's old form redirects away. China Post's ordered-character challenge
 Hongkong Post's CAPTCHA remain unsupported. Parcelforce forwards to Royal Mail's
 disabled direct route. An Post's consumer query is challenged, MRW's stateful result
 has no usable history, and SpeedX's anonymous endpoints require verification. Old
-Dominion has no adapter yet. TIPSA requires the destination postcode, which
-no public reference supplies.
+Dominion and TIPSA have no adapter yet; TIPSA's locator form requires the destination
+postcode, but its shop link needs only the 22-digit reference.
 
 17TRACK's generic transit code is refined for Swiss Post's exact vehicle-loading
 label. PostNL direct refines its overloaded processing category for the exact

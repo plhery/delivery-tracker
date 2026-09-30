@@ -2254,7 +2254,7 @@ export const CARRIER_CATALOG = {
     "displayName": "TIPSA",
     "color": "#001e62",
     "selectable": true,
-    "timezone": "UTC",
+    "timezone": "Europe/Madrid",
     "tracking": {
       "mode": "automatic",
       "adapter": "universal"

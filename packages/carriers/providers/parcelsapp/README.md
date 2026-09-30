@@ -81,8 +81,8 @@ step exists for future protocol changes.
   Africa"), rules them out and the scan stays as labeled. A location that names no
   country ("Example Hub", "Toronto, ON") rules nothing out, and step 4 only reads scans
   without a location. A country added to `COUNTRY_ZONES` therefore moves the stored scans
-  located in it, and so their event ids: plan a re-key of stored ParcelsApp rows with
-  such a change.
+  located in it, as a changed catalog `timezone` moves its carrier's, and so their event
+  ids: plan a re-key of stored ParcelsApp rows with either change.
 
   With no zone, an offset is taken as given. Steps 3 and 4 choose a zone only:
   `carrierIdFromName` still treats these brands as ambiguous, so discovery and routing
@@ -99,6 +99,11 @@ step exists for future protocol changes.
   [numbers.json](../../carriers/asendia/numbers.json)). ParcelsApp can list A1's scans
   under another name (an eBay shipment's under "EasyShip"); those still go through the
   steps.
+- TIPSA's `date` has the digits of TIPSA's own tracking page, which keeps Madrid time for
+  every agency, so step 1 reads its Portuguese scans on Madrid time too. On a delivery in
+  Portugal the page's proof of delivery shows the local time, an hour before the history's.
+  The only other fit, agency-local history with a UTC proof of delivery, would put the
+  proof of every Spanish summer delivery two hours off.
 - Brand zones: a bare brand does not say which network scanned. The DPD, GLS and Hermes
   carriers in the catalog all keep Central European time, which step 4 checks for each
   scan, DST changes included. A brand with a UTC carrier (DHL, through DHL eCommerce) gets
