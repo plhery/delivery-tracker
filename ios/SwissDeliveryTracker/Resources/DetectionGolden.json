@@ -28,6 +28,14 @@
     ]
   },
   {
+    "input": "0000100000104000903494",
+    "carrier": "ctt-express",
+    "confidence": "high",
+    "candidates": [
+      "ctt-express"
+    ]
+  },
+  {
     "input": "000123450000000027",
     "carrier": "unknown",
     "confidence": "low",
@@ -343,11 +351,16 @@
     "carrier": "unknown",
     "confidence": "low",
     "candidates": [
+      "tipsa",
       "austrian-post",
       "usps",
       "estafeta"
     ],
+    "preferred": [
+      "tipsa"
+    ],
     "asked": [
+      "tipsa",
       "austrian-post"
     ]
   },
@@ -446,6 +459,42 @@
       "seur",
       "brt",
       "ciblex"
+    ]
+  },
+  {
+    "input": "0460040240008103140542",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "tipsa",
+      "austrian-post",
+      "usps",
+      "estafeta"
+    ],
+    "preferred": [
+      "tipsa"
+    ],
+    "asked": [
+      "tipsa",
+      "austrian-post"
+    ]
+  },
+  {
+    "input": "0460040460048105123537",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "tipsa",
+      "austrian-post",
+      "usps",
+      "estafeta"
+    ],
+    "preferred": [
+      "tipsa"
+    ],
+    "asked": [
+      "tipsa",
+      "austrian-post"
     ]
   },
   {
@@ -772,7 +821,8 @@
       "estafeta"
     ],
     "asked": [
-      "relais-colis"
+      "relais-colis",
+      "tipsa"
     ]
   },
   {
@@ -854,7 +904,8 @@
       "estafeta"
     ],
     "asked": [
-      "relais-colis"
+      "relais-colis",
+      "tipsa"
     ]
   },
   {
@@ -939,7 +990,8 @@
       "estafeta"
     ],
     "asked": [
-      "relais-colis"
+      "relais-colis",
+      "tipsa"
     ]
   },
   {
@@ -1347,7 +1399,8 @@
       "estafeta"
     ],
     "asked": [
-      "relais-colis"
+      "relais-colis",
+      "tipsa"
     ]
   },
   {
@@ -1608,7 +1661,8 @@
       "estafeta"
     ],
     "asked": [
-      "relais-colis"
+      "relais-colis",
+      "tipsa"
     ]
   },
   {
@@ -1926,7 +1980,8 @@
       "estafeta"
     ],
     "asked": [
-      "relais-colis"
+      "relais-colis",
+      "tipsa"
     ]
   },
   {
@@ -1981,7 +2036,8 @@
       "estafeta"
     ],
     "asked": [
-      "relais-colis"
+      "relais-colis",
+      "tipsa"
     ]
   },
   {
@@ -2477,7 +2533,8 @@
       "estafeta"
     ],
     "asked": [
-      "relais-colis"
+      "relais-colis",
+      "tipsa"
     ]
   },
   {
@@ -2492,7 +2549,8 @@
       "estafeta"
     ],
     "asked": [
-      "relais-colis"
+      "relais-colis",
+      "tipsa"
     ]
   },
   {

@@ -1263,7 +1263,17 @@ describe('carrier detection', () => {
     const match = detectCarrierMatch('8104405448');
     expect(match).toMatchObject({ carrier: 'unknown', confidence: 'low' });
     expect(match.candidates).toContain('tipsa');
-    expectUniversalFallback('tipsa');
+    // REPORTED REAL 22-digit reference: agency codes that start with 0 make TIPSA the first suggestion.
+    // Source: https://www.ocu.org/reclamar/lista-reclamaciones-publicas/incumplimiento-en-la-entrega-d/fac22bd26674a21683
+    expect(detectCarrierMatch('0460040240008103140542')).toMatchObject({
+      carrier: 'unknown', confidence: 'low', candidates: ['tipsa', 'austrian-post', 'usps', 'estafeta'], preferred: ['tipsa'],
+    });
+    expect(CARRIERS.tipsa.trackingUrl?.('0990010990010000000017'))
+      .toBe('https://www.tip-sa.com/cliente/datos_prestashop.php?id=0990010990010000000017');
+    expect(parseTrackingInput('https://www.tip-sa.com/cliente/datos_prestashop.php?id=0990010990010000000017')).toMatchObject({
+      trackingNumber: '0990010990010000000017', carrier: 'tipsa', source: 'link',
+    });
+    expectDirectTracking('tipsa');
   });
 
   it('tnt — TNT', () => {

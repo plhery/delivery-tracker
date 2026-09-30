@@ -75,6 +75,7 @@ import { adapter as sunyou } from '../carriers/sunyou/adapter';
 import { adapter as swissPost } from '../carriers/swiss-post/adapter';
 import { adapter as swissPostCargo } from '../carriers/swiss-post-cargo/adapter';
 import { adapter as theCourierGuy } from '../carriers/the-courier-guy/adapter';
+import { adapter as tipsa } from '../carriers/tipsa/adapter';
 import { adapter as tnt } from '../carriers/tnt/adapter';
 import { adapter as ukrposhta } from '../carriers/ukrposhta/adapter';
 import { adapter as uniuni } from '../carriers/uniuni/adapter';
@@ -162,6 +163,7 @@ export const REGISTRY: RegistryDefinition = {
     "swiss-post": swissPost,
     "swiss-post-cargo": swissPostCargo,
     "the-courier-guy": theCourierGuy,
+    "tipsa": tipsa,
     "tnt": tnt,
     "ukrposhta": ukrposhta,
     "uniuni": uniuni,
@@ -266,7 +268,7 @@ export const REGISTRY: RegistryDefinition = {
     "swiss-post-cargo": "swiss-post-cargo",
     "thailand-post": "universal",
     "the-courier-guy": "the-courier-guy",
-    "tipsa": "universal",
+    "tipsa": "tipsa",
     "tnt": "tnt",
     "ukrposhta": "ukrposhta",
     "uniuni": "uniuni",

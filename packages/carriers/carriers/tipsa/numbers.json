@@ -2,6 +2,20 @@
   "carrier": "tipsa",
   "records": [
     {
+      "number": "0000100000104000903494",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/paquete-entregado-a-otra-perso/CPTES01915119-48",
+        "date": "2023-11-11"
+      },
+      "expect": {
+        "carrier": "ctt-express",
+        "confidence": "high"
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to TIPSA; CTT Express's rule for numbers starting 00 claims it."
+    },
+    {
       "number": "0280010280017024953690",
       "role": "shipment",
       "evidence": "public_shipment_report",
@@ -13,12 +27,53 @@
         "carrier": "unknown",
         "confidence": "low",
         "candidates": [
+          "tipsa",
           "austrian-post",
           "usps",
           "estafeta"
         ]
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to TIPSA, which no rule claims. Portuguese shipment."
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Portuguese shipment."
+    },
+    {
+      "number": "0460040240008103140542",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.ocu.org/reclamar/lista-reclamaciones-publicas/incumplimiento-en-la-entrega-d/fac22bd26674a21683",
+        "date": "2024-12-13"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "tipsa",
+          "austrian-post",
+          "usps",
+          "estafeta"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Its two agency codes differ."
+    },
+    {
+      "number": "0460040460048105123537",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://portaldaqueixa.com/brands/tipsa/complaints/tipsa-nao-entrega-de-encomenda-2-146876825",
+        "date": "2025-12-24"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "tipsa",
+          "austrian-post",
+          "usps",
+          "estafeta"
+        ]
+      },
+      "note": "Publicly reported shipment number; the attribution was not independently verified. Portuguese shipment."
     },
     {
       "number": "8104405448",

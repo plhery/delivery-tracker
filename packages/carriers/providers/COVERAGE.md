@@ -128,7 +128,7 @@ statuses map correctly.
 | [SpeedX](../carriers/speedx/carrier.json) | No adapter | Not tested | No history | No history | ✓ 2 | No history | N/A |
 | [GOFO Express](../carriers/gofo/README.md) | Yes | ✓ 14 | ✓ 14 | ✓ 14 | ✓ 14 | ✓ 14 | N/A |
 | [Ecoscooting](../carriers/ecoscooting/README.md) | Yes | ✓ 6 | ✓ 6 | ✓ 6 | No history | ✓ 22 | N/A |
-| [TIPSA](../carriers/tipsa/carrier.json) | No adapter | Not tested | No history | ✓ 13 | No history | No history | N/A |
+| [TIPSA](../carriers/tipsa/README.md) | Yes | ✓ 13 | No history | ✓ 13 | No history | No history | N/A |
 | [Canpar](../carriers/canpar/README.md) | Yes | ✓ 11 | No history | ✓ 11 | No history | ✓ 11 | N/A |
 
 ## What the differences mean
@@ -157,11 +157,11 @@ By source:
   Japan Post), and was the only aggregator with GLS France, Evri, DTDC, Relais Colis and
   TIPSA history. It exposes internal labels (`swa_rex_*` for Amazon Shipping pickup),
   shows Amazon sign-in notices (excluded from counts), repeats a delivery as
-  `Final delivery`, and relays TIPSA's labels written twice (`ENTREGADOENTREGADO`), as
-  TIPSA's own page shows them; the parser reads them once. It asks for a postcode for bpost's 24-digit numbers and for GEODIS
-  and Ciblex numbers, and answered a Yamato number with a FedEx parcel and a Heppner
-  number with another carrier's older parcel. Scans it sends without a date (one in its
-  Asendia reply) are left out of the history.
+  `Final delivery`, and relays TIPSA's labels written twice (`ENTREGADOENTREGADO`, from
+  each cell's tooltip and its text), which the parser reads once. It asks for a postcode
+  for bpost's 24-digit numbers and for GEODIS and Ciblex numbers, and answered a Yamato
+  number with a FedEx parcel and a Heppner number with another carrier's older parcel.
+  Scans it sends without a date (one in its Asendia reply) are left out of the history.
 - **17TRACK** gives the best multi-operator journeys, naming each operator: China Post
   plus Correios, Canada Post plus USPS, Japan Post plus Malta Post, and China Post after
   Singapore Post, Poczta Polska, Bring or Ukrposhta. It was the only aggregator with USPS,
@@ -384,15 +384,11 @@ By carrier:
   leg; Ship24 and ParcelsApp hold the same last-mile history. Spanish numeric references
   and the older Spanish `CNESP` form are supported too; the published `CNESP` references
   now get the gateway's inconclusive query error.
-- **TIPSA:** the native recipient form requires the destination postcode even for a
-  full 22-digit reference, but the shop link ParcelsApp cites
-  (`www.tip-sa.com/cliente/datos_prestashop.php?id={number}`) opens the history with the
-  reference alone, beside the recipient's masked name and address. Of the aggregators
-  only ParcelsApp had the Portuguese reference, with the same rows and clock digits as
-  that page. The digits are Madrid time, Portuguese agencies included
-  ([ParcelsApp](parcelsapp/README.md)). The rows carry TIPSA's Spanish labels (`REPARTO`,
-  `Ausente`, `ENTREGADO`); with no TIPSA status map, the shared Spanish wording rules give
-  them their stages.
+- **TIPSA:** the locator form requires the destination postcode, but the shop link
+  ParcelsApp cites opens the history with the 22-digit reference alone, and the direct
+  adapter reads it. Of the aggregators only ParcelsApp had the Portuguese reference, with
+  the same 13 scans at the same Madrid-time instants; it shortens the delivery to
+  "Delivered".
 - **Canpar:** direct, ParcelsApp and Postal Ninja hold the same 11 scans. The ambiguous
   clock shift remains local history; empty placeholder packages are inconclusive.
 
@@ -405,8 +401,7 @@ CAPTCHA; STO's old form redirects away. China Post's ordered-character challenge
 Hongkong Post's CAPTCHA remain unsupported. Parcelforce forwards to Royal Mail's
 disabled direct route. An Post's consumer query is challenged, MRW's stateful result
 has no usable history, and SpeedX's anonymous endpoints require verification. Old
-Dominion and TIPSA have no adapter yet; TIPSA's locator form requires the destination
-postcode, but its shop link needs only the 22-digit reference.
+Dominion has no adapter yet.
 
 PostNL direct refines its overloaded processing category for the exact out-for-delivery
 label. EMS export cancellation is an exception. Unresolved direct postal clocks remain

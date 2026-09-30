@@ -1,0 +1,12 @@
+{
+  "carrier": "tipsa",
+  "entries": [
+    { "wording": "PENDIENTE DE ENTREGAR A TIPSA", "language": "es", "stage": "registered", "confirmedBy": "live" },
+    { "wording": "TRANSITO", "language": "es", "stage": "in_transit", "confirmedBy": "live" },
+    { "wording": "LEIDO EN DESTINO", "language": "es", "stage": "in_transit", "confirmedBy": "live" },
+    { "wording": "LECTURA EN AGENCIA DESTINO", "language": "es", "stage": "in_transit", "confirmedBy": "live", "note": "Followed by the destination agency's name." },
+    { "wording": "REPARTO", "language": "es", "stage": "out_for_delivery", "confirmedBy": "live" },
+    { "wording": "Ausente", "language": "es", "stage": "failed_attempt", "confirmedBy": "live" },
+    { "wording": "ENTREGADO", "language": "es", "stage": "delivered", "confirmedBy": "live" }
+  ]
+}

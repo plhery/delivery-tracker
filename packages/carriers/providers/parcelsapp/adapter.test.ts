@@ -119,7 +119,7 @@ describe('ParcelsApp result parsing', () => {
   });
 
   it.each(['json', 'html'])('reads the TIPSA labels it relays twice over (%s)', (transport) => {
-    // TIPSA's wording, written twice as its own page shows it; synthetic dates and agency.
+    // TIPSA's wording, written twice as ParcelsApp relays it; synthetic dates and agency.
     const scans = [
       ['08', '18:50', 'ENTREGADO'],
       ['07', '08:30', 'REPARTO'],

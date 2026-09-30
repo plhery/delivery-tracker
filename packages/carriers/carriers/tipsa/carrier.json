@@ -19,24 +19,77 @@
   "timezone": "Europe/Madrid",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "tipsa",
+    "steps": [
+      "direct"
+    ],
+    "recognition": {
+      "rank": 24
+    }
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location"
+  ],
   "portal": {
-    "url": "https://www.tip-sa.com/es/localizacion-envios",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
-    "unavailable": []
+    "url": "https://www.tip-sa.com/cliente/datos_prestashop.php?id={trackingNumber}",
+    "canaryUrl": "https://dinapaqweb.tipsa-dinapaq.com/dinapaqweb/detalle_envio.php",
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "sender_name",
+      "recipient_name",
+      "recipient_address",
+      "postcodes",
+      "customer_reference",
+      "parcel_count",
+      "weight",
+      "volume",
+      "proof_of_delivery"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location"
+    ],
+    "discarded": [
+      "sender_name",
+      "recipient_name",
+      "recipient_address",
+      "postcodes",
+      "customer_reference",
+      "parcel_count",
+      "weight",
+      "volume",
+      "proof_of_delivery"
+    ],
+    "unavailable": [
+      "eta"
+    ]
   },
-  "links": [],
+  "links": [
+    {
+      "domains": [
+        "tip-sa.com"
+      ],
+      "path": "^/cliente/datos(?:_prestashop)?\\.php$",
+      "params": [
+        "id"
+      ]
+    }
+  ],
   "detection": [
     {
       "id": "tipsa-1",
       "pattern": "^\\d{10}$",
       "confidence": "low"
+    },
+    {
+      "id": "tipsa-2",
+      "pattern": "^0\\d{5}0\\d{5}\\d{10}$",
+      "confidence": "low",
+      "preferred": true
     }
   ]
 }

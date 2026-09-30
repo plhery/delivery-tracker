@@ -101,11 +101,9 @@ step exists for future protocol changes.
   (Ship24's instants and Swiss Post's own scan agree once they are read that way), so
   they go through the steps like any other scan. Their US scans name no single-clock
   country and stay as labeled, hours early.
-- TIPSA's `date` has the digits of TIPSA's own tracking page, which keeps Madrid time for
-  every agency, so step 1 reads its Portuguese scans on Madrid time too. On a delivery in
-  Portugal the page's proof of delivery shows the local time, an hour before the history's.
-  The only other fit, agency-local history with a UTC proof of delivery, would put the
-  proof of every Spanish summer delivery two hours off.
+- TIPSA's `date` has the digits of TIPSA's own shipment page, which keeps Madrid time for
+  every agency ([TIPSA](../../carriers/tipsa/README.md)), so step 1 reads its Portuguese
+  scans on Madrid time too.
 - Brand zones: a bare brand does not say which network scanned. The DPD, GLS and Hermes
   carriers in the catalog all keep Central European time, which step 4 checks for each
   scan, DST changes included. A brand with a UTC carrier (DHL, through DHL eCommerce) gets

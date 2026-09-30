@@ -759,5 +759,26 @@
       "the-courier-guy"
     ],
     "reason": "Courier Guy product references share the eight-character format with the three GLS networks; native recognition must establish the carrier."
+  },
+  {
+    "shape": "9{22}",
+    "carriers": [
+      "austrian-post",
+      "estafeta",
+      "tipsa",
+      "usps"
+    ],
+    "reason": "TIPSA references start each six-digit agency code with 0; the number stays a low-confidence suggestion, TIPSA first, and recognition asks TIPSA."
+  },
+  {
+    "shape": "9{22}",
+    "carriers": [
+      "austrian-post",
+      "ctt-express",
+      "estafeta",
+      "tipsa",
+      "usps"
+    ],
+    "reason": "CTT Express numbers share TIPSA's agency, agency, waybill layout; the CTT Express prefix is the only high-confidence rule, so TIPSA references starting 00 are read as CTT Express."
   }
 ]

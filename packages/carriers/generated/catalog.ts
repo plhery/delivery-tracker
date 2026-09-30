@@ -2257,17 +2257,33 @@ export const CARRIER_CATALOG = {
     "timezone": "Europe/Madrid",
     "tracking": {
       "mode": "automatic",
-      "adapter": "universal"
+      "adapter": "tipsa",
+      "recognitionRank": 24
     },
-    "canaryUrl": "https://t.17track.net/",
-    "linkRules": [],
+    "canaryUrl": "https://dinapaqweb.tipsa-dinapaq.com/dinapaqweb/detalle_envio.php",
+    "linkRules": [
+      {
+        "domains": [
+          "tip-sa.com"
+        ],
+        "path": "^/cliente/datos(?:_prestashop)?\\.php$",
+        "params": [
+          "id"
+        ]
+      }
+    ],
     "detectionRules": [
       {
         "pattern": "^\\d{10}$",
         "confidence": "low"
+      },
+      {
+        "pattern": "^0\\d{5}0\\d{5}\\d{10}$",
+        "confidence": "low",
+        "preferred": true
       }
     ],
-    "trackingUrlTemplate": "https://www.tip-sa.com/es/localizacion-envios",
+    "trackingUrlTemplate": "https://www.tip-sa.com/cliente/datos_prestashop.php?id={trackingNumber}",
     "countries": [
       "ES",
       "PT",

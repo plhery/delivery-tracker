@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>DinaPaq - Consulta de Env&iacute;os</title>
+</head>
+<body>
+<div class="wrapper">
+<header class="mdl-layout__header mdl-layout__header--transparent">
+ <span class="mdl-layout-title span-logo">NOS GUSTAN TUS ENV&Iacute;OS</span>
+ <label class="mdl-textfield__label" for="busqueda">LOCALIZA TU ENV&Iacute;O</label>
+</header>
+<div id="content" class="content">
+ <input type='hidden' id='CodAgeCargo' value='099001'><input type='hidden' id='CodAgeOri' value='099001'><input type='hidden' id='Albaran' value='0000000017'>
+ <div id="cabecera" class="mdl-grid">
+  <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+   <input class="mdl-textfield__input input-cabecera-datos-envio" id="envio-localizado" type="text" pattern="[0-9]*" value="0990010990010000000017" readonly="true">
+   <label class="mdl-textfield__label label-cabecera-datos" for="envio-localizado">N&uacute;mero de seguimiento</label>
+  </div>
+  <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+   <input class="mdl-textfield__input input-cabecera-datos-estado" id="estado-localizado" type="text" value= "ENTREGADO" readonly="true">
+   <label class="mdl-textfield__label label-cabecera-datos" for="estado-localizado" placeholder="ESTADO">Estado</label>
+  </div>
+ </div>
+ <div id="stepper" class="stepper stepper--horizontal">
+  <div class="stepper-item"><span> 30/03/2026 18:40 </span><span>Entregado</span></div>
+  <div class="stepper-item"><span> 30/03/2026 09:05 </span><span>En reparto</span></div>
+  <div class="stepper-item"><span> 28/03/2026 20:11 </span><span>Ausente</span></div>
+ </div>
+ <div id="datos" class="datos mdl-grid mdl-cell mdl-cell--12-col">
+  <div id="datos-generales" class="mdl-cell mdl-cell--12-col panel-datos"><span>DATOS GENERALES</span></div>
+  <div class='mdl-cell mdl-cell--6-col color-accent'>Remitente</div>
+  <div class='mdl-cell mdl-cell--6-col'>PRIVATE_SYNTHETIC_SENDER S.L. </div>
+  <div class='mdl-cell mdl-cell--6-col color-accent'>Destinatario</div>
+  <div class='mdl-cell mdl-cell--6-col'>PRIVATE_SYNTHETIC_NAME***** </div>
+  <div class='mdl-cell mdl-cell--6-col color-accent'>Persona de contacto</div>
+  <div class='mdl-cell mdl-cell--6-col'>PRIVATE_SYNTHETIC_CONTACT***** </div>
+  <div class='mdl-cell mdl-cell--6-col color-accent'>Direcci&oacute;n Destino</div>
+  <div class='mdl-cell mdl-cell--6-col'>PRIVATE_SYNTHETIC_STREET***** </div>
+  <div class='mdl-cell mdl-cell--6-col color-accent'>Poblaci&oacute;n Destino</div>
+  <div class='mdl-cell mdl-cell--6-col'>PRIVATE_SYNTHETIC_TOWN </div>
+  <div class='mdl-cell mdl-cell--6-col color-accent'>C&oacute;digo postal</div>
+  <div class='mdl-cell mdl-cell--6-col'>99999 </div>
+  <div class='mdl-cell mdl-cell--6-col color-accent'>Estado Actual</div>
+  <div class='mdl-cell mdl-cell--6-col'>ENTREGADO </div>
+  <div class='mdl-cell mdl-cell--6-col color-accent'>Referencia</div>
+  <div class='mdl-cell mdl-cell--6-col'>PRIVATE_SYNTHETIC_REFERENCE </div>
+  <div class='mdl-cell mdl-cell--6-col color-accent'>Bultos</div>
+  <div class='mdl-cell mdl-cell--6-col'>1 </div>
+ </div>
+ <div id="datos-age" class="mdl-cell mdl-cell--12-col panel-datos">
+  <span>AGENCIA DESTINO</span>
+  <div class='mdl-cell mdl-cell--6-col color-accent'>Nombre</div>
+  <div class='mdl-cell mdl-cell--6-col'>EJEMPLO 01 </div>
+  <div class='mdl-cell mdl-cell--6-col color-accent'>Direcci&oacute;n</div>
+  <div class='mdl-cell mdl-cell--6-col'>PRIVATE_SYNTHETIC_AGENCY_STREET </div>
+ </div>
+ <div id="datos" class="datos mdl-grid mdl-cell mdl-cell--12-col">
+  <div id="datos-generales" class="mdl-cell mdl-cell--12-col panel-datos"><span>DETALLES DEL ENVÍO</span></div>
+  <div id='datos-generales-resto' class="mdl-cell mdl-cell--12-col panel-datos-resto mdl-grid">
+   <table id='datos-generales-resto' class="mdl-data-table mdl-js-data-table tabla tooltip">
+    <thead>
+     <tr>
+      <th class="mdl-data-table__cell--non-numeric">FECHA/HORA</th>
+      <th class="mdl-data-table__cell--non-numeric">ESTADO</th>
+      <th class="mdl-data-table__cell--non-numeric">POBLACIÓN</th>
+     </tr>
+    </thead>
+    <tbody>
+     <tr><td class="mdl-data-table__cell--non-numeric">30/03/26 18:40</td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_des_1">ENTREGADO</span><span id="est_traz_des_1">ENTREGADO</span></td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_pob_1"> </span><span id="est_traz_pob_1"> </span></td></tr><tr><td class="mdl-data-table__cell--non-numeric">30/03/26 09:05</td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_des_2">REPARTO</span><span id="est_traz_des_2">REPARTO</span></td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_pob_2"> </span><span id="est_traz_pob_2"> </span></td></tr><tr><td class="mdl-data-table__cell--non-numeric">30/03/26 09:05</td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_des_3">LECTURA EN AGENCIA DESTINO EJEMPLO 01</span><span id="est_traz_des_3">LECTURA EN AGENCIA DESTINO EJEMPLO 01</span></td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_pob_3">VILLA EJEMPLO</span><span id="est_traz_pob_3">VILLA EJEMPLO</span></td></tr><tr><td class="mdl-data-table__cell--non-numeric">28/03/26 20:11</td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_des_4">Ausente</span><span id="est_traz_des_4">Ausente</span></td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_pob_4"> </span><span id="est_traz_pob_4"> </span></td></tr><tr><td class="mdl-data-table__cell--non-numeric">28/03/26 08:30</td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_des_5">REPARTO</span><span id="est_traz_des_5">REPARTO</span></td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_pob_5"> </span><span id="est_traz_pob_5"> </span></td></tr><tr><td class="mdl-data-table__cell--non-numeric">27/03/26 19:10</td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_des_6">LECTURA EN AGENCIA DESTINO EJEMPLO 01</span><span id="est_traz_des_6">LECTURA EN AGENCIA DESTINO EJEMPLO 01</span></td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_pob_6">VILLA EJEMPLO</span><span id="est_traz_pob_6">VILLA EJEMPLO</span></td></tr><tr><td class="mdl-data-table__cell--non-numeric">27/03/26 19:10</td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_des_7">LEIDO EN DESTINO</span><span id="est_traz_des_7">LEIDO EN DESTINO</span></td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_pob_7"> </span><span id="est_traz_pob_7"> </span></td></tr><tr><td class="mdl-data-table__cell--non-numeric">26/03/26 22:24</td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_des_8">TRANSITO</span><span id="est_traz_des_8">TRANSITO</span></td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_pob_8"> </span><span id="est_traz_pob_8"> </span></td></tr><tr><td class="mdl-data-table__cell--non-numeric">26/03/26 17:50</td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_des_9">PENDIENTE DE ENTREGAR A TIPSA</span><span id="est_traz_des_9">PENDIENTE DE ENTREGAR A TIPSA</span></td><td class="mdl-data-table__cell--non-numeric ellipsis"><span class="mdl-tooltip" for="est_traz_pob_9"> </span><span id="est_traz_pob_9"> </span></td></tr>
+    </tbody>
+   </table>
+  </div>
+ </div>
+ <div id="datos-entrega" class="mdl-cell mdl-cell--12-col panel-datos">
+  <span>DATOS DE LA ENTREGA</span>
+  <div class='mdl-cell mdl-cell--6-col color-accent'>Receptor</div>
+  <div class='mdl-cell mdl-cell--6-col'>PRIVATE_SYNTHETIC_RECEIVER***** </div>
+  <div class='mdl-cell mdl-cell--6-col color-accent'>Observaciones</div>
+  <div class='mdl-cell mdl-cell--6-col'>PRIVATE_SYNTHETIC_NOTE </div>
+  <div class='mdl-cell mdl-cell--6-col color-accent'>Fecha</div>
+  <div class='mdl-cell mdl-cell--6-col'>30/03/26 </div>
+  <div class='mdl-cell mdl-cell--6-col color-accent'>Hora</div>
+  <div class='mdl-cell mdl-cell--6-col'>18:40 </div>
+ </div>
+</div>
+</div>
+</body>
+</html>
