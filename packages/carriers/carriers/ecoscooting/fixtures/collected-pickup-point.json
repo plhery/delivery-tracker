@@ -12,8 +12,8 @@
   },
   "popStationParam": {
     "popStationId": "PRIVATE_SYNTHETIC_STATION_ID",
-    "stationName": "PRIVATE_SYNTHETIC_STATION_NAME",
-    "detailAddress": "PRIVATE_SYNTHETIC_STATION_ADDRESS",
+    "stationName": "Example Parcel Shop",
+    "detailAddress": "Calle Ejemplo 1, 00000 Ejemplo",
     "phone": "PRIVATE_SYNTHETIC_STATION_PHONE",
     "officeTime": "PRIVATE_SYNTHETIC_OPENING_HOURS",
     "pinCode": "PRIVATE_SYNTHETIC_PICKUP_PIN"

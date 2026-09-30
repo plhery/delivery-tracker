@@ -14,6 +14,9 @@ const COMPLETION_LABELS = new Map<string, readonly [string, string]>([
   ['GTMS_PUDO_SIGNED', COLLECTED],
   ['PUDO_SIGN_SUCCESS', COLLECTED],
 ]);
+/** Scans that place the parcel at a pickup point, in either code family. */
+const PICKUP_POINT_CODES = new Set(['GTMS_PUDO_INBOUND', 'GTMS_STA_SIGNED', 'GTMS_PUDO_SIGNED', 'GTMS_PUDO_OVERDUE',
+  'PUDO_INBOUND', 'PUDO_DELIVERY', 'PUDO_SIGN_SUCCESS', 'PUDO_OVERDUE']);
 
 export function normalizeEcoscootingNumber(raw: string): string {
   const number = normalizeTrackingNumber(raw);
@@ -61,5 +64,15 @@ export function parseEcoscooting(payload: unknown, rawNumber: string): CarrierRe
   return { status: current?.status ?? 'unknown', ...(current ? { current_stage: current.stage } : {}),
     last_status_text: latest.description, last_update: latest.time ?? null, expected_delivery: null,
     ...(current?.stage === 'delivered' && latest.time ? { delivered_at: latest.time } : {}),
-    ...(dims.weightUnit === 'g' && Number.isFinite(grams) && grams > 0 ? { weight_kg: grams / 1000 } : {}), events: events.slice(0, 100) };
+    ...(dims.weightUnit === 'g' && Number.isFinite(grams) && grams > 0 ? { weight_kg: grams / 1000 } : {}),
+    ...pickupPoint(payload.popStationParam, events), events: events.slice(0, 100) };
+}
+
+// A shop's name and address, once a scan places the parcel there. It stays
+// after collection so the parcel still says where it was collected. The pickup
+// PIN, the shop's phone and the station id are never read.
+function pickupPoint(station: unknown, events: CarrierEvent[]): { pickup_point?: string } {
+  if (!isRecord(station) || !events.some(event => PICKUP_POINT_CODES.has(String(event.provider_code)))) return {};
+  const lines = [...new Set([clean(station.stationName, 160), clean(station.detailAddress, 300)].filter(Boolean))];
+  return lines.length ? { pickup_point: lines.join('\n') } : {};
 }

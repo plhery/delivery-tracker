@@ -22,6 +22,7 @@
   },
   "capabilities": [
     "history",
+    "pickup_point",
     "weight",
     "delivered_at"
   ],
@@ -31,12 +32,14 @@
     "shows": [
       "status",
       "history",
+      "pickup_point",
       "weight",
       "delivered_at"
     ],
     "scraped": [
       "status",
       "history",
+      "pickup_point",
       "weight",
       "delivered_at"
     ],
@@ -45,7 +48,7 @@
       "coordinates",
       "order_references",
       "routing_features",
-      "pickup_point"
+      "pickup_code"
     ],
     "unavailable": []
   },

@@ -26,9 +26,12 @@ journey back to the sender, read as returned. The web client names the GTMS
 code for that deadline (`GTMS_PUDO_OVERDUE`); only the last-mile one
 (`PUDO_OVERDUE`) has been seen in a reply. The gateway no longer answers the
 published `CNESP` references.
-The labelled gram weight is converted to kilograms. Destination addresses,
-postcodes, coordinates, delivery photos, order identifiers, routing features
-and pickup-point details, including the pickup PIN, are excluded. References
+The labelled gram weight is converted to kilograms. Once a scan places the
+parcel at a pickup point, the shop's name and address become `pickup_point`.
+They stay after collection so the parcel still shows where it was collected.
+The pickup PIN, the shop's phone, opening hours and station id are never read.
+Destination addresses, postcodes, coordinates, delivery photos, order
+identifiers and routing features are excluded. References
 start with the destination postcode, after any `CN` country prefix, so samples
 and fixtures use zeros there.
 ICP references use a separate client normalization and are not supported.
@@ -41,4 +44,4 @@ Set `ECOSCOOTING_TRACKING_NUMBER` outside the repository and run
 Optionally set `ECOSCOOTING_UNKNOWN_NUMBER` to check an inconclusive query error.
 Set `ECOSCOOTING_PORTUGAL_NUMBER` to check the `CN` reference completion schema.
 Set `ECOSCOOTING_PICKUP_NUMBER` to a parcel collected at a pickup point to check
-that collection reads as delivered.
+that collection reads as delivered and names the pickup point.
