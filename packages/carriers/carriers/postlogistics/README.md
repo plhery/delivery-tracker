@@ -19,6 +19,12 @@ as [swiss-post-cargo](../swiss-post-cargo/README.md).
 - `Type: 2` is a customer reference: every returned shipment belongs to the
   lookup and their histories are merged. A `Type: 2` answer with no resolved
   barcode is refused — nothing ties the history to the reference.
+- `Type: 3`, which the tracker's published source map does not name, is a Swiss
+  Post parcel barcode PostLogistics does not hold. The endpoint relays Swiss Post's
+  own scans, each coded `PST`, with no place and in German whatever the culture.
+  Once the echo matches the barcode, it becomes a 404 and routing moves the parcel
+  to [swiss-post](../swiss-post/README.md). Reading the relay would keep the
+  parcel on a thinner copy whose `PST` codes never say delivered.
 - Any other `Type` is refused rather than guessed, which could show someone
   else's parcel.
 
@@ -42,4 +48,6 @@ as [swiss-post-cargo](../swiss-post-cargo/README.md).
 ## Testing
 
 `npm run test:carriers:live -- packages/carriers/carriers/postlogistics` (no env
-vars; checks that an unissued barcode returns a clean 404).
+vars; checks that an unissued barcode returns a clean 404). Set
+`SWISS_POST_TRACKING_NUMBER` to a current Swiss Post parcel barcode to also check
+the `Type: 3` relay's 404.

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { SwissPostCargoTracker } from './adapter';
 
+// A current Swiss Post parcel barcode, supplied outside the repository: the
+// endpoint relays Swiss Post's scans for it as `Type: 3`.
+const SWISS_POST_TRACKING_NUMBER = process.env.SWISS_POST_TRACKING_NUMBER;
+
 describe('Swiss Post Cargo live anonymous tracking', () => {
   it('resolves the shipment number published by Swiss Post Cargo as its own example', async () => {
     // The official Hugger/Swiss Post Cargo tracking form labels 12345678 as
@@ -22,6 +26,14 @@ describe('Swiss Post Cargo live anonymous tracking', () => {
       name: 'NotFoundError',
       status: 404,
       message: 'Swiss Post Cargo could not locate the shipment',
+    });
+  });
+
+  it.skipIf(!SWISS_POST_TRACKING_NUMBER)('leaves a relayed Swiss Post parcel to the Swiss Post adapter', async () => {
+    await expect(new SwissPostCargoTracker().fetch(SWISS_POST_TRACKING_NUMBER!)).rejects.toMatchObject({
+      name: 'NotFoundError',
+      status: 404,
+      message: 'Swiss Post Cargo only relays Swiss Post tracking for this barcode',
     });
   });
 });

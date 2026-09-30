@@ -1,0 +1,31 @@
+{
+  "Type": 3,
+  "Data": [
+    {
+      "Identifier": "993412345612345678",
+      "DriveAndArrive": null,
+      "History": [
+        {
+          "Id": 1,
+          "Status": "PST",
+          "NextStatus": "",
+          "TimeStamp": "2026-09-01T04:30:00Z",
+          "Description": "Dateneinlieferung durch Aufgeber",
+          "FullDescription": "",
+          "GeoLocation": null,
+          "City": ""
+        },
+        {
+          "Id": 2,
+          "Status": "PST",
+          "NextStatus": "",
+          "TimeStamp": "2026-09-01T16:05:00Z",
+          "Description": "Sortiert",
+          "FullDescription": "",
+          "GeoLocation": null,
+          "City": ""
+        }
+      ]
+    }
+  ]
+}

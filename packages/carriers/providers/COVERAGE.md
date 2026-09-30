@@ -345,9 +345,11 @@ By carrier:
   postcode, which no public reference had. No aggregator knew either of two Dachser
   consignments.
 - **Old Dominion, Swiss Post Cargo, PostLogistics:** no public post ties a number to
-  these freight services. PostLogistics' endpoint answers a Swiss Post parcel barcode
-  with a third response type holding two scans, which the PostLogistics and Swiss Post
-  Cargo adapters reject as a schema change.
+  these freight services. Both eos endpoints answer a Swiss Post parcel barcode with a
+  third response type that relays Swiss Post's own two scans, coded `PST` and without
+  places. The adapters report it as not found, so routing moves the parcel to the
+  Swiss Post adapter, which returns the same scans with Swiss Post's codes and the
+  sorting location.
 - **Hermes Einrichtungs-Service, C Chez Vous:** the number alone opens the order, so their
   public references stay out of the repository. The Hermes service returns ten
   appointment updates for a September delivery that no aggregator knows; C Chez Vous

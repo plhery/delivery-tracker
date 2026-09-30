@@ -77,10 +77,10 @@ export function parseSwissPostCargoResponse(
     throw new SchemaError(PROVIDER, 'Swiss Post Cargo returned an invalid tracking response');
   }
   const responseType = Number(payload.Type);
-  if (responseType !== 1 && responseType !== 2) {
+  if (responseType !== 1 && responseType !== 2 && responseType !== 3) {
     throw new SchemaError(PROVIDER, 'Swiss Post Cargo returned an invalid tracking response type');
   }
-  if (responseType === 1) {
+  if (responseType !== 2) {
     const identifiers = shipments
       .map((shipment) => cleanScalar(shipment.Identifier, 64).toLocaleUpperCase('en-US'))
       .filter(Boolean);
@@ -93,6 +93,13 @@ export function parseSwissPostCargoResponse(
     shipments = shipments.filter((shipment) => (
       cleanScalar(shipment.Identifier, 64).toLocaleUpperCase('en-US') === trackingNumber
     ));
+  }
+  // Type 3, which the tracker's source map does not name, relays Swiss Post's
+  // own scans (placeholder `PST` codes, no place) for a parcel barcode the eos
+  // system does not hold. The parcel is Swiss Post's, so this is a not-found
+  // here and routing asks the Swiss Post adapter instead.
+  if (responseType === 3) {
+    throw new NotFoundError(PROVIDER, 'Swiss Post Cargo only relays Swiss Post tracking for this barcode');
   }
 
   const parsedEvents: Array<{

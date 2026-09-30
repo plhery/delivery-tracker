@@ -143,7 +143,7 @@ describe('PostLogistics response types and event ordering', () => {
   it('rejects an unsupported response type and a mismatched Type 1 barcode', async () => {
     const fetcher = vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(jsonResponse({
-        Type: 3,
+        Type: 4,
         Data: [{ Identifier: POSTLOGISTICS_WRONG_NUMBER, History: [] }],
       }))
       .mockResolvedValueOnce(jsonResponse({
@@ -156,6 +156,25 @@ describe('PostLogistics response types and event ordering', () => {
     await expect(fetchPostlogistics(POSTLOGISTICS_WRONG_NUMBER))
       .rejects.toThrow('different shipment');
     expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it('leaves a Type 3 relay of Swiss Post tracking to the Swiss Post adapter', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValue(jsonResponse(fixture('relayed-swiss-post.json')));
+
+    // The portal's dotted form names the same barcode as the echo.
+    await expect(fetchPostlogistics('99.34.123456.12345678')).rejects.toMatchObject({
+      name: 'NotFoundError',
+      status: 404,
+      kind: 'not_found',
+      message: 'PostLogistics only relays Swiss Post tracking for this barcode',
+    });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses a Type 3 relay that names a different barcode', () => {
+    expect(() => parsePostlogisticsTrackingResponse(fixture('relayed-swiss-post.json'), '998811223344556677'))
+      .toThrow('different shipment');
   });
 
   it('does not accept a Type 2 response without a resolved barcode', async () => {

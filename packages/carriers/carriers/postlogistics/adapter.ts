@@ -12,6 +12,10 @@ import 'server-only';
  * - `Type` 2: a customer reference that resolved to one or more barcodes. The
  *   requested string is not a barcode, so every returned shipment belongs to
  *   this lookup and all of them are merged.
+ * - `Type` 3: a Swiss Post parcel barcode PostLogistics does not hold. The
+ *   endpoint relays Swiss Post's own scans (placeholder `PST` codes, no place),
+ *   so the parcel is Swiss Post's: once the echo matches, this is a not-found
+ *   and routing asks the Swiss Post adapter instead.
  *
  * Any other type is refused rather than guessed at. A `Data: null` answer is
  * PostLogistics' explicit "unknown identifier".
@@ -62,7 +66,7 @@ export function parsePostlogisticsTrackingResponse(value: unknown, trackingNumbe
   }
   if (items.length === 0) throw new SchemaError(PROVIDER, 'PostLogistics did not return a shipment entry');
   const responseType = Number(payload.Type);
-  if (responseType !== 1 && responseType !== 2) {
+  if (responseType !== 1 && responseType !== 2 && responseType !== 3) {
     throw new SchemaError(PROVIDER, 'PostLogistics returned an invalid tracking response type');
   }
   const identified = items.filter((candidate) => comparableIdentifier(candidate.Identifier));
@@ -70,7 +74,7 @@ export function parsePostlogisticsTrackingResponse(value: unknown, trackingNumbe
     throw new SchemaError(PROVIDER, 'PostLogistics did not return a shipment identifier');
   }
   let shipments = identified;
-  if (responseType === 1) {
+  if (responseType !== 2) {
     const requested = comparableIdentifier(trackingNumber);
     shipments = identified.filter(
       (candidate) => comparableIdentifier(candidate.Identifier) === requested,
@@ -78,6 +82,9 @@ export function parsePostlogisticsTrackingResponse(value: unknown, trackingNumbe
     if (shipments.length === 0) {
       throw new SchemaError(PROVIDER, 'PostLogistics returned a different shipment');
     }
+  }
+  if (responseType === 3) {
+    throw new NotFoundError(PROVIDER, 'PostLogistics only relays Swiss Post tracking for this barcode');
   }
   const history = shipments.flatMap((shipment) => recordArray(shipment.History));
   // Merged references interleave several barcodes, so order by absolute

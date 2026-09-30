@@ -60,7 +60,7 @@ describe('Swiss Post Cargo tracking', () => {
       Type: 1,
       Data: [{ ...deliveredShipment(), Identifier: undefined }],
     }, '1234ABC789')).toThrow('no shipment identifier');
-    expect(() => parseSwissPostCargoResponse({ ...delivered(), Type: 3 }, '1234ABC789'))
+    expect(() => parseSwissPostCargoResponse({ ...delivered(), Type: 4 }, '1234ABC789'))
       .toThrow('invalid tracking response type');
     expect(() => parseSwissPostCargoResponse({ Data: delivered().Data }, '1234ABC789'))
       .toThrow('invalid tracking response type');
@@ -96,6 +96,21 @@ describe('Swiss Post Cargo tracking', () => {
         message: 'Swiss Post Cargo could not locate the shipment',
       });
     }
+  });
+
+  it('leaves a Type 3 relay of Swiss Post tracking to the Swiss Post adapter', () => {
+    const relayed = fixture('relayed-swiss-post');
+    expect(() => parseSwissPostCargoResponse(relayed, '99.34.123456.12345678')).toThrow(NotFoundError);
+    try {
+      parseSwissPostCargoResponse(relayed, '99.34.123456.12345678');
+    } catch (error) {
+      expect(error).toMatchObject({
+        status: 404,
+        kind: 'not_found',
+        message: 'Swiss Post Cargo only relays Swiss Post tracking for this barcode',
+      });
+    }
+    expect(() => parseSwissPostCargoResponse(relayed, '1234ABC789')).toThrow('different shipment');
   });
 
   it('classifies negative delivery wording before the delivered substring', () => {
