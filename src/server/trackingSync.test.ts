@@ -2169,4 +2169,47 @@ describe('scans a carrier and a universal provider both report', () => {
     expect(store.rows.get(own(delivered))).toMatchObject({ occurred_at: '2026-01-04T21:58:30Z' });
     expect(adapter.fetchUniversal).toHaveBeenCalledTimes(2);
   });
+
+  it('does not take the carrier reply after a fallback for older history', async () => {
+    vi.spyOn(observability, 'reportRoutingEvent').mockImplementation(() => undefined);
+    const store = eventStore();
+    const client = { ...store.client,
+      acquireTrackingProvider: vi.fn().mockResolvedValue({ token: 'lease', retry_at: '2026-01-05T12:01:30Z' }),
+      finishTrackingProvider: vi.fn().mockResolvedValue(undefined),
+    };
+    const down = new Error('GOFO tracking endpoint is unavailable');
+    const adapter = {
+      fetch: vi.fn()
+        .mockResolvedValueOnce(result([hub, label]))
+        .mockRejectedValueOnce(down)
+        .mockResolvedValueOnce(result([out, hub, label]))
+        .mockRejectedValueOnce(down),
+      fetchUniversal: vi.fn().mockResolvedValue(result([out, hub, label].map(copied))),
+    };
+    const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter, null, now);
+    // Each check sees the watermark the previous one saved, without its cooldowns.
+    let watermark: unknown;
+    const sync = async (stage: string) => {
+      await service.syncPackage({ ...parcel, current_stage: stage,
+        ...(watermark ? { carrier_data: { routing: { version: 1, configured_carrier: 'gofo', last_event_at: watermark } } } : {}),
+        [STORED_EVENT_IDENTITIES]: store.identities() });
+      const values = store.client.updatePackage.mock.calls.at(-1)![1] as JsonObject;
+      watermark = ((values.carrier_data as JsonObject).routing as JsonObject).last_event_at;
+      return values;
+    };
+
+    await sync('pending');
+    // GOFO is down: the copy's new scan, three hours late, sets the watermark.
+    expect((await sync('in_transit')).carrier_data).toMatchObject({ tracking_provider: expect.any(String) });
+    expect(watermark).toBe('2026-01-04T15:59:03.000Z');
+    // GOFO is back with that scan at its real time: its summary and link replace the copy's.
+    const recovered = await sync('out_for_delivery');
+    expect(recovered).toMatchObject({ last_status_text: 'Out for Delivery', current_stage: 'out_for_delivery' });
+    expect(recovered.carrier_data).not.toHaveProperty('tracking_provider');
+    expect(watermark).toBe('2026-01-04T12:59:03.000Z');
+    // Down again: copies of stored scans no longer move the watermark past GOFO's clock.
+    await sync('out_for_delivery');
+    expect(watermark).toBe('2026-01-04T12:59:03.000Z');
+    expect(store.rows.size).toBe(3);
+  });
 });

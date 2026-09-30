@@ -177,7 +177,10 @@ scans with no trustworthy zone of their own (ParcelsApp's, and Ship24's offset-l
 When that carrier's zone is UTC (Asendia, `unknown`), they get the zone of the carrier a
 direct lookup confirmed for the same number instead, if any. The freshness watermark (`last_event_at`) reads
 offset-less times in the result's zone, exactly as the stored events are read, and so does
-the sync when it checks whether a returned summary is older than the watermark.
+the sync when it checks whether a returned summary is older than the watermark. A universal
+copy of a stored scan counts at the stored scan's instant, and a copy a carrier's scan takes
+over at that scan's instant. A provider that misread the zone therefore cannot set the
+watermark hours ahead and make the carrier's own reply look older.
 
 ## Direct histories without complete timestamps
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sameInstantIdentities, sharedScans, withIdentities } from './eventIdentity';
+import { sameInstantIdentities, sharedScans, withIdentities, withoutCopyDrift } from './eventIdentity';
 
 // New events carry the sync's ISO spelling; stored rows come back from
 // PostgREST with an explicit +00:00 offset. Both name the same instant.
@@ -228,5 +228,44 @@ describe('scans a carrier and a universal provider both report', () => {
     const observed = { ...scan('unknown:observed', instant, 'Delivered'), raw_data: { observed_without_provider_timestamp: true } };
     expect(sharedScans([observed], [row('gofo:delivered', instant, 'Delivered')]).skipped.size).toBe(0);
     expect(sharedScans([scan('unknown:a', instant, 'Delivered')], []).skipped.size).toBe(0);
+  });
+});
+
+describe('newest-event times set by copies read in the wrong zone', () => {
+  const at = (iso: string) => Date.parse(iso);
+  const none = { reused: new Map<string, string>(), skipped: new Map<string, string>() };
+  const twin = row('gofo:out', '2026-01-04T12:59:03+00:00', 'Out for Delivery');
+  const copy = scan('unknown:out', '2026-01-04T15:59:03Z', 'Out for Delivery');
+  const skipped = { reused: new Map<string, string>(), skipped: new Map([['unknown:out', 'gofo:out']]) };
+
+  it('reads a skipped copy at its stored twin instant', () => {
+    const late = at('2026-01-04T15:59:03Z');
+    expect(withoutCopyDrift(late, [copy], [twin], skipped)).toBe(at('2026-01-04T12:59:03Z'));
+    // A newer scan of the batch, or a time the batch rows do not carry, still counts.
+    expect(withoutCopyDrift(late, [copy, scan('unknown:new', '2026-01-04T14:00:00Z', 'Arrived')], [twin], skipped))
+      .toBe(at('2026-01-04T14:00:00Z'));
+    expect(withoutCopyDrift(late, [copy], [twin], skipped, { also: [at('2026-01-04T14:30:00Z')] })).toBe(at('2026-01-04T14:30:00Z'));
+    // The router caps a future-dated copy at the time of the check: the copy still explains it.
+    expect(withoutCopyDrift(at('2026-01-04T15:00:00Z'), [copy], [twin], skipped)).toBe(at('2026-01-04T12:59:03Z'));
+  });
+
+  it('keeps a time the copies do not explain', () => {
+    expect(withoutCopyDrift(at('2026-01-04T16:30:00Z'), [copy], [twin], skipped)).toBe(at('2026-01-04T16:30:00Z'));
+    expect(withoutCopyDrift(at('2026-01-04T12:00:00Z'), [copy], [twin], skipped)).toBe(at('2026-01-04T12:00:00Z'));
+    expect(withoutCopyDrift(at('2026-01-04T15:59:03Z'), [copy], [twin], none)).toBe(at('2026-01-04T15:59:03Z'));
+    expect(withoutCopyDrift(Number.NaN, [copy], [twin], skipped)).toBeNaN();
+  });
+
+  it('reads a copy the carrier took over at the carrier scan instant', () => {
+    const stored = [row('gofo:label', '2026-01-02T12:30:00+00:00', 'Shipping Label Created'), row('unknown:out', '2026-01-04T15:59:03+00:00', 'Out for Delivery')];
+    const takeover = { reused: new Map([['gofo:out', 'unknown:out']]), skipped: new Map<string, string>() };
+    const events = [scan('gofo:out', '2026-01-04T12:59:03Z', 'Out for Delivery'), scan('gofo:label', '2026-01-02T12:30:00Z', 'Shipping Label Created')];
+    expect(withoutCopyDrift(at('2026-01-04T15:59:03Z'), events, stored, takeover, { withStored: true })).toBe(at('2026-01-04T12:59:03Z'));
+    // A stored scan newer than the corrected one keeps the watermark there.
+    const newer = [...stored, row('unknown:sorted', '2026-01-04T14:10:00+00:00', 'Sorted')];
+    expect(withoutCopyDrift(at('2026-01-04T15:59:03Z'), events, newer, takeover, { withStored: true })).toBe(at('2026-01-04T14:10:00Z'));
+    // A stage change stamped when the sync saw it is not a scan time.
+    const observed = { ...scan('gofo:observed', '2026-01-05T11:00:00.123Z', 'Out for Delivery'), raw_data: { observed_without_provider_timestamp: true } };
+    expect(withoutCopyDrift(at('2026-01-04T15:59:03Z'), [...events, observed], stored, takeover, { withStored: true })).toBe(at('2026-01-04T12:59:03Z'));
   });
 });

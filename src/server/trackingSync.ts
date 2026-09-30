@@ -28,7 +28,7 @@ import {
 } from './observability';
 import { PushDispatchError, type CompositePushNotificationService } from './push';
 import { STORED_EVENT_IDENTITIES, type SupabaseServiceClient } from './supabase';
-import { sameInstantIdentities, sharedScans, withIdentities } from './eventIdentity';
+import { sameInstantIdentities, sharedScans, withIdentities, withoutCopyDrift } from './eventIdentity';
 import {
   TrackingSyncAudit,
   type SyncAnomalyCode,
@@ -861,10 +861,22 @@ export class TrackingSyncService {
       const handoff = supportsSwissPostHandoff(String(parcel.tracking_number ?? ''));
       const knownUpdate = hasUpdate || Boolean(handoff && swissPostReady);
       const progressDisappeared = anomalies.includes('progress_disappeared');
+      // A reworded scan (DPD with and without the postcode) updates its stored row in place,
+      // and a scan both a carrier and a universal provider reported is stored once.
+      const stored = storedEventIdentities(parcel);
+      const reworded = sameInstantIdentities(events, stored, sourceCarrierId);
+      const shared = sharedScans(events, stored, reworded);
+      const matches = { reused: new Map([...reworded, ...shared.reused]), skipped: shared.skipped };
       const previousRouting = routingState(parcel);
-      const previousEventTime = Date.parse(previousRouting.last_event_at ?? '');
+      // Copies a universal provider read in the wrong zone must not make a result
+      // look fresher, or the carrier's own reply older, than it is.
+      const previousEventTime = withoutCopyDrift(
+        Date.parse(previousRouting.last_event_at ?? ''), events, stored, matches, { withStored: true },
+      );
       // Read as routing wrote the watermark: a naive local clock in its source's zone.
-      const returnedEventTime = Date.parse(eventTimestamp(result.last_update, resultTimezone(sourceCarrierId, result)) ?? '');
+      const returnedEventTime = withoutCopyDrift(
+        Date.parse(eventTimestamp(result.last_update, resultTimezone(sourceCarrierId, result)) ?? ''), events, stored, matches,
+      );
       const olderSnapshot = Number.isFinite(previousEventTime) && Number.isFinite(returnedEventTime)
         && returnedEventTime < previousEventTime;
       const previousData = isRecord(parcel.carrier_data) ? parcel.carrier_data : {};
@@ -888,6 +900,18 @@ export class TrackingSyncService {
       const carrierData: JsonObject = Object.fromEntries(
         Object.entries(result).filter(([key, value]) => key !== 'events' && value != null),
       );
+      // The saved watermark takes the same correction, so later replies are compared with the carrier's clock.
+      const routing = isRecord(result.routing) ? { ...result.routing } : null;
+      if (routing) {
+        const watermark = olderSnapshot ? previousEventTime : withoutCopyDrift(
+          Date.parse(String(routing.last_event_at ?? '')), events, stored, matches, { also: [returnedEventTime,
+            fetched.earlierResult ? latestResultTime(fetched.earlierResult, fetched.earlierCarrierId ?? sourceCarrierId) : Number.NaN] },
+        );
+        const saved = olderSnapshot ? previousRouting.last_event_at : routing.last_event_at;
+        if (Number.isFinite(watermark) && Date.parse(String(saved ?? '')) !== watermark) routing.last_event_at = new Date(watermark).toISOString();
+        else if (saved !== undefined) routing.last_event_at = saved;
+        carrierData.routing = routing;
+      }
       const postalHistory = upuHistory(parcel, result, now);
       if (postalHistory) carrierData.upu_history = postalHistory;
       const localHistory = directLocalHistory(parcel, result);
@@ -914,11 +938,8 @@ export class TrackingSyncService {
           ? 'The carrier temporarily returned no tracking progress. Previous tracking details have been kept.'
           : null,
       };
-      if (isRecord(result.routing)) {
-        values.carrier_data = { ...(isRecord(parcel.carrier_data) ? parcel.carrier_data : {}), routing: {
-          ...result.routing,
-          ...(olderSnapshot ? { last_event_at: previousRouting.last_event_at } : {}),
-        } };
+      if (routing) {
+        values.carrier_data = { ...(isRecord(parcel.carrier_data) ? parcel.carrier_data : {}), routing };
       }
       // A verified partner can confirm the same completed milestone with a
       // different timestamp. Keep the saved summary/watermark, but retain the
@@ -964,14 +985,9 @@ export class TrackingSyncService {
       }
       const outcome = progressDisappeared ? 'error' : knownUpdate ? 'updated' : 'waiting';
       const eventsToPersist = progressDisappeared || (preserveSummary && (result.tracking_provider === 'UPU' || localOnlyFallback)) ? [] : events;
-      // A reworded scan (DPD with and without the postcode) updates its stored row in place,
-      // and a scan both a carrier and a universal provider reported is stored once.
-      const stored = storedEventIdentities(parcel);
-      const reworded = sameInstantIdentities(eventsToPersist, stored, sourceCarrierId);
-      const shared = sharedScans(eventsToPersist, stored, reworded);
-      const reusedIdentities = new Map([...reworded, ...shared.reused]);
+      const persistedIds = new Set(eventsToPersist.map((event) => String(event.provider_event_id)));
       const persistedEvents = withIdentities(
-        eventsToPersist.filter((event) => !shared.skipped.has(String(event.provider_event_id))), reusedIdentities,
+        eventsToPersist.filter((event) => !matches.skipped.has(String(event.provider_event_id))), matches.reused,
       );
       operation = 'persist_package';
       await audit.step('persist_package', async () => {
@@ -985,11 +1001,11 @@ export class TrackingSyncService {
       });
       audit.record('persist_events', 'succeeded', 0, {
         events_persisted: persistedEvents.length,
-        identities_reused: reusedIdentities.size,
-        copies_skipped: shared.skipped.size,
+        identities_reused: [...matches.reused.keys()].filter((id) => persistedIds.has(id)).length,
+        copies_skipped: [...matches.skipped.keys()].filter((id) => persistedIds.has(id)).length,
         atomic_with_package: true,
       });
-      await this.recordStatusObservations(eventsToPersist, sourceCarrierId, context, new Map([...reusedIdentities, ...shared.skipped]));
+      await this.recordStatusObservations(eventsToPersist, sourceCarrierId, context, new Map([...matches.reused, ...matches.skipped]));
       const completion = {
         outcome,
         sourceCarrier: sourceCarrierId,

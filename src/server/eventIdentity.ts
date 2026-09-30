@@ -110,6 +110,11 @@ function stageOf(row: JsonObject): string {
   return typeof row.stage === 'string' ? row.stage : '';
 }
 
+/** A stage change the sync stamped with the time it saw it, not a provider scan. */
+function observedOnly(row: JsonObject): boolean {
+  return isRecord(row.raw_data) && row.raw_data.observed_without_provider_timestamp === true;
+}
+
 /** The same wording, or one followed by a further sentence (GOFO's support line). */
 function sameWording(left: string, right: string): boolean {
   if (!left || !right) return false;
@@ -161,8 +166,7 @@ export function sharedScans(
   for (const event of events) {
     const id = identity(event);
     const source = sourceOf(id);
-    const observed = isRecord(event.raw_data) && event.raw_data.observed_without_provider_timestamp === true;
-    if (source === '' || source === 'app' || reused.has(id) || observed || !Number.isFinite(instantOf(event))) continue;
+    if (source === '' || source === 'app' || reused.has(id) || observedOnly(event) || !Number.isFinite(instantOf(event))) continue;
     const own = storedById.get(id);
     if (!own) pending.push(event);
     else if (source === UNIVERSAL && instantOf(own) !== instantOf(event)) shared.skipped.set(id, id);
@@ -194,6 +198,46 @@ export function sharedScans(
     else shared.reused.set(id, rowId);
   }
   return shared;
+}
+
+/**
+ * A newest-event time (the routing watermark, a result's summary time) that
+ * universal copies read in the wrong zone may have set hours late. A skipped
+ * copy counts at its stored twin's instant, and a stored copy a carrier's scan
+ * takes over at that scan's instant. The time drops to the newest instant left
+ * only when it is later than that and no later than the newest instant a copy
+ * claimed, so the copies explain the excess (the router caps a future-dated
+ * copy at the time of the check); a time they do not explain stands. The batch
+ * always counts, `stored` rows only with `withStored`, and `also` adds instants
+ * the batch rows do not carry.
+ */
+export function withoutCopyDrift(
+  time: number,
+  events: readonly JsonObject[],
+  stored: readonly JsonObject[],
+  matches: { reused: ReadonlyMap<string, string>; skipped: ReadonlyMap<string, string> },
+  options: { withStored?: boolean; also?: readonly number[] } = {},
+): number {
+  if (!Number.isFinite(time)) return time;
+  const storedById = new Map(stored.map((row) => [identity(row), row] as const));
+  const claimed: number[] = [];
+  const retimed = new Map<string, number>();
+  const kept: number[] = [...(options.also ?? [])];
+  for (const event of events) {
+    if (observedOnly(event)) continue;
+    const takenOver = storedById.get(matches.reused.get(identity(event)) ?? '');
+    if (takenOver) {
+      claimed.push(instantOf(takenOver));
+      retimed.set(identity(takenOver), instantOf(event));
+    }
+    const twin = storedById.get(matches.skipped.get(identity(event)) ?? '');
+    if (twin) claimed.push(instantOf(event));
+    kept.push(instantOf(twin ?? event));
+  }
+  if (options.withStored) for (const row of stored) kept.push(retimed.get(identity(row)) ?? instantOf(row));
+  const newest = Math.max(...kept.filter(Number.isFinite));
+  const claimedNewest = Math.max(...claimed.filter(Number.isFinite));
+  return Number.isFinite(newest) && time > newest && time <= claimedNewest ? newest : time;
 }
 
 /** The events as persisted: a reused identity replaces the computed one. */
