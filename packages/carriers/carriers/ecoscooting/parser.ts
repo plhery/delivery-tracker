@@ -33,20 +33,18 @@ export function parseEcoscooting(payload: unknown, rawNumber: string): CarrierRe
     if (row.opTimestamp != null && !time) throw new SchemaError('Ecoscooting', 'Ecoscooting returned an invalid scan timestamp');
     const display = clean(row.datetime, 64);
     const mapped = ecoscootingStatus(code);
-    // CN references (CNESP, CNPRT) use a last-mile schema without the older
-    // numeric replies' completion flags. Its exact success code and two
-    // affirmative labels confirm completion.
-    const numericCompletion = code === 'GTMS_SIGNED' && row.statusGroup === 'delivered' && row.status === 'finish'
+    // Numeric references arrive either with completion flags or, like every CN
+    // reference (CNESP, CNPRT), without them. Without flags, a delivery or a
+    // collection at a pickup point needs its exact success code and both
+    // affirmative labels; a flagless GTMS_SIGNED stays inconclusive.
+    const flaggedCompletion = code === 'GTMS_SIGNED' && row.statusGroup === 'delivered' && row.status === 'finish'
       && description === 'Parcel has been delivered successfully';
-    const referenceCompletion = number.startsWith('CN') && code === 'LM_SIGN_SUCCESS'
-      && row.statusName === 'Delivery Success' && description === 'Your shipment has been delivered successfully'
-      && !Object.hasOwn(row, 'statusGroup') && !Object.hasOwn(row, 'status');
-    // Newer numeric replies use that flagless schema too. There a collection at
-    // a pickup point is confirmed by its exact code and both collection labels.
-    const pickupCompletion = code === 'GTMS_PUDO_SIGNED'
-      && row.statusName === 'PUDO Sign Success' && description === 'Your shipment has been collected by consignee at the parcelshop'
-      && !Object.hasOwn(row, 'statusGroup') && !Object.hasOwn(row, 'status');
-    if (mapped?.stage === 'delivered' && !numericCompletion && !referenceCompletion && !pickupCompletion) throw new IndeterminateError('Ecoscooting', 'Ecoscooting returned inconsistent delivery evidence');
+    const flagless = !Object.hasOwn(row, 'statusGroup') && !Object.hasOwn(row, 'status');
+    const deliveryCompletion = flagless && code === 'LM_SIGN_SUCCESS'
+      && row.statusName === 'Delivery Success' && description === 'Your shipment has been delivered successfully';
+    const pickupCompletion = flagless && code === 'GTMS_PUDO_SIGNED'
+      && row.statusName === 'PUDO Sign Success' && description === 'Your shipment has been collected by consignee at the parcelshop';
+    if (mapped?.stage === 'delivered' && !flaggedCompletion && !deliveryCompletion && !pickupCompletion) throw new IndeterminateError('Ecoscooting', 'Ecoscooting returned inconsistent delivery evidence');
     const event: CarrierEvent = { ...(time ? { time: time.iso } : display ? { provider_time_text: display } : {}), description, provider_code: code, ...(mapped ? { stage: mapped.stage } : {}) };
     const key = JSON.stringify(event);
     if (!seen.has(key)) { seen.add(key); events.push(event); }

@@ -104,6 +104,13 @@
       "confirmedBy": "live"
     },
     {
+      "code": "LM_DELIVERY_FAILURE",
+      "wording": "Delivery Attempt Failure",
+      "language": "en",
+      "stage": "failed_attempt",
+      "confirmedBy": "live"
+    },
+    {
       "code": "SL_ACCEPT",
       "wording": "Your shipment has been accepted by delivery carrier",
       "language": "en",

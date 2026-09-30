@@ -2,6 +2,42 @@
   "carrier": "ecoscooting",
   "records": [
     {
+      "number": "024000000109776633",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6ab43348dde9a585fb7ee200",
+        "date": "2026-09-23"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "The anonymous native gateway identifies this reference as an Ecoscooting parcel."
+    },
+    {
+      "number": "035010000109668280",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6ab29a65ba413b1cba7cb0c5",
+        "date": "2026-09-22"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "The anonymous native gateway identifies this reference as an Ecoscooting parcel."
+    },
+    {
       "number": "081730000038942441",
       "role": "shipment",
       "evidence": "public_shipment_report",
@@ -38,6 +74,24 @@
       "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ecoscooting, which stays one candidate among several."
     },
     {
+      "number": "083300000108897658",
+      "role": "shipment",
+      "evidence": "public_shipment_report",
+      "source": {
+        "url": "https://www.trustpilot.com/reviews/6ab4e2956837367f1f188fb5",
+        "date": "2026-09-24"
+      },
+      "expect": {
+        "carrier": "unknown",
+        "confidence": "low",
+        "candidates": [
+          "bpost",
+          "ecoscooting"
+        ]
+      },
+      "note": "The anonymous native gateway identifies this reference as an Ecoscooting parcel."
+    },
+    {
       "number": "289700000110328320",
       "role": "shipment",
       "evidence": "public_shipment_report",
@@ -53,7 +107,7 @@
           "ecoscooting"
         ]
       },
-      "note": "Publicly reported shipment number; the attribution was not independently verified. The source attributes it to Ecoscooting, which stays one candidate among several."
+      "note": "The anonymous native gateway identifies this reference as an Ecoscooting parcel."
     },
     {
       "number": "380030000066362966",

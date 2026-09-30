@@ -14,15 +14,15 @@ orders and remains inconclusive rather than proving absence.
 
 Per-scan epoch milliseconds establish instants. Missing epochs retain display
 text without borrowing its timezone or an older delivery timestamp. Status
-comes from the latest scan. A numeric `GTMS_SIGNED` delivery requires its
-completion flags. `CN` references (Portuguese `CNPRT`, older Spanish `CNESP`)
-and newer numeric replies carry no flags. There `LM_SIGN_SUCCESS` (`CN` only)
-and a collection at a pickup point (`GTMS_PUDO_SIGNED`) require their exact
-code and both affirmative labels, and a flagless `GTMS_SIGNED` stays
-inconclusive. Conflicting flags remain inconclusive. Arrival at a pickup point
-and the pickup point's own signature (`GTMS_STA_SIGNED`, "Delivered to PUDO")
-read as ready for pickup. The gateway no longer answers the published `CNESP`
-references.
+comes from the latest scan. Numeric references arrive either with completion
+flags or, like every `CN` reference (Portuguese `CNPRT`, older Spanish
+`CNESP`), without them. A flagged delivery needs `GTMS_SIGNED` with its flags.
+Without flags, a delivery (`LM_SIGN_SUCCESS`) or a collection at a pickup point
+(`GTMS_PUDO_SIGNED`) needs its exact code and both affirmative labels, and a
+flagless `GTMS_SIGNED` stays inconclusive. Conflicting flags remain
+inconclusive. Arrival at a pickup point and the pickup point's own signature
+(`GTMS_STA_SIGNED`, "Delivered to PUDO") read as ready for pickup. The gateway
+no longer answers the published `CNESP` references.
 The labelled gram weight is converted to kilograms. Destination addresses,
 postcodes, coordinates, delivery photos, order identifiers, routing features
 and pickup-point details, including the pickup PIN, are excluded. References

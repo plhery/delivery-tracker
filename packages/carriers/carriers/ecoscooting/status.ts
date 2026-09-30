@@ -17,6 +17,7 @@ const CODES = new Map<string, ClassifiedStatus>([
   ['Label_created', { status: 'pending', stage: 'registered' }],
   ['LM_SIGN_SUCCESS', { status: 'delivered', stage: 'delivered' }],
   ['LM_DELIVERY_DEPART', { status: 'out_for_delivery', stage: 'out_for_delivery' }],
+  ['LM_DELIVERY_FAILURE', { status: 'exception', stage: 'failed_attempt' }],
   ['SL_ACCEPT', { status: 'in_transit', stage: 'accepted' }],
   ['SC_OUTBOUND', { status: 'in_transit', stage: 'in_transit' }],
   ['SC_INBOUND', { status: 'in_transit', stage: 'in_transit' }],

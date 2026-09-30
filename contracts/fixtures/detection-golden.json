@@ -285,6 +285,18 @@
     ]
   },
   {
+    "input": "024000000109776633",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "bpost",
+      "ecoscooting"
+    ],
+    "asked": [
+      "bpost"
+    ]
+  },
+  {
     "input": "02673I145025",
     "carrier": "mrw",
     "confidence": "high",
@@ -364,6 +376,18 @@
     "asked": [
       "nz-post",
       "poczta-polska"
+    ]
+  },
+  {
+    "input": "035010000109668280",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "bpost",
+      "ecoscooting"
+    ],
+    "asked": [
+      "bpost"
     ]
   },
   {
@@ -553,6 +577,18 @@
     "confidence": "high",
     "candidates": [
       "nacex"
+    ]
+  },
+  {
+    "input": "083300000108897658",
+    "carrier": "unknown",
+    "confidence": "low",
+    "candidates": [
+      "bpost",
+      "ecoscooting"
+    ],
+    "asked": [
+      "bpost"
     ]
   },
   {

@@ -32,10 +32,16 @@ describe('Ecoscooting parcel history', () => {
     const wrongScan = referenceFixture(number); wrongScan.statuses[1].mailNo = NUMBER;
     expect(() => parseEcoscooting(wrongScan, number)).toThrow(expect.objectContaining({ kind: 'schema' }));
   });
-  it('does not borrow missing completion flags from the CN reference schema for numeric parcels', () => {
-    const value = portugalFixture(); value.packageParam.trackingNumber = NUMBER;
-    expect(() => parseEcoscooting(value, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
+  it('reads numeric parcels in the flagless last-mile schema but never a flagless GTMS_SIGNED', () => {
+    const value = referenceFixture(NUMBER);
+    value.statuses.splice(1, 0, { ...value.statuses[1], actionCode: 'LM_DELIVERY_FAILURE', statusName: 'Delivery Attempt Failure',
+      description: 'Your shipment delivery attempt failed [Recipient not at home]' });
+    const result = normalizeCarrierResult(parseEcoscooting(value, NUMBER));
+    expect(result).toMatchObject({ status: 'delivered', current_stage: 'delivered', delivered_at: '2026-01-10T12:00:00Z' });
+    expect(result.events?.slice(0, 3).map(event => event.stage)).toEqual(['delivered', 'failed_attempt', 'out_for_delivery']);
     const numeric = fixture(); delete numeric.statuses[0].status; delete numeric.statuses[0].statusGroup;
+    expect(() => parseEcoscooting(numeric, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
+    numeric.statuses[0] = { ...numeric.statuses[0], description: 'Your shipment has been delivered successfully' };
     expect(() => parseEcoscooting(numeric, NUMBER)).toThrow(expect.objectContaining({ kind: 'indeterminate' }));
   });
   it.each(['status', 'statusGroup', 'description', 'statusName'])('rejects contradictory CN reference completion %s', field => {
