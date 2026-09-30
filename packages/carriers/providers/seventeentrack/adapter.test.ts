@@ -65,6 +65,19 @@ describe('17TRACK result parsing', () => {
     expect(parse17TrackResponse(payload, number).current_stage).toBe('in_transit');
   });
 
+  it('reads an exact voided label as a problem despite the generic transit code', () => {
+    const label = { ...postalScan('InfoReceived', 'Shipping Label Created'),
+      time_iso: '2026-09-19T12:22:00+08:00', time_utc: '2026-09-19T04:22:00Z' };
+    for (const description of ['Parcel Void', 'PARCEL VOIDED', 'Shipping label has been voided.']) {
+      expect(parse17TrackResponse(postalHistory([postalScan('InTransit_Other', description), label]), number)).toMatchObject({
+        status: 'exception', current_stage: 'exception', last_status_text: description,
+        events: [{ stage: 'exception', provider_code: 'InTransit_Other' }, { stage: 'registered', provider_code: 'InfoReceived' }] });
+    }
+    // A relabel is a new label, not a cancelled shipment.
+    expect(parse17TrackResponse(postalHistory([postalScan('InTransit_Other', 'Label voided, new label created')]), number))
+      .toMatchObject({ status: 'pending', current_stage: 'registered' });
+  });
+
   it.each(['Returning to sender', 'Return to sender', 'Will be returned to sender',
     'To be returned to the sender', 'Being returned to sender', 'Will soon be returned to sender',
     'Not yet returned to sender', 'Could not be returned to sender', 'Cannot be returned to sender',

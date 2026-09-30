@@ -38,6 +38,9 @@ order, and [COVERAGE.md](COVERAGE.md) compares results carrier by carrier.
   `pending` and never inherits the shipment's stage.
 - English return instructions and a return in progress remain exceptions. Completed
   return wording can mark sender delivery; starting the return cannot complete it.
+- An exactly worded voided label ("Parcel Void", "Shipment voided") is an exception even
+  when a provider files it as generic transit: it was cancelled before shipping. A
+  relabel that mentions a void is not.
 - Reported carrier names are hints. Routing may try that carrier's adapter, but only that
   adapter confirming the shipment adopts the carrier.
 - Persisted names (`Ship24`, `ParcelsApp`, `17TRACK`, `Postal Ninja`, `UPU`) are stored

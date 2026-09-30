@@ -53,6 +53,10 @@ function sourceEventStage(description: string, includeBroadMovement = true): Sta
   if (/not delivered|could not.*deliver|unable to deliver|delivery (?:attempt|failed)/i.test(description)) return 'failed_attempt';
   // Carrier-reported problems that are neither a missed attempt nor a return.
   if (/damaged|broken in transit|lost in transit|(?:package|parcel|shipment) (?:is )?lost|refused(?: by)?|rejected by (?:the )?recipient|(?:incorrect|incomplete|insufficient|unknown|invalid) address|address (?:incorrect|incomplete|insufficient|unknown|invalid)|addressee (?:unknown|cannot be located)|delivery exception|shipment exception|carrier exception|held (?:by|in|at) customs|customs (?:issue|problem)|action required|awaiting instructions|(?:shipment|parcel) (?:held|on hold)/i.test(description)) return 'exception';
+  // A voided label was cancelled before shipping, even where a provider files
+  // it as transit (17TRACK's generic code). Exact wording only, so a relabel
+  // ("label voided, new label created") is not read as a cancellation.
+  if (/^(?:parcel|package|shipment|(?:shipping )?label) (?:(?:has been|was|is) )?void(?:ed)?[.!]?$/i.test(description)) return 'exception';
   if (/delivered to (?:the )?(?:local carrier|delivery partner|post office)/i.test(description)) return 'in_transit';
   if (/will be available for (?:pickup|collection)/i.test(description)) return 'in_transit';
   // Sender pre-advice such as Quickpac's "Shipment recorded by sender (data delivered)".

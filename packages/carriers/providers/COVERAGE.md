@@ -168,9 +168,11 @@ By source:
   SF Express, SpeedX and Correos de Chile history, and the only one still holding a June
   MRW delivery. It misses some actionable rows (La Poste pickup-ready, InPost
   locker-ready) and had nothing for OnTrac, DTDC, DPD France, BRT, Correos Express,
-  Landmark Global, Canpar, TIPSA or a domestic Thailand Post item. Its first poll can
-  stay pending; a second bounded call completed except for Asendia. Chinese domestic
-  scans can carry courier names and phone numbers.
+  Landmark Global, Canpar, TIPSA or a domestic Thailand Post item. Its generic transit
+  code also covers Swiss Post's vehicle loading and SpeedX's voided label; their exact
+  wording makes them out for delivery and an exception. Its first poll can stay pending;
+  a second bounded call completed except for Asendia. Chinese domestic scans can carry
+  courier names and phone numbers.
 - **Postal Ninja** often matches ParcelsApp and had the most rows for La Poste and
   Ecoscooting. It was the only source with Parcelforce rows and with a domestic Aramex
   delivery. Many rows are undated (PostNL, Australia Post, Japan Post), some codes stay
@@ -362,9 +364,9 @@ By carrier:
   providers are asked for dated progress. Master shipments are inconclusive. Every
   feed holds the same six scans; ParcelsApp and Postal Ninja add translated or repeated
   rows. The compact `UUSC` family is supported by detection and native recognition.
-- **SpeedX:** only 17TRACK knew the reference: a label, then "Parcel Void", which it files
-  under its generic transit code, so a voided label reads as in transit. A 24-character
-  `SPX…` number in another report matches no rule.
+- **SpeedX:** only 17TRACK knew the reference: a label, then "Parcel Void", which reads
+  as an exception rather than transit because the label was cancelled before shipping.
+  A 24-character `SPX…` number in another report matches no rule.
 - **GOFO Express:** GOFO counts 15 scans for this reference but lists 14, the same 14
   the aggregators hold; its page shows the list and ignores the counter. The adapter
   accepts a larger counter only when the list runs from label creation to the current
@@ -401,11 +403,9 @@ has no usable history, and SpeedX's anonymous endpoints require verification. Ol
 Dominion and TIPSA have no adapter yet; TIPSA's locator form requires the destination
 postcode, but its shop link needs only the 22-digit reference.
 
-17TRACK's generic transit code is refined for Swiss Post's exact vehicle-loading
-label. PostNL direct refines its overloaded processing category for the exact
-out-for-delivery label. EMS export
-cancellation is an exception. Unresolved direct postal clocks remain local history
-rather than inferred scan instants.
+PostNL direct refines its overloaded processing category for the exact out-for-delivery
+label. EMS export cancellation is an exception. Unresolved direct postal clocks remain
+local history rather than inferred scan instants.
 
 Detection selects or suggests the named carrier for the public numbers behind rows
 31–100, with these exceptions. Planzer composites stay undetected on purpose (see the
