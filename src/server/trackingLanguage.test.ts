@@ -178,6 +178,8 @@ describe('intuitive language contrasts', () => {
     'Consegnato, firmato da [recipient]',
     'Entregado, firmado por [recipient]',
     'Entregue, assinado por [recipient]',
+    'Entregado; código de entrega: [code]',
+    'Entregue; código de levantamento: [code]',
   ])('[generated privacy] reduces delivery wording to a safe description: %s', (description) => {
     expect(event('2026-01-01T12:00:00Z', description)?.description).toBe('Delivered');
   });
@@ -185,9 +187,24 @@ describe('intuitive language contrasts', () => {
   it.each([
     'Ready for pickup; collection code: [code]',
     'Disponible au point de retrait ; code de retrait : [code]',
+    "Disponible au point de retrait ; code d'accès : [code]",
+    'Destinataire absent, numéro de maison [number]',
     'Zur Abholung bereit; Abholcode: [code]',
     'Disponibile per il ritiro; codice di ritiro: [code]',
+    'Ausente. Código de recogida: [code]',
+    'Disponible en el punto; codigo de retirada [code]',
+    'Aviso de llegada firmado por [recipient]',
+    'Destinatario ausente en el número de portal [number]',
+    'Disponível para levantamento; código de levantamento: [code]',
+    'Aviso assinado por [recipient]',
+    'Não entregue, porta nº [number]',
   ])('[generated privacy] excludes access details: %s', (description) => {
     expect(event('2026-01-01T12:00:00Z', description)).toBeNull();
+  });
+
+  it.each([
+    'Recibido por Estafeta', 'Objeto recebido pelos Correios do Brasil', 'Firma geschlossen', 'Código de envío [number]',
+  ])('[generated privacy] keeps carrier handoffs and references: %s', (description) => {
+    expect(event('2026-01-01T12:00:00Z', description)).not.toBeNull();
   });
 });

@@ -37,8 +37,10 @@ export function isNotice(description: string): boolean {
   return /enter .*?(?:postal|post|zip|phone)|select (?:a |the )?(?:carrier|destination country)|no information about your (?:package|parcel|shipment)|tracking (?:is |temporarily )?unavailable|tracking number (?:not found|is incorrect)|no tracking (?:information|data)|delivery preference|captcha|verify (?:you|your)|enable javascript|try again later/i.test(description);
 }
 
+// Raw text, so accented and plain spellings are both listed. A carrier receiving the
+// parcel ("Recibido por Estafeta") and German "Firma" (a business) are not private.
 export function hasPrivateDeliveryDetails(description: string): boolean {
-  return /\bpin\s*:|(?:access|security|pickup|collection) code|(?:door|house) (?:no\b|number)|signed (?:for )?by|signature|numero civico|firmato da|signe par|signé par|code (?:de retrait|d'acces|d’accès)|numero de (?:rue|maison)|abholcode|zugangscode|hausnummer|unterschrieben von|codice (?:di ritiro|di accesso)/i.test(description);
+  return /\bpin\s*:|(?:access|security|pickup|collection) code|(?:door|house) (?:no\b|number)|signed (?:for )?by|signature|numero civico|firmato da|signe par|signé par|code (?:de retrait|d['’]acc[eè]s)|num[eé]ro de (?:rue|maison)|abholcode|zugangscode|hausnummer|unterschrieben von|codice (?:di ritiro|di accesso)|c[oó]digo (?:pin|secreto|de (?:recogida|retirada|retiro|acceso|acesso|entrega|seguridad|seguran[cç]a|levantamento|recolha|desbloqueo|desbloqueio|apertura|abertura))|firmad[oa] por|firma del destinatari|assinad[oa] por|assinatura|n[uú]mero (?:de (?:portal|puerta|casa|piso|vivienda|pol[ií]cia)|da (?:porta|casa))|(?:porta|puerta) n\.?\s?[º°]|n\.?\s?[º°] (?:de |da )?porta/i.test(description);
 }
 
 function sourceEventStage(description: string, includeBroadMovement = true): Stage | undefined {
