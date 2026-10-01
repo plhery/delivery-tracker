@@ -593,11 +593,17 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
         { x: x - width / 2, y: y - 29, dx: 0, dy: -1 }, { x: x - width / 2, y: y + 8, dx: 0, dy: 1 }])
       .map((option, index) => ({ ...option, order: option.dx * awayX + option.dy * awayY + index * .01 }))
       .sort((a, b) => a.order - b.order);
-    const choice = options.find(option => {
-      const box = { ...option, width, height };
-      return !overlaps(box) && inside([box.x, box.y], 2) && inside([box.x + width, box.y + height], 2)
-        && inside([box.x + width, box.y], 2) && inside([box.x, box.y + height], 2);
-    }) ?? (candidate.priority === 0 ? options[0] : null);
+    const fits = (option: { x: number; y: number }) => inside([option.x, option.y], 2) && inside([option.x + width, option.y + height], 2)
+      && inside([option.x + width, option.y], 2) && inside([option.x, option.y + height], 2);
+    // The parcel's own place is always named: over another mark if it must be, and moved in from the frame's edge rather than cut off by it.
+    const framed = () => options.map((option) => {
+      if (shape === 'circle') return { ...option, shift: 0 };
+      const x = Math.max(insets.left + 2, Math.min(size.width - insets.right - 2 - width, option.x));
+      const y = Math.max(insets.top + 2, Math.min(size.height - insets.bottom - 2 - height, option.y));
+      return { ...option, x, y, shift: Math.abs(x - option.x) + Math.abs(y - option.y) };
+    }).sort((a, b) => a.shift - b.shift)[0];
+    const choice = options.find(option => fits(option) && !overlaps({ ...option, width, height }))
+      ?? (candidate.priority === 0 ? framed() : null);
     if (!choice) continue;
     placed.push({ ...choice, width, height });
     labelBoxes.push({ id: candidate.id, x: choice.x, y: choice.y, text, kind: area ? 'area' : candidate.kind });

@@ -622,7 +622,17 @@ struct MapOverlay {
                 .sorted { $0.1 < $1.1 }
                 .map { CGRect(x: $0.0.x, y: $0.0.y, width: width, height: height) }
             let taken = placed
-            guard let frame = ordered.first(where: { !overlaps($0, taken) && fits($0, 2) }) ?? (candidate.priority == 0 ? ordered.first : nil)
+            // The parcel's own place is always named: over another mark if it must be, and moved in from the
+            // frame's edge rather than cut off by it.
+            let framed = { () -> CGRect? in
+                ordered.enumerated().map { index, box -> (frame: CGRect, shift: CGFloat, index: Int) in
+                    let x = max(insets.leading + 2, min(size.width - insets.trailing - 2 - box.width, box.minX))
+                    let y = max(insets.top + 2, min(size.height - insets.bottom - 2 - box.height, box.minY))
+                    return (CGRect(x: x, y: y, width: box.width, height: box.height), abs(x - box.minX) + abs(y - box.minY), index)
+                }
+                .min { ($0.shift, $0.index) < ($1.shift, $1.index) }?.frame
+            }
+            guard let frame = ordered.first(where: { !overlaps($0, taken) && fits($0, 2) }) ?? (candidate.priority == 0 ? framed() : nil)
             else { continue }
             placed.append(frame)
             labels.append(Label(frame: frame, text: text, kind: area ? .area : candidate.kind))

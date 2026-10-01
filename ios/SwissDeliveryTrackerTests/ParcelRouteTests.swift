@@ -231,6 +231,37 @@ final class ParcelRouteTests: XCTestCase {
         XCTAssertTrue(overlay.dots.contains { $0.kind == .current })
     }
 
+    func testThePlaceOfTheParcelIsNamedInsideTheFrame() throws {
+        let url = try XCTUnwrap(Bundle.main.url(forResource: "World", withExtension: "json"))
+        let atlas = try WorldAtlas(data: Data(contentsOf: url))
+        let size = CGSize(width: 350, height: 160)
+        func overlay(_ route: ParcelRoute, _ camera: GlobeCamera, _ insets: EdgeInsets) -> MapOverlay {
+            MapOverlay(route: route, camera: camera, size: size, insets: insets, labels: .ends, mode: .journey,
+                       context: false, atlas: atlas, locale: Locale(identifier: "en"), countryName: { $0 })
+        }
+        // On a card, the parcel's place lands at the west end and the destination's ring takes the one side with room.
+        let card = EdgeInsets(top: 40, leading: 16, bottom: 28, trailing: 16)
+        let paris = city("Paris", "FR", 2.55, 49.01)
+        let middles = [0.25, 0.5, 0.75].flatMap { [kyoto.point.interpolated(to: paris.point, $0), paris.point.interpolated(to: switzerland.point, $0)] }
+        let far = GlobeCamera.fit([kyoto.point, paris.point, switzerland.point] + middles,
+                                  in: CGRect(x: 16, y: 40, width: 318, height: 92).insetBy(dx: 11, dy: 11), minimumKilometres: 400, tilt: true)
+        let name = try XCTUnwrap(overlay(ParcelRoute(places: [kyoto, paris], destination: switzerland), far, card).labels.first { $0.text == "Paris" })
+        XCTAssertEqual(name.kind, .current)
+        XCTAssertGreaterThanOrEqual(name.frame.minX, card.leading)
+        XCTAssertLessThanOrEqual(name.frame.maxX, size.width - card.trailing)
+
+        // In the corner of a small frame no side of the dot has room: the name moves in from the edge.
+        let small = EdgeInsets(top: 32, leading: 125, bottom: 32, trailing: 125)
+        let bergamo = city("Bergamo", "IT", 9.67, 45.7)
+        let mulhouse = city("Mulhouse", "FR", 7.34, 47.75)
+        let corner = GlobeCamera.fit([bergamo.point, mulhouse.point], in: CGRect(x: 125, y: 32, width: 100, height: 96).insetBy(dx: 11.52, dy: 11.52),
+                                     minimumKilometres: 120)
+        let moved = try XCTUnwrap(overlay(ParcelRoute(places: [bergamo, mulhouse]), corner, small).labels.first { $0.text == "Mulhouse" })
+        let frame = CGRect(x: small.leading, y: small.top, width: size.width - small.leading - small.trailing,
+                           height: size.height - small.top - small.bottom)
+        XCTAssertTrue(frame.contains(moved.frame), "\(moved.frame)")
+    }
+
     func testDemoParcelsCarryPlaces() {
         let parcels = DemoRepository.seed()
         let matcha = parcels.first { $0.label.hasPrefix("Matcha") }

@@ -32,10 +32,11 @@ const context = new Proxy({} as Record<string | symbol, unknown>, {
   },
 });
 
+let frame = { width: 400, height: 300 };
 class FixedResizeObserver {
   constructor(private readonly callback: ResizeObserverCallback) {}
   observe() {
-    this.callback([{ contentRect: { width: 400, height: 300 } } as ResizeObserverEntry], this as unknown as ResizeObserver);
+    this.callback([{ contentRect: frame } as ResizeObserverEntry], this as unknown as ResizeObserver);
   }
   disconnect() {}
 }
@@ -46,6 +47,7 @@ function reducedMotion(reduce: boolean) {
 
 beforeEach(() => {
   calls = [];
+  frame = { width: 400, height: 300 };
   vi.stubGlobal('ResizeObserver', FixedResizeObserver);
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(() => context as unknown as CanvasRenderingContext2D);
   reducedMotion(true);
@@ -111,6 +113,32 @@ describe('WorldMap', () => {
     expect(screen.getByText('SWITZERLAND')).toHaveAttribute('data-kind', 'area');
     expect(container.querySelector('g[data-kind="destination"]')).not.toBeNull();
     expect(screen.getByRole('img')).toHaveAccessibleName('Map: from China to Switzerland');
+  });
+
+  it('names the parcel\u2019s place inside the frame', async () => {
+    // Where a name is drawn, with the width the recording context measures.
+    const box = (name: HTMLElement) => {
+      const [left, top] = /translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec(name.style.transform)!.slice(1).map(Number);
+      return { left, top, right: left + name.textContent!.length * 6 + 14, bottom: top + 22 };
+    };
+    frame = { width: 350, height: 160 };
+    // On a card, the parcel's place lands at the west end and the destination's ring takes the one side with room.
+    const card = { top: 40, right: 16, bottom: 28, left: 16 };
+    const far = buildRoute([scan(kyoto), scan(city('Paris', 'FR', 2.55, 49.01))], countryPlace('CH', 'Switzerland', [7.46, 46.72]));
+    const { unmount } = render(<WorldMap route={far} mode="journey" time={time} labels="ends" context={false} insets={card} />);
+    const paris = box(await screen.findByText('Paris'));
+    expect(paris.left).toBeGreaterThanOrEqual(card.left);
+    expect(paris.right).toBeLessThanOrEqual(frame.width - card.right);
+    unmount();
+    // In the corner of a small frame no side of the dot has room: the name moves in from the edge.
+    const small = { top: 32, right: 125, bottom: 32, left: 125 };
+    const corner = buildRoute([scan(city('Bergamo', 'IT', 9.67, 45.7)), scan(city('Mulhouse', 'FR', 7.34, 47.75))]);
+    render(<WorldMap route={corner} mode="journey" time={time} labels="ends" context={false} insets={small} />);
+    const mulhouse = box(await screen.findByText('Mulhouse'));
+    expect(mulhouse.left).toBeGreaterThanOrEqual(small.left);
+    expect(mulhouse.right).toBeLessThanOrEqual(frame.width - small.right);
+    expect(mulhouse.top).toBeGreaterThanOrEqual(small.top);
+    expect(mulhouse.bottom).toBeLessThanOrEqual(frame.height - small.bottom);
   });
 
   it('marks the last known stop when the newest scan has no place', async () => {
