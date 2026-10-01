@@ -273,7 +273,7 @@ enum PipArtwork {
         inkFace(face, palette, mood: mood, side: side, below: below)
         if open {
             for (index, glint) in PipGeometry.glints.enumerated() {
-                let twinkle = time.map { twinkle(index, at: $0) } ?? (opacity: 1, scale: 1, degrees: 0)
+                let twinkle = time.map { Self.twinkle(index, at: $0) } ?? (opacity: 1, scale: 1, degrees: 0)
                 var star = body
                 star.opacity = twinkle.opacity
                 star.concatenate(CGAffineTransform(translationX: glint.center.x, y: glint.center.y)
