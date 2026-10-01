@@ -55,7 +55,7 @@ jobs:
   tracking-links:
     name: Rendered UI tracking links
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     outputs:
       failures: ${{ steps.links.outputs.failures }}
     steps:
@@ -70,7 +70,9 @@ jobs:
         id: links
         env:
           CANARY_SUMMARY_TITLE: Rendered UI tracking links
-        run: npm run test:tracking-links -- --retry 1
+        # The retry waits out a rotating DNS answer: some carrier CDNs hand out
+        # an edge the runner cannot reach, for about a minute at a time.
+        run: npm run test:tracking-links -- --retry.count 1 --retry.delay 70000
 
   report:
     name: Track failures in an issue
