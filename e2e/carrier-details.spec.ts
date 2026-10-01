@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 import type { ParcelWithEvents } from '../src/types';
 
 test('localizes carrier details and opens the missing-input editor without overflow', async ({ page }, testInfo) => {
-  const now = new Date();
+  const now = new Date('2026-01-15T12:00:00Z');
+  await page.clock.setFixedTime(now);
   const date = (days: number) => new Date(now.getTime() + days * 86400000).toISOString().slice(0, 10);
   const parcel: ParcelWithEvents = {
     id: 'carrier-details', carrier: 'heppner', trackingNumber: '12345678', label: 'Livraison bureau',

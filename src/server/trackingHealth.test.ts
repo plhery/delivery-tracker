@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { NoHistoryError } from '@carriers/core/errors';
-import { TrackingCaptureError } from '@carriers/providers/shared/capture';
+import { NoHistoryError } from 'universal-parcel-scraper';
+import { TrackingCaptureError } from 'universal-parcel-scraper/node';
 import { healthMessage, healthStepRecorder, observeTrackingHealth, type HealthSample } from './trackingHealth';
 import { TrackingSyncAudit } from './trackingAudit';
 import type { SupabaseServiceClient } from './supabase';

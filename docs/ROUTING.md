@@ -15,8 +15,8 @@ provider.
 2. **Carriers that recognize the number**, when the filed carrier cannot track it (see
    Carrier recognition below).
 3. **Universal providers**, by default ParcelsApp → Ship24 → 17TRACK → UPU.
-   - A carrier with results in [coverage.json](../packages/carriers/providers/coverage.json)
-     gets its own order, listed in [COVERAGE.md](../packages/carriers/providers/COVERAGE.md):
+   - A carrier with results in [coverage.json](https://github.com/plhery/universal-parcel-scraper/blob/main/providers/coverage.json)
+     gets its own order, listed in [COVERAGE.md](https://github.com/plhery/universal-parcel-scraper/blob/main/providers/COVERAGE.md):
      providers by the tier its results give them (full history, partial history, nothing
      conclusive, answered without history), HTTP providers (ParcelsApp, Ship24) before the
      browser-service ones (Postal Ninja, 17TRACK) within a tier, then the default order. A
@@ -32,7 +32,7 @@ provider.
      17TRACK.
    - Exception: checksum-valid China Post `C…CN` and `L…CN` numbers try 17TRACK first,
      because it returns much richer history for them (see
-     [COMPARISON.md](../packages/carriers/providers/COMPARISON.md)). Dedicated adapters such
+     [COMPARISON.md](https://github.com/plhery/universal-parcel-scraper/blob/main/providers/COMPARISON.md)). Dedicated adapters such
      as EMS still go first.
 
 **Affinity.** A provider that returns history is saved with its lookup number in
@@ -42,7 +42,7 @@ it, each within its own backoff, so a parcel moves up to a fuller history and ne
 down.
 
 **Royal Mail** uses the universal providers. Its browser adapter exists but isn't an active
-route (see its [README](../packages/carriers/carriers/royal-mail/README.md)).
+route (see its [README](https://github.com/plhery/universal-parcel-scraper/blob/main/carriers/royal-mail/README.md)).
 
 ## When a source fails
 
@@ -114,7 +114,7 @@ Post 17TRACK route skip shadow checks.
 | Everything fails | Keep progress, store the next check time, keep affinity until a replacement works. |
 | User switches to a worse carrier | Check the new choice first. If the previously confirmed route still works, restore it with the same notice, using the postcode or link saved with it. Choosing the confirmed carrier again replaces those with what the user entered, so a cleared postcode is not reused. Generation fencing cancels in-flight work. |
 | Older or regressing result | Keep the newer or terminal state. A successful response never downgrades status. |
-| Same scan from several sources | Stored once. A universal copy of a stored scan is not stored: the same instant with the same wording or stage, or the same wording a whole number of quarter hours up to 14 h away (a zone the provider misread). A carrier's scan takes over the universal copy stored while its lookup was down, and DPD's scan also takes over the one stored DPD row at its exact instant; the row is updated in place. A taken-over row keeps its identity, so a later universal reply may reword it at the same instant (its wording follows the source that answered last) but never moves it. Any other carrier rewording is a new stored event ([`eventIdentity.ts`](../src/server/eventIdentity.ts), [DPD README](../packages/carriers/carriers/dpd/README.md)). |
+| Same scan from several sources | Stored once. A universal copy of a stored scan is not stored: the same instant with the same wording or stage, or the same wording a whole number of quarter hours up to 14 h away (a zone the provider misread). A carrier's scan takes over the universal copy stored while its lookup was down, and DPD's scan also takes over the one stored DPD row at its exact instant; the row is updated in place. A taken-over row keeps its identity, so a later universal reply may reword it at the same instant (its wording follows the source that answered last) but never moves it. Any other carrier rewording is a new stored event ([`eventIdentity.ts`](../src/server/eventIdentity.ts), [DPD README](https://github.com/plhery/universal-parcel-scraper/blob/main/carriers/dpd/README.md)). |
 
 ## Carrier recognition
 
@@ -122,7 +122,7 @@ A number whose shape fits several carriers is checked with the carriers that can
 cheaply ([`carrierRecognition.ts`](../src/server/carrierRecognition.ts)). A carrier
 qualifies when its `carrier.json` declares `tracking.recognition` and its adapter
 implements `recognize()`: plain HTTP, a clean not-found, no browser. Which carriers are
-asked is shared code ([`recognition.ts`](../packages/carriers/core/catalog/recognition.ts));
+asked is shared code ([`recognition.ts`](https://github.com/plhery/universal-parcel-scraper/blob/main/core/catalog/recognition.ts));
 the web and iOS Add sheets name them while they answer, and the iOS port replays the
 detection golden file's `asked` lists. Carriers that only
 answer through a browser (DHL, FedEx, UPS, USPS, DPD France, Mondial Relay, SF Express)
@@ -168,7 +168,7 @@ A parcel often changes carrier at the border. The origin history is always kept.
 - Adapters can report `delivery_carrier`, `delivery_tracking_number` or an official
   partner link. Names and links are resolved through the carrier catalog.
 - With no named partner, a checksum-valid S10 number and a reported destination country can
-  propose **one** national-post lookup ([catalog hints](../packages/carriers/core/catalog/hints.ts)).
+  propose **one** national-post lookup ([catalog hints](https://github.com/plhery/universal-parcel-scraper/blob/main/core/catalog/hints.ts)).
   The issuer suffix and transit scans never pick the operator.
 - The partner is only adopted once its own adapter (no required inputs) returns dated,
   fresh progress. A partner whose only input is optional (DPD's postcode) is asked without
@@ -183,7 +183,7 @@ UPU times have no reliable zone. Its scans are archived separately (up to 1,000 
 number). Only newly observed milestones enter the visible timeline, stamped at observation
 time and flagged as lacking a provider time. UPU can update its own summary but never
 proves freshness against another source, and forecasts are ignored. See the
-[UPU README](../packages/carriers/providers/upu/README.md).
+[UPU README](https://github.com/plhery/universal-parcel-scraper/blob/main/providers/upu/README.md).
 
 Universal providers also get the catalog timezone of the parcel's carrier, used only for
 scans with no trustworthy zone of their own (ParcelsApp's, and Ship24's offset-less legs).
@@ -200,7 +200,7 @@ watermark hours ahead and make the carrier's own reply look older.
 Some direct feeds omit scan clocks, offsets or the event year. An adapter may guess a clock
 it knows the feed uses, such as PostNL's own records on Amsterdam time. The guess stands
 only if it fits between the feed's dated scans and isn't after the lookup
-([`settleGuessedClocks`](../packages/carriers/core/time/index.ts)). The router keeps
+([`settleGuessedClocks`](https://github.com/plhery/universal-parcel-scraper/blob/main/core/time/index.ts)). The router keeps
 histories that are still incomplete separately, including return-leg and summary markers.
 When the current status has no complete timestamp, it tries providers for dated progress. If
 providers cannot help, the direct current status remains available without advancing the

@@ -1,19 +1,15 @@
+import records from './fixtures/expandedResults.json';
+import { CarrierError, type CarrierErrorKind } from 'universal-parcel-scraper';
 // @vitest-environment node
-import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { NOOP_RECORDER } from '@carriers/core/telemetry';
-import type { CarrierResult } from '@carriers/core/result';
-import type { TrawlClient } from '@carriers/core/transport';
+import { NOOP_RECORDER } from 'universal-parcel-scraper/node';
+import type { CarrierResult } from 'universal-parcel-scraper';
 import { createAdapterRegistry } from './adapterRegistry';
 import { buildEvents, CarrierTrackingAdapter } from './trackingSync';
 import { TrackingRouter } from './trackingRouting';
 import { captureDirectLocalHistory, directLocalHistory, hasUnresolvedDirectCurrent, hasUnresolvedDirectHistory } from './directLocalHistory';
-import type { UniversalTracker } from '@carriers/providers/universal';
+import type { UniversalTracker } from 'universal-parcel-scraper/node';
 import * as observability from './observability';
-import { CorreiosOcr } from '@carriers/carriers/correios-br/ocr';
-import { UkrposhtaTracker } from '@carriers/carriers/ukrposhta/adapter';
-import { parseUkrposhtaHistory, parseUkrposhtaOverview } from '@carriers/carriers/ukrposhta/parser';
-import * as yundaChallenge from '@carriers/carriers/yunda/challenge';
 
 const cases = [
   { carrier: 'austrian-post', number: '1000000000000000000001', fixture: 'delivered.json' },
@@ -69,141 +65,16 @@ const cases = [
 
 ];
 
-function setup(entry: typeof cases[number], transform = (body: string) => body) {
-  let body = readFileSync(new URL(`../../packages/carriers/carriers/${entry.carrier}/fixtures/${entry.fixture}`, import.meta.url), 'utf8');
-  if (entry.carrier === 'four-px') {
-    const value = JSON.parse(body);
-    for (const scan of value.data[0].tracks) scan.tkTimezone = '';
-    body = JSON.stringify(value);
-  }
-  if (entry.carrier === 'yunexpress') {
-    const value = JSON.parse(body);
-    value.ResultList[0].TrackInfo.LastTrackEvent.GmtProcessTimezone = '';
-    body = JSON.stringify(value);
-  }
-  if (entry.carrier === 'spring-gds') {
-    const value = JSON.parse(body);
-    value.data.items[0].events[0].country_code = 'US';
-    value.data.items[0].events[0].country_name = 'United States';
-    body = JSON.stringify(value);
-  }
-  if (entry.carrier === 'uniuni') {
-    const value = JSON.parse(body);
-    delete value.data.valid_tno[0].spath_list.at(-1).dateTime.ts;
-    body = JSON.stringify(value);
-  }
-  if (entry.carrier === 'ctt-express') {
-    const value = JSON.parse(body);
-    value.data.shipping_history.events.at(-1).event_date = '2026-01-04T10:00:00';
-    body = JSON.stringify(value);
-  }
-  if (entry.carrier === 'pos-malaysia') {
-    body = JSON.stringify({ code: 'S0000', message: 'Success', data: [JSON.parse(body)] });
-  }
-  if (entry.carrier === 'ninja-van') {
-    const value = JSON.parse(body);
-    value.events.at(-2).time = '2026-02-30T09:00:00Z';
-    body = JSON.stringify(value);
-  }
-  if (entry.carrier === 'seur') {
-    const value = JSON.parse(body);
-    value.situaciones[0].fecha = '2026-01-23T13:13:05';
-    body = JSON.stringify(value);
-  }
-  if (entry.carrier === 'landmark-global') body = body.replace(/<input id="utc_server_offset"[^>]*>/, '');
-  if (entry.carrier === 'nz-post') {
-    const value = JSON.parse(body);
-    value.results[0].tracking_events.at(-1).date_time = '2026-01-05T10:00:00';
-    body = JSON.stringify(value);
-  }
-  if (entry.carrier === 'gofo') {
-    const value = JSON.parse(body);
-    value.data.success[0].trackEventList[0].processDate = '2026-01-04T12:00:00.000';
-    value.data.success[0].lastTrackEvent.processDate = '2026-01-04T12:00:00.000';
-    body = JSON.stringify(value);
-  }
-  if (entry.carrier === 'ecoscooting') {
-    const value = JSON.parse(body);
-    delete value.statuses[0].opTimestamp;
-    body = JSON.stringify(value);
-  }
-  if (entry.carrier === 'the-courier-guy') {
-    const value = JSON.parse(body);
-    value.shipments[0].tracking_events[0].date = '2026-01-06T12:00:00';
-    body = JSON.stringify(value);
-  }
-  if (entry.carrier === 'bring-posten') {
-    const value = JSON.parse(body);
-    const parcel = value.consignmentWithDomainAsync.packageSet[0];
-    parcel.eventSet[0].dateIso = parcel.domain.latestSignificantEvent.dateIso = '2026-01-06T12:00:00';
-    body = JSON.stringify(value);
-  }
-  if (entry.carrier === 'canada-post') {
-    const value = JSON.parse(body);
-    delete value.events[0].datetime.zoneOffset;
-    body = JSON.stringify(value);
-  }
-  if (entry.carrier === 'relais-colis') body = body.replace('28-04-2026 à 15h21', '28-04-2026');
-  if (entry.carrier === 'ciblex') body = body.replace('10:01:23', 'invalid clock');
-  body = transform(body);
-  if (entry.carrier === 'ukrposhta') {
-    const payload = JSON.parse(body);
-    vi.spyOn(UkrposhtaTracker.prototype, 'fetch').mockResolvedValue(
-      parseUkrposhtaHistory(payload.history, parseUkrposhtaOverview(payload.overview, entry.number)));
-  }
-  if (entry.carrier === 'correios-br') vi.spyOn(CorreiosOcr.prototype, 'solve').mockResolvedValue('abcd');
-  if (entry.carrier === 'yunda') vi.spyOn(yundaChallenge, 'solveYundaSlider').mockResolvedValue({ x: 100, y: 40 });
-  const fetcher = vi.fn<typeof fetch>().mockImplementation(async (url, init) => {
-    if (entry.carrier === 'correos-chile' && init?.method !== 'POST') {
-      const page = readFileSync(new URL('../../packages/carriers/carriers/correos-chile/fixtures/bootstrap.html', import.meta.url), 'utf8');
-      return new Response(page, { headers: [
-        ['set-cookie', 'JSESSIONID=syntheticSession123; Path=/; Secure; HttpOnly'],
-        ['set-cookie', 'SERVER_ID=syntheticServer123; Path=/; Secure'],
-      ] });
-    }
-    if (entry.carrier === 'relais-colis' && init?.method !== 'POST') {
-      return new Response('<input id="track_package__token" value="synthetic-csrf-token">');
-    }
-    if (entry.carrier === 'nacex') {
-      if (String(url).endsWith('/irSeguimiento.do')) {
-        return new Response('<form name="seguimientoFormulario" method="post" action="/seguimientoFormulario.do"><input name="agencia_origen"><input name="numero_albaran"></form>',
-          { headers: { 'set-cookie': 'JSESSIONID=synthetic-session; Path=/' } });
-      }
-      if (String(url).endsWith('/seguimientoFormulario.do')) {
-        return new Response(null, { status: 302, headers: {
-          location: '/seguimientoDetalle.do?agencia_origen=9900&numero_albaran=99000002&estado=1&internacional=0&externo=N&usr=null&pas=null',
-        } });
-      }
-      return new Response(body, { headers: { 'content-type': 'text/html; charset=utf-8' } });
-    }
-    if (entry.carrier === 'estafeta' && String(url).endsWith('/GetTrackingItemHistory')) {
-      return new Response(readFileSync(new URL(`../../packages/carriers/carriers/estafeta/fixtures/${entry.fixture === 'full-guide-lookup.html' ? 'full-guide-history.html' : 'delivered-history.html'}`, import.meta.url), 'utf8'));
-    }
-    if (entry.carrier === 'poczta-polska' && String(url) === 'https://emonitoring.poczta-polska.pl/') {
-      return new Response(readFileSync(new URL('../../packages/carriers/carriers/poczta-polska/fixtures/bootstrap.html', import.meta.url), 'utf8'));
-    }
-    if (entry.carrier === 'spring-gds' && String(url).endsWith('/auth/token')) return Response.json({ access_token: 'synthetic-visitor-token' });
-    if (entry.carrier === 'yunda') {
-      if (String(url).includes('/captcha_type?')) return Response.json({ code: 200, data: 1 });
-      if (String(url).includes('/captcha?')) return Response.json({ code: 200, data: {} });
-    }
-    if (entry.carrier === 'correios-br') {
-      if (String(url).includes('/app/index.php')) return new Response('<html>Tracking</html>');
-      if (String(url).includes('/securimage_show.php')) return new Response('synthetic image', { headers: { 'content-type': 'image/png' } });
-    }
-    if (entry.carrier === 'aramex' && String(url).includes('/track/shipments')) {
-      return new Response(`<a class="shipment-card" href="/track/details?q=synthetic"><div class="shipment-num"><h5>${entry.number}</h5></div></a>`);
-    }
-    return new Response(body, { headers: { 'content-type': entry.carrier === 'brt' ? 'text/html; charset=utf-8' : 'text/plain; charset=utf-8' } });
+function setup(entry: typeof cases[number], variant = '') {
+  const record = (records as Record<string, { result?: CarrierResult; error?: { kind: string; message: string } }>)[`${entry.carrier}/${entry.fixture}/${variant}`];
+  if (!record) throw new Error('Missing synthetic scraper result');
+  const registry = createAdapterRegistry({ trawl: null, browserExecutablePath: null, env: {}, recorder: NOOP_RECORDER });
+  const track = vi.spyOn(registry.for(entry.carrier)!, 'track').mockImplementation(async () => {
+    if (record.error) throw new CarrierError(record.error.kind as CarrierErrorKind, entry.carrier, record.error.message);
+    return structuredClone(record.result!);
   });
-  const trawl = entry.carrier === 'yunexpress' ? { scrape: vi.fn().mockResolvedValue({
-    capturedResponses: [{ url: 'https://services.yuntrack.com/Track/Query', status: 200,
-      body, base64Encoded: false, truncated: false, error: null }],
-  }) } : null;
-  const registry = createAdapterRegistry({ fetcher, trawl: trawl as unknown as TrawlClient | null, browserExecutablePath: null, env: {}, recorder: NOOP_RECORDER });
   const universal = { fetch: vi.fn() };
-  const adapter = new CarrierTrackingAdapter(universal as unknown as UniversalTracker, registry, NOOP_RECORDER);
-  return { adapter, registry, fetcher };
+  return { adapter: new CarrierTrackingAdapter(universal as unknown as UniversalTracker, registry, NOOP_RECORDER), registry, track };
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -215,7 +86,7 @@ describe('expanded direct coverage through the host', () => {
     const result = await test.adapter.fetch(entry.carrier, entry.number, null);
     expect(result.events?.length).toBeGreaterThan(0);
     expect(result).not.toHaveProperty('tracking_provider');
-    expect(test.fetcher).toHaveBeenCalledTimes(['yunexpress', 'ukrposhta'].includes(entry.carrier) ? 0 : ['aramex', 'spring-gds', 'poczta-polska', 'estafeta', 'relais-colis', 'correos-chile'].includes(entry.carrier) ? 2 : ['correios-br', 'yunda', 'nacex'].includes(entry.carrier) ? 3 : 1);
+    expect(test.track).toHaveBeenCalledOnce();
   });
 
   it.each(cases.filter(entry => entry.unresolved))('$carrier saves unresolved direct dates while using dated provider progress', async entry => {
@@ -241,8 +112,7 @@ describe('expanded direct coverage through the host', () => {
 
   it('keeps Ciblex current unknown wording separate from an older delivery', async () => {
     const entry = cases.find(entry => entry.carrier === 'ciblex')!;
-    const test = setup(entry, body => body.replace('Colis Livré', 'Nouvelle formulation inconnue')
-      .replace('Mis en livraison', 'Colis Livré'));
+    const test = setup(entry, 'unknown');
     const result = await test.adapter.fetch(entry.carrier, entry.number, null);
     expect(result.status).toBe('unknown');
     expect(result.current_stage).toBeUndefined();
@@ -264,13 +134,7 @@ describe('expanded direct coverage through the host', () => {
 
   it.each(['yto', 'correios-br', 'yunda'])('archives an unresolved %s current clock and asks providers for dated progress', async carrier => {
     const entry = cases.find(entry => entry.carrier === carrier)!;
-    const test = setup(entry, (body) => {
-      const payload = JSON.parse(body);
-      if (carrier === 'yto') payload[0].waybillProcessInfo[0].opTime = '2026-02-30 18:00:00';
-      else if (carrier === 'correios-br') payload.eventos[0].dtHrCriado.date = '2026-02-30 18:00:00';
-      else payload.data.logistic[entry.number].gn.at(-1).scanTm = '2026-02-30 18:00:00';
-      return JSON.stringify(payload);
-    });
+    const test = setup(entry, 'invalid-clock');
     const direct = await test.adapter.fetch(entry.carrier, entry.number, null);
     expect(hasUnresolvedDirectCurrent(entry.carrier, direct)).toBe(true);
     expect(direct.events?.[0]).toMatchObject({ provider_time_text: '2026-02-30 18:00:00' });
@@ -289,12 +153,7 @@ describe('expanded direct coverage through the host', () => {
   it.each(['ontrac', 'aramex'])('%s asks providers when the current scan has no clock at all', async carrier => {
     vi.spyOn(observability, 'reportRoutingEvent').mockImplementation(() => undefined);
     const entry = cases.find(entry => entry.carrier === carrier)!;
-    const test = setup(entry, body => {
-      if (carrier === 'aramex') return body.replaceAll(/<span class="(?:date|time)">[^<]*<\/span>/g, '');
-      const payload = JSON.parse(body);
-      delete payload.Packages[0].Events[0].ZonedEventDateTime;
-      return JSON.stringify(payload);
-    });
+    const test = setup(entry, 'no-clock');
     const direct = await test.adapter.fetch(carrier, entry.number, null);
     expect(hasUnresolvedDirectCurrent(carrier, direct)).toBe(true);
     expect(direct.events?.[0]).not.toHaveProperty('time');
@@ -334,11 +193,7 @@ describe('expanded direct coverage through the host', () => {
   it('archives an undated Pos Malaysia delivery summary without borrowing an older movement clock', async () => {
     vi.spyOn(observability, 'reportRoutingEvent').mockImplementation(() => undefined);
     const entry = cases.find(entry => entry.carrier === 'pos-malaysia')!;
-    const direct = await setup(entry, body => {
-      const payload = JSON.parse(body);
-      payload.data[0].process_status = 'DELIVERED';
-      return JSON.stringify(payload);
-    }).adapter.fetch(entry.carrier, entry.number, null);
+    const direct = await setup(entry, 'delivered-summary').adapter.fetch(entry.carrier, entry.number, null);
     expect(direct).toMatchObject({ status: 'delivered', last_update: null, events: [
       expect.objectContaining({ stage: 'delivered', summary_snapshot: true }),
       ...Array.from({ length: 5 }, () => expect.any(Object)),
@@ -372,16 +227,7 @@ describe('expanded direct coverage through the host', () => {
   it('falls back from mismatched YunExpress latest history without consuming its dated scans', async () => {
     vi.spyOn(observability, 'reportRoutingEvent').mockImplementation(() => undefined);
     const entry = cases.find(entry => entry.carrier === 'yunexpress')!;
-    const test = setup(entry, body => {
-      const payload = JSON.parse(body);
-      const item = payload.ResultList[0];
-      for (const group of item.TrackData.ProcessGroupList) {
-        for (const scan of group.ProcessDetailList) scan.ProcessDate += '-04:00';
-      }
-      item.TrackInfo.LastTrackEvent.ProcessDate += '-04:00';
-      item.TrackInfo.LastTrackEvent.ProcessLocation = 'Different facility';
-      return JSON.stringify(payload);
-    });
+    const test = setup(entry, 'mismatch');
     await expect(test.adapter.fetch(entry.carrier, entry.number, null)).rejects.toMatchObject({ kind: 'indeterminate' });
     const providerEvents = [{ time: '2026-04-01T10:00:00Z', description: 'Out for delivery', stage: 'out_for_delivery' }];
     const universal = vi.fn().mockResolvedValue({ status: 'out_for_delivery', current_stage: 'out_for_delivery',
@@ -411,12 +257,8 @@ describe('expanded direct coverage through the host', () => {
 
   it('keeps a DTDC return active through the host until delivery back to the sender', async () => {
     const entry = cases.find(entry => entry.carrier === 'dtdc')!;
-    for (const [wording, stage] of [['RTO Booked', 'exception'], ['In Transit', 'in_transit'], ['Out For Delivery', 'out_for_delivery'], ['Delivered', 'returned']]) {
-      const test = setup(entry, body => {
-        const payload = JSON.parse(body);
-        Object.assign(payload.data, { type: 'rto', status_external: wording, current_event_description: wording, timestamp: 1767790800000 });
-        return JSON.stringify(payload);
-      });
+    for (const stage of ['exception', 'in_transit', 'out_for_delivery', 'returned']) {
+      const test = setup(entry, `return-${stage}`);
       const result = await test.adapter.fetch(entry.carrier, entry.number, null);
       expect(result.current_stage).toBe(stage);
       expect(result).not.toHaveProperty('delivered_at');

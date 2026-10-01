@@ -1,5 +1,5 @@
 /**
- * Moved to `@carriers/core/detection`. This module stays as the import path the
+ * Moved to `universal-parcel-scraper`. This module stays as the import path the
  * application already uses.
  */
-export { isValidMondialRelayBarcode } from '@carriers/core/detection';
+export { isValidMondialRelayBarcode } from 'universal-parcel-scraper';

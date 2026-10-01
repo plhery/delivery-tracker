@@ -1,4 +1,4 @@
-import type { AdapterRegistry } from '@carriers/core/adapter';
+import type { AdapterRegistry } from 'universal-parcel-scraper/node';
 import { isAmazonTrackingNumber } from '../../../../src/lib/amazon';
 import { checkAmazonShipping } from '../../../../src/server/amazonShippingEligibility';
 import { createAdapterRegistry } from '../../../../src/server/adapterRegistry';

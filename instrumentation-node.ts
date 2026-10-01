@@ -1,5 +1,5 @@
 import { startBackgroundServices } from './src/server/background';
-import { preloadPlaces } from './src/server/places';
+import { preloadPlaces } from 'universal-parcel-scraper/places';
 import { installShutdownHandlers } from './src/server/shutdown';
 
 // Invalid server-side credentials are a deployment failure. Let initialization

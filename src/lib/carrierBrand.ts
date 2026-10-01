@@ -5,7 +5,7 @@ import {
   carrierBrand as carrierPalette,
   carrierBrandFamily,
   carrierDecal,
-} from '@carriers/core/brand';
+} from '../brand';
 import type { CarrierInfo } from './carriers';
 
 export { DEFAULT_CARRIER_COLOR, carrierBrandFamily, carrierDecal };
@@ -15,8 +15,8 @@ const WORDMARKS: Record<string, string> = { dhl: 'DHL', gls: 'GLS', ups: 'ups' }
 
 /**
  * Only the approved wordmarks need special treatment; new carriers use catalog
- * colors. Both the palette and the livery are data in the carrier folders, read
- * through `packages/carriers/core/brand`.
+ * colors. Both the palette and the livery are app data, read
+ * through `src/brand`.
  */
 export function carrierBrand(carrier: CarrierInfo) {
   const family = carrierBrandFamily(carrier.id);

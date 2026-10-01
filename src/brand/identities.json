@@ -1,0 +1,266 @@
+{
+  "aliexpress": {},
+  "amazon-logistics": {
+    "decal": "amazon",
+    "palette": {
+      "truck": "#232f3e",
+      "edge": "#131a22",
+      "accent": "#ff9900"
+    }
+  },
+  "amazon-shipping": {
+    "family": "amazon-logistics"
+  },
+  "an-post": {},
+  "aramex": {},
+  "asendia": {},
+  "australia-post": {},
+  "austrian-post": {
+    "palette": {
+      "accent": "#1a1a1a",
+      "brand-light": "#1a1a1a"
+    }
+  },
+  "blue-dart": {},
+  "bpost": {},
+  "bring-posten": {},
+  "brt": {},
+  "c-chez-vous": {},
+  "canada-post": {},
+  "canpar": {},
+  "china-post": {},
+  "chronopost": {
+    "decal": "chronopost",
+    "palette": {
+      "accent": "#0094cf",
+      "truck": "#ffffff",
+      "edge": "#0056a7"
+    }
+  },
+  "ciblex": {},
+  "colis-prive": {},
+  "colisweb": {},
+  "correios-br": {
+    "palette": {
+      "accent": "#06416a",
+      "brand-light": "#06416a"
+    }
+  },
+  "correos-chile": {},
+  "correos-express": {
+    "palette": {
+      "accent": "#002e6d",
+      "brand-light": "#002e6d"
+    }
+  },
+  "correos-spain": {
+    "palette": {
+      "accent": "#002e6d",
+      "brand-light": "#002e6d"
+    }
+  },
+  "ctt": {},
+  "ctt-express": {},
+  "dachser": {},
+  "delhivery": {},
+  "delivengo": {},
+  "dhl": {
+    "palette": {
+      "surface-light": "#f7e8aa",
+      "surface-dark": "#514727",
+      "ink-light": "#6c5419",
+      "ink-dark": "#ead695",
+      "brand-light": "#d40511",
+      "brand-dark": "#ffe274",
+      "truck": "#ffcc00",
+      "edge": "#b88d16",
+      "accent": "#d40511"
+    },
+    "decal": "dhl"
+  },
+  "dhl-ecommerce": {
+    "family": "dhl"
+  },
+  "dpd": {
+    "decal": "dpd"
+  },
+  "dpd-fr": {
+    "family": "dpd"
+  },
+  "dtdc": {},
+  "ecoscooting": {},
+  "ems": {},
+  "estafeta": {},
+  "evri": {
+    "palette": {
+      "accent": "#53efef"
+    }
+  },
+  "fedex": {
+    "palette": {
+      "accent": "#ff6600"
+    },
+    "decal": "fedex"
+  },
+  "four-px": {},
+  "geodis": {},
+  "gls-ch": {
+    "family": "gls",
+    "palette": {
+      "surface-light": "#dfebfa",
+      "surface-dark": "#293e57",
+      "ink-light": "#355e8a",
+      "ink-dark": "#b7d1ee",
+      "brand-light": "#1634a7",
+      "brand-dark": "#abc7ff",
+      "truck": "#1634a7",
+      "edge": "#1634a7",
+      "accent": "#ffcf00"
+    }
+  },
+  "gls-de": {
+    "family": "gls"
+  },
+  "gls-fr": {
+    "family": "gls"
+  },
+  "gofo": {},
+  "heppner": {},
+  "hermes": {},
+  "hermes-de": {},
+  "hongkong-post": {},
+  "india-post": {
+    "decal": "india-post",
+    "palette": {
+      "accent": "#fedb01"
+    }
+  },
+  "inpost": {
+    "palette": {
+      "accent": "#1d1d1d",
+      "brand-light": "#1d1d1d"
+    }
+  },
+  "intl-post": {},
+  "j-and-t": {},
+  "japan-post": {
+    "decal": "japan-post"
+  },
+  "jd-logistics": {},
+  "korea-post": {},
+  "la-poste": {
+    "decal": "la-poste",
+    "palette": {
+      "accent": "#003da5",
+      "brand-light": "#003da5"
+    }
+  },
+  "landmark-global": {},
+  "mondial-relay": {
+    "decal": "mondial-relay",
+    "palette": {
+      "truck": "#f5a9bb",
+      "edge": "#94154b",
+      "accent": "#94154b",
+      "brand-light": "#94154b",
+      "brand-dark": "#f5a9bb"
+    }
+  },
+  "mrw": {},
+  "nacex": {},
+  "ninja-van": {},
+  "nz-post": {},
+  "old-dominion": {},
+  "ontrac": {},
+  "paack": {},
+  "packeta": {},
+  "parcelforce": {},
+  "planzer": {},
+  "poczta-polska": {},
+  "pos-malaysia": {},
+  "poste-italiane": {
+    "palette": {
+      "accent": "#0047bb",
+      "brand-light": "#0047bb"
+    }
+  },
+  "posti": {},
+  "postlogistics": {
+    "family": "swiss-post"
+  },
+  "postnord": {},
+  "purolator": {},
+  "quickpac": {
+    "decal": "quickpac"
+  },
+  "relais-colis": {},
+  "royal-mail": {},
+  "seur": {},
+  "sf-express": {},
+  "shipup": {},
+  "singapore-post": {},
+  "spee-dee": {},
+  "speedx": {},
+  "spring-gds": {
+    "decal": "postnl"
+  },
+  "sto": {},
+  "sunyou": {},
+  "swiss-post": {
+    "decal": "swiss-post",
+    "palette": {
+      "accent": "#141414",
+      "brand-light": "#141414"
+    }
+  },
+  "swiss-post-cargo": {
+    "family": "swiss-post"
+  },
+  "thailand-post": {},
+  "the-courier-guy": {},
+  "tipsa": {
+    "palette": {
+      "accent": "#ff4f00"
+    }
+  },
+  "tnt": {},
+  "ukrposhta": {
+    "palette": {
+      "accent": "#0e2f4b",
+      "brand-light": "#0e2f4b"
+    }
+  },
+  "uniuni": {},
+  "unknown": {},
+  "ups": {
+    "palette": {
+      "surface-light": "#ede3d5",
+      "surface-dark": "#463a2c",
+      "ink-light": "#78573e",
+      "ink-dark": "#dbc2a4",
+      "brand-light": "#573626",
+      "brand-dark": "#ebca99",
+      "truck": "#573626",
+      "edge": "#573626",
+      "accent": "#f5c86b"
+    },
+    "decal": "ups"
+  },
+  "usps": {},
+  "yamato": {
+    "palette": {
+      "accent": "#141414",
+      "brand-light": "#141414"
+    }
+  },
+  "yanwen": {},
+  "yto": {},
+  "yunda": {
+    "palette": {
+      "accent": "#393838",
+      "brand-light": "#393838"
+    }
+  },
+  "yunexpress": {},
+  "zto": {}
+}

@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TrackingSyncService } from './trackingSync';
 import { upuHistory } from './upuHistory';
-import { parseUpuResponse } from '@carriers/providers/upu/adapter';
-import { NotFoundError } from '@carriers/core/errors';
+import { carrierResult } from '../test/carrierResults';
+import { NotFoundError } from 'universal-parcel-scraper';
 import type { SupabaseServiceClient } from './supabase';
 import { isRecord, type JsonObject } from './types';
 import * as observability from './observability';
@@ -13,7 +13,7 @@ const scan = (EventCd: string, EventNm: string, EventDT: string) => ({ EventCd, 
 const first = scan('EMA', 'Posting/Collection', '2026-09-18T10:00:00Z');
 const second = scan('EMB', 'Arrival at outward office of exchange', '2026-09-19T10:00:00Z');
 const third = scan('EMC', 'Departure from outward office of exchange', '2026-09-20T10:00:00Z');
-const parse = (Events = [first, second]) => parseUpuResponse([{ ID: number, Events }], number);
+const parse = (Events = [first, second]) => carrierResult(Events.length === 2 ? 'upu-0-1' : Events[0].EventCd === 'EMA' ? 'upu-0' : Events[0].EventCd === 'EMB' ? 'upu-1' : 'upu-2');
 afterEach(() => vi.restoreAllMocks());
 
 function setup() {

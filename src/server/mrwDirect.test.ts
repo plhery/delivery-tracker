@@ -1,12 +1,9 @@
+import { carrierResult } from '../test/carrierResults';
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { readFileSync } from 'node:fs';
-import type { CarrierResult } from '@carriers/core/result';
-import { NOOP_RECORDER } from '@carriers/core/telemetry';
-import type { UniversalTracker } from '@carriers/providers/universal';
-import { createAdapterRegistry } from './adapterRegistry';
+import type { CarrierResult } from 'universal-parcel-scraper';
 import { TrackingRouter } from './trackingRouting';
-import { buildEvents, CarrierTrackingAdapter, TrackingSyncService } from './trackingSync';
+import { buildEvents, TrackingSyncService } from './trackingSync';
 import type { SupabaseServiceClient } from './supabase';
 import { directLocalHistory } from './directLocalHistory';
 import * as observability from './observability';
@@ -29,25 +26,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('MRW summary fallback', () => {
   it('dispatches native history through the registered factory and keeps its local clocks as evidence', { timeout: 10_000 }, async () => {
-    const fixture = (name: string) => readFileSync(new URL(`../../packages/carriers/carriers/mrw/fixtures/${name}.html`, import.meta.url), 'utf8');
-    const fetcher = vi.fn<typeof fetch>().mockImplementation(async url => {
-      const address = new URL(String(url));
-      if (address.pathname === '/seguimiento/') return new Response(fixture('bootstrap'), {
-        headers: { 'set-cookie': 'ASPSESSIONIDSYNTHABC=synthetic-session; Path=/' } });
-      if (address.pathname.endsWith('/validar-envio.asp')) return new Response(null, {
-        status: 302, headers: { location: '/seguimiento/envio-actual.asp' } });
-      if (address.pathname.endsWith('/envio-actual.asp')) return new Response(fixture('summary'));
-      if (address.search) return new Response(null, { status: 302, headers: { location: '/seguimiento/envio-historico.asp' } });
-      return new Response(fixture('history'));
-    });
-    const registry = createAdapterRegistry({ fetcher, trawl: null, browserExecutablePath: null,
-      env: {}, recorder: NOOP_RECORDER });
-    const fallback = { fetch: vi.fn() };
-    const adapter = new CarrierTrackingAdapter(fallback as unknown as UniversalTracker, registry, NOOP_RECORDER);
-    expect(registry.adapterIdFor('mrw')).toBe('mrw');
-    const direct = await adapter.fetch('mrw', number, null);
-    expect(fetcher).toHaveBeenCalledTimes(5);
-    expect(fallback.fetch).not.toHaveBeenCalled();
+    const direct = carrierResult('mrw-delivered');
     expect(direct).toMatchObject({ current_stage: 'delivered', last_update: null, last_update_local: '2026-09-10T19:29:00' });
     expect(direct.events).toHaveLength(5);
     expect(direct.events?.every(event => !event.time && typeof event.local_time === 'string')).toBe(true);

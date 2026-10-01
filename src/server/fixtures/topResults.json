@@ -1,0 +1,183 @@
+{
+  "japan-post/positive/all": {
+    "status": "delivered",
+    "current_stage": "delivered",
+    "last_status_text": "Final delivery",
+    "last_update": null,
+    "last_update_local": "2026-09-04T11:43:00",
+    "expected_delivery": null,
+    "events": [
+      {
+        "local_time": "2026-09-04T11:43:00",
+        "description": "Final delivery",
+        "location": "USA",
+        "stage": "delivered"
+      },
+      {
+        "local_time": "2026-09-04T07:45:00",
+        "description": "Item out for physical delivery",
+        "location": "USA",
+        "stage": "out_for_delivery"
+      },
+      {
+        "local_time": "2026-09-03T12:55:00",
+        "description": "Item presented to import Customs",
+        "location": "EXAMPLE IMPORT, USA",
+        "stage": "customs"
+      },
+      {
+        "local_time": "2026-09-02T11:33:00",
+        "description": "Dispatch from outward office of exchange",
+        "location": "EXAMPLE EXPORT, USA",
+        "stage": "in_transit"
+      },
+      {
+        "local_time": "2026-09-01T12:23:00",
+        "description": "Posting/Collection",
+        "location": "EXAMPLE ORIGIN, USA",
+        "stage": "accepted"
+      }
+    ]
+  },
+  "evri/international/all": {
+    "status": "exception",
+    "current_stage": "failed_attempt",
+    "last_status_text": "Delivery Attempted",
+    "last_update": null,
+    "last_update_local": "2026-06-08T12:08:00",
+    "expected_delivery": null,
+    "weight_kg": 1.95,
+    "events": [
+      {
+        "local_time": "2026-06-08T12:08:00",
+        "description": "Delivery Attempted",
+        "location": "ET",
+        "stage": "failed_attempt"
+      },
+      {
+        "local_time": "2026-06-08T11:51:00",
+        "description": "At the local depot",
+        "location": "ET",
+        "stage": "in_transit"
+      },
+      {
+        "local_time": "2026-06-07T18:50:00",
+        "description": "Customs cleared",
+        "location": "ET",
+        "stage": "in_transit"
+      },
+      {
+        "local_time": "2026-06-07T18:49:00",
+        "description": "In customs",
+        "location": "ET",
+        "stage": "customs"
+      },
+      {
+        "local_time": "2026-06-06T08:08:58",
+        "description": "Cross Docked",
+        "location": "NL",
+        "stage": "in_transit"
+      },
+      {
+        "local_time": "2026-06-02T10:10:31",
+        "description": "Accepted",
+        "location": "Example Hub, GB",
+        "stage": "accepted"
+      },
+      {
+        "local_time": "2026-06-02T09:34:33",
+        "description": "Created",
+        "location": "GB",
+        "stage": "registered"
+      }
+    ]
+  },
+  "sf-express/delivered/all": {
+    "status": "delivered",
+    "current_stage": "delivered",
+    "last_status_text": "Delivered",
+    "last_update": null,
+    "last_update_local": "2026-01-08T11:20:00",
+    "expected_delivery": null,
+    "events": [
+      {
+        "local_time": "2026-01-08T11:20:00",
+        "provider_code": "80",
+        "description": "Delivered",
+        "stage": "delivered"
+      },
+      {
+        "local_time": "2026-01-08T07:50:00",
+        "provider_code": "204",
+        "description": "Out for delivery",
+        "stage": "out_for_delivery"
+      },
+      {
+        "local_time": "2026-01-07T10:00:00",
+        "provider_code": "14",
+        "description": "Customs clearance completed",
+        "stage": "in_transit"
+      },
+      {
+        "local_time": "2026-01-06T15:00:00",
+        "provider_code": "106",
+        "description": "The shipment has arrived at the destination hub",
+        "stage": "in_transit"
+      },
+      {
+        "local_time": "2026-01-05T14:00:00",
+        "provider_code": "30",
+        "description": "Shipment loaded at the origin hub",
+        "stage": "in_transit"
+      },
+      {
+        "local_time": "2026-01-04T12:00:00",
+        "provider_code": "950",
+        "description": "The shipment has been collected by SF Express",
+        "stage": "accepted"
+      }
+    ]
+  },
+  "japan-post/positive/destination": {
+    "status": "delivered",
+    "current_stage": "delivered",
+    "last_status_text": "Final delivery",
+    "last_update": null,
+    "last_update_local": "2026-09-04T11:43:00",
+    "expected_delivery": null,
+    "events": [
+      {
+        "local_time": "2026-09-04T11:43:00",
+        "description": "Final delivery",
+        "location": "USA",
+        "stage": "delivered"
+      },
+      {
+        "local_time": "2026-09-04T07:45:00",
+        "description": "Item out for physical delivery",
+        "location": "USA",
+        "stage": "out_for_delivery"
+      },
+      {
+        "local_time": "2026-09-03T12:55:00",
+        "description": "Item presented to import Customs",
+        "location": "EXAMPLE IMPORT, USA",
+        "stage": "customs"
+      },
+      {
+        "time": "2026-09-02T02:33:00Z",
+        "local_time": "2026-09-02T11:33:00",
+        "description": "Dispatch from outward office of exchange",
+        "location": "EXAMPLE EXPORT, KANAGAWA",
+        "stage": "in_transit"
+      },
+      {
+        "time": "2026-09-01T03:23:00Z",
+        "local_time": "2026-09-01T12:23:00",
+        "description": "Posting/Collection",
+        "location": "EXAMPLE ORIGIN, OSAKA",
+        "stage": "accepted"
+      }
+    ]
+  }
+}

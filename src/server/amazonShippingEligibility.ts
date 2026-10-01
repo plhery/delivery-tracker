@@ -1,17 +1,14 @@
 import 'server-only';
 
 import { AMAZON_ACCOUNT_MESSAGE, AMAZON_CHECK_UNAVAILABLE_MESSAGE } from '../lib/amazon';
-import { AmazonShippingHistoryExpiredError, AmazonShippingNotFoundError, AmazonShippingTracker } from '@carriers/carriers/amazon-shipping/adapter';
+import { amazonShippingEligibility } from 'universal-parcel-scraper/node';
 import { captureOperationalError } from './observability';
 import { HttpError } from './api';
 
 export async function checkAmazonShipping(trackingNumber: string): Promise<'available' | 'expired' | 'not-found' | 'unavailable'> {
   try {
-    await new AmazonShippingTracker(5_000).fetch(trackingNumber);
-    return 'available';
+    return await amazonShippingEligibility(trackingNumber);
   } catch (error) {
-    if (error instanceof AmazonShippingHistoryExpiredError) return 'expired';
-    if (error instanceof AmazonShippingNotFoundError) return 'not-found';
     captureOperationalError(error, {
       component: 'amazon-shipping', operation: 'eligibility', trackingNumber,
     });

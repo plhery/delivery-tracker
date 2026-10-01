@@ -1,8 +1,8 @@
 // @vitest-environment node
 import { afterEach, expect, it, vi } from 'vitest';
-import { UpstreamHttpError } from '@carriers/core/transport';
+import { UpstreamHttpError } from 'universal-parcel-scraper/node';
 import { TrackingRouter } from './trackingRouting';
-import { UniversalTracker } from '@carriers/providers/universal';
+import { UniversalTracker } from 'universal-parcel-scraper/node';
 import * as monitoring from './observability';
 
 const number = 'TEST1234';

@@ -1,8 +1,9 @@
+import { CARRIER_DEFINITIONS } from 'universal-parcel-scraper';
 import { DateTime } from 'luxon';
-import type { CarrierResult } from '@carriers/core/result';
+import type { CarrierResult } from 'universal-parcel-scraper';
 import { isRecord, type JsonObject } from './types';
 
-const CARRIERS = new Set(['japan-post', 'evri', 'sf-express', 'aramex', 'four-px', 'singapore-post', 'korea-post', 'yamato', 'ontrac', 'blue-dart', 'yunexpress', 'delhivery', 'bpost', 'purolator', 'yto', 'correios-br', 'yunda', 'spring-gds', 'ems', 'uniuni', 'ctt-express', 'pos-malaysia', 'canpar', 'ninja-van', 'correos-chile', 'landmark-global', 'gofo', 'ecoscooting', 'correos-express', 'nz-post', 'poczta-polska', 'the-courier-guy', 'bring-posten', 'estafeta', 'canada-post', 'nacex', 'brt', 'ukrposhta', 'seur', 'ciblex', 'relais-colis', 'mrw']);
+const CARRIERS = new Set(Object.entries(CARRIER_DEFINITIONS).filter(([, carrier]) => carrier.tracking.localClocks).map(([id]) => id));
 const eventKey = (event: JsonObject): string => JSON.stringify([
   event.local_time, event.provider_time_text, event.time, event.description, event.location, event.provider_code, event.provider_leg, event.summary_snapshot,
 ]);

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TrackingRouter } from './trackingRouting';
-import { NotFoundError } from '@carriers/core/errors';
+import { NotFoundError } from 'universal-parcel-scraper';
 import * as observability from './observability';
 
 const number = 'EB000000005CN';

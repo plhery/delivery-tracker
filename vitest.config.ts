@@ -7,7 +7,6 @@ export default defineConfig({
     // the server modules directly, so map the marker to an inert module here.
     alias: {
       'server-only': fileURLToPath(new URL('./src/test/serverOnly.ts', import.meta.url)),
-      '@carriers': fileURLToPath(new URL('./packages/carriers', import.meta.url)),
     },
   },
   test: {

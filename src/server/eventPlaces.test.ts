@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as observability from './observability';
-import * as places from './places';
+import * as places from 'universal-parcel-scraper/places';
+vi.mock('universal-parcel-scraper/places', { spy: true });
 import { withEventPlaces } from './eventPlaces';
 
 const event = (id: string, location: string | null, occurredAt: string) => ({

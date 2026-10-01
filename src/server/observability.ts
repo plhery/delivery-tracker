@@ -3,7 +3,7 @@ import 'server-only';
 import * as Sentry from '@sentry/node';
 import { healthMessage } from './trackingHealth';
 import type { JsonObject } from './types';
-import { UpstreamHttpError, type UpstreamHttpDiagnostics } from '@carriers/core/transport';
+import { UpstreamHttpError, type UpstreamHttpDiagnostics } from 'universal-parcel-scraper/node';
 
 let initialized = false;
 

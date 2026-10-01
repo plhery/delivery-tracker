@@ -1,36 +1,12 @@
-/*
- * The carrier folders are the source of truth. Everything else is generated
- * from them, and the merge only ever flows in this direction:
- *
- *   packages/carriers/carriers/<id>/carrier.json   (hand-edited)
- *     -> contracts/openapi.json    x-carriers, components.schemas.CarrierId.enum
- *          -> src/generated/apiContract.ts
- *          -> ios/SwissDeliveryTracker/GeneratedAPIContract.swift
- *          -> packages/carriers/generated/catalog.ts
- *
- * Editing x-carriers in contracts/openapi.json by hand is pointless: the next
- * run overwrites it from the folders. Everything else in the OpenAPI document
- * (paths, schemas, examples) is still hand-written, so the merge splices the
- * two generated members into the existing text instead of re-serializing the
- * whole document.
- *
- * `--check` regenerates in memory and fails when any of the four artifacts is
- * out of date, or when the folders and the contract disagree about which
- * carriers exist.
- */
-
-import { readFile, writeFile, mkdir, readdir, access } from 'node:fs/promises';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import Ajv from 'ajv';
+import { CARRIER_CATALOG, STAGES } from 'universal-parcel-scraper';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const contractPath = path.join(root, 'contracts', 'openapi.json');
-const carriersPath = path.join(root, 'packages', 'carriers', 'carriers');
-const carrierSchemaPath = path.join(root, 'packages', 'carriers', 'core', 'catalog', 'carrier.schema.json');
 const typesPath = path.join(root, 'src', 'generated', 'apiContract.ts');
 const swiftPath = path.join(root, 'ios', 'SwissDeliveryTracker', 'GeneratedAPIContract.swift');
-const catalogPath = path.join(root, 'packages', 'carriers', 'generated', 'catalog.ts');
 
 const contractSource = await readFile(contractPath, 'utf8');
 const contract = JSON.parse(contractSource);
@@ -48,220 +24,15 @@ if (!Array.isArray(schemas.CarrierId?.enum)) throw new Error('CarrierId must def
 const publishedCarriers = contract['x-carriers'];
 const publishedCarrierIds = schemas.CarrierId.enum;
 
-// ---------------------------------------------------------------------------
-// Carrier folders
-// ---------------------------------------------------------------------------
+// The scraper validates its catalog. The app publishes client-facing capabilities.
+const contractKeyOrder = ['displayName', 'displayNames', 'aliases', 'countries', 'color',
+  'selectable', 'timezone', 'tracking', 'canaryUrl', 'trackingUrlTemplate',
+  'trackingSiteName', 'linkRules', 'detectionRules'];
 
-/** Reads every packages/carriers/carriers/<id>/carrier.json, in folder order. */
-async function readCarrierDocuments() {
-  const entries = await readdir(carriersPath, { withFileTypes: true });
-  const folders = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
-  const documents = [];
-  for (const folder of folders) {
-    const file = path.join(carriersPath, folder, 'carrier.json');
-    const source = await readFile(file, 'utf8').catch(() => null);
-    if (source === null) {
-      throw new Error(
-        `packages/carriers/carriers/${folder} has no carrier.json. `
-        + 'Every carrier folder must define one; use npm run carrier:new to scaffold it.',
-      );
-    }
-    let document;
-    try {
-      document = JSON.parse(source);
-    } catch (cause) {
-      throw new Error(`packages/carriers/carriers/${folder}/carrier.json is not valid JSON: ${cause.message}`);
-    }
-    if (document.id !== folder) {
-      throw new Error(
-        `packages/carriers/carriers/${folder}/carrier.json declares id ${JSON.stringify(document.id)}; `
-        + 'the id must equal the folder name.',
-      );
-    }
-    documents.push(document);
-  }
-  return documents;
-}
-
-/**
- * Folders that ship their own `adapter.ts`. An automatic carrier either runs a
- * universal provider or names one of these folders — its own, or the folder
- * whose adapter serves it (chronopost -> la-poste, quickpac -> planzer). There
- * is no free-text adapter name any more: a typo must fail the generator rather
- * than reach the registry.
- */
-async function readAdapterFolders() {
-  const entries = await readdir(carriersPath, { withFileTypes: true });
-  const folders = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
-  const withAdapter = new Set();
-  for (const folder of folders) {
-    const found = await access(path.join(carriersPath, folder, 'adapter.ts'))
-      .then(() => true, () => false);
-    if (found) withAdapter.add(folder);
-  }
-  return withAdapter;
-}
-
-const carrierInputValidators = {
-  trackingUrl: new Set(['planzerSharedUrl', 'dachserCapabilityUrl']),
-  dpdPostcode: new Set([
-    'swissPostcode',
-    'francePostcode',
-    'swissOrFrancePostcode',
-    'paackPostcode',
-  ]),
-};
-
-/** Structural validation: the shape is owned by core/catalog/carrier.schema.json. */
-async function validateCarrierSchema(documents) {
-  const schema = JSON.parse(await readFile(carrierSchemaPath, 'utf8'));
-  const ajv = new Ajv({ allErrors: true, allowUnionTypes: true });
-  const validate = ajv.compile(schema);
-  for (const carrier of documents) {
-    if (!validate(carrier)) {
-      const details = validate.errors
-        .map((error) => `${error.instancePath || '/'} ${error.message}`)
-        .join('; ');
-      throw new Error(`packages/carriers/carriers/${carrier.id}/carrier.json is invalid: ${details}`);
-    }
-  }
-}
-
-/** Checks the schema cannot express: adapter/mode agreement, canary URLs, regexes. */
-function validateCarrierSemantics(carrier, adapterFolders) {
-  const where = `packages/carriers/carriers/${carrier.id}/carrier.json`;
-  const { tracking, portal } = carrier;
-  if (
-    (tracking.mode === 'automatic' && typeof tracking.adapter !== 'string')
-    || (tracking.mode === 'link-only' && tracking.adapter !== null)
-  ) {
-    throw new Error(`${where} has an invalid tracking adapter`);
-  }
-  if (
-    tracking.mode === 'automatic'
-    && tracking.adapter !== 'universal'
-    && !adapterFolders.has(tracking.adapter)
-  ) {
-    throw new Error(
-      `${where} names tracking.adapter ${JSON.stringify(tracking.adapter)}, which is neither `
-      + '"universal" nor a carrier folder containing adapter.ts.',
-    );
-  }
-  if (tracking.mode === 'automatic') {
-    let canaryUrl;
-    try {
-      canaryUrl = new URL(portal.canaryUrl);
-    } catch {
-      throw new Error(`${where} must define a valid portal.canaryUrl`);
-    }
-    if (
-      canaryUrl.protocol !== 'https:'
-      || canaryUrl.username
-      || canaryUrl.password
-      || canaryUrl.search
-      || canaryUrl.hash
-    ) {
-      throw new Error(`${where} must define a public HTTPS portal.canaryUrl`);
-    }
-  }
-  const fields = new Set();
-  for (const requirement of tracking.requirements ?? []) {
-    const validators = carrierInputValidators[requirement.field];
-    if (!validators || fields.has(requirement.field) || !validators.has(requirement.validator)) {
-      throw new Error(`${where} has an invalid input requirement`);
-    }
-    fields.add(requirement.field);
-    if (requirement.whenTrackingNumber) new RegExp(requirement.whenTrackingNumber);
-    if (requirement.pattern) new RegExp(requirement.pattern);
-  }
-  for (const rule of carrier.detection) {
-    new RegExp(rule.pattern);
-    if (rule.rawPattern) new RegExp(rule.rawPattern);
-    // Preference orders suggestions; a high-confidence rule already selects.
-    if (rule.preferred !== undefined && (rule.preferred !== true || rule.confidence !== 'low')) {
-      throw new Error(`${where} detection rule ${rule.id} may only prefer a low-confidence match`);
-    }
-  }
-  for (const rule of carrier.links) {
-    for (const field of ['path', 'pathPattern', 'fragment']) {
-      if (rule[field] !== undefined) new RegExp(rule[field], 'i');
-    }
-  }
-}
-
-/** Detection rule ids are referenced by the sweep and the collision file. */
-function validateDetectionRuleIds(documents) {
-  const owners = new Map();
-  for (const carrier of documents) {
-    for (const rule of carrier.detection) {
-      const owner = owners.get(rule.id);
-      if (owner) {
-        throw new Error(`Detection rule id ${rule.id} is used by both ${owner} and ${carrier.id}`);
-      }
-      owners.set(rule.id, carrier.id);
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Folders -> x-carriers
-// ---------------------------------------------------------------------------
-
-// Key order used for carriers the contract does not describe yet. Existing
-// entries keep the order contracts/openapi.json already uses (see
-// orderedContractEntry), so adopting the folders as the source of truth does
-// not reshuffle a hundred entries in the diff.
-const contractKeyOrder = [
-  'displayName',
-  'displayNames',
-  'aliases',
-  'countries',
-  'color',
-  'selectable',
-  'timezone',
-  'tracking',
-  'canaryUrl',
-  'trackingUrlTemplate',
-  'trackingSiteName',
-  'linkRules',
-  'detectionRules',
-];
-
-function contractDetectionRule(rule) {
-  // `id` stays a folder-side concept: the published contract keeps the old shape.
-  const contractRule = { pattern: rule.pattern, confidence: rule.confidence };
-  if (rule.rawPattern !== undefined) contractRule.rawPattern = rule.rawPattern;
-  if (rule.checksum !== undefined) contractRule.checksum = rule.checksum;
-  if (rule.preferred !== undefined) contractRule.preferred = rule.preferred;
-  return contractRule;
-}
-
-function contractTracking(tracking) {
-  const contractValue = { mode: tracking.mode, adapter: tracking.adapter };
-  if (tracking.upstreamName !== undefined) contractValue.upstreamName = tracking.upstreamName;
-  if (tracking.requirements !== undefined) contractValue.requirements = tracking.requirements;
-  // Clients predict which carriers the Add sheet's recognition asks.
-  if (tracking.recognition !== undefined) contractValue.recognitionRank = tracking.recognition.rank;
-  return contractValue;
-}
-
-/** Projects one carrier.json onto the published x-carriers entry shape. */
 function contractEntry(carrier) {
-  const entry = { displayName: carrier.displayName };
-  if (carrier.displayNames !== undefined) entry.displayNames = carrier.displayNames;
-  entry.color = carrier.brand.color;
-  // The carrier pickers search other names and show and search countries.
-  if (carrier.aliases.length) entry.aliases = carrier.aliases;
-  if (carrier.region.countries.length) entry.countries = carrier.region.countries;
-  entry.selectable = carrier.selectable;
-  entry.timezone = carrier.timezone;
-  entry.tracking = contractTracking(carrier.tracking);
-  if (carrier.portal.canaryUrl !== undefined) entry.canaryUrl = carrier.portal.canaryUrl;
-  if (carrier.portal.url !== undefined) entry.trackingUrlTemplate = carrier.portal.url;
-  if (carrier.portal.siteName !== undefined) entry.trackingSiteName = carrier.portal.siteName;
-  entry.linkRules = carrier.links;
-  entry.detectionRules = carrier.detection.map(contractDetectionRule);
-  return entry;
+  const tracking = Object.fromEntries(Object.entries(carrier.tracking)
+    .filter(([key]) => !['refresh', 'localClocks'].includes(key)));
+  return { ...carrier, tracking };
 }
 
 function orderedContractEntry(entry, current) {
@@ -282,7 +53,7 @@ function orderedCarrierIds(ids, current) {
 }
 
 function mergeContractCarriers(documents) {
-  const entries = new Map(documents.map((carrier) => [carrier.id, contractEntry(carrier)]));
+  const entries = new Map(Object.entries(documents).map(([id, carrier]) => [id, contractEntry(carrier)]));
   const merged = {};
   for (const id of orderedCarrierIds([...entries.keys()], Object.keys(publishedCarriers))) {
     merged[id] = orderedContractEntry(entries.get(id), publishedCarriers[id]);
@@ -399,17 +170,12 @@ function validateOperations() {
 // Merge
 // ---------------------------------------------------------------------------
 
-const carrierDocuments = await readCarrierDocuments();
-await validateCarrierSchema(carrierDocuments);
-const adapterFolders = await readAdapterFolders();
-carrierDocuments.forEach((carrier) => validateCarrierSemantics(carrier, adapterFolders));
-validateDetectionRuleIds(carrierDocuments);
-
+const carrierDocuments = CARRIER_CATALOG;
+if (JSON.stringify(schemas.Stage?.enum) !== JSON.stringify(STAGES)) {
+  throw new Error('The app and scraper stage vocabulary must agree');
+}
 const carrierCapabilities = mergeContractCarriers(carrierDocuments);
-const carrierIds = orderedCarrierIds(
-  carrierDocuments.map((carrier) => carrier.id),
-  publishedCarrierIds,
-);
+const carrierIds = orderedCarrierIds(Object.keys(carrierDocuments), publishedCarrierIds);
 if (
   carrierIds.length !== Object.keys(carrierCapabilities).length
   || carrierIds.some((carrierId) => !Object.hasOwn(carrierCapabilities, carrierId))
@@ -529,26 +295,6 @@ function generatedTypeScript() {
     lines.push(`export type Api${name} = ${typeScriptType(schema)};`, '');
   }
   return `${lines.join('\n').trim()}\n`;
-}
-
-/**
- * The carrier package consumes the merged catalog directly, without importing
- * application code: same data, package-local names.
- */
-function generatedCarrierCatalog() {
-  const stages = schemas.Stage?.enum;
-  if (!Array.isArray(stages)) throw new Error('Stage must define an enum');
-  return `${[
-    '/* This file is generated by scripts/generate-api-contract.mjs. Do not edit. */',
-    '',
-    `export const CARRIER_CATALOG = ${JSON.stringify(carrierCapabilities, null, 2)} as const;`,
-    '',
-    `export const CARRIER_IDS = ${JSON.stringify(carrierIds, null, 2)} as const;`,
-    'export type CarrierId = (typeof CARRIER_IDS)[number];',
-    '',
-    `export const STAGES = ${JSON.stringify(stages, null, 2)} as const;`,
-    'export type Stage = (typeof STAGES)[number];',
-  ].join('\n')}\n`;
 }
 
 // ---------------------------------------------------------------------------
@@ -809,22 +555,21 @@ const outputs = [
   [contractPath, generatedContract(contractSource, carrierCapabilities, carrierIds)],
   [typesPath, generatedTypeScript()],
   [swiftPath, generatedSwift()],
-  [catalogPath, generatedCarrierCatalog()],
 ];
 
-/** Reports folder/contract disagreements before the generic staleness message. */
+/** Reports scraper/contract disagreements before the generic staleness message. */
 function describeCarrierDrift() {
-  const folderIds = new Set(carrierDocuments.map((carrier) => carrier.id));
+  const folderIds = new Set(Object.keys(carrierDocuments));
   const contractIds = publishedCarrierIds;
   const added = [...folderIds].filter((id) => !contractIds.includes(id));
   const removed = contractIds.filter((id) => !folderIds.has(id));
   const problems = [];
   if (added.length > 0) {
-    problems.push(`carrier folders missing from contracts/openapi.json: ${added.sort().join(', ')}`);
+    problems.push(`scraper carriers missing from contracts/openapi.json: ${added.sort().join(', ')}`);
   }
   if (removed.length > 0) {
     problems.push(
-      `contracts/openapi.json lists carriers with no packages/carriers/carriers/<id>/carrier.json: ${removed.sort().join(', ')}`,
+      `contracts/openapi.json lists carriers absent from the scraper catalog: ${removed.sort().join(', ')}`,
     );
   }
   return problems;

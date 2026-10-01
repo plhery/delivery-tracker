@@ -1,1 +1,0 @@
-The JSON fixtures use synthetic parcel PINs, clocks and locations with the native detail response structure. Placeholder private fields verify projection boundaries. They cover outbound delivery, transit and a return journey that is still moving.

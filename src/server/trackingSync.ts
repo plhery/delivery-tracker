@@ -1,25 +1,24 @@
 import 'server-only';
 import { deferredTrackingFailure, trackingFailureCode } from './trackingFailure';
-import { AmazonShippingHistoryExpiredError } from '@carriers/carriers/amazon-shipping/adapter';
+import { CarrierError, inferStage, stageSource, resultStage, resultHasUpdate, CARRIER_DEFINITIONS, type CarrierId } from 'universal-parcel-scraper';
+export { classifyStage, inferStage, stageSource, resultStage, resultHasUpdate } from 'universal-parcel-scraper';
 import { AMAZON_ACCOUNT_MESSAGE, AMAZON_HISTORY_EXPIRED, requiresAmazonAccount } from '../lib/amazon';
 
 import { createHash } from 'node:crypto';
 import { DateTime } from 'luxon';
 import { STAGES } from '../generated/apiContract';
-import { normalizeCarrierResult, type CarrierResult } from '@carriers/core/result';
+import { normalizeCarrierResult, type CarrierResult } from 'universal-parcel-scraper';
 import { deliveryHandoff, hasDirectHandoffAdapter, type DeliveryHandoff } from './carrierHandoff';
 import {
   AUTOMATIC_CARRIER_IDS,
   supportsSwissPostHandoff,
 } from './carriers';
-import type { AdapterRegistry, Recognition } from '@carriers/core/adapter';
-import { runSteps } from '@carriers/core/runner';
-import type { StepRecorder } from '@carriers/core/telemetry';
+import type { AdapterRegistry, Recognition } from 'universal-parcel-scraper/node';
+import { trackCarrier } from 'universal-parcel-scraper/node';
+import type { StepRecorder } from 'universal-parcel-scraper/node';
 import { createAdapterRegistry, hostAdapterEnvironment } from './adapterRegistry';
 import { hostStepRecorder } from './stepRecorder';
 import { recordStatusMapping } from './metrics';
-import { classifyWording, type ClassifiedWording } from '@carriers/core/status';
-import type { Stage } from '@carriers/core/status';
 import {
   captureOperationalError,
   errorType,
@@ -35,8 +34,8 @@ import {
   type SyncRunContext,
 } from './trackingAudit';
 import { isRecord, type JsonObject } from './types';
-import { UniversalTracker } from '@carriers/providers/universal';
-import type { UniversalSource } from '@carriers/providers/shared/result';
+import { UniversalTracker } from 'universal-parcel-scraper/node';
+import type { UniversalSource } from 'universal-parcel-scraper';
 import { RoutingDeferred, routingFailure, routingState, TrackingRouter } from './trackingRouting';
 import { upuHistory } from './upuHistory';
 import { directHistoryNumber, directLocalHistory, directLocalSnapshotIsOlder, hasUnresolvedDirectCurrent } from './directLocalHistory';
@@ -44,9 +43,6 @@ import { eventTimestamp, latestResultTime, resultTimezone } from './eventTime';
 
 const MAX_PACKAGES_PER_OWNER_PER_SYNC = 5;
 const VALID_STAGES = new Set<string>(STAGES);
-const SLOW_POLL_CARRIERS = new Set(['gls-de', 'gls-ch', 'gls-fr']);
-const SLOW_POLL_INTERVAL_MS = 60 * 60 * 1_000;
-const FAILED_SLOW_POLL_INTERVAL_MS = 4 * SLOW_POLL_INTERVAL_MS;
 /** Scheduled checks fall back to hourly this long after a parcel's newest carrier event, or after it was added. */
 const IDLE_AFTER_MS = 48 * 60 * 60 * 1_000;
 
@@ -81,11 +77,12 @@ export function isTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
   const routing = routingState(parcel);
   if (routing.next_check_at && Date.parse(routing.next_check_at) > now.getTime()) return false;
   const activeCarrier = isRecord(parcel.carrier_data) ? parcel.carrier_data.active_tracking_carrier : undefined;
-  if (!SLOW_POLL_CARRIERS.has(String(activeCarrier ?? parcel.carrier))) return true;
+  const refresh = CARRIER_DEFINITIONS[String(activeCarrier ?? parcel.carrier) as CarrierId]?.tracking.refresh;
+  if (!refresh?.afterFailureMinutes) return true;
   const lastChecked = Date.parse(String(parcel.last_synced_at ?? ''));
   if (!Number.isFinite(lastChecked)) return true;
   const interval = parcel.sync_status === 'error'
-    ? FAILED_SLOW_POLL_INTERVAL_MS : SLOW_POLL_INTERVAL_MS;
+    ? refresh.afterFailureMinutes * 60_000 : refresh.minMinutes * 60_000;
   return now.getTime() >= lastChecked + interval;
 }
 
@@ -104,7 +101,7 @@ function isScheduledTrackingSyncDue(parcel: JsonObject, now: Date): boolean {
   if (!Number.isFinite(lastChecked)) return true;
   const local = DateTime.fromJSDate(now, { zone: 'Europe/Zurich' });
   const intervalMinutes = parcel.current_stage === 'out_for_delivery'
-    ? 2 : parcel.carrier === 'spring-gds' ? 30 : 10;
+    ? 2 : Math.max(10, (CARRIER_DEFINITIONS[String(parcel.carrier) as CarrierId]?.tracking.refresh?.minMinutes ?? 0));
   const activity = lastActivity(parcel);
   const idle = activity !== null && now.getTime() - activity >= IDLE_AFTER_MS;
   // Compare schedule windows so request duration does not skip the next tick.
@@ -126,15 +123,9 @@ export interface TrackingAdapter {
   ): Promise<CarrierResult>;
 }
 
-/**
- * Lookups outrun any single provider timeout by a wide margin; the budget only
- * guards against an adapter that never settles.
- */
-const SINGLE_STEP_BUDGET_MS = 120_000;
-
 export class CarrierTrackingAdapter implements TrackingAdapter {
   constructor(
-    readonly universal = new UniversalTracker({ environment: hostAdapterEnvironment() }),
+    readonly universal = new UniversalTracker({ environment: hostAdapterEnvironment(), providers: ['ParcelsApp', 'Ship24', '17TRACK', 'UPU'] }),
     readonly registry: AdapterRegistry = createAdapterRegistry(),
     readonly recorder: StepRecorder = hostStepRecorder(),
   ) {}
@@ -155,23 +146,9 @@ export class CarrierTrackingAdapter implements TrackingAdapter {
     trackingUrl: string | null,
     dpdPostcode?: string | null,
   ): Promise<CarrierResult> {
-    const input = { number: trackingNumber, trackingUrl, postcode: dpdPostcode ?? null };
-    const registered = this.registry.for(carrierId);
-    if (registered) {
-      // Adapters with several tiers run and report their own steps; a
-      // single-step adapter is timed here so every lookup produces exactly one
-      // step record and one lookup record.
-      const result = registered.steps.length > 1
-        ? await registered.track(input)
-        : await runSteps({ carrier: carrierId, budgetMs: SINGLE_STEP_BUDGET_MS, recorder: this.recorder }, [
-          { id: registered.steps[0] ?? 'direct', run: () => registered.track(input) },
-        ]);
-      return normalizeCarrierResult(result);
-    }
-    if (this.registry.adapterIdFor(carrierId) === 'universal') {
-      return normalizeCarrierResult(await this.universal.fetch(trackingNumber, input.postcode));
-    }
-    throw new RangeError(`No tracking adapter is registered for ${carrierId}`);
+    return trackCarrier(carrierId, { number: trackingNumber, trackingUrl, postcode: dpdPostcode ?? null }, {
+      registry: this.registry, universal: this.universal, recorder: this.recorder,
+    });
   }
 }
 
@@ -199,57 +176,6 @@ export function emptySyncSummary(): SyncSummary {
     notification_errors: 0,
     subscriptions_expired: 0,
   };
-}
-
-export type ClassifiedStage = ClassifiedWording;
-
-/** The generic wording classifier, kept under its historical host name. */
-export function classifyStage(text: string, fallback = 'in_transit'): ClassifiedStage {
-  return classifyWording(text, fallback as Stage);
-}
-
-export function inferStage(text: string, fallback = 'in_transit'): string {
-  return classifyStage(text, fallback).stage;
-}
-
-/**
- * Records where a persisted event's stage came from: an explicit carrier or
- * provider stage, the wording rule that matched, or the untraceable fallback.
- */
-export function stageSource(declaredStage: string, description: string): string {
-  if (VALID_STAGES.has(declaredStage)) return 'carrier_map';
-  return classifyStage(description).source;
-}
-
-export function resultStage(result: CarrierResult): string | null {
-  const declaredCurrent = String(result.current_stage ?? '');
-  if (VALID_STAGES.has(declaredCurrent)) return declaredCurrent;
-  const status = String(result.status ?? 'unknown');
-  const text = String(result.last_status_text ?? '');
-  switch (status) {
-    case 'pending': {
-      const inferred = inferStage(text, 'pending');
-      if (inferred !== 'pending') return inferred;
-      const declared = String(result.events?.[0]?.stage ?? '');
-      return VALID_STAGES.has(declared) ? declared : 'pending';
-    }
-    case 'in_transit': return inferStage(text, 'in_transit');
-    case 'out_for_delivery': return inferStage(text, 'out_for_delivery');
-    case 'delivered': return inferStage(text, 'delivered');
-    case 'exception': return inferStage(text, 'failed_attempt');
-    default: return null;
-  }
-}
-
-export function resultHasUpdate(result: CarrierResult): boolean {
-  const stage = resultStage(result);
-  if (stage && stage !== 'pending') return true;
-  return (result.events ?? []).some((event) => {
-    const declared = String(event.stage ?? '');
-    if (VALID_STAGES.has(declared) && declared !== 'pending') return true;
-    const description = String(event.description ?? '');
-    return Boolean(description) && inferStage(description, 'pending') !== 'pending';
-  });
 }
 
 const UNANNOUNCED_PHRASES = [
@@ -754,7 +680,7 @@ export class TrackingSyncService {
           }).fetch(parcel, context.trigger === 'scheduled', context.signal)
           : await this.fetchResult(parcel, carrierId));
       } catch (error) {
-        if (carrierId === 'amazon-shipping' && error instanceof AmazonShippingHistoryExpiredError) {
+        if (carrierId === 'amazon-shipping' && error instanceof CarrierError && error.reason === 'history_expired') {
           audit.skip('normalize', 'history_expired');
           audit.skip('persist_events', 'history_expired');
           await persist({ sync_status: 'unsupported', sync_error: AMAZON_HISTORY_EXPIRED, last_synced_at: this.now().toISOString() });

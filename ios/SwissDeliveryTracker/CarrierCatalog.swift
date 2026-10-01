@@ -344,7 +344,7 @@ final class CarrierCatalog: ObservableObject, @unchecked Sendable {
     /// Carriers the detect route asks at once.
     static let maximumRecognitions = 5
     /// Brands with several catalog networks ("DPD" is `dpd` and `dpd-fr`), as in
-    /// `packages/carriers/core/catalog/networks.ts`.
+    /// Universal Parcel Scraper's catalog networks.
     private static let networkBrands = ["dhl", "dpd", "gls", "hermes"]
 
     static func networkBrand(_ carrier: CarrierID) -> String? {

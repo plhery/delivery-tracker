@@ -1,0 +1,360 @@
+{
+  "dpd-delivered": {
+    "status": "delivered",
+    "current_stage": "delivered",
+    "last_status_text": "Your parcel has been delivered successfully",
+    "last_update": "2026-07-16T10:12:00+02:00",
+    "expected_delivery": null,
+    "events": [
+      {
+        "time": "2026-07-16T10:12:00+02:00",
+        "location": "Urdorf, CH",
+        "description": "Your parcel has been delivered successfully",
+        "stage": "delivered",
+        "provider_code": "DEY"
+      },
+      {
+        "time": "2026-07-16T06:10:45+02:00",
+        "location": "Urdorf, CH",
+        "description": "Your parcel is out for delivery",
+        "stage": "out_for_delivery",
+        "provider_code": "DLO"
+      },
+      {
+        "time": "2026-07-16T03:48:00+02:00",
+        "location": "Urdorf, CH",
+        "description": "Your parcel arrived at our delivery depot",
+        "stage": "in_transit",
+        "provider_code": "DLI"
+      },
+      {
+        "time": "2026-07-15T18:05:12+02:00",
+        "location": "Urdorf, CH",
+        "description": "Your parcel arrived at our depot",
+        "provider_code": "ORI"
+      },
+      {
+        "time": "2026-07-15T16:30:00+02:00",
+        "location": "",
+        "description": "Your parcel cleared customs successfully",
+        "stage": "in_transit",
+        "provider_code": "CCO"
+      }
+    ],
+    "source": "mydpd_guest_api",
+    "delivery_date": "2026-07-16",
+    "delivery_time_from": null,
+    "delivery_time_to": null,
+    "is_predictive_date": false,
+    "sender_name": "Example Webshop AG",
+    "weight_kg": 1.4,
+    "delivered_at": "2026-07-16T10:12:00+02:00",
+    "dpd_postcode_verified": true
+  },
+  "dpd-unverified": {
+    "status": "delivered",
+    "current_stage": "delivered",
+    "last_status_text": "Delivered",
+    "last_update": "2026-07-16T10:12:00+02:00",
+    "expected_delivery": null,
+    "events": [
+      {
+        "time": "2026-07-16T10:12:00+02:00",
+        "location": "",
+        "description": "Delivered",
+        "stage": "delivered",
+        "provider_code": "DELIVERED"
+      },
+      {
+        "time": "2026-07-16T06:10:45+02:00",
+        "location": "",
+        "description": "Parcel out for delivery",
+        "stage": "out_for_delivery",
+        "provider_code": "PARCEL_OUT_FOR_DELIVERY"
+      },
+      {
+        "time": "2026-07-16T03:48:00+02:00",
+        "location": "",
+        "description": "At delivery center",
+        "provider_code": "AT_DELIVERY_CENTER"
+      },
+      {
+        "time": "2026-07-15T18:05:12+02:00",
+        "location": "",
+        "description": "Parcel handed to DPD",
+        "provider_code": "PARCEL_HANDED"
+      }
+    ],
+    "source": "mydpd_guest_api",
+    "delivery_date": "2026-07-16",
+    "delivery_time_from": null,
+    "delivery_time_to": null,
+    "is_predictive_date": false,
+    "delivered_at": "2026-07-16T10:12:00+02:00",
+    "dpd_postcode_verified": false
+  },
+  "cainiao-delivered": {
+    "status": "delivered",
+    "current_stage": "delivered",
+    "last_status_text": "Delivered",
+    "last_update": "2026-03-04T10:15:00+01:00",
+    "expected_delivery": null,
+    "delivered_at": "2026-03-04T10:15:00+01:00",
+    "delivery_tracking_number": "RA123456785CH",
+    "events": [
+      {
+        "time": "2026-03-04T10:15:00+01:00",
+        "location": "",
+        "description": "Delivered",
+        "stage": "delivered"
+      },
+      {
+        "time": "2026-03-04T07:02:00+01:00",
+        "location": "",
+        "description": "Out for delivery",
+        "stage": "out_for_delivery"
+      },
+      {
+        "time": "2026-03-02T19:40:00+01:00",
+        "location": "",
+        "description": "Import customs clearance success",
+        "stage": "in_transit"
+      },
+      {
+        "time": "2026-02-25T09:00:00+08:00",
+        "location": "",
+        "description": "Shipment accepted by the warehouse",
+        "stage": "registered"
+      }
+    ]
+  },
+  "dpd-ORI": {
+    "status": "in_transit",
+    "last_status_text": "Your parcel arrived at our depot",
+    "last_update": "2026-07-15T18:05:12+02:00",
+    "expected_delivery": "2026-07-16",
+    "events": [
+      {
+        "time": "2026-07-15T18:05:12+02:00",
+        "location": "Urdorf, CH",
+        "description": "Your parcel arrived at our depot",
+        "provider_code": "ORI"
+      }
+    ],
+    "source": "mydpd_guest_api",
+    "delivery_date": "2026-07-16",
+    "delivery_time_from": null,
+    "delivery_time_to": null,
+    "is_predictive_date": false,
+    "sender_name": "Example Webshop AG",
+    "weight_kg": 1.4,
+    "dpd_postcode_verified": true
+  },
+  "dpd-ORI-CCO": {
+    "status": "in_transit",
+    "last_status_text": "Your parcel arrived at our depot",
+    "last_update": "2026-07-15T18:05:12+02:00",
+    "expected_delivery": "2026-07-16",
+    "events": [
+      {
+        "time": "2026-07-15T18:05:12+02:00",
+        "location": "Urdorf, CH",
+        "description": "Your parcel arrived at our depot",
+        "provider_code": "ORI"
+      },
+      {
+        "time": "2026-07-15T16:30:00+02:00",
+        "location": "",
+        "description": "Your parcel cleared customs successfully",
+        "stage": "in_transit",
+        "provider_code": "CCO"
+      }
+    ],
+    "source": "mydpd_guest_api",
+    "delivery_date": "2026-07-16",
+    "delivery_time_from": null,
+    "delivery_time_to": null,
+    "is_predictive_date": false,
+    "sender_name": "Example Webshop AG",
+    "weight_kg": 1.4,
+    "dpd_postcode_verified": true
+  },
+  "cainiao-Switzerland": {
+    "status": "in_transit",
+    "current_stage": "in_transit",
+    "last_status_text": "",
+    "last_update": "2026-03-04 10:00:00",
+    "expected_delivery": null,
+    "destination_country_name": "Switzerland",
+    "events": []
+  },
+  "cainiao-Finland": {
+    "status": "in_transit",
+    "current_stage": "in_transit",
+    "last_status_text": "",
+    "last_update": "2026-03-04 10:00:00",
+    "expected_delivery": null,
+    "destination_country_name": "Finland",
+    "events": []
+  },
+  "postnl-Delivered": {
+    "status": "delivered",
+    "current_stage": "delivered",
+    "last_status_text": "Postal tracking update",
+    "last_update": "2026-03-04T10:00:00+01:00",
+    "expected_delivery": null,
+    "delivered_at": "2026-03-04T10:00:00+01:00",
+    "destination_country": "CH",
+    "events": [
+      {
+        "time": "2026-03-04T10:00:00+01:00",
+        "location": "NL",
+        "description": "Postal tracking update",
+        "stage": "delivered"
+      }
+    ]
+  },
+  "postnl-Departed": {
+    "status": "in_transit",
+    "current_stage": "in_transit",
+    "last_status_text": "Postal tracking update",
+    "last_update": "2026-03-04T10:00:00+01:00",
+    "expected_delivery": null,
+    "destination_country": "CH",
+    "events": [
+      {
+        "time": "2026-03-04T10:00:00+01:00",
+        "location": "NL",
+        "description": "Postal tracking update",
+        "stage": "in_transit"
+      }
+    ]
+  },
+  "upu-0-1": {
+    "status": "in_transit",
+    "current_stage": "in_transit",
+    "last_status_text": "Arrival at outward office of exchange",
+    "last_update": null,
+    "expected_delivery": null,
+    "timezone": "UTC",
+    "tracking_provider": "UPU",
+    "events": [
+      {
+        "local_time": "2026-09-19T10:00:00",
+        "provider_code": "EMB",
+        "description": "Arrival at outward office of exchange",
+        "stage": "in_transit"
+      },
+      {
+        "local_time": "2026-09-18T10:00:00",
+        "provider_code": "EMA",
+        "description": "Posting/Collection",
+        "stage": "accepted"
+      }
+    ],
+    "last_update_local": "2026-09-19T10:00:00",
+    "tracking_source": "structured-web-response"
+  },
+  "upu-0": {
+    "status": "in_transit",
+    "current_stage": "accepted",
+    "last_status_text": "Posting/Collection",
+    "last_update": null,
+    "expected_delivery": null,
+    "timezone": "UTC",
+    "tracking_provider": "UPU",
+    "events": [
+      {
+        "local_time": "2026-09-18T10:00:00",
+        "provider_code": "EMA",
+        "description": "Posting/Collection",
+        "stage": "accepted"
+      }
+    ],
+    "last_update_local": "2026-09-18T10:00:00",
+    "tracking_source": "structured-web-response"
+  },
+  "upu-1": {
+    "status": "in_transit",
+    "current_stage": "in_transit",
+    "last_status_text": "Arrival at outward office of exchange",
+    "last_update": null,
+    "expected_delivery": null,
+    "timezone": "UTC",
+    "tracking_provider": "UPU",
+    "events": [
+      {
+        "local_time": "2026-09-19T10:00:00",
+        "provider_code": "EMB",
+        "description": "Arrival at outward office of exchange",
+        "stage": "in_transit"
+      }
+    ],
+    "last_update_local": "2026-09-19T10:00:00",
+    "tracking_source": "structured-web-response"
+  },
+  "upu-2": {
+    "status": "in_transit",
+    "current_stage": "in_transit",
+    "last_status_text": "Departure from outward office of exchange",
+    "last_update": null,
+    "expected_delivery": null,
+    "timezone": "UTC",
+    "tracking_provider": "UPU",
+    "events": [
+      {
+        "local_time": "2026-09-20T10:00:00",
+        "provider_code": "EMC",
+        "description": "Departure from outward office of exchange",
+        "stage": "in_transit"
+      }
+    ],
+    "last_update_local": "2026-09-20T10:00:00",
+    "tracking_source": "structured-web-response"
+  },
+  "mrw-delivered": {
+    "status": "delivered",
+    "current_stage": "delivered",
+    "last_status_text": "Envío entregado",
+    "last_update": null,
+    "last_update_local": "2026-09-10T19:29:00",
+    "expected_delivery": null,
+    "events": [
+      {
+        "description": "Envío entregado",
+        "provider_status": "Envío entregado",
+        "stage": "delivered",
+        "local_time": "2026-09-10T19:29:00",
+        "location": "28000 Madrid"
+      },
+      {
+        "description": "Depositado en PointCorner destino",
+        "provider_status": "Depositado en PointCorner destino",
+        "stage": "ready_for_pickup",
+        "local_time": "2026-09-10T13:40:00",
+        "location": "28000 Madrid"
+      },
+      {
+        "description": "Destinatario ausente o cerrado",
+        "provider_status": "Destinatario ausente o cerrado",
+        "stage": "failed_attempt",
+        "local_time": "2026-09-09T16:47:00",
+        "location": "28000 Madrid"
+      },
+      {
+        "description": "En tránsito",
+        "provider_status": "En tránsito",
+        "stage": "in_transit",
+        "local_time": "2026-09-07T14:03:00",
+        "location": "28000 Madrid"
+      },
+      {
+        "description": "Pendiente de recoger",
+        "provider_status": "Pendiente de recoger",
+        "stage": "registered",
+        "local_time": "2026-09-04T17:10:00",
+        "location": "28000 Madrid"
+      }
+    ]
+  }
+}

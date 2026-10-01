@@ -30,9 +30,6 @@
     "paths": {
       "@/*": [
         "./*"
-      ],
-      "@carriers/*": [
-        "./packages/carriers/*"
       ]
     },
     "allowJs": true,
@@ -49,9 +46,7 @@
     "vitest.config.ts",
     "vitest.server.config.ts",
     "next.config.ts",
-    ".next/dev/types/**/*.ts",
-    "packages/**/*.ts",
-    "vitest.carriers-live.config.ts"
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

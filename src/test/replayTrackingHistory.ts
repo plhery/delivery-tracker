@@ -1,84 +1,11 @@
-import { vi } from 'vitest';
-import { parseDHLTrackingResponse } from '@carriers/carriers/dhl/adapter';
-import { parseDHLEcommerceResponse } from '@carriers/carriers/dhl-ecommerce/adapter';
-import { parseLaPosteTrackingResponse } from '@carriers/carriers/la-poste/adapter';
-import { parseSwissPostShipment } from '@carriers/carriers/swiss-post/adapter';
-import { parseGLSSwitzerlandTrackingResponse } from '@carriers/carriers/gls-ch/adapter';
-import { classifyIndiaPostEvent } from '@carriers/carriers/india-post/adapter';
-import { fetchPlanzer } from '@carriers/carriers/planzer/adapter';
-import { fetchPostNL } from '@carriers/carriers/spring-gds/adapter';
-import { event } from '@carriers/providers/shared/result';
-import type { CarrierResult } from '@carriers/core/result';
-
-const NUMBER = 'AB12345678901';
-const TIME = '2026-01-01T12:00:00Z';
+import type { CarrierResult } from 'universal-parcel-scraper';
+import records from '../server/fixtures/historyResults.json';
 export type AuditedScan = { provider: string; description: string; code?: string; expected: string };
 
-// Descriptions/codes were reviewed from stored history. The surrounding provider
-// envelopes, numbers and dates below are synthetic, not captured customer data.
+/** Parser/classifier tests live in the scraper; the app replays their result contracts. */
 export async function replayAuditedScan(scan: AuditedScan, translatedDescription?: string): Promise<CarrierResult> {
-  const { provider, code } = scan;
-  const description = translatedDescription ?? scan.description;
-  const events = [{ time: TIME, description }];
-  switch (provider) {
-    case 'dhl':
-      return parseDHLTrackingResponse({ sendungen: [{
-        id: NUMBER, sendungsdetails: { istZugestellt: true, sendungsverlauf: {
-          events: [{ datum: TIME, status: description }],
-        } },
-      }] }, NUMBER);
-    case 'dhl-ecommerce': {
-      // Exercise the two observed unclassified handling scans with no coarse
-      // status; ordinary transit events also carry DHL's documented coarse code.
-      const statusCode = /^(CLOSE BAG|SCANNED INTO SACK\/CONTAINER)$/.test(scan.description)
-        ? 'unknown' : 'transit';
-      const providerEvent = { timestamp: TIME, description, statusCode };
-      return parseDHLEcommerceResponse({ shipments: [{
-        id: NUMBER, service: 'ecommerce', status: providerEvent, events: [providerEvent],
-      }] });
-    }
-    case 'la-poste': {
-      const [group, eventCode] = code?.includes('/') ? code.split('/') : ['', code];
-      return parseLaPosteTrackingResponse([{ returnCode: 0, shipment: {
-        idShip: NUMBER, isFinal: true,
-        event: [{ date: TIME, label: description, group, code: eventCode }],
-      } }], NUMBER);
-    }
-    case 'swiss-post':
-      return code ? parseSwissPostShipment({ globalStatus: 'DELIVERED' }, [{
-        eventCode: code, timestamp: TIME, externalMetadata: { description },
-      }]) : { status: 'delivered', events };
-    case 'gls-de':
-      return parseGLSSwitzerlandTrackingResponse({
-        tuNo: '12345678901', progressBar: { statusInfo: 'DELIVERED', statusText: 'Delivered' },
-        history: [{ date: '2026-01-01', time: '12:00', evtDscr: description }],
-      }, '12345678901');
-    case 'india-post':
-      return { events: [{ ...events[0], stage: classifyIndiaPostEvent(code, description).stage }] };
-    case 'ParcelsApp':
-      return { events: [event(TIME, description)!] };
-    case 'quickpac':
-      if (scan.description === 'Paket wurde elektronisch angekündigt') return { events };
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({
-        overallStatus: { text: { english: 'Shipment delivered' } },
-        transportPositions: [{ positionNumber: NUMBER,
-          positionEvents: [{ createdAt: TIME, text: { english: description } }] }],
-      }));
-      return fetchPlanzer(NUMBER);
-    case 'spring-gds':
-      // PostNL's category takes precedence over its free-text label. These
-      // synthetic categories exercise the observed pre-advice/transit grouping.
-      vi.spyOn(globalThis, 'fetch')
-        .mockResolvedValueOnce(Response.json({ access_token: 'synthetic-visitor-token' }))
-        .mockResolvedValueOnce(Response.json({ data: { items: [{ item: NUMBER, events: [{
-          datetime_local: TIME, country_code: 'NL', status_description: description,
-          category: /pre-advised|shippers warehouse/.test(scan.description) ? 'Pre-advised' : 'Transit',
-        }] }] } }));
-      return fetchPostNL(NUMBER);
-    case 'dpd':
-    case 'ups':
-      return { status: 'delivered', events };
-    default:
-      throw new Error('Add an explicit replay path for this provider');
-  }
+  const key = JSON.stringify([scan.provider, scan.code ?? '', translatedDescription ?? scan.description]);
+  const result = (records as Record<string, unknown>)[key];
+  if (!result) throw new Error(`Missing synthetic carrier result: ${key}`);
+  return structuredClone(result) as CarrierResult;
 }

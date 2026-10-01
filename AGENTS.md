@@ -9,8 +9,8 @@
 
 - Keep docs short, plain and current. Describe how things work now: no dates, verification logs, changelogs, one-off measurements ("22 scans in 14.6 s") or hedging. Git history holds the history.
 - Don't copy what a machine-readable source already holds: `carrier.json` (links, detection rules, capabilities, steps), `numbers.json` (sample numbers), `statuses.json`/`status.ts` (status vocabulary). No status tables or field tables in READMEs.
-- A carrier or provider README covers scope, how retrieval works, non-obvious decisions with their reason, limitations and how to run the live test. Follow the template from `npm run carrier:new`; skip sections with nothing to say.
-- Keep one topic in one place: routing in `docs/ROUTING.md`, logs/audit/Sentry/metrics in `docs/OBSERVABILITY.md`, provider results in `packages/carriers/providers/COVERAGE.md`. Link to files rather than section anchors.
+- Carrier adapters and provider documentation belong in [Universal Parcel Scraper](https://github.com/plhery/universal-parcel-scraper). App documentation covers routing, persistence and client behaviour.
+- Keep one topic in one place: routing in `docs/ROUTING.md`, logs/audit/Sentry/metrics in `docs/OBSERVABILITY.md`, provider results in `https://github.com/plhery/universal-parcel-scraper/blob/main/providers/COVERAGE.md`. Link to files rather than section anchors.
 - Update the docs in the same commit as the behaviour they describe. When a migration needs a rollout order, put it in the commit message, not the docs.
 
 <!-- BEGIN:nextjs-agent-rules -->

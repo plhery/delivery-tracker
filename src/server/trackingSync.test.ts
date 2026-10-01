@@ -1,26 +1,13 @@
-import { AmazonShippingHistoryExpiredError, AmazonShippingTracker } from '@carriers/carriers/amazon-shipping/adapter';
+import { carrierResult } from '../test/carrierResults';
+import { CarrierError } from 'universal-parcel-scraper';
+import { REGISTRY } from 'universal-parcel-scraper/node';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { secondsUntilNextSync, workerPollDelay } from './background';
-import { normalizeCarrierResult, type CarrierResult } from '@carriers/core/result';
-import { ColisPriveTracker, ColisPriveTrackingError } from '@carriers/carriers/colis-prive/adapter';
-import { ColiswebTracker } from '@carriers/carriers/colisweb/adapter';
-import { CChezVousTracker } from '@carriers/carriers/c-chez-vous/adapter';
-import { CiblexTracker } from '@carriers/carriers/ciblex/adapter';
-import { DPDFranceTracker } from '@carriers/carriers/dpd-fr/adapter';
-import { GeodisTracker } from '@carriers/carriers/geodis/adapter';
-import { GLSFranceTracker } from '@carriers/carriers/gls-fr/adapter';
-import { GLSSwitzerlandTracker } from '@carriers/carriers/gls-ch/adapter';
-import { HeppnerTracker } from '@carriers/carriers/heppner/adapter';
-import { IndiaPostTracker } from '@carriers/carriers/india-post/adapter';
-import { LaPosteTracker } from '@carriers/carriers/la-poste/adapter';
-import { MondialRelayTracker } from '@carriers/carriers/mondial-relay/adapter';
-import { PaackTracker } from '@carriers/carriers/paack/adapter';
-import { RelaisColisTracker } from '@carriers/carriers/relais-colis/adapter';
-import { SwissPostCargoTracker } from '@carriers/carriers/swiss-post-cargo/adapter';
+import { normalizeCarrierResult, type CarrierResult } from 'universal-parcel-scraper';
 import { STORED_EVENT_IDENTITIES, type SupabaseServiceClient } from './supabase';
-import { AdapterRegistry, type AdapterEnvironment } from '@carriers/core/adapter';
-import type { StepRecorder } from '@carriers/core/telemetry';
-import type { UniversalTracker } from '@carriers/providers/universal';
+import { AdapterRegistry, type AdapterEnvironment } from 'universal-parcel-scraper/node';
+import type { StepRecorder } from 'universal-parcel-scraper/node';
+import type { UniversalTracker } from 'universal-parcel-scraper/node';
 import { eventTimestamp } from './eventTime';
 import {
   CarrierTrackingAdapter,
@@ -41,16 +28,10 @@ import {
 } from './trackingSync';
 import type { JsonObject } from './types';
 import * as observability from './observability';
-import { UniversalTrackingError } from '@carriers/providers/universal';
-import { UpstreamHttpError } from '@carriers/core/transport';
-import cainiaoDeliveredFixture from '../../packages/carriers/carriers/aliexpress/fixtures/delivered.json';
-import dpdDeliveredFixture from '../../packages/carriers/carriers/dpd/fixtures/delivered-verified.json';
-import dpdUnverifiedFixture from '../../packages/carriers/carriers/dpd/fixtures/delivered-unverified.json';
-import { parseDPDTrackingApi } from '@carriers/carriers/dpd/adapter';
-import { adapter as cainiaoAdapter, parseCainiaoTrackingResponse } from '@carriers/carriers/aliexpress/adapter';
-import { adapter as postNLAdapter, parsePostNLTrackingResponse } from '@carriers/carriers/spring-gds/adapter';
-import { NOOP_RECORDER } from '@carriers/core/telemetry';
-import { IndeterminateError, NotFoundError, SchemaError } from '@carriers/core/errors';
+import { UniversalTrackingError } from 'universal-parcel-scraper/node';
+import { UpstreamHttpError } from 'universal-parcel-scraper/node';
+import { NOOP_RECORDER } from 'universal-parcel-scraper/node';
+import { IndeterminateError, NotFoundError, SchemaError } from 'universal-parcel-scraper';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -64,72 +45,11 @@ describe('dedicated carrier dispatch', () => {
     expect(adapter.registry.has('royal-mail')).toBe(false);
   });
 
-  it('routes every dedicated regional carrier to its isolated adapter', async () => {
-    const laPoste = vi.spyOn(LaPosteTracker.prototype, 'fetch')
-      .mockResolvedValue({ status: 'in_transit' });
-    const glsFrance = vi.spyOn(GLSFranceTracker.prototype, 'fetch')
-      .mockResolvedValue({ status: 'in_transit' });
-    const colisPrive = vi.spyOn(ColisPriveTracker.prototype, 'fetch')
-      .mockResolvedValue({ status: 'in_transit' });
-    const geodis = vi.spyOn(GeodisTracker.prototype, 'fetch')
-      .mockResolvedValue({ status: 'in_transit' });
-    const dpdFrance = vi.spyOn(DPDFranceTracker.prototype, 'fetch')
-      .mockResolvedValue({ status: 'in_transit' });
-    const mondialRelay = vi.spyOn(MondialRelayTracker.prototype, 'fetch')
-      .mockResolvedValue({ status: 'in_transit' });
-    const relaisColis = vi.spyOn(RelaisColisTracker.prototype, 'fetch')
-      .mockResolvedValue({ status: 'in_transit' });
-    const swissPostCargo = vi.spyOn(SwissPostCargoTracker.prototype, 'fetch')
-      .mockResolvedValue({ status: 'in_transit' });
-    const glsSwitzerland = vi.spyOn(GLSSwitzerlandTracker.prototype, 'fetch')
-      .mockResolvedValue({ status: 'in_transit' });
-    const colisweb = vi.spyOn(ColiswebTracker.prototype, 'fetch')
-      .mockResolvedValue({ status: 'in_transit' });
-    const cChezVous = vi.spyOn(CChezVousTracker.prototype, 'fetch')
-      .mockResolvedValue({ status: 'in_transit' });
-    const heppner = vi.spyOn(HeppnerTracker.prototype, 'fetch')
-      .mockResolvedValue({ status: 'in_transit' });
-    const ciblex = vi.spyOn(CiblexTracker.prototype, 'fetch')
-      .mockResolvedValue({ status: 'in_transit' });
-    const paack = vi.spyOn(PaackTracker.prototype, 'fetch')
-      .mockResolvedValue({ status: 'in_transit' });
-    const indiaPost = vi.spyOn(IndiaPostTracker.prototype, 'fetch')
-      .mockResolvedValue({ status: 'in_transit' });
+  it.each(['la-poste', 'chronopost', 'gls-fr', 'colis-prive', 'geodis', 'dpd-fr', 'mondial-relay', 'relais-colis', 'swiss-post-cargo', 'gls-ch', 'colisweb', 'c-chez-vous', 'heppner', 'ciblex', 'paack', 'india-post'])('dispatches %s through the public registry', async carrier => {
     const adapter = new CarrierTrackingAdapter();
-
-    await adapter.fetch('la-poste', '8G12345678901', null);
-    await adapter.fetch('chronopost', 'PZ123456785JF', null);
-    await adapter.fetch('gls-fr', '00AB12CD', null);
-    await adapter.fetch('colis-prive', '99112233445575012', null);
-    await adapter.fetch('geodis', '1G123GEODIS0', null);
-    await adapter.fetch('dpd-fr', '250123456789012', null);
-    await adapter.fetch('mondial-relay', '76434219', null, '59650');
-    await adapter.fetch('relais-colis', 'CC200000000401', null);
-    await adapter.fetch('swiss-post-cargo', '1234ABC789', null);
-    await adapter.fetch('gls-ch', '993990103198', null, '8000');
-    await adapter.fetch('colisweb', '12345678', null);
-    await adapter.fetch('c-chez-vous', 'FGRC45BKLM', null);
-    await adapter.fetch('heppner', '23456789', null, '75001');
-    await adapter.fetch('ciblex', '12345678901234', null);
-    await adapter.fetch('paack', 'ORDER1234', null, '75001');
-    await adapter.fetch('india-post', 'JN067614884IN', null);
-
-    expect(laPoste).toHaveBeenNthCalledWith(1, '8G12345678901');
-    expect(laPoste).toHaveBeenNthCalledWith(2, 'PZ123456785JF');
-    expect(glsFrance).toHaveBeenCalledWith('00AB12CD');
-    expect(colisPrive).toHaveBeenCalledWith('99112233445575012');
-    expect(geodis).toHaveBeenCalledWith('1G123GEODIS0');
-    expect(dpdFrance).toHaveBeenCalledWith('250123456789012');
-    expect(mondialRelay).toHaveBeenCalledWith('76434219', '59650');
-    expect(relaisColis).toHaveBeenCalledWith('CC200000000401', undefined);
-    expect(swissPostCargo).toHaveBeenCalledWith('1234ABC789');
-    expect(glsSwitzerland).toHaveBeenCalledWith('993990103198', '8000');
-    expect(colisweb).toHaveBeenCalledWith('12345678');
-    expect(cChezVous).toHaveBeenCalledWith('FGRC45BKLM');
-    expect(heppner).toHaveBeenCalledWith('23456789', '75001');
-    expect(ciblex).toHaveBeenCalledWith('12345678901234', undefined);
-    expect(paack).toHaveBeenCalledWith('ORDER1234', '75001');
-    expect(indiaPost).toHaveBeenCalledWith('JN067614884IN');
+    const track = vi.spyOn(adapter.registry.for(carrier)!, 'track').mockResolvedValue({ status: 'in_transit' });
+    expect(await adapter.fetch(carrier, 'SYNTHETIC0001', null, '00000')).toMatchObject({ status: 'in_transit' });
+    expect(track.mock.calls[0][0]).toEqual({ number: 'SYNTHETIC0001', trackingUrl: null, postcode: '00000' });
   });
 });
 
@@ -243,7 +163,7 @@ describe('tracking event normalization', () => {
   });
 
   it('keeps a verified DPD delivery delivered: the proof-of-delivery scan is not the newest row', () => {
-    const result = normalizeCarrierResult(parseDPDTrackingApi(dpdDeliveredFixture, '06080000000001', true));
+    const result = normalizeCarrierResult(carrierResult('dpd-delivered'));
     const rows = buildEvents(
       { id: 'package-1', carrier: 'dpd', current_stage: 'out_for_delivery' },
       result,
@@ -273,15 +193,8 @@ describe('tracking event normalization', () => {
   it('adds no observed DPD row when the newest verified scan is the depot arrival', () => {
     // The enumeration beside ORI (PARCEL_HANDED) has no stage, so the result
     // stage comes from the scan's wording; the scan must agree with it.
-    const scans = (dpdDeliveredFixture.parcelEvents as JsonObject[]);
-    const history = (dpdDeliveredFixture.parcelHistory as JsonObject[]);
     for (const eventTypes of [['ORI'], ['ORI', 'CCO']]) {
-      const result = normalizeCarrierResult(parseDPDTrackingApi({
-        ...dpdDeliveredFixture,
-        status: { ...history[0], description: 'PARCEL_HANDED' },
-        parcelHistory: history.filter((entry) => entry.description === 'PARCEL_HANDED'),
-        parcelEvents: scans.filter((scan) => eventTypes.includes(String(scan.eventType))),
-      }, '06080000000001', true));
+      const result = carrierResult(eventTypes.length === 1 ? 'dpd-ORI' : 'dpd-ORI-CCO');
       for (const previousStage of ['pending', 'registered', 'accepted']) {
         const rows = buildEvents(
           { id: 'package-1', carrier: 'dpd', current_stage: previousStage },
@@ -958,13 +871,13 @@ describe('TrackingSyncService', () => {
     expect(client.updatePackage.mock.calls.at(-1)![1].carrier_data.active_tracking_carrier).toBe('posti');
   });
 
-  it('hands a real Cainiao response shape to its reported local number through normalization', async () => {
-    const payload = cainiaoDeliveredFixture;
-    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => Response.json(payload));
+  it('hands a Cainiao result to its reported local number through normalization', async () => {
+    const origin = carrierResult('cainiao-delivered');
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => Response.json({}));
     const swiss = vi.fn().mockResolvedValue({ status: 'delivered', current_stage: 'delivered',
       last_update: '2026-03-04T12:00:00Z', events: [{ time: '2026-03-04T12:00:00Z', description: 'Delivered', stage: 'delivered' }] });
     const registry = new AdapterRegistry({ factories: {
-      aliexpress: cainiaoAdapter,
+      aliexpress: () => ({ id: 'aliexpress', steps: ['direct'], track: vi.fn().mockResolvedValue(origin) }),
       'swiss-post': () => ({ id: 'swiss-post', steps: ['direct'], track: swiss }),
     }, carriers: { aliexpress: 'aliexpress', 'swiss-post': 'swiss-post' } }, {
       fetcher, trawl: null, browserExecutablePath: null, recorder: NOOP_RECORDER, env: {},
@@ -987,7 +900,7 @@ describe('TrackingSyncService', () => {
     adapter.fetch.mockClear();
     await service.syncPackage({ ...parcel, ...values });
     expect(adapter.fetch).toHaveBeenCalledExactlyOnceWith('swiss-post', 'RA123456785CH', null, null);
-    expect(fetcher).toHaveBeenCalledOnce();
+    expect(registry.for('aliexpress')!.track).toHaveBeenCalledOnce();
     expect(adapter.fetchUniversal).not.toHaveBeenCalled();
   });
 
@@ -1031,9 +944,7 @@ describe('TrackingSyncService', () => {
 
   it.each(['Switzerland', 'Finland'])('respects Cainiao’s actual destination field before the historical probe: %s', async (country) => {
     const number = 'LX123456785CH';
-    const origin = parseCainiaoTrackingResponse({ module: [{ mailNo: number, destCountry: country,
-      latestTrace: { actionCode: 'LH_ARRIVE', timeStr: '2026-03-04 10:00:00' }, detailList: [],
-    }] }, number);
+    const origin = carrierResult(country === 'Switzerland' ? 'cainiao-Switzerland' : 'cainiao-Finland');
     const adapter = { fetch: vi.fn().mockResolvedValueOnce(origin).mockResolvedValueOnce({ status: 'unknown' }) };
     await new TrackingSyncService(fakeClient() as unknown as SupabaseServiceClient, adapter, null)
       .syncPackage({ id: 'cainiao-destination', carrier: 'aliexpress', tracking_number: number });
@@ -1095,7 +1006,7 @@ describe('TrackingSyncService', () => {
     const swiss = vi.fn().mockResolvedValue({ status: 'out_for_delivery', last_update: '2026-03-05T09:00:00Z',
       events: [{ time: '2026-03-05T09:00:00Z', description: 'Out for delivery', stage: 'out_for_delivery' }] });
     const registry = new AdapterRegistry({ factories: {
-      'spring-gds': postNLAdapter,
+      'spring-gds': REGISTRY.factories['spring-gds'],
       'swiss-post': () => ({ id: 'swiss-post', steps: ['direct'], track: swiss }),
     }, carriers: { 'spring-gds': 'spring-gds', 'swiss-post': 'swiss-post' } }, {
       fetcher, trawl: null, browserExecutablePath: null, recorder: NOOP_RECORDER, env: {},
@@ -1126,10 +1037,7 @@ describe('TrackingSyncService', () => {
     'keeps PostNL when a national-post probe is %s', async (state) => {
       const client = fakeClient();
       const number = 'LX123456785NL';
-      const origin = parsePostNLTrackingResponse({ data: { items: [{ item: number, destination_code: 'CH',
-        events: [{ category: state === 'terminal_conflict' ? 'Delivered' : 'Departed',
-          datetime_local: '2026-03-04T10:00:00Z', status_description: 'Postal tracking update', country_code: 'NL' }],
-      }] } }, number);
+      const origin = carrierResult(state === 'terminal_conflict' ? 'postnl-Delivered' : 'postnl-Departed');
       const delivery: CarrierResult = { status: 'out_for_delivery', last_update: '2026-03-05T10:00:00Z' };
       if (state === 'unknown') delivery.status = 'unknown';
       if (state === 'registered') { delivery.status = 'pending'; delivery.current_stage = 'registered'; }
@@ -1740,7 +1648,7 @@ describe('TrackingSyncService', () => {
     };
     const client = fakeClient();
     const adapter: TrackingAdapter = {
-      fetch: vi.fn().mockRejectedValue(new ColisPriveTrackingError()),
+      fetch: vi.fn().mockRejectedValue(Object.assign(new NotFoundError('Colis Privé'), { name: 'ColisPriveTrackingError' })),
     };
     const service = new TrackingSyncService(
       client as unknown as SupabaseServiceClient,
@@ -1786,12 +1694,12 @@ describe('TrackingSyncService', () => {
 
   it('dispatches confirmed Shipping without applying the retail guard or trying universal providers', async () => {
     const client = fakeClient();
-    const fetch = vi.spyOn(AmazonShippingTracker.prototype, 'fetch').mockResolvedValue({ status: 'in_transit', current_stage: 'in_transit' });
     const adapter = new CarrierTrackingAdapter();
+    const fetch = vi.spyOn(adapter.registry.for('amazon-shipping')!, 'track').mockResolvedValue({ status: 'in_transit', current_stage: 'in_transit' });
     const universal = vi.spyOn(adapter, 'fetchUniversal');
     const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, adapter);
     await service.syncPackage({ id: 'shipping-parcel', carrier: 'amazon-shipping', tracking_number: 'FR0000000001' });
-    expect(fetch).toHaveBeenCalledWith('FR0000000001');
+    expect(fetch.mock.calls[0][0]).toMatchObject({ number: 'FR0000000001' });
     expect(universal).not.toHaveBeenCalled();
   });
 
@@ -1811,7 +1719,7 @@ describe('TrackingSyncService', () => {
 
   it('keeps expired Shipping history out of the timeline and Sentry', async () => {
     const client = fakeClient();
-    const fetch = vi.fn().mockRejectedValue(new AmazonShippingHistoryExpiredError());
+    const fetch = vi.fn().mockRejectedValue(new CarrierError('not_found', 'Amazon Shipping', 'Amazon Shipping history expired', { reason: 'history_expired' }));
     const universal = vi.fn();
     const capture = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
     const service = new TrackingSyncService(client as unknown as SupabaseServiceClient, { fetch, fetchUniversal: universal });
@@ -2005,8 +1913,8 @@ function eventStore() {
 describe('reworded DPD scans', () => {
   // The fixtures' synthetic number: a DPD reply must name the parcel asked for.
   const NUMBER = '06080000000001';
-  const unverified = () => parseDPDTrackingApi(dpdUnverifiedFixture, NUMBER, false);
-  const verified = () => parseDPDTrackingApi(dpdDeliveredFixture, NUMBER, true);
+  const unverified = () => carrierResult('dpd-unverified');
+  const verified = () => carrierResult('dpd-delivered');
   const now = () => new Date('2026-07-16T12:00:00Z');
   const parcel = { id: 'dpd-postcode-later', user_id: 'owner', carrier: 'dpd', tracking_number: NUMBER };
   const ids = (events: JsonObject[]) => events.map((event) => String(event.provider_event_id));

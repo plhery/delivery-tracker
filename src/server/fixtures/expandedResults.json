@@ -1,0 +1,3167 @@
+{
+  "austrian-post/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Sendung wurde zugestellt",
+      "last_update": "2026-03-29T13:00:00.747Z",
+      "expected_delivery": null,
+      "weight_kg": 0.45,
+      "events": [
+        {
+          "time": "2026-03-29T13:00:00.747Z",
+          "description": "Sendung wurde zugestellt",
+          "location": "Synthetic destination",
+          "stage": "delivered"
+        },
+        {
+          "time": "2026-03-28T13:00:00Z",
+          "description": "Empfänger nicht angetroffen - brieflich benachrichtigt",
+          "stage": "failed_attempt"
+        },
+        {
+          "time": "2026-03-28T12:00:00Z",
+          "description": "Sendung in Zustellung",
+          "location": "Synthetic delivery base",
+          "stage": "out_for_delivery"
+        },
+        {
+          "time": "2026-03-28T11:00:00Z",
+          "description": "Sendung im Logistikzentrum in Bearbeitung",
+          "location": "Synthetic logistics centre",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-03-27T12:00:00Z",
+          "description": "Versender*in bereitet die Sendung für den Versand vor",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "tnt/registered.html/": {
+    "result": {
+      "status": "pending",
+      "current_stage": "registered",
+      "last_status_text": "Colis chez l'expéditeur",
+      "last_update": "2026-03-27T11:25:00+01:00",
+      "expected_delivery": null,
+      "events": [
+        {
+          "time": "2026-03-27T11:25:00+01:00",
+          "description": "Colis chez l'expéditeur",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "ontrac/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Package Delivered",
+      "last_update": "2026-01-03T14:00:00-08:00",
+      "last_update_local": null,
+      "expected_delivery": null,
+      "delivered_at": "2026-01-03T14:00:00-08:00",
+      "weight_kg": 0.90718474,
+      "events": [
+        {
+          "description": "Package Delivered",
+          "time": "2026-01-03T14:00:00-08:00",
+          "location": "Example City, CA",
+          "provider_code": "DLVD",
+          "stage": "delivered"
+        },
+        {
+          "description": "Out for Delivery",
+          "time": "2026-01-03T08:00:00-08:00",
+          "location": "Example City, CA",
+          "provider_code": "OFDL",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "On its way to OnTrac",
+          "time": "2026-01-01T12:00:00-08:00",
+          "provider_code": "EXRL",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "blue-dart/delivered.html/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Shipment Delivered",
+      "last_update": "2026-01-03T14:00:00+05:30",
+      "timezone": "Asia/Kolkata",
+      "delivered_at": "2026-01-03T14:00:00+05:30",
+      "expected_delivery": null,
+      "events": [
+        {
+          "description": "Shipment Delivered",
+          "location": "Example Facility",
+          "time": "2026-01-03T14:00:00+05:30",
+          "stage": "delivered"
+        },
+        {
+          "description": "Shipment Out For Delivery",
+          "location": "Example Facility",
+          "time": "2026-01-03T08:00:00+05:30",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "Shipment Arrived At Hub",
+          "location": "Example Hub",
+          "time": "2026-01-02T12:00:00+05:30",
+          "stage": "in_transit"
+        }
+      ]
+    }
+  },
+  "delhivery/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "DELIVERED",
+      "last_update": "2026-01-03T14:00:00+05:30",
+      "expected_delivery": null,
+      "delivered_at": "2026-01-03T14:00:00+05:30",
+      "timezone": "Asia/Kolkata",
+      "events": [
+        {
+          "description": "DELIVERED",
+          "time": "2026-01-03T14:00:00+05:30",
+          "stage": "delivered",
+          "summary_snapshot": true
+        },
+        {
+          "description": "Delivered",
+          "location": "Example City",
+          "stage": "delivered"
+        },
+        {
+          "description": "In Transit",
+          "location": "Example City",
+          "stage": "in_transit"
+        }
+      ]
+    }
+  },
+  "aramex/delivered.html/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "The shipment has been delivered",
+      "last_update": null,
+      "last_update_local": "2026-01-03T14:00:00",
+      "expected_delivery": null,
+      "events": [
+        {
+          "description": "The shipment has been delivered",
+          "location": "Example City, Example Country",
+          "local_time": "2026-01-03T14:00:00",
+          "stage": "delivered"
+        },
+        {
+          "description": "An Aramex Delivery Champion has the shipment and is expected to reach the customer's doorstep shortly",
+          "location": "Example City, Example Country",
+          "local_time": "2026-01-03T08:00:00",
+          "stage": "out_for_delivery"
+        }
+      ]
+    }
+  },
+  "four-px/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered, in/at mailbox",
+      "last_update": null,
+      "destination_country": "US",
+      "delivery_tracking_number": "4200000000000000000000000000000001",
+      "events": [
+        {
+          "local_time": "2026-03-28T14:30:03",
+          "description": "Delivered, in/at mailbox",
+          "location": "Example facility 0",
+          "provider_code": "FPX_S_OK",
+          "stage": "delivered"
+        },
+        {
+          "local_time": "2026-03-27T14:30:03",
+          "description": "Out for delivery",
+          "location": "Example facility 1",
+          "provider_code": "FPX_D_SD",
+          "stage": "out_for_delivery"
+        },
+        {
+          "local_time": "2026-03-26T14:30:03",
+          "description": "Arrived at post office",
+          "location": "Example facility 2",
+          "provider_code": "FPX_D_HQ",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-25T14:30:03",
+          "description": "Arrived at usps facility",
+          "location": "Example facility 3",
+          "provider_code": "FPX_O_RR",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-24T14:30:03",
+          "description": "Arrived at usps regional facility",
+          "location": "Example facility 4",
+          "provider_code": "FPX_O_RR",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-23T14:30:03",
+          "description": "In transit to next facility",
+          "location": "Example facility 5",
+          "provider_code": "FPX_M_IT",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-22T14:30:03",
+          "description": "Departed usps regional facility",
+          "location": "Example facility 6",
+          "provider_code": "FPX_O_RR",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-21T14:30:03",
+          "description": "Arrived at usps regional facility",
+          "location": "Example facility 7",
+          "provider_code": "FPX_O_RR",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-20T14:30:03",
+          "description": "In transit to next facility",
+          "location": "Example facility 8",
+          "provider_code": "FPX_M_IT",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-19T14:30:03",
+          "description": "In transit to next facility",
+          "location": "Example facility 9",
+          "provider_code": "FPX_M_IT",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-18T14:30:03",
+          "description": "Departed usps regional facility",
+          "location": "Example facility 10",
+          "provider_code": "FPX_O_RR",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-17T14:30:03",
+          "description": "Arrived at usps regional origin facility",
+          "location": "Example facility 11",
+          "provider_code": "FPX_O_RR",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-16T14:30:03",
+          "description": "Accepted at usps origin facility",
+          "location": "Example facility 12",
+          "provider_code": "FPX_O_RR",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-15T14:30:03",
+          "description": "In transit, it's progressing through post network",
+          "location": "Example facility 13",
+          "provider_code": "FPX_D_STPP",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-14T14:30:03",
+          "description": "Customs clearance agent received the shipment in destnation country.",
+          "location": "Example facility 14",
+          "provider_code": "FPX_M_CRSD",
+          "stage": "customs"
+        },
+        {
+          "local_time": "2026-03-13T14:30:03",
+          "description": "Arrival to the destination airport",
+          "location": "Example facility 15",
+          "provider_code": "FPX_M_ATA",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-12T14:30:03",
+          "description": "Released from customs: customs cleared.",
+          "location": "Example facility 16",
+          "provider_code": "FPX_I_RCUK",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-11T14:30:03",
+          "description": "Departure from the original airport",
+          "location": "Example facility 17",
+          "provider_code": "FPX_M_DFOA",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-10T14:30:03",
+          "description": "Hand over to airline.",
+          "location": "Example facility 18",
+          "provider_code": "FPX_M_HA",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-09T14:30:03",
+          "description": "Depart from facility to service provider.",
+          "location": "Example facility 19",
+          "provider_code": "FPX_C_ADFF",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-08T14:30:03",
+          "description": "Shipment arrived at facility and measured.",
+          "location": "Example facility 20",
+          "provider_code": "FPX_C_AAF",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-07T14:30:03",
+          "description": "Shipment arrived at facility and measured.",
+          "location": "Example facility 21",
+          "provider_code": "FPX_C_AAF",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-06T14:30:03",
+          "description": "Shipment picked up.",
+          "location": "Example facility 22",
+          "provider_code": "FPX_C_SPLS",
+          "stage": "accepted"
+        },
+        {
+          "local_time": "2026-03-05T14:30:03",
+          "description": "Pickup scanned, in transit to warehouse",
+          "location": "Example facility 23",
+          "provider_code": "FPX_L_SC",
+          "stage": "accepted"
+        },
+        {
+          "local_time": "2026-03-04T14:30:03",
+          "description": "Shipping label created, usps awaiting item",
+          "location": "Example facility 24",
+          "provider_code": "FPX_O_IRI",
+          "stage": "registered"
+        },
+        {
+          "local_time": "2026-03-03T14:30:03",
+          "description": "Parcel information received",
+          "location": "Example facility 25",
+          "provider_code": "FPX_L_RPIF",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "singapore-post/speedpost.json/": {
+    "result": {
+      "status": "in_transit",
+      "current_stage": "customs",
+      "last_status_text": "Held by Customs at Destination",
+      "last_update": null,
+      "events": [
+        {
+          "local_time": "2026-03-12T14:30:03",
+          "description": "Held by Customs at Destination",
+          "location": "Example facility 0",
+          "provider_code": "HC",
+          "stage": "customs"
+        },
+        {
+          "local_time": "2026-03-11T14:30:03",
+          "description": "Customs Inspection in Progress",
+          "location": "Example facility 1",
+          "provider_code": "CS",
+          "stage": "customs"
+        },
+        {
+          "local_time": "2026-03-10T14:30:03",
+          "description": "Receive item at Destination Hub",
+          "location": "Example facility 2",
+          "provider_code": "DA",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-09T14:30:03",
+          "description": "Departed from Singapore Hub for Transit to Overseas Destination",
+          "location": "Example facility 3",
+          "provider_code": "DO",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-08T14:30:03",
+          "description": "Handed Over to SingPost Courier",
+          "location": "Example facility 4",
+          "provider_code": "PL",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-07T14:30:03",
+          "description": "Accepted at Drop-Off Point",
+          "location": "Example facility 5",
+          "provider_code": "DP",
+          "stage": "accepted"
+        },
+        {
+          "local_time": "2026-03-06T14:30:03",
+          "description": "SingPost has received your order information, but not your item yet",
+          "location": "Example facility 6",
+          "provider_code": "IR",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "korea-post/delivered.html/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivery complete",
+      "last_update": null,
+      "events": [
+        {
+          "local_time": "2026-03-05T11:30:00",
+          "description": "Delivery complete",
+          "location": "Example facility",
+          "stage": "delivered"
+        },
+        {
+          "local_time": "2026-03-04T12:20:00",
+          "description": "Unsuccessful delivery",
+          "location": "Example facility",
+          "stage": "failed_attempt"
+        },
+        {
+          "local_time": "2026-03-03T07:15:00",
+          "description": "Ready for customs clearance",
+          "location": "Example facility",
+          "stage": "customs"
+        },
+        {
+          "local_time": "2026-03-02T14:30:00",
+          "description": "Delivered to Destination Post",
+          "location": "Example facility",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-01T08:10:00",
+          "description": "Posting/Collection",
+          "location": "Example facility",
+          "stage": "accepted"
+        }
+      ]
+    }
+  },
+  "yamato/delivered.html/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "配達完了",
+      "last_update": null,
+      "timezone": "Asia/Tokyo",
+      "events": [
+        {
+          "description": "配達完了",
+          "provider_time_text": "01月01日 18:48",
+          "location": "Example delivery office",
+          "stage": "delivered"
+        },
+        {
+          "description": "依頼受付（再配達）",
+          "provider_time_text": "01月01日 14:44"
+        },
+        {
+          "description": "発送済み",
+          "provider_time_text": "12月31日 17:00",
+          "location": "Example origin office",
+          "stage": "in_transit"
+        },
+        {
+          "description": "荷物受付",
+          "provider_time_text": "12月31日 16:43",
+          "location": "Example origin office",
+          "stage": "accepted"
+        }
+      ]
+    }
+  },
+  "yanwen/delivered.html/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "【Example facility】Delivered.",
+      "last_update": "2026-03-05T12:00:00+01:00",
+      "delivered_at": "2026-03-05T12:00:00+01:00",
+      "delivery_tracking_number": "6000000000001",
+      "destination_country": "IT",
+      "events": [
+        {
+          "time": "2026-03-05T12:00:00+01:00",
+          "description": "【Example facility】Delivered.",
+          "location": "Example facility",
+          "provider_code": "LM40",
+          "stage": "delivered"
+        },
+        {
+          "time": "2026-03-05T09:00:00+01:00",
+          "description": "【Example facility】Shipment out for delivery.",
+          "location": "Example facility",
+          "stage": "out_for_delivery"
+        },
+        {
+          "time": "2026-03-04T16:00:00+01:00",
+          "description": "International shipment release - Import",
+          "location": "Example facility",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-03-02T14:00:00+08:00",
+          "description": "Yanwen Pickup Scan",
+          "location": "Example facility",
+          "stage": "accepted"
+        }
+      ]
+    }
+  },
+  "dtdc/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered",
+      "last_update": "2026-01-03T13:00:00Z",
+      "timezone": "Asia/Kolkata",
+      "delivered_at": "2026-01-03T13:00:00Z",
+      "events": [
+        {
+          "description": "Delivered",
+          "time": "2026-01-03T13:00:00Z",
+          "location": "Example destination depot",
+          "stage": "delivered",
+          "provider_code": "delivered"
+        },
+        {
+          "description": "Out For Delivery",
+          "time": "2026-01-03T11:00:00Z",
+          "location": "Example destination depot",
+          "stage": "out_for_delivery",
+          "provider_code": "outfordelivery"
+        },
+        {
+          "description": "In Transit",
+          "time": "2026-01-02T13:00:00Z",
+          "location": "Example sorting depot",
+          "stage": "in_transit",
+          "provider_code": "in_transit"
+        },
+        {
+          "description": "Picked Up",
+          "time": "2026-01-01T13:00:00Z",
+          "location": "Example origin depot",
+          "stage": "accepted",
+          "provider_code": "pickup_completed"
+        },
+        {
+          "description": "Booked",
+          "time": "2026-01-01T11:00:00Z",
+          "location": "Example origin depot",
+          "stage": "registered",
+          "provider_code": "softdata_upload"
+        }
+      ]
+    }
+  },
+  "yunexpress/in-transit.json/": {
+    "result": {
+      "status": "in_transit",
+      "current_stage": "customs",
+      "last_status_text": "Customs inspection - Import",
+      "last_update": null,
+      "delivery_tracking_number": "9000000000000000000001",
+      "destination_country": "US",
+      "events": [
+        {
+          "local_time": "2026-03-20T13:39:00",
+          "description": "Customs inspection - Import",
+          "location": "Example facility",
+          "stage": "customs"
+        },
+        {
+          "local_time": "2026-03-19T13:39:00",
+          "description": "Clearance processing completed - Import",
+          "location": "Example facility",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-18T13:39:00",
+          "description": "Collected at Cargo Terminal",
+          "location": "Example facility",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-17T13:39:00",
+          "description": "Start Customs Clearence",
+          "location": "Example facility",
+          "stage": "customs"
+        },
+        {
+          "local_time": "2026-03-16T13:39:00",
+          "description": "International flight has arrived",
+          "location": "Example facility",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-15T13:39:00",
+          "description": "International flight has departed",
+          "location": "Example facility",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-14T13:39:00",
+          "description": "Clearence processing completed - Export",
+          "location": "Example facility",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-13T13:39:00",
+          "description": "Arrived at the origin international airport",
+          "location": "Example facility",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-12T13:39:00",
+          "description": "The country of origin commences customs declaration.",
+          "location": "Example facility",
+          "stage": "customs"
+        },
+        {
+          "local_time": "2026-03-11T13:39:00",
+          "description": "Shipment is in transit to next facility",
+          "location": "Example facility",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-10T13:39:00",
+          "description": "Departed from sort facility",
+          "location": "Example facility",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-09T13:39:00",
+          "description": "Arrived at origin facility",
+          "location": "Example facility",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-03-08T13:39:00",
+          "description": "Shipment picked up",
+          "location": "Example facility",
+          "stage": "accepted"
+        },
+        {
+          "local_time": "2026-03-07T13:39:00",
+          "description": "Shipment information received",
+          "location": "Example facility",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "postnord/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "The shipment item has been delivered to the recipient",
+      "last_update": "2026-01-04T12:00:00Z",
+      "expected_delivery": null,
+      "delivered_at": "2026-01-04T12:00:00Z",
+      "weight_kg": 1.5,
+      "dimensions_text": "40 × 30 × 20 cm",
+      "events": [
+        {
+          "time": "2026-01-04T12:00:00Z",
+          "description": "The shipment item has been delivered.",
+          "provider_code": "DELIVERED",
+          "location": "Example Service Point",
+          "stage": "delivered"
+        },
+        {
+          "time": "2026-01-03T12:00:00Z",
+          "description": "The shipment item has been delivered to a service point.",
+          "provider_code": "AVAILABLE_FOR_DELIVERY",
+          "location": "Example Service Point",
+          "stage": "ready_for_pickup"
+        },
+        {
+          "time": "2026-01-03T08:00:00Z",
+          "description": "The delivery of the shipment item is in progress.",
+          "provider_code": "EN_ROUTE",
+          "location": "Example Terminal",
+          "stage": "out_for_delivery"
+        },
+        {
+          "time": "2026-01-02T10:00:00Z",
+          "description": "The shipment item is under transportation.",
+          "provider_code": "EN_ROUTE",
+          "location": "Example Terminal",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-01T12:00:00Z",
+          "description": "We have received a notification from your shipper that they are preparing an item for you. The tracking information will be updated when the parcel is handed over to PostNord.",
+          "provider_code": "INFORMED",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "bpost/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Item delivered",
+      "last_update": null,
+      "last_update_local": "2026-01-04T12:00:00",
+      "expected_delivery": null,
+      "weight_kg": 0.32,
+      "dimensions_text": "26.1 × 7.5 × 38.4 cm",
+      "events": [
+        {
+          "local_time": "2026-01-04T12:00:00",
+          "description": "Item delivered",
+          "location": "Example facility, BE",
+          "stage": "delivered"
+        },
+        {
+          "local_time": "2026-01-03T12:00:00",
+          "description": "Item available at Pick-up point",
+          "location": "Example facility, BE",
+          "stage": "ready_for_pickup"
+        },
+        {
+          "local_time": "2026-01-03T10:00:00",
+          "description": "The postman's delivery round for your item has started",
+          "location": "Example facility, BE",
+          "stage": "out_for_delivery"
+        },
+        {
+          "local_time": "2026-01-02T12:00:00",
+          "description": "Your item has been sorted",
+          "location": "Example facility, BE",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-01-01T12:00:00",
+          "description": "Item is announced / Landmark Global (bpost) received the information",
+          "location": "Example facility, BE",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "purolator/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Shipment delivered",
+      "last_update": null,
+      "last_update_local": "2026-01-04T14:00:00",
+      "expected_delivery": null,
+      "weight_kg": 0.90718474,
+      "events": [
+        {
+          "description": "Shipment delivered",
+          "provider_code": "9500",
+          "location": "Example City, QC, CA",
+          "local_time": "2026-01-04T14:00:00",
+          "stage": "delivered"
+        },
+        {
+          "description": "Available for pickup for 5 business days from arrival date at the counter",
+          "provider_code": "9550",
+          "location": "Example City, QC, CA",
+          "local_time": "2026-01-03T16:00:00",
+          "stage": "ready_for_pickup"
+        },
+        {
+          "description": "Attempted delivery - receiver unavailable",
+          "provider_code": "9260",
+          "location": "Example City, QC, CA",
+          "local_time": "2026-01-03T14:00:00",
+          "stage": "failed_attempt"
+        },
+        {
+          "description": "On vehicle for delivery",
+          "provider_code": "4200",
+          "location": "Example City, QC, CA",
+          "local_time": "2026-01-03T08:00:00",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "Arrived at sort facility",
+          "provider_code": "7220",
+          "location": "Example City, ON, CA",
+          "local_time": "2026-01-02T10:00:00",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Picked up by Purolator",
+          "provider_code": "2380",
+          "location": "Example City, ON, CA",
+          "local_time": "2026-01-01T18:00:00",
+          "stage": "accepted"
+        },
+        {
+          "description": "Label information electronically submitted",
+          "provider_code": "3010",
+          "location": "CA",
+          "local_time": "2026-01-01T10:00:00",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "yto/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered",
+      "last_update": "2026-01-03T18:00:00+08:00",
+      "timezone": "Asia/Shanghai",
+      "delivered_at": "2026-01-03T18:00:00+08:00",
+      "events": [
+        {
+          "description": "Delivered",
+          "provider_code": "745",
+          "time": "2026-01-03T18:00:00+08:00",
+          "location": "Example destination depot",
+          "stage": "delivered"
+        },
+        {
+          "description": "In a parcel locker or pickup station",
+          "provider_code": "751",
+          "time": "2026-01-03T12:00:00+08:00",
+          "location": "Example destination depot",
+          "stage": "ready_for_pickup"
+        },
+        {
+          "description": "Out for delivery",
+          "provider_code": "710",
+          "time": "2026-01-03T11:00:00+08:00",
+          "location": "Example destination depot",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "Unloaded at a sorting centre",
+          "provider_code": "171",
+          "time": "2026-01-02T20:00:00+08:00",
+          "location": "Example sorting depot",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Loaded for transport",
+          "provider_code": "131",
+          "time": "2026-01-02T18:00:00+08:00",
+          "location": "Example origin depot",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Picked up",
+          "provider_code": "310",
+          "time": "2026-01-01T14:00:00+08:00",
+          "location": "Example origin depot",
+          "stage": "accepted"
+        }
+      ]
+    }
+  },
+  "correios-br/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Objeto entregue ao destinatário",
+      "last_update": "2026-01-05T16:10:47-03:00",
+      "last_update_local": null,
+      "expected_delivery": null,
+      "delivered_at": "2026-01-05T16:10:47-03:00",
+      "events": [
+        {
+          "description": "Objeto entregue ao destinatário",
+          "provider_code": "BDE/01",
+          "time": "2026-01-05T16:10:47-03:00",
+          "location": "Cidade Exemplo, SP",
+          "stage": "delivered"
+        },
+        {
+          "description": "Objeto saiu para entrega ao destinatário",
+          "provider_code": "OEC/01",
+          "time": "2026-01-05T13:54:24-03:00",
+          "location": "Cidade Exemplo, SP",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "Saída para entrega cancelada",
+          "provider_code": "BDE/47",
+          "time": "2026-01-05T13:24:13-03:00",
+          "stage": "exception"
+        },
+        {
+          "description": "Inconsistências no endereçamento do objeto",
+          "provider_code": "BDE/34",
+          "time": "2026-01-04T13:16:48-03:00",
+          "stage": "exception"
+        },
+        {
+          "description": "Objeto em transferência - por favor aguarde",
+          "provider_code": "RO/01",
+          "time": "2026-01-03T13:39:43-03:00",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Objeto postado",
+          "provider_code": "PO/01",
+          "time": "2026-01-02T18:40:01-03:00",
+          "stage": "accepted"
+        },
+        {
+          "description": "Informações enviadas para análise da autoridade aduaneira/órgãos anuentes",
+          "provider_code": "PAR/21",
+          "time": "2026-01-01T21:09:45-03:00",
+          "stage": "customs"
+        }
+      ]
+    }
+  },
+  "yunda/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "timezone": "Asia/Shanghai",
+      "last_status_text": "Delivered",
+      "last_update": "2026-01-03T18:00:00+08:00",
+      "delivered_at": "2026-01-03T18:00:00+08:00",
+      "events": [
+        {
+          "description": "Delivered",
+          "provider_code": "已签收",
+          "time": "2026-01-03T18:00:00+08:00",
+          "location": "示例市",
+          "stage": "delivered"
+        },
+        {
+          "description": "Ready for pickup",
+          "provider_code": "待取件",
+          "time": "2026-01-03T12:00:00+08:00",
+          "location": "示例市",
+          "stage": "ready_for_pickup"
+        },
+        {
+          "description": "Out for delivery",
+          "provider_code": "派送中",
+          "time": "2026-01-03T11:00:00+08:00",
+          "location": "示例市",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "In transit",
+          "provider_code": "运输中",
+          "time": "2026-01-02T18:00:00+08:00",
+          "location": "示例市",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Picked up",
+          "provider_code": "已揽件",
+          "time": "2026-01-01T14:00:00+08:00",
+          "location": "示例市",
+          "stage": "accepted"
+        }
+      ]
+    }
+  },
+  "ems/positive.html/": {
+    "result": {
+      "status": "in_transit",
+      "current_stage": "customs",
+      "last_status_text": "Held for export customs inspection",
+      "last_update": null,
+      "last_update_local": "2026-09-03T22:23:00",
+      "expected_delivery": null,
+      "events": [
+        {
+          "local_time": "2026-09-03T22:23:00",
+          "description": "Held for export customs inspection",
+          "location": "Example customs office",
+          "stage": "customs"
+        },
+        {
+          "local_time": "2026-09-02T01:37:00",
+          "description": "Departed from export office",
+          "location": "Example exchange office",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-09-02T01:37:00",
+          "description": "Released from export customs and security",
+          "location": "Example customs office",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-09-01T23:05:00",
+          "description": "Presented to export customs and security",
+          "location": "Example customs office",
+          "stage": "customs"
+        },
+        {
+          "local_time": "2026-09-01T23:05:00",
+          "description": "Arrived at export office",
+          "location": "Example exchange office",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-09-01T10:48:00",
+          "description": "Posted",
+          "location": "Example origin office",
+          "stage": "accepted"
+        }
+      ]
+    }
+  },
+  "spring-gds/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Shipment delivered",
+      "last_update": null,
+      "last_update_local": "2026-09-03T10:12:00",
+      "expected_delivery": null,
+      "sender_name": "Example Webshop",
+      "events": [
+        {
+          "local_time": "2026-09-03T10:12:00",
+          "location": "United States",
+          "description": "Shipment delivered",
+          "stage": "delivered"
+        },
+        {
+          "time": "2026-09-03T06:40:00+02:00",
+          "location": "Netherlands",
+          "description": "Shipment out for delivery",
+          "stage": "out_for_delivery"
+        },
+        {
+          "time": "2026-09-01T19:05:00+02:00",
+          "location": "Netherlands",
+          "description": "Customs clearance completed",
+          "stage": "customs"
+        },
+        {
+          "time": "2026-08-28T11:00:00+08:00",
+          "location": "CN",
+          "description": "Shipment data received",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "uniuni/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered",
+      "last_update": null,
+      "last_update_local": "2026-01-05T16:00:00",
+      "expected_delivery": null,
+      "events": [
+        {
+          "description": "Delivered",
+          "provider_code": "203",
+          "local_time": "2026-01-05T16:00:00",
+          "location": "Example City, EX",
+          "stage": "delivered"
+        },
+        {
+          "description": "Out for delivery",
+          "provider_code": "202",
+          "time": "2026-01-05T15:00:00Z",
+          "location": "Example City, EX",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "Failed delivery attempt, returning to the warehouse",
+          "provider_code": "211",
+          "time": "2026-01-04T21:00:00Z",
+          "location": "Example City, EX",
+          "stage": "failed_attempt"
+        },
+        {
+          "description": "Out for delivery",
+          "provider_code": "202",
+          "time": "2026-01-04T15:00:00Z",
+          "location": "Example City, EX",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "Arrival scan",
+          "provider_code": "200",
+          "time": "2026-01-04T14:00:00Z",
+          "location": "Example City, EX",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Gateway transit out",
+          "provider_code": "195",
+          "time": "2026-01-03T23:00:00Z",
+          "location": "Example City, EX",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Gateway transit in",
+          "provider_code": "199",
+          "time": "2026-01-03T18:00:00Z",
+          "location": "Example City, EX",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Gateway transit in",
+          "provider_code": "199",
+          "time": "2026-01-02T17:00:00Z",
+          "location": "Example City, EX",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Order received",
+          "provider_code": "190",
+          "time": "2026-01-01T14:30:00Z",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "ctt-express/pickup.json/": {
+    "result": {
+      "status": "in_transit",
+      "current_stage": "ready_for_pickup",
+      "last_status_text": "Disponible en Punto Collectt Express",
+      "last_update": null,
+      "last_update_local": "2026-01-04T10:00:00",
+      "expected_delivery": null,
+      "events": [
+        {
+          "provider_code": "2310",
+          "description": "Disponible en Punto Collectt Express",
+          "local_time": "2026-01-04T10:00:00",
+          "stage": "ready_for_pickup"
+        },
+        {
+          "provider_code": "2400",
+          "description": "Nuevo reparto",
+          "time": "2026-01-03T12:00:01.017Z",
+          "stage": "out_for_delivery"
+        },
+        {
+          "provider_code": "2400",
+          "description": "Nuevo reparto",
+          "time": "2026-01-03T12:00:00.970Z",
+          "stage": "out_for_delivery"
+        },
+        {
+          "provider_code": "1600",
+          "description": "Incidencia en el reparto",
+          "time": "2026-01-03T11:00:00Z",
+          "stage": "exception"
+        },
+        {
+          "provider_code": "1500",
+          "description": "En reparto",
+          "time": "2026-01-03T10:00:00Z",
+          "stage": "out_for_delivery"
+        },
+        {
+          "provider_code": "1000",
+          "description": "Enviado",
+          "time": "2026-01-02T10:00:00Z",
+          "stage": "in_transit"
+        },
+        {
+          "provider_code": "0000",
+          "description": "Pendiente de recepción en CTT Express",
+          "time": "2026-01-01T10:00:00Z",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "pos-malaysia/international.json/": {
+    "result": {
+      "status": "in_transit",
+      "current_stage": "in_transit",
+      "last_status_text": "Item arrived at delivery office",
+      "last_update": null,
+      "expected_delivery": null,
+      "events": [
+        {
+          "provider_time_text": "23 Feb 2026, 09:20:00 AM",
+          "location": "",
+          "description": "Item arrived at delivery office",
+          "stage": "in_transit",
+          "provider_code": "EMG"
+        },
+        {
+          "provider_time_text": "22 Feb 2026, 03:46:00 PM",
+          "location": "",
+          "description": "Your parcel is being transported to the next facility",
+          "stage": "in_transit",
+          "provider_code": "TN035"
+        },
+        {
+          "provider_time_text": "22 Feb 2026, 10:43:00 AM",
+          "location": "",
+          "description": "Your parcel has arrived at destination facility for Processing",
+          "stage": "in_transit",
+          "provider_code": "TN030"
+        },
+        {
+          "provider_time_text": "21 Feb 2026, 12:04:38 PM",
+          "location": "",
+          "description": "Your parcel is being transported to destination country",
+          "stage": "in_transit",
+          "provider_code": "TN008"
+        },
+        {
+          "provider_time_text": "21 Feb 2026, 10:37:37 AM",
+          "location": "",
+          "description": "Your parcel has arrived at our facility for sorting",
+          "stage": "in_transit",
+          "provider_code": "TN001"
+        }
+      ]
+    }
+  },
+  "canpar/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Our Package was Delivered",
+      "last_update": null,
+      "last_update_local": "2026-01-05T10:00:00",
+      "expected_delivery": null,
+      "events": [
+        {
+          "description": "Our Package was Delivered",
+          "provider_code": "DEL",
+          "local_time": "2026-01-05T10:00:00",
+          "location": "Example City, EX",
+          "stage": "delivered"
+        },
+        {
+          "description": "Out for Delivery-Almost There!",
+          "provider_code": "WC",
+          "local_time": "2026-01-05T08:00:00",
+          "location": "Example City, EX",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "Package Has Arrived at Our Facility",
+          "provider_code": "ARR",
+          "local_time": "2026-01-04T10:00:00",
+          "location": "Example City, EX",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Returned to Sender",
+          "provider_code": "RTN",
+          "local_time": "2026-01-03T10:00:00",
+          "location": "Example City, EX",
+          "stage": "returned"
+        },
+        {
+          "description": "Can't Find the Address-Checking Again!",
+          "provider_code": "NL",
+          "local_time": "2026-01-03T08:00:00",
+          "location": "Example City, EX",
+          "stage": "failed_attempt"
+        },
+        {
+          "description": "Picked Up and On the Move!",
+          "provider_code": "PIC",
+          "local_time": "2026-01-01T10:00:00",
+          "location": "Example City, EX",
+          "stage": "accepted"
+        }
+      ]
+    }
+  },
+  "ninja-van/returned.json/": {
+    "result": {
+      "status": "exception",
+      "current_stage": "returned",
+      "last_status_text": "Returned to sender",
+      "last_update": null,
+      "expected_delivery": null,
+      "events": [
+        {
+          "provider_code": "DELIVERY_SUCCESS",
+          "description": "delivery success",
+          "provider_time_text": "2026-02-30T09:00:00Z",
+          "stage": "returned",
+          "provider_leg": "return"
+        },
+        {
+          "provider_code": "DRIVER_INBOUND_SCAN",
+          "description": "driver inbound scan",
+          "time": "2026-04-02T08:00:00Z",
+          "location": "Example Station",
+          "stage": "in_transit",
+          "provider_leg": "return"
+        },
+        {
+          "provider_code": "HUB_INBOUND_SCAN",
+          "description": "hub inbound scan",
+          "time": "2026-04-01T11:00:00Z",
+          "location": "Example Sorting Centre",
+          "stage": "in_transit",
+          "provider_leg": "return"
+        },
+        {
+          "provider_code": "DRIVER_PICKUP_SCAN",
+          "description": "driver pickup scan",
+          "time": "2026-04-01T10:30:00Z",
+          "location": "Example Hub",
+          "stage": "in_transit",
+          "provider_leg": "return"
+        },
+        {
+          "provider_code": "RTS",
+          "description": "rts",
+          "time": "2026-04-01T08:15:00Z",
+          "stage": "exception",
+          "provider_leg": "return"
+        }
+      ]
+    }
+  },
+  "correos-chile/customs.json/": {
+    "result": {
+      "status": "in_transit",
+      "current_stage": "customs",
+      "last_status_text": "ENVÍO EN PROCESO DE INTERNACIÓN AL PAÍS",
+      "last_update": null,
+      "last_update_local": "2026-09-05T01:24:00",
+      "expected_delivery": null,
+      "events": [
+        {
+          "local_time": "2026-09-05T01:24:00",
+          "description": "ENVÍO EN PROCESO DE INTERNACIÓN AL PAÍS",
+          "provider_code": "003",
+          "location": "AEROPUERTO",
+          "stage": "customs"
+        },
+        {
+          "local_time": "2026-08-31T19:20:00",
+          "description": "Actualización del envío",
+          "provider_code": "001",
+          "location": "PLANTA CENTRAL"
+        }
+      ]
+    }
+  },
+  "gofo/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered",
+      "last_update": null,
+      "last_update_local": "2026-01-04T12:00:00",
+      "expected_delivery": null,
+      "destination_country": "US",
+      "events": [
+        {
+          "local_time": "2026-01-04T12:00:00",
+          "description": "Delivered",
+          "provider_code": "205",
+          "location": "Example City, EX",
+          "stage": "delivered"
+        },
+        {
+          "time": "2026-01-04T08:00:00-08:00",
+          "description": "Out for Delivery",
+          "provider_code": "208",
+          "location": "Example City, EX",
+          "stage": "out_for_delivery"
+        },
+        {
+          "time": "2026-01-03T18:00:00-08:00",
+          "description": "Arrived at GOFO Regional Hub",
+          "provider_code": "202",
+          "location": "Example City, EX",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-01T12:00:00-08:00",
+          "description": "Shipping Label Created",
+          "provider_code": "100",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "ecoscooting/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Parcel has been delivered successfully",
+      "last_update": null,
+      "expected_delivery": null,
+      "weight_kg": 4.301,
+      "events": [
+        {
+          "provider_time_text": "2026-01-04 20:00:00 UTC+1",
+          "description": "Parcel has been delivered successfully",
+          "provider_code": "GTMS_SIGNED",
+          "stage": "delivered"
+        },
+        {
+          "time": "2026-01-04T13:00:00Z",
+          "description": "Out for delivery",
+          "provider_code": "GTMS_DO_DEPART",
+          "stage": "out_for_delivery"
+        },
+        {
+          "time": "2026-01-03T18:00:00Z",
+          "description": "Package stolen",
+          "provider_code": "GTMS_DEL_FAILURE",
+          "stage": "failed_attempt"
+        },
+        {
+          "time": "2026-01-02T10:00:00Z",
+          "description": "Parcel has been accepted by last mile",
+          "provider_code": "GTMS_ACCEPT",
+          "stage": "accepted"
+        }
+      ]
+    }
+  },
+  "landmark-global/delivered.html/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered",
+      "last_update": null,
+      "last_update_local": "2026-01-04T12:00:00",
+      "expected_delivery": null,
+      "canonical_tracking_number": "LTN00000001",
+      "delivery_tracking_number": "AA000000005AU",
+      "delivery_carrier": "australia-post",
+      "events": [
+        {
+          "local_time": "2026-01-04T12:00:00",
+          "description": "Delivered",
+          "location": "Example City, EX",
+          "stage": "delivered"
+        },
+        {
+          "local_time": "2026-01-04T08:00:00",
+          "description": "Onboard for delivery",
+          "location": "Example City, EX",
+          "stage": "out_for_delivery"
+        },
+        {
+          "local_time": "2026-01-03T10:00:00",
+          "description": "Customs cleared",
+          "location": "Example Gateway",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-01-01T12:00:00",
+          "description": "Shipment Data Uploaded",
+          "location": "Example Origin",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "correos-express/history.html/": {
+    "result": {
+      "status": "in_transit",
+      "current_stage": "in_transit",
+      "last_status_text": "NUEVO REPARTO",
+      "last_update": null,
+      "last_update_local": "2026-01-05T18:27:00",
+      "expected_delivery": "2026-01-06",
+      "events": [
+        {
+          "description": "NUEVO REPARTO",
+          "provider_status": "NUEVO REPARTO",
+          "stage": "in_transit",
+          "local_time": "2026-01-05T18:27:00",
+          "location": "BARCELONA2"
+        },
+        {
+          "description": "EN ALMACÉN",
+          "provider_status": "EN ALMACÉN",
+          "stage": "exception",
+          "local_time": "2026-01-02T10:01:00",
+          "location": "BARCELONA2"
+        },
+        {
+          "description": "EN REPARTO",
+          "provider_status": "EN REPARTO",
+          "stage": "out_for_delivery",
+          "local_time": "2026-01-02T09:00:00",
+          "location": "BARCELONA2"
+        },
+        {
+          "description": "EN DESTINO",
+          "provider_status": "EN DESTINO",
+          "stage": "in_transit",
+          "local_time": "2026-01-01T12:00:00",
+          "location": "MADRID"
+        },
+        {
+          "description": "EN RUTA A LOCALIDAD DE DESTINO",
+          "provider_status": "EN RUTA A LOCALIDAD DE DESTINO",
+          "stage": "in_transit",
+          "local_time": "2026-01-01T06:03:00",
+          "location": "MADRID"
+        },
+        {
+          "description": "ADMITIDO",
+          "provider_status": "ADMITIDO",
+          "stage": "accepted",
+          "local_time": "2025-12-31T13:15:00",
+          "location": "OVIEDO"
+        },
+        {
+          "description": "INFORMADO",
+          "provider_status": "INFORMADO",
+          "stage": "registered",
+          "local_time": "2025-12-30T13:15:00",
+          "location": "CENTRAL"
+        }
+      ]
+    }
+  },
+  "nz-post/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered",
+      "last_update": null,
+      "last_update_local": "2026-01-05T10:00:00",
+      "expected_delivery": null,
+      "events": [
+        {
+          "local_time": "2026-01-05T10:00:00",
+          "description": "Delivered",
+          "provider_code": "22",
+          "location": "Example Depot",
+          "stage": "delivered"
+        },
+        {
+          "time": "2026-01-06T08:00:00Z",
+          "description": "With courier for delivery",
+          "provider_code": "32",
+          "location": "Example Depot",
+          "stage": "out_for_delivery"
+        },
+        {
+          "time": "2026-01-05T11:00:00Z",
+          "description": "Processed at depot",
+          "provider_code": "8",
+          "location": "Example Depot",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-05T09:00:00Z",
+          "description": "Collected from sender",
+          "provider_code": "13",
+          "location": "Example Depot",
+          "stage": "accepted"
+        },
+        {
+          "time": "2026-01-04T08:00:00Z",
+          "description": "Tracking number allocated to parcel",
+          "provider_code": "997",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "poczta-polska/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Final delivery",
+      "last_update": null,
+      "last_update_local": "2026-01-06T12:00:00",
+      "expected_delivery": null,
+      "weight_kg": 0.35,
+      "events": [
+        {
+          "local_time": "2026-01-06T12:00:00",
+          "description": "Final delivery",
+          "provider_code": "P_D",
+          "location": "Example Post Office",
+          "stage": "delivered"
+        },
+        {
+          "local_time": "2026-01-06T08:00:00",
+          "description": "In delivery",
+          "provider_code": "P_WD",
+          "location": "Example Post Office",
+          "stage": "out_for_delivery"
+        },
+        {
+          "local_time": "2026-01-05T16:00:00",
+          "description": "In delivery",
+          "provider_code": "P_ND",
+          "location": "Example Distribution Centre",
+          "stage": "exception"
+        },
+        {
+          "local_time": "2026-01-04T12:00:00",
+          "description": "Posting/collection",
+          "provider_code": "P_NAD",
+          "location": "Example Post Office",
+          "stage": "accepted"
+        },
+        {
+          "local_time": "2026-01-04T08:00:00",
+          "description": "Electronic item data received",
+          "provider_code": "P_REJ_KN1",
+          "location": "Electronic Sender",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "the-courier-guy/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered",
+      "last_update": null,
+      "last_update_local": "2026-01-06T12:00:00.000",
+      "expected_delivery": null,
+      "events": [
+        {
+          "local_time": "2026-01-06T12:00:00.000",
+          "provider_code": "delivered",
+          "description": "Delivered",
+          "location": "Example Hub",
+          "stage": "delivered"
+        },
+        {
+          "time": "2026-01-06T10:00:00Z",
+          "provider_code": "out-for-delivery",
+          "description": "Out for delivery",
+          "location": "Example Hub",
+          "stage": "out_for_delivery"
+        },
+        {
+          "time": "2026-01-05T12:00:00Z",
+          "provider_code": "ready-for-pickup",
+          "description": "Ready for pickup",
+          "location": "Example Counter",
+          "stage": "ready_for_pickup"
+        },
+        {
+          "time": "2026-01-04T12:00:00Z",
+          "provider_code": "collected",
+          "description": "Collected",
+          "location": "Example Hub",
+          "stage": "accepted"
+        },
+        {
+          "time": "2026-01-03T12:00:00Z",
+          "provider_code": "submitted",
+          "description": "Submitted",
+          "location": "",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "bring-posten/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered",
+      "last_update": null,
+      "last_update_local": "2026-01-06T12:00:00.000",
+      "expected_delivery": null,
+      "weight_kg": 0.5,
+      "dimensions_text": "20 × 15 × 4 cm",
+      "events": [
+        {
+          "local_time": "2026-01-06T12:00:00.000",
+          "provider_code": "DELIVERED",
+          "description": "Delivered",
+          "location": "Example City",
+          "stage": "delivered"
+        },
+        {
+          "time": "2026-01-06T10:00:00+01:00",
+          "provider_code": "TRANSPORT_TO_RECIPIENT",
+          "description": "Out for delivery",
+          "location": "Example City",
+          "stage": "out_for_delivery"
+        },
+        {
+          "time": "2026-01-05T12:00:00+01:00",
+          "provider_code": "READY_FOR_PICKUP",
+          "description": "Ready for pickup",
+          "location": "Example City",
+          "stage": "ready_for_pickup"
+        },
+        {
+          "time": "2026-01-04T12:00:00+01:00",
+          "provider_code": "HANDED_IN",
+          "description": "Handed in",
+          "location": "Example City",
+          "stage": "accepted"
+        },
+        {
+          "time": "2026-01-03T12:00:00+01:00",
+          "provider_code": "PRE_NOTIFIED",
+          "description": "Shipment information received",
+          "location": "",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "estafeta/delivered-lookup.html/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Entregado",
+      "last_update": null,
+      "last_update_local": "2026-01-04T12:00:00",
+      "expected_delivery": null,
+      "canonical_tracking_number": "100000000000000A00TEST",
+      "events": [
+        {
+          "local_time": "2026-01-04T12:00:00",
+          "description": "Entregado",
+          "location": "Example City",
+          "stage": "delivered"
+        },
+        {
+          "local_time": "2026-01-04T08:00:00",
+          "description": "En proceso de entrega a domicilio",
+          "location": "Example City",
+          "stage": "out_for_delivery"
+        },
+        {
+          "local_time": "2026-01-03T18:00:00",
+          "description": "En tránsito",
+          "location": "Example Gateway",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-01-03T12:00:00",
+          "description": "Recibido por estafeta",
+          "location": "Example Origin",
+          "stage": "accepted"
+        }
+      ]
+    }
+  },
+  "canada-post/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered",
+      "last_update": null,
+      "expected_delivery": null,
+      "events": [
+        {
+          "description": "Delivered",
+          "stage": "delivered",
+          "summary_snapshot": true
+        },
+        {
+          "local_time": "2026-03-14T08:00:34",
+          "description": "Signature available",
+          "provider_code": "20",
+          "location": "EXAMPLE CITY, ON"
+        },
+        {
+          "time": "2026-03-14T08:00:34-05:00",
+          "description": "Delivered",
+          "provider_code": "1466",
+          "stage": "delivered",
+          "location": "EXAMPLE CITY, ON"
+        },
+        {
+          "time": "2026-03-14T07:00:12-05:00",
+          "description": "Out for delivery",
+          "provider_code": "0500",
+          "stage": "out_for_delivery",
+          "location": "EXAMPLE CITY, ON"
+        },
+        {
+          "time": "2026-03-14T06:00:00-05:00",
+          "description": "Item processed",
+          "provider_code": "0170",
+          "stage": "in_transit",
+          "location": "EXAMPLE CITY, ON"
+        },
+        {
+          "time": "2026-03-12T09:30:22-05:00",
+          "description": "Item accepted at the Post Office",
+          "provider_code": "1302",
+          "stage": "accepted",
+          "location": "EXAMPLE CITY, ON"
+        }
+      ],
+      "tracking_url": "https://www.canadapost-postescanada.ca/track-reperage/en/search?searchFor=0073938000999999",
+      "tracking_source": "structured-web-response"
+    }
+  },
+  "nacex/history.html/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered",
+      "last_update": null,
+      "events": [
+        {
+          "description": "Delivered",
+          "provider_status": "Entregado",
+          "provider_time_text": "16 January 2026",
+          "stage": "delivered"
+        },
+        {
+          "description": "En reparto",
+          "provider_status": "En reparto",
+          "provider_time_text": "16 January 2026",
+          "location": "TEST LOCALITY",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "Disponible en punto NACEX",
+          "provider_status": "Disponible en punto NACEX",
+          "provider_time_text": "16 January 2026",
+          "location": "TEST LOCALITY",
+          "stage": "ready_for_pickup"
+        },
+        {
+          "description": "En reparto",
+          "provider_status": "En reparto",
+          "provider_time_text": "16 January 2026",
+          "location": "TEST LOCALITY",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "Cambio de dirección",
+          "provider_status": "Cambio de dirección",
+          "provider_time_text": "15 January 2026"
+        },
+        {
+          "description": "Solución de entrega concertada",
+          "provider_status": "Solución de entrega concertada",
+          "provider_time_text": "15 January 2026"
+        },
+        {
+          "description": "Ausente",
+          "provider_status": "Ausente",
+          "provider_time_text": "15 January 2026",
+          "stage": "failed_attempt"
+        },
+        {
+          "description": "En reparto",
+          "provider_status": "En reparto",
+          "provider_time_text": "15 January 2026",
+          "location": "TEST LOCALITY",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "En tránsito",
+          "provider_status": "En tránsito",
+          "provider_time_text": "15 January 2026",
+          "location": "TEST DEPOT",
+          "stage": "in_transit"
+        },
+        {
+          "description": "En tránsito",
+          "provider_status": "En tránsito",
+          "provider_time_text": "14 January 2026",
+          "location": "TEST ORIGIN",
+          "stage": "in_transit"
+        },
+        {
+          "description": "En tránsito",
+          "provider_status": "En tránsito",
+          "provider_time_text": "14 January 2026",
+          "location": "TEST ORIGIN",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Notificado",
+          "provider_status": "Notificado",
+          "provider_time_text": "14 January 2026"
+        },
+        {
+          "description": "Aceptada",
+          "provider_status": "Aceptada",
+          "provider_time_text": "14 January 2026",
+          "location": "TEST ORIGIN",
+          "stage": "accepted"
+        },
+        {
+          "description": "Notificado",
+          "provider_status": "Notificado",
+          "provider_time_text": "14 January 2026"
+        }
+      ]
+    }
+  },
+  "ukrposhta/delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Final delivery",
+      "last_update": null,
+      "events": [
+        {
+          "description": "Final delivery",
+          "provider_code": "48000",
+          "location": "Example facility, EXAMPLE COUNTRY",
+          "local_time": "2026-03-29T16:03:00",
+          "stage": "delivered"
+        },
+        {
+          "description": "Item out for physical delivery",
+          "provider_code": "29500",
+          "location": "Example facility, EXAMPLE COUNTRY",
+          "local_time": "2026-03-29T13:32:00",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "Arrival at the delivery office",
+          "provider_code": "27900",
+          "location": "Example facility, EXAMPLE COUNTRY",
+          "local_time": "2026-03-28T11:27:00",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Registered",
+          "provider_code": "10100",
+          "location": "Example facility, EXAMPLE COUNTRY",
+          "local_time": "2026-03-25T18:11:00",
+          "stage": "accepted"
+        }
+      ]
+    }
+  },
+  "seur/history.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered",
+      "last_update": null,
+      "last_update_local": "2026-01-23T13:13:05",
+      "weight_kg": 1.2,
+      "events": [
+        {
+          "description": "Delivered",
+          "provider_status": "EL ENVÍO HA SIDO ENTREGADO A UN VECINO.",
+          "provider_group": "ENTREGADO",
+          "provider_code": "LL020",
+          "stage": "delivered",
+          "local_time": "2026-01-23T13:13:05"
+        },
+        {
+          "description": "EL ENVÍO ESTÁ EN REPARTO.",
+          "provider_status": "EL ENVÍO ESTÁ EN REPARTO.",
+          "provider_group": "EN REPARTO",
+          "provider_code": "LC003",
+          "stage": "out_for_delivery",
+          "time": "2026-01-23T08:15:00Z"
+        },
+        {
+          "description": "EL ENVÍO HA SUFRIDO UN RETRASO Y ES POSIBLE QUE SE DEMORE LA ENTREGA. DISCULPA LAS MOLESTIAS.",
+          "provider_status": "EL ENVÍO HA SUFRIDO UN RETRASO Y ES POSIBLE QUE SE DEMORE LA ENTREGA. DISCULPA LAS MOLESTIAS.",
+          "provider_group": "EN DEMORA",
+          "provider_code": "LI300",
+          "stage": "exception",
+          "time": "2026-01-23T07:45:29Z"
+        },
+        {
+          "description": "EL ENVÍO ESTÁ EN TRÁNSITO. PRÓXIMAMENTE LLEGARÁ A LAS INSTALACIONES DE DESTINO.",
+          "provider_status": "EL ENVÍO ESTÁ EN TRÁNSITO. PRÓXIMAMENTE LLEGARÁ A LAS INSTALACIONES DE DESTINO.",
+          "provider_group": "EN TRÁNSITO",
+          "provider_code": "LI567",
+          "stage": "in_transit",
+          "time": "2026-01-22T20:16:54Z"
+        },
+        {
+          "description": "EL ENVÍO HA SIDO RECEPCIONADO EN LAS INSTALACIONES DE ORIGEN DE SEUR. COMIENZA EL TRÁNSITO A DESTINO",
+          "provider_status": "EL ENVÍO HA SIDO RECEPCIONADO EN LAS INSTALACIONES DE ORIGEN DE SEUR. COMIENZA EL TRÁNSITO A DESTINO",
+          "provider_group": "EN TRÁNSITO",
+          "provider_code": "SX001",
+          "stage": "accepted",
+          "time": "2026-01-22T19:43:00Z"
+        },
+        {
+          "description": "EL ENVÍO HA SIDO REGISTRADO.",
+          "provider_status": "EL ENVÍO HA SIDO REGISTRADO.",
+          "provider_group": "NOTIFICADO",
+          "provider_code": "SX010",
+          "stage": "registered",
+          "time": "2026-01-21T19:06:31Z"
+        }
+      ]
+    }
+  },
+  "brt/history.html/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered",
+      "last_update": null,
+      "last_update_local": "2026-01-16T21:07:00",
+      "weight_kg": 0.2,
+      "events": [
+        {
+          "description": "Delivered",
+          "provider_status": "COLLECTED AT BRT LOCKER",
+          "stage": "delivered",
+          "location": "TEST DEPOT (990)",
+          "local_time": "2026-01-16T21:07:00"
+        },
+        {
+          "description": "ARRIVED AT BRT LOCKER",
+          "provider_status": "ARRIVED AT BRT LOCKER",
+          "stage": "ready_for_pickup",
+          "location": "TEST DEPOT (990)",
+          "local_time": "2026-01-14T15:49:00"
+        },
+        {
+          "description": "FOR DELIVERY",
+          "provider_status": "FOR DELIVERY",
+          "stage": "out_for_delivery",
+          "location": "TEST DEPOT (990)",
+          "provider_time_text": "14.01.2026"
+        },
+        {
+          "description": "ARRIVED AT DEPOT",
+          "provider_status": "ARRIVED AT DEPOT",
+          "stage": "in_transit",
+          "location": "TEST DEPOT (990)",
+          "local_time": "2026-01-14T08:32:00"
+        },
+        {
+          "description": "DEPARTED",
+          "provider_status": "DEPARTED",
+          "stage": "in_transit",
+          "location": "TEST FRANCE (991)",
+          "local_time": "2026-01-13T21:00:00"
+        },
+        {
+          "description": "COLLECTED",
+          "provider_status": "COLLECTED",
+          "stage": "accepted",
+          "location": "TEST FRANCE (991)",
+          "local_time": "2026-01-13T18:00:00"
+        },
+        {
+          "description": "SHIPPING INFO SENT TO BRT",
+          "provider_status": "SHIPPING INFO SENT TO BRT",
+          "stage": "registered",
+          "location": "TEST FRANCE (991)",
+          "local_time": "2026-01-10T14:57:00"
+        }
+      ]
+    }
+  },
+  "landmark-global/in-transit-nine-digit.html/": {
+    "result": {
+      "status": "in_transit",
+      "current_stage": "in_transit",
+      "last_status_text": "Departure to country of destination",
+      "last_update": null,
+      "last_update_local": "2026-01-20T12:00:00",
+      "expected_delivery": null,
+      "delivery_tracking_number": "AA000000005AU",
+      "delivery_carrier": "australia-post",
+      "events": [
+        {
+          "local_time": "2026-01-20T12:00:00",
+          "description": "Departure to country of destination",
+          "location": "Example Departure Depot",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-01-19T12:00:00",
+          "description": "Shipment has arrived at depot",
+          "location": "Example Crossborder Gateway",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-01-18T12:00:00",
+          "description": "Received at international processing center",
+          "location": "Example Departure Depot",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-01-17T12:00:00",
+          "description": "Shipment has arrived at depot",
+          "location": "Example Crossborder Gateway",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-01-16T12:00:00",
+          "description": "Incoming scan at facility",
+          "location": "Example Departure Depot",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-01-15T12:00:00",
+          "description": "Shipment has departed from airport",
+          "location": "Example Crossborder Gateway",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-01-14T12:00:00",
+          "description": "Shipment has arrived at depot",
+          "location": "Example Departure Depot",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-01-13T12:00:00",
+          "description": "Shipment has departed from depot",
+          "location": "Example Crossborder Gateway",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-01-12T12:00:00",
+          "description": "Crossing border and in transit to carrier hub",
+          "location": "Example Departure Depot",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-01-11T12:00:00",
+          "description": "Customs cleared",
+          "location": "Example Crossborder Gateway",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-01-10T12:00:00",
+          "description": "Grouped when pallet scanned to crossing (DDU Bpost #3)",
+          "location": "Example Departure Depot"
+        },
+        {
+          "local_time": "2026-01-09T12:00:00",
+          "description": "Scanned at Landmark crossdock facility",
+          "location": "Example Crossborder Gateway",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-01-08T12:00:00",
+          "description": "Processed",
+          "location": "Example Departure Depot",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-01-07T12:00:00",
+          "description": "Shipment Data Uploaded",
+          "location": "Example Crossborder Gateway",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "gofo/public-counter.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered",
+      "last_update": null,
+      "last_update_local": "2026-01-04T12:00:00",
+      "expected_delivery": null,
+      "destination_country": "US",
+      "events": [
+        {
+          "local_time": "2026-01-04T12:00:00",
+          "description": "Delivered",
+          "provider_code": "205",
+          "location": "Example City, EX",
+          "stage": "delivered"
+        },
+        {
+          "time": "2026-01-20T07:00:00-08:00",
+          "description": "Out for Delivery",
+          "provider_code": "208",
+          "location": "Station City, EX",
+          "stage": "out_for_delivery"
+        },
+        {
+          "time": "2026-01-18T16:00:00-08:00",
+          "description": "Delivery Exception, Business Closed.",
+          "provider_code": "206",
+          "location": "Example City, EX"
+        },
+        {
+          "time": "2026-01-18T07:00:00-08:00",
+          "description": "Out for Delivery",
+          "provider_code": "208",
+          "location": "Station City, EX",
+          "stage": "out_for_delivery"
+        },
+        {
+          "time": "2026-01-18T06:50:00-08:00",
+          "description": "Arrived at GOFO Delivery Station",
+          "provider_code": "201",
+          "location": "Station City, EX",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-18T00:30:00-08:00",
+          "description": "Loaded on Vehicle",
+          "provider_code": "200",
+          "location": "Hub City, EX",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-17T02:00:00-08:00",
+          "description": "Arrived at GOFO Regional Hub",
+          "provider_code": "202",
+          "location": "Hub City, EX",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-16T23:50:00-08:00",
+          "description": "In Transit to Next Facility",
+          "provider_code": "412",
+          "location": "Hub City, EX"
+        },
+        {
+          "time": "2026-01-15T10:20:00-08:00",
+          "description": "Departed GOFO Regional Hub",
+          "provider_code": "411",
+          "location": "Origin City, EX"
+        },
+        {
+          "time": "2026-01-15T10:10:00-08:00",
+          "description": "Loaded on Vehicle at GOFO Regional Origin Hub",
+          "provider_code": "200",
+          "location": "Origin City, EX",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-15T02:20:00-08:00",
+          "description": "Arrived at GOFO Regional Origin Hub",
+          "provider_code": "202",
+          "location": "Origin City, EX",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-14T18:00:00-08:00",
+          "description": "Pick Up Success",
+          "provider_code": "801",
+          "location": "Origin City, EX"
+        },
+        {
+          "time": "2026-01-14T16:00:00-08:00",
+          "description": "Pick Up Start",
+          "provider_code": "216",
+          "location": "Seller City, EX"
+        },
+        {
+          "time": "2026-01-14T04:30:00-08:00",
+          "description": "Shipping Label Created",
+          "provider_code": "100",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "ecoscooting/delivered-portugal.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Your shipment has been delivered successfully",
+      "last_update": null,
+      "expected_delivery": null,
+      "weight_kg": 4.301,
+      "events": [
+        {
+          "provider_time_text": "2026-01-10 12:00:00 UTC+0",
+          "description": "Your shipment has been delivered successfully",
+          "provider_code": "LM_SIGN_SUCCESS",
+          "stage": "delivered"
+        },
+        {
+          "time": "2026-01-09T12:00:00Z",
+          "description": "Your shipment is out for delivery",
+          "provider_code": "LM_DELIVERY_DEPART",
+          "stage": "out_for_delivery"
+        },
+        {
+          "time": "2026-01-08T12:00:00Z",
+          "description": "Your shipment has been accepted by delivery carrier",
+          "provider_code": "SL_ACCEPT",
+          "stage": "accepted"
+        },
+        {
+          "time": "2026-01-07T12:00:00Z",
+          "description": "Your shipment has been processed at sorting center and ready for shipping",
+          "provider_code": "SC_OUTBOUND",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-06T12:00:00Z",
+          "description": "Your shipment has arrived at sorting center",
+          "provider_code": "SC_INBOUND",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-05T12:00:00Z",
+          "description": "Shipment order created",
+          "provider_code": "CREATE_ORDER_CES",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "uniuni/uusc-delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered",
+      "last_update": null,
+      "last_update_local": "2026-01-05T16:00:00",
+      "expected_delivery": null,
+      "events": [
+        {
+          "description": "Delivered",
+          "provider_code": "203",
+          "local_time": "2026-01-05T16:00:00",
+          "location": "Example City, EX",
+          "stage": "delivered"
+        },
+        {
+          "description": "Out for delivery",
+          "provider_code": "202",
+          "time": "2026-01-04T15:00:00Z",
+          "location": "Example City, EX",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "Arrival scan",
+          "provider_code": "200",
+          "time": "2026-01-04T14:00:00Z",
+          "location": "Example City, EX",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Gateway transit out",
+          "provider_code": "195",
+          "time": "2026-01-03T23:00:00Z",
+          "location": "Example City, EX",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Gateway transit in",
+          "provider_code": "199",
+          "time": "2026-01-02T17:00:00Z",
+          "location": "Example City, EX",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Order received",
+          "provider_code": "190",
+          "time": "2026-01-01T14:30:00Z",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "estafeta/full-guide-lookup.html/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Entregado",
+      "last_update": null,
+      "last_update_local": "2026-01-04T12:00:00",
+      "expected_delivery": null,
+      "events": [
+        {
+          "local_time": "2026-01-04T12:00:00",
+          "description": "Entregado",
+          "location": "Example City",
+          "stage": "delivered"
+        },
+        {
+          "local_time": "2026-01-04T08:00:00",
+          "description": "En proceso de entrega a domicilio",
+          "location": "Example City",
+          "stage": "out_for_delivery"
+        },
+        {
+          "local_time": "2026-01-03T18:00:00",
+          "description": "En tránsito",
+          "location": "Example Gateway",
+          "stage": "in_transit"
+        },
+        {
+          "local_time": "2026-01-03T12:00:00",
+          "description": "Recibido por estafeta",
+          "location": "Example Origin",
+          "stage": "accepted"
+        }
+      ]
+    }
+  },
+  "the-courier-guy/pudo-delivered.json/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "canonical_tracking_number": "TESTA1",
+      "last_status_text": "Delivered",
+      "last_update": null,
+      "last_update_local": "2026-01-06T12:00:00.000",
+      "expected_delivery": null,
+      "events": [
+        {
+          "local_time": "2026-01-06T12:00:00.000",
+          "provider_code": "delivered",
+          "description": "Delivered",
+          "location": "Example Hub",
+          "stage": "delivered"
+        },
+        {
+          "time": "2026-01-06T10:00:00Z",
+          "provider_code": "out-for-delivery",
+          "description": "Out for delivery",
+          "location": "Example Hub",
+          "stage": "out_for_delivery"
+        },
+        {
+          "time": "2026-01-04T12:00:00Z",
+          "provider_code": "collected",
+          "description": "Collected",
+          "location": "Example Hub",
+          "stage": "accepted"
+        },
+        {
+          "time": "2026-01-03T12:00:00Z",
+          "provider_code": "submitted",
+          "description": "Submitted",
+          "location": "",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "the-courier-guy/collection-cancelled.json/": {
+    "result": {
+      "status": "exception",
+      "current_stage": "exception",
+      "canonical_tracking_number": "TESTA1",
+      "last_status_text": "Cancelled",
+      "last_update": null,
+      "last_update_local": "2026-01-06T12:00:00.000",
+      "expected_delivery": null,
+      "events": [
+        {
+          "local_time": "2026-01-06T12:00:00.000",
+          "provider_code": "cancelled",
+          "description": "Cancelled",
+          "location": "Example Hub",
+          "stage": "exception"
+        },
+        {
+          "time": "2026-01-05T10:00:00.123Z",
+          "provider_code": "collection-failed-attempt",
+          "description": "Collection failed attempt",
+          "location": "Example Hub",
+          "stage": "exception"
+        },
+        {
+          "time": "2026-01-04T12:00:00.123Z",
+          "provider_code": "collection-assigned",
+          "description": "Collection assigned",
+          "location": "Example Hub",
+          "stage": "registered"
+        },
+        {
+          "time": "2026-01-03T12:00:00.123Z",
+          "provider_code": "submitted",
+          "description": "Submitted",
+          "location": "Example Hub",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "relais-colis/grouped-history.html/": {
+    "result": {
+      "status": "in_transit",
+      "last_status_text": "Colis en transit sur notre plateforme parisienne.",
+      "last_update": null,
+      "last_update_local": "2026-04-28",
+      "expected_delivery": null,
+      "timezone": "Europe/Paris",
+      "events": [
+        {
+          "local_time": "2026-04-28",
+          "provider_time_text": "28-04-2026",
+          "location": "",
+          "description": "Colis en transit sur notre plateforme parisienne.",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-04-21T19:07:00+02:00",
+          "location": "",
+          "description": "Colis en transit entre les sites Relais Colis.",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-04-20T12:19:00+02:00",
+          "location": "",
+          "description": "Votre colis est pris en charge par le Relais Colis",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-04-19T15:25:00+02:00",
+          "location": "",
+          "description": "Votre colis a été annoncé.",
+          "stage": "registered"
+        }
+      ],
+      "tracking_url": "https://www.relaiscolis.com/colis/suivre",
+      "tracking_source": "rendered-page"
+    }
+  },
+  "ciblex/full-barcode.html/": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered",
+      "last_update": null,
+      "expected_delivery": null,
+      "timezone": "Europe/Paris",
+      "events": [
+        {
+          "provider_time_text": "23/01/2026 invalid clock",
+          "description": "Delivered",
+          "provider_status": "Colis Livré",
+          "location": "",
+          "stage": "delivered"
+        },
+        {
+          "time": "2026-01-23T05:55:02+01:00",
+          "description": "Out for delivery",
+          "provider_status": "Mis en livraison",
+          "location": "TEST DEPOT 99 (99)",
+          "stage": "out_for_delivery"
+        },
+        {
+          "time": "2026-01-23T01:37:00+01:00",
+          "description": "Parcel processed at Ciblex facility",
+          "provider_status": "Colis Contrôle",
+          "location": "TEST DEPOT 99 (99)",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-10T06:02:00+01:00",
+          "description": "Parcel processed at Ciblex facility",
+          "provider_status": "Colis Contrôle",
+          "location": "TEST DEPOT 99 (99)",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-10T06:02:00+01:00",
+          "description": "Ciblex tracking update",
+          "provider_status": "Acheminement contractuel du colis en 48h00",
+          "location": "TEST DEPOT 99 (99)"
+        },
+        {
+          "time": "2026-01-09T15:37:00+01:00",
+          "description": "Parcel processed at Ciblex facility",
+          "provider_status": "Colis Contrôle",
+          "location": "",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-09T15:37:00+01:00",
+          "description": "Parcel processed at Ciblex facility",
+          "provider_status": "Colis Contrôle",
+          "location": "",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-09T08:17:00+01:00",
+          "description": "Ciblex tracking update",
+          "provider_status": "COLIS NON REMIS",
+          "location": ""
+        }
+      ]
+    }
+  },
+  "ciblex/full-barcode.html/unknown": {
+    "result": {
+      "status": "unknown",
+      "last_status_text": "Ciblex tracking update",
+      "last_update": null,
+      "expected_delivery": null,
+      "timezone": "Europe/Paris",
+      "events": [
+        {
+          "provider_time_text": "23/01/2026 invalid clock",
+          "description": "Ciblex tracking update",
+          "provider_status": "Nouvelle formulation inconnue",
+          "location": ""
+        },
+        {
+          "time": "2026-01-23T05:55:02+01:00",
+          "description": "Delivered",
+          "provider_status": "Colis Livré",
+          "location": "TEST DEPOT 99 (99)",
+          "stage": "delivered"
+        },
+        {
+          "time": "2026-01-23T01:37:00+01:00",
+          "description": "Parcel processed at Ciblex facility",
+          "provider_status": "Colis Contrôle",
+          "location": "TEST DEPOT 99 (99)",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-10T06:02:00+01:00",
+          "description": "Parcel processed at Ciblex facility",
+          "provider_status": "Colis Contrôle",
+          "location": "TEST DEPOT 99 (99)",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-10T06:02:00+01:00",
+          "description": "Ciblex tracking update",
+          "provider_status": "Acheminement contractuel du colis en 48h00",
+          "location": "TEST DEPOT 99 (99)"
+        },
+        {
+          "time": "2026-01-09T15:37:00+01:00",
+          "description": "Parcel processed at Ciblex facility",
+          "provider_status": "Colis Contrôle",
+          "location": "",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-09T15:37:00+01:00",
+          "description": "Parcel processed at Ciblex facility",
+          "provider_status": "Colis Contrôle",
+          "location": "",
+          "stage": "in_transit"
+        },
+        {
+          "time": "2026-01-09T08:17:00+01:00",
+          "description": "Ciblex tracking update",
+          "provider_status": "COLIS NON REMIS",
+          "location": ""
+        }
+      ]
+    }
+  },
+  "yto/delivered.json/invalid-clock": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered",
+      "last_update": null,
+      "timezone": "Asia/Shanghai",
+      "events": [
+        {
+          "description": "Delivered",
+          "provider_code": "745",
+          "provider_time_text": "2026-02-30 18:00:00",
+          "location": "Example destination depot",
+          "stage": "delivered"
+        },
+        {
+          "description": "In a parcel locker or pickup station",
+          "provider_code": "751",
+          "time": "2026-01-03T12:00:00+08:00",
+          "location": "Example destination depot",
+          "stage": "ready_for_pickup"
+        },
+        {
+          "description": "Out for delivery",
+          "provider_code": "710",
+          "time": "2026-01-03T11:00:00+08:00",
+          "location": "Example destination depot",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "Unloaded at a sorting centre",
+          "provider_code": "171",
+          "time": "2026-01-02T20:00:00+08:00",
+          "location": "Example sorting depot",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Loaded for transport",
+          "provider_code": "131",
+          "time": "2026-01-02T18:00:00+08:00",
+          "location": "Example origin depot",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Picked up",
+          "provider_code": "310",
+          "time": "2026-01-01T14:00:00+08:00",
+          "location": "Example origin depot",
+          "stage": "accepted"
+        }
+      ]
+    }
+  },
+  "correios-br/delivered.json/invalid-clock": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Objeto entregue ao destinatário",
+      "last_update": null,
+      "last_update_local": null,
+      "expected_delivery": null,
+      "events": [
+        {
+          "description": "Objeto entregue ao destinatário",
+          "provider_code": "BDE/01",
+          "provider_time_text": "2026-02-30 18:00:00",
+          "location": "Cidade Exemplo, SP",
+          "stage": "delivered"
+        },
+        {
+          "description": "Objeto saiu para entrega ao destinatário",
+          "provider_code": "OEC/01",
+          "time": "2026-01-05T13:54:24-03:00",
+          "location": "Cidade Exemplo, SP",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "Saída para entrega cancelada",
+          "provider_code": "BDE/47",
+          "time": "2026-01-05T13:24:13-03:00",
+          "stage": "exception"
+        },
+        {
+          "description": "Inconsistências no endereçamento do objeto",
+          "provider_code": "BDE/34",
+          "time": "2026-01-04T13:16:48-03:00",
+          "stage": "exception"
+        },
+        {
+          "description": "Objeto em transferência - por favor aguarde",
+          "provider_code": "RO/01",
+          "time": "2026-01-03T13:39:43-03:00",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Objeto postado",
+          "provider_code": "PO/01",
+          "time": "2026-01-02T18:40:01-03:00",
+          "stage": "accepted"
+        },
+        {
+          "description": "Informações enviadas para análise da autoridade aduaneira/órgãos anuentes",
+          "provider_code": "PAR/21",
+          "time": "2026-01-01T21:09:45-03:00",
+          "stage": "customs"
+        }
+      ]
+    }
+  },
+  "yunda/delivered.json/invalid-clock": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "timezone": "Asia/Shanghai",
+      "last_status_text": "Delivered",
+      "last_update": null,
+      "events": [
+        {
+          "description": "Delivered",
+          "provider_code": "已签收",
+          "provider_time_text": "2026-02-30 18:00:00",
+          "location": "示例市",
+          "stage": "delivered"
+        },
+        {
+          "description": "Ready for pickup",
+          "provider_code": "待取件",
+          "time": "2026-01-03T12:00:00+08:00",
+          "location": "示例市",
+          "stage": "ready_for_pickup"
+        },
+        {
+          "description": "Out for delivery",
+          "provider_code": "派送中",
+          "time": "2026-01-03T11:00:00+08:00",
+          "location": "示例市",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "In transit",
+          "provider_code": "运输中",
+          "time": "2026-01-02T18:00:00+08:00",
+          "location": "示例市",
+          "stage": "in_transit"
+        },
+        {
+          "description": "Picked up",
+          "provider_code": "已揽件",
+          "time": "2026-01-01T14:00:00+08:00",
+          "location": "示例市",
+          "stage": "accepted"
+        }
+      ]
+    }
+  },
+  "ontrac/delivered.json/no-clock": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Package Delivered",
+      "last_update": null,
+      "last_update_local": null,
+      "expected_delivery": null,
+      "weight_kg": 0.90718474,
+      "events": [
+        {
+          "description": "Package Delivered",
+          "location": "Example City, CA",
+          "provider_code": "DLVD",
+          "stage": "delivered"
+        },
+        {
+          "description": "Out for Delivery",
+          "time": "2026-01-03T08:00:00-08:00",
+          "location": "Example City, CA",
+          "provider_code": "OFDL",
+          "stage": "out_for_delivery"
+        },
+        {
+          "description": "On its way to OnTrac",
+          "time": "2026-01-01T12:00:00-08:00",
+          "provider_code": "EXRL",
+          "stage": "registered"
+        }
+      ]
+    }
+  },
+  "aramex/delivered.html/no-clock": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "The shipment has been delivered",
+      "last_update": null,
+      "last_update_local": null,
+      "expected_delivery": null,
+      "events": [
+        {
+          "description": "The shipment has been delivered",
+          "location": "Example City, Example Country",
+          "stage": "delivered"
+        },
+        {
+          "description": "An Aramex Delivery Champion has the shipment and is expected to reach the customer's doorstep shortly",
+          "location": "Example City, Example Country",
+          "stage": "out_for_delivery"
+        }
+      ]
+    }
+  },
+  "pos-malaysia/international.json/delivered-summary": {
+    "result": {
+      "status": "delivered",
+      "current_stage": "delivered",
+      "last_status_text": "Delivered",
+      "last_update": null,
+      "expected_delivery": null,
+      "events": [
+        {
+          "description": "Delivered",
+          "stage": "delivered",
+          "provider_code": "DELIVERED",
+          "summary_snapshot": true
+        },
+        {
+          "provider_time_text": "23 Feb 2026, 09:20:00 AM",
+          "location": "",
+          "description": "Item arrived at delivery office",
+          "stage": "in_transit",
+          "provider_code": "EMG"
+        },
+        {
+          "provider_time_text": "22 Feb 2026, 03:46:00 PM",
+          "location": "",
+          "description": "Your parcel is being transported to the next facility",
+          "stage": "in_transit",
+          "provider_code": "TN035"
+        },
+        {
+          "provider_time_text": "22 Feb 2026, 10:43:00 AM",
+          "location": "",
+          "description": "Your parcel has arrived at destination facility for Processing",
+          "stage": "in_transit",
+          "provider_code": "TN030"
+        },
+        {
+          "provider_time_text": "21 Feb 2026, 12:04:38 PM",
+          "location": "",
+          "description": "Your parcel is being transported to destination country",
+          "stage": "in_transit",
+          "provider_code": "TN008"
+        },
+        {
+          "provider_time_text": "21 Feb 2026, 10:37:37 AM",
+          "location": "",
+          "description": "Your parcel has arrived at our facility for sorting",
+          "stage": "in_transit",
+          "provider_code": "TN001"
+        }
+      ]
+    }
+  },
+  "yunexpress/in-transit.json/mismatch": {
+    "error": {
+      "kind": "indeterminate",
+      "message": "YunExpress latest summary does not match its first scan"
+    }
+  },
+  "dtdc/delivered.json/return-exception": {
+    "result": {
+      "status": "exception",
+      "current_stage": "exception",
+      "last_status_text": "RTO Booked",
+      "last_update": "2026-01-07T13:00:00Z",
+      "timezone": "Asia/Kolkata",
+      "events": [
+        {
+          "description": "RTO Booked",
+          "time": "2026-01-07T13:00:00Z",
+          "location": "Example destination depot",
+          "stage": "exception",
+          "provider_code": "delivered",
+          "provider_leg": "return"
+        },
+        {
+          "description": "Delivered",
+          "time": "2026-01-03T13:00:00Z",
+          "location": "Example destination depot",
+          "stage": "delivered",
+          "provider_code": "delivered"
+        },
+        {
+          "description": "Out For Delivery",
+          "time": "2026-01-03T11:00:00Z",
+          "location": "Example destination depot",
+          "stage": "out_for_delivery",
+          "provider_code": "outfordelivery"
+        },
+        {
+          "description": "In Transit",
+          "time": "2026-01-02T13:00:00Z",
+          "location": "Example sorting depot",
+          "stage": "in_transit",
+          "provider_code": "in_transit"
+        },
+        {
+          "description": "Picked Up",
+          "time": "2026-01-01T13:00:00Z",
+          "location": "Example origin depot",
+          "stage": "accepted",
+          "provider_code": "pickup_completed"
+        },
+        {
+          "description": "Booked",
+          "time": "2026-01-01T11:00:00Z",
+          "location": "Example origin depot",
+          "stage": "registered",
+          "provider_code": "softdata_upload"
+        }
+      ]
+    }
+  },
+  "dtdc/delivered.json/return-in_transit": {
+    "result": {
+      "status": "in_transit",
+      "current_stage": "in_transit",
+      "last_status_text": "In Transit",
+      "last_update": "2026-01-07T13:00:00Z",
+      "timezone": "Asia/Kolkata",
+      "events": [
+        {
+          "description": "In Transit",
+          "time": "2026-01-07T13:00:00Z",
+          "location": "Example destination depot",
+          "stage": "in_transit",
+          "provider_code": "delivered",
+          "provider_leg": "return"
+        },
+        {
+          "description": "Delivered",
+          "time": "2026-01-03T13:00:00Z",
+          "location": "Example destination depot",
+          "stage": "delivered",
+          "provider_code": "delivered"
+        },
+        {
+          "description": "Out For Delivery",
+          "time": "2026-01-03T11:00:00Z",
+          "location": "Example destination depot",
+          "stage": "out_for_delivery",
+          "provider_code": "outfordelivery"
+        },
+        {
+          "description": "In Transit",
+          "time": "2026-01-02T13:00:00Z",
+          "location": "Example sorting depot",
+          "stage": "in_transit",
+          "provider_code": "in_transit"
+        },
+        {
+          "description": "Picked Up",
+          "time": "2026-01-01T13:00:00Z",
+          "location": "Example origin depot",
+          "stage": "accepted",
+          "provider_code": "pickup_completed"
+        },
+        {
+          "description": "Booked",
+          "time": "2026-01-01T11:00:00Z",
+          "location": "Example origin depot",
+          "stage": "registered",
+          "provider_code": "softdata_upload"
+        }
+      ]
+    }
+  },
+  "dtdc/delivered.json/return-out_for_delivery": {
+    "result": {
+      "status": "out_for_delivery",
+      "current_stage": "out_for_delivery",
+      "last_status_text": "Out For Delivery",
+      "last_update": "2026-01-07T13:00:00Z",
+      "timezone": "Asia/Kolkata",
+      "events": [
+        {
+          "description": "Out For Delivery",
+          "time": "2026-01-07T13:00:00Z",
+          "location": "Example destination depot",
+          "stage": "out_for_delivery",
+          "provider_code": "delivered",
+          "provider_leg": "return"
+        },
+        {
+          "description": "Delivered",
+          "time": "2026-01-03T13:00:00Z",
+          "location": "Example destination depot",
+          "stage": "delivered",
+          "provider_code": "delivered"
+        },
+        {
+          "description": "Out For Delivery",
+          "time": "2026-01-03T11:00:00Z",
+          "location": "Example destination depot",
+          "stage": "out_for_delivery",
+          "provider_code": "outfordelivery"
+        },
+        {
+          "description": "In Transit",
+          "time": "2026-01-02T13:00:00Z",
+          "location": "Example sorting depot",
+          "stage": "in_transit",
+          "provider_code": "in_transit"
+        },
+        {
+          "description": "Picked Up",
+          "time": "2026-01-01T13:00:00Z",
+          "location": "Example origin depot",
+          "stage": "accepted",
+          "provider_code": "pickup_completed"
+        },
+        {
+          "description": "Booked",
+          "time": "2026-01-01T11:00:00Z",
+          "location": "Example origin depot",
+          "stage": "registered",
+          "provider_code": "softdata_upload"
+        }
+      ]
+    }
+  },
+  "dtdc/delivered.json/return-returned": {
+    "result": {
+      "status": "exception",
+      "current_stage": "returned",
+      "last_status_text": "Delivered",
+      "last_update": "2026-01-07T13:00:00Z",
+      "timezone": "Asia/Kolkata",
+      "events": [
+        {
+          "description": "Delivered",
+          "time": "2026-01-07T13:00:00Z",
+          "location": "Example destination depot",
+          "stage": "returned",
+          "provider_code": "delivered",
+          "provider_leg": "return"
+        },
+        {
+          "description": "Delivered",
+          "time": "2026-01-03T13:00:00Z",
+          "location": "Example destination depot",
+          "stage": "delivered",
+          "provider_code": "delivered"
+        },
+        {
+          "description": "Out For Delivery",
+          "time": "2026-01-03T11:00:00Z",
+          "location": "Example destination depot",
+          "stage": "out_for_delivery",
+          "provider_code": "outfordelivery"
+        },
+        {
+          "description": "In Transit",
+          "time": "2026-01-02T13:00:00Z",
+          "location": "Example sorting depot",
+          "stage": "in_transit",
+          "provider_code": "in_transit"
+        },
+        {
+          "description": "Picked Up",
+          "time": "2026-01-01T13:00:00Z",
+          "location": "Example origin depot",
+          "stage": "accepted",
+          "provider_code": "pickup_completed"
+        },
+        {
+          "description": "Booked",
+          "time": "2026-01-01T11:00:00Z",
+          "location": "Example origin depot",
+          "stage": "registered",
+          "provider_code": "softdata_upload"
+        }
+      ]
+    }
+  }
+}

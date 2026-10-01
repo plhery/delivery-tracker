@@ -1,7 +1,7 @@
 import 'server-only';
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { CarrierError, NoHistoryError } from '@carriers/core/errors';
-import type { LookupRecord, StepRecord } from '@carriers/core/telemetry';
+import { CarrierError, NoHistoryError } from 'universal-parcel-scraper';
+import type { LookupRecord, StepRecord } from 'universal-parcel-scraper/node';
 import type { JsonObject } from './types';
 
 export interface HealthSample extends JsonObject {

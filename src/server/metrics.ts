@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { Counter, Histogram, Registry, collectDefaultMetrics, type LabelValues } from '@prometheus-io/client';
-import { METRICS, type LookupRecord, type StepRecord, type StepRecorder } from '@carriers/core/telemetry';
+import { METRICS, type LookupRecord, type StepRecord, type StepRecorder } from 'universal-parcel-scraper/node';
 
 /**
  * Prometheus sink for carrier telemetry. Labels are deliberately

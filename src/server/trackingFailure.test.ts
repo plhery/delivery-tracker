@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { InputRequiredError, MaintenanceError, RateLimitedError, ChallengeError } from '@carriers/core/errors';
+import { InputRequiredError, MaintenanceError, RateLimitedError, ChallengeError } from 'universal-parcel-scraper';
 import { deferredTrackingFailure, trackingFailureCode } from './trackingFailure';
 
 describe('public tracking failure codes', () => {

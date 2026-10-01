@@ -2,7 +2,7 @@ import SwiftUI
 import XCTest
 @testable import SwissDeliveryTracker
 
-/// The carrier livery is declared once, in `packages/carriers/core/brand`, and
+/// The carrier livery is declared once, in `src/brand`, and
 /// shipped to the app as `Resources/Brand.json`. The SwiftUI identity and canvas
 /// keep their own code — a `Canvas` is not an SVG — so this replays the shared
 /// definition against every constant they draw. Drift fails here, not on screen.

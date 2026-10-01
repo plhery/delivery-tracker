@@ -1,9 +1,9 @@
 import 'server-only';
 
-import { timeZoneCountry } from '@carriers/core/time';
+import { timeZoneCountry } from 'universal-parcel-scraper';
 import { carrierTimezone } from './carriers';
 import { captureOperationalError } from './observability';
-import { placesForEvents, type EventPoint } from './places';
+import { placesForEvents, type EventPoint } from 'universal-parcel-scraper/places';
 import { isRecord, type JsonObject } from './types';
 
 let reported = false;

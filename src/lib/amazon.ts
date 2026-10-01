@@ -5,14 +5,14 @@
 export {
   AMAZON_NUMBER_PATTERN,
   isAmazonTrackingNumber,
-} from '@carriers/core/detection';
+} from 'universal-parcel-scraper';
 export {
   amazonMarketplace,
   amazonOrdersUrl,
   amazonShippingOrigin,
   amazonShippingUrl,
   requiresAmazonAccount,
-} from '@carriers/core/catalog';
+} from 'universal-parcel-scraper';
 
 export const AMAZON_HISTORY_EXPIRED = 'amazon_shipping_history_expired';
 

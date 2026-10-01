@@ -1,8 +1,4 @@
-/**
- * The carrier catalog and tracking-number detection now live in the carrier
- * package (`@carriers/core/catalog` and `@carriers/core/detection`). This
- * module stays as the import path the application already uses.
- */
+/** Browser-safe carrier data and detection come from the scraper's public API. */
 export type {
   CarrierCapabilities,
   CarrierInfo,
@@ -10,7 +6,7 @@ export type {
   CarrierInputRequirement,
   CarrierTrackingMode,
   ParcelTrackingLink,
-} from '@carriers/core/catalog';
+} from 'universal-parcel-scraper';
 export {
   CARRIERS,
   SELECTABLE_CARRIERS,
@@ -23,16 +19,16 @@ export {
   parcelTrackingNumbers,
   requirementSatisfied,
   tracksAutomatically,
-} from '@carriers/core/catalog';
+} from 'universal-parcel-scraper';
 export {
   MAX_RECOGNITIONS,
   recognitionAskedCarriers,
-} from '@carriers/core/catalog/recognition';
+} from 'universal-parcel-scraper';
 export type {
   CarrierDetection,
   DetectionConfidence,
   TrackingInputMatch,
-} from '@carriers/core/detection';
+} from 'universal-parcel-scraper';
 export {
   detectCarrier,
   detectCarrierMatch,
@@ -42,4 +38,4 @@ export {
   normalizeTrackingNumber,
   parseTrackingInput,
   supportsSwissPostHandoff,
-} from '@carriers/core/detection';
+} from 'universal-parcel-scraper';

@@ -1,5 +1,5 @@
-import { CARRIER_TRUCK } from '@carriers/core/brand';
-import type { TruckDecalShape } from '@carriers/core/brand';
+import { CARRIER_TRUCK } from '../brand';
+import type { TruckDecalShape } from '../brand';
 import type { CarrierInfo } from '../lib/carriers';
 import { carrierBrand } from '../lib/carrierBrand';
 

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TrackingRouter } from './trackingRouting';
-import { NotFoundError, ChallengeError } from '@carriers/core/errors';
+import { NotFoundError, ChallengeError } from 'universal-parcel-scraper';
 import * as observability from './observability';
 
 const number = 'LZ000000005CN';

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { CARRIERS, carrierInfo } from '../lib/carriers';
 import { CarrierMark } from './CarrierMark';
 import markup from './carrierMark.fixture.json';
-import { CARRIER_DECALS, CARRIER_TRUCK, carrierDecal } from '@carriers/core/brand';
+import { CARRIER_DECALS, CARRIER_TRUCK, carrierDecal } from '../brand';
 
 /** Recorded SVG markup anchors the shared truck and selected liveries. */
 describe('carrier mark', () => {

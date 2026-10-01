@@ -1,4 +1,4 @@
-import { carrierErrorKind } from '@carriers/core/errors';
+import { carrierErrorKind } from 'universal-parcel-scraper';
 
 /** Stable public copy codes. Full diagnostics remain in the tracking audit. */
 export function trackingFailureCode(error: unknown): string | null {

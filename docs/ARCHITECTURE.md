@@ -12,7 +12,7 @@ Browser/PWA + iPhone app <---- email OTP / OAuth ----> Supabase Auth
 Next.js route handlers --- user token ---> PostgREST + Postgres RLS
           |
           +--- service role ---> background sync writes
-          +--------------------> carrier adapters (packages/carriers)
+          +--------------------> universal-parcel-scraper
           +--------------------> Web Push + APNs
 ```
 
@@ -24,12 +24,12 @@ Next.js route handlers --- user token ---> PostgREST + Postgres RLS
 | `proxy.ts` | Per-request CSP nonce and security headers |
 | `src/` | React client (`components/`, `store/`, `auth/`, `i18n.tsx`) |
 | `src/server/` | API helpers, auth, sync worker, routing, push, observability |
-| `packages/carriers/` | Every carrier: catalog, detection, adapters, universal providers ([README](../packages/carriers/README.md)) |
+| `universal-parcel-scraper` (npm dependency) | Every carrier: catalog, detection, adapters, universal providers ([README](https://github.com/plhery/universal-parcel-scraper/blob/main/README.md)) |
 | `shared/` | Translations, tracking message map and analytics catalog, shared by web and iOS |
 | `contracts/` | OpenAPI contract (source of TypeScript and Swift types) and cross-platform fixtures |
 | `supabase/` | Append-only migrations and SQL assertions for RLS |
 | `ios/` | SwiftUI app, Share extension, widgets, Live Activities ([README](../ios/README.md)) |
-| `ops/` | TRAWL browser service, Sentry and Grafana dashboards |
+| `ops/` | Sentry and Grafana dashboards |
 | `scripts/` | Code generation, validation and smoke tests |
 
 Key server modules:
@@ -41,8 +41,8 @@ Key server modules:
   or double-run work. This is the only code path with cross-account access.
 - `trackingSync.ts` runs one refresh through the adapter registry;
   `trackingRouting.ts` decides which source to ask ([ROUTING.md](ROUTING.md)).
-- `places/` places each scan's free-text location on the map with an offline gazetteer,
-  when the API returns a parcel ([README](../src/server/places/README.md)).
+- `eventPlaces.ts` uses the scraper's place resolver to put each scan on the map,
+  when the API returns a parcel ([README](https://github.com/plhery/universal-parcel-scraper/blob/main/places/README.md)).
 - `push.ts` sends Web Push, APNs alerts and Live Activity updates, only to the parcel
   owner's devices. Each batch of new scans announces its newest one, and only when it is
   the parcel's newest scan: history a carrier change backfills, or a scan reported late,

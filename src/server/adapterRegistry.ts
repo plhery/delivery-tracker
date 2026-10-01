@@ -1,8 +1,6 @@
 import 'server-only';
 
-import { AdapterRegistry, type AdapterEnvironment } from '@carriers/core/adapter';
-import { TrawlClient } from '@carriers/core/transport';
-import { REGISTRY } from '@carriers/generated/registry';
+import { AdapterRegistry, TrawlClient, REGISTRY, type AdapterEnvironment } from 'universal-parcel-scraper/node';
 import { hostStepRecorder } from './stepRecorder';
 
 /**

@@ -2,9 +2,9 @@ import { afterEach, expect, it, vi } from 'vitest';
 import * as Sentry from '@sentry/node';
 import type { Event } from '@sentry/node';
 import { captureOperationalError, captureTrackingHealth, flushObservability, initObservability, reportRoutingEvent } from './observability';
-import { UniversalTrackingError } from '@carriers/providers/universal';
-import { UpstreamHttpError } from '@carriers/core/transport';
-import { LaPosteTracker } from '@carriers/carriers/la-poste/adapter';
+import { UniversalTrackingError } from 'universal-parcel-scraper/node';
+import { UpstreamHttpError } from 'universal-parcel-scraper/node';
+import { createAdapterRegistry } from './adapterRegistry';
 import { hostStepRecorder } from './stepRecorder';
 
 const captured = vi.hoisted(() => ({ events: [] as Event[] }));
@@ -149,8 +149,8 @@ it('retains original exceptions, provider causes, and SDK diagnostic context', a
   }));
   // The tracker reports through the package's StepRecorder now, so the host's
   // sinks have to be wired in for its retries to reach Sentry.
-  const refused = await new LaPosteTracker({ recorder: hostStepRecorder() })
-    .fetch('8U00000000000').catch((error: unknown) => error);
+  const refused = await createAdapterRegistry({ fetcher, trawl: null, browserExecutablePath: null, env: {}, recorder: hostStepRecorder() })
+    .for('la-poste')!.track({ number: '8U00000000000' }).catch((error: unknown) => error);
   // One direct request and the three immediate 403 retries.
   expect(fetcher).toHaveBeenCalledTimes(4);
   fetcher.mockRestore();

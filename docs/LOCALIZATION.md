@@ -10,7 +10,7 @@ translating it (not implemented).
   translated through [`shared/tracking-messages.json`](../shared/tracking-messages.json).
 - Any other carrier description is shown as the carrier wrote it, on web
   (`localizedEventDescription` in [`i18n.tsx`](../src/i18n.tsx)) and iOS
-  (`eventDescription` in `Core.swift`). The [multilingual classifier](../packages/carriers/core/status/language.ts)
+  (`eventDescription` in `Core.swift`). The [multilingual classifier](https://github.com/plhery/universal-parcel-scraper/blob/main/core/status/language.ts)
   reads wording to pick a stage. It doesn't translate.
 - Scan locations keep the carrier's text, except for a country it wrote out: a flag leads
   the place and the country's name in the reader's language closes it, so "Zürich, CH"

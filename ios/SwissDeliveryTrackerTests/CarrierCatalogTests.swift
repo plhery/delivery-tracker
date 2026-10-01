@@ -819,7 +819,7 @@ private actor CatalogRequestRecorder {
 }
 
 extension CarrierCatalogTests {
-    /// The shared corpus (`contracts/fixtures/detection-golden.json`) records what the
+    /// The scraper's published detection corpus records what the
     /// TypeScript engine answers for every sample number; the Swift port must agree.
     func testDetectionMatchesTheSharedGoldenFile() throws {
         struct Entry: Decodable {

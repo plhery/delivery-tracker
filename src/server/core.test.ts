@@ -9,7 +9,7 @@ import {
   readJsonObject,
 } from './api';
 import { SupabaseAuthError, SupabaseAuthenticator } from './auth';
-import { fetchBounded, parseJsonBytes } from '@carriers/core/transport';
+import { fetchBounded, parseJsonBytes } from 'universal-parcel-scraper/node';
 import { RateLimiter } from './rateLimit';
 import {
   DeliveryLiveActivityNotificationService,

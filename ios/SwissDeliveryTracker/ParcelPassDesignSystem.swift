@@ -413,7 +413,7 @@ struct CarrierVisualIdentity {
     }
 }
 
-/// The one truck, as `packages/carriers/core/brand/truck.json` states it. The web
+/// The one truck, as `src/brand/truck.json` states it. The web
 /// draws the same numbers as an SVG; `BrandParityTests` asserts every value here
 /// against `Resources/Brand.json`, so neither drawing can drift.
 ///

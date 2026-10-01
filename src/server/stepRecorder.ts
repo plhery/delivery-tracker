@@ -1,8 +1,8 @@
 import 'server-only';
 
 import * as Sentry from '@sentry/node';
-import type { LookupRecord, StepRecord, StepRecorder } from '@carriers/core/telemetry';
-import { combineRecorders } from '@carriers/core/telemetry';
+import type { LookupRecord, StepRecord, StepRecorder } from 'universal-parcel-scraper/node';
+import { combineRecorders } from 'universal-parcel-scraper/node';
 import { healthStepRecorder } from './trackingHealth';
 import { prometheusStepRecorder } from './metrics';
 import { initObservability, logOperationalEvent, reportRoutingEvent } from './observability';

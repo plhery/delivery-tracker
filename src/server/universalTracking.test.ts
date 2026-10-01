@@ -1,11 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { isUnannouncedTrackingError, CarrierTrackingAdapter } from './trackingSync';
-import { UniversalTrackingError } from '@carriers/providers/universal';
-import { HermesGermanyTracker } from '@carriers/carriers/hermes-de/adapter';
-import { GLSGermanyTracker } from '@carriers/carriers/gls-de/adapter';
-import { LaPosteTracker } from '@carriers/carriers/la-poste/adapter';
+import { UniversalTrackingError } from 'universal-parcel-scraper/node';
 
-// The providers themselves live in packages/carriers/providers; this file keeps
+// The providers themselves live in Universal Parcel Scraper; this file keeps
 // the host-side dispatch into the universal chain under test.
 const number = 'ZZ12345678900';
 
@@ -25,16 +22,16 @@ describe('universal tracking dispatch', () => {
   it('dispatches the added regional carriers without falling back to a generic adapter', async () => {
     const adapter = new CarrierTrackingAdapter();
     const expected = { status: 'delivered' as const, current_stage: 'delivered' };
-    // The registry builds its own tracker instances, so spy on the prototypes.
-    const hermes = vi.spyOn(HermesGermanyTracker.prototype, 'fetch').mockResolvedValue(expected);
-    const gls = vi.spyOn(GLSGermanyTracker.prototype, 'fetch').mockResolvedValue(expected);
-    const laPoste = vi.spyOn(LaPosteTracker.prototype, 'fetch').mockResolvedValue(expected);
+    // Spy at the public registry boundary; parser tests live in the scraper.
+    const hermes = vi.spyOn(adapter.registry.for('hermes-de')!, 'track').mockResolvedValue(expected);
+    const gls = vi.spyOn(adapter.registry.for('gls-de')!, 'track').mockResolvedValue(expected);
+    const laPoste = vi.spyOn(adapter.registry.for('delivengo')!, 'track').mockResolvedValue(expected);
     await adapter.fetch('hermes-de', 'H1234567890123456789', null);
     await adapter.fetch('gls-de', '12345678901', null, '01067');
     await adapter.fetch('delivengo', 'LD123456785FR', null);
-    expect(hermes).toHaveBeenCalledWith('H1234567890123456789');
-    expect(gls).toHaveBeenCalledWith('12345678901', '01067');
-    expect(laPoste).toHaveBeenCalledWith('LD123456785FR');
+    expect(hermes).toHaveBeenCalledWith({ number: 'H1234567890123456789', trackingUrl: null, postcode: null });
+    expect(gls).toHaveBeenCalledWith({ number: '12345678901', trackingUrl: null, postcode: '01067' });
+    expect(laPoste).toHaveBeenCalledWith({ number: 'LD123456785FR', trackingUrl: null, postcode: null });
   });
 
   it('does not treat an exhausted provider chain as an unannounced shipment', () => {

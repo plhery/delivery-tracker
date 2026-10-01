@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { UpstreamHttpError } from '@carriers/core/transport';
+import { UpstreamHttpError } from 'universal-parcel-scraper/node';
 import { freshnessWindow, RoutingDeferred, routingState, TrackingRouter, type RoutedResult } from './trackingRouting';
 import type { JsonObject } from './types';
-import type { CarrierResult } from '@carriers/core/result';
+import type { CarrierResult } from 'universal-parcel-scraper';
 import * as monitoring from './observability';
-import { universalCarrierHints } from '@carriers/providers/shared/hints';
-import { IndeterminateError, InputRequiredError, NotFoundError } from '@carriers/core/errors';
+import { universalCarrierHints } from 'universal-parcel-scraper';
+import { IndeterminateError, InputRequiredError, NotFoundError } from 'universal-parcel-scraper';
 
 const time = new Date('2026-09-10T12:00:00Z');
 const history = (stamp = '2026-09-10T11:00:00Z'): CarrierResult => ({ status: 'in_transit', current_stage: 'in_transit',
@@ -762,7 +762,7 @@ describe('coverage-based provider order', () => {
 describe('routingFailure with carrier package errors', () => {
   it('classifies by error kind before falling back to status sniffing', async () => {
     const { routingFailure } = await import('./trackingRouting');
-    const errors = await import('@carriers/core/errors');
+    const errors = await import('universal-parcel-scraper');
     expect(routingFailure(new errors.NotFoundError('CTT'))).toEqual({ kind: 'not_found', retryAfterMs: 0 });
     expect(routingFailure(new errors.RateLimitedError('Ship24', 30_000))).toEqual({ kind: 'rate_limited', retryAfterMs: 30_000 });
     expect(routingFailure(new errors.ChallengeError('UPS'))).toEqual({ kind: 'verification', retryAfterMs: 0 });
