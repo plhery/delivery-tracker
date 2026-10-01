@@ -21,9 +21,6 @@
 .app--deliveries .parcel-card--hero { min-height: 166px; padding: 18px 20px; border-radius: 22px; gap: 0; }
 .app--deliveries .parcel-card__hero-main { min-height: 53px; margin: 19px 0 15px; }
 .app--deliveries .parcel-card--hero .parcel-card__label { font-size: 24px; }
-.app--deliveries .parcel-card__hero-main .postage-stamp { width: 43px; height: 53px; padding: 6px; }
-.app--deliveries .parcel-card__hero-main .postage-stamp svg { width: 22px; height: 22px; stroke-width: 1.2; }
-.app--deliveries .parcel-card__hero-main .postage-stamp__cancel { width: 24px; height: 24px; }
 .app--deliveries .parcel-section--past .parcel-card,
 .app--deliveries .archived-section .parcel-card { background: color-mix(in srgb, var(--tone-surface) 35%, var(--paper)); }
 .app--deliveries .archived-section { border-top: 1px solid var(--line); padding-top: 5px; }

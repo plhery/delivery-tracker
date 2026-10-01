@@ -89,37 +89,120 @@ struct PostageStampShape: Shape {
     }
 }
 
+/// A self-adhesive stamp's serpentine die cut: every edge dips into the paper in
+/// even waves that meet at the corners, where each edge starts and ends at full width.
+struct DieCutStampShape: Shape {
+    /// The stamp is designed 44 wide; a wave is 3.6 long and 1.1 deep at that size.
+    static let designWidth: CGFloat = 44
+
+    func path(in rect: CGRect) -> Path {
+        let unit = rect.width / Self.designWidth
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        let corners = [CGPoint(x: rect.minX, y: rect.minY), CGPoint(x: rect.maxX, y: rect.minY),
+                       CGPoint(x: rect.maxX, y: rect.maxY), CGPoint(x: rect.minX, y: rect.maxY)]
+        let inward = [CGVector(dx: 0, dy: 1), CGVector(dx: -1, dy: 0), CGVector(dx: 0, dy: -1), CGVector(dx: 1, dy: 0)]
+        for side in 0..<4 {
+            let from = corners[side], to = corners[(side + 1) % 4]
+            let length = hypot(to.x - from.x, to.y - from.y)
+            let waves = max(1, Int((length / (3.6 * unit)).rounded()))
+            let steps = waves * 10
+            for step in 1...steps {
+                let t = CGFloat(step) / CGFloat(steps)
+                let dip = 1.1 * unit * (1 - cos(2 * .pi * CGFloat(waves) * t)) / 2
+                path.addLine(to: CGPoint(x: from.x + (to.x - from.x) * t + inward[side].dx * dip,
+                                         y: from.y + (to.y - from.y) * t + inward[side].dy * dip))
+            }
+        }
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// A globe's meridians and parallels, inside its bounding square.
+struct StampGlobeLines: Shape {
+    func path(in rect: CGRect) -> Path {
+        let radius = rect.width / 2
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        var path = Path()
+        path.addEllipse(in: CGRect(x: center.x - radius * 0.42, y: rect.minY, width: radius * 0.84, height: rect.height))
+        path.move(to: CGPoint(x: center.x, y: rect.minY))
+        path.addLine(to: CGPoint(x: center.x, y: rect.maxY))
+        path.move(to: CGPoint(x: rect.minX, y: center.y))
+        path.addLine(to: CGPoint(x: rect.maxX, y: center.y))
+        // The two parallels, half way to each pole.
+        let band = radius / 2
+        let chord = (radius * radius - band * band).squareRoot()
+        for y in [center.y - band, center.y + band] {
+            path.move(to: CGPoint(x: center.x - chord, y: y))
+            path.addLine(to: CGPoint(x: center.x + chord, y: y))
+        }
+        return path
+    }
+}
+
+/// The parcel's stamp: the same globe on every parcel, printed in the card's own
+/// colours, with the country it was posted in. The postmark lands with the delivery.
 struct DeliveryPostageStamp: View {
-    let stage: TrackingStage?
+    let parcel: Parcel
+    let identity: CarrierVisualIdentity
+    var width: CGFloat = 46
     let appeared: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
+        // Every measure below is in the stamp's 44 by 56 design, scaled to `width`.
+        let unit = width / DieCutStampShape.designWidth
+        let origin = parcel.stampOrigin
+        // Without a caption the globe sits in the middle of the print.
+        let globeY = (origin == nil ? 28 : 25) * unit
+        let ink = identity.ink
+        let paper = colorScheme == .dark ? identity.surface.mix(with: ink, by: 0.22) : Color(hex: "#FFFEFA")
         ZStack {
-            PostageStampShape()
-                .fill(Color(hex: "#FFF9E8"))
-                .shadow(color: .black.opacity(0.1), radius: 2, y: 2)
+            DieCutStampShape()
+                .fill(paper)
+                .shadow(color: .black.opacity(0.16), radius: 1.2 * unit, y: 0.8 * unit)
             Rectangle()
-                .fill(Brand.accent.opacity(0.24))
-                .overlay(Rectangle().stroke(Brand.onAccent.opacity(0.3), lineWidth: 0.75))
-                .padding(9)
-            Image(systemName: stage?.metadata.symbol ?? "shippingbox")
-                .font(.system(size: 24, weight: .light))
-                .foregroundStyle(Brand.onAccent)
-                .contentTransition(reduceMotion ? .identity : .symbolEffect(.replace))
-                .symbolEffect(.bounce, options: .nonRepeating, value: reduceMotion ? nil : stage)
-        }
-        .frame(width: 55, height: 67)
-        .overlay(alignment: .bottomTrailing) {
-            // A partial cancellation mark crosses the printed frame and paper edge.
-            ZStack {
-                Circle().stroke(Brand.onAccent.opacity(0.3), lineWidth: 1)
-                Circle().inset(by: 4).stroke(Brand.onAccent.opacity(0.18), lineWidth: 0.7)
+                .fill(identity.surface)
+                .padding(4.5 * unit)
+            Group {
+                Circle().fill(identity.surface.mix(with: ink, by: 0.14))
+                StampGlobeLines().stroke(ink, lineWidth: 0.7 * unit)
+                Circle().stroke(ink, lineWidth: 0.9 * unit)
             }
-            .frame(width: 32, height: 32)
-            .offset(x: 8, y: 5)
+            .frame(width: 22 * unit, height: 22 * unit)
+            .position(x: 22 * unit, y: globeY)
+            Rectangle()
+                .stroke(ink.opacity(0.28), lineWidth: 0.6 * unit)
+                .padding(6.2 * unit)
+            if let origin {
+                Text(origin)
+                    .font(.system(size: 5.2 * unit, weight: .bold))
+                    .tracking(0.5 * unit)
+                    .foregroundStyle(ink)
+                    .position(x: 22 * unit, y: 45 * unit)
+            }
         }
-        .rotationEffect(.degrees(reduceMotion || appeared ? -3 : -10))
+        .frame(width: width, height: 56 * unit)
+        .overlay {
+            if let date = parcel.stampDeliveryDate {
+                ZStack {
+                    Circle().stroke(ink, lineWidth: 0.9 * unit)
+                    Circle().stroke(ink, lineWidth: 0.55 * unit).padding(2.8 * unit)
+                    Text(date)
+                        .font(.system(size: 5.2 * unit, weight: .heavy))
+                        .monospacedDigit()
+                        .foregroundStyle(ink)
+                }
+                .frame(width: 23 * unit, height: 23 * unit)
+                .rotationEffect(.degrees(-12))
+                .opacity(0.8)
+                .position(x: 38 * unit, y: 36 * unit)
+                .allowsHitTesting(false)
+            }
+        }
+        .rotationEffect(.degrees(reduceMotion || appeared ? -2 : -10))
         .scaleEffect(reduceMotion || appeared ? 1 : 1.12)
         .animation(reduceMotion ? nil : .spring(response: 0.48, dampingFraction: 0.6).delay(0.08), value: appeared)
         .accessibilityHidden(true)

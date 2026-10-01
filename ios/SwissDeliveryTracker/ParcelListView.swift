@@ -766,8 +766,7 @@ private struct ExperimentalNextDeliveryPass: View {
                     .font(.title2.weight(.semibold))
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                DeliveryPostageStamp(stage: parcel.currentStage, appeared: appeared)
-                    .scaleEffect(0.8).frame(width: 43, height: 53)
+                DeliveryPostageStamp(parcel: parcel, identity: identity, appeared: appeared)
             }
             .padding(.top, 19)
             .padding(.bottom, 15)

@@ -90,7 +90,7 @@ test('adds a parcel from tracking text', async ({ page }) => {
       const element = document.querySelector<HTMLElement>(`.parcel-card-swipe[data-parcel-id="${burst.dataset.parcelId}"]`);
       if (!element) return;
       const card = element.getBoundingClientRect();
-      const stamp = element.querySelector('.postage-stamp')?.getBoundingClientRect();
+      const stamp = element.querySelector('.parcel-stamp')?.getBoundingClientRect();
       const snapshot = {
         distance: Math.hypot(parseFloat(burst.style.getPropertyValue('--burst-x')) - (stamp ? stamp.x + stamp.width / 2 : card.right - 30),
           parseFloat(burst.style.getPropertyValue('--burst-y')) - (stamp ? stamp.y + stamp.height / 2 : card.y + card.height / 2)),

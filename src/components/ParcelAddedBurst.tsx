@@ -88,7 +88,7 @@ export function ParcelAddedBurst({ parcelId, onFinished }: { parcelId: string; o
         return;
       }
       const rect = card.getBoundingClientRect();
-      const anchor = card.querySelector<HTMLElement>('.parcel-card__stub, .postage-stamp');
+      const anchor = card.querySelector<HTMLElement>('.parcel-card__stub, .parcel-stamp');
       const stamp = anchor?.getBoundingClientRect();
       element!.style.setProperty('--burst-x', `${stamp ? stamp.x + stamp.width / 2 : rect.right - 30}px`);
       element!.style.setProperty('--burst-y', `${stamp ? stamp.y + stamp.height / 2 : rect.y + rect.height / 2}px`);

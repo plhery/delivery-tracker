@@ -1212,6 +1212,27 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertNil(ParcelOrganizer.nextDelivery(from: [archived], now: now))
     }
 
+    func testStampNamesTheFirstPlacedCountryAndIsDatedOnlyOnceDelivered() {
+        func scan(_ day: Int, _ stage: TrackingStage, _ place: EventPlace?) -> TrackingEvent {
+            TrackingEvent(id: UUID(), packageID: UUID(), stage: stage, description: "Update", location: nil,
+                          occurredAt: "2026-09-\(day)T12:00:00Z", place: place)
+        }
+        let kyoto = EventPlace(latitude: 35.01, longitude: 135.77, precision: .city, country: "JP", name: "Kyoto")
+        let zurich = EventPlace(latitude: 47.37, longitude: 8.54, precision: .city, country: "CH", name: "Zürich")
+        // Scans arrive in no particular order; the origin is the earliest one with a place.
+        let scans = [scan(20, .outForDelivery, zurich), scan(10, .registered, nil), scan(11, .accepted, kyoto)]
+        let travelling = makeParcel(events: scans)
+        XCTAssertEqual(travelling.stampOrigin, "JP")
+        XCTAssertNil(travelling.stampDeliveryDate)
+
+        let arrived = makeParcel(events: scans + [scan(21, .delivered, zurich)])
+        XCTAssertEqual(arrived.stampOrigin, "JP")
+        XCTAssertEqual(arrived.stampDeliveryDate, "21.09")
+
+        let unplaced = makeParcel(events: [scan(10, .registered, nil)])
+        XCTAssertNil(unplaced.stampOrigin)
+    }
+
     private func makeParcel(
         id: UUID = UUID(),
         trackingNumber: String = "1Z999AA10123456784",

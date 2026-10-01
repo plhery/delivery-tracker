@@ -38,8 +38,9 @@ import { TrackingJournal } from './TrackingJournal';
 import { CarrierMark } from './CarrierMark';
 import { carrierBrand } from '../lib/carrierBrand';
 import './ParcelDetail.css';
-import { Icon, PostageStamp } from './Icon';
-import { parcelIcon, parcelTone } from '../lib/parcelDesign';
+import { Icon } from './Icon';
+import { ParcelStamp } from './ParcelStamp';
+import { parcelTone } from '../lib/parcelDesign';
 import { ParcelMapSheet, RouteEngraving, useParcelRoute } from './ParcelMap';
 import { ProgressTrack } from './ProgressTrack';
 import { PickupPointCard } from './PickupPointCard';
@@ -459,7 +460,7 @@ export function ParcelDetail({
         ) : (
           <div className="detail__title-row">
             <h1 className="detail__title">{parcel.label || t('common.parcel')}</h1>
-            <PostageStamp icon={parcelIcon(current?.stage)} />
+            <ParcelStamp parcel={parcel} />
           </div>
         )}
         {parcel.senderName?.trim() && <p className="detail__sender">{t('parcel.sender', { sender: parcel.senderName.trim() })}</p>}

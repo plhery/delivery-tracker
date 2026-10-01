@@ -121,12 +121,23 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .parcel-card__next-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--tone); opacity: .75; flex-shrink: 0; }
 .parcel-card__hero-main { display: flex; align-items: center; gap: 16px; justify-content: space-between; min-height: 65px; margin: 25px 0 20px; }
 .parcel-card--hero .parcel-card__label { font-size: 24px; letter-spacing: -.65px; flex: 1; min-width: 0; }
-.parcel-card__hero-main .postage-stamp { width: 55px; height: 67px; }
 .parcel-card__summary { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; color: var(--tone); }
 .parcel-card--hero .parcel-card__notice { margin-top: 8px; }
 .progress-track { display: flex; align-items: center; width: 100%; height: 3px; gap: 5px; }
 .progress-track__dot { display: block; flex: 1; height: 3px; background: color-mix(in srgb, var(--ink) 14%, transparent); border-radius: 4px; transition: background .25s; }
 .progress-track__dot--filled { background: var(--tone, var(--blue)); }
+/* The parcel's stamp: a die-cut globe in the card's colours, postmarked once the parcel is delivered. */
+.parcel-stamp { --stamp-paper: light-dark(#fffefa, color-mix(in srgb, var(--tone) 22%, var(--tone-surface))); flex: 0 0 auto; width: 46px; height: 58px; overflow: visible; fill: none; stroke: none; rotate: -2deg; }
+.parcel-stamp__paper { fill: var(--stamp-paper); }
+.parcel-stamp__print { fill: var(--tone-surface); }
+.parcel-stamp__globe { fill: color-mix(in srgb, var(--tone) 14%, var(--tone-surface)); }
+.parcel-stamp__line, .parcel-stamp__rim, .parcel-stamp__frame { stroke: var(--tone); stroke-width: .7; }
+.parcel-stamp__rim { stroke-width: .9; }
+.parcel-stamp__frame { stroke-opacity: .28; stroke-width: .6; }
+.parcel-stamp__code { fill: var(--tone); font-size: 5.2px; font-weight: 700; letter-spacing: .5px; text-anchor: middle; }
+.parcel-stamp__postmark { stroke: var(--tone); stroke-width: .9; opacity: .8; }
+.parcel-stamp__postmark circle + circle { stroke-width: .55; }
+.parcel-stamp__postmark text { fill: var(--tone); stroke: none; font-size: 5.2px; font-weight: 750; letter-spacing: .2px; text-anchor: middle; font-variant-numeric: tabular-nums; }
 .postage-stamp { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 72px; height: 86px; flex: 0 0 auto; padding: 9px; background: #fff9e8; color: var(--on-yellow); transform: rotate(-3deg); filter: drop-shadow(0 2px 1px rgb(0 0 0 / 8%)); clip-path: polygon(0 4%,4% 0,10% 4%,16% 0,22% 4%,28% 0,34% 4%,40% 0,46% 4%,52% 0,58% 4%,64% 0,70% 4%,76% 0,82% 4%,88% 0,94% 4%,100% 0,96% 7%,100% 13%,96% 19%,100% 25%,96% 31%,100% 37%,96% 43%,100% 49%,96% 55%,100% 61%,96% 67%,100% 73%,96% 79%,100% 85%,96% 91%,100% 97%,94% 100%,88% 96%,82% 100%,76% 96%,70% 100%,64% 96%,58% 100%,52% 96%,46% 100%,40% 96%,34% 100%,28% 96%,22% 100%,16% 96%,10% 100%,4% 96%,0 100%,4% 91%,0 85%,4% 79%,0 73%,4% 67%,0 61%,4% 55%,0 49%,4% 43%,0 37%,4% 31%,0 25%,4% 19%,0 13%,4% 7%); }
 .postage-stamp__print { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #f6e9b7; border: 1px solid #bcab75; }
 .postage-stamp__print svg { width: 30px; height: 30px; stroke-width: 1.4; }
@@ -495,8 +506,8 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 @media (hover: hover) {
   .icon-button:hover, .sheet__close:hover, .detail__title-edit:hover, .app__add-button:hover, .field__inline-action:hover { background: var(--control); }
   .button--primary:hover { filter: brightness(1.025); }
-  .parcel-card-swipe:not([data-swipe="dragging"]) .parcel-card:hover .postage-stamp { scale: 1.025; }
-  .postage-stamp { transition: scale .18s ease-out; }
+  .parcel-card-swipe:not([data-swipe="dragging"]) .parcel-card:hover .parcel-stamp { scale: 1.025; }
+  .postage-stamp, .parcel-stamp { transition: scale .18s ease-out; }
   .time-card:hover, .stamp-card:hover { scale: 1.012; }
   .settings-row:hover { filter: brightness(.97); }
   .arrival__open:hover { color: var(--ink); }
@@ -582,7 +593,7 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
   .sheet__actions .button { padding: 12px; font-size: 13px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .parcel-card-swipe:not([data-swipe="dragging"]) .parcel-card:hover .postage-stamp { scale: 1; }
+  .parcel-card-swipe:not([data-swipe="dragging"]) .parcel-card:hover .parcel-stamp { scale: 1; }
   .arrival__tilt, .arrival__press { transform: none !important; }
   .parcel-illustration__glints, .parcel-illustration__light { display: none; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }

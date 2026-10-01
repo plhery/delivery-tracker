@@ -219,9 +219,7 @@ struct ParcelDetailView: View {
                         .font(.title2.weight(.semibold))
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    DeliveryPostageStamp(stage: parcel.currentStage, appeared: true)
-                        .scaleEffect(0.8)
-                        .frame(width: 44, height: 54)
+                    DeliveryPostageStamp(parcel: parcel, identity: branding, width: 50, appeared: true)
                 }
                 if let sender = parcel.carrierData?.senderName?.nonEmpty {
                     Text(localizer.text("parcel.sender", ["sender": sender]))

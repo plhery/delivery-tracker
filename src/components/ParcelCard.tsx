@@ -4,12 +4,12 @@ import { activeTrackingCarrierId, displayedCarrierId, carrierInfo } from '../lib
 import { localizedDatePhrase, localizedExpectedDelivery, useI18n } from '../i18n';
 import { localizedParcelCompletionDate, parcelDeliveryEstimate, parcelDisplayStatusKey, parcelHasCarrierUpdate } from '../lib/parcelStatus';
 import { currentEvent } from '../lib/stages';
-import { parcelIcon } from '../lib/parcelDesign';
 import { userErrorMessage } from '../lib/userMessages';
 import type { ParcelWithEvents } from '../types';
 import { CarrierMark } from './CarrierMark';
 import { carrierBrand } from '../lib/carrierBrand';
-import { Icon, PostageStamp } from './Icon';
+import { Icon } from './Icon';
+import { ParcelStamp } from './ParcelStamp';
 import { bindSwipeRow, type SwipeRow } from '../lib/swipeRow';
 
 export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regular' }: {
@@ -90,7 +90,7 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
         onClick={(event) => { if (!swipe.current?.consumeClick()) onOpen(parcel, event.currentTarget); }}>
         {hero ? <>
           <span className="parcel-card__hero-top"><CarrierMark carrier={carrier} /><span className="parcel-card__next-label">{t('app.nextUp')}</span></span>
-          <span className="parcel-card__hero-main"><strong className="parcel-card__label">{parcelName}</strong><PostageStamp icon={parcelIcon(current?.stage)} /></span>
+          <span className="parcel-card__hero-main"><strong className="parcel-card__label">{parcelName}</strong><ParcelStamp parcel={parcel} /></span>
           {deliveryLabel && <span className="parcel-card__sender">{deliveryLabel}</span>}
           <AutoCarrierNotice parcel={parcel} className="parcel-card__sender" />
           <span className="parcel-card__summary"><span className="parcel-card__state">{statusLabel}</span>{expectedDelivery && <><span aria-hidden="true">·</span><span className="parcel-card__eta">{expectedDelivery}</span></>}</span>

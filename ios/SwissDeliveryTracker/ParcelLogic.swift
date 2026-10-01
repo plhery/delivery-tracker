@@ -125,6 +125,20 @@ extension Parcel {
         trackingEvents.sorted(by: Self.eventPrecedes)
     }
 
+    /// The country code of the first place the parcel was scanned, which is where it was posted.
+    var stampOrigin: String? {
+        trackingEvents.filter { $0.place != nil }
+            .min { (DateParser.date($0.occurredAt) ?? .distantFuture) < (DateParser.date($1.occurredAt) ?? .distantFuture) }?
+            .place?.country
+    }
+
+    /// The day and month the parcel was delivered, as a postmark shows it: 28.09.
+    var stampDeliveryDate: String? {
+        guard isDelivered, let event = currentEvent, let date = DateParser.date(event.occurredAt) else { return nil }
+        let parts = Calendar.current.dateComponents([.day, .month], from: date)
+        return String(format: "%02d.%02d", parts.day ?? 0, parts.month ?? 0)
+    }
+
     /// Whether refreshed parcels bring new tracking: a changed timeline, status
     /// line or delivery date. A parcel that replaced another is compared with it.
     static func trackingChanged(from before: [Parcel], to after: [Parcel]) -> Bool {
