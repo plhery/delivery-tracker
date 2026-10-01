@@ -306,9 +306,9 @@ happen in this repository, 1 and 4 in the new one, 2 and 3 in both.
 6. Add `LICENSE` (Apache-2.0), `NOTICE` (GeoNames CC BY 4.0, the Correios model's MIT licence,
    Natural Earth), `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`,
    `AGENTS.md`, an ESLint config, `.nvmrc`, a `.gitignore` with `private.numbers.json` and
-   `.private/`, issue templates ("A carrier stopped working", "Add a carrier"), Dependabot and
-   workflows. `AGENTS.md` carries over this repository's privacy, push-to-main and documentation
-   rules, plus the semver rules above and "never import from an app".
+   `.private/`, issue templates ("A carrier stopped working", "Add a carrier") and workflows.
+   `AGENTS.md` carries over this repository's privacy, push-to-main and documentation rules, plus
+   the semver rules above and "never import from an app".
 7. Workflows: CI (lint, typecheck, tests, generator checks, the detection sweep, the TRAWL script
    tests, and `npm pack` installed into a scratch project that imports every entry point), secret
    scanning, and the daily canary, whose issue now lives in the new repository.
@@ -323,8 +323,7 @@ happen in this repository, 1 and 4 in the new one, 2 and 3 in both.
    manual), and push both images.
 2. In the app: depend on the exact version and delete `packages/carriers/`, `ops/trawl/`, the
    moved files, the workspace, the `carrier:new`, `canary`, `test:carriers:*` and
-   `test:tracking-links` scripts, `vitest.carriers-live.config.ts` and the canary workflow. Tell
-   Dependabot to ignore the package.
+   `test:tracking-links` scripts, `vitest.carriers-live.config.ts` and the canary workflow.
 3. Check the full CI, `npm run test:e2e` and the iOS job, and that `contracts/openapi.json`, the
    `/api/carriers` response and the iOS resources are identical before and after.
 4. Point `README.md` (Carriers), `docs/ARCHITECTURE.md`, `docs/ROUTING.md`,
