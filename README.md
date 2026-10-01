@@ -44,7 +44,7 @@
 
 ## Local development
 
-Requires Node.js 24 and npm 10+. The local demo needs no account, database,
+Requires Node.js 26 and npm 10+. The local demo needs no account, database,
 or environment file.
 
 ```bash
