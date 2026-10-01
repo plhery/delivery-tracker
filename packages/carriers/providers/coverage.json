@@ -1213,8 +1213,8 @@
     },
     {
       "carrier": "mrw",
-      "direct": "No adapter",
-      "sample": "Not tested",
+      "direct": "Yes",
+      "sample": "Summary only; alternate ✓ 14",
       "references": [
         {
           "stale": true,

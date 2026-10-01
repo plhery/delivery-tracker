@@ -15,16 +15,32 @@
   "timezone": "UTC",
   "tracking": {
     "mode": "automatic",
-    "adapter": "universal",
-    "steps": []
+    "adapter": "mrw",
+    "steps": [
+      "direct"
+    ]
   },
-  "capabilities": [],
+  "capabilities": [
+    "history",
+    "location"
+  ],
   "portal": {
     "url": "https://www.mrw.es/seguimiento",
-    "canaryUrl": "https://t.17track.net/",
-    "shows": [],
-    "scraped": [],
-    "discarded": [],
+    "canaryUrl": "https://www.mrw.es/seguimiento/",
+    "shows": [
+      "status",
+      "history",
+      "location",
+      "pickup_point_address"
+    ],
+    "scraped": [
+      "status",
+      "history",
+      "location"
+    ],
+    "discarded": [
+      "pickup_point_address"
+    ],
     "unavailable": []
   },
   "links": [],

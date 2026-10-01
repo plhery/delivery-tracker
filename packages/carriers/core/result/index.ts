@@ -59,6 +59,8 @@ export interface CarrierResult extends JsonObject {
   canonical_tracking_number?: string;
   international_tracking_number?: string;
   timezone?: string;
+  /** An identity-bound current status without a scan history. */
+  summary_only?: boolean;
   events?: CarrierEvent[];
 }
 

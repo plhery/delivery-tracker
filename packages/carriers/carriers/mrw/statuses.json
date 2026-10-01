@@ -1,0 +1,13 @@
+{
+  "carrier": "mrw",
+  "entries": [
+    { "wording": "Pendiente de recoger", "language": "es", "stage": "registered", "confirmedBy": "live" },
+    { "wording": "Envío recogido en origen", "language": "es", "stage": "accepted", "confirmedBy": "live" },
+    { "wording": "En tránsito", "language": "es", "stage": "in_transit", "confirmedBy": "live" },
+    { "wording": "Envío en reparto", "language": "es", "stage": "out_for_delivery", "confirmedBy": "live" },
+    { "wording": "Destinatario ausente o cerrado", "language": "es", "stage": "failed_attempt", "confirmedBy": "live" },
+    { "wording": "Depositado en punto MRW", "language": "es", "stage": "ready_for_pickup", "confirmedBy": "live" },
+    { "wording": "Depositado en PointCorner destino", "language": "es", "stage": "ready_for_pickup", "confirmedBy": "live" },
+    { "wording": "Envío entregado", "language": "es", "stage": "delivered", "confirmedBy": "live" }
+  ]
+}

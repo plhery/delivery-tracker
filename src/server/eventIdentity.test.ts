@@ -77,6 +77,16 @@ describe('same-instant identity reuse', () => {
     expect(sameInstantIdentities([scan('dhl:origin', instant)], [row('dpd:old', instant)], 'dpd').size).toBe(0);
   });
 
+  it('does not reuse an observation as a carrier scan identity', () => {
+    const instant = '2026-07-16T08:12:00Z';
+    const observed = { ...row('dpd:observed', instant, 'Delivered'),
+      raw_data: { observed_without_provider_timestamp: true } };
+    expect(sameInstantIdentities([scan('dpd:dated', instant, 'Delivered')], [observed], 'dpd').size).toBe(0);
+    const incomingObservation = { ...scan('dpd:observed', instant, 'Delivered'),
+      raw_data: { observed_without_provider_timestamp: true } };
+    expect(sameInstantIdentities([incomingObservation], [row('dpd:dated', instant, 'Delivered')], 'dpd').size).toBe(0);
+  });
+
   it('only applies to a source that opted in', () => {
     const instant = '2026-07-16T08:12:00Z';
     for (const source of ['unknown', 'gls-ch', 'swiss-post']) {
@@ -228,6 +238,15 @@ describe('scans a carrier and a universal provider both report', () => {
     const observed = { ...scan('unknown:observed', instant, 'Delivered'), raw_data: { observed_without_provider_timestamp: true } };
     expect(sharedScans([observed], [row('gofo:delivered', instant, 'Delivered')]).skipped.size).toBe(0);
     expect(sharedScans([scan('unknown:a', instant, 'Delivered')], []).skipped.size).toBe(0);
+  });
+
+  it('retains real provider scans when the stored matching row is only an observation', () => {
+    const observed = { ...row('mrw:observed', '2026-09-25T12:00:00Z', 'Delivered', 'delivered'),
+      raw_data: { observed_without_provider_timestamp: true } };
+    expect(sharedScans([scan('unknown:dated', '2026-09-25T12:00:00Z', 'Delivered', 'delivered')],
+      [observed]).skipped.size).toBe(0);
+    expect(sharedScans([scan('unknown:dated', '2026-09-25T10:00:00Z', 'Delivered', 'delivered')],
+      [observed]).skipped.size).toBe(0);
   });
 });
 

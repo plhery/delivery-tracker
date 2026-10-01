@@ -105,7 +105,7 @@ statuses map correctly.
 | [BRT](../carriers/brt/README.md) | Yes | Not tested; alternate ✓ 7 | No history | ✓ 23 | No history | ✓ 5 | N/A |
 | [SEUR](../carriers/seur/README.md) | Yes | No history; alternate ✓ 6 | No history | ✓ 4 | ✓ 4 | ✓ 4 | N/A |
 | [Correos Express](../carriers/correos-express/README.md) | Yes | ✓ 9 | ✓ 9 | ✓ 9 | No history | No history | N/A |
-| [MRW](../carriers/mrw/carrier.json) | No adapter | Not tested | No history | No history | ✓ 1 | No history | N/A |
+| [MRW](../carriers/mrw/README.md) | Yes | Summary only; alternate ✓ 14 | No history | No history | ✓ 1 | No history | N/A |
 | [NACEX](../carriers/nacex/README.md) | Yes | Not tested; alternate ✓ 14 | Error | Error | Error | Error | N/A |
 | [Colis Privé](../carriers/colis-prive/README.md) | Yes (postcode) | Not tested (postcode) | No history | No history | No history | No history | N/A |
 | [Relais Colis](../carriers/relais-colis/README.md) | Yes | ✓ 4 | No history | ✓ 4 | No history | Refused | N/A |
@@ -384,9 +384,10 @@ By carrier:
 - **Correos Express:** Ship24, ParcelsApp and the direct form hold the same nine scans.
   A failed-delivery row lacks a status label; the adapter keeps it as a neutral update
   without exposing the free-form incident note or promoting an older delivery.
-- **MRW:** the newest reference is a June parcel reviewed in September; only 17TRACK
-  still had it, as a single delivery row. A September parcel had 14 rows in Ship24,
-  ParcelsApp and Postal Ninja and none in 17TRACK.
+- **MRW:** the native stateful form provides full scan history for the alternate
+  reference, matching Ship24, ParcelsApp and Postal Ninja. The older comparison
+  reference has a native delivered summary with no history; only 17TRACK has a
+  delivery row. Native scan clocks lack offsets and remain local evidence.
 - **NACEX:** the providers reject the `agency/number` composite before sending it. No
   aggregator had history for the joined digits or the eight-digit shipment number either.
   The direct adapter submits the pair in a fresh anonymous session and preserves
@@ -485,9 +486,8 @@ is supported. J&T's Philippine portal uses interactive verification and its Indo
 portal asks for a phone suffix. JD Logistics and ZTO gate reads with sessions or
 CAPTCHA; STO's old form redirects away. China Post's ordered-character challenge and
 Hongkong Post's CAPTCHA remain unsupported. Parcelforce forwards to Royal Mail's
-disabled direct route. An Post's consumer query is challenged, MRW's stateful result
-has no usable history, and SpeedX's anonymous endpoints require verification. Old
-Dominion has no adapter yet.
+disabled direct route. An Post's consumer query is challenged, and SpeedX's anonymous
+endpoints require verification. Old Dominion has no direct adapter.
 
 PostNL direct refines its overloaded processing category for the exact out-for-delivery
 label. EMS export cancellation is an exception. Unresolved direct postal clocks remain

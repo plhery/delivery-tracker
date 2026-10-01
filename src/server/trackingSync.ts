@@ -893,6 +893,7 @@ export class TrackingSyncService {
         && previousLocalHistory.carrier === sourceCarrierId && previousLocalHistory.number === directHistoryNumber(parcel, result);
       const unprovenLocalSummary = localOnlyFallback && (
         (previousStage !== 'pending' && !sameLocalSource)
+        || (sameLocalSource && result.summary_only === true && Array.isArray(previousLocalHistory.events) && previousLocalHistory.events.length > 0)
         || (sameLocalSource && directLocalSnapshotIsOlder(previousLocalHistory, result))
       );
       const preserveSummary = progressDisappeared || olderSnapshot || unprovenUpuSummary || unprovenLocalSummary

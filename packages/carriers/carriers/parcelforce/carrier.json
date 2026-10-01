@@ -19,8 +19,8 @@
   },
   "capabilities": [],
   "portal": {
-    "url": "https://www.parcelforce.com/portal/pw/track?trackNumber={trackingNumber}",
-    "canaryUrl": "https://t.17track.net/",
+    "url": "https://www.royalmail.com/track-your-item#/tracking-results/{trackingNumber}",
+    "canaryUrl": "https://www.royalmail.com/track-your-item",
     "shows": [],
     "scraped": [],
     "discarded": [],

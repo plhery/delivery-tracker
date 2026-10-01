@@ -77,10 +77,10 @@ export function sameInstantIdentities(
   const storedIds = new Set(stored.map(identity));
   const claimed = new Set(events.map(identity));
   const unmatched = byInstant(events.filter((event) => (
-    identity(event).startsWith(`${sourceCarrierId}:`) && !storedIds.has(identity(event))
+    identity(event).startsWith(`${sourceCarrierId}:`) && !storedIds.has(identity(event)) && !observedOnly(event)
   )));
   const candidates = byInstant(stored.filter((row) => (
-    prefixes.some((prefix) => identity(row).startsWith(prefix)) && !claimed.has(identity(row))
+    prefixes.some((prefix) => identity(row).startsWith(prefix)) && !claimed.has(identity(row)) && !observedOnly(row)
   )));
   for (const [instant, scans] of unmatched) {
     const rows = candidates.get(instant) ?? [];
@@ -160,7 +160,8 @@ export function sharedScans(
   const taken = new Set([...events.map(identity), ...reused.values()]);
   const rows = stored.filter((row) => {
     const source = sourceOf(identity(row));
-    return source !== '' && source !== 'app' && !taken.has(identity(row)) && Number.isFinite(instantOf(row));
+    return source !== '' && source !== 'app' && !taken.has(identity(row)) && !observedOnly(row)
+      && Number.isFinite(instantOf(row));
   });
   const pending: JsonObject[] = [];
   for (const event of events) {

@@ -4813,6 +4813,14 @@
     ]
   },
   {
+    "input": "SP0000000000000001",
+    "carrier": "spee-dee",
+    "confidence": "high",
+    "candidates": [
+      "spee-dee"
+    ]
+  },
+  {
     "input": "SP029692450001607639",
     "carrier": "spee-dee",
     "confidence": "high",

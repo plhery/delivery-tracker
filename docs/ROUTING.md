@@ -68,9 +68,9 @@ asked again in the same check. A pending parcel whose failures are all not-found
 `no_history` shows as waiting, not as an outage. When a failed direct adapter recovers, it
 takes over from the universal provider again.
 
-An adapter whose answer has only local clocks (no instant for its latest scan) keeps that
-history as evidence while a universal provider dates the timeline. It is asked again
-6 h later, not on every check.
+An adapter whose answer has only local clocks or an undated status summary keeps its
+evidence while a universal provider dates the timeline. It is asked again 6 h later,
+not on every check.
 
 **Rate limits (429).** If the last successful retrieval is recent (under 1 h by day, 3 h
 overnight), the parcel keeps its progress and skips fallback until that window or the
@@ -205,7 +205,8 @@ histories that are still incomplete separately, including return-leg and summary
 When the current status has no complete timestamp, it tries providers for dated progress. If
 providers cannot help, the direct current status remains available without advancing the
 freshness watermark. An unresolved direct lookup cannot displace a carrier already confirmed
-by dated progress. The sync preserves richer saved progress and records status changes as
+by dated progress. A status summary without scans also preserves previously saved direct
+history. The sync preserves richer saved progress and records status changes as
 observations, keeping observation time distinct from a carrier scan time.
 
 ## Tracking links

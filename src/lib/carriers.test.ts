@@ -822,7 +822,7 @@ describe('carrier detection', () => {
     const numeric = detectCarrierMatch('038233020970');
     expect(numeric).toMatchObject({ carrier: 'unknown', confidence: 'low' });
     expect(numeric.candidates).toContain('mrw');
-    expectUniversalFallback('mrw');
+    expect(CARRIERS.mrw.capabilities.tracking.adapter).toBe('mrw');
   });
 
   it('nacex — NACEX', () => {
@@ -1138,6 +1138,11 @@ describe('carrier detection', () => {
     for (const number of ['SP029692510000920746', 'SP029692510000901479', 'SP029692450001607639']) {
       expect(detectCarrier(number)).toBe('spee-dee');
     }
+    // The official tracker also exposes SP followed by 16 digits.
+    // Source: https://packages.speedeedelivery.com/package_progress.php
+    expect(detectCarrier('SP0000000000000001')).toBe('spee-dee');
+    expect(detectCarrier('SP000000000000001')).toBe('unknown');
+    expect(detectCarrier('SP00000000000000001')).toBe('unknown');
     expectUniversalFallback('spee-dee');
   });
 

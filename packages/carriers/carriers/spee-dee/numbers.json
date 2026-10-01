@@ -2,6 +2,17 @@
   "carrier": "spee-dee",
   "records": [
     {
+      "number": "SP0000000000000001",
+      "role": "shipment",
+      "evidence": "synthetic",
+      "derivedFrom": "official_shape",
+      "expect": {
+        "carrier": "spee-dee",
+        "confidence": "high"
+      },
+      "note": "Synthetic reference following the official tracker's SP plus 16 digits format."
+    },
+    {
       "number": "SP029692450001607639",
       "role": "shipment",
       "evidence": "open_source_example",

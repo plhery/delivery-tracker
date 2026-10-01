@@ -29,6 +29,13 @@ export interface TrackingLinkCase {
 // independently of the generated link templates, so a template that drifts
 // fails here instead of passing against itself.
 export const trackingLinkCases: TrackingLinkCase[] = [
+  { carrier: 'mrw', number: '99000Z000001',
+    route: /^https:\/\/www\.mrw\.es\/seguimiento(?:\/|$)/,
+    marker: /Seguimiento de envíos|Seguimiento de envios|Número de envío|Nº de envío/i,
+    forwarding: 'none' },
+  { carrier: 'parcelforce', number: 'CP000000005GB',
+    route: /^https:\/\/www\.royalmail\.com\/track-your-item(?:#|$)/,
+    marker: /Track your item|Tracking number|Enter your.*number/i, renderTimeoutMs: 20_000 },
   { carrier: 'the-courier-guy', number: 'TESTA1',
     route: /^https:\/\/portal\.thecourierguy\.co\.za\/track/,
     marker: /Track your parcel|Waybill not found|Enter tracking reference/i },

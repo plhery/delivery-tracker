@@ -41,6 +41,11 @@
       "id": "spee-dee-1",
       "pattern": "^SP\\d{18}$",
       "confidence": "high"
+    },
+    {
+      "id": "spee-dee-2",
+      "pattern": "^SP\\d{16}$",
+      "confidence": "high"
     }
   ]
 }

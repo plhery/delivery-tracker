@@ -12,7 +12,7 @@ import { isKnownCarrierName } from '@carriers/providers/shared/hints';
 import { brandCarrierIds, carrierBrand, carrierIdFromName } from '@carriers/core/catalog/hints';
 import { errorType, reportRoutingEvent } from './observability';
 import { CarrierError, carrierErrorKind, IndeterminateError, retryAfterMsOf } from '@carriers/core/errors';
-import { captureDirectLocalHistory, directHistoryNumber, hasUnresolvedDirectCurrent, hasUnresolvedDirectHistory } from './directLocalHistory';
+import { captureDirectLocalHistory, directHistoryNumber, directLocalHistory, hasUnresolvedDirectCurrent, hasUnresolvedDirectHistory } from './directLocalHistory';
 import { latestResultTime } from './eventTime';
 import type { Recognition } from '@carriers/core/adapter';
 import { MAX_RECOGNITIONS, recognitionCandidates, recognizeAll, settleRecognition } from './carrierRecognition';
@@ -284,15 +284,25 @@ export class TrackingRouter {
         const value = await this.options.direct(lookupParcel, carrier);
         value.result = normalizeCarrierResult(value.result);
         if (!usable(value.result)) throw Object.assign(new Error('No confirmed shipment progress'), { status: 404 });
-        if (hasUnresolvedDirectHistory(value.sourceCarrierId, value.result)) {
-          localHistory = captureDirectLocalHistory(value.sourceCarrierId, String(directHistoryNumber(lookupParcel, value.result)), value.result);
-        }
+        // An empty summary archive binds the fallback to this parcel without
+        // creating a scan; earlier real scans survive when it is merged.
+        const capturedHistory = hasUnresolvedDirectHistory(value.sourceCarrierId, value.result)
+          || (value.result.summary_only === true && hasUnresolvedDirectCurrent(value.sourceCarrierId, value.result))
+          ? captureDirectLocalHistory(value.sourceCarrierId, String(directHistoryNumber(lookupParcel, value.result)), value.result)
+          : undefined;
         if (hasUnresolvedDirectCurrent(value.sourceCarrierId, value.result)) {
           // Preserve the direct evidence, but let timestamped or richer
           // providers supply the normal timeline and freshness watermark.
           // A discovered candidate with no instants cannot displace a source
           // whose dated progress already established the carrier.
-          if (!candidate) localDirectFallback = { value, carrier };
+          if (!candidate) {
+            localDirectFallback = { value, carrier };
+            localHistory = capturedHistory;
+          } else if (!localHistory && !directLocalHistory(parcel, {})) {
+            // An unconfirmed candidate may add evidence for an unknown parcel,
+            // but cannot replace history from the parcel's own carrier.
+            localHistory = capturedHistory;
+          }
           return null;
         }
         // A probe needs movement: a pre-advice ("Order created") proves the
@@ -303,6 +313,7 @@ export class TrackingRouter {
         if (candidate && latest(value) < millis(state.last_event_at)) return null;
         if (terminalStage && ['delivered', 'returned'].includes(terminalStage)
           && value.result.current_stage !== terminalStage) return null;
+        if (capturedHistory) localHistory = capturedHistory;
         // A probe finding the carrier its number points to is the expected
         // outcome, not a detection gap: log it without raising an alert.
         if (carrier !== declared && state.confirmed_carrier !== carrier) {
@@ -556,7 +567,7 @@ export class TrackingRouter {
         }
         state.reported_carriers_seen = [...new Set([...seen, ...value.result.reported_carriers])].slice(-20);
       }
-      // The carrier's own answer had only local clocks, so this provider dates the
+      // The carrier's own answer had no current instant, so this provider dates the
       // timeline: ask the carrier again in 6 h. A retry time left over from an
       // earlier failure has expired and would otherwise keep it due on every check.
       if (localDirectFallback || !state.direct_retry_at) state.direct_retry_at = iso(now().getTime() + 6 * HOUR);

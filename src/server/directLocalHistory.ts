@@ -2,7 +2,7 @@ import { DateTime } from 'luxon';
 import type { CarrierResult } from '@carriers/core/result';
 import { isRecord, type JsonObject } from './types';
 
-const CARRIERS = new Set(['japan-post', 'evri', 'sf-express', 'aramex', 'four-px', 'singapore-post', 'korea-post', 'yamato', 'ontrac', 'blue-dart', 'yunexpress', 'delhivery', 'bpost', 'purolator', 'yto', 'correios-br', 'yunda', 'spring-gds', 'ems', 'uniuni', 'ctt-express', 'pos-malaysia', 'canpar', 'ninja-van', 'correos-chile', 'landmark-global', 'gofo', 'ecoscooting', 'correos-express', 'nz-post', 'poczta-polska', 'the-courier-guy', 'bring-posten', 'estafeta', 'canada-post', 'nacex', 'brt', 'ukrposhta', 'seur', 'ciblex', 'relais-colis']);
+const CARRIERS = new Set(['japan-post', 'evri', 'sf-express', 'aramex', 'four-px', 'singapore-post', 'korea-post', 'yamato', 'ontrac', 'blue-dart', 'yunexpress', 'delhivery', 'bpost', 'purolator', 'yto', 'correios-br', 'yunda', 'spring-gds', 'ems', 'uniuni', 'ctt-express', 'pos-malaysia', 'canpar', 'ninja-van', 'correos-chile', 'landmark-global', 'gofo', 'ecoscooting', 'correos-express', 'nz-post', 'poczta-polska', 'the-courier-guy', 'bring-posten', 'estafeta', 'canada-post', 'nacex', 'brt', 'ukrposhta', 'seur', 'ciblex', 'relais-colis', 'mrw']);
 const eventKey = (event: JsonObject): string => JSON.stringify([
   event.local_time, event.provider_time_text, event.time, event.description, event.location, event.provider_code, event.provider_leg, event.summary_snapshot,
 ]);
@@ -18,7 +18,8 @@ export function hasUnresolvedDirectHistory(carrier: string, result: CarrierResul
 }
 
 export function hasUnresolvedDirectCurrent(carrier: string, result: CarrierResult): boolean {
-  return hasUnresolvedDirectHistory(carrier, result) && !instant(result.last_update);
+  return CARRIERS.has(carrier) && (result.summary_only === true || hasUnresolvedDirectHistory(carrier, result))
+    && !instant(result.last_update);
 }
 
 export function captureDirectLocalHistory(carrier: string, number: string, result: CarrierResult): JsonObject {
@@ -61,7 +62,7 @@ export function directLocalHistory(parcel: JsonObject, result: CarrierResult): J
   if (!incoming) return previous ? { ...previous, events: (previous.events as unknown[]).slice(0, 100) } : undefined;
   if (!previous || previous.carrier !== incoming.carrier) return { ...incoming, events: (incoming.events as unknown[]).slice(0, 100) };
   const unique = new Map<string, JsonObject>();
-  const older = directLocalSnapshotIsOlder(previous, incoming);
+  const older = (incoming.events as unknown[]).length === 0 || directLocalSnapshotIsOlder(previous, incoming);
   const ordered = older ? [previous, incoming] : [incoming, previous];
   // The provider's order is meaningful across locations with different clocks.
   for (const event of ordered.flatMap((archive) => archive.events as unknown[])) {
