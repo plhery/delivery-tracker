@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -37,6 +37,29 @@ test('engraves the route in the card and opens it as a full map', async ({ page 
   await expect(detail).toBeVisible();
   await expect(open).toBeFocused();
   expect(errors).toEqual([]);
+});
+
+test('draws the route on Next up, and opens the parcel on the same picture', async ({ page }) => {
+  // How far below the top of its card the parcel's dot sits.
+  const dotOffset = async (card: Locator) => {
+    const dot = await card.locator('g[data-kind="current"]').boundingBox();
+    const box = await card.boundingBox();
+    return dot && box ? dot.y - box.y : NaN;
+  };
+  const next = page.locator('.parcel-card--hero');
+  const engraving = next.locator('.parcel-card__engraving');
+  // Waiting at its pickup point: the card shows the last mile, with Hamburg on the edge.
+  await expect(engraving.locator('[data-scale]')).toHaveAttribute('data-mode', 'now');
+  await expect(engraving.getByText('Hamburg', { exact: true })).toBeVisible();
+  // Only Next up draws its route in the list.
+  await expect(page.locator('.parcel-card__engraving')).toHaveCount(1);
+  const inList = await dotOffset(next);
+
+  // The drawing takes no touches: a tap on it opens the parcel like the rest of the card.
+  await next.click({ position: { x: 60, y: 70 } });
+  const hero = page.locator('.detail--postcard .detail__hero');
+  await expect(hero.locator('.detail__engraving [data-scale]')).toHaveAttribute('data-mode', 'now');
+  await expect.poll(async () => Math.abs(await dotOffset(hero) - inList)).toBeLessThan(1.5);
 });
 
 test('zooms the full map with the wheel, and returns to the parcel', async ({ page, isMobile }) => {

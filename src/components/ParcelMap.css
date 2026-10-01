@@ -5,7 +5,7 @@
 .detail__hero--map .detail__hero-meta button { pointer-events: auto; }
 .detail--postcard .detail__hero--map .detail__title-row { margin-top: 118px; }
 .detail__engraving { position: absolute; top: 0; right: 0; left: 0; z-index: 0; height: 176px; cursor: pointer; }
-.detail__hero .detail__engraving-map {
+.detail__hero .detail__engraving-map, .parcel-card .parcel-card__engraving-map {
   --map-space: transparent; --map-ocean: transparent; --map-land: color-mix(in srgb, var(--tone) 10%, transparent);
   --map-visited: color-mix(in srgb, var(--tone) 17%, transparent); --map-border: color-mix(in srgb, var(--tone-surface) 80%, transparent);
   --map-night: transparent; --map-grid: transparent; --map-shade: transparent; --map-limb: color-mix(in srgb, var(--tone) 16%, transparent);
@@ -15,7 +15,12 @@
   position: absolute; inset: 0; animation: parcel-engraving-in .5s var(--ease-out) both;
   -webkit-mask-image: linear-gradient(black 78%, transparent); mask-image: linear-gradient(black 78%, transparent);
 }
-.detail__hero .detail__engraving-map * { -webkit-backdrop-filter: none; backdrop-filter: none; }
+.detail__hero .detail__engraving-map *, .parcel-card .parcel-card__engraving-map * { -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* Next up carries the same engraving. Its card is one button, so the drawing takes no touches. */
+.parcel-card--map { overflow: hidden; }
+.parcel-card--map > :not(.parcel-card__engraving) { position: relative; }
+.parcel-card__engraving { position: absolute; top: 0; right: 0; left: 0; z-index: 0; display: block; height: 160px; pointer-events: none; }
+.app--deliveries .parcel-card--map .parcel-card__hero-main { margin-top: 101px; }
 .detail--postcard .detail__map-button {
   display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%;
   background: transparent; color: var(--tone); opacity: .75; cursor: pointer;
@@ -72,5 +77,5 @@
 }
 @keyframes parcel-map-in { from { opacity: 0; transform: translateY(16px) scale(.985); } }
 @media (prefers-reduced-motion: reduce) {
-  .parcel-map, .detail__hero .detail__engraving-map { animation: none; }
+  .parcel-map, .detail__hero .detail__engraving-map, .parcel-card .parcel-card__engraving-map { animation: none; }
 }

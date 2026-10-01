@@ -743,11 +743,14 @@ private struct ExperimentalNextDeliveryPass: View {
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
+    @State private var atlas: WorldAtlas?
     @ObservedObject private var catalog = CarrierCatalog.shared
 
     private var identity: CarrierVisualIdentity {
         CarrierVisualIdentity.of(parcel.displayedCarrier, catalog: catalog, language: localizer.language)
     }
+    /// Scans with places are drawn as a route across the top of the card, as on the opened parcel.
+    private var placed: Bool { parcel.trackingEvents.contains { $0.place != nil } }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -768,7 +771,8 @@ private struct ExperimentalNextDeliveryPass: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 DeliveryPostageStamp(parcel: parcel, identity: identity, appeared: appeared)
             }
-            .padding(.top, 19)
+            // Room for the route engraved behind the top of the card.
+            .padding(.top, placed ? 101 : 19)
             .padding(.bottom, 15)
 
             AutomaticCarrierNotice(parcel: parcel)
@@ -791,6 +795,20 @@ private struct ExperimentalNextDeliveryPass: View {
         .foregroundStyle(.primary)
         .padding(18)
         .frame(maxWidth: .infinity, minHeight: 166, alignment: .leading)
+        .background(alignment: .top) {
+            if placed, let atlas {
+                // The card is one tap target, so the drawing takes no touches of its own.
+                RouteEngraving(
+                    atlas: atlas, route: ParcelRoute(parcel: parcel, atlas: atlas, language: localizer.language),
+                    stage: parcel.currentStage, identity: identity, peek: false,
+                    insets: EdgeInsets(top: 40, leading: 16, bottom: 28, trailing: 16)
+                )
+                .frame(height: 160)
+                .clipShape(UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24, style: .continuous))
+                .allowsHitTesting(false)
+                .transition(.opacity)
+            }
+        }
         .experimentalSurface(fill: identity.surface, cornerRadius: 24)
         .matchedTransitionSource(id: parcel.id, in: transition)
         .accessibilityElement(children: .combine)
@@ -801,6 +819,11 @@ private struct ExperimentalNextDeliveryPass: View {
         .opacity(appeared ? 1 : 0)
         .accessibilityHint(localizer.text("detail.label"))
         .onAppear { withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) { appeared = true } }
+        .task(id: placed) {
+            guard placed, atlas == nil else { return }
+            let loaded = await WorldAtlas.bundled.value
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.5)) { atlas = loaded }
+        }
     }
 }
 

@@ -379,9 +379,13 @@ enum ParcelOrganizer {
             return parcel.currentStage == .outForDelivery || parcel.expectedDayKey == today ? 1 : 2
         }
         let next = candidates
-            .map { (urgency: urgency($0), key: SortKey($0, sort: .priority, catalog: .shared)) }
+            .map { (urgency: urgency($0), placed: $0.trackingEvents.contains { $0.place != nil },
+                    key: SortKey($0, sort: .priority, catalog: .shared)) }
             .min { left, right in
-                left.urgency != right.urgency ? left.urgency < right.urgency : left.key.precedes(right.key)
+                if left.urgency != right.urgency { return left.urgency < right.urgency }
+                // Next up draws the parcel's route: of two due the same day, the one with places to draw goes first.
+                if left.key.expected == right.key.expected, left.placed != right.placed { return left.placed }
+                return left.key.precedes(right.key)
             }
         return next?.key.parcel
     }

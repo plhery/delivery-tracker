@@ -13,9 +13,10 @@ import './ParcelMap.css';
 /**
  * The parcel's route once its scans have places and the map data has loaded.
  * `placed` is known at once, so the card can keep room for the map while it loads.
+ * A card that draws no map passes `wanted` as false, and never asks for the map data.
  */
-export function useParcelRoute(parcel: ParcelWithEvents, languageTag: string): { placed: boolean; route: Route | null } {
-  const placed = parcel.events.some((event) => event.place);
+export function useParcelRoute(parcel: ParcelWithEvents, languageTag: string, wanted = true): { placed: boolean; route: Route | null } {
+  const placed = wanted && parcel.events.some((event) => event.place);
   const ready = useWorld(placed);
   const route = useMemo(() => {
     if (!placed || !ready) return null;
@@ -43,6 +44,19 @@ export function RouteEngraving({ route, stage, onOpen }: { route: Route | null; 
     {route && <WorldMap route={route} mode={defaultMode(route, stage)} time={time} look="tint" labels="ends" context={false} live={false} peek
       languageTag={languageTag} insets={{ top: 40, right: 16, bottom: 44, left: 16 }} className="detail__engraving-map" />}
   </div>;
+}
+
+/**
+ * The same engraving on the Next up card, so opening the card lands on the same picture.
+ * The card is one button: the drawing takes no touches of its own.
+ */
+export function NextUpEngraving({ route, stage }: { route: Route | null; stage?: Stage }) {
+  const { languageTag } = useI18n();
+  const [time] = useState(() => new Date());
+  return <span className="parcel-card__engraving" aria-hidden="true">
+    {route && <WorldMap route={route} mode={defaultMode(route, stage)} time={time} look="tint" labels="ends" context={false} live={false}
+      languageTag={languageTag} insets={{ top: 40, right: 16, bottom: 28, left: 16 }} className="parcel-card__engraving-map" />}
+  </span>;
 }
 
 function RouteSummary({ route, stage }: { route: Route; stage?: Stage }) {

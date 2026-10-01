@@ -1250,6 +1250,31 @@ final class ParcelLogicTests: XCTestCase {
         XCTAssertNil(ParcelOrganizer.nextDelivery(from: [archived], now: now))
     }
 
+    func testNextDeliveryPrefersAParcelWhoseRouteCanBeDrawnOnTheSameDay() {
+        let now = DateParser.date("2026-09-09T12:00:00Z")!
+        let zurich = EventPlace(latitude: 47.37, longitude: 8.54, precision: .city, country: "CH", name: "Zürich")
+        func shipment(_ stage: TrackingStage, at occurredAt: String, place: EventPlace? = nil, expected: String? = nil) -> Parcel {
+            let id = UUID()
+            var parcel = makeParcel(id: id, events: [TrackingEvent(
+                id: UUID(), packageID: id, stage: stage, description: "Update", location: nil, occurredAt: occurredAt, place: place
+            )])
+            parcel.expectedDelivery = expected
+            return parcel
+        }
+        // Without a date on either, the newer update used to win; the map now decides first.
+        let newer = shipment(.inTransit, at: "2026-09-09T09:00:00Z")
+        let placed = shipment(.inTransit, at: "2026-09-09T07:00:00Z", place: zurich)
+        XCTAssertEqual(ParcelOrganizer.nextDelivery(from: [newer, placed], now: now)?.id, placed.id)
+        let datedNewer = shipment(.inTransit, at: "2026-09-09T09:00:00Z", expected: "2026-09-10")
+        let datedPlaced = shipment(.inTransit, at: "2026-09-09T07:00:00Z", place: zurich, expected: "2026-09-10")
+        XCTAssertEqual(ParcelOrganizer.nextDelivery(from: [datedNewer, datedPlaced], now: now)?.id, datedPlaced.id)
+        // An earlier day or a more urgent stage still comes first.
+        let sooner = shipment(.inTransit, at: "2026-09-09T06:00:00Z", expected: "2026-09-09")
+        XCTAssertEqual(ParcelOrganizer.nextDelivery(from: [sooner, datedPlaced], now: now)?.id, sooner.id)
+        let pickup = shipment(.readyForPickup, at: "2026-09-09T06:00:00Z")
+        XCTAssertEqual(ParcelOrganizer.nextDelivery(from: [pickup, placed], now: now)?.id, pickup.id)
+    }
+
     func testStampNamesTheFirstPlacedCountryAndIsDatedOnlyOnceDelivered() {
         func scan(_ day: Int, _ stage: TrackingStage, _ place: EventPlace?) -> TrackingEvent {
             TrackingEvent(id: UUID(), packageID: UUID(), stage: stage, description: "Update", location: nil,

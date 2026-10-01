@@ -10,6 +10,7 @@ import type { ParcelWithEvents } from '../types';
 import { CarrierMark } from './CarrierMark';
 import { carrierBrand } from '../lib/carrierBrand';
 import { Icon } from './Icon';
+import { NextUpEngraving, useParcelRoute } from './ParcelMap';
 import { ParcelStamp } from './ParcelStamp';
 import { bindSwipeRow, type SwipeRow } from '../lib/swipeRow';
 
@@ -35,6 +36,8 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
   const parcelName = parcel.label || t('common.parcel');
   const branding = carrierBrand(carrier);
   const hero = variant === 'hero';
+  // Only Next up draws its route, so only it asks for the map data.
+  const { placed, route } = useParcelRoute(parcel, languageTag, hero);
   // Carrier-reported stages already say what needs attention in the status line.
   const carrierIssue = ['customs', 'ready_for_pickup', 'failed_attempt', 'exception'].includes(current?.stage ?? '');
   const flag = (notice && !carrierIssue ? notice : null) ?? (parcel.syncStatus === 'error' ? t('attention.sync_error') : null);
@@ -89,10 +92,11 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
             aria-hidden={!open} tabIndex={open ? 0 : -1} disabled={archiving} onClick={() => swipe.current?.archive()}><Icon name="archive" /><span>{t('parcel.archive')}</span></button>
         </div>
       </div>}
-      <button ref={button} type="button" className={`parcel-card${hero ? ' parcel-card--hero' : ''}${parcel.archivedAt ? ' parcel-card--archived' : ''}`}
+      <button ref={button} type="button" className={`parcel-card${hero ? ' parcel-card--hero' : ''}${placed ? ' parcel-card--map' : ''}${parcel.archivedAt ? ' parcel-card--archived' : ''}`}
         disabled={archiving} aria-busy={archiving} aria-label={hero ? `${t('app.nextUp')}: ${label}` : label}
         onClick={(event) => { if (!swipe.current?.consumeClick()) onOpen(parcel, event.currentTarget); }}>
         {hero ? <>
+          {placed && <NextUpEngraving route={route} stage={current?.stage} />}
           <span className="parcel-card__hero-top"><CarrierMark carrier={carrier} /><span className="parcel-card__next-label">{t('app.nextUp')}</span></span>
           <span className="parcel-card__hero-main"><strong className="parcel-card__label">{parcelName}</strong><ParcelStamp parcel={parcel} /></span>
           {deliveryLabel && <span className="parcel-card__sender">{deliveryLabel}</span>}

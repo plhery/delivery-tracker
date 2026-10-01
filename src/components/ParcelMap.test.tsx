@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { trackAction } from '../lib/analytics';
 import type { EventPlace, ParcelWithEvents, Stage, TrackingEvent } from '../types';
 import { buildRoute, countryPlace, formatKm, type Place, type Scan } from './map/route';
+import { ParcelCard } from './ParcelCard';
 import { ParcelDetail } from './ParcelDetail';
 import { ParcelMapSheet } from './ParcelMap';
 
@@ -72,6 +73,28 @@ describe('parcel map', () => {
     show({ events: [event(11, 'in_transit')] });
     expect(document.querySelector('.detail__engraving')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Open the map' })).not.toBeInTheDocument();
+  });
+});
+
+describe('next up engraving', () => {
+  const card = (values: Partial<ParcelWithEvents> = {}, variant: 'hero' | 'regular' = 'hero') =>
+    render(<ParcelCard parcel={{ ...parcel, ...values }} variant={variant} onOpen={vi.fn()} />).container;
+
+  it('draws the route on the Next up card, which stays one button', async () => {
+    const user = userEvent.setup();
+    const onOpen = vi.fn();
+    const { container } = render(<ParcelCard parcel={parcel} variant="hero" onOpen={onOpen} />);
+    const engraving = container.querySelector('.parcel-card--map > .parcel-card__engraving');
+    // Room is kept at once; the drawing arrives with the map data.
+    expect(engraving).toHaveAttribute('aria-hidden', 'true');
+    await waitFor(() => expect(engraving!.querySelector('.parcel-card__engraving-map')).not.toBeNull());
+    await user.click(screen.getByRole('button', { name: /^Next up: Tea/ }));
+    expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves the other cards, and a parcel without places, as they were', () => {
+    expect(card({}, 'regular').querySelector('.parcel-card__engraving')).toBeNull();
+    expect(card({ events: [event(11, 'in_transit')] }).querySelector('.parcel-card--map, .parcel-card__engraving')).toBeNull();
   });
 });
 

@@ -118,5 +118,9 @@ export function nextPriorityParcel(parcels: ParcelWithEvents[], now = Date.now()
     return currentStage(parcel.events) === 'out_for_delivery'
       || expectedDeliveryDay(parcel.expectedDelivery) === today ? 1 : 2;
   };
-  return candidates.sort((a, b) => urgency(a) - urgency(b) || compareParcelPriority(a, b))[0] ?? null;
+  const day = (parcel: ParcelWithEvents) => expectedDeliveryDay(parcel.expectedDelivery) ?? '9999-99-99';
+  // Next up draws the parcel's route: of two due the same day, the one with places to draw goes first.
+  const unplaced = (parcel: ParcelWithEvents) => parcel.events.some((event) => event.place) ? 0 : 1;
+  return candidates.sort((a, b) => urgency(a) - urgency(b) || day(a).localeCompare(day(b))
+    || unplaced(a) - unplaced(b) || compareParcelPriority(a, b))[0] ?? null;
 }

@@ -45,6 +45,19 @@ describe('parcel priority', () => {
     expect(prioritizeActiveParcels([customs, failed], NOW).attention).toHaveLength(2);
   });
 
+  it('prefers a parcel whose route can be drawn when two are due the same day', () => {
+    const zurich = { latitude: 47.37, longitude: 8.55, precision: 'city' as const, country: 'CH', name: 'Zürich' };
+    const newer = { ...parcel('newer', 'in_transit', '2026-08-05T09:00:00Z'), expectedDelivery: '2026-08-06' };
+    const placed = { ...parcel('placed', 'in_transit', '2026-08-05T07:00:00Z'), expectedDelivery: '2026-08-06' };
+    placed.events = [{ ...placed.events[0], place: zurich }];
+    expect(nextPriorityParcel([newer, placed], NOW)?.id).toBe('placed');
+    // Neither has a date: the map decides as well.
+    expect(nextPriorityParcel([{ ...newer, expectedDelivery: undefined }, { ...placed, expectedDelivery: undefined }], NOW)?.id).toBe('placed');
+    // An earlier day or a more urgent stage still comes first.
+    expect(nextPriorityParcel([{ ...newer, expectedDelivery: '2026-08-05' }, placed], NOW)?.id).toBe('newer');
+    expect(nextPriorityParcel([parcel('pickup', 'ready_for_pickup'), placed], NOW)?.id).toBe('pickup');
+  });
+
   it('recognizes dates with or without delivery windows', () => {
     expect(expectedDeliveryDay('2026-08-05')).toBe('2026-08-05');
     expect(expectedDeliveryDay('2026-08-05 13:00–15:00')).toBe('2026-08-05');

@@ -17,13 +17,16 @@ struct RouteEngraving: View {
     let route: ParcelRoute
     let stage: TrackingStage?
     let identity: CarrierVisualIdentity
+    /// Off on the Next up card, which is one tap target in a scrolling list.
+    var peek = true
+    var insets = EdgeInsets(top: 40, leading: 16, bottom: 44, trailing: 16)
     @EnvironmentObject private var localizer: Localizer
 
     var body: some View {
         WorldMapView(
             atlas: atlas, route: route, mode: route.defaultMode(for: stage),
-            palette: .tint(ink: identity.ink, surface: identity.surface), labels: .ends, showsContext: false, peek: true,
-            insets: EdgeInsets(top: 40, leading: 16, bottom: 44, trailing: 16), language: localizer.language
+            palette: .tint(ink: identity.ink, surface: identity.surface), labels: .ends, showsContext: false, peek: peek,
+            insets: insets, language: localizer.language
         )
         .mask(LinearGradient(stops: [.init(color: .black, location: 0.78), .init(color: .clear, location: 1)],
                              startPoint: .top, endPoint: .bottom))
