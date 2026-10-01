@@ -1,4 +1,4 @@
-import demoCatalog from '../../shared/delivery-demo.json';
+import demoSamples from '../../shared/delivery-demo.json';
 import {
   detectCarrier,
   normalizeTrackingNumber,
@@ -19,6 +19,20 @@ import {
 
 export const DEMO_STORAGE_KEY = 'sdt.demo.parcels.v1';
 
+/** One sample parcel of the demo, timed relative to the moment it is seeded. */
+interface DemoSample {
+  label: string;
+  trackingNumber: string;
+  carrier: string;
+  expectedInDays?: number;
+  archivedHoursAgo?: number;
+  senderName?: string;
+  pickupPoint?: string;
+  weightKg?: number;
+  events: { stage: string; hoursAgo: number; description: string; location?: string; place?: unknown }[];
+}
+
+const demoCatalog: DemoSample[] = demoSamples;
 const HOUR = 3_600_000;
 const CATALOG_KEY = 'sdt.demo.catalog.v2';
 
@@ -172,6 +186,7 @@ export function seedParcels(now: number): ParcelWithEvents[] {
       expectedDelivery, syncStatus: 'ok',
       archivedAt: sample.archivedHoursAgo === undefined ? undefined : iso(sample.archivedHoursAgo),
       dpdPostcode: sample.carrier === 'dpd' ? '8000' : undefined,
+      senderName: sample.senderName, pickupPoint: sample.pickupPoint, weightKg: sample.weightKg,
       events: sample.events.map((event) => ({
         id: uid(), parcelId: id, stage: event.stage as Stage,
         description: event.description, location: event.location, occurredAt: iso(event.hoursAgo),

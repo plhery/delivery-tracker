@@ -280,7 +280,7 @@ describe('App', () => {
     expect(within(active).getByText('Birthday gift 🎁')).toBeInTheDocument();
 
     const next = screen.getByRole('button', { name: /Next up: New sneakers/ });
-    expect(within(next).getByText('Out for delivery')).toBeInTheDocument();
+    expect(within(next).getByText('Ready for pickup')).toBeInTheDocument();
     expect(next.querySelector('.parcel-stamp')).toBeInTheDocument();
     expect(within(next).queryByText('Customs clearance')).not.toBeInTheDocument();
     expect(next.querySelector('.progress-track')).not.toBeInTheDocument();
@@ -386,7 +386,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Clear filters' }));
 
     expect(await screen.findByText('Coffee beans ☕')).toBeInTheDocument();
-    expect(screen.getByText('16 shown')).toBeInTheDocument();
+    expect(screen.getByText('17 shown')).toBeInTheDocument();
   });
 
   it('filters parcels by status and carrier', async () => {
@@ -406,13 +406,13 @@ describe('App', () => {
       .not.toBeInTheDocument();
 
     await user.selectOptions(screen.getByLabelText('Status'), 'all');
-    await user.selectOptions(screen.getByLabelText('Carrier'), 'intl-post');
+    await user.selectOptions(screen.getByLabelText('Carrier'), 'chronopost');
     expect(within(parcelSections as HTMLElement).getByText('Birthday gift 🎁'))
       .toBeInTheDocument();
     expect(screen.queryByText('Coffee beans ☕')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /hide filters/i }));
     expect(screen.queryByLabelText('Status')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /unknown postal carrier/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /chronopost/i })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /hide search & filters/i }));
     expect(screen.queryByRole('searchbox', { name: 'Search parcels' })).not.toBeInTheDocument();
     expect(viewToggle).toHaveTextContent('Custom view');

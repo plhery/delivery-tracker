@@ -1569,6 +1569,9 @@ final class DemoRepository {
             let carrier: CarrierID
             let expectedInDays: Int?
             let archivedHoursAgo: Double?
+            let senderName: String?
+            let pickupPoint: String?
+            let weightKg: Double?
             let events: [Event]
         }
         guard let url = Bundle.main.url(forResource: "DeliveryDemo", withExtension: "json"),
@@ -1591,7 +1594,9 @@ final class DemoRepository {
                 lastStatusText: history.sorted(by: { $0.occurredAt > $1.occurredAt }).first?.description,
                 lastSyncedAt: iso(0.2), syncStatus: .ok, syncError: nil,
                 trackingURL: nil, dpdPostcode: sample.carrier == .dpd ? "8000" : nil,
-                carrierData: nil, archivedAt: sample.archivedHoursAgo.map(iso), notificationsMuted: false,
+                carrierData: sample.senderName == nil && sample.pickupPoint == nil && sample.weightKg == nil ? nil
+                    : CarrierData(senderName: sample.senderName, pickupPoint: sample.pickupPoint, weightKg: sample.weightKg),
+                archivedAt: sample.archivedHoursAgo.map(iso), notificationsMuted: false,
                 trackingEvents: history
             )
         }

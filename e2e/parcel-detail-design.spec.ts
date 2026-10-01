@@ -28,7 +28,7 @@ test('keeps tracking actions available when history is folded and preserves titl
     } });
   });
   await detail.getByRole('button', { name: 'Copy tracking number', exact: true }).click();
-  await expect(detail.locator('[aria-live="polite"]')).toContainText('Copied');
+  await expect(detail.locator('.detail__tracking-copy [aria-live="polite"]')).toContainText('Copied');
   await expect(journal).not.toHaveAttribute('open', '');
   const displayedNumber = (await detail.locator('.detail__tracking-ticket strong').textContent())!.replace(/[.\s]/g, '');
   expect((await page.locator('html').getAttribute('data-copied-tracking'))!.replace(/[.\s]/g, '')).toBe(displayedNumber);

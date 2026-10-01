@@ -32,7 +32,7 @@ test('keeps the next arrival, flagged issue card, and search tools in one compac
   expect(noticeBounds.y).toBeGreaterThan(heroBounds.y);
   expect(noticeBounds.width).toBeGreaterThan(heroBounds.width - 2);
   const region = page.getByRole('region', { name: 'On the way' });
-  await expect(region.locator('.parcel-section__heading > span')).toHaveText('6');
+  await expect(region.locator('.parcel-section__heading > span')).toHaveText('7');
   const row = await page.locator('.delivery-overview').boundingBox();
   const searchButton = page.getByRole('button', { name: 'Search & filters' });
   const searchBounds = await searchButton.boundingBox();

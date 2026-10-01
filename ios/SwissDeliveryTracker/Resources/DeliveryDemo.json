@@ -3,6 +3,8 @@
     "label": "Coffee beans ☕",
     "trackingNumber": "993412345678901234",
     "carrier": "swiss-post",
+    "senderName": "Rösterei Morgenrot",
+    "weightKg": 0.5,
     "events": [
       {
         "stage": "registered",
@@ -25,7 +27,7 @@
       {
         "stage": "in_transit",
         "hoursAgo": 40,
-        "description": "Sorted at the parcel center",
+        "description": "Sorted overnight, still smelling wonderful",
         "location": "Härkingen, Switzerland",
         "place": {
           "latitude": 47.305,
@@ -51,7 +53,7 @@
       {
         "stage": "delivered",
         "hoursAgo": 26,
-        "description": "Delivered to your mailbox",
+        "description": "Delivered to your mailbox. Mornings are saved.",
         "location": "Zürich, Switzerland",
         "place": {
           "latitude": 47.367,
@@ -67,15 +69,18 @@
     "label": "New sneakers 👟",
     "trackingNumber": "1234567899",
     "carrier": "dhl",
+    "senderName": "Elbe Laufladen",
+    "pickupPoint": "Kiosk im Hauptbahnhof\nBahnhofplatz 15, 8001 Zürich",
+    "weightKg": 0.9,
     "events": [
       {
         "stage": "registered",
-        "hoursAgo": 30,
+        "hoursAgo": 58,
         "description": "Your running shoes are packed"
       },
       {
         "stage": "accepted",
-        "hoursAgo": 20,
+        "hoursAgo": 48,
         "description": "Collected from the running shop",
         "location": "Hamburg, Germany",
         "place": {
@@ -88,7 +93,7 @@
       },
       {
         "stage": "in_transit",
-        "hoursAgo": 10,
+        "hoursAgo": 30,
         "description": "Arrived at the destination depot",
         "location": "Regensdorf, Switzerland",
         "place": {
@@ -97,6 +102,126 @@
           "precision": "city",
           "country": "CH",
           "name": "Regensdorf"
+        }
+      },
+      {
+        "stage": "out_for_delivery",
+        "hoursAgo": 24,
+        "description": "With the courier for delivery",
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
+      },
+      {
+        "stage": "failed_attempt",
+        "hoursAgo": 21,
+        "description": "Nobody home. Out for a run, presumably.",
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
+      },
+      {
+        "stage": "ready_for_pickup",
+        "hoursAgo": 4,
+        "description": "Waiting for you at the pickup point",
+        "location": "Zürich, Switzerland",
+        "place": {
+          "latitude": 47.367,
+          "longitude": 8.55,
+          "precision": "city",
+          "country": "CH",
+          "name": "Zürich"
+        }
+      }
+    ]
+  },
+  {
+    "label": "Birthday gift 🎁",
+    "trackingNumber": "LX123456789DE",
+    "carrier": "chronopost",
+    "senderName": "Mamie",
+    "weightKg": 1.2,
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 50,
+        "description": "A little surprise is on its way"
+      },
+      {
+        "stage": "accepted",
+        "hoursAgo": 44,
+        "description": "Handed over at the post office counter",
+        "location": "Lyon, France",
+        "place": {
+          "latitude": 45.749,
+          "longitude": 4.848,
+          "precision": "city",
+          "country": "FR",
+          "name": "Lyon"
+        }
+      },
+      {
+        "stage": "customs",
+        "hoursAgo": 12,
+        "description": "Customs is taking a look. No peeking.",
+        "location": "Basel, Switzerland",
+        "place": {
+          "latitude": 47.558,
+          "longitude": 7.573,
+          "precision": "city",
+          "country": "CH",
+          "name": "Basel"
+        }
+      }
+    ]
+  },
+  {
+    "label": "Belgian chocolate 🍫",
+    "trackingNumber": "DEMOCHOC20260001",
+    "carrier": "fedex",
+    "expectedInDays": 0,
+    "senderName": "Chocolaterie Discrète",
+    "weightKg": 0.8,
+    "events": [
+      {
+        "stage": "registered",
+        "hoursAgo": 44,
+        "description": "Pralines boxed with great care"
+      },
+      {
+        "stage": "accepted",
+        "hoursAgo": 38,
+        "description": "Collected from the chocolatier",
+        "location": "Brussels, Belgium",
+        "place": {
+          "latitude": 50.85,
+          "longitude": 4.349,
+          "precision": "city",
+          "country": "BE",
+          "name": "Brussels"
+        }
+      },
+      {
+        "stage": "in_transit",
+        "hoursAgo": 14,
+        "description": "Crossed the border. Swiss chocolate was not informed.",
+        "location": "Basel, Switzerland",
+        "place": {
+          "latitude": 47.558,
+          "longitude": 7.573,
+          "precision": "city",
+          "country": "CH",
+          "name": "Basel"
         }
       },
       {
@@ -112,51 +237,15 @@
           "name": "Zürich"
         }
       }
-    ],
-    "expectedInDays": 0
-  },
-  {
-    "label": "Birthday gift 🎁",
-    "trackingNumber": "LX123456789DE",
-    "carrier": "intl-post",
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 50,
-        "description": "A little surprise is on its way"
-      },
-      {
-        "stage": "accepted",
-        "hoursAgo": 44,
-        "description": "Accepted by the origin post",
-        "location": "Lyon, France",
-        "place": {
-          "latitude": 45.749,
-          "longitude": 4.848,
-          "precision": "city",
-          "country": "FR",
-          "name": "Lyon"
-        }
-      },
-      {
-        "stage": "customs",
-        "hoursAgo": 12,
-        "description": "The parcel is being cleared for import",
-        "location": "Basel, Switzerland",
-        "place": {
-          "latitude": 47.558,
-          "longitude": 7.573,
-          "precision": "city",
-          "country": "CH",
-          "name": "Basel"
-        }
-      }
     ]
   },
   {
     "label": "Moon lamp 🌙",
     "trackingNumber": "DEMOGLS20260001",
     "carrier": "gls-de",
+    "expectedInDays": 2,
+    "senderName": "Studio Luna",
+    "weightKg": 1.4,
     "events": [
       {
         "stage": "registered",
@@ -179,7 +268,7 @@
       {
         "stage": "in_transit",
         "hoursAgo": 5,
-        "description": "Departed the sorting center",
+        "description": "Left the sorting hub. Full moon expected soon.",
         "location": "Neuenstein, Germany",
         "place": {
           "latitude": 49.205,
@@ -189,13 +278,14 @@
           "name": "Neuenstein"
         }
       }
-    ],
-    "expectedInDays": 1
+    ]
   },
   {
     "label": "Kind of Blue · vinyl 🎷",
     "trackingNumber": "1ZDEMO202600000001",
     "carrier": "ups",
+    "senderName": "Round Midnight Records",
+    "weightKg": 0.4,
     "events": [
       {
         "stage": "registered",
@@ -218,7 +308,7 @@
       {
         "stage": "in_transit",
         "hoursAgo": 6,
-        "description": "Travelling to the Swiss delivery network",
+        "description": "Travelling south at a steady 33⅓ rpm",
         "location": "Eindhoven, Netherlands",
         "place": {
           "latitude": 51.441,
@@ -234,6 +324,9 @@
     "label": "Trail weekend kit 🏕️",
     "trackingNumber": "DEMODPD20260001",
     "carrier": "dpd",
+    "expectedInDays": 1,
+    "senderName": "Gipfelstube Outdoor",
+    "weightKg": 2.3,
     "events": [
       {
         "stage": "registered",
@@ -253,36 +346,38 @@
           "name": "Buchs"
         }
       }
-    ],
-    "expectedInDays": 2
+    ]
   },
   {
     "label": "35mm film rolls 🎞️",
-    "trackingNumber": "DEMOQUICK20260001",
-    "carrier": "quickpac",
+    "trackingNumber": "DEMOFILM20260001",
+    "carrier": "an-post",
+    "expectedInDays": 3,
+    "senderName": "The Darkroom, Dublin",
     "events": [
       {
         "stage": "registered",
         "hoursAgo": 36,
         "description": "The photo lab has announced your parcel"
       }
-    ],
-    "expectedInDays": 2
+    ]
   },
   {
     "label": "Matcha ritual 🍵",
     "trackingNumber": "DEMOMATCHA20260001",
     "carrier": "fedex",
+    "senderName": "Uji Tea House",
+    "weightKg": 0.3,
     "events": [
       {
         "stage": "registered",
         "hoursAgo": 178,
-        "description": "The sender prepared your parcel"
+        "description": "Tea tins wrapped in Kyoto"
       },
       {
         "stage": "accepted",
         "hoursAgo": 170,
-        "description": "Collected from the sender",
+        "description": "Collected from the tea house",
         "location": "Kyoto, Japan",
         "place": {
           "latitude": 35.021,
@@ -321,7 +416,7 @@
       {
         "stage": "delivered",
         "hoursAgo": 50,
-        "description": "Delivered — enjoy your new arrival",
+        "description": "Delivered. Time to put the kettle on.",
         "location": "Zürich, Switzerland",
         "place": {
           "latitude": 47.367,
@@ -337,16 +432,18 @@
     "label": "Sunday in Kyoto 📚",
     "trackingNumber": "DEMOBOOK20260001",
     "carrier": "chronopost",
+    "senderName": "Librairie des Voyageurs",
+    "weightKg": 0.35,
     "events": [
       {
         "stage": "registered",
         "hoursAgo": 118,
-        "description": "The sender prepared your parcel"
+        "description": "A paperback was chosen for you"
       },
       {
         "stage": "accepted",
         "hoursAgo": 110,
-        "description": "Collected from the sender",
+        "description": "Collected from the bookshop",
         "location": "Paris, France",
         "place": {
           "latitude": 48.853,
@@ -385,7 +482,7 @@
       {
         "stage": "delivered",
         "hoursAgo": 74,
-        "description": "Delivered — enjoy your new arrival",
+        "description": "Delivered. The unread pile grows.",
         "location": "Zürich, Switzerland",
         "place": {
           "latitude": 47.367,
@@ -401,16 +498,18 @@
     "label": "Mechanical keyboard ⌨️",
     "trackingNumber": "DEMOKEYS20260001",
     "carrier": "dhl",
+    "senderName": "Clack & Co.",
+    "weightKg": 1.1,
     "events": [
       {
         "stage": "registered",
         "hoursAgo": 148,
-        "description": "The sender prepared your parcel"
+        "description": "Switches tested, keycaps counted"
       },
       {
         "stage": "accepted",
         "hoursAgo": 140,
-        "description": "Collected from the sender",
+        "description": "Collected from the workshop",
         "location": "Berlin, Germany",
         "place": {
           "latitude": 52.524,
@@ -449,7 +548,7 @@
       {
         "stage": "delivered",
         "hoursAgo": 98,
-        "description": "Delivered — enjoy your new arrival",
+        "description": "Delivered. The neighbours have been warned.",
         "location": "Zürich, Switzerland",
         "place": {
           "latitude": 47.367,
@@ -462,19 +561,21 @@
     ]
   },
   {
-    "label": "Studio headphones 🎧",
-    "trackingNumber": "DEMOAUDIO20260001",
+    "label": "Cat tree 🐈",
+    "trackingNumber": "DEMOCAT20260001",
     "carrier": "spring-gds",
+    "senderName": "Whisker Works",
+    "weightKg": 8.6,
     "events": [
       {
         "stage": "registered",
         "hoursAgo": 208,
-        "description": "The sender prepared your parcel"
+        "description": "Flat-packed, some assembly required"
       },
       {
         "stage": "accepted",
         "hoursAgo": 200,
-        "description": "Collected from the sender",
+        "description": "Collected from the workshop",
         "location": "Rotterdam, Netherlands",
         "place": {
           "latitude": 51.923,
@@ -513,7 +614,7 @@
       {
         "stage": "delivered",
         "hoursAgo": 146,
-        "description": "Delivered — enjoy your new arrival",
+        "description": "Delivered. The cat prefers the box.",
         "location": "Zürich, Switzerland",
         "place": {
           "latitude": 47.367,
@@ -529,16 +630,18 @@
     "label": "Linen weekend bag 🧳",
     "trackingNumber": "DEMOBAG20260001",
     "carrier": "la-poste",
+    "senderName": "Atelier Lin",
+    "weightKg": 0.7,
     "events": [
       {
         "stage": "registered",
         "hoursAgo": 286,
-        "description": "The sender prepared your parcel"
+        "description": "Stitched, folded and packed"
       },
       {
         "stage": "accepted",
         "hoursAgo": 278,
-        "description": "Collected from the sender",
+        "description": "Collected from the atelier",
         "location": "Lille, France",
         "place": {
           "latitude": 50.634,
@@ -577,7 +680,7 @@
       {
         "stage": "delivered",
         "hoursAgo": 218,
-        "description": "Delivered — enjoy your new arrival",
+        "description": "Delivered. Now it just needs a weekend.",
         "location": "Zürich, Switzerland",
         "place": {
           "latitude": 47.367,
@@ -591,19 +694,21 @@
     "archivedHoursAgo": 194
   },
   {
-    "label": "Espresso tools ☕️",
+    "label": "Studio headphones 🎧",
     "trackingNumber": "1ZDEMO202600000002",
     "carrier": "ups",
+    "senderName": "Silenzio Audio",
+    "weightKg": 0.6,
     "events": [
       {
         "stage": "registered",
         "hoursAgo": 368,
-        "description": "The sender prepared your parcel"
+        "description": "Tuned, boxed and ready"
       },
       {
         "stage": "accepted",
         "hoursAgo": 360,
-        "description": "Collected from the sender",
+        "description": "Collected from the audio workshop",
         "location": "Milano, Italy",
         "place": {
           "latitude": 45.464,
@@ -642,7 +747,7 @@
       {
         "stage": "delivered",
         "hoursAgo": 314,
-        "description": "Delivered — enjoy your new arrival",
+        "description": "Delivered. The open-plan office fades away.",
         "location": "Zürich, Switzerland",
         "place": {
           "latitude": 47.367,
@@ -659,16 +764,18 @@
     "label": "Alpine trail map 🗺️",
     "trackingNumber": "DEMOMAP20260001",
     "carrier": "swiss-post",
+    "senderName": "Kartenhaus Bern",
+    "weightKg": 0.1,
     "events": [
       {
         "stage": "registered",
         "hoursAgo": 436,
-        "description": "The sender prepared your parcel"
+        "description": "Folded along the right creases"
       },
       {
         "stage": "accepted",
         "hoursAgo": 428,
-        "description": "Collected from the sender",
+        "description": "Collected from the map shop",
         "location": "Bern, Switzerland",
         "place": {
           "latitude": 46.948,
@@ -707,7 +814,7 @@
       {
         "stage": "delivered",
         "hoursAgo": 410,
-        "description": "Delivered — enjoy your new arrival",
+        "description": "Delivered. You are here.",
         "location": "Zürich, Switzerland",
         "place": {
           "latitude": 47.367,
@@ -724,16 +831,18 @@
     "label": "Ceramic ramen bowls 🍜",
     "trackingNumber": "DEMOBOWLS20260001",
     "carrier": "dhl",
+    "senderName": "Osaka Clayworks",
+    "weightKg": 2.8,
     "events": [
       {
         "stage": "registered",
         "hoursAgo": 1282,
-        "description": "The sender prepared your parcel"
+        "description": "Four bowls, wrapped one by one"
       },
       {
         "stage": "accepted",
         "hoursAgo": 1274,
-        "description": "Collected from the sender",
+        "description": "Collected from the pottery",
         "location": "Osaka, Japan",
         "place": {
           "latitude": 34.694,
@@ -772,7 +881,7 @@
       {
         "stage": "delivered",
         "hoursAgo": 506,
-        "description": "Delivered — enjoy your new arrival",
+        "description": "Delivered in one piece. Well, four.",
         "location": "Zürich, Switzerland",
         "place": {
           "latitude": 47.367,
@@ -786,19 +895,22 @@
     "archivedHoursAgo": 482
   },
   {
-    "label": "Limited-edition art print 🖼️",
+    "label": "Art print · no. 14 of 50 🖼️",
     "trackingNumber": "DEMOART20260001",
     "carrier": "gls-fr",
+    "senderName": "Galerie Papier",
+    "pickupPoint": "Paketshop Stadelhofen\nStadelhoferstrasse 8, 8001 Zürich",
+    "weightKg": 0.3,
     "events": [
       {
         "stage": "registered",
         "hoursAgo": 682,
-        "description": "The sender prepared your parcel"
+        "description": "Signed, numbered and rolled with care"
       },
       {
         "stage": "accepted",
         "hoursAgo": 674,
-        "description": "Collected from the sender",
+        "description": "Collected from the gallery",
         "location": "Lyon, France",
         "place": {
           "latitude": 45.749,

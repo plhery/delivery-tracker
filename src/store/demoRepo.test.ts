@@ -69,7 +69,7 @@ describe('createDemoRepo', () => {
   it('offers varied arrivals, dates, and real histories for the Passport', async () => {
     const now = Date.parse('2026-09-09T12:00:00Z');
     const parcels = await createDemoRepo(window.localStorage, () => now).list();
-    expect(parcels).toHaveLength(16);
+    expect(parcels).toHaveLength(17);
     expect(new Set(parcels.map(parcel => parcel.trackingNumber)).size).toBe(parcels.length);
     expect(parcels.filter(parcel => parcel.archivedAt)).toHaveLength(5);
     expect(nextPriorityParcel(parcels, now)?.label).toBe('New sneakers 👟');
@@ -82,10 +82,10 @@ describe('createDemoRepo', () => {
       expect(times).toEqual([...times].sort((a, b) => a - b));
     }
     expect(passportStatistics(parcels)).toMatchObject({
-      deliveredCount: 10, activeCount: 6, domesticDeliveryCount: 2,
+      deliveredCount: 10, activeCount: 7, domesticDeliveryCount: 2,
       crossBorderCount: 8, pickupDeliveryCount: 1, longWaitDeliveryCount: 1,
     });
-    expect(passportStatistics(parcels).originCountries.length).toBe(6);
+    expect(passportStatistics(parcels).originCountries.length).toBe(7);
   });
 
   it('upgrades legacy examples once without replacing edits or restoring deleted samples', async () => {
@@ -95,11 +95,11 @@ describe('createDemoRepo', () => {
     window.localStorage.removeItem('sdt.demo.catalog.v2');
     const repo = createDemoRepo(window.localStorage);
     const upgraded = await repo.list();
-    expect(upgraded).toHaveLength(14);
+    expect(upgraded).toHaveLength(15);
     expect(upgraded.find(parcel => parcel.id === coffee.id)).toEqual(coffee);
     const lamp = upgraded.find(parcel => parcel.label === 'Moon lamp 🌙')!;
     await repo.deletePermanently!(lamp.id);
-    expect(await createDemoRepo(window.localStorage).list()).toHaveLength(13);
+    expect(await createDemoRepo(window.localStorage).list()).toHaveLength(14);
     expect(window.localStorage.getItem('sdt.demo.catalog.v2')).toBe('1');
   });
 

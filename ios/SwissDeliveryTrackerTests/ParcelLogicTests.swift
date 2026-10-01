@@ -44,9 +44,9 @@ final class ParcelLogicTests: XCTestCase {
     func testSharedDemoCatalogHasVariedHistoriesAndRelativeDates() {
         let now = DateParser.date("2026-09-09T12:00:00Z")!
         let parcels = DemoRepository.seed(now: now)
-        XCTAssertEqual(parcels.count, 16)
-        XCTAssertEqual(Set(parcels.map(\.trackingNumber)).count, 16)
-        XCTAssertEqual(parcels.filter(\.isActive).count, 6)
+        XCTAssertEqual(parcels.count, 17)
+        XCTAssertEqual(Set(parcels.map(\.trackingNumber)).count, 17)
+        XCTAssertEqual(parcels.filter(\.isActive).count, 7)
         XCTAssertEqual(parcels.filter(\.isDelivered).count, 10)
         XCTAssertEqual(parcels.filter(\.isArchived).count, 5)
         XCTAssertEqual(ParcelOrganizer.nextDelivery(from: parcels, now: now)?.label, "New sneakers 👟")
@@ -72,12 +72,12 @@ final class ParcelLogicTests: XCTestCase {
         defaults.set(try JSONEncoder.deliveryTracker.encode([coffee]), forKey: "sdt.native.demo.parcels.v1")
         let repo = DemoRepository(defaults: defaults)
         let upgraded = repo.list()
-        XCTAssertEqual(upgraded.count, 16)
+        XCTAssertEqual(upgraded.count, 17)
         XCTAssertEqual(upgraded.first { $0.id == coffee.id }?.label, "My edited coffee")
         XCTAssertTrue(try XCTUnwrap(upgraded.first { $0.id == coffee.id }).isArchived)
         let lamp = try XCTUnwrap(upgraded.first { $0.label == "Moon lamp 🌙" })
         try repo.permanentlyDelete(id: lamp.id)
-        XCTAssertEqual(DemoRepository(defaults: defaults).list().count, 15)
+        XCTAssertEqual(DemoRepository(defaults: defaults).list().count, 16)
         defaults.set(try JSONEncoder.deliveryTracker.encode([Parcel]()), forKey: "sdt.native.demo.parcels.v1")
         defaults.removeObject(forKey: "sdt.native.demo.catalog.v2")
         XCTAssertTrue(DemoRepository(defaults: defaults).list().isEmpty)
@@ -1831,7 +1831,7 @@ extension ParcelLogicTests {
         let now = DateParser.date("2026-09-09T12:00:00Z")!
         var parcel = DemoRepository.seed(now: now).first { $0.label == "New sneakers 👟" }!
         let before = parcel.currentStage
-        XCTAssertEqual(before, .outForDelivery)
+        XCTAssertEqual(before, .readyForPickup)
         parcel.trackingEvents.append(TrackingEvent(
             id: UUID(), packageID: parcel.id, stage: .delivered,
             description: "Delivered", occurredAt: DateParser.isoString(now)
