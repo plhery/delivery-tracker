@@ -11,7 +11,7 @@ extension ParcelRoute {
     }
 }
 
-/// The route, drawn in the card's own ink across the top of the parcel's card.
+/// The route, drawn in the card's own ink across the top of the parcel's card, with Pip beside the parcel's place.
 struct RouteEngraving: View {
     let atlas: WorldAtlas
     let route: ParcelRoute
@@ -20,16 +20,20 @@ struct RouteEngraving: View {
     /// Off on the Next up card, which is one tap target in a scrolling list.
     var peek = true
     var insets = EdgeInsets(top: 40, leading: 16, bottom: 44, trailing: 16)
+    /// Where the card starts writing over the bottom of the map, which Pip stays above.
+    var floor: CGFloat?
     @EnvironmentObject private var localizer: Localizer
 
     var body: some View {
         WorldMapView(
             atlas: atlas, route: route, mode: route.defaultMode(for: stage),
             palette: .tint(ink: identity.ink, surface: identity.surface), labels: .ends, showsContext: false, peek: peek,
-            insets: insets, language: localizer.language
+            // The parcel's dot pulses until the journey is over.
+            live: stage != .delivered && stage != .returned,
+            // Pip keeps below the top row of the parcel's page, and of Next up alike, so both show the same picture.
+            pip: PipMood(stage: stage).map { PipRequest(mood: $0, ceiling: 52, floor: floor) },
+            fades: true, insets: insets, language: localizer.language
         )
-        .mask(LinearGradient(stops: [.init(color: .black, location: 0.78), .init(color: .clear, location: 1)],
-                             startPoint: .top, endPoint: .bottom))
         // The globe button beside the bell is the accessible way in.
         .accessibilityHidden(true)
     }

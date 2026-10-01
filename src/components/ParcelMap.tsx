@@ -7,7 +7,8 @@ import type { ParcelWithEvents, Stage } from '../types';
 import { Icon } from './Icon';
 import { countryLabel, useWorld } from './map/geography';
 import { countryPlace, defaultMode, flag, formatKm, hasNearView, placeName, routeFromEvents, type MapMode, type Route } from './map/route';
-import { WorldMap } from './map/WorldMap';
+import { pipMood } from './map/Pip';
+import { WorldMap, type PipPlacing } from './map/WorldMap';
 import './ParcelMap.css';
 
 /**
@@ -37,27 +38,36 @@ function useRouteLabel(route: Route): string {
   return end === origin ? t('map.labelOne', { place: origin }) : t('map.label', { from: origin, to: end });
 }
 
-/** The route, drawn in the card's own ink across the top of the parcel's card. */
+/** Pip keeps below the top row of the parcel's page, and of Next up alike, so both show the same picture. */
+const pip = (stage: Stage | undefined, floor?: number): PipPlacing | null => {
+  const mood = pipMood(stage);
+  return mood && { mood, ceiling: 52, floor };
+};
+
+/** The parcel's dot pulses until the journey is over. */
+const travelling = (stage?: Stage) => stage !== 'delivered' && stage !== 'returned';
+
+/** The route, drawn in the card's own ink across the top of the parcel's card, with Pip beside the parcel's place. */
 export function RouteEngraving({ route, stage, onOpen }: { route: Route | null; stage?: Stage; onOpen: () => void }) {
   const { languageTag } = useI18n();
   const [time] = useState(() => new Date());
   // The globe button beside the bell is the accessible way in; the drawing is a large tap target.
   return <div className="detail__engraving" onClick={onOpen} aria-hidden="true">
-    {route && <WorldMap route={route} mode={defaultMode(route, stage)} time={time} look="tint" labels="ends" context={false} live={false} peek
-      languageTag={languageTag} insets={{ top: 40, right: 16, bottom: 44, left: 16 }} className="detail__engraving-map" />}
+    {route && <WorldMap route={route} mode={defaultMode(route, stage)} time={time} look="tint" labels="ends" context={false} live={travelling(stage)} peek
+      pip={pip(stage)} languageTag={languageTag} insets={{ top: 40, right: 16, bottom: 44, left: 16 }} className="detail__engraving-map" />}
   </div>;
 }
 
 /**
  * The same engraving on the Next up card, so opening the card lands on the same picture.
- * The card is one button: the drawing takes no touches of its own.
+ * The card is one button: the drawing takes no touches of its own. Its title is written over the bottom of the map, so Pip stays above it.
  */
 export function NextUpEngraving({ route, stage }: { route: Route | null; stage?: Stage }) {
   const { languageTag } = useI18n();
   const [time] = useState(() => new Date());
   return <span className="parcel-card__engraving" aria-hidden="true">
-    {route && <WorldMap route={route} mode={defaultMode(route, stage)} time={time} look="tint" labels="ends" context={false} live={false}
-      languageTag={languageTag} insets={{ top: 40, right: 16, bottom: 28, left: 16 }} className="parcel-card__engraving-map" />}
+    {route && <WorldMap route={route} mode={defaultMode(route, stage)} time={time} look="tint" labels="ends" context={false} live={travelling(stage)}
+      pip={pip(stage, 140)} languageTag={languageTag} insets={{ top: 40, right: 16, bottom: 28, left: 16 }} className="parcel-card__engraving-map" />}
   </span>;
 }
 
@@ -140,7 +150,7 @@ export function ParcelMapSheet({ route, stage, brand, onClose }: {
 
   return createPortal(<div className="parcel-map" ref={dialog} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1} style={brand}>
     <WorldMap route={route} mode={mode} time={time} night interactive sites label={label} languageTag={languageTag} insets={insets}
-      live={stage !== 'delivered' && stage !== 'returned'}
+      live={travelling(stage)}
       recenter={recenter} onFreeChange={setFree} className="parcel-map__map" />
     <button ref={close} type="button" className="parcel-map__close" onClick={onClose} aria-label={t('map.close')}>
       <Icon name="close" />

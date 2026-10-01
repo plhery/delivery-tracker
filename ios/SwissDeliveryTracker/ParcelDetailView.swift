@@ -253,7 +253,8 @@ struct ParcelDetailView: View {
             .padding(18)
             .background(alignment: .top) {
                 if let atlas, let route {
-                    RouteEngraving(atlas: atlas, route: route, stage: parcel.currentStage, identity: branding)
+                    // The title is written over the bottom of the map, so Pip stays above it.
+                    RouteEngraving(atlas: atlas, route: route, stage: parcel.currentStage, identity: branding, floor: 160)
                         .frame(height: 176)
                         .clipShape(UnevenRoundedRectangle(topLeadingRadius: 18, topTrailingRadius: 18))
                         .contentShape(Rectangle())

@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { countryPlace, buildRoute, distanceKm, formatKm, type Place, type Route, type Scan } from './route';
-import { circleOf, targetCamera, WorldMap } from './WorldMap';
+import { PIP_FRAME, outlineDistance, pipExtents, pipOutlines, type PipMood, type PipSide } from './Pip';
+import { circleOf, targetCamera, WorldMap, type PipPlacing } from './WorldMap';
 
 const city = (name: string, country: string, longitude: number, latitude: number): Place => ({
   id: name, name, country, coordinate: [longitude, latitude], precision: 'city',
@@ -139,6 +140,132 @@ describe('WorldMap', () => {
     expect(mulhouse.right).toBeLessThanOrEqual(frame.width - small.right);
     expect(mulhouse.top).toBeGreaterThanOrEqual(small.top);
     expect(mulhouse.bottom).toBeLessThanOrEqual(frame.height - small.bottom);
+  });
+
+  describe('Pip beside the parcel', () => {
+    const card = { top: 40, right: 16, bottom: 28, left: 16 };
+    const moods: PipMood[] = ['look', 'eager', 'wait', 'worry', 'joy'];
+    const hamburg = city('Hamburg', 'DE', 9.99, 53.55);
+    const regensdorf = city('Regensdorf', 'CH', 8.47, 47.43);
+    // The last flag: the journey ends at the frame's edge with a stop close by, which can leave no clear spot.
+    const journeys: [string, Route, 'journey' | 'now', boolean][] = [
+      ['a last mile', buildRoute([scan(hamburg), scan(regensdorf), scan(zurich)]), 'now', false],
+      ['a journey across a country', buildRoute([scan(city('Berlin', 'DE', 13.4, 52.52)), scan(city('Neuenstein', 'DE', 9.58, 49.2))]), 'journey', false],
+      ['a journey with the way still to go', buildRoute([scan(city('Lyon', 'FR', 4.83, 45.76)), scan(basel)], countryPlace('CH', 'Switzerland', [7.46, 46.72])), 'journey', false],
+      ['a journey across the world', buildRoute([scan(kyoto), scan(leipzig), scan(zurich)]), 'journey', true],
+      ['a journey that ends in the east', buildRoute([scan(zurich), scan(leipzig), scan(kyoto)]), 'journey', true],
+      ['a single place', buildRoute([scan(zurich)]), 'journey', false],
+    ];
+    // Next up, the parcel's page and Next up on a wide screen. A card writes its title over the bottom of the map.
+    const frames = [{ width: 350, height: 160, floor: 140 }, { width: 358, height: 176 }, { width: 660, height: 160, floor: 140 }];
+
+    type Box = { left: number; top: number; right: number; bottom: number };
+    // Positions are written to a tenth of a pixel, so boxes that only touch may seem to meet by less than that.
+    const meets = (a: Box, b: Box) => a.left < b.right - .1 && a.right > b.left + .1 && a.top < b.bottom - .1 && a.bottom > b.top + .1;
+    const offset = (element: Element) => /translate\((-?[\d.]+)(?:px,)? (-?[\d.]+)/.exec(element.getAttribute('transform') ?? (element as HTMLElement).style.transform)!
+      .slice(1).map(Number) as [number, number];
+
+    /** What the map drew, read back from the page: Pip, the dots, the names and points along every leg. */
+    function drawn(container: HTMLElement) {
+      const element = container.querySelector<HTMLElement>('[data-pip]');
+      const [left, top] = element ? offset(element) : [0, 0];
+      const mood = element?.dataset.pip as PipMood;
+      const side = Number(element?.dataset.side) as PipSide;
+      const unit = parseFloat(element?.style.width ?? '0') / PIP_FRAME.width;
+      const extents = element ? pipExtents(mood, side) : { left: 0, top: 0, right: 0, bottom: 0 };
+      const route = [...container.querySelectorAll('path[data-kind]')].flatMap((leg) => {
+        const points = [...leg.getAttribute('d')!.matchAll(/(-?[\d.]+),(-?[\d.]+)/g)].map(([, x, y]) => [Number(x), Number(y)]);
+        const steps = Array.from({ length: 41 }, (_, index) => index / 40);
+        // A short hop is one curve; a long leg is a line through many points.
+        if (leg.getAttribute('d')!.includes('Q')) {
+          const [[x1, y1], [cx, cy], [x2, y2]] = points;
+          return steps.map((t) => [(1 - t) ** 2 * x1 + 2 * (1 - t) * t * cx + t * t * x2, (1 - t) ** 2 * y1 + 2 * (1 - t) * t * cy + t * t * y2]);
+        }
+        return points.slice(1).flatMap(([x, y], index) => steps.map((t) => [points[index][0] + (x - points[index][0]) * t, points[index][1] + (y - points[index][1]) * t]));
+      });
+      return {
+        pip: element && {
+          mood, side, width: parseFloat(element.style.width),
+          box: { left: left + extents.left * unit, top: top + extents.top * unit, right: left + extents.right * unit, bottom: top + extents.bottom * unit },
+          // How far a point of the map is from the drawing itself.
+          away: ([x, y]: number[]) => Math.min(...pipOutlines(mood, side).map((outline) => outlineDistance([(x - left) / unit, (y - top) / unit], outline))) * unit,
+        },
+        parcel: offset(container.querySelector('g[data-kind="current"]')!),
+        dots: [...container.querySelectorAll('g[data-kind]')].map(offset),
+        names: [...container.querySelectorAll<HTMLElement>('span[data-kind]')].map((name) => {
+          const [x, y] = offset(name);
+          return { text: name.textContent!, left: x, top: y, right: x + name.textContent!.length * 6 + 14, bottom: y + 22 };
+        }),
+        route,
+      };
+    }
+
+    async function show(size: { width: number; height: number }, route: Route, mode: 'journey' | 'now', pip: PipPlacing, insets = card) {
+      frame = size;
+      const view = render(<WorldMap route={route} mode={mode} time={time} look="tint" labels="ends" context={false} insets={insets} pip={pip} />);
+      await waitFor(() => expect(view.container.querySelector('g[data-kind="current"]')).not.toBeNull());
+      return { ...view, ...drawn(view.container) };
+    }
+
+    it.each(journeys)('never covers the dot or a name, and keeps off the route where there is room, on %s', async (_, route, mode, edge) => {
+      for (const { floor, ...size } of frames) {
+        // A delivered parcel is never Next up, so the open box is only drawn on the parcel's page.
+        for (const mood of moods.filter((mood) => mood !== 'joy' || !floor)) {
+          const { pip, parcel, dots, names, route: legs, unmount } = await show(size, route, mode, { mood, ceiling: 52, floor });
+          const where = `${mood} in ${size.width} × ${size.height}`;
+          expect(pip, where).not.toBeNull();
+          expect(pip!.mood).toBe(mood);
+          // Inside the map, below the card's top row and above what the card writes over the map.
+          expect(pip!.box.left, where).toBeGreaterThanOrEqual(4);
+          expect(pip!.box.right, where).toBeLessThanOrEqual(size.width - 4);
+          expect(pip!.box.top, where).toBeGreaterThanOrEqual(52);
+          expect(pip!.box.bottom, where).toBeLessThanOrEqual(floor ?? size.height - 4);
+          expect(pip!.away(parcel), where).toBeGreaterThanOrEqual(9.9);
+          expect(names.map((name) => name.text), where).toContain(route.current!.place.name);
+          for (const name of names) expect(meets(name, pip!.box), `${where}: ${name.text}`).toBe(false);
+          // He looks toward the dot from the side he stands on.
+          expect([0, Math.sign(parcel[0] - (pip!.box.left + pip!.box.right) / 2)], where).toContain(pip!.side);
+          // With no clear spot he takes the one with the fewest overlaps: at most the stop beside the dot and the leg between them.
+          const covered = dots.filter((dot) => pip!.away(dot) < 5.9).length + (legs.some((point) => pip!.away(point) < 1.4) ? 1 : 0);
+          expect(covered, where).toBeLessThanOrEqual(edge ? 2 : 0);
+          unmount();
+        }
+      }
+    });
+
+    it('trails an eager Pip\u2019s speed lines away from the dot', async () => {
+      const { container, pip, parcel } = await show(frames[1], journeys[0][1], 'now', { mood: 'eager', ceiling: 52 });
+      const lines = container.querySelector('[data-pip] path[opacity=".32"]')!;
+      const right = parcel[0] < (pip!.box.left + pip!.box.right) / 2;
+      // The dot is on his left, so the lines are mirrored to his right.
+      expect(lines.hasAttribute('transform')).toBe(right);
+      expect(pip!.side).toBe(right ? -1 : 1);
+    });
+
+    it('shrinks, then stays away, when the map has no room beside the dot', async () => {
+      const world = journeys[3][1];
+      // The parcel ends at the frame's edge: only a smaller Pip finds a clear spot.
+      const delivered = await show(frames[1], world, 'journey', { mood: 'joy', ceiling: 52 });
+      expect(delivered.pip!.width).toBeLessThan(66);
+      delivered.unmount();
+      const cramped = await show({ width: 120, height: 70 }, world, 'journey', { mood: 'joy' }, { top: 4, right: 4, bottom: 4, left: 4 });
+      expect(cramped.pip).toBeNull();
+      expect(cramped.names.map((name) => name.text)).toContain('Zürich');
+    });
+
+    it('leaves the map as it was without him', async () => {
+      frame = { width: 350, height: 160 };
+      const { container } = render(<WorldMap route={journeys[0][1]} mode="now" time={time} look="tint" labels="ends" context={false} insets={card} />);
+      await waitFor(() => expect(container.querySelector('g[data-kind="current"]')).not.toBeNull());
+      expect(container.querySelector('[data-pip]')).toBeNull();
+    });
+
+    it('keeps names off the route when a side allows it', async () => {
+      const { names, route } = await show(frames[1], journeys[1][1], 'journey', { mood: 'look', ceiling: 52 });
+      for (const name of names) {
+        expect(route.some(([x, y]) => x > name.left && x < name.right && y > name.top && y < name.bottom), name.text).toBe(false);
+      }
+    });
   });
 
   it('marks the last known stop when the newest scan has no place', async () => {

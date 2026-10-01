@@ -288,6 +288,106 @@ final class ParcelRouteTests: XCTestCase {
         XCTAssertTrue(frame.contains(moved.frame), "\(moved.frame)")
     }
 
+    func testPipHasAMoodForEveryStageWithAMap() {
+        let moods = Dictionary(uniqueKeysWithValues: TrackingStage.allCases.map { ($0, PipMood(stage: $0)) })
+        XCTAssertEqual(moods, [
+            .pending: nil, .registered: .look, .accepted: .look, .inTransit: .look, .outForDelivery: .eager, .customs: .wait,
+            .readyForPickup: .wait, .failedAttempt: .worry, .exception: .worry, .returned: .worry, .delivered: .joy,
+        ])
+        XCTAssertNil(PipMood(stage: nil))
+        for mood in PipMood.allCases {
+            let extents = PipGeometry.extents(mood, side: 1)
+            let away = { (point: CGPoint) in PipGeometry.outlines(mood, side: 1).map { PipGeometry.distance(from: point, to: $0) }.min() ?? 0 }
+            // The middle of his box is on him; its top corner on the dot's side is not.
+            XCTAssertEqual(away(CGPoint(x: extents.midX, y: extents.midY)), 0, "\(mood)")
+            XCTAssertGreaterThan(away(CGPoint(x: extents.maxX, y: extents.minY)), 10, "\(mood)")
+        }
+        // An eager Pip's speed lines trail on the far side from the dot.
+        XCTAssertEqual(PipGeometry.extents(.eager, side: 1).minX, 0)
+        XCTAssertEqual(PipGeometry.extents(.eager, side: -1).maxX, 300)
+        // Still unless the mood moves him: a bob that comes back to where it started, and a jump that lands.
+        XCTAssertEqual(PipArtwork.motion(.look, at: 3), .identity)
+        XCTAssertNotEqual(PipArtwork.motion(.joy, at: 0.28 * 2.2), .identity)
+        XCTAssertEqual(PipArtwork.motion(.joy, at: 0.8 * 2.2).ty, 0, accuracy: 0.001)
+        XCTAssertEqual(PipArtwork.motion(.eager, at: 0).b, PipArtwork.motion(.eager, at: 1.1).b, accuracy: 0.001)
+    }
+
+    func testPipStandsBesideTheDotOffItsNameAndTheRoute() throws {
+        let url = try XCTUnwrap(Bundle.main.url(forResource: "World", withExtension: "json"))
+        let atlas = try WorldAtlas(data: Data(contentsOf: url))
+        let card = EdgeInsets(top: 40, leading: 16, bottom: 28, trailing: 16)
+        let hamburg = city("Hamburg", "DE", 9.99, 53.55)
+        let regensdorf = city("Regensdorf", "CH", 8.47, 47.43)
+        // The last flag: the journey ends at the frame's edge with a stop close by, which can leave no clear spot.
+        let journeys: [(name: String, route: ParcelRoute, mode: ParcelRoute.Mode, edge: Bool)] = [
+            ("a last mile", ParcelRoute(places: [hamburg, regensdorf, zurich]), .now, false),
+            ("a journey across a country", ParcelRoute(places: [city("Berlin", "DE", 13.4, 52.52), city("Neuenstein", "DE", 9.58, 49.2)]), .journey, false),
+            ("a journey with the way still to go", ParcelRoute(places: [city("Lyon", "FR", 4.83, 45.76), basel], destination: switzerland), .journey, false),
+            ("a journey across the world", ParcelRoute(places: [kyoto, leipzig, zurich]), .journey, true),
+            ("a journey that ends in the east", ParcelRoute(places: [zurich, leipzig, kyoto]), .journey, true),
+            ("a single place", ParcelRoute(places: [zurich]), .journey, false),
+        ]
+        // Next up, and the parcel's page. Both write their title over the bottom of the map.
+        let frames: [(size: CGSize, floor: CGFloat, nextUp: Bool)] = [(CGSize(width: 350, height: 160), 140, true), (CGSize(width: 358, height: 176), 160, false)]
+        func overlay(_ route: ParcelRoute, _ mode: ParcelRoute.Mode, _ size: CGSize, _ request: PipRequest?, _ insets: EdgeInsets) -> MapOverlay {
+            MapOverlay(route: route, camera: .framing(route, mode: mode, in: size, insets: insets), size: size, insets: insets, labels: .ends,
+                       mode: mode, context: false, atlas: atlas, locale: Locale(identifier: "en"), countryName: { $0 }, pip: request)
+        }
+
+        for journey in journeys {
+            for frame in frames {
+                // A delivered parcel is never Next up, so the open box is only drawn on the parcel's page.
+                for mood in PipMood.allCases where mood != .joy || !frame.nextUp {
+                    let drawn = overlay(journey.route, journey.mode, frame.size, PipRequest(mood: mood, ceiling: 52, floor: frame.floor), card)
+                    let place = "\(mood) on \(journey.name) in \(Int(frame.size.width)) × \(Int(frame.size.height))"
+                    let pip = try XCTUnwrap(drawn.pip, place)
+                    let unit = pip.width / PipGeometry.frame.width
+                    let away = { (point: CGPoint) -> CGFloat in
+                        let local = CGPoint(x: (point.x - pip.origin.x) / unit, y: (point.y - pip.origin.y) / unit)
+                        return (PipGeometry.outlines(pip.mood, side: pip.side).map { PipGeometry.distance(from: local, to: $0) }.min() ?? 0) * unit
+                    }
+                    XCTAssertEqual(pip.mood, mood)
+                    // Inside the map, below the card's top row and above what the card writes over the map.
+                    XCTAssertGreaterThanOrEqual(pip.box.minX, 4, place)
+                    XCTAssertLessThanOrEqual(pip.box.maxX, frame.size.width - 4, place)
+                    XCTAssertGreaterThanOrEqual(pip.box.minY, 52, place)
+                    XCTAssertLessThanOrEqual(pip.box.maxY, frame.floor, place)
+                    let dot = try XCTUnwrap(drawn.dots.first { $0.kind == .current }, place).point
+                    XCTAssertGreaterThanOrEqual(away(dot), 9.99, place)
+                    XCTAssertTrue(drawn.labels.contains { $0.kind == .current }, place)
+                    for label in drawn.labels {
+                        XCTAssertTrue(label.frame.intersection(pip.box).isNull || label.frame.intersection(pip.box).width < 0.01
+                            || label.frame.intersection(pip.box).height < 0.01, "\(place): \(label.text)")
+                    }
+                    // He looks toward the dot from the side he stands on.
+                    XCTAssertTrue(pip.side == 0 || (dot.x < pip.box.midX) == (pip.side < 0), place)
+                    // With no clear spot he takes the one with the fewest overlaps: at most the stop beside the dot and the leg between them.
+                    let crossed = drawn.legs.contains { leg in
+                        stride(from: 0.0, through: 1, by: 1.0 / 80).contains { away(leg.path.trimmedPath(from: 0, to: $0).currentPoint ?? dot) < 1.4 }
+                    }
+                    XCTAssertLessThanOrEqual(drawn.dots.filter { away($0.point) < 5.9 }.count + (crossed ? 1 : 0), journey.edge ? 2 : 0, place)
+                }
+            }
+        }
+
+        // The parcel ends at the frame's edge: only a smaller Pip finds a clear spot.
+        let world = journeys[3].route
+        let delivered = try XCTUnwrap(overlay(world, .journey, frames[1].size, PipRequest(mood: .joy, ceiling: 52, floor: 160), card).pip)
+        XCTAssertLessThan(delivered.width, 66)
+        // With no room beside the dot he stays away, and the place keeps its name.
+        let cramped = overlay(world, .journey, CGSize(width: 120, height: 70), PipRequest(mood: .joy), EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+        XCTAssertNil(cramped.pip)
+        XCTAssertTrue(cramped.labels.contains { $0.text == "Zürich" })
+        // Without him the map is as it was, and names keep off the route when a side allows it.
+        let plain = overlay(journeys[1].route, .journey, frames[1].size, nil, card)
+        XCTAssertNil(plain.pip)
+        for label in plain.labels {
+            XCTAssertFalse(plain.legs.contains { leg in
+                stride(from: 0.0, through: 1, by: 1.0 / 80).contains { label.frame.contains(leg.path.trimmedPath(from: 0, to: $0).currentPoint ?? .zero) }
+            }, label.text)
+        }
+    }
+
     func testDemoParcelsCarryPlaces() {
         let parcels = DemoRepository.seed()
         let matcha = parcels.first { $0.label.hasPrefix("Matcha") }

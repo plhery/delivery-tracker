@@ -41,7 +41,10 @@ test('opens from the tapped mobile card, retaining focus and browser history', a
     const middle = await detail.boundingBox();
     expect(middle!.height).toBeGreaterThan(start!.height);
     expect(middle!.height).toBeLessThan(page.viewportSize()!.height);
-    await detail.evaluate((element) => element.getAnimations({ subtree: true }).forEach((animation) => animation.finish()));
+    // The parcel's dot keeps pulsing and Pip keeps moving: only what can end is finished.
+    await detail.evaluate((element) => element.getAnimations({ subtree: true })
+      .filter((animation) => Number.isFinite(animation.effect?.getComputedTiming().endTime))
+      .forEach((animation) => animation.finish()));
     await expect.poll(opening).toBe(false);
     await expect(detail).toHaveCSS('transform', 'none');
   }

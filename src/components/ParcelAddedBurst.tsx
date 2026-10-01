@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { SmallPip } from './Icon';
 
 // Same little sparks and rumble as the native card celebration.
 const parcels = [
@@ -132,6 +133,6 @@ export function ParcelAddedBurst({ parcelId, onFinished }: { parcelId: string; o
   }, [parcelId, onFinished]);
 
   return createPortal(<div ref={cloud} className="parcel-added-burst" data-parcel-id={parcelId} data-phase="waiting" aria-hidden="true">
-    {parcels.map(([, , , size], index) => <span key={index} style={{ fontSize: size }}>📦</span>)}
+    {parcels.map(([, , , size], index) => <span key={index} style={{ fontSize: size }}><SmallPip /></span>)}
   </div>, document.body);
 }

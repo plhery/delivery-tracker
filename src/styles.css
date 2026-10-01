@@ -416,6 +416,9 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .parcel-illustration__face-light { opacity: calc(.025 + (var(--parcel-x, 0) + 1) * .045); }
 .parcel-illustration__edge { opacity: calc(.22 + (var(--parcel-x, 0) + 1) * .18); }
 .parcel-illustration__seal-light { opacity: calc(.2 + (var(--parcel-y, 0) + 1) * .28); }
+/* Pip's eyes turn into happy arcs as the box opens. */
+.parcel-illustration__eye, .parcel-illustration__happy-eye { transition: opacity .2s .3s; }
+.parcel-illustration__happy-eye { opacity: 0; }
 .parcel-illustration__glints, .parcel-illustration__light { opacity: 0; pointer-events: none; }
 .parcel-illustration__sparkle { opacity: 0; transform-box: fill-box; transform-origin: center; }
 .parcel-illustration__light { filter: blur(10px); }
@@ -441,6 +444,8 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .arrival--opening .parcel-illustration__tape, .arrival--sign-in .parcel-illustration__tape { opacity: 0; transform: translate(-6px, -19px) rotate(-8deg); }
 .arrival--opening .parcel-illustration__delivery-card, .arrival--sign-in .parcel-illustration__delivery-card { opacity: 1; transform: translateY(-69px) rotate(-5deg); }
 .arrival--opening .parcel-illustration__check, .arrival--sign-in .parcel-illustration__check { stroke-dashoffset: 0; }
+.arrival--opening .parcel-illustration__eye, .arrival--sign-in .parcel-illustration__eye { opacity: 0; }
+.arrival--opening .parcel-illustration__happy-eye, .arrival--sign-in .parcel-illustration__happy-eye { opacity: 1; }
 .arrival--opening .parcel-illustration__light { animation: parcel-light 1.2s ease-out .14s both; }
 .arrival--opening .parcel-illustration__glints { opacity: 1; }
 .arrival--opening .parcel-illustration__sparkle { animation: parcel-sparkle 1.65s ease-out calc(.28s + var(--sparkle-delay)) both; }
@@ -736,6 +741,7 @@ button.friend-card:focus-visible .friend-avatar .postage-stamp { scale: 1.035; }
 
 .parcel-added-burst { position: fixed; inset: 0; z-index: 150; overflow: hidden; pointer-events: none; contain: strict; }
 .parcel-added-burst > span { position: absolute; left: var(--burst-x); top: var(--burst-y); display: grid; place-items: center; width: 1.4em; height: 1.4em; margin: -.7em; line-height: 1; opacity: 0; user-select: none; }
+.small-pip { display: block; width: 1.25em; height: auto; }
 .parcel-added-burst[data-phase="waiting"] { visibility: hidden; }
 .parcel-added-burst[data-reduced="true"] > span { display: none; }
 

@@ -42,7 +42,8 @@ test('engraves the route in the card and opens it as a full map', async ({ page 
 test('draws the route on Next up, and opens the parcel on the same picture', async ({ page }) => {
   // How far below the top of its card the parcel's dot sits.
   const dotOffset = async (card: Locator) => {
-    const dot = await card.locator('g[data-kind="current"]').boundingBox();
+    // The dot itself, not the halo that pulses around it.
+    const dot = await card.locator('g[data-kind="current"] circle').last().boundingBox();
     const box = await card.boundingBox();
     return dot && box ? dot.y - box.y : NaN;
   };
@@ -60,6 +61,56 @@ test('draws the route on Next up, and opens the parcel on the same picture', asy
   const hero = page.locator('.detail--postcard .detail__hero');
   await expect(hero.locator('.detail__engraving [data-scale]')).toHaveAttribute('data-mode', 'now');
   await expect.poll(async () => Math.abs(await dotOffset(hero) - inList)).toBeLessThan(1.5);
+});
+
+test('stands Pip beside the parcel\u2019s dot, in the mood of its stage', async ({ page, isMobile }) => {
+  // The dot and the box Pip is drawn as, inside one card's map.
+  const marks = async (card: Locator) => {
+    await expect(card.locator('[data-pip]')).toBeVisible();
+    // He rises into place first.
+    await card.locator('[data-pip] > span').evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)));
+    const dot = (await card.locator('g[data-kind="current"] circle').last().boundingBox())!;
+    const pip = (await card.locator('[data-pip] svg > g > g').boundingBox())!;
+    const map = (await card.locator('[data-scale]').boundingBox())!;
+    return { dot, pip, map };
+  };
+  const apart = (a: { x: number; y: number; width: number; height: number }, b: typeof a) =>
+    a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y;
+
+  // Waiting at its pickup point, Pip waits too: on Next up, then on the same spot of the parcel's page.
+  const next = page.locator('.parcel-card--hero');
+  await expect(next.locator('[data-pip]')).toHaveAttribute('data-pip', 'wait');
+  await expect(next.locator('[data-pip]')).toHaveAttribute('aria-hidden', 'true');
+  const inList = await marks(next);
+  expect(apart(inList.dot, inList.pip)).toBe(true);
+  expect(inList.pip.x).toBeGreaterThanOrEqual(inList.map.x);
+  expect(inList.pip.x + inList.pip.width).toBeLessThanOrEqual(inList.map.x + inList.map.width);
+  // The parcel is still on its way, so its dot pulses.
+  await expect(next.locator('g[data-kind="current"] circle')).toHaveCount(2);
+  await next.click({ position: { x: 60, y: 70 } });
+  const hero = page.locator('.detail--postcard .detail__hero');
+  expect(apart((await marks(hero)).dot, (await marks(hero)).pip)).toBe(true);
+  // On a phone the card and the page are as wide as each other, so he stands on the same spot once he has risen into place.
+  if (isMobile) await expect.poll(async () => {
+    const onPage = await marks(hero);
+    return Math.max(Math.abs((onPage.pip.x - onPage.dot.x) - (inList.pip.x - inList.dot.x)), Math.abs((onPage.pip.y - onPage.dot.y) - (inList.pip.y - inList.dot.y)));
+  }).toBeLessThan(1.5);
+  await page.keyboard.press('Escape');
+
+  // Out for delivery he bobs, eager to arrive.
+  await page.getByRole('button', { name: /^Belgian chocolate 🍫 —/ }).click();
+  const eager = hero.locator('[data-pip="eager"] svg > g > g');
+  await expect(eager).toHaveCSS('animation-iteration-count', 'infinite');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(eager).toHaveCSS('animation-name', 'none');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.keyboard.press('Escape');
+
+  // Delivered, the box is open and the dot is still.
+  await page.getByRole('button', { name: /^Coffee beans ☕ —/ }).click();
+  await expect(hero.locator('[data-pip="joy"] polygon')).toHaveCount(4);
+  await expect(hero.locator('g[data-kind="current"] circle')).toHaveCount(1);
+  expect(apart((await marks(hero)).dot, (await marks(hero)).pip)).toBe(true);
 });
 
 test('zooms the full map with the wheel, and returns to the parcel', async ({ page, isMobile }) => {

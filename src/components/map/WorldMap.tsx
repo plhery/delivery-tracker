@@ -4,10 +4,18 @@ import { geoCircle, geoDistance, geoGraticule, geoInterpolate, geoPath } from 'd
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent } from 'react';
 import { easeInOut, fitCamera, interpolateCamera, projection, subsolarPoint, zoomCamera, type Box, type Camera } from './camera';
 import { cities, geography, useWorld, type Coordinate, type Part } from './geography';
+import { InkPip, PIP_FRAME, PIP_SPOTS, PIP_SPOT_BELOW, outlineDistance, pipExtents, pipOutlines, pipWidths, type PipMood, type PipSide } from './Pip';
 import { NEAR_KM, distanceKm, formatKm, placeName, type MapMode, type Route, type Scale } from './route';
 import styles from './map.module.css';
 
 export interface Insets { top: number; right: number; bottom: number; left: number }
+export interface PipPlacing {
+  mood: PipMood;
+  /** Where the card's top row ends; the top inset when absent. */
+  ceiling?: number;
+  /** Where the card starts writing over the bottom of the map; the map's bottom edge when absent. */
+  floor?: number;
+}
 type Size = { width: number; height: number };
 type Shape = 'rect' | 'circle';
 type Look = 'map' | 'tint';
@@ -25,7 +33,7 @@ const RESTING_CENTER: Coordinate = [8.2, 42];
 
 export function WorldMap({
   route, mode, shape = 'rect', insets = NO_INSETS, look = 'map', labels = 'all', sites = false, context = true, interactive = false, night = false,
-  time, redrawKey = '', recenter = 0, onFreeChange, className = '', style, label, languageTag = 'en', live = true, peek = false,
+  time, redrawKey = '', recenter = 0, onFreeChange, className = '', style, label, languageTag = 'en', live = true, peek = false, pip = null,
 }: {
   route: Route;
   mode: MapMode;
@@ -57,6 +65,8 @@ export function WorldMap({
   live?: boolean;
   /** Pinching zooms for a moment; the map settles back when the fingers lift. */
   peek?: boolean;
+  /** Pip stands beside the parcel's place in this mood. */
+  pip?: PipPlacing | null;
 }) {
   const ready = useWorld();
   const root = useRef<HTMLDivElement>(null);
@@ -159,7 +169,7 @@ export function WorldMap({
     draw(canvas.current, size, camera, readPalette(probes.current), route, night ? time : null, circle);
   }, [camera, size, route, time, night, shape, look, redrawKey, top, right, bottom, left]);
 
-  const overlay = camera && size ? layout(route, camera, size, insets, shape, labels, sites, mode, context, languageTag) : null;
+  const overlay = camera && size ? layout(route, camera, size, insets, shape, labels, sites, mode, context, languageTag, pip) : null;
   const circle = shape === 'circle' && size ? circleOf(size, insets) : null;
 
   function local(event: PointerEvent<HTMLDivElement>): [number, number] {
@@ -249,28 +259,34 @@ export function WorldMap({
     <span ref={probes} className={styles.probes} aria-hidden="true">
       {COLORS.map(name => <span key={name} data-color={name} style={{ color: `var(--map-${name})` }} />)}
     </span>
-    <canvas ref={canvas} className={styles.mapCanvas} aria-hidden="true" />
-    {overlay && <svg className={styles.mapOverlay} viewBox={`0 0 ${size!.width} ${size!.height}`} aria-hidden="true">
-      {circle && <defs><clipPath id={clip}><circle cx={circle.x} cy={circle.y} r={circle.radius} /></clipPath></defs>}
-      <g clipPath={circle ? `url(#${clip})` : undefined}>
-        {overlay.legs.map(leg => <path key={leg.id} d={leg.d} className={styles.leg} data-kind={leg.kind}
-          pathLength={leg.kind === 'travelled' ? 1 : undefined} />)}
-        {overlay.dots.map(dot => <g key={dot.id} className={styles.dot} data-kind={dot.kind} transform={`translate(${dot.x} ${dot.y})`}>
-          {dot.kind === 'current' && live && <circle className={styles.halo} r="5" />}
-          <circle r={dot.kind === 'current' ? 5 : dot.kind === 'origin' ? 3.5 : dot.kind === 'stop' ? 2.6 : 4.5} />
-        </g>)}
-      </g>
-    </svg>}
-    {circle && <span className={styles.rim} aria-hidden="true"
-      style={{ left: circle.x - circle.radius, top: circle.y - circle.radius, width: circle.radius * 2, height: circle.radius * 2 }} />}
-    {overlay?.labels.filter(label => !moving || (label.kind !== 'context' && label.kind !== 'city'))
-      .map(label => <span key={label.id} className={styles.placeLabel} data-kind={label.kind}
-        style={{ transform: `translate(${label.x}px, ${label.y}px)` }} aria-hidden="true">{label.text}</span>)}
-    {!moving && overlay?.pointers.map(pointer => <span key={pointer.id} className={styles.pointer}
-      style={{ transform: `translate(${pointer.x}px, ${pointer.y}px) translate(-50%, -50%)` }} aria-hidden="true">
-      <svg viewBox="0 0 12 12" style={{ transform: `rotate(${pointer.angle}deg)` }}><path d="M2 6h8M7 3l3 3-3 3" /></svg>
-      <span><strong>{pointer.text}</strong> {pointer.detail}</span>
-    </span>)}
+    <div className={styles.layers}>
+      <canvas ref={canvas} className={styles.mapCanvas} aria-hidden="true" />
+      {overlay && <svg className={styles.mapOverlay} viewBox={`0 0 ${size!.width} ${size!.height}`} aria-hidden="true">
+        {circle && <defs><clipPath id={clip}><circle cx={circle.x} cy={circle.y} r={circle.radius} /></clipPath></defs>}
+        <g clipPath={circle ? `url(#${clip})` : undefined}>
+          {overlay.legs.map(leg => <path key={leg.id} d={leg.d} className={styles.leg} data-kind={leg.kind}
+            pathLength={leg.kind === 'travelled' ? 1 : undefined} />)}
+          {overlay.dots.map(dot => <g key={dot.id} className={styles.dot} data-kind={dot.kind} transform={`translate(${dot.x} ${dot.y})`}>
+            {dot.kind === 'current' && live && <circle className={styles.halo} r="5" />}
+            <circle r={dot.kind === 'current' ? 5 : dot.kind === 'origin' ? 3.5 : dot.kind === 'stop' ? 2.6 : 4.5} />
+          </g>)}
+        </g>
+      </svg>}
+      {circle && <span className={styles.rim} aria-hidden="true"
+        style={{ left: circle.x - circle.radius, top: circle.y - circle.radius, width: circle.radius * 2, height: circle.radius * 2 }} />}
+      {overlay?.labels.filter(label => !moving || (label.kind !== 'context' && label.kind !== 'city'))
+        .map(label => <span key={label.id} className={styles.placeLabel} data-kind={label.kind}
+          style={{ transform: `translate(${label.x}px, ${label.y}px)` }} aria-hidden="true">{label.text}</span>)}
+      {!moving && overlay?.pointers.map(pointer => <span key={pointer.id} className={styles.pointer}
+        style={{ transform: `translate(${pointer.x}px, ${pointer.y}px) translate(-50%, -50%)` }} aria-hidden="true">
+        <svg viewBox="0 0 12 12" style={{ transform: `rotate(${pointer.angle}deg)` }}><path d="M2 6h8M7 3l3 3-3 3" /></svg>
+        <span><strong>{pointer.text}</strong> {pointer.detail}</span>
+      </span>)}
+    </div>
+    {overlay?.pip && <span className={styles.pip} data-pip={overlay.pip.mood} data-side={overlay.pip.side} aria-hidden="true"
+      style={{ transform: `translate(${overlay.pip.x.toFixed(1)}px, ${overlay.pip.y.toFixed(1)}px)`, width: overlay.pip.width }}>
+      <span className={styles.pipIn}><InkPip mood={overlay.pip.mood} side={overlay.pip.side} below={overlay.pip.below} /></span>
+    </span>}
   </div>;
 }
 
@@ -487,7 +503,12 @@ interface Overlay {
   dots: { id: string; x: number; y: number; kind: 'origin' | 'stop' | 'current' | 'last-known' | 'area' | 'destination' }[];
   labels: { id: string; x: number; y: number; text: string; kind: 'current' | 'end' | 'stop' | 'area' | 'context' | 'city' }[];
   pointers: { id: string; x: number; y: number; angle: number; text: string; detail: string }[];
+  /** Where Pip's frame starts, how wide it is, and which side of him the parcel's dot is on. */
+  pip: { x: number; y: number; width: number; mood: PipMood; side: PipSide; below: boolean } | null;
 }
+
+type Rect = { x: number; y: number; width: number; height: number };
+const intersects = (a: Rect, b: Rect) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 
 let measure: CanvasRenderingContext2D | null = null;
 function textWidth(text: string): number {
@@ -498,7 +519,7 @@ function textWidth(text: string): number {
 }
 
 function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape: Shape, labels: 'all' | 'ends' | 'none', sites: boolean,
-  mode: MapMode, context: boolean, languageTag: string): Overlay {
+  mode: MapMode, context: boolean, languageTag: string, pip: PipPlacing | null = null): Overlay {
   const project = projection(camera).clipExtent([[-400, -400], [size.width + 400, size.height + 400]]);
   const svgPath = geoPath(project);
   const visible = (point: Coordinate) => geoDistance(point, camera.center) < Math.PI / 2 - .02;
@@ -508,6 +529,8 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
     ? Math.hypot(x - centerX, y - centerY) < radius - margin
     : x > insets.left + margin && x < size.width - insets.right - margin && y > insets.top + margin && y < size.height - insets.bottom - margin;
 
+  // A leg as it is drawn, and sampled along its curve so names and Pip can keep off it.
+  const tracks: [number, number][][] = [];
   const legPath = (a: Coordinate, b: Coordinate, km: number) => {
     if (km < 900 && visible(a) && visible(b)) {
       // Short hops bow slightly to the left of travel: a hop, not a road.
@@ -517,8 +540,15 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
       const bend = Math.min(length * .18, 70);
       const cx = (x1 + x2) / 2 + (y2 - y1) / length * bend;
       const cy = (y1 + y2) / 2 - (x2 - x1) / length * bend;
+      const steps = Math.max(8, Math.ceil(length / 3));
+      tracks.push(Array.from({ length: steps + 1 }, (_, index) => {
+        const t = index / steps;
+        return [(1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * cx + t * t * x2, (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * cy + t * t * y2];
+      }));
       return `M${x1.toFixed(1)},${y1.toFixed(1)}Q${cx.toFixed(1)},${cy.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}`;
     }
+    const along = geoInterpolate(a, b);
+    tracks.push(Array.from({ length: 121 }, (_, index) => along(index / 120) as Coordinate).filter(visible).map(point => at(point) as [number, number]));
     return svgPath({ type: 'LineString', coordinates: [a, b] }) ?? '';
   };
 
@@ -532,6 +562,9 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
     d: legPath(route.current.place.coordinate, route.destination.coordinate, route.remainingKm ?? 0),
     kind: 'remaining',
   });
+  /** Whether a leg passes through a box. */
+  const onRoute = (box: Rect) => tracks.some(track => track.some(([x, y]) => x > box.x - 1 && x < box.x + box.width + 1
+    && y > box.y - 1 && y < box.y + box.height + 1));
 
   const dots: Overlay['dots'] = [];
   route.stops.forEach((stop, index) => {
@@ -550,9 +583,8 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
   }
 
   // Place names, most important first, skipping any that would collide.
-  const placed: { x: number; y: number; width: number; height: number }[] = dots.map(dot => ({ x: dot.x - 6, y: dot.y - 6, width: 12, height: 12 }));
-  const overlaps = (box: typeof placed[number]) => placed.some(other => box.x < other.x + other.width && box.x + box.width > other.x
-    && box.y < other.y + other.height && box.y + box.height > other.y);
+  const placed: Rect[] = dots.map(dot => ({ x: dot.x - 6, y: dot.y - 6, width: 12, height: 12 }));
+  const overlaps = (box: Rect) => placed.some(other => intersects(box, other));
   const candidates = [
     ...(route.current ? [{ id: route.current.id, place: route.current.place, kind: 'current' as const, priority: 0 }] : []),
     ...(route.destination ? [{ id: 'destination', place: route.destination, kind: 'end' as const, priority: 1 }] : []),
@@ -577,44 +609,58 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
     }
     return [dx, dy] as const;
   };
-  const seen = new Set<string>();
-  const named: { text: string; coordinate: Coordinate }[] = [];
-  const labelBoxes: Overlay['labels'] = [];
-  for (const candidate of labels === 'none' ? [] : candidates) {
-    const point = candidate.place.coordinate;
-    if (!visible(point) || seen.has(candidate.place.id)) continue;
-    const [x, y] = at(point);
-    if (!inside([x, y], -2)) continue;
-    seen.add(candidate.place.id);
+  /** Where a place's name goes among the marks already taken, and whether that spot is clear of all of them and of the route. */
+  const nameBox = (candidate: typeof candidates[number], taken: Rect[]) => {
+    const [x, y] = at(candidate.place.coordinate);
     const area = candidate.place.precision === 'country';
     const text = area ? candidate.place.name.toUpperCase() : placeName(candidate.place, sites);
-    if (named.some(other => other.text === text && distanceKm(other.coordinate, point) < SAME_TOWN_KM)) continue;
     const width = area ? textWidth(text) * .91 + text.length * .84 + 10 : textWidth(text) + 14;
     const height = 22;
     const [awayX, awayY] = legDirection(candidate.id, x, y);
-    const options = (area
-      ? [{ x: x - width / 2, y: y + 8, dx: 0, dy: 1 }, { x: x - width / 2, y: y - 30, dx: 0, dy: -1 },
-        { x: x + 8, y: y + 6, dx: 1, dy: 1 }, { x: x - width - 8, y: y + 6, dx: -1, dy: 1 }]
-      : [{ x: x + 9, y: y - height / 2, dx: 1, dy: 0 }, { x: x - 9 - width, y: y - height / 2, dx: -1, dy: 0 },
-        { x: x - width / 2, y: y - 29, dx: 0, dy: -1 }, { x: x - width / 2, y: y + 8, dx: 0, dy: 1 }])
-      .map((option, index) => ({ ...option, order: option.dx * awayX + option.dy * awayY + index * .01 }))
+    const ranked = (sides: { x: number; y: number; dx: number; dy: number }[]) => sides
+      .map((option, index) => ({ x: option.x, y: option.y, width, height, order: option.dx * awayX + option.dy * awayY + index * .01 }))
       .sort((a, b) => a.order - b.order);
-    const fits = (option: { x: number; y: number }) => inside([option.x, option.y], 2) && inside([option.x + width, option.y + height], 2)
+    // Beside, above or below the dot first; a town's name may also sit off one of its corners.
+    const options = area
+      ? ranked([{ x: x - width / 2, y: y + 8, dx: 0, dy: 1 }, { x: x - width / 2, y: y - 30, dx: 0, dy: -1 },
+        { x: x + 8, y: y + 6, dx: 1, dy: 1 }, { x: x - width - 8, y: y + 6, dx: -1, dy: 1 }])
+      : [...ranked([{ x: x + 9, y: y - height / 2, dx: 1, dy: 0 }, { x: x - 9 - width, y: y - height / 2, dx: -1, dy: 0 },
+        { x: x - width / 2, y: y - 29, dx: 0, dy: -1 }, { x: x - width / 2, y: y + 8, dx: 0, dy: 1 }]),
+      ...ranked([{ x: x + 8, y: y + 6, dx: 1, dy: 1 }, { x: x - width - 8, y: y + 6, dx: -1, dy: 1 },
+        { x: x + 8, y: y - height - 6, dx: 1, dy: -1 }, { x: x - width - 8, y: y - height - 6, dx: -1, dy: -1 }])];
+    const fits = (option: Rect) => inside([option.x, option.y], 2) && inside([option.x + width, option.y + height], 2)
       && inside([option.x + width, option.y], 2) && inside([option.x, option.y + height], 2);
-    // The parcel's own place is always named: over another mark if it must be, and moved in from the frame's edge rather than cut off by it.
-    const framed = () => options.map((option) => {
+    const free = (option: Rect) => !taken.some(other => intersects(option, other));
+    const inFrame = options.filter(fits);
+    // The parcel's own place is always named: moved in from the frame's edge rather than cut off by it, and over another mark if it must be.
+    const moved = candidate.priority ? [] : options.map((option) => {
       if (shape === 'circle') return { ...option, shift: 0 };
       const x = Math.max(insets.left + 2, Math.min(size.width - insets.right - 2 - width, option.x));
       const y = Math.max(insets.top + 2, Math.min(size.height - insets.bottom - 2 - height, option.y));
       return { ...option, x, y, shift: Math.abs(x - option.x) + Math.abs(y - option.y) };
-    }).sort((a, b) => a.shift - b.shift)[0];
-    const choice = options.find(option => fits(option) && !overlaps({ ...option, width, height }))
-      ?? (candidate.priority === 0 ? framed() : null);
-    if (!choice) continue;
-    placed.push({ ...choice, width, height });
-    named.push({ text, coordinate: point });
-    labelBoxes.push({ id: candidate.id, x: choice.x, y: choice.y, text, kind: area ? 'area' : candidate.kind });
-  }
+    }).sort((a, b) => a.shift - b.shift);
+    // A name keeps off the route when a side allows it.
+    const clean = [...inFrame, ...moved].find(option => free(option) && !onRoute(option));
+    const choice = clean ?? inFrame.find(free) ?? moved.find(free) ?? moved[0];
+    return choice ? { x: choice.x, y: choice.y, width, height, text, area, clean: Boolean(clean), free: free(choice) } : null;
+  };
+  /** Every name that finds room among the marks already taken, most important first. */
+  const names = (taken: Rect[]) => {
+    const marks = [...taken];
+    const seen = new Set<string>();
+    const found: (NonNullable<ReturnType<typeof nameBox>> & { id: string; kind: Overlay['labels'][number]['kind']; own: boolean; coordinate: Coordinate })[] = [];
+    for (const candidate of candidates) {
+      const point = candidate.place.coordinate;
+      if (!visible(point) || seen.has(candidate.place.id) || !inside(at(point), -2)) continue;
+      seen.add(candidate.place.id);
+      const name = nameBox(candidate, marks);
+      // A town is named once, however many of its sites the parcel passed through.
+      if (!name || found.some(other => other.text === name.text && distanceKm(other.coordinate, point) < SAME_TOWN_KM)) continue;
+      marks.push(name);
+      found.push({ ...name, id: candidate.id, kind: name.area ? 'area' : candidate.kind, own: candidate.priority === 0, coordinate: point });
+    }
+    return { found, seen };
+  };
 
   // In a close-up, far ends of the journey stay on the edge, pointing the way.
   const pointers: Overlay['pointers'] = [];
@@ -663,6 +709,55 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
       pointers.push({ id: place.id, x, y, angle: Math.atan2(dy, dx) * 180 / Math.PI, text: name, detail });
     }
   }
+
+  // Pip stands beside the parcel's dot, never on it or on its name: the first spot that leaves the other dots, the route and
+  // the pointers clear, and every name its place.
+  let pipPlace: Overlay['pip'] = null;
+  const parcelDot = pip && route.current && visible(route.current.place.coordinate) ? at(route.current.place.coordinate) : null;
+  if (pip && parcelDot && inside(parcelDot, -2)) {
+    const [x, y] = parcelDot;
+    const ceiling = pip.ceiling ?? insets.top;
+    const floor = pip.floor ?? size.height - 4;
+    const chips = placed.slice(dots.length);
+    const named = names(placed).found.length;
+    let best: { cost: number; place: NonNullable<Overlay['pip']>; box: Rect } | null = null;
+    // Every spot beside the dot at every size, before the one below it.
+    const widths = pipWidths(pip.mood);
+    const trials = [...widths.flatMap(width => PIP_SPOTS.map(spot => ({ width, spot }))), ...widths.map(width => ({ width, spot: PIP_SPOT_BELOW }))];
+    for (const { width, spot: [dx, dy] } of trials) {
+      const unit = width / PIP_FRAME.width;
+      const side: PipSide = dx > 0 ? -1 : dx < 0 ? 1 : 0;
+      const left = x + dx * width - PIP_FRAME.groundX * unit;
+      const top = y + dy * width - PIP_FRAME.groundY * unit;
+      const extents = pipExtents(pip.mood, side);
+      const box = { x: left + extents.left * unit, y: top + extents.top * unit, width: (extents.right - extents.left) * unit, height: (extents.bottom - extents.top) * unit };
+      const framed = shape === 'circle'
+        ? [[box.x, box.y], [box.x + box.width, box.y], [box.x, box.y + box.height], [box.x + box.width, box.y + box.height]].every(([cornerX, cornerY]) => inside([cornerX, cornerY], 4))
+        : box.x >= 4 && box.x + box.width <= size.width - 4 && box.y >= ceiling && box.y + box.height <= floor;
+      // How far a point on the map is from Pip himself: the corners of his box are empty.
+      const outlines = pipOutlines(pip.mood, side);
+      const away = (pointX: number, pointY: number) => Math.min(...outlines.map(outline => outlineDistance([(pointX - left) / unit, (pointY - top) / unit], outline))) * unit;
+      if (!framed || away(x, y) < 10) continue;
+      const beside = names([...placed, box]).found;
+      const own = beside.find(name => name.own);
+      if (own && !own.free) continue;
+      const cost = dots.filter(mark => away(mark.x, mark.y) < 6).length
+        + tracks.filter(track => track.some(([trackX, trackY]) => away(trackX, trackY) < 1.5)).length
+        + chips.filter(chip => intersects(box, chip)).length
+        + (own && !own.clean ? 1 : 0) + Math.max(0, named - beside.length);
+      if (!best || cost < best.cost) best = { cost, place: { x: left, y: top, width, mood: pip.mood, side, below: dy > 1 }, box };
+      if (!cost) break;
+    }
+    if (best) {
+      pipPlace = best.place;
+      placed.push(best.box);
+    }
+  }
+
+  const { found, seen } = names(placed);
+  placed.push(...found);
+  const labelBoxes: Overlay['labels'] = found.map(name => ({ id: name.id, x: name.x, y: name.y, text: name.text, kind: name.kind }));
+
   // Faint country names for orientation, fewer as the view widens.
   const spanKm = Math.min(size.width, size.height) / camera.scale * 6371;
   const maxRank = !context || labels === 'none' || spanKm < 180 || spanKm > 10000 ? 0 : spanKm > 6000 ? 2 : spanKm > 3000 ? 3 : spanKm > 1200 ? 4 : 5;
@@ -697,6 +792,6 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
     shown += 1;
   }
 
-  return { legs, dots, labels: labelBoxes, pointers };
+  return { legs, dots, labels: labelBoxes, pointers, pip: pipPlace };
 }
 

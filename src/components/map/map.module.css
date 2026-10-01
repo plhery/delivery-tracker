@@ -21,6 +21,8 @@
 .worldMap[data-interactive]:active { cursor: grabbing; }
 .probes { position: absolute; width: 0; height: 0; overflow: hidden; visibility: hidden; }
 .rim { position: absolute; border-radius: 50%; pointer-events: none; box-shadow: inset 0 0 0 1px var(--map-limb), inset 0 3px 18px var(--map-rim-shade); }
+/* The drawing itself, which a card may fade out at the bottom; Pip stands in front of the fade. */
+.layers { position: absolute; inset: 0; -webkit-mask-image: var(--map-mask, none); mask-image: var(--map-mask, none); }
 .mapCanvas, .mapOverlay { position: absolute; inset: 0; width: 100%; height: 100%; }
 .mapOverlay { overflow: visible; pointer-events: none; }
 .leg { fill: none; stroke: var(--map-route); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -55,6 +57,37 @@
 .pointer strong { color: var(--map-label-strong); font-weight: 600; }
 .pointer, .placeLabel[data-kind=context], .placeLabel[data-kind=city] { animation: settle .35s var(--ease-out) both; }
 @keyframes settle { from { opacity: 0; } }
+/* Pip, the parcel with a face, beside the parcel's place: the card's ink mixed toward its surface. */
+.pip {
+  --pip-ink: var(--tone, var(--ink)); --pip-surface: var(--tone-surface, var(--paper));
+  /* On a dark card the surface is the darker of the two, so the eyes keep their white and the pupils their depth. */
+  --pip-deep: color-mix(in srgb, light-dark(var(--pip-ink), var(--pip-surface)) 82%, black);
+  --pip-paper: color-mix(in srgb, light-dark(var(--pip-surface), var(--pip-ink)) 38%, white);
+  --pip-shadow: light-dark(color-mix(in srgb, var(--pip-deep) 14%, transparent), rgb(0 0 0 / 26%));
+  --pip-right: color-mix(in srgb, var(--pip-surface), var(--pip-ink) 84%); --pip-left: color-mix(in srgb, var(--pip-surface), var(--pip-ink) 56%);
+  --pip-back-left: color-mix(in srgb, var(--pip-surface), var(--pip-ink) 62%); --pip-back-right: color-mix(in srgb, var(--pip-surface), var(--pip-ink) 40%);
+  --pip-front-right: color-mix(in srgb, var(--pip-surface), var(--pip-ink) 50%); --pip-front-left: color-mix(in srgb, var(--pip-surface), var(--pip-ink) 36%);
+  --pip-tape: color-mix(in srgb, var(--pip-surface), var(--pip-ink) 20%); --pip-seam: color-mix(in srgb, var(--pip-surface), var(--pip-ink) 70%);
+  --pip-blush: color-mix(in srgb, var(--pip-left) 45%, #f0707e);
+  --pip-glint: color-mix(in srgb, var(--pip-surface), var(--pip-ink) 72%); --pip-glint-deep: color-mix(in srgb, var(--pip-surface), var(--pip-ink) 86%);
+  position: absolute; left: 0; top: 0; pointer-events: none;
+}
+.pipIn { display: block; animation: pip-in .6s var(--spring) both; }
+/* A card is a button, and buttons style their icons: Pip keeps his own size and strokes. */
+.pip .pipArt { display: block; width: 100%; height: auto; overflow: visible; stroke: none; stroke-width: 1; stroke-linecap: butt; stroke-linejoin: miter; }
+.pipBody { transform-origin: 150px 277px; }
+.pipBody[data-mood=eager] { animation: pip-bob 1.1s ease-in-out infinite; }
+.pipBody[data-mood=joy] { animation: pip-joy 2.2s var(--spring) infinite; }
+.pipGlint { transform-box: fill-box; transform-origin: center; animation: pip-twinkle var(--twinkle) ease-in-out var(--twinkle-delay) infinite; }
+@keyframes pip-in { from { opacity: 0; transform: translateY(7px); } }
+@keyframes pip-bob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-3px) rotate(2.5deg); } }
+@keyframes pip-joy {
+  0%, 58%, 100% { transform: translateY(0) rotate(0) scale(1); }
+  12% { transform: translateY(0) scale(1.07, .9); }
+  28% { transform: translateY(-10px) rotate(-5deg) scale(.96, 1.05); }
+  44% { transform: translateY(0) rotate(2deg) scale(1.05, .95); }
+}
+@keyframes pip-twinkle { 0%, 100% { opacity: .2; transform: scale(.6) rotate(-10deg); } 50% { opacity: 1; transform: scale(1.1) rotate(8deg); } }
 @media (prefers-reduced-motion: reduce) {
-  .leg[data-kind=travelled], .dot[data-kind=current] .halo, .pointer, .placeLabel { animation: none; }
+  .leg[data-kind=travelled], .dot[data-kind=current] .halo, .pointer, .placeLabel, .pipIn, .pipBody[data-mood], .pipGlint { animation: none; }
 }

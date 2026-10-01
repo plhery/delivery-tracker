@@ -8,7 +8,7 @@ import { invitationInitialPath } from '../lib/invitationInitialPath';
 const sansFont = readFileSync(join(process.cwd(), 'node_modules/next/dist/compiled/@vercel/og/Geist-Regular.ttf'));
 const nameFont = readFileSync(join(process.cwd(), 'public/fonts/gelasio/Gelasio-SemiBoldItalic.ttf'));
 
-/** A still of the welcome parcel, drawn with the same kraft paper and labels. */
+/** A still of the welcome parcel: the same kraft paper, face and seal. */
 export function invitationSocialImage(nickname: string | null): ImageResponse {
   const initial = invitationInitial(nickname);
   const initialPath = invitationInitialPath(initial);
@@ -37,10 +37,14 @@ export function invitationSocialImage(nickname: string | null): ImageResponse {
         <path d="m150 190 95-48v87l-95 48v-87Z" fill="#B78F66" />
         <path d="M56 144v84l93 47m2 0 92-46v-84" stroke="#987450" strokeOpacity=".25" strokeWidth=".8" />
         <path d="m55 142 95 48 95-48m-95 48v87" stroke="#FFF2CF" strokeWidth="1" />
-        <g transform="matrix(1 0.505263 0 1 77 193)">
-          <rect width="51" height="32" rx="3" fill="#D8E5EA" />
-          <path d="M8 8v17m4-17v17m3-17v17m5-17v17m3-17v17m5-17v17m4-17v17m3-17v17m5-17v17" stroke="#4E677A" strokeWidth="1.5" />
-          <path d="M3 5V3h45" stroke="white" strokeOpacity=".5" />
+        <g transform="matrix(1 0.505263 0 1 55 142)">
+          {[32.5, 63.5].map((x) => <g key={x}>
+            <ellipse cx={x} cy="36" rx="10" ry="11.5" fill="#FFFDF6" />
+            <circle cx={x + 3.5} cy="34.6" r="5.4" fill="#20251E" />
+            <circle cx={x + 1.7} cy="32.6" r="1.6" fill="#FFFFFF" />
+            <ellipse cx={x - 1} cy="51" rx="6.5" ry="3.2" fill="#E9958F" opacity=".55" />
+          </g>)}
+          <path d="M42 51Q48 58 54 51" stroke="#20251E" strokeWidth="2.4" strokeLinecap="round" />
         </g>
         <g transform="translate(201 201) rotate(-27)"><path d="M10 22V4m-5 5 5-5 5 5" stroke="#735C43" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></g>
         <g transform="translate(183 234) rotate(-27)">

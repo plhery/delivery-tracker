@@ -942,7 +942,7 @@ private struct AuthenticationLanguageMenu: View {
     }
 }
 
-/// A little paper object, drawn in points so its folds stay crisp at every size.
+/// Pip, a little paper parcel with a face, drawn in points so its folds stay crisp at every size.
 /// The welcome screen gives it a small greeting; a tap unfolds the paper.
 struct UnwrappingParcel: View, Animatable {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -1041,19 +1041,6 @@ struct UnwrappingParcel: View, Animatable {
                     }
                     .stroke(Color(hex: "#FFF2CF").opacity(0.22 + (tilt.x + 1) * 0.18), lineWidth: 1)
 
-                    // The quiet shipping label is part of the illustration.
-                    HStack(alignment: .bottom, spacing: 2) {
-                        ForEach(0..<10) { index in
-                            Rectangle()
-                                .fill(Color(hex: "#4E677A"))
-                                .frame(width: index.isMultiple(of: 3) ? 2 : 1, height: 17)
-                        }
-                    }
-                    .frame(width: 51, height: 32)
-                    .background(Color(hex: "#D8E5EA"), in: RoundedRectangle(cornerRadius: 3))
-                    .projectionEffect(ProjectionTransform(CGAffineTransform(a: 1, b: 48.0 / 95.0, c: 0, d: 1, tx: 0, ty: 0)))
-                    .position(x: 101, y: 209)
-
                     Image(systemName: "arrow.up")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(Color(hex: "#735C43"))
@@ -1080,6 +1067,13 @@ struct UnwrappingParcel: View, Animatable {
                         opened: [(55, 142), (150, 190), (121, 234), (26, 186)],
                         color: Color(hex: "#DDBD96"), progress: phase(0.2, 0.8)
                     )
+
+                    // Pip's face. The open front flaps hang over the left side, so it is drawn after them,
+                    // and its eyes turn into happy arcs as the box opens.
+                    Canvas { context, _ in
+                        PipArtwork.kraftFace(context, k: 1, happy: phase(0.2, 0.3))
+                    }
+                    .frame(width: 300, height: 310)
 
                     // The tape tears out of sight as the flaps open.
                     polygon([(96, 122), (109, 115), (204, 163), (191, 170)])

@@ -801,7 +801,7 @@ private struct ExperimentalNextDeliveryPass: View {
                 RouteEngraving(
                     atlas: atlas, route: ParcelRoute(parcel: parcel, atlas: atlas, language: localizer.language),
                     stage: parcel.currentStage, identity: identity, peek: false,
-                    insets: EdgeInsets(top: 40, leading: 16, bottom: 28, trailing: 16)
+                    insets: EdgeInsets(top: 40, leading: 16, bottom: 28, trailing: 16), floor: 140
                 )
                 .frame(height: 160)
                 .clipShape(UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24, style: .continuous))

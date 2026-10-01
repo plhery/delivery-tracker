@@ -53,44 +53,108 @@ export function PostageStamp({ icon = 'truck' }: { icon?: IconName }) {
   return <span className="postage-stamp" aria-hidden="true"><span className="postage-stamp__print"><Icon name={icon} /></span><span className="postage-stamp__cancel" /></span>;
 }
 
-type PaperPoint = readonly [number, number];
-
-/** A hinge stays fixed while the paper folds through it, just like the native parcel. */
-function ParcelFlap({ points, openedCorner, tone, rear = false, hidden = false }: {
+export type PaperPoint = readonly [number, number];
+export interface PaperFlap {
   points: readonly [PaperPoint, PaperPoint, PaperPoint, PaperPoint];
   openedCorner: PaperPoint;
-  tone: string;
-  rear?: boolean;
-  hidden?: boolean;
-}) {
+}
+
+/** The box in its 300 × 310 frame, shared by the kraft parcel and by Pip on the card maps. */
+export const PARCEL = {
+  inside: 'm55 142 95-47 95 47-95 48-95-48Z',
+  left: 'm55 142 95 48v87l-95-48v-87Z',
+  right: 'm150 190 95-48v87l-95 48v-87Z',
+  hairlines: 'M56 144v84l93 47m2 0 92-46v-84',
+  edges: 'm55 142 95 48 95-48m-95 48v87',
+  tape: 'm96 122 13-7 95 48-13 7-95-48Z',
+  seam: 'm103 119 94 47',
+  /** The left side's plane, where the face is drawn. */
+  facePlane: 'matrix(1 0.505263 0 1 55 142)',
+  glint: 'M0 -1 .24 -.24 1 0 .24 .24 0 1 -.24 .24 -1 0 -.24 -.24Z',
+  glints: [
+    { x: 43, y: 96, size: 23, color: '#C99B35' },
+    { x: 91, y: 57, size: 16, color: '#D6AE48' },
+    { x: 151, y: 36, size: 24, color: '#C99B35' },
+    { x: 216, y: 55, size: 18, color: '#B594BE' },
+    { x: 261, y: 96, size: 25, color: '#D6AE48' },
+    { x: 233, y: 145, size: 13, color: '#C99B35' },
+  ],
+  flaps: {
+    backLeft: { points: [[55, 142], [150, 95], [190, 143], [95, 190]], openedCorner: [112, 48] },
+    backRight: { points: [[150, 95], [245, 142], [197.5, 166], [102.5, 118.5]], openedCorner: [270, 88] },
+    frontRight: { points: [[245, 142], [150, 190], [110, 142], [205, 95]], openedCorner: [186, 231] },
+    frontLeft: { points: [[55, 142], [150, 190], [197.5, 166], [102.5, 118.5]], openedCorner: [121, 234] },
+  },
+} as const satisfies Record<string, unknown> & { flaps: Record<string, PaperFlap> };
+
+// Trigonometric results can differ at the last decimal across JS runtimes.
+const coordinate = (value: number) => Number(value.toFixed(6));
+
+/** A hinge stays fixed while the paper folds through it, just like the native parcel. */
+function flapFold({ points, openedCorner }: PaperFlap) {
   const [origin, hinge, corner] = points;
   const angle = Math.atan2(hinge[1] - origin[1], hinge[0] - origin[0]);
-  const local = ([x, y]: PaperPoint) => [
+  const local = ([x, y]: PaperPoint): PaperPoint => [
     (x - origin[0]) * Math.cos(angle) + (y - origin[1]) * Math.sin(angle),
     (y - origin[1]) * Math.cos(angle) - (x - origin[0]) * Math.sin(angle),
   ];
   const from = local(corner), to = local(openedCorner);
-  // Trigonometric results can differ at the last decimal across JS runtimes.
-  const coordinate = (value: number) => Number(value.toFixed(6));
+  return { origin, angle, local, scale: to[1] / from[1], slant: (to[0] - from[0]) / from[1] };
+}
+
+/** Where a flap's corners rest, closed on the box or folded open on its hinge. */
+export function flapPoints(flap: PaperFlap, open: boolean): string {
+  if (!open) return flap.points.map((point) => point.join(',')).join(' ');
+  const { origin, angle, local, scale, slant } = flapFold(flap);
+  return flap.points.map((point) => {
+    const [x, y] = local(point);
+    const foldedX = x + y * slant, foldedY = y * scale;
+    return [origin[0] + foldedX * Math.cos(angle) - foldedY * Math.sin(angle), origin[1] + foldedX * Math.sin(angle) + foldedY * Math.cos(angle)]
+      .map((value) => Number(value.toFixed(2))).join(',');
+  }).join(' ');
+}
+
+function ParcelFlap({ flap, tone, rear = false, hidden = false }: { flap: PaperFlap; tone: string; rear?: boolean; hidden?: boolean }) {
+  const { origin, angle, local, scale, slant } = flapFold(flap);
   const fold = {
-    '--fold-scale': coordinate(to[1] / from[1]),
-    '--fold-skew': `${coordinate(Math.atan((to[0] - from[0]) / from[1]) * 180 / Math.PI)}deg`,
+    '--fold-scale': coordinate(scale),
+    '--fold-skew': `${coordinate(Math.atan(slant) * 180 / Math.PI)}deg`,
   } as CSSProperties;
   return <g transform={`translate(${origin.join(' ')}) rotate(${coordinate(angle * 180 / Math.PI)})`}>
     <g className={`parcel-illustration__flap${rear ? ' parcel-illustration__flap--rear' : ''}${hidden ? ' parcel-illustration__flap--hidden' : ''}`} style={fold}>
-      <polygon points={points.map((point) => local(point).map(coordinate).join(',')).join(' ')} fill={tone} stroke="#987450" strokeOpacity=".24" strokeWidth=".7" />
+      <polygon points={flap.points.map((point) => local(point).map(coordinate).join(',')).join(' ')} fill={tone} stroke="#987450" strokeOpacity=".24" strokeWidth=".7" />
     </g>
   </g>;
 }
 
-/** Kraft paper, printed labels, and a card tucked behind the front faces. */
+/**
+ * Pip's face, in the plane of the box's left side. `k` scales the features: 1 at full size, larger on a small parcel.
+ * The open eyes give way to happy arcs when the box opens.
+ */
+export function PipFace({ k = 1, look = [.5, -.2] }: { k?: number; look?: PaperPoint }) {
+  const mouth = 47 + 4 * k;
+  return <g className="parcel-illustration__pip" transform={PARCEL.facePlane}>
+    {[48 - 15.5 * k, 48 + 15.5 * k].map((x) => <g key={x}>
+      <g className="parcel-illustration__eye">
+        <ellipse cx={x} cy="36" rx={10 * k} ry={11.5 * k} fill="#FFFDF6" />
+        <circle cx={x + look[0] * 7 * k} cy={36 + look[1] * 7 * k} r={5.4 * k} fill="#20251E" />
+        <circle cx={x + (look[0] * 7 - 1.8) * k} cy={36 + (look[1] * 7 - 2) * k} r={1.6 * k} fill="#FFFFFF" />
+      </g>
+      <path className="parcel-illustration__happy-eye" d={`M${x - 8 * k} ${36 + 3 * k}Q${x} ${36 - 8 * k} ${x + 8 * k} ${36 + 3 * k}`} stroke="#20251E" strokeWidth={3 * k} strokeLinecap="round" />
+      <ellipse cx={x - 1} cy={36 + 15 * k} rx={6.5 * k} ry={3.2 * k} fill="#E9958F" opacity=".55" />
+    </g>)}
+    <path d={`M${48 - 6 * k} ${mouth}Q48 ${mouth + 7 * k} ${48 + 6 * k} ${mouth}`} stroke="#20251E" strokeWidth={2.4 * k} strokeLinecap="round" />
+  </g>;
+}
+
+/** Pip: kraft paper, a face on the left side, and a card tucked behind the front faces. */
 export function ParcelIllustration({ className = '' }: { className?: string }) {
   return <svg className={`parcel-illustration ${className}`} viewBox="0 0 300 310" fill="none" aria-hidden="true">
     <ellipse className="parcel-illustration__shadow" cx="150" cy="286" rx="84" ry="10" fill="currentColor" opacity=".08" />
     <g className="parcel-illustration__body">
-      <path d="m55 142 95-47 95 47-95 48-95-48Z" fill="#806345" />
-      <ParcelFlap points={[[55, 142], [150, 95], [190, 143], [95, 190]]} openedCorner={[112, 48]} tone="#C4A078" rear hidden />
-      <ParcelFlap points={[[150, 95], [245, 142], [197.5, 166], [102.5, 118.5]]} openedCorner={[270, 88]} tone="#D8B997" rear />
+      <path d={PARCEL.inside} fill="#806345" />
+      <ParcelFlap flap={PARCEL.flaps.backLeft} tone="#C4A078" rear hidden />
+      <ParcelFlap flap={PARCEL.flaps.backRight} tone="#D8B997" rear />
       <ellipse className="parcel-illustration__light" cx="150" cy="140" rx="62" ry="20" fill="#FFE8AE" />
       <g className="parcel-illustration__delivery-card">
         <rect x="110" y="111" width="83" height="111" rx="7" fill="#FCFAF4" stroke="#E6E0D4" strokeWidth=".7" />
@@ -100,42 +164,48 @@ export function ParcelIllustration({ className = '' }: { className?: string }) {
         <path d="M124 181h45" stroke="#DAD7CE" strokeWidth="4" strokeLinecap="round" />
         <path d="M124 194h29" stroke="#E7E4DC" strokeWidth="4" strokeLinecap="round" />
       </g>
-      <path d="m55 142 95 48v87l-95-48v-87Z" fill="#C9A47B" />
-      <path d="m150 190 95-48v87l-95 48v-87Z" fill="#B78F66" />
-      <path className="parcel-illustration__face-light" d="m55 142 95 48v87l-95-48v-87Z" fill="#FFF4D6" />
-      <path d="M56 144v84l93 47m2 0 92-46v-84" stroke="#987450" strokeOpacity=".25" strokeWidth=".8" />
-      <path className="parcel-illustration__edge" d="m55 142 95 48 95-48m-95 48v87" stroke="#FFF2CF" strokeWidth="1" />
-      <g transform="matrix(1 0.505263 0 1 77 193)">
-        <rect width="51" height="32" rx="3" fill="#D8E5EA" />
-        <path d="M8 8v17m4-17v17m3-17v17m5-17v17m3-17v17m5-17v17m4-17v17m3-17v17m5-17v17" stroke="#4E677A" strokeWidth="1.5" />
-        <path d="M3 5V3h45" stroke="white" strokeOpacity=".5" />
-      </g>
+      <path d={PARCEL.left} fill="#C9A47B" />
+      <path d={PARCEL.right} fill="#B78F66" />
+      <path className="parcel-illustration__face-light" d={PARCEL.left} fill="#FFF4D6" />
+      <path d={PARCEL.hairlines} stroke="#987450" strokeOpacity=".25" strokeWidth=".8" />
+      <path className="parcel-illustration__edge" d={PARCEL.edges} stroke="#FFF2CF" strokeWidth="1" />
       <g transform="translate(201 201) rotate(-27)"><path d="M10 22V4m-5 5 5-5 5 5" stroke="#735C43" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></g>
       <g transform="translate(183 234) rotate(-27)">
         <circle r="14" fill="#DECCE2" />
         <circle className="parcel-illustration__seal-light" r="11.5" stroke="#FFF6FF" strokeWidth="1.2" />
         <path d="M0-7V7m-6-10 12 6M-6 3 6-3" stroke="#7C6787" strokeWidth="2" strokeLinecap="round" />
       </g>
-      <ParcelFlap points={[[245, 142], [150, 190], [110, 142], [205, 95]]} openedCorner={[186, 231]} tone="#D1AE85" hidden />
-      <ParcelFlap points={[[55, 142], [150, 190], [197.5, 166], [102.5, 118.5]]} openedCorner={[121, 234]} tone="#DDBD96" />
-      <g className="parcel-illustration__tape"><path d="m96 122 13-7 95 48-13 7-95-48Z" fill="#EBDDCA" /><path d="m103 119 94 47" stroke="#AF9474" strokeOpacity=".6" strokeWidth="1" strokeDasharray="3 3" /></g>
+      <ParcelFlap flap={PARCEL.flaps.frontRight} tone="#D1AE85" hidden />
+      <ParcelFlap flap={PARCEL.flaps.frontLeft} tone="#DDBD96" />
+      {/* The open front flaps hang over the left side, so the face is drawn after them. */}
+      <PipFace />
+      <g className="parcel-illustration__tape"><path d={PARCEL.tape} fill="#EBDDCA" /><path d={PARCEL.seam} stroke="#AF9474" strokeOpacity=".6" strokeWidth="1" strokeDasharray="3 3" /></g>
       <g className="parcel-illustration__glints">
-        {[
-          { x: 43, y: 96, size: 23, color: '#C99B35' },
-          { x: 91, y: 57, size: 16, color: '#D6AE48' },
-          { x: 151, y: 36, size: 24, color: '#C99B35' },
-          { x: 216, y: 55, size: 18, color: '#B594BE' },
-          { x: 261, y: 96, size: 25, color: '#D6AE48' },
-          { x: 233, y: 145, size: 13, color: '#C99B35' },
-        ].map(({ x, y, size, color }, index) => <g key={index} transform={`translate(${x} ${y})`}>
+        {PARCEL.glints.map(({ x, y, size, color }, index) => <g key={index} transform={`translate(${x} ${y})`}>
           <g className="parcel-illustration__sparkle" style={{
             '--sparkle-x': `${(150 - x) * .55}px`, '--sparkle-y': `${(140 - y) * .7}px`,
             '--sparkle-delay': `${index % 3 * .055}s`,
           } as CSSProperties}>
-            <path d="M0 -1 .24 -.24 1 0 .24 .24 0 1 -.24 .24 -1 0 -.24 -.24Z" transform={`scale(${size / 2})`} fill={color} />
+            <path d={PARCEL.glint} transform={`scale(${size / 2})`} fill={color} />
           </g>
         </g>)}
       </g>
     </g>
   </svg>;
 }
+
+/** Pip at sticker size, closed and still, with a face large enough to read. */
+export function SmallPip() {
+  return <svg className="small-pip" viewBox="48 88 204 196" fill="none" aria-hidden="true">
+    <path d={PARCEL.inside} fill="#806345" />
+    <polygon points={flapPoints(PARCEL.flaps.backRight, false)} fill="#D8B997" />
+    <path d={PARCEL.left} fill="#C9A47B" />
+    <path d={PARCEL.right} fill="#B78F66" />
+    <path d={PARCEL.hairlines} stroke="#987450" strokeOpacity=".25" strokeWidth=".8" />
+    <path d={PARCEL.edges} stroke="#FFF2CF" strokeOpacity=".4" strokeWidth="1" />
+    <polygon points={flapPoints(PARCEL.flaps.frontLeft, false)} fill="#DDBD96" />
+    <PipFace k={1.3} />
+    <path d={PARCEL.tape} fill="#EBDDCA" />
+  </svg>;
+}
+

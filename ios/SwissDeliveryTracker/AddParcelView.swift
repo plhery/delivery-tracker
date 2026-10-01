@@ -882,7 +882,7 @@ private struct ParcelArrivalEffect: ViewModifier, Animatable {
     }
 }
 
-/// Small, uneven sparks from the new card's stamp; follows its position while scrolling.
+/// Small Pips fly, unevenly, from the new card's stamp; they follow its position while scrolling.
 struct ParcelAddedBurst: View {
     let stubInset: CGFloat
     let onFinished: () -> Void
@@ -927,7 +927,7 @@ struct ParcelAddedBurst: View {
         let opacity = min(1, progress / 0.05) * min(1, (1 - progress) / 0.3)
         let x = origin.x + CGFloat(parcel.0 * (1 - pow(1 - progress, 2))) * spread
         let y = origin.y + CGFloat(-parcel.1 * progress + 120 * progress * progress)
-        return Text("📦").font(.system(size: CGFloat(parcel.3)))
+        return SmallPip().frame(width: CGFloat(parcel.3) * 1.25)
             .rotationEffect(.degrees(rotation)).scaleEffect(scale).opacity(opacity)
             .position(x: x, y: y)
     }

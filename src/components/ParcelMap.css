@@ -12,8 +12,8 @@
   --map-route: var(--tone); --map-route-muted: color-mix(in srgb, var(--tone) 45%, transparent); --map-accent: var(--tone);
   --map-label: var(--tone); --map-label-strong: var(--tone); --map-label-bg: color-mix(in srgb, var(--tone-surface) 92%, transparent);
   --map-dot-ring: var(--tone-surface);
+  --map-mask: linear-gradient(black 78%, transparent);
   position: absolute; inset: 0; animation: parcel-engraving-in .5s var(--ease-out) both;
-  -webkit-mask-image: linear-gradient(black 78%, transparent); mask-image: linear-gradient(black 78%, transparent);
 }
 .detail__hero .detail__engraving-map *, .parcel-card .parcel-card__engraving-map * { -webkit-backdrop-filter: none; backdrop-filter: none; }
 /* Next up carries the same engraving. Its card is one button, so the drawing takes no touches. */

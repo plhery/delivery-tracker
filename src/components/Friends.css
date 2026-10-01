@@ -79,6 +79,7 @@
 :root .invitation-parcel.opening .parcel-illustration__flap { transform: scaleY(var(--fold-scale)) skewX(var(--fold-skew)); opacity: 1; }
 :root .invitation-parcel.opening .parcel-illustration__tape { opacity: 0; transform: translate(-11px,-27px) rotate(-14deg); }
 :root .invitation-parcel.opening .parcel-illustration__delivery-card { opacity: 1; transform: translateY(-74px) rotate(-4deg); }
+:root .invitation-parcel.opening .parcel-illustration__eye { opacity: 0; }:root .invitation-parcel.opening .parcel-illustration__happy-eye { opacity: 1; }
 :root .invitation-parcel.opening .parcel-illustration__glints { opacity: 1; }:root .invitation-parcel.opening .parcel-illustration__sparkle { animation: friend-parcel-glint .8s ease-out calc(.5s + var(--sparkle-delay)) both; }
 @keyframes friend-parcel-glint { 0% { opacity: 0; transform: scale(.3); } 35% { opacity: .65; } 100% { opacity: 0; transform: translateY(-7px) scale(.65); } }
 :root .invitation-accept .friend-postcard { margin-bottom: 22px; }:root .invitation-accept .friends-privacy { margin-top: 15px; }:root .invitation-sharing-heading { display: flex; align-items: center; justify-content: space-between; margin: 0 0 12px; }:root .invitation-sharing-heading h2 { font-size: 16px; margin: 0; }:root .invitation-sharing-heading button { font-size: 12px; background: none; text-decoration: underline; color: var(--ink-soft); }
