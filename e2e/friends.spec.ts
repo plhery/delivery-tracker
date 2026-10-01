@@ -19,6 +19,10 @@ test('The compact circle opens Passport stamps and keeps bubble dismissal inside
   const details = page.locator('.friends-sheet');
   await expect(details.locator('.friend-postcard')).toContainText('Mila');
   await expect(details.locator('.passport-seal--locked').first()).toBeVisible();
+  // Both kinds of stamp are die cut by a mask on their paper: one wave tile per edge, and nothing clips the stamp itself.
+  for (const stamp of [details.locator('.friend-postcard .postage-stamp'), details.locator('.passport-seal').first()]) {
+    expect(await stamp.evaluate((element) => [getComputedStyle(element).clipPath, getComputedStyle(element, '::before').maskImage.split('url(').length - 1])).toEqual(['none', 4]);
+  }
   await details.getByRole('button', { name: 'First arrival', exact: true }).click();
   await expect(details.locator('.passport-bubble:popover-open')).toContainText('First arrival');
   await page.keyboard.press('Escape');

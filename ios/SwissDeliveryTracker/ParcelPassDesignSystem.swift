@@ -49,54 +49,16 @@ struct ExperimentalBackdrop: View {
     }
 }
 
-/// Cut-out perforations make this read as a paper stamp, even at card size.
-struct PostageStampShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let radius: CGFloat = 2.3
-        let horizontalCount = max(1, Int(rect.width / 9))
-        let verticalCount = max(1, Int(rect.height / 9))
-        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-        for index in 0..<horizontalCount {
-            let x = rect.minX + (CGFloat(index) + 0.5) * rect.width / CGFloat(horizontalCount)
-            path.addLine(to: CGPoint(x: x - radius, y: rect.minY))
-            path.addArc(center: CGPoint(x: x, y: rect.minY), radius: radius,
-                        startAngle: .degrees(180), endAngle: .degrees(0), clockwise: true)
-        }
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-        for index in 0..<verticalCount {
-            let y = rect.minY + (CGFloat(index) + 0.5) * rect.height / CGFloat(verticalCount)
-            path.addLine(to: CGPoint(x: rect.maxX, y: y - radius))
-            path.addArc(center: CGPoint(x: rect.maxX, y: y), radius: radius,
-                        startAngle: .degrees(-90), endAngle: .degrees(90), clockwise: true)
-        }
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-        for index in 0..<horizontalCount {
-            let x = rect.maxX - (CGFloat(index) + 0.5) * rect.width / CGFloat(horizontalCount)
-            path.addLine(to: CGPoint(x: x + radius, y: rect.maxY))
-            path.addArc(center: CGPoint(x: x, y: rect.maxY), radius: radius,
-                        startAngle: .degrees(0), endAngle: .degrees(180), clockwise: true)
-        }
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        for index in 0..<verticalCount {
-            let y = rect.maxY - (CGFloat(index) + 0.5) * rect.height / CGFloat(verticalCount)
-            path.addLine(to: CGPoint(x: rect.minX, y: y + radius))
-            path.addArc(center: CGPoint(x: rect.minX, y: y), radius: radius,
-                        startAngle: .degrees(90), endAngle: .degrees(270), clockwise: true)
-        }
-        path.closeSubpath()
-        return path
-    }
-}
-
 /// A self-adhesive stamp's serpentine die cut: every edge dips into the paper in
 /// even waves that meet at the corners, where each edge starts and ends at full width.
 struct DieCutStampShape: Shape {
-    /// The stamp is designed 44 wide; a wave is 3.6 long and 1.1 deep at that size.
+    /// The parcel's stamp is designed 44 wide and scales its waves with its width.
     static let designWidth: CGFloat = 44
+    /// The length and depth of one wave. The other stamps keep these at any size.
+    var wavelength: CGFloat = 3.6
+    var depth: CGFloat = 1.1
 
     func path(in rect: CGRect) -> Path {
-        let unit = rect.width / Self.designWidth
         var path = Path()
         path.move(to: CGPoint(x: rect.minX, y: rect.minY))
         let corners = [CGPoint(x: rect.minX, y: rect.minY), CGPoint(x: rect.maxX, y: rect.minY),
@@ -105,11 +67,11 @@ struct DieCutStampShape: Shape {
         for side in 0..<4 {
             let from = corners[side], to = corners[(side + 1) % 4]
             let length = hypot(to.x - from.x, to.y - from.y)
-            let waves = max(1, Int((length / (3.6 * unit)).rounded()))
+            let waves = max(1, Int((length / wavelength).rounded()))
             let steps = waves * 10
             for step in 1...steps {
                 let t = CGFloat(step) / CGFloat(steps)
-                let dip = 1.1 * unit * (1 - cos(2 * .pi * CGFloat(waves) * t)) / 2
+                let dip = depth * (1 - cos(2 * .pi * CGFloat(waves) * t)) / 2
                 path.addLine(to: CGPoint(x: from.x + (to.x - from.x) * t + inward[side].dx * dip,
                                          y: from.y + (to.y - from.y) * t + inward[side].dy * dip))
             }
@@ -160,7 +122,7 @@ struct DeliveryPostageStamp: View {
         let ink = identity.ink
         let paper = colorScheme == .dark ? identity.surface.mix(with: ink, by: 0.22) : Color(hex: "#FFFEFA")
         ZStack {
-            DieCutStampShape()
+            DieCutStampShape(wavelength: 3.6 * unit, depth: 1.1 * unit)
                 .fill(paper)
                 .shadow(color: .black.opacity(0.16), radius: 1.2 * unit, y: 0.8 * unit)
             Rectangle()

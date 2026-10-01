@@ -202,7 +202,7 @@ struct FriendAvatarView: View {
         GeometryReader { geometry in
             Text(String(name.prefix(1))).font(.system(size: geometry.size.width * 0.47, weight: .medium))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(surface.mix(with: tint, by: 0.19), in: PostageStampShape())
+                .background(surface.mix(with: tint, by: 0.19), in: DieCutStampShape())
                 .overlay(Rectangle().stroke(tint.opacity(0.34), lineWidth: 0.7).padding(5))
                 .foregroundStyle(tint).rotationEffect(.degrees(-4))
         }.accessibilityHidden(true)

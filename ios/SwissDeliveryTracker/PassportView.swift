@@ -331,7 +331,7 @@ struct PassportSeal: View {
 
     var body: some View {
         ZStack {
-            PostageStampShape().fill(surface)
+            DieCutStampShape().fill(surface)
             Rectangle().strokeBorder(tint.opacity(0.4), lineWidth: 0.7).padding(6)
             if symbol == "10" || symbol == "25" {
                 Text(symbol).font(.system(size: 20, weight: .light)).foregroundStyle(tint)

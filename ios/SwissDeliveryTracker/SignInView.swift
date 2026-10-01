@@ -185,7 +185,7 @@ struct ArrivalView: View {
 private struct FriendshipReceiptStamp: View {
     var body: some View {
         ZStack {
-            PostageStampShape().fill(Brand.cream).shadow(color: .black.opacity(0.18), radius: 5, y: 3)
+            DieCutStampShape().fill(Brand.cream).shadow(color: .black.opacity(0.18), radius: 5, y: 3)
             VStack(spacing: 9) {
                 Image(systemName: "person.2.fill").font(.system(size: 30, weight: .medium))
                 Image(systemName: "checkmark.seal.fill").font(.system(size: 23))
@@ -999,7 +999,7 @@ struct UnwrappingParcel: View, Animatable {
                     // A small delivery card rises from inside. It has no fake data.
                     VStack(alignment: .leading, spacing: 8) {
                         if let senderName {
-                            Text(String(senderName.prefix(1))).font(.system(size: 13, weight: .medium)).frame(width: 21, height: 26).background(Color(hex: "#D1BEDF"), in: PostageStampShape()).frame(maxWidth: .infinity, alignment: .trailing)
+                            Text(String(senderName.prefix(1))).font(.system(size: 13, weight: .medium)).frame(width: 21, height: 26).background(Color(hex: "#D1BEDF"), in: DieCutStampShape()).frame(maxWidth: .infinity, alignment: .trailing)
                             Text(localizer.text("friends.from")).font(.system(size: 8))
                             Text(senderName).font(.system(size: 17, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.45)
                             Capsule().fill(Color(hex: "#B39BC7")).frame(width: 29, height: 1)

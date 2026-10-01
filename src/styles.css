@@ -139,10 +139,24 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .parcel-stamp__postmark { stroke: var(--tone); stroke-width: .9; opacity: .8; }
 .parcel-stamp__postmark circle + circle { stroke-width: .55; }
 .parcel-stamp__postmark text { fill: var(--tone); stroke: none; font-size: 5.2px; font-weight: 750; letter-spacing: .2px; text-anchor: middle; font-variant-numeric: tabular-nums; }
-.postage-stamp { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 72px; height: 86px; flex: 0 0 auto; padding: 9px; background: #fff9e8; color: var(--on-yellow); transform: rotate(-3deg); filter: drop-shadow(0 2px 1px rgb(0 0 0 / 8%)); clip-path: polygon(0 4%,4% 0,10% 4%,16% 0,22% 4%,28% 0,34% 4%,40% 0,46% 4%,52% 0,58% 4%,64% 0,70% 4%,76% 0,82% 4%,88% 0,94% 4%,100% 0,96% 7%,100% 13%,96% 19%,100% 25%,96% 31%,100% 37%,96% 43%,100% 49%,96% 55%,100% 61%,96% 67%,100% 73%,96% 79%,100% 85%,96% 91%,100% 97%,94% 100%,88% 96%,82% 100%,76% 96%,70% 100%,64% 96%,58% 100%,52% 96%,46% 100%,40% 96%,34% 100%,28% 96%,22% 100%,16% 96%,10% 100%,4% 96%,0 100%,4% 91%,0 85%,4% 79%,0 73%,4% 67%,0 61%,4% 55%,0 49%,4% 43%,0 37%,4% 31%,0 25%,4% 19%,0 13%,4% 7%); }
+/* The other stamps share the parcel stamp's die cut. Their paper is a layer behind the print, so the shadow follows the
+   cut and any postmark stays whole. Whatever the stamp's size, the mask bites a whole number of 3.6 by 1.1 waves out of
+   each edge; each tile reaches a pixel past the edge, so rounding leaves no sliver of paper there. */
+.postage-stamp { --stamp-paper: #fff9e8; position: relative; isolation: isolate; display: inline-flex; align-items: center; justify-content: center; width: 72px; height: 86px; flex: 0 0 auto; padding: 9px; color: var(--on-yellow); transform: rotate(-3deg); filter: drop-shadow(0 2px 1px rgb(0 0 0 / 8%)); }
+.postage-stamp::before, .passport-seal::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; background: var(--stamp-paper);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3.6 2.1' preserveAspectRatio='none'%3E%3Cpath d='M0 0H3.6V1C2.94 1 2.46 2.1 1.8 2.1S.66 1 0 1Z'/%3E%3C/svg%3E") 0 -1px / 3.6px 2.1px round no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3.6 2.1' preserveAspectRatio='none'%3E%3Cpath d='M0 2.1H3.6V1.1C2.94 1.1 2.46 0 1.8 0S.66 1.1 0 1.1Z'/%3E%3C/svg%3E") 0 calc(100% + 1px) / 3.6px 2.1px round no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2.1 3.6' preserveAspectRatio='none'%3E%3Cpath d='M0 0V3.6H1C1 2.94 2.1 2.46 2.1 1.8S1 .66 1 0Z'/%3E%3C/svg%3E") -1px 0 / 2.1px 3.6px no-repeat round,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2.1 3.6' preserveAspectRatio='none'%3E%3Cpath d='M2.1 0V3.6H1.1C1.1 2.94 0 2.46 0 1.8S1.1 .66 1.1 0Z'/%3E%3C/svg%3E") calc(100% + 1px) 0 / 2.1px 3.6px no-repeat round,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
 .postage-stamp__print { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #f6e9b7; border: 1px solid #bcab75; }
 .postage-stamp__print svg { width: 30px; height: 30px; stroke-width: 1.4; }
-.postage-stamp__cancel { position: absolute; width: 32px; height: 32px; border: 1px solid rgb(32 37 30 / 30%); border-radius: 50%; bottom: 3px; right: -7px; outline: 1px solid rgb(32 37 30 / 18%); outline-offset: -5px; }
+/* The postmark keeps its place and size relative to the stamp and reaches past the paper's edge, in an ink that shows on light and dark surfaces. */
+.postage-stamp__cancel { position: absolute; width: 44.4%; aspect-ratio: 1; border: 1px solid rgb(128 132 120 / 55%); border-radius: 50%; bottom: 3.5%; right: -9.7%; }
+.postage-stamp__cancel::after { content: ''; position: absolute; inset: 10%; border: 1px solid rgb(128 132 120 / 32%); border-radius: 50%; }
 /* Swipe to archive: the action rides on the card's edge, then leaps to it past the commit point. */
 .parcel-card-swipe__tray { position: absolute; inset: 0; background: var(--orange-soft); }
 .parcel-card-swipe:not([data-swipe]) .parcel-card-swipe__tray { visibility: hidden; }
@@ -275,12 +289,12 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .passport-cover__main > span:first-child { display: flex; flex-direction: column; gap: 9px; font-size: 13px; }
 .passport-cover__main > span:first-child > span { opacity: .7; }
 .passport-cover__count { font-size: 54px; line-height: 1; font-weight: 600; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
-.passport-seal { position: relative; display: block; flex-shrink: 0; width: 54px; height: 67px; padding: 6px; background: var(--tone-surface); color: var(--tone); clip-path:polygon(0 4%,5% 0,11% 4%,17% 0,23% 4%,29% 0,35% 4%,41% 0,47% 4%,53% 0,59% 4%,65% 0,71% 4%,77% 0,83% 4%,89% 0,95% 4%,100% 0,96% 7%,100% 14%,96% 21%,100% 28%,96% 35%,100% 42%,96% 49%,100% 56%,96% 63%,100% 70%,96% 77%,100% 84%,96% 91%,100% 98%,94% 100%,88% 96%,82% 100%,76% 96%,70% 100%,64% 96%,58% 100%,52% 96%,46% 100%,40% 96%,34% 100%,28% 96%,22% 100%,16% 96%,10% 100%,4% 96%,0 100%,4% 91%,0 85%,4% 79%,0 73%,4% 67%,0 61%,4% 55%,0 49%,4% 43%,0 37%,4% 31%,0 25%,4% 19%,0 13%,4% 7%) }
+.passport-seal { --stamp-paper: var(--tone-surface); position: relative; isolation: isolate; display: block; flex-shrink: 0; width: 54px; height: 67px; padding: 6px; color: var(--tone); }
 .passport-seal__frame { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border: 1px solid color-mix(in srgb, currentColor 40%, transparent); }
 .passport-seal svg { width: 24px; height: 24px; stroke-width: 1.1; }
 .passport-seal__ten { font-size: 20px; font-weight: 300; }
 .passport-seal--locked { opacity: .3; filter: grayscale(1); }
-.passport-cover .passport-seal { width: 66px; height: 80px; transform: rotate(-7deg); background: #fff; color: #745300; }
+.passport-cover .passport-seal { --stamp-paper: #fff; width: 66px; height: 80px; transform: rotate(-7deg); color: #745300; }
 .passport-cover .passport-seal::after { content: ''; position: absolute; right: -3px; bottom: 7px; width: 31px; height: 31px; border: 1px solid currentColor; border-radius: 50%; outline: 1px solid currentColor; outline-offset: -5px; opacity: .2; }
 .passport-stamps__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; gap: 8px; }
 .stamp-card { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; min-height: 96px; padding: 2px 0; background: transparent; color: var(--ink-soft); text-align: center; border-radius: 8px; transition: scale .2s var(--spring); }
@@ -643,7 +657,7 @@ button.friend-card:active { scale: .985; }
 .friend-card__name small { color: var(--tone); font-size: 11px; font-weight: 400; }
 .friend-card__name strong { font-size: 20px; letter-spacing: -.5px; overflow-wrap: anywhere; font-weight: 650; }
 .friend-avatar { position: relative; flex: 0 0 auto; color: var(--tone); animation: friend-stamp-land .55s var(--spring) both; }
-.friend-avatar .postage-stamp { width: 42px; height: 48px; padding: 6px; background: var(--paper); color: inherit; transform: rotate(-4deg); transition: scale .3s var(--spring); }
+.friend-avatar .postage-stamp { --stamp-paper: var(--paper); width: 42px; height: 48px; padding: 6px; color: inherit; transform: rotate(-4deg); transition: scale .3s var(--spring); }
 .friend-avatar .postage-stamp__print { background: transparent; border-color: color-mix(in srgb, var(--tone) 25%, transparent); font-size: 23px; font-weight: 650; }
 .friend-avatar__spark { position: absolute; right: -6px; top: -6px; font-size: 17px; animation: friend-spark .65s ease-out both; }
 .friend-card__collection { display: grid; gap: 8px; min-height: 76px; align-content: center; }
@@ -653,7 +667,7 @@ button.friend-card:active { scale: .985; }
 .friend-card__stamps { display: flex; gap: 7px; min-height: 28px; }
 .friend-card__stamps > span { display: flex; animation: friend-stamp-land .4s var(--spring) both; }
 .friend-card__stamps > span:nth-child(2) { animation-delay: .055s; }.friend-card__stamps > span:nth-child(3) { animation-delay: .11s; }.friend-card__stamps > span:nth-child(4) { animation-delay: .165s; }
-.friend-card__stamps .postage-stamp { width: 25px; height: 28px; padding: 4px; color: var(--tone); background: color-mix(in srgb, var(--tone) 9%, var(--tone-surface)); filter: none; }
+.friend-card__stamps .postage-stamp { --stamp-paper: color-mix(in srgb, var(--tone) 9%, var(--tone-surface)); width: 25px; height: 28px; padding: 4px; color: var(--tone); filter: none; }
 .friend-card__stamps > span:nth-child(even) .postage-stamp { transform: rotate(3deg); }
 .friend-card__stamps .postage-stamp__print { border: none; background: transparent; }
 .friend-card__stamps .postage-stamp__cancel { display: none; }
@@ -727,7 +741,7 @@ button.friend-card:focus-visible .friend-avatar .postage-stamp { scale: 1.035; }
 
 /* A friendship is delivered onto the same parcel before its card arrives. */
 .friendship-receipt { position: absolute; left: 52%; top: 44%; width: 30%; aspect-ratio: 100 / 116; transform: rotate(-9deg); pointer-events: none; animation: friendship-stamp-land .55s cubic-bezier(.2,.85,.3,1.15) both; }
-.friendship-receipt .postage-stamp { width: 100%; height: 100%; background: var(--paper); color: var(--green); filter: drop-shadow(0 4px 3px #0003); }
+.friendship-receipt .postage-stamp { --stamp-paper: var(--paper); width: 100%; height: 100%; color: var(--green); filter: drop-shadow(0 4px 3px #0003); }
 .friendship-receipt .postage-stamp__print { background: var(--green-soft); flex-direction: column; gap: 5px; border: 1px dashed currentColor; }
 .friendship-receipt svg { width: 48%; height: 40%; }.friendship-receipt svg:last-child { width: 30%; height: 26%; }
 @keyframes friendship-stamp-land { 0%, 25% { opacity: 0; transform: translateY(-80px) scale(1.8) rotate(-23deg); } 65% { opacity: 1; transform: translateY(3px) scale(.94) rotate(-8deg); } 100% { opacity: 1; transform: translateY(0) scale(1) rotate(-9deg); } }
@@ -735,7 +749,7 @@ button.friend-card:focus-visible .friend-avatar .postage-stamp { scale: 1.035; }
 .friend-card[data-arriving="waiting"] { opacity: 0; transform: translateX(80px) rotate(2deg); }
 .friend-card[data-arriving="landed"] { opacity: 1; transform: translateX(0) rotate(0); }
 .friend-accepted-notice { position: fixed; z-index: 50; top: max(14px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: min(520px, calc(100% - 32px)); display: flex; align-items: center; gap: 6px; padding: 10px 12px 10px 16px; border-radius: 22px; background: var(--paper); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 8px 30px #0002; animation: friend-notice-enter .35s ease-out; }
-.friend-accepted-notice__open { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; text-align: left; border: 0; background: none; color: inherit; font: inherit; font-size: 14px; font-weight: 550; padding: 0; min-height: 44px; cursor: pointer; }.friend-accepted-notice__open > span:not(.postage-stamp) { flex: 1; }.friend-accepted-notice .postage-stamp { width: 32px; height: 40px; flex-shrink: 0; color: var(--green); }.friend-accepted-notice .icon-button { flex-shrink: 0; }
+.friend-accepted-notice__open { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; text-align: left; border: 0; background: none; color: inherit; font: inherit; font-size: 14px; font-weight: 550; padding: 0; min-height: 44px; cursor: pointer; }.friend-accepted-notice__open > span:not(.postage-stamp) { flex: 1; }.friend-accepted-notice .postage-stamp { width: 32px; height: 40px; padding: 5px; flex-shrink: 0; color: #24613e; }.friend-accepted-notice .postage-stamp svg { width: 15px; height: 15px; }.friend-accepted-notice .icon-button { flex-shrink: 0; }
 @keyframes friend-notice-enter { from { opacity: 0; transform: translate(-50%, -14px); } to { opacity: 1; transform: translate(-50%, 0); } }
 @media (prefers-reduced-motion: reduce) { .friendship-receipt { animation: none; }.friend-card[data-arriving="waiting"] { transform: none; }.friend-card[data-arriving] { transition: opacity .15s; }.friend-accepted-notice { animation: none; } }
 .friends-received-card { width: 100%; max-width: 520px; margin-bottom: 18px; }.friends-received-card > .friend-card { width: 100%; }

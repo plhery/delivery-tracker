@@ -6,7 +6,7 @@
 :root .friend-card__copy > strong { font-size: 18px; font-weight: 650; letter-spacing: -.4px; overflow-wrap: anywhere; }
 :root .friend-card__summary { font-size: 11px; color: var(--tone); }
 :root .friends-page .friend-avatar, :root .friends-sheet .friend-avatar { animation: none; }
-:root .friends-page .friend-avatar .postage-stamp, :root .friends-sheet .friend-avatar .postage-stamp, :root .invitation-accept .friend-avatar .postage-stamp { background: color-mix(in srgb, var(--tone-surface) 81%, var(--tone)); color: var(--tone); filter: none; }
+:root .friends-page .friend-avatar .postage-stamp, :root .friends-sheet .friend-avatar .postage-stamp, :root .invitation-accept .friend-avatar .postage-stamp { --stamp-paper: color-mix(in srgb, var(--tone-surface) 81%, var(--tone)); color: var(--tone); filter: none; }
 :root .friend-card__arrival { display: flex; gap: 5px; align-items: center; border: 0; padding: 0; margin-top: 5px; color: var(--tone); font-size: 11px; }
 :root .friend-card__arrival::before { content: ''; width: 4px; height: 4px; background: currentColor; border-radius: 50%; }
 :root .friends-own-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 0 20px; border: 0; border-bottom: 1px solid var(--line); background: transparent; text-align: left; }
