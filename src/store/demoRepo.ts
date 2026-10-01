@@ -4,6 +4,7 @@ import {
   normalizeTrackingNumber,
   supportsSwissPostHandoff,
 } from '../lib/carriers';
+import { isLocale, type Locale } from '../lib/locale';
 import { currentStage, isFinal, latestEvent } from '../lib/stages';
 import { uid } from '../lib/uid';
 import {
@@ -35,6 +36,28 @@ interface DemoSample {
 const demoCatalog: DemoSample[] = demoSamples;
 const HOUR = 3_600_000;
 const CATALOG_KEY = 'sdt.demo.catalog.v2';
+/** The language the saved demo text is written in; English when absent. */
+const LANGUAGE_KEY = 'sdt.demo.language.v1';
+
+/** The demo's own English text and its translation; a language loads when the demo first needs it. */
+type DemoDictionary = Record<string, string>;
+const dictionaryLoaders: Record<Exclude<Locale, 'en'>, () => Promise<{ default: DemoDictionary }>> = {
+  de: () => import('../../shared/demo-locales/de.json'),
+  fr: () => import('../../shared/demo-locales/fr.json'),
+  it: () => import('../../shared/demo-locales/it.json'),
+  es: () => import('../../shared/demo-locales/es.json'),
+  pt: () => import('../../shared/demo-locales/pt.json'),
+  pl: () => import('../../shared/demo-locales/pl.json'),
+};
+const dictionaries = new Map<Locale, DemoDictionary>([['en', {}]]);
+
+async function demoDictionary(locale: Locale): Promise<DemoDictionary> {
+  const loaded = dictionaries.get(locale);
+  if (loaded) return loaded;
+  const dictionary = (await dictionaryLoaders[locale as Exclude<Locale, 'en'>]()).default;
+  dictionaries.set(locale, dictionary);
+  return dictionary;
+}
 
 function createMemoryStorage(): Storage {
   const values = new Map<string, string>();
@@ -151,7 +174,7 @@ export function nextStage(stage: Stage): Stage | null {
   }
 }
 
-function event(
+function simulatedEvent(
   parcelId: string,
   stage: Stage,
   occurredAt: string,
@@ -232,12 +255,15 @@ export function createDemoRepo(
   storage: Storage = defaultStorage(),
   now: () => number = Date.now,
 ): ParcelRepo {
-  function getAll(): ParcelWithEvents[] {
+  let language: Locale = 'en';
+
+  function saved(): ParcelWithEvents[] {
     let parcels = load(storage);
     if (!parcels) {
       parcels = seedParcels(now());
       save(storage, parcels);
       storage.setItem(CATALOG_KEY, '1');
+      storage.removeItem(LANGUAGE_KEY);
     } else if (!storage.getItem(CATALOG_KEY)) {
       // Upgrade existing demos once, preserving edits, archives, and custom parcels.
       // Empty lists and separately seeded test/showcase data stay as they are.
@@ -251,6 +277,44 @@ export function createDemoRepo(
     }
     return parcels;
   }
+
+  /**
+   * The saved parcels with the demo's own text in the app's language. Names
+   * someone edited and text the demo did not write match nothing and stay.
+   */
+  async function getAll(): Promise<ParcelWithEvents[]> {
+    const target = language;
+    const wanted = await demoDictionary(target);
+    const written = storage.getItem(LANGUAGE_KEY);
+    const from = isLocale(written) ? written : 'en';
+    if (from === target) return saved();
+    const english = new Map(Object.entries(await demoDictionary(from)).map(([text, translated]) => [translated, text]));
+    const say = (text: string) => {
+      const original = english.get(text) ?? text;
+      return wanted[original] ?? original;
+    };
+    const parcels = saved().map((parcel) => ({
+      ...parcel,
+      label: say(parcel.label),
+      events: parcel.events.map((scan) => ({
+        ...scan, description: say(scan.description), location: scan.location && say(scan.location),
+      })),
+    }));
+    save(storage, parcels);
+    storage.setItem(LANGUAGE_KEY, target);
+    return parcels;
+  }
+
+  /** A simulated scan, said in the language the demo is written in. */
+  const event = (parcelId: string, stage: Stage, occurredAt: string): TrackingEvent => {
+    const scan = simulatedEvent(parcelId, stage, occurredAt);
+    const dictionary = dictionaries.get(language) ?? {};
+    return {
+      ...scan,
+      description: dictionary[scan.description] ?? scan.description,
+      location: scan.location && (dictionary[scan.location] ?? scan.location),
+    };
+  };
 
   const sortNewestFirst = (parcels: ParcelWithEvents[]) =>
     [...parcels].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -279,18 +343,22 @@ export function createDemoRepo(
     mode: 'demo',
 
     async list() {
-      return sortNewestFirst(getAll());
+      return sortNewestFirst(await getAll());
+    },
+
+    setLanguage(locale: Locale) {
+      language = locale;
     },
 
     async resetDemo() {
-      const parcels = seedParcels(now());
-      save(storage, parcels);
+      save(storage, seedParcels(now()));
       storage.setItem(CATALOG_KEY, '1');
-      return sortNewestFirst(parcels);
+      storage.removeItem(LANGUAGE_KEY);
+      return sortNewestFirst(await getAll());
     },
 
     async add(input: NewParcelInput) {
-      const parcels = getAll();
+      const parcels = await getAll();
       const trackingNumber = normalizeTrackingNumber(input.trackingNumber);
       const existing = parcels.find((candidate) => candidate.trackingNumber === trackingNumber);
       if (existing) {
@@ -325,7 +393,7 @@ export function createDemoRepo(
       if (label.length > 80) {
         throw new Error('Parcel names can be at most 80 characters');
       }
-      const parcels = getAll();
+      const parcels = await getAll();
       const parcel = parcels.find((candidate) => candidate.id === id);
       if (!parcel) throw new Error('Parcel not found');
       const renamed = { ...parcel, label };
@@ -337,7 +405,7 @@ export function createDemoRepo(
     },
 
     async changeCarrier(id: string, input: ParcelCarrierInput) {
-      const parcels = getAll();
+      const parcels = await getAll();
       const parcel = parcels.find((candidate) => candidate.id === id);
       if (!parcel) throw new Error('Parcel not found');
       const changedAt = new Date(now()).toISOString();
@@ -366,7 +434,7 @@ export function createDemoRepo(
     },
 
     async setNotificationsMuted(id: string, muted: boolean) {
-      const parcels = getAll();
+      const parcels = await getAll();
       const parcel = parcels.find((candidate) => candidate.id === id);
       if (!parcel) throw new Error('Parcel not found');
       const updated = { ...parcel, notificationsMuted: muted };
@@ -381,12 +449,12 @@ export function createDemoRepo(
       const archivedAt = new Date(now()).toISOString();
       save(
         storage,
-        getAll().map((parcel) => parcel.id === id ? { ...parcel, archivedAt } : parcel),
+        (await getAll()).map((parcel) => parcel.id === id ? { ...parcel, archivedAt } : parcel),
       );
     },
 
     async restore(id: string) {
-      const parcels = getAll();
+      const parcels = await getAll();
       const parcel = parcels.find((candidate) => candidate.id === id);
       if (!parcel) throw new Error('Parcel not found');
       const restored = { ...parcel };
@@ -399,20 +467,20 @@ export function createDemoRepo(
     },
 
     async deletePermanently(id: string) {
-      const parcels = getAll();
+      const parcels = await getAll();
       const parcel = parcels.find((candidate) => candidate.id === id);
       if (!parcel) throw new Error('Parcel not found');
       save(storage, parcels.filter((candidate) => candidate.id !== id));
     },
 
     async refresh() {
-      const advanced = getAll().map(advance);
+      const advanced = (await getAll()).map(advance);
       save(storage, advanced);
       return sortNewestFirst(advanced);
     },
 
     async refreshParcel(id: string) {
-      const parcels = getAll();
+      const parcels = await getAll();
       const parcel = parcels.find((candidate) => candidate.id === id);
       if (!parcel) throw new Error('Parcel not found');
       const advanced = advance(parcel);

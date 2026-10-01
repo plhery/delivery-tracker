@@ -281,6 +281,8 @@ describe('App', () => {
 
     const next = screen.getByRole('button', { name: /Next up: New sneakers/ });
     expect(within(next).getByText('Ready for pickup')).toBeInTheDocument();
+    expect(within(next).getByText('Kiosk im Hauptbahnhof')).toBeInTheDocument();
+    expect(next).toHaveAccessibleName('Next up: New sneakers 👟 — Ready for pickup · Kiosk im Hauptbahnhof');
     expect(next.querySelector('.parcel-stamp')).toBeInTheDocument();
     expect(within(next).queryByText('Customs clearance')).not.toBeInTheDocument();
     expect(next.querySelector('.progress-track')).not.toBeInTheDocument();

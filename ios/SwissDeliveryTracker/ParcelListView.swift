@@ -778,7 +778,7 @@ private struct ExperimentalNextDeliveryPass: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Text([localizer.parcelStatus(parcel), localizer.parcelDeliveryEstimate(parcel)]
+            Text([localizer.parcelStatus(parcel), parcel.pickupPlace, localizer.parcelDeliveryEstimate(parcel)]
                 .compactMap { $0 }.joined(separator: " · "))
                 .font(.caption)
                 .foregroundStyle(identity.ink)
@@ -851,7 +851,7 @@ private struct ExperimentalParcelPassCard: View {
             if flag == nil || parcel.hasCarrierUpdate {
                 HStack(spacing: 5) {
                     if parcel.isDelivered { Image(systemName: "checkmark").font(.caption2.weight(.light)).accessibilityHidden(true) }
-                    Text(localizer.parcelStatus(parcel))
+                    Text([localizer.parcelStatus(parcel), parcel.pickupPlace].compactMap { $0 }.joined(separator: " · "))
                 }
                     .font(.caption)
                     .foregroundStyle(identity.ink)

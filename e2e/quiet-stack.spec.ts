@@ -19,6 +19,18 @@ async function seed(page: Page, parcels: ParcelWithEvents[]) {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
 }
 
+test('writes the demo in the chosen language and names the pickup point on the next arrival', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('deliveryTrackerLocale', 'fr'));
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const hero = page.locator('.parcel-card--hero');
+  await expect(hero).toContainText('Nouvelles baskets 👟');
+  await expect(hero.locator('.parcel-card__place')).toHaveText('Kiosk im Hauptbahnhof');
+  await expect(page.getByText('Chocolat belge 🍫')).toBeVisible();
+  await hero.click();
+  await expect(page.locator('.detail--postcard')).toContainText('Personne à la maison. Sans doute parti courir.');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test('keeps the next arrival, flagged issue card, and search tools in one compact feed', async ({ page, isMobile }) => {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   const hero = page.getByRole('button', { name: /^Next up: New sneakers/ });

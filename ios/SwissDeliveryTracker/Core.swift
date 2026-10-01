@@ -58,6 +58,16 @@ enum AppLanguage: String, CaseIterable, Identifiable, Codable, Hashable {
 
     var id: String { rawValue }
     var locale: Locale { Locale(identifier: self == .pt ? "pt-PT" : rawValue) }
+
+    static let storageKey = "deliveryTrackerLocale"
+    /// The chosen language, else the first of the device's languages the app speaks.
+    static var current: AppLanguage {
+        let saved = UserDefaults.standard.string(forKey: storageKey)
+        let preferred = Locale.preferredLanguages.compactMap {
+            AppLanguage(rawValue: $0.split(separator: "-").first.map(String.init)?.lowercased() ?? "")
+        }.first
+        return AppLanguage(rawValue: saved ?? "") ?? preferred ?? .en
+    }
     var nativeName: String {
         switch self {
         case .en: "English"
@@ -75,12 +85,11 @@ enum AppLanguage: String, CaseIterable, Identifiable, Codable, Hashable {
 final class Localizer: ObservableObject {
     @Published var language: AppLanguage {
         didSet {
-            UserDefaults.standard.set(language.rawValue, forKey: Self.storageKey)
+            UserDefaults.standard.set(language.rawValue, forKey: AppLanguage.storageKey)
             saveSharedLanguage()
         }
     }
 
-    private static let storageKey = "deliveryTrackerLocale"
     private let dictionaries: [String: [String: String]]
     private struct TrackingMessages: Decodable {
         struct Event: Decodable { let key: String; let variables: [String: String] }
@@ -97,13 +106,7 @@ final class Localizer: ObservableObject {
         } else {
             trackingMessages = TrackingMessages(events: [:], failures: [:])
         }
-        let saved = UserDefaults.standard.string(forKey: Self.storageKey)
-        let preferred = Locale.preferredLanguages.compactMap {
-            AppLanguage(rawValue: $0.split(separator: "-").first.map(String.init)?.lowercased() ?? "")
-        }.first
-        language = AppLanguage(rawValue: saved ?? "")
-            ?? preferred
-            ?? .en
+        language = AppLanguage.current
         if let url = bundle.url(forResource: "Localization", withExtension: "json"),
            let data = try? Data(contentsOf: url),
            let decoded = try? JSONDecoder().decode([String: [String: String]].self, from: data) {
@@ -116,7 +119,7 @@ final class Localizer: ObservableObject {
 
     private func saveSharedLanguage() {
         UserDefaults(suiteName: AppConfiguration.current.appGroupIdentifier)?
-            .set(language.rawValue, forKey: Self.storageKey)
+            .set(language.rawValue, forKey: AppLanguage.storageKey)
     }
 
     func text(_ key: String, _ variables: [String: CustomStringConvertible] = [:]) -> String {

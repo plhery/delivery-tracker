@@ -1,3 +1,4 @@
+import type { Locale } from './lib/locale';
 import type {
   ApiCarrierId,
   ApiEventPlace,
@@ -112,6 +113,8 @@ export class RefreshTimeoutError extends Error {
 export interface ParcelRepo {
   readonly mode: 'api' | 'demo';
   list(): Promise<ParcelWithEvents[]>;
+  /** The local demo writes its sample parcels in this language. */
+  setLanguage?(locale: Locale): void;
   /** Restore the original sample parcels; available only in the local demo. */
   resetDemo?(): Promise<ParcelWithEvents[]>;
   add(input: NewParcelInput): Promise<ParcelWithEvents>;

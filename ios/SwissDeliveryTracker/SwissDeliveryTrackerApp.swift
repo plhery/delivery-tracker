@@ -156,6 +156,7 @@ struct RootView: View {
             await session.saveEmailLanguage(localizer.language)
         }
         .onChange(of: localizer.language) { _, language in
+            parcels.demoLanguageChanged()
             parcels.refreshDeliverySurfaces()
             guard let token = AppDelegate.currentDeviceToken else { return }
             Task { await parcels.forwardNativePushToken(token, language: language) }

@@ -1,965 +1,1497 @@
-[
-  {
-    "label": "Coffee beans ☕",
-    "trackingNumber": "993412345678901234",
-    "carrier": "swiss-post",
-    "senderName": "Rösterei Morgenrot",
-    "weightKg": 0.5,
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 72,
-        "description": "The roastery packed your monthly coffee"
-      },
-      {
-        "stage": "accepted",
-        "hoursAgo": 60,
-        "description": "Freshly roasted beans handed to Swiss Post",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
+{
+  "parcels": [
+    {
+      "label": "Coffee beans ☕",
+      "trackingNumber": "993412345678901234",
+      "carrier": "swiss-post",
+      "senderName": "Rösterei Morgenrot",
+      "weightKg": 0.5,
+      "events": [
+        {
+          "stage": "registered",
+          "hoursAgo": 72,
+          "description": "The roastery packed your monthly coffee"
+        },
+        {
+          "stage": "accepted",
+          "hoursAgo": 60,
+          "description": "Freshly roasted beans handed to Swiss Post",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
+        },
+        {
+          "stage": "in_transit",
+          "hoursAgo": 40,
+          "description": "Sorted overnight, still smelling wonderful",
+          "location": "Härkingen, Switzerland",
+          "place": {
+            "latitude": 47.305,
+            "longitude": 7.821,
+            "precision": "city",
+            "country": "CH",
+            "name": "Härkingen"
+          }
+        },
+        {
+          "stage": "out_for_delivery",
+          "hoursAgo": 28,
+          "description": "With your local delivery round",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
+        },
+        {
+          "stage": "delivered",
+          "hoursAgo": 26,
+          "description": "Delivered to your mailbox. Mornings are saved.",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
         }
-      },
-      {
-        "stage": "in_transit",
-        "hoursAgo": 40,
-        "description": "Sorted overnight, still smelling wonderful",
-        "location": "Härkingen, Switzerland",
-        "place": {
-          "latitude": 47.305,
-          "longitude": 7.821,
-          "precision": "city",
-          "country": "CH",
-          "name": "Härkingen"
+      ]
+    },
+    {
+      "label": "New sneakers 👟",
+      "trackingNumber": "1234567899",
+      "carrier": "dhl",
+      "senderName": "Elbe Laufladen",
+      "pickupPoint": "Kiosk im Hauptbahnhof\nBahnhofplatz 15, 8001 Zürich",
+      "weightKg": 0.9,
+      "events": [
+        {
+          "stage": "registered",
+          "hoursAgo": 58,
+          "description": "Your running shoes are packed"
+        },
+        {
+          "stage": "accepted",
+          "hoursAgo": 48,
+          "description": "Collected from the running shop",
+          "location": "Hamburg, Germany",
+          "place": {
+            "latitude": 53.551,
+            "longitude": 9.993,
+            "precision": "city",
+            "country": "DE",
+            "name": "Hamburg"
+          }
+        },
+        {
+          "stage": "in_transit",
+          "hoursAgo": 30,
+          "description": "Arrived at the destination depot",
+          "location": "Regensdorf, Switzerland",
+          "place": {
+            "latitude": 47.434,
+            "longitude": 8.469,
+            "precision": "city",
+            "country": "CH",
+            "name": "Regensdorf"
+          }
+        },
+        {
+          "stage": "out_for_delivery",
+          "hoursAgo": 24,
+          "description": "With the courier for delivery",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
+        },
+        {
+          "stage": "failed_attempt",
+          "hoursAgo": 21,
+          "description": "Nobody home. Out for a run, presumably.",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
+        },
+        {
+          "stage": "ready_for_pickup",
+          "hoursAgo": 4,
+          "description": "Waiting for you at the pickup point",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
         }
-      },
-      {
-        "stage": "out_for_delivery",
-        "hoursAgo": 28,
-        "description": "With your local delivery round",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
+      ]
+    },
+    {
+      "label": "Birthday gift 🎁",
+      "trackingNumber": "LX123456789DE",
+      "carrier": "chronopost",
+      "senderName": "Mamie",
+      "weightKg": 1.2,
+      "events": [
+        {
+          "stage": "registered",
+          "hoursAgo": 50,
+          "description": "A little surprise is on its way"
+        },
+        {
+          "stage": "accepted",
+          "hoursAgo": 44,
+          "description": "Handed over at the post office counter",
+          "location": "Lyon, France",
+          "place": {
+            "latitude": 45.749,
+            "longitude": 4.848,
+            "precision": "city",
+            "country": "FR",
+            "name": "Lyon"
+          }
+        },
+        {
+          "stage": "customs",
+          "hoursAgo": 12,
+          "description": "Customs is taking a look. No peeking.",
+          "location": "Basel, Switzerland",
+          "place": {
+            "latitude": 47.558,
+            "longitude": 7.573,
+            "precision": "city",
+            "country": "CH",
+            "name": "Basel"
+          }
         }
-      },
-      {
-        "stage": "delivered",
-        "hoursAgo": 26,
-        "description": "Delivered to your mailbox. Mornings are saved.",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
+      ]
+    },
+    {
+      "label": "Belgian chocolate 🍫",
+      "trackingNumber": "DEMOCHOC20260001",
+      "carrier": "fedex",
+      "expectedInDays": 0,
+      "senderName": "Chocolaterie Discrète",
+      "weightKg": 0.8,
+      "events": [
+        {
+          "stage": "registered",
+          "hoursAgo": 44,
+          "description": "Pralines boxed with great care"
+        },
+        {
+          "stage": "accepted",
+          "hoursAgo": 38,
+          "description": "Collected from the chocolatier",
+          "location": "Brussels, Belgium",
+          "place": {
+            "latitude": 50.85,
+            "longitude": 4.349,
+            "precision": "city",
+            "country": "BE",
+            "name": "Brussels"
+          }
+        },
+        {
+          "stage": "in_transit",
+          "hoursAgo": 14,
+          "description": "Crossed the border. Swiss chocolate was not informed.",
+          "location": "Basel, Switzerland",
+          "place": {
+            "latitude": 47.558,
+            "longitude": 7.573,
+            "precision": "city",
+            "country": "CH",
+            "name": "Basel"
+          }
+        },
+        {
+          "stage": "out_for_delivery",
+          "hoursAgo": 2,
+          "description": "With the courier for delivery today",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
         }
-      }
-    ]
-  },
-  {
-    "label": "New sneakers 👟",
-    "trackingNumber": "1234567899",
-    "carrier": "dhl",
-    "senderName": "Elbe Laufladen",
-    "pickupPoint": "Kiosk im Hauptbahnhof\nBahnhofplatz 15, 8001 Zürich",
-    "weightKg": 0.9,
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 58,
-        "description": "Your running shoes are packed"
-      },
-      {
-        "stage": "accepted",
-        "hoursAgo": 48,
-        "description": "Collected from the running shop",
-        "location": "Hamburg, Germany",
-        "place": {
-          "latitude": 53.551,
-          "longitude": 9.993,
-          "precision": "city",
-          "country": "DE",
-          "name": "Hamburg"
+      ]
+    },
+    {
+      "label": "Moon lamp 🌙",
+      "trackingNumber": "DEMOGLS20260001",
+      "carrier": "gls-de",
+      "expectedInDays": 2,
+      "senderName": "Studio Luna",
+      "weightKg": 1.4,
+      "events": [
+        {
+          "stage": "registered",
+          "hoursAgo": 54,
+          "description": "Your bedside moon is ready to travel"
+        },
+        {
+          "stage": "accepted",
+          "hoursAgo": 40,
+          "description": "Collected from the design studio",
+          "location": "Berlin, Germany",
+          "place": {
+            "latitude": 52.524,
+            "longitude": 13.411,
+            "precision": "city",
+            "country": "DE",
+            "name": "Berlin"
+          }
+        },
+        {
+          "stage": "in_transit",
+          "hoursAgo": 5,
+          "description": "Left the sorting hub. Full moon expected soon.",
+          "location": "Neuenstein, Germany",
+          "place": {
+            "latitude": 49.205,
+            "longitude": 9.58,
+            "precision": "city",
+            "country": "DE",
+            "name": "Neuenstein"
+          }
         }
-      },
-      {
-        "stage": "in_transit",
-        "hoursAgo": 30,
-        "description": "Arrived at the destination depot",
-        "location": "Regensdorf, Switzerland",
-        "place": {
-          "latitude": 47.434,
-          "longitude": 8.469,
-          "precision": "city",
-          "country": "CH",
-          "name": "Regensdorf"
+      ]
+    },
+    {
+      "label": "Kind of Blue · vinyl 🎷",
+      "trackingNumber": "1ZDEMO202600000001",
+      "carrier": "ups",
+      "senderName": "Round Midnight Records",
+      "weightKg": 0.4,
+      "events": [
+        {
+          "stage": "registered",
+          "hoursAgo": 56,
+          "description": "The record shop packed your pressing"
+        },
+        {
+          "stage": "accepted",
+          "hoursAgo": 43,
+          "description": "Collected from the record shop",
+          "location": "Amsterdam, Netherlands",
+          "place": {
+            "latitude": 52.374,
+            "longitude": 4.89,
+            "precision": "city",
+            "country": "NL",
+            "name": "Amsterdam"
+          }
+        },
+        {
+          "stage": "in_transit",
+          "hoursAgo": 6,
+          "description": "Travelling south at a steady 33⅓ rpm",
+          "location": "Eindhoven, Netherlands",
+          "place": {
+            "latitude": 51.441,
+            "longitude": 5.478,
+            "precision": "city",
+            "country": "NL",
+            "name": "Eindhoven"
+          }
         }
-      },
-      {
-        "stage": "out_for_delivery",
-        "hoursAgo": 24,
-        "description": "With the courier for delivery",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
+      ]
+    },
+    {
+      "label": "Trail weekend kit 🏕️",
+      "trackingNumber": "DEMODPD20260001",
+      "carrier": "dpd",
+      "expectedInDays": 1,
+      "senderName": "Gipfelstube Outdoor",
+      "weightKg": 2.3,
+      "events": [
+        {
+          "stage": "registered",
+          "hoursAgo": 38,
+          "description": "Your trail essentials are packed"
+        },
+        {
+          "stage": "accepted",
+          "hoursAgo": 8,
+          "description": "Collected from the outdoor shop",
+          "location": "Buchs, Switzerland",
+          "place": {
+            "latitude": 47.167,
+            "longitude": 9.478,
+            "precision": "city",
+            "country": "CH",
+            "name": "Buchs"
+          }
         }
-      },
-      {
-        "stage": "failed_attempt",
-        "hoursAgo": 21,
-        "description": "Nobody home. Out for a run, presumably.",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
+      ]
+    },
+    {
+      "label": "35mm film rolls 🎞️",
+      "trackingNumber": "DEMOFILM20260001",
+      "carrier": "an-post",
+      "expectedInDays": 3,
+      "senderName": "The Darkroom, Dublin",
+      "events": [
+        {
+          "stage": "registered",
+          "hoursAgo": 36,
+          "description": "The photo lab has announced your parcel"
         }
-      },
-      {
-        "stage": "ready_for_pickup",
-        "hoursAgo": 4,
-        "description": "Waiting for you at the pickup point",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
+      ]
+    },
+    {
+      "label": "Matcha ritual 🍵",
+      "trackingNumber": "DEMOMATCHA20260001",
+      "carrier": "fedex",
+      "senderName": "Uji Tea House",
+      "weightKg": 0.3,
+      "events": [
+        {
+          "stage": "registered",
+          "hoursAgo": 178,
+          "description": "Tea tins wrapped in Kyoto"
+        },
+        {
+          "stage": "accepted",
+          "hoursAgo": 170,
+          "description": "Collected from the tea house",
+          "location": "Kyoto, Japan",
+          "place": {
+            "latitude": 35.021,
+            "longitude": 135.754,
+            "precision": "city",
+            "country": "JP",
+            "name": "Kyoto"
+          }
+        },
+        {
+          "stage": "in_transit",
+          "hoursAgo": 110,
+          "description": "Sorted for the journey to Zürich",
+          "location": "Härkingen, Switzerland",
+          "place": {
+            "latitude": 47.305,
+            "longitude": 7.821,
+            "precision": "city",
+            "country": "CH",
+            "name": "Härkingen"
+          }
+        },
+        {
+          "stage": "out_for_delivery",
+          "hoursAgo": 52,
+          "description": "On the final stretch to your door",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
+        },
+        {
+          "stage": "delivered",
+          "hoursAgo": 50,
+          "description": "Delivered. Time to put the kettle on.",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
         }
-      }
-    ]
-  },
-  {
-    "label": "Birthday gift 🎁",
-    "trackingNumber": "LX123456789DE",
-    "carrier": "chronopost",
-    "senderName": "Mamie",
-    "weightKg": 1.2,
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 50,
-        "description": "A little surprise is on its way"
-      },
-      {
-        "stage": "accepted",
-        "hoursAgo": 44,
-        "description": "Handed over at the post office counter",
-        "location": "Lyon, France",
-        "place": {
-          "latitude": 45.749,
-          "longitude": 4.848,
-          "precision": "city",
-          "country": "FR",
-          "name": "Lyon"
+      ]
+    },
+    {
+      "label": "Sunday in Kyoto 📚",
+      "trackingNumber": "DEMOBOOK20260001",
+      "carrier": "chronopost",
+      "senderName": "Librairie des Voyageurs",
+      "weightKg": 0.35,
+      "events": [
+        {
+          "stage": "registered",
+          "hoursAgo": 118,
+          "description": "A paperback was chosen for you"
+        },
+        {
+          "stage": "accepted",
+          "hoursAgo": 110,
+          "description": "Collected from the bookshop",
+          "location": "Paris, France",
+          "place": {
+            "latitude": 48.853,
+            "longitude": 2.349,
+            "precision": "city",
+            "country": "FR",
+            "name": "Paris"
+          }
+        },
+        {
+          "stage": "in_transit",
+          "hoursAgo": 92,
+          "description": "Sorted for the journey to Zürich",
+          "location": "Härkingen, Switzerland",
+          "place": {
+            "latitude": 47.305,
+            "longitude": 7.821,
+            "precision": "city",
+            "country": "CH",
+            "name": "Härkingen"
+          }
+        },
+        {
+          "stage": "out_for_delivery",
+          "hoursAgo": 76,
+          "description": "On the final stretch to your door",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
+        },
+        {
+          "stage": "delivered",
+          "hoursAgo": 74,
+          "description": "Delivered. The unread pile grows.",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
         }
-      },
-      {
-        "stage": "customs",
-        "hoursAgo": 12,
-        "description": "Customs is taking a look. No peeking.",
-        "location": "Basel, Switzerland",
-        "place": {
-          "latitude": 47.558,
-          "longitude": 7.573,
-          "precision": "city",
-          "country": "CH",
-          "name": "Basel"
+      ]
+    },
+    {
+      "label": "Mechanical keyboard ⌨️",
+      "trackingNumber": "DEMOKEYS20260001",
+      "carrier": "dhl",
+      "senderName": "Clack & Co.",
+      "weightKg": 1.1,
+      "events": [
+        {
+          "stage": "registered",
+          "hoursAgo": 148,
+          "description": "Switches tested, keycaps counted"
+        },
+        {
+          "stage": "accepted",
+          "hoursAgo": 140,
+          "description": "Collected from the workshop",
+          "location": "Berlin, Germany",
+          "place": {
+            "latitude": 52.524,
+            "longitude": 13.411,
+            "precision": "city",
+            "country": "DE",
+            "name": "Berlin"
+          }
+        },
+        {
+          "stage": "in_transit",
+          "hoursAgo": 119,
+          "description": "Sorted for the journey to Zürich",
+          "location": "Härkingen, Switzerland",
+          "place": {
+            "latitude": 47.305,
+            "longitude": 7.821,
+            "precision": "city",
+            "country": "CH",
+            "name": "Härkingen"
+          }
+        },
+        {
+          "stage": "out_for_delivery",
+          "hoursAgo": 100,
+          "description": "On the final stretch to your door",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
+        },
+        {
+          "stage": "delivered",
+          "hoursAgo": 98,
+          "description": "Delivered. The neighbours have been warned.",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
         }
-      }
-    ]
-  },
-  {
-    "label": "Belgian chocolate 🍫",
-    "trackingNumber": "DEMOCHOC20260001",
-    "carrier": "fedex",
-    "expectedInDays": 0,
-    "senderName": "Chocolaterie Discrète",
-    "weightKg": 0.8,
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 44,
-        "description": "Pralines boxed with great care"
-      },
-      {
-        "stage": "accepted",
-        "hoursAgo": 38,
-        "description": "Collected from the chocolatier",
-        "location": "Brussels, Belgium",
-        "place": {
-          "latitude": 50.85,
-          "longitude": 4.349,
-          "precision": "city",
-          "country": "BE",
-          "name": "Brussels"
+      ]
+    },
+    {
+      "label": "Cat tree 🐈",
+      "trackingNumber": "DEMOCAT20260001",
+      "carrier": "spring-gds",
+      "senderName": "Whisker Works",
+      "weightKg": 8.6,
+      "events": [
+        {
+          "stage": "registered",
+          "hoursAgo": 208,
+          "description": "Flat-packed, some assembly required"
+        },
+        {
+          "stage": "accepted",
+          "hoursAgo": 200,
+          "description": "Collected from the workshop",
+          "location": "Rotterdam, Netherlands",
+          "place": {
+            "latitude": 51.923,
+            "longitude": 4.479,
+            "precision": "city",
+            "country": "NL",
+            "name": "Rotterdam"
+          }
+        },
+        {
+          "stage": "in_transit",
+          "hoursAgo": 173,
+          "description": "Sorted for the journey to Zürich",
+          "location": "Härkingen, Switzerland",
+          "place": {
+            "latitude": 47.305,
+            "longitude": 7.821,
+            "precision": "city",
+            "country": "CH",
+            "name": "Härkingen"
+          }
+        },
+        {
+          "stage": "out_for_delivery",
+          "hoursAgo": 148,
+          "description": "On the final stretch to your door",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
+        },
+        {
+          "stage": "delivered",
+          "hoursAgo": 146,
+          "description": "Delivered. The cat prefers the box.",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
         }
-      },
-      {
-        "stage": "in_transit",
-        "hoursAgo": 14,
-        "description": "Crossed the border. Swiss chocolate was not informed.",
-        "location": "Basel, Switzerland",
-        "place": {
-          "latitude": 47.558,
-          "longitude": 7.573,
-          "precision": "city",
-          "country": "CH",
-          "name": "Basel"
+      ]
+    },
+    {
+      "label": "Linen weekend bag 🧳",
+      "trackingNumber": "DEMOBAG20260001",
+      "carrier": "la-poste",
+      "senderName": "Atelier Lin",
+      "weightKg": 0.7,
+      "events": [
+        {
+          "stage": "registered",
+          "hoursAgo": 286,
+          "description": "Stitched, folded and packed"
+        },
+        {
+          "stage": "accepted",
+          "hoursAgo": 278,
+          "description": "Collected from the atelier",
+          "location": "Lille, France",
+          "place": {
+            "latitude": 50.634,
+            "longitude": 3.055,
+            "precision": "city",
+            "country": "FR",
+            "name": "Lille"
+          }
+        },
+        {
+          "stage": "in_transit",
+          "hoursAgo": 248,
+          "description": "Sorted for the journey to Zürich",
+          "location": "Härkingen, Switzerland",
+          "place": {
+            "latitude": 47.305,
+            "longitude": 7.821,
+            "precision": "city",
+            "country": "CH",
+            "name": "Härkingen"
+          }
+        },
+        {
+          "stage": "out_for_delivery",
+          "hoursAgo": 220,
+          "description": "On the final stretch to your door",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
+        },
+        {
+          "stage": "delivered",
+          "hoursAgo": 218,
+          "description": "Delivered. Now it just needs a weekend.",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
         }
-      },
-      {
-        "stage": "out_for_delivery",
-        "hoursAgo": 2,
-        "description": "With the courier for delivery today",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
+      ],
+      "archivedHoursAgo": 194
+    },
+    {
+      "label": "Studio headphones 🎧",
+      "trackingNumber": "1ZDEMO202600000002",
+      "carrier": "ups",
+      "senderName": "Silenzio Audio",
+      "weightKg": 0.6,
+      "events": [
+        {
+          "stage": "registered",
+          "hoursAgo": 368,
+          "description": "Tuned, boxed and ready"
+        },
+        {
+          "stage": "accepted",
+          "hoursAgo": 360,
+          "description": "Collected from the audio workshop",
+          "location": "Milano, Italy",
+          "place": {
+            "latitude": 45.464,
+            "longitude": 9.19,
+            "precision": "city",
+            "country": "IT",
+            "name": "Milano"
+          }
+        },
+        {
+          "stage": "in_transit",
+          "hoursAgo": 337,
+          "description": "Sorted for the journey to Zürich",
+          "location": "Härkingen, Switzerland",
+          "place": {
+            "latitude": 47.305,
+            "longitude": 7.821,
+            "precision": "city",
+            "country": "CH",
+            "name": "Härkingen"
+          }
+        },
+        {
+          "stage": "out_for_delivery",
+          "hoursAgo": 316,
+          "description": "On the final stretch to your door",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
+        },
+        {
+          "stage": "delivered",
+          "hoursAgo": 314,
+          "description": "Delivered. The open-plan office fades away.",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
         }
-      }
-    ]
-  },
-  {
-    "label": "Moon lamp 🌙",
-    "trackingNumber": "DEMOGLS20260001",
-    "carrier": "gls-de",
-    "expectedInDays": 2,
-    "senderName": "Studio Luna",
-    "weightKg": 1.4,
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 54,
-        "description": "Your bedside moon is ready to travel"
-      },
-      {
-        "stage": "accepted",
-        "hoursAgo": 40,
-        "description": "Collected from the design studio",
-        "location": "Berlin, Germany",
-        "place": {
-          "latitude": 52.524,
-          "longitude": 13.411,
-          "precision": "city",
-          "country": "DE",
-          "name": "Berlin"
+      ],
+      "archivedHoursAgo": 290
+    },
+    {
+      "label": "Alpine trail map 🗺️",
+      "trackingNumber": "DEMOMAP20260001",
+      "carrier": "swiss-post",
+      "senderName": "Kartenhaus Bern",
+      "weightKg": 0.1,
+      "events": [
+        {
+          "stage": "registered",
+          "hoursAgo": 436,
+          "description": "Folded along the right creases"
+        },
+        {
+          "stage": "accepted",
+          "hoursAgo": 428,
+          "description": "Collected from the map shop",
+          "location": "Bern, Switzerland",
+          "place": {
+            "latitude": 46.948,
+            "longitude": 7.447,
+            "precision": "city",
+            "country": "CH",
+            "name": "Bern"
+          }
+        },
+        {
+          "stage": "in_transit",
+          "hoursAgo": 419,
+          "description": "Sorted for the journey to Zürich",
+          "location": "Härkingen, Switzerland",
+          "place": {
+            "latitude": 47.305,
+            "longitude": 7.821,
+            "precision": "city",
+            "country": "CH",
+            "name": "Härkingen"
+          }
+        },
+        {
+          "stage": "out_for_delivery",
+          "hoursAgo": 412,
+          "description": "On the final stretch to your door",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
+        },
+        {
+          "stage": "delivered",
+          "hoursAgo": 410,
+          "description": "Delivered. You are here.",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
         }
-      },
-      {
-        "stage": "in_transit",
-        "hoursAgo": 5,
-        "description": "Left the sorting hub. Full moon expected soon.",
-        "location": "Neuenstein, Germany",
-        "place": {
-          "latitude": 49.205,
-          "longitude": 9.58,
-          "precision": "city",
-          "country": "DE",
-          "name": "Neuenstein"
+      ],
+      "archivedHoursAgo": 386
+    },
+    {
+      "label": "Ceramic ramen bowls 🍜",
+      "trackingNumber": "DEMOBOWLS20260001",
+      "carrier": "dhl",
+      "senderName": "Osaka Clayworks",
+      "weightKg": 2.8,
+      "events": [
+        {
+          "stage": "registered",
+          "hoursAgo": 1282,
+          "description": "Four bowls, wrapped one by one"
+        },
+        {
+          "stage": "accepted",
+          "hoursAgo": 1274,
+          "description": "Collected from the pottery",
+          "location": "Osaka, Japan",
+          "place": {
+            "latitude": 34.694,
+            "longitude": 135.501,
+            "precision": "city",
+            "country": "JP",
+            "name": "Osaka"
+          }
+        },
+        {
+          "stage": "in_transit",
+          "hoursAgo": 890,
+          "description": "Sorted for the journey to Zürich",
+          "location": "Härkingen, Switzerland",
+          "place": {
+            "latitude": 47.305,
+            "longitude": 7.821,
+            "precision": "city",
+            "country": "CH",
+            "name": "Härkingen"
+          }
+        },
+        {
+          "stage": "out_for_delivery",
+          "hoursAgo": 508,
+          "description": "On the final stretch to your door",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
+        },
+        {
+          "stage": "delivered",
+          "hoursAgo": 506,
+          "description": "Delivered in one piece. Well, four.",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
         }
-      }
-    ]
-  },
-  {
-    "label": "Kind of Blue · vinyl 🎷",
-    "trackingNumber": "1ZDEMO202600000001",
-    "carrier": "ups",
-    "senderName": "Round Midnight Records",
-    "weightKg": 0.4,
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 56,
-        "description": "The record shop packed your pressing"
-      },
-      {
-        "stage": "accepted",
-        "hoursAgo": 43,
-        "description": "Collected from the record shop",
-        "location": "Amsterdam, Netherlands",
-        "place": {
-          "latitude": 52.374,
-          "longitude": 4.89,
-          "precision": "city",
-          "country": "NL",
-          "name": "Amsterdam"
+      ],
+      "archivedHoursAgo": 482
+    },
+    {
+      "label": "Art print · no. 14 of 50 🖼️",
+      "trackingNumber": "DEMOART20260001",
+      "carrier": "gls-fr",
+      "senderName": "Galerie Papier",
+      "pickupPoint": "Paketshop Stadelhofen\nStadelhoferstrasse 8, 8001 Zürich",
+      "weightKg": 0.3,
+      "events": [
+        {
+          "stage": "registered",
+          "hoursAgo": 682,
+          "description": "Signed, numbered and rolled with care"
+        },
+        {
+          "stage": "accepted",
+          "hoursAgo": 674,
+          "description": "Collected from the gallery",
+          "location": "Lyon, France",
+          "place": {
+            "latitude": 45.749,
+            "longitude": 4.848,
+            "precision": "city",
+            "country": "FR",
+            "name": "Lyon"
+          }
+        },
+        {
+          "stage": "in_transit",
+          "hoursAgo": 638,
+          "description": "Sorted for the journey to Zürich",
+          "location": "Härkingen, Switzerland",
+          "place": {
+            "latitude": 47.305,
+            "longitude": 7.821,
+            "precision": "city",
+            "country": "CH",
+            "name": "Härkingen"
+          }
+        },
+        {
+          "stage": "ready_for_pickup",
+          "hoursAgo": 604,
+          "description": "Ready at the neighbourhood parcel shop",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
+        },
+        {
+          "stage": "delivered",
+          "hoursAgo": 602,
+          "description": "Collected from the parcel shop",
+          "location": "Zürich, Switzerland",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
         }
-      },
-      {
-        "stage": "in_transit",
-        "hoursAgo": 6,
-        "description": "Travelling south at a steady 33⅓ rpm",
-        "location": "Eindhoven, Netherlands",
-        "place": {
-          "latitude": 51.441,
-          "longitude": 5.478,
-          "precision": "city",
-          "country": "NL",
-          "name": "Eindhoven"
-        }
-      }
-    ]
-  },
-  {
-    "label": "Trail weekend kit 🏕️",
-    "trackingNumber": "DEMODPD20260001",
-    "carrier": "dpd",
-    "expectedInDays": 1,
-    "senderName": "Gipfelstube Outdoor",
-    "weightKg": 2.3,
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 38,
-        "description": "Your trail essentials are packed"
-      },
-      {
-        "stage": "accepted",
-        "hoursAgo": 8,
-        "description": "Collected from the outdoor shop",
-        "location": "Buchs, Switzerland",
-        "place": {
-          "latitude": 47.167,
-          "longitude": 9.478,
-          "precision": "city",
-          "country": "CH",
-          "name": "Buchs"
-        }
-      }
-    ]
-  },
-  {
-    "label": "35mm film rolls 🎞️",
-    "trackingNumber": "DEMOFILM20260001",
-    "carrier": "an-post",
-    "expectedInDays": 3,
-    "senderName": "The Darkroom, Dublin",
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 36,
-        "description": "The photo lab has announced your parcel"
-      }
-    ]
-  },
-  {
-    "label": "Matcha ritual 🍵",
-    "trackingNumber": "DEMOMATCHA20260001",
-    "carrier": "fedex",
-    "senderName": "Uji Tea House",
-    "weightKg": 0.3,
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 178,
-        "description": "Tea tins wrapped in Kyoto"
-      },
-      {
-        "stage": "accepted",
-        "hoursAgo": 170,
-        "description": "Collected from the tea house",
-        "location": "Kyoto, Japan",
-        "place": {
-          "latitude": 35.021,
-          "longitude": 135.754,
-          "precision": "city",
-          "country": "JP",
-          "name": "Kyoto"
-        }
-      },
-      {
-        "stage": "in_transit",
-        "hoursAgo": 110,
-        "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland",
-        "place": {
-          "latitude": 47.305,
-          "longitude": 7.821,
-          "precision": "city",
-          "country": "CH",
-          "name": "Härkingen"
-        }
-      },
-      {
-        "stage": "out_for_delivery",
-        "hoursAgo": 52,
-        "description": "On the final stretch to your door",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      },
-      {
-        "stage": "delivered",
-        "hoursAgo": 50,
-        "description": "Delivered. Time to put the kettle on.",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      }
-    ]
-  },
-  {
-    "label": "Sunday in Kyoto 📚",
-    "trackingNumber": "DEMOBOOK20260001",
-    "carrier": "chronopost",
-    "senderName": "Librairie des Voyageurs",
-    "weightKg": 0.35,
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 118,
-        "description": "A paperback was chosen for you"
-      },
-      {
-        "stage": "accepted",
-        "hoursAgo": 110,
-        "description": "Collected from the bookshop",
-        "location": "Paris, France",
-        "place": {
-          "latitude": 48.853,
-          "longitude": 2.349,
-          "precision": "city",
-          "country": "FR",
-          "name": "Paris"
-        }
-      },
-      {
-        "stage": "in_transit",
-        "hoursAgo": 92,
-        "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland",
-        "place": {
-          "latitude": 47.305,
-          "longitude": 7.821,
-          "precision": "city",
-          "country": "CH",
-          "name": "Härkingen"
-        }
-      },
-      {
-        "stage": "out_for_delivery",
-        "hoursAgo": 76,
-        "description": "On the final stretch to your door",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      },
-      {
-        "stage": "delivered",
-        "hoursAgo": 74,
-        "description": "Delivered. The unread pile grows.",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      }
-    ]
-  },
-  {
-    "label": "Mechanical keyboard ⌨️",
-    "trackingNumber": "DEMOKEYS20260001",
-    "carrier": "dhl",
-    "senderName": "Clack & Co.",
-    "weightKg": 1.1,
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 148,
-        "description": "Switches tested, keycaps counted"
-      },
-      {
-        "stage": "accepted",
-        "hoursAgo": 140,
-        "description": "Collected from the workshop",
-        "location": "Berlin, Germany",
-        "place": {
-          "latitude": 52.524,
-          "longitude": 13.411,
-          "precision": "city",
-          "country": "DE",
-          "name": "Berlin"
-        }
-      },
-      {
-        "stage": "in_transit",
-        "hoursAgo": 119,
-        "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland",
-        "place": {
-          "latitude": 47.305,
-          "longitude": 7.821,
-          "precision": "city",
-          "country": "CH",
-          "name": "Härkingen"
-        }
-      },
-      {
-        "stage": "out_for_delivery",
-        "hoursAgo": 100,
-        "description": "On the final stretch to your door",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      },
-      {
-        "stage": "delivered",
-        "hoursAgo": 98,
-        "description": "Delivered. The neighbours have been warned.",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      }
-    ]
-  },
-  {
-    "label": "Cat tree 🐈",
-    "trackingNumber": "DEMOCAT20260001",
-    "carrier": "spring-gds",
-    "senderName": "Whisker Works",
-    "weightKg": 8.6,
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 208,
-        "description": "Flat-packed, some assembly required"
-      },
-      {
-        "stage": "accepted",
-        "hoursAgo": 200,
-        "description": "Collected from the workshop",
-        "location": "Rotterdam, Netherlands",
-        "place": {
-          "latitude": 51.923,
-          "longitude": 4.479,
-          "precision": "city",
-          "country": "NL",
-          "name": "Rotterdam"
-        }
-      },
-      {
-        "stage": "in_transit",
-        "hoursAgo": 173,
-        "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland",
-        "place": {
-          "latitude": 47.305,
-          "longitude": 7.821,
-          "precision": "city",
-          "country": "CH",
-          "name": "Härkingen"
-        }
-      },
-      {
-        "stage": "out_for_delivery",
-        "hoursAgo": 148,
-        "description": "On the final stretch to your door",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      },
-      {
-        "stage": "delivered",
-        "hoursAgo": 146,
-        "description": "Delivered. The cat prefers the box.",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      }
-    ]
-  },
-  {
-    "label": "Linen weekend bag 🧳",
-    "trackingNumber": "DEMOBAG20260001",
-    "carrier": "la-poste",
-    "senderName": "Atelier Lin",
-    "weightKg": 0.7,
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 286,
-        "description": "Stitched, folded and packed"
-      },
-      {
-        "stage": "accepted",
-        "hoursAgo": 278,
-        "description": "Collected from the atelier",
-        "location": "Lille, France",
-        "place": {
-          "latitude": 50.634,
-          "longitude": 3.055,
-          "precision": "city",
-          "country": "FR",
-          "name": "Lille"
-        }
-      },
-      {
-        "stage": "in_transit",
-        "hoursAgo": 248,
-        "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland",
-        "place": {
-          "latitude": 47.305,
-          "longitude": 7.821,
-          "precision": "city",
-          "country": "CH",
-          "name": "Härkingen"
-        }
-      },
-      {
-        "stage": "out_for_delivery",
-        "hoursAgo": 220,
-        "description": "On the final stretch to your door",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      },
-      {
-        "stage": "delivered",
-        "hoursAgo": 218,
-        "description": "Delivered. Now it just needs a weekend.",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      }
-    ],
-    "archivedHoursAgo": 194
-  },
-  {
-    "label": "Studio headphones 🎧",
-    "trackingNumber": "1ZDEMO202600000002",
-    "carrier": "ups",
-    "senderName": "Silenzio Audio",
-    "weightKg": 0.6,
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 368,
-        "description": "Tuned, boxed and ready"
-      },
-      {
-        "stage": "accepted",
-        "hoursAgo": 360,
-        "description": "Collected from the audio workshop",
-        "location": "Milano, Italy",
-        "place": {
-          "latitude": 45.464,
-          "longitude": 9.19,
-          "precision": "city",
-          "country": "IT",
-          "name": "Milano"
-        }
-      },
-      {
-        "stage": "in_transit",
-        "hoursAgo": 337,
-        "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland",
-        "place": {
-          "latitude": 47.305,
-          "longitude": 7.821,
-          "precision": "city",
-          "country": "CH",
-          "name": "Härkingen"
-        }
-      },
-      {
-        "stage": "out_for_delivery",
-        "hoursAgo": 316,
-        "description": "On the final stretch to your door",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      },
-      {
-        "stage": "delivered",
-        "hoursAgo": 314,
-        "description": "Delivered. The open-plan office fades away.",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      }
-    ],
-    "archivedHoursAgo": 290
-  },
-  {
-    "label": "Alpine trail map 🗺️",
-    "trackingNumber": "DEMOMAP20260001",
-    "carrier": "swiss-post",
-    "senderName": "Kartenhaus Bern",
-    "weightKg": 0.1,
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 436,
-        "description": "Folded along the right creases"
-      },
-      {
-        "stage": "accepted",
-        "hoursAgo": 428,
-        "description": "Collected from the map shop",
-        "location": "Bern, Switzerland",
-        "place": {
-          "latitude": 46.948,
-          "longitude": 7.447,
-          "precision": "city",
-          "country": "CH",
-          "name": "Bern"
-        }
-      },
-      {
-        "stage": "in_transit",
-        "hoursAgo": 419,
-        "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland",
-        "place": {
-          "latitude": 47.305,
-          "longitude": 7.821,
-          "precision": "city",
-          "country": "CH",
-          "name": "Härkingen"
-        }
-      },
-      {
-        "stage": "out_for_delivery",
-        "hoursAgo": 412,
-        "description": "On the final stretch to your door",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      },
-      {
-        "stage": "delivered",
-        "hoursAgo": 410,
-        "description": "Delivered. You are here.",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      }
-    ],
-    "archivedHoursAgo": 386
-  },
-  {
-    "label": "Ceramic ramen bowls 🍜",
-    "trackingNumber": "DEMOBOWLS20260001",
-    "carrier": "dhl",
-    "senderName": "Osaka Clayworks",
-    "weightKg": 2.8,
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 1282,
-        "description": "Four bowls, wrapped one by one"
-      },
-      {
-        "stage": "accepted",
-        "hoursAgo": 1274,
-        "description": "Collected from the pottery",
-        "location": "Osaka, Japan",
-        "place": {
-          "latitude": 34.694,
-          "longitude": 135.501,
-          "precision": "city",
-          "country": "JP",
-          "name": "Osaka"
-        }
-      },
-      {
-        "stage": "in_transit",
-        "hoursAgo": 890,
-        "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland",
-        "place": {
-          "latitude": 47.305,
-          "longitude": 7.821,
-          "precision": "city",
-          "country": "CH",
-          "name": "Härkingen"
-        }
-      },
-      {
-        "stage": "out_for_delivery",
-        "hoursAgo": 508,
-        "description": "On the final stretch to your door",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      },
-      {
-        "stage": "delivered",
-        "hoursAgo": 506,
-        "description": "Delivered in one piece. Well, four.",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      }
-    ],
-    "archivedHoursAgo": 482
-  },
-  {
-    "label": "Art print · no. 14 of 50 🖼️",
-    "trackingNumber": "DEMOART20260001",
-    "carrier": "gls-fr",
-    "senderName": "Galerie Papier",
-    "pickupPoint": "Paketshop Stadelhofen\nStadelhoferstrasse 8, 8001 Zürich",
-    "weightKg": 0.3,
-    "events": [
-      {
-        "stage": "registered",
-        "hoursAgo": 682,
-        "description": "Signed, numbered and rolled with care"
-      },
-      {
-        "stage": "accepted",
-        "hoursAgo": 674,
-        "description": "Collected from the gallery",
-        "location": "Lyon, France",
-        "place": {
-          "latitude": 45.749,
-          "longitude": 4.848,
-          "precision": "city",
-          "country": "FR",
-          "name": "Lyon"
-        }
-      },
-      {
-        "stage": "in_transit",
-        "hoursAgo": 638,
-        "description": "Sorted for the journey to Zürich",
-        "location": "Härkingen, Switzerland",
-        "place": {
-          "latitude": 47.305,
-          "longitude": 7.821,
-          "precision": "city",
-          "country": "CH",
-          "name": "Härkingen"
-        }
-      },
-      {
-        "stage": "ready_for_pickup",
-        "hoursAgo": 604,
-        "description": "Ready at the neighbourhood parcel shop",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      },
-      {
-        "stage": "delivered",
-        "hoursAgo": 602,
-        "description": "Collected from the parcel shop",
-        "location": "Zürich, Switzerland",
-        "place": {
-          "latitude": 47.367,
-          "longitude": 8.55,
-          "precision": "city",
-          "country": "CH",
-          "name": "Zürich"
-        }
-      }
-    ],
-    "archivedHoursAgo": 578
+      ],
+      "archivedHoursAgo": 578
+    }
+  ],
+  "translations": {
+    "de": {
+      "Coffee beans ☕": "Kaffeebohnen ☕",
+      "New sneakers 👟": "Neue Sneaker 👟",
+      "Birthday gift 🎁": "Geburtstagsgeschenk 🎁",
+      "Belgian chocolate 🍫": "Belgische Schokolade 🍫",
+      "Moon lamp 🌙": "Mondlampe 🌙",
+      "Kind of Blue · vinyl 🎷": "Kind of Blue · Vinyl 🎷",
+      "Trail weekend kit 🏕️": "Trail-Wochenend-Set 🏕️",
+      "35mm film rolls 🎞️": "35-mm-Filmrollen 🎞️",
+      "Matcha ritual 🍵": "Matcha-Ritual 🍵",
+      "Sunday in Kyoto 📚": "Sonntag in Kyoto 📚",
+      "Mechanical keyboard ⌨️": "Mechanische Tastatur ⌨️",
+      "Cat tree 🐈": "Kratzbaum 🐈",
+      "Linen weekend bag 🧳": "Weekender aus Leinen 🧳",
+      "Studio headphones 🎧": "Studiokopfhörer 🎧",
+      "Alpine trail map 🗺️": "Alpen-Wanderkarte 🗺️",
+      "Ceramic ramen bowls 🍜": "Ramen-Schalen aus Keramik 🍜",
+      "Art print · no. 14 of 50 🖼️": "Kunstdruck · Nr. 14 von 50 🖼️",
+      "The roastery packed your monthly coffee": "Die Rösterei hat deinen Monatskaffee verpackt",
+      "Freshly roasted beans handed to Swiss Post": "Frisch geröstete Bohnen an die Schweizerische Post übergeben",
+      "Sorted overnight, still smelling wonderful": "Über Nacht sortiert, duftet immer noch herrlich",
+      "With your local delivery round": "Auf der Zustelltour in deinem Quartier",
+      "Delivered to your mailbox. Mornings are saved.": "In deinen Briefkasten zugestellt. Die Morgen sind gerettet.",
+      "Your running shoes are packed": "Deine Laufschuhe sind verpackt",
+      "Collected from the running shop": "Im Laufladen abgeholt",
+      "Arrived at the destination depot": "Im Zieldepot angekommen",
+      "With the courier for delivery": "Beim Kurier für die Zustellung",
+      "Nobody home. Out for a run, presumably.": "Niemand zu Hause. Vermutlich gerade laufen.",
+      "Waiting for you at the pickup point": "Wartet am Abholort auf dich",
+      "A little surprise is on its way": "Eine kleine Überraschung ist unterwegs",
+      "Handed over at the post office counter": "Am Postschalter aufgegeben",
+      "Customs is taking a look. No peeking.": "Der Zoll wirft einen Blick darauf. Nicht spicken.",
+      "Pralines boxed with great care": "Pralinen mit grosser Sorgfalt verpackt",
+      "Collected from the chocolatier": "Beim Chocolatier abgeholt",
+      "Crossed the border. Swiss chocolate was not informed.": "Grenze passiert. Die Schweizer Schokolade wurde nicht informiert.",
+      "With the courier for delivery today": "Beim Kurier, Zustellung heute",
+      "Your bedside moon is ready to travel": "Dein Mond fürs Nachttischchen ist reisefertig",
+      "Collected from the design studio": "Im Designstudio abgeholt",
+      "Left the sorting hub. Full moon expected soon.": "Hat das Sortierzentrum verlassen. Vollmond in Kürze erwartet.",
+      "The record shop packed your pressing": "Der Plattenladen hat deine Pressung verpackt",
+      "Collected from the record shop": "Im Plattenladen abgeholt",
+      "Travelling south at a steady 33⅓ rpm": "Unterwegs nach Süden, mit konstanten 33⅓ U/min",
+      "Your trail essentials are packed": "Deine Trail-Ausrüstung ist verpackt",
+      "Collected from the outdoor shop": "Im Outdoor-Laden abgeholt",
+      "The photo lab has announced your parcel": "Das Fotolabor hat dein Paket angekündigt",
+      "Tea tins wrapped in Kyoto": "Teedosen in Kyoto eingepackt",
+      "Collected from the tea house": "Im Teehaus abgeholt",
+      "Sorted for the journey to Zürich": "Für die Reise nach Zürich sortiert",
+      "On the final stretch to your door": "Auf den letzten Metern bis zu deiner Tür",
+      "Delivered. Time to put the kettle on.": "Zugestellt. Zeit, Wasser aufzusetzen.",
+      "A paperback was chosen for you": "Ein Taschenbuch wurde für dich ausgesucht",
+      "Collected from the bookshop": "In der Buchhandlung abgeholt",
+      "Delivered. The unread pile grows.": "Zugestellt. Der Stapel ungelesener Bücher wächst.",
+      "Switches tested, keycaps counted": "Switches getestet, Tastenkappen gezählt",
+      "Collected from the workshop": "In der Werkstatt abgeholt",
+      "Delivered. The neighbours have been warned.": "Zugestellt. Die Nachbarn sind gewarnt.",
+      "Flat-packed, some assembly required": "Flach verpackt, etwas Montage nötig",
+      "Delivered. The cat prefers the box.": "Zugestellt. Die Katze bevorzugt den Karton.",
+      "Stitched, folded and packed": "Genäht, gefaltet und verpackt",
+      "Collected from the atelier": "Im Atelier abgeholt",
+      "Delivered. Now it just needs a weekend.": "Zugestellt. Jetzt fehlt nur noch ein Wochenende.",
+      "Tuned, boxed and ready": "Abgestimmt, verpackt und bereit",
+      "Collected from the audio workshop": "In der Audiowerkstatt abgeholt",
+      "Delivered. The open-plan office fades away.": "Zugestellt. Das Grossraumbüro verstummt.",
+      "Folded along the right creases": "An den richtigen Falzen gefaltet",
+      "Collected from the map shop": "Im Kartenladen abgeholt",
+      "Delivered. You are here.": "Zugestellt. Sie befinden sich hier.",
+      "Four bowls, wrapped one by one": "Vier Schalen, einzeln eingewickelt",
+      "Collected from the pottery": "In der Töpferei abgeholt",
+      "Delivered in one piece. Well, four.": "In einem Stück zugestellt. Also, in vier.",
+      "Signed, numbered and rolled with care": "Signiert, nummeriert und sorgfältig gerollt",
+      "Collected from the gallery": "In der Galerie abgeholt",
+      "Ready at the neighbourhood parcel shop": "Abholbereit im Paketshop im Quartier",
+      "Collected from the parcel shop": "Im Paketshop abgeholt",
+      "The sender announced the parcel": "Der Absender hat das Paket angekündigt",
+      "Parcel accepted at the counter": "Paket am Schalter angenommen",
+      "Sorted at the parcel center": "Im Paketzentrum sortiert",
+      "Held for customs clearance": "Wartet auf die Verzollung",
+      "A problem is holding up the parcel": "Ein Problem hält das Paket auf",
+      "Nobody home — a notice was left": "Niemand zu Hause – eine Abholungseinladung wurde hinterlassen",
+      "Ready for pickup at your branch": "Abholbereit in deiner Filiale",
+      "Delivered to your mailbox": "In deinen Briefkasten zugestellt",
+      "Returned to the sender": "Zurück an den Absender",
+      "Tracking updated": "Sendungsverfolgung aktualisiert",
+      "Your neighbourhood": "Dein Quartier",
+      "Post branch": "Postfiliale",
+      "Home": "Zuhause"
+    },
+    "es": {
+      "Coffee beans ☕": "Café en grano ☕",
+      "New sneakers 👟": "Zapatillas nuevas 👟",
+      "Birthday gift 🎁": "Regalo de cumpleaños 🎁",
+      "Belgian chocolate 🍫": "Chocolate belga 🍫",
+      "Moon lamp 🌙": "Lámpara luna 🌙",
+      "Kind of Blue · vinyl 🎷": "Kind of Blue · vinilo 🎷",
+      "Trail weekend kit 🏕️": "Kit trail de fin de semana 🏕️",
+      "35mm film rolls 🎞️": "Carretes de 35 mm 🎞️",
+      "Matcha ritual 🍵": "Ritual matcha 🍵",
+      "Sunday in Kyoto 📚": "Domingo en Kioto 📚",
+      "Mechanical keyboard ⌨️": "Teclado mecánico ⌨️",
+      "Cat tree 🐈": "Rascador para gatos 🐈",
+      "Linen weekend bag 🧳": "Bolsa de fin de semana de lino 🧳",
+      "Studio headphones 🎧": "Auriculares de estudio 🎧",
+      "Alpine trail map 🗺️": "Mapa de senderos alpinos 🗺️",
+      "Ceramic ramen bowls 🍜": "Cuencos de cerámica para ramen 🍜",
+      "Art print · no. 14 of 50 🖼️": "Lámina · n.º 14 de 50 🖼️",
+      "The roastery packed your monthly coffee": "El tostador ha empaquetado tu café del mes",
+      "Freshly roasted beans handed to Swiss Post": "Granos recién tostados entregados a Swiss Post",
+      "Sorted overnight, still smelling wonderful": "Clasificado durante la noche, y sigue oliendo de maravilla",
+      "With your local delivery round": "En el reparto de tu zona",
+      "Delivered to your mailbox. Mornings are saved.": "Entregado en tu buzón. Las mañanas están a salvo.",
+      "Your running shoes are packed": "Tus zapatillas de correr están empaquetadas",
+      "Collected from the running shop": "Recogido en la tienda de running",
+      "Arrived at the destination depot": "Ha llegado al depósito de destino",
+      "With the courier for delivery": "Con el repartidor para la entrega",
+      "Nobody home. Out for a run, presumably.": "Nadie en casa. Habrá salido a correr.",
+      "Waiting for you at the pickup point": "Te espera en el punto de recogida",
+      "A little surprise is on its way": "Una pequeña sorpresa está en camino",
+      "Handed over at the post office counter": "Entregado en la ventanilla de correos",
+      "Customs is taking a look. No peeking.": "La aduana está echando un vistazo. Sin espiar.",
+      "Pralines boxed with great care": "Bombones empaquetados con mucho mimo",
+      "Collected from the chocolatier": "Recogido en la chocolatería",
+      "Crossed the border. Swiss chocolate was not informed.": "Frontera cruzada. El chocolate suizo no ha sido informado.",
+      "With the courier for delivery today": "Con el repartidor, entrega hoy",
+      "Your bedside moon is ready to travel": "Tu luna de mesilla está lista para viajar",
+      "Collected from the design studio": "Recogido en el estudio de diseño",
+      "Left the sorting hub. Full moon expected soon.": "Ha salido del centro de clasificación. Luna llena prevista en breve.",
+      "The record shop packed your pressing": "La tienda de discos ha empaquetado tu edición",
+      "Collected from the record shop": "Recogido en la tienda de discos",
+      "Travelling south at a steady 33⅓ rpm": "Rumbo al sur a unas constantes 33⅓ rpm",
+      "Your trail essentials are packed": "Tus básicos de trail están empaquetados",
+      "Collected from the outdoor shop": "Recogido en la tienda de montaña",
+      "The photo lab has announced your parcel": "El laboratorio fotográfico ha anunciado tu paquete",
+      "Tea tins wrapped in Kyoto": "Latas de té envueltas en Kioto",
+      "Collected from the tea house": "Recogido en la casa de té",
+      "Sorted for the journey to Zürich": "Clasificado para el viaje a Zúrich",
+      "On the final stretch to your door": "En el último tramo hasta tu puerta",
+      "Delivered. Time to put the kettle on.": "Entregado. Hora de poner el agua a calentar.",
+      "A paperback was chosen for you": "Han elegido un libro de bolsillo para ti",
+      "Collected from the bookshop": "Recogido en la librería",
+      "Delivered. The unread pile grows.": "Entregado. La pila de pendientes crece.",
+      "Switches tested, keycaps counted": "Switches probados, teclas contadas",
+      "Collected from the workshop": "Recogido en el taller",
+      "Delivered. The neighbours have been warned.": "Entregado. Los vecinos están avisados.",
+      "Flat-packed, some assembly required": "En paquete plano, requiere algo de montaje",
+      "Delivered. The cat prefers the box.": "Entregado. El gato prefiere la caja.",
+      "Stitched, folded and packed": "Cosido, doblado y empaquetado",
+      "Collected from the atelier": "Recogido en el atelier",
+      "Delivered. Now it just needs a weekend.": "Entregado. Ahora solo falta un fin de semana.",
+      "Tuned, boxed and ready": "Afinados, embalados y listos",
+      "Collected from the audio workshop": "Recogido en el taller de audio",
+      "Delivered. The open-plan office fades away.": "Entregado. La oficina diáfana se desvanece.",
+      "Folded along the right creases": "Doblado por los pliegues correctos",
+      "Collected from the map shop": "Recogido en la tienda de mapas",
+      "Delivered. You are here.": "Entregado. Usted está aquí.",
+      "Four bowls, wrapped one by one": "Cuatro cuencos, envueltos uno a uno",
+      "Collected from the pottery": "Recogido en el taller de cerámica",
+      "Delivered in one piece. Well, four.": "Entregado de una pieza. Bueno, de cuatro.",
+      "Signed, numbered and rolled with care": "Firmada, numerada y enrollada con cuidado",
+      "Collected from the gallery": "Recogido en la galería",
+      "Ready at the neighbourhood parcel shop": "Disponible en el punto de recogida del barrio",
+      "Collected from the parcel shop": "Recogido en el punto de recogida",
+      "The sender announced the parcel": "El remitente ha anunciado el paquete",
+      "Parcel accepted at the counter": "Paquete admitido en la ventanilla",
+      "Sorted at the parcel center": "Clasificado en el centro de paquetería",
+      "Held for customs clearance": "Retenido para el despacho de aduanas",
+      "A problem is holding up the parcel": "Un problema está retrasando el paquete",
+      "Nobody home — a notice was left": "Nadie en casa: se ha dejado un aviso",
+      "Ready for pickup at your branch": "Listo para recoger en tu oficina",
+      "Delivered to your mailbox": "Entregado en tu buzón",
+      "Returned to the sender": "Devuelto al remitente",
+      "Tracking updated": "Seguimiento actualizado",
+      "Your neighbourhood": "Tu barrio",
+      "Post branch": "Oficina de correos",
+      "Home": "Casa"
+    },
+    "fr": {
+      "Coffee beans ☕": "Café en grains ☕",
+      "New sneakers 👟": "Nouvelles baskets 👟",
+      "Birthday gift 🎁": "Cadeau d’anniversaire 🎁",
+      "Belgian chocolate 🍫": "Chocolat belge 🍫",
+      "Moon lamp 🌙": "Lampe lune 🌙",
+      "Kind of Blue · vinyl 🎷": "Kind of Blue · vinyle 🎷",
+      "Trail weekend kit 🏕️": "Kit week-end trail 🏕️",
+      "35mm film rolls 🎞️": "Pellicules 35 mm 🎞️",
+      "Matcha ritual 🍵": "Rituel matcha 🍵",
+      "Sunday in Kyoto 📚": "Un dimanche à Kyoto 📚",
+      "Mechanical keyboard ⌨️": "Clavier mécanique ⌨️",
+      "Cat tree 🐈": "Arbre à chat 🐈",
+      "Linen weekend bag 🧳": "Sac week-end en lin 🧳",
+      "Studio headphones 🎧": "Casque de studio 🎧",
+      "Alpine trail map 🗺️": "Carte de randonnée alpine 🗺️",
+      "Ceramic ramen bowls 🍜": "Bols à ramen en céramique 🍜",
+      "Art print · no. 14 of 50 🖼️": "Tirage d’art · n° 14 sur 50 🖼️",
+      "The roastery packed your monthly coffee": "La brûlerie a emballé ton café du mois",
+      "Freshly roasted beans handed to Swiss Post": "Grains fraîchement torréfiés remis à La Poste Suisse",
+      "Sorted overnight, still smelling wonderful": "Trié pendant la nuit, et ça sent toujours aussi bon",
+      "With your local delivery round": "Dans la tournée de ton quartier",
+      "Delivered to your mailbox. Mornings are saved.": "Livré dans ta boîte aux lettres. Les matins sont sauvés.",
+      "Your running shoes are packed": "Tes chaussures de course sont emballées",
+      "Collected from the running shop": "Récupéré à la boutique de running",
+      "Arrived at the destination depot": "Arrivé au dépôt de destination",
+      "With the courier for delivery": "Avec le coursier pour la livraison",
+      "Nobody home. Out for a run, presumably.": "Personne à la maison. Sans doute parti courir.",
+      "Waiting for you at the pickup point": "T’attend au point de retrait",
+      "A little surprise is on its way": "Une petite surprise est en route",
+      "Handed over at the post office counter": "Déposé au guichet de la poste",
+      "Customs is taking a look. No peeking.": "La douane jette un œil. Interdit de regarder.",
+      "Pralines boxed with great care": "Pralines emballées avec le plus grand soin",
+      "Collected from the chocolatier": "Récupéré chez le chocolatier",
+      "Crossed the border. Swiss chocolate was not informed.": "Frontière franchie. Le chocolat suisse n’a pas été prévenu.",
+      "With the courier for delivery today": "Avec le coursier, livraison aujourd’hui",
+      "Your bedside moon is ready to travel": "Ta lune de chevet est prête à voyager",
+      "Collected from the design studio": "Récupéré au studio de design",
+      "Left the sorting hub. Full moon expected soon.": "A quitté le centre de tri. Pleine lune attendue bientôt.",
+      "The record shop packed your pressing": "Le disquaire a emballé ton pressage",
+      "Collected from the record shop": "Récupéré chez le disquaire",
+      "Travelling south at a steady 33⅓ rpm": "En route vers le sud, à 33 tours ⅓ par minute",
+      "Your trail essentials are packed": "Tes indispensables de trail sont emballés",
+      "Collected from the outdoor shop": "Récupéré au magasin outdoor",
+      "The photo lab has announced your parcel": "Le labo photo a annoncé ton colis",
+      "Tea tins wrapped in Kyoto": "Boîtes de thé emballées à Kyoto",
+      "Collected from the tea house": "Récupéré à la maison de thé",
+      "Sorted for the journey to Zürich": "Trié pour le voyage vers Zurich",
+      "On the final stretch to your door": "Dans la dernière ligne droite jusqu’à ta porte",
+      "Delivered. Time to put the kettle on.": "Livré. Il est temps de mettre la bouilloire en route.",
+      "A paperback was chosen for you": "Un livre de poche a été choisi pour toi",
+      "Collected from the bookshop": "Récupéré à la librairie",
+      "Delivered. The unread pile grows.": "Livré. La pile à lire grandit.",
+      "Switches tested, keycaps counted": "Switches testés, touches comptées",
+      "Collected from the workshop": "Récupéré à l’atelier",
+      "Delivered. The neighbours have been warned.": "Livré. Les voisins sont prévenus.",
+      "Flat-packed, some assembly required": "Emballé à plat, un peu de montage à prévoir",
+      "Delivered. The cat prefers the box.": "Livré. Le chat préfère le carton.",
+      "Stitched, folded and packed": "Cousu, plié et emballé",
+      "Collected from the atelier": "Récupéré à l’atelier de couture",
+      "Delivered. Now it just needs a weekend.": "Livré. Il ne manque plus qu’un week-end.",
+      "Tuned, boxed and ready": "Réglé, emballé et prêt",
+      "Collected from the audio workshop": "Récupéré à l’atelier audio",
+      "Delivered. The open-plan office fades away.": "Livré. L’open space s’efface.",
+      "Folded along the right creases": "Pliée en suivant les bons plis",
+      "Collected from the map shop": "Récupéré à la boutique de cartes",
+      "Delivered. You are here.": "Livré. Vous êtes ici.",
+      "Four bowls, wrapped one by one": "Quatre bols, emballés un par un",
+      "Collected from the pottery": "Récupéré à la poterie",
+      "Delivered in one piece. Well, four.": "Livré en un seul morceau. Enfin, quatre.",
+      "Signed, numbered and rolled with care": "Signé, numéroté et roulé avec soin",
+      "Collected from the gallery": "Récupéré à la galerie",
+      "Ready at the neighbourhood parcel shop": "Disponible au point relais du quartier",
+      "Collected from the parcel shop": "Retiré au point relais",
+      "The sender announced the parcel": "L’expéditeur a annoncé le colis",
+      "Parcel accepted at the counter": "Colis accepté au guichet",
+      "Sorted at the parcel center": "Trié au centre colis",
+      "Held for customs clearance": "Retenu pour le dédouanement",
+      "A problem is holding up the parcel": "Un problème retarde le colis",
+      "Nobody home — a notice was left": "Personne à la maison — un avis de passage a été laissé",
+      "Ready for pickup at your branch": "Prêt à être retiré à ton office de poste",
+      "Delivered to your mailbox": "Livré dans ta boîte aux lettres",
+      "Returned to the sender": "Retourné à l’expéditeur",
+      "Tracking updated": "Suivi mis à jour",
+      "Your neighbourhood": "Ton quartier",
+      "Post branch": "Office de poste",
+      "Home": "Domicile"
+    },
+    "it": {
+      "Coffee beans ☕": "Caffè in grani ☕",
+      "New sneakers 👟": "Sneakers nuove 👟",
+      "Birthday gift 🎁": "Regalo di compleanno 🎁",
+      "Belgian chocolate 🍫": "Cioccolato belga 🍫",
+      "Moon lamp 🌙": "Lampada luna 🌙",
+      "Kind of Blue · vinyl 🎷": "Kind of Blue · vinile 🎷",
+      "Trail weekend kit 🏕️": "Kit weekend trail 🏕️",
+      "35mm film rolls 🎞️": "Rullini 35 mm 🎞️",
+      "Matcha ritual 🍵": "Rituale matcha 🍵",
+      "Sunday in Kyoto 📚": "Domenica a Kyoto 📚",
+      "Mechanical keyboard ⌨️": "Tastiera meccanica ⌨️",
+      "Cat tree 🐈": "Tiragraffi 🐈",
+      "Linen weekend bag 🧳": "Borsa weekend in lino 🧳",
+      "Studio headphones 🎧": "Cuffie da studio 🎧",
+      "Alpine trail map 🗺️": "Mappa dei sentieri alpini 🗺️",
+      "Ceramic ramen bowls 🍜": "Ciotole da ramen in ceramica 🍜",
+      "Art print · no. 14 of 50 🖼️": "Stampa d’arte · n. 14 di 50 🖼️",
+      "The roastery packed your monthly coffee": "La torrefazione ha confezionato il tuo caffè del mese",
+      "Freshly roasted beans handed to Swiss Post": "Chicchi appena tostati consegnati alla Posta Svizzera",
+      "Sorted overnight, still smelling wonderful": "Smistato durante la notte, profuma ancora benissimo",
+      "With your local delivery round": "Nel giro di consegna della tua zona",
+      "Delivered to your mailbox. Mornings are saved.": "Consegnato nella tua cassetta delle lettere. Le mattine sono salve.",
+      "Your running shoes are packed": "Le tue scarpe da corsa sono imballate",
+      "Collected from the running shop": "Ritirato dal negozio di running",
+      "Arrived at the destination depot": "Arrivato al deposito di destinazione",
+      "With the courier for delivery": "Con il corriere per la consegna",
+      "Nobody home. Out for a run, presumably.": "Nessuno in casa. Probabilmente fuori a correre.",
+      "Waiting for you at the pickup point": "Ti aspetta al punto di ritiro",
+      "A little surprise is on its way": "Una piccola sorpresa è in arrivo",
+      "Handed over at the post office counter": "Consegnato allo sportello postale",
+      "Customs is taking a look. No peeking.": "La dogana dà un’occhiata. Non sbirciare.",
+      "Pralines boxed with great care": "Praline confezionate con grande cura",
+      "Collected from the chocolatier": "Ritirato dal cioccolatiere",
+      "Crossed the border. Swiss chocolate was not informed.": "Confine superato. Il cioccolato svizzero non è stato avvisato.",
+      "With the courier for delivery today": "Con il corriere, consegna oggi",
+      "Your bedside moon is ready to travel": "La tua luna da comodino è pronta a partire",
+      "Collected from the design studio": "Ritirato dallo studio di design",
+      "Left the sorting hub. Full moon expected soon.": "Ha lasciato il centro di smistamento. Luna piena attesa a breve.",
+      "The record shop packed your pressing": "Il negozio di dischi ha imballato la tua copia",
+      "Collected from the record shop": "Ritirato dal negozio di dischi",
+      "Travelling south at a steady 33⅓ rpm": "In viaggio verso sud a 33 giri ⅓ costanti",
+      "Your trail essentials are packed": "Il tuo essenziale per il trail è imballato",
+      "Collected from the outdoor shop": "Ritirato dal negozio outdoor",
+      "The photo lab has announced your parcel": "Il laboratorio fotografico ha annunciato il tuo pacco",
+      "Tea tins wrapped in Kyoto": "Barattoli di tè confezionati a Kyoto",
+      "Collected from the tea house": "Ritirato dalla casa del tè",
+      "Sorted for the journey to Zürich": "Smistato per il viaggio verso Zurigo",
+      "On the final stretch to your door": "Nell’ultimo tratto fino alla tua porta",
+      "Delivered. Time to put the kettle on.": "Consegnato. È ora di mettere su il bollitore.",
+      "A paperback was chosen for you": "Un tascabile è stato scelto per te",
+      "Collected from the bookshop": "Ritirato dalla libreria",
+      "Delivered. The unread pile grows.": "Consegnato. La pila dei libri da leggere cresce.",
+      "Switches tested, keycaps counted": "Switch testati, tasti contati",
+      "Collected from the workshop": "Ritirato dal laboratorio",
+      "Delivered. The neighbours have been warned.": "Consegnato. I vicini sono stati avvisati.",
+      "Flat-packed, some assembly required": "In pacco piatto, richiede un po’ di montaggio",
+      "Delivered. The cat prefers the box.": "Consegnato. Il gatto preferisce la scatola.",
+      "Stitched, folded and packed": "Cucito, piegato e imballato",
+      "Collected from the atelier": "Ritirato dall’atelier",
+      "Delivered. Now it just needs a weekend.": "Consegnato. Ora manca solo un weekend.",
+      "Tuned, boxed and ready": "Messe a punto, imballate e pronte",
+      "Collected from the audio workshop": "Ritirato dal laboratorio audio",
+      "Delivered. The open-plan office fades away.": "Consegnato. L’open space svanisce.",
+      "Folded along the right creases": "Piegata lungo le pieghe giuste",
+      "Collected from the map shop": "Ritirato dal negozio di mappe",
+      "Delivered. You are here.": "Consegnato. Voi siete qui.",
+      "Four bowls, wrapped one by one": "Quattro ciotole, incartate una a una",
+      "Collected from the pottery": "Ritirato dal laboratorio di ceramica",
+      "Delivered in one piece. Well, four.": "Consegnato tutto intero. Anzi, in quattro pezzi.",
+      "Signed, numbered and rolled with care": "Firmata, numerata e arrotolata con cura",
+      "Collected from the gallery": "Ritirato dalla galleria",
+      "Ready at the neighbourhood parcel shop": "Pronto al punto di ritiro del quartiere",
+      "Collected from the parcel shop": "Ritirato al punto di ritiro",
+      "The sender announced the parcel": "Il mittente ha annunciato il pacco",
+      "Parcel accepted at the counter": "Pacco accettato allo sportello",
+      "Sorted at the parcel center": "Smistato al centro pacchi",
+      "Held for customs clearance": "Trattenuto per lo sdoganamento",
+      "A problem is holding up the parcel": "Un problema sta trattenendo il pacco",
+      "Nobody home — a notice was left": "Nessuno in casa: è stato lasciato un avviso",
+      "Ready for pickup at your branch": "Pronto per il ritiro nella tua filiale",
+      "Delivered to your mailbox": "Consegnato nella tua cassetta delle lettere",
+      "Returned to the sender": "Restituito al mittente",
+      "Tracking updated": "Tracciamento aggiornato",
+      "Your neighbourhood": "Il tuo quartiere",
+      "Post branch": "Filiale postale",
+      "Home": "Casa"
+    },
+    "pl": {
+      "Coffee beans ☕": "Kawa ziarnista ☕",
+      "New sneakers 👟": "Nowe sneakersy 👟",
+      "Birthday gift 🎁": "Prezent urodzinowy 🎁",
+      "Belgian chocolate 🍫": "Belgijska czekolada 🍫",
+      "Moon lamp 🌙": "Lampa księżyc 🌙",
+      "Kind of Blue · vinyl 🎷": "Kind of Blue · winyl 🎷",
+      "Trail weekend kit 🏕️": "Zestaw na weekend w górach 🏕️",
+      "35mm film rolls 🎞️": "Filmy 35 mm 🎞️",
+      "Matcha ritual 🍵": "Rytuał matcha 🍵",
+      "Sunday in Kyoto 📚": "Niedziela w Kioto 📚",
+      "Mechanical keyboard ⌨️": "Klawiatura mechaniczna ⌨️",
+      "Cat tree 🐈": "Drapak dla kota 🐈",
+      "Linen weekend bag 🧳": "Lniana torba weekendowa 🧳",
+      "Studio headphones 🎧": "Słuchawki studyjne 🎧",
+      "Alpine trail map 🗺️": "Mapa alpejskich szlaków 🗺️",
+      "Ceramic ramen bowls 🍜": "Ceramiczne miski do ramenu 🍜",
+      "Art print · no. 14 of 50 🖼️": "Grafika · nr 14 z 50 🖼️",
+      "The roastery packed your monthly coffee": "Palarnia spakowała twoją comiesięczną kawę",
+      "Freshly roasted beans handed to Swiss Post": "Świeżo palone ziarna przekazane Swiss Post",
+      "Sorted overnight, still smelling wonderful": "Posortowano w nocy, nadal pachnie cudownie",
+      "With your local delivery round": "W doręczeniu w twojej okolicy",
+      "Delivered to your mailbox. Mornings are saved.": "Doręczono do twojej skrzynki. Poranki uratowane.",
+      "Your running shoes are packed": "Twoje buty do biegania są spakowane",
+      "Collected from the running shop": "Odebrano ze sklepu biegowego",
+      "Arrived at the destination depot": "Dotarła do oddziału docelowego",
+      "With the courier for delivery": "U kuriera, w doręczeniu",
+      "Nobody home. Out for a run, presumably.": "Nikogo w domu. Pewnie na bieganiu.",
+      "Waiting for you at the pickup point": "Czeka na ciebie w punkcie odbioru",
+      "A little surprise is on its way": "Mała niespodzianka jest w drodze",
+      "Handed over at the post office counter": "Nadano w okienku pocztowym",
+      "Customs is taking a look. No peeking.": "Urząd celny zerka do środka. Bez podglądania.",
+      "Pralines boxed with great care": "Pralinki zapakowane z wielką starannością",
+      "Collected from the chocolatier": "Odebrano z pracowni czekolady",
+      "Crossed the border. Swiss chocolate was not informed.": "Granica przekroczona. Szwajcarska czekolada nie została poinformowana.",
+      "With the courier for delivery today": "U kuriera, doręczenie dzisiaj",
+      "Your bedside moon is ready to travel": "Twój nocny księżyc jest gotowy do drogi",
+      "Collected from the design studio": "Odebrano ze studia projektowego",
+      "Left the sorting hub. Full moon expected soon.": "Opuściła sortownię. Pełnia już wkrótce.",
+      "The record shop packed your pressing": "Sklep z płytami spakował twoje wydanie",
+      "Collected from the record shop": "Odebrano ze sklepu z płytami",
+      "Travelling south at a steady 33⅓ rpm": "W drodze na południe, w stałym tempie 33⅓ obr./min",
+      "Your trail essentials are packed": "Twój niezbędnik na szlak jest spakowany",
+      "Collected from the outdoor shop": "Odebrano ze sklepu outdoorowego",
+      "The photo lab has announced your parcel": "Laboratorium fotograficzne zapowiedziało twoją paczkę",
+      "Tea tins wrapped in Kyoto": "Puszki herbaty zapakowane w Kioto",
+      "Collected from the tea house": "Odebrano z herbaciarni",
+      "Sorted for the journey to Zürich": "Posortowano na drogę do Zurychu",
+      "On the final stretch to your door": "Na ostatniej prostej do twoich drzwi",
+      "Delivered. Time to put the kettle on.": "Doręczono. Czas nastawić czajnik.",
+      "A paperback was chosen for you": "Wybrano dla ciebie książkę w miękkiej oprawie",
+      "Collected from the bookshop": "Odebrano z księgarni",
+      "Delivered. The unread pile grows.": "Doręczono. Stos nieprzeczytanych rośnie.",
+      "Switches tested, keycaps counted": "Przełączniki sprawdzone, nasadki policzone",
+      "Collected from the workshop": "Odebrano z pracowni",
+      "Delivered. The neighbours have been warned.": "Doręczono. Sąsiedzi zostali ostrzeżeni.",
+      "Flat-packed, some assembly required": "W płaskiej paczce, wymaga trochę montażu",
+      "Delivered. The cat prefers the box.": "Doręczono. Kot woli karton.",
+      "Stitched, folded and packed": "Uszyto, złożono i spakowano",
+      "Collected from the atelier": "Odebrano z atelier",
+      "Delivered. Now it just needs a weekend.": "Doręczono. Teraz brakuje tylko weekendu.",
+      "Tuned, boxed and ready": "Nastrojone, spakowane i gotowe",
+      "Collected from the audio workshop": "Odebrano z pracowni audio",
+      "Delivered. The open-plan office fades away.": "Doręczono. Open space cichnie.",
+      "Folded along the right creases": "Złożona wzdłuż właściwych zagięć",
+      "Collected from the map shop": "Odebrano ze sklepu z mapami",
+      "Delivered. You are here.": "Doręczono. Jesteś tutaj.",
+      "Four bowls, wrapped one by one": "Cztery miski, każda zapakowana osobno",
+      "Collected from the pottery": "Odebrano z pracowni ceramicznej",
+      "Delivered in one piece. Well, four.": "Doręczono w jednym kawałku. No, w czterech.",
+      "Signed, numbered and rolled with care": "Podpisana, ponumerowana i starannie zwinięta",
+      "Collected from the gallery": "Odebrano z galerii",
+      "Ready at the neighbourhood parcel shop": "Gotowa do odbioru w osiedlowym punkcie",
+      "Collected from the parcel shop": "Odebrano z punktu odbioru",
+      "The sender announced the parcel": "Nadawca zapowiedział paczkę",
+      "Parcel accepted at the counter": "Paczka przyjęta w okienku",
+      "Sorted at the parcel center": "Posortowano w centrum paczek",
+      "Held for customs clearance": "Zatrzymana do odprawy celnej",
+      "A problem is holding up the parcel": "Problem wstrzymuje paczkę",
+      "Nobody home — a notice was left": "Nikogo w domu — zostawiono awizo",
+      "Ready for pickup at your branch": "Gotowa do odbioru w twojej placówce",
+      "Delivered to your mailbox": "Doręczono do twojej skrzynki",
+      "Returned to the sender": "Zwrócono do nadawcy",
+      "Tracking updated": "Śledzenie zaktualizowane",
+      "Your neighbourhood": "Twoja okolica",
+      "Post branch": "Placówka pocztowa",
+      "Home": "Dom"
+    },
+    "pt": {
+      "Coffee beans ☕": "Café em grão ☕",
+      "New sneakers 👟": "Sapatilhas novas 👟",
+      "Birthday gift 🎁": "Prenda de aniversário 🎁",
+      "Belgian chocolate 🍫": "Chocolate belga 🍫",
+      "Moon lamp 🌙": "Candeeiro lua 🌙",
+      "Kind of Blue · vinyl 🎷": "Kind of Blue · vinil 🎷",
+      "Trail weekend kit 🏕️": "Kit trail de fim de semana 🏕️",
+      "35mm film rolls 🎞️": "Rolos de 35 mm 🎞️",
+      "Matcha ritual 🍵": "Ritual de matcha 🍵",
+      "Sunday in Kyoto 📚": "Domingo em Quioto 📚",
+      "Mechanical keyboard ⌨️": "Teclado mecânico ⌨️",
+      "Cat tree 🐈": "Arranhador para gatos 🐈",
+      "Linen weekend bag 🧳": "Saco de fim de semana em linho 🧳",
+      "Studio headphones 🎧": "Auscultadores de estúdio 🎧",
+      "Alpine trail map 🗺️": "Mapa de trilhos alpinos 🗺️",
+      "Ceramic ramen bowls 🍜": "Taças de cerâmica para ramen 🍜",
+      "Art print · no. 14 of 50 🖼️": "Gravura · n.º 14 de 50 🖼️",
+      "The roastery packed your monthly coffee": "A torrefação embalou o teu café do mês",
+      "Freshly roasted beans handed to Swiss Post": "Grãos acabados de torrar entregues à Swiss Post",
+      "Sorted overnight, still smelling wonderful": "Triado durante a noite, e continua a cheirar maravilhosamente",
+      "With your local delivery round": "Na volta de distribuição da tua zona",
+      "Delivered to your mailbox. Mornings are saved.": "Entregue na tua caixa de correio. As manhãs estão salvas.",
+      "Your running shoes are packed": "As tuas sapatilhas de corrida estão embaladas",
+      "Collected from the running shop": "Recolhido na loja de corrida",
+      "Arrived at the destination depot": "Chegou ao depósito de destino",
+      "With the courier for delivery": "Com o estafeta para entrega",
+      "Nobody home. Out for a run, presumably.": "Ninguém em casa. Deve ter ido correr.",
+      "Waiting for you at the pickup point": "À tua espera no ponto de levantamento",
+      "A little surprise is on its way": "Uma pequena surpresa vem a caminho",
+      "Handed over at the post office counter": "Entregue ao balcão dos correios",
+      "Customs is taking a look. No peeking.": "A alfândega está a dar uma vista de olhos. Sem espreitar.",
+      "Pralines boxed with great care": "Bombons embalados com todo o cuidado",
+      "Collected from the chocolatier": "Recolhido na chocolataria",
+      "Crossed the border. Swiss chocolate was not informed.": "Fronteira atravessada. O chocolate suíço não foi avisado.",
+      "With the courier for delivery today": "Com o estafeta, entrega hoje",
+      "Your bedside moon is ready to travel": "A tua lua de cabeceira está pronta para viajar",
+      "Collected from the design studio": "Recolhido no estúdio de design",
+      "Left the sorting hub. Full moon expected soon.": "Saiu do centro de triagem. Lua cheia prevista em breve.",
+      "The record shop packed your pressing": "A loja de discos embalou a tua prensagem",
+      "Collected from the record shop": "Recolhido na loja de discos",
+      "Travelling south at a steady 33⅓ rpm": "A caminho do sul a umas constantes 33⅓ rpm",
+      "Your trail essentials are packed": "O teu essencial de trail está embalado",
+      "Collected from the outdoor shop": "Recolhido na loja de outdoor",
+      "The photo lab has announced your parcel": "O laboratório fotográfico anunciou a tua encomenda",
+      "Tea tins wrapped in Kyoto": "Latas de chá embrulhadas em Quioto",
+      "Collected from the tea house": "Recolhido na casa de chá",
+      "Sorted for the journey to Zürich": "Triado para a viagem até Zurique",
+      "On the final stretch to your door": "Na reta final até à tua porta",
+      "Delivered. Time to put the kettle on.": "Entregue. Hora de pôr a chaleira ao lume.",
+      "A paperback was chosen for you": "Escolheram um livro de bolso para ti",
+      "Collected from the bookshop": "Recolhido na livraria",
+      "Delivered. The unread pile grows.": "Entregue. A pilha por ler cresce.",
+      "Switches tested, keycaps counted": "Switches testados, teclas contadas",
+      "Collected from the workshop": "Recolhido na oficina",
+      "Delivered. The neighbours have been warned.": "Entregue. Os vizinhos foram avisados.",
+      "Flat-packed, some assembly required": "Em embalagem plana, requer alguma montagem",
+      "Delivered. The cat prefers the box.": "Entregue. O gato prefere a caixa.",
+      "Stitched, folded and packed": "Cosido, dobrado e embalado",
+      "Collected from the atelier": "Recolhido no ateliê",
+      "Delivered. Now it just needs a weekend.": "Entregue. Agora só falta um fim de semana.",
+      "Tuned, boxed and ready": "Afinados, embalados e prontos",
+      "Collected from the audio workshop": "Recolhido na oficina de áudio",
+      "Delivered. The open-plan office fades away.": "Entregue. O open space desvanece-se.",
+      "Folded along the right creases": "Dobrado pelas dobras certas",
+      "Collected from the map shop": "Recolhido na loja de mapas",
+      "Delivered. You are here.": "Entregue. Você está aqui.",
+      "Four bowls, wrapped one by one": "Quatro taças, embrulhadas uma a uma",
+      "Collected from the pottery": "Recolhido na olaria",
+      "Delivered in one piece. Well, four.": "Entregue inteiro. Bem, em quatro.",
+      "Signed, numbered and rolled with care": "Assinada, numerada e enrolada com cuidado",
+      "Collected from the gallery": "Recolhido na galeria",
+      "Ready at the neighbourhood parcel shop": "Disponível no ponto de recolha do bairro",
+      "Collected from the parcel shop": "Levantado no ponto de recolha",
+      "The sender announced the parcel": "O remetente anunciou a encomenda",
+      "Parcel accepted at the counter": "Encomenda aceite ao balcão",
+      "Sorted at the parcel center": "Triado no centro de encomendas",
+      "Held for customs clearance": "Retido para desalfandegamento",
+      "A problem is holding up the parcel": "Um problema está a atrasar a encomenda",
+      "Nobody home — a notice was left": "Ninguém em casa — foi deixado um aviso",
+      "Ready for pickup at your branch": "Pronto a levantar no teu balcão",
+      "Delivered to your mailbox": "Entregue na tua caixa de correio",
+      "Returned to the sender": "Devolvido ao remetente",
+      "Tracking updated": "Seguimento atualizado",
+      "Your neighbourhood": "O teu bairro",
+      "Post branch": "Estação de correios",
+      "Home": "Casa"
+    }
   }
-]
+}

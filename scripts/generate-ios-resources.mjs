@@ -44,7 +44,13 @@ const outputs = new Map([
   ['Analytics.json', fs.readFileSync(path.join(root, 'shared', 'analytics.json'), 'utf8')],
   ['Localization.json', `${JSON.stringify(languages, null, 2)}\n`],
   ['CarrierCatalog.json', `${JSON.stringify({ 'x-carriers': contract['x-carriers'] }, null, 2)}\n`],
-  ['DeliveryDemo.json', fs.readFileSync(path.join(root, 'shared', 'delivery-demo.json'), 'utf8')],
+  // The sample parcels with every language's translation of their text.
+  ['DeliveryDemo.json', `${JSON.stringify({
+    parcels: JSON.parse(fs.readFileSync(path.join(root, 'shared', 'delivery-demo.json'), 'utf8')),
+    translations: Object.fromEntries(Object.keys(languages).filter((language) => language !== 'en').sort().map((language) => [
+      language, JSON.parse(fs.readFileSync(path.join(root, 'shared', 'demo-locales', `${language}.json`), 'utf8')),
+    ])),
+  }, null, 2)}\n`],
   ['FriendsDemo.json', fs.readFileSync(path.join(root, 'shared', 'friends-demo.json'), 'utf8')],
   ['ContractFixtures.json', `${JSON.stringify(apiFixture, null, 2)}\n`],
   // Replayed by the native detection test so the Swift port cannot drift from the shared engine.

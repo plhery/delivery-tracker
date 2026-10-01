@@ -167,6 +167,8 @@ extension Parcel {
     }
 
     var currentStage: TrackingStage? { currentEvent?.stage }
+    /// Where a parcel waiting for collection waits, for its status line.
+    var pickupPlace: String? { currentStage == .readyForPickup ? PickupPoint(carrierData?.pickupPoint)?.name : nil }
     var hasCarrierUpdate: Bool { currentEvent.map { $0.stage != .pending } ?? false }
     var isUnannounced: Bool { !hasCarrierUpdate && syncStatus == .waiting }
     var isArchived: Bool { archivedAt != nil }

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { activeTrackingCarrierId, displayedCarrierId, carrierInfo } from '../lib/carriers';
 import { localizedDatePhrase, localizedExpectedDelivery, useI18n } from '../i18n';
 import { localizedParcelCompletionDate, parcelDeliveryEstimate, parcelDisplayStatusKey, parcelHasCarrierUpdate } from '../lib/parcelStatus';
+import { pickupPoint } from '../lib/pickupPoint';
 import { currentEvent } from '../lib/stages';
 import { userErrorMessage } from '../lib/userMessages';
 import type { ParcelWithEvents } from '../types';
@@ -29,6 +30,8 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
   const expectedDelivery = estimate ? localizedExpectedDelivery(estimate, t, languageTag) : null;
   const statusLabel = t(parcelDisplayStatusKey(parcel));
   const completionDate = localizedParcelCompletionDate(parcel, languageTag, t);
+  // A parcel waiting for collection says where.
+  const pickupPlace = current?.stage === 'ready_for_pickup' ? pickupPoint(parcel.pickupPoint)?.name : undefined;
   const parcelName = parcel.label || t('common.parcel');
   const branding = carrierBrand(carrier);
   const hero = variant === 'hero';
@@ -71,7 +74,8 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
     swipe.current = controller;
     return () => { controller.destroy(); swipe.current = null; };
   }, [swipeable, hero]);
-  const statusSummary = completionDate ? `${statusLabel} ${localizedDatePhrase(completionDate, t)}` : statusLabel;
+  const statusSummary = completionDate ? `${statusLabel} ${localizedDatePhrase(completionDate, t)}`
+    : pickupPlace ? `${statusLabel} · ${pickupPlace}` : statusLabel;
   const statusAria = expectedDelivery ? t('parcel.ariaExpected', { name: parcelName, status: statusSummary, date: expectedDelivery }) : t('parcel.aria', { name: parcelName, status: statusSummary });
 
   const label = [statusAria, flag, deliveryLabel].filter(Boolean).join('. ');
@@ -93,14 +97,14 @@ export function ParcelCard({ parcel, onOpen, onArchive, notice, variant = 'regul
           <span className="parcel-card__hero-main"><strong className="parcel-card__label">{parcelName}</strong><ParcelStamp parcel={parcel} /></span>
           {deliveryLabel && <span className="parcel-card__sender">{deliveryLabel}</span>}
           <AutoCarrierNotice parcel={parcel} className="parcel-card__sender" />
-          <span className="parcel-card__summary"><span className="parcel-card__state">{statusLabel}</span>{expectedDelivery && <><span aria-hidden="true">·</span><span className="parcel-card__eta">{expectedDelivery}</span></>}</span>
+          <span className="parcel-card__summary"><span className="parcel-card__state">{statusLabel}</span>{pickupPlace && <><span aria-hidden="true">·</span><span className="parcel-card__place">{pickupPlace}</span></>}{expectedDelivery && <><span aria-hidden="true">·</span><span className="parcel-card__eta">{expectedDelivery}</span></>}</span>
           {flagChip}
         </> : <>
           <span className="parcel-card__top"><CarrierMark carrier={carrier} />{(expectedDelivery || completionDate) && <span className={completionDate ? 'parcel-card__completion' : 'parcel-card__eta'}>{expectedDelivery || completionDate}</span>}</span>
           <strong className="parcel-card__label">{parcelName}</strong>
           {deliveryLabel && <span className="parcel-card__sender">{deliveryLabel}</span>}
           <AutoCarrierNotice parcel={parcel} className="parcel-card__sender" />
-          {(!flag || parcelHasCarrierUpdate(parcel)) && <span className="parcel-card__state">{current?.stage === 'delivered' && <Icon name="check" />}{statusLabel}</span>}
+          {(!flag || parcelHasCarrierUpdate(parcel)) && <span className="parcel-card__state">{current?.stage === 'delivered' && <Icon name="check" />}{statusLabel}{pickupPlace && <><span aria-hidden="true">·</span><span className="parcel-card__place">{pickupPlace}</span></>}</span>}
           {flagChip}
         </>}
       </button>

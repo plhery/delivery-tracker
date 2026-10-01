@@ -510,6 +510,12 @@ final class ParcelStore: ObservableObject {
         return url
     }
 
+    /// The demo writes its sample parcels in the app's language.
+    func demoLanguageChanged() {
+        guard isDemo else { return }
+        parcels = demo.list()
+    }
+
     func resetDemoData() async {
         DeliveryAnalytics.shared.action("demo-reset")
         guard isDemo else { return }
@@ -1312,9 +1318,15 @@ final class DemoRepository {
     private let placesKey = "sdt.native.demo.places.v1"
     private let key = "sdt.native.demo.parcels.v1"
     private let preferencesKey = "sdt.native.demo.preferences.v1"
+    /// The language the saved demo text is written in; English when absent.
+    private let languageKey = "sdt.native.demo.language.v1"
     private let defaults: UserDefaults
+    private let language: () -> AppLanguage
 
-    init(defaults: UserDefaults = .standard) { self.defaults = defaults }
+    init(defaults: UserDefaults = .standard, language: @escaping () -> AppLanguage = { AppLanguage.current }) {
+        self.defaults = defaults
+        self.language = language
+    }
 
     var notificationPreferences: NotificationPreferences {
         guard let data = defaults.data(forKey: preferencesKey),
@@ -1438,9 +1450,45 @@ final class DemoRepository {
     func reset() {
         defaults.removeObject(forKey: key)
         defaults.removeObject(forKey: preferencesKey)
+        defaults.removeObject(forKey: languageKey)
     }
 
+    /// The saved parcels with the demo's own text in the app's language. Names
+    /// someone edited and text the demo did not write match nothing and stay.
     private func load() -> [Parcel] {
+        let parcels = saved()
+        let target = language().rawValue
+        let written = defaults.string(forKey: languageKey) ?? "en"
+        guard written != target else { return parcels }
+        let wanted = Self.catalog.translations[target] ?? [:]
+        let english = Dictionary((Self.catalog.translations[written] ?? [:]).map { ($0.value, $0.key) }, uniquingKeysWith: { first, _ in first })
+        func say(_ text: String) -> String {
+            let original = english[text] ?? text
+            return wanted[original] ?? original
+        }
+        let translated = parcels.map { parcel in
+            var copy = parcel
+            copy.label = say(parcel.label)
+            copy.lastStatusText = parcel.lastStatusText.map(say)
+            copy.trackingEvents = parcel.trackingEvents.map { event in
+                var scan = event
+                scan.description = say(event.description)
+                scan.location = event.location.map(say)
+                return scan
+            }
+            return copy
+        }
+        save(translated)
+        defaults.set(target, forKey: languageKey)
+        return translated
+    }
+
+    /// A simulated scan's text, said in the language the demo is written in.
+    private func said(_ text: String) -> String {
+        Self.catalog.translations[language().rawValue]?[text] ?? text
+    }
+
+    private func saved() -> [Parcel] {
         if let data = defaults.data(forKey: key),
            let parcels = try? JSONDecoder.deliveryTracker.decode([Parcel].self, from: data) {
             if !defaults.bool(forKey: catalogKey) {
@@ -1463,6 +1511,7 @@ final class DemoRepository {
         }
         let seeded = Self.seed()
         save(seeded)
+        defaults.removeObject(forKey: languageKey)
         return seeded
     }
 
@@ -1507,12 +1556,13 @@ final class DemoRepository {
         var copy = parcel
         let update = Self.updates[next] ?? ("Tracking updated", nil, nil)
         let timestamp = DateParser.isoString(Date())
+        let description = said(update.description)
         copy.trackingEvents.append(TrackingEvent(
             id: UUID(), packageID: copy.id, stage: next,
-            description: update.description, location: update.location, occurredAt: timestamp, place: update.place
+            description: description, location: update.location.map(said), occurredAt: timestamp, place: update.place
         ))
         copy.lastSyncedAt = timestamp
-        copy.lastStatusText = update.description
+        copy.lastStatusText = description
         if CarrierCatalog.supportsSwissPostHandoff(copy.trackingNumber),
            [.inTransit, .customs, .outForDelivery, .delivered].contains(next) {
             copy.carrierData = CarrierData(activeTrackingCarrier: .swissPost, swissPostReady: true)
@@ -1555,7 +1605,8 @@ final class DemoRepository {
         timezone: TimeZone.current.identifier
     )
 
-    static func seed(now: Date = Date()) -> [Parcel] {
+    /// The sample parcels, in English, and each language's translation of their text.
+    private struct Catalog: Decodable {
         struct Sample: Decodable {
             struct Event: Decodable {
                 let stage: TrackingStage
@@ -1574,11 +1625,21 @@ final class DemoRepository {
             let weightKg: Double?
             let events: [Event]
         }
+        let parcels: [Sample]
+        let translations: [String: [String: String]]
+    }
+
+    private static let catalog: Catalog = {
         guard let url = Bundle.main.url(forResource: "DeliveryDemo", withExtension: "json"),
               let data = try? Data(contentsOf: url),
-              let samples = try? JSONDecoder().decode([Sample].self, from: data) else { return [] }
+              let catalog = try? JSONDecoder().decode(Catalog.self, from: data) else { return Catalog(parcels: [], translations: [:]) }
+        return catalog
+    }()
+
+    /// The sample parcels in English; `list()` writes them in the app's language.
+    static func seed(now: Date = Date()) -> [Parcel] {
         func iso(_ hoursAgo: Double) -> String { DateParser.isoString(now.addingTimeInterval(-hoursAgo * 3_600)) }
-        return samples.map { sample in
+        return catalog.parcels.map { sample in
             let id = UUID()
             let history = sample.events.map { event in
                 TrackingEvent(id: UUID(), packageID: id, stage: event.stage,

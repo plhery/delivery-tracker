@@ -17,6 +17,7 @@ import {
   type ParcelWithEvents,
 } from '../types';
 import { ApiAuthenticationError } from '../lib/apiClient';
+import { useI18n } from '../i18n';
 
 /** What a refresh can change for the reader: the timeline, the status line and the delivery date. */
 function trackingState(parcel: ParcelWithEvents | undefined): string | undefined {
@@ -78,6 +79,9 @@ export function ParcelsProvider({
   const parcelsRef = useRef<ParcelWithEvents[]>(savedParcels ?? []);
   const revision = useRef(0);
   const loadSequence = useRef(0);
+  // Only the demo writes its own parcels, so only it reloads with the language.
+  const { locale } = useI18n();
+  const demoLanguage = repo.setLanguage ? locale : null;
 
   useEffect(() => {
     parcelsRef.current = parcels;
@@ -142,11 +146,12 @@ export function ParcelsProvider({
   useEffect(() => {
     // Fetching from and subscribing to the repository is the external system
     // synchronization this provider owns.
+    if (demoLanguage) repo.setLanguage?.(demoLanguage);
     const unsubscribe = repo.subscribe?.(reload);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void reload();
     return unsubscribe;
-  }, [repo, reload]);
+  }, [repo, reload, demoLanguage]);
 
   // Show the service's answer immediately; the collection reload runs behind it.
   const addParcel = useCallback(

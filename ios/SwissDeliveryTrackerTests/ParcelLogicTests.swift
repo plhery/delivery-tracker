@@ -70,7 +70,7 @@ final class ParcelLogicTests: XCTestCase {
         coffee.label = "My edited coffee"
         coffee.archivedAt = DateParser.isoString(Date())
         defaults.set(try JSONEncoder.deliveryTracker.encode([coffee]), forKey: "sdt.native.demo.parcels.v1")
-        let repo = DemoRepository(defaults: defaults)
+        let repo = DemoRepository(defaults: defaults, language: { .en })
         let upgraded = repo.list()
         XCTAssertEqual(upgraded.count, 17)
         XCTAssertEqual(upgraded.first { $0.id == coffee.id }?.label, "My edited coffee")
@@ -81,6 +81,44 @@ final class ParcelLogicTests: XCTestCase {
         defaults.set(try JSONEncoder.deliveryTracker.encode([Parcel]()), forKey: "sdt.native.demo.parcels.v1")
         defaults.removeObject(forKey: "sdt.native.demo.catalog.v2")
         XCTAssertTrue(DemoRepository(defaults: defaults).list().isEmpty)
+    }
+
+    func testDemoIsWrittenInTheAppLanguageAndKeepsEditedNames() throws {
+        let suite = "demo-language-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var language = AppLanguage.en
+        let repo = DemoRepository(defaults: defaults, language: { language })
+        let coffee = try XCTUnwrap(repo.list().first { $0.label == "Coffee beans ☕" })
+        _ = try repo.rename(id: coffee.id, label: "My own coffee")
+
+        language = .fr
+        let french = repo.list()
+        XCTAssertEqual(french.first { $0.id == coffee.id }?.label, "My own coffee")
+        let sneakers = try XCTUnwrap(french.first { $0.trackingNumber == "1234567899" })
+        XCTAssertEqual(sneakers.label, "Nouvelles baskets 👟")
+        XCTAssertEqual(sneakers.pickupPlace, "Kiosk im Hauptbahnhof")
+        XCTAssertTrue(sneakers.trackingEvents.contains { $0.description == "Personne à la maison. Sans doute parti courir." })
+        XCTAssertEqual(sneakers.lastStatusText, "T’attend au point de retrait")
+        // A refresh adds its scan in the same language.
+        let collected = try repo.refresh(id: sneakers.id)
+        XCTAssertEqual(collected.currentEvent?.description, "Livré dans ta boîte aux lettres")
+        XCTAssertEqual(collected.currentEvent?.location, "Domicile")
+        XCTAssertNil(collected.pickupPlace)
+
+        language = .de
+        let german = repo.list()
+        XCTAssertEqual(german.first { $0.id == sneakers.id }?.label, "Neue Sneaker 👟")
+        XCTAssertEqual(german.first { $0.id == sneakers.id }?.currentEvent?.description, "In deinen Briefkasten zugestellt")
+        XCTAssertEqual(german.first { $0.id == coffee.id }?.label, "My own coffee")
+        // Another launch, and a reset, keep the chosen language.
+        let later = DemoRepository(defaults: defaults, language: { .de })
+        XCTAssertEqual(later.list().first { $0.id == sneakers.id }?.label, "Neue Sneaker 👟")
+        later.reset()
+        XCTAssertTrue(later.list().contains { $0.label == "Kaffeebohnen ☕" })
+
+        language = .en
+        XCTAssertEqual(Set(repo.list().map(\.label)), Set(DemoRepository.seed().map(\.label)))
     }
 
     func testArrivalTiltFiltersJitterAndBoundsLargeMovements() {

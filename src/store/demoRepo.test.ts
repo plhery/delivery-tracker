@@ -5,6 +5,9 @@ import { CARRIER_CAPABILITIES } from '../generated/apiContract';
 import { passportStatistics } from '../lib/passport';
 import { nextPriorityParcel } from '../lib/parcelPriority';
 import { ParcelAlreadyExistsError } from '../types';
+import { SUPPORTED_LOCALES } from '../lib/locale';
+import demoSamples from '../../shared/delivery-demo.json';
+import { SIMULATED_UPDATES } from './demoRepo';
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -302,6 +305,68 @@ describe('createDemoRepo', () => {
     await repo.refresh();
     const after = await repo.list();
     expect(after.map((p) => p.events.length)).toEqual(counts);
+  });
+
+  it('writes its sample parcels in the app language and keeps edited names', async () => {
+    const repo = createDemoRepo(window.localStorage);
+    const english = await repo.list();
+    const coffee = english.find(parcel => parcel.label === 'Coffee beans ☕')!;
+    await repo.rename(coffee.id, 'My own coffee');
+
+    repo.setLanguage!('fr');
+    const french = await repo.list();
+    expect(french.find(parcel => parcel.id === coffee.id)).toMatchObject({ label: 'My own coffee' });
+    const sneakers = french.find(parcel => parcel.trackingNumber === '1234567899')!;
+    expect(sneakers.label).toBe('Nouvelles baskets 👟');
+    expect(sneakers.events.map(event => event.description)).toContain('Personne à la maison. Sans doute parti courir.');
+    expect(sneakers.events.map(event => event.location)).toContain('Zürich, Switzerland');
+    expect(sneakers).toMatchObject({ senderName: 'Elbe Laufladen', pickupPoint: 'Kiosk im Hauptbahnhof\nBahnhofplatz 15, 8001 Zürich' });
+
+    // A refresh adds its scan in the same language.
+    const collected = await repo.refreshParcel!(sneakers.id);
+    expect(collected.events.at(-1)).toMatchObject({ stage: 'delivered', description: 'Livré dans ta boîte aux lettres', location: 'Domicile' });
+
+    repo.setLanguage!('de');
+    const german = await repo.list();
+    expect(german.find(parcel => parcel.id === sneakers.id)!.label).toBe('Neue Sneaker 👟');
+    expect(german.find(parcel => parcel.id === sneakers.id)!.events.at(-1)).toMatchObject({ description: 'In deinen Briefkasten zugestellt', location: 'Zuhause' });
+    expect(german.find(parcel => parcel.id === coffee.id)!.label).toBe('My own coffee');
+
+    // Another session, and a reset, keep the chosen language.
+    const later = createDemoRepo(window.localStorage);
+    later.setLanguage!('de');
+    expect((await later.list()).find(parcel => parcel.id === sneakers.id)!.label).toBe('Neue Sneaker 👟');
+    expect((await later.resetDemo!()).map(parcel => parcel.label)).toContain('Kaffeebohnen ☕');
+
+    later.setLanguage!('en');
+    expect((await later.list()).map(parcel => parcel.label)).toEqual(expect.arrayContaining(english.map(parcel => parcel.label)));
+  });
+
+  it('translates every text the demo writes, once per language', async () => {
+    const texts = new Set<string>();
+    for (const sample of demoSamples) {
+      texts.add(sample.label);
+      for (const event of sample.events) texts.add(event.description);
+    }
+    for (const [stage, update] of Object.entries(SIMULATED_UPDATES)) {
+      // The waiting message is one of the app's own tracking messages.
+      if (stage !== 'pending') texts.add(update.description);
+      if (update.location && !update.place) texts.add(update.location);
+    }
+    // The iPhone demo's fallback scan.
+    texts.add('Tracking updated');
+    for (const locale of SUPPORTED_LOCALES) {
+      if (locale === 'en') continue;
+      const dictionary: Record<string, string> = (await import(`../../shared/demo-locales/${locale}.json`)).default;
+      expect(Object.keys(dictionary).sort(), locale).toEqual([...texts].sort());
+      const translations = Object.values(dictionary);
+      expect(new Set(translations).size, locale).toBe(translations.length);
+      expect(translations.every(text => text.trim() === text && text.length > 0), locale).toBe(true);
+      // Emoji and numbers survive translation.
+      for (const [text, translated] of Object.entries(dictionary)) {
+        expect(translated.match(/\p{Extended_Pictographic}/gu) ?? [], text).toEqual(text.match(/\p{Extended_Pictographic}/gu) ?? []);
+      }
+    }
   });
 
   it('survives corrupted storage by re-seeding', async () => {
