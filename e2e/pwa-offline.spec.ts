@@ -4,6 +4,7 @@ import { once } from 'node:events';
 import { createServer } from 'node:net';
 import fr from '../shared/locales/fr.json' with { type: 'json' };
 import de from '../shared/locales/de.json' with { type: 'json' };
+import frDemo from '../shared/demo-locales/fr.json' with { type: 'json' };
 
 // Shut down a dedicated origin to exercise real network loss. WebKit's emulated
 // offline mode can abort navigations before its service worker handles them.
@@ -44,7 +45,8 @@ test('serves a translated, interactive fallback when the server becomes unreacha
     await page.getByRole('combobox', { name: 'Language' }).selectOption('fr');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(fr['offline.title']);
     await page.goto(origin.url);
-    await expect(page.getByText('Coffee beans ☕', { exact: true })).toBeVisible();
+    // The demo is written in the language just chosen.
+    await expect(page.getByText(frDemo['Coffee beans ☕'], { exact: true })).toBeVisible();
     await origin.stop();
     await page.goto(`${origin.url}/uncached-offline-navigation`);
     await expect(page).toHaveURL(`${origin.url}/~offline`);
