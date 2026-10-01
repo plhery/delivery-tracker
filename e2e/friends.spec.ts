@@ -1,10 +1,18 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 
 test.use({ locale: 'en-US' });
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('sdt.web.experience.v1', 'demo'));
   await page.goto('/');
   await page.getByRole('button', { name: 'Friends', exact: true }).click();
+});
+
+// A sheet springs in, and check() does not wait for a switch that is already on, so a position is only
+// meaningful once every finite animation in the sheet has run out.
+const atRest = (sheet: Locator) => sheet.evaluate(async (element) => {
+  await Promise.all(element.getAnimations({ subtree: true })
+    .filter((animation) => Number.isFinite(animation.effect?.getComputedTiming().endTime))
+    .map((animation) => animation.finished));
 });
 
 test('The compact circle opens Passport stamps and keeps bubble dismissal inside its sheet', async ({ page }) => {
@@ -42,11 +50,13 @@ test('Sharing controls stay in place and preserve saved privacy preferences', as
   const sheet = page.locator('.friends-sheet');
   const arrivals = sheet.getByRole('switch', { name: 'Arrivals this week', exact: true });
   await arrivals.check();
+  await atRest(sheet);
   const before = await arrivals.boundingBox();
   await arrivals.click();
+  await expect(arrivals).not.toBeChecked();
+  await atRest(sheet);
   const after = await arrivals.boundingBox();
   expect(after!.y).toBeCloseTo(before!.y, 0);
-  await expect(arrivals).not.toBeChecked();
   await expect(sheet.getByRole('button', { name: 'Turn off Friends' })).toHaveCount(0);
   await sheet.getByRole('button', { name: 'Save', exact: true }).click();
   await page.getByRole('button', { name: 'Sharing preferences', exact: true }).click();
