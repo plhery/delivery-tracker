@@ -7,7 +7,9 @@ import {
   canaryHealthy,
   carrierCanaryMain,
   probeCanaryTarget,
+  recheckUnanswered,
   runCanaries,
+  type CanaryResult,
   type CanaryTarget,
 } from './carrierCanary';
 
@@ -193,6 +195,44 @@ describe('carrier front-door canaries', () => {
     expect(await carrierCanaryMain(['--attempts', '1'])).toBe(1);
     expect(fs.readFileSync(summary, 'utf8')).toMatch(/\| ❌ failed \| swiss-post[a-z,-]* \(service\.post\.ch\) \| HTTP 404 \|/);
     expect(fs.readFileSync(output, 'utf8')).toMatch(/^failures<<(EOF_[\w-]+)\n- `swiss-post[a-z,-]* \(service\.post\.ch\)`: HTTP 404\n\1\n$/);
+  });
+
+  it('probes an unanswered front door again after a pause, keeping the original order', async () => {
+    const targets = ['answered', 'rotating', 'gone', 'missing'].map((carrierId) => ({
+      ...target, carrierId, url: `https://${carrierId}.example/`,
+    }));
+    const first: CanaryResult[] = [200, null, null, 404].map((status, index) => ({ target: targets[index]!, status }));
+    const fetchStatus = vi.fn(async (url: string) => {
+      if (url.includes('rotating')) return 301;
+      throw new TypeError('fetch failed');
+    });
+    vi.useFakeTimers();
+    try {
+      const pending = recheckUnanswered(first, { pauseMs: 70_000, fetchStatus });
+      await vi.advanceTimersByTimeAsync(69_999);
+      expect(fetchStatus).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(fetchStatus.mock.calls.map(([url]) => url)).toEqual(['https://rotating.example/', 'https://gone.example/']);
+      await vi.advanceTimersByTimeAsync(70_000);
+      const results = await pending;
+      expect(results.map((result) => result.target)).toEqual(targets);
+      expect(results.map((result) => result.status)).toEqual([200, 301, null, 404]);
+      // An answer ends the rechecks for that target; silence uses every round.
+      expect(fetchStatus).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('passes a front door that only answers on a recheck', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    let unreachable = 2;
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (new URL(url).hostname === 'service.post.ch' && unreachable-- > 0) throw new TypeError('fetch failed');
+      return new Response(null, { status: 200 });
+    }));
+    expect(await carrierCanaryMain(['--recheck-pause', '0.001'])).toBe(0);
+    expect(unreachable).toBe(-1);
   });
 
   it('caps concurrency while preserving target order', async () => {

@@ -6,6 +6,9 @@ import { writeCanaryReport } from '../../scripts/canary-report.mjs';
 const DEFAULT_TIMEOUT_MS = 15_000;
 const DEFAULT_ATTEMPTS = 2;
 const MAX_CONCURRENCY = 6;
+const DEFAULT_RECHECKS = 2;
+// Longer than the one-minute DNS answers of the CDNs seen rotating their edges.
+const DEFAULT_RECHECK_PAUSE_MS = 70_000;
 const ERROR_NAMES = new Set([
   'Error', 'TypeError', 'AggregateError', 'AbortError', 'TimeoutError',
   'ConnectTimeoutError', 'HeadersTimeoutError', 'BodyTimeoutError', 'SocketError',
@@ -184,6 +187,28 @@ export async function runCanaries(
   return results;
 }
 
+/**
+ * Probes each target that got no HTTP answer again after a pause, for up to
+ * `rechecks` rounds. A front door on rotating DNS can hand out an edge this
+ * network cannot reach (YTO's CDN does), and an immediate retry meets the
+ * same address.
+ */
+export async function recheckUnanswered(
+  results: CanaryResult[],
+  options: NonNullable<Parameters<typeof probeCanaryTarget>[1]> & { rechecks?: number; pauseMs?: number } = {},
+): Promise<CanaryResult[]> {
+  const { rechecks = DEFAULT_RECHECKS, pauseMs = DEFAULT_RECHECK_PAUSE_MS, ...probe } = options;
+  let current = results;
+  for (let round = 0; round < rechecks; round += 1) {
+    const unanswered = current.filter((result) => result.status === null).map((result) => result.target);
+    if (!unanswered.length) break;
+    await new Promise((resolve) => { setTimeout(resolve, pauseMs); });
+    const rechecked = await runCanaries(unanswered, { ...probe, attempts: 1 });
+    current = current.map((result) => rechecked.find((again) => again.target === result.target) ?? result);
+  }
+  return current;
+}
+
 function optionValue(argv: string[], name: string, fallback: number): number {
   const index = argv.indexOf(name);
   if (index < 0) return fallback;
@@ -195,6 +220,7 @@ function optionValue(argv: string[], name: string, fallback: number): number {
 export async function carrierCanaryMain(argv = process.argv.slice(2)): Promise<number> {
   const timeoutMs = optionValue(argv, '--timeout', DEFAULT_TIMEOUT_MS / 1_000) * 1_000;
   const attempts = optionValue(argv, '--attempts', DEFAULT_ATTEMPTS);
+  const pauseMs = optionValue(argv, '--recheck-pause', DEFAULT_RECHECK_PAUSE_MS / 1_000) * 1_000;
   console.log(`CANARY ${JSON.stringify({
     node: process.version,
     undici: process.versions.undici,
@@ -209,13 +235,17 @@ export async function carrierCanaryMain(argv = process.argv.slice(2)): Promise<n
   const targets = automaticCanaryTargets();
   const carriersByUrl = new Map<string, string[]>();
   for (const target of targets) carriersByUrl.set(target.url, [...carriersByUrl.get(target.url) ?? [], target.carrierId]);
-  const results = await runCanaries(targets.filter((target) => carriersByUrl.get(target.url)![0] === target.carrierId), {
+  const options = {
     timeoutMs,
     attempts,
-    onAttempt: (target, result) => {
+    onAttempt: (target: CanaryTarget, result: CanaryAttempt) => {
       console.log(`ATTEMPT ${target.carrierId} ${new URL(target.url).hostname} ${JSON.stringify(result)}`);
     },
-  });
+  };
+  const results = await recheckUnanswered(
+    await runCanaries(targets.filter((target) => carriersByUrl.get(target.url)![0] === target.carrierId), options),
+    { ...options, pauseMs },
+  );
   const failures: { result: 'failed'; check: string; reason: string }[] = [];
   for (const result of results) {
     const carriers = carriersByUrl.get(result.target.url)!.join(',');

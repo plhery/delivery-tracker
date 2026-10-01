@@ -16,7 +16,7 @@ jobs:
   probe:
     name: Public carrier reachability
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     outputs:
       failures: ${{ steps.probe.outputs.failures }}
     steps:

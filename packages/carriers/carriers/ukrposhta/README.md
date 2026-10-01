@@ -26,6 +26,8 @@ Retrieval needs `TRACKING_CHROMIUM_PATH`. Multiple-piece shipments, count change
 between requests and conflicting current scans are inconclusive. The portal's
 not-found reply omits the barcode, so it cannot establish parcel absence. Delivery
 and estimate dates are not inferred from local scan clocks or the query time.
+The portal can refuse the browser's automatic verification. The lookup then fails
+as a challenge and routing falls back to the universal providers.
 
 ## Testing
 
