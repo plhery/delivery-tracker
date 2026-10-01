@@ -58,7 +58,7 @@ struct ParcelMapScreen: View {
             ZStack(alignment: .bottom) {
                 // The route is framed in the space the summary leaves.
                 WorldMapView(
-                    atlas: atlas, route: route, mode: mode, palette: .map(accent: accent), interactive: true, night: time,
+                    atlas: atlas, route: route, mode: mode, palette: .map(accent: accent), sites: true, interactive: true, night: time,
                     live: stage != .delivered && stage != .returned,
                     insets: EdgeInsets(top: proxy.safeAreaInsets.top + 52, leading: 0,
                                        bottom: proxy.safeAreaInsets.bottom + barHeight + 24, trailing: 0),
@@ -91,9 +91,10 @@ struct ParcelMapScreen: View {
         .background(Brand.background)
     }
 
+    /// The opened map has room for a facility's own name, so it says "Zürich-Mülligen" where the card says "Zürich".
     private var label: String {
-        let origin = route.origin?.place.name ?? ""
-        let end = (route.destination ?? route.current?.place)?.name ?? origin
+        let origin = route.origin?.place.name(sites: true) ?? ""
+        let end = (route.destination ?? route.current?.place)?.name(sites: true) ?? origin
         return end == origin ? localizer.text("map.labelOne", ["place": origin]) : localizer.text("map.label", ["from": origin, "to": end])
     }
 
@@ -160,13 +161,14 @@ struct ParcelMapScreen: View {
 
     private func endpoint(_ title: String, _ place: RoutePlace, alignment: HorizontalAlignment) -> some View {
         let country = TrackingLocation.countryName(place.country, language: localizer.language)
+        let name = place.name(sites: true)
         return VStack(alignment: alignment, spacing: 2) {
             Text(title)
                 .font(.caption2.weight(.medium))
                 .textCase(.uppercase)
                 .tracking(1.4)
                 .foregroundStyle(.secondary)
-            Text(place.name)
+            Text(name)
                 .font(.title2.weight(.semibold))
                 .lineLimit(1)
             Text("\(TrackingLocation.flag(place.country)) \(country)")
@@ -177,7 +179,7 @@ struct ParcelMapScreen: View {
         .frame(maxWidth: .infinity, alignment: alignment == .leading ? .leading : .trailing)
         .multilineTextAlignment(alignment == .leading ? .leading : .trailing)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(place.name == country ? "\(title), \(country)" : "\(title), \(place.name), \(country)")
+        .accessibilityLabel(name == country ? "\(title), \(country)" : "\(title), \(name), \(country)")
     }
 
     private func viewButton(_ target: ParcelRoute.Mode, key: String, symbol: String) -> some View {

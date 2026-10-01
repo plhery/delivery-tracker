@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EventPlace, Stage, TrackingEvent } from '../../types';
-import { buildRoute, countryPlace, defaultMode, flag, formatKm, hasNearView, placeFromEvent, routeFromEvents, type Place, type Scan } from './route';
+import { buildRoute, countryPlace, defaultMode, flag, formatKm, hasNearView, placeFromEvent, placeName, routeFromEvents, type Place, type Scan } from './route';
 
 const city = (name: string, country: string, longitude: number, latitude: number): Place => ({
   id: name, name, country, coordinate: [longitude, latitude], precision: 'city',
@@ -92,6 +92,13 @@ describe('routeFromEvents', () => {
     expect(route.latestLocated).toBe(true);
     expect(placeFromEvent(place('Zürich', 47.3667, 8.55, 'CH'))).toMatchObject({ id: '47.37,8.55', coordinate: [8.55, 47.3667] });
     expect(routeFromEvents([event('2026-09-20T08:00:00Z', place('China', 32.5, 106.34, 'CN', 'country'))]).stops[0].place.name).toBe('China');
+  });
+
+  it('calls a facility by its town on a card and by its own name on the opened map', () => {
+    const centre = placeFromEvent({ ...place('Zürich', 47.3959, 8.4695, 'CH'), site: 'Zürich-Mülligen' });
+    expect([placeName(centre, false), placeName(centre, true)]).toEqual(['Zürich', 'Zürich-Mülligen']);
+    const town = placeFromEvent(place('Zürich', 47.37, 8.55, 'CH'));
+    expect([placeName(town, false), placeName(town, true)]).toEqual(['Zürich', 'Zürich']);
   });
 });
 

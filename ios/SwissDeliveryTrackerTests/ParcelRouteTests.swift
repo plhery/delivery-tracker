@@ -231,6 +231,32 @@ final class ParcelRouteTests: XCTestCase {
         XCTAssertTrue(overlay.dots.contains { $0.kind == .current })
     }
 
+    func testAFacilityIsNamedByItsTownOnACardAndInFullOnTheOpenedMap() throws {
+        let url = try XCTUnwrap(Bundle.main.url(forResource: "World", withExtension: "json"))
+        let atlas = try WorldAtlas(data: Data(contentsOf: url))
+        let centre = RoutePlace(EventPlace(latitude: 47.3959, longitude: 8.4695, precision: .city, country: "CH", name: "Zürich",
+                                           site: "Zürich-Mülligen"))
+        XCTAssertEqual([centre.name(sites: false), centre.name(sites: true)], ["Zürich", "Zürich-Mülligen"])
+        XCTAssertEqual(zurich.name(sites: true), "Zürich")
+        let size = CGSize(width: 400, height: 300)
+        let box = CGRect(x: 40, y: 40, width: 320, height: 220)
+        func names(_ route: ParcelRoute, sites: Bool, mode: ParcelRoute.Mode = .journey) -> (labels: [String], pointers: [String]) {
+            let points = mode == .now ? route.near.map(\.place.point) : route.stops.map(\.place.point)
+            let overlay = MapOverlay(route: route, camera: GlobeCamera.fit(points, in: box, minimumKilometres: 120), size: size,
+                                     insets: EdgeInsets(), labels: .all, sites: sites, mode: mode, context: false, atlas: atlas,
+                                     locale: Locale(identifier: "en"), countryName: { $0 })
+            return (overlay.labels.map(\.text), overlay.pointers.map(\.name))
+        }
+        // The town and the centre 7 km from it are both "Zürich": the name is written once, at the parcel.
+        let route = ParcelRoute(places: [basel, centre, zurich])
+        XCTAssertEqual(names(route, sites: false).labels.sorted(), ["Basel", "Zürich"])
+        XCTAssertEqual(names(route, sites: true).labels.sorted(), ["Basel", "Zürich", "Zürich-Mülligen"])
+        // Far from the centre, the pointer to it follows the same rule.
+        let far = ParcelRoute(places: [centre, kyoto])
+        XCTAssertEqual(names(far, sites: false, mode: .now).pointers, ["Zürich"])
+        XCTAssertEqual(names(far, sites: true, mode: .now).pointers, ["Zürich-Mülligen"])
+    }
+
     func testThePlaceOfTheParcelIsNamedInsideTheFrame() throws {
         let url = try XCTUnwrap(Bundle.main.url(forResource: "World", withExtension: "json"))
         let atlas = try WorldAtlas(data: Data(contentsOf: url))

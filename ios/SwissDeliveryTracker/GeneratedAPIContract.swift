@@ -293,6 +293,7 @@ struct EventPlace: Codable, Equatable, Hashable, Sendable {
     var precision: EventPlacePrecision
     var country: String
     var name: String
+    var site: String? = nil
 }
 
 struct TrackingEvent: Codable, Equatable, Hashable, Sendable, Identifiable {

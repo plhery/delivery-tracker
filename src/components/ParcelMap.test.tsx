@@ -119,6 +119,13 @@ describe('map summary', () => {
     expect(within(views).getByRole('button', { name: 'Journey' })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('names a facility in full, where the card names its town', () => {
+    const centre: Place = { ...city('Zürich', 'CH', 8.4695, 47.3959), site: 'Zürich-Mülligen' };
+    sheet(buildRoute([scan(centre), scan(bern)]), 'in_transit');
+    expect(screen.getByRole('dialog', { name: 'Map of the journey from Zürich-Mülligen to Bern' })).toBeInTheDocument();
+    expect(screen.getByText('From').nextElementSibling).toHaveTextContent('Zürich-Mülligen');
+  });
+
   it('says delivered, or last seen when the newest scan has no place', () => {
     const route = buildRoute([scan(tokyo), scan(bern)]);
     const view = sheet(route, 'delivered');

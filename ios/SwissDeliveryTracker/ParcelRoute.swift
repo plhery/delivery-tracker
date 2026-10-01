@@ -60,9 +60,14 @@ extension GeoPoint {
 struct RoutePlace: Hashable, Sendable {
     let id: String
     var name: String
+    /// The facility's own name, longer than its town's: "Zürich-Mülligen".
+    var site: String? = nil
     let country: String
     let point: GeoPoint
     let isCountry: Bool
+
+    /// What to call the place: its town on a card, the facility itself on the opened map, which has the room.
+    func name(sites: Bool) -> String { sites ? site ?? name : name }
 }
 
 extension RoutePlace {
@@ -71,6 +76,7 @@ extension RoutePlace {
         self.init(
             id: String(format: "%.2f,%.2f", place.latitude, place.longitude),
             name: place.name,
+            site: place.site,
             country: place.country,
             point: GeoPoint(longitude: place.longitude, latitude: place.latitude),
             isCountry: place.precision == .country

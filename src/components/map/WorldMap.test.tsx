@@ -159,6 +159,25 @@ describe('WorldMap', () => {
     await waitFor(() => expect(container.querySelector('svg path')).toBeNull());
   });
 
+  it('names a facility by its town on a card, once, and by its own name on the opened map', async () => {
+    const centre: Place = { ...city('Zürich', 'CH', 8.4695, 47.3959), id: 'centre', site: 'Zürich-Mülligen' };
+    const route = buildRoute([scan(basel), scan(centre), scan(zurich)]);
+    const { rerender } = render(<WorldMap route={route} mode="journey" time={time} context={false} />);
+    await screen.findByText('Basel');
+    // The town and the centre 7 km from it are both "Zürich": the name is written once, at the parcel.
+    expect(screen.getByText('Zürich')).toHaveAttribute('data-kind', 'current');
+    expect(screen.queryByText('Zürich-Mülligen')).not.toBeInTheDocument();
+    rerender(<WorldMap route={route} mode="journey" time={time} context={false} sites />);
+    expect(screen.getByText('Zürich-Mülligen')).toHaveAttribute('data-kind', 'stop');
+    expect(screen.getByText('Zürich')).toHaveAttribute('data-kind', 'current');
+    // Far from the centre, the pointer to it follows the same rule.
+    const far = buildRoute([scan(centre), scan(kyoto)]);
+    rerender(<WorldMap route={far} mode="now" time={time} context={false} />);
+    await waitFor(() => expect(screen.getByText('Zürich').tagName).toBe('STRONG'));
+    rerender(<WorldMap route={far} mode="now" time={time} context={false} sites />);
+    expect(screen.getByText('Zürich-Mülligen').tagName).toBe('STRONG');
+  });
+
   it('skips transparent layers and cuts lakes out of a see-through map', async () => {
     const colors: Record<string, string> = { ocean: 'rgba(0, 0, 0, 0)', night: 'transparent', grid: 'rgb(0 0 0 / 0)' };
     const original = window.getComputedStyle.bind(window);

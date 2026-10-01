@@ -42,10 +42,11 @@ describe('locatePlace', () => {
   });
 
   it('puts Swiss Post sorting centres on their own site', () => {
-    const mulligen = { precision: 'city', country: 'CH', name: 'Zürich-Mülligen', latitude: 47.3959, longitude: 8.4695 };
+    // The town names the place; a site with a name of its own gives that too.
+    const mulligen = { precision: 'city', country: 'CH', name: 'Zürich', site: 'Zürich-Mülligen', latitude: 47.3959, longitude: 8.4695 };
     expect(place('Zürich Briefzentrum 801050')).toEqual(mulligen);
     expect(place('Zürich Briefzentrum International 801053')).toEqual(mulligen);
-    expect(place('Daillens Centre Colis 131000')).toMatchObject({ name: 'Daillens', latitude: 46.6327, longitude: 6.541 });
+    expect(place('Daillens Centre Colis 131000')).toEqual({ precision: 'city', country: 'CH', name: 'Daillens', latitude: 46.6327, longitude: 6.541 });
     // A site the table does not know stays on its town.
     expectPlace('Zürich 15 Zustellung 801500', { country: 'CH', name: 'Zürich', latitude: 47.37, longitude: 8.55 }, ['CH']);
     // The number alone is not enough: the name has to start with the site's town.

@@ -4080,6 +4080,7 @@ export interface ApiEventPlace {
   "precision": "city" | "country";
   "country": string;
   "name": string;
+  "site"?: string;
 }
 
 export interface ApiTrackingEventRow {

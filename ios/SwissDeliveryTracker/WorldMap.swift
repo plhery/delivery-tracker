@@ -517,8 +517,11 @@ struct MapOverlay {
         }
     }
 
+    /// A town is named once, however many of its sites the parcel passed through.
+    private static let sameTownKilometres = 30.0
+
     init(route: ParcelRoute, camera: GlobeCamera, size: CGSize, insets: EdgeInsets, labels labelSet: MapLabels,
-         mode: ParcelRoute.Mode, context: Bool, atlas: WorldAtlas, locale: Locale,
+         sites: Bool = false, mode: ParcelRoute.Mode, context: Bool, atlas: WorldAtlas, locale: Locale,
          countryName: (String) -> String) {
         let projection = GlobeProjection(camera)
         let visible = { (point: GeoPoint) in projection.sees(point) }
@@ -593,6 +596,7 @@ struct MapOverlay {
             neighbours["destination"] = [current.place.point]
         }
         var seen = Set<String>()
+        var named: [(text: String, point: GeoPoint)] = []
         for candidate in labelSet == .none ? [] : candidates {
             let point = candidate.place.point
             guard visible(point), !seen.contains(candidate.place.id) else { continue }
@@ -600,7 +604,8 @@ struct MapOverlay {
             guard inside(spot, -2) else { continue }
             seen.insert(candidate.place.id)
             let area = candidate.place.isCountry
-            let text = area ? candidate.place.name.uppercased(with: locale) : candidate.place.name
+            let text = area ? candidate.place.name.uppercased(with: locale) : candidate.place.name(sites: sites)
+            if named.contains(where: { $0.text == text && $0.point.kilometres(to: point) < Self.sameTownKilometres }) { continue }
             let width = area ? Fonts.width(text, Fonts.area, tracking: 0.84) + 10 : Fonts.width(text, Fonts.label) + 14
             let height: CGFloat = 22
             var awayX = 0.0
@@ -635,6 +640,7 @@ struct MapOverlay {
             guard let frame = ordered.first(where: { !overlaps($0, taken) && fits($0, 2) }) ?? (candidate.priority == 0 ? framed() : nil)
             else { continue }
             placed.append(frame)
+            named.append((text, point))
             labels.append(Label(frame: frame, text: text, kind: area ? .area : candidate.kind))
         }
 
@@ -658,13 +664,14 @@ struct MapOverlay {
                         : dy < 0 ? (insets.top + margin - viewCenter.y) / dy : .infinity
                 )
                 let detail = ParcelRoute.formattedKilometres(current.place.point.kilometres(to: place.point), locale: locale)
-                let width = Fonts.width(place.name, Fonts.pointerName) + Fonts.width(" " + detail, Fonts.pointerDetail) + 34
+                let name = place.name(sites: sites)
+                let width = Fonts.width(name, Fonts.pointerName) + Fonts.width(" " + detail, Fonts.pointerDetail) + 34
                 let half = width / 2
                 // Keep the whole chip inside the frame, whichever edge it points past.
                 let x = max(insets.leading + half + 8, min(size.width - insets.trailing - half - 8, viewCenter.x + dx * reach))
                 let y = max(insets.top + 21, min(size.height - insets.bottom - 21, viewCenter.y + dy * reach))
                 placed.append(CGRect(x: x - half, y: y - 13, width: width, height: 26))
-                pointers.append(Pointer(center: CGPoint(x: x, y: y), width: width, angle: atan2(dy, dx), name: place.name, detail: detail))
+                pointers.append(Pointer(center: CGPoint(x: x, y: y), width: width, angle: atan2(dy, dx), name: name, detail: detail))
             }
         }
 
@@ -897,6 +904,8 @@ struct WorldMapView: View {
     let mode: ParcelRoute.Mode
     let palette: MapPalette
     var labels: MapLabels = .all
+    /// Names a facility by its own name ("Zürich-Mülligen") rather than its town's.
+    var sites = false
     /// Faint country and city names for orientation.
     var showsContext = true
     var interactive = false
@@ -937,7 +946,7 @@ struct WorldMapView: View {
                 let shown = flight?.camera(at: timeline.date) ?? camera ?? target
                 let moving = flight.map { $0.progress(at: timeline.date) < 1 } ?? false
                 let overlay = MapOverlay(
-                    route: route, camera: shown, size: size, insets: insets, labels: labels, mode: mode, context: showsContext,
+                    route: route, camera: shown, size: size, insets: insets, labels: labels, sites: sites, mode: mode, context: showsContext,
                     atlas: atlas, locale: language.locale, countryName: { TrackingLocation.countryName($0, language: language) }
                 )
                 ZStack(alignment: .topLeading) {

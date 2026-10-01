@@ -31,6 +31,9 @@ Swiss Post's "Zürich Briefzentrum" is in Mülligen, 7 km west.
   OpenStreetMap element its point comes from. The first four digits are often not a
   postcode (8920 and 8520, the Urdorf and Frauenfeld parcel centres, are none), so unknown
   sites stay on their town.
+- A site with a name of its own keeps its town as the place's `name` and gives its own as
+  `site` ("Zürich", "Zürich-Mülligen"). A parcel's card has room for the town only; the
+  opened map names the site.
 - A carrier's own coordinates for a scan (`point` on the event, kept in `raw_data`) move it
   to the facility when they are within 30 km of the town its text names. Scans with the same
   text share a point, so a carrier that places some scans of an office keeps them together.

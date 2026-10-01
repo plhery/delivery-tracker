@@ -14,7 +14,10 @@ export interface EventPlace {
   precision: 'city' | 'country';
   /** ISO 3166-1 alpha-2. */
   country: string;
+  /** The town, which is all a card has room for. */
   name: string;
+  /** The facility's own name, when the point is on one that has a name: "Zürich-Mülligen". */
+  site?: string;
 }
 
 /** Where a carrier itself puts a scan's facility (`point` on a stored scan). */
@@ -285,8 +288,8 @@ function facilityPlace(text: string): EventPlace | null {
   const match = /^(.*\S)\s+(\d{6})$/.exec(text);
   const facility = match && FACILITIES.get(`CH:${match[2]}`);
   if (!facility || !`${nameKey(match[1])} `.startsWith(`${nameKey(facility.town)} `)) return null;
-  const { latitude, longitude, country, name } = facility;
-  return { latitude, longitude, precision: 'city', country, name };
+  const { latitude, longitude, country, town, name } = facility;
+  return { latitude, longitude, precision: 'city', country, name: town, ...(name === town ? {} : { site: name }) };
 }
 
 /** The carrier's own point in place of the town's centre, when the two agree. */

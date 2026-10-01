@@ -8,6 +8,8 @@ export type Precision = 'city' | 'country';
 export interface Place {
   id: string;
   name: string;
+  /** The facility's own name, longer than its town's: "Zürich-Mülligen". */
+  site?: string;
   country: string;
   coordinate: Coordinate;
   precision: Precision;
@@ -64,11 +66,15 @@ export function placeFromEvent(place: EventPlace): Place {
   return {
     id: `${place.latitude.toFixed(2)},${place.longitude.toFixed(2)}`,
     name: place.name,
+    site: place.site,
     country: place.country,
     coordinate: [place.longitude, place.latitude],
     precision: place.precision,
   };
 }
+
+/** What to call a place: its town on a card, the facility itself on the opened map, which has the room. */
+export const placeName = (place: Place, sites: boolean) => (sites && place.site) || place.name;
 
 /** A country as a destination, drawn at its label point. */
 export function countryPlace(country: string, name: string, coordinate: Coordinate): Place {

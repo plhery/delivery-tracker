@@ -6,7 +6,7 @@ import { countryName } from '../lib/trackingLocation';
 import type { ParcelWithEvents, Stage } from '../types';
 import { Icon } from './Icon';
 import { countryLabel, useWorld } from './map/geography';
-import { countryPlace, defaultMode, flag, formatKm, hasNearView, routeFromEvents, type MapMode, type Route } from './map/route';
+import { countryPlace, defaultMode, flag, formatKm, hasNearView, placeName, routeFromEvents, type MapMode, type Route } from './map/route';
 import { WorldMap } from './map/WorldMap';
 import './ParcelMap.css';
 
@@ -28,10 +28,12 @@ export function useParcelRoute(parcel: ParcelWithEvents, languageTag: string, wa
   return { placed, route };
 }
 
+/** The opened map has room for a facility's own name, so it says "Zürich-Mülligen" where the card says "Zürich". */
 function useRouteLabel(route: Route): string {
   const { t } = useI18n();
-  const origin = route.origin?.place.name ?? '';
-  const end = (route.destination ?? route.current?.place)?.name ?? origin;
+  const origin = route.origin ? placeName(route.origin.place, true) : '';
+  const finish = route.destination ?? route.current?.place;
+  const end = finish ? placeName(finish, true) : origin;
   return end === origin ? t('map.labelOne', { place: origin }) : t('map.label', { from: origin, to: end });
 }
 
@@ -75,12 +77,12 @@ function RouteSummary({ route, stage }: { route: Route; stage?: Stage }) {
   return <div className="parcel-map__summary" data-single={single || undefined}>
     {!single && <div>
       <span>{t('map.from')}</span>
-      <strong>{origin.place.name}</strong>
+      <strong>{placeName(origin.place, true)}</strong>
       <small><span aria-hidden="true">{flag(origin.place.country)}</span> {countryName(origin.place.country, languageTag)}</small>
     </div>}
     <div data-end>
       <span>{endLabel}</span>
-      <strong>{end.name}</strong>
+      <strong>{placeName(end, true)}</strong>
       <small><span aria-hidden="true">{flag(end.country)}</span> {countryName(end.country, languageTag)}</small>
     </div>
     {!single && <div className="parcel-map__line" style={{ '--progress': progress } as CSSProperties} aria-hidden="true"><span /><i /></div>}
@@ -137,7 +139,7 @@ export function ParcelMapSheet({ route, stage, brand, onClose }: {
   }
 
   return createPortal(<div className="parcel-map" ref={dialog} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1} style={brand}>
-    <WorldMap route={route} mode={mode} time={time} night interactive label={label} languageTag={languageTag} insets={insets}
+    <WorldMap route={route} mode={mode} time={time} night interactive sites label={label} languageTag={languageTag} insets={insets}
       live={stage !== 'delivered' && stage !== 'returned'}
       recenter={recenter} onFreeChange={setFree} className="parcel-map__map" />
     <button ref={close} type="button" className="parcel-map__close" onClick={onClose} aria-label={t('map.close')}>

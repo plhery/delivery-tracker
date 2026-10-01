@@ -4,7 +4,7 @@ import { geoCircle, geoDistance, geoGraticule, geoInterpolate, geoPath } from 'd
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent } from 'react';
 import { easeInOut, fitCamera, interpolateCamera, projection, subsolarPoint, zoomCamera, type Box, type Camera } from './camera';
 import { cities, geography, useWorld, type Coordinate, type Part } from './geography';
-import { NEAR_KM, distanceKm, formatKm, type MapMode, type Route, type Scale } from './route';
+import { NEAR_KM, distanceKm, formatKm, placeName, type MapMode, type Route, type Scale } from './route';
 import styles from './map.module.css';
 
 export interface Insets { top: number; right: number; bottom: number; left: number }
@@ -18,11 +18,13 @@ type Palette = Record<(typeof COLORS)[number], string>;
 const graticule = geoGraticule().step([30, 30])();
 const LABEL_FONT = '500 11.5px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
 const MIN_SPAN: Record<Scale, number> = { world: 400, region: 300, local: 120, city: 24, point: 260, none: 0 };
+// A town is named once, however many of its sites the parcel passed through.
+const SAME_TOWN_KM = 30;
 // With nothing to show yet, the globe rests on the parcel's likely destination.
 const RESTING_CENTER: Coordinate = [8.2, 42];
 
 export function WorldMap({
-  route, mode, shape = 'rect', insets = NO_INSETS, look = 'map', labels = 'all', context = true, interactive = false, night = false,
+  route, mode, shape = 'rect', insets = NO_INSETS, look = 'map', labels = 'all', sites = false, context = true, interactive = false, night = false,
   time, redrawKey = '', recenter = 0, onFreeChange, className = '', style, label, languageTag = 'en', live = true, peek = false,
 }: {
   route: Route;
@@ -31,6 +33,8 @@ export function WorldMap({
   insets?: Insets;
   look?: Look;
   labels?: 'all' | 'ends' | 'none';
+  /** Names a facility by its own name ("Zürich-Mülligen") rather than its town's. */
+  sites?: boolean;
   /** Faint country and city names for orientation. */
   context?: boolean;
   interactive?: boolean;
@@ -155,7 +159,7 @@ export function WorldMap({
     draw(canvas.current, size, camera, readPalette(probes.current), route, night ? time : null, circle);
   }, [camera, size, route, time, night, shape, look, redrawKey, top, right, bottom, left]);
 
-  const overlay = camera && size ? layout(route, camera, size, insets, shape, labels, mode, context, languageTag) : null;
+  const overlay = camera && size ? layout(route, camera, size, insets, shape, labels, sites, mode, context, languageTag) : null;
   const circle = shape === 'circle' && size ? circleOf(size, insets) : null;
 
   function local(event: PointerEvent<HTMLDivElement>): [number, number] {
@@ -493,8 +497,8 @@ function textWidth(text: string): number {
   return measure.measureText(text).width;
 }
 
-function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape: Shape, labels: 'all' | 'ends' | 'none', mode: MapMode,
-  context: boolean, languageTag: string): Overlay {
+function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape: Shape, labels: 'all' | 'ends' | 'none', sites: boolean,
+  mode: MapMode, context: boolean, languageTag: string): Overlay {
   const project = projection(camera).clipExtent([[-400, -400], [size.width + 400, size.height + 400]]);
   const svgPath = geoPath(project);
   const visible = (point: Coordinate) => geoDistance(point, camera.center) < Math.PI / 2 - .02;
@@ -574,6 +578,7 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
     return [dx, dy] as const;
   };
   const seen = new Set<string>();
+  const named: { text: string; coordinate: Coordinate }[] = [];
   const labelBoxes: Overlay['labels'] = [];
   for (const candidate of labels === 'none' ? [] : candidates) {
     const point = candidate.place.coordinate;
@@ -582,7 +587,8 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
     if (!inside([x, y], -2)) continue;
     seen.add(candidate.place.id);
     const area = candidate.place.precision === 'country';
-    const text = area ? candidate.place.name.toUpperCase() : candidate.place.name;
+    const text = area ? candidate.place.name.toUpperCase() : placeName(candidate.place, sites);
+    if (named.some(other => other.text === text && distanceKm(other.coordinate, point) < SAME_TOWN_KM)) continue;
     const width = area ? textWidth(text) * .91 + text.length * .84 + 10 : textWidth(text) + 14;
     const height = 22;
     const [awayX, awayY] = legDirection(candidate.id, x, y);
@@ -606,6 +612,7 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
       ?? (candidate.priority === 0 ? framed() : null);
     if (!choice) continue;
     placed.push({ ...choice, width, height });
+    named.push({ text, coordinate: point });
     labelBoxes.push({ id: candidate.id, x: choice.x, y: choice.y, text, kind: area ? 'area' : candidate.kind });
   }
 
@@ -642,7 +649,8 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
       }
       const detail = formatKm(distanceKm(route.current.place.coordinate, place.coordinate), languageTag);
       // Keep the whole chip inside the frame, whichever edge it points past.
-      const half = (textWidth(`${place.name} ${detail}`) + 38) / 2;
+      const name = placeName(place, sites);
+      const half = (textWidth(`${name} ${detail}`) + 38) / 2;
       if (shape === 'circle') {
         // Just outside the rim, then nudged back inside the box.
         x = Math.max(half + 4, Math.min(size.width - half - 4, x + dx * Math.max(0, half - 14)));
@@ -652,7 +660,7 @@ function layout(route: Route, camera: Camera, size: Size, insets: Insets, shape:
         y = Math.max(insets.top + 21, Math.min(size.height - insets.bottom - 21, y));
       }
       placed.push({ x: x - half, y: y - 13, width: half * 2, height: 26 });
-      pointers.push({ id: place.id, x, y, angle: Math.atan2(dy, dx) * 180 / Math.PI, text: place.name, detail });
+      pointers.push({ id: place.id, x, y, angle: Math.atan2(dy, dx) * 180 / Math.PI, text: name, detail });
     }
   }
   // Faint country names for orientation, fewer as the view widens.

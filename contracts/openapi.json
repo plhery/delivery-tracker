@@ -5433,7 +5433,12 @@
           "name": {
             "type": "string",
             "minLength": 1,
-            "description": "The carrier's own spelling when it has one, else the gazetteer name."
+            "description": "The town: the carrier's own spelling when it has one, else the gazetteer name."
+          },
+          "site": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The facility the point is on, when it has a name of its own (\"Zürich-Mülligen\"). Shown where there is room; name stays the town."
           }
         }
       },
