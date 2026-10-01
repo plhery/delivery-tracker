@@ -21,7 +21,7 @@
     ["24/01/2026", "08:00", "Private return event", ""]
   ],
   "privateSections": {
-    "agence": "19 Private Street",
+    "agence": "<div class=\"agInfos\"><p class=\"first\">DPD France SAS Etablissement 283<br/>19 Private Street<br/>83260 LA CRAU</p></div><div class=\"marker-default hide\" data-lat=\"43.15123456\" data-lng=\"6.07123456\"></div>",
     "preuveliv": "Signed by Private Recipient, private@example.test"
   }
 }

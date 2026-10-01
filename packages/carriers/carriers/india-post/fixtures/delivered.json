@@ -8,7 +8,13 @@
       "event_type": "ItemBooked",
       "office": "Dadar BPC",
       "pincode": "400014",
-      "remarks": ""
+      "remarks": "",
+      "pincode_info": {
+        "office_name": "Dadar HO",
+        "is_verified": true,
+        "latitude": 19.0176,
+        "longitude": 72.8436
+      }
     },
     {
       "tracked_at": "2026-09-01T06:10:00.000000Z",
@@ -16,7 +22,13 @@
       "event_type": "ItemDispatched",
       "office": "Mumbai NSH",
       "pincode": "400099",
-      "remarks": ""
+      "remarks": "",
+      "pincode_info": {
+        "office_name": "Mumbai NSH",
+        "is_verified": true,
+        "latitude": 19.11364,
+        "longitude": 72.86972
+      }
     },
     {
       "tracked_at": "2026-09-01T11:25:04.000000Z",
@@ -26,7 +38,13 @@
       "pincode": "841215",
       "remarks": "Received by private recipient",
       "recipient_address": "must never survive normalization",
-      "pincode_info": { "contact_number": "+91 private" }
+      "pincode_info": {
+        "contact_number": "+91 private",
+        "office_name": "Maker SO",
+        "is_verified": false,
+        "latitude": 22.25,
+        "longitude": 86.18
+      }
     }
   ]
 }

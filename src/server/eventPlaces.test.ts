@@ -29,6 +29,24 @@ describe('withEventPlaces', () => {
     expect(located.tracking_events[2].place).toMatchObject({ country: 'DE', name: 'Köln' });
   });
 
+  it('moves a scan to the carrier\'s own point near its town, and never returns the point', () => {
+    const row = {
+      id: 'parcel',
+      carrier: 'dpd-fr',
+      tracking_events: [
+        // A depot 6 km from Strasbourg's centre.
+        { ...event('1', 'Agence DPD de Strasbourg (67)', '2026-09-18T05:40:00+00:00'), point: { latitude: 48.6305, longitude: 7.7682 } },
+        // A point that disagrees with the town is ignored.
+        { ...event('2', 'Agence DPD de Strasbourg (67)', '2026-09-18T05:42:00+00:00'), point: { latitude: 43.1512, longitude: 6.0712 } },
+      ],
+    };
+    const [depot, elsewhere] = (withEventPlaces(row) as { tracking_events: Record<string, unknown>[] }).tracking_events;
+    expect(depot.place).toMatchObject({ name: 'Strasbourg', latitude: 48.6305, longitude: 7.7682 });
+    expect(elsewhere.place).toMatchObject({ name: 'Strasbourg', latitude: expect.closeTo(48.58, 1) });
+    expect(depot).not.toHaveProperty('point');
+    expect(elsewhere).not.toHaveProperty('point');
+  });
+
   it('leaves packages without scans untouched', () => {
     const row = { id: 'parcel', carrier: 'swiss-post', tracking_events: [] };
     expect(withEventPlaces(row)).toBe(row);
@@ -41,8 +59,8 @@ describe('withEventPlaces', () => {
     });
     const capture = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
     const row = { id: 'parcel', carrier: 'not-a-carrier', tracking_events: [event('1', 'Zürich', '2026-09-26T09:00:00+00:00')] };
-    expect(withEventPlaces(row)).toBe(row);
-    expect(withEventPlaces(row)).toBe(row);
+    expect(withEventPlaces(row)).toEqual(row);
+    expect(withEventPlaces(row)).toEqual(row);
     expect(capture).toHaveBeenCalledTimes(1);
     expect(capture).toHaveBeenCalledWith(expect.any(Error), { component: 'api', operation: 'locate_event_places' });
   });

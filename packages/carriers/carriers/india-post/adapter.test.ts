@@ -133,6 +133,17 @@ describe('India Post response normalization', () => {
     expect(JSON.stringify(result)).not.toContain('must never survive normalization');
   });
 
+  it('keeps an office point only from a verified entry for the same office', () => {
+    const events = parseIndiaPostTrackingHtml(trackingHistoryHtml(), SAMPLE_NUMBER).events ?? [];
+    const byOffice = Object.fromEntries(events.map((event) => [event.location, event.point]));
+
+    expect(byOffice['Mumbai NSH 400099']).toEqual({ latitude: 19.1136, longitude: 72.8697 });
+    // The pincode's directory entry is another office.
+    expect(byOffice['Dadar BPC 400014']).toBeUndefined();
+    // Unverified entries can be hundreds of kilometres off.
+    expect(byOffice['Maker SO 841215']).toBeUndefined();
+  });
+
   it('distinguishes accepted, transit, delivery, failure, and return events', () => {
     expect(classifyIndiaPostEvent('ItemBooked')).toEqual({
       status: 'pending',

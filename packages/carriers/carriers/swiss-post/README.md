@@ -45,10 +45,12 @@ and the `INLAND`/`IMPORT`/`EXPORT` segment comes from the shipment's own flags.
   values read as UTC for that comparison). `core/time` is not used for this reason.
 - Wording is only trimmed, not whitespace-collapsed, so `core/transport`'s
   `clean()` is not used.
-- Scan locations keep the depot's city and postcode: it separates same-named
-  Swiss towns, and it is the scanning facility's postcode, not the recipient's
-  (see [PRIVACY.md](../../../../PRIVACY.md)). Recipient name, address, signature
-  and delivery instructions are never read; a test asserts it.
+- Scan locations keep the facility's name and number as sent ("Zürich
+  Briefzentrum 801050"): the six-digit number is Swiss Post's site number, not
+  the recipient's postcode (see [PRIVACY.md](../../../../PRIVACY.md)). The map
+  places known sites by it ([places](../../../../src/server/places/README.md)).
+  Recipient name, address, signature and delivery instructions are never read;
+  a test asserts it.
 
 ## Testing
 

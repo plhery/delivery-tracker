@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { brotliDecompressSync } from 'node:zlib';
 import { ambiguousAddressCodes, trackingPlace } from '../../lib/trackingLocation';
+import facilityList from './facilities.json';
 import { nameKey, nameKeys } from './names.mjs';
 
 /** Where a scan happened, as precisely as its free-text location allows. */
@@ -14,6 +15,12 @@ export interface EventPlace {
   /** ISO 3166-1 alpha-2. */
   country: string;
   name: string;
+}
+
+/** Where a carrier itself puts a scan's facility (`point` on a stored scan). */
+export interface EventPoint {
+  latitude: number;
+  longitude: number;
 }
 
 export interface PlaceHints {
@@ -63,6 +70,11 @@ const ADMIN_CODES: Record<string, Record<string, string>> = {
 };
 // A place nothing else confirms has to be a known town, not a hamlet with the same name.
 const UNCONFIRMED_MIN_THOUSANDS = 15;
+// A carrier's own point for a scan has to agree with the town its text names.
+const POINT_MAX_KM = 30;
+
+// Swiss Post scans end in the site's six-digit number: "Zürich Briefzentrum 801050".
+const FACILITIES = new Map(facilityList.map((facility) => [`${facility.country}:${facility.code}`, facility]));
 
 let loaded: Gazetteer | null = null;
 
@@ -185,6 +197,8 @@ const candidate = (entry: number) => ({ index: entry < 0 ? ~entry : entry, alter
 export function locatePlace(location: string | null | undefined, hints: PlaceHints = {}): EventPlace | null {
   const text = location?.trim();
   if (!text) return null;
+  const facility = facilityPlace(text);
+  if (facility) return facility;
   const data = gazetteer();
   const explicit = trackingPlace(text);
   let country = explicit.country && data.countries.has(explicit.country) ? explicit.country : null;
@@ -266,6 +280,22 @@ export function locatePlace(location: string | null | undefined, hints: PlaceHin
 
 const round = (value: number) => Math.round(value * 1000) / 1000;
 
+/** A sorting centre the table knows, by its number and the town its name starts with. */
+function facilityPlace(text: string): EventPlace | null {
+  const match = /^(.*\S)\s+(\d{6})$/.exec(text);
+  const facility = match && FACILITIES.get(`CH:${match[2]}`);
+  if (!facility || !`${nameKey(match[1])} `.startsWith(`${nameKey(facility.town)} `)) return null;
+  const { latitude, longitude, country, name } = facility;
+  return { latitude, longitude, precision: 'city', country, name };
+}
+
+/** The carrier's own point in place of the town's centre, when the two agree. */
+function atPoint(place: EventPlace | null, point: EventPoint | null | undefined): EventPlace | null {
+  if (!place || !point || place.precision !== 'city') return place;
+  if (distanceKm(place.latitude, place.longitude, point.latitude, point.longitude) > POINT_MAX_KM) return place;
+  return { ...place, latitude: point.latitude, longitude: point.longitude };
+}
+
 const cache = new Map<string, EventPlace | null>();
 const CACHE_SIZE = 20_000;
 
@@ -282,19 +312,35 @@ function cachedPlace(location: string | null | undefined, countries: readonly st
  * Places for a parcel's scans, oldest first. A scan that names no country
  * borrows one from the scans around it, then the destination and the
  * carrier's home countries, so "Buchs" after "Zürich" stays in Switzerland.
+ * A carrier's own point for a scan, or for another scan with the same text,
+ * moves it from the town's centre to the facility, if the two are within
+ * 30 km of each other.
  */
 export function placesForEvents(
   locations: readonly (string | null | undefined)[],
-  { destinationCountry, carrierCountries = [] }: { destinationCountry?: string | null; carrierCountries?: readonly string[] } = {},
+  { destinationCountry, carrierCountries = [], points = [] }: {
+    destinationCountry?: string | null;
+    carrierCountries?: readonly string[];
+    /** The carrier's own point for each scan, where it gave one. */
+    points?: readonly (EventPoint | null | undefined)[];
+  } = {},
 ): (EventPlace | null)[] {
   const base = [...new Set([destinationCountry, ...carrierCountries].filter((code): code is string => Boolean(code)))];
   const first = locations.map((location) => cachedPlace(location, base));
+  // A carrier can place some scans of an office and not others: they all share it.
+  const pointAt = new Map<string, EventPoint>();
+  locations.forEach((location, index) => {
+    const point = points[index];
+    if (location && point && !pointAt.has(location.trim())) pointAt.set(location.trim(), point);
+  });
   return locations.map((location, index) => {
     if (!location?.trim()) return null;
     const before = first.slice(0, index).reverse().find(Boolean)?.country;
     const after = first.slice(index + 1).find(Boolean)?.country;
     const neighbours = [...new Set([before, after].filter((code): code is string => Boolean(code)))];
-    if (!neighbours.length || neighbours.every((code) => base.includes(code))) return first[index];
-    return cachedPlace(location, [...neighbours, ...base.filter((code) => !neighbours.includes(code))]) ?? first[index];
+    const place = !neighbours.length || neighbours.every((code) => base.includes(code))
+      ? first[index]
+      : cachedPlace(location, [...neighbours, ...base.filter((code) => !neighbours.includes(code))]) ?? first[index];
+    return atPoint(place, points[index] ?? pointAt.get(location.trim()));
   });
 }

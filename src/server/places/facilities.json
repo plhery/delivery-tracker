@@ -1,0 +1,11 @@
+[
+  { "country": "CH", "code": "801050", "town": "Zürich", "name": "Zürich-Mülligen", "latitude": 47.3959, "longitude": 8.4695, "source": "https://www.openstreetmap.org/way/24055904" },
+  { "country": "CH", "code": "801053", "town": "Zürich", "name": "Zürich-Mülligen", "latitude": 47.3959, "longitude": 8.4695, "source": "https://www.openstreetmap.org/way/24055904" },
+  { "country": "CH", "code": "800473", "town": "Zürich", "name": "Zürich Sihlpost", "latitude": 47.3773, "longitude": 8.5353, "source": "https://www.openstreetmap.org/way/36927540" },
+  { "country": "CH", "code": "892000", "town": "Urdorf", "name": "Urdorf", "latitude": 47.3676, "longitude": 8.4276, "source": "https://www.openstreetmap.org/way/38934280" },
+  { "country": "CH", "code": "852000", "town": "Frauenfeld", "name": "Frauenfeld", "latitude": 47.5716, "longitude": 8.9173, "source": "https://www.openstreetmap.org/way/46882390" },
+  { "country": "CH", "code": "462000", "town": "Härkingen", "name": "Härkingen", "latitude": 47.3163, "longitude": 7.8084, "source": "https://www.openstreetmap.org/node/11139998177" },
+  { "country": "CH", "code": "462150", "town": "Härkingen", "name": "Härkingen", "latitude": 47.3192, "longitude": 7.8155, "source": "https://www.openstreetmap.org/node/11139998178" },
+  { "country": "CH", "code": "131000", "town": "Daillens", "name": "Daillens", "latitude": 46.6327, "longitude": 6.541, "source": "https://www.openstreetmap.org/way/112072584" },
+  { "country": "CH", "code": "659100", "town": "Cadenazzo", "name": "Cadenazzo", "latitude": 46.1552, "longitude": 8.9417, "source": "https://www.openstreetmap.org/way/1121092808" }
+]

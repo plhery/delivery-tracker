@@ -78,7 +78,7 @@ describe('guarded tracking writes', () => {
     // The API's package shape is unchanged and never names provider_event_id.
     const apiShape = 'id,tracking_number,label,carrier,created_at,expected_delivery,last_status_text,'
       + 'last_synced_at,sync_status,sync_error,tracking_url,dpd_postcode,carrier_data,archived_at,'
-      + 'notifications_muted,tracking_events(id,package_id,stage,description,location,occurred_at)';
+      + 'notifications_muted,tracking_events(id,package_id,stage,description,location,occurred_at,point:raw_data->point)';
     expect(select(userRequest, 0)).toBe(apiShape);
     expect(select(userRequest, 1)).toBe(apiShape);
     expect(select(userRequest, 2)).not.toContain('provider_event_id');

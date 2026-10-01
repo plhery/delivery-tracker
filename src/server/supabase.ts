@@ -20,8 +20,12 @@ const PACKAGE_COLUMNS = [
   'archived_at',
   'notifications_muted',
 ].join(',');
-/** The package shape the API returns. It never carries provider_event_id. */
-const PACKAGE_SELECT = `${PACKAGE_COLUMNS},tracking_events(id,package_id,stage,description,location,occurred_at)`;
+/**
+ * The package shape the API returns. It never carries provider_event_id. A
+ * scan's `point`, the carrier's own coordinates, feeds eventPlaces.ts, which
+ * drops it from the response.
+ */
+const PACKAGE_SELECT = `${PACKAGE_COLUMNS},tracking_events(id,package_id,stage,description,location,occurred_at,point:raw_data->point)`;
 const ACTIVE_PACKAGE_SELECT = 'id,user_id,tracking_number,label,carrier,current_stage,tracking_url,dpd_postcode,created_at,last_synced_at,sync_status,carrier_data,tracking_generation';
 /**
  * Where the sync loaders put each stored event's identity, instant, stage and

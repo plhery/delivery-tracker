@@ -5,7 +5,7 @@ import makeFetchCookie from 'fetch-cookie';
 import { CookieJar } from 'tough-cookie';
 import type { AdapterFactory } from '../../core/adapter';
 import { ChallengeError, IndeterminateError, NotFoundError, SchemaError } from '../../core/errors';
-import type { CarrierEvent, CarrierResult } from '../../core/result';
+import { eventPoint, type CarrierEvent, type CarrierResult, type EventPoint } from '../../core/result';
 import type { ClassifiedStatus } from '../../core/status';
 import { isValidS10TrackingNumber } from '../../core/detection';
 import { isoTime } from '../../core/time';
@@ -129,6 +129,22 @@ function eventText(raw: string): string {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 }
 
+/**
+ * The office's point from MySpeedPost's pincode directory. It is looked up by
+ * pincode, not by office: "KOLKATA FOREIGN LCAO 900056" comes back as an office
+ * in Delhi. Only a verified entry for the scan's own office is kept.
+ */
+function officePoint(rawEvent: JsonObject, office: string): EventPoint | null {
+  const info = rawEvent.pincode_info;
+  if (!isRecord(info) || info.is_verified !== true) return null;
+  const name = (value: unknown) => clean(value, 120).toLocaleUpperCase('en-US').replace(/[^A-Z0-9]+/g, ' ').trim();
+  if (!office || name(info.office_name) !== name(office)) return null;
+  const point = eventPoint(info.latitude, info.longitude);
+  // India's mainland and islands; anything else is a bad directory entry.
+  if (!point || point.latitude < 6 || point.latitude > 37 || point.longitude < 68 || point.longitude > 98) return null;
+  return point;
+}
+
 export function parseIndiaPostTrackingHtml(
   html: string,
   trackingNumber: string,
@@ -166,6 +182,7 @@ export function parseIndiaPostTrackingHtml(
       ? clean(rawEvent.pincode, 6)
       : '';
     const providerCode = clean(rawEvent.event_type, 100);
+    const point = officePoint(rawEvent, office);
     const identity = JSON.stringify([time.iso, description, office, pincode, providerCode]);
     if (seen.has(identity)) return;
     seen.add(identity);
@@ -184,6 +201,7 @@ export function parseIndiaPostTrackingHtml(
         description,
         stage: classified.stage,
         ...(providerCode ? { provider_code: providerCode } : {}),
+        ...(point ? { point } : {}),
       },
       classified,
       timestamp: time.timestamp,

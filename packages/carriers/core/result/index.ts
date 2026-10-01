@@ -25,6 +25,16 @@ export interface CarrierEvent extends JsonObject {
   description?: string;
   stage?: string;
   provider_code?: string;
+  /**
+   * Where the carrier itself puts the scanning facility, when it says so. The
+   * map uses it only where it agrees with the town in `location`.
+   */
+  point?: EventPoint;
+}
+
+export interface EventPoint extends JsonObject {
+  latitude: number;
+  longitude: number;
 }
 
 export interface CarrierResult extends JsonObject {
@@ -76,6 +86,18 @@ const OPTIONAL_TEXT_FIELDS = [
   'timezone',
 ] as const;
 const EVENT_TEXT_FIELDS = ['time', 'location', 'description', 'stage'] as const;
+
+/** A carrier's coordinates for a scan, or null when they are not a usable point. */
+export function eventPoint(latitude: unknown, longitude: unknown): EventPoint | null {
+  const number = (value: unknown) => typeof value === 'string' && value.trim() ? Number(value) : value;
+  const lat = number(latitude);
+  const lon = number(longitude);
+  if (typeof lat !== 'number' || typeof lon !== 'number' || !Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  // 0,0 is a missing value, not a scan in the Gulf of Guinea.
+  if (Math.abs(lat) > 90 || Math.abs(lon) > 180 || (lat === 0 && lon === 0)) return null;
+  // Four decimals is about ten metres: a building, not a desk.
+  return { latitude: Math.round(lat * 1e4) / 1e4, longitude: Math.round(lon * 1e4) / 1e4 };
+}
 
 export function normalizeCarrierResult(value: unknown): CarrierResult {
   if (!isRecord(value)) throw new TypeError('The carrier adapter returned an invalid response');
@@ -132,7 +154,13 @@ export function normalizeCarrierResult(value: unknown): CarrierResult {
         throw new TypeError('The carrier adapter returned an invalid tracking event');
       }
     }
-    return { ...rawEvent } as CarrierEvent;
+    const event = { ...rawEvent } as CarrierEvent;
+    if (event.point !== undefined) {
+      const point = isRecord(event.point) ? eventPoint(event.point.latitude, event.point.longitude) : null;
+      if (point) event.point = point;
+      else delete event.point;
+    }
+    return event;
   });
   return normalized;
 }

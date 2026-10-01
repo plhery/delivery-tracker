@@ -118,6 +118,7 @@ describe('DPD France rendered tracking', () => {
         location: 'Agence DPD de La Crau (283)',
         description: 'Nous avons reçu une réclamation : une enquête est ouverte',
         stage: 'exception',
+        point: { latitude: 43.1512, longitude: 6.0712 },
       },
       {
         time: '2026-01-23T12:45:00+01:00',
@@ -130,6 +131,7 @@ describe('DPD France rendered tracking', () => {
         location: 'Agence DPD de La Crau (283)',
         description: 'Votre colis est en cours de livraison',
         stage: 'out_for_delivery',
+        point: { latitude: 43.1512, longitude: 6.0712 },
       },
       {
         time: '2026-01-22T16:16:00+01:00',
@@ -189,7 +191,21 @@ describe('DPD France rendered tracking', () => {
       time: '2026-02-13T07:05:00+01:00',
       location: 'Agence DPD de La Crau (283)',
       description: 'Votre colis fait l’objet d’un traitement particulier',
+      point: { latitude: 43.1512, longitude: 6.0712 },
     }]);
+  });
+
+  it('puts only the delivering depot\'s scans on its map marker', () => {
+    const result = parseDPDFranceTrackingHtml(trackingFixture(), TEST_TRACKING_NUMBER);
+    const points = result.events?.map((event) => [event.location, event.point ?? null]);
+
+    expect(points).toEqual([
+      ['Agence DPD de La Crau (283)', { latitude: 43.1512, longitude: 6.0712 }],
+      ['Livré au destinataire', null],
+      ['Agence DPD de La Crau (283)', { latitude: 43.1512, longitude: 6.0712 }],
+      // Another depot: the page only places the delivering one.
+      ['Centre de tri DPD de Le Coudray (175)', null],
+    ]);
   });
 
   it('rejects browser challenges, unknown shipments, and mismatched responses', () => {

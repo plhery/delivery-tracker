@@ -41,6 +41,17 @@ describe('locatePlace', () => {
     expect(place('Centre de tri DPD de Le Coudray (175)', ['FR'])).toMatchObject({ country: 'FR', name: 'Le Coudray' });
   });
 
+  it('puts Swiss Post sorting centres on their own site', () => {
+    const mulligen = { precision: 'city', country: 'CH', name: 'Zürich-Mülligen', latitude: 47.3959, longitude: 8.4695 };
+    expect(place('Zürich Briefzentrum 801050')).toEqual(mulligen);
+    expect(place('Zürich Briefzentrum International 801053')).toEqual(mulligen);
+    expect(place('Daillens Centre Colis 131000')).toMatchObject({ name: 'Daillens', latitude: 46.6327, longitude: 6.541 });
+    // A site the table does not know stays on its town.
+    expectPlace('Zürich 15 Zustellung 801500', { country: 'CH', name: 'Zürich', latitude: 47.37, longitude: 8.55 }, ['CH']);
+    // The number alone is not enough: the name has to start with the site's town.
+    expect(place('Basel 801050', ['CH'])).toMatchObject({ name: 'Basel' });
+  });
+
   it('finds small Swiss towns and postcodes when the parcel is in Switzerland', () => {
     expectPlace('Härkingen 4622', { country: 'CH', name: 'Härkingen', latitude: 47.3, longitude: 7.82 }, ['CH', 'LI']);
     expectPlace('Dintikon', { country: 'CH', name: 'Dintikon', latitude: 47.36, longitude: 8.22 }, ['CH']);
@@ -81,6 +92,15 @@ describe('placesForEvents', () => {
     expect(empty).toBeNull();
     expect(placesForEvents(['Kyoto', 'Emmen', 'Leipzig'])[1]?.country).toBe('NL');
     expect(placesForEvents(['Bern', 'Emmen'])[1]?.country).toBe('CH');
+  });
+
+  it('moves every scan with the same text to a point the carrier gave for one of them', () => {
+    const gpo = { latitude: 25.6036, longitude: 85.1326 };
+    const places = placesForEvents(['Patna GPO 800001', 'Patna GPO 800001', 'Patna NSH 800001'], { carrierCountries: ['IN'], points: [null, gpo, null] });
+    expect(places.map((found) => found && [found.latitude, found.longitude])).toEqual([[25.6036, 85.1326], [25.6036, 85.1326], [25.594, 85.136]]);
+    // A point far from the town its scan names is not used.
+    expect(placesForEvents(['Patna GPO 800001'], { carrierCountries: ['IN'], points: [{ latitude: 28.6448, longitude: 77.2167 }] })[0])
+      .toMatchObject({ latitude: 25.594, longitude: 85.136 });
   });
 
   it('uses the destination and the carrier before guessing', () => {

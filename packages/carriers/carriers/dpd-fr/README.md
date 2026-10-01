@@ -40,6 +40,10 @@ non-2xx statuses are indeterminate.
   `exception`.
 - Unrecognized wording keeps the row with no `stage`; the result status comes
   from the newest recognized row.
+- The depot tab names the delivering depot ("Etablissement 067") and carries its map marker.
+  Rows naming the same depot number ("Agence DPD de Strasbourg (67)") get that marker as
+  their `point`: the depot is in Bischheim, 6 km from Strasbourg's centre. Other depots
+  have no point, and the depot's street address is never read.
 - Rows print naive `dd/MM/yyyy` + `HH:mm` in two cells, read in Europe/Paris.
   The planned delivery date is a calendar day, dropped once delivered or in
   exception.
@@ -54,7 +58,8 @@ non-2xx statuses are indeterminate.
 - DPD France's site terms restrict unapproved automated access. Treat this as
   experimental; a contracted API is the long-term fix.
 - Customer reference, delivery address and proof-of-delivery blocks are never
-  read: the parser visits only timeline rows and labelled detail rows.
+  read: the parser visits only timeline rows, labelled detail rows and the depot
+  tab's first line and marker.
 
 ## Testing
 

@@ -3,7 +3,7 @@ import 'server-only';
 import { load } from 'cheerio';
 import type { AdapterFactory } from '../../core/adapter';
 import { ChallengeError, IndeterminateError, NotFoundError, SchemaError } from '../../core/errors';
-import type { CarrierEvent, CarrierResult, CarrierStatus } from '../../core/result';
+import { eventPoint, type CarrierEvent, type CarrierResult, type CarrierStatus, type EventPoint } from '../../core/result';
 import { runSteps } from '../../core/runner';
 import type { StepRecorder } from '../../core/telemetry';
 import { zonedTime } from '../../core/time';
@@ -78,6 +78,25 @@ export function dpdFranceTrackingUrl(raw: string): string {
   return `${TRACKING_BASE}/${encodeURIComponent(number)}`;
 }
 
+/**
+ * The delivering depot's number and map marker, from the page's depot tab
+ * ("DPD France SAS Etablissement 067"). Scan rows name depots by the same
+ * number: "Agence DPD de Strasbourg (67)". Its street address is never read.
+ */
+function deliveringDepot($: ReturnType<typeof load>): { number: number; point: EventPoint } | null {
+  const depot = $('#agence');
+  // Only the first line, which names the depot: <br> carries no text, so .text() would join it to the street.
+  const heading = (depot.find('.agInfos').first().html() ?? '').split(/<br\s*\/?>/i)[0];
+  const number = /\bEtablissement\s+(\d{1,4})\s*$/i.exec(clean(load(heading).text(), 200))?.[1];
+  const marker = depot.find('.marker-default').first();
+  const point = eventPoint(marker.attr('data-lat'), marker.attr('data-lng'));
+  // Mainland France and Corsica: DPD France's depots.
+  if (!number || !point || point.latitude < 41 || point.latitude > 51.5 || point.longitude < -5.5 || point.longitude > 10) {
+    return null;
+  }
+  return { number: Number(number), point };
+}
+
 export function parseDPDFranceTrackingHtml(html: string, rawTrackingNumber: string): CarrierResult {
   const trackingNumber = normalizeDPDFranceTrackingNumber(rawTrackingNumber);
   if (!html.trim()) throw new SchemaError('DPD France', 'DPD France returned an empty tracking response');
@@ -120,6 +139,7 @@ export function parseDPDFranceTrackingHtml(html: string, rawTrackingNumber: stri
     : '#tableTrace tr.tabTraceColisAller';
   const detailsSelector = isReturn ? '#infos2' : '#infos1';
 
+  const depot = deliveringDepot($);
   const parsedEvents: Array<{
     event: CarrierEvent;
     status: CarrierStatus;
@@ -143,12 +163,15 @@ export function parseDPDFranceTrackingHtml(html: string, rawTrackingNumber: stri
     // Wording the map does not recognize carries no stage: the sync's
     // classifier decides, and the row still stays visible in the history.
     const mapped = classified.status !== 'unknown';
+    const depotNumber = /\((\d{1,4})\)$/.exec(location)?.[1];
+    const point = depot && depotNumber && Number(depotNumber) === depot.number ? depot.point : null;
     parsedEvents.push({
       event: {
         time: time.iso,
         location,
         description,
         ...(mapped ? { stage: classified.stage } : {}),
+        ...(point ? { point } : {}),
       },
       status: classified.status,
       timestamp: time.timestamp,

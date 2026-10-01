@@ -48,6 +48,10 @@ Outcomes:
   `source_synced_at`.
 - IDs and pincodes arrive as numbers or strings, hence `cleanScalar`. A pincode is kept only when it
   is exactly six digits.
+- A row's `pincode_info` is MySpeedPost's directory entry for the pincode, not for the office:
+  "KOLKATA FOREIGN LCAO 900056" comes back as an office in Delhi, and unverified entries can be
+  hundreds of kilometres off. Its coordinates become the scan's `point` only when the entry is
+  verified and names the scan's own office. The rest of the entry is never kept.
 
 ## Limitations
 
