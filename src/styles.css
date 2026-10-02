@@ -428,6 +428,11 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 /* Pip's eyes turn into happy arcs as the box opens. */
 .parcel-illustration__eye, .parcel-illustration__happy-eye { transition: opacity .2s .3s; }
 .parcel-illustration__happy-eye { opacity: 0; }
+/* Pip blinks, each eye closing in the plane of its own side. The sticker and the ink Pip on a map stay still. */
+@media (prefers-reduced-motion: no-preference) {
+  .parcel-illustration .parcel-illustration__eye { transform-box: fill-box; transform-origin: center; animation: pip-blink 4.6s ease-in-out infinite; }
+  .parcel-illustration .parcel-illustration__pip > g + g > .parcel-illustration__eye { animation-delay: .02s; }
+}
 .parcel-illustration__glints, .parcel-illustration__light { opacity: 0; pointer-events: none; }
 .parcel-illustration__sparkle { opacity: 0; transform-box: fill-box; transform-origin: center; }
 .parcel-illustration__light { filter: blur(10px); }
@@ -436,7 +441,7 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .arrival:has(.arrival__open:active) .arrival__press { transform: translateY(3px) scale(.976); }
 .arrival__ground { position: absolute; top: 91%; left: 24%; width: 52%; height: 5%; border-radius: 50%; background: #352b20; filter: blur(8px); opacity: .1; translate: calc(var(--parcel-x, 0) * -4px) calc(var(--parcel-y, 0) * -2px); animation: parcel-ground 5.4s ease-in-out infinite; }
 .arrival .parcel-illustration__shadow { opacity: 0; animation: none; }
-.arrival[data-motion-paused="true"] .parcel-illustration__body, .arrival[data-motion-paused="true"] .arrival__ground { animation-play-state: paused; }
+.arrival[data-motion-paused="true"] .parcel-illustration__body, .arrival[data-motion-paused="true"] .arrival__ground, .arrival[data-motion-paused="true"] .parcel-illustration__eye { animation-play-state: paused; }
 .arrival__open { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 350px; max-width: 100%; background: transparent; padding: 0; border-radius: 24px; color: var(--ink-soft); }
 .arrival__parcel-space { height: 345px; width: 100%; }
 .arrival__open > span:last-child { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 56px; padding: 8px 12px; font-size: 14px; font-weight: 550; transition: opacity .2s, transform .3s; }
@@ -455,6 +460,7 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 .arrival--opening .parcel-illustration__check, .arrival--sign-in .parcel-illustration__check { stroke-dashoffset: 0; }
 .arrival--opening .parcel-illustration__eye, .arrival--sign-in .parcel-illustration__eye { opacity: 0; }
 .arrival--opening .parcel-illustration__happy-eye, .arrival--sign-in .parcel-illustration__happy-eye { opacity: 1; }
+.arrival--sign-in .parcel-illustration__eye { animation: none; }
 .arrival--opening .parcel-illustration__light { animation: parcel-light 1.2s ease-out .14s both; }
 .arrival--opening .parcel-illustration__glints { opacity: 1; }
 .arrival--opening .parcel-illustration__sparkle { animation: parcel-sparkle 1.65s ease-out calc(.28s + var(--sparkle-delay)) both; }
@@ -520,6 +526,7 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 @keyframes rail-arrive { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes skeleton-breathe { from { opacity: .5; } to { opacity: 1; } }
+@keyframes pip-blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.08); } }
 @keyframes parcel-idle { 0%, 100% { transform: translateY(0) rotate(-.5deg); } 50% { transform: translateY(-7px) rotate(.7deg); } }
 @keyframes parcel-ground { 0%, 100% { transform: scale(1); opacity: .1; } 50% { transform: scale(.86); opacity: .065; } }
 @keyframes parcel-unseal { 0% { transform: var(--parcel-rest, translateY(0) scale(1)); } 15% { transform: translateY(3px) scale(.978); } 50% { transform: translateY(-6px) scale(1.015); } 100% { transform: translateY(0) scale(1); } }

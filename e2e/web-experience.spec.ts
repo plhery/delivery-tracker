@@ -81,6 +81,18 @@ test('leads every header with the name: the lockup where it stands alone, the ma
   await expect(page.getByRole('button', { name: 'Add a parcel', exact: true })).toBeVisible();
 });
 
+test('Pip blinks on the welcome parcel, and keeps still when motion is reduced', async ({ page }) => {
+  await page.goto('/');
+  const eyes = page.locator('.arrival__parcel .parcel-illustration__eye');
+  await expect(eyes).toHaveCount(2);
+  await expect(eyes.first()).toHaveCSS('animation-name', 'pip-blink');
+  await expect(eyes.first()).toHaveCSS('animation-iteration-count', 'infinite');
+  await expect(eyes.last()).toHaveCSS('animation-delay', '0.02s');
+  await expect(page.locator('.arrival__parcel .parcel-illustration__happy-eye').first()).toHaveCSS('animation-name', 'none');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(eyes.first()).toHaveCSS('animation-name', 'none');
+});
+
 test('gives the parcel bounded depth without moving the controls, and stops on opening', async ({ page, browserName }) => {
   await page.goto('/');
   const arrival = page.locator('.arrival');
