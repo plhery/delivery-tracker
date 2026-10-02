@@ -7,6 +7,7 @@ import { trackAction, trackScreen } from '../lib/analytics';
 import { carrierBrand } from '../lib/carrierBrand';
 import { carrierChoiceSections, carrierChoiceTags, shapeCarrier, usedCarrierIds } from '../lib/carrierPicker';
 import { carrierInfo, formatTrackingNumber } from '../lib/carriers';
+import { focusClickedButton } from '../lib/modal';
 import type { CarrierId } from '../types';
 import { CarrierRibbon } from './landing/CarrierRibbon';
 import { LandingIcon } from './landing/glyphs';
@@ -190,7 +191,7 @@ export function FrontDoor({ onTracked, onSignIn }: {
     '--tone-surface': 'light-dark(var(--carrier-surface-light), var(--carrier-surface-dark))',
   } as CSSProperties : undefined;
 
-  return <div className="door" style={tone} data-view={firstVisit ? 'first' : 'device'} data-engaged={written || undefined}>
+  return <div className="door" style={tone} data-view={firstVisit ? 'first' : 'device'} data-engaged={written || undefined} onClickCapture={focusClickedButton}>
     <header className="door-header">
       <PeekLockup />
       <div className="door-header__actions">

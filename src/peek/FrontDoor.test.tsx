@@ -341,6 +341,20 @@ describe('FrontDoor', () => {
     await waitFor(() => expect(mocks.lookup).toHaveBeenCalledWith({ trackingNumber: 'DEMO4471203', carrier: 'gls-ch', dpdPostcode: '8004' }, expect.any(AbortSignal)));
   });
 
+  it('hands the keyboard back to “Change” when the picker closes without a choice, in a browser that leaves a clicked button unfocused', async () => {
+    const { user, field } = door();
+    await user.type(field, 'DEMO4471203');
+    await user.tab();
+    const change = screen.getByRole('button', { name: 'Change' });
+    expect(change).not.toHaveFocus();
+    // Safari's click: the button is pressed without taking the focus.
+    fireEvent.click(change);
+    await screen.findByRole('dialog', { name: 'Carrier' });
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(change).toHaveFocus();
+  });
+
   it('keeps the way to the picker in place while the carriers are asked', async () => {
     mocks.detect.mockReturnValueOnce(new Promise(() => undefined));
     const { user, field } = door();

@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore, type RefObject } from 'react';
+import { lazy, useEffect, useState, useSyncExternalStore, type ComponentType, type LazyExoticComponent, type RefObject } from 'react';
 
 const subscribeToTab = (notify: () => void) => {
   document.addEventListener('visibilitychange', notify);
@@ -55,6 +55,16 @@ export function useLive(target: RefObject<Element | null>, share = 0): boolean {
  */
 export function useNear(target: RefObject<Element | null>, margin = '600px'): boolean {
   return useInView(target, margin, 0, true);
+}
+
+/**
+ * A picture whose code is fetched when `useNear` says so. If the code cannot
+ * be fetched, as on a connection that drops or a page being left, its place
+ * stays empty and the page around it stands.
+ */
+export function lazyPicture<Props>(load: () => Promise<{ default: ComponentType<Props> }>): LazyExoticComponent<ComponentType<Props>> {
+  const Nothing: ComponentType<Props> = () => null;
+  return lazy(() => load().catch(() => ({ default: Nothing })));
 }
 
 /**

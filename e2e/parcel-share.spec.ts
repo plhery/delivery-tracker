@@ -1,4 +1,5 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { allowCopying, copied, track } from './peek';
 
 // The demo build keeps parcel links in the browser: every number here is fictional, and a
 // second browser reads a link as a viewer once it is handed the first one's demo links.
@@ -12,19 +13,9 @@ function watch(page: Page) {
 test.beforeEach(async ({ page }) => { watch(page); });
 test.afterEach(async ({ page }) => { expect(errors.get(page)).toEqual([]); });
 
-const parcelAddress = /\/p\/[2-9A-HJ-NP-Za-km-z]{12}$/;
 const status = (page: Page) => page.getByRole('heading', { level: 1 });
 const fits = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
 const actions = (page: Page) => page.locator('.peekp-actions');
-
-async function track(page: Page, text: string) {
-  await page.goto('/');
-  const submit = page.getByRole('button', { name: 'Track', exact: true });
-  await expect(submit).toBeEnabled();
-  await page.getByRole('textbox', { name: 'Tracking number or link' }).fill(text);
-  await submit.click();
-  await expect(page).toHaveURL(parcelAddress);
-}
 
 /** Gives another browser the demo's links as the owner's browser has them now, and shows it `address`. */
 async function show(owner: Page, viewer: Page, address: string) {
@@ -44,10 +35,12 @@ async function anotherBrowser(browser: Browser, options: Parameters<Browser['new
 /**
  * Headless browsers refuse notifications whatever a test grants, so the browser's answer is
  * stood in for: asked once, it says `answer`, and remembers it across reloads as a real one does.
+ * Playwright's WebKit has no notifications at all: there the stand-in is the whole of them.
  */
 async function answerNotifications(page: Page, answer: 'granted' | 'denied') {
   await page.addInitScript((reply) => {
     const key = 'e2e.notifications';
+    if (typeof Notification === 'undefined') Object.defineProperty(window, 'Notification', { configurable: true, writable: true, value: class {} });
     Object.defineProperty(Notification, 'permission', { configurable: true, get: () => sessionStorage.getItem(key) ?? 'default' });
     Notification.requestPermission = async () => {
       sessionStorage.setItem(key, reply);
@@ -101,8 +94,8 @@ test('the owner chooses what the link shows: a recipient reads the number’s en
   await context.close();
 });
 
-test('a gift stays a surprise until it is delivered, then shows its note and what is inside', async ({ page, browser, context }) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+test('a gift stays a surprise until it is delivered, then shows its note and what is inside', async ({ page, browser }) => {
+  await allowCopying(page);
   await track(page, 'DEMOCHOC20260001');
   await expect(status(page)).toHaveText('Out for delivery');
   await page.getByRole('button', { name: 'Name it' }).click();
@@ -116,7 +109,7 @@ test('a gift stays a surprise until it is delivered, then shows its note and wha
   await sheet.getByRole('switch', { name: 'Show what’s inside' }).check();
   await sheet.getByRole('button', { name: 'Copy' }).click();
   await expect(sheet.getByText('Link copied')).toBeVisible();
-  const link = await page.evaluate(() => navigator.clipboard.readText());
+  const link = await copied(page);
   // The name, the note and the signature travel after the #, which no server sees.
   expect(link).toMatch(/\/p\/[2-9A-HJ-NP-Za-km-z]{12}#n=Belgian%20chocolate&g=Happy%20birthday.*&f=Sam$/);
   await sheet.getByRole('button', { name: 'Close' }).click();
@@ -271,6 +264,24 @@ test('alerts: a browser that refuses notifications gets plain guidance and the c
   expect(calendar).toMatch(/URL:http:\/\/[^\r]+\/p\/[2-9A-HJ-NP-Za-km-z]{12}\r\n/);
 });
 
+test('alerts: a browser without notifications is told so, and offered the calendar file instead', async ({ page }) => {
+  // Playwright's WebKit is such a browser; Chromium is made one.
+  await page.addInitScript(() => { Object.defineProperty(window, 'Notification', { configurable: true, value: undefined }); });
+  await track(page, 'DEMOCHOC20260001');
+  await expect(status(page)).toHaveText('Out for delivery');
+  await actions(page).getByRole('button', { name: /^Ping me/ }).click();
+  const sheet = page.getByRole('dialog', { name: 'Ping me when it arrives' });
+  const notifications = sheet.getByRole('radio', { name: /^Notifications in this browser/ });
+  await expect(notifications).toBeDisabled();
+  await expect(notifications).not.toBeChecked();
+  await expect(sheet.getByText('This browser can’t show notifications.')).toBeVisible();
+  await expect(sheet.getByRole('button', { name: 'Turn on' })).toHaveCount(0);
+  await expect(sheet.getByRole('radio', { name: /^Add the delivery window to my calendar/ })).toBeChecked();
+  await expect(sheet.getByRole('button', { name: 'Add to calendar' })).toBeVisible();
+  // An account's alerts do not depend on this browser: the way to them stays.
+  await expect(sheet.getByText('Alerts on all your devices')).toBeVisible();
+});
+
 test('alerts: an iPhone outside its Home Screen app gets the three steps, not a button that cannot work', async ({ browser, page }) => {
   await track(page, 'DEMOGLS20260009');
   await expect(status(page)).toHaveText('In transit');
@@ -290,7 +301,7 @@ test('alerts: an iPhone outside its Home Screen app gets the three steps, not a 
 });
 
 test('a parcel of the deliveries is shared through the same sheet: its link is made on copy, and stopped for good', async ({ page, context }) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await allowCopying(page);
   await page.goto('/demo');
   await page.getByRole('button', { name: /New sneakers/ }).first().click();
   const detail = page.getByRole('dialog', { name: /New sneakers/ }).first();
@@ -304,7 +315,7 @@ test('a parcel of the deliveries is shared through the same sheet: its link is m
   await sheet.getByRole('switch', { name: 'Show its name' }).check();
   await sheet.getByRole('button', { name: 'Copy' }).click();
   await expect(sheet.getByText('Link copied')).toBeVisible();
-  const link = await page.evaluate(() => navigator.clipboard.readText());
+  const link = await copied(page);
   expect(link).toMatch(/\/p\/[2-9A-HJ-NP-Za-km-z]{12}#n=New%20sneakers/);
   await expect(sheet.getByRole('button', { name: 'Stop sharing' })).toBeVisible();
 
@@ -332,12 +343,7 @@ test('fits a phone at 320 px, in German and in the dark: the sheets, a gift and 
   await page.emulateMedia({ colorScheme: 'dark' });
   await answerNotifications(page, 'granted');
   await page.addInitScript(() => localStorage.setItem('deliveryTrackerLocale', 'de'));
-  await page.goto('/');
-  const submit = page.getByRole('button', { name: 'Verfolgen', exact: true });
-  await expect(submit).toBeEnabled();
-  await page.getByRole('textbox').fill('DEMOCHOC20260001');
-  await submit.click();
-  await expect(page).toHaveURL(parcelAddress);
+  await track(page, 'DEMOCHOC20260001', { field: 'Sendungsnummer oder Link', track: 'Verfolgen' });
   await expect(status(page)).toHaveText('In Zustellung');
   expect(await fits(page)).toBe(true);
   const address = page.url();

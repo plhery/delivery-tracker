@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { allowCopying, copied, track } from './peek';
 
 // The demo build keeps lookups in the browser; every number here is fictional.
 const errors = new WeakMap<Page, string[]>();
@@ -10,19 +11,8 @@ test.beforeEach(async ({ page }) => {
 test.afterEach(async ({ page }) => { expect(errors.get(page)).toEqual([]); });
 
 const frontDoor = (page: Page) => page.getByRole('heading', { name: 'Where’s my parcel?' });
-const parcelAddress = /\/p\/[2-9A-HJ-NP-Za-km-z]{12}$/;
 const status = (page: Page) => page.getByRole('heading', { level: 1 });
 const fits = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
-
-async function track(page: Page, text: string) {
-  await page.goto('/');
-  await expect(frontDoor(page)).toBeVisible();
-  const submit = page.getByRole('button', { name: 'Track', exact: true });
-  await expect(submit).toBeEnabled();
-  await page.getByRole('textbox', { name: 'Tracking number or link' }).fill(text);
-  await submit.click();
-  await expect(page).toHaveURL(parcelAddress);
-}
 
 test('follows one parcel without an account: a number typed at the door gets its own page, which a reload keeps', async ({ page }) => {
   const sent: string[] = [];
@@ -110,8 +100,8 @@ test('names the parcel on this device: the page, a reload and the front door sho
   await expect(page.getByRole('region', { name: 'On this device' }).getByRole('link')).toContainText('Moon lamp');
 });
 
-test('shares the link by copying it where there is no share sheet, and the name only when asked', async ({ page, context }) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+test('shares the link by copying it where there is no share sheet, and the name only when asked', async ({ page }) => {
+  await allowCopying(page);
   await page.addInitScript(() => { Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); });
   await track(page, 'DEMOGLS20260009');
   await page.getByRole('button', { name: 'Name it' }).click();
@@ -122,12 +112,12 @@ test('shares the link by copying it where there is no share sheet, and the name 
   const sheet = page.getByRole('dialog', { name: 'Share this parcel' });
   await sheet.getByRole('button', { name: 'Share…' }).click();
   await expect(sheet.getByText('Link copied')).toBeVisible();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(page.url());
+  expect(await copied(page)).toBe(page.url());
   expect(page.url()).not.toContain('surprise');
   // The name travels only once it is switched on, and then after the #.
   await sheet.getByRole('switch', { name: 'Show what’s inside' }).check();
   await sheet.getByRole('button', { name: 'Copy' }).click();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(`${page.url()}#n=A%20surprise`);
+  await expect.poll(() => copied(page)).toBe(`${page.url()}#n=A%20surprise`);
 });
 
 test('forgets the parcel after asking once, and its link then leads nowhere', async ({ page }) => {
@@ -183,12 +173,8 @@ test('fits a phone at 320 px, in German and in the dark', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Wo ist mein Paket?' })).toBeVisible();
   expect(await fits(page)).toBe(true);
-  const submit = page.getByRole('button', { name: 'Verfolgen', exact: true });
-  await expect(submit).toBeEnabled();
   // A sample with places on its way: the map runs across the card.
-  await page.getByRole('textbox').fill('1234567899');
-  await submit.click();
-  await expect(page).toHaveURL(parcelAddress);
+  await track(page, '1234567899', { field: 'Sendungsnummer oder Link', track: 'Verfolgen' });
   await expect(status(page)).toHaveText('Abholbereit');
   expect(await fits(page)).toBe(true);
   // The name form, the forget dialog and a delivered parcel fit as well.

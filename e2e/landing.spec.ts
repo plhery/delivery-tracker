@@ -163,11 +163,14 @@ test('tapping Pip opens the box, then the sample parcels, and Back returns to th
   await expect(page.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
 });
 
-test('everything that can be used is reached by keyboard, and Pip opens with Enter', async ({ page }) => {
+test('everything that can be used is reached by keyboard, and Pip opens with Enter', async ({ page, browserName }) => {
   await openLanding(page);
+  // Safari's Tab stops at fields and menus only, unless its "Press Tab to highlight each item"
+  // setting is on; Option-Tab stops at everything, as Tab does in other browsers.
+  const tab = browserName === 'webkit' ? 'Alt+Tab' : 'Tab';
   const reached: string[] = [];
   for (let step = 0; step < 24; step += 1) {
-    await page.keyboard.press('Tab');
+    await page.keyboard.press(tab);
     const name = await page.evaluate(() => {
       const element = document.activeElement as HTMLElement | null;
       if (!element || element === document.body) return '';

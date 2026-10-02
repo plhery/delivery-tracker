@@ -1,4 +1,4 @@
-import { lazy, Suspense, type CSSProperties, type RefObject } from 'react';
+import { Suspense, type CSSProperties, type RefObject } from 'react';
 import { CarrierMark } from '../../components/CarrierMark';
 import { Icon } from '../../components/Icon';
 import { PeekMark } from '../../components/PeekMark';
@@ -7,11 +7,11 @@ import { useI18n } from '../../i18n';
 import { carrierBrand } from '../../lib/carrierBrand';
 import { carrierInfo } from '../../lib/carriers';
 import { JOURNEY, JOURNEY_CARRIER } from './journey';
-import { useNear } from './useLive';
+import { lazyPicture, useNear } from './useLive';
 import './Moves.css';
 
 // The map and its data are for whoever scrolls this far.
-const JourneyMap = lazy(() => import('./JourneyMap'));
+const JourneyMap = lazyPicture(() => import('./JourneyMap'));
 
 /**
  * "Will I know when it moves?": one parcel travels scan by scan on the app's

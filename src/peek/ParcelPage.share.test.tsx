@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { restoreAlertBrowser, stubAlertBrowser } from '../test/alertBrowser';
@@ -146,6 +146,24 @@ describe('the parcel page of a link’s owner', () => {
     expect(screen.getByText('Sharing is stopped. The link shows nothing to anyone else.')).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Share this parcel' }));
     expect(screen.getByRole('dialog', { name: 'Share this parcel' })).toBeVisible();
+  });
+
+  it('hands the keyboard back to the button that opened a sheet, in a browser that leaves a clicked button unfocused', async () => {
+    const user = userEvent.setup();
+    open(view());
+    const share = await actions().findByRole('button', { name: 'Share' });
+    // Safari's click: the button is pressed without taking the focus.
+    fireEvent.click(share);
+    expect(screen.getByRole('dialog', { name: 'Share this parcel' })).toBeVisible();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(share).toHaveFocus();
+
+    const ping = actions().getByRole('button', { name: /^Ping me/ });
+    fireEvent.click(ping);
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Ping me when it arrives' })).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(ping).toHaveFocus();
   });
 
   it('leads from the share sheet to naming a parcel that has no name', async () => {

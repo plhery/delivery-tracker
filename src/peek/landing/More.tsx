@@ -1,15 +1,15 @@
-import { lazy, Suspense, useRef } from 'react';
+import { Suspense, useRef } from 'react';
 import { Icon, type IconName } from '../../components/Icon';
 import { Seal } from '../../components/Passport';
 import { PeekMark } from '../../components/PeekMark';
 import { useI18n, type MessageKey } from '../../i18n';
 import { LandingIcon } from './glyphs';
 import { IOS_APP_URL } from './links';
-import { useNear, useRise } from './useLive';
+import { lazyPicture, useNear, useRise } from './useLive';
 import './More.css';
 
 // The cards and their sample parcels are for whoever scrolls this far.
-const SampleList = lazy(() => import('./SampleList'));
+const SampleList = lazyPicture(() => import('./SampleList'));
 
 const BENEFITS: readonly { icon: IconName; title: MessageKey; body: MessageKey }[] = [
   { icon: 'parcel', title: 'landing.more.list.title', body: 'landing.more.list.body' },

@@ -11,6 +11,7 @@ import { localizedDeliveryWindow, localizedEventDescription, stageLabel, useI18n
 import { trackAction, trackScreen } from '../lib/analytics';
 import { carrierBrand } from '../lib/carrierBrand';
 import { activeTrackingCarrierId, carrierInfo, displayedCarrierId, formatTrackingNumber, tracksAutomatically } from '../lib/carriers';
+import { focusClickedButton } from '../lib/modal';
 import { parcelDeliveryEstimate, parcelHasCarrierUpdate, parcelIsUnannounced } from '../lib/parcelStatus';
 import { pickupPoint } from '../lib/pickupPoint';
 import { currentEvent, isFinal, sortEventsDesc } from '../lib/stages';
@@ -109,7 +110,8 @@ function Shell({ title, onHome, controls, banner, brand, entrance, live, news, c
 }) {
   const { t } = useI18n();
   useTabTitle(title, `${t('app.title')} — ${t('app.tagline')}`);
-  return <div className="peekp" style={brand}>
+  // A sheet hands the focus back to the button that opened it, in Safari too.
+  return <div className="peekp" style={brand} onClickCapture={focusClickedButton}>
     {banner}
     <header className="peekp-header">
       <button type="button" className="peekp-home" aria-label={t('app.title')} onClick={onHome}><PeekLockup /></button>

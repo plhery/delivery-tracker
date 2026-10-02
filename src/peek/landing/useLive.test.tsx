@@ -1,9 +1,9 @@
 import { act, render, screen } from '@testing-library/react';
-import { useRef } from 'react';
+import { Suspense, useRef } from 'react';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { scroll, stubIntersections, watching } from '../../test/intersections';
-import { useLive, useNear, useReducedMotion, useRise, useTabShown } from './useLive';
+import { lazyPicture, useLive, useNear, useReducedMotion, useRise, useTabShown } from './useLive';
 
 function Probe({ share }: { share?: number }) {
   const target = useRef<HTMLDivElement>(null);
@@ -80,6 +80,25 @@ describe('useNear', () => {
     // It has stopped looking: what it loaded stays loaded.
     scroll(element, 0);
     expect(element).toHaveAttribute('data-near', 'true');
+  });
+});
+
+describe('lazyPicture', () => {
+  it('shows the picture once its code has arrived', async () => {
+    const Picture = lazyPicture(async () => ({ default: ({ name }: { name: string }) => <p>{name}</p> }));
+    render(<Suspense fallback={null}><Picture name="A map" /></Suspense>);
+    expect(await screen.findByText('A map')).toBeVisible();
+  });
+
+  it('leaves its place empty when its code cannot be fetched, and the page around it stands', async () => {
+    const failed = vi.spyOn(console, 'error');
+    const load = vi.fn(() => Promise.reject<{ default: () => null }>(new Error('Loading chunk 5060 failed.')));
+    const Picture = lazyPicture(load);
+    const { container } = await act(async () => render(<main><h1>Where’s my parcel?</h1><div data-testid="frame"><Suspense fallback={null}><Picture /></Suspense></div></main>));
+    expect(load).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('frame')).toBeEmptyDOMElement();
+    expect(container).toHaveTextContent('Where’s my parcel?');
+    expect(failed).not.toHaveBeenCalled();
   });
 });
 
