@@ -1007,7 +1007,8 @@ export function pushServices(client: SupabaseServiceClient): CompositePushNotifi
   const webValues = {
     publicKey: process.env.VAPID_PUBLIC_KEY?.trim() ?? '',
     privateKey: process.env.VAPID_PRIVATE_KEY?.trim() ?? '',
-    subject: process.env.VAPID_SUBJECT?.trim() || 'https://delivery.plhery.com',
+    // Push services ask who sends: the site itself, unless a contact is set.
+    subject: process.env.VAPID_SUBJECT?.trim() || process.env.CANONICAL_ORIGIN?.trim() || 'https://peek.plhery.com',
   };
   const nativeValues = {
     teamId: process.env.APNS_TEAM_ID?.trim() ?? '',

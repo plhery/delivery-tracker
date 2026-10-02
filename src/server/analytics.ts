@@ -1,4 +1,5 @@
 import 'server-only';
+import { movedOrigin, requestHostname } from './siteHosts';
 
 export function analyticsConfiguration(env: NodeJS.ProcessEnv = process.env) {
   try {
@@ -12,4 +13,17 @@ export function analyticsConfiguration(env: NodeJS.ProcessEnv = process.env) {
     return { endpoint: `${endpoint.origin}/api/send`, hostname: origin.hostname,
       webWebsite: env.UMAMI_WEBSITE_ID!, iosWebsite: env.UMAMI_IOS_WEBSITE_ID! };
   } catch { return null; }
+}
+
+/**
+ * What a client is told. Clients only collect when the hostname is the one
+ * they call, so a host the site moved from is answered with its own name:
+ * installed apps that still call it keep reporting to the same properties.
+ */
+export function analyticsConfigurationFor(headers: Pick<Headers, 'get'>, env: NodeJS.ProcessEnv = process.env) {
+  const configuration = analyticsConfiguration(env);
+  const moved = configuration && movedOrigin(headers, env);
+  const asked = requestHostname(headers);
+  if (!configuration || !moved || !asked || new URL(moved).hostname !== configuration.hostname) return configuration;
+  return { ...configuration, hostname: asked };
 }

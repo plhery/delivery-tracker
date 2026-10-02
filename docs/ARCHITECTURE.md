@@ -21,7 +21,7 @@ Next.js route handlers --- user token ---> PostgREST + Postgres RLS
 | Path | What |
 | --- | --- |
 | `app/` | App Router pages, route handlers, manifest, service worker, offline page |
-| `proxy.ts` | Per-request CSP nonce and security headers |
+| `proxy.ts` | Per-request CSP nonce and security headers; redirects pages from a host the site has left |
 | `src/` | React client (`components/`, `store/`, `auth/`, `i18n.tsx`) |
 | `src/peek/` | The front door and the parcel page for visitors: parcel link client, this device's parcels, keeping a parcel after sign-in |
 | `src/server/` | API helpers, auth, sync worker, routing, push, observability |
@@ -96,6 +96,20 @@ Key server modules:
   Auth, invitation pages and parcel link pages are network-only.
 - **Proxies**: forwarded client IPs are trusted only with `TRUST_PROXY_HEADERS=true`.
   Cloudflare may sit in front for TLS and abuse protection, but it isn't part of identity.
+- **Hosts**: a redirect between hosts goes only to the configured canonical origin, never
+  to anything a request names ([DEPLOYMENT.md](DEPLOYMENT.md)).
+
+## Addresses
+
+| Address | What it shows |
+| --- | --- |
+| `/` | The front door to a visitor, the deliveries to someone signed in |
+| `/p/<id>` | One parcel, to anyone with the link |
+| `/i/<key>`, `/invite` | A friend invitation ([FRIENDS.md](FRIENDS.md)) |
+| `/demo` | The demo deliveries, kept on the device, to anyone; leaving the demo returns to `/` |
+
+Sessions belong to one origin, so every address lives on the same host. With the iPhone
+app installed, `/p/…` and `/i/…` open in the app.
 
 ## Data lifecycle
 

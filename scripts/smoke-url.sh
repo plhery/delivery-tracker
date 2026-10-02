@@ -3,7 +3,7 @@ set -euo pipefail
 
 base_url=${1:-}
 if [[ -z "$base_url" ]]; then
-  echo "Usage: $0 https://delivery.example.com" >&2
+  echo "Usage: $0 https://peek.example.com" >&2
   exit 2
 fi
 base_url=${base_url%/}

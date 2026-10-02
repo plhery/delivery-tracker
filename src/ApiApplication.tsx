@@ -3,7 +3,7 @@ import App from './App';
 import { useAuth } from './auth/AuthContext';
 import { ArrivalScreen } from './components/ArrivalScreen';
 import { ParcelIllustration } from './components/Icon';
-import { useEntryExperience } from './lib/experience';
+import { useDemoAddress, useEntryExperience } from './lib/experience';
 import { createDemoRepo } from './store/demoRepo';
 import { deleteAccount, downloadAccountExport, exportAccount } from './lib/account';
 import {
@@ -26,14 +26,17 @@ import { leaveParcelLink, useParcelLinkRoute } from './peek/route';
 import type { PeekSession } from './peek/session';
 import { useVisitorSession } from './peek/visitor';
 
-export function ApiApplication({ invitationRoute = false, parcelLinkId = null }: {
+export function ApiApplication({ invitationRoute = false, parcelLinkId = null, demoRoute = false }: {
   invitationRoute?: boolean;
   /** The link id of the parcel page the server rendered, at `/p/<id>`. */
   parcelLinkId?: string | null;
+  /** The server rendered the demo's address, `/demo`. */
+  demoRoute?: boolean;
 }) {
   const { t } = useI18n();
   const auth = useAuth();
-  const experience = useEntryExperience();
+  const experience = useEntryExperience(demoRoute);
+  const demoAddress = useDemoAddress(demoRoute);
   const invitation = usePendingInvitation(invitationRoute);
   const linkId = useParcelLinkRoute(parcelLinkId);
   const visitor = useVisitorSession(auth.status === 'loading' ? 'checking' : 'visitor');
@@ -96,6 +99,11 @@ export function ApiApplication({ invitationRoute = false, parcelLinkId = null }:
     configured: auth.status !== 'unconfigured', googleEnabled: auth.googleEnabled, appleEnabled: auth.appleEnabled, emailOtpEnabled: auth.emailOtpEnabled,
     signInWithGoogle: auth.signInWithGoogle, signInWithApple: auth.signInWithApple, sendCode: auth.sendCode, verifyCode: auth.verifyCode,
   };
+  const demo = <ParcelsProvider key="demo" repo={demoRepo}>
+    <App onExitDemo={() => experience.navigate('welcome')} />
+  </ParcelsProvider>;
+  // The demo's address shows the demo to anyone at once, signed in or not. Leaving the demo returns to `/`.
+  if (demoAddress) return demo;
   // A parcel's address shows the parcel to anyone at once, while a saved sign-in is still being restored.
   // Without one, a visitor arrives at the front door.
   if (auth.status !== 'authenticated' && (linkId
@@ -107,9 +115,7 @@ export function ApiApplication({ invitationRoute = false, parcelLinkId = null }:
   }
   if (auth.status === 'unconfigured' || auth.status === 'anonymous') {
     if (invitation.pending) return <FriendInvitation key={invitation.pending.code ?? 'invalid'} {...invitationProps} />;
-    if (experience.screen === 'demo') return <ParcelsProvider key="demo" repo={demoRepo}>
-      <App onExitDemo={() => experience.navigate('welcome')} />
-    </ParcelsProvider>;
+    if (experience.screen === 'demo') return demo;
     return (
       <ArrivalScreen
         screen="sign-in"

@@ -3,11 +3,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'node:crypto';
 import { APPEARANCE_BOOTSTRAP } from './src/lib/appearanceConfig';
 import { publicSupabaseOrigin } from './src/server/runtime';
+import { legacyHostRedirect } from './src/server/siteHosts';
 
 // The app and static privacy document use this exact, fixed prepaint script.
 const appearanceScriptHash = createHash('sha256').update(APPEARANCE_BOOTSTRAP).digest('base64');
 
 export function proxy(request: NextRequest) {
+  // A page opened on a host the site has left continues at the same address on its new one.
+  const moved = legacyHostRedirect({
+    method: request.method,
+    headers: request.headers,
+    pathname: request.nextUrl.pathname,
+    search: request.nextUrl.search,
+  });
+  // Never stored: the answer depends on who asks, and a later change of hosts must take effect at once.
+  if (moved) return NextResponse.redirect(moved, { status: 308, headers: { 'Cache-Control': 'private, no-store' } });
+
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const isDevelopment = process.env.NODE_ENV === 'development';
   const supabaseOrigin = publicSupabaseOrigin();
@@ -42,7 +53,7 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     {
-      source: '/((?!api|health|_next/static|_next/image|icons|sw\\.js|push-sw\\.js|og\\.png|favicon\\.ico).*)',
+      source: '/((?!api|health|_next/static|_next/image|icons|sw\\.js|push-sw\\.js|og\\.png|favicon\\.ico|\\.well-known/apple-app-site-association).*)',
       missing: [
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },

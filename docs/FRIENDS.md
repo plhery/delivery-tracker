@@ -33,7 +33,8 @@ locations, emails, photos, active shipments or ids.
   accepting.
 - Reopening an accepted link shows `already_accepted` or `already_friends` to the account
   that accepted it, and creates nothing new. Unavailable links stay closed.
-- Older link formats (`/i/key#token`, `/invite?preview=hash#token`) still work.
+- Older link formats (`/i/key#token`, `/invite?preview=hash#token`) still work, and so do
+  links on a host the site has left: they redirect to the same address.
 - Personal Team iOS builds open links through the web page's "Open in iOS app" button;
   universal links need the Associated Domains entitlement.
 

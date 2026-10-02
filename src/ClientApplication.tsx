@@ -13,7 +13,8 @@ import { checkForUpdatesOnResume, enablePwaLiveReload, registerPwaServiceWorker 
 import { createDemoRepo } from './store/demoRepo';
 import { ParcelsProvider } from './store/ParcelsContext';
 import { AppearanceProvider } from './lib/appearance';
-import { useEntryExperience } from './lib/experience';
+import { useDemoAddress, useEntryExperience } from './lib/experience';
+import { MovedHost } from './lib/movedHost';
 import { ArrivalScreen } from './components/ArrivalScreen';
 import { FriendInvitation } from './components/FriendInvitation';
 import { usePendingInvitation } from './lib/friendInvites';
@@ -33,13 +34,25 @@ const authConfig = authConfigFromEnvironment({
   emailOtpEnabled: process.env.NEXT_PUBLIC_AUTH_EMAIL_OTP_ENABLED,
 });
 
-export function ClientApplication({ invitationRoute = false, parcelLinkId = null, initialLocale, initialMessages }: {
+interface ApplicationProps {
   invitationRoute?: boolean;
   /** The link id of the parcel page the server rendered, at `/p/<id>`. */
   parcelLinkId?: string | null;
+  /** The server rendered the demo's address, `/demo`. */
+  demoRoute?: boolean;
   initialLocale?: Locale;
   initialMessages?: Messages;
+}
+
+export function ClientApplication({ movedTo, ...props }: ApplicationProps & {
+  /** The origin the site moved to, when the server rendered the page on a host it has left. */
+  movedTo?: string;
 }) {
+  // On a host the site has left, nothing of the app starts until it is known to stay there.
+  return movedTo ? <MovedHost to={movedTo}><Application {...props} /></MovedHost> : <Application {...props} />;
+}
+
+function Application({ invitationRoute = false, parcelLinkId = null, demoRoute = false, initialLocale, initialMessages }: ApplicationProps) {
   const demoRepo = useMemo(
     () => isDemoBuild ? createDemoRepo() : null,
     [],
@@ -67,9 +80,9 @@ export function ClientApplication({ invitationRoute = false, parcelLinkId = null
   return (
     <I18nProvider initialLocale={initialLocale} initialMessages={initialMessages}>
       <AppearanceProvider>
-      {demoRepo ? <DemoApplication repo={demoRepo} invitationRoute={invitationRoute} parcelLinkId={parcelLinkId} /> : (
+      {demoRepo ? <DemoApplication repo={demoRepo} invitationRoute={invitationRoute} parcelLinkId={parcelLinkId} demoRoute={demoRoute} /> : (
         <AuthProvider config={authConfig}>
-          <ApiApplication invitationRoute={invitationRoute} parcelLinkId={parcelLinkId} />
+          <ApiApplication invitationRoute={invitationRoute} parcelLinkId={parcelLinkId} demoRoute={demoRoute} />
         </AuthProvider>
       )}
       </AppearanceProvider>
@@ -78,13 +91,15 @@ export function ClientApplication({ invitationRoute = false, parcelLinkId = null
 }
 
 /** A build without an API: everyone is a visitor, and the demo stands in for an account. */
-export function DemoApplication({ repo, invitationRoute = false, parcelLinkId = null }: {
+export function DemoApplication({ repo, invitationRoute = false, parcelLinkId = null, demoRoute = false }: {
   repo: ParcelRepo;
   invitationRoute?: boolean;
   parcelLinkId?: string | null;
+  demoRoute?: boolean;
 }) {
   const invitation = usePendingInvitation(invitationRoute);
-  const experience = useEntryExperience();
+  const experience = useEntryExperience(demoRoute);
+  const demoAddress = useDemoAddress(demoRoute);
   const linkId = useParcelLinkRoute(parcelLinkId);
   const session = useVisitorSession('visitor');
   const signIn = { configured: false, googleEnabled: false, emailOtpEnabled: false, sendCode: async () => undefined, verifyCode: async () => undefined };
@@ -93,7 +108,8 @@ export function DemoApplication({ repo, invitationRoute = false, parcelLinkId = 
   if (linkId || (!invitation.pending && experience.screen === 'welcome')) {
     return <PeekRoot session={session} serverLinkId={parcelLinkId} />;
   }
-  if (invitation.pending) {
+  // The demo's address shows the demo; an invitation waiting in this tab comes back after it.
+  if (invitation.pending && !demoAddress) {
     return <FriendInvitation key={invitation.pending.code ?? 'invalid'} invitation={invitation}
       onDismiss={() => { invitation.clear(); experience.navigate('welcome'); }} {...signIn} />;
   }

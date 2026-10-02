@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { requestOrigin } from '../src/server/requestOrigin';
+import { requestMovedOrigin, requestOrigin } from '../src/server/requestOrigin';
 import { requestLanguage } from '../src/server/requestLocale';
 import { connection } from 'next/server';
 import { ClientApplication } from '../src/ClientApplication';
@@ -40,5 +40,5 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   await connection();
-  return <ClientApplication {...await requestLanguage()} />;
+  return <ClientApplication movedTo={await requestMovedOrigin()} {...await requestLanguage()} />;
 }

@@ -105,6 +105,12 @@ const pageNavigation = new NetworkFirst({
   plugins: [
     new ExpirationPlugin({ maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 }),
     {
+      // Only a page itself is kept for offline use. A redirect is the server's
+      // answer of the moment, such as a host whose pages moved: the browser
+      // follows it, and it is asked again next time.
+      cacheWillUpdate: async ({ response }) => (response.status === 200 && !response.redirected ? response : null),
+    },
+    {
       // Next's router needs the fallback's real URL when it hydrates.
       // The target itself is precached and works without a network.
       handlerDidError: async () => Response.redirect(new URL('/~offline', self.location.origin).href, 302),

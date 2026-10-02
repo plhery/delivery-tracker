@@ -1,8 +1,8 @@
-import { analyticsConfiguration } from '../../../../src/server/analytics';
+import { analyticsConfigurationFor } from '../../../../src/server/analytics';
 
 export const dynamic = 'force-dynamic';
 
-export function GET() {
+export function GET(request: Request) {
   // Public collection IDs only. Runtime configuration keeps forks and local demos off.
-  return Response.json(analyticsConfiguration(), { headers: { 'Cache-Control': 'no-store' } });
+  return Response.json(analyticsConfigurationFor(request.headers), { headers: { 'Cache-Control': 'no-store' } });
 }

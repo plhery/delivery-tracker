@@ -66,12 +66,14 @@ vi.mock('./App', () => ({
     onSignOut,
     onExportAccount,
     onDeleteAccount,
+    onExitDemo,
   }: {
     accountEmail: string;
     onSignOut: () => Promise<void>;
     onExportAccount: () => Promise<void>;
     onDeleteAccount: (confirmation: string) => Promise<void>;
-  }) => (
+    onExitDemo?: () => void;
+  }) => onExitDemo ? <button type="button" onClick={onExitDemo}>Exit demo</button> : (
     <div>
       <span>{accountEmail}</span>
       <button type="button" onClick={() => void onExportAccount()}>Export</button>
@@ -179,6 +181,31 @@ describe('ApiApplication', () => {
     expect(screen.getByRole('button', { name: 'Explore the demo' })).toBeVisible();
     expect(window.localStorage.getItem('sdt.web.experience.v1')).toBe('sign-in');
     await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+  });
+
+  it('shows the demo at its address to someone signed in, and returns to their deliveries when they leave it', async () => {
+    history.replaceState(null, '', '/demo?view=passport');
+    mocks.auth.status = 'authenticated';
+    mocks.auth.user = USER;
+    render(<ApiApplication demoRoute />);
+    expect(screen.getByRole('button', { name: 'Exit demo' })).toBeVisible();
+    expect(screen.queryByText('owner@example.test')).not.toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Exit demo' }));
+    expect(location.pathname + location.search).toBe('/');
+    expect(screen.getByText('owner@example.test')).toBeVisible();
+  });
+
+  it('shows the demo at its address at once, while a saved sign-in is still being restored, and leaves it for the front door', async () => {
+    history.replaceState(null, '', '/demo');
+    mocks.auth.status = 'loading';
+    const result = render(<ApiApplication demoRoute />);
+    expect(screen.getByRole('button', { name: 'Exit demo' })).toBeVisible();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    mocks.auth.status = 'anonymous';
+    result.rerender(<ApiApplication demoRoute />);
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Exit demo' }));
+    expect(location.pathname).toBe('/');
     expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
   });
 

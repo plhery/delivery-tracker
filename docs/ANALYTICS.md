@@ -23,6 +23,10 @@ The values are public ids, not keys. Clients read them from the uncached
 `/api/analytics/config` and check the hostname. The CSP allows only that origin in
 `connect-src`, and no remote script is loaded.
 
+When the site has moved ([DEPLOYMENT.md](DEPLOYMENT.md)), `UMAMI_APP_ORIGIN` is the
+canonical origin. A legacy host is then answered with its own hostname, so installed apps
+that still call it keep reporting to the same properties.
+
 Both clients post to Umami's `/api/send`. The queue holds at most 30 events, and requests
 time out after 5 s. Failures are dropped and never delay the user; nothing is stored for
 offline replay. The iPhone app uses a Safari-like user agent with a `DeliveryTracker`

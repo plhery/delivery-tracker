@@ -81,6 +81,30 @@ describe('DemoApplication', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
   });
 
+  it('opens the demo at its own address, and leaves it for the front door at `/`', async () => {
+    history.replaceState(null, '', '/demo?view=passport');
+    const user = userEvent.setup();
+    render(<DemoApplication repo={createDemoRepo(window.localStorage)} demoRoute />);
+    expect(await screen.findByText(/Coffee beans/)).toBeVisible();
+    // The address is the demo: `/` still opens the front door.
+    expect(localStorage.getItem('sdt.web.experience.v1')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Exit demo' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+    expect(location.pathname + location.search).toBe('/');
+  });
+
+  it('shows the demo at its address before an invitation waiting in the tab, which comes back after it', async () => {
+    sessionStorage.setItem('sdt.pendingFriendInvitation.v1', JSON.stringify({ code: 'Ab7kP2mQ9xR4tY6n', opened: false, receivedAt: Date.now() }));
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ previewNickname: 'Paul' }))));
+    history.replaceState(null, '', '/demo');
+    const user = userEvent.setup();
+    render(<DemoApplication repo={createDemoRepo(window.localStorage)} demoRoute />);
+    expect(await screen.findByText(/Coffee beans/)).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Exit demo' }));
+    expect(await screen.findByRole('button', { name: 'Tap to open your parcel' })).toBeVisible();
+    vi.unstubAllGlobals();
+  });
+
   it('brings the parcel a visitor asked to keep into the demo deliveries, with its history and its name', async () => {
     const { id, key } = await lookupParcel({ trackingNumber: '1ZDEMO202600000009' });
     const view = await readParcelLink(id, { key, advance: true });

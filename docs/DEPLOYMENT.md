@@ -2,7 +2,7 @@
 
 The app is one long-running Next.js container: web, API and background worker. It needs
 Supabase (Auth, PostgREST, Postgres 16+) and HTTPS. The official instance runs at
-`https://delivery.plhery.com`, behind Cloudflare.
+`https://peek.plhery.com`, behind Cloudflare.
 
 ## Requirements
 
@@ -60,12 +60,19 @@ The build fails early unless API mode is on and at least one sign-in method is e
 At runtime, set the server Supabase values and `SUPABASE_SERVICE_ROLE_KEY`. Push is
 optional:
 
-- Web Push: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`.
+- Web Push: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (the canonical origin
+  when unset).
 - APNs: `APNS_TEAM_ID`, `APNS_KEY_ID`, `APNS_PRIVATE_KEY` (the whole `.p8`) and
   `APNS_BUNDLE_ID`. The same key sends alerts and Live Activity pushes.
 
 Partial VAPID or APNs configuration is rejected at startup. [`.env.example`](../.env.example)
 lists everything.
+
+**Links that open in the iPhone app.** `/.well-known/apple-app-site-association` lets iOS
+open parcel links and invitations (`/p/…`, `/i/…`, `/invite`) in the app. It names the app
+that receives the APNs pushes, or the apps in `APPLE_APP_IDS` (`<team id>.<bundle id>`,
+comma-separated) when set. Without either it answers 404. Apple's servers fetch it without
+credentials and don't follow redirects, so keep it reachable through any edge protection.
 
 - Expose port `3000` behind HTTPS.
 - `GET /health` returns `{"ok": true}` when the database answers within 2.5 s and the
@@ -82,6 +89,36 @@ lists everything.
   browsers re-download everything.
 
 After deploying, run `scripts/smoke-url.sh https://your-hostname` from outside the origin.
+
+## Moving to another host
+
+One container can answer on several hosts. To move the site, serve the new host next to
+the old one, then set:
+
+```dotenv
+CANONICAL_ORIGIN=https://peek.example.com
+LEGACY_HOSTS=delivery.example.com
+```
+
+`LEGACY_HOSTS` is a comma-separated list of hostnames. Unset, nothing is redirected. A
+malformed value stops the server at startup.
+
+- A page opened on a legacy host answers `308` to the same path and query on the canonical
+  origin, so shared parcel links and invitations keep working.
+- Everything a client fetches on its own stays where it is: `/api`, `/health`, assets, the
+  service workers, the manifest, `/.well-known`, `/auth-emails` and `/og.png`. Installed
+  iPhone apps and open sessions keep calling the old host with their token, which a
+  redirect to another host would drop.
+- A browser that already has the old host's service worker gets the app from it, without
+  asking the server. A tab then continues at the same address on the canonical origin. An
+  installed web app stays on the old host and keeps working there, with its session and
+  its notifications.
+- Sessions belong to an origin: people sign in again on the new one, and turn notifications
+  on again there.
+
+Keep both hosts in the Auth redirect allow list ([AUTHENTICATION.md](AUTHENTICATION.md))
+and in the iPhone app's link hosts ([iPhone app](../ios/README.md)) for as long as the old
+host answers. Point `UMAMI_APP_ORIGIN` and the smoke test at the new host.
 
 ## Shutdown and crash recovery
 

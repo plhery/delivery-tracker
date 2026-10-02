@@ -40,6 +40,12 @@ swissdeliverytracker://auth-callback
 On self-hosted Supabase, configure GoTrue through environment variables (site URL, allow
 list, SMTP, templates). The hosted dashboard doesn't configure a self-hosted Auth server.
 
+Web sign-in with Google or Apple returns to the origin it started on, which must be the
+Site URL or in the allow list. When the site answers on more than one host
+([DEPLOYMENT.md](DEPLOYMENT.md)), set `GOTRUE_SITE_URL` to the canonical origin and list
+every origin in `GOTRUE_URI_ALLOW_LIST`, next to the iPhone callback. Providers return
+through the Supabase callback, so their consoles don't name the app's host as a redirect.
+
 ## Email codes
 
 Enable the Email provider with sign-ups, set the Site URL to the production origin, and
@@ -51,8 +57,8 @@ The app serves a branded template at `/auth-emails/magic-link.html`. It shows th
 instead of the magic-link one, so point both at the same template:
 
 ```dotenv
-GOTRUE_MAILER_TEMPLATES_MAGIC_LINK=https://delivery.example.com/auth-emails/magic-link.html
-GOTRUE_MAILER_TEMPLATES_CONFIRMATION=https://delivery.example.com/auth-emails/magic-link.html
+GOTRUE_MAILER_TEMPLATES_MAGIC_LINK=https://peek.example.com/auth-emails/magic-link.html
+GOTRUE_MAILER_TEMPLATES_CONFIRMATION=https://peek.example.com/auth-emails/magic-link.html
 GOTRUE_MAILER_SUBJECTS_MAGIC_LINK={{ if eq .Data.locale "de" }}Dein Anmeldecode für Peek{{ else if eq .Data.locale "fr" }}Ton code de connexion Peek{{ else if eq .Data.locale "it" }}Il tuo codice di accesso a Peek{{ else if eq .Data.locale "es" }}Tu código de acceso a Peek{{ else if eq .Data.locale "pt" }}O teu código de acesso ao Peek{{ else if eq .Data.locale "pl" }}Twój kod logowania do Peek{{ else }}Your Peek sign-in code{{ end }}
 GOTRUE_MAILER_SUBJECTS_CONFIRMATION=<same value as GOTRUE_MAILER_SUBJECTS_MAGIC_LINK>
 ```
