@@ -5,7 +5,15 @@ import { healthMessage } from './trackingHealth';
 import type { JsonObject } from './types';
 import { UpstreamHttpError, type UpstreamHttpDiagnostics } from 'universal-parcel-scraper/node';
 
-let initialized = false;
+/**
+ * The build puts this module in more than one server bundle (instrumentation
+ * and the routes), each with its own module state, while Sentry keeps one
+ * client for the whole process. The flag therefore lives on the process too:
+ * a second Sentry.init would instrument the HTTP server again, and the two
+ * copies would then wrap its `emit` anew on every request until the stack
+ * overflows a few hours later.
+ */
+const runtime = globalThis as typeof globalThis & { __deliveryObservabilityInitialized?: boolean };
 
 export interface OperationalContext {
   component: string;
@@ -134,7 +142,7 @@ export function operationalErrorMetadata(error: unknown): OperationalErrorMetada
 }
 
 export function initObservability(): boolean {
-  if (initialized) return true;
+  if (runtime.__deliveryObservabilityInitialized) return true;
   const dsn = process.env.SENTRY_DSN?.trim();
   if (!dsn) return false;
   Sentry.init({
@@ -151,7 +159,7 @@ export function initObservability(): boolean {
       Sentry.extraErrorDataIntegration({ depth: 8 }),
     ],
   });
-  initialized = true;
+  runtime.__deliveryObservabilityInitialized = true;
   return true;
 }
 
@@ -399,7 +407,7 @@ export function finishScheduledSyncCheckIn(
   status: 'ok' | 'error',
   now = new Date(),
 ): void {
-  if (!checkIn || !initialized) return;
+  if (!checkIn || !runtime.__deliveryObservabilityInitialized) return;
   Sentry.captureCheckIn({
     monitorSlug: checkIn.monitorSlug,
     checkInId: checkIn.checkInId,
@@ -409,5 +417,5 @@ export function finishScheduledSyncCheckIn(
 }
 
 export async function flushObservability(timeoutMs = 2_000): Promise<boolean> {
-  return initialized ? await Sentry.flush(timeoutMs) : true;
+  return runtime.__deliveryObservabilityInitialized ? await Sentry.flush(timeoutMs) : true;
 }
