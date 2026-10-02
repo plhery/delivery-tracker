@@ -24,11 +24,17 @@ export async function forgetParcel(linkId: string, key: string): Promise<void> {
   trackAction('parcel-link-forget', 'success');
 }
 
-/** Asks once before a parcel is forgotten for good. */
-export function ForgetDialog({ onForget, onCancel }: {
+/**
+ * Asks once before a parcel is forgotten for good. With `arrived`, it is the
+ * owner's gentle exit after "I have it": forget the parcel now, or keep it
+ * until Peek forgets it by itself.
+ */
+export function ForgetDialog({ onForget, onCancel, arrived }: {
   /** Forgets the parcel; a rejection keeps the dialog open with its reason. */
   onForget: () => Promise<void>;
   onCancel: () => void;
+  /** The parcel has arrived; `forgetLine` says when Peek forgets it anyway. */
+  arrived?: { forgetLine: string | null };
 }) {
   const { t } = useI18n();
   const dialog = useRef<HTMLDialogElement>(null);
@@ -58,11 +64,11 @@ export function ForgetDialog({ onForget, onCancel }: {
 
   return <dialog ref={dialog} className="delete-parcel-dialog" aria-labelledby="peekp-forget-title" aria-describedby="peekp-forget-body"
     onCancel={(event) => { event.preventDefault(); if (!working) onCancel(); }}>
-    <h2 id="peekp-forget-title">{t('link.forget.title')}</h2>
-    <p id="peekp-forget-body">{t('link.forget.body')}</p>
+    <h2 id="peekp-forget-title">{t(arrived ? 'alerts.have.title' : 'link.forget.title')}</h2>
+    <p id="peekp-forget-body">{arrived ? [arrived.forgetLine, t('alerts.have.body')].filter(Boolean).join(' ') : t('link.forget.body')}</p>
     {error && <p className="sheet__error" role="alert">{t(error)}</p>}
     <div className="delete-parcel-dialog__actions">
-      <button type="button" className="button button--secondary" onClick={onCancel} disabled={working} autoFocus>{t('common.cancel')}</button>
+      <button type="button" className="button button--secondary" onClick={onCancel} disabled={working} autoFocus>{t(arrived ? 'alerts.have.keep' : 'common.cancel')}</button>
       <button type="button" className="button button--danger" onClick={() => void forget()} disabled={working}>{t(working ? 'link.forget.working' : 'link.forget.now')}</button>
     </div>
   </dialog>;

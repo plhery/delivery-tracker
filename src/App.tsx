@@ -691,6 +691,7 @@ export default function App({
           onRename={(p, label) => renameParcel(p.id, label)}
           onChangeCarrier={(p, input) => changeParcelCarrier(p.id, input)}
           usedCarriers={usedCarriers}
+          apiAuth={apiAuth}
           onSetNotificationsMuted={(p, muted) =>
             setParcelNotificationsMuted(p.id, muted)}
           onRefresh={(p) => refreshParcel(p.id)}

@@ -1,0 +1,90 @@
+/* The share and alerts sheets. They stand outside the page, in the deliveries app too. */
+.peeks .sheet__heading { margin-bottom: 18px; }
+.peeks .sheet__title { font-size: 24px; letter-spacing: -.7px; line-height: 1.15; overflow-wrap: anywhere; }
+.peeks .sheet__close svg { width: 18px; height: 18px; }
+.peeks__intro { margin: -6px 0 16px; color: var(--ink-soft); font-size: 13px; line-height: 1.5; }
+.peeks__promise { margin: 14px 2px 0; color: var(--ink-soft); font-size: 11.5px; line-height: 1.5; }
+.peeks__label { margin: 16px 2px 8px; font-size: 13px; font-weight: 600; }
+.peeks__actions { display: grid; gap: 6px; margin-top: 14px; }
+.peeks__actions .button { width: 100%; }
+.peeks__actions .button svg { width: 19px; height: 19px; flex: 0 0 auto; }
+.peeks__quiet { min-height: 44px; padding: 10px 14px; border-radius: 14px; background: transparent; color: var(--ink-soft); font-size: 13px; font-weight: 550; }
+.peeks .sheet__error { margin-top: 12px; }
+.peeks__note { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 14px 16px; border-radius: 16px; background: var(--control); color: var(--ink-soft); font-size: 13px; line-height: 1.5; }
+.peeks__note svg { width: 18px; height: 18px; flex: 0 0 auto; margin-top: 1px; }
+.peeks__said { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 20px; margin: 10px 0 0; color: var(--green); font-size: 12.5px; font-weight: 550; }
+.peeks__said[data-empty] { min-height: 0; margin: 0; }
+.peeks__said svg { width: 15px; height: 15px; }
+
+/* The link and its copy. */
+.peeks-link { display: flex; align-items: center; gap: 8px; min-height: 54px; padding: 6px 6px 6px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); }
+.peeks-link__address { flex: 1; min-width: 0; overflow: hidden; font: 500 14px ui-monospace, SFMono-Regular, Menlo, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.peeks-link__pending { flex: 1; min-width: 0; color: var(--ink-soft); font-size: 12.5px; line-height: 1.4; }
+.peeks-link__copy { display: inline-flex; align-items: center; justify-content: center; gap: 9px; flex: 0 0 auto; min-height: 44px; padding: 10px 14px; border-radius: 14px; background: var(--control); font-size: 13px; font-weight: 550; }
+.peeks-link__copy svg { width: 17px; height: 17px; }
+
+/* What the link shows: real switches. */
+.peeks-switches { display: grid; gap: 7px; margin-top: 14px; }
+.peeks-switch { border-radius: 14px; background: var(--paper); }
+.peeks-switch > label { position: relative; display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 13px 14px; cursor: pointer; }
+.peeks-switch[data-disabled] > label { cursor: default; }
+.peeks-switch[data-disabled] .peeks-switch__track { opacity: .5; }
+.peeks-switch__icon { color: var(--ink-soft); }
+.peeks-switch__icon svg { display: block; width: 18px; height: 18px; }
+.peeks-switch__text { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.peeks-switch__text strong { font-size: 13px; font-weight: 600; }
+.peeks-switch__text small { color: var(--ink-soft); font-size: 11.5px; line-height: 1.4; overflow-wrap: anywhere; }
+.peeks-switch input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.peeks-switch__track { position: relative; display: block; flex-shrink: 0; width: 44px; height: 26px; border: 1px solid var(--line); border-radius: 13px; background: var(--control); transition: background .18s, border-color .18s; }
+.peeks-switch__track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 22%); transition: translate .2s var(--spring); }
+.peeks-switch input:checked + .peeks-switch__track { border-color: var(--green); background: var(--green); }
+.peeks-switch input:checked + .peeks-switch__track::after { translate: 18px 0; }
+.peeks-switch input:focus-visible + .peeks-switch__track { outline: 2px solid var(--ink); outline-offset: 2px; }
+.peeks-switch__nudge { display: block; min-height: 36px; margin: -8px 14px 6px 44px; padding: 0; background: none; font-size: 12.5px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+/* A gift's note and who it is from. */
+.peeks-gift { display: grid; gap: 6px; padding: 12px 14px 14px; border-radius: 14px; background: var(--paper); }
+.peeks-gift label { color: var(--ink-soft); font-size: 11.5px; }
+.peeks-gift textarea, .peeks-gift input { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--canvas); font-size: 16px; line-height: 1.4; resize: vertical; }
+.peeks-gift textarea:focus, .peeks-gift input:focus { outline: none; border-color: var(--ochre); box-shadow: 0 0 0 3px color-mix(in srgb, var(--yellow) 20%, transparent); }
+.peeks-gift small { color: var(--ink-soft); font-size: 11.5px; line-height: 1.4; }
+
+/* Ping me: the ways to be told. */
+.peeks-options { display: grid; gap: 7px; }
+.peeks-option { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 13px 14px; border-radius: 14px; background: var(--paper); cursor: pointer; }
+.peeks-option[data-selected] { background: var(--yellow-soft); box-shadow: inset 0 0 0 1.5px var(--ochre); }
+.peeks-option[data-disabled] { cursor: default; }
+.peeks-option input { flex: 0 0 20px; width: 20px; height: 20px; margin: 0; accent-color: var(--ochre); }
+.peeks-option > span:nth-of-type(1), .peeks-account > span:nth-of-type(1), .peeks-on > span:nth-of-type(1) { color: var(--ink-soft); }
+.peeks-option svg, .peeks-account svg, .peeks-on svg { display: block; width: 18px; height: 18px; }
+.peeks-option > span:last-child, .peeks-account > span:nth-of-type(2), .peeks-on > span:last-child { display: grid; gap: 3px; flex: 1; min-width: 0; }
+.peeks-option strong, .peeks-account strong, .peeks-on strong { font-size: 13px; font-weight: 600; }
+.peeks-option small, .peeks-account small, .peeks-on small { color: var(--ink-soft); font-size: 12px; line-height: 1.4; }
+.peeks-account { display: flex; align-items: center; gap: 12px; min-height: 60px; margin-top: 7px; padding: 12px 14px; border: 1px dashed var(--line); border-radius: 14px; }
+.peeks-account button { flex: 0 0 auto; min-height: 44px; padding: 0; background: none; font-size: 12.5px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.peeks-on { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 13px 14px; border-radius: 14px; background: var(--green-soft); }
+.peeks-on > span:nth-of-type(1) { color: var(--green); }
+.peeks-presets { display: flex; gap: 5px; padding: 5px; border-radius: 17px; background: var(--control); }
+.peeks-presets button { flex: 1; min-width: 0; min-height: 44px; padding: 8px 6px; border-radius: 13px; background: transparent; color: var(--ink-soft); font-size: 12px; line-height: 1.25; overflow-wrap: anywhere; }
+.peeks-presets button[aria-pressed=true] { background: var(--paper); color: var(--ink); box-shadow: 0 3px 15px rgb(25 35 20 / 4%); }
+
+/* Alerts on iPhone: three taps. */
+.peeks-steps { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.peeks-steps li { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 14px; border-radius: 14px; background: var(--paper); font-size: 13.5px; }
+.peeks-steps li > span:first-child { display: grid; place-items: center; flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; background: var(--yellow); color: var(--on-yellow); font-size: 13px; font-weight: 700; }
+.peeks-steps li > span:nth-child(2) { flex: 1; min-width: 0; }
+.peeks-steps svg { flex: 0 0 auto; width: 18px; height: 18px; color: var(--ink-soft); }
+
+/* The way into the share sheet from a parcel of the deliveries. */
+.detail--postcard .detail__share-button { display: grid; place-items: center; width: 44px; height: 44px; background: transparent; color: var(--tone); opacity: .75; }
+.detail--postcard .detail__share-button svg { width: 18px; height: 18px; stroke-width: 1.2; }
+
+@media (max-width: 360px) {
+  .peeks-link { padding-left: 12px; }
+  .peeks-link__copy { padding-inline: 10px; }
+  .peeks-option, .peeks-switch > label { gap: 10px; padding-inline: 12px; }
+  .peeks-switch__nudge { margin-left: 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .peeks-switch__track, .peeks-switch__track::after { transition: none; }
+}

@@ -83,6 +83,9 @@ Key server modules:
     public routes; it becomes the parcel's label only when the parcel is kept in an account.
     "Forget it now" deletes the link on the server and the device's copy; keeping a parcel
     in an account drops the device's copy too.
+  - Beside each link the browser notes what its sharer sends along (whether the name
+    travels, a gift's note and who it is from, whether viewers read the whole number) and
+    the alert it turned on. The notes go when the device forgets the parcel.
   - A link's preview (the page's title, description and image) is written on the server
     from what a viewer sees: the status, the carrier and the estimate, never the number, a
     name or a place. Reading it does not count as opening the link, and a link that leads
@@ -98,7 +101,11 @@ Key server modules:
   like a missing one. A lookup's owner changes its link with the owner key.
   - A viewer's answer is the same allow-list for both kinds of link. The server never sends
     a viewer the parcel's label: a name, a gift note and who a gift is from travel after `#`
-    in the link and stay in the browser.
+    in the link (`#n=…&g=…&f=…`) and stay in the browser. The share sheet adds them to the
+    link it copies or shares; the page of a gift on its way renders none of them and does
+    not save the name to the device.
+  - An account's link is made when its owner shares or copies it, not when the share sheet
+    opens.
   - **Gifts**: until the parcel is delivered, a gift's viewer gets no sender, weight, size,
     pickup point or carrier status line, a masked number whatever the link shows otherwise,
     no scan from before the carrier had the parcel, and the scans of the origin country
@@ -116,6 +123,9 @@ Key server modules:
     gift's no place. An alert ends with the journey, when the push service says the
     subscription is gone, or after three failed sends in a row; a failed send is not
     repeated, so an endpoint anyone can add costs a bounded number of requests.
+    The browser is asked for the permission, and subscribes, only on "Turn on". It reuses
+    the subscription an account or another parcel already made, so turning one alert off
+    leaves the subscription in place. The calendar file is made in the browser.
 - **Private data**: tracking numbers, labels, carrier history, push endpoints and capability
   URLs (Planzer, Dachser) never go into analytics. They do appear in operator logs and
   Sentry; see [OBSERVABILITY.md](OBSERVABILITY.md).

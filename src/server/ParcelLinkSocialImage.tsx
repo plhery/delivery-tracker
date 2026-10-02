@@ -67,8 +67,14 @@ function Mark({ size }: { size: number }) {
   </svg>;
 }
 
-/** Pip, closed, with the carrier's label on his right side: its truck and a barcode, never a number. */
-function Pip({ carrier, palette, width }: { carrier: CarrierInfo | null; palette: CarrierPalette | null; width: number }) {
+/** What a gift's picture is painted in, whoever carries it. */
+const GIFT = { surface: '#e9deff', tone: '#654299' };
+
+/**
+ * Pip, closed, with the carrier's label on his right side: its truck and a
+ * barcode, never a number. With `ribbon` he is wrapped as a gift, as on the page.
+ */
+function Pip({ carrier, palette, width, ribbon = false }: { carrier: CarrierInfo | null; palette: CarrierPalette | null; width: number; ribbon?: boolean }) {
   return <div style={{ display: 'flex', position: 'relative', width, height: width * 310 / 300 }}>
     <svg width={width} height={width * 310 / 300} viewBox="0 0 300 310" fill="none">
       <ellipse cx="150" cy="286" rx="84" ry="10" fill={INK} opacity=".08" />
@@ -84,7 +90,8 @@ function Pip({ carrier, palette, width }: { carrier: CarrierInfo | null; palette
           <circle cx={x + 1.7} cy="32.6" r="1.6" fill="#FFFFFF" />
           <ellipse cx={x - 1} cy="51" rx="6.5" ry="3.2" fill="#E9958F" opacity=".55" />
         </g>)}
-        <path d="M42 51Q48 58 54 51" stroke="#20251E" strokeWidth="2.4" strokeLinecap="round" />
+        {/* The ribbon runs where Pip smiles. */}
+        {!ribbon && <path d="M42 51Q48 58 54 51" stroke="#20251E" strokeWidth="2.4" strokeLinecap="round" />}
       </g>
       {carrier && palette ? <g transform="matrix(.97 -0.490105 0 .97 160 205)">
         <rect width="74" height="48" rx="2.5" fill="#FFFEFA" />
@@ -99,6 +106,10 @@ function Pip({ carrier, palette, width }: { carrier: CarrierInfo | null; palette
       </g>}
       <path d={BOX.tape} fill="#EBDDCA" />
       <path d={BOX.seam} stroke="#AF9474" strokeOpacity=".6" strokeWidth="1" strokeDasharray="3 3" />
+      {ribbon && <path d="M102.5 118.5 197.5 166M197.5 118.5 102.5 166M102.5 166v87M197.5 166v87" stroke="#A286B5" strokeWidth="9" />}
+      {ribbon && <path d="M150 142c-14-16-34-12-26 0 5 7 20 4 26 0Zm0 0c14-16 34-12 26 0-5 7-20 4-26 0Z" fill="#B99BCB" stroke="#9A82AA" strokeWidth="1" />}
+      {ribbon && <path d="M150 142c-6 10-12 18-20 22M150 142c6 10 13 17 22 20" stroke="#A286B5" strokeWidth="5" strokeLinecap="round" />}
+      {ribbon && <ellipse cx="150" cy="142" rx="6" ry="4.5" fill="#8E6FA3" />}
     </svg>
   </div>;
 }
@@ -116,10 +127,10 @@ function headlineSize(headline: string): number {
  * with the status as the headline, and Pip. `host` is where the link lives.
  */
 export function parcelLinkSocialImage(preview: ParcelLinkPreview, host: string | null): ImageResponse {
-  const { carrier, headline, detail, steps } = preview;
+  const { carrier, headline, detail, steps, gift = false } = preview;
   const palette = carrier ? carrierBrand(carrier.color, CARRIER_PALETTES[carrier.id]) : null;
-  const surface = palette?.['surface-light'] ?? '#eceee7';
-  const tone = palette?.['ink-light'] ?? '#657060';
+  const surface = gift ? GIFT.surface : palette?.['surface-light'] ?? '#eceee7';
+  const tone = gift ? GIFT.tone : palette?.['ink-light'] ?? '#657060';
   const size = headlineSize(headline);
   // The bundled face has one weight: an outline in the text's own colour makes it bold.
   const bold = (width: number, color: string) => ({ WebkitTextStroke: `${width}px ${color}` });
@@ -138,7 +149,7 @@ export function parcelLinkSocialImage(preview: ParcelLinkPreview, host: string |
           }} />)}
         </div>
       </div>
-      <div style={{ display: 'flex', position: 'absolute', right: 70, top: 90 }}><Pip carrier={carrier} palette={palette} width={420} /></div>
+      <div style={{ display: 'flex', position: 'absolute', right: 70, top: 90 }}><Pip carrier={carrier} palette={palette} width={420} ribbon={gift} /></div>
       <div style={{ display: 'flex', alignItems: 'center', position: 'absolute', left: 84, bottom: 44, fontSize: 26, color: tone }}>
         <Mark size={38} />
         <span style={{ marginLeft: 9, fontSize: 28, color: INK, ...bold(1.1, INK) }}>Peek</span>

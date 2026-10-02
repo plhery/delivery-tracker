@@ -1,8 +1,10 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LINK_ID, OWNER_KEY, pendingView, testView } from '../test/parcelLinks';
-import { ParcelLinkError, type ParcelLinkRead } from './links';
+import { linkNote, noteLink } from './deviceNotes';
+import { ParcelLinkError, type ParcelLinkRead, type ParcelLinkView } from './links';
 import { forgetAllRecents, recentFor, rememberParcel, renameParcel } from './recents';
+import type { Stage } from '../types';
 import { firstCheckLanded, newScan, useParcelLink } from './useParcelLink';
 
 const mocks = vi.hoisted(() => ({ read: vi.fn() }));
@@ -48,7 +50,8 @@ describe('useParcelLink', () => {
     await pass(0);
     expect(hook.result.current).toMatchObject({ status: 'ready', view: testView(), trouble: null, checking: false });
     expect(mocks.read).toHaveBeenCalledTimes(1);
-    expect(mocks.read).toHaveBeenLastCalledWith(LINK_ID, expect.objectContaining({ key: undefined, advance: false }));
+    // The page asks to be told when a link's sharing was stopped.
+    expect(mocks.read).toHaveBeenLastCalledWith(LINK_ID, expect.objectContaining({ key: undefined, advance: false, tellStopped: true }));
     expect(recentFor(LINK_ID)).toMatchObject({ key: null, stage: 'in_transit' });
     await pass(29_999);
     expect(mocks.read).toHaveBeenCalledTimes(1);
@@ -238,14 +241,75 @@ describe('useParcelLink', () => {
     history.replaceState(null, '', `/p/${LINK_ID}#n=${encodeURIComponent('From Ada')}`);
     answers(testView({ owner: false }));
     const hook = renderHook(() => useParcelLink(LINK_ID));
-    expect(hook.result.current.name).toBe('From Ada');
+    // Until the first answer says what the link is, nothing it carries is shown: it may be a gift.
+    expect(hook.result.current).toMatchObject({ name: null, words: { name: null, note: null, from: null } });
     await pass(0);
+    expect(hook.result.current).toMatchObject({ name: 'From Ada', words: { name: 'From Ada', note: null, from: null } });
     expect(recentFor(LINK_ID)).toMatchObject({ name: 'From Ada', key: null });
     expect(location.hash).toBe(`#n=${encodeURIComponent('From Ada')}`);
     act(() => renameParcel(LINK_ID, 'My own name'));
     expect(hook.result.current.name).toBe('My own name');
     await pass(30_000);
     expect(recentFor(LINK_ID)!.name).toBe('My own name');
+  });
+
+  it('keeps what a gift’s link carries to itself until the parcel is delivered, on the page and on the device', async () => {
+    history.replaceState(null, '', `/p/${LINK_ID}#n=${encodeURIComponent('trail running shoes')}&g=${encodeURIComponent('Happy birthday!')}&f=Sam`);
+    const gift = (stages: Stage[]): ParcelLinkView => {
+      const view = testView({ owner: false, stages });
+      return { ...view, link: { ...view.link, gift: true } };
+    };
+    answers(gift(['accepted', 'in_transit']), gift(['accepted', 'in_transit', 'delivered']));
+    const hook = renderHook(() => useParcelLink(LINK_ID));
+    await pass(0);
+    expect(hook.result.current).toMatchObject({ status: 'ready', name: null, words: { name: null, note: null, from: null } });
+    // The device's list does not learn the name either.
+    expect(recentFor(LINK_ID)).toMatchObject({ name: null });
+    expect(location.hash).toContain('g=Happy');
+    await pass(30_000);
+    expect(hook.result.current).toMatchObject({ name: 'trail running shoes', words: { name: 'trail running shoes', note: 'Happy birthday!', from: 'Sam' } });
+    expect(recentFor(LINK_ID)).toMatchObject({ name: 'trail running shoes' });
+  });
+
+  it('shows a gift’s sender everything it carries all along', async () => {
+    history.replaceState(null, '', `/p/${LINK_ID}#g=${encodeURIComponent('Happy birthday!')}`);
+    const view = testView();
+    answers({ ...view, link: { ...view.link, gift: true } });
+    const hook = renderHook(() => useParcelLink(LINK_ID));
+    await pass(0);
+    expect(hook.result.current.words.note).toBe('Happy birthday!');
+  });
+
+  it('tells a link whose sharing was stopped from one that leads nowhere, forgets the device’s copy and stops reading', async () => {
+    rememberParcel({ id: LINK_ID, view: testView({ owner: false }), name: 'From Ada' });
+    noteLink(LINK_ID, { alert: { preset: 'all', endpoint: 'demo:1' } });
+    answers(new ParcelLinkError('stopped'));
+    const hook = renderHook(() => useParcelLink(LINK_ID));
+    await pass(0);
+    expect(hook.result.current).toMatchObject({ status: 'stopped', view: null, name: null, trouble: null, live: false });
+    expect(recentFor(LINK_ID)).toBeNull();
+    expect(linkNote(LINK_ID)).toEqual({});
+    await pass(120_000);
+    setHidden(true);
+    setHidden(false);
+    await pass(0);
+    expect(mocks.read).toHaveBeenCalledTimes(1);
+  });
+
+  it('takes an answer the page got itself, as after changing what the link shows', async () => {
+    rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: testView(), name: 'New sneakers' });
+    const hook = renderHook(() => useParcelLink(LINK_ID));
+    await pass(0);
+    const view = testView();
+    const changed: ParcelLinkView = { ...view, link: { ...view.link, gift: true, shared: false } };
+    act(() => hook.result.current.adopt(changed));
+    expect(hook.result.current.view).toEqual(changed);
+    expect(recentFor(LINK_ID)).toMatchObject({ key: OWNER_KEY, name: 'New sneakers', snapshot: changed });
+    // Once the link is gone, a late answer brings nothing back.
+    answers('unavailable');
+    await pass(30_000);
+    act(() => hook.result.current.adopt(changed));
+    expect(hook.result.current).toMatchObject({ status: 'unavailable', view: null });
   });
 
   it('stops reading when the page closes, and ignores an answer that arrives afterwards', async () => {

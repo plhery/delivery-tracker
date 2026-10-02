@@ -2,9 +2,14 @@ import type {
   ApiCarrierDetectionResponse,
   ApiClaimParcelsRequest,
   ApiClaimParcelsResponse,
+  ApiDeleteParcelAlertRequest,
+  ApiParcelAlertRequest,
+  ApiParcelShareResponse,
   ApiPublicLookupRequest,
   ApiPublicLookupResponse,
   ApiPublicParcelResponse,
+  ApiShareParcelRequest,
+  ApiUpdateParcelLinkRequest,
 } from '../generated/apiContract';
 import { authenticatedFetch, type ApiAuth } from '../lib/apiClient';
 import { isDemoBuild } from '../lib/buildMode';
@@ -16,12 +21,18 @@ import {
   ParcelLinkError,
   parcelLinkView,
   type CarrierAnswer,
+  type ParcelAlertInput,
   type ParcelClaim,
   type ParcelClaimResult,
+  type ParcelLinkChanges,
   type ParcelLinkRead,
+  type ParcelLinkReadOptions,
   type ParcelLinksClient,
+  type ParcelLinkView,
   type ParcelLookup,
   type ParcelLookupInput,
+  type ParcelShare,
+  type ParcelShareClient,
 } from './linkModel';
 
 export * from './linkModel';
@@ -45,6 +56,8 @@ async function failure(response: Response): Promise<ParcelLinkError> {
   const message = typeof payload?.error === 'string' ? payload.error : undefined;
   const retry = retryAfterSeconds(response);
   if (response.status === 404) return new ParcelLinkError('unavailable');
+  if (response.status === 410) return new ParcelLinkError('stopped');
+  if (response.status === 409) return new ParcelLinkError('full', { message });
   if (response.status === 429) {
     return new ParcelLinkError(payload?.scope === 'daily' ? 'daily' : 'burst', {
       message, retryAfterSeconds: retry ?? DEFAULT_RETRY_SECONDS,
@@ -52,7 +65,9 @@ async function failure(response: Response): Promise<ParcelLinkError> {
   }
   // The server's wording picks advice the app already has; the wording itself stays out of the screen.
   const guidance = message ? userErrorKey(new Error(message)) : null;
-  return new ParcelLinkError(response.status === 400 ? 'validation' : 'server', { message, guidance, retryAfterSeconds: retry });
+  const kind = response.status === 400 ? 'validation'
+    : response.status === 503 && /not configured/i.test(message ?? '') ? 'unconfigured' : 'server';
+  return new ParcelLinkError(kind, { message, guidance, retryAfterSeconds: retry });
 }
 
 async function answer<T>(response: Response): Promise<T> {
@@ -83,11 +98,12 @@ export function createApiLinks(request: typeof fetch = (input, init) => fetch(in
       throw new ParcelLinkError('offline', { cause: error });
     }
   }
-  const post = (path: string, body: unknown, signal?: AbortSignal) => send(path, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-  }, signal);
-  const keyHeader = (key: string | null | undefined): HeadersInit | undefined =>
+  const keyHeader = (key: string | null | undefined): Record<string, string> | undefined =>
     key && OWNER_KEY.test(key) ? { 'X-Parcel-Key': key } : undefined;
+  const write = (method: string, path: string, body: unknown, signal?: AbortSignal, key?: string | null) => send(path, {
+    method, headers: { 'Content-Type': 'application/json', ...keyHeader(key) }, body: JSON.stringify(body),
+  }, signal);
+  const post = (path: string, body: unknown, signal?: AbortSignal) => write('POST', path, body, signal);
 
   return {
     mode: 'api',
@@ -124,11 +140,11 @@ export function createApiLinks(request: typeof fetch = (input, init) => fetch(in
       return { id: view.link.id, key: result.key, view };
     },
 
-    async readParcelLink(id, { key, signal } = {}) {
+    async readParcelLink(id, { key, signal, tellStopped = false } = {}) {
       // A malformed id is a link that leads nowhere; it is not worth a request.
       if (!isParcelLinkId(id)) return 'unavailable';
       const response = await send(`/api/public/parcels/${id}`, { headers: keyHeader(key) }, signal);
-      if (response.status === 404) return 'unavailable';
+      if (response.status === 404 || (response.status === 410 && !tellStopped)) return 'unavailable';
       if (!response.ok) throw await failure(response);
       return parcelLinkView(await answer<ApiPublicParcelResponse>(response));
     },
@@ -138,14 +154,94 @@ export function createApiLinks(request: typeof fetch = (input, init) => fetch(in
       const response = await send(`/api/public/parcels/${id}`, { method: 'DELETE', headers: keyHeader(key) });
       if (!response.ok) throw await failure(response);
     },
+
+    async updateParcelLink(id, key, changes, signal) {
+      if (!isParcelLinkId(id) || !OWNER_KEY.test(key)) throw new ParcelLinkError('unavailable');
+      // Named switches only: a name or a gift note is never part of it.
+      const body: ApiUpdateParcelLinkRequest = {
+        ...(typeof changes.showNumber === 'boolean' ? { showNumber: changes.showNumber } : {}),
+        ...(typeof changes.gift === 'boolean' ? { gift: changes.gift } : {}),
+        ...(typeof changes.shared === 'boolean' ? { shared: changes.shared } : {}),
+      };
+      const response = await write('PATCH', `/api/public/parcels/${id}`, body, signal, key);
+      if (!response.ok) throw await failure(response);
+      return parcelLinkView(await answer<ApiPublicParcelResponse>(response));
+    },
+
+    async setParcelAlert(id, alert, key) {
+      if (!isParcelLinkId(id)) throw new ParcelLinkError('unavailable');
+      const { endpoint, keys } = alert.subscription;
+      const body: ApiParcelAlertRequest = {
+        subscription: { endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth } }, preset: alert.preset, locale: alert.locale,
+      };
+      const response = await write('PUT', `/api/public/parcels/${id}/alerts`, body, undefined, key);
+      if (!response.ok) throw await failure(response);
+    },
+
+    async removeParcelAlert(id, endpoint) {
+      // A link that cannot exist has no alert to remove.
+      if (!isParcelLinkId(id)) return;
+      const body: ApiDeleteParcelAlertRequest = { endpoint };
+      const response = await write('DELETE', `/api/public/parcels/${id}/alerts`, body);
+      if (!response.ok) throw await failure(response);
+    },
+  };
+}
+
+function shareLink(value: unknown): ParcelShare | null {
+  if (!value || typeof value !== 'object') return null;
+  const link = value as Partial<ParcelShare>;
+  if (!isParcelLinkId(link.id)) throw new ParcelLinkError('server', { message: 'Unreadable share answer' });
+  return { id: link.id, showNumber: link.showNumber === true, gift: link.gift === true, createdAt: String(link.createdAt ?? '') };
+}
+
+/**
+ * Sharing one of the signed-in account's parcels through a parcel link.
+ * Always the API. An expired sign-in fails as it does everywhere else in the
+ * app, with `ApiAuthenticationError`.
+ */
+export function createAccountShare(auth: ApiAuth): ParcelShareClient {
+  async function call(packageId: string, init: RequestInit): Promise<Response> {
+    let response: Response;
+    try {
+      response = await authenticatedFetch(`/api/packages/${encodeURIComponent(packageId)}/share`, auth, init);
+    } catch (error) {
+      if (error instanceof TypeError || (error instanceof DOMException && error.name === 'TimeoutError')) {
+        throw new ParcelLinkError('offline', { cause: error });
+      }
+      throw error;
+    }
+    if (!response.ok) throw await failure(response);
+    return response;
+  }
+  return {
+    async current(parcelId) {
+      return shareLink((await answer<ApiParcelShareResponse>(await call(parcelId, {}))).link);
+    },
+    async share(parcel, changes = {}) {
+      const body: ApiShareParcelRequest = {
+        ...(typeof changes.showNumber === 'boolean' ? { showNumber: changes.showNumber } : {}),
+        ...(typeof changes.gift === 'boolean' ? { gift: changes.gift } : {}),
+      };
+      const link = shareLink((await answer<ApiParcelShareResponse>(await call(parcel.id, { method: 'PUT', body: JSON.stringify(body) }))).link);
+      if (!link) throw new ParcelLinkError('server', { message: 'Unreadable share answer' });
+      return link;
+    },
+    async stop(parcelId) {
+      await call(parcelId, { method: 'DELETE' });
+    },
   };
 }
 
 /** Chosen once: the API where the build has one, this browser's demo where it has none. */
-const client: ParcelLinksClient = isDemoBuild ? createDemoLinks() : createApiLinks();
+const demo = isDemoBuild ? createDemoLinks() : null;
+const client: ParcelLinksClient = demo ?? createApiLinks();
 
 /** Whether lookups stay in this browser (`demo`) or go to the server (`api`). */
 export const parcelLinksMode = client.mode;
+
+/** Sharing the demo deliveries' parcels, in a build without an API: their links live in this browser. */
+export const demoAccountShare: ParcelShareClient | null = demo?.accountShare ?? null;
 
 /** Which carrier a number belongs to, asked before anyone signs in. */
 export function detectCarrierPublic(trackingNumber: string, signal?: AbortSignal): Promise<CarrierAnswer> {
@@ -157,17 +253,33 @@ export function lookupParcel(input: ParcelLookupInput, signal?: AbortSignal): Pr
   return client.lookupParcel(input, signal);
 }
 
-/** Reads a parcel through its link: as its owner with the key, as a viewer without. */
-export function readParcelLink(
-  id: string,
-  options?: { key?: string | null; signal?: AbortSignal; advance?: boolean },
-): Promise<ParcelLinkRead> {
+/**
+ * Reads a parcel through its link: as its owner with the key, as a viewer
+ * without. A link whose sharing was stopped reads as unavailable, unless
+ * `tellStopped` asks for the `stopped` failure a parcel page tells apart.
+ */
+export function readParcelLink(id: string, options?: ParcelLinkReadOptions): Promise<ParcelLinkRead> {
   return client.readParcelLink(id, options);
 }
 
 /** Forgets a lookup on the server. Only the owner key can. */
 export function forgetParcelLink(id: string, key: string): Promise<void> {
   return client.forgetParcelLink(id, key);
+}
+
+/** Changes what a looked-up parcel's link shows. Only the owner key can; the answer is the owner's view. */
+export function updateParcelLink(id: string, key: string, changes: ParcelLinkChanges, signal?: AbortSignal): Promise<ParcelLinkView> {
+  return client.updateParcelLink(id, key, changes, signal);
+}
+
+/** Turns a browser's alerts on for a link, or changes what they announce. */
+export function setParcelAlert(id: string, alert: ParcelAlertInput, key?: string | null): Promise<void> {
+  return client.setParcelAlert(id, alert, key);
+}
+
+/** Turns a browser's alerts off for a link. */
+export function removeParcelAlert(id: string, endpoint: string): Promise<void> {
+  return client.removeParcelAlert(id, endpoint);
 }
 
 /**

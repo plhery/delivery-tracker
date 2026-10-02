@@ -144,7 +144,9 @@ deleting the parcel or the account deletes its links at once.
 
 The name of a parcel, a gift note and who a gift is from are never sent to the
 service. They travel in the part of the link after `#` and stay in the
-browsers of the people who have the link.
+browsers of the people who have the link. The browser you share from remembers
+what you chose to send along, until the parcel is forgotten on that device. A
+gift's page shows its recipient none of it before the parcel is delivered.
 
 Anyone who has a link can turn on notifications in their browser for that one
 parcel, without an account. The service then stores that browser's Web Push
@@ -155,6 +157,10 @@ or its push subscription ends, when the link is forgotten, and, for everyone
 but the device that made the lookup, when sharing is stopped. The notifications
 carry the parcel's status and never its number or name; a gift's do not say
 where it is before it arrives.
+
+Your browser is asked for notifications, and creates its push subscription,
+only when you choose "Turn on". Adding a delivery to your calendar makes a
+calendar file in the browser; nothing is sent for it.
 
 ## Retention and control
 

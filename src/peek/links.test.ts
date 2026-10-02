@@ -3,15 +3,22 @@ import fixtures from '../../contracts/fixtures/delivery-api.json';
 import { ApiAuthenticationError } from '../lib/apiClient';
 import {
   claimParcelLinks,
+  cleanLinkText,
+  collapseGiftRows,
+  createAccountShare,
   createApiLinks,
   isParcelLinkId,
+  isWrappedGift,
   maskedNumber,
+  numberEnds,
   ParcelLinkError,
   parcelLinkErrorKey,
   parcelLinkView,
   type ParcelLinkErrorKind,
 } from './links';
 import type { ApiPublicParcelResponse } from '../generated/apiContract';
+import { testParcel, testView } from '../test/parcelLinks';
+import type { TrackingEvent } from '../types';
 
 const ID = 'k7Qm2xHd9RtW';
 const KEY = 'A'.repeat(43);
@@ -42,7 +49,8 @@ afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.resetModules(); 
 describe('parcel link model', () => {
   it('maps a public answer onto the app’s parcel, keeping a masked number’s ends beside it', () => {
     const view = parcelLinkView(viewer);
-    expect(view.link).toEqual(viewer.link);
+    // An answer from before links could be gifts, stopped or alerted reads as a plain shared link without alerts.
+    expect(view.link).toEqual({ ...viewer.link, gift: false, shared: true, alerts: { available: false, vapidPublicKey: null } });
     expect(view.parcel).toMatchObject({
       trackingNumber: '', label: '', carrier: 'dpd', syncStatus: 'ok', expectedDelivery: '2026-10-03',
       senderName: 'Example Shop', weightKg: 1.2, destinationCountry: 'CH',
@@ -54,6 +62,47 @@ describe('parcel link model', () => {
     const shown = parcelLinkView(owner as ApiPublicParcelResponse);
     expect(shown.parcel.trackingNumber).toBe('TESTPARCEL123456');
     expect(shown.numberHint).toBeNull();
+  });
+
+  it('carries whether the link is a gift, whether it is still shared, and how a browser subscribes to its alerts', () => {
+    const answer = (link: object) => parcelLinkView({ ...viewer, link: { ...viewer.link, ...link } } as ApiPublicParcelResponse).link;
+    expect(answer({ gift: true, shared: false, alerts: { available: true, vapidPublicKey: 'BPublicKey' } }))
+      .toMatchObject({ gift: true, shared: false, alerts: { available: true, vapidPublicKey: 'BPublicKey' } });
+    // Without the server's key no browser can subscribe, whatever the answer claims.
+    expect(answer({ alerts: { available: true, vapidPublicKey: null } }).alerts).toEqual({ available: false, vapidPublicKey: null });
+    expect(answer({ gift: 'yes', shared: null, alerts: 'on' })).toMatchObject({ gift: false, shared: true, alerts: { available: false } });
+  });
+
+  it('tells a gift still on its way to someone else from one its owner sees, and from one that arrived', () => {
+    const gift = (owner: boolean, stages: Parameters<typeof testParcel>[1]) => {
+      const view = testView({ owner, stages });
+      return { ...view, link: { ...view.link, gift: true } };
+    };
+    expect(isWrappedGift(gift(false, ['accepted', 'in_transit']))).toBe(true);
+    expect(isWrappedGift(gift(true, ['accepted', 'in_transit']))).toBe(false);
+    expect(isWrappedGift(gift(false, ['in_transit', 'delivered']))).toBe(false);
+    expect(isWrappedGift(testView({ owner: false }))).toBe(false);
+  });
+
+  it('tells a gift’s hidden beginning once: scans blurred alike that follow one another collapse into the newest', () => {
+    const scan = (id: string, hour: number, description: string, location?: string): TrackingEvent =>
+      ({ id, parcelId: 'p', stage: 'in_transit', description, location, occurredAt: `2026-10-01T${String(hour).padStart(2, '0')}:00:00.000Z` });
+    const events = [
+      scan('c', 12, 'Left the sender', 'DE'), scan('a', 9, 'Left the sender', 'DE'), scan('b', 10, 'Left the sender', 'DE'),
+      scan('d', 14, 'Cleared customs', 'Basel, CH'), scan('e', 15, 'Left the sender', 'DE'), scan('f', 16, 'Left the sender'),
+    ];
+    // The run a–c keeps its newest; e and f differ in place, so both stay. The order the journal got is kept.
+    expect(collapseGiftRows(events).map((event) => event.id)).toEqual(['c', 'd', 'e', 'f']);
+    expect(collapseGiftRows([])).toEqual([]);
+  });
+
+  it('shows the same ends of a masked number as the server, and cleans the words a link carries', () => {
+    expect(maskedNumber(numberEnds('1234567890899'))).toBe('1234 ••• 899');
+    expect(numberEnds('1234567899')).toEqual({ head: '123', tail: '99' });
+    expect(numberEnds('12345')).toEqual({ head: '1', tail: '5' });
+    expect(cleanLinkText('  Happy\n birthday \u200b ', 280)).toBe('Happy birthday');
+    expect(cleanLinkText('abcdef', 3)).toBe('abc');
+    expect(cleanLinkText(' \n ', 10)).toBeNull();
   });
 
   it('refuses an answer it cannot read', () => {
@@ -74,6 +123,7 @@ describe('parcel link model', () => {
     const expected: Record<ParcelLinkErrorKind, string> = {
       unavailable: 'link.gone.title', burst: 'error.rateLimited', daily: 'peek.dailyLimit',
       validation: 'error.trackingNumber', offline: 'error.connection', server: 'error.generic',
+      stopped: 'share.stopped.title', full: 'alerts.error.full', unconfigured: 'notifications.state.unavailable',
     };
     for (const [kind, key] of Object.entries(expected)) {
       expect(parcelLinkErrorKey(new ParcelLinkError(kind as ParcelLinkErrorKind))).toBe(key);
@@ -129,6 +179,77 @@ describe('the API backend', () => {
     expect(await links.readParcelLink(ID)).toBe('unavailable');
     expect(await links.readParcelLink('../../packages')).toBe('unavailable');
     expect(request).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads a link whose sharing was stopped as unavailable, and as stopped for a page that asks to be told', async () => {
+    const { links, request } = api(json({ error: 'Parcel not shared' }, 410), json({ error: 'Parcel not shared' }, 410));
+    expect(await links.readParcelLink(ID)).toBe('unavailable');
+    const stopped = await failure(links.readParcelLink(ID, { tellStopped: true }));
+    expect(stopped.kind).toBe('stopped');
+    expect(parcelLinkErrorKey(stopped)).toBe('share.stopped.title');
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+
+  it('changes what the link shows with the owner key, sending the switches and nothing else', async () => {
+    const changed = { ...owner, link: { ...owner.link, gift: true, shared: true } };
+    const { links, request } = api(json(changed), json({ error: 'Parcel unavailable' }, 404), json({ error: 'Invalid request' }, 400));
+    const view = await links.updateParcelLink(ID, KEY, { showNumber: true, gift: true, name: 'For Mum', note: 'Happy birthday' } as never);
+    expect(view.link).toMatchObject({ role: 'owner', gift: true, shared: true });
+    const [path, init] = request.mock.calls[0];
+    expect(path).toBe(`/api/public/parcels/${ID}`);
+    expect(init).toMatchObject({ method: 'PATCH', credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' });
+    expect(new Headers(init!.headers).get('X-Parcel-Key')).toBe(KEY);
+    expect(JSON.parse(String(init!.body))).toEqual({ showNumber: true, gift: true });
+    // A wrong key, a link from an account and an unknown link are one refusal.
+    expect((await failure(links.updateParcelLink(ID, KEY, { shared: false }))).kind).toBe('unavailable');
+    expect(JSON.parse(String(request.mock.calls[1][1]!.body))).toEqual({ shared: false });
+    expect((await failure(links.updateParcelLink(ID, KEY, {}))).kind).toBe('validation');
+    // Without a usable key or id nothing is asked.
+    expect((await failure(links.updateParcelLink(ID, 'no key', { gift: true }))).kind).toBe('unavailable');
+    expect((await failure(links.updateParcelLink('nope', KEY, { gift: true }))).kind).toBe('unavailable');
+    expect(request).toHaveBeenCalledTimes(3);
+  });
+
+  it('turns a browser’s alerts on and off for a link, and types every refusal', async () => {
+    const subscription = { endpoint: 'https://push.example.test/send/abc', keys: { p256dh: 'p256dh-key', auth: 'auth-secret' } };
+    const { links, request } = api(
+      new Response(null, { status: 204 }),
+      json({ error: 'This parcel has all the alerts it can take' }, 409),
+      json({ error: 'Push notifications are not configured' }, 503),
+      json({ error: 'Parcel not shared' }, 410),
+      json({ error: 'Parcel unavailable' }, 404),
+      json({ error: 'Invalid push subscription' }, 400),
+      json({ error: 'Too many requests. Try again shortly.' }, 429, { 'Retry-After': '9' }),
+      new Response(null, { status: 204 }),
+      json({ error: 'Invalid endpoint' }, 400),
+    );
+    await expect(links.setParcelAlert(ID, { subscription: { ...subscription, expirationTime: null } as never, preset: 'important', locale: 'de' }, KEY)).resolves.toBeUndefined();
+    const [path, init] = request.mock.calls[0];
+    expect(path).toBe(`/api/public/parcels/${ID}/alerts`);
+    expect(init).toMatchObject({ method: 'PUT', credentials: 'omit', referrerPolicy: 'no-referrer' });
+    expect(new Headers(init!.headers).get('X-Parcel-Key')).toBe(KEY);
+    expect(JSON.parse(String(init!.body))).toEqual({ subscription, preset: 'important', locale: 'de' });
+
+    const alert = { subscription, preset: 'all' as const, locale: 'en' as const };
+    const full = await failure(links.setParcelAlert(ID, alert));
+    expect(full.kind).toBe('full');
+    expect(parcelLinkErrorKey(full)).toBe('alerts.error.full');
+    // A viewer sends no key.
+    expect(new Headers(request.mock.calls[1][1]!.headers).has('X-Parcel-Key')).toBe(false);
+    expect((await failure(links.setParcelAlert(ID, alert))).kind).toBe('unconfigured');
+    expect((await failure(links.setParcelAlert(ID, alert))).kind).toBe('stopped');
+    expect((await failure(links.setParcelAlert(ID, alert))).kind).toBe('unavailable');
+    expect((await failure(links.setParcelAlert(ID, alert))).kind).toBe('validation');
+    expect(await failure(links.setParcelAlert(ID, alert))).toMatchObject({ kind: 'burst', retryAfterSeconds: 9 });
+    expect((await failure(links.setParcelAlert('nope', alert))).kind).toBe('unavailable');
+
+    await expect(links.removeParcelAlert(ID, subscription.endpoint)).resolves.toBeUndefined();
+    expect(request.mock.calls[7][0]).toBe(`/api/public/parcels/${ID}/alerts`);
+    expect(request.mock.calls[7][1]).toMatchObject({ method: 'DELETE', credentials: 'omit' });
+    expect(JSON.parse(String(request.mock.calls[7][1]!.body))).toEqual({ endpoint: subscription.endpoint });
+    expect((await failure(links.removeParcelAlert(ID, 'nonsense'))).kind).toBe('validation');
+    await expect(links.removeParcelAlert('nope', subscription.endpoint)).resolves.toBeUndefined();
+    expect(request).toHaveBeenCalledTimes(9);
   });
 
   it('tells a burst limit, with its wait, from the daily limit', async () => {
@@ -245,6 +366,50 @@ describe('keeping links in an account', () => {
   });
 });
 
+describe('sharing a parcel of an account', () => {
+  const auth = { userId: 'user-1', getAccessToken: async () => 'token' };
+  const parcel = testParcel({ id: 'package/1', label: 'New sneakers' });
+  const share = { id: ID, showNumber: true, gift: false, createdAt: '2026-10-02T08:00:00.000Z' };
+
+  it('reads, makes or changes, and stops the link with the signed-in bearer, never sending the name', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(json({ link: null }))
+      .mockResolvedValueOnce(json({ link: share }))
+      .mockResolvedValueOnce(json({ link: { ...share, gift: true, extra: 'ignored' } }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetch);
+    const client = createAccountShare(auth);
+    expect(await client.current(parcel.id)).toBeNull();
+    expect(await client.share(parcel)).toEqual(share);
+    expect(await client.share(parcel, { showNumber: true, gift: true, shared: false, name: 'New sneakers' } as never)).toEqual({ ...share, gift: true });
+    await expect(client.stop(parcel.id)).resolves.toBeUndefined();
+
+    expect(fetch.mock.calls.map(([path, init]) => [path, init?.method ?? 'GET']))
+      .toEqual(Array.from(['GET', 'PUT', 'PUT', 'DELETE'], (method) => ['/api/packages/package%2F1/share', method]));
+    expect(new Headers(fetch.mock.calls[1][1]!.headers).get('Authorization')).toBe('Bearer token');
+    expect(JSON.parse(String(fetch.mock.calls[1][1]!.body))).toEqual({});
+    expect(JSON.parse(String(fetch.mock.calls[2][1]!.body))).toEqual({ showNumber: true, gift: true });
+    expect(fetch.mock.calls.every(([, init]) => !String(init?.body ?? '').includes('sneakers'))).toBe(true);
+  });
+
+  it('types every way sharing can fail', async () => {
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce(json({ error: 'Package not found' }, 404))
+      .mockResolvedValueOnce(json({ link: { id: 'short' } }))
+      .mockResolvedValueOnce(json({ link: null }))
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(json({ error: 'Delivery database failed' }, 502))
+      .mockResolvedValue(json({ error: 'Authentication is required' }, 401)));
+    const client = createAccountShare(auth);
+    expect((await failure(client.current(parcel.id))).kind).toBe('unavailable');
+    expect((await failure(client.current(parcel.id))).kind).toBe('server');
+    expect((await failure(client.share(parcel))).kind).toBe('server');
+    expect((await failure(client.share(parcel))).kind).toBe('offline');
+    expect((await failure(client.stop(parcel.id))).kind).toBe('server');
+    await expect(client.current(parcel.id)).rejects.toBeInstanceOf(ApiAuthenticationError);
+  });
+});
+
 describe('choosing the backend', () => {
   it('uses the API in a build that has one and this browser’s demo in a build that has none', async () => {
     expect((await import('./links')).parcelLinksMode).toBe('api');
@@ -257,8 +422,16 @@ describe('choosing the backend', () => {
     const { id, key } = await demo.lookupParcel({ trackingNumber: '1234567899' });
     expect(await demo.readParcelLink(id, { key })).toMatchObject({ link: { id, role: 'owner' } });
     expect((await demo.detectCarrierPublic('1234567899')).trackingNumber).toBe('1234567899');
+    expect((await demo.updateParcelLink(id, key, { gift: true })).link.gift).toBe(true);
+    await demo.setParcelAlert(id, { subscription: { endpoint: 'demo:1', keys: { p256dh: 'demo', auth: 'demo' } }, preset: 'all', locale: 'en' }, key);
+    await demo.removeParcelAlert(id, 'demo:1');
     await demo.forgetParcelLink(id, key);
     expect(await demo.readParcelLink(id, { key })).toBe('unavailable');
+    // The demo's deliveries share through the same browser-only links; a build with an API has no such stand-in.
+    expect(demo.demoAccountShare).not.toBeNull();
     expect(fetch).not.toHaveBeenCalled();
+    vi.resetModules();
+    vi.stubEnv('NEXT_PUBLIC_USE_API', 'true');
+    expect((await import('./links')).demoAccountShare).toBeNull();
   });
 });

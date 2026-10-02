@@ -183,10 +183,12 @@ function ParcelLabel({ carrier, number }: { carrier: CarrierInfo; number?: strin
 /**
  * Pip: kraft paper, a face on the left side, and a card tucked behind the front faces.
  * With `label`, the carrier's label takes the place of the arrow and the seal on the right side.
+ * With `ribbon`, the box is wrapped as a gift: a lilac ribbon tied in a bow on its lid, and a gift on the card inside.
  */
-export function ParcelIllustration({ className = '', label }: {
+export function ParcelIllustration({ className = '', label, ribbon = false }: {
   className?: string;
   label?: { carrier: CarrierInfo; number?: string | null };
+  ribbon?: boolean;
 }) {
   return <svg className={`parcel-illustration ${className}`} viewBox="0 0 300 310" fill="none" aria-hidden="true">
     <ellipse className="parcel-illustration__shadow" cx="150" cy="286" rx="84" ry="10" fill="currentColor" opacity=".08" />
@@ -198,10 +200,17 @@ export function ParcelIllustration({ className = '', label }: {
       <g className="parcel-illustration__delivery-card">
         <rect x="110" y="111" width="83" height="111" rx="7" fill="#FCFAF4" stroke="#E6E0D4" strokeWidth=".7" />
         <path d="M112 120v-2a5 5 0 0 1 5-5h69" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-        <circle cx="143" cy="145" r="19" fill="#E7ECE4" />
-        <path className="parcel-illustration__check" d="m135 145 5 5 11-12" stroke="#587260" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M124 181h45" stroke="#DAD7CE" strokeWidth="4" strokeLinecap="round" />
-        <path d="M124 194h29" stroke="#E7E4DC" strokeWidth="4" strokeLinecap="round" />
+        {ribbon ? <>
+          <circle cx="151.5" cy="137" r="12" fill="#EFE3F1" />
+          <path d="M145.5 137h12v8h-12zM144.5 133.5h14v3.5h-14zM151.5 133.5v11.5M151.5 133.5c-5.5 0-4.5-5.5-1.7-3.9l1.7 3.9Zm0 0c5.5 0 4.5-5.5 1.7-3.9l-1.7 3.9Z" stroke="#7C6787" strokeWidth="1.2" strokeLinejoin="round" />
+          <path d="M128 164h47" stroke="#DAD7CE" strokeWidth="4" strokeLinecap="round" />
+          <path d="M137 177h29" stroke="#E7E4DC" strokeWidth="4" strokeLinecap="round" />
+        </> : <>
+          <circle cx="143" cy="145" r="19" fill="#E7ECE4" />
+          <path className="parcel-illustration__check" d="m135 145 5 5 11-12" stroke="#587260" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M124 181h45" stroke="#DAD7CE" strokeWidth="4" strokeLinecap="round" />
+          <path d="M124 194h29" stroke="#E7E4DC" strokeWidth="4" strokeLinecap="round" />
+        </>}
       </g>
       <path d={PARCEL.left} fill="#C9A47B" />
       <path d={PARCEL.right} fill="#B78F66" />
@@ -221,6 +230,14 @@ export function ParcelIllustration({ className = '', label }: {
       {/* The open front flaps hang over the left side, so the face is drawn after them. */}
       <PipFace />
       <g className="parcel-illustration__tape"><path d={PARCEL.tape} fill="#EBDDCA" /><path d={PARCEL.seam} stroke="#AF9474" strokeOpacity=".6" strokeWidth="1" strokeDasharray="3 3" /></g>
+      {/* The ribbon runs over the lid and down both sides, between Pip's eyes. */}
+      {ribbon && <g className="parcel-illustration__ribbon">
+        <path d="M102.5 118.5 197.5 166M197.5 118.5 102.5 166M102.5 166v87M197.5 166v87" stroke="#A286B5" strokeWidth="9" />
+        <path d="M102.5 118.5 197.5 166M197.5 118.5 102.5 166" stroke="#CDB8DB" strokeWidth="2" opacity=".7" />
+        <path d="M150 142c-14-16-34-12-26 0 5 7 20 4 26 0Zm0 0c14-16 34-12 26 0-5 7-20 4-26 0Z" fill="#B99BCB" stroke="#7C6787" strokeWidth="1" strokeOpacity=".5" />
+        <path d="M150 142c-6 10-12 18-20 22M150 142c6 10 13 17 22 20" stroke="#A286B5" strokeWidth="5" strokeLinecap="round" />
+        <ellipse cx="150" cy="142" rx="6" ry="4.5" fill="#8E6FA3" />
+      </g>}
       <g className="parcel-illustration__glints">
         {PARCEL.glints.map(({ x, y, size, color }, index) => <g key={index} transform={`translate(${x} ${y})`}>
           <g className="parcel-illustration__sparkle" style={{

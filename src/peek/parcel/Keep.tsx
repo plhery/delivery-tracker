@@ -103,9 +103,10 @@ export function AlreadyFollowed({ name, onOpen }: { name: string; onOpen: () => 
   </div>;
 }
 
-export function SharedWithYou() {
+/** Above the card of a parcel someone else shared. A visitor is told that following it needs no account. */
+export function SharedWithYou({ visitor = false }: { visitor?: boolean }) {
   const { t } = useI18n();
-  return <p className="peekp-shared"><Glyph name="link" />{t('link.shared')}</p>;
+  return <p className="peekp-shared"><Glyph name="link" />{t(visitor ? 'share.withYou' : 'link.shared')}</p>;
 }
 
 /** A parcel that crossed a border earns a stamp: the way into the passport. */

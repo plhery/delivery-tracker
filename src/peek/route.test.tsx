@@ -5,10 +5,12 @@ import {
   leaveParcelLink,
   linkNameFromHash,
   linkNameFromLocation,
+  linkWordsFromHash,
   openParcelLink,
   parcelLinkIdFromPath,
   parcelLinkPath,
   parcelLinkURL,
+  parcelShareURL,
   useParcelLinkRoute,
 } from './route';
 import { LINK_ID, OTHER_LINK_ID } from '../test/parcelLinks';
@@ -37,6 +39,34 @@ describe('the parcel page’s address', () => {
     for (const hash of ['', '#', '#n=', '#name=Ada', '#x=1&n=Ada', '#n=%E0%A4%A']) expect(linkNameFromHash(hash)).toBeNull();
     history.replaceState(null, '', `/p/${LINK_ID}#n=For%20Mum`);
     expect(linkNameFromLocation()).toBe('For Mum');
+  });
+
+  it('reads a gift’s note and who it is from beside the name, each cleaned, and nothing from a # that is not a link’s', () => {
+    const hash = `#n=${encodeURIComponent('trail running shoes')}&g=${encodeURIComponent('Happy birthday, Alex! 50% & more')}&f=Sam`;
+    expect(linkWordsFromHash(hash)).toEqual({ name: 'trail running shoes', note: 'Happy birthday, Alex! 50% & more', from: 'Sam' });
+    expect(linkWordsFromHash('#g=Just%20a%20note')).toEqual({ name: null, note: 'Just a note', from: null });
+    expect(linkNameFromHash(hash)).toBe('trail running shoes');
+    // A note is one line of at most 280 characters, a signature of 60.
+    expect([...linkWordsFromHash(`#g=${'a'.repeat(400)}&f=${'b'.repeat(90)}`).note!]).toHaveLength(280);
+    expect([...linkWordsFromHash(`#f=${'b'.repeat(90)}`).from!]).toHaveLength(60);
+    expect(linkWordsFromHash('#g=line%0Aone%09two')).toMatchObject({ note: 'line one two' });
+    // One unreadable part leaves the others; a part that is not a link's makes the whole # someone else's.
+    expect(linkWordsFromHash('#n=Ada&g=%E0%A4%A')).toEqual({ name: 'Ada', note: null, from: null });
+    for (const foreign of ['#section', '#n=Ada&utm=1', '#n=Ada&', '#x', '']) {
+      expect(linkWordsFromHash(foreign)).toEqual({ name: null, note: null, from: null });
+    }
+  });
+
+  it('writes the words a sharer sends along after the #, encoded, and nothing when there are none', () => {
+    const origin = 'https://peek.example';
+    expect(parcelShareURL(LINK_ID, {}, origin)).toBe(`${origin}/p/${LINK_ID}`);
+    expect(parcelShareURL(LINK_ID, { name: null, note: '  ', from: '' }, origin)).toBe(`${origin}/p/${LINK_ID}`);
+    const address = parcelShareURL(LINK_ID, { name: ' New sneakers 👟 ', note: 'Happy birthday, Alex! 50% & more #1', from: 'Sam' }, origin);
+    expect(address).toBe(`${origin}/p/${LINK_ID}#n=New%20sneakers%20%F0%9F%91%9F&g=Happy%20birthday%2C%20Alex!%2050%25%20%26%20more%20%231&f=Sam`);
+    // What is written is what is read back, and no server sees it: it all stands after the #.
+    expect(linkWordsFromHash(new URL(address).hash)).toEqual({ name: 'New sneakers 👟', note: 'Happy birthday, Alex! 50% & more #1', from: 'Sam' });
+    expect(new URL(address).pathname + new URL(address).search).toBe(`/p/${LINK_ID}`);
+    expect(parcelShareURL(LINK_ID, { from: 'Sam' }, origin)).toBe(`${origin}/p/${LINK_ID}#f=Sam`);
   });
 
   it('follows the address: opening pushes, back and forward work, leaving returns to the door', async () => {

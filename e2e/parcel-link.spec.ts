@@ -110,17 +110,24 @@ test('names the parcel on this device: the page, a reload and the front door sho
   await expect(page.getByRole('region', { name: 'On this device' }).getByRole('link')).toContainText('Moon lamp');
 });
 
-test('shares the link by copying it where there is no share sheet, and never the name', async ({ page, context }) => {
+test('shares the link by copying it where there is no share sheet, and the name only when asked', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.addInitScript(() => { Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }); });
   await track(page, 'DEMOGLS20260009');
   await page.getByRole('button', { name: 'Name it' }).click();
   await page.keyboard.type('A surprise');
   await page.keyboard.press('Enter');
-  await page.getByRole('button', { name: 'Share', exact: true }).click();
-  await expect(page.getByText('Link copied')).toBeVisible();
+  // The owner's Share opens the sheet; its "Share…" copies where the system has no share sheet.
+  await page.locator('.peekp-actions').getByRole('button', { name: 'Share', exact: true }).click();
+  const sheet = page.getByRole('dialog', { name: 'Share this parcel' });
+  await sheet.getByRole('button', { name: 'Share…' }).click();
+  await expect(sheet.getByText('Link copied')).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(page.url());
   expect(page.url()).not.toContain('surprise');
+  // The name travels only once it is switched on, and then after the #.
+  await sheet.getByRole('switch', { name: 'Show what’s inside' }).check();
+  await sheet.getByRole('button', { name: 'Copy' }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(`${page.url()}#n=A%20surprise`);
 });
 
 test('forgets the parcel after asking once, and its link then leads nowhere', async ({ page }) => {

@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { currentEvent } from '../lib/stages';
 import type { CarrierId, Stage, SyncStatus } from '../types';
+import { forgetAllLinkNotes, forgetLinkNote } from './deviceNotes';
 import { isParcelLinkId, type ParcelLinkView } from './linkModel';
 
 /**
@@ -147,12 +148,14 @@ export function renameParcel(id: string, name: string | null): void {
   write(list.map((recent) => recent.id === id ? { ...recent, name: cleanParcelName(name) } : recent));
 }
 
-/** Drops the device's copy. The server's is forgotten with `forgetParcelLink`. */
+/** Drops the device's copy, with what it noted about the link. The server's is forgotten with `forgetParcelLink`. */
 export function forgetRecent(id: string): void {
   const list = read();
   if (list.some((recent) => recent.id === id)) write(list.filter((recent) => recent.id !== id));
+  forgetLinkNote(id);
 }
 
 export function forgetAllRecents(): void {
   write([]);
+  forgetAllLinkNotes();
 }

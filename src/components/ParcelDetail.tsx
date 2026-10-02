@@ -2,7 +2,7 @@ import { AMAZON_HISTORY_EXPIRED } from '../lib/amazon';
 import { AutoCarrierNotice } from './AutoCarrierNotice';
 import { trackAction } from '../lib/analytics';
 import { userErrorMessage } from '../lib/userMessages';
-import { useEffect, useState, useRef, type FormEvent, type PointerEvent } from 'react';
+import { useEffect, useMemo, useState, useRef, type FormEvent, type PointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import {
   activeTrackingCarrierId,
@@ -47,6 +47,9 @@ import { PickupPointCard } from './PickupPointCard';
 import { pickupPoint } from '../lib/pickupPoint';
 import type { CardOrigin } from '../lib/cardTransition';
 import { useRefreshAnimation } from '../lib/useRefreshAnimation';
+import type { ApiAuth } from '../lib/apiClient';
+import { createAccountShare, demoAccountShare } from '../peek/links';
+import { AccountShareSheet } from '../peek/parcel/ShareSheet';
 import './Refresh.css';
 
 export function ParcelDetail({
@@ -62,8 +65,11 @@ export function ParcelDetail({
   onExitDemo,
   openingOrigin,
   usedCarriers,
+  apiAuth,
 }: {
   parcel: ParcelWithEvents;
+  /** The signed-in account, which can share the parcel through a link. Without one, only a build without an API can: its links stay in the browser. */
+  apiAuth?: ApiAuth;
   /** The carriers of the latest parcels, offered first when changing the carrier. */
   usedCarriers?: readonly CarrierId[];
   openingOrigin?: CardOrigin | null;
@@ -132,6 +138,9 @@ export function ParcelDetail({
   const [savingNotifications, setSavingNotifications] = useState(false);
   const [notificationsAnimated, setNotificationsAnimated] = useState(false);
   const [notificationError, setNotificationError] = useState<string | null>(null);
+  const shareClient = useMemo(() => apiAuth ? createAccountShare(apiAuth) : demoAccountShare, [apiAuth]);
+  const canShare = !!shareClient && !parcel.archivedAt;
+  const [sharing, setSharing] = useState(false);
   const backButton = useRef<HTMLButtonElement>(null);
   const actionsMenu = useRef<HTMLDetailsElement>(null);
   const [dialog, onBack] = useSheetDialog<HTMLDivElement>(true, onDismissed, backButton, openingOrigin);
@@ -343,6 +352,10 @@ export function ParcelDetail({
               if (actionsMenu.current) actionsMenu.current.open = false;
               beginTitleEdit();
             }}>{t('detail.editTitle')}</button>
+            {canShare && <button type="button" onClick={() => {
+              if (actionsMenu.current) actionsMenu.current.open = false;
+              setSharing(true);
+            }}>{t('link.share')}</button>}
             <button
               type="button"
               disabled={deleting}
@@ -398,6 +411,9 @@ export function ParcelDetail({
           <span className="detail__hero-actions">
           {placed && <button type="button" className="detail__map-button" disabled={!route} onClick={openMap} aria-label={t('map.open')}>
             <Icon name="globe" />
+          </button>}
+          {canShare && <button type="button" className="detail__share-button" onClick={() => setSharing(true)} aria-label={t('link.shareAria')}>
+            <Icon name="share" />
           </button>}
           <button type="button" className="detail__notification" disabled={savingNotifications}
             data-animated={notificationsAnimated || undefined}
@@ -624,6 +640,8 @@ export function ParcelDetail({
       {mapOpen && route && (
         <ParcelMapSheet route={route} stage={current?.stage} brand={carrierBrand(displayedCarrier).style} onClose={() => setMapOpen(false)} />
       )}
+
+      {sharing && shareClient && <AccountShareSheet parcel={parcel} client={shareClient} onClose={() => setSharing(false)} />}
     </div>
     </div>,
     document.body,

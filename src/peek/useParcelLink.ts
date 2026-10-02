@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { parcelHasCarrierUpdate } from '../lib/parcelStatus';
 import { currentEvent } from '../lib/stages';
 import type { TrackingEvent } from '../types';
-import { ParcelLinkError, readParcelLink, type ParcelLinkView } from './links';
+import { isWrappedGift, ParcelLinkError, readParcelLink, type ParcelLinkView } from './links';
 import { forgetRecent, recentFor, rememberParcel, useRecents } from './recents';
-import { linkNameFromHash } from './route';
+import { linkWordsFromHash, type LinkWords } from './route';
 
 /** Until the first check lands the page asks again after 2 s, then ever more slowly up to 10 s. */
 const FIRST_CHECK_MS = 2_000;
@@ -29,12 +29,18 @@ export function newScan(before: ParcelLinkView | null, after: ParcelLinkView): T
 }
 
 export interface ParcelLinkState {
-  /** `loading` until there is something to show; `unavailable` once the link leads nowhere. */
-  status: 'loading' | 'ready' | 'unavailable';
+  /** `loading` until there is something to show; `unavailable` once the link leads nowhere; `stopped` once its owner stopped sharing it. */
+  status: 'loading' | 'ready' | 'unavailable' | 'stopped';
   /** The newest answer, or the device's last one while a first answer is on its way or cannot come. */
   view: ParcelLinkView | null;
   /** The name this device has for the parcel, or the one the link carries. */
   name: string | null;
+  /**
+   * What the link carries after its `#`: the name, a gift's note and who it is
+   * from. All empty while the link shows a gift still on its way: the browser
+   * has them, the reader does not see them yet.
+   */
+  words: LinkWords;
   /** Why the newest read failed; the view then is the last one that worked. */
   trouble: ParcelLinkError | null;
   /** The carrier has not been asked yet: the first check is still to land. */
@@ -55,7 +61,11 @@ export interface ParcelLinkState {
   refresh(): Promise<boolean>;
   /** The news has been told. */
   dismissNews(): void;
+  /** Takes an answer the page got itself, as after changing what the link shows. */
+  adopt(view: ParcelLinkView): void;
 }
+
+const NO_WORDS: LinkWords = { name: null, note: null, from: null };
 
 const never = () => () => undefined;
 function onVisibilityChange(notify: () => void) {
@@ -72,8 +82,8 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
   const recent = useRecents().find((candidate) => candidate.id === linkId);
   // The name in the address is read once, when the link is opened.
   const hash = useSyncExternalStore(never, () => window.location.hash, () => '');
-  const linkName = useMemo(() => linkNameFromHash(hash), [hash]);
-  const [answer, setAnswer] = useState<{ view: ParcelLinkView | null; gone: boolean; trouble: ParcelLinkError | null }>(
+  const carried = useMemo(() => linkWordsFromHash(hash), [hash]);
+  const [answer, setAnswer] = useState<{ view: ParcelLinkView | null; gone: false | 'unavailable' | 'stopped'; trouble: ParcelLinkError | null }>(
     { view: initial ?? null, gone: false, trouble: null },
   );
   const [told, setTold] = useState<{ news: TrackingEvent | null; unseen: number; previousEstimate: string | null }>(
@@ -83,6 +93,8 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
   const [refreshing, setRefreshing] = useState(false);
   const reader = useRef<(advance: boolean) => Promise<boolean>>(async () => false);
   const first = useRef(initial);
+  // Nothing is left to follow: no later answer brings the link back.
+  const ended = useRef(false);
 
   useEffect(() => {
     let disposed = false;
@@ -108,13 +120,13 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
       controller?.abort();
       const current = controller = new AbortController();
       try {
-        const result = await readParcelLink(linkId, { key: recentFor(linkId)?.key, signal: current.signal, advance });
+        const result = await readParcelLink(linkId, { key: recentFor(linkId)?.key, signal: current.signal, advance, tellStopped: true });
         if (disposed || current.signal.aborted) return false;
         if (result === 'unavailable') {
           // Nothing is left to follow, on the server or here.
-          gone = true;
+          gone = ended.current = true;
           forgetRecent(linkId);
-          setAnswer({ view: null, gone: true, trouble: null });
+          setAnswer({ view: null, gone: 'unavailable', trouble: null });
           return false;
         }
         landed = firstCheckLanded(result);
@@ -122,7 +134,8 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
         const earlier = shown?.parcel.expectedDelivery;
         const moved = !!earlier && !!result.parcel.expectedDelivery && earlier !== result.parcel.expectedDelivery;
         shown = result;
-        rememberParcel({ id: linkId, view: result, suggestedName: linkNameFromHash(window.location.hash) });
+        // A gift on its way keeps its name to itself: the device does not learn it before the delivery.
+        rememberParcel({ id: linkId, view: result, suggestedName: isWrappedGift(result) ? null : linkWordsFromHash(window.location.hash).name });
         setAnswer({ view: result, gone: false, trouble: null });
         if (scan || moved) {
           const inBackground = document.hidden;
@@ -136,6 +149,13 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
         return !!scan;
       } catch (error) {
         if (disposed || current.signal.aborted) return false;
+        if (error instanceof ParcelLinkError && error.kind === 'stopped') {
+          // Its owner stopped sharing: what this device kept of it goes too.
+          gone = ended.current = true;
+          forgetRecent(linkId);
+          setAnswer({ view: null, gone: 'stopped', trouble: null });
+          return false;
+        }
         const trouble = error instanceof ParcelLinkError ? error : new ParcelLinkError('server', { cause: error });
         setAnswer((previous) => ({ ...previous, trouble }));
         schedule(Math.max(cadence(), (trouble.retryAfterSeconds ?? 0) * 1_000));
@@ -175,12 +195,20 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
     try { return await reader.current(true); } finally { setRefreshing(false); }
   }, []);
   const dismissNews = useCallback(() => setTold((previous) => previous.news ? { ...previous, news: null } : previous), []);
+  const adopt = useCallback((next: ParcelLinkView) => {
+    if (ended.current) return;
+    rememberParcel({ id: linkId, view: next });
+    setAnswer({ view: next, gone: false, trouble: null });
+  }, [linkId]);
 
   const view = answer.view ?? (answer.gone ? null : recent?.snapshot ?? null);
+  // Until the first answer says what the link is, nothing it carries is shown: it may be a gift.
+  const words = view && !isWrappedGift(view) ? carried : NO_WORDS;
   return {
-    status: answer.gone ? 'unavailable' : view ? 'ready' : 'loading',
+    status: answer.gone || (view ? 'ready' : 'loading'),
     view,
-    name: recent?.name ?? (answer.gone ? null : linkName),
+    name: recent?.name ?? words.name,
+    words,
     trouble: answer.trouble,
     checking: !!view && !firstCheckLanded(view),
     live: visible && !answer.gone,
@@ -191,5 +219,6 @@ export function useParcelLink(linkId: string, initial?: ParcelLinkView): ParcelL
     previousEstimate: told.previousEstimate,
     refresh,
     dismissNews,
+    adopt,
   };
 }

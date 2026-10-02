@@ -224,3 +224,30 @@ export function parcelPreviewText(parcel: ParcelWithEvents, carrierName: string,
     description: detail ? `${detail}${/[.!?…]$/.test(detail) ? '' : '.'} ${follow}` : follow,
   };
 }
+
+/** When a gift arrives, as its recipient reads it: "Arrives today, 13:00–17:00". Null while nobody knows. */
+export function giftArrival(parcel: ParcelWithEvents, wording: Wording): string | null {
+  const { t, languageTag, now = Date.now() } = wording;
+  const estimate = parcelDeliveryEstimate(parcel, now);
+  return estimate ? t('share.gift.arrives', { date: localizedDeliveryWindow(parcel.expectedDeliveryFrom, estimate, t, languageTag, now) }) : null;
+}
+
+/** "Delivered today at 14:12", for a gift that has arrived. */
+export function giftDelivered(parcel: ParcelWithEvents, wording: Wording): string | null {
+  const { t, languageTag, now = Date.now() } = wording;
+  const current = currentEvent(parcel.events);
+  const at = current?.stage === 'delivered' ? new Date(current.occurredAt) : null;
+  if (!at || Number.isNaN(at.getTime())) return null;
+  return t('share.gift.delivered', { date: localizedDeliveryDate(at, t, languageTag, now), time: clock(at, languageTag) });
+}
+
+/**
+ * The preview of a gift on its way: that something is coming and when. Not
+ * who carries it, where it comes from, who sent it or what it is.
+ */
+export function giftPreviewText(parcel: ParcelWithEvents, wording: Wording): { title: string; description: string; headline: string; detail: string | null } {
+  const headline = wording.t('share.gift.headline');
+  const detail = giftArrival(parcel, wording);
+  const follow = wording.t('link.preview.follow');
+  return { headline, detail, title: headline, description: detail ? `${detail}${/[.!?…]$/.test(detail) ? '' : '.'} ${follow}` : follow };
+}

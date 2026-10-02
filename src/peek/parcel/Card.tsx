@@ -45,7 +45,15 @@ const SPARKS = [
  * so the opening is seen, then open for good. When a parcel is revealed,
  * golden sparks twinkle once around the box.
  */
-function KraftPip({ carrier, number, open, hero, sparks }: { carrier: CarrierInfo | null; number: string | null; open: boolean; hero: boolean; sparks: boolean }) {
+function KraftPip({ carrier, number, open, hero, sparks, ribbon = false }: {
+  carrier: CarrierInfo | null;
+  number: string | null;
+  open: boolean;
+  hero: boolean;
+  sparks: boolean;
+  /** Wrapped as a gift: a ribbon instead of the carrier's label. */
+  ribbon?: boolean;
+}) {
   const [opened, setOpened] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -53,7 +61,7 @@ function KraftPip({ carrier, number, open, hero, sparks }: { carrier: CarrierInf
     return () => cancelAnimationFrame(frame);
   }, [open]);
   return <div className={`peekp-pip${hero ? ' peekp-pip--hero' : ''}${open && opened ? ' peekp-pip--open' : ''}`} style={{ viewTransitionName: PIP_TRANSITION_NAME }}>
-    <ParcelIllustration label={carrier && !open ? { carrier, number } : undefined} />
+    <ParcelIllustration label={carrier && !open && !ribbon ? { carrier, number } : undefined} ribbon={ribbon} />
     {sparks && <div className="peekp-pip__sparks" aria-hidden="true">
       {SPARKS.map(({ left, top, size, color, delay }) => <svg key={left} width={size} height={size} viewBox="-1 -1 2 2"
         style={{ left, top, animationDelay: `${delay}s` }}><path d={PARCEL.glint} fill={color} /></svg>)}
@@ -78,7 +86,7 @@ const FLAG_ICONS: Record<ParcelAttention, ReactNode> = {
  * the open box in the middle (`hero`), or not at all when the map beside the
  * card has him.
  */
-export function LinkCard({ parcel, stage, carrier, headline, name, detail, notes, flag, figure, number, map, marker, links, settled }: {
+export function LinkCard({ parcel, stage, carrier, headline, name, detail, notes, flag, figure, number, map, marker, links, settled, gift }: {
   parcel: ParcelWithEvents;
   stage: Stage | null;
   /** Null while no carrier is known. */
@@ -97,19 +105,27 @@ export function LinkCard({ parcel, stage, carrier, headline, name, detail, notes
   links: readonly ParcelTrackingLink[];
   /** The reveal's settle beat: the newest step fills and the sparks twinkle. */
   settled: boolean;
+  /**
+   * A gift. Its recipient gets the lilac card with the ribboned Pip while it
+   * is `wrapped`, and the open box once it is `opened`; its sender (`own`)
+   * keeps the usual card, marked as a gift.
+   */
+  gift?: 'wrapped' | 'opened' | 'own';
 }) {
   const { t } = useI18n();
   const delivered = stage === 'delivered';
-  return <section className={`peekp-card peekp-card--${figure}${carrier ? '' : ' peekp-card--neutral'}`} aria-label={headline} data-settled={settled || undefined}>
+  const present = gift === 'wrapped' || gift === 'opened';
+  return <section className={`peekp-card peekp-card--${figure}${carrier ? '' : ' peekp-card--neutral'}${present ? ` peekp-card--gift peekp-card--${gift}` : ''}`} aria-label={headline} data-settled={settled || undefined}>
     {figure === 'map' && map}
     <div className="peekp-card__top">
       {carrier ? <CarrierMark carrier={carrier} />
         : <span className="peekp-card__nocarrier"><Icon name="detect" />{t('link.unknown.carrier')}</span>}
       {marker}
     </div>
-    {figure === 'hero' && <KraftPip carrier={carrier} number={number} open={delivered} hero sparks={false} />}
+    {figure === 'hero' && <KraftPip carrier={carrier} number={number} open={delivered} hero sparks={false} ribbon={present} />}
     <div className="peekp-card__body">
       <div className="peekp-card__text">
+        {gift === 'own' && <p className="peekp-card__gift"><Icon name="gift" />{t('share.gift.marker')}</p>}
         {name && <p className="peekp-card__name">{name}</p>}
         <h1>{headline}</h1>
         {detail && <p className="peekp-card__detail">{detail}</p>}
@@ -119,7 +135,7 @@ export function LinkCard({ parcel, stage, carrier, headline, name, detail, notes
       {figure === 'kraft' && <KraftPip carrier={carrier} number={number} open={delivered} hero={false} sparks={settled && !delivered} />}
     </div>
     {flag && <p className="peekp-card__flag">{FLAG_ICONS[flag]}<span>{t(flagKey(flag))}</span></p>}
-    <div className="peekp-card__progress"><ProgressTrack stage={stage} /></div>
+    {gift !== 'opened' && <div className="peekp-card__progress"><ProgressTrack stage={stage} /></div>}
     {links.length > 1 && <div className="peekp-card__journey" role="group" aria-label={t('detail.trackingSources')}>
       {links.map((link) => {
         const role = t(link.role === 'active' ? 'detail.sourceActive' : link.role === 'waiting' ? 'detail.sourceWaiting' : 'detail.sourceHistory');

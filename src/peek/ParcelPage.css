@@ -68,6 +68,29 @@
 .peekp-card--hero .peekp-card__detail { margin-top: 6px; }
 .peekp-card--hero .peekp-card__flag { margin-inline: auto; }
 
+/* A gift: lilac for its recipient, whoever carries it; a small marker for its sender. */
+.peekp-card--gift { --tone: var(--lilac); --tone-surface: var(--lilac-soft); }
+.peekp-card--wrapped h1 { font-size: 30px; letter-spacing: -1px; }
+.peekp-card--wrapped .peekp-pip--hero { margin-bottom: -18px; }
+.peekp-pip .parcel-illustration__ribbon { transition: opacity .3s var(--ease-out); }
+.peekp-pip--open .parcel-illustration__ribbon { opacity: 0; }
+/* The ribbon runs where Pip smiles: until the box opens, the eyes say it all. */
+.peekp-pip:not(.peekp-pip--open) .parcel-illustration__pip:has(~ .parcel-illustration__ribbon) > path:last-child { opacity: 0; }
+.peekp-card__gift { display: inline-flex; align-items: center; gap: 5px; margin: 0 0 6px; padding: 3px 9px 3px 7px; border-radius: 10px; background: color-mix(in srgb, var(--paper) 72%, transparent); color: var(--lilac); font-size: 11.5px; font-weight: 600; }
+.peekp-card__gift svg { width: 13px; height: 13px; }
+.peekp-surprise { display: flex; align-items: flex-start; gap: 8px; margin: 0 4px; color: var(--ink-soft); font-size: 12.5px; line-height: 1.5; }
+.peekp-surprise svg { width: 16px; height: 16px; flex: 0 0 auto; margin-top: 1px; }
+.peekp-giftnote { padding: 20px; border: 1px solid light-dark(#ebe5d6, #45413a); border-radius: 20px; background: light-dark(#fffdf7, #2c2a24); rotate: -.8deg; }
+.peekp-giftnote p { margin: 0; overflow-wrap: anywhere; }
+.peekp-giftnote__text, .peekp-giftnote__from { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 600; }
+.peekp-giftnote__text { color: light-dark(#3b3a33, #ece7da); font-size: 20px; line-height: 1.45; }
+.peekp-giftnote__text + .peekp-giftnote__from { margin-top: 10px; }
+.peekp-giftnote__from { color: light-dark(#6b675a, #b9b3a4); font-size: 17px; }
+.peekp-giftnote__inside { display: flex; align-items: flex-start; gap: 8px; color: var(--ink-soft); font-size: 12.5px; line-height: 1.5; }
+.peekp-giftnote__inside:not(:first-child) { margin-top: 16px; padding-top: 12px; border-top: 1px dashed light-dark(#d8cfb8, #55503f); }
+.peekp-giftnote__inside svg { width: 15px; height: 15px; flex: 0 0 auto; margin-top: 2px; }
+.peekp-giftnote__inside strong { color: var(--ink); font-weight: 600; }
+
 /* The marker beside the carrier. */
 .peekp-live { position: relative; display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto; min-height: 36px; padding: 0; border-radius: 10px; background: none; color: var(--tone); font-size: 11px; line-height: 1.2; white-space: nowrap; }
 button.peekp-live::before { content: ''; position: absolute; inset: -4px -8px; }
@@ -108,7 +131,12 @@ button.peekp-live::before { content: ''; position: absolute; inset: -4px -8px; }
 .peekp-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .peekp-action { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); font-size: 13px; font-weight: 550; text-align: start; transition: scale .18s var(--spring); }
 .peekp-action:active { scale: .975; }
-.peekp-action svg { width: 17px; height: 17px; }
+.peekp-action svg { width: 17px; height: 17px; flex: 0 0 auto; }
+.peekp-action__long { display: none; }
+/* Beside a recipient's two actions, the name's pencil says enough. */
+.peekp-action--compact > span, .peekp-columns[data-beside] .peekp-action--name > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.peekp-actions--led .peekp-actions__lead { width: 100%; }
+.peekp-actions__lead svg { width: 19px; height: 19px; flex: 0 0 auto; }
 .peekp-name { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .peekp-name input { grid-column: 1 / -1; min-width: 0; min-height: 50px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); font-size: 16px; }
 .peekp-name input:focus { outline: none; border-color: var(--ochre); box-shadow: 0 0 0 3px color-mix(in srgb, var(--yellow) 20%, transparent); }
@@ -243,6 +271,8 @@ button.peekp-live::before { content: ''; position: absolute; inset: -4px -8px; }
   .peekp-header__share > span { display: inline; }
   .peekp-main { padding: 10px 32px 0; }
   .peekp-footer { padding-top: 40px; }
+  .peekp-action__short { display: none; }
+  .peekp-action__long { display: inline; }
 }
 .peekp-columns[data-beside] { grid-template-columns: 420px minmax(0, 600px); gap: 40px; width: fit-content; max-width: 100%; }
 .peekp-columns[data-beside] .peekp-column { gap: 14px; }
@@ -258,7 +288,15 @@ button.peekp-live::before { content: ''; position: absolute; inset: -4px -8px; }
   .peekp-card h1 { font-size: 23px; letter-spacing: -.6px; }
   .peekp-card__detail { font-size: 14px; }
   .peekp-pip { width: 88px; margin: -10px -6px -14px 0; }
+  .peekp-pip--hero { width: min(200px, 68%); margin: -6px auto -20px; }
   .peekp-card__body { gap: 10px; }
+  .peekp-card--wrapped h1 { font-size: 25px; }
+  /* Three actions in a row: the name's pencil says enough. */
+  .peekp-actions:not(.peekp-actions--led) .peekp-action:nth-child(n+3).peekp-action--name > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .peekp-actions { gap: 6px; }
+  .peekp-action { gap: 6px; padding-inline: 10px; font-size: 12.5px; }
+  .peekp-giftnote { padding: 16px; }
+  .peekp-giftnote__text { font-size: 18px; }
   .peekp-live__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .peekp-live__short { display: inline; }
   .peekp-live[data-kind=live] .peekp-live__label, .peekp-live[data-kind=offline] .peekp-live__label, .peekp-live[data-kind=stale] .peekp-live__label, .peekp-live[data-kind=ended] .peekp-live__label { position: static; width: auto; height: auto; clip-path: none; }
@@ -268,6 +306,7 @@ button.peekp-live::before { content: ''; position: absolute; inset: -4px -8px; }
   .peekp-card--map .peekp-card__top { top: 12px; right: 12px; left: 16px; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .peekp-pip .parcel-illustration__ribbon { transition: none; }
   .peekp-card, .peekp-actions, .peekp-pip__sparks svg, .peekp-map .peekp-map__canvas, .peekp-passport__stamp, .peekp-live__dot i,
   .peekp-main[data-entrance=reveal] .tracking-journal__events > li, .peekp-card[data-settled] .progress-track__dot--current,
   .peekp-pip .parcel-illustration__body, .peekp-pip .parcel-illustration__eye, .peekp-pip--open .parcel-illustration__light, .peekp-pip--open .parcel-illustration__sparkle { animation: none !important; }

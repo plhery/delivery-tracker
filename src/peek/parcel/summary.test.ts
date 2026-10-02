@@ -7,6 +7,9 @@ import type { ParcelWithEvents, Stage } from '../../types';
 import {
   capitalized,
   forgetDate,
+  giftArrival,
+  giftDelivered,
+  giftPreviewText,
   journeyEndedBefore,
   momentLabel,
   parcelDetail,
@@ -169,5 +172,27 @@ describe('the tab’s title and the link preview', () => {
     });
     expect(parcelPreviewText(parcel([['ready_for_pickup', at(2, 9)]]), 'DHL', wording).description).toBe('Follow it on Peek.');
     expect(JSON.stringify(parcelPreviewText(shown, 'DHL', wording))).not.toMatch(/1234567899|private name/);
+  });
+
+  it('says of a gift when it arrives and when it arrived, in the reader’s language', () => {
+    expect(giftArrival(moving({ expectedDelivery: '2026-10-02 13:00-17:00' }), wording)).toBe('Arrives today, 13:00–17:00');
+    expect(giftArrival(moving({ expectedDelivery: '2026-10-06' }), wording)).toBe('Arrives Tue 6 oct');
+    expect(giftArrival(moving({ expectedDelivery: '2026-10-03' }), german)).toBe('Kommt morgen');
+    expect(giftArrival(moving(), wording)).toBeNull();
+    const delivered = parcel([['in_transit', at(1, 8)], ['delivered', at(2, 9, 12)]]);
+    expect(giftDelivered(delivered, wording)).toBe('Delivered today at 09:12');
+    expect(giftDelivered(delivered, { ...wording, now: NOW + 86_400_000 })).toBe('Delivered yesterday at 09:12');
+    expect(giftDelivered(delivered, german)).toBe('Zugestellt heute um 09:12');
+    expect(giftDelivered(moving(), wording)).toBeNull();
+  });
+
+  it('previews a gift on its way with no carrier, name, number or place', () => {
+    const gift = moving({ expectedDelivery: '2026-10-02 13:00-17:00', label: 'A private name', senderName: 'Example Shop' });
+    expect(giftPreviewText(gift, wording)).toEqual({
+      headline: 'Something’s on its way to you', detail: 'Arrives today, 13:00–17:00',
+      title: 'Something’s on its way to you', description: 'Arrives today, 13:00–17:00. Follow it on Peek.',
+    });
+    expect(giftPreviewText(moving(), wording)).toMatchObject({ detail: null, description: 'Follow it on Peek.' });
+    expect(JSON.stringify(giftPreviewText(gift, german))).not.toMatch(/1234567899|private name|Example Shop|DHL/);
   });
 });

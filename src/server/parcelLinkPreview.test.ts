@@ -96,6 +96,39 @@ describe('parcelLinkPreview', () => {
     expect(found).toHaveBeenCalledTimes(1);
   });
 
+  it('says of a gift on its way only that something is coming and when: no carrier, sender, place or number', async () => {
+    const gift = (overrides: JsonObject = {}) => {
+      const found = stored({ expected_delivery: '2026-10-02', ...overrides });
+      return { ...found, link: { ...found.link, gift: true, show_number: true } };
+    };
+    const found = vi.spyOn(SupabaseServiceClient.prototype, 'publicParcel').mockResolvedValue(gift());
+    const preview = await parcelLinkPreview(linkId, new Headers(), 'en', NOW);
+    expect(preview).toEqual({
+      title: 'Something’s on its way to you', description: 'Arrives today. Follow it on Peek.',
+      headline: 'Something’s on its way to you', detail: 'Arrives today', carrier: null, steps: 5, gift: true,
+    });
+    expect(JSON.stringify(preview)).not.toMatch(PRIVATE);
+    expect(JSON.stringify(preview)).not.toMatch(/DHL|dhl/);
+    expect(await parcelLinkPreview(linkId, new Headers(), 'de', NOW)).toMatchObject({ title: 'Etwas ist auf dem Weg zu dir', description: 'Kommt heute. Verfolge es auf Peek.' });
+    // Without an estimate the preview only invites.
+    found.mockResolvedValue(gift({ expected_delivery: null }));
+    expect(await parcelLinkPreview(linkId, new Headers(), 'en', NOW)).toMatchObject({ detail: null, description: 'Follow it on Peek.', gift: true });
+    // Delivered, it is a link like any other.
+    found.mockResolvedValue(gift({ current_stage: 'delivered', tracking_events: [
+      { id: 'e9', package_id: 'p', stage: 'delivered', description: 'Delivered', location: null, occurred_at: '2026-10-02T08:00:00Z' },
+    ] }));
+    const delivered = await parcelLinkPreview(linkId, new Headers(), 'en', NOW);
+    expect(delivered).toMatchObject({ title: 'Delivered · DHL', carrier: { id: 'dhl' } });
+    expect(delivered!.gift).toBeUndefined();
+  });
+
+  it('gives a link whose sharing was stopped Peek’s own preview', async () => {
+    vi.spyOn(SupabaseServiceClient.prototype, 'publicParcel').mockResolvedValue('stopped');
+    expect(await parcelLinkPreview(linkId, new Headers(), 'en')).toBeNull();
+    request.headers.set('x-real-ip', '198.51.100.33');
+    expect((await generateMetadata({ params: Promise.resolve({ id: linkId }) })).title).toBe('Peek — Universal Parcel Tracker');
+  });
+
   it('falls back to nothing, and reports it, when the database fails or answers something unreadable', async () => {
     const reported = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
     const found = vi.spyOn(SupabaseServiceClient.prototype, 'publicParcel').mockRejectedValue(new SupabaseError('database down', 503));
@@ -137,6 +170,20 @@ describe('the parcel page’s metadata', () => {
     });
     expect(metadata.alternates).toBeUndefined();
     expect(JSON.stringify(metadata)).not.toMatch(PRIVATE);
+  });
+
+  it('previews a gift on its way without saying who carries it', async () => {
+    request.headers.set('x-real-ip', '198.51.100.34');
+    const found = stored();
+    vi.spyOn(SupabaseServiceClient.prototype, 'publicParcel').mockResolvedValue({ ...found, link: { ...found.link, gift: true } });
+    const metadata = await generateMetadata({ params: Promise.resolve({ id: linkId }) });
+    expect(metadata).toMatchObject({
+      title: 'Something’s on its way to you', description: 'Arrives today. Follow it on Peek.',
+      robots: { index: false, follow: false }, referrer: 'no-referrer',
+      openGraph: { title: 'Something’s on its way to you', images: [{ alt: 'Something’s on its way to you' }] },
+    });
+    expect(JSON.stringify(metadata)).not.toMatch(PRIVATE);
+    expect(JSON.stringify(metadata)).not.toMatch(/DHL/);
   });
 
   it('follows the language the visitor chose over the browser’s', async () => {
@@ -183,6 +230,20 @@ describe('the link preview image', () => {
     expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow');
     expect(await size(response)).toEqual([1200, 630]);
+  });
+
+  it('draws a gift on its way wrapped, whoever carries it', async () => {
+    const response = parcelLinkSocialImage(preview({ title: 'Something’s on its way to you', headline: 'Something’s on its way to you', detail: 'Arrives today', gift: true }), 'peek.example.test');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(await size(response)).toEqual([1200, 630]);
+    // The route serves it for a gift link, in German as well.
+    const found = stored();
+    vi.spyOn(SupabaseServiceClient.prototype, 'publicParcel').mockResolvedValue({ ...found, link: { ...found.link, gift: true } });
+    const served = await image(new Request(`https://peek.example.test/api/public/parcels/${linkId}/image?lang=de`, {
+      headers: { host: 'peek.example.test', 'x-real-ip': '198.51.100.60' },
+    }), { params: Promise.resolve({ linkId }) });
+    expect(served.status).toBe(200);
+    expect(await size(served)).toEqual([1200, 630]);
   });
 
   it('serves the parcel’s picture in the asked language, with every carrier’s own livery', async () => {

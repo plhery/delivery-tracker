@@ -43,8 +43,10 @@ are virtual names, never real URLs.
 - **Auth**: sign-in attempts and results, sign-out, demo entry/exit.
 - **Parcels**: add, rename, change carrier, archive, restore, delete, mute, refresh, copy,
   open carrier link, paste, scan, share-in.
-- **Parcel links**: lookup without an account, share or copy the link, sign in to keep,
-  keep in the account, open the parcel already followed, forget.
+- **Parcel links**: lookup without an account, share or copy the link, change what the
+  link shows, stop sharing, turn a browser's alerts on or off, add the delivery to a
+  calendar, sign in to keep, keep in the account, open the parcel already followed, forget.
+  Sharing a parcel from an account counts under the same names.
 - **Discovery**: search used (never the query), filters, sorting.
 - **Friends**: profile save, invitation create/revoke/accept/share, remove, disable.
 - **Settings**: language, appearance, notifications, widgets, Live Activities, export,
@@ -58,8 +60,8 @@ Demo actions never count as account API successes.
 ## Privacy
 
 Never sent: emails, account or parcel ids, parcel link ids or owner keys, labels and names,
-tracking numbers, postcodes, invitation codes, errors, search terms, query strings or
-referrers. A parcel page is the `parcel-link` screen, whatever its address. Umami still
+gift notes, push addresses, tracking numbers, postcodes, invitation codes, errors, search
+terms, query strings or referrers. A parcel page is the `parcel-link` screen, whatever its address. Umami still
 sees the IP, user agent, basic device data and language.
 
 The **Usage analytics** switch in Account turns collection off and clears the queue. The

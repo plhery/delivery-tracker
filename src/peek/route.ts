@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { cleanLinkText, MAX_GIFT_FROM_LENGTH, MAX_GIFT_NOTE_LENGTH } from './linkModel';
 import { cleanParcelName } from './recents';
 
 const eventName = 'peek-route-change';
@@ -26,11 +27,52 @@ export function parcelLinkURL(id: string, origin = window.location.origin): stri
   return new URL(parcelLinkPath(id), origin).href;
 }
 
+/**
+ * What a link carries after its `#`, which never reaches a server: the
+ * parcel's name (`n`), and for a gift a note (`g`) and who it is from (`f`).
+ */
+export interface LinkWords {
+  name: string | null;
+  note: string | null;
+  from: string | null;
+}
+
+const NO_WORDS: LinkWords = { name: null, note: null, from: null };
+const WORD_KEYS = { n: 'name', g: 'note', f: 'from' } as const;
+
+/** Reads `#n=<name>&g=<note>&f=<from>`. A part that is not one of these three makes the whole `#` someone else's. */
+export function linkWordsFromHash(hash: string): LinkWords {
+  if (!hash.startsWith('#') || hash.length < 2) return NO_WORDS;
+  const words: LinkWords = { ...NO_WORDS };
+  for (const part of hash.slice(1).split('&')) {
+    const at = part.indexOf('=');
+    const key = at < 0 ? '' : part.slice(0, at);
+    if (!Object.hasOwn(WORD_KEYS, key)) return NO_WORDS;
+    let value: string;
+    try { value = decodeURIComponent(part.slice(at + 1)); } catch { continue; }
+    const word = WORD_KEYS[key as keyof typeof WORD_KEYS];
+    words[word] = word === 'name' ? cleanParcelName(value)
+      : cleanLinkText(value, word === 'note' ? MAX_GIFT_NOTE_LENGTH : MAX_GIFT_FROM_LENGTH);
+  }
+  return words;
+}
+
 /** The name a link carries in its `#n=<name>` part, which never reaches a server. */
 export function linkNameFromHash(hash: string): string | null {
-  const encoded = /^#n=(.*)$/s.exec(hash)?.[1];
-  if (!encoded) return null;
-  try { return cleanParcelName(decodeURIComponent(encoded)); } catch { return null; }
+  return linkWordsFromHash(hash).name;
+}
+
+/**
+ * A parcel's address with the words its sharer chose to send along. They go
+ * after the `#`, so they reach the recipient's browser and no server.
+ */
+export function parcelShareURL(id: string, words: Partial<LinkWords> = {}, origin = window.location.origin): string {
+  const parts = (Object.entries(WORD_KEYS) as [string, keyof LinkWords][])
+    .map(([key, word]): [string, string | null] => [key, word === 'name' ? cleanParcelName(words.name)
+      : cleanLinkText(words[word], word === 'note' ? MAX_GIFT_NOTE_LENGTH : MAX_GIFT_FROM_LENGTH)])
+    .filter((entry): entry is [string, string] => entry[1] !== null)
+    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`);
+  return parcelLinkURL(id, origin) + (parts.length ? `#${parts.join('&')}` : '');
 }
 
 /** The name in the open link's address. The address keeps it: a reload or a share still has it. */
