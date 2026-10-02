@@ -140,7 +140,11 @@ describe('what a link shows', () => {
       package: { id: 'parcel', tracking_number: 'TESTPARCEL123456', carrier: 'unknown', sync_status: 'ok',
         created_at: '2026-10-02T08:00:00Z', carrier_data: {}, tracking_events: [] },
     }, alerts).link;
-    expect(Object.keys(shown({})).sort()).toEqual(Object.keys(link.properties).sort());
+    expect(Object.keys(shown({ owner: true })).sort()).toEqual(Object.keys(link.properties).sort());
+    // Only the owner, who always reads the number, is told what viewers are shown.
+    expect(shown({ owner: true, show_number: true })).toMatchObject({ showNumber: true, numberShown: true });
+    expect(shown({ owner: true })).toMatchObject({ showNumber: false, numberShown: true });
+    expect(shown({ show_number: true })).not.toHaveProperty('showNumber');
     expect(link.additionalProperties).toBe(false);
     expect(shown({})).toMatchObject({ gift: false, shared: true, alerts });
     expect(shown({ gift: true, stopped: true, owner: true })).toMatchObject({ gift: true, shared: false, role: 'owner' });

@@ -180,6 +180,7 @@ export function createDemoLinks(
       link: {
         id, role: owner ? 'owner' : 'viewer', kind: link.account ? 'shared' : 'lookup', createdAt: link.createdAt,
         forgetAt: link.account ? null : forgetAt(link), numberShown, canKeep: numberShown,
+        ...(owner ? { showNumber: !!link.showNumber } : {}),
         gift: !!link.gift, shared: !link.stopped,
         // The demo has no push service: a browser's alert is only remembered here.
         alerts: { available: true, vapidPublicKey: null },

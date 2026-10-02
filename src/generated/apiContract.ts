@@ -4395,6 +4395,7 @@ export interface ApiParcelLink {
   "forgetAt": string | null;
   "numberShown": boolean;
   "canKeep": boolean;
+  "showNumber"?: boolean;
   "gift"?: boolean;
   "shared"?: boolean;
   "alerts"?: ApiParcelAlerts;

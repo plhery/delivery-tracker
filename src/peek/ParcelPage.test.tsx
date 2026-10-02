@@ -139,7 +139,7 @@ describe('ParcelPage', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'This parcel has been forgotten' })).toBeVisible();
     expect(screen.getByText(/Peek forgets parcels 30 days after delivery/)).toBeVisible();
     expect(screen.getByText('A link that never existed shows the same page, so links can’t be guessed.')).toBeVisible();
-    expect(document.title).toBe('This parcel has been forgotten · Peek');
+    await waitFor(() => expect(document.title).toBe('This parcel has been forgotten · Peek'));
     expect(screen.queryByRole('button', { name: 'Share this parcel' })).toBeNull();
     await userEvent.setup().click(screen.getByRole('button', { name: 'Where’s my parcel?' }));
     expect(location.pathname).toBe('/');

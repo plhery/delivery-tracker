@@ -33,6 +33,7 @@ function OwnerSheet({ initial = owned(), name = 'New sneakers' as string | null,
 beforeEach(() => {
   mocks.track.mockReset();
   mocks.update.mockReset().mockImplementation(async (_id: string, _key: string, changes: ParcelLinkChanges) => owned({
+    ...(typeof changes.showNumber === 'boolean' ? { showNumber: changes.showNumber } : {}),
     ...(typeof changes.gift === 'boolean' ? { gift: changes.gift } : {}),
     ...(typeof changes.shared === 'boolean' ? { shared: changes.shared } : {}),
   }));
@@ -66,7 +67,7 @@ describe('the share sheet of a looked-up parcel', () => {
     expect(mocks.update).not.toHaveBeenCalled();
   });
 
-  it('saves the number switch at once: on before the server answers, remembered on this device, and told to the page', async () => {
+  it('saves the number switch at once: on before the server answers, then as the server says, and told to the page', async () => {
     let answer: (view: ParcelLinkView) => void = () => undefined;
     mocks.update.mockReturnValueOnce(new Promise<ParcelLinkView>((resolve) => { answer = resolve; }));
     const changed = vi.fn();
@@ -79,17 +80,22 @@ describe('the share sheet of a looked-up parcel', () => {
     expect(mocks.update).toHaveBeenCalledExactlyOnceWith(LINK_ID, OWNER_KEY, { showNumber: true });
     await user.click(toggle('Show the tracking number'));
     expect(mocks.update).toHaveBeenCalledTimes(1);
-    answer(owned());
+    answer(owned({ showNumber: true }));
     await waitFor(() => expect(toggle('Show the tracking number')).not.toHaveAttribute('aria-busy'));
+    // The owner's answer says what viewers read: nothing is noted on the device.
     expect(toggle('Show the tracking number')).toBeChecked();
-    expect(changed).toHaveBeenCalledWith(owned());
-    // The owner's answer never says what viewers read: this device remembers what it set.
-    expect(linkNote(LINK_ID).share).toMatchObject({ number: true });
+    expect(changed).toHaveBeenCalledWith(owned({ showNumber: true }));
+    expect(linkNote(LINK_ID).share).toBeUndefined();
     expect(mocks.track).toHaveBeenCalledWith('parcel-link-share-change', 'success');
 
     await user.click(toggle('Show the tracking number'));
     expect(mocks.update).toHaveBeenLastCalledWith(LINK_ID, OWNER_KEY, { showNumber: false });
-    await waitFor(() => expect(linkNote(LINK_ID).share).toMatchObject({ number: false }));
+    await waitFor(() => expect(toggle('Show the tracking number')).not.toBeChecked());
+  });
+
+  it('opens with the number switch as the server last stored it', () => {
+    render(<OwnerSheet initial={owned({ showNumber: true })} />);
+    expect(toggle('Show the tracking number')).toBeChecked();
   });
 
   it('puts a switch back and says so when it cannot be saved', async () => {
@@ -124,7 +130,7 @@ describe('the share sheet of a looked-up parcel', () => {
   it('cannot share what is inside a parcel without a name, and leads to naming it', async () => {
     const onNameIt = vi.fn();
     const onClose = vi.fn();
-    noteLink(LINK_ID, { share: { number: false, name: true, note: '', from: '' } });
+    noteLink(LINK_ID, { share: { name: true, note: '', from: '' } });
     const user = userEvent.setup();
     render(<OwnerSheet name={null} onNameIt={onNameIt} onClose={onClose} />);
     const inside = toggle('Show what’s inside');
@@ -149,7 +155,7 @@ describe('the share sheet of a looked-up parcel', () => {
     await user.type(note, 'Happy birthday, Alex!');
     await user.type(screen.getByRole('textbox', { name: 'From' }), 'Sam');
     await user.click(toggle('Show what’s inside'));
-    expect(linkNote(LINK_ID).share).toEqual({ number: false, name: true, note: 'Happy birthday, Alex!', from: 'Sam' });
+    expect(linkNote(LINK_ID).share).toEqual({ name: true, note: 'Happy birthday, Alex!', from: 'Sam' });
     await user.click(screen.getByRole('button', { name: 'Share…' }));
     expect(share).toHaveBeenCalledWith({ url: `${ADDRESS}#n=New%20sneakers&g=Happy%20birthday%2C%20Alex!&f=Sam` });
     // Nothing of it went to the server: only the switch did.
@@ -268,7 +274,7 @@ describe('the share sheet of an account’s parcel', () => {
   });
 
   it('opens on the link the parcel already has, and saves its switches at once', async () => {
-    noteLink(LINK_ID, { share: { number: false, name: true, note: 'Happy birthday!', from: 'Sam' } });
+    noteLink(LINK_ID, { share: { name: true, note: 'Happy birthday!', from: 'Sam' } });
     const client = account(link({ showNumber: true, gift: true }));
     const user = userEvent.setup();
     render(<AccountShareSheet parcel={parcel} client={client} onClose={() => undefined} />);

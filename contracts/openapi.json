@@ -7365,6 +7365,10 @@
             "type": "boolean",
             "description": "Whether the caller may keep the parcel after signing in: the owner, or a viewer of a link that shows its number."
           },
+          "showNumber": {
+            "type": "boolean",
+            "description": "Whether viewers read the whole tracking number. Sent to the owner only, whose own answer always shows it."
+          },
           "gift": {
             "type": "boolean",
             "description": "A gift link. Until the parcel is delivered a viewer gets no sender, a masked number, and the scans of the origin reduced to \"Left the sender\" and a country. Always sent; an answer stored on a device before sharing existed lacks it."

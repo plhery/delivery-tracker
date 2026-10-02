@@ -784,6 +784,7 @@ struct ParcelLink: Codable, Equatable, Hashable, Sendable, Identifiable {
     var forgetAt: String? = nil
     var numberShown: Bool
     var canKeep: Bool
+    var showNumber: Bool? = nil
     var gift: Bool? = nil
     var shared: Bool? = nil
     var alerts: ParcelAlerts? = nil

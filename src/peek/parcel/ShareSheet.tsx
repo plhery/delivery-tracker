@@ -23,7 +23,7 @@ import { Glyph } from './glyphs';
 import { copyText, shareParcelLink } from './share';
 import { Sheet, SwitchRow } from './Sheet';
 
-const NO_WORDS: ShareWords = { number: false, name: false, note: '', from: '' };
+const NO_WORDS: ShareWords = { name: false, note: '', from: '' };
 
 interface Settings { showNumber: boolean; gift: boolean }
 
@@ -199,8 +199,6 @@ export function LinkShareSheet({ linkId, ownerKey, view, name, onChanged, onName
   async function save(changes: ParcelLinkChanges, event: 'parcel-link-share-change' | 'parcel-link-share-stop') {
     try {
       onChanged(await updateParcelLink(linkId, ownerKey, changes));
-      // An owner's answer always shows the number: what viewers read is remembered here.
-      if (typeof changes.showNumber === 'boolean') noteLink(linkId, { share: { ...words, number: changes.showNumber } });
       trackAction(event, 'success');
     } catch (error) {
       trackAction(event, 'error');
@@ -211,7 +209,7 @@ export function LinkShareSheet({ linkId, ownerKey, view, name, onChanged, onName
   return <ShareSheetView
     title={t('share.title')}
     linkId={linkId}
-    settings={{ showNumber: words.number, gift: link.gift === true }}
+    settings={{ showNumber: link.showNumber === true, gift: link.gift === true }}
     loading={false}
     stopped={link.shared === false}
     stoppedLine={t('share.stopped.owner')}
@@ -225,7 +223,7 @@ export function LinkShareSheet({ linkId, ownerKey, view, name, onChanged, onName
     words={words}
     onWords={(next) => noteLink(linkId, { share: next })}
     onChange={(next) => save({
-      ...(next.showNumber !== words.number ? { showNumber: next.showNumber } : {}),
+      ...(next.showNumber !== (link.showNumber === true) ? { showNumber: next.showNumber } : {}),
       ...(next.gift !== (link.gift === true) ? { gift: next.gift } : {}),
     }, 'parcel-link-share-change')}
     onLink={async () => linkId}

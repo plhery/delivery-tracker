@@ -122,6 +122,7 @@
       "createdAt": "2026-10-02T08:00:00.000Z",
       "forgetAt": "2026-12-31T08:00:00.000Z",
       "numberShown": true,
+      "showNumber": false,
       "canKeep": true
     },
     "key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",

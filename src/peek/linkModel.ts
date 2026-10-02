@@ -201,6 +201,7 @@ export function parcelLinkView(response: ApiPublicParcelResponse): ParcelLinkVie
       createdAt: String(link.createdAt ?? ''),
       forgetAt: typeof link.forgetAt === 'string' ? link.forgetAt : null,
       numberShown: link.numberShown === true,
+      ...(typeof link.showNumber === 'boolean' ? { showNumber: link.showNumber } : {}),
       canKeep: link.canKeep === true,
       gift: link.gift === true,
       // Only a link that says it was stopped is: an answer from before sharing could be stopped is a shared one.

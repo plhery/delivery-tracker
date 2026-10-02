@@ -178,7 +178,7 @@ describe('looking up a parcel without an account', () => {
     expect(answer.key).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(answer.link).toEqual({
       id: linkId, role: 'owner', kind: 'lookup', createdAt: '2026-09-28T08:00:00.000Z',
-      forgetAt: '2026-12-30T10:00:00.000Z', numberShown: true, canKeep: true,
+      forgetAt: '2026-12-30T10:00:00.000Z', numberShown: true, showNumber: false, canKeep: true,
       gift: false, shared: true, alerts: { available: false, vapidPublicKey: null },
     });
     expect(answer.package).toMatchObject({ id: packageId, tracking_number: trackingNumber, number_hint: null, label: '' });

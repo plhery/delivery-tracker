@@ -272,6 +272,8 @@ export function publicParcelResponse(found: StoredParcelLink, alerts: ApiParcelA
     createdAt: isoTime(link.created_at) ?? '',
     forgetAt: isoTime(link.forget_at),
     numberShown,
+    // The owner always reads the number: this is what the link's viewers are shown.
+    ...(owner ? { showNumber: link.show_number === true } : {}),
     // A gift cannot be kept by its recipient before it arrives: its number is not shown.
     canKeep: numberShown,
     gift: link.gift === true,

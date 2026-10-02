@@ -14,12 +14,6 @@ const eventName = 'peek-link-notes-change';
 
 /** What a sharer chose for the link they hand out, and adds to it. */
 export interface ShareWords {
-  /**
-   * Viewers read the whole tracking number. The server tells an owner nothing
-   * about it (an owner always reads the number), so the device that holds the
-   * owner key remembers what it set; a lookup starts with the number masked.
-   */
-  number: boolean;
   /** The link carries the parcel's name. */
   name: boolean;
   /** A gift's note, and who it is from. */
@@ -56,7 +50,6 @@ function note(value: unknown): LinkNote | null {
   const kept: LinkNote = {};
   if (share && typeof share === 'object') {
     kept.share = {
-      number: share.number === true,
       name: share.name === true,
       note: cleanLinkText(typeof share.note === 'string' ? share.note : '', MAX_GIFT_NOTE_LENGTH) ?? '',
       from: cleanLinkText(typeof share.from === 'string' ? share.from : '', MAX_GIFT_FROM_LENGTH) ?? '',

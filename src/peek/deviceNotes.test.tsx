@@ -4,7 +4,7 @@ import { LINK_ID, OTHER_LINK_ID, OWNER_KEY, testView } from '../test/parcelLinks
 import { forgetAllLinkNotes, forgetLinkNote, LINK_NOTES_STORAGE_KEY, linkNote, noteLink, useLinkNote } from './deviceNotes';
 import { forgetAllRecents, forgetRecent, rememberParcel } from './recents';
 
-const share = { number: true, name: true, note: 'Happy birthday!', from: 'Sam' };
+const share = { name: true, note: 'Happy birthday!', from: 'Sam' };
 const alert = { preset: 'important' as const, endpoint: 'https://push.example.test/send/abc' };
 
 afterEach(() => { forgetAllLinkNotes(); forgetAllRecents(); vi.restoreAllMocks(); });
@@ -29,13 +29,13 @@ describe('what this browser notes about a link', () => {
 
   it('reads only what it can trust: a link’s id, clean words within their limits, a known preset', () => {
     localStorage.setItem(LINK_NOTES_STORAGE_KEY, JSON.stringify({
-      [LINK_ID]: { share: { number: 'yes', name: true, note: `  two\nlines ${'x'.repeat(400)}`, from: 7 }, alert: { preset: 'hourly', endpoint: 'x' } },
+      [LINK_ID]: { share: { name: true, note: `  two\nlines ${'x'.repeat(400)}`, from: 7 }, alert: { preset: 'hourly', endpoint: 'x' } },
       [OTHER_LINK_ID]: { alert: { preset: 'delivery', endpoint: 'demo:1' }, share: 'nonsense' },
       'not-a-link': { alert },
     }));
     const note = linkNote(LINK_ID);
     expect(note.alert).toBeUndefined();
-    expect(note.share).toMatchObject({ number: false, name: true, from: '' });
+    expect(note.share).toEqual(expect.objectContaining({ name: true, from: '' }));
     expect(note.share!.note.startsWith('two lines xxx')).toBe(true);
     expect([...note.share!.note]).toHaveLength(280);
     expect(linkNote(OTHER_LINK_ID)).toEqual({ alert: { preset: 'delivery', endpoint: 'demo:1' } });
