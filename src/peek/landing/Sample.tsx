@@ -40,7 +40,8 @@ export function SampleLine({ beat }: { beat: SampleBeat }) {
       <span className="door-line__detect is-busy"><Icon name="detect" /></span>
       <span className="door-line__text">
         <strong>{t('door.line.finding')}</strong>{' '}
-        <small>{t('add.line.asking', { carriers: carrierNameList(ASKED, locale, languageTag) })}</small>
+        {/* The list's commas are the engine's own (Intl.ListFormat): a browser may write them differently from the server. */}
+        <small suppressHydrationWarning>{t('add.line.asking', { carriers: carrierNameList(ASKED, locale, languageTag) })}</small>
       </span>
     </div>
     <div className="door-sample-line__found">
