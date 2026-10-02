@@ -7,6 +7,7 @@ enum Brand {
     static let accentBright = accent
     static let onAccent = Color(hex: "#20251E")
     static let ink = color(light: "#20251E", dark: "#F5F6F2")
+    static let inkSoft = color(light: "#657060", dark: "#AFB9A9")
     static let cream = color(light: "#F0F0E9", dark: "#292C28")
     static let paper = color(light: "#FFFFFF", dark: "#242824")
     static let warning = color(light: "#963E19", dark: "#FFB184")
@@ -170,22 +171,6 @@ struct TactileButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed && !reduceMotion ? scale : 1)
             .opacity(configuration.isPressed ? 0.94 : 1)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: configuration.isPressed)
-    }
-}
-
-struct ParcelGlyph: View {
-    let size: CGFloat
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: size * 0.25, style: .continuous)
-                .fill(Brand.accent)
-            Image(systemName: "shippingbox.fill")
-                .font(.system(size: size * 0.43, weight: .semibold))
-                .foregroundStyle(Brand.onAccent)
-        }
-        .frame(width: size, height: size)
-        .accessibilityHidden(true)
     }
 }
 

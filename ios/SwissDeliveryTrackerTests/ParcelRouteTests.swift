@@ -312,6 +312,40 @@ final class ParcelRouteTests: XCTestCase {
         XCTAssertEqual(PipArtwork.motion(.eager, at: 0).b, PipArtwork.motion(.eager, at: 1.1).b, accuracy: 0.001)
     }
 
+    func testPipBlinksAtTheEndOfEachPeriodAndIsLeftAloneBetween() {
+        let period = PipBlink.period
+        for time in [0, 1, 0.93 * period, period, period + 2] {
+            XCTAssertEqual(PipBlink.eyeScale(at: time), 1, accuracy: 0.0001, "\(time)")
+        }
+        XCTAssertEqual(PipBlink.eyeScale(at: 0.945 * period), 0.54, accuracy: 0.001)
+        XCTAssertEqual(PipBlink.eyeScale(at: 0.96 * period), PipBlink.closed, accuracy: 0.001)
+        XCTAssertEqual(PipBlink.eyeScale(at: 0.98 * period), 0.54, accuracy: 0.001)
+        XCTAssertEqual(PipBlink.eyeScale(at: 3.96 * period), PipBlink.closed, accuracy: 0.001)
+        // The second eye follows the first, and waits for its first turn.
+        XCTAssertEqual(PipBlink.eyeScale(at: 0.96 * period + PipBlink.lag, eye: 1), PipBlink.closed, accuracy: 0.001)
+        XCTAssertGreaterThan(PipBlink.eyeScale(at: 0.96 * period, eye: 1), PipBlink.eyeScale(at: 0.96 * period))
+        XCTAssertEqual(PipBlink.eyeScale(at: 0.01, eye: 1), 1)
+
+        // The face is drawn for the frames of a blink only, and both eyes are open whenever it rests.
+        XCTAssertEqual(PipBlink.nextFrame(after: 0), 0.93 * period, accuracy: 0.0001)
+        var frames: [Double] = []
+        var time = 0.0
+        while time < 3 * period {
+            let next = PipBlink.nextFrame(after: time)
+            XCTAssertGreaterThan(next, time)
+            if next - time > 1 {
+                XCTAssertEqual(PipBlink.eyeScale(at: time), 1, accuracy: 0.0001, "\(time)")
+                XCTAssertEqual(PipBlink.eyeScale(at: time, eye: 1), 1, accuracy: 0.0001, "\(time)")
+                XCTAssertEqual(next - time, 0.93 * period - (time > 0 ? PipBlink.lag : 0), accuracy: 0.0001)
+            }
+            frames.append(next)
+            time = next
+        }
+        XCTAssertLessThan(frames.count, 3 * 25)
+        XCTAssertTrue(frames.contains { PipBlink.eyeScale(at: $0) < 0.2 })
+        XCTAssertTrue(frames.contains { PipBlink.eyeScale(at: $0, eye: 1) < 0.2 })
+    }
+
     func testPipStandsBesideTheDotOffItsNameAndTheRoute() throws {
         let url = try XCTUnwrap(Bundle.main.url(forResource: "World", withExtension: "json"))
         let atlas = try WorldAtlas(data: Data(contentsOf: url))

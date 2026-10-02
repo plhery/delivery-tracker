@@ -294,15 +294,22 @@ enum PipArtwork {
     }
 
     /// The kraft parcel's face. `k` scales the features: 1 at full size, larger on a small parcel.
-    /// `happy` turns the open eyes into arcs as the box opens.
-    static func kraftFace(_ context: GraphicsContext, k: CGFloat, look: CGPoint = CGPoint(x: 0.5, y: -0.2), happy: Double) {
+    /// `happy` turns the open eyes into arcs as the box opens. `blink` is the time on the blink's clock;
+    /// nil keeps the eyes open.
+    static func kraftFace(_ context: GraphicsContext, k: CGFloat, look: CGPoint = CGPoint(x: 0.5, y: -0.2), happy: Double, blink: Double? = nil) {
         var face = context
         face.concatenate(PipGeometry.facePlane)
         let palette = PipPalette.kraft
-        for x in [48 - 15.5 * k, 48 + 15.5 * k] {
+        for (index, x) in [48 - 15.5 * k, 48 + 15.5 * k].enumerated() {
             if happy < 1 {
                 var eye = face
                 eye.opacity = 1 - happy
+                if let blink {
+                    // The white, the pupil and the catchlight close together, about the eye's own centre.
+                    eye.translateBy(x: 0, y: 36)
+                    eye.scaleBy(x: 1, y: PipBlink.eyeScale(at: blink, eye: index))
+                    eye.translateBy(x: 0, y: -36)
+                }
                 eye.fill(ellipse(x, 36, 10 * k, 11.5 * k), with: .color(palette.eyeWhite))
                 eye.fill(ellipse(x + look.x * 7 * k, 36 + look.y * 7 * k, 5.4 * k, 5.4 * k), with: .color(palette.features))
                 eye.fill(ellipse(x + (look.x * 7 - 1.8) * k, 36 + (look.y * 7 - 2) * k, 1.6 * k, 1.6 * k), with: .color(palette.catchlight))
@@ -444,7 +451,94 @@ enum PipArtwork {
     }
 }
 
+// MARK: - Blink
+
+/// The kraft parcel blinks while it waits: once a period, each open eye flattens and reopens.
+enum PipBlink {
+    static let period = 4.6
+    /// How tall a closed eye is, as a share of the open one.
+    static let closed = 0.08
+    /// The second eye follows the first.
+    static let lag = 0.02
+    /// The share of the period after which the eyes start to close, and the one at which they are closed.
+    private static let closing = 0.93, shut = 0.96
+    private static let frame = 1.0 / 60
+
+    /// How tall an eye is, `time` seconds on the blink's clock: 1 when open.
+    static func eyeScale(at time: Double, eye: Int = 0) -> Double {
+        let local = time - Double(eye) * lag
+        guard local > 0 else { return 1 }
+        let phase = (local / period).truncatingRemainder(dividingBy: 1)
+        if phase <= closing { return 1 }
+        if phase < shut { return 1 - (1 - closed) * UnitCurve.easeInOut.value(at: (phase - closing) / (shut - closing)) }
+        return closed + (1 - closed) * UnitCurve.easeInOut.value(at: (phase - shut) / (1 - shut))
+    }
+
+    /// When the eyes next need drawing after `time`: every frame of a blink, and nothing between two blinks.
+    static func nextFrame(after time: Double) -> Double {
+        let time = max(0, time)
+        let cycle = (time / period).rounded(.down)
+        // The second eye is still reopening as the next period starts.
+        let reopened = cycle * period + lag
+        if cycle > 0, time < reopened { return min(time + frame, reopened) }
+        let closes = (cycle + closing) * period
+        return time < closes ? closes : min(time + frame, (cycle + 1) * period + lag)
+    }
+}
+
+/// Wakes a timeline for the frames of each blink only.
+struct PipBlinkSchedule: TimelineSchedule {
+    /// When the blink's clock started.
+    let start: Date
+    var paused = false
+
+    func entries(from startDate: Date, mode: TimelineScheduleMode) -> Entries {
+        Entries(start: start, time: max(0, startDate.timeIntervalSince(start)), still: paused || mode == .lowFrequency)
+    }
+
+    struct Entries: Sequence, IteratorProtocol {
+        let start: Date
+        var time: Double
+        let still: Bool
+        private var begun = false
+
+        init(start: Date, time: Double, still: Bool) {
+            self.start = start
+            self.time = time
+            self.still = still
+        }
+
+        mutating func next() -> Date? {
+            if !begun { begun = true }
+            else if still { return nil }
+            else { time = PipBlink.nextFrame(after: time) }
+            return start.addingTimeInterval(time)
+        }
+    }
+}
+
 // MARK: - Views
+
+/// The kraft parcel's face at full size, in Pip's 300 × 310 frame. Its open eyes blink while it waits;
+/// the happy arcs don't, and nothing does when motion is reduced.
+struct KraftPipFace: View {
+    /// 0 for open eyes, 1 for happy arcs.
+    var happy: Double
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var appeared = Date()
+
+    var body: some View {
+        let blinks = !reduceMotion && happy == 0
+        TimelineView(PipBlinkSchedule(start: appeared, paused: !blinks)) { timeline in
+            let blink = blinks ? timeline.date.timeIntervalSince(appeared) : nil
+            Canvas { context, _ in
+                PipArtwork.kraftFace(context, k: 1, happy: happy, blink: blink)
+            }
+        }
+        .frame(width: PipGeometry.frame.width, height: PipGeometry.frame.height)
+    }
+}
 
 /// Pip in the card's own ink, beside the parcel's place on its map. Decorative.
 struct InkPip: View {

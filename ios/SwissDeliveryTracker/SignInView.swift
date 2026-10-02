@@ -228,9 +228,7 @@ private struct WelcomeView: View {
                             Button(action: onDismiss) { Image(systemName: "xmark").frame(width: 44, height: 44) }
                                 .foregroundStyle(Brand.ink).accessibilityLabel(localizer.text("common.close"))
                         }
-                        Text(localizer.text("app.title"))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Brand.ink)
+                        PeekLockup()
                         Spacer()
                         if invitation == nil {
                             Button(copy.signInTitle, action: onSignIn)
@@ -319,6 +317,32 @@ private struct WelcomeView: View {
             }
             .scrollIndicators(.hidden)
         }
+    }
+}
+
+/// The mark beside the name and its tagline, where the name stands alone.
+private struct PeekLockup: View {
+    @EnvironmentObject private var localizer: Localizer
+    @ScaledMetric(relativeTo: .subheadline) private var nameSize: CGFloat = 16
+    @ScaledMetric(relativeTo: .caption2) private var taglineSize: CGFloat = 10
+
+    var body: some View {
+        HStack(spacing: 9) {
+            PeekMark(size: 28)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(localizer.text("app.title"))
+                    .font(.system(size: nameSize, weight: .bold))
+                    .tracking(-0.4)
+                    .foregroundStyle(Brand.ink)
+                Text(localizer.text("app.tagline"))
+                    .font(.system(size: taglineSize))
+                    .foregroundStyle(Brand.inkSoft)
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+        }
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -1070,10 +1094,7 @@ struct UnwrappingParcel: View, Animatable {
 
                     // Pip's face. The open front flaps hang over the left side, so it is drawn after them,
                     // and its eyes turn into happy arcs as the box opens.
-                    Canvas { context, _ in
-                        PipArtwork.kraftFace(context, k: 1, happy: phase(0.2, 0.3))
-                    }
-                    .frame(width: 300, height: 310)
+                    KraftPipFace(happy: phase(0.2, 0.3))
 
                     // The tape tears out of sight as the flaps open.
                     polygon([(96, 122), (109, 115), (204, 163), (191, 170)])

@@ -72,6 +72,7 @@ private struct DeliveryWidgetProvider: TimelineProvider {
 
 private struct DeliveryWidgetView: View {
     @Environment(\.widgetFamily) private var family
+    @Environment(\.widgetRenderingMode) private var renderingMode
     let entry: DeliveryWidgetEntry
 
     private var copy: DeliveryWidgetLocalizer {
@@ -168,8 +169,13 @@ private struct DeliveryWidgetView: View {
 
     private var widgetHeader: some View {
         HStack(spacing: 6) {
-            Image(systemName: "shippingbox.fill")
-                .font(.caption.weight(.bold))
+            // A tinted or clear Home Screen flattens the mark's colours into a blank tile, so it keeps the symbol.
+            if renderingMode == .fullColor {
+                PeekMark(size: 16)
+            } else {
+                Image(systemName: "shippingbox.fill")
+                    .font(.caption.weight(.bold))
+            }
             Text(copy.text("app.title"))
                 .font(.caption2.weight(.heavy))
                 .textCase(.uppercase)

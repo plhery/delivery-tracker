@@ -186,7 +186,7 @@ private struct LaunchView: View {
             Brand.background.ignoresSafeArea()
             if slow {
                 VStack(spacing: 20) {
-                    ParcelGlyph(size: 78)
+                    PeekMark(size: 78)
                     ProgressView()
                         .controlSize(.large)
                         .tint(Brand.ink)

@@ -296,6 +296,14 @@ private struct DeliveryListView: View {
             AccountToolbarButton { showingAccount = true }
         }
 
+        // The mark stands at the leading edge on its own tile, not on a control's glass.
+        if #available(iOS 26.0, *) {
+            ToolbarItem(placement: .topBarLeading) { PeekMark(size: 30) }
+                .sharedBackgroundVisibility(.hidden)
+        } else {
+            ToolbarItem(placement: .topBarLeading) { PeekMark(size: 30) }
+        }
+
         ToolbarItem(placement: .topBarLeading) {
             Button {
                 sharedDraft = nil

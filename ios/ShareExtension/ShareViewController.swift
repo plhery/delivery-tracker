@@ -18,12 +18,10 @@ final class ShareViewController: UIViewController {
     }
 
     private func configureInterface() {
-        let mark = UIImageView(image: UIImage(systemName: "shippingbox.fill"))
-        mark.preferredSymbolConfiguration = .init(pointSize: 34, weight: .semibold)
-        mark.tintColor = UIColor(red: 0.09, green: 0.09, blue: 0.08, alpha: 1)
-        mark.backgroundColor = UIColor(red: 1, green: 0.84, blue: 0.04, alpha: 1)
-        mark.layer.cornerRadius = 22
-        mark.contentMode = .center
+        let markSize: CGFloat = 76
+        let mark = UIImageView(image: UIGraphicsImageRenderer(size: CGSize(width: markSize, height: markSize)).image { renderer in
+            PeekMarkArtwork.draw(PeekMarkVariant(size: markSize), in: renderer.cgContext, size: markSize)
+        })
         mark.translatesAutoresizingMaskIntoConstraints = false
 
         let title = UILabel()
@@ -60,8 +58,8 @@ final class ShareViewController: UIViewController {
         view.addSubview(stack)
 
         NSLayoutConstraint.activate([
-            mark.widthAnchor.constraint(equalToConstant: 76),
-            mark.heightAnchor.constraint(equalToConstant: 76),
+            mark.widthAnchor.constraint(equalToConstant: markSize),
+            mark.heightAnchor.constraint(equalToConstant: markSize),
             openButton.widthAnchor.constraint(equalTo: stack.widthAnchor),
             openButton.heightAnchor.constraint(equalToConstant: 52),
             stack.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor, constant: 8),
@@ -149,48 +147,48 @@ final class ShareViewController: UIViewController {
 private enum ShareCopy {
     private static let catalogs: [String: [String: String]] = [
         "en": [
-            "title": "Add to Delivery Tracker",
+            "title": "Add to Peek",
             "reading": "Reading the shared tracking information…",
             "save": "Save tracking details",
-            "saved": "Saved. Open Delivery Tracker within 10 minutes to review and add your parcel.",
+            "saved": "Saved. Open Peek within 10 minutes to review and add your parcel.",
             "done": "Done",
             "saveFailed": "Could not save. Please paste the tracking information directly in the app.",
             "cancel": "Cancel",
             "notFound": "Share a tracking number or link, or paste it directly in the app.",
-            "ready": "Save these tracking details, then open Delivery Tracker to add your parcel.",
+            "ready": "Save these tracking details, then open Peek to add your parcel.",
         ],
         "de": [
-            "title": "Zu Delivery Tracker hinzufügen",
+            "title": "Zu Peek hinzufügen",
             "reading": "Geteilte Sendungsinformationen werden gelesen…",
             "save": "Sendungsangaben speichern",
-            "saved": "Gespeichert. Öffne Delivery Tracker innerhalb von 10 Minuten, um dein Paket zu prüfen und hinzuzufügen.",
+            "saved": "Gespeichert. Öffne Peek innerhalb von 10 Minuten, um dein Paket zu prüfen und hinzuzufügen.",
             "done": "Fertig",
             "saveFailed": "Speichern fehlgeschlagen. Bitte füge die Sendungsangaben direkt in der App ein.",
             "cancel": "Abbrechen",
             "notFound": "Teile eine Sendungsnummer oder einen Link oder füge sie direkt in der App ein.",
-            "ready": "Speichere die Sendungsangaben und öffne dann Delivery Tracker, um dein Paket hinzuzufügen.",
+            "ready": "Speichere die Sendungsangaben und öffne dann Peek, um dein Paket hinzuzufügen.",
         ],
         "fr": [
-            "title": "Ajouter à Delivery Tracker",
+            "title": "Ajouter à Peek",
             "reading": "Lecture des informations de suivi partagées…",
             "save": "Enregistrer le suivi",
-            "saved": "Enregistré. Ouvrez Delivery Tracker dans les 10 minutes pour vérifier et ajouter votre colis.",
+            "saved": "Enregistré. Ouvrez Peek dans les 10 minutes pour vérifier et ajouter votre colis.",
             "done": "Terminé",
             "saveFailed": "Échec de l’enregistrement. Collez les informations de suivi directement dans l’app.",
             "cancel": "Annuler",
             "notFound": "Partagez un numéro ou un lien de suivi, ou collez-le directement dans l’app.",
-            "ready": "Enregistrez le suivi, puis ouvrez Delivery Tracker pour ajouter votre colis.",
+            "ready": "Enregistrez le suivi, puis ouvrez Peek pour ajouter votre colis.",
         ],
         "it": [
-            "title": "Aggiungi a Delivery Tracker",
+            "title": "Aggiungi a Peek",
             "reading": "Lettura delle informazioni di tracciamento condivise…",
             "save": "Salva il tracciamento",
-            "saved": "Salvato. Apri Delivery Tracker entro 10 minuti per verificare e aggiungere il pacco.",
+            "saved": "Salvato. Apri Peek entro 10 minuti per verificare e aggiungere il pacco.",
             "done": "Fine",
             "saveFailed": "Salvataggio non riuscito. Incolla il tracciamento direttamente nell’app.",
             "cancel": "Annulla",
             "notFound": "Condividi un numero o un link di tracciamento, oppure incollalo direttamente nell’app.",
-            "ready": "Salva il tracciamento, poi apri Delivery Tracker per aggiungere il pacco.",
+            "ready": "Salva il tracciamento, poi apri Peek per aggiungere il pacco.",
         ],
     ]
 
