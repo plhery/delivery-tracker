@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import { ApiAuthenticationError } from './lib/apiClient';
+import { announceKeepOutcome } from './peek/pending';
 import { createDemoRepo } from './store/demoRepo';
 import { ParcelsProvider } from './store/ParcelsContext';
 import { carrierPicker, pickCarrier } from './test/carrierPicker';
@@ -139,6 +140,21 @@ describe('App', () => {
     const [first, ...rest] = parcels;
     await act(async () => finish([{ ...first, lastStatusText: 'Sorted at the depot' }, ...rest]));
     expect(toast()).toHaveTextContent('Tracking updated');
+  });
+
+  it('says how keeping a parcel from its link ended, even when that was settled before the list appeared', async () => {
+    const outcome = { id: 'k7Qm2xHd9RtW', packageId: 'p1', name: null };
+    announceKeepOutcome({ ...outcome, outcome: 'kept' });
+    renderApp();
+    await screen.findByText('Coffee beans ☕');
+    const toast = () => screen.getByRole('status');
+    expect(toast()).toHaveTextContent('Added to your deliveries');
+    expect(toast().querySelector('.toast-mark')).toHaveClass('toast-mark--success');
+    act(() => announceKeepOutcome({ ...outcome, outcome: 'already' }));
+    expect(toast()).toHaveTextContent('You already follow this parcel');
+    act(() => announceKeepOutcome({ ...outcome, outcome: 'quota' }));
+    expect(toast()).toHaveTextContent('Couldn’t add this parcel.');
+    expect(toast().querySelector('.toast-mark')).toHaveClass('toast-mark--pending');
   });
 
   it('reports checks that outlive the wait as still running, not as an error', async () => {

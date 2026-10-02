@@ -48,6 +48,7 @@ import {
 } from './lib/shareTarget';
 import { currentStage, isDelivered } from './lib/stages';
 import { useParcels } from './store/ParcelsContext';
+import { onKeepOutcome } from './peek/pending';
 import type { CarrierId, ParcelWithEvents } from './types';
 
 const DETAIL_HISTORY_KEY = 'parcelPostDetail';
@@ -179,6 +180,13 @@ export default function App({
     const timeout = window.setTimeout(() => setRefreshNotice(null), 4_000);
     return () => window.clearTimeout(timeout);
   }, [refreshNotice]);
+
+  // A parcel kept from its link joins the list: say how that ended, once.
+  useEffect(() => onKeepOutcome(({ outcome }) => setRefreshNotice(
+    outcome === 'kept' ? { mark: 'success', text: t('link.added') }
+      : outcome === 'already' ? { mark: 'success', text: t('link.already.title') }
+        : { mark: 'pending', text: t('add.failed') },
+  )), [t]);
 
   useEffect(() => {
     const interval = window.setInterval(() => setViewNow(Date.now()), 60_000);

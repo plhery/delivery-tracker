@@ -1,4 +1,7 @@
 import type { CSSProperties, SVGProps } from 'react';
+import { carrierBrand } from '../lib/carrierBrand';
+import type { CarrierInfo } from '../lib/carriers';
+import { TruckArt } from './CarrierMark';
 
 const paths = {
   parcel: 'M3 7l9-5 9 5v10l-9 5-9-5V7Zm0 0 9 5 9-5M12 12v10M7.5 4.5l9 5',
@@ -70,6 +73,9 @@ export const PARCEL = {
   seam: 'm103 119 94 47',
   /** The left side's plane, where the face is drawn. */
   facePlane: 'matrix(1 0.505263 0 1 55 142)',
+  /** The right side's plane, where the carrier's label sits. */
+  labelPlane: 'matrix(1 -0.505263 0 1 160 205)',
+  barcode: 'M6 20v14m2.2-14v14m3-14v14m1.6-14v14m3.4-14v14m2-14v14m3-14v14m1.4-14v14m3.6-14v14m2-14v14m2.6-14v14m1.8-14v14m3.2-14v14m2-14v14m2.4-14v14m3-14v14m1.6-14v14',
   glint: 'M0 -1 .24 -.24 1 0 .24 .24 0 1 -.24 .24 -1 0 -.24 -.24Z',
   glints: [
     { x: 43, y: 96, size: 23, color: '#C99B35' },
@@ -147,8 +153,41 @@ export function PipFace({ k = 1, look = [.5, -.2] }: { k?: number; look?: PaperP
   </g>;
 }
 
-/** Pip: kraft paper, a face on the left side, and a card tucked behind the front faces. */
-export function ParcelIllustration({ className = '' }: { className?: string }) {
+/** The label's own measures. A name or a number too long for its line is set narrower to fit. */
+const LABEL = { width: 74, height: 48, margin: 6, nameStart: 23, nameSize: 7, numberSize: 5.6, numberSpacing: .3 } as const;
+
+/**
+ * The carrier's label on the box's right side: its truck, its name in its own
+ * colour, a barcode and the tracking number. The label's paper is light in
+ * either appearance, so the name takes the brand's light-mode colour.
+ */
+function ParcelLabel({ carrier, number }: { carrier: CarrierInfo; number?: string | null }) {
+  const { family, name, decal, style } = carrierBrand(carrier);
+  const nameRoom = LABEL.width - LABEL.nameStart - 4;
+  const numberRoom = LABEL.width - 2 * LABEL.margin;
+  const nameWidth = [...name].length * LABEL.nameSize * .6;
+  const numberWidth = [...number ?? ''].length * (LABEL.numberSize * .6 + LABEL.numberSpacing);
+  return <g className="parcel-illustration__label" data-family={family} transform={`${PARCEL.labelPlane} scale(.97)`} stroke="none" style={style}>
+    <rect width={LABEL.width} height={LABEL.height} rx="2.5" fill="#FFFEFA" />
+    <g transform="translate(5 5) scale(.5)"><TruckArt decal={decal} /></g>
+    <text className="parcel-illustration__label-name" x={LABEL.nameStart} y="13" fill="var(--carrier-brand-light)" fontSize={LABEL.nameSize} fontWeight="800"
+      fontStyle={family === 'dhl' ? 'italic' : undefined}
+      {...(nameWidth > nameRoom ? { textLength: nameRoom, lengthAdjust: 'spacingAndGlyphs' } : {})}>{name}</text>
+    <path d={PARCEL.barcode} stroke="#20251E" strokeWidth="1.05" />
+    {number && <text className="parcel-illustration__label-number" x={LABEL.margin} y="43" fill="#20251E" fontSize={LABEL.numberSize} letterSpacing={LABEL.numberSpacing}
+      style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}
+      {...(numberWidth > numberRoom ? { textLength: numberRoom, lengthAdjust: 'spacingAndGlyphs' } : {})}>{number}</text>}
+  </g>;
+}
+
+/**
+ * Pip: kraft paper, a face on the left side, and a card tucked behind the front faces.
+ * With `label`, the carrier's label takes the place of the arrow and the seal on the right side.
+ */
+export function ParcelIllustration({ className = '', label }: {
+  className?: string;
+  label?: { carrier: CarrierInfo; number?: string | null };
+}) {
   return <svg className={`parcel-illustration ${className}`} viewBox="0 0 300 310" fill="none" aria-hidden="true">
     <ellipse className="parcel-illustration__shadow" cx="150" cy="286" rx="84" ry="10" fill="currentColor" opacity=".08" />
     <g className="parcel-illustration__body">
@@ -169,12 +208,14 @@ export function ParcelIllustration({ className = '' }: { className?: string }) {
       <path className="parcel-illustration__face-light" d={PARCEL.left} fill="#FFF4D6" />
       <path d={PARCEL.hairlines} stroke="#987450" strokeOpacity=".25" strokeWidth=".8" />
       <path className="parcel-illustration__edge" d={PARCEL.edges} stroke="#FFF2CF" strokeWidth="1" />
-      <g transform="translate(201 201) rotate(-27)"><path d="M10 22V4m-5 5 5-5 5 5" stroke="#735C43" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></g>
-      <g transform="translate(183 234) rotate(-27)">
-        <circle r="14" fill="#DECCE2" />
-        <circle className="parcel-illustration__seal-light" r="11.5" stroke="#FFF6FF" strokeWidth="1.2" />
-        <path d="M0-7V7m-6-10 12 6M-6 3 6-3" stroke="#7C6787" strokeWidth="2" strokeLinecap="round" />
-      </g>
+      {label ? <ParcelLabel {...label} /> : <>
+        <g transform="translate(201 201) rotate(-27)"><path d="M10 22V4m-5 5 5-5 5 5" stroke="#735C43" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></g>
+        <g transform="translate(183 234) rotate(-27)">
+          <circle r="14" fill="#DECCE2" />
+          <circle className="parcel-illustration__seal-light" r="11.5" stroke="#FFF6FF" strokeWidth="1.2" />
+          <path d="M0-7V7m-6-10 12 6M-6 3 6-3" stroke="#7C6787" strokeWidth="2" strokeLinecap="round" />
+        </g>
+      </>}
       <ParcelFlap flap={PARCEL.flaps.frontRight} tone="#D1AE85" hidden />
       <ParcelFlap flap={PARCEL.flaps.frontLeft} tone="#DDBD96" />
       {/* The open front flaps hang over the left side, so the face is drawn after them. */}

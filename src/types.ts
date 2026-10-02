@@ -118,6 +118,8 @@ export interface ParcelRepo {
   /** Restore the original sample parcels; available only in the local demo. */
   resetDemo?(): Promise<ParcelWithEvents[]>;
   add(input: NewParcelInput): Promise<ParcelWithEvents>;
+  /** Take in a parcel followed through a parcel link, with its history; available only in the local demo. */
+  adopt?(parcel: ParcelWithEvents, label: string): Promise<ParcelWithEvents>;
   rename(id: string, label: string): Promise<ParcelWithEvents>;
   changeCarrier?(id: string, input: ParcelCarrierInput): Promise<ParcelWithEvents>;
   setNotificationsMuted?(id: string, muted: boolean): Promise<ParcelWithEvents>;

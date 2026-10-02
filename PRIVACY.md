@@ -107,6 +107,11 @@ Only the device holding the key sees the full number, can forget the parcel,
 and can keep it after signing in. The postcode or tracking link you entered is
 never shown through a link.
 
+Your browser keeps a list of the parcels you followed or opened this way: each
+link, its key if this device made the lookup, the name you gave it and the last
+tracking history it showed, so the parcel is still there offline. The list
+stays on the device until the parcel is forgotten or kept in an account.
+
 To limit abuse, the service counts lookups per day under a keyed hash of the
 network address and the date. The address itself is not stored, and the
 counters are deleted after seven days.

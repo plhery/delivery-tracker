@@ -49,6 +49,21 @@ export function ArrivalScreen({ screen, onNavigate, invitation, ...signIn }: Com
     if (screen === 'sign-in') signInPanel.current?.querySelector<HTMLElement>('h1')?.focus({ preventScroll: true });
   }, [screen, opening]);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  // Sign-in reached without the welcome step, from the front door: the box stands closed for a frame, then opens in place.
+  const [arrival, setArrival] = useState<'sealed' | 'opening' | 'open'>(() => screen === 'sign-in' && !invitation ? 'sealed' : 'open');
+  useEffect(() => {
+    if (arrival === 'sealed') {
+      // The closed box has to be laid out before its opening can be seen.
+      scene.current?.getBoundingClientRect();
+      const frame = requestAnimationFrame(() => setArrival('opening'));
+      return () => cancelAnimationFrame(frame);
+    }
+    if (arrival === 'opening') {
+      const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      const settle = setTimeout(() => setArrival('open'), reduced ? 80 : 960);
+      return () => clearTimeout(settle);
+    }
+  }, [arrival]);
 
   function unwrap() {
     if (opening) return;
@@ -61,7 +76,7 @@ export function ArrivalScreen({ screen, onNavigate, invitation, ...signIn }: Com
 
   const back = <button className="text-button arrival__back" type="button" disabled={invitation?.received} onClick={() => { setOpening(false); onNavigate('welcome'); }}><Icon name="back" />{t('welcome.back')}</button>;
 
-  return <main ref={scene} className={`arrival arrival--${screen}${opening ? ' arrival--opening' : ''}${invitation ? ' arrival--invitation' : ' arrival--onboarding'}${invitation?.received ? ' arrival--received' : ''}${!welcome && invitation?.afterOpen && !invitation.received ? ' arrival--accepting' : ''}`}>
+  return <main ref={scene} className={`arrival arrival--${arrival === 'sealed' ? 'arriving' : screen}${opening || arrival === 'opening' ? ' arrival--opening' : ''}${invitation ? ' arrival--invitation' : ' arrival--onboarding'}${invitation?.received ? ' arrival--received' : ''}${!welcome && invitation?.afterOpen && !invitation.received ? ' arrival--accepting' : ''}`}>
     <header className="arrival__header">
       {/* An invitation is led by its own way out; everywhere else the name stays in place while the step changes beside it. */}
       {!invitation ? <PeekLockup /> : welcome ? <button className="text-button arrival__back" type="button" aria-label={t('common.close')} onClick={invitation.onDismiss}><Icon name="close" /></button> : back}

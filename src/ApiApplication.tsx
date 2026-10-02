@@ -18,12 +18,25 @@ import { createFriendsClient } from './lib/friends';
 import { FriendInvitation } from './components/FriendInvitation';
 import { useParcels } from './store/ParcelsContext';
 import { FriendsActivityProvider } from './components/FriendsActivity';
+import type { ApiAuth } from './lib/apiClient';
+import { KeepPendingParcel } from './peek/KeepPending';
+import { PeekRoot } from './peek/PeekRoot';
+import { keepParcelLink } from './peek/pending';
+import { leaveParcelLink, useParcelLinkRoute } from './peek/route';
+import type { PeekSession } from './peek/session';
+import { useVisitorSession } from './peek/visitor';
 
-export function ApiApplication({ invitationRoute = false }: { invitationRoute?: boolean }) {
+export function ApiApplication({ invitationRoute = false, parcelLinkId = null }: {
+  invitationRoute?: boolean;
+  /** The link id of the parcel page the server rendered, at `/p/<id>`. */
+  parcelLinkId?: string | null;
+}) {
   const { t } = useI18n();
   const auth = useAuth();
   const experience = useEntryExperience();
   const invitation = usePendingInvitation(invitationRoute);
+  const linkId = useParcelLinkRoute(parcelLinkId);
+  const visitor = useVisitorSession(auth.status === 'loading' ? 'checking' : 'visitor');
   const demoRepo = useMemo(() => createDemoRepo(), []);
   const signOut = auth.signOut;
   const navigate = experience.navigate;
@@ -83,6 +96,12 @@ export function ApiApplication({ invitationRoute = false }: { invitationRoute?: 
     configured: auth.status !== 'unconfigured', googleEnabled: auth.googleEnabled, appleEnabled: auth.appleEnabled, emailOtpEnabled: auth.emailOtpEnabled,
     signInWithGoogle: auth.signInWithGoogle, signInWithApple: auth.signInWithApple, sendCode: auth.sendCode, verifyCode: auth.verifyCode,
   };
+  // A parcel's address shows the parcel to anyone at once, while a saved sign-in is still being restored.
+  // Without one, a visitor arrives at the front door.
+  if (auth.status !== 'authenticated' && (linkId
+    || (auth.status !== 'loading' && !invitation.pending && experience.screen === 'welcome'))) {
+    return <PeekRoot session={visitor} serverLinkId={parcelLinkId} />;
+  }
   if (auth.status === 'loading') {
     return <div className="auth-loading" role="status"><ParcelIllustration /><span>{t('auth.loading')}</span></div>;
   }
@@ -93,8 +112,8 @@ export function ApiApplication({ invitationRoute = false }: { invitationRoute?: 
     </ParcelsProvider>;
     return (
       <ArrivalScreen
-        screen={experience.screen}
-        onNavigate={experience.navigate}
+        screen="sign-in"
+        onNavigate={visitor.leaveSignIn}
         configured={auth.status !== 'unconfigured'}
         googleEnabled={auth.googleEnabled}
         appleEnabled={auth.appleEnabled}
@@ -110,7 +129,9 @@ export function ApiApplication({ invitationRoute = false }: { invitationRoute?: 
   return (
     <FriendsActivityProvider key={auth.user?.id} auth={apiAuth!} paused={!!invitation.pending}>
     <ParcelsProvider key={auth.user?.id} repo={repo}>
-      {invitation.pending ? <AuthenticatedInvitation key={invitation.pending.code ?? 'invalid'} {...invitationProps} client={friendsClient} /> : <App
+      <KeepPendingParcel auth={apiAuth!} />
+      {linkId ? <SignedInPeek auth={apiAuth!} serverLinkId={parcelLinkId} />
+        : invitation.pending ? <AuthenticatedInvitation key={invitation.pending.code ?? 'invalid'} {...invitationProps} client={friendsClient} /> : <App
         accountEmail={auth.user?.email ?? t('native.account')}
         onSignOut={handleSignOut}
         onExportAccount={handleExport}
@@ -125,4 +146,21 @@ export function ApiApplication({ invitationRoute = false }: { invitationRoute?: 
 function AuthenticatedInvitation(props: ComponentProps<typeof FriendInvitation>) {
   const { parcels } = useParcels();
   return <FriendInvitation {...props} parcels={parcels} />;
+}
+
+/** A parcel page opened by someone signed in: it can join their deliveries without leaving the page. */
+function SignedInPeek({ auth, serverLinkId }: { auth: ApiAuth; serverLinkId: string | null }) {
+  const { parcels, loading, retryLoad } = useParcels();
+  const session = useMemo<PeekSession>(() => ({
+    account: 'signed-in',
+    signIn: () => undefined,
+    async keep(linkId) {
+      const outcome = await keepParcelLink(linkId, auth);
+      if (outcome.outcome === 'kept' || outcome.outcome === 'already') void retryLoad();
+      return outcome;
+    },
+    deliveries: loading ? undefined : parcels,
+    openDeliveries: (parcelId) => leaveParcelLink(parcelId ? `/?parcel=${encodeURIComponent(parcelId)}` : '/'),
+  }), [auth, parcels, loading, retryLoad]);
+  return <PeekRoot session={session} serverLinkId={serverLinkId} />;
 }

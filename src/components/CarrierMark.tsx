@@ -21,9 +21,10 @@ function Decal({ shape }: { shape: TruckDecalShape }) {
   return <path d={shape.d} stroke={paint(shape.stroke)} strokeWidth={n(shape.strokeWidth)} />;
 }
 
-function Truck({ decal }: { decal: ReturnType<typeof carrierBrand>['decal'] }) {
-  const { viewBox, strokeWidth, body, cab, windshield, wheels, decals } = CARRIER_TRUCK;
-  return <svg className="carrier-mark__truck" viewBox={`0 0 ${n(viewBox.width)} ${n(viewBox.height)}`} fill="none" aria-hidden="true">
+/** The truck's shapes in its own frame, for any SVG whose ancestors carry the carrier's brand properties. */
+export function TruckArt({ decal }: { decal: ReturnType<typeof carrierBrand>['decal'] }) {
+  const { strokeWidth, body, cab, windshield, wheels, decals } = CARRIER_TRUCK;
+  return <>
     <rect x={n(body.x)} y={n(body.y)} width={n(body.width)} height={n(body.height)} rx={n(body.rx)} fill={paint(body.fill)} stroke={paint(body.stroke)} strokeWidth={n(strokeWidth)} />
     <path d={cab.d} fill={paint(cab.fill)} stroke={paint(cab.stroke)} strokeWidth={n(strokeWidth)} />
     <path d={windshield.d} fill={paint(windshield.fill)} />
@@ -33,6 +34,13 @@ function Truck({ decal }: { decal: ReturnType<typeof carrierBrand>['decal'] }) {
       <circle cx={n(x)} cy={n(y)} r={n(wheels.tire.r)} fill={paint(wheels.tire.fill)} />
       <circle cx={n(x)} cy={n(y)} r={n(wheels.hub.r)} fill={paint(wheels.hub.fill)} />
     </g>)}
+  </>;
+}
+
+function Truck({ decal }: { decal: ReturnType<typeof carrierBrand>['decal'] }) {
+  const { viewBox } = CARRIER_TRUCK;
+  return <svg className="carrier-mark__truck" viewBox={`0 0 ${n(viewBox.width)} ${n(viewBox.height)}`} fill="none" aria-hidden="true">
+    <TruckArt decal={decal} />
   </svg>;
 }
 

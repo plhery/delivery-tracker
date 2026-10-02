@@ -388,6 +388,27 @@ export function createDemoRepo(
       return parcel;
     },
 
+    async adopt(followed: ParcelWithEvents, label: string) {
+      const parcels = await getAll();
+      const existing = parcels.find((candidate) => candidate.trackingNumber === followed.trackingNumber);
+      if (existing) {
+        throw new ParcelAlreadyExistsError(
+          'This tracking number is already in your delivery box',
+          existing.id,
+        );
+      }
+      const id = uid();
+      const parcel: ParcelWithEvents = {
+        ...followed,
+        id,
+        label: label.trim(),
+        archivedAt: undefined,
+        events: followed.events.map((scan) => ({ ...scan, id: uid(), parcelId: id })),
+      };
+      save(storage, [...parcels, parcel]);
+      return parcel;
+    },
+
     async rename(id: string, nextLabel: string) {
       const label = nextLabel.trim();
       if (label.length > 80) {

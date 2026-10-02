@@ -6,7 +6,10 @@
 .arrival--onboarding.arrival--welcome .arrival__parcel { top: 162px; }
 .arrival--onboarding .arrival__open { margin-top: 8px; }
 .arrival--onboarding .arrival__sign-in { padding-top: 0; width: 365px; max-width: 100%; margin-top: 90px; }
+/* Arriving from the front door, the parcel waits closed in its sign-in place, then opens there. */
+.arrival--onboarding.arrival--arriving .arrival__parcel,
 .arrival--onboarding.arrival--sign-in .arrival__parcel { top: 60px; transform: translateX(-210px) scale(.78) rotate(-4deg); }
+.arrival--sign-in.arrival--opening .parcel-illustration__body { animation: parcel-unseal .96s var(--ease-out) both; }
 .auth-flow--card { background: var(--paper); border: 1px solid var(--line); border-radius: 24px; padding: 25px 22px; }
 .auth-flow--card .auth-flow__heading h1 { font-size: 28px; letter-spacing: -.8px; margin-bottom: 9px; }
 .auth-flow--card .auth-flow__heading > p { font-size: 12px; margin-bottom: 23px; }
@@ -24,6 +27,7 @@
   .arrival--onboarding .arrival__welcome h1 { font-size: clamp(34px, 8.8vw, 48px); }
   .arrival__explanation { font-size: 13px; }
   .arrival--onboarding .arrival__sign-in { padding-top: 172px; margin: 0 auto; }
+  .arrival--onboarding.arrival--arriving .arrival__parcel,
   .arrival--onboarding.arrival--sign-in .arrival__parcel { top: -31px; transform: scale(.5) rotate(-4deg); }
   .auth-flow--card { padding: 23px 20px; }
 }

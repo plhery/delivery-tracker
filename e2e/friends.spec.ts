@@ -86,6 +86,8 @@ test('Demo invitations offer sign-in without creating a fake link', async ({ pag
   await page.getByRole('button', { name: 'Invite a friend', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Sign in instead', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Tap to open your parcel' })).toBeVisible();
+  // Leaving the demo lands on the front door, where sign-in is offered.
+  await expect(page.getByRole('heading', { name: 'Where’s my parcel?' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('sdt.web.experience.v1'))).toBe('welcome');
 });

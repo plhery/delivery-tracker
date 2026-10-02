@@ -1,0 +1,19 @@
+.peekp { min-height: 100dvh; padding: 0 32px 40px; }
+.peekp-header { display: flex; align-items: center; width: min(100%, 1044px); min-height: 104px; margin: 0 auto; }
+.peekp-home { min-height: 44px; padding: 0; background: transparent; }
+.peekp-body { display: grid; justify-items: center; gap: 12px; width: min(100%, 520px); margin: 0 auto; text-align: center; }
+.peekp-pip { width: min(200px, 55%); }
+.peekp-body h1 { margin: 0; font-size: clamp(28px, 4vw, 40px); line-height: 1.1; letter-spacing: -1px; font-weight: 650; text-wrap: balance; }
+.peekp-body p { margin: 0; color: var(--ink-soft); overflow-wrap: anywhere; }
+.peekp-body .peekp-name { color: var(--ink); font-weight: 600; }
+.peekp-number strong { color: var(--ink); font: 500 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.peekp-body .peekp-trouble { color: var(--orange-text); font-size: 13px; }
+.peekp-body .carrier-mark { white-space: nowrap; }
+.peekp-body .tracking-journal { width: 100%; text-align: start; }
+@media (max-width: 760px) {
+  .peekp { padding: env(safe-area-inset-top) 24px 32px; }
+  .peekp-header { min-height: 76px; }
+}
+@media (max-width: 360px) {
+  .peekp { padding-left: 17px; padding-right: 17px; }
+}

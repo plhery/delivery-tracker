@@ -3,6 +3,9 @@ import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiApplication } from './ApiApplication';
+import { onKeepOutcome, pendingKeep, rememberPendingKeep, type KeepOutcome } from './peek/pending';
+import { forgetAllRecents, recentFor, rememberParcel, renameParcel } from './peek/recents';
+import { LINK_ID, OWNER_KEY, testView } from './test/parcelLinks';
 
 const mocks = vi.hoisted(() => ({
   auth: {} as Record<string, unknown>,
@@ -14,6 +17,8 @@ const mocks = vi.hoisted(() => ({
   exportAccount: vi.fn(),
   downloadAccountExport: vi.fn(),
   deleteAccount: vi.fn(),
+  retryLoad: vi.fn(),
+  kept: vi.fn(),
 }));
 
 vi.mock('./auth/AuthContext', () => ({ useAuth: () => mocks.auth }));
@@ -24,8 +29,23 @@ vi.mock('./store/apiRepo', () => ({
 }));
 vi.mock('./store/ParcelsContext', () => ({
   ParcelsProvider: ({ children }: { children: ReactNode }) => children,
-  useParcels: () => ({ parcels: [] }),
+  useParcels: () => ({ parcels: [], loading: false, retryLoad: mocks.retryLoad }),
 }));
+// The page itself has its own tests; here it shows what the app hands it.
+vi.mock('./peek/ParcelPage', async () => {
+  const { usePeekSession } = await import('./peek/session');
+  return {
+    ParcelPage: ({ linkId }: { linkId: string }) => {
+      const session = usePeekSession();
+      return <div>
+        <p>Parcel page {linkId} for {session.account}{session.deliveries ? ` with ${session.deliveries.length} deliveries` : ''}</p>
+        <button type="button" onClick={() => session.signIn(linkId)}>Sign in to keep it</button>
+        {session.keep && <button type="button" onClick={() => void session.keep!(linkId).then(mocks.kept)}>Add to my deliveries</button>}
+        {session.openDeliveries && <button type="button" onClick={() => session.openDeliveries!('p1')}>Open it</button>}
+      </div>;
+    },
+  };
+});
 vi.mock('./lib/pushNotifications', () => ({
   disablePushNotifications: mocks.disablePushNotifications,
   unsubscribePushNotificationsLocally: mocks.unsubscribePushNotificationsLocally,
@@ -91,7 +111,17 @@ beforeEach(() => {
   mocks.deleteAccount.mockResolvedValue(undefined);
 });
 
-afterEach(() => { vi.unstubAllGlobals(); sessionStorage.clear(); history.replaceState(null, '', '/'); });
+afterEach(() => { vi.unstubAllGlobals(); sessionStorage.clear(); forgetAllRecents(); history.replaceState(null, '', '/'); });
+
+/** Answers the claim request; everything else the signed-in app asks for is unavailable here. */
+function claimAnswering(result: { id: string; outcome: string; packageId?: string }) {
+  const fetch = vi.fn<typeof globalThis.fetch>(async (path) => path === '/api/packages/claim'
+    ? new Response(JSON.stringify({ results: [result] }))
+    : new Response('{}', { status: 404 }));
+  vi.stubGlobal('fetch', fetch);
+  return fetch;
+}
+const claims = (fetch: ReturnType<typeof claimAnswering>) => fetch.mock.calls.filter(([path]) => path === '/api/packages/claim');
 
 describe('ApiApplication', () => {
   it.each([true, false])('keeps the invitation through sign-in and accepts with Friends already enabled: %s', async (alreadyEnabled) => {
@@ -123,7 +153,7 @@ describe('ApiApplication', () => {
     expect(location.search).toBe('?view=friends');
     expect(sessionStorage.getItem('sdt.pendingFriendInvitation.v1')).toBeNull();
   });
-  it('restarts the unopened welcome after sign-out and remembers it for the next visit', async () => {
+  it('returns to the front door after sign-out and remembers it for the next visit', async () => {
     mocks.auth.status = 'authenticated';
     mocks.auth.user = USER;
     const result = render(<ApiApplication />);
@@ -132,9 +162,99 @@ describe('ApiApplication', () => {
     mocks.auth.status = 'anonymous';
     mocks.auth.user = null;
     result.rerender(<ApiApplication />);
-    expect(screen.getByRole('button', { name: 'Tap to open your parcel' })).toBeEnabled();
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
     expect(screen.queryByText('Configured sign in')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Explore the demo/ })).not.toBeInTheDocument();
+  });
+
+  it('greets a visitor with the front door, opens sign-in from it and comes back', async () => {
+    window.localStorage.removeItem('sdt.web.experience.v1');
+    window.dispatchEvent(new Event('storage'));
+    const user = userEvent.setup();
+    render(<ApiApplication />);
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Tap to open your parcel' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(screen.getByText('Configured sign in')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Explore the demo' })).toBeVisible();
+    expect(window.localStorage.getItem('sdt.web.experience.v1')).toBe('sign-in');
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+  });
+
+  it('shows a parcel page to anyone at once, while a saved sign-in is still being restored', () => {
+    history.replaceState(null, '', `/p/${LINK_ID}`);
+    mocks.auth.status = 'loading';
+    const result = render(<ApiApplication parcelLinkId={LINK_ID} />);
+    expect(screen.getByText(`Parcel page ${LINK_ID} for checking`)).toBeVisible();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    mocks.auth.status = 'anonymous';
+    result.rerender(<ApiApplication parcelLinkId={LINK_ID} />);
+    expect(screen.getByText(`Parcel page ${LINK_ID} for visitor`)).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Add to my deliveries' })).not.toBeInTheDocument();
+  });
+
+  it('keeps a parcel page for someone signed in, who can add it and go to their deliveries', async () => {
+    history.replaceState(null, '', `/p/${LINK_ID}`);
+    mocks.auth.status = 'authenticated';
+    mocks.auth.user = USER;
+    rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: testView() });
+    const fetch = claimAnswering({ id: LINK_ID, outcome: 'kept', packageId: 'p1' });
+    const user = userEvent.setup();
+    render(<ApiApplication parcelLinkId={LINK_ID} />);
+    expect(screen.getByText(`Parcel page ${LINK_ID} for signed-in with 0 deliveries`)).toBeVisible();
+    expect(screen.queryByText('owner@example.test')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Add to my deliveries' }));
+    await waitFor(() => expect(mocks.kept).toHaveBeenCalledWith({ id: LINK_ID, outcome: 'kept', packageId: 'p1', name: null }));
+    expect(claims(fetch)).toHaveLength(1);
+    expect(JSON.parse(String(claims(fetch)[0][1]!.body))).toEqual({ links: [{ id: LINK_ID, key: OWNER_KEY }] });
+    expect(new Headers(claims(fetch)[0][1]!.headers).get('Authorization')).toBe('Bearer token');
+    expect(mocks.retryLoad).toHaveBeenCalled();
+    expect(recentFor(LINK_ID)).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Open it' }));
+    expect(location.pathname + location.search).toBe('/?parcel=p1');
+    expect(screen.getByText('owner@example.test')).toBeVisible();
+  });
+
+  it('keeps the parcel a visitor asked to keep, once, as soon as they are signed in', async () => {
+    window.localStorage.removeItem('sdt.web.experience.v1');
+    window.dispatchEvent(new Event('storage'));
+    history.replaceState(null, '', `/p/${LINK_ID}`);
+    rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: testView() });
+    renameParcel(LINK_ID, 'New sneakers');
+    const fetch = claimAnswering({ id: LINK_ID, outcome: 'kept', packageId: 'p1' });
+    const heard: KeepOutcome[] = [];
+    const stop = onKeepOutcome((outcome) => heard.push(outcome));
+    const user = userEvent.setup();
+    const result = render(<ApiApplication parcelLinkId={LINK_ID} />);
+    await user.click(screen.getByRole('button', { name: 'Sign in to keep it' }));
+    // Signing in happens at /, where a provider returns to; the note waits in this tab.
+    expect(location.pathname).toBe('/');
+    expect(screen.getByText('Configured sign in')).toBeVisible();
+    expect(pendingKeep()).toBe(LINK_ID);
+    expect(claims(fetch)).toHaveLength(0);
+
+    mocks.auth.status = 'authenticated';
+    mocks.auth.user = USER;
+    result.rerender(<ApiApplication parcelLinkId={LINK_ID} />);
+    expect(await screen.findByText('owner@example.test')).toBeVisible();
+    await waitFor(() => expect(heard).toEqual([{ id: LINK_ID, outcome: 'kept', packageId: 'p1', name: 'New sneakers' }]));
+    result.rerender(<ApiApplication parcelLinkId={LINK_ID} />);
+    expect(claims(fetch)).toHaveLength(1);
+    expect(JSON.parse(String(claims(fetch)[0][1]!.body))).toEqual({ links: [{ id: LINK_ID, key: OWNER_KEY, label: 'New sneakers' }] });
+    expect(mocks.retryLoad).toHaveBeenCalled();
+    expect(recentFor(LINK_ID)).toBeNull();
+    expect(pendingKeep()).toBeNull();
+    stop();
+  });
+
+  it('forgets the parcel to keep when the visitor backs out of sign-in', async () => {
+    rememberPendingKeep(LINK_ID);
+    const user = userEvent.setup();
+    render(<ApiApplication />);
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+    expect(pendingKeep()).toBeNull();
   });
 
   it('signs out and clears private cache while push deregistration is stalled', async () => {

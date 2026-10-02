@@ -23,6 +23,7 @@ Next.js route handlers --- user token ---> PostgREST + Postgres RLS
 | `app/` | App Router pages, route handlers, manifest, service worker, offline page |
 | `proxy.ts` | Per-request CSP nonce and security headers |
 | `src/` | React client (`components/`, `store/`, `auth/`, `i18n.tsx`) |
+| `src/peek/` | The front door and the parcel page for visitors: parcel link client, this device's parcels, keeping a parcel after sign-in |
 | `src/server/` | API helpers, auth, sync worker, routing, push, observability |
 | `universal-parcel-scraper` (npm dependency) | Every carrier: catalog, detection, adapters, universal providers ([README](https://github.com/plhery/universal-parcel-scraper/blob/main/README.md)) |
 | `shared/` | Translations, tracking message map and analytics catalog, shared by web and iOS |
@@ -76,6 +77,11 @@ Key server modules:
     quotas and the duplicate, and gives a viewer's copy none of what the sharer entered.
   - Link ids and keys stay out of request logs, metric labels, analytics and error reports.
     The pages send `Referrer-Policy: no-referrer` and are never cached by the service worker.
+  - The browser keeps the links it looked up or opened in `localStorage`, with their owner
+    key, the name given on the device and the last answer. The name is never sent to the
+    public routes; it becomes the parcel's label only when the parcel is kept in an account.
+  - A build without an API (`NEXT_PUBLIC_USE_API=false`) answers lookups in the browser with
+    fictional parcels from the demo stories, so nothing leaves the device.
   - Lookups are limited per client and overall, per minute in memory and per day in the
     database. The daily counter is keyed by a hash of the client address and the date,
     made with a server secret; an IPv6 client counts as its /64.

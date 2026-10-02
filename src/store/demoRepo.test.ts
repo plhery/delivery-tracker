@@ -141,6 +141,28 @@ describe('createDemoRepo', () => {
     expect(error).toMatchObject({ parcelId: parcel.id });
   });
 
+  it('adopts a parcel followed through a link with its history, once', async () => {
+    const repo = createDemoRepo(window.localStorage);
+    const followed = {
+      id: 'link-parcel', trackingNumber: 'DEMOADOPT20260001', label: '', carrier: 'ups' as const,
+      createdAt: '2026-10-02T08:00:00.000Z', syncStatus: 'ok' as const, archivedAt: '2026-10-02T09:00:00.000Z',
+      events: [
+        { id: 'a', parcelId: 'link-parcel', stage: 'registered' as const, description: 'Announced', occurredAt: '2026-10-01T08:00:00.000Z' },
+        { id: 'b', parcelId: 'link-parcel', stage: 'in_transit' as const, description: 'On its way', occurredAt: '2026-10-02T07:00:00.000Z' },
+      ],
+    };
+    const adopted = await repo.adopt!(followed, '  From the link ');
+    expect(adopted).toMatchObject({ trackingNumber: 'DEMOADOPT20260001', label: 'From the link', carrier: 'ups' });
+    expect(adopted.id).not.toBe('link-parcel');
+    expect(adopted.archivedAt).toBeUndefined();
+    expect(adopted.events.map((event) => [event.stage, event.description, event.parcelId])).toEqual([
+      ['registered', 'Announced', adopted.id], ['in_transit', 'On its way', adopted.id],
+    ]);
+    expect((await repo.list()).find((parcel) => parcel.id === adopted.id)?.events).toHaveLength(2);
+    await expect(repo.adopt!(followed, 'Again')).rejects.toMatchObject({ parcelId: adopted.id });
+    await expect(repo.adopt!(followed, 'Again')).rejects.toBeInstanceOf(ParcelAlreadyExistsError);
+  });
+
   it('lists newest parcels first', async () => {
     let t = new Date('2026-07-01T10:00:00.000Z').getTime();
     const repo = createDemoRepo(window.localStorage, () => (t += 60_000));

@@ -94,7 +94,8 @@ function saveCachedParcels(
   }
 }
 
-function toEvent(row: ApiTrackingEventRow): TrackingEvent {
+/** A tracking event row as the client model. */
+export function toEvent(row: ApiTrackingEventRow): TrackingEvent {
   return {
     id: row.id,
     parcelId: row.package_id,
@@ -106,7 +107,8 @@ function toEvent(row: ApiTrackingEventRow): TrackingEvent {
   };
 }
 
-function toParcel(row: ApiPackageRow): ParcelWithEvents {
+/** A package row as the client model; a parcel link's package maps through it too. */
+export function toParcel(row: ApiPackageRow): ParcelWithEvents {
   return {
     id: row.id,
     trackingNumber: row.tracking_number,

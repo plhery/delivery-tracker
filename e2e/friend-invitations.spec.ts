@@ -72,7 +72,9 @@ for (const suffix of ['', '?fbclid=tracking#discardable']) test(`a shared link (
   await page.getByRole('button', { name: 'Back' }).click();
   await expect(page.getByRole('button', { name: 'Tap to open your parcel' })).toBeEnabled();
   await page.getByRole('button', { name: 'Close', exact: true }).click();
-  await expect(page.locator('.arrival')).not.toHaveClass(/arrival--invitation/);
+  // A dismissed invitation leaves the visitor at the front door.
+  await expect(page.getByRole('heading', { name: 'Where’s my parcel?' })).toBeVisible();
+  await expect(page.locator('.arrival--invitation')).toHaveCount(0);
   expect(await page.evaluate(() => sessionStorage.getItem('sdt.pendingFriendInvitation.v1'))).toBeNull();
   expect(urls.some((url) => url.includes(token))).toBe(false);
   expect(errors).toEqual([]);

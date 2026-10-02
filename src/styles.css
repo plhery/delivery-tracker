@@ -600,7 +600,7 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
   .detail .demo-banner { margin: 0 20px; }
   .arrival { padding: env(safe-area-inset-top) 24px 32px; }
   .arrival__header { min-height: 86px; }
-  .arrival--sign-in .arrival__header { gap: 10px; }
+  .arrival--arriving .arrival__header, .arrival--sign-in .arrival__header { gap: 10px; }
   .arrival__actions { gap: 8px; }
   .arrival__header .language-control select { font-size: 12px; max-width: 118px; }
   .arrival__scene { min-height: 580px; margin-top: 16px; }
@@ -628,7 +628,7 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
   .appearance-control button { flex-direction: column; gap: 4px; }
   .arrival { padding-left: 20px; padding-right: 20px; }
   /* Beside Back and the language, the narrowest screens keep the name alone. */
-  .arrival--sign-in .peek-lockup__tagline { display: none; }
+  .arrival--arriving .peek-lockup__tagline, .arrival--sign-in .peek-lockup__tagline { display: none; }
   .arrival__header .language-control select { max-width: 95px; }
   .sheet { padding-left: 18px; padding-right: 18px; }
   .sheet__actions .button { padding: 12px; font-size: 13px; }
