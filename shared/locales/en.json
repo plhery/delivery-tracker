@@ -300,6 +300,7 @@
   "liveActivity.settingDescription": "Automatically show parcels while they are out for delivery on the Lock Screen and Dynamic Island.",
   "liveActivity.settingTitle": "Live Activities",
   "liveActivity.systemDisabled": "Live Activities are disabled for this app in iPhone Settings.",
+  "linkapp.full": "Your deliveries are full. Archive or delete a few parcels, then add this one.",
   "native.account": "Account",
   "native.apnsTokenError": "Couldn’t connect this iPhone for alerts. Try again in Notification settings.",
   "native.appearance.dark": "Dark",

@@ -52,6 +52,56 @@ enum FriendInvitationLink {
     }
 }
 
+/// A parcel link, `/p/<id>`. The id is the capability. A name someone gave the parcel travels
+/// only after the `#`, which never reaches a server.
+struct ParcelLinkRoute: Equatable, Sendable {
+    let id: String
+    var name: String? = nil
+
+    private static let alphabet = Set("23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
+
+    static func validID(_ value: String) -> Bool {
+        value.count == 12 && value.allSatisfy(alphabet.contains)
+    }
+
+    init(id: String, name: String? = nil) {
+        self.id = id
+        self.name = name
+    }
+
+    init?(url: URL, baseURL: URL = AppConfiguration.current.apiBaseURL) {
+        guard url.user == nil, url.password == nil else { return nil }
+        let id: String
+        if url.scheme?.lowercased() == OAuthFlow.callbackScheme {
+            guard url.host?.lowercased() == "p", url.path.hasPrefix("/") else { return nil }
+            id = String(url.path.dropFirst())
+        } else {
+            guard url.scheme == baseURL.scheme, url.host?.lowercased() == baseURL.host?.lowercased(),
+                  url.port == baseURL.port, url.path.hasPrefix("/p/") else { return nil }
+            id = String(url.path.dropFirst(3))
+        }
+        guard Self.validID(id) else { return nil }
+        self.id = id
+        name = Self.name(inFragment: URLComponents(url: url, resolvingAgainstBaseURL: false)?.percentEncodedFragment)
+    }
+
+    /// `n=<percent-encoded name>`, cleaned to what a parcel's name may hold.
+    static func name(inFragment fragment: String?) -> String? {
+        guard let item = fragment?.split(separator: "&").first(where: { $0.hasPrefix("n=") }),
+              let decoded = String(item.dropFirst(2)).removingPercentEncoding else { return nil }
+        let line = decoded.unicodeScalars
+            .map { CharacterSet.controlCharacters.contains($0) || CharacterSet.newlines.contains($0) ? " " : String($0) }
+            .joined()
+            .trimmingCharacters(in: .whitespaces)
+        var name = ""
+        for character in line {
+            guard name.utf16.count + character.utf16.count <= 80 else { break }
+            name.append(character)
+        }
+        return name.trimmingCharacters(in: .whitespaces).nonEmpty
+    }
+}
+
 enum NativeRoute: Equatable {
     case parcel(UUID)
     case friend(UUID)

@@ -334,6 +334,21 @@ final class ParcelStore: ObservableObject {
         return parcel
     }
 
+    /// Keeps a parcel shared through a link in this account, under the name the link suggests.
+    /// The list is then reloaded, so the parcel is on it before the sheet closes.
+    func keep(_ link: ParcelLinkRoute) async throws -> ParcelLinkClaim {
+        guard session.user != nil else { throw DeliveryAPIError.authenticationExpired }
+        let generation = session.generation
+        let response = try await api.claimParcels(ClaimParcelsRequest(links: [ClaimParcelLink(id: link.id, label: link.name)]))
+        try session.checkGeneration(generation)
+        guard let claim = ParcelLinkClaim(response: response, linkID: link.id) else { throw DeliveryAPIError.invalidResponse }
+        switch claim {
+        case .added, .already: await load()
+        case .full, .unavailable: break
+        }
+        return claim
+    }
+
     func rename(_ parcel: Parcel, label: String) async throws {
         let generation = session.generation
         let cleaned = label.trimmingCharacters(in: .whitespacesAndNewlines)

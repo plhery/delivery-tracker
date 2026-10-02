@@ -121,6 +121,87 @@ final class AppRoutingTests: XCTestCase {
         XCTAssertNil(NativeRoute(remoteNotification: ["friend_id": friendID.uuidString]))
     }
 
+    func testParcelLinksOpenFromTheAppsOwnHostAndScheme() {
+        let base = URL(string: "https://delivery.plhery.com")!
+        let id = "k7Qm2xHd9RtW"
+        for text in ["https://delivery.plhery.com/p/" + id,
+                     "https://DELIVERY.plhery.com/p/" + id,
+                     "https://delivery.plhery.com/p/" + id + "?utm_source=chat",
+                     "https://delivery.plhery.com/p/" + id + "/",
+                     "swissdeliverytracker://p/" + id,
+                     "SwissDeliveryTracker://P/" + id] {
+            XCTAssertEqual(ParcelLinkRoute(url: URL(string: text)!, baseURL: base), ParcelLinkRoute(id: id), text)
+        }
+        // Another deployment answers on its own origin only, port included.
+        let local = URL(string: "http://localhost:3000")!
+        XCTAssertEqual(ParcelLinkRoute(url: URL(string: "http://localhost:3000/p/" + id)!, baseURL: local)?.id, id)
+        XCTAssertNil(ParcelLinkRoute(url: URL(string: "http://localhost:4000/p/" + id)!, baseURL: local))
+        XCTAssertNil(ParcelLinkRoute(url: URL(string: "https://delivery.plhery.com/p/" + id)!, baseURL: local))
+
+        for text in ["https://evil.example/p/" + id,
+                     "https://delivery.plhery.com.evil.example/p/" + id,
+                     "https://user@delivery.plhery.com/p/" + id,
+                     "http://delivery.plhery.com/p/" + id,
+                     "https://delivery.plhery.com:8443/p/" + id,
+                     "https://delivery.plhery.com/p/" + id + "/extra",
+                     "https://delivery.plhery.com/P/" + id,
+                     "https://delivery.plhery.com/x/p/" + id,
+                     "https://delivery.plhery.com/p/" + id + "%0A",
+                     "https://delivery.plhery.com/p/" + String(id.dropLast()),
+                     "https://delivery.plhery.com/p/" + id + "2",
+                     "https://delivery.plhery.com/p/",
+                     "https://delivery.plhery.com/i/" + id,
+                     "swissdeliverytracker://parcel/" + id,
+                     "swissdeliverytracker://p/" + id + "/extra",
+                     "swissdeliverytracker://p",
+                     "swissdeliverytracker://user@p/" + id,
+                     "otherapp://p/" + id] {
+            XCTAssertNil(ParcelLinkRoute(url: URL(string: text)!, baseURL: base), text)
+        }
+        // Lookalike characters are not in the alphabet, so a mistyped link is never sent.
+        for lookalike in ["0", "1", "I", "O", "l", "-", "_", "é"] {
+            XCTAssertFalse(ParcelLinkRoute.validID(String(id.dropLast()) + lookalike), lookalike)
+        }
+        XCTAssertTrue(ParcelLinkRoute.validID("23456789ABCD"))
+        XCTAssertTrue(ParcelLinkRoute.validID("HJKLMNPQRSTU"))
+        XCTAssertTrue(ParcelLinkRoute.validID("VWXYZabcdefg"))
+        XCTAssertTrue(ParcelLinkRoute.validID("hijkmnopqrst"))
+        XCTAssertTrue(ParcelLinkRoute.validID("uvwxyz222222"))
+
+        // A parcel link is not an invitation, and the other routes leave it alone.
+        let link = URL(string: "swissdeliverytracker://p/" + id)!
+        XCTAssertNil(NativeRoute(url: link))
+        XCTAssertFalse(FriendInvitationLink.isInvitation(link, baseURL: base))
+        XCTAssertFalse(FriendInvitationLink.isInvitation(URL(string: "https://delivery.plhery.com/p/" + id)!, baseURL: base))
+    }
+
+    func testAParcelLinkCarriesItsNameOnlyAfterTheHash() {
+        let base = URL(string: "https://delivery.plhery.com")!
+        let id = "k7Qm2xHd9RtW"
+        func name(_ fragment: String) -> String? {
+            ParcelLinkRoute(url: URL(string: "https://delivery.plhery.com/p/" + id + fragment)!, baseURL: base)?.name
+        }
+        XCTAssertEqual(name("#n=New%20sneakers"), "New sneakers")
+        XCTAssertEqual(name("#n=Caf%C3%A9%20%E2%98%95"), "Café ☕")
+        XCTAssertEqual(name("#x=1&n=Moon%20lamp"), "Moon lamp")
+        XCTAssertEqual(name("#n=a+b%26c"), "a+b&c")
+        XCTAssertEqual(name("?n=Query#n=Fragment"), "Fragment")
+        XCTAssertEqual(ParcelLinkRoute(url: URL(string: "swissdeliverytracker://p/" + id + "#n=Kind%20of%20Blue")!, baseURL: base),
+                       ParcelLinkRoute(id: id, name: "Kind of Blue"))
+        for fragment in ["", "#", "#n=", "#n=%20%20", "#name=Lamp", "#Lamp", "?n=Query"] {
+            XCTAssertNil(name(fragment), fragment)
+        }
+        // The link opens whatever follows the hash.
+        XCTAssertEqual(ParcelLinkRoute(url: URL(string: "https://delivery.plhery.com/p/" + id + "#anything")!, baseURL: base), ParcelLinkRoute(id: id))
+
+        // The name is cleaned to what a parcel's name may hold: one line, 80 characters.
+        XCTAssertEqual(ParcelLinkRoute.name(inFragment: "n=%20Line%0Aone%09two%20"), "Line one two")
+        XCTAssertEqual(ParcelLinkRoute.name(inFragment: "n=" + String(repeating: "a", count: 100)), String(repeating: "a", count: 80))
+        XCTAssertEqual(ParcelLinkRoute.name(inFragment: "n=" + String(repeating: "%F0%9F%93%A6", count: 50))?.utf16.count, 80)
+        XCTAssertNil(ParcelLinkRoute.name(inFragment: "n=%ZZ"))
+        XCTAssertNil(ParcelLinkRoute.name(inFragment: nil))
+    }
+
     func testParsesParcelDeepLink() {
         let parcelID = UUID()
         let url = URL(string: "swissdeliverytracker://parcel/\(parcelID.uuidString)")!

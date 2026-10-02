@@ -73,6 +73,7 @@ private struct DeliveryListView: View {
     @EnvironmentObject private var store: ParcelStore
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var localizer: Localizer
+    @EnvironmentObject private var links: ParcelLinkStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Environment(\.scenePhase) private var scenePhase
@@ -194,6 +195,7 @@ private struct DeliveryListView: View {
             openParcelNotification(AppDelegate.consumePendingParcelID() ?? (notification.object as? UUID))
         }
         .onOpenURL(perform: handleURL)
+        .onChange(of: links.arrival, initial: true) { _, arrival in receive(arrival) }
         .onChange(of: store.undoParcel?.id) { _, next in
             guard let next else { return }
             Task {
@@ -726,6 +728,32 @@ private struct DeliveryListView: View {
     private func openParcelNotification(_ parcelID: UUID?) {
         guard let parcelID else { return }
         path = [parcelID]
+    }
+
+    /// A parcel kept from a link arrives like one just added; one already followed opens.
+    private func receive(_ arrival: ParcelLinkStore.Arrival?) {
+        guard let arrival else { return }
+        links.consumeArrival()
+        let elsewhere = !path.isEmpty || showingAdd || showingAccount || showingFilters
+        showingAdd = false
+        showingAccount = false
+        showingFilters = false
+        switch arrival {
+        case .open(let parcelID):
+            path = [parcelID]
+        case .added(let parcelID):
+            path = []
+            let confirmation = localizer.text("link.added")
+            toast = ListToast(text: confirmation)
+            AccessibilityNotification.Announcement(confirmation).post()
+            guard let parcelID, scenePhase == .active else { return }
+            if !visibleParcels.contains(where: { $0.id == parcelID }) { clearFilters() }
+            Task {
+                // Returning to the list clears a pending reveal, so wait until it is back.
+                if elsewhere { try? await Task.sleep(for: .milliseconds(500)) }
+                revealParcelID = parcelID
+            }
+        }
     }
 
     private func handleURL(_ url: URL) {

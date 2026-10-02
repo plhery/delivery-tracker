@@ -8,6 +8,7 @@ struct SwissDeliveryTrackerApp: App {
     @StateObject private var localizer: Localizer
     @StateObject private var invitation = FriendInvitationStore()
     @StateObject private var friendsActivity = FriendsActivityStore()
+    @StateObject private var links: ParcelLinkStore
     @AppStorage(AppAppearance.storageKey) private var appearance = AppAppearance.defaultValue
 
     init() {
@@ -20,6 +21,11 @@ struct SwissDeliveryTrackerApp: App {
             session: session,
             localizer: localizer
         ))
+        #if DEBUG
+        _links = StateObject(wrappedValue: ParcelLinkStore.debugPreview() ?? ParcelLinkStore())
+        #else
+        _links = StateObject(wrappedValue: ParcelLinkStore())
+        #endif
         // Build lookup tables off the main thread before the first card or parcel needs them.
         Task.detached(priority: .utility) {
             _ = CarrierBrandAssets.shared
@@ -36,6 +42,7 @@ struct SwissDeliveryTrackerApp: App {
                 .environmentObject(localizer)
                 .environmentObject(invitation)
                 .environmentObject(friendsActivity)
+                .environmentObject(links)
                 .environment(\.locale, localizer.language.locale)
                 .background { AppWindowAppearance(appearance: appearance) }
                 .tint(Brand.accent)
@@ -49,6 +56,7 @@ struct RootView: View {
     @EnvironmentObject private var localizer: Localizer
     @EnvironmentObject private var invitation: FriendInvitationStore
     @EnvironmentObject private var friendsActivity: FriendsActivityStore
+    @EnvironmentObject private var links: ParcelLinkStore
     @Environment(\.scenePhase) private var scenePhase
     @State private var selectedTab = 0
     private let carrierCatalog = CarrierCatalog.shared
@@ -124,11 +132,8 @@ struct RootView: View {
 
     private var routedContent: some View {
         lifecycleContent
-        .onOpenURL { url in
-            if case .friend(let friendID) = NativeRoute(url: url), session.user != nil { friendsActivity.reveal(friendID) }
-            else { invitation.open(url) }
-        }
-        .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { if let url = $0.webpageURL { invitation.open(url) } }
+        .onOpenURL(perform: open)
+        .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { if let url = $0.webpageURL { open(url) } }
         .onChange(of: invitation.completed) { _, _ in selectedTab = 2 }
         .onChange(of: friendsActivity.presentationID) { _, _ in
             if friendsActivity.focusID != nil { selectedTab = 2 }
@@ -144,8 +149,36 @@ struct RootView: View {
         }
     }
 
-    var body: some View {
+    /// A parcel link opens as a sheet over whatever is on screen, signed in or not.
+    private var linkedContent: some View {
         routedContent
+        .background {
+            FrontmostSheet(isPresented: links.route != nil, onClose: links.close, onDismiss: links.dismissed) {
+                ParcelLinkSheet()
+                    .environmentObject(links)
+                    .environmentObject(session)
+                    .environmentObject(parcels)
+                    .environmentObject(localizer)
+            }
+            .accessibilityHidden(true)
+        }
+        // A link opened before signing in comes back once someone is signed in.
+        .onChange(of: session.user?.id, initial: true) { _, user in
+            if user != nil { links.resume() }
+        }
+        .onChange(of: links.arrival) { _, arrival in
+            if arrival != nil { selectedTab = 0 }
+        }
+    }
+
+    private func open(_ url: URL) {
+        if let link = ParcelLinkRoute(url: url) { links.open(link) }
+        else if case .friend(let friendID) = NativeRoute(url: url), session.user != nil { friendsActivity.reveal(friendID) }
+        else { invitation.open(url) }
+    }
+
+    var body: some View {
+        linkedContent
         .onReceive(NotificationCenter.default.publisher(for: .didReceiveAPNSToken)) { notification in
             guard let token = notification.object as? String else { return }
             Task {

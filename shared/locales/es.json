@@ -300,6 +300,7 @@
   "liveActivity.settingDescription": "Muestra automáticamente los paquetes en reparto en la pantalla de bloqueo y la Dynamic Island.",
   "liveActivity.settingTitle": "Actividades en directo",
   "liveActivity.systemDisabled": "Las actividades en directo están desactivadas para esta app en los ajustes del iPhone.",
+  "linkapp.full": "Tus entregas están llenas. Archiva o elimina algunos paquetes y luego añade este.",
   "native.account": "Cuenta",
   "native.apnsTokenError": "No se pudieron configurar los avisos en este iPhone. Reintenta en los ajustes de notificaciones.",
   "native.appearance.dark": "Oscuro",

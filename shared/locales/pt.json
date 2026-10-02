@@ -300,6 +300,7 @@
   "liveActivity.settingDescription": "Mostra automaticamente os envios em distribuição no ecrã bloqueado e na Dynamic Island.",
   "liveActivity.settingTitle": "Atividades em direto",
   "liveActivity.systemDisabled": "As atividades em direto estão desativadas para esta app nas definições do iPhone.",
+  "linkapp.full": "As tuas entregas estão cheias. Arquiva ou elimina alguns envios e depois adiciona este.",
   "native.account": "Conta",
   "native.apnsTokenError": "Não foi possível configurar os alertas neste iPhone. Tenta nas definições de notificações.",
   "native.appearance.dark": "Escuro",

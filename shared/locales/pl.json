@@ -300,6 +300,7 @@
   "liveActivity.settingDescription": "Automatycznie pokazuj przesyłki w doręczeniu na ekranie blokady i w Dynamic Island.",
   "liveActivity.settingTitle": "Aktywności na żywo",
   "liveActivity.systemDisabled": "Aktywności na żywo są wyłączone dla tej aplikacji w ustawieniach iPhone’a.",
+  "linkapp.full": "Twoje dostawy są pełne. Zarchiwizuj lub usuń kilka przesyłek, a potem dodaj tę.",
   "native.account": "Konto",
   "native.apnsTokenError": "Nie udało się skonfigurować powiadomień na tym iPhonie. Spróbuj w ustawieniach powiadomień.",
   "native.appearance.dark": "Ciemny",

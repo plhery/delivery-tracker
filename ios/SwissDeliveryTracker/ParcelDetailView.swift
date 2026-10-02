@@ -8,10 +8,8 @@ struct ParcelDetailView: View {
     @EnvironmentObject private var store: ParcelStore
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.openURL) private var openURL
 
-    @State private var showingFullJourney = true
     @State private var showingTitleEditor = false
     @State private var editedTitle = ""
     @State private var copiedNumber: String?
@@ -34,7 +32,7 @@ struct ParcelDetailView: View {
                     VStack(alignment: .leading, spacing: 20) {
                         liveParcelPass(parcel)
                         if catalog.tracksAutomatically(parcel.activeTrackingCarrier) || parcel.hasCarrierUpdate {
-                            journey(parcel)
+                            ParcelJournal(parcel: parcel, tint: identity(parcel).ink)
                         }
                         syncStatus(parcel, tint: identity(parcel).ink)
                     }
@@ -512,76 +510,6 @@ struct ParcelDetailView: View {
         .foregroundStyle(.secondary)
     }
 
-    private func journey(_ parcel: Parcel) -> some View {
-        let groups = journalDays(parcel)
-        let tint = identity(parcel).ink
-        let eventCount = parcel.trackingEvents.count
-        let currentEventID = parcel.currentEvent?.id
-        let syncing = parcel.displayStatus.syncing
-        return VStack(alignment: .leading, spacing: 0) {
-            Button {
-                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { showingFullJourney.toggle() }
-            } label: {
-                HStack(spacing: 12) {
-                    Text(localizer.text("timeline.label")).font(.subheadline.weight(.semibold))
-                    Spacer(minLength: 4)
-                    Text(localizer.text(eventCount == 1 ? "detail.updateCount.one" : "detail.updateCount.many", ["count": eventCount]))
-                        .font(.caption2).foregroundStyle(.secondary)
-                    Image(systemName: showingFullJourney ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 10, weight: .regular)).foregroundStyle(.secondary)
-                }
-                .frame(minHeight: 36)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityValue(localizer.text(showingFullJourney ? "design.lessJourney" : "design.fullJourney"))
-            if showingFullJourney {
-                if groups.isEmpty {
-                    Text(localizer.text(syncing ? "timeline.emptySyncing" : "timeline.empty"))
-                        .font(.footnote).foregroundStyle(.secondary).padding(.vertical, 12)
-                }
-                ForEach(groups) { group in
-                    Text(group.label)
-                        .font(.caption2).textCase(.uppercase).tracking(1)
-                        .foregroundStyle(.secondary).padding(.top, 22).padding(.bottom, 13)
-                        .accessibilityAddTraits(.isHeader)
-                    VStack(alignment: .leading, spacing: 18) {
-                        ForEach(group.events) { event in
-                            JournalEventRow(event: event, tint: tint,
-                                isCurrent: event.id == currentEventID,
-                                syncing: syncing)
-                        }
-                    }
-                }
-            }
-        }
-        .padding(.horizontal, 2)
-    }
-
-    private func journalDays(_ parcel: Parcel) -> [JournalDay] {
-        var groups: [JournalDay] = []
-        let calendar = Calendar.current
-        for event in parcel.sortedEvents {
-            let date = DateParser.date(event.occurredAt)
-            let key = date.map { String(calendar.startOfDay(for: $0).timeIntervalSince1970) } ?? event.occurredAt
-            if let index = groups.firstIndex(where: { $0.id == key }) {
-                groups[index].events.append(event)
-            } else {
-                let label: String
-                if let date {
-                    if calendar.isDateInToday(date) { label = localizer.text("time.today") }
-                    else if calendar.isDateInYesterday(date) { label = localizer.text("time.yesterday") }
-                    else {
-                        let year = calendar.component(.year, from: date)
-                        label = localizer.shortDate(date) + (year == calendar.component(.year, from: Date()) ? "" : " \(year)")
-                    }
-                } else { label = event.occurredAt }
-                groups.append(JournalDay(id: key, label: label, events: [event]))
-            }
-        }
-        return groups
-    }
-
     private func copy(_ value: String, carrier: CarrierID) {
         DeliveryAnalytics.shared.action("parcel-copy-tracking")
         UIPasteboard.general.string = carrier == .postlogistics
@@ -924,6 +852,85 @@ private struct ChangeCarrierView: View {
                 saving = false
             }
         }
+    }
+}
+
+/// A parcel's tracking history, newest first and grouped by day.
+struct ParcelJournal: View {
+    let parcel: Parcel
+    let tint: Color
+
+    @EnvironmentObject private var localizer: Localizer
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showingFullJourney = true
+
+    var body: some View {
+        let groups = journalDays(parcel)
+        let eventCount = parcel.trackingEvents.count
+        let currentEventID = parcel.currentEvent?.id
+        let syncing = parcel.displayStatus.syncing
+        return VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { showingFullJourney.toggle() }
+            } label: {
+                HStack(spacing: 12) {
+                    Text(localizer.text("timeline.label")).font(.subheadline.weight(.semibold))
+                    Spacer(minLength: 4)
+                    Text(localizer.text(eventCount == 1 ? "detail.updateCount.one" : "detail.updateCount.many", ["count": eventCount]))
+                        .font(.caption2).foregroundStyle(.secondary)
+                    Image(systemName: showingFullJourney ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 10, weight: .regular)).foregroundStyle(.secondary)
+                }
+                .frame(minHeight: 36)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(localizer.text(showingFullJourney ? "design.lessJourney" : "design.fullJourney"))
+            if showingFullJourney {
+                if groups.isEmpty {
+                    Text(localizer.text(syncing ? "timeline.emptySyncing" : "timeline.empty"))
+                        .font(.footnote).foregroundStyle(.secondary).padding(.vertical, 12)
+                }
+                ForEach(groups) { group in
+                    Text(group.label)
+                        .font(.caption2).textCase(.uppercase).tracking(1)
+                        .foregroundStyle(.secondary).padding(.top, 22).padding(.bottom, 13)
+                        .accessibilityAddTraits(.isHeader)
+                    VStack(alignment: .leading, spacing: 18) {
+                        ForEach(group.events) { event in
+                            JournalEventRow(event: event, tint: tint,
+                                isCurrent: event.id == currentEventID,
+                                syncing: syncing)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 2)
+    }
+
+    private func journalDays(_ parcel: Parcel) -> [JournalDay] {
+        var groups: [JournalDay] = []
+        let calendar = Calendar.current
+        for event in parcel.sortedEvents {
+            let date = DateParser.date(event.occurredAt)
+            let key = date.map { String(calendar.startOfDay(for: $0).timeIntervalSince1970) } ?? event.occurredAt
+            if let index = groups.firstIndex(where: { $0.id == key }) {
+                groups[index].events.append(event)
+            } else {
+                let label: String
+                if let date {
+                    if calendar.isDateInToday(date) { label = localizer.text("time.today") }
+                    else if calendar.isDateInYesterday(date) { label = localizer.text("time.yesterday") }
+                    else {
+                        let year = calendar.component(.year, from: date)
+                        label = localizer.shortDate(date) + (year == calendar.component(.year, from: Date()) ? "" : " \(year)")
+                    }
+                } else { label = event.occurredAt }
+                groups.append(JournalDay(id: key, label: label, events: [event]))
+            }
+        }
+        return groups
     }
 }
 

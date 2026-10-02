@@ -300,6 +300,7 @@
   "liveActivity.settingDescription": "Affiche les colis en livraison sur l’écran verrouillé et dans la Dynamic Island.",
   "liveActivity.settingTitle": "Activités en direct",
   "liveActivity.systemDisabled": "Les activités en direct sont désactivées pour cette app dans les réglages de l’iPhone.",
+  "linkapp.full": "Tes livraisons sont pleines. Archive ou supprime quelques colis, puis ajoute celui-ci.",
   "native.account": "Compte",
   "native.apnsTokenError": "Impossible de connecter cet iPhone aux alertes. Réessaie dans les réglages des notifications.",
   "native.appearance.dark": "Sombre",

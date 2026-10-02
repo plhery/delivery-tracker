@@ -71,6 +71,29 @@ final class DeliveryAPIClient {
         return name
     }
 
+    /// Reads a parcel link as a viewer: no sign-in, no cookies and never an owner key.
+    /// Nil when the link leads nowhere, whether it was forgotten, stopped or never existed.
+    static func publicParcel(linkID: String, configuration: AppConfiguration = .current, transport: URLSession = .shared) async throws -> PublicParcelResponse? {
+        var request = URLRequest(url: configuration.apiBaseURL.appending(path: "api/public/parcels").appending(path: linkID),
+                                 cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 15)
+        request.httpShouldHandleCookies = false
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        let (data, response) = try await transport.data(for: request)
+        guard let response = response as? HTTPURLResponse else { throw DeliveryAPIError.invalidResponse }
+        switch response.statusCode {
+        case 200:
+            do { return try JSONDecoder.deliveryTracker.decode(PublicParcelResponse.self, from: data) }
+            catch { throw DeliveryAPIError.invalidResponse }
+        case 404: return nil
+        case 429: throw DeliveryAPIError.rateLimited(retryAfterSeconds(response.value(forHTTPHeaderField: "Retry-After")))
+        default: throw DeliveryAPIError.serviceFailed(response.statusCode)
+        }
+    }
+
+    func claimParcels(_ value: ClaimParcelsRequest) async throws -> ClaimParcelsResponse {
+        try await request("/api/packages/claim", method: "POST", body: value)
+    }
+
     func listPackages() async throws -> [Parcel] {
         let response: PackageListResponse = try await request("/api/packages?includeArchived=true")
         return response.packages

@@ -300,6 +300,7 @@
   "liveActivity.settingDescription": "Zeige Pakete automatisch auf dem Sperrbildschirm und in der Dynamic Island, während sie in Zustellung sind.",
   "liveActivity.settingTitle": "Live-Aktivitäten",
   "liveActivity.systemDisabled": "Live-Aktivitäten sind für diese App in den iPhone-Einstellungen deaktiviert.",
+  "linkapp.full": "Deine Sendungen sind voll. Archiviere oder lösche ein paar Pakete und füge dieses dann hinzu.",
   "native.account": "Konto",
   "native.apnsTokenError": "Benachrichtigungen konnten auf diesem iPhone nicht eingerichtet werden. Versuche es in den Benachrichtigungseinstellungen erneut.",
   "native.appearance.dark": "Dunkel",
