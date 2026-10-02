@@ -9,7 +9,12 @@ const parcels = [
   [0.35, 120, -55, 20, 60], [0.6, 95, 100, 22, 10],
 ] as const;
 
-export function ParcelAddedBurst({ parcelId, onFinished }: { parcelId: string; onFinished: () => void }) {
+export function ParcelAddedBurst({ parcelId, focusCard = true, onFinished }: {
+  parcelId: string;
+  /** Whether the celebrating card takes the focus; an add that keeps the focus where it was says no. */
+  focusCard?: boolean;
+  onFinished: () => void;
+}) {
   const cloud = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const element = cloud.current;
@@ -47,7 +52,7 @@ export function ParcelAddedBurst({ parcelId, onFinished }: { parcelId: string; o
       launched = true;
       element!.dataset.phase = 'playing';
       target.dataset.celebrating = reduced ? 'highlight' : 'rumble';
-      button.focus({ preventScroll: true });
+      if (focusCard) button.focus({ preventScroll: true });
       // Animate the wrapper, leaving the button's swipe transform independent.
       const frames: Keyframe[] = reduced
         ? [{ filter: 'brightness(1)' }, { filter: 'brightness(1.08)', offset: 0.5 }, { filter: 'brightness(1)' }]
@@ -130,7 +135,7 @@ export function ParcelAddedBurst({ parcelId, onFinished }: { parcelId: string; o
       window.removeEventListener('popstate', finish);
       motion?.removeEventListener('change', finish);
     };
-  }, [parcelId, onFinished]);
+  }, [parcelId, focusCard, onFinished]);
 
   return createPortal(<div ref={cloud} className="parcel-added-burst" data-parcel-id={parcelId} data-phase="waiting" aria-hidden="true">
     {parcels.map(([, , , size], index) => <span key={index} style={{ fontSize: size }}><SmallPip /></span>)}

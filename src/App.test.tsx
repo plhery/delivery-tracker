@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import { ApiAuthenticationError } from './lib/apiClient';
@@ -15,6 +15,12 @@ function renderApp(repo: ParcelRepo = createDemoRepo(window.localStorage)) {
       <App />
     </ParcelsProvider>,
   );
+}
+
+/** Opens the Add sheet from the deliveries' field: Enter with nothing typed asks for the whole form. */
+async function openAddSheet(user: UserEvent) {
+  await user.type(await screen.findByRole('textbox', { name: 'Track a parcel' }), '{Enter}');
+  return screen.getByRole('dialog', { name: 'Add a parcel' });
 }
 
 function renderSignedInApp() {
@@ -60,8 +66,7 @@ describe('App', () => {
     const add = vi.spyOn(repo, 'add');
     const user = userEvent.setup();
     renderApp(repo);
-    await user.click(await screen.findByRole('button', { name: 'Add a parcel' }));
-    const sheet = screen.getByRole('dialog', { name: 'Add a parcel' });
+    const sheet = await openAddSheet(user);
     await user.type(within(sheet).getByLabelText('Tracking number or link'), 'LX123456785NL');
     expect(within(sheet).getByText('PostNL', { selector: 'strong' })).toBeInTheDocument();
     await user.click(within(sheet).getByRole('button', { name: 'Add parcel' }));
@@ -75,8 +80,7 @@ describe('App', () => {
     const add = vi.spyOn(repo, 'add');
     const user = userEvent.setup();
     renderApp(repo);
-    await user.click(await screen.findByRole('button', { name: 'Add a parcel' }));
-    const sheet = screen.getByRole('dialog', { name: 'Add a parcel' });
+    const sheet = await openAddSheet(user);
     await user.type(within(sheet).getByLabelText('Tracking number or link'), 'LF123456785DE');
     expect(within(sheet).getByText('DHL', { exact: true })).toBeInTheDocument();
     expect(within(sheet).queryByText('We’ll check DHL for updates automatically.')).not.toBeInTheDocument();
@@ -99,8 +103,7 @@ describe('App', () => {
     repo.list = vi.fn().mockResolvedValue([parcel]);
     const user = userEvent.setup();
     renderApp(repo);
-    await user.click(await screen.findByRole('button', { name: 'Add a parcel' }));
-    const sheet = screen.getByRole('dialog', { name: 'Add a parcel' });
+    const sheet = await openAddSheet(user);
     await user.type(within(sheet).getByLabelText('Tracking number or link'), parcel.trackingNumber);
     expect(within(sheet).getByText('Unknown postal carrier', { exact: true })).toBeInTheDocument();
     expect(within(sheet).getByRole('button', { name: 'Add parcel' })).toBeEnabled();
@@ -653,8 +656,7 @@ describe('App', () => {
     renderApp();
     await screen.findByText('Coffee beans ☕');
 
-    await user.click(screen.getByRole('button', { name: /add a parcel/i }));
-    const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
+    const sheet = await openAddSheet(user);
 
     await user.type(
       within(sheet).getByLabelText(/^name/i),
@@ -677,6 +679,68 @@ describe('App', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('adds a pasted number at once from the field, and takes it back with “Don’t keep”', async () => {
+    const repo = createDemoRepo(window.localStorage);
+    const deletePermanently = vi.spyOn(repo, 'deletePermanently');
+    const user = userEvent.setup();
+    renderApp(repo);
+    await screen.findByText('Coffee beans ☕');
+    // The field took the place of the header's Add button.
+    expect(screen.queryByRole('button', { name: 'Add a parcel' })).not.toBeInTheDocument();
+    const field = screen.getByRole('textbox', { name: 'Track a parcel' });
+    await user.click(field);
+    await user.paste('Track 99.34.111111.22222222');
+
+    const toast = (await screen.findByText('Added to your deliveries')).closest<HTMLElement>('.undo-toast')!;
+    expect(toast).toHaveAttribute('role', 'status');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(field).toHaveValue('');
+    expect(field).toHaveFocus();
+    const added = (await repo.list()).find((parcel) => parcel.trackingNumber === '993411111122222222')!;
+    expect(added).toMatchObject({ carrier: 'swiss-post' });
+    expect(document.querySelector(`.parcel-card-swipe[data-parcel-id="${added.id}"]`)).toBeInTheDocument();
+
+    await user.click(within(toast).getByRole('button', { name: 'Don’t keep' }));
+    await waitFor(() => expect(deletePermanently).toHaveBeenCalledWith(added.id));
+    expect(await screen.findByText('Removed from your deliveries')).toBeInTheDocument();
+    expect(screen.queryByText('Added to your deliveries')).not.toBeInTheDocument();
+    expect(document.querySelector(`.parcel-card-swipe[data-parcel-id="${added.id}"]`)).not.toBeInTheDocument();
+    expect(await repo.list()).not.toContainEqual(expect.objectContaining({ id: added.id }));
+    expect(field).toHaveFocus();
+  });
+
+  it('opens the parcel when the field gets a number the deliveries already hold', async () => {
+    const repo = createDemoRepo(window.localStorage);
+    const add = vi.spyOn(repo, 'add');
+    const user = userEvent.setup();
+    renderApp(repo);
+    await screen.findByText('Coffee beans ☕');
+    await user.type(screen.getByRole('textbox', { name: 'Track a parcel' }), '99.34.123456.78901234{Enter}');
+
+    expect(await screen.findByRole('dialog', { name: 'Coffee beans ☕' })).toBeInTheDocument();
+    expect(screen.getByText('You already follow this parcel')).toBeInTheDocument();
+    expect(add).not.toHaveBeenCalled();
+  });
+
+  it('hands a text the field cannot settle to the Add sheet, and gets the focus back', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await screen.findByText('Coffee beans ☕');
+    const field = screen.getByRole('textbox', { name: 'Track a parcel' });
+    await user.click(field);
+    await user.paste('TBA123456789012');
+
+    const sheet = await screen.findByRole('dialog', { name: 'Add a parcel' });
+    expect(within(sheet).getByLabelText('Tracking number or link')).toHaveValue('TBA123456789012');
+    expect(within(sheet).getByRole('button', { name: 'Add parcel' })).toBeDisabled();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(field).toHaveValue('');
+    expect(field).toHaveFocus();
+    // The sheet opened from elsewhere starts empty again.
+    expect(within(await openAddSheet(user)).getByLabelText('Tracking number or link')).toHaveValue('');
+  });
+
   it('offers an optional DPD postcode and submits only four digits', async () => {
     const base = createDemoRepo(window.localStorage);
     const add = vi.fn(base.add);
@@ -684,8 +748,7 @@ describe('App', () => {
     renderApp({ ...base, add });
     await screen.findByText('Coffee beans ☕');
 
-    await user.click(screen.getByRole('button', { name: /add a parcel/i }));
-    const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
+    const sheet = await openAddSheet(user);
     await user.type(
       within(sheet).getByLabelText(/tracking number/i),
       '06080000000002',
@@ -722,8 +785,7 @@ describe('App', () => {
     renderApp({ ...base, add });
     await screen.findByText('Coffee beans ☕');
 
-    await user.click(screen.getByRole('button', { name: /add a parcel/i }));
-    const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
+    const sheet = await openAddSheet(user);
     await user.type(within(sheet).getByLabelText(/tracking number/i), '06080000000001');
     await pickCarrier(user, within(sheet).getByRole('button', { name: /^Detect automatically/ }), 'DPD');
     await user.clear(within(sheet).getByLabelText(/delivery postcode/i));
@@ -750,8 +812,7 @@ describe('App', () => {
     renderApp(repo);
     await screen.findByText('Previous DPD parcel');
 
-    await user.click(screen.getByRole('button', { name: /add a parcel/i }));
-    const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
+    const sheet = await openAddSheet(user);
     await user.type(
       within(sheet).getByLabelText(/tracking number/i),
       '06080000000003',
@@ -778,8 +839,7 @@ describe('App', () => {
     renderApp({ ...repo, add });
     await screen.findByText('Previous DPD parcel');
 
-    await user.click(screen.getByRole('button', { name: /add a parcel/i }));
-    const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
+    const sheet = await openAddSheet(user);
     await user.type(within(sheet).getByLabelText(/tracking number/i), '76434219');
 
     await user.click(within(sheet).getByRole('button', { name: /^Detect automatically/ }));
@@ -887,8 +947,7 @@ describe('App', () => {
     renderApp({ ...base, add });
     await screen.findByText('Coffee beans ☕');
 
-    await user.click(screen.getByRole('button', { name: /add a parcel/i }));
-    const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
+    const sheet = await openAddSheet(user);
     await user.type(within(sheet).getByLabelText(/tracking number/i), 'ambiguous-123');
     await pickCarrier(user, within(sheet).getByRole('button', { name: /^Detect automatically/ }), 'Planzer');
     expect(within(sheet).getByText(/Planzer/i, { selector: 'strong' })).toBeInTheDocument();
@@ -908,8 +967,7 @@ describe('App', () => {
     renderApp({ ...base, add });
     await screen.findByText('Coffee beans ☕');
 
-    await user.click(screen.getByRole('button', { name: /add a parcel/i }));
-    const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
+    const sheet = await openAddSheet(user);
     await user.type(
       within(sheet).getByLabelText(/tracking number/i),
       '91346097123456789012',
@@ -934,8 +992,7 @@ describe('App', () => {
     renderApp({ ...base, add });
     await screen.findByText('Coffee beans ☕');
 
-    await user.click(screen.getByRole('button', { name: /add a parcel/i }));
-    const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
+    const sheet = await openAddSheet(user);
     await user.type(
       within(sheet).getByLabelText(/tracking number or link/i),
       'https://www.dpdgroup.com/ch/mydpd/my-parcels/incoming?parcelNumber=06080000000002',
@@ -964,8 +1021,7 @@ describe('App', () => {
     renderApp({ ...base, add });
     await screen.findByText('Coffee beans ☕');
 
-    await user.click(screen.getByRole('button', { name: /add a parcel/i }));
-    const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
+    const sheet = await openAddSheet(user);
     const trackingUrl =
       'https://trackandtrace.planzergroup.com/shared/sendungen/999.90.03316119?accessKey=abcdefghijklmnopqrstuvwxyzABCDEFGH';
     await user.type(within(sheet).getByLabelText(/tracking number or link/i), trackingUrl);
@@ -989,8 +1045,7 @@ describe('App', () => {
     renderApp({ ...base, add });
     await screen.findByText('Coffee beans ☕');
 
-    await user.click(screen.getByRole('button', { name: /add a parcel/i }));
-    const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
+    const sheet = await openAddSheet(user);
     const trackingUrl =
       'https://customeriberia.dachser.com/customerarea/utilidades/seguimiento-publico/detalle?cliente=generico&numeroUnico=9010000001234&fecha=20260513&clave=TESTKEY9';
     await user.type(within(sheet).getByLabelText(/tracking number or link/i), trackingUrl);
@@ -1015,8 +1070,7 @@ describe('App', () => {
     renderApp({ ...base, add });
     await screen.findByText('Coffee beans ☕');
 
-    await user.click(screen.getByRole('button', { name: /add a parcel/i }));
-    const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
+    const sheet = await openAddSheet(user);
     await user.type(
       within(sheet).getByLabelText(/tracking number/i),
       '999.90.03316119',
@@ -1047,8 +1101,7 @@ describe('App', () => {
     renderApp({ ...base, list });
     await screen.findByText('Coffee beans ☕');
 
-    await user.click(screen.getByRole('button', { name: /add a parcel/i }));
-    const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
+    const sheet = await openAddSheet(user);
     await user.type(within(sheet).getByLabelText(/^name/i), 'Fondue set 🫕');
     await user.type(within(sheet).getByLabelText(/tracking number/i), '99.34.111111.22222222');
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
@@ -1064,8 +1117,7 @@ describe('App', () => {
     renderApp({ ...base, add: vi.fn().mockRejectedValue(new Error('Duplicate parcel')) });
     await screen.findByText('Coffee beans ☕');
 
-    await user.click(screen.getByRole('button', { name: /add a parcel/i }));
-    const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
+    const sheet = await openAddSheet(user);
     await user.type(within(sheet).getByLabelText(/tracking number/i), '123456');
     await user.click(within(sheet).getByRole('button', { name: /add parcel/i }));
 
@@ -1078,8 +1130,7 @@ describe('App', () => {
     renderApp();
     await screen.findByText('Coffee beans ☕');
 
-    await user.click(screen.getByRole('button', { name: /add a parcel/i }));
-    const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
+    const sheet = await openAddSheet(user);
     await user.type(
       within(sheet).getByLabelText(/tracking number/i),
       '993412345678901234',
@@ -1101,8 +1152,7 @@ describe('App', () => {
     renderApp();
     await screen.findByText('Coffee beans ☕');
 
-    await user.click(screen.getByRole('button', { name: /add a parcel/i }));
-    const sheet = screen.getByRole('dialog', { name: /add a parcel/i });
+    const sheet = await openAddSheet(user);
     expect(
       within(sheet).getByRole('button', { name: /add parcel/i }),
     ).toBeDisabled();
@@ -1115,9 +1165,9 @@ describe('App', () => {
   it('isolates the add sheet, focuses its primary field, and restores focus', async () => {
     const user = userEvent.setup();
     renderApp();
-    const trigger = await screen.findByRole('button', { name: /add a parcel/i });
+    const trigger = await screen.findByRole('textbox', { name: 'Track a parcel' });
 
-    await user.click(trigger);
+    await user.type(trigger, '{Enter}');
 
     const dialog = screen.getByRole('dialog', { name: /add a parcel/i });
     expect(dialog).toHaveAttribute('aria-modal', 'true');

@@ -64,16 +64,20 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .app__navigation[data-selection-ready] button[aria-current="page"] { background: transparent; box-shadow: none; }
 .app__navigation button:active { scale: .96; }
 .app__navigation svg { width: 18px; height: 18px; }
-.app__add-button span { display: none; }
 /* Keep the header and desktop tabs the same size on every page so the pill can
    glide without the navigation shifting underneath it. */
 @media (min-width: 761px) {
-  .app__navigation { background: transparent; gap: 5px; padding: 0; }
+  .app__navigation { background: transparent; gap: 5px; padding: 0; margin-top: 10px; }
   .app__navigation button { padding: 8px 12px; min-height: 40px; font-weight: 500; font-size: 12px; }
   .app__navigation-selection { background: var(--control); box-shadow: none; }
-  .app__add-button span { display: inline; font-size: 12px; font-weight: 500; }
+  /* The field stands between the name and the account, above the tabs, on every page; the tabs name the page. */
+  .app__header { display: grid; grid-template-columns: minmax(max-content, 1fr) minmax(0, 480px) minmax(max-content, 1fr); align-items: center; gap: 4px 12px; padding-top: calc(env(safe-area-inset-top) + 18px); }
+  .app__masthead { display: contents; }
+  .app__title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .app__header > .deliveries-field { grid-column: 2; grid-row: 1; }
+  /* What scrolls into view clears the taller header. */
+  html { scroll-padding-top: 140px; }
 }
-.app__add-button { display: flex; justify-content: center; align-items: center; gap: 7px; background: transparent; border-radius: 14px; min-height: 44px; padding: 8px; font-weight: 600; font-size: 13px; }
 .account-trigger { background: var(--yellow); color: var(--on-yellow); width: 36px; height: 36px; padding: 9px; margin: 4px; font-weight: 700; font-size: 14px; }
 .account-trigger svg { width: 17px; height: 17px; }
 .demo-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 46px; padding: 5px 32px; color: var(--ink-soft); border-bottom: 1px solid var(--line); font-size: 12px; }
@@ -540,7 +544,7 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 }
 @keyframes parcel-shadow { 0%, 100% { transform: scaleX(1); opacity: .08; } 50% { transform: scaleX(.87); opacity: .045; } }
 @media (hover: hover) {
-  .icon-button:hover, .sheet__close:hover, .detail__title-edit:hover, .app__add-button:hover, .field__inline-action:hover { background: var(--control); }
+  .icon-button:hover, .sheet__close:hover, .detail__title-edit:hover, .field__inline-action:hover { background: var(--control); }
   .button--primary:hover { filter: brightness(1.025); }
   .parcel-card-swipe:not([data-swipe="dragging"]) .parcel-card:hover .parcel-stamp { scale: 1.025; }
   .postage-stamp, .parcel-stamp { transition: scale .18s ease-out; }
@@ -553,8 +557,11 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 
 @media (max-width: 760px) {
   .app { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
-  .app__header { padding: env(safe-area-inset-top) 20px 0; }
-  .app__masthead { min-height: 64px; gap: 14px; padding: 0; }
+  /* Only the title row stays in view: the field under it scrolls away with the deliveries. */
+  .app__header { display: contents; }
+  .app__masthead { position: sticky; top: 0; z-index: 25; min-height: calc(64px + env(safe-area-inset-top)); gap: 14px; padding: env(safe-area-inset-top) 20px 0; background: var(--canvas); }
+  .app__header > .deliveries-field { margin: 4px 20px 6px; }
+  .app:not(.app--deliveries) .app__header > .deliveries-field { display: none; }
   .app__title { font-size: 23px; }
   .app__navigation { justify-self: auto; position: fixed; z-index: 30; bottom: max(14px, env(safe-area-inset-bottom)); left: 50%; translate: -50% 0; background: var(--paper); padding: 5px; border: 1px solid var(--line); border-radius: 24px; box-shadow: 0 4px 18px rgb(0 0 0 / 9%); width: 288px; max-width: calc(100% - 48px); gap: 5px; }
   .app__navigation button { flex: 1; min-width: 0; min-height: 49px; flex-direction: column; gap: 4px; padding: 6px 8px; font-size: 10px; border-radius: 19px; }
@@ -564,8 +571,6 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
   .app__brand > .peek-mark { display: block; }
   .app__brand .peek-lockup { display: none; }
   .app__actions { gap: 10px; }
-  .app__add-button { padding: 8px; border-radius: 50%; width: 40px; min-height: 40px; background: var(--control); }
-  .app__add-button span { display: none; }
   .account-trigger { margin: 0; }
   .demo-banner { margin: 0 20px; border-top: 1px solid var(--line); padding: 2px 0; min-height: 40px; font-size: 11px; }
   .demo-banner button { font-size: 11px; }
@@ -619,8 +624,8 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
   .passport-loading { grid-template-columns: 1fr; }
 }
 @media (max-width: 360px) {
-  .app__header { padding-left: 16px; padding-right: 16px; }
-  .app__masthead { gap: 9px; }
+  .app__masthead { gap: 9px; padding-left: 16px; padding-right: 16px; }
+  .app__header > .deliveries-field { margin-left: 16px; margin-right: 16px; }
   .app__content { padding-left: 16px; padding-right: 16px; }
   .postage-stamp { width: 62px; height: 76px; }
   .parcel-card__label { font-size: 15px; }

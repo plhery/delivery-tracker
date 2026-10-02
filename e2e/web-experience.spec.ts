@@ -99,7 +99,9 @@ test('leads every header with the name: the lockup where it stands alone, the ma
   const mark = page.locator('.app__brand .peek-mark:visible');
   await expect(mark).toHaveCSS('width', phone ? '30px' : '28px');
   await expect(mark).toHaveCSS('stroke', 'none');
-  await expect(page.getByRole('button', { name: 'Add a parcel', exact: true })).toBeVisible();
+  // The field stands under a phone's title row and inside a wide screen's header.
+  await expect(page.getByRole('textbox', { name: 'Track a parcel' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add a parcel', exact: true })).toHaveCount(0);
 });
 
 test('Pip blinks on the front door’s closed parcel, and keeps still when motion is reduced', async ({ page }) => {
@@ -215,7 +217,8 @@ test('keeps language and account consistent across deliveries, Passport, and par
   await expect(page.getByRole('dialog')).toContainText('Apparence');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Ajouter un colis', exact: true }).click();
+  await page.getByRole('button', { name: 'Livraisons', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Suivre un colis' }).press('Enter');
   const sheet = page.getByRole('dialog', { name: 'Ajouter un colis' });
   await expect(sheet.locator('#add-parcel-tracking')).toBeFocused();
   await sheet.locator('#add-parcel-tracking').fill('993411111122222222');
@@ -310,7 +313,8 @@ test('respects reduced motion while retaining every action', async ({ page }) =>
   await expect(page.locator('.arrival .parcel-illustration__delivery-card')).toHaveCSS('opacity', '1');
   expect(await page.locator('.parcel-illustration__body').evaluate((element) => getComputedStyle(element).animationIterationCount)).not.toBe('infinite');
   await page.getByRole('button', { name: 'Explore the demo' }).click();
-  await page.getByRole('button', { name: 'Add a parcel', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Track a parcel' }).press('Enter');
+  await expect(page.getByRole('dialog', { name: 'Add a parcel' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
@@ -322,13 +326,17 @@ test('keeps every screen within a narrow viewport in dark mode', async ({ page }
   await noOverflow(page);
   await page.getByRole('button', { name: 'Passport', exact: true }).click();
   await noOverflow(page);
-  await page.getByRole('button', { name: 'Add a parcel', exact: true }).click();
-  await page.getByLabel('Tracking number or link').fill('hello there');
+  await page.getByRole('button', { name: 'Deliveries', exact: true }).click();
+  // What the field cannot read goes to the Add sheet as typed.
+  const field = page.getByRole('textbox', { name: 'Track a parcel' });
+  await field.fill('hello there');
+  await noOverflow(page);
+  await field.press('Enter');
+  await expect(page.getByLabel('Tracking number or link')).toHaveValue('hello there');
   await expect(page.getByRole('button', { name: 'Add parcel', exact: true })).toBeDisabled();
   await noOverflow(page);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Deliveries', exact: true }).click();
   await page.getByText('Coffee beans ☕', { exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Coffee beans ☕' })).toBeVisible();
   await noOverflow(page);

@@ -156,6 +156,10 @@ are left to the universals.
   before saving; for a carrier picked by hand it only points out the one that has the
   parcel. Several answers ask the user to choose. Automatic detection stays a valid
   choice throughout, and the check never holds the Add button.
+- **In the deliveries' field.** A paste, or Enter after typing, asks the same route when
+  the number's shape fits several carriers, and waits four seconds at most. A single
+  answer adds the parcel with that carrier at once; several answers, none, or a carrier
+  that requires an input open the Add sheet with the text instead.
 - **In routing.** When the filed carrier cannot track the number (no adapter of its own,
   or its adapter answered not-found; a transient failure does not count), the router asks
   before the universals, never another network of the filed carrier's brand, for open
