@@ -58,6 +58,8 @@ final class ParcelStore: ObservableObject {
     private let api: DeliveryAPIClient
     private let liveActivityRevocations: LiveActivityRevocations
     private let demo: DemoRepository
+    private let demoShares = DemoParcelShares()
+    private let shareNotes = ParcelShareNotes()
     private let deliveryWidgetStore: DeliveryWidgetSharedStore?
     private let cache = ParcelCache()
     private var pollingTask: Task<Void, Never>?
@@ -130,6 +132,8 @@ final class ParcelStore: ObservableObject {
             try? liveActivityRevocations.queue()
             liveActivityRevocations.retry()
             cache.delete(userID: cacheOwnerID)
+            // The words its links carried leave the device with the account.
+            shareNotes.forgetAll()
             UIApplication.shared.unregisterForRemoteNotifications()
             AppDelegate.clearDeviceToken()
             UserDefaults.standard.set(true, forKey: notificationOptOutKey)
@@ -349,6 +353,34 @@ final class ParcelStore: ObservableObject {
         return claim
     }
 
+    /// How the share sheet reaches this parcel's link: through the service, or the demo's own
+    /// made-up links, which lead nowhere.
+    func shareClient(for parcel: Parcel) -> ParcelShareModel.Client {
+        let id = parcel.id
+        return ParcelShareModel.Client(
+            current: { [self] in
+                if isDemo { return demoShares.link(for: id) }
+                let generation = session.generation
+                let link = try await api.parcelShare(id: id)
+                try session.checkGeneration(generation)
+                return link
+            },
+            share: { [self] settings in
+                if isDemo { return demoShares.share(id, showNumber: settings.showNumber, gift: settings.gift) }
+                let generation = session.generation
+                let link = try await api.shareParcel(id: id, ShareParcelRequest(showNumber: settings.showNumber, gift: settings.gift))
+                try session.checkGeneration(generation)
+                return link
+            },
+            stop: { [self] in
+                if isDemo { demoShares.stop(id); return }
+                let generation = session.generation
+                try await api.stopSharingParcel(id: id)
+                try session.checkGeneration(generation)
+            }
+        )
+    }
+
     func rename(_ parcel: Parcel, label: String) async throws {
         let generation = session.generation
         let cleaned = label.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -437,9 +469,15 @@ final class ParcelStore: ObservableObject {
 
     func permanentlyDelete(_ parcel: Parcel) async throws {
         let generation = session.generation
-        if isDemo { try demo.permanentlyDelete(id: parcel.id) }
-        else { try await api.permanentlyDelete(id: parcel.id) }
+        if isDemo {
+            try demo.permanentlyDelete(id: parcel.id)
+            demoShares.stop(parcel.id)
+        } else {
+            try await api.permanentlyDelete(id: parcel.id)
+        }
         try session.checkGeneration(generation)
+        // What its link carried goes with the parcel.
+        shareNotes.forget(parcel.id)
         mutationRevision += 1
         parcels.removeAll { $0.id == parcel.id }
         persistCache()
@@ -535,6 +573,8 @@ final class ParcelStore: ObservableObject {
         DeliveryAnalytics.shared.action("demo-reset")
         guard isDemo else { return }
         demo.reset()
+        demoShares.reset()
+        shareNotes.forgetAll()
         undoParcel = nil
         await endAllDeliveryLiveActivities()
         parcels = demo.list()

@@ -977,6 +977,8 @@ struct UnwrappingParcel: View, Animatable {
     var pressed = false
     var celebrating = false
     var senderName: String? = nil
+    /// Wrapped as a gift: a lilac ribbon tied in a bow on its lid, and a gift on the card inside.
+    var ribbon = false
     @EnvironmentObject private var localizer: Localizer
 
     var animatableData: Double {
@@ -1027,6 +1029,17 @@ struct UnwrappingParcel: View, Animatable {
                             Text(localizer.text("friends.from")).font(.system(size: 8))
                             Text(senderName).font(.system(size: 17, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.45)
                             Capsule().fill(Color(hex: "#B39BC7")).frame(width: 29, height: 1)
+                        } else if ribbon {
+                            VStack(spacing: 9) {
+                                Image(systemName: "gift")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(Color(hex: "#7C6787"))
+                                    .frame(width: 24, height: 24)
+                                    .background(Color(hex: "#EFE3F1"), in: Circle())
+                                Capsule().fill(Color(hex: "#DAD7CE")).frame(width: 47, height: 4)
+                                Capsule().fill(Color(hex: "#E7E4DC")).frame(width: 29, height: 4)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                         } else {
                         Path { path in
                             path.move(to: CGPoint(x: 10, y: 19))
@@ -1094,7 +1107,8 @@ struct UnwrappingParcel: View, Animatable {
 
                     // Pip's face. The open front flaps hang over the left side, so it is drawn after them,
                     // and its eyes turn into happy arcs as the box opens.
-                    KraftPipFace(happy: phase(0.2, 0.3))
+                    // A ribbon runs where Pip smiles: until the box opens, the eyes say it all.
+                    KraftPipFace(happy: phase(0.2, 0.3), smile: ribbon ? phase(0.2, 0.3) : 1)
 
                     // The tape tears out of sight as the flaps open.
                     polygon([(96, 122), (109, 115), (204, 163), (191, 170)])
@@ -1107,6 +1121,11 @@ struct UnwrappingParcel: View, Animatable {
                         path.addLine(to: CGPoint(x: 197.5, y: 166))
                     }
                     .stroke(Color(hex: "#AF9474").opacity(max(0, 0.6 - open * 3)), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    if ribbon {
+                        // The ribbon comes off as the flaps open.
+                        Canvas { context, _ in PipArtwork.ribbon(context) }
+                            .opacity(max(0, 1 - open * 4))
+                    }
                     ParcelStarBurst(active: celebrating)
                 }
                 .frame(width: 300, height: 310)

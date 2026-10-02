@@ -196,6 +196,11 @@ private struct DeliveryListView: View {
         }
         .onOpenURL(perform: handleURL)
         .onChange(of: links.arrival, initial: true) { _, arrival in receive(arrival) }
+        #if DEBUG
+        .task {
+            if let parcel = ParcelSharePreview.parcel(in: store.parcels) { path = [parcel.id] }
+        }
+        #endif
         .onChange(of: store.undoParcel?.id) { _, next in
             guard let next else { return }
             Task {

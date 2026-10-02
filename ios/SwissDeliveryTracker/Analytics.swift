@@ -161,6 +161,7 @@ final class DeliveryAnalytics {
 struct AnalyticsLifecycleObserver: View {
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var invitation: FriendInvitationStore
+    @EnvironmentObject private var links: ParcelLinkStore
     @EnvironmentObject private var localizer: Localizer
     @Environment(\.scenePhase) private var phase
 
@@ -168,6 +169,9 @@ struct AnalyticsLifecycleObserver: View {
         if session.isDemo { return .demo }
         return session.user == nil ? .anonymous : .account
     }
+    /// The screen a parcel link's sheet covers, to return to when it closes.
+    @State private var beneathLink: String?
+
     private var screen: String {
         if invitation.isPresenting { return "invitation" }
         switch session.state {
@@ -180,7 +184,22 @@ struct AnalyticsLifecycleObserver: View {
         Color.clear.frame(width: 0, height: 0)
             .task { await DeliveryAnalytics.shared.start() }
             .onChange(of: screen + mode.rawValue, initial: true) { _, _ in
-                DeliveryAnalytics.shared.view(screen, mode: mode)
+                if beneathLink == nil {
+                    DeliveryAnalytics.shared.view(screen, mode: mode)
+                } else {
+                    beneathLink = screen
+                    DeliveryAnalytics.shared.view("parcel-link", mode: mode)
+                }
+            }
+            // A parcel link is one screen, whatever its address, over the screen it was opened on.
+            .onChange(of: links.route != nil, initial: true) { _, open in
+                if open {
+                    beneathLink = DeliveryAnalytics.shared.screen
+                    DeliveryAnalytics.shared.view("parcel-link", mode: mode)
+                } else if let beneath = beneathLink {
+                    beneathLink = nil
+                    DeliveryAnalytics.shared.view(beneath, mode: mode)
+                }
             }
             .onChange(of: phase) { _, phase in
                 if phase == .active {

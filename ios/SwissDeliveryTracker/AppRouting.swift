@@ -86,21 +86,118 @@ enum FriendInvitationLink {
     }
 }
 
-/// A parcel link, `/p/<id>`. The id is the capability. A name someone gave the parcel travels
-/// only after the `#`, which never reaches a server.
+/// What a parcel link carries after its `#`, which never reaches a server: the parcel's name
+/// (`n`), and for a gift a note (`g`) and who it is from (`f`).
+struct ParcelLinkWords: Equatable, Sendable {
+    var name: String? = nil
+    var note: String? = nil
+    var from: String? = nil
+
+    /// The longest note and signature a link carries, in Unicode scalars as the site counts them.
+    static let noteLimit = 280
+    static let fromLimit = 60
+    /// A parcel's name holds 80 UTF-16 units, the length its account accepts.
+    static let nameLimit = 80
+
+    init(name: String? = nil, note: String? = nil, from: String? = nil) {
+        self.name = name
+        self.note = note
+        self.from = from
+    }
+
+    /// Reads `n=<name>&g=<note>&f=<from>`, each percent-encoded and cleaned to what it may hold.
+    init(fragment: String?) {
+        let parts = fragment?.split(separator: "&") ?? []
+        func value(_ key: String) -> String? {
+            parts.first { $0.hasPrefix(key + "=") }.flatMap { String($0.dropFirst(key.count + 1)).removingPercentEncoding }
+        }
+        name = value("n").flatMap(Self.cleanName)
+        note = value("g").flatMap { Self.clean($0, limit: Self.noteLimit) }
+        from = value("f").flatMap { Self.clean($0, limit: Self.fromLimit) }
+    }
+
+    /// The same words as the `#` part of an address, encoded as the site encodes them. Nil when there are none.
+    var fragment: String? {
+        let parts = [("n", name.flatMap(Self.cleanName)),
+                     ("g", note.flatMap { Self.clean($0, limit: Self.noteLimit) }),
+                     ("f", from.flatMap { Self.clean($0, limit: Self.fromLimit) })]
+            .compactMap { key, value in
+                value.flatMap { $0.addingPercentEncoding(withAllowedCharacters: Self.unescaped) }.map { "\(key)=\($0)" }
+            }
+        return parts.isEmpty ? nil : parts.joined(separator: "&")
+    }
+
+    static func cleanName(_ value: String) -> String? {
+        clean(value, limit: nameLimit) { $0.utf16.count }
+    }
+
+    /// One line without control characters, at most `limit` long. Whole characters only, so a
+    /// cut never leaves half an emoji.
+    static func clean(_ value: String, limit: Int, length: (Character) -> Int = { $0.unicodeScalars.count }) -> String? {
+        var line = String.UnicodeScalarView()
+        var gap = false
+        for scalar in value.unicodeScalars {
+            let category = scalar.properties.generalCategory
+            if scalar.properties.isWhitespace || category == .control || category == .format {
+                gap = !line.isEmpty
+            } else {
+                if gap { line.append(" ") }
+                gap = false
+                line.append(scalar)
+            }
+        }
+        var text = ""
+        var used = 0
+        for character in String(line) {
+            used += length(character)
+            guard used <= limit else { break }
+            text.append(character)
+        }
+        return text.trimmingCharacters(in: .whitespaces).nonEmpty
+    }
+
+    /// What JavaScript's `encodeURIComponent` leaves as it is.
+    private static let unescaped = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.!~*'()")
+}
+
+/// A parcel link, `/p/<id>`. The id is the capability. A name someone gave the parcel, and a
+/// gift's note and signature, travel only after the `#`, which never reaches a server.
 struct ParcelLinkRoute: Equatable, Sendable {
     let id: String
     var name: String? = nil
+    /// A gift's note and who it is from. Shown only once the parcel is delivered.
+    var note: String? = nil
+    var from: String? = nil
 
-    private static let alphabet = Set("23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
+    private static let alphabet = Array("23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
+    private static let symbols = Set(alphabet)
 
     static func validID(_ value: String) -> Bool {
-        value.count == 12 && value.allSatisfy(alphabet.contains)
+        value.count == 12 && value.allSatisfy(symbols.contains)
     }
 
-    init(id: String, name: String? = nil) {
+    /// An id in the format the service gives a link, for a demo that has no service.
+    static func madeUpID(using generator: inout some RandomNumberGenerator) -> String {
+        String((0..<12).map { _ in alphabet.randomElement(using: &generator)! })
+    }
+
+    init(id: String, name: String? = nil, note: String? = nil, from: String? = nil) {
         self.id = id
         self.name = name
+        self.note = note
+        self.from = from
+    }
+
+    /// The link's address on the site, with the words its sharer sends along after the `#`.
+    static func address(
+        id: String,
+        words: ParcelLinkWords = ParcelLinkWords(),
+        baseURL: URL = AppConfiguration.current.apiBaseURL
+    ) -> URL {
+        var components = URLComponents(url: baseURL.appending(path: "p").appending(path: id), resolvingAgainstBaseURL: false)!
+        components.query = nil
+        components.percentEncodedFragment = words.fragment
+        return components.url!
     }
 
     init?(
@@ -119,23 +216,15 @@ struct ParcelLinkRoute: Equatable, Sendable {
         }
         guard Self.validID(id) else { return nil }
         self.id = id
-        name = Self.name(inFragment: URLComponents(url: url, resolvingAgainstBaseURL: false)?.percentEncodedFragment)
+        let words = ParcelLinkWords(fragment: URLComponents(url: url, resolvingAgainstBaseURL: false)?.percentEncodedFragment)
+        name = words.name
+        note = words.note
+        from = words.from
     }
 
     /// `n=<percent-encoded name>`, cleaned to what a parcel's name may hold.
     static func name(inFragment fragment: String?) -> String? {
-        guard let item = fragment?.split(separator: "&").first(where: { $0.hasPrefix("n=") }),
-              let decoded = String(item.dropFirst(2)).removingPercentEncoding else { return nil }
-        let line = decoded.unicodeScalars
-            .map { CharacterSet.controlCharacters.contains($0) || CharacterSet.newlines.contains($0) ? " " : String($0) }
-            .joined()
-            .trimmingCharacters(in: .whitespaces)
-        var name = ""
-        for character in line {
-            guard name.utf16.count + character.utf16.count <= 80 else { break }
-            name.append(character)
-        }
-        return name.trimmingCharacters(in: .whitespaces).nonEmpty
+        ParcelLinkWords(fragment: fragment).name
     }
 }
 

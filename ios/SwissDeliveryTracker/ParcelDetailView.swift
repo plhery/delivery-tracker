@@ -20,6 +20,7 @@ struct ParcelDetailView: View {
     @State private var showingDeleteConfirmation = false
     @State private var notificationAnimation = 0
     @State private var showingMap = false
+    @State private var showingShare = false
     @State private var atlas: WorldAtlas?
 
     @ObservedObject private var catalog = CarrierCatalog.shared
@@ -122,6 +123,17 @@ struct ParcelDetailView: View {
                     .environmentObject(localizer)
             }
         }
+        .sheet(isPresented: $showingShare) {
+            if let parcel {
+                ParcelShareSheet(parcel: parcel, client: store.shareClient(for: parcel), demo: store.isDemo)
+                    .environmentObject(localizer)
+            }
+        }
+        #if DEBUG
+        .task {
+            if ParcelSharePreview.variant != nil { showingShare = true }
+        }
+        #endif
         .alert(localizer.text("detail.editTitle"), isPresented: $showingTitleEditor) {
             TextField(localizer.text("common.parcel"), text: $editedTitle)
             Button(localizer.text("common.cancel"), role: .cancel) {}
@@ -188,6 +200,15 @@ struct ParcelDetailView: View {
                         .disabled(route == nil)
                         .accessibilityLabel(localizer.text("map.open"))
                     }
+                    Button { showingShare = true } label: {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 16))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(branding.ink.opacity(0.75))
+                    .accessibilityLabel(localizer.text("link.shareAria"))
                     Button {
                         run {
                             try await store.setMuted(parcel, muted: !parcel.notificationsMuted)

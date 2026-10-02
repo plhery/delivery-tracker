@@ -45,6 +45,11 @@ installed. Two things make that work, both set in `Configuration/Shared.xcconfig
 Elsewhere, `swissdeliverytracker://p/<id>` and `swissdeliverytracker://invite#<key>` open
 the same screens.
 
+A parcel's detail shares the parcel through such a link, built on the host of
+`SDT_API_BASE_URL`. The name, a gift's note and who it is from travel after the link's `#`:
+they stay on the device and never reach the API. In the demo the link is made up and leads
+nowhere.
+
 ## Signing for a device
 
 1. Select your team for the app, `ShareExtension` and `DeliveryWidget` targets.

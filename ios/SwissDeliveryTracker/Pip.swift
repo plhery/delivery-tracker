@@ -295,8 +295,8 @@ enum PipArtwork {
 
     /// The kraft parcel's face. `k` scales the features: 1 at full size, larger on a small parcel.
     /// `happy` turns the open eyes into arcs as the box opens. `blink` is the time on the blink's clock;
-    /// nil keeps the eyes open.
-    static func kraftFace(_ context: GraphicsContext, k: CGFloat, look: CGPoint = CGPoint(x: 0.5, y: -0.2), happy: Double, blink: Double? = nil) {
+    /// nil keeps the eyes open. `smile` fades the mouth, which a gift's ribbon runs over.
+    static func kraftFace(_ context: GraphicsContext, k: CGFloat, look: CGPoint = CGPoint(x: 0.5, y: -0.2), happy: Double, blink: Double? = nil, smile: Double = 1) {
         var face = context
         face.concatenate(PipGeometry.facePlane)
         let palette = PipPalette.kraft
@@ -324,11 +324,49 @@ enum PipArtwork {
             }
             face.fill(ellipse(x - 1, 36 + 15 * k, 6.5 * k, 3.2 * k), with: .color(palette.blush.opacity(0.55)))
         }
+        guard smile > 0 else { return }
         let mouth = 47 + 4 * k
-        var smile = Path()
-        smile.move(to: CGPoint(x: 48 - 6 * k, y: mouth))
-        smile.addQuadCurve(to: CGPoint(x: 48 + 6 * k, y: mouth), control: CGPoint(x: 48, y: mouth + 7 * k))
-        face.stroke(smile, with: .color(palette.features), style: StrokeStyle(lineWidth: 2.4 * k, lineCap: .round))
+        var curve = Path()
+        curve.move(to: CGPoint(x: 48 - 6 * k, y: mouth))
+        curve.addQuadCurve(to: CGPoint(x: 48 + 6 * k, y: mouth), control: CGPoint(x: 48, y: mouth + 7 * k))
+        face.opacity = smile
+        face.stroke(curve, with: .color(palette.features), style: StrokeStyle(lineWidth: 2.4 * k, lineCap: .round))
+    }
+
+    /// A gift's ribbon: over the lid and down both sides, between Pip's eyes, tied in a bow.
+    static func ribbon(_ context: GraphicsContext) {
+        var bands = Path()
+        var sheen = Path()
+        for (from, to) in [(CGPoint(x: 102.5, y: 118.5), CGPoint(x: 197.5, y: 166)), (CGPoint(x: 197.5, y: 118.5), CGPoint(x: 102.5, y: 166))] {
+            bands.move(to: from)
+            bands.addLine(to: to)
+            sheen.move(to: from)
+            sheen.addLine(to: to)
+        }
+        for x in [102.5, 197.5] {
+            bands.move(to: CGPoint(x: x, y: 166))
+            bands.addLine(to: CGPoint(x: x, y: 253))
+        }
+        context.stroke(bands, with: .color(Color(hex: "#A286B5")), lineWidth: 9)
+        context.stroke(sheen, with: .color(Color(hex: "#CDB8DB").opacity(0.7)), lineWidth: 2)
+
+        let knot = CGPoint(x: 150, y: 142)
+        var loops = Path()
+        for side in [-1.0, 1.0] {
+            loops.move(to: knot)
+            loops.addCurve(to: CGPoint(x: 150 + 26 * side, y: 142), control1: CGPoint(x: 150 + 14 * side, y: 126), control2: CGPoint(x: 150 + 34 * side, y: 130))
+            loops.addCurve(to: knot, control1: CGPoint(x: 150 + 21 * side, y: 149), control2: CGPoint(x: 150 + 6 * side, y: 146))
+            loops.closeSubpath()
+        }
+        context.fill(loops, with: .color(Color(hex: "#B99BCB")))
+        context.stroke(loops, with: .color(Color(hex: "#7C6787").opacity(0.5)), lineWidth: 1)
+        var tails = Path()
+        tails.move(to: knot)
+        tails.addCurve(to: CGPoint(x: 130, y: 164), control1: CGPoint(x: 144, y: 152), control2: CGPoint(x: 138, y: 160))
+        tails.move(to: knot)
+        tails.addCurve(to: CGPoint(x: 172, y: 162), control1: CGPoint(x: 156, y: 152), control2: CGPoint(x: 163, y: 159))
+        context.stroke(tails, with: .color(Color(hex: "#A286B5")), style: StrokeStyle(lineWidth: 5, lineCap: .round))
+        context.fill(ellipse(knot.x, knot.y, 6, 4.5), with: .color(Color(hex: "#8E6FA3")))
     }
 
     // The ink face is drawn at card size: eyes 21.75 either side of the middle, at 33 down the side.
@@ -524,6 +562,8 @@ struct PipBlinkSchedule: TimelineSchedule {
 struct KraftPipFace: View {
     /// 0 for open eyes, 1 for happy arcs.
     var happy: Double
+    /// How much of the mouth shows: none under a gift's ribbon.
+    var smile: Double = 1
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = Date()
@@ -533,7 +573,7 @@ struct KraftPipFace: View {
         TimelineView(PipBlinkSchedule(start: appeared, paused: !blinks)) { timeline in
             let blink = blinks ? timeline.date.timeIntervalSince(appeared) : nil
             Canvas { context, _ in
-                PipArtwork.kraftFace(context, k: 1, happy: happy, blink: blink)
+                PipArtwork.kraftFace(context, k: 1, happy: happy, blink: blink, smile: smile)
             }
         }
         .frame(width: PipGeometry.frame.width, height: PipGeometry.frame.height)

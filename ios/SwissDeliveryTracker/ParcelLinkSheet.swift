@@ -23,12 +23,14 @@ struct ParcelLinkSheet: View {
                 case .shown(let response):
                     shared(response)
                 case .unavailable:
-                    gone
+                    nothing(title: "link.gone.title", body: "link.gone.body")
+                case .stopped:
+                    nothing(title: "share.stopped.title", body: "share.stopped.body")
                 case .failed(let failure):
                     failed(failure)
                 }
             }
-            .navigationTitle(localizer.text("link.shared"))
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -45,24 +47,54 @@ struct ParcelLinkSheet: View {
         }
     }
 
+    /// A gift keeps the sheet to itself; so does a link that shows nothing.
+    private var title: String {
+        switch links.phase {
+        case .shown(let response): response.gift == .wrapped || response.gift == .opened ? "" : localizer.text("link.shared")
+        case .stopped: ""
+        case .loading, .unavailable, .failed: localizer.text("link.shared")
+        }
+    }
+
     // MARK: - The parcel
 
     private func shared(_ response: PublicParcelResponse) -> some View {
-        let parcel = Parcel(shared: response.package)
+        let gift = response.gift
+        let wrapped = gift == .wrapped
+        var parcel = Parcel(shared: response.package)
+        // A gift on its way tells its hidden beginning once.
+        if wrapped { parcel.trackingEvents = parcel.trackingEvents.collapsingGiftRows() }
         let identity = CarrierVisualIdentity.of(parcel.displayedCarrier, language: localizer.language)
+        let tint = wrapped || gift == .opened ? ExperimentalPalette.lilac : identity.ink
         return ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                SharedParcelCard(parcel: parcel, name: links.route?.name, refreshing: refreshing) {
-                    Task { await refresh() }
+                if wrapped || gift == .opened {
+                    GiftParcelCard(parcel: parcel, opened: gift == .opened, refreshing: refreshing) {
+                        Task { await refresh() }
+                    }
+                } else {
+                    SharedParcelCard(parcel: parcel, name: links.route?.name, gift: gift == .own, refreshing: refreshing) {
+                        Task { await refresh() }
+                    }
                 }
                 if let failure = links.refreshFailure {
                     note(localizer.text(failure.messageKey))
                 }
-                if response.link.canKeep { keeping }
+                if wrapped {
+                    GiftSurprise()
+                } else if gift == .opened {
+                    // What the link carried all along comes out with the delivery.
+                    GiftNote(note: links.route?.note, from: links.route?.from, inside: links.route?.name)
+                }
+                // A gift cannot be kept before it is delivered: that would show its number.
+                if response.link.canKeep, !wrapped { keeping }
                 VStack(alignment: .leading, spacing: 20) {
-                    SharedParcelNumber(parcel: parcel, hint: response.package.numberHint, tint: identity.ink)
+                    // The number and the carrier's own page would tell where a gift comes from.
+                    if !wrapped {
+                        SharedParcelNumber(parcel: parcel, hint: response.package.numberHint, tint: tint)
+                    }
                     if CarrierCatalog.shared.tracksAutomatically(parcel.activeTrackingCarrier) || parcel.hasCarrierUpdate {
-                        ParcelJournal(parcel: parcel, tint: identity.ink)
+                        ParcelJournal(parcel: parcel, tint: tint)
                     }
                 }
                 .padding(.horizontal, 6)
@@ -156,7 +188,10 @@ struct ParcelLinkSheet: View {
                 .accessibilityElement(children: .combine)
             }
             if let parcelID {
-                Button { links.openExisting(parcelID) } label: {
+                Button {
+                    DeliveryAnalytics.shared.action("parcel-link-open-existing")
+                    links.openExisting(parcelID)
+                } label: {
                     HStack(spacing: 6) {
                         Text(localizer.text("link.open"))
                         Image(systemName: "chevron.right").font(.caption.weight(.semibold)).accessibilityHidden(true)
@@ -189,17 +224,18 @@ struct ParcelLinkSheet: View {
 
     // MARK: - No parcel
 
-    private var gone: some View {
+    /// A link that shows no parcel: forgotten or unknown alike, or one whose owner stopped sharing it.
+    private func nothing(title: String, body: String) -> some View {
         VStack(spacing: 12) {
             SmallPip()
                 .frame(width: 120)
                 .saturation(0.3)
                 .opacity(0.8)
                 .padding(.bottom, 8)
-            Text(localizer.text("link.gone.title"))
+            Text(localizer.text(title))
                 .font(.title2.weight(.semibold))
                 .accessibilityAddTraits(.isHeader)
-            Text(localizer.text("link.gone.body"))
+            Text(localizer.text(body))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             Button(localizer.text("common.close")) { links.close() }
@@ -265,6 +301,7 @@ struct ParcelLinkSheet: View {
     }
 
     private func signIn() {
+        DeliveryAnalytics.shared.action("parcel-link-sign-in")
         links.rememberForSignIn()
         if session.user == nil { session.showSignIn() }
     }
@@ -274,6 +311,8 @@ struct ParcelLinkSheet: View {
 private struct SharedParcelCard: View {
     let parcel: Parcel
     let name: String?
+    /// The parcel is a gift, seen by its sender: the usual card, marked.
+    var gift = false
     let refreshing: Bool
     let onRefresh: () -> Void
 
@@ -297,11 +336,7 @@ private struct SharedParcelCard: View {
             HStack(spacing: 4) {
                 CarrierFleetMark(identity: identity).layoutPriority(1)
                 Spacer(minLength: 8)
-                // In a narrow card or at large type, the arrow alone stays.
-                ViewThatFits(in: .horizontal) {
-                    refreshButton(tint: identity.ink, dated: true)
-                    refreshButton(tint: identity.ink, dated: false)
-                }
+                LinkRefreshButton(parcel: parcel, refreshing: refreshing, tint: identity.ink, action: onRefresh)
                 if placed {
                     Button { showingMap = true } label: {
                         Image(systemName: "globe")
@@ -322,6 +357,14 @@ private struct SharedParcelCard: View {
             }
             HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
+                    if gift {
+                        Label(localizer.text("share.gift.marker"), systemImage: "gift")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(ExperimentalPalette.lilac)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Brand.paper.opacity(0.72), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    }
                     if let name {
                         Text(name).font(.subheadline.weight(.medium))
                     }
@@ -386,10 +429,27 @@ private struct SharedParcelCard: View {
             .compactMap { $0 }.joined(separator: " · ")
         return (line.prefix(1).uppercased(with: localizer.language.locale) + line.dropFirst()).nonEmpty
     }
+}
 
-    /// When the carrier was last asked; a tap reads the link again.
-    private func refreshButton(tint: Color, dated: Bool) -> some View {
-        Button(action: onRefresh) {
+/// When the carrier was last asked; a tap reads the link again. In a narrow card or at large
+/// type, the arrow alone stays.
+private struct LinkRefreshButton: View {
+    let parcel: Parcel
+    let refreshing: Bool
+    let tint: Color
+    let action: () -> Void
+
+    @EnvironmentObject private var localizer: Localizer
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            button(dated: true)
+            button(dated: false)
+        }
+    }
+
+    private func button(dated: Bool) -> some View {
+        Button(action: action) {
             HStack(spacing: 6) {
                 if dated, let checked = parcel.lastSyncedAt {
                     // The age is written out, so it is kept current while the sheet stays open.
@@ -416,6 +476,157 @@ private struct SharedParcelCard: View {
         .accessibilityValue(parcel.lastSyncedAt.map {
             localizer.text("parcel.updated", ["date": localizer.relativeTime(from: $0)])
         } ?? "")
+    }
+}
+
+/// A gift as its recipient sees it: wrapped while it is on its way, with nothing about who
+/// sent it or what it is, and the open box once it is delivered.
+private struct GiftParcelCard: View {
+    let parcel: Parcel
+    let opened: Bool
+    let refreshing: Bool
+    let onRefresh: () -> Void
+
+    @EnvironmentObject private var localizer: Localizer
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @ObservedObject private var catalog = CarrierCatalog.shared
+    /// How far the box has opened: it is seen closed first, so the opening is seen.
+    @State private var open = 0.0
+
+    var body: some View {
+        let identity = CarrierVisualIdentity.of(parcel.displayedCarrier, catalog: catalog, language: localizer.language)
+        let tone = ExperimentalPalette.lilac
+        let width: CGFloat = typeSize.isAccessibilitySize ? 150 : opened ? 250 : 220
+        VStack(spacing: 0) {
+            HStack(spacing: 4) {
+                CarrierFleetMark(identity: identity).layoutPriority(1)
+                Spacer(minLength: 8)
+                LinkRefreshButton(parcel: parcel, refreshing: refreshing, tint: tone, action: onRefresh)
+            }
+            .frame(minHeight: 44)
+            UnwrappingParcel(open: opened ? open : 0, celebrating: opened && open > 0, ribbon: true)
+                .frame(width: width, height: width * PipGeometry.frame.height / PipGeometry.frame.width)
+                .padding(.top, opened ? -6 : -16)
+                .padding(.bottom, opened ? -8 : -6)
+            VStack(spacing: 7) {
+                Text(localizer.text(opened ? "share.gift.here" : "share.gift.headline"))
+                    .font((opened ? Font.largeTitle : .title).weight(.semibold))
+                    .accessibilityAddTraits(.isHeader)
+                if let detail {
+                    Text(detail)
+                        .font(.callout.weight(.medium))
+                        .foregroundStyle(tone)
+                }
+            }
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            if !opened {
+                ExperimentalJourneyRail(stage: parcel.currentStage, tint: tone.opacity(0.55), compact: true)
+                    .padding(.top, 18)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 18)
+        .padding(.top, 10)
+        .padding(.bottom, 20)
+        .background(ExperimentalPalette.lilacSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .accessibilityElement(children: .contain)
+        .onChange(of: opened, initial: true) { _, opened in
+            guard opened else { open = 0; return }
+            withAnimation(reduceMotion ? nil : .spring(duration: 0.9, bounce: 0.2).delay(0.25)) { open = 1 }
+        }
+    }
+
+    /// "Arrives today, 13:00–17:00" while it is on its way; "Delivered today at 14:12" once it is there.
+    private var detail: String? {
+        if opened {
+            guard let event = parcel.currentEvent, event.stage == .delivered, let date = DateParser.date(event.occurredAt) else { return nil }
+            return localizer.text("share.gift.delivered", ["date": localizer.deliveryDate(date), "time": localizer.clockTime(date)])
+        }
+        return localizer.parcelDeliveryEstimate(parcel).map { localizer.text("share.gift.arrives", ["date": $0]) }
+    }
+}
+
+/// Under a gift on its way: why the sheet says so little.
+private struct GiftSurprise: View {
+    @EnvironmentObject private var localizer: Localizer
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Image(systemName: "gift").accessibilityHidden(true)
+            Text(localizer.text("share.gift.surprise")).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .font(.footnote)
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 6)
+    }
+}
+
+/// What a gift's link carried all along and shows once the parcel is delivered: the sender's
+/// note, who it is from, and what is inside. None of it ever reached the service.
+private struct GiftNote: View {
+    let note: String?
+    let from: String?
+    let inside: String?
+
+    @EnvironmentObject private var localizer: Localizer
+
+    private static let paper = Brand.color(light: "#FFFDF7", dark: "#2C2A24")
+    private static let edge = Brand.color(light: "#EBE5D6", dark: "#45413A")
+    private static let fold = Brand.color(light: "#D8CFB8", dark: "#55503F")
+    private static let ink = Brand.color(light: "#3B3A33", dark: "#ECE7DA")
+    private static let signature = Brand.color(light: "#6B675A", dark: "#B9B3A4")
+
+    var body: some View {
+        if note != nil || from != nil || inside != nil {
+            VStack(alignment: .leading, spacing: 0) {
+                if let note {
+                    Text(note)
+                        .font(.system(.title3, design: .serif).weight(.semibold).italic())
+                        .foregroundStyle(Self.ink)
+                        .lineSpacing(4)
+                }
+                if let from {
+                    Text("— " + from)
+                        .font(.system(.body, design: .serif).weight(.semibold).italic())
+                        .foregroundStyle(Self.signature)
+                        .padding(.top, note == nil ? 0 : 10)
+                }
+                if let inside {
+                    if note != nil || from != nil {
+                        Line()
+                            .stroke(Self.fold, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                            .frame(height: 1)
+                            .padding(.top, 16)
+                            .padding(.bottom, 12)
+                    }
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Image(systemName: "gift").foregroundStyle(.secondary).accessibilityHidden(true)
+                        (Text(localizer.text("share.gift.inside") + " ").foregroundStyle(.secondary)
+                            + Text(inside).fontWeight(.semibold))
+                    }
+                    .font(.footnote)
+                }
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(20)
+            .background(Self.paper, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Self.edge))
+            .rotationEffect(.degrees(-0.8))
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    private struct Line: Shape {
+        func path(in rect: CGRect) -> Path {
+            var path = Path()
+            path.move(to: CGPoint(x: rect.minX, y: rect.midY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+            return path
+        }
     }
 }
 

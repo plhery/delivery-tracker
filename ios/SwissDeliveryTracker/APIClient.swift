@@ -72,7 +72,8 @@ final class DeliveryAPIClient {
     }
 
     /// Reads a parcel link as a viewer: no sign-in, no cookies and never an owner key.
-    /// Nil when the link leads nowhere, whether it was forgotten, stopped or never existed.
+    /// Nil when the link leads nowhere, whether it was forgotten or never existed. A link whose
+    /// owner stopped sharing it throws `ParcelLinkStopped`.
     static func publicParcel(linkID: String, configuration: AppConfiguration = .current, transport: URLSession = .shared) async throws -> PublicParcelResponse? {
         var request = URLRequest(url: configuration.apiBaseURL.appending(path: "api/public/parcels").appending(path: linkID),
                                  cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 15)
@@ -85,6 +86,7 @@ final class DeliveryAPIClient {
             do { return try JSONDecoder.deliveryTracker.decode(PublicParcelResponse.self, from: data) }
             catch { throw DeliveryAPIError.invalidResponse }
         case 404: return nil
+        case 410: throw ParcelLinkStopped()
         case 429: throw DeliveryAPIError.rateLimited(retryAfterSeconds(response.value(forHTTPHeaderField: "Retry-After")))
         default: throw DeliveryAPIError.serviceFailed(response.statusCode)
         }
@@ -92,6 +94,24 @@ final class DeliveryAPIClient {
 
     func claimParcels(_ value: ClaimParcelsRequest) async throws -> ClaimParcelsResponse {
         try await request("/api/packages/claim", method: "POST", body: value)
+    }
+
+    /// The link one of the account's parcels is shared through, or nil while it is not shared.
+    func parcelShare(id: UUID) async throws -> ParcelShare? {
+        let response: ParcelShareResponse = try await request("/api/packages/\(id.uuidString)/share")
+        return response.link
+    }
+
+    /// Makes the parcel's link when it has none, else changes what the link shows.
+    func shareParcel(id: UUID, _ value: ShareParcelRequest) async throws -> ParcelShare {
+        let response: ParcelShareResponse = try await request("/api/packages/\(id.uuidString)/share", method: "PUT", body: value)
+        guard let link = response.link, ParcelLinkRoute.validID(link.id) else { throw DeliveryAPIError.invalidResponse }
+        return link
+    }
+
+    /// The link goes blank for good. The answer has no body.
+    func stopSharingParcel(id: UUID) async throws {
+        _ = try await rawRequest("/api/packages/\(id.uuidString)/share", method: "DELETE")
     }
 
     func listPackages() async throws -> [Parcel] {
