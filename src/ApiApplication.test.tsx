@@ -343,6 +343,50 @@ describe('ApiApplication', () => {
     expect(screen.getByText('Configured sign in')).toBeInTheDocument();
   });
 
+  it('draws the landing while it makes sure nobody is signed in, and keeps it in place once it knows', () => {
+    window.localStorage.removeItem('sdt.web.experience.v1');
+    window.dispatchEvent(new Event('storage'));
+    mocks.auth.status = 'loading';
+    const result = render(<ApiApplication />);
+    // What the server sends everyone: the landing, with the splash beside it for a browser that holds a sign-in.
+    const field = screen.getByRole('textbox', { name: 'Tracking number or link' });
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+    expect(document.querySelector('.entry-splash')).toHaveAttribute('aria-hidden', 'true');
+    expect(document.querySelector('.auth-loading[role="status"]')).toBeNull();
+    mocks.auth.status = 'anonymous';
+    result.rerender(<ApiApplication />);
+    expect(screen.getByRole('textbox', { name: 'Tracking number or link' })).toBe(field);
+    expect(document.querySelector('.entry-splash')).toBeNull();
+  });
+
+  it('keeps the splash, not the landing, for a browser that said before the first paint that it holds a sign-in', () => {
+    window.localStorage.removeItem('sdt.web.experience.v1');
+    window.dispatchEvent(new Event('storage'));
+    document.documentElement.dataset.entry = 'app';
+    mocks.auth.status = 'loading';
+    const result = render(<ApiApplication />);
+    expect(screen.getByRole('status')).toHaveTextContent('Opening your parcels…');
+    expect(screen.queryByRole('heading', { name: 'Where’s my parcel?' })).not.toBeInTheDocument();
+    expect(document.documentElement.dataset.entry).toBe('app');
+    // Signed in: the deliveries, and the mark has done its work.
+    mocks.auth.status = 'authenticated'; mocks.auth.user = USER;
+    result.rerender(<ApiApplication />);
+    expect(screen.getByText('owner@example.test')).toBeVisible();
+    expect(document.documentElement.dataset.entry).toBeUndefined();
+  });
+
+  it('shows the landing after all when the sign-in the browser held turns out to be gone', () => {
+    window.localStorage.removeItem('sdt.web.experience.v1');
+    window.dispatchEvent(new Event('storage'));
+    document.documentElement.dataset.entry = 'app';
+    mocks.auth.status = 'loading';
+    const result = render(<ApiApplication />);
+    mocks.auth.status = 'anonymous';
+    result.rerender(<ApiApplication />);
+    expect(screen.getByRole('heading', { level: 1, name: 'Where’s my parcel?' })).toBeVisible();
+    expect(document.documentElement.dataset.entry).toBeUndefined();
+  });
+
   it('wires account export, deletion, and privacy-clean sign-out', async () => {
     mocks.auth.status = 'authenticated';
     mocks.auth.user = USER;

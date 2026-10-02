@@ -13,6 +13,7 @@ import { checkForUpdatesOnResume, enablePwaLiveReload, registerPwaServiceWorker 
 import { createDemoRepo } from './store/demoRepo';
 import { ParcelsProvider } from './store/ParcelsContext';
 import { AppearanceProvider } from './lib/appearance';
+import { useEntryHint } from './lib/entryHint';
 import { useDemoAddress, useEntryExperience } from './lib/experience';
 import { MovedHost } from './lib/movedHost';
 import { ArrivalScreen } from './components/ArrivalScreen';
@@ -103,6 +104,8 @@ export function DemoApplication({ repo, invitationRoute = false, parcelLinkId = 
   const demoAddress = useDemoAddress(demoRoute);
   const linkId = useParcelLinkRoute(parcelLinkId);
   const session = useVisitorSession('visitor');
+  // Without accounts the page knows who is looking as soon as it is live.
+  useEntryHint(true);
   const signIn = { configured: false, googleEnabled: false, emailOtpEnabled: false, sendCode: async () => undefined, verifyCode: async () => undefined };
 
   // A parcel's address shows the parcel, whatever this browser was doing before.

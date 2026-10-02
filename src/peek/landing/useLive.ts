@@ -1,0 +1,87 @@
+import { useEffect, useState, useSyncExternalStore, type RefObject } from 'react';
+
+const subscribeToTab = (notify: () => void) => {
+  document.addEventListener('visibilitychange', notify);
+  return () => document.removeEventListener('visibilitychange', notify);
+};
+const tabShown = () => document.visibilityState !== 'hidden';
+const subscribeToMotion = (notify: () => void) => {
+  const query = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+  query?.addEventListener('change', notify);
+  return () => query?.removeEventListener('change', notify);
+};
+const motionReduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+
+/** Whether the tab is the one being looked at. A page still on the server is not. */
+export function useTabShown(): boolean {
+  return useSyncExternalStore(subscribeToTab, tabShown, () => false);
+}
+
+/** Whether the reader asked for less motion. The server draws the moving page; the still frame replaces it before anything loops. */
+export function useReducedMotion(): boolean {
+  return useSyncExternalStore(subscribeToMotion, motionReduced, () => false);
+}
+
+/** Whether `share` of an element is within `margin` of the screen. Without a way to tell, it is not. */
+function useInView(target: RefObject<Element | null>, margin: string, share: number, once: boolean): boolean {
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const element = target.current;
+    if (!element || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver((entries) => {
+      const seen = entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= share);
+      setInView(seen);
+      if (seen && once) observer.disconnect();
+    }, { rootMargin: margin, threshold: share });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [target, margin, share, once]);
+  return inView;
+}
+
+/**
+ * Whether a loop may run: its element is on screen, in a tab someone is
+ * looking at. Off screen or in a background tab it is paused. `share` is how
+ * much of the element has to show: any of it, unless a sliver tells nothing.
+ */
+export function useLive(target: RefObject<Element | null>, share = 0): boolean {
+  const inView = useInView(target, '0px', share, false);
+  return useTabShown() && inView;
+}
+
+/**
+ * Turns true once an element comes close to the screen, and stays true: the
+ * moment to load what it shows. The first paint never waits for it.
+ */
+export function useNear(target: RefObject<Element | null>, margin = '600px'): boolean {
+  return useInView(target, margin, 0, true);
+}
+
+/**
+ * For something that rises into place when it is first scrolled to: `wait`
+ * while an element that started below the screen has not come into view, `go`
+ * once it has. One that was in view from the start, or a reader who asked for
+ * less motion, gets neither and sees it in place.
+ */
+export function useRise(target: RefObject<Element | null>): 'wait' | 'go' | undefined {
+  const [rise, setRise] = useState<'wait' | 'go'>();
+  useEffect(() => {
+    const element = target.current;
+    if (!element || typeof IntersectionObserver === 'undefined' || motionReduced()) return;
+    let first = true;
+    const observer = new IntersectionObserver((entries) => {
+      const seen = entries.some((entry) => entry.isIntersecting);
+      // Only what is wholly below the screen may be hidden: nothing in sight ever disappears.
+      const below = entries.every((entry) => entry.boundingClientRect.top >= window.innerHeight);
+      if (seen) {
+        if (!first) setRise('go');
+        observer.disconnect();
+      } else if (first && below) setRise('wait');
+      else if (first) observer.disconnect();
+      first = false;
+    }, { rootMargin: '0px 0px -12% 0px' });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [target]);
+  return rise;
+}

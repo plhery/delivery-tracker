@@ -1,0 +1,73 @@
+/* "Will I know when it moves?": the words beside one parcel's journey. */
+.landing-moves { display: grid; grid-template-columns: minmax(0, 400fr) minmax(0, 620fr); align-items: center; gap: 80px; }
+.landing-moves__text { display: grid; gap: 16px; }
+
+/* The journey's card, in its carrier's colours, with the pings arriving over its corner. */
+.landing-journey {
+  --tone: light-dark(var(--carrier-ink-light), var(--carrier-ink-dark)); --tone-surface: light-dark(var(--carrier-surface-light), var(--carrier-surface-dark));
+  --carrier-brand: light-dark(var(--carrier-brand-light), var(--carrier-brand-dark));
+  position: relative; padding-top: 30px;
+}
+.landing-journey__card { position: relative; isolation: isolate; overflow: hidden; border-radius: 28px; background: var(--tone-surface); color: var(--ink); }
+.landing-journey__map { position: relative; height: 340px; }
+/* The route in the card's own ink, as the parcel's page draws it. */
+.landing-journey .landing-journey__canvas {
+  --map-space: transparent; --map-ocean: transparent; --map-land: color-mix(in srgb, var(--tone) 10%, transparent);
+  --map-visited: color-mix(in srgb, var(--tone) 17%, transparent); --map-border: color-mix(in srgb, var(--tone-surface) 80%, transparent);
+  --map-night: transparent; --map-grid: transparent; --map-shade: transparent; --map-limb: color-mix(in srgb, var(--tone) 16%, transparent);
+  --map-route: var(--tone); --map-route-muted: color-mix(in srgb, var(--tone) 45%, transparent); --map-accent: var(--tone);
+  --map-label: var(--tone); --map-label-strong: var(--tone); --map-label-bg: color-mix(in srgb, var(--tone-surface) 92%, transparent);
+  --map-dot-ring: var(--tone-surface);
+  --map-mask: linear-gradient(black 80%, transparent);
+  position: absolute; inset: 0; animation: landing-fade .5s var(--ease-out) both;
+}
+.landing-journey .landing-journey__canvas * { -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* The story starts over: the route and the parcel's place come back in, rather than running backwards. */
+.landing-journey__card[data-scan="0"] .landing-journey__canvas svg { animation: landing-fade .3s linear both; }
+.landing-journey__top { position: absolute; top: 18px; right: 18px; left: 22px; display: flex; align-items: center; justify-content: space-between; gap: 12px; pointer-events: none; }
+.landing-journey__top .carrier-mark { min-width: 0; white-space: nowrap; }
+.landing-journey__top .carrier-mark__truck { flex-shrink: 0; width: 27px; height: 18px; overflow: visible; }
+.landing-journey__live { display: inline-flex; align-items: center; gap: 7px; color: var(--tone); font-size: 11px; line-height: 1.2; white-space: nowrap; }
+.landing-journey__live i { position: relative; flex-shrink: 0; width: 7px; height: 7px; }
+.landing-journey__live i::before, .landing-journey__live i::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: currentColor; }
+.landing-journey__live i::before { opacity: 0; }
+.landing-journey__live[data-pulse] i::before { animation: landing-pulse 2.4s var(--ease-out) infinite; }
+.landing-journey__text { position: relative; padding: 0 22px 22px; }
+.landing-journey__text strong { display: block; font-size: 30px; line-height: 1.12; letter-spacing: -.8px; font-weight: 650; text-wrap: balance; }
+.landing-journey__text .landing-stack span { display: block; margin-top: 6px; color: var(--tone); font-size: 14px; font-weight: 500; }
+.landing-journey__text .landing-stack span::first-letter { text-transform: uppercase; }
+.landing-journey .progress-track { gap: 4px; margin-top: 16px; }
+.landing-journey .progress-track__dot { background: color-mix(in srgb, var(--tone) 13%, transparent); }
+.landing-journey .progress-track__dot--filled { background: color-mix(in srgb, var(--tone) 55%, var(--tone-surface)); }
+
+/* A ping drops in for each scan and gives way to the next. */
+.landing-pings { position: absolute; z-index: 2; top: -16px; right: max(-44px, 16px - (100vw - min(100vw - 64px, 1100px)) / 2); display: grid; width: 300px; pointer-events: none; }
+.landing-ping { grid-area: 1 / 1; align-self: start; display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); box-shadow: 0 6px 24px rgb(0 0 0 / 8%); opacity: 0; transform: translateY(6px); transition: opacity .3s var(--ease-out), transform .3s var(--ease-out); }
+.landing-ping[data-on] { opacity: 1; transform: none; animation: landing-ping .36s var(--ease-out) both; }
+.landing-ping__text { display: grid; flex: 1; gap: 1px; min-width: 0; text-align: start; }
+.landing-ping__text > span:first-child { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+/* A notification keeps to one line each for what happened and for where, as a phone shows it. */
+.landing-ping strong, .landing-ping__text > span:last-child { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.landing-ping strong { font-size: 13px; font-weight: 650; }
+.landing-ping small { flex-shrink: 0; color: var(--ink-soft); font-size: 11px; }
+.landing-ping__text > span:last-child { color: var(--ink-soft); font-size: 12.5px; line-height: 1.4; }
+
+@keyframes landing-fade { from { opacity: 0; } }
+@keyframes landing-pulse { from { transform: scale(1); opacity: .45; } to { transform: scale(3.2); opacity: 0; } }
+@keyframes landing-ping { from { opacity: 0; transform: translateY(-12px); } }
+
+/* One column: the journey under the words, with the ping over the card's top edge. */
+@media (max-width: 1000px) {
+  .landing-moves { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .landing-moves__text { gap: 10px; }
+  .landing-moves__text .landing-chips { margin-top: 6px; }
+  .landing-journey { width: min(100%, 620px); margin: 52px auto 0; padding-top: 0; }
+  .landing-pings { top: -40px; right: auto; left: 50%; width: min(322px, 100% - 20px); translate: -50% 0; }
+}
+@media (max-width: 760px) {
+  .landing-journey__map { height: 250px; }
+  .landing-journey__text strong { font-size: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-journey .landing-journey__canvas, .landing-journey__card[data-scan="0"] .landing-journey__canvas svg, .landing-journey__live[data-pulse] i::before, .landing-ping[data-on] { animation: none; }
+}

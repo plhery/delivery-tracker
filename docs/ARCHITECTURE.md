@@ -23,7 +23,7 @@ Next.js route handlers --- user token ---> PostgREST + Postgres RLS
 | `app/` | App Router pages, route handlers, manifest, service worker, offline page |
 | `proxy.ts` | Per-request CSP nonce and security headers; redirects pages from a host the site has left |
 | `src/` | React client (`components/`, `store/`, `auth/`, `i18n.tsx`) |
-| `src/peek/` | The front door and the parcel page for visitors: parcel link client, this device's parcels, keeping a parcel after sign-in |
+| `src/peek/` | The landing and the parcel page for visitors: the field, parcel link client, this device's parcels, keeping a parcel after sign-in; `landing/` holds the sections below the field |
 | `src/server/` | API helpers, auth, sync worker, routing, push, observability |
 | `universal-parcel-scraper` (npm dependency) | Every carrier: catalog, detection, adapters, universal providers ([README](https://github.com/plhery/universal-parcel-scraper/blob/main/README.md)) |
 | `shared/` | Translations, tracking message map and analytics catalog, shared by web and iOS |
@@ -144,13 +144,19 @@ Key server modules:
 
 | Address | What it shows |
 | --- | --- |
-| `/` | The front door to a visitor, the deliveries to someone signed in |
+| `/` | The landing to a visitor, with the parcels of their device right under the field; the deliveries to someone signed in |
 | `/p/<id>` | One parcel, to anyone with the link |
 | `/i/<key>`, `/invite` | A friend invitation ([FRIENDS.md](FRIENDS.md)) |
 | `/demo` | The demo deliveries, kept on the device, to anyone; leaving the demo returns to `/` |
 
 Sessions belong to one origin, so every address lives on the same host. With the iPhone
 app installed, `/p/…` and `/i/…` open in the app.
+
+The server draws the landing at `/` for everyone, because a sign-in lives in the browser's
+storage. A script that runs before the first paint
+([`entryHintConfig.ts`](../src/lib/entryHintConfig.ts)) marks a browser that holds a
+sign-in, or has the demo open, so it shows the splash instead until its own screen is
+ready. The map and the sample parcels of the landing load when their sections come near.
 
 ## Data lifecycle
 

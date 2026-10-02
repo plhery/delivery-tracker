@@ -3,6 +3,7 @@ import App from './App';
 import { useAuth } from './auth/AuthContext';
 import { ArrivalScreen } from './components/ArrivalScreen';
 import { ParcelIllustration } from './components/Icon';
+import { useEntryHint } from './lib/entryHint';
 import { useDemoAddress, useEntryExperience } from './lib/experience';
 import { createDemoRepo } from './store/demoRepo';
 import { deleteAccount, downloadAccountExport, exportAccount } from './lib/account';
@@ -41,6 +42,8 @@ export function ApiApplication({ invitationRoute = false, parcelLinkId = null, d
   const invitation = usePendingInvitation(invitationRoute);
   const linkId = useParcelLinkRoute(parcelLinkId);
   const visitor = useVisitorSession(auth.status === 'loading' ? 'checking' : 'visitor');
+  // A browser that holds a sign-in says so before the first paint: it waits for its deliveries, not at the landing.
+  const restoring = useEntryHint(auth.status !== 'loading') === 'app';
   // On a parcel page a visitor signs in without leaving it; the ways to do so come from here.
   const visitorSession = useMemo<PeekSession>(() => ({
     ...visitor,
@@ -114,10 +117,15 @@ export function ApiApplication({ invitationRoute = false, parcelLinkId = null, d
   // The demo's address shows the demo to anyone at once, signed in or not. Leaving the demo returns to `/`.
   if (demoAddress) return demo;
   // A parcel's address shows the parcel to anyone at once, while a saved sign-in is still being restored.
-  // Without one, a visitor arrives at the front door.
-  if (auth.status !== 'authenticated' && (linkId
-    || (auth.status !== 'loading' && !invitation.pending && experience.screen === 'welcome'))) {
-    return <PeekRoot session={visitorSession} serverLinkId={parcelLinkId} />;
+  // Without one, a visitor arrives at the front door: the server draws it for everyone, since it cannot see a saved
+  // sign-in, and so does a browser that holds none while it makes sure.
+  const landing = !linkId && !invitation.pending && experience.screen === 'welcome' && !(auth.status === 'loading' && restoring);
+  if (auth.status !== 'authenticated' && (linkId || landing)) {
+    return <>
+      <PeekRoot session={visitorSession} serverLinkId={parcelLinkId} />
+      {/* For the browser that does hold a sign-in: what it shows, in place of the landing, until the page is live. */}
+      {landing && auth.status === 'loading' && <div className="auth-loading entry-splash" aria-hidden="true"><ParcelIllustration /><span>{t('auth.loading')}</span></div>}
+    </>;
   }
   if (auth.status === 'loading') {
     return <div className="auth-loading" role="status"><ParcelIllustration /><span>{t('auth.loading')}</span></div>;

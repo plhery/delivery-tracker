@@ -1,0 +1,22 @@
+/* The carrier ribbon: the trucks from the brand data rolling by, each riding a little unevenly. */
+.door-ribbon { display: grid; gap: 12px; margin-top: 22px; animation: door-rise .6s var(--spring) .5s both; }
+.door-ribbon__caption { margin: 0; padding: 0 16px; color: var(--ink-soft); font-size: 12px; line-height: 1.4; text-align: center; text-wrap: balance; }
+.door-ribbon__road { position: relative; width: 100%; max-width: 1100px; margin: 0 auto; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent); mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent); }
+.door-ribbon__lane { display: flex; width: max-content; }
+.door-ribbon__road[data-rolling] .door-ribbon__lane { animation: door-drive 60s linear infinite; }
+.door-ribbon__truck { --carrier-brand: light-dark(var(--carrier-brand-light), var(--carrier-brand-dark)); display: inline-flex; flex-shrink: 0; padding: 0 16px; animation: door-wheel ease-in-out infinite; }
+.door-ribbon__truck .carrier-mark { white-space: nowrap; }
+.door-ribbon__road[data-paused] .door-ribbon__lane, .door-ribbon__road[data-paused] .door-ribbon__truck { animation-play-state: paused; }
+@keyframes door-drive { to { transform: translateX(-50%); } }
+@keyframes door-wheel { 50% { transform: translateY(-1.5px); } }
+@media (hover: hover) {
+  .door-ribbon__road:hover .door-ribbon__lane, .door-ribbon__road:hover .door-ribbon__truck { animation-play-state: paused; }
+}
+@media (max-width: 760px) {
+  .door-ribbon { gap: 10px; margin-top: 18px; }
+  .door-ribbon__caption { font-size: 11px; }
+  .door-ribbon__road[data-rolling] .door-ribbon__lane { animation-duration: 46s; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .door-ribbon, .door-ribbon__road[data-rolling] .door-ribbon__lane, .door-ribbon__truck { animation: none; }
+}

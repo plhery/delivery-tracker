@@ -4,9 +4,10 @@ import { requestLanguage } from '../src/server/requestLocale';
 import { connection } from 'next/server';
 import { ClientApplication } from '../src/ClientApplication';
 
-const title = 'Peek — Universal Parcel Tracker';
+// The landing's own title is the question it answers; the description says only what the page itself claims.
+const title = 'Peek — Where’s my parcel?';
 const description =
-  'Private parcel tracking, with alerts and history synced across your devices.';
+  'Paste a tracking number, a carrier link or a shipping email and see where your parcel is. 3,500+ carriers, checked every 10 minutes. Open source, no account needed.';
 
 export async function generateMetadata(): Promise<Metadata> {
   const origin = await requestOrigin();

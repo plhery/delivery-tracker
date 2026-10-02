@@ -1,0 +1,17 @@
+/* The landing below the field: each section opens with a visitor's question. */
+.landing-section { width: min(100%, 1100px); margin: 90px auto 0; padding-top: 80px; border-top: 1px solid var(--line); }
+.landing-section h2 { margin: 0; font-size: 44px; line-height: 1.08; letter-spacing: -.035em; font-weight: 650; text-wrap: balance; overflow-wrap: anywhere; }
+.landing-section h2 + p { margin: 0; color: var(--ink-soft); font-size: 16px; line-height: 1.55; }
+.landing-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.landing-chips li { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink-soft); font-size: 11.5px; }
+.landing-chips svg { flex-shrink: 0; width: 13px; height: 13px; }
+/* Several lines that take turns in one place: the place is as tall as the tallest, so a turn moves nothing. */
+.landing-stack { display: grid; }
+.landing-stack > * { grid-area: 1 / 1; opacity: 0; transition: opacity .3s linear; }
+.landing-stack > [data-on] { opacity: 1; }
+
+@media (max-width: 760px) {
+  .landing-section { margin-top: 46px; padding-top: 34px; }
+  .landing-section h2 { font-size: 28px; }
+  .landing-section h2 + p { font-size: 14px; line-height: 1.5; }
+}

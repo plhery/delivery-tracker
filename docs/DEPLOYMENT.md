@@ -57,6 +57,9 @@ docker build \
 
 The build fails early unless API mode is on and at least one sign-in method is enabled.
 
+`NEXT_PUBLIC_IOS_APP_URL` is an optional build argument: the https address of the iPhone
+app's page. The landing shows "Get the iPhone app" only when it is set.
+
 At runtime, set the server Supabase values and `SUPABASE_SERVICE_ROLE_KEY`. Push is
 optional:
 

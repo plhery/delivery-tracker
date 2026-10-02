@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import '../src/styles.css';
 import { authConfigFromEnvironment } from '../src/auth/authConfig';
 import { APPEARANCE_BOOTSTRAP } from '../src/lib/appearanceConfig';
+import { ENTRY_HINT_BOOTSTRAP } from '../src/lib/entryHintConfig';
 import { requestLocale } from '../src/server/requestLocale';
 
 export const metadata: Metadata = {
@@ -41,6 +42,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang={await requestLocale()} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: APPEARANCE_BOOTSTRAP }} />
+        {/* Tells the stylesheet, before anything is painted, who is about to see the landing at `/`. */}
+        <script dangerouslySetInnerHTML={{ __html: ENTRY_HINT_BOOTSTRAP }} />
         {authOrigin && <link rel="preconnect" href={authOrigin} crossOrigin="anonymous" />}
       </head>
       <body>{children}</body>

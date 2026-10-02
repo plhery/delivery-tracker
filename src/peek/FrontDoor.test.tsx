@@ -3,8 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { hydrateRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { scroll, stubIntersections } from '../test/intersections';
 import { LINK_ID, OTHER_LINK_ID, OWNER_KEY, pendingView, testView } from '../test/parcelLinks';
 import { FrontDoor } from './FrontDoor';
+import { FIRST_SAMPLE_MS, SAMPLE_PERIOD_MS } from './landing/useSampleLoop';
 import { ParcelLinkError, type ParcelLookup } from './links';
 import { forgetDeviceChecks } from './lookup/deviceList';
 import { forgetAllRecents, recentFor, rememberParcel, renameParcel } from './recents';
@@ -38,6 +40,9 @@ function door() {
   };
 }
 const type = (field: HTMLElement, text: string) => fireEvent.input(field, { target: { value: text } });
+/** The parcels of this device; the page around them has links of its own. */
+const deviceLinks = () => within(screen.getByRole('region', { name: 'On this device' })).getAllByRole('link');
+const deviceLink = () => within(screen.getByRole('region', { name: 'On this device' })).getByRole('link');
 /** A reader who asked for less motion gets no recognise beat: the answer hands over at once. */
 const stillMotion = (still: boolean) => vi.stubGlobal('matchMedia', vi.fn((query: string) => ({
   matches: still && query.includes('reduce'), addEventListener: vi.fn(), removeEventListener: vi.fn(),
@@ -526,7 +531,7 @@ describe('FrontDoor: on this device', () => {
   it('shortens a long number to its two ends', () => {
     rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: testView({ parcel: { trackingNumber: 'DEMOGLS20260001', carrier: 'gls-ch' } }), now: Date.now() });
     door();
-    expect(screen.getByRole('link')).toHaveTextContent('DEMOGLS…0001');
+    expect(deviceLink()).toHaveTextContent('DEMOGLS…0001');
   });
 
   it('opens the link of a number the device already follows instead of spending a lookup', async () => {
@@ -547,8 +552,8 @@ describe('FrontDoor: on this device', () => {
     const seen = recentFor(LINK_ID)!.lastSeenAt;
     mocks.read.mockImplementation(async (id: string) => id === LINK_ID ? testView({ stages: ['registered', 'in_transit', 'out_for_delivery'] }) : 'unavailable');
     door();
-    await waitFor(() => expect(screen.getAllByRole('link')).toHaveLength(1));
-    expect(screen.getByRole('link')).toHaveTextContent('Out for delivery');
+    await waitFor(() => expect(deviceLinks()).toHaveLength(1));
+    expect(deviceLink()).toHaveTextContent('Out for delivery');
     expect(mocks.read).toHaveBeenCalledWith(LINK_ID, { key: OWNER_KEY, signal: expect.any(AbortSignal) });
     expect(mocks.read).toHaveBeenCalledWith(OTHER_LINK_ID, { key: null, signal: expect.any(AbortSignal) });
     expect(recentFor(LINK_ID)).toMatchObject({ key: OWNER_KEY, stage: 'out_for_delivery', lastSeenAt: seen });
@@ -562,7 +567,7 @@ describe('FrontDoor: on this device', () => {
     mocks.read.mockRejectedValue(new ParcelLinkError('offline'));
     door();
     await waitFor(() => expect(mocks.read).toHaveBeenCalledOnce());
-    expect(screen.getAllByRole('link')).toHaveLength(2);
+    expect(deviceLinks()).toHaveLength(2);
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
@@ -575,7 +580,7 @@ describe('FrontDoor: on this device', () => {
     expect(question).toHaveFocus();
     expect(mocks.forget).not.toHaveBeenCalled();
     await user.click(within(question).getByRole('button', { name: 'Cancel' }));
-    expect(screen.getAllByRole('link')).toHaveLength(2);
+    expect(deviceLinks()).toHaveLength(2);
     await user.click(screen.getByRole('button', { name: 'Forget all' }));
     await user.click(screen.getByRole('button', { name: 'Forget' }));
     await waitFor(() => expect(screen.queryByRole('region', { name: 'On this device' })).not.toBeInTheDocument());
@@ -596,7 +601,7 @@ describe('FrontDoor: on this device', () => {
     await user.click(screen.getByRole('button', { name: 'Forget all' }));
     await user.click(screen.getByRole('button', { name: 'Forget' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t forget every parcel. Check your connection and try again.');
-    expect(screen.getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual([`/p/${LINK_ID}`]);
+    expect(deviceLinks().map((link) => link.getAttribute('href'))).toEqual([`/p/${LINK_ID}`]);
     expect(screen.getByRole('button', { name: 'Forget all' })).toBeVisible();
   });
 
@@ -605,16 +610,16 @@ describe('FrontDoor: on this device', () => {
     rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: pendingView(), now: Date.now() });
     mocks.read.mockResolvedValueOnce(pendingView()).mockResolvedValue(testView());
     const { view } = door();
-    expect(screen.getByRole('link')).toHaveTextContent('Checking for updates');
+    expect(deviceLink()).toHaveTextContent('Checking for updates');
     // Just looked up: not asked at once.
     await act(async () => { await vi.advanceTimersByTimeAsync(0); });
     expect(mocks.read).not.toHaveBeenCalled();
     await act(async () => { await vi.advanceTimersByTimeAsync(2_000); });
     expect(mocks.read).toHaveBeenCalledOnce();
-    expect(screen.getByRole('link')).toHaveTextContent('Checking for updates');
+    expect(deviceLink()).toHaveTextContent('Checking for updates');
     await act(async () => { await vi.advanceTimersByTimeAsync(3_000); });
     expect(mocks.read).toHaveBeenCalledTimes(2);
-    expect(screen.getByRole('link')).toHaveTextContent('In transit');
+    expect(deviceLink()).toHaveTextContent('In transit');
     // Answered: the list rests.
     await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
     expect(mocks.read).toHaveBeenCalledTimes(2);
@@ -626,5 +631,206 @@ describe('FrontDoor: on this device', () => {
     const { user } = door();
     await user.click(screen.getByRole('button', { name: 'Forget all' }));
     expect(screen.getByRole('group', { name: 'Forget this parcel?' })).toBeVisible();
+  });
+});
+
+describe('FrontDoor: the landing', () => {
+  const hero = () => document.querySelector<HTMLElement>('.door-hero')!;
+  const sample = () => document.querySelector('.door-sample[data-on] .door-sample__text')?.textContent ?? null;
+  const line = () => document.querySelector<HTMLElement>('.door-sample-line');
+  const pass = (milliseconds: number) => act(() => { vi.advanceTimersByTime(milliseconds); });
+  /** A first visit with the page in view, in a browser that moves. */
+  function arrive() {
+    stillMotion(false);
+    stubIntersections();
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+    const view = render(<FrontDoor onTracked={onTracked} onSignIn={onSignIn} />);
+    scroll(hero(), 1);
+    return { view, field: screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Tracking number or link' }) };
+  }
+
+  it('opens the landing for a first visit: the pill, the question, what to paste, Pip as the way to a sample, the carriers, and three more questions', () => {
+    door();
+    expect(screen.getByRole('link', { name: 'Open source 3,500+ carriers' })).toHaveAttribute('href', 'https://github.com/plhery/delivery-tracker');
+    expect(screen.getByText('Paste a tracking number, a carrier link or a whole shipping email. No account needed.')).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Open a sample parcel' })).toHaveAttribute('href', '/demo');
+    expect(screen.getByRole('img', { name: /^Works with Swiss Post, DHL, UPS/ })).toBeVisible();
+    // Four sections, each a visitor's question.
+    expect(screen.getAllByRole('heading').filter((heading) => /^H[12]$/.test(heading.tagName)).map((heading) => heading.textContent)).toEqual([
+      'Where’s my parcel?', 'Will I know when it moves?', 'Following more than one?', 'Who’s behind Peek?',
+    ]);
+    expect(document.querySelector('.door')).toHaveAttribute('data-view', 'first');
+    expect(document.title).toBe('Peek — Where’s my parcel?');
+  });
+
+  it('gives the tab back to the app when the landing closes', () => {
+    const { view } = door();
+    view.unmount();
+    expect(document.title).toBe('Peek — Universal Parcel Tracker');
+  });
+
+  it('shows what the field takes while nobody has touched it: a number, a link, an email, each with its carrier', () => {
+    const { field } = arrive();
+    expect(sample()).toBeNull();
+    pass(FIRST_SAMPLE_MS);
+    expect(sample()).toBe('1234567899');
+    expect(screen.getByRole('button', { name: 'Paste' })).toHaveAttribute('data-press');
+    pass(300);
+    expect(line()).toHaveAttribute('data-phase', 'finding');
+    expect(line()!.querySelector('.door-sample-line__finding')).toHaveTextContent('Finding the carrier asking DHL, UPS and Swiss Post…');
+    pass(900);
+    expect(line()).toHaveAttribute('data-phase', 'found');
+    expect(line()!.querySelector('.door-sample-line__found')).toHaveTextContent('DHL has this parcel');
+    expect(document.querySelector('.door-pip')).toHaveAttribute('data-mood', 'happy');
+    pass(2_400);
+    expect(sample()).toBeNull();
+    expect(document.querySelector('.door-pip')).not.toHaveAttribute('data-mood');
+    pass(400);
+    expect(sample()).toBe('ups.com/track?tracknum=1ZDEMO202600000001');
+    pass(1_200);
+    expect(line()!.querySelector('.door-sample-line__found')).toHaveTextContent('UPS found in the link');
+    pass(SAMPLE_PERIOD_MS - 1_200);
+    expect(sample()).toBe('Your order has shipped! Track it: 99.60.123456.78901234');
+    pass(1_200);
+    expect(line()!.querySelector('.door-sample-line__found')).toHaveTextContent('Swiss Post found in the email');
+
+    // The samples are for the eye only: never the field's value, never sent anywhere, never read out.
+    expect(field.value).toBe('');
+    expect(document.querySelector('.door-sample')).toHaveAttribute('aria-hidden', 'true');
+    expect(line()).toHaveAttribute('aria-hidden', 'true');
+    expect(mocks.lookup).not.toHaveBeenCalled();
+    expect(mocks.detect).not.toHaveBeenCalled();
+    expect(onTracked).not.toHaveBeenCalled();
+  });
+
+  it('stops showing itself for good the moment the field has the focus', () => {
+    const { field } = arrive();
+    pass(FIRST_SAMPLE_MS + 1_300);
+    expect(sample()).toBe('1234567899');
+    act(() => field.focus());
+    expect(sample()).toBeNull();
+    expect(line()).toHaveAttribute('data-phase', 'rest');
+    act(() => field.blur());
+    pass(5 * SAMPLE_PERIOD_MS);
+    expect(sample()).toBeNull();
+    expect(field.value).toBe('');
+  });
+
+  it('stops for typing and for a paste, and tracks what was pasted, not the sample', async () => {
+    const { field } = arrive();
+    pass(FIRST_SAMPLE_MS + 500);
+    expect(sample()).toBe('1234567899');
+    fireEvent.paste(field);
+    type(field, `Your order has shipped: ${UPS}`);
+    // The sample is gone, and with it everything that belonged to it.
+    expect(document.querySelector('.door-sample')).toBeNull();
+    expect(line()).toBeNull();
+    expect(mocks.lookup).toHaveBeenCalledWith({ trackingNumber: UPS, carrier: 'ups' }, expect.any(AbortSignal));
+    expect(mocks.lookup).toHaveBeenCalledOnce();
+    // The recognise beat, then the hand-over.
+    await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+    expect(onTracked).toHaveBeenCalledOnce();
+    expect(onTracked.mock.calls[0][0].id).toBe(LINK_ID);
+  });
+
+  it('shows itself only while the first screen is on screen', () => {
+    arrive();
+    pass(FIRST_SAMPLE_MS + 1_300);
+    expect(sample()).toBe('1234567899');
+    expect(hero()).not.toHaveAttribute('data-resting');
+    scroll(hero(), 0);
+    expect(sample()).toBeNull();
+    expect(hero()).toHaveAttribute('data-resting');
+    pass(5 * SAMPLE_PERIOD_MS);
+    expect(sample()).toBeNull();
+    // Back in view it goes on with the next sample.
+    scroll(hero(), 1);
+    pass(FIRST_SAMPLE_MS);
+    expect(sample()).toBe('ups.com/track?tracknum=1ZDEMO202600000001');
+  });
+
+  it('shows the placeholder, and nothing else, to someone who asked for less motion', () => {
+    stubIntersections();
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+    render(<FrontDoor onTracked={onTracked} onSignIn={onSignIn} />);
+    scroll(hero(), 1);
+    pass(5 * SAMPLE_PERIOD_MS);
+    expect(sample()).toBeNull();
+    expect(line()).toHaveAttribute('data-phase', 'rest');
+    expect(screen.getByRole('textbox', { name: 'Tracking number or link' })).toHaveAttribute('placeholder', 'Paste a number, link, or message');
+    // Pip stands still, and still opens a sample.
+    expect(screen.getByRole('link', { name: 'Open a sample parcel' })).toHaveAttribute('href', '/demo');
+  });
+
+  it('stops showing itself while Pip opens a sample', () => {
+    arrive();
+    pass(FIRST_SAMPLE_MS + 100);
+    expect(sample()).toBe('1234567899');
+    fireEvent.click(screen.getByRole('link', { name: 'Open a sample parcel' }));
+    expect(sample()).toBeNull();
+    expect(document.querySelector('.door-pip')).toHaveClass('door-pip--opening');
+    pass(1_300);
+    expect(location.pathname).toBe('/demo');
+  });
+
+  it('pastes and tracks with the one button a phone’s first visit has, which gives way to Track once the field has something', async () => {
+    const { user, track } = door();
+    const both = screen.getByRole('button', { name: 'Paste and track' });
+    // Track is there from the start, for the keyboard and for a wider screen; the stylesheet shows one or the other.
+    expect(track).toBeEnabled();
+    expect(both.closest('.door-action')).toHaveAttribute('data-paste');
+    await navigator.clipboard.writeText(`Your order has shipped: ${UPS}`);
+    await user.click(both);
+    await waitFor(() => expect(mocks.lookup).toHaveBeenCalledWith({ trackingNumber: UPS, carrier: 'ups' }, expect.any(AbortSignal)));
+    expect(screen.queryByRole('button', { name: 'Paste and track' })).not.toBeInTheDocument();
+    expect(document.querySelector('.door-action')).not.toHaveAttribute('data-paste');
+  });
+
+  it('says why when the one button could not paste', async () => {
+    const { user } = door();
+    vi.spyOn(navigator.clipboard, 'readText').mockRejectedValueOnce(new DOMException('denied', 'NotAllowedError'));
+    await user.click(screen.getByRole('button', { name: 'Paste and track' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t paste');
+  });
+
+  it('gives the first screen to the parcels of this device: no pill, no samples, no Pip, the list right under the field, then the rest', () => {
+    rememberParcel({ id: LINK_ID, key: OWNER_KEY, view: testView(), now: Date.now() });
+    stillMotion(false);
+    stubIntersections();
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+    const view = render(<FrontDoor onTracked={onTracked} onSignIn={onSignIn} />);
+    scroll(hero(), 1);
+    pass(3 * SAMPLE_PERIOD_MS);
+    expect(document.querySelector('.door')).toHaveAttribute('data-view', 'device');
+    expect(screen.queryByRole('link', { name: 'Open source 3,500+ carriers' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/No account needed\.$/)).not.toBeInTheDocument();
+    expect(document.querySelector('.door-sample')).toBeNull();
+    expect(line()).toBeNull();
+    expect(document.querySelector('.door-pip')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Paste and track' })).not.toBeInTheDocument();
+    // The list comes before everything the landing says.
+    const list = screen.getByRole('region', { name: 'On this device' });
+    const moves = screen.getByRole('region', { name: 'Will I know when it moves?' });
+    expect(list.compareDocumentPosition(moves) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(list.compareDocumentPosition(screen.getByRole('img', { name: /^Works with/ })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    view.unmount();
+  });
+
+  it('counts a visit only once it knows a visitor is looking', async () => {
+    const analytics = await import('../lib/analytics');
+    const seen = vi.spyOn(analytics, 'trackScreen');
+    const { PeekSessionProvider } = await import('./session');
+    const view = render(<PeekSessionProvider value={{ account: 'checking', signIn: () => undefined }}><FrontDoor onTracked={onTracked} onSignIn={onSignIn} /></PeekSessionProvider>);
+    expect(seen).not.toHaveBeenCalled();
+    view.rerender(<PeekSessionProvider value={{ account: 'visitor', signIn: () => undefined }}><FrontDoor onTracked={onTracked} onSignIn={onSignIn} /></PeekSessionProvider>);
+    expect(seen).toHaveBeenCalledWith('front-door', 'anonymous');
+    seen.mockRestore();
+  });
+
+  it('draws the whole first screen on the server: Pip included, nothing of the map or the cards', () => {
+    const html = renderToString(<FrontDoor onTracked={onTracked} onSignIn={onSignIn} />);
+    for (const text of ['Where’s my parcel?', 'Open a sample parcel', 'door-pip', 'door-ribbon__truck', 'Who’s behind Peek?']) expect(html).toContain(text);
+    expect(html).not.toContain('landing-journey__canvas');
+    expect(html).not.toContain('parcel-card');
   });
 });

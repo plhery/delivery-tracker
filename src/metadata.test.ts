@@ -16,6 +16,9 @@ import { generateMetadata } from '../app/page';
 const TITLE = 'Peek — Universal Parcel Tracker';
 const DESCRIPTION =
   'Private parcel tracking, with alerts and history synced across your devices.';
+const LANDING_TITLE = 'Peek — Where’s my parcel?';
+const LANDING_DESCRIPTION =
+  'Paste a tracking number, a carrier link or a shipping email and see where your parcel is. 3,500+ carriers, checked every 10 minutes. Open source, no account needed.';
 
 describe('public product metadata', () => {
   it('names the site and the installed PWA Peek, with what it does where the name stands alone', () => {
@@ -39,21 +42,21 @@ describe('public product metadata', () => {
     });
   });
 
-  it('uses the same positioning in canonical and social metadata', async () => {
+  it('titles the landing with the question it answers, the same in canonical and social metadata', async () => {
     const metadata = await generateMetadata();
     expect(metadata).toMatchObject({
       metadataBase: new URL('https://delivery.example.test/'),
-      title: TITLE,
-      description: DESCRIPTION,
+      title: LANDING_TITLE,
+      description: LANDING_DESCRIPTION,
       alternates: { canonical: 'https://delivery.example.test/' },
       openGraph: {
         siteName: 'Peek',
-        title: TITLE,
-        description: DESCRIPTION,
+        title: LANDING_TITLE,
+        description: LANDING_DESCRIPTION,
       },
       twitter: {
-        title: TITLE,
-        description: DESCRIPTION,
+        title: LANDING_TITLE,
+        description: LANDING_DESCRIPTION,
       },
     });
   });

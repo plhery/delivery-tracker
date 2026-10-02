@@ -36,6 +36,8 @@
 .dot[data-kind=last-known] circle { fill: var(--paper); stroke: var(--map-accent); stroke-width: 2; }
 .dot[data-kind=destination] circle { fill: var(--map-dot-ring); stroke: var(--map-route-muted); stroke-width: 1.5; }
 .dot[data-kind=area] circle { fill: none; stroke: var(--map-route); stroke-width: 1.4; stroke-dasharray: 1.6 2.4; }
+/* A journey told scan by scan: the dot and Pip travel to the next place. */
+.dot[data-glide], .pip[data-glide] { transition: transform .45s var(--spring); }
 @keyframes pulse { from { transform: scale(1); opacity: .35; } to { transform: scale(3.4); opacity: 0; } }
 .placeLabel {
   position: absolute; left: 0; top: 0; display: flex; align-items: center; height: 22px; padding: 0 7px; border-radius: 7px;

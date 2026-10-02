@@ -34,6 +34,7 @@ const RESTING_CENTER: Coordinate = [8.2, 42];
 export function WorldMap({
   route, mode, shape = 'rect', insets = NO_INSETS, look = 'map', labels = 'all', sites = false, context = true, interactive = false, night = false,
   time, redrawKey = '', recenter = 0, onFreeChange, className = '', style, label, languageTag = 'en', live = true, peek = false, pip = null,
+  framing, glide = false,
 }: {
   route: Route;
   mode: MapMode;
@@ -67,6 +68,10 @@ export function WorldMap({
   peek?: boolean;
   /** Pip stands beside the parcel's place in this mood. */
   pip?: PipPlacing | null;
+  /** The route the camera frames instead of the one drawn, so a journey told scan by scan keeps one picture. */
+  framing?: Route;
+  /** The parcel's dot and Pip travel to a new place instead of appearing there. */
+  glide?: boolean;
 }) {
   const ready = useWorld();
   const root = useRef<HTMLDivElement>(null);
@@ -100,8 +105,9 @@ export function WorldMap({
   }, []);
 
   const { top, right, bottom, left } = insets;
-  const target = useMemo(() => ready && size ? targetCamera(route, mode, size, { top, right, bottom, left }, shape) : null,
-    [ready, route, mode, size, top, right, bottom, left, shape]);
+  const framed = framing ?? route;
+  const target = useMemo(() => ready && size ? targetCamera(framed, mode, size, { top, right, bottom, left }, shape) : null,
+    [ready, framed, mode, size, top, right, bottom, left, shape]);
 
   // Only a change of view, or recentering, brings a moved map back; a new frame or scan leaves it where it was put.
   useEffect(() => {
@@ -266,10 +272,16 @@ export function WorldMap({
         <g clipPath={circle ? `url(#${clip})` : undefined}>
           {overlay.legs.map(leg => <path key={leg.id} d={leg.d} className={styles.leg} data-kind={leg.kind}
             pathLength={leg.kind === 'travelled' ? 1 : undefined} />)}
-          {overlay.dots.map(dot => <g key={dot.id} className={styles.dot} data-kind={dot.kind} transform={`translate(${dot.x} ${dot.y})`}>
-            {dot.kind === 'current' && live && <circle className={styles.halo} r="5" />}
-            <circle r={dot.kind === 'current' ? 5 : dot.kind === 'origin' ? 3.5 : dot.kind === 'stop' ? 2.6 : 4.5} />
-          </g>)}
+          {overlay.dots.map(dot => {
+            // A dot that travels is one element from place to place, moved by a style so the move can be eased.
+            const travels = glide && dot.kind === 'current';
+            return <g key={travels ? 'current' : dot.id} className={styles.dot} data-kind={dot.kind} data-glide={travels || undefined}
+              transform={travels ? undefined : `translate(${dot.x} ${dot.y})`}
+              style={travels ? { transform: `translate(${dot.x.toFixed(1)}px, ${dot.y.toFixed(1)}px)` } : undefined}>
+              {dot.kind === 'current' && live && <circle className={styles.halo} r="5" />}
+              <circle r={dot.kind === 'current' ? 5 : dot.kind === 'origin' ? 3.5 : dot.kind === 'stop' ? 2.6 : 4.5} />
+            </g>;
+          })}
         </g>
       </svg>}
       {circle && <span className={styles.rim} aria-hidden="true"
@@ -283,7 +295,7 @@ export function WorldMap({
         <span><strong>{pointer.text}</strong> {pointer.detail}</span>
       </span>)}
     </div>
-    {overlay?.pip && <span className={styles.pip} data-pip={overlay.pip.mood} data-side={overlay.pip.side} aria-hidden="true"
+    {overlay?.pip && <span className={styles.pip} data-pip={overlay.pip.mood} data-side={overlay.pip.side} data-glide={glide || undefined} aria-hidden="true"
       style={{ transform: `translate(${overlay.pip.x.toFixed(1)}px, ${overlay.pip.y.toFixed(1)}px)`, width: overlay.pip.width }}>
       <span className={styles.pipIn}><InkPip mood={overlay.pip.mood} side={overlay.pip.side} below={overlay.pip.below} /></span>
     </span>}

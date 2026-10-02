@@ -447,6 +447,42 @@ describe('WorldMap', () => {
     expect(screen.getByText('Kyoto').parentElement?.textContent).toContain('km');
   });
 
+  it('keeps one picture for a journey told scan by scan, and lets the parcel travel across it', async () => {
+    const leipzigOnly = buildRoute([scan(leipzig)], zurich);
+    const whole = buildRoute([scan(leipzig), scan(basel), scan(zurich)]);
+    const dot = (container: HTMLElement) => container.querySelector<SVGGElement>('g[data-kind="current"]')!;
+    const { container, rerender } = render(<WorldMap route={leipzigOnly} framing={whole} mode="journey" time={time} glide pip={{ mood: 'look' }} />);
+    await waitFor(() => expect(dot(container)).not.toBeNull());
+    // The travelling dot is placed by a style, which can be eased; every other dot keeps its attribute.
+    const first = dot(container);
+    expect(first).toHaveAttribute('data-glide');
+    expect(first).not.toHaveAttribute('transform');
+    expect(first.style.transform).toMatch(/^translate\(/);
+    expect(container.querySelector('g[data-kind="destination"]')).toHaveAttribute('transform');
+    expect(container.querySelector('[data-pip]')).toHaveAttribute('data-glide');
+    const start = first.style.transform;
+    const framed = targetCamera(whole, 'journey', frame, { top: 0, right: 0, bottom: 0, left: 0 }, 'rect');
+    const alone = targetCamera(leipzigOnly, 'journey', frame, { top: 0, right: 0, bottom: 0, left: 0 }, 'rect');
+    expect(framed.scale).not.toBeCloseTo(alone.scale, 0);
+
+    // The next scan: the same element moves on, the place it left keeps a dot of its own, and the picture stays.
+    rerender(<WorldMap route={whole} framing={whole} mode="journey" time={time} glide pip={{ mood: 'eager' }} />);
+    await waitFor(() => expect(container.querySelectorAll('path[data-kind="travelled"]')).toHaveLength(2));
+    expect(dot(container)).toBe(first);
+    expect(first.style.transform).not.toBe(start);
+    const origin = container.querySelector('g[data-kind="origin"]')!;
+    expect(origin.getAttribute('transform')!.replace(/[^\d.]+/g, ' ').trim().split(' ').map(Number).map(Math.round))
+      .toEqual(start.replace(/[^\d.]+/g, ' ').trim().split(' ').map(Number).map(Math.round));
+  });
+
+  it('places every dot by its attribute, and frames the route itself, unless told otherwise', async () => {
+    const route = buildRoute([scan(leipzig), scan(zurich)]);
+    const { container } = render(<WorldMap route={route} mode="journey" time={time} pip={{ mood: 'look' }} />);
+    await waitFor(() => expect(container.querySelector('g[data-kind="current"]')).not.toBeNull());
+    expect(container.querySelector('g[data-kind="current"]')).toHaveAttribute('transform');
+    expect(container.querySelector('[data-glide]')).toBeNull();
+  });
+
   it('waits for a size before drawing', async () => {
     vi.stubGlobal('ResizeObserver', undefined);
     const route = buildRoute([scan(kyoto), scan(zurich)]);

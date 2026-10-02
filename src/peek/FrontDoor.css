@@ -1,11 +1,35 @@
-/* The front door stands where the welcome screen stood: the name keeps its place when sign-in opens beside it. */
-.door { position: relative; isolation: isolate; min-height: 100dvh; padding: 0 32px 40px; overflow-x: clip; }
+/* The front door opens the landing: the field is its first section, and the page goes on below it.
+   Its header stands where the sign-in step's does, so the name keeps its place when sign-in opens. */
+.door { position: relative; min-height: 100dvh; padding: 0 32px; overflow-x: clip; }
 .door-header { display: flex; align-items: center; justify-content: space-between; width: min(100%, 1044px); min-height: 104px; margin: 0 auto; gap: 18px; }
+.door-header__actions { display: flex; align-items: center; flex-shrink: 0; gap: 18px; }
+.door-github { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: var(--ink-soft); font-size: 13px; font-weight: 550; text-decoration: none; }
+.door-github svg { width: 15px; height: 15px; }
 .door-signin { flex-shrink: 0; min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink); font-size: 13px; font-weight: 550; line-height: 1.35; white-space: nowrap; transition: scale .18s var(--spring); }
 .door-signin:active:not(:disabled) { scale: .96; }
-.door-body { width: min(100%, 640px); margin: 0 auto; padding-top: 10px; }
-.door-body h1 { margin: 0; font-size: clamp(44px, 4.6vw, 66px); line-height: 1.04; letter-spacing: -.039em; font-weight: 650; text-align: center; }
+/* Before the page is live (src/lib/entryHintConfig.ts): a browser that holds a sign-in, or has the demo open, is not
+   shown the landing it is about to leave; it sees what it saw while its parcels opened. */
+html[data-entry=app] .door { display: none; }
+.entry-splash { display: none; }
+html[data-entry=app] .entry-splash { display: grid; }
+/* A visitor with parcels on this device gets them first: until they are in place, only the name stands. */
+html[data-entry=device] .door > :not(.door-header), html[data-entry=device] .door > :not(.door-header) * { visibility: hidden !important; }
+/* "Where's my parcel?": the first section. */
+.door-hero { position: relative; isolation: isolate; }
+.door-body { width: min(100%, 680px); margin: 0 auto; text-align: center; }
+.door-pill { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 32px; margin-bottom: 18px; padding: 0 13px 0 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink); font-size: 12px; font-weight: 550; text-decoration: none; }
+/* A finger gets more than the pill's own height. */
+.door-pill::after { content: ''; position: absolute; inset: -6px 0; }
+.door-pill svg { width: 14px; height: 14px; }
+.door-pill__dot { width: 3px; height: 3px; border-radius: 50%; background: var(--ink-soft); }
+.door-body h1 { margin: 0; font-size: clamp(44px, 4.6vw, 66px); line-height: 1.04; letter-spacing: -.039em; font-weight: 650; }
+.door-lead { margin: 16px 0 0; color: var(--ink-soft); font-size: 17px; }
 .door-form { margin-top: 34px; text-align: start; }
+/* On arrival the pill, the title, the line and the field rise one after the other. */
+.door[data-view=first] :is(.door-pill, .door-body h1, .door-lead, .door-form) { animation: door-rise .6s var(--spring) both; }
+.door[data-view=first] .door-body h1 { animation-delay: .06s; }
+.door[data-view=first] .door-lead { animation-delay: .12s; }
+.door[data-view=first] .door-form { animation-delay: .18s; }
 
 /* One field for a number, a link or a whole message; Track stands beside it. */
 .door-entry { display: flex; align-items: flex-start; gap: 10px; }
@@ -31,9 +55,32 @@
 .door-action { flex-shrink: 0; display: flex; }
 .door-action .button { min-height: 60px; padding: 0 30px; font-size: 15px; white-space: nowrap; }
 .door-action .button--secondary:disabled { opacity: .6; font-variant-numeric: tabular-nums; }
+/* A phone's first visit has one button that pastes and tracks; a wider screen keeps Paste in the field and Track beside it. */
+.door-action__paste { display: none; }
+.door-action__paste svg { width: 19px; height: 19px; }
+
+/* The field shows itself while nobody has touched it: a sample lands over the placeholder, and the carrier answers on the line below. */
+.door-sample { position: absolute; inset: 0; display: flex; align-items: center; background: var(--paper); opacity: 0; pointer-events: none; transition: opacity .18s linear; }
+.door-sample[data-on] { opacity: 1; transition-duration: .12s; }
+.door-sample__text { max-width: 100%; margin-inline-start: -4px; padding: 3px 4px; border-radius: 6px; overflow: hidden; font: 500 15px ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; text-overflow: ellipsis; }
+.door-sample[data-on] .door-sample__text { animation: door-flash 1.08s linear both; }
+.door-paste[data-press] { animation: door-press .24s var(--ease-out); }
+.door-says { position: relative; min-height: 52px; }
+.door[data-view=device] .door-says { min-height: 0; }
+.door-sample-line { position: absolute; inset: 8px 0 auto; height: 44px; pointer-events: none; }
+.door-sample-line > div { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px; opacity: 0; transition: opacity .12s linear; }
+.door-sample-line[data-phase=finding] .door-sample-line__finding { opacity: 1; }
+.door-sample-line:not([data-phase=finding]) .door-line__detect svg { animation: none; }
+.door-sample-line .door-sample-line__found { transform: translateY(5px); transition: opacity .18s var(--ease-out), transform .18s var(--ease-out); }
+.door-sample-line[data-phase=found] .door-sample-line__found { opacity: 1; transform: none; }
+.door-sample-line[data-phase=clearing] .door-sample-line__found { transform: none; }
 
 /* What the door says back. The carrier's line holds its height from the first number on, so an answer moves nothing. */
-.door-feedback { display: grid; gap: 4px; margin-top: 6px; min-width: 0; }
+.door-feedback { display: grid; gap: 4px; margin-top: 8px; min-width: 0; }
+/* On a first visit the carrier's line stands in the middle, where the sample showed it. */
+.door[data-view=first] .door-line, .door-sample-line .door-line__text { justify-content: center; }
+.door[data-view=first] .door-line__text, .door-sample-line .door-line__text { flex: 0 1 auto; }
+.door[data-view=first] .door-found { text-align: center; }
 .door-feedback:empty { display: none; }
 .door-message { margin: 4px 0 0; padding: 0 2px; color: var(--orange-text); font-size: 12px; line-height: 1.45; }
 .door-found { margin: 6px 0 0; color: var(--ink-soft); font-size: 12px; overflow-wrap: anywhere; }
@@ -115,8 +162,50 @@
 /* Pip waits under the field; once the carrier is known its label prints on Pip's side. */
 .door-pip { width: 320px; max-width: 80%; margin: 20px auto 0; animation: door-in .4s var(--ease-out) both; }
 .door-pip .parcel-illustration__label { animation: door-print .45s var(--ease-out) both; }
-/* The carrier's own colour rises from the foot of the screen while the parcel's page is on its way. */
-.door-wash { position: absolute; z-index: -1; inset: auto 0 0; height: min(640px, 72%); background: linear-gradient(to top, var(--tone-surface), transparent); pointer-events: none; animation: door-wash 1s var(--ease-out) both; }
+/* On a first visit he drops in under the carrier's line; the top of his frame is empty, so it reaches up beside the line. */
+.door[data-view=first] .door-pip { width: 236px; max-width: 70%; margin-top: -43px; }
+.door[data-view=first]:not([data-engaged]) .door-pip { animation: door-drop .8s var(--spring) .3s both; }
+/* Only the box itself takes a tap: the empty corners of his frame leave what is under them alone. */
+.door-pip__tap { display: block; border-radius: 28px; outline-offset: -8px; pointer-events: none; }
+/* A link styles its icons: Pip keeps his own size and strokes. */
+.door-pip__tap .parcel-illustration { width: 100%; height: auto; stroke: none; stroke-width: 1; stroke-linecap: butt; stroke-linejoin: miter; }
+.door-pip__tap svg * { pointer-events: auto; }
+.door-pip__tap[href] { cursor: pointer; }
+/* He leans toward the pointer, or with the phone. */
+.door-pip__tilt { display: block; transform-origin: 50% 64%; transform: perspective(850px) rotateX(calc(var(--parcel-y, 0) * -4deg)) rotateY(calc(var(--parcel-x, 0) * 5deg)) translate3d(calc(var(--parcel-x, 0) * 7px), calc(var(--parcel-y, 0) * 4px), 0); }
+.door-pip__hop { display: block; transform-origin: 50% 88%; transition: transform .25s var(--spring); }
+.door-pip__tap[href]:active .door-pip__hop { transform: translateY(3px) scale(.976); }
+/* He looks up at the field while it has the focus, and smiles when a carrier answers. */
+.door-pip .parcel-illustration__eye circle { transition: transform .3s var(--ease-out); }
+.door-form:focus-within ~ .door-pip .parcel-illustration__eye circle { transform: translate(-4.9px, -3.4px); }
+.door-pip:not(.door-pip--opening) :is(.parcel-illustration__eye, .parcel-illustration__happy-eye) { transition: opacity .12s linear; }
+.door-pip[data-mood=happy] .parcel-illustration__eye { opacity: 0; }
+.door-pip[data-mood=happy] .parcel-illustration__happy-eye { opacity: 1; }
+/* Off screen and in a background tab he holds still. */
+.door-hero[data-motion-paused=true] :is(.parcel-illustration__body, .parcel-illustration__shadow, .parcel-illustration__eye),
+.door-hero[data-resting] :is(.parcel-illustration__body, .parcel-illustration__shadow, .parcel-illustration__eye) { animation-play-state: paused; }
+/* Tapped, the box opens as it does at sign-in: he presses, the flaps fold back, the card rises out. */
+.door-pip--opening .parcel-illustration__body { animation: parcel-unseal .96s var(--ease-out) both; }
+.door-pip--opening .parcel-illustration__shadow { animation: none; }
+.door-pip--opening .parcel-illustration__flap { transform: scaleY(var(--fold-scale)) skewX(var(--fold-skew)); opacity: 1; }
+.door-pip--opening .parcel-illustration__tape { opacity: 0; transform: translate(-6px, -19px) rotate(-8deg); }
+.door-pip--opening .parcel-illustration__delivery-card { opacity: 1; transform: translateY(-69px) rotate(-5deg); }
+.door-pip--opening .parcel-illustration__check { stroke-dashoffset: 0; }
+.door-pip--opening .parcel-illustration__eye { opacity: 0; animation: none; }
+.door-pip--opening .parcel-illustration__happy-eye { opacity: 1; }
+.door-pip--opening .parcel-illustration__light { animation: parcel-light 1.2s ease-out .14s both; }
+.door-pip--opening .parcel-illustration__glints { opacity: 1; }
+.door-pip--opening .parcel-illustration__sparkle { animation: parcel-sparkle 1.65s ease-out calc(.28s + var(--sparkle-delay)) both; }
+.door-pip--opening .door-pip__tilt { transform: none; transition: transform .35s var(--ease-out); }
+/* The line under him keeps its place whether or not it has something to say. */
+.door-hint { margin: 6px 0 0; color: var(--ink-soft); font-size: 12px; visibility: hidden; }
+.door-hint[data-shown] { visibility: visible; }
+/* It arrives with him. */
+.door[data-view=first]:not([data-engaged]) .door-hint { animation: door-in .5s var(--ease-out) .7s both; }
+.door-hint strong { color: var(--ink); font-weight: 600; }
+.door[data-view=device] .door-hint { display: none; }
+/* The carrier's own colour rises from the foot of the first screen while the parcel's page is on its way. */
+.door-wash { position: absolute; z-index: -1; inset: auto -32px 0; height: min(640px, 72%); background: linear-gradient(to top, var(--tone-surface), transparent); pointer-events: none; animation: door-wash 1s var(--ease-out) both; }
 /* A lookup that takes longer than a beat shows the card that is about to arrive. */
 .door-skeleton { display: none; margin-top: 16px; padding: 18px 20px; border-radius: 24px; background: var(--tone-surface, var(--paper)); animation: door-rise .5s var(--spring) .25s both; }
 .door-skeleton span { display: block; border-radius: 9px; background: color-mix(in srgb, var(--tone, var(--ink-soft)) 20%, transparent); animation: door-breathe 1.2s ease-in-out infinite alternate; }
@@ -149,6 +238,9 @@
 
 @keyframes door-in { from { opacity: 0; transform: translateY(7px); } }
 @keyframes door-rise { from { opacity: 0; transform: translateY(18px) scale(.98); } }
+@keyframes door-drop { 0% { opacity: 0; transform: translateY(-46px); } 55% { opacity: 1; transform: translateY(0) scale(1.08, .9); } 75% { transform: translateY(-6px) scale(.97, 1.03); } 100% { opacity: 1; transform: none; } }
+@keyframes door-flash { 0%, 11% { background-color: var(--yellow-soft); } 100% { background-color: transparent; } }
+@keyframes door-press { 40% { transform: scale(.92); } }
 @keyframes door-wash { from { opacity: 0; transform: translateY(40px); } }
 @keyframes door-breathe { from { opacity: .45; } }
 @keyframes door-print { from { opacity: 0; clip-path: inset(0 0 100% 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
@@ -157,38 +249,63 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .door-line__detect.is-busy svg { opacity: .6; }
+  .door[data-view=first] :is(.door-pill, .door-body h1, .door-lead, .door-form, .door-pip, .door-hint) { animation: none; }
+  .door-pip__tilt, .door-pip__hop { transform: none !important; }
 }
 
 @media (max-width: 760px) {
-  .door { padding: env(safe-area-inset-top) 24px 32px; }
-  /* Room for the button at the foot of the screen. */
-  .door[data-engaged] { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
-  .door-header { min-height: 76px; }
-  .door-body { padding-top: 0; }
-  .door-body h1 { margin: 2px 0 16px; font-size: 30px; line-height: 1.08; letter-spacing: -1.1px; text-align: start; }
-  .door-form { margin-top: 0; }
-  .door-entry { display: block; }
+  .door { padding: env(safe-area-inset-top) 16px 0; }
+  .door-header { min-height: 76px; padding: 0 8px; }
+  .door-github { display: none; }
+  .door-pill { margin-bottom: 14px; }
+  .door-body h1 { font-size: 40px; line-height: 1.06; letter-spacing: -1.6px; }
+  /* The question takes two lines, as a title does on a phone. */
+  .door[data-view=first] .door-body h1 { max-width: 300px; margin-inline: auto; text-wrap: wrap; }
+  .door-lead { max-width: 300px; margin: 12px auto 0; font-size: 14px; }
+  .door-form { margin-top: 22px; }
   /* A little tighter inside, and the placeholder a size smaller, so it fits whole on a 390 px phone. */
   .door-field { gap: 6px; min-height: 54px; padding-left: 14px; }
   .door-field__placeholder { font-size: 15px; }
   .door-paste { padding-inline: 10px; }
   .door-field textarea, .door-field__number, .door-field__placeholder { padding: 10px 0; }
-  .door-action { position: fixed; z-index: 5; left: 24px; right: 24px; bottom: max(22px, env(safe-area-inset-bottom)); }
-  /* The page scrolls under the button, never through it. */
-  .door-action::before { content: ''; position: absolute; z-index: -1; inset: -18px -24px calc(-1 * max(22px, env(safe-area-inset-bottom))); background: linear-gradient(to top, var(--canvas) 62%, transparent); pointer-events: none; }
+  .door-sample__text { font-size: 13.5px; }
+  .door-sample-line__finding small { display: none; }
+  /* On a first visit the button stands under the field, where it pastes and tracks in one tap. */
+  .door[data-view=first] .door-entry { display: grid; gap: 10px; }
+  .door[data-view=first] .door-action { display: grid; }
+  .door[data-view=first] .door-action .button { grid-area: 1 / 1; }
   .door-action .button { width: 100%; min-height: 50px; padding: 13px 20px; }
-  /* With nothing to track yet the field's own Paste leads; the button stays reachable by keyboard. */
-  .door-action[data-idle]:not(:focus-within) { opacity: 0; pointer-events: none; }
-  .door-feedback { margin-top: 8px; }
+  /* While the field is empty that button stands in Track's place; Track stays reachable by keyboard. */
+  .door-action .door-action__paste { display: inline-flex; }
+  .door-action[data-paste] .button[type=submit]:not(:focus-visible) { opacity: 0; pointer-events: none; }
+  .door-action[data-paste] .button[type=submit]:focus-visible { z-index: 1; }
+  .door-says { min-height: 50px; }
+  .door-sample-line { top: 6px; }
+  .door-feedback { margin-top: 6px; }
   .door-line__opening { display: none; }
-  .door-pip { width: 230px; max-width: 70%; margin-top: 18px; }
-  .door-wash { height: min(520px, 70%); }
+  .door[data-view=first] .door-pip { width: 186px; margin-top: -37px; }
+  .door-wash { inset-inline: -16px; height: min(520px, 70%); }
   .door-skeleton { display: block; }
   .door-device__list { grid-template-columns: minmax(0, 1fr); }
+
+  /* With parcels on this device the first screen is theirs: the question, the field, the list. */
+  .door[data-view=device] .door-body { padding: 0 4px; text-align: start; }
+  .door[data-view=device] .door-body h1 { margin: 8px 0 16px; font-size: 30px; line-height: 1.08; letter-spacing: -1.1px; }
+  .door[data-view=device] .door-form { margin-top: 0; }
+  .door[data-view=device] .door-entry { display: block; }
+  .door[data-view=device] .door-pip { width: 230px; max-width: 70%; margin-top: 18px; }
+  /* There the button stands at the foot of the screen once there is something to track, and the page scrolls under it. */
+  .door[data-view=device] .door-action { position: fixed; z-index: 5; left: 20px; right: 20px; bottom: max(22px, env(safe-area-inset-bottom)); }
+  .door[data-view=device] .door-action::before { content: ''; position: absolute; z-index: -1; inset: -18px -20px calc(-1 * max(22px, env(safe-area-inset-bottom))); background: linear-gradient(to top, var(--canvas) 62%, transparent); pointer-events: none; }
+  /* With nothing to track yet the field's own Paste leads; the button stays reachable by keyboard. */
+  .door[data-view=device] .door-action[data-idle]:not(:focus-within) { opacity: 0; pointer-events: none; }
+  .door[data-view=device][data-engaged] .landing-footer { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
 }
 @media (max-width: 360px) {
-  .door { padding-left: 17px; padding-right: 17px; }
-  .door-action { left: 17px; right: 17px; }
-  .door-action::before { inset-inline: -17px; }
+  .door { padding-left: 12px; padding-right: 12px; }
+  .door-body h1 { font-size: 34px; letter-spacing: -1.3px; }
+  .door-wash { inset-inline: -12px; }
+  .door[data-view=device] .door-action { left: 16px; right: 16px; }
+  .door[data-view=device] .door-action::before { inset-inline: -16px; }
   .door-number { gap: 10px; padding-inline: 12px; }
 }
