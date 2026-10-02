@@ -1,23 +1,194 @@
 /* The front door stands where the welcome screen stood: the name keeps its place when sign-in opens beside it. */
-.door { min-height: 100dvh; padding: 0 32px 40px; }
+.door { position: relative; isolation: isolate; min-height: 100dvh; padding: 0 32px 40px; overflow-x: clip; }
 .door-header { display: flex; align-items: center; justify-content: space-between; width: min(100%, 1044px); min-height: 104px; margin: 0 auto; gap: 18px; }
-.door-signin { background: var(--control); color: var(--ink); padding: 10px 14px; min-height: 44px; border-radius: 12px; font-size: 12px; flex-shrink: 0; white-space: nowrap; }
-.door-scene { display: grid; justify-items: center; gap: 18px; width: min(100%, 520px); margin: 0 auto; text-align: center; }
-.door-pip { width: min(220px, 60%); }
-.door-scene h1 { margin: 0; font-size: clamp(34px, 5vw, 54px); line-height: 1.06; letter-spacing: -2px; font-weight: 650; text-wrap: balance; }
-.door-lookup { display: flex; gap: 10px; width: 100%; }
-.door-lookup input { flex: 1; min-width: 0; min-height: 50px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); font-size: 16px; }
-.door-error { margin: 0; color: var(--orange-text); font-size: 13px; }
-.door-recents { width: 100%; text-align: start; }
-.door-recents h2 { margin: 12px 0 8px; font-size: 12px; font-weight: 650; color: var(--ink-soft); }
-.door-recents ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.door-recents a { display: grid; gap: 2px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); text-decoration: none; overflow-wrap: anywhere; }
-.door-recents a span { color: var(--ink-soft); font-size: 12px; }
+.door-signin { flex-shrink: 0; min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink); font-size: 13px; font-weight: 550; line-height: 1.35; white-space: nowrap; transition: scale .18s var(--spring); }
+.door-signin:active:not(:disabled) { scale: .96; }
+.door-body { width: min(100%, 640px); margin: 0 auto; padding-top: 10px; }
+.door-body h1 { margin: 0; font-size: clamp(44px, 4.6vw, 66px); line-height: 1.04; letter-spacing: -.039em; font-weight: 650; text-align: center; }
+.door-form { margin-top: 34px; text-align: start; }
+
+/* One field for a number, a link or a whole message; Track stands beside it. */
+.door-entry { display: flex; align-items: flex-start; gap: 10px; }
+.door-field { flex: 1; display: flex; align-items: flex-start; gap: 8px; min-width: 0; min-height: 60px; padding: 6px 6px 6px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); transition: border-color .2s, box-shadow .2s; }
+.door-field:focus-within { border-color: var(--ochre); box-shadow: 0 0 0 3px color-mix(in srgb, var(--yellow) 22%, transparent); }
+.door-field[data-invalid] { border-color: var(--orange); }
+.door-field__input { position: relative; flex: 1; min-width: 0; }
+.door-field textarea, .door-field__number, .door-field__placeholder { padding: 12px 0; font-size: 16px; line-height: 22px; }
+.door-field__number { flex: 1; min-width: 0; }
+.door-field textarea { display: block; width: 100%; max-height: 138px; margin: 0; border: 0; outline: none; background: transparent; resize: none; overflow-y: auto; }
+/* The browser's own placeholder cannot end in an ellipsis in a multi-line field: it keeps its one line, unseen, under ours. */
+.door-field textarea::placeholder { color: transparent; white-space: nowrap; overflow: hidden; }
+.door-field__placeholder { display: none; position: absolute; inset: 0; overflow: hidden; color: var(--ink-soft); opacity: .72; white-space: nowrap; text-overflow: ellipsis; pointer-events: none; }
+.door-field textarea:placeholder-shown + .door-field__placeholder { display: block; }
+/* A number is set like the label it was read from. 16px keeps iPhone from zooming into the field. */
+.door-field textarea[data-number], .door-field__number, .door-input__field { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .2px; }
+.door-field__number { overflow-wrap: anywhere; }
+.door-field__check { display: grid; place-items: center; align-self: center; flex-shrink: 0; width: 42px; height: 42px; color: var(--tone, var(--ochre)); }
+.door-field__check svg { width: 18px; height: 18px; stroke-width: 2; }
+.door-paste { align-self: center; flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; min-height: 42px; padding: 8px 12px; border-radius: 12px; background: var(--control); font-size: 13px; font-weight: 550; transition: scale .18s var(--spring); }
+.door-paste:active:not(:disabled) { scale: .96; }
+.door-paste svg { width: 16px; height: 16px; }
+.door-action { flex-shrink: 0; display: flex; }
+.door-action .button { min-height: 60px; padding: 0 30px; font-size: 15px; white-space: nowrap; }
+.door-action .button--secondary:disabled { opacity: .6; font-variant-numeric: tabular-nums; }
+
+/* What the door says back. The carrier's line holds its height from the first number on, so an answer moves nothing. */
+.door-feedback { display: grid; gap: 4px; margin-top: 6px; min-width: 0; }
+.door-feedback:empty { display: none; }
+.door-message { margin: 4px 0 0; padding: 0 2px; color: var(--orange-text); font-size: 12px; line-height: 1.45; }
+.door-found { margin: 6px 0 0; color: var(--ink-soft); font-size: 12px; overflow-wrap: anywhere; }
+.door-found strong { padding: 1px 5px; border-radius: 5px; background: var(--yellow-soft); color: var(--ink); font: 400 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.door-line { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.door-line__text { display: flex; flex: 1; align-items: baseline; flex-wrap: wrap; gap: 3px 8px; min-width: 0; }
+/* Each part keeps to one row, so the line is two rows at most and never outgrows its place. */
+.door-line__text strong, .door-line__text small { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.door-line__text strong { font-size: 13px; font-weight: 600; }
+.door-line__text small { color: var(--ink-soft); font-size: 12px; }
+.door-line__text small.is-attention { color: var(--ochre); }
+.door-line__opening { margin-inline-start: -4px; }
+.door-line__detect { display: grid; place-items: center; flex-shrink: 0; width: 27px; color: var(--ochre); }
+.door-line__detect svg { width: 18px; height: 18px; }
+.door-line__detect.is-busy svg { animation: spin 1.1s linear infinite; }
+.door-line__change { flex-shrink: 0; min-height: 44px; padding: 0 2px 0 8px; background: transparent; color: var(--ink-soft); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+.door-aside { margin: 6px 2px 0; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
+.door-link { display: inline; padding: 0; background: none; color: var(--ink); font-size: inherit; font-weight: 600; line-height: inherit; text-align: start; text-decoration: underline; text-underline-offset: 3px; }
+.door .carrier-truck, .door .carrier-mark__truck { flex-shrink: 0; }
+.door .carrier-mark__truck { width: 27px; height: 18px; stroke: none; stroke-width: 0; overflow: visible; }
+.door .carrier-mark { white-space: nowrap; }
+
+/* A check digit that does not add up is a question, with the likely answer one tap away. */
+.door-typo { display: grid; justify-items: start; gap: 10px; }
+.door-suggestion { min-height: 40px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); font-size: 12.5px; text-align: start; }
+.door-suggestion__number { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.door-suggestion mark { padding: 0 2px; border-radius: 3px; background: var(--yellow-soft); color: inherit; }
+.door-as-typed { min-height: 44px; padding: 0; background: transparent; color: var(--ink-soft); font-size: 12px; font-weight: 550; }
+
+/* Several numbers in one text, or several carriers for one number: the visitor chooses. */
+.door-numbers, .door-carriers { display: grid; gap: 8px; margin-top: 12px; }
+.door-numbers legend { margin-bottom: 10px; padding: 0 2px; font-size: 13px; font-weight: 600; }
+.door-number { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 14px; border-radius: 14px; background: var(--paper); box-shadow: inset 0 0 0 1px var(--line); cursor: pointer; }
+.door-number[data-checked] { background: var(--yellow-soft); box-shadow: inset 0 0 0 1.5px var(--ochre); }
+.door-number input { flex-shrink: 0; width: 20px; height: 20px; margin: 0; accent-color: var(--ochre); }
+.door-number__text { display: grid; gap: 1px; min-width: 0; }
+.door-number__text strong { font-size: 13px; font-weight: 600; }
+.door-number__text span { color: var(--ink-soft); font: 500 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+.door-carriers { gap: 10px; margin-top: 4px; }
+.door-carrier, .door-parcel, .door-skeleton { --tone: light-dark(var(--carrier-ink-light), var(--carrier-ink-dark)); --tone-surface: light-dark(var(--carrier-surface-light), var(--carrier-surface-dark)); --carrier-brand: light-dark(var(--carrier-brand-light), var(--carrier-brand-dark)); }
+.door-carrier { display: grid; gap: 6px; padding: 14px 16px; border-radius: 18px; background: var(--tone-surface); cursor: pointer; }
+.door-carrier > span:last-child { color: var(--tone); font-size: 12px; }
+.door-carrier[data-checked] { box-shadow: inset 0 0 0 2px var(--tone); }
+.door-carrier:has(input:focus-visible) { outline: 3px solid var(--blue); outline-offset: 3px; }
+
+/* What a carrier asks for before it shows a parcel. */
+.door-input { display: grid; gap: 8px; margin-top: 10px; }
+.door-input label { font-size: 13px; font-weight: 600; }
+.door-input label small { color: var(--ink-soft); font-size: 11px; font-weight: 400; }
+.door-input__field { width: 100%; min-width: 0; min-height: 54px; padding: 6px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); font-size: 16px; transition: border-color .2s, box-shadow .2s; }
+.door-input__field::placeholder { color: var(--ink-soft); opacity: .72; }
+.door-input__field:focus { outline: none; border-color: var(--ochre); box-shadow: 0 0 0 3px color-mix(in srgb, var(--yellow) 22%, transparent); }
+.door-input__field[aria-invalid] { border-color: var(--orange); }
+.door-input .door-aside, .door-input .door-message { margin-top: 0; }
+.door-private { display: flex; align-items: center; gap: 6px; margin: -2px 2px 0; color: var(--ink-soft); font-size: 11.5px; }
+.door-private svg { flex-shrink: 0; width: 13px; height: 13px; }
+
+/* Notes: something to know before going on. */
+.door-note { display: flex; align-items: flex-start; gap: 12px; margin-top: 8px; padding: 14px 16px; border-radius: 16px; }
+.door-note--paper { border: 1px solid var(--line); background: var(--paper); }
+.door-note--warm { background: var(--orange-soft); color: var(--orange-text); }
+.door-note__icon { flex-shrink: 0; padding-top: 1px; }
+.door-note--paper .door-note__icon { color: var(--ink-soft); }
+.door-note__icon svg { display: block; width: 18px; height: 18px; }
+.door-note__text { display: grid; flex: 1; justify-items: start; gap: 3px; min-width: 0; }
+.door-note__text strong { font-size: 13px; font-weight: 600; }
+.door-note__text p { margin: 0; font-size: 12.5px; line-height: 1.5; }
+.door-note--paper p { color: var(--ink-soft); }
+.door-note__action { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; margin-top: 4px; padding: 0; background: none; color: inherit; font-size: 13px; font-weight: 600; text-decoration: none; }
+.door-note__action svg { width: 13px; height: 13px; }
+.door-note__action + .door-note__action { margin-top: 0; }
+.door-shapes { margin-top: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
+.door-shapes h2 { margin: 0 0 10px; font-size: 13px; font-weight: 600; letter-spacing: 0; }
+.door-shapes ul { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.door-shapes li { display: grid; grid-template-columns: 27px minmax(74px, max-content) minmax(0, 1fr); align-items: center; gap: 10px; font-size: 12.5px; }
+.door-shapes li strong { font-weight: 600; }
+.door-shapes li span:last-child { color: var(--ink-soft); }
+
+/* Pip waits under the field; once the carrier is known its label prints on Pip's side. */
+.door-pip { width: 320px; max-width: 80%; margin: 20px auto 0; animation: door-in .4s var(--ease-out) both; }
+.door-pip .parcel-illustration__label { animation: door-print .45s var(--ease-out) both; }
+/* The carrier's own colour rises from the foot of the screen while the parcel's page is on its way. */
+.door-wash { position: absolute; z-index: -1; inset: auto 0 0; height: min(640px, 72%); background: linear-gradient(to top, var(--tone-surface), transparent); pointer-events: none; animation: door-wash 1s var(--ease-out) both; }
+/* A lookup that takes longer than a beat shows the card that is about to arrive. */
+.door-skeleton { display: none; margin-top: 16px; padding: 18px 20px; border-radius: 24px; background: var(--tone-surface, var(--paper)); animation: door-rise .5s var(--spring) .25s both; }
+.door-skeleton span { display: block; border-radius: 9px; background: color-mix(in srgb, var(--tone, var(--ink-soft)) 20%, transparent); animation: door-breathe 1.2s ease-in-out infinite alternate; }
+.door-skeleton span:nth-child(1) { width: 42%; height: 14px; border-radius: 7px; }
+.door-skeleton span:nth-child(2) { width: 70%; height: 26px; margin-top: 14px; animation-delay: .15s; }
+.door-skeleton span:nth-child(3) { height: 3px; margin-top: 18px; border-radius: 4px; background: color-mix(in srgb, var(--tone, var(--ink-soft)) 13%, transparent); animation: none; }
+
+/* On this device: each parcel in its carrier's colours. */
+.door-device { margin-top: 26px; text-align: start; }
+.door-device__heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-height: 44px; margin: 0 2px 10px; }
+.door-device__heading h2 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0; }
+.door-device__forget { min-height: 44px; padding: 0; background: none; color: var(--ink-soft); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+.door-device__question { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; margin-bottom: 10px; padding: 10px 10px 10px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); }
+.door-device__question:focus { outline: none; }
+.door-device__question p { margin: 0; font-size: 13px; font-weight: 600; }
+.door-device__question div { display: flex; gap: 6px; margin-inline-start: auto; }
+.door-device__cancel, .door-device__confirm { min-height: 44px; padding: 0 14px; border-radius: 12px; font-size: 13px; }
+.door-device__cancel { background: transparent; color: var(--ink-soft); }
+.door-device__confirm { background: var(--control); font-weight: 600; }
+.door-device__list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.door-parcel { display: grid; gap: 4px; height: 100%; padding: 14px 16px; border-radius: 18px; background: var(--tone-surface); color: var(--ink); text-decoration: none; transition: scale .2s var(--spring); }
+.door-parcel:active { scale: .988; }
+.door-parcel__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.door-parcel__when, .door-parcel__state { color: var(--tone); }
+.door-parcel__when { font-size: 11px; text-align: end; }
+.door-parcel__when::first-letter { text-transform: uppercase; }
+.door-parcel strong { font-size: 16px; font-weight: 650; letter-spacing: -.4px; overflow-wrap: anywhere; }
+.door-parcel__state { font-size: 12px; }
+.door-device > .door-aside { margin-top: 14px; }
+
+@keyframes door-in { from { opacity: 0; transform: translateY(7px); } }
+@keyframes door-rise { from { opacity: 0; transform: translateY(18px) scale(.98); } }
+@keyframes door-wash { from { opacity: 0; transform: translateY(40px); } }
+@keyframes door-breathe { from { opacity: .45; } }
+@keyframes door-print { from { opacity: 0; clip-path: inset(0 0 100% 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
+@media (hover: hover) {
+  .door-line__change:hover, .door-device__forget:hover, .door-as-typed:hover { color: var(--ink); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .door-line__detect.is-busy svg { opacity: .6; }
+}
+
 @media (max-width: 760px) {
   .door { padding: env(safe-area-inset-top) 24px 32px; }
+  /* Room for the button at the foot of the screen. */
+  .door[data-engaged] { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
   .door-header { min-height: 76px; }
+  .door-body { padding-top: 0; }
+  .door-body h1 { margin: 2px 0 16px; font-size: 30px; line-height: 1.08; letter-spacing: -1.1px; text-align: start; }
+  .door-form { margin-top: 0; }
+  .door-entry { display: block; }
+  /* A little tighter inside, and the placeholder a size smaller, so it fits whole on a 390 px phone. */
+  .door-field { gap: 6px; min-height: 54px; padding-left: 14px; }
+  .door-field__placeholder { font-size: 15px; }
+  .door-paste { padding-inline: 10px; }
+  .door-field textarea, .door-field__number, .door-field__placeholder { padding: 10px 0; }
+  .door-action { position: fixed; z-index: 5; left: 24px; right: 24px; bottom: max(22px, env(safe-area-inset-bottom)); }
+  /* The page scrolls under the button, never through it. */
+  .door-action::before { content: ''; position: absolute; z-index: -1; inset: -18px -24px calc(-1 * max(22px, env(safe-area-inset-bottom))); background: linear-gradient(to top, var(--canvas) 62%, transparent); pointer-events: none; }
+  .door-action .button { width: 100%; min-height: 50px; padding: 13px 20px; }
+  /* With nothing to track yet the field's own Paste leads; the button stays reachable by keyboard. */
+  .door-action[data-idle]:not(:focus-within) { opacity: 0; pointer-events: none; }
+  .door-feedback { margin-top: 8px; }
+  .door-line__opening { display: none; }
+  .door-pip { width: 230px; max-width: 70%; margin-top: 18px; }
+  .door-wash { height: min(520px, 70%); }
+  .door-skeleton { display: block; }
+  .door-device__list { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 360px) {
   .door { padding-left: 17px; padding-right: 17px; }
-  .door-lookup { flex-direction: column; }
+  .door-action { left: 17px; right: 17px; }
+  .door-action::before { inset-inline: -17px; }
+  .door-number { gap: 10px; padding-inline: 12px; }
 }

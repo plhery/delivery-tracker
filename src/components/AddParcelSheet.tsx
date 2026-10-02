@@ -15,7 +15,7 @@ import {
   requirementSatisfied,
   tracksAutomatically,
 } from '../lib/carriers';
-import { carrierCheck } from '../lib/carrierPicker';
+import { carrierCheck, carrierChoiceSections, carrierChoiceTags, carrierNameList, shapeCarrier } from '../lib/carrierPicker';
 import {
   ParcelAlreadyExistsError,
   type CarrierId,
@@ -25,8 +25,10 @@ import { useSheetDialog } from '../lib/modal';
 import { useI18n } from '../i18n';
 import { Icon } from './Icon';
 import { CarrierTruck } from './CarrierMark';
-import { CarrierPickerSheet, type CarrierPickerSection, type CarrierPickerTag } from './CarrierPickerSheet';
+import { CarrierPickerSheet } from './CarrierPickerSheet';
 import './AddParcelSheet.css';
+import { useTypingPause } from '../lib/typingPause';
+import { FoundNumber } from '../peek/lookup/FoundNumber';
 import { lookupCarrier } from '../lib/carrierDetection';
 import type { ApiAuth } from '../lib/apiClient';
 import type { ApiCarrierDetectionResponse } from '../generated/apiContract';
@@ -142,10 +144,7 @@ export function AddParcelSheet({
     input.style.height = `${input.scrollHeight + input.offsetHeight - input.clientHeight}px`;
   }, [trackingInputValue]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setSettledTrackingInput(trackingInputValue), 800);
-    return () => clearTimeout(timer);
-  }, [trackingInputValue]);
+  useTypingPause(trackingInputValue, setSettledTrackingInput);
 
   const parsedTracking = parseTrackingInput(trackingInputValue);
   const trackingNumber = parsedTracking.trackingNumber;
@@ -238,14 +237,12 @@ export function AddParcelSheet({
       })
       : t(carrierTrackingHintKey(carrier.id), { carrier: carrier.name })
     : '';
-  const carrierNames = (ids: readonly CarrierId[]) => new Intl.ListFormat(languageTag, { type: 'conjunction' })
-    .format(ids.map((id) => carrierInfo(id, locale).name));
+  const carrierNames = (ids: readonly CarrierId[]) => carrierNameList(ids, locale, languageTag);
   const automatic = selectedCarrier === 'auto';
   // The carrier line under the number: the carrier once one is known, and
   // otherwise what the carrier check has found so far.
   const lineCarrier = carrier && carrier.id !== 'unknown' ? carrier : null;
-  const numberCarrier = parsedTracking.confidence === 'high' && parsedTracking.carrier !== 'unknown'
-    && parsedTracking.carrier !== 'intl-post' ? parsedTracking.carrier : undefined;
+  const numberCarrier = shapeCarrier(parsedTracking);
   const lineDetail = !automatic ? t('add.line.chosen')
     : check.status === 'found' ? t('add.line.found')
       : amazonNumber || (lineCarrier && lineCarrier.id !== 'intl-post') ? t('add.detectedCarrier')
@@ -256,30 +253,8 @@ export function AddParcelSheet({
                 : check.status === 'unasked' ? t('add.line.later') : '';
   const choosing = automatic && (check.status === 'several' || requiresCarrierConfirmation);
   // The picker leads with the carriers that fit the number, then the ones used before.
-  const fittingCarriers = (numberCarrier ? [numberCarrier] : parsedTracking.candidates)
-    .filter((id) => carrierInfo(id).capabilities.selectable);
-  const knowingCarriers = check.status === 'several' ? check.carriers : [];
-  const pickerSections: CarrierPickerSection[] = [
-    { key: 'known', title: t('picker.section.known'), carriers: knowingCarriers },
-    {
-      key: 'fits',
-      title: t(numberCarrier ? 'picker.section.detected' : 'picker.section.fits'),
-      carriers: fittingCarriers.filter((id) => !knowingCarriers.includes(id)),
-    },
-    {
-      key: 'used',
-      title: t('picker.section.used'),
-      carriers: usedCarriers.filter((id) => !knowingCarriers.includes(id) && !fittingCarriers.includes(id)),
-    },
-  ].filter((section) => section.carriers.length > 0);
-  const pickerTags: Partial<Record<CarrierId, CarrierPickerTag>> = {};
-  if (check.status === 'asking') {
-    for (const id of check.asked) pickerTags[id] = { label: t('picker.tag.asking'), tone: 'quiet' };
-  } else if (check.status === 'found') {
-    pickerTags[check.carrier] = { label: t('picker.tag.found'), tone: 'found' };
-  } else if (check.status === 'several') {
-    for (const id of check.carriers) pickerTags[id] = { label: t('picker.tag.knows'), tone: 'found' };
-  }
+  const pickerSections = carrierChoiceSections({ detection: parsedTracking, check, used: usedCarriers, t });
+  const pickerTags = carrierChoiceTags(check, t);
   const autoDescription = check.status === 'asking' ? t('add.recognizing')
     : check.status === 'found' ? t('add.recognized', { carrier: carrierInfo(check.carrier, locale).name })
       : check.status === 'several' ? t('picker.auto.several', { carriers: carrierNames(check.carriers) })
@@ -433,13 +408,8 @@ export function AddParcelSheet({
                 </div>
               )}
               {parsedTracking.source !== 'number' && trackingNumber && (
-                <p className="sheet__carrier-hint">
-                  {t('add.foundPrefix')}{t('add.foundPrefix') ? ' ' : ''}
-                  <strong>{formatTrackingNumber(trackingNumber, resolvedCarrier)}</strong>{' '}
-                  {t(parsedTracking.source === 'link'
-                    ? 'add.foundLinkSuffix'
-                    : 'add.foundTextSuffix')}
-                </p>
+                <FoundNumber className="sheet__carrier-hint" number={formatTrackingNumber(trackingNumber, resolvedCarrier)}
+                  source={parsedTracking.source === 'link' ? 'link' : 'text'} />
               )}
               {carrier && trackingNumber && (
                 <div className={`add-parcel-carrier${amazonNumber ? ' add-parcel-carrier--account' : ''}`} aria-live="polite" aria-busy={lookingUp || recognizing}>

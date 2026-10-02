@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { carrierInfo, recognitionAskedCarriers, SELECTABLE_CARRIERS } from './carriers';
+import { translate, type Translate } from '../i18n';
 import {
   alphabetSections,
   carrierCheck,
+  carrierChoiceSections,
+  carrierChoiceTags,
+  carrierNameList,
   countryLine,
   foldForSearch,
   searchCarriers,
+  shapeCarrier,
   usedCarrierIds,
 } from './carrierPicker';
 import { countryName } from './trackingLocation';
@@ -122,5 +127,50 @@ describe('carrier check', () => {
     expect(answered({ asked, unanswered: asked })).toEqual({ status: 'failed', asked });
     // A server that asked nobody leaves the number to routing.
     expect(answered({})).toEqual({ status: 'unasked' });
+  });
+});
+
+describe('what a picker beside a number leads with', () => {
+  const t: Translate = (key, variables) => translate('en', key, variables);
+  const shape = (carrier: CarrierId, confidence: 'high' | 'low' | 'none', candidates: CarrierId[] = []) => ({ carrier, confidence, candidates });
+
+  it('names carriers as one phrase in the reader’s language', () => {
+    expect(carrierNameList(['dhl', 'ups', 'dpd'], 'en', 'en-CH')).toBe('DHL, UPS and DPD');
+    expect(carrierNameList(['dhl', 'ups'], 'de', 'de-CH')).toBe('DHL und UPS');
+    expect(carrierNameList([], 'en', 'en-CH')).toBe('');
+  });
+
+  it('takes a carrier from the number only when its shape is certain', () => {
+    expect(shapeCarrier(shape('ups', 'high'))).toBe('ups');
+    expect(shapeCarrier(shape('unknown', 'low'))).toBeUndefined();
+    expect(shapeCarrier(shape('intl-post', 'high'))).toBeUndefined();
+  });
+
+  it('lists the carriers that know the number, then those it fits, then those used before, each once', () => {
+    const sections = carrierChoiceSections({
+      detection: shape('unknown', 'low', ['dpd', 'seur', 'brt']),
+      check: { status: 'several', carriers: ['dpd', 'seur'] },
+      used: ['brt', 'ups', 'dpd'],
+      t,
+    });
+    expect(sections).toEqual([
+      { key: 'known', title: 'Know this number', carriers: ['dpd', 'seur'] },
+      { key: 'fits', title: 'Fits this number', carriers: ['brt'] },
+      { key: 'used', title: 'You’ve used', carriers: ['ups'] },
+    ]);
+    expect(carrierChoiceSections({ detection: shape('ups', 'high', ['ups']), check: { status: 'idle' }, t }))
+      .toEqual([{ key: 'fits', title: 'Detected', carriers: ['ups'] }]);
+    expect(carrierChoiceSections({ detection: shape('unknown', 'none'), check: { status: 'idle' }, t })).toEqual([]);
+  });
+
+  it('tags the carriers the check has asked or heard from', () => {
+    expect(carrierChoiceTags({ status: 'asking', asked: ['dpd', 'seur'] }, t)).toEqual({
+      dpd: { label: 'Asking…', tone: 'quiet' }, seur: { label: 'Asking…', tone: 'quiet' },
+    });
+    expect(carrierChoiceTags({ status: 'found', carrier: 'dpd' }, t)).toEqual({ dpd: { label: 'Has this parcel', tone: 'found' } });
+    expect(carrierChoiceTags({ status: 'several', carriers: ['dpd', 'seur'] }, t)).toEqual({
+      dpd: { label: 'Knows this number', tone: 'found' }, seur: { label: 'Knows this number', tone: 'found' },
+    });
+    expect(carrierChoiceTags({ status: 'none', asked: ['dpd'] }, t)).toEqual({});
   });
 });

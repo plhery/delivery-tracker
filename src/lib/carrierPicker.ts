@@ -4,8 +4,9 @@
  * Add sheet's carrier check has found so far. `CarrierPicker.swift` mirrors it.
  */
 import type { ApiCarrierDetectionResponse } from '../generated/apiContract';
+import type { Translate } from '../i18n';
 import type { CarrierId } from '../types';
-import type { CarrierInfo } from './carriers';
+import { carrierInfo, type CarrierDetection, type CarrierInfo } from './carriers';
 
 const LETTER_OR_DIGIT = /[\p{L}\p{N}]/u;
 
@@ -196,4 +197,68 @@ export function carrierCheck({ applies, settled, asked, answer }: {
   if (answered.length === 0) return { status: 'unasked' };
   if ((answer.unanswered?.length ?? 0) >= answered.length) return { status: 'failed', asked: answered };
   return { status: 'none', asked: answered };
+}
+
+/** Carrier names as one phrase in the reader's language: "DHL, UPS and DPD". */
+export function carrierNameList(ids: readonly CarrierId[], locale: string, languageTag: string): string {
+  return new Intl.ListFormat(languageTag, { type: 'conjunction' }).format(ids.map((id) => carrierInfo(id, locale).name));
+}
+
+/** The carrier a number's shape names with certainty. An unknown postal carrier is not one. */
+export function shapeCarrier(detection: Pick<CarrierDetection, 'carrier' | 'confidence'>): CarrierId | undefined {
+  return detection.confidence === 'high' && detection.carrier !== 'unknown' && detection.carrier !== 'intl-post'
+    ? detection.carrier : undefined;
+}
+
+export interface CarrierChoiceSection {
+  key: string;
+  title: string;
+  carriers: readonly CarrierId[];
+}
+
+/**
+ * What a picker opened beside a tracking number leads with: the carriers that
+ * know the number, the ones its shape fits, then the ones used before, each
+ * carrier once.
+ */
+export function carrierChoiceSections({ detection, check, used = [], t }: {
+  detection: Pick<CarrierDetection, 'carrier' | 'confidence' | 'candidates'>;
+  check: CarrierCheck;
+  used?: readonly CarrierId[];
+  t: Translate;
+}): CarrierChoiceSection[] {
+  const named = shapeCarrier(detection);
+  const fitting = (named ? [named] : detection.candidates).filter((id) => carrierInfo(id).capabilities.selectable);
+  const knowing = check.status === 'several' ? check.carriers : [];
+  return [
+    { key: 'known', title: t('picker.section.known'), carriers: knowing },
+    {
+      key: 'fits',
+      title: t(named ? 'picker.section.detected' : 'picker.section.fits'),
+      carriers: fitting.filter((id) => !knowing.includes(id)),
+    },
+    {
+      key: 'used',
+      title: t('picker.section.used'),
+      carriers: used.filter((id) => !knowing.includes(id) && !fitting.includes(id)),
+    },
+  ].filter((section) => section.carriers.length > 0);
+}
+
+export interface CarrierChoiceTag {
+  label: string;
+  tone: 'quiet' | 'found';
+}
+
+/** What the carrier check says about each carrier it asked, for the picker's rows. */
+export function carrierChoiceTags(check: CarrierCheck, t: Translate): Partial<Record<CarrierId, CarrierChoiceTag>> {
+  const tags: Partial<Record<CarrierId, CarrierChoiceTag>> = {};
+  if (check.status === 'asking') {
+    for (const id of check.asked) tags[id] = { label: t('picker.tag.asking'), tone: 'quiet' };
+  } else if (check.status === 'found') {
+    tags[check.carrier] = { label: t('picker.tag.found'), tone: 'found' };
+  } else if (check.status === 'several') {
+    for (const id of check.carriers) tags[id] = { label: t('picker.tag.knows'), tone: 'found' };
+  }
+  return tags;
 }
