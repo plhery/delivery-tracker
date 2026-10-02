@@ -630,6 +630,7 @@
   "event.carrier.registered": "Dati della spedizione ricevuti",
   "event.carrier.returning": "In restituzione al mittente",
   "event.carrier.update": "Aggiornamento del tracciamento",
+  "event.gift.leftSender": "Ha lasciato il mittente",
   "tracking.failure.challenge": "Il tracciamento automatico è temporaneamente bloccato. Controlla il sito del corriere.",
   "tracking.failure.connection": "Il servizio di tracciamento non è raggiungibile. Riprova più tardi.",
   "tracking.failure.input": "Servono altre informazioni per questa spedizione. Aggiorna i dati di tracciamento o consulta il sito del corriere.",

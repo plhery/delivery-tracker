@@ -630,6 +630,7 @@
   "event.carrier.registered": "Sendungsdaten erhalten",
   "event.carrier.returning": "Auf dem Rückweg zum Absender",
   "event.carrier.update": "Sendungsaktualisierung",
+  "event.gift.leftSender": "Hat den Absender verlassen",
   "tracking.failure.challenge": "Automatische Abfragen sind vorübergehend blockiert. Prüfe den Status auf der Website des Paketdienstes.",
   "tracking.failure.connection": "Der Tracking-Dienst ist nicht erreichbar. Versuche es später erneut.",
   "tracking.failure.input": "Für diese Sendung fehlen Angaben. Ergänze die Sendungsdaten oder prüfe die Website des Paketdienstes.",

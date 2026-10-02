@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { ALL_NOTIFICATION_STAGES } from '../lib/notificationPresets';
 import { isRecord, type JsonObject } from './types';
 
 const REQUEST_TIMEOUT_MS = 20_000;
@@ -67,6 +68,25 @@ function rows(value: unknown): JsonObject[] {
 function forgotten(value: unknown): { links: number; packages: number } {
   const counts = isRecord(value) ? value : {};
   return { links: Number(counts.links ?? 0), packages: Number(counts.packages ?? 0) };
+}
+
+/** A link and its whole package row, as the database returns them to the server. */
+export interface StoredParcelLink { link: JsonObject; package: JsonObject }
+
+/** The live link an account shares a parcel through. */
+export interface ParcelShare { id: string; showNumber: boolean; gift: boolean; createdAt: string }
+
+function parcelShare(value: unknown): ParcelShare {
+  if (!isRecord(value) || typeof value.id !== 'string' || typeof value.created_at !== 'string') {
+    throw new SupabaseError('Supabase did not return the shared link');
+  }
+  return { id: value.id, showNumber: value.show_number === true, gift: value.gift === true, createdAt: value.created_at };
+}
+
+/** A parcel that is not the caller's answers like one that does not exist. */
+function ownedPackageError(error: unknown): never {
+  if (error instanceof SupabaseError && error.code === 'P0002') throw new SupabaseError('Package not found', 404, error.code, { cause: error });
+  throw error;
 }
 
 export class SupabaseClient {
@@ -703,8 +723,9 @@ export class SupabaseServiceClient extends SupabaseClient {
   }
 
   /**
-   * The open one-off parcels with a link opened since `openedSince`, the least
-   * recently checked first, in the shape of listActivePackages.
+   * The open one-off parcels with a link opened since `openedSince` or with
+   * an alert on, the least recently checked first, in the shape of
+   * listActivePackages.
    */
   async listFollowedOneOffPackages(openedSince: Date): Promise<JsonObject[]> {
     const params = query({
@@ -961,19 +982,113 @@ export class SupabaseServiceClient extends SupabaseClient {
 
   /**
    * A parcel link, the role its caller has and the whole package row with its
-   * events, or null when the link is unknown or past its forget date. The
-   * link id and key hash travel in the body, never in a logged URL. `touch`
-   * records that the link was opened.
+   * events. Null when the link is unknown or past its forget date, and
+   * `stopped` when its sharing was stopped and the caller does not hold the
+   * owner key. The link id and key hash travel in the body, never in a logged
+   * URL. `touch` records that the link was opened.
    */
-  async publicParcel(linkId: string, ownerKeyHash: string | null, touch: boolean): Promise<{ link: JsonObject; package: JsonObject } | null> {
-    const result = await this.request('/rest/v1/rpc/public_parcel', {
+  async publicParcel(linkId: string, ownerKeyHash: string | null, touch: boolean): Promise<StoredParcelLink | 'stopped' | null> {
+    const result = await this.request('/rest/v1/rpc/parcel_link_view', {
       method: 'POST', body: { p_link_id: linkId, p_owner_key_hash: ownerKeyHash, p_touch: touch },
+    });
+    if (result === null) return null;
+    if (isRecord(result) && result.stopped === true) return 'stopped';
+    if (!isRecord(result) || !isRecord(result.link) || !isRecord(result.package)) {
+      throw new SupabaseError('Supabase did not return the parcel link');
+    }
+    return { link: result.link, package: result.package };
+  }
+
+  /**
+   * Changes what a lookup's link shows, or stops and resumes its sharing, for
+   * the holder of its owner key. Null for an unknown link and for a wrong key
+   * alike. `transition` says whether the sharing stopped or resumed.
+   */
+  async updateParcelLink(
+    linkId: string,
+    ownerKeyHash: string,
+    changes: { showNumber?: boolean; gift?: boolean; shared?: boolean },
+  ): Promise<StoredParcelLink & { transition: 'stopped' | 'started' | null } | null> {
+    const result = await this.request('/rest/v1/rpc/update_parcel_link', {
+      method: 'POST',
+      body: {
+        p_link_id: linkId,
+        p_owner_key_hash: ownerKeyHash,
+        p_show_number: changes.showNumber ?? null,
+        p_gift: changes.gift ?? null,
+        p_shared: changes.shared ?? null,
+      },
     });
     if (result === null) return null;
     if (!isRecord(result) || !isRecord(result.link) || !isRecord(result.package)) {
       throw new SupabaseError('Supabase did not return the parcel link');
     }
-    return { link: result.link, package: result.package };
+    return {
+      link: result.link,
+      package: result.package,
+      transition: result.transition === 'stopped' || result.transition === 'started' ? result.transition : null,
+    };
+  }
+
+  /**
+   * Turns on an alert for a link, or updates the one its browser has. `full`
+   * when the link has ten already, `finished` when the journey is over and
+   * nothing was stored, `stopped` like publicParcel, null for an unknown link.
+   */
+  async addParcelLinkAlert(
+    linkId: string,
+    ownerKeyHash: string | null,
+    alert: { endpoint: string; p256dh: string; auth: string; locale: string; preset: string },
+  ): Promise<'added' | 'updated' | 'full' | 'finished' | 'stopped' | null> {
+    const result = await this.request('/rest/v1/rpc/add_parcel_link_alert', {
+      method: 'POST',
+      body: {
+        p_link_id: linkId,
+        p_owner_key_hash: ownerKeyHash,
+        p_endpoint: alert.endpoint,
+        p_p256dh: alert.p256dh,
+        p_auth: alert.auth,
+        p_locale: alert.locale,
+        p_preset: alert.preset,
+      },
+    });
+    if (result === null) return null;
+    if (result === 'added' || result === 'updated' || result === 'full' || result === 'finished' || result === 'stopped') return result;
+    throw new SupabaseError('Supabase did not return the alert');
+  }
+
+  /** Turns a browser's alert for a link off; false when there was none. */
+  async removeParcelLinkAlert(linkId: string, endpoint: string): Promise<boolean> {
+    return await this.request('/rest/v1/rpc/remove_parcel_link_alert', {
+      method: 'POST', body: { p_link_id: linkId, p_endpoint: endpoint },
+    }) === true;
+  }
+
+  /** The scans no link alert has handled yet, one row per alert and scan, with the alert's push credentials. */
+  async listPendingParcelLinkAlerts(): Promise<JsonObject[]> {
+    const params = query({ select: '*', order: 'event_created_at.asc', limit: '1000' });
+    return rows(await this.request(`/rest/v1/pending_parcel_link_alerts?${params}`));
+  }
+
+  async recordParcelLinkAlertDeliveries(alertId: string, eventIds: string[]): Promise<void> {
+    if (eventIds.length === 0) return;
+    await this.request(`/rest/v1/parcel_link_alert_deliveries?${query({ on_conflict: 'alert_id,event_id' })}`, {
+      method: 'POST',
+      body: eventIds.map((eventId) => ({ alert_id: alertId, event_id: eventId })),
+      prefer: 'resolution=ignore-duplicates,return=minimal',
+    });
+  }
+
+  async setParcelLinkAlertFailures(alertId: string, failures: number): Promise<void> {
+    await this.request(`/rest/v1/parcel_link_alerts?${query({ id: `eq.${alertId}` })}`, {
+      method: 'PATCH', body: { failures }, prefer: 'return=minimal',
+    });
+  }
+
+  async deleteParcelLinkAlert(alertId: string): Promise<void> {
+    await this.request(`/rest/v1/parcel_link_alerts?${query({ id: `eq.${alertId}` })}`, {
+      method: 'DELETE', prefer: 'return=minimal',
+    });
   }
 
   /** Forgets a lookup when the key hash matches; a one-off parcel goes with its last link. */
@@ -983,9 +1098,15 @@ export class SupabaseServiceClient extends SupabaseClient {
     }));
   }
 
-  /** Forgets the lookups past their forget date and the one-off parcels left without a link. */
-  async forgetExpiredParcelLinks(): Promise<{ links: number; packages: number }> {
-    return forgotten(await this.request('/rest/v1/rpc/forget_expired_parcel_links', { method: 'POST', body: {} }));
+  /**
+   * Forgets the lookups past their forget date and the one-off parcels left
+   * without a link, the links from accounts stopped 30 days ago (`stopped`),
+   * and the alerts of journeys that are over (`alerts`).
+   */
+  async forgetExpiredParcelLinks(): Promise<{ links: number; packages: number; stopped: number; alerts: number }> {
+    const result = await this.request('/rest/v1/rpc/forget_expired_parcel_links', { method: 'POST', body: {} });
+    const counts = isRecord(result) ? result : {};
+    return { ...forgotten(result), stopped: Number(counts.stopped ?? 0), alerts: Number(counts.alerts ?? 0) };
   }
 
   /** Yesterday's lookups per client: how many clients, and their median, 90th percentile and maximum. */
@@ -1062,6 +1183,33 @@ export class SupabaseUserClient extends SupabaseClient {
     return { outcome: result.outcome, packageId: typeof result.package_id === 'string' ? result.package_id : null };
   }
 
+  /** The live link this account shares the parcel through, or null. A parcel of another account is a 404. */
+  async packageShare(packageId: string): Promise<ParcelShare | null> {
+    const result = await this.request('/rest/v1/rpc/owned_package_share', {
+      method: 'POST', body: { p_package_id: packageId },
+    }).catch(ownedPackageError);
+    return result === null ? null : parcelShare(result);
+  }
+
+  /** Shares the parcel: makes its link when none is live, else changes what the live one shows. */
+  async sharePackage(
+    packageId: string,
+    shown: { showNumber?: boolean; gift?: boolean },
+  ): Promise<ParcelShare & { created: boolean }> {
+    const result = await this.request('/rest/v1/rpc/share_owned_package', {
+      method: 'POST',
+      body: { p_package_id: packageId, p_show_number: shown.showNumber ?? null, p_gift: shown.gift ?? null },
+    }).catch(ownedPackageError);
+    return { ...parcelShare(result), created: isRecord(result) && result.created === true };
+  }
+
+  /** Stops sharing the parcel; false when it was not shared. */
+  async stopPackageShare(packageId: string): Promise<boolean> {
+    return await this.request('/rest/v1/rpc/stop_owned_package_share', {
+      method: 'POST', body: { p_package_id: packageId },
+    }).catch(ownedPackageError) === true;
+  }
+
   override async updatePackage(packageId: string, values: JsonObject): Promise<void> {
     const keys = Object.keys(values);
     let changed: unknown;
@@ -1128,18 +1276,7 @@ export class SupabaseUserClient extends SupabaseClient {
     });
     const result = rows(await this.request(`/rest/v1/notification_preferences?${params}`));
     return result[0] ?? {
-      enabled_stages: [
-        'registered',
-        'accepted',
-        'in_transit',
-        'customs',
-        'exception',
-        'out_for_delivery',
-        'failed_attempt',
-        'ready_for_pickup',
-        'delivered',
-        'returned',
-      ],
+      enabled_stages: [...ALL_NOTIFICATION_STAGES],
       quiet_hours_start: null,
       quiet_hours_end: null,
       timezone: 'Europe/Zurich',

@@ -12,6 +12,10 @@
       "key": "event.carrierChanged",
       "variables": {}
     },
+    "Left the sender": {
+      "key": "event.gift.leftSender",
+      "variables": {}
+    },
     "Tracking update": {
       "key": "event.carrier.update",
       "variables": {}

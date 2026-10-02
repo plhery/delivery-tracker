@@ -4395,6 +4395,9 @@ export interface ApiParcelLink {
   "forgetAt": string | null;
   "numberShown": boolean;
   "canKeep": boolean;
+  "gift"?: boolean;
+  "shared"?: boolean;
+  "alerts"?: ApiParcelAlerts;
 }
 
 export interface ApiParcelNumberHint {
@@ -4475,4 +4478,48 @@ export interface ApiClaimParcelResult {
 
 export interface ApiClaimParcelsResponse {
   "results": Array<ApiClaimParcelResult>;
+}
+
+export interface ApiParcelAlerts {
+  "available": boolean;
+  "vapidPublicKey": string | null;
+}
+
+export interface ApiUpdateParcelLinkRequest {
+  "showNumber"?: boolean;
+  "gift"?: boolean;
+  "shared"?: boolean;
+}
+
+export type ApiParcelAlertPreset = "all" | "important" | "delivery";
+
+export interface ApiParcelAlertSubscription {
+  "endpoint": string;
+  "keys": ApiPushSubscriptionKeys;
+}
+
+export interface ApiParcelAlertRequest {
+  "subscription": ApiParcelAlertSubscription;
+  "preset": ApiParcelAlertPreset;
+  "locale": ApiNativePushLocale;
+}
+
+export interface ApiDeleteParcelAlertRequest {
+  "endpoint": string;
+}
+
+export interface ApiParcelShare {
+  "id": string;
+  "showNumber": boolean;
+  "gift": boolean;
+  "createdAt": string;
+}
+
+export interface ApiParcelShareResponse {
+  "link": ApiParcelShare | null;
+}
+
+export interface ApiShareParcelRequest {
+  "showNumber"?: boolean;
+  "gift"?: boolean;
 }

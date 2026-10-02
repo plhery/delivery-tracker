@@ -17,11 +17,12 @@ import { METRICS, type LookupRecord, type StepRecord, type StepRecorder } from '
  * provider instead.
  *
  * The parcel-link series count lookups without an account, link reads, kept
- * parcels and forgotten ones by outcome only: never by number, link or client.
+ * parcels, forgotten ones, shares and alerts by outcome only: never by number,
+ * link, client or push endpoint.
  */
 
 /** Bump when the series or their labels change, so a hot-reloaded copy does not reuse an older shape. */
-const RUNTIME_VERSION = 4;
+const RUNTIME_VERSION = 5;
 
 interface PrometheusRuntime {
   version: number;
@@ -37,6 +38,10 @@ interface PrometheusRuntime {
   publicParcelReadTotal: Counter<'outcome'>;
   parcelClaimTotal: Counter<'outcome'>;
   parcelForgottenTotal: Counter<'kind' | 'reason'>;
+  parcelShareTotal: Counter<'kind' | 'change'>;
+  parcelAlertSetTotal: Counter<'outcome'>;
+  parcelAlertRemovedTotal: Counter<'reason'>;
+  parcelAlertSentTotal: Counter<'outcome'>;
   publicLookupClients: Gauge;
   publicLookupsPerClient: Gauge<'stat'>;
   /** Series a scrape has shown; they count at once. */
@@ -110,7 +115,7 @@ function createRuntime(): PrometheusRuntime {
     }),
     publicParcelReadTotal: new Counter({
       name: 'public_parcel_read_total',
-      help: 'Reads of a parcel link by outcome (ok, not_found).',
+      help: 'Reads of a parcel link by outcome (ok, not_found, stopped).',
       labelNames: ['outcome'] as const,
       registers: [registry],
     }),
@@ -122,8 +127,32 @@ function createRuntime(): PrometheusRuntime {
     }),
     parcelForgottenTotal: new Counter({
       name: 'parcel_forgotten_total',
-      help: 'Forgotten parcel links and one-off parcels (kind) by reason (asked, expired).',
+      help: 'Forgotten parcel links and one-off parcels (kind) by reason (asked, expired, stopped).',
       labelNames: ['kind', 'reason'] as const,
+      registers: [registry],
+    }),
+    parcelShareTotal: new Counter({
+      name: 'parcel_share_total',
+      help: 'Changes to the sharing of a parcel (started, changed, stopped) by kind of link (lookup, account).',
+      labelNames: ['kind', 'change'] as const,
+      registers: [registry],
+    }),
+    parcelAlertSetTotal: new Counter({
+      name: 'parcel_alert_set_total',
+      help: 'Requests to turn on an alert for a parcel link by outcome (added, updated, full, finished, stopped, unavailable).',
+      labelNames: ['outcome'] as const,
+      registers: [registry],
+    }),
+    parcelAlertRemovedTotal: new Counter({
+      name: 'parcel_alert_removed_total',
+      help: 'Alerts of parcel links removed by reason (asked, delivered, expired, failed).',
+      labelNames: ['reason'] as const,
+      registers: [registry],
+    }),
+    parcelAlertSentTotal: new Counter({
+      name: 'parcel_alert_sent_total',
+      help: 'Batches of new scans handled for a parcel link alert by outcome (sent, skipped, failed, expired).',
+      labelNames: ['outcome'] as const,
       registers: [registry],
     }),
     publicLookupClients: new Gauge({
@@ -219,7 +248,7 @@ export function recordPublicLookup(outcome: PublicLookupOutcome): void {
   count(runtime.publicLookupTotal, 'public_lookup_total', { outcome });
 }
 
-export function recordPublicParcelRead(outcome: 'ok' | 'not_found'): void {
+export function recordPublicParcelRead(outcome: 'ok' | 'not_found' | 'stopped'): void {
   count(runtime.publicParcelReadTotal, 'public_parcel_read_total', { outcome });
 }
 
@@ -227,13 +256,44 @@ export function recordParcelClaim(outcome: 'kept' | 'already' | 'quota' | 'unava
   count(runtime.parcelClaimTotal, 'parcel_claim_total', { outcome });
 }
 
-/** Links and one-off parcels forgotten on request (`asked`) or past their forget date (`expired`). */
-export function recordParcelsForgotten(reason: 'asked' | 'expired', forgotten: { links: number; packages: number }): void {
+/**
+ * Links and one-off parcels forgotten on request (`asked`) or past their
+ * forget date (`expired`), and links from accounts purged 30 days after their
+ * sharing was stopped (`stopped`).
+ */
+export function recordParcelsForgotten(reason: 'asked' | 'expired' | 'stopped', forgotten: { links: number; packages: number }): void {
   for (const [kind, total] of [['link', forgotten.links], ['package', forgotten.packages]] as const) {
     if (total > 0) afterFirstScrape(`parcel_forgotten_total${JSON.stringify({ kind, reason })}`,
       () => runtime.parcelForgottenTotal.inc({ kind, reason }, 0),
       () => runtime.parcelForgottenTotal.inc({ kind, reason }, total));
   }
+}
+
+/** A parcel's sharing started, changed what it shows, or stopped, through a lookup's link or an account's. */
+export function recordParcelShare(kind: 'lookup' | 'account', change: 'started' | 'changed' | 'stopped'): void {
+  count(runtime.parcelShareTotal, 'parcel_share_total', { kind, change });
+}
+
+export type ParcelAlertOutcome = 'added' | 'updated' | 'full' | 'finished' | 'stopped' | 'unavailable';
+
+export function recordParcelAlertSet(outcome: ParcelAlertOutcome): void {
+  count(runtime.parcelAlertSetTotal, 'parcel_alert_set_total', { outcome });
+}
+
+/**
+ * Alerts removed because their browser asked, the journey ended (`delivered`),
+ * the push service said the subscription is gone (`expired`) or sends kept
+ * failing.
+ */
+export function recordParcelAlertRemoved(reason: 'asked' | 'delivered' | 'expired' | 'failed', total = 1): void {
+  if (total > 0) afterFirstScrape(`parcel_alert_removed_total${JSON.stringify({ reason })}`,
+    () => runtime.parcelAlertRemovedTotal.inc({ reason }, 0),
+    () => runtime.parcelAlertRemovedTotal.inc({ reason }, total));
+}
+
+/** One batch of new scans for one alert: announced, passed over, failed, or sent to a subscription that is gone. */
+export function recordParcelAlertSent(outcome: 'sent' | 'skipped' | 'failed' | 'expired'): void {
+  count(runtime.parcelAlertSentTotal, 'parcel_alert_sent_total', { outcome });
 }
 
 /** Yesterday's lookups per client, set by the maintenance pass; the p90 tells whether the daily allowance pinches. */

@@ -7,6 +7,7 @@ import {
   lookupLimits,
   newOwnerKey,
   ownerKeyHash,
+  parcelAlerts,
   publicParcelResponse,
   secondsUntilUtcMidnight,
 } from '../../../../src/server/publicParcels';
@@ -52,7 +53,7 @@ export const POST = apiRoute(async (context) => {
     // The first read of the link queues the check again.
     if (!(error instanceof SupabaseError)) throw error;
   }
-  return json({ ...publicParcelResponse(created), key } satisfies ApiPublicLookupResponse, 201);
+  return json({ ...publicParcelResponse(created, parcelAlerts(service)), key } satisfies ApiPublicLookupResponse, 201);
 }, {
   authenticated: false,
   serviceRequired: true,

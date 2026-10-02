@@ -41,10 +41,18 @@ while IFS= read -r migration; do
     psql "$database_url" -X -v ON_ERROR_STOP=1 \
       -f "$repo_root/supabase/tests/pre_multiple_invitations.sql"
   fi
+  if [[ "$(basename "$migration")" == "20261002120000_parcel_sharing.sql" ]]; then
+    psql "$database_url" -X -v ON_ERROR_STOP=1 \
+      -f "$repo_root/supabase/tests/pre_parcel_sharing.sql"
+  fi
   psql "$database_url" -X -v ON_ERROR_STOP=1 -f "$migration"
   if [[ "$(basename "$migration")" == "20260911150000_short_invitation_previews.sql" ]]; then
     psql "$database_url" -X -v ON_ERROR_STOP=1 \
       -f "$repo_root/supabase/tests/short_invitation_previews.sql"
+  fi
+  if [[ "$(basename "$migration")" == "20261002120000_parcel_sharing.sql" ]]; then
+    psql "$database_url" -X -v ON_ERROR_STOP=1 \
+      -f "$repo_root/supabase/tests/parcel_sharing_upgrade.sql"
   fi
 done < <(find "$repo_root/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | sort)
 
@@ -125,3 +133,6 @@ psql "$database_url" -X -v ON_ERROR_STOP=1 \
 
 psql "$database_url" -X -v ON_ERROR_STOP=1 \
   -f "$repo_root/supabase/tests/parcel_links.sql"
+
+psql "$database_url" -X -v ON_ERROR_STOP=1 \
+  -f "$repo_root/supabase/tests/parcel_sharing.sql"

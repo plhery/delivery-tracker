@@ -6,7 +6,10 @@ import { createPrivateKey, type KeyObject } from 'node:crypto';
 import { SignJWT } from 'jose';
 import { DateTime, IANAZone } from 'luxon';
 import webpush from 'web-push';
-import { CARRIER_CAPABILITIES } from '../generated/apiContract';
+import { CARRIER_CAPABILITIES, type ApiParcelAlertPreset } from '../generated/apiContract';
+import { ALERT_PRESET_STAGES } from '../lib/notificationPresets';
+import { recordParcelAlertRemoved, recordParcelAlertSent } from './metrics';
+import { logOperationalEvent } from './observability';
 import type { SupabaseServiceClient } from './supabase';
 import { errorMessage, isRecord, type JsonObject } from './types';
 
@@ -29,6 +32,8 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     test_title: "Parcel alerts are on",
     test_body: "You’ll receive the delivery updates you chose on this device. You can change them in Notification settings.",
     update: 'Parcel update',
+    gift_on_its_way: "Something’s on its way to you",
+    gift_delivered: "It’s here",
     today: 'today',
     tomorrow: 'tomorrow',
     ...STAGE_LABELS,
@@ -53,6 +58,8 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     test_title: "Paketmeldungen sind aktiv",
     test_body: "Du erhältst die gewählten Liefermeldungen auf diesem Gerät. Du kannst sie in den Meldungseinstellungen ändern.",
     update: 'Paket-Update',
+    gift_on_its_way: "Etwas ist auf dem Weg zu dir",
+    gift_delivered: "Es ist da",
     today: 'heute',
     tomorrow: 'morgen',
     pending: 'Noch nicht angekündigt',
@@ -87,6 +94,8 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     test_title: "Les alertes colis sont activées",
     test_body: "Tu recevras les mises à jour choisies sur cet appareil. Tu peux les modifier dans les réglages des notifications.",
     update: 'Mise à jour du colis',
+    gift_on_its_way: "Quelque chose est en route pour toi",
+    gift_delivered: "C’est arrivé",
     today: 'aujourd’hui',
     tomorrow: 'demain',
     pending: 'Pas encore annoncé',
@@ -121,6 +130,8 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     test_title: "Gli avvisi sui pacchi sono attivi",
     test_body: "Riceverai gli aggiornamenti scelti su questo dispositivo. Puoi modificarli nelle impostazioni delle notifiche.",
     update: 'Aggiornamento del pacco',
+    gift_on_its_way: "Qualcosa è in viaggio verso di te",
+    gift_delivered: "È arrivato",
     today: 'oggi',
     tomorrow: 'domani',
     pending: 'Non ancora annunciato',
@@ -155,6 +166,8 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     "test_title": "Avisos de paquetes activados",
     "test_body": "Recibirás las novedades elegidas en este dispositivo. Puedes cambiarlas en los ajustes de notificaciones.",
     "update": "Novedades del paquete",
+    "gift_on_its_way": "Algo va de camino hacia ti",
+    "gift_delivered": "Ya está aquí",
     "today": "hoy",
     "tomorrow": "mañana",
     "pending": "Aún sin anunciar",
@@ -189,6 +202,8 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     "test_title": "Alertas de envios ativos",
     "test_body": "Receberás as atualizações escolhidas neste dispositivo. Podes alterá-las nas definições de notificações.",
     "update": "Atualização do envio",
+    "gift_on_its_way": "Há algo a caminho para ti",
+    "gift_delivered": "Já chegou",
     "today": "hoje",
     "tomorrow": "amanhã",
     "pending": "Ainda não anunciado",
@@ -223,6 +238,8 @@ const PUSH_COPY: Record<string, Record<string, string>> = {
     "test_title": "Powiadomienia o przesyłkach włączone",
     "test_body": "Na tym urządzeniu otrzymasz wybrane aktualizacje dostaw. Możesz je zmienić w ustawieniach powiadomień.",
     "update": "Aktualizacja przesyłki",
+    "gift_on_its_way": "Coś jest do Ciebie w drodze",
+    "gift_delivered": "Już jest",
     "today": "dziś",
     "tomorrow": "jutro",
     "pending": "Jeszcze niezgłoszona",
@@ -542,6 +559,132 @@ export class WebPushNotificationService {
       tag: `parcel-${packageId}`,
       lang: locale,
       data: { url: `/?parcel=${packageId}` },
+    };
+  }
+}
+
+/** The push service says the subscription is gone, as for an account's. */
+const GONE_SUBSCRIPTION = new Set([404, 410]);
+/** An alert whose sends keep failing is removed after this many in a row. */
+const MAX_LINK_ALERT_FAILURES = 3;
+const FINISHED_STAGES = new Set(['delivered', 'returned']);
+
+/**
+ * Browser notifications for parcel links, for people without an account. An
+ * alert is told about its parcel's scans with the sentences an account gets,
+ * in the alert's language, when its preset covers the scan's stage. It never
+ * carries the parcel's name or number: the title is generic.
+ *
+ * - A batch of new scans announces its newest covered one, and only when that
+ *   is the parcel's newest, as for accounts.
+ * - A gift on its way is announced as one: without the place of a scan, and
+ *   without the scans its page leaves out.
+ * - An alert on a browser the parcel's owner gets account notifications on is
+ *   passed over, so nobody is told twice.
+ * - An alert ends with the journey, when the push service says its
+ *   subscription is gone, and after a few failed sends in a row. A failed send
+ *   is not repeated: anyone with a link can add an endpoint, so one that never
+ *   works must cost a bounded number of requests. For the same reason failures
+ *   are logged and counted in metrics, not reported as errors.
+ */
+export class ParcelLinkAlertService {
+  constructor(readonly web: WebPushNotificationService) {}
+
+  async dispatch(signal?: AbortSignal): Promise<PushSummary> {
+    signal?.throwIfAborted();
+    const { client } = this.web;
+    const grouped = new Map<string, JsonObject[]>();
+    for (const row of await client.listPendingParcelLinkAlerts()) {
+      const alertId = stringField(row, 'alert_id');
+      grouped.set(alertId, [...(grouped.get(alertId) ?? []), row]);
+    }
+    const summary = emptySummary();
+    let failed = 0;
+    const latest = await parcelScanTimes(client, grouped.values());
+    for (const [alertId, events] of grouped) {
+      signal?.throwIfAborted();
+      const newest = events.filter((event) => this.announces(event)).sort(compareNotificationEvents)[0];
+      const finished = FINISHED_STAGES.has(stringField(events[0]!, 'package_stage'));
+      const failures = Number(events[0]!.failures ?? 0);
+      const eventIds = events.map((event) => stringField(event, 'event_id')).filter(Boolean);
+      const remove = async (reason: 'delivered' | 'expired' | 'failed') => {
+        await client.deleteParcelLinkAlert(alertId);
+        recordParcelAlertRemoved(reason);
+      };
+      /** The batch is handled, whatever became of it; a journey that is over needs no alert. */
+      const settle = async (failuresNow: number) => {
+        if (finished) return await remove('delivered');
+        await client.recordParcelLinkAlertDeliveries(alertId, eventIds);
+        if (failuresNow !== failures) await client.setParcelLinkAlertFailures(alertId, failuresNow);
+      };
+
+      if (!newest || newest.account_endpoint === true || isBackfilledScan(newest, latest)) {
+        await settle(failures);
+        recordParcelAlertSent('skipped');
+        continue;
+      }
+      summary.attempted += 1;
+      try {
+        await this.web.send(newest, this.payload(newest));
+      } catch (error) {
+        signal?.throwIfAborted();
+        const status = typeof error === 'object' && error !== null && 'statusCode' in error ? Number(error.statusCode) : 0;
+        if (GONE_SUBSCRIPTION.has(status)) {
+          await remove('expired');
+          recordParcelAlertSent('expired');
+          summary.expired += 1;
+        } else {
+          failed += 1;
+          recordParcelAlertSent('failed');
+          if (failures + 1 >= MAX_LINK_ALERT_FAILURES) await remove('failed');
+          else await settle(failures + 1);
+        }
+        continue;
+      }
+      signal?.throwIfAborted();
+      await settle(0);
+      recordParcelAlertSent('sent');
+      summary.sent += 1;
+    }
+    if (failed > 0) logOperationalEvent('parcel_link_alerts_failed', { failed }, 'error');
+    return summary;
+  }
+
+  /** Whether the alert's preset covers the scan. A gift on its way is not told what its page leaves out. */
+  announces(row: JsonObject): boolean {
+    const preset = stringField(row, 'preset');
+    const stage = stringField(row, 'stage');
+    const stages: readonly string[] = Object.hasOwn(ALERT_PRESET_STAGES, preset)
+      ? ALERT_PRESET_STAGES[preset as ApiParcelAlertPreset] : [];
+    return stages.includes(stage) && !(this.wrappedGift(row) && stage === 'registered');
+  }
+
+  /** A gift that has not arrived, for everyone but the lookup's owner. */
+  private wrappedGift(row: JsonObject): boolean {
+    return row.gift === true && row.owner !== true && stringField(row, 'package_stage') !== 'delivered';
+  }
+
+  payload(row: JsonObject): JsonObject {
+    const locale = notificationLocale(row.locale);
+    const copy = PUSH_COPY[locale]!;
+    const linkId = stringField(row, 'link_id');
+    const stage = stringField(row, 'stage');
+    const gift = row.gift === true && row.owner !== true;
+    const title = !gift || stage === 'returned' ? copy.update
+      : stage === 'delivered' ? copy.gift_delivered : copy.gift_on_its_way;
+    return {
+      // Neither the parcel's name nor its number: both are its owner's.
+      title: notificationText(title, 80),
+      // The scan's place is part of what a gift keeps to itself. Nobody chose a timezone: Zurich's, as for an account without one.
+      body: notificationBody(
+        { ...row, timezone: 'Europe/Zurich', location: this.wrappedGift(row) ? null : row.location },
+        copy, locale, this.web.now(),
+      ),
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      tag: `parcel-link-${linkId}`,
+      lang: locale,
+      data: { url: `/p/${linkId}` },
     };
   }
 }
@@ -968,13 +1111,15 @@ export class CompositePushNotificationService {
     readonly web: WebPushNotificationService | null,
     readonly native: NativePushNotificationService | null,
     readonly liveActivities: DeliveryLiveActivityNotificationService | null,
+    readonly linkAlerts: ParcelLinkAlertService | null = null,
   ) {}
 
   async dispatch(signal?: AbortSignal): Promise<PushSummary> {
     signal?.throwIfAborted();
     const combined = emptySummary();
     const errors: unknown[] = [];
-    for (const service of [this.liveActivities, this.web, this.native]) {
+    // Accounts first: a parcel link's alerts come on top of its owner's notifications.
+    for (const service of [this.liveActivities, this.web, this.native, this.linkAlerts]) {
       if (!service) continue;
       try {
         const summary = await service.dispatch(signal);
@@ -1063,6 +1208,7 @@ export function pushServices(client: SupabaseServiceClient): CompositePushNotifi
         web,
         native,
         native ? new DeliveryLiveActivityNotificationService(client, native) : null,
+        web ? new ParcelLinkAlertService(web) : null,
       ),
     };
   }

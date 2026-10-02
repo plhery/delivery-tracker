@@ -1,8 +1,10 @@
 import 'server-only';
 
 import { createHash, createHmac, randomBytes } from 'node:crypto';
+import { locatePlace } from 'universal-parcel-scraper/places';
 import type {
   ApiCarrierId,
+  ApiParcelAlerts,
   ApiParcelLink,
   ApiParcelNumberHint,
   ApiPublicPackage,
@@ -10,17 +12,28 @@ import type {
   ApiSyncStatus,
   ApiTrackingEventRow,
 } from '../generated/apiContract';
+import { EVENT_STAGE_ORDER } from '../lib/stages';
 import { clientNetwork } from './api';
 import { withEventPlaces } from './eventPlaces';
-import { isRecord, type JsonObject } from './types';
+import { pushServices } from './push';
+import type { StoredParcelLink, SupabaseServiceClient } from './supabase';
+import { isRecord } from './types';
 
 /**
- * One parcel without an account: what a parcel link's caller may see, the
- * owner key behind the owner role, and the daily lookup allowances.
+ * One parcel through a link: what the link's caller may see, a gift's viewer
+ * included, the owner key behind the owner role, and the daily lookup
+ * allowances.
  */
 
 /** The one answer for an unknown, forgotten, expired or malformed link, and for a wrong key. */
 export const PARCEL_UNAVAILABLE = 'Parcel unavailable';
+/** The answer for a link whose sharing was stopped, to anyone but its owner. */
+export const PARCEL_NOT_SHARED = 'Parcel not shared';
+/**
+ * What every scan of a gift's origin reads until the gift is delivered. The
+ * clients translate it (shared/tracking-messages.json).
+ */
+export const GIFT_ORIGIN_DESCRIPTION = 'Left the sender';
 
 const LINK_ID = /^[2-9A-HJ-NP-Za-km-z]{12}$/;
 const OWNER_KEY = /^[A-Za-z0-9_-]{43}$/;
@@ -116,12 +129,94 @@ const SHOWN_WITH_NUMBER: Record<string, (value: unknown) => boolean> = {
   original_tracking_number: text,
 };
 
-function publicCarrierData(value: unknown, numberShown: boolean): ApiPublicPackage['carrier_data'] {
+/**
+ * The carrier details a gift keeps until it is delivered: who carries it and
+ * when it arrives. Not the sender, nor what would describe the contents or
+ * where it waits. A detail a link starts to show later stays out of a gift
+ * until it is listed here.
+ */
+const SHOWN_IN_GIFT = new Set([
+  'active_tracking_carrier', 'original_carrier', 'tracking_provider', 'carrier_answered', 'auto_changed_from',
+  'auto_changed_to', 'auto_changed_at', 'swiss_post_ready', 'expected_delivery_from', 'destination_country',
+]);
+
+function publicCarrierData(value: unknown, numberShown: boolean, wrapped: boolean): ApiPublicPackage['carrier_data'] {
   const stored = isRecord(value) ? value : {};
   const shown = numberShown ? { ...SHOWN_CARRIER_DATA, ...SHOWN_WITH_NUMBER } : SHOWN_CARRIER_DATA;
   return Object.fromEntries(Object.entries(shown)
-    .filter(([key, valid]) => valid(stored[key]))
+    .filter(([key, valid]) => valid(stored[key]) && (!wrapped || SHOWN_IN_GIFT.has(key)))
     .map(([key]) => [key, stored[key]]));
+}
+
+function eventTime(event: ApiTrackingEventRow): number {
+  const time = Date.parse(event.occurred_at);
+  return Number.isFinite(time) ? time : 0;
+}
+
+/** A country as a scan's place: its label point, and nothing more precise. */
+function countryPlace(country: string): ApiTrackingEventRow['place'] {
+  try {
+    const place = locatePlace(country);
+    if (place?.precision !== 'country' || place.country !== country) return null;
+    return { latitude: place.latitude, longitude: place.longitude, precision: 'country', country, name: place.name };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The journey of a gift as its viewer sees it until it is delivered: where it
+ * comes from stays a country.
+ *
+ * - Scans from before the carrier had the parcel (`pending`, `registered`) are
+ *   left out.
+ * - The origin country is the country of the earliest located scan.
+ * - When the parcel leaves that country, or is bound for another one, every
+ *   scan located in the origin country is blurred, and so is every scan
+ *   without a place from before the parcel was first seen elsewhere.
+ * - When the journey stays in one country, or no scan is located, only the
+ *   `accepted` scans are blurred: the rest is the way to the recipient.
+ *
+ * A blurred scan keeps its time and stage. Its description becomes
+ * GIFT_ORIGIN_DESCRIPTION, its location the origin country's code and its
+ * place that country, without a town or the carrier's point.
+ */
+export function giftEvents(
+  events: readonly ApiTrackingEventRow[],
+  destinationCountry: string | null,
+): ApiTrackingEventRow[] {
+  const journey = [...events].sort((a, b) => eventTime(a) - eventTime(b)
+    || EVENT_STAGE_ORDER.indexOf(a.stage) - EVENT_STAGE_ORDER.indexOf(b.stage)
+    || a.id.localeCompare(b.id));
+  const origin = journey.find((event) => event.place)?.place?.country ?? null;
+  const abroad = origin === null ? -1 : journey.findIndex((event) => event.place && event.place.country !== origin);
+  const leavesOrigin = origin !== null && (abroad !== -1 || (destinationCountry !== null && destinationCountry !== origin));
+  const position = new Map(journey.map((event, index) => [event, index]));
+  const blurred = (event: ApiTrackingEventRow): boolean => {
+    if (!leavesOrigin) return event.stage === 'accepted';
+    if (event.place) return event.place.country === origin;
+    return abroad === -1 || position.get(event)! < abroad;
+  };
+  const place = origin === null ? null : countryPlace(origin);
+  return events
+    .filter((event) => event.stage !== 'pending' && event.stage !== 'registered')
+    .map((event) => blurred(event)
+      ? { ...event, description: GIFT_ORIGIN_DESCRIPTION, location: origin, place }
+      : event);
+}
+
+/**
+ * Whether this server sends browser notifications, and the key a browser
+ * subscribes with. A push configuration that does not load reads as none: a
+ * parcel is still shown.
+ */
+export function parcelAlerts(service: SupabaseServiceClient): ApiParcelAlerts {
+  try {
+    const web = pushServices(service).web;
+    return { available: web !== null, vapidPublicKey: web?.publicKey ?? null };
+  } catch {
+    return { available: false, vapidPublicKey: null };
+  }
 }
 
 const optionalText = (value: unknown): string | null => typeof value === 'string' ? value : null;
@@ -136,17 +231,40 @@ function isoTime(value: unknown): string | null {
   return Number.isFinite(time) ? new Date(time).toISOString() : null;
 }
 
+/** Whether the link is a gift still on its way for this caller: everyone but the owner, until the parcel is delivered. */
+export function isWrappedGift({ link, package: row }: StoredParcelLink): boolean {
+  return link.gift === true && link.owner !== true && row.current_stage !== 'delivered';
+}
+
 /**
  * Explicit projection of a link and its package row: a column or a stored key
  * added later is never published by accident. The owner key and its hash are
  * not part of the input.
+ *
+ * A gift on its way shows its viewer less: no sender, weight, size or pickup
+ * point, no carrier status line, a masked number whatever the link shows
+ * otherwise, and the journey of giftEvents. Delivered, it is a link like any
+ * other. Its owner always sees everything.
  */
-export function publicParcelResponse(found: { link: JsonObject; package: JsonObject }): ApiPublicParcelResponse {
+export function publicParcelResponse(found: StoredParcelLink, alerts: ApiParcelAlerts): ApiPublicParcelResponse {
   const { link, package: row } = found;
   const owner = link.owner === true;
-  const numberShown = owner || link.show_number === true;
+  const wrapped = isWrappedGift(found);
+  const numberShown = owner || (link.show_number === true && !wrapped);
   const trackingNumber = String(row.tracking_number ?? '');
-  const events = withEventPlaces(row).tracking_events;
+  const stored = withEventPlaces(row).tracking_events;
+  const events = (Array.isArray(stored) ? stored.filter(isRecord) : []).map((event): ApiTrackingEventRow => ({
+    id: String(event.id),
+    package_id: String(event.package_id),
+    stage: event.stage as ApiTrackingEventRow['stage'],
+    description: String(event.description ?? ''),
+    location: optionalText(event.location),
+    occurred_at: String(event.occurred_at),
+    place: (isRecord(event.place) ? event.place : null) as ApiTrackingEventRow['place'],
+  }));
+  const carrierData = isRecord(row.carrier_data) ? row.carrier_data : {};
+  const destination = typeof carrierData.destination_country === 'string' && /^[A-Za-z]{2}$/.test(carrierData.destination_country)
+    ? carrierData.destination_country.toUpperCase() : null;
   const shownLink: ApiParcelLink = {
     id: String(link.id),
     role: owner ? 'owner' : 'viewer',
@@ -154,7 +272,12 @@ export function publicParcelResponse(found: { link: JsonObject; package: JsonObj
     createdAt: isoTime(link.created_at) ?? '',
     forgetAt: isoTime(link.forget_at),
     numberShown,
+    // A gift cannot be kept by its recipient before it arrives: its number is not shown.
     canKeep: numberShown,
+    gift: link.gift === true,
+    // The stored link's own `shared` says that it belongs to an account: the kind above.
+    shared: link.stopped !== true,
+    alerts,
   };
   return {
     link: shownLink,
@@ -168,25 +291,37 @@ export function publicParcelResponse(found: { link: JsonObject; package: JsonObj
       // A parcel several lookups share does not say when the first one was made.
       created_at: later(row.created_at, link.created_at),
       expected_delivery: optionalText(row.expected_delivery),
-      last_status_text: optionalText(row.last_status_text),
+      // The carrier's status line can name the place the newest scan was made.
+      last_status_text: wrapped ? null : optionalText(row.last_status_text),
       last_synced_at: optionalText(row.last_synced_at),
       sync_status: String(row.sync_status) as ApiSyncStatus,
       sync_error: typeof row.sync_error === 'string' && SYNC_ERROR_CODE.test(row.sync_error) ? row.sync_error : null,
       // A stored link is always a private credential (Planzer, Dachser), and a postcode is the recipient's.
       tracking_url: null,
       dpd_postcode: null,
-      carrier_data: publicCarrierData(row.carrier_data, numberShown),
+      carrier_data: publicCarrierData(carrierData, numberShown, wrapped),
       archived_at: null,
       notifications_muted: false,
-      tracking_events: (Array.isArray(events) ? events.filter(isRecord) : []).map((event) => ({
-        id: String(event.id),
-        package_id: String(event.package_id),
-        stage: event.stage as ApiTrackingEventRow['stage'],
-        description: String(event.description ?? ''),
-        location: optionalText(event.location),
-        occurred_at: String(event.occurred_at),
-        place: (isRecord(event.place) ? event.place : null) as ApiTrackingEventRow['place'],
-      })),
+      tracking_events: wrapped ? giftEvents(events, destination) : events,
     },
   };
+}
+
+/** What someone holding only the link gets: the parcel as a viewer sees it, or why not. */
+export type ViewerParcel =
+  | { status: 'shown'; parcel: ApiPublicParcelResponse; wrappedGift: boolean }
+  | { status: 'stopped' }
+  | { status: 'unavailable' };
+
+/**
+ * A link as a viewer sees it, for the page's metadata and preview image: they
+ * are built from this answer, never from the stored row, so a gift on its way
+ * says no more there than on the page. `wrappedGift` tells them to speak of a
+ * gift. Reading it is not an opening of the link.
+ */
+export async function viewerParcel(service: SupabaseServiceClient, linkId: string): Promise<ViewerParcel> {
+  const found = isParcelLinkId(linkId) ? await service.publicParcel(linkId, null, false) : null;
+  if (found === null) return { status: 'unavailable' };
+  if (found === 'stopped') return { status: 'stopped' };
+  return { status: 'shown', parcel: publicParcelResponse(found, parcelAlerts(service)), wrappedGift: isWrappedGift(found) };
 }

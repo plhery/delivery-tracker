@@ -630,6 +630,7 @@
   "event.carrier.registered": "Dados do envio recebidos",
   "event.carrier.returning": "Em devolução ao remetente",
   "event.carrier.update": "Atualização do seguimento",
+  "event.gift.leftSender": "Saiu do remetente",
   "tracking.failure.challenge": "O seguimento automático está temporariamente bloqueado. Consulta o site da transportadora.",
   "tracking.failure.connection": "Não foi possível contactar o serviço de seguimento. Tenta novamente mais tarde.",
   "tracking.failure.input": "São necessários mais dados para consultar este envio. Atualiza os dados de seguimento ou consulta o site da transportadora.",

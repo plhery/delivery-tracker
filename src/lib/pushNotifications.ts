@@ -12,33 +12,11 @@ import type {
 export type NotificationPreferences = ApiNotificationPreferences;
 export type NotificationStage = ApiNotificationStage;
 
-export const ALL_NOTIFICATION_STAGES: NotificationStage[] = [
-  'registered',
-  'accepted',
-  'in_transit',
-  'customs',
-  'exception',
-  'out_for_delivery',
-  'failed_attempt',
-  'ready_for_pickup',
-  'delivered',
-  'returned',
-];
-
-export const IMPORTANT_NOTIFICATION_STAGES: NotificationStage[] = [
-  'customs',
-  'exception',
-  'out_for_delivery',
-  'failed_attempt',
-  'ready_for_pickup',
-  'delivered',
-  'returned',
-];
-
-export const DELIVERY_DAY_NOTIFICATION_STAGES: NotificationStage[] = [
-  'out_for_delivery',
-  'delivered',
-];
+export {
+  ALL_NOTIFICATION_STAGES,
+  DELIVERY_DAY_NOTIFICATION_STAGES,
+  IMPORTANT_NOTIFICATION_STAGES,
+} from './notificationPresets';
 
 export type PushState =
   | { kind: 'unsupported' }

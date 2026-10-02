@@ -37,9 +37,9 @@ Key server modules:
 
 - `auth.ts` validates the bearer token and builds a PostgREST client carrying the
   user's JWT. `api.ts` adds logging and per-account rate limits.
-- `publicParcels.ts` decides what a parcel link shows, hashes owner keys and keys the daily
-  lookup counters. The routes under `/api/public` are the only ones without sign-in that
-  write.
+- `publicParcels.ts` decides what a parcel link shows, to a gift's viewer too, hashes owner
+  keys and keys the daily lookup counters. The routes under `/api/public` are the only ones
+  without sign-in that write.
 - `background.ts` runs the scheduler. `public.sync_jobs` is the durable, deduplicated
   queue, and workers claim jobs with leases, so deploys, crashes and replicas never lose
   or double-run work. This is the only code path with cross-account access.
@@ -47,10 +47,10 @@ Key server modules:
   `trackingRouting.ts` decides which source to ask ([ROUTING.md](ROUTING.md)).
 - `eventPlaces.ts` uses the scraper's place resolver to put each scan on the map,
   when the API returns a parcel ([README](https://github.com/plhery/universal-parcel-scraper/blob/main/places/README.md)).
-- `push.ts` sends Web Push, APNs alerts and Live Activity updates, only to the parcel
-  owner's devices. Each batch of new scans announces its newest one, and only when it is
-  the parcel's newest scan: history a carrier change backfills, or a scan reported late,
-  is recorded as handled without an alert.
+- `push.ts` sends Web Push, APNs alerts and Live Activity updates to the parcel owner's
+  devices, and Web Push to the alerts of the parcel's links. Each batch of new scans
+  announces its newest one, and only when it is the parcel's newest scan: history a carrier
+  change backfills, or a scan reported late, is recorded as handled without an alert.
 - `observability.ts` and `trackingAudit.ts` link Sentry and logs to the private audit
   tables ([OBSERVABILITY.md](OBSERVABILITY.md)).
 
@@ -62,7 +62,8 @@ Key server modules:
   PostgREST with that token, so RLS is the final check. Writes use owner-bound database
   functions that re-validate, enforce quotas and can't target another account.
 - **Service role**: used only for scheduled carrier work, push delivery, account
-  deletion and parcels followed without an account. It never reaches the browser.
+  deletion, parcels followed without an account and what a parcel link shows. It never
+  reaches the browser.
 - **Parcel links**: a parcel followed without an account has no owner and is reached
   through `/p/<id>`. The id (12 symbols, about 70 bits) is the capability to read it.
   - The device that made the lookup also gets an owner key, once; the database keeps its
@@ -85,6 +86,30 @@ Key server modules:
   - Lookups are limited per client and overall, per minute in memory and per day in the
     database. The daily counter is keyed by a hash of the client address and the date,
     made with a server secret; an IPv6 client counts as its /64.
+- **Shared links**: a signed-in person shares one of their parcels through a link of their
+  own, at most one live link per parcel. The database functions behind
+  `/api/packages/{id}/share` run under the user's token and refuse another account's parcel
+  like a missing one. A lookup's owner changes its link with the owner key.
+  - A viewer's answer is the same allow-list for both kinds of link. The server never sends
+    a viewer the parcel's label: a name, a gift note and who a gift is from travel after `#`
+    in the link and stay in the browser.
+  - **Gifts**: until the parcel is delivered, a gift's viewer gets no sender, weight, size,
+    pickup point or carrier status line, a masked number whatever the link shows otherwise,
+    no scan from before the carrier had the parcel, and the scans of the origin country
+    reduced to "Left the sender" and that country (`giftEvents` in `publicParcels.ts`). The
+    owner sees everything. A gift cannot be kept by a viewer before it is delivered; the
+    database refuses it, not only the page.
+  - The page's metadata and preview image are built from the viewer's answer
+    (`viewerParcel`), never from the stored row.
+  - **Stopping** makes the link answer "not shared" to everyone but a lookup's owner and
+    ends its viewers' alerts. Sharing an account's parcel again makes a new link.
+  - **Alerts**: anyone holding a link can subscribe their browser to that parcel. The
+    endpoint must belong to a known push service and the key be a valid one, as for an
+    account. Endpoints and keys are service-role only and are never returned or logged. A
+    link takes ten alerts from viewers. Notifications carry no name and no number, and a
+    gift's no place. An alert ends with the journey, when the push service says the
+    subscription is gone, or after three failed sends in a row; a failed send is not
+    repeated, so an endpoint anyone can add costs a bounded number of requests.
 - **Private data**: tracking numbers, labels, carrier history, push endpoints and capability
   URLs (Planzer, Dachser) never go into analytics. They do appear in operator logs and
   Sentry; see [OBSERVABILITY.md](OBSERVABILITY.md).
@@ -124,6 +149,10 @@ app installed, `/p/…` and `/i/…` open in the app.
 - **Keeping a looked-up parcel** after signing in moves it into the account when nobody
   else follows it, and copies it otherwise. Its link then belongs to the account and has
   no forget date.
+- **A link from an account** lasts until its parcel or account is deleted. Once its
+  sharing is stopped it is deleted 30 days later, by the same maintenance pass.
+- **An alert for a link** is deleted when the parcel is delivered or returned, when its
+  browser unsubscribes, when its link goes and, for viewers, when sharing stops.
 - **Deleting an account** removes the Auth user. Foreign-key cascades remove parcels,
   jobs, events, push registrations, Live Activity tokens and audit rows. Other audit rows
   expire after 90 days.

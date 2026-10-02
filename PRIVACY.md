@@ -126,6 +126,36 @@ last link. If you sign in and keep the parcel, it becomes part of your account.
 Diagnostic logs and Sentry reports can retain its tracking number as described
 above.
 
+## Sharing a parcel and alerts for a link
+
+You can share a parcel through its link, with or without an account. Anyone
+who has the link sees the parcel's status and history. They never see a pickup
+code, a postcode, the recipient's name or the name you gave the parcel, and
+the tracking number stays masked unless you choose to show it.
+
+You can mark the link as a gift. Until the parcel is delivered, its viewers
+then see no sender, weight, size or pickup point, the number stays masked, and
+the scans made in the country the parcel comes from read "Left the sender"
+with that country and no town.
+
+You can stop sharing at any time. The link then only says that the parcel is
+not shared anymore. A stopped link from an account is deleted 30 days later;
+deleting the parcel or the account deletes its links at once.
+
+The name of a parcel, a gift note and who a gift is from are never sent to the
+service. They travel in the part of the link after `#` and stay in the
+browsers of the people who have the link.
+
+Anyone who has a link can turn on notifications in their browser for that one
+parcel, without an account. The service then stores that browser's Web Push
+endpoint and encryption keys, its language, which updates to announce, and
+whether the device that made the lookup turned the alert on. This is deleted
+when the parcel is delivered or returned, when the browser turns the alert off
+or its push subscription ends, when the link is forgotten, and, for everyone
+but the device that made the lookup, when sharing is stopped. The notifications
+carry the parcel's status and never its number or name; a gift's do not say
+where it is before it arrives.
+
 ## Retention and control
 
 Parcel data remains until you delete the account. Archiving a parcel only hides

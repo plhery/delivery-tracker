@@ -1,22 +1,13 @@
 import { AMAZON_ACCOUNT_MESSAGE, isAmazonTrackingNumber, requiresAmazonAccount } from '../lib/amazon';
-import { CARRIER_IDS } from '../generated/apiContract';
+import { CARRIER_IDS, type ApiParcelAlertPreset } from '../generated/apiContract';
+import { ALERT_PRESET_STAGES, ALL_NOTIFICATION_STAGES } from '../lib/notificationPresets';
+import { createECDH } from 'node:crypto';
 import { HttpError, parseUuid } from './api';
 import { normalizeCarrierInputs } from './carriers';
-import type { JsonObject } from './types';
+import { isRecord, type JsonObject } from './types';
 
 const VALID_CARRIERS = new Set<string>(CARRIER_IDS);
-const NOTIFICATION_STAGES = new Set([
-  'registered',
-  'accepted',
-  'in_transit',
-  'customs',
-  'exception',
-  'out_for_delivery',
-  'failed_attempt',
-  'ready_for_pickup',
-  'delivered',
-  'returned',
-]);
+const NOTIFICATION_STAGES = new Set<string>(ALL_NOTIFICATION_STAGES);
 const PUSH_ENDPOINT_HOSTS = new Set([
   'android.googleapis.com',
   'fcm.googleapis.com',
@@ -182,6 +173,60 @@ export function pushSubscription(payload: JsonObject): {
   }
   return { endpoint, p256dh: keys.p256dh, auth: keys.auth,
     ...(payload.locale == null ? {} : { locale: nativePushLocale(payload.locale) }) };
+}
+
+export interface ParcelAlertValues {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  locale: NativePushLocale;
+  preset: ApiParcelAlertPreset;
+}
+
+/**
+ * An alert for a parcel link: the browser's subscription, checked as an
+ * account's is, what to announce and in which language. The key must also be a
+ * point of the curve, so a made-up one is refused here and not at every send.
+ */
+export function parcelAlert(payload: JsonObject): ParcelAlertValues {
+  if (!isRecord(payload.subscription)) throw new HttpError(400, 'Send a valid push subscription');
+  const { endpoint, p256dh, auth } = pushSubscription({
+    endpoint: payload.subscription.endpoint, keys: payload.subscription.keys,
+  });
+  try {
+    const exchange = createECDH('prime256v1');
+    exchange.generateKeys();
+    exchange.computeSecret(Buffer.from(p256dh, 'base64url'));
+  } catch (error) {
+    throw new HttpError(400, 'Send valid push encryption keys', undefined, { cause: error });
+  }
+  const preset = payload.preset;
+  if (typeof preset !== 'string' || !Object.hasOwn(ALERT_PRESET_STAGES, preset)) {
+    throw new HttpError(400, 'Choose what the alert announces');
+  }
+  return { endpoint, p256dh, auth, locale: nativePushLocale(payload.locale), preset: preset as ApiParcelAlertPreset };
+}
+
+/**
+ * The switches of a shared link named in `fields`: each true or false when
+ * sent, and at least one of them unless `optional`.
+ */
+export function shareSwitches<Field extends 'showNumber' | 'gift' | 'shared'>(
+  payload: JsonObject,
+  fields: readonly Field[],
+  optional = false,
+): Partial<Record<Field, boolean>> {
+  const switches: Partial<Record<Field, boolean>> = {};
+  for (const field of fields) {
+    const value = payload[field];
+    if (value === undefined) continue;
+    if (typeof value !== 'boolean') throw new HttpError(400, `${field} must be true or false`);
+    switches[field] = value;
+  }
+  if (!optional && Object.keys(switches).length === 0) {
+    throw new HttpError(400, `Send ${fields.join(', ')} to change`);
+  }
+  return switches;
 }
 
 export function pushSubscriptionLocale(payload: JsonObject): { endpoint: string; locale: NativePushLocale } {

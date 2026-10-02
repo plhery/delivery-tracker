@@ -269,7 +269,7 @@ begin
   end if;
 
   answer := public.forget_expired_parcel_links();
-  if answer <> '{"links":4,"packages":3}' then
+  if answer <> '{"links":4,"packages":3,"stopped":0,"alerts":0}' then
     raise exception 'The purge forgot %', answer;
   end if;
   if exists (select 1 from public.parcel_links where id = any(expired))
@@ -278,7 +278,7 @@ begin
       or (select count(*) from public.packages where tracking_number like 'ONEOFFEXPIRE%') <> 5 then
     raise exception 'The purge did not honour the forget dates';
   end if;
-  if public.forget_expired_parcel_links() <> '{"links":0,"packages":0}' then
+  if public.forget_expired_parcel_links() <> '{"links":0,"packages":0,"stopped":0,"alerts":0}' then
     raise exception 'A second purge found more to forget';
   end if;
   delete from public.packages where tracking_number like 'ONEOFFEXPIRE%';
@@ -411,8 +411,11 @@ begin
   insert into public.parcel_links (package_id, created_by, show_number)
   values ('c2000000-0000-4000-8000-000000000005', sharer, true) returning id into link_id;
   perform set_config('parcel_test.shown_link', link_id, true);
+  -- An account shares a parcel through one live link: the hidden one is another parcel's.
+  insert into public.packages (id, user_id, tracking_number, carrier, current_stage)
+  values ('c2000000-0000-4000-8000-000000000007', sharer, 'ONEOFFKEEP0007', 'unknown', 'in_transit');
   insert into public.parcel_links (package_id, created_by)
-  values ('c2000000-0000-4000-8000-000000000005', sharer) returning id into link_id;
+  values ('c2000000-0000-4000-8000-000000000007', sharer) returning id into link_id;
   perform set_config('parcel_test.hidden_link', link_id, true);
 end;
 $$;

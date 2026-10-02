@@ -17,8 +17,11 @@ publicly.
 
 Parcel link ids and owner keys are the exception, because holding one is enough to read
 or forget a parcel. Request logs name those routes without the id
-(`/api/public/parcels/:link`), and error reports for them and for `/api/packages/claim`
-leave the incoming request out. A reverse proxy in front of the app still sees the address.
+(`/api/public/parcels/:link`, `/api/public/parcels/:link/alerts`), and error reports for
+them and for `/api/packages/claim` leave the incoming request out. A reverse proxy in front
+of the app still sees the address. The push endpoint and keys of a link's alert are never
+logged, and a failed send to one is logged and counted but not reported as an error:
+anyone holding a link can add an endpoint.
 
 ## Postgres audit
 
@@ -136,7 +139,9 @@ Key JSON events:
 - `carrier_recognition`: how many carriers the Add sheet's recognition asked, how many
   knew the number or failed, and what it settled on (a carrier, `choice` or `none`).
 - `parcel_links_forgotten`: how many expired lookups, and parcels with them, a maintenance
-  pass forgot. `parcel_link_maintenance_failed` when it could not run.
+  pass forgot, how many stopped links from accounts it purged and how many alerts of
+  finished journeys it ended. `parcel_link_maintenance_failed` when it could not run.
+- `parcel_link_alerts_failed`: how many alerts of parcel links a dispatch could not send.
 
 The logger allows `tracking_number` explicitly. It drops other fields whose names look
 like parcel, user, label, location, status text, URL, token, cookie or secret data. Keep
@@ -211,9 +216,13 @@ container.
 | `carrier_detection_total` (result) | Detection confidence served to clients |
 | `carrier_refresh_total` (carrier, served_by, outcome) | Who served each refresh: `adapter`, `other_adapter`, `provider` or `none` |
 | `public_lookup_total` (outcome) | Lookups without an account: `created`, `reused` (the number was already stored), `limited_burst`, `limited_daily` (the client's day is used up), `limited_global` |
-| `public_parcel_read_total` (outcome) | Reads of a parcel link: `ok` or `not_found` |
+| `public_parcel_read_total` (outcome) | Reads of a parcel link: `ok`, `not_found` or `stopped` (its sharing was stopped) |
 | `parcel_claim_total` (outcome) | Links kept after sign-in: `kept`, `already`, `quota`, `unavailable` |
-| `parcel_forgotten_total` (kind, reason) | Forgotten links and parcels (`kind`), `asked` by their owner or `expired` |
+| `parcel_forgotten_total` (kind, reason) | Forgotten links and parcels (`kind`): `asked` by their owner, `expired`, or `stopped` 30 days ago |
+| `parcel_share_total` (kind, change) | Sharing `started`, `changed` (what the link shows) or `stopped`, through a `lookup`'s link or an `account`'s |
+| `parcel_alert_set_total` (outcome) | Requests to turn on an alert for a link: `added`, `updated`, `full` (ten already), `finished` (journey over), `stopped`, `unavailable` |
+| `parcel_alert_sent_total` (outcome) | Batches of new scans per alert: `sent`, `skipped` (not in its preset, backfilled, or the owner's own browser), `failed`, `expired` (the push service says the subscription is gone) |
+| `parcel_alert_removed_total` (reason) | Alerts ended: `asked`, `delivered` (journey over), `expired`, `failed` (three failed sends in a row) |
 | `public_lookup_clients` | Clients that made a lookup yesterday (UTC) |
 | `public_lookups_per_client` (stat) | Yesterday's lookups per client: `p50`, `p90`, `max` |
 

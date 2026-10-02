@@ -1,8 +1,10 @@
-import { createHash } from 'node:crypto';
+import { createECDH, createHash, randomBytes } from 'node:crypto';
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import webpush from 'web-push';
 import { POST as lookUp } from '../../app/api/public/parcels/route';
-import { DELETE as forget, GET as read } from '../../app/api/public/parcels/[linkId]/route';
+import { DELETE as forget, GET as read, PATCH as change } from '../../app/api/public/parcels/[linkId]/route';
+import { DELETE as alertOff, PUT as alertOn } from '../../app/api/public/parcels/[linkId]/alerts/route';
 import { AMAZON_ACCOUNT_MESSAGE } from '../lib/amazon';
 import { SupabaseAuthenticator } from './auth';
 import * as background from './background';
@@ -92,6 +94,8 @@ function storedLink(overrides: JsonObject = {}): JsonObject {
     owner: false,
     shared: false,
     show_number: false,
+    gift: false,
+    stopped: false,
     created_at: '2026-09-28T08:00:00+00:00',
     forget_at: '2026-12-30T10:00:00+00:00',
     ...overrides,
@@ -110,6 +114,21 @@ function lookup(body: unknown, ip = nextIp()) {
 function open(id = linkId, key?: string, ip = nextIp()) {
   return read(new NextRequest(`https://delivery.example/api/public/parcels/${id}`, {
     headers: { 'x-real-ip': ip, ...(key === undefined ? {} : { 'x-parcel-key': key }) },
+  }), route(id));
+}
+/** `key` null sends no owner key. */
+function update(body: unknown, id = linkId, key: string | null = ownerKey, ip = nextIp()) {
+  return change(new NextRequest(`https://delivery.example/api/public/parcels/${id}`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', 'x-real-ip': ip, ...(key === null ? {} : { 'x-parcel-key': key }) },
+    body: JSON.stringify(body),
+  }), route(id));
+}
+function alertRequest(handler: typeof alertOn, method: string, body: unknown, id = linkId, key?: string, ip = nextIp()) {
+  return handler(new NextRequest(`https://delivery.example/api/public/parcels/${id}/alerts`, {
+    method,
+    headers: { 'content-type': 'application/json', 'x-real-ip': ip, ...(key === undefined ? {} : { 'x-parcel-key': key }) },
+    body: JSON.stringify(body),
   }), route(id));
 }
 function remove(id = linkId, key?: string, ip = nextIp()) {
@@ -160,6 +179,7 @@ describe('looking up a parcel without an account', () => {
     expect(answer.link).toEqual({
       id: linkId, role: 'owner', kind: 'lookup', createdAt: '2026-09-28T08:00:00.000Z',
       forgetAt: '2026-12-30T10:00:00.000Z', numberShown: true, canKeep: true,
+      gift: false, shared: true, alerts: { available: false, vapidPublicKey: null },
     });
     expect(answer.package).toMatchObject({ id: packageId, tracking_number: trackingNumber, number_hint: null, label: '' });
 
@@ -351,6 +371,7 @@ describe('reading a parcel link', () => {
     expect(answer.link).toEqual({
       id: linkId, role: 'viewer', kind: 'shared', createdAt: '2026-09-28T08:00:00.000Z',
       forgetAt: null, numberShown: true, canKeep: true,
+      gift: false, shared: true, alerts: { available: false, vapidPublicKey: null },
     });
     expect(answer.package).toMatchObject({ tracking_number: trackingNumber, number_hint: null, dpd_postcode: null });
     expect(enqueue).not.toHaveBeenCalled();
@@ -379,6 +400,69 @@ describe('reading a parcel link', () => {
     expect(found).toHaveBeenCalledExactlyOnceWith('unknownLink2', keyHash, true);
     expect(counted.mock.calls).toEqual([['not_found'], ['not_found'], ['not_found']]);
     expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  it('tells a viewer that the sharing was stopped, and nothing else', async () => {
+    const found = vi.spyOn(SupabaseServiceClient.prototype, 'publicParcel').mockResolvedValue('stopped');
+    const counted = vi.spyOn(metrics, 'recordPublicParcelRead');
+    const response = await open(linkId, 'B'.repeat(43));
+    expect(response.status).toBe(410);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(await response.json()).toEqual({ error: 'Parcel not shared' });
+    expect(found).toHaveBeenCalledOnce();
+    expect(counted).toHaveBeenCalledExactlyOnceWith('stopped');
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  it('still shows a stopped lookup to its owner, marked as not shared', async () => {
+    find({ owner: true, stopped: true });
+    const answer = await (await open(linkId, ownerKey)).json();
+    expect(answer.link).toMatchObject({ role: 'owner', shared: false, numberShown: true });
+    expect(answer.package.tracking_number).toBe(trackingNumber);
+  });
+
+  it('shows a gift on its way to a viewer without its sender, number or origin, whatever the link shows', async () => {
+    const gift = {
+      current_stage: 'in_transit',
+      carrier_data: { sender_name: 'Example Shop', weight_kg: 1.2, destination_country: 'CH', active_tracking_number: 'TESTDELIVERYLEG01' },
+      tracking_events: [
+        { id: 'scan-3', package_id: packageId, stage: 'in_transit', description: 'Arrived in Switzerland', location: 'Basel, CH', occurred_at: '2026-10-01T12:00:00+00:00' },
+        { id: 'scan-2', package_id: packageId, stage: 'accepted', description: 'Picked up at Example Shop', location: 'Hamburg, DE', occurred_at: '2026-10-01T08:00:00+00:00' },
+        { id: 'scan-1', package_id: packageId, stage: 'registered', description: 'Announced by Example Shop', location: null, occurred_at: '2026-10-01T06:00:00+00:00' },
+      ],
+    };
+    find({ gift: true, show_number: true, shared: true, forget_at: null }, gift);
+    const text = await (await open()).text();
+    expectNothingPrivate(text);
+    for (const hidden of [trackingNumber, 'Example Shop', 'Hamburg', 'TESTDELIVERYLEG01', 'weight_kg', 'In transit']) expect(text).not.toContain(hidden);
+    const answer = JSON.parse(text);
+    expect(answer.link).toMatchObject({ role: 'viewer', gift: true, numberShown: false, canKeep: false });
+    expect(answer.package).toMatchObject({ tracking_number: null, number_hint: { head: 'TEST', tail: '456' }, last_status_text: null });
+    expect(answer.package.tracking_events).toEqual([
+      expect.objectContaining({ id: 'scan-3', description: 'Arrived in Switzerland', location: 'Basel, CH' }),
+      { id: 'scan-2', package_id: packageId, stage: 'accepted', description: 'Left the sender', location: 'DE',
+        occurred_at: '2026-10-01T08:00:00+00:00', place: expect.objectContaining({ precision: 'country', country: 'DE' }) },
+    ]);
+
+    // The same link with its owner key shows everything.
+    vi.restoreAllMocks();
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    find({ gift: true, owner: true }, gift);
+    const owned = await (await open(linkId, ownerKey)).json();
+    expect(owned.link).toMatchObject({ role: 'owner', gift: true, numberShown: true });
+    expect(owned.package.tracking_number).toBe(trackingNumber);
+    expect(owned.package.carrier_data.sender_name).toBe('Example Shop');
+    expect(owned.package.tracking_events).toHaveLength(3);
+  });
+
+  it('says a link can take alerts, and with which key, when Web Push is configured', async () => {
+    const keys = webpush.generateVAPIDKeys();
+    vi.stubEnv('VAPID_PUBLIC_KEY', keys.publicKey);
+    vi.stubEnv('VAPID_PRIVATE_KEY', keys.privateKey);
+    find();
+    const text = await (await open()).text();
+    expect(JSON.parse(text).link.alerts).toEqual({ available: true, vapidPublicKey: keys.publicKey });
+    expect(text).not.toContain(keys.privateKey);
   });
 
   it('queues a check of a one-off parcel that is due one, and only then', async () => {
@@ -470,5 +554,249 @@ describe('forgetting a lookup', () => {
     // Only a well-formed link and key are checked against the database.
     expect(forgotten).toHaveBeenCalledTimes(2);
     expect(counted).not.toHaveBeenCalled();
+  });
+});
+
+describe('changing what a lookup shows', () => {
+  const store = (transition: 'stopped' | 'started' | null = null, link: JsonObject = {}) => vi
+    .spyOn(SupabaseServiceClient.prototype, 'updateParcelLink')
+    .mockResolvedValue({ link: storedLink({ owner: true, ...link }), package: storedPackage(), transition });
+
+  it('changes the link for its owner key and answers as the owner sees it', async () => {
+    const stored = store(null, { gift: true, show_number: true });
+    const counted = vi.spyOn(metrics, 'recordParcelShare');
+    const response = await update({ showNumber: true, gift: true, label: 'never stored' });
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(stored).toHaveBeenCalledExactlyOnceWith(linkId, keyHash, { showNumber: true, gift: true });
+    const text = await response.text();
+    expectNothingPrivate(text);
+    const answer = JSON.parse(text);
+    expect(answer).not.toHaveProperty('transition');
+    expect(answer.link).toMatchObject({ role: 'owner', gift: true, shared: true, numberShown: true, canKeep: true });
+    // The owner of a gift still sees all of it.
+    expect(answer.package).toMatchObject({ tracking_number: trackingNumber, carrier_data: { sender_name: 'Example Shop' } });
+    expect(counted).toHaveBeenCalledExactlyOnceWith('lookup', 'changed');
+  });
+
+  it.each([['stopped', false], ['started', true]] as const)('counts sharing %s', async (transition, shared) => {
+    const stored = store(transition, { stopped: !shared });
+    const counted = vi.spyOn(metrics, 'recordParcelShare');
+    const answer = await (await update({ shared })).json();
+    expect(stored).toHaveBeenCalledExactlyOnceWith(linkId, keyHash, { shared });
+    expect(answer.link.shared).toBe(shared);
+    expect(counted).toHaveBeenCalledExactlyOnceWith('lookup', transition);
+  });
+
+  it('answers an unknown link, a wrong key and a missing key alike', async () => {
+    const stored = vi.spyOn(SupabaseServiceClient.prototype, 'updateParcelLink').mockResolvedValue(null);
+    const counted = vi.spyOn(metrics, 'recordParcelShare');
+    const answers = [
+      await update({ gift: true }, 'unknownLink2'),
+      await update({ gift: true }, linkId, 'B'.repeat(43)),
+      await update({ gift: true }, linkId, null),
+      await update({ gift: true }, linkId, 'not-a-key'),
+      await update({ gift: true }, 'not-a-link-id!'),
+    ];
+    for (const response of answers) {
+      expect(response.status).toBe(404);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      expect(await response.json()).toEqual({ error: 'Parcel unavailable' });
+    }
+    // Only a well-formed link and key are checked against the database.
+    expect(stored).toHaveBeenCalledTimes(2);
+    expect(counted).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [{}], [{ label: 'Sneakers' }], [{ gift: 'yes' }], [{ showNumber: 1 }], [{ shared: null }], [{ gift: true, shared: 'no' }],
+  ])('rejects %j before looking at the key or the link', async (body) => {
+    const stored = store();
+    for (const response of [await update(body), await update(body, 'unknownLink2', null)]) {
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: expect.stringMatching(/showNumber|gift|shared/) });
+    }
+    expect(stored).not.toHaveBeenCalled();
+  });
+
+  it('keeps the link and its key out of request logs and error reports', async () => {
+    const logged = vi.mocked(console.log);
+    vi.spyOn(SupabaseServiceClient.prototype, 'updateParcelLink').mockRejectedValue(new SupabaseError('database down', 503));
+    const report = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
+    expect((await update({ shared: false })).status).toBe(502);
+    expect(report).toHaveBeenCalledExactlyOnceWith(expect.any(SupabaseError), expect.objectContaining({
+      route: '/api/public/parcels/:link', withoutRequest: true,
+    }));
+    for (const [line] of [...logged.mock.calls, ...vi.mocked(console.error).mock.calls]) {
+      for (const secret of [linkId, ownerKey, keyHash]) expect(String(line)).not.toContain(secret);
+    }
+  });
+
+  it('limits changes per client across every link', async () => {
+    const stored = vi.spyOn(SupabaseServiceClient.prototype, 'updateParcelLink').mockResolvedValue(null);
+    for (let index = 0; index < 30; index += 1) {
+      expect((await update({ gift: true }, index % 2 ? linkId : 'unknownLink2', ownerKey, '198.51.100.30')).status).toBe(404);
+    }
+    const refused = await update({ gift: true }, 'anotherLink3', ownerKey, '198.51.100.30');
+    expect(refused.status).toBe(429);
+    expect(refused.headers.get('retry-after')).toBeTruthy();
+    expect(stored).toHaveBeenCalledTimes(30);
+  });
+});
+
+describe('alerts for a parcel link', () => {
+  // A synthetic subscription: a fresh P-256 point and secret, and an endpoint no push service issued.
+  const endpoint = 'https://fcm.googleapis.com/fcm/send/synthetic-link-alert';
+  const exchange = createECDH('prime256v1');
+  exchange.generateKeys();
+  const keys = { p256dh: exchange.getPublicKey().toString('base64url'), auth: randomBytes(16).toString('base64url') };
+  const body = (changes: JsonObject = {}) => ({ subscription: { endpoint, keys }, preset: 'important', locale: 'de', ...changes });
+  const secrets = [endpoint, 'synthetic-link-alert', keys.p256dh, keys.auth, ownerKey, keyHash];
+  const turnOn = (payload: unknown = body(), id = linkId, key?: string, ip?: string) => alertRequest(alertOn, 'PUT', payload, id, key, ip);
+  const turnOff = (payload: unknown = { endpoint }, id = linkId, ip?: string) => alertRequest(alertOff, 'DELETE', payload, id, undefined, ip);
+  const store = (outcome: 'added' | 'updated' | 'full' | 'finished' | 'stopped' | null = 'added') => vi
+    .spyOn(SupabaseServiceClient.prototype, 'addParcelLinkAlert').mockResolvedValue(outcome);
+
+  beforeEach(() => {
+    const vapid = webpush.generateVAPIDKeys();
+    vi.stubEnv('VAPID_PUBLIC_KEY', vapid.publicKey);
+    vi.stubEnv('VAPID_PRIVATE_KEY', vapid.privateKey);
+  });
+
+  it('turns an alert on for anyone holding the link, without sign-in', async () => {
+    const authenticate = vi.spyOn(SupabaseAuthenticator.prototype, 'validate');
+    const stored = store();
+    const counted = vi.spyOn(metrics, 'recordParcelAlertSet');
+    const response = await turnOn();
+    expect(response.status).toBe(204);
+    expect(await response.text()).toBe('');
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(stored).toHaveBeenCalledExactlyOnceWith(linkId, null, {
+      endpoint, p256dh: keys.p256dh, auth: keys.auth, locale: 'de', preset: 'important',
+    });
+    expect(counted).toHaveBeenCalledExactlyOnceWith('added');
+    expect(authenticate).not.toHaveBeenCalled();
+  });
+
+  it('marks the alert of the lookup\'s owner by its key', async () => {
+    const stored = store('updated');
+    expect((await turnOn(body({ preset: 'delivery' }), linkId, ownerKey)).status).toBe(204);
+    expect(stored).toHaveBeenCalledExactlyOnceWith(linkId, keyHash, expect.objectContaining({ preset: 'delivery' }));
+    stored.mockClear();
+    // A malformed key is no key: the alert is a viewer's.
+    await turnOn(body(), linkId, 'not-a-key');
+    expect(stored).toHaveBeenCalledExactlyOnceWith(linkId, null, expect.anything());
+  });
+
+  it('answers a journey that is over like an alert that has ended', async () => {
+    store('finished');
+    const counted = vi.spyOn(metrics, 'recordParcelAlertSet');
+    expect((await turnOn()).status).toBe(204);
+    expect(counted).toHaveBeenCalledExactlyOnceWith('finished');
+  });
+
+  it('answers an unknown and a malformed link alike, a stopped one as not shared, a full one as full', async () => {
+    const stored = store(null);
+    const counted = vi.spyOn(metrics, 'recordParcelAlertSet');
+    for (const response of [await turnOn(body(), 'unknownLink2', ownerKey), await turnOn(body(), 'not-a-link-id!')]) {
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({ error: 'Parcel unavailable' });
+    }
+    // A malformed id never reaches the database.
+    expect(stored).toHaveBeenCalledOnce();
+    stored.mockResolvedValue('stopped');
+    const stopped = await turnOn();
+    expect(stopped.status).toBe(410);
+    expect(await stopped.json()).toEqual({ error: 'Parcel not shared' });
+    stored.mockResolvedValue('full');
+    const full = await turnOn();
+    expect(full.status).toBe(409);
+    expect(await full.json()).toEqual({ error: expect.any(String) });
+    expect(counted.mock.calls).toEqual([['unavailable'], ['unavailable'], ['stopped'], ['full']]);
+  });
+
+  it.each([
+    ['no subscription', { subscription: undefined }],
+    ['a subscription that is not an object', { subscription: endpoint }],
+    ['an endpoint outside the known push services', { subscription: { endpoint: 'https://push.example.test/send/1', keys } }],
+    ['an endpoint over plain HTTP', { subscription: { endpoint: endpoint.replace('https:', 'http:'), keys } }],
+    ['an endpoint with credentials', { subscription: { endpoint: endpoint.replace('https://', 'https://user:pass@'), keys } }],
+    ['an endpoint on another port', { subscription: { endpoint: endpoint.replace('.com/', '.com:8443/'), keys } }],
+    ['no keys', { subscription: { endpoint } }],
+    ['a key of the wrong length', { subscription: { endpoint, keys: { ...keys, p256dh: keys.auth } } }],
+    ['a key that is not a point of the curve', { subscription: { endpoint, keys: { ...keys, p256dh: Buffer.concat([Buffer.from([4]), Buffer.alloc(64, 1)]).toString('base64url') } } }],
+    ['a secret of the wrong length', { subscription: { endpoint, keys: { ...keys, auth: 'c2hvcnQ' } } }],
+    ['an unknown preset', { preset: 'everything' }],
+    ['an account preset\'s name', { preset: 'delivery-day' }],
+    ['no preset', { preset: undefined }],
+    ['an unsupported language', { locale: 'nl' }],
+    ['no language', { locale: undefined }],
+  ])('rejects %s without storing anything', async (_name, changes) => {
+    const stored = store();
+    const response = await turnOn(body(changes));
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: expect.any(String) });
+    expect(stored).not.toHaveBeenCalled();
+  });
+
+  it('says so when this server cannot send Web Push', async () => {
+    vi.stubEnv('VAPID_PUBLIC_KEY', '');
+    vi.stubEnv('VAPID_PRIVATE_KEY', '');
+    const stored = store();
+    const response = await turnOn();
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: 'Push notifications are not configured' });
+    expect(stored).not.toHaveBeenCalled();
+    // An invalid request is still told so first.
+    expect((await turnOn(body({ preset: 'everything' }))).status).toBe(400);
+  });
+
+  it('turns an alert off for whoever knows its endpoint, and answers the same when there was none', async () => {
+    const removed = vi.spyOn(SupabaseServiceClient.prototype, 'removeParcelLinkAlert').mockResolvedValueOnce(true).mockResolvedValue(false);
+    const counted = vi.spyOn(metrics, 'recordParcelAlertRemoved');
+    for (const response of [await turnOff(), await turnOff(), await turnOff({ endpoint }, 'unknownLink2'), await turnOff({ endpoint }, 'not-a-link-id!')]) {
+      expect(response.status).toBe(204);
+      expect(await response.text()).toBe('');
+      expect(response.headers.get('cache-control')).toBe('no-store');
+    }
+    expect(removed.mock.calls).toEqual([[linkId, endpoint], [linkId, endpoint], ['unknownLink2', endpoint]]);
+    expect(counted).toHaveBeenCalledExactlyOnceWith('asked');
+    for (const invalid of [{}, { endpoint: 'https://push.example.test/send/1' }, { endpoint: 42 }]) {
+      expect((await turnOff(invalid)).status).toBe(400);
+    }
+    expect(removed).toHaveBeenCalledTimes(3);
+  });
+
+  it('never returns or logs the endpoint, its keys, the link or the owner key', async () => {
+    const logged = vi.mocked(console.log);
+    const report = vi.spyOn(observability, 'captureOperationalError').mockReturnValue(null);
+    store();
+    vi.spyOn(SupabaseServiceClient.prototype, 'removeParcelLinkAlert').mockResolvedValue(true);
+    const answers = [await turnOn(body(), linkId, ownerKey), await turnOff()];
+    vi.spyOn(SupabaseServiceClient.prototype, 'addParcelLinkAlert').mockRejectedValue(new SupabaseError('database down', 503));
+    vi.spyOn(SupabaseServiceClient.prototype, 'removeParcelLinkAlert').mockRejectedValue(new SupabaseError('database down', 503));
+    answers.push(await turnOn(body(), linkId, ownerKey), await turnOff(), await turnOn(body({ preset: 'everything' })));
+    expect(answers.map((response) => response.status)).toEqual([204, 204, 502, 502, 400]);
+    const lines = [...logged.mock.calls, ...vi.mocked(console.error).mock.calls].map(([line]) => String(line));
+    expect(lines.filter((line) => line.includes('"route":"/api/public/parcels/:link/alerts"'))).toHaveLength(5);
+    for (const text of [...lines, ...await Promise.all(answers.map((response) => response.text()))]) {
+      for (const secret of [...secrets, linkId]) expect(text).not.toContain(secret);
+    }
+    expect(report).toHaveBeenCalledTimes(2);
+    for (const [, context] of report.mock.calls) {
+      expect(context).toMatchObject({ route: '/api/public/parcels/:link/alerts', withoutRequest: true });
+    }
+  });
+
+  it('limits alert requests per client across every link', async () => {
+    const stored = store(null);
+    for (let index = 0; index < 20; index += 1) {
+      expect((await turnOn(body(), index % 2 ? linkId : 'unknownLink2', undefined, '198.51.100.40')).status).toBe(404);
+    }
+    const refused = await turnOff({ endpoint }, linkId, '198.51.100.40');
+    expect(refused.status).toBe(429);
+    expect(refused.headers.get('retry-after')).toBeTruthy();
+    expect(stored).toHaveBeenCalledTimes(20);
+    expect((await turnOn(body(), linkId, undefined, '198.51.100.41')).status).toBe(404);
   });
 });

@@ -154,5 +154,100 @@
         }
       ]
     }
+  },
+  "publicGiftParcel": {
+    "link": {
+      "id": "g8Rn3yJe2SuX",
+      "role": "viewer",
+      "kind": "shared",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "forgetAt": null,
+      "numberShown": false,
+      "canKeep": false,
+      "gift": true,
+      "shared": true,
+      "alerts": {
+        "available": true,
+        "vapidPublicKey": "BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      }
+    },
+    "package": {
+      "id": "43000000-0000-0000-0000-000000000006",
+      "tracking_number": null,
+      "number_hint": {
+        "head": "TEST",
+        "tail": "789"
+      },
+      "label": "",
+      "carrier": "dhl",
+      "created_at": "2026-10-01T08:00:00+00:00",
+      "expected_delivery": "2026-10-03",
+      "last_status_text": null,
+      "last_synced_at": "2026-10-02T08:05:00+00:00",
+      "sync_status": "ok",
+      "sync_error": null,
+      "tracking_url": null,
+      "dpd_postcode": null,
+      "carrier_data": {
+        "destination_country": "CH"
+      },
+      "archived_at": null,
+      "notifications_muted": false,
+      "tracking_events": [
+        {
+          "id": "44000000-0000-0000-0000-000000000063",
+          "package_id": "43000000-0000-0000-0000-000000000006",
+          "stage": "out_for_delivery",
+          "description": "With the courier for delivery",
+          "location": "Zürich, CH",
+          "occurred_at": "2026-10-02T06:12:00+00:00",
+          "place": {
+            "latitude": 47.367,
+            "longitude": 8.55,
+            "precision": "city",
+            "country": "CH",
+            "name": "Zürich"
+          }
+        },
+        {
+          "id": "44000000-0000-0000-0000-000000000062",
+          "package_id": "43000000-0000-0000-0000-000000000006",
+          "stage": "in_transit",
+          "description": "Left the sender",
+          "location": "DE",
+          "occurred_at": "2026-10-01T15:48:00+00:00",
+          "place": {
+            "latitude": 50.96,
+            "longitude": 9.68,
+            "precision": "country",
+            "country": "DE",
+            "name": "Germany"
+          }
+        },
+        {
+          "id": "44000000-0000-0000-0000-000000000061",
+          "package_id": "43000000-0000-0000-0000-000000000006",
+          "stage": "accepted",
+          "description": "Left the sender",
+          "location": "DE",
+          "occurred_at": "2026-10-01T10:30:00+00:00",
+          "place": {
+            "latitude": 50.96,
+            "longitude": 9.68,
+            "precision": "country",
+            "country": "DE",
+            "name": "Germany"
+          }
+        }
+      ]
+    }
+  },
+  "parcelShare": {
+    "link": {
+      "id": "g8Rn3yJe2SuX",
+      "showNumber": false,
+      "gift": true,
+      "createdAt": "2026-10-01T08:00:00.000Z"
+    }
   }
 }

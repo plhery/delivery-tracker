@@ -2,19 +2,23 @@ import {
   apiRoute,
   json,
   noContent,
+  readJsonObject,
   requireService,
   type RouteParameters,
 } from '../../../../../src/server/api';
 import { wakeSyncWorker } from '../../../../../src/server/background';
-import { recordParcelsForgotten, recordPublicParcelRead } from '../../../../../src/server/metrics';
+import { recordParcelShare, recordParcelsForgotten, recordPublicParcelRead } from '../../../../../src/server/metrics';
 import {
   isParcelLinkId,
   ownerKeyHash,
+  PARCEL_NOT_SHARED,
   PARCEL_UNAVAILABLE,
+  parcelAlerts,
   publicParcelResponse,
 } from '../../../../../src/server/publicParcels';
 import { SupabaseError } from '../../../../../src/server/supabase';
 import { isOpenedParcelSyncDue } from '../../../../../src/server/trackingSync';
+import { shareSwitches } from '../../../../../src/server/validation';
 import type { ApiPublicParcelResponse } from '../../../../../src/generated/apiContract';
 
 interface LinkParameters extends RouteParameters {
@@ -29,8 +33,9 @@ const unavailable = () => json({ error: PARCEL_UNAVAILABLE }, 404);
 
 /**
  * Reads a parcel through its link. With the lookup's owner key the caller is
- * the owner; anyone else is a viewer. A read records that the link was opened,
- * creates nothing, and queues a check of a one-off parcel that is due one.
+ * the owner; anyone else is a viewer, who is told when the sharing was
+ * stopped. A read records that the link was opened, creates nothing, and
+ * queues a check of a one-off parcel that is due one.
  */
 export const GET = apiRoute<LinkParameters>(async (context) => {
   const { linkId } = await context.route.params;
@@ -42,6 +47,10 @@ export const GET = apiRoute<LinkParameters>(async (context) => {
     recordPublicParcelRead('not_found');
     return unavailable();
   }
+  if (found === 'stopped') {
+    recordPublicParcelRead('stopped');
+    return json({ error: PARCEL_NOT_SHARED }, 410);
+  }
   if (found.package.one_off === true && isOpenedParcelSyncDue(found.package, new Date())) {
     try {
       await service.enqueueSyncJob({ packageId: String(found.package.id) });
@@ -52,12 +61,33 @@ export const GET = apiRoute<LinkParameters>(async (context) => {
     }
   }
   recordPublicParcelRead('ok');
-  return json(publicParcelResponse(found) satisfies ApiPublicParcelResponse);
+  return json(publicParcelResponse(found, parcelAlerts(service)) satisfies ApiPublicParcelResponse);
 }, {
   authenticated: false,
   serviceRequired: true,
   capability: true,
   publicRateLimit: { limit: 120, window: 60, bucket: 'public-parcel' },
+});
+
+/**
+ * Changes what a lookup's link shows its viewers, makes it a gift, or stops
+ * and resumes its sharing. Only the owner key may: an unknown link and a
+ * wrong or missing key answer alike.
+ */
+export const PATCH = apiRoute<LinkParameters>(async (context) => {
+  const { linkId } = await context.route.params;
+  const changes = shareSwitches(await readJsonObject(context.request), ['showNumber', 'gift', 'shared']);
+  const keyHash = ownerKeyHash(context.request.headers.get('x-parcel-key'));
+  const service = requireService(context);
+  const updated = isParcelLinkId(linkId) && keyHash ? await service.updateParcelLink(linkId, keyHash, changes) : null;
+  if (!updated) return unavailable();
+  recordParcelShare('lookup', updated.transition ?? 'changed');
+  return json(publicParcelResponse(updated, parcelAlerts(service)) satisfies ApiPublicParcelResponse);
+}, {
+  authenticated: false,
+  serviceRequired: true,
+  capability: true,
+  publicRateLimit: { limit: 30, window: 60, bucket: 'public-parcel-update' },
 });
 
 /** Forgets a lookup. An unknown link and a wrong or missing key answer alike. */

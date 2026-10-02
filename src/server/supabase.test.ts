@@ -154,13 +154,13 @@ describe('one-off parcels and their links', () => {
     await expect(client.createOneOffParcel({ trackingNumber: 'TEST1234', carrier: 'unknown', trackingUrl: null, dpdPostcode: null }, hash))
       .resolves.toEqual({ ...found, created: true });
     await expect(client.forgetParcelLink('k7Qm2xHd9RtW', hash)).resolves.toEqual({ links: 1, packages: 1 });
-    await expect(client.forgetExpiredParcelLinks()).resolves.toEqual({ links: 3, packages: 2 });
+    await expect(client.forgetExpiredParcelLinks()).resolves.toEqual({ links: 3, packages: 2, stopped: 0, alerts: 0 });
     await expect(client.claimPublicLookup(hash, 15, 3_000)).resolves.toEqual({ allowed: false, scope: 'global' });
     await expect(client.publicLookupUsageSummary()).resolves.toEqual({ buckets: 4, p50: 2, p90: 10, max: 10 });
     await expect(user.claimParcelLink('k7Qm2xHd9RtW', hash, 'Sneakers')).resolves.toEqual({ outcome: 'kept', packageId: 'package-2' });
 
     expect(request.mock.calls.map(([path]) => path)).toEqual([
-      '/rest/v1/rpc/public_parcel', '/rest/v1/rpc/public_parcel', '/rest/v1/rpc/create_one_off_parcel',
+      '/rest/v1/rpc/parcel_link_view', '/rest/v1/rpc/parcel_link_view', '/rest/v1/rpc/create_one_off_parcel',
       '/rest/v1/rpc/forget_parcel_link', '/rest/v1/rpc/forget_expired_parcel_links',
       '/rest/v1/rpc/claim_public_lookup', '/rest/v1/rpc/public_lookup_usage_summary',
     ]);
@@ -171,6 +171,115 @@ describe('one-off parcels and their links', () => {
     expect(userRequest).toHaveBeenCalledExactlyOnceWith('/rest/v1/rpc/claim_parcel_link', {
       method: 'POST', body: { p_link_id: 'k7Qm2xHd9RtW', p_owner_key_hash: hash, p_label: 'Sneakers' },
     });
+  });
+
+  it('tells a stopped link from an unknown one, and counts what the maintenance pass ended', async () => {
+    const client = service();
+    const request = vi.spyOn(client, 'request')
+      .mockResolvedValueOnce({ stopped: true })
+      .mockResolvedValueOnce({ link: { id: 'k7Qm2xHd9RtW' } })
+      .mockResolvedValueOnce({ links: 1, packages: 1, stopped: 2, alerts: 3 });
+    await expect(client.publicParcel('k7Qm2xHd9RtW', null, true)).resolves.toBe('stopped');
+    await expect(client.publicParcel('k7Qm2xHd9RtW', null, true)).rejects.toThrow('parcel link');
+    await expect(client.forgetExpiredParcelLinks()).resolves.toEqual({ links: 1, packages: 1, stopped: 2, alerts: 3 });
+    expect(request).toHaveBeenCalledTimes(3);
+  });
+
+  it('changes a link and its alerts through functions, with ids, key hashes and endpoints in request bodies', async () => {
+    const client = service();
+    const hash = 'a'.repeat(64);
+    const endpoint = 'https://fcm.googleapis.com/fcm/send/synthetic-alert';
+    const found = { link: { id: 'k7Qm2xHd9RtW', owner: true }, package: { id: 'package-1' } };
+    const request = vi.spyOn(client, 'request')
+      .mockResolvedValueOnce({ ...found, transition: 'stopped' })
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce('added')
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce('renamed')
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
+    const alert = { endpoint, p256dh: 'synthetic-key', auth: 'synthetic-auth', locale: 'fr', preset: 'important' };
+
+    await expect(client.updateParcelLink('k7Qm2xHd9RtW', hash, { shared: false })).resolves.toEqual({ ...found, transition: 'stopped' });
+    await expect(client.updateParcelLink('k7Qm2xHd9RtW', hash, { showNumber: true, gift: false })).resolves.toBeNull();
+    await expect(client.addParcelLinkAlert('k7Qm2xHd9RtW', null, alert)).resolves.toBe('added');
+    await expect(client.addParcelLinkAlert('k7Qm2xHd9RtW', hash, alert)).resolves.toBeNull();
+    await expect(client.addParcelLinkAlert('k7Qm2xHd9RtW', hash, alert)).rejects.toThrow('alert');
+    await expect(client.removeParcelLinkAlert('k7Qm2xHd9RtW', endpoint)).resolves.toBe(true);
+    await expect(client.removeParcelLinkAlert('k7Qm2xHd9RtW', endpoint)).resolves.toBe(false);
+
+    expect(request.mock.calls.map(([path]) => path)).toEqual([
+      '/rest/v1/rpc/update_parcel_link', '/rest/v1/rpc/update_parcel_link', '/rest/v1/rpc/add_parcel_link_alert',
+      '/rest/v1/rpc/add_parcel_link_alert', '/rest/v1/rpc/add_parcel_link_alert',
+      '/rest/v1/rpc/remove_parcel_link_alert', '/rest/v1/rpc/remove_parcel_link_alert',
+    ]);
+    // A value left out is sent as null: the database keeps what it has.
+    expect(request.mock.calls[0][1]).toEqual({ method: 'POST', body: {
+      p_link_id: 'k7Qm2xHd9RtW', p_owner_key_hash: hash, p_show_number: null, p_gift: null, p_shared: false,
+    } });
+    expect(request.mock.calls[1][1]!.body).toMatchObject({ p_show_number: true, p_gift: false, p_shared: null });
+    expect(request.mock.calls[2][1]).toEqual({ method: 'POST', body: {
+      p_link_id: 'k7Qm2xHd9RtW', p_owner_key_hash: null, p_endpoint: endpoint, p_p256dh: 'synthetic-key',
+      p_auth: 'synthetic-auth', p_locale: 'fr', p_preset: 'important',
+    } });
+    expect(request.mock.calls[5][1]).toEqual({ method: 'POST', body: { p_link_id: 'k7Qm2xHd9RtW', p_endpoint: endpoint } });
+  });
+
+  it('reads the alert queue, and records what an alert handled by its id', async () => {
+    const client = service();
+    const request = vi.spyOn(client, 'request').mockResolvedValue([{ alert_id: 'alert-1' }]);
+    await expect(client.listPendingParcelLinkAlerts()).resolves.toEqual([{ alert_id: 'alert-1' }]);
+    await client.recordParcelLinkAlertDeliveries('alert-1', ['event-1', 'event-2']);
+    await client.recordParcelLinkAlertDeliveries('alert-1', []);
+    await client.setParcelLinkAlertFailures('alert-1', 2);
+    await client.deleteParcelLinkAlert('alert-1');
+    expect(request).toHaveBeenCalledTimes(4);
+    expect(request.mock.calls[0][0]).toMatch(/^\/rest\/v1\/pending_parcel_link_alerts\?/);
+    expect(params(request.mock.calls[0][0]).get('order')).toBe('event_created_at.asc');
+    expect(request.mock.calls[1]).toEqual(['/rest/v1/parcel_link_alert_deliveries?on_conflict=alert_id%2Cevent_id', {
+      method: 'POST',
+      body: [{ alert_id: 'alert-1', event_id: 'event-1' }, { alert_id: 'alert-1', event_id: 'event-2' }],
+      prefer: 'resolution=ignore-duplicates,return=minimal',
+    }]);
+    expect(request.mock.calls[2]).toEqual(['/rest/v1/parcel_link_alerts?id=eq.alert-1', {
+      method: 'PATCH', body: { failures: 2 }, prefer: 'return=minimal',
+    }]);
+    expect(request.mock.calls[3]).toEqual(['/rest/v1/parcel_link_alerts?id=eq.alert-1', { method: 'DELETE', prefer: 'return=minimal' }]);
+  });
+
+  it('shares an account\'s parcel under its own token, and reads another account\'s as missing', async () => {
+    const user = new SupabaseUserClient('https://database.example', 'public-key', 'token');
+    const stored = { id: 'k7Qm2xHd9RtW', show_number: true, gift: false, created_at: '2026-10-02T08:00:00+00:00' };
+    const share = { id: 'k7Qm2xHd9RtW', showNumber: true, gift: false, createdAt: '2026-10-02T08:00:00+00:00' };
+    const request = vi.spyOn(user, 'request')
+      .mockResolvedValueOnce(stored)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ ...stored, created: true })
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
+    await expect(user.packageShare('package-1')).resolves.toEqual(share);
+    await expect(user.packageShare('package-1')).resolves.toBeNull();
+    await expect(user.sharePackage('package-1', { gift: false })).resolves.toEqual({ ...share, created: true });
+    await expect(user.stopPackageShare('package-1')).resolves.toBe(true);
+    await expect(user.stopPackageShare('package-1')).resolves.toBe(false);
+    expect(request.mock.calls).toEqual([
+      ['/rest/v1/rpc/owned_package_share', { method: 'POST', body: { p_package_id: 'package-1' } }],
+      ['/rest/v1/rpc/owned_package_share', { method: 'POST', body: { p_package_id: 'package-1' } }],
+      ['/rest/v1/rpc/share_owned_package', { method: 'POST', body: { p_package_id: 'package-1', p_show_number: null, p_gift: false } }],
+      ['/rest/v1/rpc/stop_owned_package_share', { method: 'POST', body: { p_package_id: 'package-1' } }],
+      ['/rest/v1/rpc/stop_owned_package_share', { method: 'POST', body: { p_package_id: 'package-1' } }],
+    ]);
+
+    for (const call of [
+      () => user.packageShare('package-2'), () => user.sharePackage('package-2', {}), () => user.stopPackageShare('package-2'),
+    ]) {
+      request.mockRejectedValueOnce(new SupabaseError('refused', 400, 'P0002'));
+      await expect(call()).rejects.toMatchObject({ status: 404, message: 'Package not found' });
+      request.mockRejectedValueOnce(new SupabaseError('database down', 503));
+      await expect(call()).rejects.toMatchObject({ status: 503 });
+    }
+    request.mockResolvedValueOnce({ show_number: true });
+    await expect(user.sharePackage('package-1', {})).rejects.toThrow('shared link');
   });
 
   it('reads a refused keep as an unknown link and passes other failures on', async () => {

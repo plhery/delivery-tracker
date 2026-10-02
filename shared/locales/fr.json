@@ -630,6 +630,7 @@
   "event.carrier.registered": "Informations d’expédition reçues",
   "event.carrier.returning": "Retour vers l’expéditeur en cours",
   "event.carrier.update": "Mise à jour du suivi",
+  "event.gift.leftSender": "A quitté l’expéditeur",
   "tracking.failure.challenge": "Le suivi automatique est temporairement bloqué. Consulte le site du transporteur.",
   "tracking.failure.connection": "Le service de suivi est injoignable. Réessaie plus tard.",
   "tracking.failure.input": "Des informations sont nécessaires pour suivre ce colis. Complète les informations de suivi ou consulte le site du transporteur.",

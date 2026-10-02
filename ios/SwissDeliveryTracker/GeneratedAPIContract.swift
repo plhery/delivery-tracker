@@ -784,6 +784,9 @@ struct ParcelLink: Codable, Equatable, Hashable, Sendable, Identifiable {
     var forgetAt: String? = nil
     var numberShown: Bool
     var canKeep: Bool
+    var gift: Bool? = nil
+    var shared: Bool? = nil
+    var alerts: ParcelAlerts? = nil
 }
 
 struct ParcelNumberHint: Codable, Equatable, Hashable, Sendable {
@@ -880,6 +883,56 @@ struct ClaimParcelResult: Codable, Equatable, Hashable, Sendable, Identifiable {
 
 struct ClaimParcelsResponse: Codable, Equatable, Hashable, Sendable {
     var results: [ClaimParcelResult]
+}
+
+struct ParcelAlerts: Codable, Equatable, Hashable, Sendable {
+    var available: Bool
+    var vapidPublicKey: String? = nil
+}
+
+struct UpdateParcelLinkRequest: Codable, Equatable, Hashable, Sendable {
+    var showNumber: Bool? = nil
+    var gift: Bool? = nil
+    var shared: Bool? = nil
+}
+
+enum ParcelAlertPreset: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {
+    case all
+    case important
+    case delivery
+
+    var id: String { rawValue }
+}
+
+struct ParcelAlertSubscription: Codable, Equatable, Hashable, Sendable {
+    var endpoint: String
+    var keys: PushSubscriptionKeys
+}
+
+struct ParcelAlertRequest: Codable, Equatable, Hashable, Sendable {
+    var subscription: ParcelAlertSubscription
+    var preset: ParcelAlertPreset
+    var locale: NativePushLocale
+}
+
+struct DeleteParcelAlertRequest: Codable, Equatable, Hashable, Sendable {
+    var endpoint: String
+}
+
+struct ParcelShare: Codable, Equatable, Hashable, Sendable, Identifiable {
+    var id: String
+    var showNumber: Bool
+    var gift: Bool
+    var createdAt: String
+}
+
+struct ParcelShareResponse: Codable, Equatable, Hashable, Sendable {
+    var link: ParcelShare? = nil
+}
+
+struct ShareParcelRequest: Codable, Equatable, Hashable, Sendable {
+    var showNumber: Bool? = nil
+    var gift: Bool? = nil
 }
 
 enum CarrierDetectionResponseAmazonShippingStatus: String, Codable, CaseIterable, Hashable, Sendable, Identifiable {

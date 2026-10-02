@@ -630,6 +630,7 @@
   "event.carrier.registered": "Shipment information received",
   "event.carrier.returning": "Returning to sender",
   "event.carrier.update": "Tracking update",
+  "event.gift.leftSender": "Left the sender",
   "tracking.failure.challenge": "Automatic tracking is temporarily blocked. Check the carrier’s website for updates.",
   "tracking.failure.connection": "The tracking service couldn’t be reached. Try again later.",
   "tracking.failure.input": "More information is needed to check this shipment. Update its tracking details or check the carrier’s website.",

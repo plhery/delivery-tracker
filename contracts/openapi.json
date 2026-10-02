@@ -5229,6 +5229,73 @@
               }
             }
           },
+          "410": {
+            "description": "Parcel not shared: its sharing was stopped, and the caller does not hold the owner key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "502": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updatePublicParcel",
+        "summary": "Change what a lookup's link shows, or stop and resume its sharing",
+        "security": [],
+        "parameters": [
+          {
+            "name": "X-Parcel-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateParcelLinkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The link and the parcel as the owner sees them",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicParcelResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "description": "Parcel unavailable: an unknown link and a wrong or missing key are never told apart",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "429": {
             "$ref": "#/components/responses/ApiError"
           },
@@ -5307,6 +5374,208 @@
             "$ref": "#/components/responses/ApiError"
           },
           "503": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/api/public/parcels/{linkId}/alerts": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ParcelLinkId"
+        }
+      ],
+      "put": {
+        "operationId": "setPublicParcelAlert",
+        "summary": "Turn on browser notifications for this parcel, until it is delivered",
+        "security": [],
+        "parameters": [
+          {
+            "name": "X-Parcel-Key",
+            "in": "header",
+            "required": false,
+            "description": "The owner key of the lookup. Its alert outlasts a stop of the sharing.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParcelAlertRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "The alert is on, or the parcel's journey is over and there is nothing left to announce"
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "description": "Parcel unavailable: an unknown, forgotten, expired or malformed link, never told apart",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The link has ten alerts already",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Parcel not shared: its sharing was stopped",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "502": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "503": {
+            "description": "Web Push is not configured on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removePublicParcelAlert",
+        "summary": "Turn off this browser's notifications for the parcel",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteParcelAlertRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Off, also when the link or the browser had no such alert"
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "502": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/api/packages/{packageId}/share": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/PackageId"
+        }
+      ],
+      "get": {
+        "operationId": "getPackageShare",
+        "summary": "The link the signed-in account shares this parcel through",
+        "responses": {
+          "200": {
+            "description": "The live link, or null when the parcel is not shared",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParcelShareResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "502": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      },
+      "put": {
+        "operationId": "sharePackage",
+        "summary": "Share this parcel: makes its link when none is live, else changes what the live one shows",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareParcelRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The live link, never null",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParcelShareResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "502": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "stopSharingPackage",
+        "summary": "Stop sharing this parcel: its link tells visitors so for 30 days, and sharing again makes a new link",
+        "responses": {
+          "204": {
+            "description": "Not shared, also when it was not shared before"
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "502": {
             "$ref": "#/components/responses/ApiError"
           }
         }
@@ -7095,6 +7364,17 @@
           "canKeep": {
             "type": "boolean",
             "description": "Whether the caller may keep the parcel after signing in: the owner, or a viewer of a link that shows its number."
+          },
+          "gift": {
+            "type": "boolean",
+            "description": "A gift link. Until the parcel is delivered a viewer gets no sender, a masked number, and the scans of the origin reduced to \"Left the sender\" and a country. Always sent; an answer stored on a device before sharing existed lacks it."
+          },
+          "shared": {
+            "type": "boolean",
+            "description": "False once the owner stopped the sharing: only the owner still reads the link. Always sent."
+          },
+          "alerts": {
+            "$ref": "#/components/schemas/ParcelAlerts"
           }
         }
       },
@@ -7439,6 +7719,168 @@
             "items": {
               "$ref": "#/components/schemas/ClaimParcelResult"
             }
+          }
+        }
+      },
+      "ParcelAlerts": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Whether this server sends browser notifications for a link, and the key a browser subscribes with.",
+        "required": [
+          "available",
+          "vapidPublicKey"
+        ],
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "vapidPublicKey": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "UpdateParcelLinkRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "What to change; a value left out stays as it is.",
+        "minProperties": 1,
+        "properties": {
+          "showNumber": {
+            "type": "boolean",
+            "description": "Whether viewers see the whole tracking number."
+          },
+          "gift": {
+            "type": "boolean"
+          },
+          "shared": {
+            "type": "boolean",
+            "description": "False stops the sharing; true resumes it."
+          }
+        }
+      },
+      "ParcelAlertPreset": {
+        "type": "string",
+        "enum": [
+          "all",
+          "important",
+          "delivery"
+        ],
+        "description": "What an alert announces: every scan, the important steps (the account preset of that name), or out for delivery and delivered only."
+      },
+      "ParcelAlertSubscription": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "The browser's push subscription, as PushSubscription.toJSON() gives it.",
+        "required": [
+          "endpoint",
+          "keys"
+        ],
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https://",
+            "maxLength": 4096
+          },
+          "keys": {
+            "$ref": "#/components/schemas/PushSubscriptionKeys"
+          }
+        }
+      },
+      "ParcelAlertRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "subscription",
+          "preset",
+          "locale"
+        ],
+        "properties": {
+          "subscription": {
+            "$ref": "#/components/schemas/ParcelAlertSubscription"
+          },
+          "preset": {
+            "$ref": "#/components/schemas/ParcelAlertPreset"
+          },
+          "locale": {
+            "$ref": "#/components/schemas/NativePushLocale"
+          }
+        }
+      },
+      "DeleteParcelAlertRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "endpoint"
+        ],
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https://",
+            "maxLength": 4096
+          }
+        }
+      },
+      "ParcelShare": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "The link an account shares one of its parcels through. The parcel's name is not part of it: the client adds it after # in the address it copies.",
+        "required": [
+          "id",
+          "showNumber",
+          "gift",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[2-9A-HJ-NP-Za-km-z]{12}$"
+          },
+          "showNumber": {
+            "type": "boolean"
+          },
+          "gift": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ParcelShareResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "link"
+        ],
+        "properties": {
+          "link": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParcelShare"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ShareParcelRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "What the link shows; a value left out stays as it is, and is false on a new link.",
+        "properties": {
+          "showNumber": {
+            "type": "boolean"
+          },
+          "gift": {
+            "type": "boolean"
           }
         }
       }

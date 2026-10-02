@@ -12,7 +12,7 @@ import {
   shouldReportRepeatedFailure,
   type ScheduledCheckIn,
 } from './observability';
-import { recordParcelsForgotten, recordPublicLookupUsage } from './metrics';
+import { recordParcelAlertRemoved, recordParcelsForgotten, recordPublicLookupUsage } from './metrics';
 import { pushServices } from './push';
 import { FriendshipPushService, FriendshipPushWorker } from './friendshipPush';
 import { serviceClient } from './runtime';
@@ -259,9 +259,12 @@ export class SyncJobWorker {
         }
         try {
           // Lookups without an account end here: 30 days after delivery, or 90 days without news.
+          // So do the links whose sharing an account stopped 30 days ago, and the alerts of finished journeys.
           const forgotten = await this.service.client.forgetExpiredParcelLinks();
           recordParcelsForgotten('expired', forgotten);
-          if (forgotten.links > 0 || forgotten.packages > 0) {
+          recordParcelsForgotten('stopped', { links: forgotten.stopped, packages: 0 });
+          recordParcelAlertRemoved('delivered', forgotten.alerts);
+          if (forgotten.links > 0 || forgotten.packages > 0 || forgotten.stopped > 0 || forgotten.alerts > 0) {
             logOperationalEvent('parcel_links_forgotten', forgotten);
           }
           recordPublicLookupUsage(await this.service.client.publicLookupUsageSummary());
