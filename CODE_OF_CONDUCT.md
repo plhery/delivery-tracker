@@ -1,6 +1,6 @@
 # Code of conduct
 
-Delivery Tracker contributors are expected to make participation welcoming and
+Peek contributors are expected to make participation welcoming and
 harassment-free regardless of experience, identity, background, or personal
 characteristics.
 

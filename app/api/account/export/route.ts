@@ -19,6 +19,6 @@ export const GET = apiRoute(async (context) => {
     friends: { profile: snapshot.profile, connections: snapshot.friends.map(({ id, nickname }) => ({ id, nickname })) },
     packages: await requireUserClient(context).listPackages(true),
   }, 200, {
-    'Content-Disposition': 'attachment; filename="delivery-tracker-export.json"',
+    'Content-Disposition': 'attachment; filename="peek-export.json"',
   });
 }, { loadService: false });

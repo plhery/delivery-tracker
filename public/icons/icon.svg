@@ -1,16 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Postal-yellow rounded tile -->
   <rect width="512" height="512" rx="116" fill="#f3cf48"/>
-  <!-- Parcel -->
-  <g>
-    <rect x="126" y="166" width="260" height="220" rx="26" fill="#fffaf0"/>
-    <!-- lid shading -->
-    <rect x="126" y="166" width="260" height="58" rx="26" fill="#f1e9e0"/>
-    <rect x="126" y="198" width="260" height="26" fill="#f1e9e0"/>
-    <!-- tape -->
-    <rect x="236" y="166" width="40" height="220" fill="#e0d5c8"/>
-    <!-- bold parcel label -->
-    <rect x="202" y="278" width="108" height="70" rx="10" fill="#171714"/>
-    <path d="M224 301h64M224 321h42" stroke="#f3cf48" stroke-width="10" stroke-linecap="round"/>
-  </g>
+  <polygon points="92,180 420,95 420,310 92,310" fill="#2b241b"/>
+  <ellipse cx="196" cy="268" rx="58" ry="62.1" fill="#fffaf0"/>
+  <circle cx="215.7" cy="273.8" r="30.2" fill="#171714"/>
+  <circle cx="205.3" cy="262.2" r="9.3" fill="#ffffff"/>
+  <ellipse cx="316" cy="262" rx="58" ry="62.1" fill="#fffaf0"/>
+  <circle cx="335.7" cy="267.8" r="30.2" fill="#171714"/>
+  <circle cx="325.3" cy="256.2" r="9.3" fill="#ffffff"/>
+  <rect x="72" y="300" width="368" height="150" rx="36" fill="#fffaf0"/>
+  <rect x="236" y="300" width="40" height="150" fill="#ece3d6"/>
+  <rect x="286" y="362" width="104" height="54" rx="10" fill="#171714"/>
+  <path d="M304 381h60M304 398h38" stroke="#f3cf48" stroke-width="9" stroke-linecap="round"/>
+  <polygon points="61.8,127.5 385.1,22.5 407.4,90.9 84.0,196.0" fill="#f1e9e0" stroke="#f1e9e0" stroke-width="40" stroke-linejoin="round"/>
+  <polygon points="206.3,80.6 244.4,68.2 266.6,136.7 228.6,149.0" fill="#e0d5c8"/>
 </svg>

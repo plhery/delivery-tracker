@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Delivery Tracker',
-    short_name: 'Delivery Tracker',
+    name: 'Peek — Universal Parcel Tracker',
+    short_name: 'Peek',
     description:
       'Private parcel tracking, with alerts and history synced across your devices.',
     lang: 'en',

@@ -84,7 +84,7 @@ it('uses the same working short key for canonical metadata and invitation action
   const metadata = await shortMetadata({ params: Promise.resolve({ previewId }) });
   expect(metadata).toMatchObject({
     title: 'Your friend Paul sent you an invitation',
-    description: 'Tap to open your invitation on Delivery Tracker.',
+    description: 'Tap to open your invitation on Peek.',
     alternates: { canonical: `https://delivery.example.test/i/${previewId}` },
     openGraph: { url: `https://delivery.example.test/i/${previewId}`, images: [{ url: `https://delivery.example.test/api/friends/invite-image?preview=${previewId}` }] },
   });

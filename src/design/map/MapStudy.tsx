@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Icon } from '../../components/Icon';
+import { PeekMark } from '../../components/PeekMark';
 import { carrierBrand } from '../../lib/carrierBrand';
 import { carrierInfo } from '../../lib/carriers';
 import type { CarrierId } from '../../types';
@@ -96,7 +97,7 @@ export function MapStudy() {
 
   return <main className={styles.study} data-ready={ready} inert={!ready}>
     <header className={styles.studyHeader}>
-      <Link href="/" className={styles.brand}><Icon name="parcel" /><span>Delivery Tracker</span><span className={styles.badge}>Design study</span></Link>
+      <Link href="/" className={styles.brand}><PeekMark size={20} /><span>Peek</span><span className={styles.badge}>Design study</span></Link>
     </header>
     <section className={styles.intro}>
       <p className={styles.eyebrow}>Near and far</p>

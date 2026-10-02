@@ -1,5 +1,5 @@
 /* Regular onboarding keeps the open parcel beside a quiet sign-in card. */
-.arrival__shortcut { background: var(--control); color: var(--ink); padding: 10px 14px; min-height: 44px; border-radius: 12px; font-size: 12px; }
+.arrival__shortcut { background: var(--control); color: var(--ink); padding: 10px 14px; min-height: 44px; border-radius: 12px; font-size: 12px; flex-shrink: 0; white-space: nowrap; }
 .arrival__explanation { font-size: 14px; color: var(--ink-soft); margin: 19px 0 0; transition: opacity .25s; }
 .arrival--opening .arrival__explanation { opacity: 0; }
 .arrival--onboarding .arrival__welcome h1 { font-size: clamp(34px, 5vw, 54px); }

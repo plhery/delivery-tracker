@@ -60,6 +60,27 @@ test('offers direct sign-in with a compact card and keeps the parcel when return
   await expect(page.locator('.arrival__parcel')).toHaveAttribute('data-kept', 'yes');
 });
 
+test('leads every header with the name: the lockup where it stands alone, the mark beside a phone’s tab title', async ({ page }) => {
+  await page.goto('/');
+  const lockup = page.locator('.arrival__header .peek-lockup');
+  await expect(lockup).toHaveText('PeekUniversal Parcel Tracker');
+  const place = await lockup.boundingBox();
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Back', exact: true })).toBeVisible();
+  await expect(page.getByLabel('Language')).toBeVisible();
+  expect(await lockup.boundingBox()).toEqual(place);
+  await noOverflow(page);
+  await page.getByRole('button', { name: 'Explore the demo', exact: true }).click();
+  const phone = page.viewportSize()!.width <= 760;
+  await expect(page.locator('.app__brand > .peek-mark')).toBeVisible({ visible: phone });
+  await expect(page.locator('.app__brand .peek-lockup')).toBeVisible({ visible: !phone });
+  // The mark keeps its own size and colours beside the controls' line icons.
+  const mark = page.locator('.app__brand .peek-mark:visible');
+  await expect(mark).toHaveCSS('width', phone ? '30px' : '28px');
+  await expect(mark).toHaveCSS('stroke', 'none');
+  await expect(page.getByRole('button', { name: 'Add a parcel', exact: true })).toBeVisible();
+});
+
 test('gives the parcel bounded depth without moving the controls, and stops on opening', async ({ page, browserName }) => {
   await page.goto('/');
   const arrival = page.locator('.arrival');

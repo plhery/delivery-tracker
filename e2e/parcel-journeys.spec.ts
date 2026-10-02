@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
   // Wait for the scripts too: Next's async development chunks can still be
   // downloading after DOMContentLoaded, before hydration can begin.
   await page.goto('/');
-  await expect(page).toHaveTitle('Delivery Tracker');
+  await expect(page).toHaveTitle('Peek — Universal Parcel Tracker');
   // This control is rendered only after the client repository has loaded, so
   // it is also a stable signal that hydration and the first effect completed.
   await expect(page.getByRole('button', { name: 'Search & filters' })).toBeVisible();

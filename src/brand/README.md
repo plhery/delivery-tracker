@@ -1,4 +1,14 @@
-# Carrier visual identity
+# Visual identity
+
+## The mark
+
+`mark.json` holds the app's mark, the peeking parcel, in the three drawings it takes as
+it shrinks. `PeekMark` picks the drawing for a size. `npm run icons` draws the icon files in
+`public/icons`, the iOS app icon and the link preview `public/og.png` (from `public/og.svg`);
+run it after editing the mark or the preview, then set the `?v=` of the preview link in
+`app/page.tsx` to the value the metadata test reports.
+
+## Carriers
 
 `identities.json` owns the app's carrier families, explicit palettes and decals.
 Catalog colours come from Universal Parcel Scraper. `palette.json` defines fallback

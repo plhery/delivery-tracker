@@ -25,7 +25,7 @@ mkdir -p "$CACHE_ROOT" "$PROFILE_BACKUP_DIR"
 notify() {
   /usr/bin/osascript \
     -e 'on run argv' \
-    -e 'display notification (item 1 of argv) with title "Delivery Tracker"' \
+    -e 'display notification (item 1 of argv) with title "Peek"' \
     -e 'end run' \
     "$1" >/dev/null 2>&1 || true
 }
@@ -77,14 +77,14 @@ on_exit() {
   if (( exit_code != 0 )); then
     notify "Refresh failed. Unlock and connect the iPhone, then try again."
     print
-    print "Delivery Tracker refresh failed. The build log is at:"
+    print "Peek refresh failed. The build log is at:"
     print "  $BUILD_LOG"
   fi
 }
 
 trap 'on_exit $?' EXIT
 
-print "Refreshing Delivery Tracker on $DEVICE_NAME…"
+print "Refreshing Peek on $DEVICE_NAME…"
 print "Keep the iPhone unlocked and connected by USB or reachable over Wi-Fi."
 print "This Personal Team build excludes push notifications, App Groups, and the Share Extension."
 print "The Lock Screen and Dynamic Island Live Activity remain available."
@@ -191,7 +191,7 @@ LAUNCH_OUTPUT="$(xcrun devicectl device process launch --device "$DEVICE_NAME" "
   elif [[ "$LAUNCH_OUTPUT" == *"device was not, or could not be, unlocked"* ]]; then
     print
     print "The app is installed. Unlock the iPhone and open it normally."
-    LAUNCH_NOTE="Unlock the iPhone and open Delivery Tracker."
+    LAUNCH_NOTE="Unlock the iPhone and open Peek."
   else
     print -u2 "The app was installed but could not be launched automatically."
     exit 1
@@ -202,7 +202,7 @@ if [[ -z "$LAUNCH_NOTE" ]]; then
 fi
 
 print
-print "Delivery Tracker refresh complete."
+print "Peek refresh complete."
 print "The refreshed app is valid until $EXPIRATION_LOCAL."
 if [[ -n "$LAUNCH_NOTE" ]]; then
   notify "$LAUNCH_NOTE Valid until $EXPIRATION_LOCAL."

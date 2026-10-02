@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="public/icons/icon-192.png" width="80" alt="Delivery Tracker logo">
+  <img src="public/icons/icon-192.png" width="80" alt="Peek logo">
 </p>
 
-<h1 align="center">Delivery Tracker</h1>
+<h1 align="center">Peek</h1>
 
-<p align="center">Open-source parcel tracking for iPhone and the web.</p>
+<p align="center">Universal Parcel Tracker. Open source, for iPhone and the web.</p>
 
 <p align="center">
   <a href="https://github.com/plhery/delivery-tracker/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/plhery/delivery-tracker/actions/workflows/ci.yml/badge.svg"></a>

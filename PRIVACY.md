@@ -1,8 +1,8 @@
-# Delivery Tracker privacy notice
+# Peek privacy notice
 
 Effective: 12 September 2026
 
-This notice describes the official Delivery Tracker parcel-tracking service.
+This notice describes the official Peek parcel-tracking service.
 A third party running a fork controls its own deployment and must publish its
 own notice.
 
@@ -61,7 +61,7 @@ recipient, address, contact and document fields from Dachser's response. Browser
 push services receive encrypted Web Push messages; Apple processes native
 notification and Live Activity payloads through APNs. Those Apple payloads can
 contain a parcel label, carrier, status, location, and expected delivery text,
-but Delivery Tracker does not put the tracking number in them.
+but Peek does not put the tracking number in them.
 
 The service places scan locations on its map itself, with GeoNames place data
 (CC BY 4.0, geonames.org) and sorting-centre locations from OpenStreetMap contributors
@@ -69,7 +69,7 @@ The service places scan locations on its map itself, with GeoNames place data
 When you tap Directions or Show on map for a pickup point, Apple Maps or Google
 Maps receives that pickup point's name and address, and nothing else about the parcel.
 
-Delivery Tracker does not sell personal data, serve advertising, or
+Peek does not sell personal data, serve advertising, or
 use advertising analytics.
 
 ## Usage analytics
@@ -83,7 +83,7 @@ derive approximate location and rotating visitor/session identifiers. We do not
 send account IDs, email addresses, parcel labels, tracking numbers, delivery
 postcodes, invitation codes, search text, full URLs, referrers, or error messages.
 No analytics cookies or persistent analytics device identifiers are created.
-Events are not linked to your Delivery Tracker account.
+Events are not linked to your Peek account.
 
 Turn off **Usage analytics** in Account on each device to stop collection.
 The web client also honors Do Not Track, Global Privacy Control and Umami's

@@ -17,6 +17,7 @@ import { Friends } from './components/Friends';
 import { createFriendsClient } from './lib/friends';
 import { captureCardOrigin, type CardOrigin } from './lib/cardTransition';
 import { Icon, ParcelIllustration } from './components/Icon';
+import { PeekLockup, PeekMark } from './components/PeekMark';
 import { ParcelViewControls } from './components/ParcelViewControls';
 import { PullToRefresh } from './components/PullToRefresh';
 import { useRefreshAnimation } from './lib/useRefreshAnimation';
@@ -421,10 +422,13 @@ export default function App({
       <a className="skip-link" href="#main-content">{t('web.skipContent')}</a>
       <header className="app__header">
         <div className="app__masthead">
-          <button type="button" className="app__add-button" aria-label={t('app.addParcelAria')} onClick={() => setAdding(true)}><Icon name="plus" /><span>{t('app.addParcel')}</span></button>
+          <span className="app__brand"><PeekMark size={30} /><PeekLockup /></span>
           <h1 className="app__title">{t(tab === 'deliveries' ? 'native.deliveries' : tab === 'passport' ? 'passport.title' : 'friends.title')}</h1>
+          <div className="app__actions">
+            <button type="button" className="app__add-button" aria-label={t('app.addParcelAria')} onClick={() => setAdding(true)}><Icon name="plus" /><span>{t('app.addParcel')}</span></button>
+            <AccountMenu email={accountEmail} onExport={onExportAccount} onDelete={onDeleteAccount} onSignOut={onSignOut} onExitDemo={onExitDemo} onResetDemo={mode === 'demo' ? resetDemo : undefined} apiAuth={apiAuth} />
+          </div>
           <AppNavigation selected={tab} onSelect={switchTab} />
-          <AccountMenu email={accountEmail} onExport={onExportAccount} onDelete={onDeleteAccount} onSignOut={onSignOut} onExitDemo={onExitDemo} onResetDemo={mode === 'demo' ? resetDemo : undefined} apiAuth={apiAuth} />
         </div>
       </header>
       {mode === 'demo' && <div className="demo-banner"><span>{t('app.demo')}</span>{onExitDemo && <button type="button" onClick={onExitDemo}>{t('native.exitDemo')}<Icon name="close" /></button>}</div>}

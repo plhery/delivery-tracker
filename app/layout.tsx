@@ -6,19 +6,20 @@ import { APPEARANCE_BOOTSTRAP } from '../src/lib/appearanceConfig';
 import { requestLocale } from '../src/server/requestLocale';
 
 export const metadata: Metadata = {
-  applicationName: 'Delivery Tracker',
-  title: 'Delivery Tracker',
+  applicationName: 'Peek',
+  title: 'Peek — Universal Parcel Tracker',
   description:
     'Private parcel tracking, with alerts and history synced across your devices.',
   manifest: '/manifest.webmanifest',
   icons: {
-    icon: '/icons/icon.svg',
+    // A tab draws the icon at 16 px, where only the eyes and the lid still read.
+    icon: { url: '/icons/favicon.svg', type: 'image/svg+xml' },
     apple: '/icons/apple-touch-icon.png',
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Deliveries',
+    title: 'Peek',
   },
 };
 

@@ -94,7 +94,7 @@ describe('NotificationControl', () => {
     const user = userEvent.setup();
     render(<NotificationControl />);
     await user.click(screen.getByRole('button', { name: 'Notification settings' }));
-    expect(await screen.findByText(/add Delivery Tracker to your Home Screen/i)).toBeInTheDocument();
+    expect(await screen.findByText(/add Peek to your Home Screen/i)).toBeInTheDocument();
   });
 
   it('saves event presets and clears the retired quiet hours', async () => {

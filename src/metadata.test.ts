@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/headers', () => ({
@@ -11,21 +13,29 @@ import { metadata as layoutMetadata } from '../app/layout';
 import manifest from '../app/manifest';
 import { generateMetadata } from '../app/page';
 
-const TITLE = 'Delivery Tracker';
+const TITLE = 'Peek — Universal Parcel Tracker';
 const DESCRIPTION =
   'Private parcel tracking, with alerts and history synced across your devices.';
 
 describe('public product metadata', () => {
-  it('uses Delivery Tracker branding for the site and installed PWA', () => {
+  it('names the site and the installed PWA Peek, with what it does where the name stands alone', () => {
     expect(layoutMetadata).toMatchObject({
-      applicationName: 'Delivery Tracker',
+      applicationName: 'Peek',
       title: TITLE,
       description: DESCRIPTION,
+      appleWebApp: { title: 'Peek' },
     });
     expect(manifest()).toMatchObject({
-      name: 'Delivery Tracker',
-      short_name: 'Delivery Tracker',
+      name: TITLE,
+      short_name: 'Peek',
       description: DESCRIPTION,
+    });
+  });
+
+  it('draws the browser tab with the glyph and the Home Screen with the full icon', () => {
+    expect(layoutMetadata.icons).toEqual({
+      icon: { url: '/icons/favicon.svg', type: 'image/svg+xml' },
+      apple: '/icons/apple-touch-icon.png',
     });
   });
 
@@ -37,7 +47,7 @@ describe('public product metadata', () => {
       description: DESCRIPTION,
       alternates: { canonical: 'https://delivery.example.test/' },
       openGraph: {
-        siteName: 'Delivery Tracker',
+        siteName: 'Peek',
         title: TITLE,
         description: DESCRIPTION,
       },
@@ -46,5 +56,11 @@ describe('public product metadata', () => {
         description: DESCRIPTION,
       },
     });
+  });
+
+  it('links the preview image by its contents, so a redrawn image replaces cached copies', async () => {
+    const { twitter } = await generateMetadata();
+    const digest = createHash('sha256').update(readFileSync('public/og.png')).digest('hex').slice(0, 8);
+    expect(twitter?.images).toEqual([`https://delivery.example.test/og.png?v=${digest}`]);
   });
 });

@@ -7,7 +7,7 @@ import { RateLimiter } from './rateLimit';
 import { serviceClient } from './runtime';
 
 const limiter = new RateLimiter();
-export const invitationDescription = 'Tap to open your invitation on Delivery Tracker.';
+export const invitationDescription = 'Tap to open your invitation on Peek.';
 
 export function invitationTitle(nickname: string | null): string {
   return nickname ? `Your friend ${nickname} sent you an invitation` : 'A friend sent you an invitation';

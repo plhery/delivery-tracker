@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <clipPath id="tile"><rect width="512" height="512" rx="116"/></clipPath>
+  <g clip-path="url(#tile)">
+    <rect width="512" height="512" fill="#f3cf48"/>
+    <path d="M60 150 452 70 452 330 60 330Z" fill="#2b241b"/>
+    <ellipse cx="176" cy="300" rx="84" ry="89.9" fill="#fffaf0"/>
+    <circle cx="204.6" cy="308.4" r="43.7" fill="#171714"/>
+    <circle cx="189.4" cy="291.6" r="13.4" fill="#ffffff"/>
+    <ellipse cx="336" cy="290" rx="84" ry="89.9" fill="#fffaf0"/>
+    <circle cx="364.6" cy="298.4" r="43.7" fill="#171714"/>
+    <circle cx="349.4" cy="281.6" r="13.4" fill="#ffffff"/>
+    <rect x="40" y="330" width="432" height="182" fill="#fffaf0"/>
+    <polygon points="29.0,94.5 447.2,13.2 462.5,91.8 44.3,173.1" fill="#f1e9e0"/>
+  </g>
+</svg>

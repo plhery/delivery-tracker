@@ -1,28 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
-  <title id="title">Delivery Tracker</title>
-  <desc id="description">All your parcels in one place. A kraft-paper parcel with pastel labels on a soft off-white background.</desc>
+  <title id="title">Peek — Universal Parcel Tracker</title>
+  <desc id="description">A kraft-paper parcel with a friendly face on a soft off-white background.</desc>
   <rect width="1200" height="630" fill="#F4F5F1"/>
-  <text x="600" y="135" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="88" font-weight="700" letter-spacing="-3" fill="#26372E">Delivery Tracker</text>
-  <text x="600" y="208" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="48" font-weight="400" fill="#526E5B">All your parcels in one place.</text>
+  <!-- The stroke thickens the regular face into the name's weight. -->
+  <text x="600" y="135" text-anchor="middle" font-family="Geist, Helvetica Neue, Helvetica, Arial, sans-serif" font-size="88" letter-spacing="-2" fill="#26372E" stroke="#26372E" stroke-width="3.6" stroke-linejoin="round">Peek</text>
+  <text x="600" y="208" text-anchor="middle" font-family="Geist, Helvetica Neue, Helvetica, Arial, sans-serif" font-size="48" font-weight="400" fill="#526E5B">Universal Parcel Tracker</text>
   <svg x="375" y="243" width="450" height="345" viewBox="25 85 250 215" fill="none">
-        <ellipse cx="150" cy="286" rx="84" ry="10" fill="#26372E" opacity=".08" />
-        <path d="m55 142 95-47 95 47-95 48-95-48Z" fill="#DDBD96" />
-        <path d="m55 142 95 48v87l-95-48v-87Z" fill="#C9A47B" />
-        <path d="m150 190 95-48v87l-95 48v-87Z" fill="#B78F66" />
-        <path d="M56 144v84l93 47m2 0 92-46v-84" stroke="#987450" stroke-opacity=".25" stroke-width=".8" />
-        <path d="m55 142 95 48 95-48m-95 48v87" stroke="#FFF2CF" stroke-width="1" />
-        <g transform="translate(77 193) rotate(27)">
-          <rect width="51" height="32" rx="3" fill="#D8E5EA" />
-          <path d="M8 8v17m4-17v17m3-17v17m5-17v17m3-17v17m5-17v17m4-17v17m3-17v17m5-17v17" stroke="#4E677A" stroke-width="1.5" />
-          <path d="M3 5V3h45" stroke="white" stroke-opacity=".5" />
-        </g>
-        <g transform="translate(201 201) rotate(-27)"><path d="M10 22V4m-5 5 5-5 5 5" stroke="#735C43" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-        <g transform="translate(183 234) rotate(-27)">
-          <circle r="14" fill="#DECCE2" />
-          <circle r="11.5" stroke="#FFF6FF" stroke-width="1.2" />
-          <path d="M0-7V7m-6-10 12 6M-6 3 6-3" stroke="#7C6787" stroke-width="2" stroke-linecap="round" />
-        </g>
-        <path d="m96 122 13-7 95 48-13 7-95-48Z" fill="#EBDDCA" />
-        <path d="m103 119 94 47" stroke="#AF9474" stroke-opacity=".6" stroke-width="1" stroke-dasharray="3 3" />
-      </svg>
+    <ellipse cx="150" cy="286" rx="84" ry="10" fill="#26372E" opacity=".08"/>
+    <path d="m55 142 95-47 95 47-95 48-95-48Z" fill="#DDBD96"/>
+    <path d="m55 142 95 48v87l-95-48v-87Z" fill="#C9A47B"/>
+    <path d="m150 190 95-48v87l-95 48v-87Z" fill="#B78F66"/>
+    <path d="M56 144v84l93 47m2 0 92-46v-84" stroke="#987450" stroke-opacity=".25" stroke-width=".8"/>
+    <path d="m55 142 95 48 95-48m-95 48v87" stroke="#FFF2CF" stroke-width="1"/>
+    <!-- Pip's face, in the plane of the left side. -->
+    <g transform="matrix(1 0.505263 0 1 55 142)">
+      <ellipse cx="32.5" cy="36" rx="10" ry="11.5" fill="#FFFDF6"/>
+      <circle cx="36" cy="34.6" r="5.4" fill="#20251E"/>
+      <circle cx="34.2" cy="32.6" r="1.6" fill="#FFFFFF"/>
+      <ellipse cx="31.5" cy="51" rx="6.5" ry="3.2" fill="#E9958F" opacity=".55"/>
+      <ellipse cx="63.5" cy="36" rx="10" ry="11.5" fill="#FFFDF6"/>
+      <circle cx="67" cy="34.6" r="5.4" fill="#20251E"/>
+      <circle cx="65.2" cy="32.6" r="1.6" fill="#FFFFFF"/>
+      <ellipse cx="62.5" cy="51" rx="6.5" ry="3.2" fill="#E9958F" opacity=".55"/>
+      <path d="M42 51Q48 58 54 51" stroke="#20251E" stroke-width="2.4" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(201 201) rotate(-27)"><path d="M10 22V4m-5 5 5-5 5 5" stroke="#735C43" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <g transform="translate(183 234) rotate(-27)">
+      <circle r="14" fill="#DECCE2"/>
+      <circle r="11.5" stroke="#FFF6FF" stroke-width="1.2"/>
+      <path d="M0-7V7m-6-10 12 6M-6 3 6-3" stroke="#7C6787" stroke-width="2" stroke-linecap="round"/>
+    </g>
+    <path d="m96 122 13-7 95 48-13 7-95-48Z" fill="#EBDDCA"/>
+    <path d="m103 119 94 47" stroke="#AF9474" stroke-opacity=".6" stroke-width="1" stroke-dasharray="3 3"/>
+  </svg>
 </svg>

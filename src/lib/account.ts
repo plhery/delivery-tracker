@@ -41,7 +41,7 @@ export function downloadAccountExport(
   const url = urlApi.createObjectURL(blob);
   const link = page.createElement('a');
   link.href = url;
-  link.download = `delivery-tracker-export-${accountExport.exportedAt.slice(0, 10)}.json`;
+  link.download = `peek-export-${accountExport.exportedAt.slice(0, 10)}.json`;
   link.rel = 'noopener';
   link.click();
   urlApi.revokeObjectURL(url);

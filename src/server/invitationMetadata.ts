@@ -25,7 +25,7 @@ export async function invitationMetadata(preview: string | string[] | undefined)
     referrer: 'no-referrer',
     alternates: { canonical: url.href },
     openGraph: {
-      type: 'website', url: url.href, siteName: 'Delivery Tracker', title, description: invitationDescription,
+      type: 'website', url: url.href, siteName: 'Peek', title, description: invitationDescription,
       images: [{ url: image.href, width: 1200, height: 630, type: 'image/png', alt: title }],
     },
     twitter: { card: 'summary_large_image', title, description: invitationDescription, images: [{ url: image.href, alt: title }] },

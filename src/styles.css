@@ -18,6 +18,12 @@ button, a, input, select, textarea, summary { outline-offset: 4px; }
 .sheet:focus, .detail:focus { outline: none; }
 a { color: inherit; text-underline-offset: 3px; }
 button svg, a svg { display: block; width: 21px; height: 21px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
+/* The mark keeps its own size and colours wherever it stands, inside a link or a button too. */
+.peek-mark { display: block; flex: 0 0 auto; stroke: none; }
+.peek-lockup { display: inline-flex; align-items: center; gap: 9px; min-width: 0; color: var(--ink); text-align: start; }
+.peek-lockup__text { display: grid; min-width: 0; line-height: 1.1; }
+.peek-lockup__name { font-size: 16px; font-weight: 700; letter-spacing: -.4px; }
+.peek-lockup__tagline { font-size: 10px; font-weight: 450; color: var(--ink-soft); text-wrap: balance; }
 h1, h2, h3, p { margin-top: 0; }
 h1, h2, h3 { text-wrap: balance; }
 h2 { font-size: 20px; font-weight: 650; letter-spacing: -.45px; }
@@ -45,6 +51,10 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .app { width: min(100%, 1100px); min-height: 100dvh; margin: 0 auto; padding-bottom: 32px; }
 .app__header { position: sticky; top: 0; z-index: 25; background: var(--canvas); padding: env(safe-area-inset-top) 28px 0; }
 .app__masthead { min-height: 90px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 4px 12px; padding: 14px 0 0; }
+/* The name leads the header: the whole lockup on a wide screen, the mark alone on a phone. */
+.app__brand { grid-column: 1; grid-row: 1; justify-self: start; display: flex; align-items: center; min-width: 0; }
+.app__brand > .peek-mark { display: none; }
+.app__actions { grid-column: 3; grid-row: 1; justify-self: end; display: flex; align-items: center; gap: 6px; }
 .app__title { grid-column: 2; grid-row: 1; margin: 0; font-size: 26px; letter-spacing: -1px; line-height: 1.15; font-weight: 650; text-align: center; }
 .app__navigation { grid-column: 1 / -1; grid-row: 2; justify-self: center; position: relative; isolation: isolate; display: flex; align-items: center; padding: 4px; gap: 4px; order: 1; background: var(--control); border-radius: 18px; }
 .app__navigation-selection { position: absolute; left: 0; pointer-events: none; border-radius: 14px; background: var(--paper); box-shadow: var(--shadow); opacity: 0; }
@@ -63,8 +73,8 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
   .app__navigation-selection { background: var(--control); box-shadow: none; }
   .app__add-button span { display: inline; font-size: 12px; font-weight: 500; }
 }
-.app__add-button { grid-column: 1; grid-row: 1; justify-self: start; display: flex; justify-content: center; align-items: center; gap: 7px; background: transparent; border-radius: 14px; min-height: 44px; padding: 8px; order: 2; font-weight: 600; font-size: 13px; }
-.account-trigger { grid-column: 3; grid-row: 1; justify-self: end; background: var(--yellow); color: var(--on-yellow); width: 36px; height: 36px; padding: 9px; margin: 4px; order: 3; font-weight: 700; font-size: 14px; }
+.app__add-button { display: flex; justify-content: center; align-items: center; gap: 7px; background: transparent; border-radius: 14px; min-height: 44px; padding: 8px; font-weight: 600; font-size: 13px; }
+.account-trigger { background: var(--yellow); color: var(--on-yellow); width: 36px; height: 36px; padding: 9px; margin: 4px; font-weight: 700; font-size: 14px; }
 .account-trigger svg { width: 17px; height: 17px; }
 .demo-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 46px; padding: 5px 32px; color: var(--ink-soft); border-bottom: 1px solid var(--line); font-size: 12px; }
 .demo-banner button { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; background: transparent; font-size: 12px; font-weight: 600; color: var(--ink); }
@@ -386,8 +396,7 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
 /* The package stays in the scene as it opens and moves into sign-in. */
 .arrival { min-height: 100dvh; padding: 0 32px 40px; overflow: clip; }
 .arrival__header { display: flex; align-items: center; justify-content: space-between; width: min(100%, 1044px); min-height: 104px; margin: 0 auto; gap: 18px; }
-.arrival__brand { display: flex; gap: 10px; align-items: center; font-size: 15px; font-weight: 650; letter-spacing: -.25px; }
-.arrival__brand svg { color: var(--ochre); }
+.arrival__actions { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
 .arrival__back { font-size: 13px; }
 .arrival__back svg { width: 17px; height: 17px; }
 .arrival__scene { position: relative; width: min(100%, 820px); min-height: min(680px, calc(100dvh - 144px)); margin: 12px auto 0; }
@@ -545,6 +554,9 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
   .app__navigation button[aria-current="page"] { background: var(--yellow); color: var(--on-yellow); box-shadow: none; }
   .app__navigation-selection { border-radius: 19px; background: var(--yellow); box-shadow: none; }
   .app__navigation svg { width: 19px; height: 19px; }
+  .app__brand > .peek-mark { display: block; }
+  .app__brand .peek-lockup { display: none; }
+  .app__actions { gap: 10px; }
   .app__add-button { padding: 8px; border-radius: 50%; width: 40px; min-height: 40px; background: var(--control); }
   .app__add-button span { display: none; }
   .account-trigger { margin: 0; }
@@ -581,8 +593,8 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
   .detail .demo-banner { margin: 0 20px; }
   .arrival { padding: env(safe-area-inset-top) 24px 32px; }
   .arrival__header { min-height: 86px; }
-  .arrival__brand { font-size: 13px; gap: 8px; }
-  .arrival__brand svg { width: 22px; }
+  .arrival--sign-in .arrival__header { gap: 10px; }
+  .arrival__actions { gap: 8px; }
   .arrival__header .language-control select { font-size: 12px; max-width: 118px; }
   .arrival__scene { min-height: 580px; margin-top: 16px; }
   .arrival__welcome { padding-top: 25px; }
@@ -607,7 +619,9 @@ button .carrier-mark__truck { width: 27px; height: 18px; flex-shrink: 0; stroke:
   .parcel-card__label { font-size: 15px; }
   .passport-seal { width: 48px; height: 60px; }.stamp-card > span:last-child { font-size: 9px; }
   .appearance-control button { flex-direction: column; gap: 4px; }
-  .arrival { padding-left: 20px; padding-right: 20px; }.arrival__brand { font-size: 12px; gap: 6px; }
+  .arrival { padding-left: 20px; padding-right: 20px; }
+  /* Beside Back and the language, the narrowest screens keep the name alone. */
+  .arrival--sign-in .peek-lockup__tagline { display: none; }
   .arrival__header .language-control select { max-width: 95px; }
   .sheet { padding-left: 18px; padding-right: 18px; }
   .sheet__actions .button { padding: 12px; font-size: 13px; }

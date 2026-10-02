@@ -73,8 +73,8 @@ assert.ok(ogImage.readUInt32BE(16) >= 1_200, 'the social card must be wide enoug
 assert.ok(ogImage.readUInt32BE(20) >= 630, 'the social card must be tall enough for link previews');
 
 const manifest = JSON.parse(manifestText);
-assert.equal(manifest.name, 'Delivery Tracker');
-assert.equal(manifest.short_name, 'Delivery Tracker');
+assert.equal(manifest.name, 'Peek — Universal Parcel Tracker');
+assert.equal(manifest.short_name, 'Peek');
 assert.equal(manifest.start_url, '/');
 assert.equal(manifest.scope, '/');
 assert.equal(manifest.display, 'standalone');
@@ -87,7 +87,7 @@ assert.deepEqual(manifest.share_target, {
   params: { title: 'title', text: 'text', url: 'url' },
 });
 assert.match(privacy, /Download my data/, 'the public build must include the privacy notice');
-assert.match(privacy, /Delivery Tracker/, 'the privacy notice must use the public product name');
-assert.doesNotMatch(privacy, /Swiss Delivery Tracker/, 'the old product name must not remain public');
+assert.match(privacy, /Peek/, 'the privacy notice must use the public product name');
+assert.doesNotMatch(privacy, /Delivery Tracker/, 'the old product name must not remain public');
 
 console.log(`PWA build contract passed for ${applicationAsset}`);

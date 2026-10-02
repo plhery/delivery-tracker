@@ -5,6 +5,7 @@ import { bindArrivalMotion } from '../lib/arrivalMotion';
 import type { EntryScreen } from '../lib/experience';
 import { InvitationParcelArtwork } from './InvitationParcel';
 import { Icon, ParcelIllustration } from './Icon';
+import { PeekLockup } from './PeekMark';
 import { SignInScreen } from './SignInScreen';
 import './Arrival.css';
 
@@ -58,12 +59,15 @@ export function ArrivalScreen({ screen, onNavigate, invitation, ...signIn }: Com
     timer.current = setTimeout(() => onNavigate('sign-in'), reduced ? 80 : 960);
   }
 
+  const back = <button className="text-button arrival__back" type="button" disabled={invitation?.received} onClick={() => { setOpening(false); onNavigate('welcome'); }}><Icon name="back" />{t('welcome.back')}</button>;
+
   return <main ref={scene} className={`arrival arrival--${screen}${opening ? ' arrival--opening' : ''}${invitation ? ' arrival--invitation' : ' arrival--onboarding'}${invitation?.received ? ' arrival--received' : ''}${!welcome && invitation?.afterOpen && !invitation.received ? ' arrival--accepting' : ''}`}>
     <header className="arrival__header">
-      {welcome ? invitation ? <button className="text-button arrival__back" type="button" aria-label={t('common.close')} onClick={invitation.onDismiss}><Icon name="close" /></button> : <span className="arrival__brand"><Icon name="parcel" />{t('app.title')}</span> :
-        <button className="text-button arrival__back" type="button" disabled={invitation?.received} onClick={() => { setOpening(false); onNavigate('welcome'); }}><Icon name="back" />{t('welcome.back')}</button>}
+      {/* An invitation is led by its own way out; everywhere else the name stays in place while the step changes beside it. */}
+      {!invitation ? <PeekLockup /> : welcome ? <button className="text-button arrival__back" type="button" aria-label={t('common.close')} onClick={invitation.onDismiss}><Icon name="close" /></button> : back}
       {invitation?.appURL && <a className="arrival__app-link" href={invitation.appURL}>{t('friends.openInApp')}</a>}
-      {welcome && !invitation ? <button type="button" className="arrival__shortcut" disabled={!ready || opening} onClick={() => onNavigate('sign-in')}>{t('arrival.signInTitle')}</button> : <LanguageControl />}
+      {invitation ? <LanguageControl /> : welcome ? <button type="button" className="arrival__shortcut" disabled={!ready || opening} onClick={() => onNavigate('sign-in')}>{t('arrival.signInTitle')}</button> :
+        <div className="arrival__actions">{back}<LanguageControl /></div>}
     </header>
     <div className="arrival__scene">
       <div className="arrival__parcel"><div className="arrival__ground" /><div className="arrival__tilt"><div className="arrival__press">{invitation?.nickname ? <InvitationParcelArtwork nickname={invitation.nickname} /> : <ParcelIllustration />}</div></div>

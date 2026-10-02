@@ -4,13 +4,13 @@ import { requestLanguage } from '../src/server/requestLocale';
 import { connection } from 'next/server';
 import { ClientApplication } from '../src/ClientApplication';
 
-const title = 'Delivery Tracker';
+const title = 'Peek — Universal Parcel Tracker';
 const description =
   'Private parcel tracking, with alerts and history synced across your devices.';
 
 export async function generateMetadata(): Promise<Metadata> {
   const origin = await requestOrigin();
-  const image = new URL('/og.png?v=2047ad49', origin).href;
+  const image = new URL('/og.png?v=dfc8f714', origin).href;
   return {
     metadataBase: origin,
     title,
@@ -19,14 +19,14 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       type: 'website',
       url: origin.href,
-      siteName: 'Delivery Tracker',
+      siteName: 'Peek',
       title,
       description,
       images: [{
         url: image,
         width: 1_200,
         height: 630,
-        alt: 'Delivery Tracker — all your parcels in one place.',
+        alt: 'Peek, the universal parcel tracker: a kraft parcel with a friendly face.',
       }],
     },
     twitter: {
